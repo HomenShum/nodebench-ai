@@ -158,9 +158,13 @@ export const researchTools: McpTool[] = [
     inputSchema: {
       type: "object",
       properties: {
+        keyword: {
+          type: "string",
+          description: "Keyword to search for in signal titles, summaries, and tags.",
+        },
         signalType: {
           type: "string",
-          description: "Type of signal to query",
+          description: "Legacy alias for keyword. Prefer keyword for new callers.",
         },
         days: {
           type: "number",
@@ -169,9 +173,10 @@ export const researchTools: McpTool[] = [
       },
     },
     handler: async (args) => {
+      const keyword = typeof args.keyword === "string" ? args.keyword : args.signalType;
       return await convexQuery(
         "domains/research/signalTimeseries:getSignalTimeseries",
-        { signalType: args.signalType, days: args.days }
+        { keyword, signalType: args.signalType, days: args.days }
       );
     },
   },

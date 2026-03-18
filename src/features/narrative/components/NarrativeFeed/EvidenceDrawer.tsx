@@ -12,6 +12,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMotionConfig } from "@/lib/motion";
 import {
   X,
   ExternalLink,
@@ -153,6 +154,7 @@ function extractDomain(url: string): string {
  * Single Artifact Card
  */
 function ArtifactCard({ artifact }: { artifact: EvidenceArtifact }) {
+  const { instant } = useMotionConfig();
   const [expanded, setExpanded] = React.useState(false);
   const credibility = getCredibilityDisplay(artifact.credibilityTier);
   const hasQuotes = artifact.extractedQuotes.length > 0;
@@ -236,9 +238,9 @@ function ArtifactCard({ artifact }: { artifact: EvidenceArtifact }) {
           <AnimatePresence>
             {expanded && (
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
+                initial={instant ? undefined : { opacity: 0, height: 0 }}
+                animate={instant ? undefined : { opacity: 1, height: "auto" }}
+                exit={instant ? undefined : { opacity: 0, height: 0 }}
                 className="mt-2 space-y-2"
               >
                 {artifact.extractedQuotes.map((quote, idx) => (
@@ -328,6 +330,8 @@ export function EvidenceDrawer({
   artifacts,
   className,
 }: EvidenceDrawerProps) {
+  const { instant, transition } = useMotionConfig();
+
   // Group artifacts by credibility tier
   const groupedArtifacts = React.useMemo(() => {
     const groups: Record<CredibilityTier, EvidenceArtifact[]> = {
@@ -360,19 +364,19 @@ export function EvidenceDrawer({
         <>
           {/* Backdrop */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={instant ? undefined : { opacity: 0 }}
+            animate={instant ? undefined : { opacity: 1 }}
+            exit={instant ? undefined : { opacity: 0 }}
             className="fixed inset-0 bg-black/20 z-40"
             onClick={onClose}
           />
 
           {/* Drawer */}
           <motion.div
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            initial={instant ? undefined : { x: "100%" }}
+            animate={instant ? undefined : { x: 0 }}
+            exit={instant ? undefined : { x: "100%" }}
+            transition={transition({ type: "spring", damping: 25, stiffness: 200 })}
             role="dialog"
             aria-label={title}
             className={cn(

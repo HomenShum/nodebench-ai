@@ -57,6 +57,7 @@ import { observabilityTools } from "./tools/observabilityTools.js";
 import { temporalIntelligenceTools } from "./tools/temporalIntelligenceTools.js";
 import { executionTraceTools } from "./tools/executionTraceTools.js";
 import { missionHarnessTools } from "./tools/missionHarnessTools.js";
+import { dimensionTools } from "./tools/dimensionTools.js";
 import type { McpTool } from "./types.js";
 
 export const TOOLSET_MAP: Record<string, McpTool[]> = {
@@ -111,7 +112,7 @@ export const TOOLSET_MAP: Record<string, McpTool[]> = {
   observability: observabilityTools,
   temporal_intelligence: temporalIntelligenceTools,
   execution_trace: executionTraceTools,
-  mission_harness: missionHarnessTools,
+  mission_harness: [...missionHarnessTools, ...dimensionTools],
 };
 
 // Pre-computed tool name → toolset name lookup

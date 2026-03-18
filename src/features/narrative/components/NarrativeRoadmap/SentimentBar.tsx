@@ -12,6 +12,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import type { SentimentDataPoint, SentimentLevel, WeekColumn } from "../../types";
 import { SENTIMENT_COLORS } from "../../types";
+import { useMotionConfig } from "@/lib/motion";
 
 interface SentimentBarProps {
   weekColumns: WeekColumn[];
@@ -45,6 +46,8 @@ export function SentimentBar({
   sentimentData,
   height = 4,
 }: SentimentBarProps) {
+  const { instant, transition } = useMotionConfig();
+
   return (
     <div className="flex">
       {/* Empty space for thread column */}
@@ -67,9 +70,9 @@ export function SentimentBar({
           >
             {/* Sentiment bar */}
             <motion.div
-              initial={{ scaleY: 0 }}
+              initial={{ scaleY: instant ? 1 : 0 }}
               animate={{ scaleY: 1 }}
-              transition={{ delay: index * 0.02 }}
+              transition={transition({ delay: index * 0.02 })}
               className={`h-${height} ${sentimentColor} origin-bottom`}
               style={{ height: `${height}px` }}
             />

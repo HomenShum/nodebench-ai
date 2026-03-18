@@ -43,7 +43,7 @@ export interface TextJudgeConfig {
   rubric?: string;
   /** Minimum score to pass (default 70). */
   threshold?: number;
-  /** LLM model identifier (default "gemini-2.5-flash"). */
+  /** LLM model identifier (default "gemini-3.1-flash-lite-preview"). */
   model?: string;
 }
 

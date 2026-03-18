@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMotionConfig } from '@/lib/motion';
 import {
   FileText,
   Calendar,
@@ -24,6 +25,7 @@ interface EmailReportViewerProps {
 }
 
 export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) {
+  const { instant, transition } = useMotionConfig();
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   // Get list of reports
@@ -111,8 +113,9 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
             {/* Executive Summary */}
             {activeReport.executiveSummary && (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 10 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={transition(0.3)}
                 className="p-4 bg-gradient-to-br from-purple-900/30 to-slate-800/50 rounded-lg border border-purple-500/30"
               >
                 <h2 className="text-lg font-semibold text-content mb-2 flex items-center gap-2">
@@ -183,9 +186,9 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
                   {activeReport.actionItems.map((item: ActionItem, index: number) => (
                     <motion.div
                       key={index}
-                      initial={{ opacity: 0, x: -10 }}
+                      initial={{ opacity: instant ? 1 : 0, x: instant ? 0 : -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
+                      transition={transition({ delay: index * 0.05 })}
                       className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg"
                     >
                       <div className="flex items-start gap-3">
@@ -305,11 +308,13 @@ function CategorySection({
   onToggle: () => void;
   index: number;
 }) {
+  const { instant, transition } = useMotionConfig();
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
+      transition={transition({ delay: index * 0.05 })}
       className="bg-surface/50 rounded-lg border border-edge overflow-hidden"
     >
       {/* Category Header */}
@@ -334,10 +339,10 @@ function CategorySection({
       <AnimatePresence>
         {isExpanded && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
+            initial={{ height: instant ? 'auto' : 0, opacity: instant ? 1 : 0 }}
             animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            exit={{ height: instant ? 'auto' : 0, opacity: instant ? 1 : 0 }}
+            transition={transition(0.2)}
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 space-y-2">

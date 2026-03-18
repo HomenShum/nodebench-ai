@@ -1,0 +1,70 @@
+{
+  "sessionId": "opt-22866fcc",
+  "config": {
+    "maxIterations": 10,
+    "maxSessionSeconds": 600,
+    "benchmarkFamilies": [
+      "company_direction",
+      "relationship_mapping",
+      "repo_intelligence",
+      "world_to_company",
+      "trace_backed_draft"
+    ]
+  },
+  "baseline": {
+    "baselineId": "baseline-401d5942-1773609609024",
+    "commitHash": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+    "throughputMetrics": {
+      "taskCompletionRate": 0.72,
+      "timeToFirstDraftMs": 45000,
+      "humanEditDistance": 180,
+      "wallClockMs": 90000,
+      "toolCallCount": 28
+    },
+    "qualityMetrics": {
+      "factualPrecision": 0.7,
+      "relationshipPrecision": 0.7,
+      "evidenceLinkage": 0.7,
+      "receiptCompleteness": 0.72,
+      "falseConfidenceRate": 0.1,
+      "canaryRelativeUplift": 0
+    },
+    "capturedAt": "2026-03-15T21:20:09.024Z"
+  },
+  "candidates": [
+    {
+      "candidateId": "nodebench-research-cell-v1",
+      "baselineId": "baseline-401d5942-1773609609024",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.66369123101084,
+        "qualityMetrics": {
+          "factualPrecision": 0.71,
+          "relationshipPrecision": 0.72,
+          "evidenceLinkage": 0.7799999999999999,
+          "receiptCompleteness": 0.82,
+          "falseConfidenceRate": 0.07,
+          "canaryRelativeUplift": 0.05
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.2% < 5% minimum",
+      "timestamp": "2026-03-15T21:41:31.311Z",
+      "iterationMs": 50
+    }
+  ],
+  "promotedCandidateId": null,
+  "startedAt": "2026-03-15T21:41:28.513Z",
+  "completedAt": "2026-03-15T21:41:35.710Z"
+}

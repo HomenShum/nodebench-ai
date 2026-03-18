@@ -9,6 +9,7 @@ import { v } from "convex/values";
 import { query } from "../../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Id, Doc } from "../../../_generated/dataModel";
+import { buildTaskSessionProofPack } from "./proofPack";
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // PUBLIC QUERIES (Unauthenticated Access)
@@ -258,10 +259,13 @@ export const getTaskSessionDetail = query({
       .order("asc")
       .collect();
 
+    const proofPack = buildTaskSessionProofPack(session, traces);
+
     return {
       session,
       traces,
       traceCount: traces.length,
+      proofPack,
     };
   },
 });

@@ -400,6 +400,19 @@ async function postProcessNode(
       }
     }
 
+    try {
+      await ctx.runAction(
+        internal.domains.deepTrace.integrations.syncNarrativeEventToDeepTrace,
+        {
+          eventId,
+          artifactIds,
+          fallbackEntityKey: state.targetEntityKeys?.[0],
+        },
+      );
+    } catch (e) {
+      console.warn("[NewsroomWorkflow] DeepTrace narrative sync failed (non-fatal):", e);
+    }
+
     if (ppCfg.enableEventVerification && Array.isArray(artifactIds) && artifactIds.length > 0) {
       try {
         const verification = await ctx.runAction(

@@ -11,6 +11,7 @@ import { useEvidence } from "../contexts/EvidenceContext";
 import { DeltaIndicator } from "./DeltaIndicator";
 import { useEngagementTracking } from "@/lib/hooks/useEngagementTracking";
 import { normalizeSourceLabel } from "@/lib/displayText";
+import { useMotionConfig } from '@/lib/motion';
 
 export interface WorkflowStep {
   name: string;
@@ -334,7 +335,9 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
 
 // --- SUB-COMPONENTS ---
 
-const CapabilityBar = ({ label, score, icon, delta }: { label: string, score: number, icon: string, delta?: number | null }) => (
+const CapabilityBar = ({ label, score, icon, delta }: { label: string, score: number, icon: string, delta?: number | null }) => {
+  const { instant, transition } = useMotionConfig();
+  return (
   <div className="flex flex-col gap-0.5 mb-3 group overflow-hidden">
     <div className="flex items-baseline gap-1.5 min-w-0">
       <span className="text-[10px] text-content-secondary font-medium group-hover:text-content dark:group-hover:text-gray-100 transition-colors leading-none truncate min-w-0 flex-1">{label}</span>
@@ -345,14 +348,15 @@ const CapabilityBar = ({ label, score, icon, delta }: { label: string, score: nu
     </div>
     <div className="h-1.5 w-full bg-surface-secondary dark:bg-white/[0.1] overflow-hidden rounded-full">
       <motion.div
-        initial={{ width: 0 }}
+        initial={{ width: instant ? `${normalizeCapabilityScore(score)}%` : 0 }}
         animate={{ width: `${normalizeCapabilityScore(score)}%` }}
-        transition={{ duration: 1.5, ease: "easeOut" }}
+        transition={transition({ duration: 1.5, ease: "easeOut" })}
         className="h-full bg-content dark:bg-surface rounded-full"
       />
     </div>
   </div>
-);
+  );
+};
 
 const BucketColumn = ({ count, color, delta }: { count: number, color: string, delta?: number | null }) => {
   // Map old colors to new theme
@@ -373,6 +377,7 @@ const BucketColumn = ({ count, color, delta }: { count: number, color: string, d
 };
 
 const DonutChart = ({ data }: { data: MarketShareSegment[] }) => {
+  const { instant, transition } = useMotionConfig();
   const topValue = data[0]?.value || 0;
   const pathLength = Math.max(0, Math.min(1, topValue / 100));
 
@@ -381,9 +386,9 @@ const DonutChart = ({ data }: { data: MarketShareSegment[] }) => {
       <svg viewBox="0 0 100 100" className="transform -rotate-90 w-full h-full">
         <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="10" fill="none" className="text-[#E5E5E2] dark:text-white/[0.1]" />
         <motion.circle
-          initial={{ pathLength: 0 }}
+          initial={{ pathLength: instant ? pathLength : 0 }}
           animate={{ pathLength }}
-          transition={{ duration: 2, ease: "easeOut" }}
+          transition={transition({ duration: 2, ease: "easeOut" })}
           cx="50"
           cy="50"
           r="40"

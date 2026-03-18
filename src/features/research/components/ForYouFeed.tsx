@@ -18,10 +18,7 @@ import {
 } from "lucide-react";
 import { PageHeroHeader } from "@/shared/ui/PageHeroHeader";
 import { sanitizeReadableText } from "@/lib/displayText";
-
-const prefersReducedMotion = () =>
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+import { useMotionConfig } from '@/lib/motion';
 
 const staggerContainer = {
   hidden: { opacity: 1 },
@@ -43,6 +40,7 @@ interface DateGroup {
 }
 
 export function ForYouFeed() {
+  const { instant, transition } = useMotionConfig();
   const authFeed = useQuery(api.domains.research.forYouFeed.getForYouFeed, { limit: 50 });
   const publicFeed = useQuery(api.domains.research.forYouFeed.getPublicForYouFeed, { limit: 50 });
   const recordEngagement = useMutation(api.domains.research.forYouFeed.recordEngagement);
@@ -206,48 +204,32 @@ export function ForYouFeed() {
                 <div className="space-y-8">
                   {/* Hero Story */}
                   {heroItem && (
-                    prefersReducedMotion() ? (
+                    <motion.div
+                      initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={transition({ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] })}
+                    >
                       <HeroCard item={heroItem} onEngagement={handleEngagement} />
-                    ) : (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-                      >
-                        <HeroCard item={heroItem} onEngagement={handleEngagement} />
-                      </motion.div>
-                    )
+                    </motion.div>
                   )}
 
                   {/* Secondary Stories */}
                   {restItems.length > 0 && (
-                    prefersReducedMotion() ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-edge">
-                        {restItems.map((item: any, idx: number) => (
+                    <motion.div
+                      className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-edge"
+                      variants={instant ? undefined : staggerContainer}
+                      initial={instant ? undefined : "hidden"}
+                      animate={instant ? undefined : "visible"}
+                    >
+                      {restItems.map((item: any, idx: number) => (
+                        <motion.div key={item.itemId ?? item.metadata?.url ?? `${group.dateString}-${idx}`} variants={instant ? undefined : staggerItem}>
                           <StoryCard
-                            key={item.itemId ?? item.metadata?.url ?? `${group.dateString}-${idx}`}
                             item={item}
                             onEngagement={handleEngagement}
                           />
-                        ))}
-                      </div>
-                    ) : (
-                      <motion.div
-                        className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-edge"
-                        variants={staggerContainer}
-                        initial="hidden"
-                        animate="visible"
-                      >
-                        {restItems.map((item: any, idx: number) => (
-                          <motion.div key={item.itemId ?? item.metadata?.url ?? `${group.dateString}-${idx}`} variants={staggerItem}>
-                            <StoryCard
-                              item={item}
-                              onEngagement={handleEngagement}
-                            />
-                          </motion.div>
-                        ))}
-                      </motion.div>
-                    )
+                        </motion.div>
+                      ))}
+                    </motion.div>
                   )}
                 </div>
               )}

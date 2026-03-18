@@ -7,6 +7,7 @@
 
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMotionConfig } from '@/lib/motion';
 import {
   GitBranch,
   GitCommit,
@@ -162,9 +163,10 @@ function StatCard({
   icon: React.ElementType;
   accent: string;
 }) {
+  const { instant, transition } = useMotionConfig();
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: instant ? 0 : 12 }}
       animate={{ opacity: 1, y: 0 }}
       className="rounded-xl border border-edge bg-white/[0.02] p-4"
     >
@@ -188,14 +190,15 @@ function DomainBranch({
   isActive: boolean;
   onClick: () => void;
 }) {
+  const { instant } = useMotionConfig();
   const color = DOMAIN_COLORS[domain] || DOMAIN_COLORS.other;
   const textColor = DOMAIN_TEXT[domain] || DOMAIN_TEXT.other;
 
   return (
     <motion.button
       onClick={onClick}
-      whileHover={{ x: 2 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={!instant ? { x: 2 } : undefined}
+      whileTap={!instant ? { scale: 0.98 } : undefined}
       className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors ${
         isActive ? "bg-white/[0.06]" : "hover:bg-white/[0.03]"
       }`}
@@ -222,6 +225,7 @@ function EpochRow({
   onToggle: () => void;
   domainFilter: string | null;
 }) {
+  const { instant, transition } = useMotionConfig();
   const filteredCommits = domainFilter
     ? epoch.commits.filter((c) => c.domain === domainFilter)
     : epoch.commits;
@@ -241,9 +245,9 @@ function EpochRow({
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
+      initial={{ opacity: instant ? 1 : 0 }}
       animate={{ opacity: 1 }}
-      transition={{ delay: Math.min(index * 0.03, 0.6) }}
+      transition={transition({ delay: Math.min(index * 0.03, 0.6) })}
       className="group"
     >
       {/* Week header */}
@@ -265,9 +269,9 @@ function EpochRow({
         <div className="flex-1 flex items-center gap-2">
           <div className="flex-1 h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
             <motion.div
-              initial={{ width: 0 }}
+              initial={{ width: instant ? `${intensity}%` : 0 }}
               animate={{ width: `${intensity}%` }}
-              transition={{ duration: 0.6, delay: index * 0.02 }}
+              transition={transition({ duration: 0.6, delay: index * 0.02 })}
               className="h-full rounded-full bg-gradient-to-r from-emerald-500/60 to-blue-500/60"
             />
           </div>
@@ -303,10 +307,10 @@ function EpochRow({
       <AnimatePresence>
         {isExpanded && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
+            initial={{ height: instant ? "auto" : 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={transition({ duration: 0.2 })}
             className="overflow-hidden"
           >
             <div className="ml-[34px] border-l border-edge pl-4 pb-3 space-y-1">
@@ -350,11 +354,12 @@ function CommitRow({ commit }: { commit: Commit }) {
 }
 
 function MilestoneMarker({ milestone }: { milestone: Milestone }) {
+  const { instant } = useMotionConfig();
   const isRelease = milestone.type === "release";
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -8 }}
+      initial={{ opacity: 0, x: instant ? 0 : -8 }}
       animate={{ opacity: 1, x: 0 }}
       className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
         isRelease
@@ -381,6 +386,7 @@ function MilestoneMarker({ milestone }: { milestone: Milestone }) {
 // ── Main Component ──────────────────────────────────────────────────────
 
 export default function DevDashboard() {
+  const { instant, transition } = useMotionConfig();
   const data = timelineData as unknown as TimelineData;
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -450,9 +456,9 @@ export default function DevDashboard() {
     <div className="h-full flex flex-col bg-[var(--bg-primary)] text-white/90 overflow-hidden">
       {/* Header */}
       <motion.header
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: instant ? 0 : -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        transition={transition({ duration: 0.4 })}
         className="shrink-0 px-6 pt-6 pb-4 border-b border-edge"
       >
         <div className="flex items-center gap-3 mb-4">
@@ -486,9 +492,9 @@ export default function DevDashboard() {
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar — Domain branches */}
         <motion.aside
-          initial={{ opacity: 0, x: -16 }}
+          initial={{ opacity: 0, x: instant ? 0 : -16 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.15 }}
+          transition={transition({ delay: 0.15 })}
           className="w-52 shrink-0 border-r border-edge overflow-y-auto p-3 space-y-0.5 hidden md:block"
         >
           <div className="text-[10px] uppercase tracking-widest text-white/30 px-3 py-2">
@@ -574,7 +580,7 @@ export default function DevDashboard() {
 
             {domainFilter && (
               <motion.button
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: instant ? 1 : 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 onClick={() => setDomainFilter(null)}
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.06] text-xs text-white/60 hover:bg-white/[0.1]"
@@ -595,7 +601,7 @@ export default function DevDashboard() {
             {/* Milestones section */}
             {filteredMilestones.length > 0 && (
               <motion.div
-                initial={{ opacity: 0 }}
+                initial={{ opacity: instant ? 1 : 0 }}
                 animate={{ opacity: 1 }}
                 className="mb-4 space-y-1.5"
               >

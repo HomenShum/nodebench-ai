@@ -152,6 +152,38 @@ const ALLOWLIST: Record<string, AllowlistEntry> = {
     ref: api.domains.knowledge.sourceRegistry.getRegistryForDomain,
     type: "query",
   },
+  getDimensionProfile: {
+    ref: api.domains.deepTrace.dimensions.getDimensionProfile,
+    type: "query",
+  },
+  listDimensionSnapshots: {
+    ref: api.domains.deepTrace.dimensions.listDimensionSnapshots,
+    type: "query",
+  },
+  listDimensionEvidence: {
+    ref: api.domains.deepTrace.dimensions.listDimensionEvidence,
+    type: "query",
+  },
+  listDimensionInteractions: {
+    ref: api.domains.deepTrace.dimensions.listDimensionInteractions,
+    type: "query",
+  },
+  getDimensionBundle: {
+    ref: api.domains.deepTrace.dimensions.getDimensionBundle,
+    type: "query",
+  },
+  refreshDimensionProfile: {
+    ref: api.domains.deepTrace.dimensions.refreshDimensionProfile,
+    type: "action",
+  },
+  runResearchCell: {
+    ref: internal.domains.deepTrace.researchCell.runResearchCell,
+    type: "action",
+  },
+  runEntityIntelligenceMission: {
+    ref: api.workflows.deepTrace.runEntityIntelligenceMission,
+    type: "action",
+  },
 
   // ── GROUP B: Internal MCP variants — need userId injection ───────────────
 

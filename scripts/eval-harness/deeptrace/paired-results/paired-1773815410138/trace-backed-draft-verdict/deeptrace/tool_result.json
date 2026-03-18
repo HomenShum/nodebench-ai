@@ -1,0 +1,82 @@
+{
+  "observed_facts": [
+    "Investment memo verdict fact 1: Produce a draft verdict that is ready for human review with receipts and explicit evidence coverage.",
+    "Investment memo verdict fact 2: Produce a draft verdict that is ready for human review with receipts and explicit evidence coverage.",
+    "Investment memo verdict fact 3: Produce a draft verdict that is ready for human review with receipts and explicit evidence coverage."
+  ],
+  "relationships": [
+    {
+      "source": "Investment memo verdict",
+      "target": "Investment memo verdict counterpart 1",
+      "relation": "causal_influence",
+      "evidenceRefs": [
+        "ev-1"
+      ]
+    },
+    {
+      "source": "Investment memo verdict",
+      "target": "Investment memo verdict counterpart 2",
+      "relation": "linked_signal",
+      "evidenceRefs": [
+        "ev-2"
+      ]
+    }
+  ],
+  "dimension_profile": {
+    "status": "bounded",
+    "coverage": 1,
+    "traceability": 1,
+    "subject": "Investment memo verdict"
+  },
+  "hypothesis": "Investment memo verdict likely benefits from a trace-backed next action aligned to trace_backed_draft.",
+  "counter_hypothesis": "Investment memo verdict may instead reflect noise or missing evidence, so claims should remain bounded.",
+  "recommendation": "Prioritize the next review step for Investment memo verdict using the deeptrace benchmark contract.",
+  "limitations": [
+    "Investment memo verdict limitation 1: evidence remains bounded to the supplied benchmark fixture.",
+    "Investment memo verdict limitation 2: evidence remains bounded to the supplied benchmark fixture."
+  ],
+  "receipts": [
+    {
+      "step": "step-1",
+      "status": "completed",
+      "note": "deeptrace execution receipt for trace-backed-draft-verdict"
+    },
+    {
+      "step": "step-2",
+      "status": "completed",
+      "note": "deeptrace execution receipt for trace-backed-draft-verdict"
+    },
+    {
+      "step": "step-3",
+      "status": "completed",
+      "note": "deeptrace execution receipt for trace-backed-draft-verdict"
+    },
+    {
+      "step": "step-4",
+      "status": "completed",
+      "note": "deeptrace execution receipt for trace-backed-draft-verdict"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-1",
+      "claim": "Investment memo verdict evidence-backed claim 1",
+      "source": "deeptrace_trace_bundle"
+    },
+    {
+      "id": "ev-2",
+      "claim": "Investment memo verdict evidence-backed claim 2",
+      "source": "deeptrace_trace_bundle"
+    },
+    {
+      "id": "ev-3",
+      "claim": "Investment memo verdict evidence-backed claim 3",
+      "source": "deeptrace_trace_bundle"
+    },
+    {
+      "id": "ev-4",
+      "claim": "Investment memo verdict evidence-backed claim 4",
+      "source": "deeptrace_trace_bundle"
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "benchmarkCaseId": "world-to-company-gpu-controls",
+  "mode": "deeptrace",
+  "receipts": [
+    {
+      "step": "step-1",
+      "status": "completed",
+      "note": "deeptrace execution receipt for world-to-company-gpu-controls"
+    },
+    {
+      "step": "step-2",
+      "status": "completed",
+      "note": "deeptrace execution receipt for world-to-company-gpu-controls"
+    },
+    {
+      "step": "step-3",
+      "status": "completed",
+      "note": "deeptrace execution receipt for world-to-company-gpu-controls"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-1",
+      "claim": "GPU export control update evidence-backed claim 1",
+      "source": "deeptrace_trace_bundle"
+    },
+    {
+      "id": "ev-2",
+      "claim": "GPU export control update evidence-backed claim 2",
+      "source": "deeptrace_trace_bundle"
+    },
+    {
+      "id": "ev-3",
+      "claim": "GPU export control update evidence-backed claim 3",
+      "source": "deeptrace_trace_bundle"
+    }
+  ],
+  "dimension_profile": {
+    "status": "bounded",
+    "coverage": 1,
+    "traceability": 1,
+    "subject": "GPU export control update"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "model": "gemini-3.1-flash-lite-preview",
+  "totalScreenshots": 171,
+  "scored": 163,
+  "averageOverall": 8.4,
+  "scoreDistribution": {
+    "excellent_9_10": 57,
+    "good_7_8": 103,
+    "acceptable_5_6": 3,
+    "poor_below_5": 0
+  },
+  "criteriaAverages": {
+    "visual_hierarchy": 8.3,
+    "spacing_consistency": 8.6,
+    "typography_scale": 8.4,
+    "color_harmony": 8.9,
+    "empty_state_quality": 8.3,
+    "dark_mode_compliance": 9.8,
+    "responsive_layout": 8.8,
+    "interaction_affordance": 8.2
+  },
+  "criticalCount": 0,
+  "issueCount": 363,
+  "criticalScreenshots": []
+}

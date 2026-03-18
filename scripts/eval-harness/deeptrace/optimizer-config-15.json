@@ -1,0 +1,11 @@
+{
+  "maxIterations": 15,
+  "maxSessionSeconds": 600,
+  "benchmarkFamilies": [
+    "company_direction",
+    "relationship_mapping",
+    "repo_intelligence",
+    "world_to_company",
+    "trace_backed_draft"
+  ]
+}

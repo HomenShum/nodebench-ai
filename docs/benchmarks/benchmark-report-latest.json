@@ -1,0 +1,2308 @@
+{
+  "generatedAt": "2026-01-04T07:21:52.155Z",
+  "gitSha": "d547fac9b26843b5b6921d9b9b7b3297e918324e",
+  "convexUrl": "https://formal-shepherd-851.convex.cloud",
+  "config": {
+    "iterations": 3,
+    "includeLinkup": true,
+    "includePersona": false
+  },
+  "runs": {
+    "liveApiSmoke": [
+      {
+        "checkedAt": 1767511361091,
+        "envPresence": {
+          "ANTHROPIC_API_KEY": true,
+          "CORE_AGENT_MCP_AUTH_TOKEN": true,
+          "CORE_AGENT_MCP_SERVER_URL": true,
+          "CORE_AGENT_MCP_TOKEN": false,
+          "CORE_AGENT_MCP_URL": false,
+          "GEMINI_API_KEY": true,
+          "LINKUP_API_KEY": true,
+          "MCP_SECRET": true,
+          "OPENAI_API_KEY": true,
+          "OPENBB_API_KEY": false,
+          "OPENBB_MCP_SERVER_URL": true,
+          "OPENBB_MCP_URL": false,
+          "RESEARCH_API_KEY": true,
+          "RESEARCH_MCP_SERVER_URL": true,
+          "RESEARCH_MCP_URL": false,
+          "YOUTUBE_API_KEY": true
+        },
+        "mode": {
+          "includeLinkup": true,
+          "includePublicApiChecks": true,
+          "requireMcpChecks": true,
+          "resolved": {
+            "coreAgentUrl": "https://core-agent-production-08a8.up.railway.app",
+            "openbbUrl": "https://openbb-production.up.railway.app",
+            "researchUrl": "https://research-production-e619.up.railway.app"
+          },
+          "tryLocalhostDefaults": false
+        },
+        "ok": true,
+        "results": {
+          "anthropic_modelsList": {
+            "details": {
+              "count": 10,
+              "sample": [
+                "claude-opus-4-5-20251101",
+                "claude-haiku-4-5-20251001",
+                "claude-sonnet-4-5-20250929",
+                "claude-opus-4-1-20250805",
+                "claude-opus-4-20250514"
+              ]
+            },
+            "elapsedMs": 129,
+            "ok": true
+          },
+          "coreAgentMcp_toolsCall": {
+            "details": {
+              "memKey": "mcp1:e2e:1767511336001",
+              "planId": "plan_1767511334749_p1nes83pv"
+            },
+            "elapsedMs": 2506,
+            "ok": true
+          },
+          "coreAgentMcp_toolsList": {
+            "details": {
+              "missing": [],
+              "toolCount": 7,
+              "toolNames": [
+                "createPlan",
+                "deleteAgentMemory",
+                "getPlan",
+                "listAgentMemory",
+                "readAgentMemory",
+                "updatePlanStep",
+                "writeAgentMemory"
+              ]
+            },
+            "elapsedMs": 156,
+            "ok": true
+          },
+          "gemini_modelsList": {
+            "details": {
+              "count": 50,
+              "sample": [
+                "models/embedding-gecko-001",
+                "models/gemini-2.5-flash",
+                "models/gemini-2.5-pro",
+                "models/gemini-2.0-flash-exp",
+                "models/gemini-2.0-flash"
+              ]
+            },
+            "elapsedMs": 71,
+            "ok": true
+          },
+          "linkup_search": {
+            "details": {
+              "hasAnswer": true,
+              "resultsCount": 0,
+              "sourcesCount": 3
+            },
+            "elapsedMs": 3950,
+            "ok": true
+          },
+          "openai_modelsList": {
+            "details": {
+              "count": 126,
+              "sample": [
+                "gpt-4-0613",
+                "gpt-4",
+                "gpt-3.5-turbo",
+                "chatgpt-image-latest",
+                "gpt-4o-mini-tts-2025-03-20"
+              ]
+            },
+            "elapsedMs": 506,
+            "ok": true
+          },
+          "openbb_executeTool": {
+            "details": {
+              "calls": {
+                "fundamentals": {
+                  "ok": true,
+                  "sample": {
+                    "asOf": "2026-01-02",
+                    "beta": null,
+                    "currency": "USD",
+                    "dayHigh": 265.38,
+                    "dayLow": 252.48,
+                    "dividendYield": null,
+                    "errors": {
+                      "yfinance_error": "Expecting value: line 1 column 1 (char 0)",
+                      "yfinance_missing_fields": [
+                        "longName",
+                        "sector",
+                        "industry",
+                        "website",
+                        "marketCap",
+                        "trailingPE",
+                        "forwardPE",
+                        "priceToBook",
+                        "beta",
+                        "dividendYield"
+                      ]
+                    },
+                    "fetchedAt": "2026-01-04T07:22:25.703770+00:00",
+                    "forwardPE": null,
+                    "industry": null,
+                    "longName": null,
+                    "marketCap": null,
+                    "partial": true,
+                    "price": 253.62,
+                    "priceToBook": null,
+                    "quoteSource": "stooq",
+                    "sector": null,
+                    "source": "mixed",
+                    "symbol": "CRM",
+                    "trailingPE": null,
+                    "volume": 9680584,
+                    "website": null
+                  },
+                  "toolName": "equity_fundamental_overview"
+                },
+                "gdp": {
+                  "ok": true,
+                  "sample": {
+                    "country": "US",
+                    "fetchedAt": "2026-01-04T07:22:28.897948+00:00",
+                    "source": "world_bank",
+                    "unit": "USD",
+                    "value": 28750956130731.2,
+                    "year": "2024"
+                  },
+                  "toolName": "economy_gdp"
+                },
+                "historical": {
+                  "ok": true,
+                  "sample": {
+                    "count": 19,
+                    "source": "stooq",
+                    "symbol": "CRM"
+                  },
+                  "toolName": "equity_price_historical"
+                },
+                "inflation": {
+                  "ok": true,
+                  "sample": {
+                    "country": "US",
+                    "fetchedAt": "2026-01-04T07:22:29.492985+00:00",
+                    "source": "world_bank",
+                    "unit": "percent",
+                    "value": 2.94952520485207,
+                    "year": "2024"
+                  },
+                  "toolName": "economy_inflation"
+                },
+                "quote": {
+                  "ok": true,
+                  "sample": {
+                    "asOf": "2026-01-02",
+                    "currency": "USD",
+                    "dayHigh": 265.38,
+                    "dayLow": 252.48,
+                    "fetchedAt": "2026-01-04T07:22:20.896061+00:00",
+                    "marketCap": null,
+                    "open": 264.74,
+                    "previousClose": null,
+                    "price": 253.62,
+                    "source": "stooq",
+                    "symbol": "CRM",
+                    "volume": 9680584
+                  },
+                  "toolName": "equity_price_quote"
+                }
+              },
+              "ok": true
+            },
+            "elapsedMs": 9791,
+            "ok": true
+          },
+          "openbb_health": {
+            "details": {
+              "data": {
+                "service": "openbb-mcp-server",
+                "status": "healthy",
+                "timestamp": "2026-01-04T07:22:19.647025",
+                "version": "1.0.0"
+              }
+            },
+            "elapsedMs": 2644,
+            "ok": true
+          },
+          "openbb_listTools": {
+            "details": {
+              "sample": {
+                "category": null,
+                "count": 9,
+                "success": true,
+                "tools": [
+                  {
+                    "category": "equity",
+                    "description": "Get real-time stock quote",
+                    "name": "equity_price_quote",
+                    "parameters": {
+                      "symbol": {
+                        "description": "Stock ticker symbol",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Real-time quote data including price, volume, and market cap"
+                  },
+                  {
+                    "category": "equity",
+                    "description": "Get historical stock price data",
+                    "name": "equity_price_historical",
+                    "parameters": {
+                      "end_date": {
+                        "description": "End date (YYYY-MM-DD)",
+                        "required": false,
+                        "type": "string"
+                      },
+                      "start_date": {
+                        "description": "Start date (YYYY-MM-DD)",
+                        "required": false,
+                        "type": "string"
+                      },
+                      "symbol": {
+                        "description": "Stock ticker symbol",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Historical price data with OHLCV"
+                  },
+                  {
+                    "category": "equity",
+                    "description": "Get company fundamental overview",
+                    "name": "equity_fundamental_overview",
+                    "parameters": {
+                      "symbol": {
+                        "description": "Stock ticker symbol",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Company fundamentals including market cap, P/E ratio, etc."
+                  },
+                  {
+                    "category": "crypto",
+                    "description": "Get cryptocurrency quote",
+                    "name": "crypto_price_quote",
+                    "parameters": {
+                      "symbol": {
+                        "description": "Crypto symbol (e.g., BTC, ETH)",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Real-time crypto quote data"
+                  },
+                  {
+                    "category": "crypto",
+                    "description": "Get historical cryptocurrency data",
+                    "name": "crypto_price_historical",
+                    "parameters": {
+                      "end_date": {
+                        "description": "End date (YYYY-MM-DD)",
+                        "required": false,
+                        "type": "string"
+                      },
+                      "start_date": {
+                        "description": "Start date (YYYY-MM-DD)",
+                        "required": false,
+                        "type": "string"
+                      },
+                      "symbol": {
+                        "description": "Crypto symbol",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Historical crypto price data"
+                  },
+                  {
+                    "category": "economy",
+                    "description": "Get GDP data",
+                    "name": "economy_gdp",
+                    "parameters": {
+                      "country": {
+                        "description": "Country code (default: US)",
+                        "required": false,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "GDP data for specified country"
+                  },
+                  {
+                    "category": "economy",
+                    "description": "Get inflation data (CPI)",
+                    "name": "economy_inflation",
+                    "parameters": {
+                      "country": {
+                        "description": "Country code (default: US)",
+                        "required": false,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Inflation/CPI data for specified country"
+                  },
+                  {
+                    "category": "news",
+                    "description": "Get company news",
+                    "name": "news_company",
+                    "parameters": {
+                      "limit": {
+                        "description": "Number of articles (default: 10)",
+                        "required": false,
+                        "type": "integer"
+                      },
+                      "symbol": {
+                        "description": "Stock ticker symbol",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Recent news articles about the company"
+                  },
+                  {
+                    "category": "news",
+                    "description": "Get world financial news",
+                    "name": "news_world",
+                    "parameters": {
+                      "limit": {
+                        "description": "Number of articles (default: 10)",
+                        "required": false,
+                        "type": "integer"
+                      }
+                    },
+                    "returns": "Recent world financial news"
+                  }
+                ]
+              }
+            },
+            "elapsedMs": 200,
+            "ok": true
+          },
+          "research_executeTool": {
+            "details": {
+              "sample": {
+                "data": {
+                  "results": {
+                    "generatedAt": "2026-01-04T07:22:36.545Z",
+                    "kind": "fusion_search_results",
+                    "payload": {
+                      "mode": "fast",
+                      "reranked": false,
+                      "results": [
+                        {
+                          "contentType": "text",
+                          "fusedRank": 1,
+                          "id": "linkup-1767511356420-0",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "Snapshots let you lock in a specific version of the model so that performance and behavior remain consistent. Below is a list of all available snapshots and aliases for GPT-5.2.\nGPT-5.2 is our flagship model for coding and agentic tasks across industries.",
+                              "name": "GPT-5.2 Model | OpenAI API",
+                              "type": "text",
+                              "url": "https://platform.openai.com/docs/models/gpt-5.2"
+                            }
+                          },
+                          "originalRank": 1,
+                          "score": 0.01639344262295082,
+                          "snippet": "Snapshots let you lock in a specific version of the model so that performance and behavior remain consistent. Below is a list of all available snapshots and aliases for GPT-5.2.\nGPT-5.2 is our flagship model for coding and agentic tasks across industries.",
+                          "source": "linkup",
+                          "title": "GPT-5.2 Model | OpenAI API",
+                          "url": "https://platform.openai.com/docs/models/gpt-5.2"
+                        },
+                        {
+                          "contentType": "news",
+                          "fusedRank": 2,
+                          "id": "news-linkup-1767511356057-0",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "The company said the model is better at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context. It will be available starting Thursday within OpenAI&#x27;s ChatGPT chatbot and its API.\nOpenAI on Thursday announced GPT-5.2, its most advanced artificial intelligence model. The company said the model is better at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context. It will be available starting Thursday within OpenAI's ChatGPT chatbot and its API.\nOpenAI on Thursday announced its most advanced artificial intelligence model, GPT-5.2, and said it's the best offering yet for everyday professional use. The model is better than predecessors at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context, OpenAI said. It will be available starting Thursday within OpenAI's ChatGPT chatbot and its application programming interface (API).\nOpenAI CEO Sam Altman told CNBC on Thursday that Google's release of its Gemini 3 model had less of an impact on the company's metrics than it originally feared. He said he expects OpenAI will exit its code red by January. \"I believe that when a competitive threat happens, you want to focus on it, deal with it quickly,\" Altman said. OpenAI said GPT-5.2 will be available in Instant, Thinking and Pro versions.\nThe company said that the model tops industry benchmarks, including SWE-Bench Pro, which evaluates agentic coding performance, and GPQA Diamond, a graduate-level scientific reasoning benchmark. On GDPval, an evaluation OpenAI released earlier this year, GPT-5.2 beat or tied top industry professionals on 70.9% of well-specified tasks, the company said.",
+                              "name": "Sam Altman expects OpenAI to exit 'code red' by January after launch of GPT-5.2 model",
+                              "type": "text",
+                              "url": "https://www.cnbc.com/2025/12/11/openai-intros-new-ai-model-gpt-5point2-says-better-at-professional-tasks.html"
+                            }
+                          },
+                          "originalRank": 1,
+                          "score": 0.01639344262295082,
+                          "snippet": "The company said the model is better at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context. It will be available starting Thursday within OpenAI&#x27;s ChatGPT chatbot and its API.\nOpenAI on Thursday announced GPT-5.2, its most advanced artificial intelligence model. The company said the model is better at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context. It will be available starting Thursday within OpenAI's ChatGPT chatbot and its API.\nOpenAI on Thursday announced its most advanced artificial intelligence model, GPT-5.2, and said it's the best offering yet for everyday professional use. The model is better than predecessors at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context, OpenAI said. It will be available starting Thursday within OpenAI's ChatGPT chatbot and its application programming interface (API).\nOpenAI CEO Sam Altman told CNBC on Thursday that Google's release of its Gemini 3 model had less of an impact on the company's metrics than it originally feared. He said he expects OpenAI will exit its code red by January. \"I believe that when a competitive threat happens, you want to focus on it, deal with it quickly,\" Altman said. OpenAI said GPT-5.2 will be available in Instant, Thinking and Pro versions.\nThe company said that the model tops industry benchmarks, including SWE-Bench Pro, which evaluates agentic coding performance, and GPQA Diamond, a graduate-level scientific reasoning benchmark. On GDPval, an evaluation OpenAI released earlier this year, GPT-5.2 beat or tied top industry professionals on 70.9% of well-specified tasks, the company said.",
+                          "source": "news",
+                          "title": "Sam Altman expects OpenAI to exit 'code red' by January after launch of GPT-5.2 model",
+                          "url": "https://www.cnbc.com/2025/12/11/openai-intros-new-ai-model-gpt-5point2-says-better-at-professional-tasks.html"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 3,
+                          "id": "linkup-1767511356420-1",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "We deploy GPT‑5.2 gradually to keep ChatGPT as smooth and reliable as we can; if you don’t see it at first, please try again later. In ChatGPT, GPT‑5.1 will still be available to paid users for three months under legacy models, after which we will sunset GPT‑5.1.\nGPT‑5.2 Thinking hallucinates less than GPT‑5.1 Thinking. On a set of de-identified queries from ChatGPT, responses with errors were 30%rel less common. For professionals, this means fewer mistakes when using the model for research, writing, analysis, and decision support—making the model more dependable for everyday knowledge work. Reasoning effort was set to the maximum available and a search tool was enabled.\nVersion 2 of the eval fixes ~5% of tasks that had incorrect ground truth values. Mean match ratio measures the average string match ratio between the model’s response and the correct answer. The points at 256k max input tokens represent averages over 128k–256k input tokens, and so forth. Here, 256k represents 256 * 1,024 = 262,144 tokens. Reasoning effort was set to the maximum available. For tasks that benefit from thinking beyond the maximum context window, GPT‑5.2 Thinking is compatible with our new Responses /compact endpoint, which extends the model’s effective context window.\nWe deploy GPT‑5.2 gradually to keep ChatGPT as smooth and reliable as we can; if you don’t see it at first, please try again later. In ChatGPT, GPT‑5.1 will still be available to paid users for three months under legacy models, after which we will sunset GPT‑5.1.\nBelow, we report comprehensive benchmark scores for GPT‑5.2 Thinking, along with a subset for GPT‑5.2 Pro. Models were run with maximum available reasoning effort in our API (xhigh for GPT‑5.2 Thinking & Pro, and high for GPT‑5.1 Thinking), except for the professional evals, where GPT‑5.2 Thinking was run with reasoning effort heavy, the maximum available in ChatGPT Pro.",
+                              "name": "Introducing GPT-5.2 | OpenAI",
+                              "type": "text",
+                              "url": "https://openai.com/index/introducing-gpt-5-2/"
+                            }
+                          },
+                          "originalRank": 2,
+                          "score": 0.016129032258064516,
+                          "snippet": "We deploy GPT‑5.2 gradually to keep ChatGPT as smooth and reliable as we can; if you don’t see it at first, please try again later. In ChatGPT, GPT‑5.1 will still be available to paid users for three months under legacy models, after which we will sunset GPT‑5.1.\nGPT‑5.2 Thinking hallucinates less than GPT‑5.1 Thinking. On a set of de-identified queries from ChatGPT, responses with errors were 30%rel less common. For professionals, this means fewer mistakes when using the model for research, writing, analysis, and decision support—making the model more dependable for everyday knowledge work. Reasoning effort was set to the maximum available and a search tool was enabled.\nVersion 2 of the eval fixes ~5% of tasks that had incorrect ground truth values. Mean match ratio measures the average string match ratio between the model’s response and the correct answer. The points at 256k max input tokens represent averages over 128k–256k input tokens, and so forth. Here, 256k represents 256 * 1,024 = 262,144 tokens. Reasoning effort was set to the maximum available. For tasks that benefit from thinking beyond the maximum context window, GPT‑5.2 Thinking is compatible with our new Responses /compact endpoint, which extends the model’s effective context window.\nWe deploy GPT‑5.2 gradually to keep ChatGPT as smooth and reliable as we can; if you don’t see it at first, please try again later. In ChatGPT, GPT‑5.1 will still be available to paid users for three months under legacy models, after which we will sunset GPT‑5.1.\nBelow, we report comprehensive benchmark scores for GPT‑5.2 Thinking, along with a subset for GPT‑5.2 Pro. Models were run with maximum available reasoning effort in our API (xhigh for GPT‑5.2 Thinking & Pro, and high for GPT‑5.1 Thinking), except for the professional evals, where GPT‑5.2 Thinking was run with reasoning effort heavy, the maximum available in ChatGPT Pro.",
+                          "source": "linkup",
+                          "title": "Introducing GPT-5.2 | OpenAI",
+                          "url": "https://openai.com/index/introducing-gpt-5-2/"
+                        },
+                        {
+                          "contentType": "news",
+                          "fusedRank": 4,
+                          "id": "news-linkup-1767511356057-1",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "Dec 11 (Reuters) - OpenAI on Thursday launched its GPT-5.2 artificial intelligence model, after CEO Sam Altman reportedly issued an internal &quot;code red&quot; in early December pausing non‑core projects and redirecting teams to accelerate development ...\nDec 11 (Reuters) - OpenAI on Thursday launched its GPT-5.2 artificial intelligence model, after CEO Sam Altman reportedly issued an internal \"code red\" in early December pausing non‑core projects and redirecting teams to accelerate development in response to Google's Gemini 3.\nGPT-5.2 comes with improvements in general intelligence, coding and long-context understanding, the company said in a statement. Sign up here. The new model is expected to bring even more economic value for users, as it is better at creating spreadsheets, building presentations and handling complex multi-step projects, OpenAI said.\nMicrosoft-backed (MSFT.O), opens new tab OpenAI said that it currently has no plans to drop GPT‑5.1, GPT‑5, or GPT‑4.1 from its application programming interface.\nAlphabet's (GOOGL.O), opens new tab Google launched the latest version of its Gemini in November, highlighting Gemini 3's lead position on several popular industry leaderboards that measure AI model performance. \"Gemini 3 has had less of an impact on our metrics than we feared,\" Altman said in an interview with CNBC on Thursday, alongside Disney (DIS.N), opens new tab CEO Bob Iger. Google did not immediately respond to a Reuters request for comment. Disney said on Thursday it is investing $1 billion in OpenAI and will let the startup use characters from Star Wars, Pixar and Marvel franchises in its Sora AI video generator.",
+                              "name": "OpenAI launches GPT-5.2 after 'code red' push to counter Google's Gemini 3 | Reuters",
+                              "type": "text",
+                              "url": "https://www.reuters.com/technology/openai-launches-gpt-52-ai-model-with-improved-capabilities-2025-12-11/"
+                            }
+                          },
+                          "originalRank": 2,
+                          "score": 0.016129032258064516,
+                          "snippet": "Dec 11 (Reuters) - OpenAI on Thursday launched its GPT-5.2 artificial intelligence model, after CEO Sam Altman reportedly issued an internal &quot;code red&quot; in early December pausing non‑core projects and redirecting teams to accelerate development ...\nDec 11 (Reuters) - OpenAI on Thursday launched its GPT-5.2 artificial intelligence model, after CEO Sam Altman reportedly issued an internal \"code red\" in early December pausing non‑core projects and redirecting teams to accelerate development in response to Google's Gemini 3.\nGPT-5.2 comes with improvements in general intelligence, coding and long-context understanding, the company said in a statement. Sign up here. The new model is expected to bring even more economic value for users, as it is better at creating spreadsheets, building presentations and handling complex multi-step projects, OpenAI said.\nMicrosoft-backed (MSFT.O), opens new tab OpenAI said that it currently has no plans to drop GPT‑5.1, GPT‑5, or GPT‑4.1 from its application programming interface.\nAlphabet's (GOOGL.O), opens new tab Google launched the latest version of its Gemini in November, highlighting Gemini 3's lead position on several popular industry leaderboards that measure AI model performance. \"Gemini 3 has had less of an impact on our metrics than we feared,\" Altman said in an interview with CNBC on Thursday, alongside Disney (DIS.N), opens new tab CEO Bob Iger. Google did not immediately respond to a Reuters request for comment. Disney said on Thursday it is investing $1 billion in OpenAI and will let the startup use characters from Star Wars, Pixar and Marvel franchises in its Sora AI video generator.",
+                          "source": "news",
+                          "title": "OpenAI launches GPT-5.2 after 'code red' push to counter Google's Gemini 3 | Reuters",
+                          "url": "https://www.reuters.com/technology/openai-launches-gpt-52-ai-model-with-improved-capabilities-2025-12-11/"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 5,
+                          "id": "linkup-1767511356420-2",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "GPT‑5.2 is the latest model family in the GPT‑5 series, and explained in our blog⁠. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT‑5 System Card⁠ and GPT‑5.1 System Card⁠.\nGPT-5.2 is the latest model family in the GPT-5 series. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT-5 System Card and GPT-5.1 System Card. Like OpenAI’s other models, the GPT-5.2 models were trained on diverse datasets, including information that is publicly available on the internet, information that we partner with third parties to access, and information that our users or human trainers and researchers provide or generate.\nGPT‑5.2 is the latest model family in the GPT‑5 series, and explained in our blog⁠. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT‑5 System Card⁠ and GPT‑5.1 System Card⁠.",
+                              "name": "Update to GPT-5 System Card: GPT-5.2 | OpenAI",
+                              "type": "text",
+                              "url": "https://openai.com/index/gpt-5-system-card-update-gpt-5-2/"
+                            }
+                          },
+                          "originalRank": 3,
+                          "score": 0.015873015873015872,
+                          "snippet": "GPT‑5.2 is the latest model family in the GPT‑5 series, and explained in our blog⁠. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT‑5 System Card⁠ and GPT‑5.1 System Card⁠.\nGPT-5.2 is the latest model family in the GPT-5 series. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT-5 System Card and GPT-5.1 System Card. Like OpenAI’s other models, the GPT-5.2 models were trained on diverse datasets, including information that is publicly available on the internet, information that we partner with third parties to access, and information that our users or human trainers and researchers provide or generate.\nGPT‑5.2 is the latest model family in the GPT‑5 series, and explained in our blog⁠. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT‑5 System Card⁠ and GPT‑5.1 System Card⁠.",
+                          "source": "linkup",
+                          "title": "Update to GPT-5 System Card: GPT-5.2 | OpenAI",
+                          "url": "https://openai.com/index/gpt-5-system-card-update-gpt-5-2/"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 6,
+                          "id": "linkup-1767511356420-3",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "The most advanced agentic coding model for professional software engineering and defensive cybersecurity. ... Today we’re releasing GPT‑5.2-Codex, the most advanced agentic coding model yet for complex, real-world software engineering.\nThe most advanced agentic coding model for professional software engineering and defensive cybersecurity. ... Today we’re releasing GPT‑5.2-Codex, the most advanced agentic coding model yet for complex, real-world software engineering.\nGPT‑5.2-Codex represents a step forward in how advanced AI can support real-world software engineering and specialized domains like cybersecurity—helping developers and defenders tackle complex, long-horizon work, and strengthening the tools available for responsible security research.\nGPT‑5.2⁠ further optimized for agentic coding in Codex, including improvements on long-horizon work through context compaction, stronger performance on large code changes like refactors and migrations, improved performance in Windows environments, and significantly stronger cybersecurity capabilities. As our models continue to advance along the intelligence frontier, we’ve observed that these improvements also translate to capability jumps in specialized domains such as\nGPT‑5.2-Codex has stronger cybersecurity capabilities than any model we’ve released so far. These advances can help strengthen cybersecurity at scale, but they also raise new dual-use risks that require careful deployment.",
+                              "name": "Introducing GPT-5.2-Codex | OpenAI",
+                              "type": "text",
+                              "url": "https://openai.com/index/introducing-gpt-5-2-codex/"
+                            }
+                          },
+                          "originalRank": 4,
+                          "score": 0.015625,
+                          "snippet": "The most advanced agentic coding model for professional software engineering and defensive cybersecurity. ... Today we’re releasing GPT‑5.2-Codex, the most advanced agentic coding model yet for complex, real-world software engineering.\nThe most advanced agentic coding model for professional software engineering and defensive cybersecurity. ... Today we’re releasing GPT‑5.2-Codex, the most advanced agentic coding model yet for complex, real-world software engineering.\nGPT‑5.2-Codex represents a step forward in how advanced AI can support real-world software engineering and specialized domains like cybersecurity—helping developers and defenders tackle complex, long-horizon work, and strengthening the tools available for responsible security research.\nGPT‑5.2⁠ further optimized for agentic coding in Codex, including improvements on long-horizon work through context compaction, stronger performance on large code changes like refactors and migrations, improved performance in Windows environments, and significantly stronger cybersecurity capabilities. As our models continue to advance along the intelligence frontier, we’ve observed that these improvements also translate to capability jumps in specialized domains such as\nGPT‑5.2-Codex has stronger cybersecurity capabilities than any model we’ve released so far. These advances can help strengthen cybersecurity at scale, but they also raise new dual-use risks that require careful deployment.",
+                          "source": "linkup",
+                          "title": "Introducing GPT-5.2-Codex | OpenAI",
+                          "url": "https://openai.com/index/introducing-gpt-5-2-codex/"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 7,
+                          "id": "linkup-1767511356420-4",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "Unlike GPT-5.2, which is a general-purpose model, we recommend using GPT-5.1-Codex-Max only for agentic coding tasks in Codex or Codex-like environments, and GPT-5.2 for use cases in other domains. GPT-5.1-Codex-Max is only available in the Responses API and supports none, medium, high, and xhigh reasoning effort settings as well function calling, structured outputs, compaction, and the web_search tool.\nUnlike GPT-5.2, which is a general-purpose model, we recommend using GPT-5.1-Codex-Max only for agentic coding tasks in Codex or Codex-like environments, and GPT-5.2 for use cases in other domains. GPT-5.1-Codex-Max is only available in the Responses API and supports none, medium, high, and xhigh reasoning effort settings as well function calling, structured outputs, compaction, and the web_search tool.\nLearn about how to use and migrate to GPT-5.2 and the GPT-5 model family, the latest models in the OpenAI API.\nClick through a few demo applications generated entirely with a single prompt, without writing any code by hand. Note that these examples were either generated by GPT-5.2 or our previous flagship model, GPT-5.\nThere are three new models. In general, gpt-5.2 is best for your most complex tasks that require broad world knowledge. It replaces the previous gpt-5.1 model. The model powering ChatGPT is gpt-5.2-chat-latest.",
+                              "name": "Using GPT-5.2 | OpenAI API",
+                              "type": "text",
+                              "url": "https://platform.openai.com/docs/guides/latest-model"
+                            }
+                          },
+                          "originalRank": 5,
+                          "score": 0.015384615384615385,
+                          "snippet": "Unlike GPT-5.2, which is a general-purpose model, we recommend using GPT-5.1-Codex-Max only for agentic coding tasks in Codex or Codex-like environments, and GPT-5.2 for use cases in other domains. GPT-5.1-Codex-Max is only available in the Responses API and supports none, medium, high, and xhigh reasoning effort settings as well function calling, structured outputs, compaction, and the web_search tool.\nUnlike GPT-5.2, which is a general-purpose model, we recommend using GPT-5.1-Codex-Max only for agentic coding tasks in Codex or Codex-like environments, and GPT-5.2 for use cases in other domains. GPT-5.1-Codex-Max is only available in the Responses API and supports none, medium, high, and xhigh reasoning effort settings as well function calling, structured outputs, compaction, and the web_search tool.\nLearn about how to use and migrate to GPT-5.2 and the GPT-5 model family, the latest models in the OpenAI API.\nClick through a few demo applications generated entirely with a single prompt, without writing any code by hand. Note that these examples were either generated by GPT-5.2 or our previous flagship model, GPT-5.\nThere are three new models. In general, gpt-5.2 is best for your most complex tasks that require broad world knowledge. It replaces the previous gpt-5.1 model. The model powering ChatGPT is gpt-5.2-chat-latest.",
+                          "source": "linkup",
+                          "title": "Using GPT-5.2 | OpenAI API",
+                          "url": "https://platform.openai.com/docs/guides/latest-model"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 9,
+                          "id": "linkup-1767511356420-6",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "In the API, they are available now to all developers. Overall, GPT‑5.2 brings significant improvements in general intelligence, long-context understanding, agentic tool-calling, and vision—making it better at executing complex, real-world ...\nThe new ChatGPT Images is powered by our flagship image generation model, delivering more precise edits, consistent details, and image generation up to 4× faster. The upgraded model is rolling out to all ChatGPT users today and is also available in the API as GPT-Image-1.5.\nThe model takes another step ahead in text rendering, capable of handling denser and smaller text. There is a newspaper on a desk. The newspaper shows the markdown below laid out as a **natural** newspaper article. Preserve all content, formatting, and numbers exactly. The image should be tall. ... We are introducing **GPT‑5.2**, the most capable model series yet for professional knowledge work.\nThe new Images model is rolling out today in ChatGPT for all users, and is available in the API as GPT Image 1.5.\nWe designed GPT‑5.2 to unlock even more economic value for people; it’s better at creating spreadsheets, building presentations, writing code, perceiving images, understanding long contexts, using tools, and handling complex, multi-step projects. GPT‑5.2 sets a new state of the art across many benchmarks, including GDPval, where it outperforms industry professionals at well-specified knowledge work tasks spanning 44 occupations.",
+                              "name": "The new ChatGPT Images is here | OpenAI",
+                              "type": "text",
+                              "url": "https://openai.com/index/new-chatgpt-images-is-here/"
+                            }
+                          },
+                          "originalRank": 7,
+                          "score": 0.014925373134328358,
+                          "snippet": "In the API, they are available now to all developers. Overall, GPT‑5.2 brings significant improvements in general intelligence, long-context understanding, agentic tool-calling, and vision—making it better at executing complex, real-world ...\nThe new ChatGPT Images is powered by our flagship image generation model, delivering more precise edits, consistent details, and image generation up to 4× faster. The upgraded model is rolling out to all ChatGPT users today and is also available in the API as GPT-Image-1.5.\nThe model takes another step ahead in text rendering, capable of handling denser and smaller text. There is a newspaper on a desk. The newspaper shows the markdown below laid out as a **natural** newspaper article. Preserve all content, formatting, and numbers exactly. The image should be tall. ... We are introducing **GPT‑5.2**, the most capable model series yet for professional knowledge work.\nThe new Images model is rolling out today in ChatGPT for all users, and is available in the API as GPT Image 1.5.\nWe designed GPT‑5.2 to unlock even more economic value for people; it’s better at creating spreadsheets, building presentations, writing code, perceiving images, understanding long contexts, using tools, and handling complex, multi-step projects. GPT‑5.2 sets a new state of the art across many benchmarks, including GDPval, where it outperforms industry professionals at well-specified knowledge work tasks spanning 44 occupations.",
+                          "source": "linkup",
+                          "title": "The new ChatGPT Images is here | OpenAI",
+                          "url": "https://openai.com/index/new-chatgpt-images-is-here/"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 10,
+                          "id": "linkup-1767511356420-7",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "Today, OpenAI’s GPT-5.2 is announced as generally available in Microsoft Foundry, introducing a new frontier model series purposefully built to meet the needs of enterprise developers and technical leaders—setting a new standard for a new era.\nAzure is the foundation for solving these challenges. Today, OpenAI’s GPT-5.2 is announced as generally available in Microsoft Foundry, introducing a new frontier model series purposefully built to meet the needs of enterprise developers and technical leaders—setting a new standard for a new era.\nExplore GPT‑5.2 in Microsoft Foundry—advanced reasoning, agentic execution, and compliance-ready AI for enterprise scale.\nThe GPT-5.2 series is built on new architecture, delivering superior performance, efficiency, and reasoning depth compared to prior generations. It’s also trained on the proven GPT-5.1 dataset and further enhanced with improved safety and integrations. GPT-5.2 leaps beyond previous models with substantial performance improvements across core metrics.\nGPT-5.2: The most advanced reasoning model that solves harder problems more effectively and with more polish.",
+                              "name": "GPT‑5.2 in Microsoft Foundry: Enterprise AI Reinvented | Microsoft Azure Blog",
+                              "type": "text",
+                              "url": "https://azure.microsoft.com/en-us/blog/introducing-gpt-5-2-in-microsoft-foundry-the-new-standard-for-enterprise-ai/"
+                            }
+                          },
+                          "originalRank": 8,
+                          "score": 0.014705882352941176,
+                          "snippet": "Today, OpenAI’s GPT-5.2 is announced as generally available in Microsoft Foundry, introducing a new frontier model series purposefully built to meet the needs of enterprise developers and technical leaders—setting a new standard for a new era.\nAzure is the foundation for solving these challenges. Today, OpenAI’s GPT-5.2 is announced as generally available in Microsoft Foundry, introducing a new frontier model series purposefully built to meet the needs of enterprise developers and technical leaders—setting a new standard for a new era.\nExplore GPT‑5.2 in Microsoft Foundry—advanced reasoning, agentic execution, and compliance-ready AI for enterprise scale.\nThe GPT-5.2 series is built on new architecture, delivering superior performance, efficiency, and reasoning depth compared to prior generations. It’s also trained on the proven GPT-5.1 dataset and further enhanced with improved safety and integrations. GPT-5.2 leaps beyond previous models with substantial performance improvements across core metrics.\nGPT-5.2: The most advanced reasoning model that solves harder problems more effectively and with more polish.",
+                          "source": "linkup",
+                          "title": "GPT‑5.2 in Microsoft Foundry: Enterprise AI Reinvented | Microsoft Azure Blog",
+                          "url": "https://azure.microsoft.com/en-us/blog/introducing-gpt-5-2-in-microsoft-foundry-the-new-standard-for-enterprise-ai/"
+                        }
+                      ],
+                      "sourcesQueried": [
+                        "linkup",
+                        "news"
+                      ],
+                      "timing": {
+                        "linkup": 2349,
+                        "news": 1984
+                      },
+                      "totalBeforeFusion": 12,
+                      "totalTimeMs": 2381
+                    },
+                    "version": 1
+                  },
+                  "success": true
+                },
+                "error": null,
+                "execution_time_ms": 4467.770099639893,
+                "success": true,
+                "tool_name": "fusion_search"
+              },
+              "toolName": "fusion_search"
+            },
+            "elapsedMs": 6846,
+            "ok": true
+          },
+          "research_health": {
+            "details": {
+              "data": {
+                "service": "research-mcp-server",
+                "status": "healthy",
+                "timestamp": "2026-01-04T07:22:30.015365",
+                "version": "1.0.0"
+              }
+            },
+            "elapsedMs": 337,
+            "ok": true
+          },
+          "research_listTools": {
+            "details": {
+              "sample": {
+                "count": 4,
+                "success": true,
+                "tools": [
+                  {
+                    "description": "Initialize research context with topic and goals",
+                    "name": "initialize_context",
+                    "parameters": {
+                      "constraints": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "goals": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "topic": {
+                        "required": true,
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "description": "Execute a quick search using LinkUp",
+                    "name": "quick_search",
+                    "parameters": {
+                      "maxResults": {
+                        "default": 10,
+                        "type": "integer"
+                      },
+                      "query": {
+                        "required": true,
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "description": "Execute multi-source search with result fusion",
+                    "name": "fusion_search",
+                    "parameters": {
+                      "mode": {
+                        "enum": [
+                          "fast",
+                          "balanced",
+                          "comprehensive"
+                        ],
+                        "type": "string"
+                      },
+                      "query": {
+                        "required": true,
+                        "type": "string"
+                      },
+                      "sources": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    }
+                  },
+                  {
+                    "description": "Get model migration statistics",
+                    "name": "get_migration_stats",
+                    "parameters": {}
+                  }
+                ]
+              }
+            },
+            "elapsedMs": 181,
+            "ok": true
+          },
+          "youtube_search": {
+            "details": {
+              "firstTitle": "OpenAI",
+              "items": 1
+            },
+            "elapsedMs": 292,
+            "ok": true
+          }
+        }
+      },
+      {
+        "checkedAt": 1767511382275,
+        "envPresence": {
+          "ANTHROPIC_API_KEY": true,
+          "CORE_AGENT_MCP_AUTH_TOKEN": true,
+          "CORE_AGENT_MCP_SERVER_URL": true,
+          "CORE_AGENT_MCP_TOKEN": false,
+          "CORE_AGENT_MCP_URL": false,
+          "GEMINI_API_KEY": true,
+          "LINKUP_API_KEY": true,
+          "MCP_SECRET": true,
+          "OPENAI_API_KEY": true,
+          "OPENBB_API_KEY": false,
+          "OPENBB_MCP_SERVER_URL": true,
+          "OPENBB_MCP_URL": false,
+          "RESEARCH_API_KEY": true,
+          "RESEARCH_MCP_SERVER_URL": true,
+          "RESEARCH_MCP_URL": false,
+          "YOUTUBE_API_KEY": true
+        },
+        "mode": {
+          "includeLinkup": true,
+          "includePublicApiChecks": true,
+          "requireMcpChecks": true,
+          "resolved": {
+            "coreAgentUrl": "https://core-agent-production-08a8.up.railway.app",
+            "openbbUrl": "https://openbb-production.up.railway.app",
+            "researchUrl": "https://research-production-e619.up.railway.app"
+          },
+          "tryLocalhostDefaults": false
+        },
+        "ok": true,
+        "results": {
+          "anthropic_modelsList": {
+            "details": {
+              "count": 10,
+              "sample": [
+                "claude-opus-4-5-20251101",
+                "claude-haiku-4-5-20251001",
+                "claude-sonnet-4-5-20250929",
+                "claude-opus-4-1-20250805",
+                "claude-opus-4-20250514"
+              ]
+            },
+            "elapsedMs": 98,
+            "ok": true
+          },
+          "coreAgentMcp_toolsCall": {
+            "details": {
+              "memKey": "mcp1:e2e:1767511363689",
+              "planId": "plan_1767511363034_u7lkrf0od"
+            },
+            "elapsedMs": 1994,
+            "ok": true
+          },
+          "coreAgentMcp_toolsList": {
+            "details": {
+              "missing": [],
+              "toolCount": 7,
+              "toolNames": [
+                "createPlan",
+                "deleteAgentMemory",
+                "getPlan",
+                "listAgentMemory",
+                "readAgentMemory",
+                "updatePlanStep",
+                "writeAgentMemory"
+              ]
+            },
+            "elapsedMs": 199,
+            "ok": true
+          },
+          "gemini_modelsList": {
+            "details": {
+              "count": 50,
+              "sample": [
+                "models/embedding-gecko-001",
+                "models/gemini-2.5-flash",
+                "models/gemini-2.5-pro",
+                "models/gemini-2.0-flash-exp",
+                "models/gemini-2.0-flash"
+              ]
+            },
+            "elapsedMs": 61,
+            "ok": true
+          },
+          "linkup_search": {
+            "details": {
+              "hasAnswer": true,
+              "resultsCount": 0,
+              "sourcesCount": 3
+            },
+            "elapsedMs": 4580,
+            "ok": true
+          },
+          "openai_modelsList": {
+            "details": {
+              "count": 126,
+              "sample": [
+                "gpt-4-0613",
+                "gpt-4",
+                "gpt-3.5-turbo",
+                "chatgpt-image-latest",
+                "gpt-4o-mini-tts-2025-03-20"
+              ]
+            },
+            "elapsedMs": 556,
+            "ok": true
+          },
+          "openbb_executeTool": {
+            "details": {
+              "calls": {
+                "fundamentals": {
+                  "ok": true,
+                  "sample": {
+                    "asOf": "2026-01-02",
+                    "beta": null,
+                    "currency": "USD",
+                    "dayHigh": 265.38,
+                    "dayLow": 252.48,
+                    "dividendYield": null,
+                    "errors": {
+                      "yfinance_error": "Expecting value: line 1 column 1 (char 0)",
+                      "yfinance_missing_fields": [
+                        "longName",
+                        "sector",
+                        "industry",
+                        "website",
+                        "marketCap",
+                        "trailingPE",
+                        "forwardPE",
+                        "priceToBook",
+                        "beta",
+                        "dividendYield"
+                      ]
+                    },
+                    "fetchedAt": "2026-01-04T07:22:51.478078+00:00",
+                    "forwardPE": null,
+                    "industry": null,
+                    "longName": null,
+                    "marketCap": null,
+                    "partial": true,
+                    "price": 253.62,
+                    "priceToBook": null,
+                    "quoteSource": "stooq",
+                    "sector": null,
+                    "source": "mixed",
+                    "symbol": "CRM",
+                    "trailingPE": null,
+                    "volume": 9680584,
+                    "website": null
+                  },
+                  "toolName": "equity_fundamental_overview"
+                },
+                "gdp": {
+                  "ok": true,
+                  "sample": {
+                    "country": "US",
+                    "fetchedAt": "2026-01-04T07:22:54.368451+00:00",
+                    "source": "world_bank",
+                    "unit": "USD",
+                    "value": 28750956130731.2,
+                    "year": "2024"
+                  },
+                  "toolName": "economy_gdp"
+                },
+                "historical": {
+                  "ok": true,
+                  "sample": {
+                    "count": 19,
+                    "source": "stooq",
+                    "symbol": "CRM"
+                  },
+                  "toolName": "equity_price_historical"
+                },
+                "inflation": {
+                  "ok": true,
+                  "sample": {
+                    "country": "US",
+                    "fetchedAt": "2026-01-04T07:22:54.833148+00:00",
+                    "source": "world_bank",
+                    "unit": "percent",
+                    "value": 2.94952520485207,
+                    "year": "2024"
+                  },
+                  "toolName": "economy_inflation"
+                },
+                "quote": {
+                  "ok": true,
+                  "sample": {
+                    "asOf": "2026-01-02",
+                    "currency": "USD",
+                    "dayHigh": 265.38,
+                    "dayLow": 252.48,
+                    "fetchedAt": "2026-01-04T07:22:46.944528+00:00",
+                    "marketCap": null,
+                    "open": 264.74,
+                    "previousClose": null,
+                    "price": 253.62,
+                    "source": "stooq",
+                    "symbol": "CRM",
+                    "volume": 9680584
+                  },
+                  "toolName": "equity_price_quote"
+                }
+              },
+              "ok": true
+            },
+            "elapsedMs": 8811,
+            "ok": true
+          },
+          "openbb_health": {
+            "details": {
+              "data": {
+                "service": "openbb-mcp-server",
+                "status": "healthy",
+                "timestamp": "2026-01-04T07:22:45.788337",
+                "version": "1.0.0"
+              }
+            },
+            "elapsedMs": 1007,
+            "ok": true
+          },
+          "openbb_listTools": {
+            "details": {
+              "sample": {
+                "category": null,
+                "count": 9,
+                "success": true,
+                "tools": [
+                  {
+                    "category": "equity",
+                    "description": "Get real-time stock quote",
+                    "name": "equity_price_quote",
+                    "parameters": {
+                      "symbol": {
+                        "description": "Stock ticker symbol",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Real-time quote data including price, volume, and market cap"
+                  },
+                  {
+                    "category": "equity",
+                    "description": "Get historical stock price data",
+                    "name": "equity_price_historical",
+                    "parameters": {
+                      "end_date": {
+                        "description": "End date (YYYY-MM-DD)",
+                        "required": false,
+                        "type": "string"
+                      },
+                      "start_date": {
+                        "description": "Start date (YYYY-MM-DD)",
+                        "required": false,
+                        "type": "string"
+                      },
+                      "symbol": {
+                        "description": "Stock ticker symbol",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Historical price data with OHLCV"
+                  },
+                  {
+                    "category": "equity",
+                    "description": "Get company fundamental overview",
+                    "name": "equity_fundamental_overview",
+                    "parameters": {
+                      "symbol": {
+                        "description": "Stock ticker symbol",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Company fundamentals including market cap, P/E ratio, etc."
+                  },
+                  {
+                    "category": "crypto",
+                    "description": "Get cryptocurrency quote",
+                    "name": "crypto_price_quote",
+                    "parameters": {
+                      "symbol": {
+                        "description": "Crypto symbol (e.g., BTC, ETH)",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Real-time crypto quote data"
+                  },
+                  {
+                    "category": "crypto",
+                    "description": "Get historical cryptocurrency data",
+                    "name": "crypto_price_historical",
+                    "parameters": {
+                      "end_date": {
+                        "description": "End date (YYYY-MM-DD)",
+                        "required": false,
+                        "type": "string"
+                      },
+                      "start_date": {
+                        "description": "Start date (YYYY-MM-DD)",
+                        "required": false,
+                        "type": "string"
+                      },
+                      "symbol": {
+                        "description": "Crypto symbol",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Historical crypto price data"
+                  },
+                  {
+                    "category": "economy",
+                    "description": "Get GDP data",
+                    "name": "economy_gdp",
+                    "parameters": {
+                      "country": {
+                        "description": "Country code (default: US)",
+                        "required": false,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "GDP data for specified country"
+                  },
+                  {
+                    "category": "economy",
+                    "description": "Get inflation data (CPI)",
+                    "name": "economy_inflation",
+                    "parameters": {
+                      "country": {
+                        "description": "Country code (default: US)",
+                        "required": false,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Inflation/CPI data for specified country"
+                  },
+                  {
+                    "category": "news",
+                    "description": "Get company news",
+                    "name": "news_company",
+                    "parameters": {
+                      "limit": {
+                        "description": "Number of articles (default: 10)",
+                        "required": false,
+                        "type": "integer"
+                      },
+                      "symbol": {
+                        "description": "Stock ticker symbol",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Recent news articles about the company"
+                  },
+                  {
+                    "category": "news",
+                    "description": "Get world financial news",
+                    "name": "news_world",
+                    "parameters": {
+                      "limit": {
+                        "description": "Number of articles (default: 10)",
+                        "required": false,
+                        "type": "integer"
+                      }
+                    },
+                    "returns": "Recent world financial news"
+                  }
+                ]
+              }
+            },
+            "elapsedMs": 204,
+            "ok": true
+          },
+          "research_executeTool": {
+            "details": {
+              "sample": {
+                "data": {
+                  "results": {
+                    "generatedAt": "2026-01-04T07:22:57.420Z",
+                    "kind": "fusion_search_results",
+                    "payload": {
+                      "mode": "fast",
+                      "reranked": false,
+                      "results": [
+                        {
+                          "contentType": "text",
+                          "fusedRank": 1,
+                          "id": "linkup-1767511356420-0",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "Snapshots let you lock in a specific version of the model so that performance and behavior remain consistent. Below is a list of all available snapshots and aliases for GPT-5.2.\nGPT-5.2 is our flagship model for coding and agentic tasks across industries.",
+                              "name": "GPT-5.2 Model | OpenAI API",
+                              "type": "text",
+                              "url": "https://platform.openai.com/docs/models/gpt-5.2"
+                            }
+                          },
+                          "originalRank": 1,
+                          "score": 0.01639344262295082,
+                          "snippet": "Snapshots let you lock in a specific version of the model so that performance and behavior remain consistent. Below is a list of all available snapshots and aliases for GPT-5.2.\nGPT-5.2 is our flagship model for coding and agentic tasks across industries.",
+                          "source": "linkup",
+                          "title": "GPT-5.2 Model | OpenAI API",
+                          "url": "https://platform.openai.com/docs/models/gpt-5.2"
+                        },
+                        {
+                          "contentType": "news",
+                          "fusedRank": 2,
+                          "id": "news-linkup-1767511356057-0",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "The company said the model is better at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context. It will be available starting Thursday within OpenAI&#x27;s ChatGPT chatbot and its API.\nOpenAI on Thursday announced GPT-5.2, its most advanced artificial intelligence model. The company said the model is better at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context. It will be available starting Thursday within OpenAI's ChatGPT chatbot and its API.\nOpenAI on Thursday announced its most advanced artificial intelligence model, GPT-5.2, and said it's the best offering yet for everyday professional use. The model is better than predecessors at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context, OpenAI said. It will be available starting Thursday within OpenAI's ChatGPT chatbot and its application programming interface (API).\nOpenAI CEO Sam Altman told CNBC on Thursday that Google's release of its Gemini 3 model had less of an impact on the company's metrics than it originally feared. He said he expects OpenAI will exit its code red by January. \"I believe that when a competitive threat happens, you want to focus on it, deal with it quickly,\" Altman said. OpenAI said GPT-5.2 will be available in Instant, Thinking and Pro versions.\nThe company said that the model tops industry benchmarks, including SWE-Bench Pro, which evaluates agentic coding performance, and GPQA Diamond, a graduate-level scientific reasoning benchmark. On GDPval, an evaluation OpenAI released earlier this year, GPT-5.2 beat or tied top industry professionals on 70.9% of well-specified tasks, the company said.",
+                              "name": "Sam Altman expects OpenAI to exit 'code red' by January after launch of GPT-5.2 model",
+                              "type": "text",
+                              "url": "https://www.cnbc.com/2025/12/11/openai-intros-new-ai-model-gpt-5point2-says-better-at-professional-tasks.html"
+                            }
+                          },
+                          "originalRank": 1,
+                          "score": 0.01639344262295082,
+                          "snippet": "The company said the model is better at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context. It will be available starting Thursday within OpenAI&#x27;s ChatGPT chatbot and its API.\nOpenAI on Thursday announced GPT-5.2, its most advanced artificial intelligence model. The company said the model is better at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context. It will be available starting Thursday within OpenAI's ChatGPT chatbot and its API.\nOpenAI on Thursday announced its most advanced artificial intelligence model, GPT-5.2, and said it's the best offering yet for everyday professional use. The model is better than predecessors at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context, OpenAI said. It will be available starting Thursday within OpenAI's ChatGPT chatbot and its application programming interface (API).\nOpenAI CEO Sam Altman told CNBC on Thursday that Google's release of its Gemini 3 model had less of an impact on the company's metrics than it originally feared. He said he expects OpenAI will exit its code red by January. \"I believe that when a competitive threat happens, you want to focus on it, deal with it quickly,\" Altman said. OpenAI said GPT-5.2 will be available in Instant, Thinking and Pro versions.\nThe company said that the model tops industry benchmarks, including SWE-Bench Pro, which evaluates agentic coding performance, and GPQA Diamond, a graduate-level scientific reasoning benchmark. On GDPval, an evaluation OpenAI released earlier this year, GPT-5.2 beat or tied top industry professionals on 70.9% of well-specified tasks, the company said.",
+                          "source": "news",
+                          "title": "Sam Altman expects OpenAI to exit 'code red' by January after launch of GPT-5.2 model",
+                          "url": "https://www.cnbc.com/2025/12/11/openai-intros-new-ai-model-gpt-5point2-says-better-at-professional-tasks.html"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 3,
+                          "id": "linkup-1767511356420-1",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "We deploy GPT‑5.2 gradually to keep ChatGPT as smooth and reliable as we can; if you don’t see it at first, please try again later. In ChatGPT, GPT‑5.1 will still be available to paid users for three months under legacy models, after which we will sunset GPT‑5.1.\nGPT‑5.2 Thinking hallucinates less than GPT‑5.1 Thinking. On a set of de-identified queries from ChatGPT, responses with errors were 30%rel less common. For professionals, this means fewer mistakes when using the model for research, writing, analysis, and decision support—making the model more dependable for everyday knowledge work. Reasoning effort was set to the maximum available and a search tool was enabled.\nVersion 2 of the eval fixes ~5% of tasks that had incorrect ground truth values. Mean match ratio measures the average string match ratio between the model’s response and the correct answer. The points at 256k max input tokens represent averages over 128k–256k input tokens, and so forth. Here, 256k represents 256 * 1,024 = 262,144 tokens. Reasoning effort was set to the maximum available. For tasks that benefit from thinking beyond the maximum context window, GPT‑5.2 Thinking is compatible with our new Responses /compact endpoint, which extends the model’s effective context window.\nWe deploy GPT‑5.2 gradually to keep ChatGPT as smooth and reliable as we can; if you don’t see it at first, please try again later. In ChatGPT, GPT‑5.1 will still be available to paid users for three months under legacy models, after which we will sunset GPT‑5.1.\nBelow, we report comprehensive benchmark scores for GPT‑5.2 Thinking, along with a subset for GPT‑5.2 Pro. Models were run with maximum available reasoning effort in our API (xhigh for GPT‑5.2 Thinking & Pro, and high for GPT‑5.1 Thinking), except for the professional evals, where GPT‑5.2 Thinking was run with reasoning effort heavy, the maximum available in ChatGPT Pro.",
+                              "name": "Introducing GPT-5.2 | OpenAI",
+                              "type": "text",
+                              "url": "https://openai.com/index/introducing-gpt-5-2/"
+                            }
+                          },
+                          "originalRank": 2,
+                          "score": 0.016129032258064516,
+                          "snippet": "We deploy GPT‑5.2 gradually to keep ChatGPT as smooth and reliable as we can; if you don’t see it at first, please try again later. In ChatGPT, GPT‑5.1 will still be available to paid users for three months under legacy models, after which we will sunset GPT‑5.1.\nGPT‑5.2 Thinking hallucinates less than GPT‑5.1 Thinking. On a set of de-identified queries from ChatGPT, responses with errors were 30%rel less common. For professionals, this means fewer mistakes when using the model for research, writing, analysis, and decision support—making the model more dependable for everyday knowledge work. Reasoning effort was set to the maximum available and a search tool was enabled.\nVersion 2 of the eval fixes ~5% of tasks that had incorrect ground truth values. Mean match ratio measures the average string match ratio between the model’s response and the correct answer. The points at 256k max input tokens represent averages over 128k–256k input tokens, and so forth. Here, 256k represents 256 * 1,024 = 262,144 tokens. Reasoning effort was set to the maximum available. For tasks that benefit from thinking beyond the maximum context window, GPT‑5.2 Thinking is compatible with our new Responses /compact endpoint, which extends the model’s effective context window.\nWe deploy GPT‑5.2 gradually to keep ChatGPT as smooth and reliable as we can; if you don’t see it at first, please try again later. In ChatGPT, GPT‑5.1 will still be available to paid users for three months under legacy models, after which we will sunset GPT‑5.1.\nBelow, we report comprehensive benchmark scores for GPT‑5.2 Thinking, along with a subset for GPT‑5.2 Pro. Models were run with maximum available reasoning effort in our API (xhigh for GPT‑5.2 Thinking & Pro, and high for GPT‑5.1 Thinking), except for the professional evals, where GPT‑5.2 Thinking was run with reasoning effort heavy, the maximum available in ChatGPT Pro.",
+                          "source": "linkup",
+                          "title": "Introducing GPT-5.2 | OpenAI",
+                          "url": "https://openai.com/index/introducing-gpt-5-2/"
+                        },
+                        {
+                          "contentType": "news",
+                          "fusedRank": 4,
+                          "id": "news-linkup-1767511356057-1",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "Dec 11 (Reuters) - OpenAI on Thursday launched its GPT-5.2 artificial intelligence model, after CEO Sam Altman reportedly issued an internal &quot;code red&quot; in early December pausing non‑core projects and redirecting teams to accelerate development ...\nDec 11 (Reuters) - OpenAI on Thursday launched its GPT-5.2 artificial intelligence model, after CEO Sam Altman reportedly issued an internal \"code red\" in early December pausing non‑core projects and redirecting teams to accelerate development in response to Google's Gemini 3.\nGPT-5.2 comes with improvements in general intelligence, coding and long-context understanding, the company said in a statement. Sign up here. The new model is expected to bring even more economic value for users, as it is better at creating spreadsheets, building presentations and handling complex multi-step projects, OpenAI said.\nMicrosoft-backed (MSFT.O), opens new tab OpenAI said that it currently has no plans to drop GPT‑5.1, GPT‑5, or GPT‑4.1 from its application programming interface.\nAlphabet's (GOOGL.O), opens new tab Google launched the latest version of its Gemini in November, highlighting Gemini 3's lead position on several popular industry leaderboards that measure AI model performance. \"Gemini 3 has had less of an impact on our metrics than we feared,\" Altman said in an interview with CNBC on Thursday, alongside Disney (DIS.N), opens new tab CEO Bob Iger. Google did not immediately respond to a Reuters request for comment. Disney said on Thursday it is investing $1 billion in OpenAI and will let the startup use characters from Star Wars, Pixar and Marvel franchises in its Sora AI video generator.",
+                              "name": "OpenAI launches GPT-5.2 after 'code red' push to counter Google's Gemini 3 | Reuters",
+                              "type": "text",
+                              "url": "https://www.reuters.com/technology/openai-launches-gpt-52-ai-model-with-improved-capabilities-2025-12-11/"
+                            }
+                          },
+                          "originalRank": 2,
+                          "score": 0.016129032258064516,
+                          "snippet": "Dec 11 (Reuters) - OpenAI on Thursday launched its GPT-5.2 artificial intelligence model, after CEO Sam Altman reportedly issued an internal &quot;code red&quot; in early December pausing non‑core projects and redirecting teams to accelerate development ...\nDec 11 (Reuters) - OpenAI on Thursday launched its GPT-5.2 artificial intelligence model, after CEO Sam Altman reportedly issued an internal \"code red\" in early December pausing non‑core projects and redirecting teams to accelerate development in response to Google's Gemini 3.\nGPT-5.2 comes with improvements in general intelligence, coding and long-context understanding, the company said in a statement. Sign up here. The new model is expected to bring even more economic value for users, as it is better at creating spreadsheets, building presentations and handling complex multi-step projects, OpenAI said.\nMicrosoft-backed (MSFT.O), opens new tab OpenAI said that it currently has no plans to drop GPT‑5.1, GPT‑5, or GPT‑4.1 from its application programming interface.\nAlphabet's (GOOGL.O), opens new tab Google launched the latest version of its Gemini in November, highlighting Gemini 3's lead position on several popular industry leaderboards that measure AI model performance. \"Gemini 3 has had less of an impact on our metrics than we feared,\" Altman said in an interview with CNBC on Thursday, alongside Disney (DIS.N), opens new tab CEO Bob Iger. Google did not immediately respond to a Reuters request for comment. Disney said on Thursday it is investing $1 billion in OpenAI and will let the startup use characters from Star Wars, Pixar and Marvel franchises in its Sora AI video generator.",
+                          "source": "news",
+                          "title": "OpenAI launches GPT-5.2 after 'code red' push to counter Google's Gemini 3 | Reuters",
+                          "url": "https://www.reuters.com/technology/openai-launches-gpt-52-ai-model-with-improved-capabilities-2025-12-11/"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 5,
+                          "id": "linkup-1767511356420-2",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "GPT‑5.2 is the latest model family in the GPT‑5 series, and explained in our blog⁠. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT‑5 System Card⁠ and GPT‑5.1 System Card⁠.\nGPT-5.2 is the latest model family in the GPT-5 series. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT-5 System Card and GPT-5.1 System Card. Like OpenAI’s other models, the GPT-5.2 models were trained on diverse datasets, including information that is publicly available on the internet, information that we partner with third parties to access, and information that our users or human trainers and researchers provide or generate.\nGPT‑5.2 is the latest model family in the GPT‑5 series, and explained in our blog⁠. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT‑5 System Card⁠ and GPT‑5.1 System Card⁠.",
+                              "name": "Update to GPT-5 System Card: GPT-5.2 | OpenAI",
+                              "type": "text",
+                              "url": "https://openai.com/index/gpt-5-system-card-update-gpt-5-2/"
+                            }
+                          },
+                          "originalRank": 3,
+                          "score": 0.015873015873015872,
+                          "snippet": "GPT‑5.2 is the latest model family in the GPT‑5 series, and explained in our blog⁠. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT‑5 System Card⁠ and GPT‑5.1 System Card⁠.\nGPT-5.2 is the latest model family in the GPT-5 series. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT-5 System Card and GPT-5.1 System Card. Like OpenAI’s other models, the GPT-5.2 models were trained on diverse datasets, including information that is publicly available on the internet, information that we partner with third parties to access, and information that our users or human trainers and researchers provide or generate.\nGPT‑5.2 is the latest model family in the GPT‑5 series, and explained in our blog⁠. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT‑5 System Card⁠ and GPT‑5.1 System Card⁠.",
+                          "source": "linkup",
+                          "title": "Update to GPT-5 System Card: GPT-5.2 | OpenAI",
+                          "url": "https://openai.com/index/gpt-5-system-card-update-gpt-5-2/"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 6,
+                          "id": "linkup-1767511356420-3",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "The most advanced agentic coding model for professional software engineering and defensive cybersecurity. ... Today we’re releasing GPT‑5.2-Codex, the most advanced agentic coding model yet for complex, real-world software engineering.\nThe most advanced agentic coding model for professional software engineering and defensive cybersecurity. ... Today we’re releasing GPT‑5.2-Codex, the most advanced agentic coding model yet for complex, real-world software engineering.\nGPT‑5.2-Codex represents a step forward in how advanced AI can support real-world software engineering and specialized domains like cybersecurity—helping developers and defenders tackle complex, long-horizon work, and strengthening the tools available for responsible security research.\nGPT‑5.2⁠ further optimized for agentic coding in Codex, including improvements on long-horizon work through context compaction, stronger performance on large code changes like refactors and migrations, improved performance in Windows environments, and significantly stronger cybersecurity capabilities. As our models continue to advance along the intelligence frontier, we’ve observed that these improvements also translate to capability jumps in specialized domains such as\nGPT‑5.2-Codex has stronger cybersecurity capabilities than any model we’ve released so far. These advances can help strengthen cybersecurity at scale, but they also raise new dual-use risks that require careful deployment.",
+                              "name": "Introducing GPT-5.2-Codex | OpenAI",
+                              "type": "text",
+                              "url": "https://openai.com/index/introducing-gpt-5-2-codex/"
+                            }
+                          },
+                          "originalRank": 4,
+                          "score": 0.015625,
+                          "snippet": "The most advanced agentic coding model for professional software engineering and defensive cybersecurity. ... Today we’re releasing GPT‑5.2-Codex, the most advanced agentic coding model yet for complex, real-world software engineering.\nThe most advanced agentic coding model for professional software engineering and defensive cybersecurity. ... Today we’re releasing GPT‑5.2-Codex, the most advanced agentic coding model yet for complex, real-world software engineering.\nGPT‑5.2-Codex represents a step forward in how advanced AI can support real-world software engineering and specialized domains like cybersecurity—helping developers and defenders tackle complex, long-horizon work, and strengthening the tools available for responsible security research.\nGPT‑5.2⁠ further optimized for agentic coding in Codex, including improvements on long-horizon work through context compaction, stronger performance on large code changes like refactors and migrations, improved performance in Windows environments, and significantly stronger cybersecurity capabilities. As our models continue to advance along the intelligence frontier, we’ve observed that these improvements also translate to capability jumps in specialized domains such as\nGPT‑5.2-Codex has stronger cybersecurity capabilities than any model we’ve released so far. These advances can help strengthen cybersecurity at scale, but they also raise new dual-use risks that require careful deployment.",
+                          "source": "linkup",
+                          "title": "Introducing GPT-5.2-Codex | OpenAI",
+                          "url": "https://openai.com/index/introducing-gpt-5-2-codex/"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 7,
+                          "id": "linkup-1767511356420-4",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "Unlike GPT-5.2, which is a general-purpose model, we recommend using GPT-5.1-Codex-Max only for agentic coding tasks in Codex or Codex-like environments, and GPT-5.2 for use cases in other domains. GPT-5.1-Codex-Max is only available in the Responses API and supports none, medium, high, and xhigh reasoning effort settings as well function calling, structured outputs, compaction, and the web_search tool.\nUnlike GPT-5.2, which is a general-purpose model, we recommend using GPT-5.1-Codex-Max only for agentic coding tasks in Codex or Codex-like environments, and GPT-5.2 for use cases in other domains. GPT-5.1-Codex-Max is only available in the Responses API and supports none, medium, high, and xhigh reasoning effort settings as well function calling, structured outputs, compaction, and the web_search tool.\nLearn about how to use and migrate to GPT-5.2 and the GPT-5 model family, the latest models in the OpenAI API.\nClick through a few demo applications generated entirely with a single prompt, without writing any code by hand. Note that these examples were either generated by GPT-5.2 or our previous flagship model, GPT-5.\nThere are three new models. In general, gpt-5.2 is best for your most complex tasks that require broad world knowledge. It replaces the previous gpt-5.1 model. The model powering ChatGPT is gpt-5.2-chat-latest.",
+                              "name": "Using GPT-5.2 | OpenAI API",
+                              "type": "text",
+                              "url": "https://platform.openai.com/docs/guides/latest-model"
+                            }
+                          },
+                          "originalRank": 5,
+                          "score": 0.015384615384615385,
+                          "snippet": "Unlike GPT-5.2, which is a general-purpose model, we recommend using GPT-5.1-Codex-Max only for agentic coding tasks in Codex or Codex-like environments, and GPT-5.2 for use cases in other domains. GPT-5.1-Codex-Max is only available in the Responses API and supports none, medium, high, and xhigh reasoning effort settings as well function calling, structured outputs, compaction, and the web_search tool.\nUnlike GPT-5.2, which is a general-purpose model, we recommend using GPT-5.1-Codex-Max only for agentic coding tasks in Codex or Codex-like environments, and GPT-5.2 for use cases in other domains. GPT-5.1-Codex-Max is only available in the Responses API and supports none, medium, high, and xhigh reasoning effort settings as well function calling, structured outputs, compaction, and the web_search tool.\nLearn about how to use and migrate to GPT-5.2 and the GPT-5 model family, the latest models in the OpenAI API.\nClick through a few demo applications generated entirely with a single prompt, without writing any code by hand. Note that these examples were either generated by GPT-5.2 or our previous flagship model, GPT-5.\nThere are three new models. In general, gpt-5.2 is best for your most complex tasks that require broad world knowledge. It replaces the previous gpt-5.1 model. The model powering ChatGPT is gpt-5.2-chat-latest.",
+                          "source": "linkup",
+                          "title": "Using GPT-5.2 | OpenAI API",
+                          "url": "https://platform.openai.com/docs/guides/latest-model"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 9,
+                          "id": "linkup-1767511356420-6",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "In the API, they are available now to all developers. Overall, GPT‑5.2 brings significant improvements in general intelligence, long-context understanding, agentic tool-calling, and vision—making it better at executing complex, real-world ...\nThe new ChatGPT Images is powered by our flagship image generation model, delivering more precise edits, consistent details, and image generation up to 4× faster. The upgraded model is rolling out to all ChatGPT users today and is also available in the API as GPT-Image-1.5.\nThe model takes another step ahead in text rendering, capable of handling denser and smaller text. There is a newspaper on a desk. The newspaper shows the markdown below laid out as a **natural** newspaper article. Preserve all content, formatting, and numbers exactly. The image should be tall. ... We are introducing **GPT‑5.2**, the most capable model series yet for professional knowledge work.\nThe new Images model is rolling out today in ChatGPT for all users, and is available in the API as GPT Image 1.5.\nWe designed GPT‑5.2 to unlock even more economic value for people; it’s better at creating spreadsheets, building presentations, writing code, perceiving images, understanding long contexts, using tools, and handling complex, multi-step projects. GPT‑5.2 sets a new state of the art across many benchmarks, including GDPval, where it outperforms industry professionals at well-specified knowledge work tasks spanning 44 occupations.",
+                              "name": "The new ChatGPT Images is here | OpenAI",
+                              "type": "text",
+                              "url": "https://openai.com/index/new-chatgpt-images-is-here/"
+                            }
+                          },
+                          "originalRank": 7,
+                          "score": 0.014925373134328358,
+                          "snippet": "In the API, they are available now to all developers. Overall, GPT‑5.2 brings significant improvements in general intelligence, long-context understanding, agentic tool-calling, and vision—making it better at executing complex, real-world ...\nThe new ChatGPT Images is powered by our flagship image generation model, delivering more precise edits, consistent details, and image generation up to 4× faster. The upgraded model is rolling out to all ChatGPT users today and is also available in the API as GPT-Image-1.5.\nThe model takes another step ahead in text rendering, capable of handling denser and smaller text. There is a newspaper on a desk. The newspaper shows the markdown below laid out as a **natural** newspaper article. Preserve all content, formatting, and numbers exactly. The image should be tall. ... We are introducing **GPT‑5.2**, the most capable model series yet for professional knowledge work.\nThe new Images model is rolling out today in ChatGPT for all users, and is available in the API as GPT Image 1.5.\nWe designed GPT‑5.2 to unlock even more economic value for people; it’s better at creating spreadsheets, building presentations, writing code, perceiving images, understanding long contexts, using tools, and handling complex, multi-step projects. GPT‑5.2 sets a new state of the art across many benchmarks, including GDPval, where it outperforms industry professionals at well-specified knowledge work tasks spanning 44 occupations.",
+                          "source": "linkup",
+                          "title": "The new ChatGPT Images is here | OpenAI",
+                          "url": "https://openai.com/index/new-chatgpt-images-is-here/"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 10,
+                          "id": "linkup-1767511356420-7",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "Today, OpenAI’s GPT-5.2 is announced as generally available in Microsoft Foundry, introducing a new frontier model series purposefully built to meet the needs of enterprise developers and technical leaders—setting a new standard for a new era.\nAzure is the foundation for solving these challenges. Today, OpenAI’s GPT-5.2 is announced as generally available in Microsoft Foundry, introducing a new frontier model series purposefully built to meet the needs of enterprise developers and technical leaders—setting a new standard for a new era.\nExplore GPT‑5.2 in Microsoft Foundry—advanced reasoning, agentic execution, and compliance-ready AI for enterprise scale.\nThe GPT-5.2 series is built on new architecture, delivering superior performance, efficiency, and reasoning depth compared to prior generations. It’s also trained on the proven GPT-5.1 dataset and further enhanced with improved safety and integrations. GPT-5.2 leaps beyond previous models with substantial performance improvements across core metrics.\nGPT-5.2: The most advanced reasoning model that solves harder problems more effectively and with more polish.",
+                              "name": "GPT‑5.2 in Microsoft Foundry: Enterprise AI Reinvented | Microsoft Azure Blog",
+                              "type": "text",
+                              "url": "https://azure.microsoft.com/en-us/blog/introducing-gpt-5-2-in-microsoft-foundry-the-new-standard-for-enterprise-ai/"
+                            }
+                          },
+                          "originalRank": 8,
+                          "score": 0.014705882352941176,
+                          "snippet": "Today, OpenAI’s GPT-5.2 is announced as generally available in Microsoft Foundry, introducing a new frontier model series purposefully built to meet the needs of enterprise developers and technical leaders—setting a new standard for a new era.\nAzure is the foundation for solving these challenges. Today, OpenAI’s GPT-5.2 is announced as generally available in Microsoft Foundry, introducing a new frontier model series purposefully built to meet the needs of enterprise developers and technical leaders—setting a new standard for a new era.\nExplore GPT‑5.2 in Microsoft Foundry—advanced reasoning, agentic execution, and compliance-ready AI for enterprise scale.\nThe GPT-5.2 series is built on new architecture, delivering superior performance, efficiency, and reasoning depth compared to prior generations. It’s also trained on the proven GPT-5.1 dataset and further enhanced with improved safety and integrations. GPT-5.2 leaps beyond previous models with substantial performance improvements across core metrics.\nGPT-5.2: The most advanced reasoning model that solves harder problems more effectively and with more polish.",
+                          "source": "linkup",
+                          "title": "GPT‑5.2 in Microsoft Foundry: Enterprise AI Reinvented | Microsoft Azure Blog",
+                          "url": "https://azure.microsoft.com/en-us/blog/introducing-gpt-5-2-in-microsoft-foundry-the-new-standard-for-enterprise-ai/"
+                        }
+                      ],
+                      "sourcesQueried": [
+                        "linkup",
+                        "news"
+                      ],
+                      "timing": {
+                        "linkup": 2349,
+                        "news": 1984
+                      },
+                      "totalBeforeFusion": 12,
+                      "totalTimeMs": 2381
+                    },
+                    "version": 1
+                  },
+                  "success": true
+                },
+                "error": null,
+                "execution_time_ms": 2083.075523376465,
+                "success": true,
+                "tool_name": "fusion_search"
+              },
+              "toolName": "fusion_search"
+            },
+            "elapsedMs": 2332,
+            "ok": true
+          },
+          "research_health": {
+            "details": {
+              "data": {
+                "service": "research-mcp-server",
+                "status": "healthy",
+                "timestamp": "2026-01-04T07:22:55.093850",
+                "version": "1.0.0"
+              }
+            },
+            "elapsedMs": 261,
+            "ok": true
+          },
+          "research_listTools": {
+            "details": {
+              "sample": {
+                "count": 4,
+                "success": true,
+                "tools": [
+                  {
+                    "description": "Initialize research context with topic and goals",
+                    "name": "initialize_context",
+                    "parameters": {
+                      "constraints": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "goals": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "topic": {
+                        "required": true,
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "description": "Execute a quick search using LinkUp",
+                    "name": "quick_search",
+                    "parameters": {
+                      "maxResults": {
+                        "default": 10,
+                        "type": "integer"
+                      },
+                      "query": {
+                        "required": true,
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "description": "Execute multi-source search with result fusion",
+                    "name": "fusion_search",
+                    "parameters": {
+                      "mode": {
+                        "enum": [
+                          "fast",
+                          "balanced",
+                          "comprehensive"
+                        ],
+                        "type": "string"
+                      },
+                      "query": {
+                        "required": true,
+                        "type": "string"
+                      },
+                      "sources": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    }
+                  },
+                  {
+                    "description": "Get model migration statistics",
+                    "name": "get_migration_stats",
+                    "parameters": {}
+                  }
+                ]
+              }
+            },
+            "elapsedMs": 176,
+            "ok": true
+          },
+          "youtube_search": {
+            "details": {
+              "firstTitle": "OpenAI",
+              "items": 1
+            },
+            "elapsedMs": 286,
+            "ok": true
+          }
+        }
+      },
+      {
+        "checkedAt": 1767511399444,
+        "envPresence": {
+          "ANTHROPIC_API_KEY": true,
+          "CORE_AGENT_MCP_AUTH_TOKEN": true,
+          "CORE_AGENT_MCP_SERVER_URL": true,
+          "CORE_AGENT_MCP_TOKEN": false,
+          "CORE_AGENT_MCP_URL": false,
+          "GEMINI_API_KEY": true,
+          "LINKUP_API_KEY": true,
+          "MCP_SECRET": true,
+          "OPENAI_API_KEY": true,
+          "OPENBB_API_KEY": false,
+          "OPENBB_MCP_SERVER_URL": true,
+          "OPENBB_MCP_URL": false,
+          "RESEARCH_API_KEY": true,
+          "RESEARCH_MCP_SERVER_URL": true,
+          "RESEARCH_MCP_URL": false,
+          "YOUTUBE_API_KEY": true
+        },
+        "mode": {
+          "includeLinkup": true,
+          "includePublicApiChecks": true,
+          "requireMcpChecks": true,
+          "resolved": {
+            "coreAgentUrl": "https://core-agent-production-08a8.up.railway.app",
+            "openbbUrl": "https://openbb-production.up.railway.app",
+            "researchUrl": "https://research-production-e619.up.railway.app"
+          },
+          "tryLocalhostDefaults": false
+        },
+        "ok": true,
+        "results": {
+          "anthropic_modelsList": {
+            "details": {
+              "count": 10,
+              "sample": [
+                "claude-opus-4-5-20251101",
+                "claude-haiku-4-5-20251001",
+                "claude-sonnet-4-5-20250929",
+                "claude-opus-4-1-20250805",
+                "claude-opus-4-20250514"
+              ]
+            },
+            "elapsedMs": 81,
+            "ok": true
+          },
+          "coreAgentMcp_toolsCall": {
+            "details": {
+              "memKey": "mcp1:e2e:1767511384533",
+              "planId": "plan_1767511383935_7cylzizfk"
+            },
+            "elapsedMs": 1860,
+            "ok": true
+          },
+          "coreAgentMcp_toolsList": {
+            "details": {
+              "missing": [],
+              "toolCount": 7,
+              "toolNames": [
+                "createPlan",
+                "deleteAgentMemory",
+                "getPlan",
+                "listAgentMemory",
+                "readAgentMemory",
+                "updatePlanStep",
+                "writeAgentMemory"
+              ]
+            },
+            "elapsedMs": 140,
+            "ok": true
+          },
+          "gemini_modelsList": {
+            "details": {
+              "count": 50,
+              "sample": [
+                "models/embedding-gecko-001",
+                "models/gemini-2.5-flash",
+                "models/gemini-2.5-pro",
+                "models/gemini-2.0-flash-exp",
+                "models/gemini-2.0-flash"
+              ]
+            },
+            "elapsedMs": 128,
+            "ok": true
+          },
+          "linkup_search": {
+            "details": {
+              "hasAnswer": true,
+              "resultsCount": 0,
+              "sourcesCount": 3
+            },
+            "elapsedMs": 3448,
+            "ok": true
+          },
+          "openai_modelsList": {
+            "details": {
+              "count": 126,
+              "sample": [
+                "gpt-4-0613",
+                "gpt-4",
+                "gpt-3.5-turbo",
+                "chatgpt-image-latest",
+                "gpt-4o-mini-tts-2025-03-20"
+              ]
+            },
+            "elapsedMs": 746,
+            "ok": true
+          },
+          "openbb_executeTool": {
+            "details": {
+              "calls": {
+                "fundamentals": {
+                  "ok": true,
+                  "sample": {
+                    "asOf": "2026-01-02",
+                    "beta": null,
+                    "currency": "USD",
+                    "dayHigh": 265.38,
+                    "dayLow": 252.48,
+                    "dividendYield": null,
+                    "errors": {
+                      "yfinance_error": "Expecting value: line 1 column 1 (char 0)",
+                      "yfinance_missing_fields": [
+                        "longName",
+                        "sector",
+                        "industry",
+                        "website",
+                        "marketCap",
+                        "trailingPE",
+                        "forwardPE",
+                        "priceToBook",
+                        "beta",
+                        "dividendYield"
+                      ]
+                    },
+                    "fetchedAt": "2026-01-04T07:23:11.807294+00:00",
+                    "forwardPE": null,
+                    "industry": null,
+                    "longName": null,
+                    "marketCap": null,
+                    "partial": true,
+                    "price": 253.62,
+                    "priceToBook": null,
+                    "quoteSource": "stooq",
+                    "sector": null,
+                    "source": "mixed",
+                    "symbol": "CRM",
+                    "trailingPE": null,
+                    "volume": 9680584,
+                    "website": null
+                  },
+                  "toolName": "equity_fundamental_overview"
+                },
+                "gdp": {
+                  "ok": true,
+                  "sample": {
+                    "country": "US",
+                    "fetchedAt": "2026-01-04T07:23:13.938078+00:00",
+                    "source": "world_bank",
+                    "unit": "USD",
+                    "value": 28750956130731.2,
+                    "year": "2024"
+                  },
+                  "toolName": "economy_gdp"
+                },
+                "historical": {
+                  "ok": true,
+                  "sample": {
+                    "count": 19,
+                    "source": "stooq",
+                    "symbol": "CRM"
+                  },
+                  "toolName": "equity_price_historical"
+                },
+                "inflation": {
+                  "ok": true,
+                  "sample": {
+                    "country": "US",
+                    "fetchedAt": "2026-01-04T07:23:14.276507+00:00",
+                    "source": "world_bank",
+                    "unit": "percent",
+                    "value": 2.94952520485207,
+                    "year": "2024"
+                  },
+                  "toolName": "economy_inflation"
+                },
+                "quote": {
+                  "ok": true,
+                  "sample": {
+                    "asOf": "2026-01-02",
+                    "currency": "USD",
+                    "dayHigh": 265.38,
+                    "dayLow": 252.48,
+                    "fetchedAt": "2026-01-04T07:23:07.315266+00:00",
+                    "marketCap": null,
+                    "open": 264.74,
+                    "previousClose": null,
+                    "price": 253.62,
+                    "source": "stooq",
+                    "symbol": "CRM",
+                    "volume": 9680584
+                  },
+                  "toolName": "equity_price_quote"
+                }
+              },
+              "ok": true
+            },
+            "elapsedMs": 8180,
+            "ok": true
+          },
+          "openbb_health": {
+            "details": {
+              "data": {
+                "service": "openbb-mcp-server",
+                "status": "healthy",
+                "timestamp": "2026-01-04T07:23:05.898794",
+                "version": "1.0.0"
+              }
+            },
+            "elapsedMs": 326,
+            "ok": true
+          },
+          "openbb_listTools": {
+            "details": {
+              "sample": {
+                "category": null,
+                "count": 9,
+                "success": true,
+                "tools": [
+                  {
+                    "category": "equity",
+                    "description": "Get real-time stock quote",
+                    "name": "equity_price_quote",
+                    "parameters": {
+                      "symbol": {
+                        "description": "Stock ticker symbol",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Real-time quote data including price, volume, and market cap"
+                  },
+                  {
+                    "category": "equity",
+                    "description": "Get historical stock price data",
+                    "name": "equity_price_historical",
+                    "parameters": {
+                      "end_date": {
+                        "description": "End date (YYYY-MM-DD)",
+                        "required": false,
+                        "type": "string"
+                      },
+                      "start_date": {
+                        "description": "Start date (YYYY-MM-DD)",
+                        "required": false,
+                        "type": "string"
+                      },
+                      "symbol": {
+                        "description": "Stock ticker symbol",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Historical price data with OHLCV"
+                  },
+                  {
+                    "category": "equity",
+                    "description": "Get company fundamental overview",
+                    "name": "equity_fundamental_overview",
+                    "parameters": {
+                      "symbol": {
+                        "description": "Stock ticker symbol",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Company fundamentals including market cap, P/E ratio, etc."
+                  },
+                  {
+                    "category": "crypto",
+                    "description": "Get cryptocurrency quote",
+                    "name": "crypto_price_quote",
+                    "parameters": {
+                      "symbol": {
+                        "description": "Crypto symbol (e.g., BTC, ETH)",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Real-time crypto quote data"
+                  },
+                  {
+                    "category": "crypto",
+                    "description": "Get historical cryptocurrency data",
+                    "name": "crypto_price_historical",
+                    "parameters": {
+                      "end_date": {
+                        "description": "End date (YYYY-MM-DD)",
+                        "required": false,
+                        "type": "string"
+                      },
+                      "start_date": {
+                        "description": "Start date (YYYY-MM-DD)",
+                        "required": false,
+                        "type": "string"
+                      },
+                      "symbol": {
+                        "description": "Crypto symbol",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Historical crypto price data"
+                  },
+                  {
+                    "category": "economy",
+                    "description": "Get GDP data",
+                    "name": "economy_gdp",
+                    "parameters": {
+                      "country": {
+                        "description": "Country code (default: US)",
+                        "required": false,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "GDP data for specified country"
+                  },
+                  {
+                    "category": "economy",
+                    "description": "Get inflation data (CPI)",
+                    "name": "economy_inflation",
+                    "parameters": {
+                      "country": {
+                        "description": "Country code (default: US)",
+                        "required": false,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Inflation/CPI data for specified country"
+                  },
+                  {
+                    "category": "news",
+                    "description": "Get company news",
+                    "name": "news_company",
+                    "parameters": {
+                      "limit": {
+                        "description": "Number of articles (default: 10)",
+                        "required": false,
+                        "type": "integer"
+                      },
+                      "symbol": {
+                        "description": "Stock ticker symbol",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "returns": "Recent news articles about the company"
+                  },
+                  {
+                    "category": "news",
+                    "description": "Get world financial news",
+                    "name": "news_world",
+                    "parameters": {
+                      "limit": {
+                        "description": "Number of articles (default: 10)",
+                        "required": false,
+                        "type": "integer"
+                      }
+                    },
+                    "returns": "Recent world financial news"
+                  }
+                ]
+              }
+            },
+            "elapsedMs": 179,
+            "ok": true
+          },
+          "research_executeTool": {
+            "details": {
+              "sample": {
+                "data": {
+                  "results": {
+                    "generatedAt": "2026-01-04T07:23:15.717Z",
+                    "kind": "fusion_search_results",
+                    "payload": {
+                      "mode": "fast",
+                      "reranked": false,
+                      "results": [
+                        {
+                          "contentType": "text",
+                          "fusedRank": 1,
+                          "id": "linkup-1767511356420-0",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "Snapshots let you lock in a specific version of the model so that performance and behavior remain consistent. Below is a list of all available snapshots and aliases for GPT-5.2.\nGPT-5.2 is our flagship model for coding and agentic tasks across industries.",
+                              "name": "GPT-5.2 Model | OpenAI API",
+                              "type": "text",
+                              "url": "https://platform.openai.com/docs/models/gpt-5.2"
+                            }
+                          },
+                          "originalRank": 1,
+                          "score": 0.01639344262295082,
+                          "snippet": "Snapshots let you lock in a specific version of the model so that performance and behavior remain consistent. Below is a list of all available snapshots and aliases for GPT-5.2.\nGPT-5.2 is our flagship model for coding and agentic tasks across industries.",
+                          "source": "linkup",
+                          "title": "GPT-5.2 Model | OpenAI API",
+                          "url": "https://platform.openai.com/docs/models/gpt-5.2"
+                        },
+                        {
+                          "contentType": "news",
+                          "fusedRank": 2,
+                          "id": "news-linkup-1767511356057-0",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "The company said the model is better at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context. It will be available starting Thursday within OpenAI&#x27;s ChatGPT chatbot and its API.\nOpenAI on Thursday announced GPT-5.2, its most advanced artificial intelligence model. The company said the model is better at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context. It will be available starting Thursday within OpenAI's ChatGPT chatbot and its API.\nOpenAI on Thursday announced its most advanced artificial intelligence model, GPT-5.2, and said it's the best offering yet for everyday professional use. The model is better than predecessors at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context, OpenAI said. It will be available starting Thursday within OpenAI's ChatGPT chatbot and its application programming interface (API).\nOpenAI CEO Sam Altman told CNBC on Thursday that Google's release of its Gemini 3 model had less of an impact on the company's metrics than it originally feared. He said he expects OpenAI will exit its code red by January. \"I believe that when a competitive threat happens, you want to focus on it, deal with it quickly,\" Altman said. OpenAI said GPT-5.2 will be available in Instant, Thinking and Pro versions.\nThe company said that the model tops industry benchmarks, including SWE-Bench Pro, which evaluates agentic coding performance, and GPQA Diamond, a graduate-level scientific reasoning benchmark. On GDPval, an evaluation OpenAI released earlier this year, GPT-5.2 beat or tied top industry professionals on 70.9% of well-specified tasks, the company said.",
+                              "name": "Sam Altman expects OpenAI to exit 'code red' by January after launch of GPT-5.2 model",
+                              "type": "text",
+                              "url": "https://www.cnbc.com/2025/12/11/openai-intros-new-ai-model-gpt-5point2-says-better-at-professional-tasks.html"
+                            }
+                          },
+                          "originalRank": 1,
+                          "score": 0.01639344262295082,
+                          "snippet": "The company said the model is better at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context. It will be available starting Thursday within OpenAI&#x27;s ChatGPT chatbot and its API.\nOpenAI on Thursday announced GPT-5.2, its most advanced artificial intelligence model. The company said the model is better at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context. It will be available starting Thursday within OpenAI's ChatGPT chatbot and its API.\nOpenAI on Thursday announced its most advanced artificial intelligence model, GPT-5.2, and said it's the best offering yet for everyday professional use. The model is better than predecessors at creating spreadsheets, building presentations, perceiving images, writing code and understanding long context, OpenAI said. It will be available starting Thursday within OpenAI's ChatGPT chatbot and its application programming interface (API).\nOpenAI CEO Sam Altman told CNBC on Thursday that Google's release of its Gemini 3 model had less of an impact on the company's metrics than it originally feared. He said he expects OpenAI will exit its code red by January. \"I believe that when a competitive threat happens, you want to focus on it, deal with it quickly,\" Altman said. OpenAI said GPT-5.2 will be available in Instant, Thinking and Pro versions.\nThe company said that the model tops industry benchmarks, including SWE-Bench Pro, which evaluates agentic coding performance, and GPQA Diamond, a graduate-level scientific reasoning benchmark. On GDPval, an evaluation OpenAI released earlier this year, GPT-5.2 beat or tied top industry professionals on 70.9% of well-specified tasks, the company said.",
+                          "source": "news",
+                          "title": "Sam Altman expects OpenAI to exit 'code red' by January after launch of GPT-5.2 model",
+                          "url": "https://www.cnbc.com/2025/12/11/openai-intros-new-ai-model-gpt-5point2-says-better-at-professional-tasks.html"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 3,
+                          "id": "linkup-1767511356420-1",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "We deploy GPT‑5.2 gradually to keep ChatGPT as smooth and reliable as we can; if you don’t see it at first, please try again later. In ChatGPT, GPT‑5.1 will still be available to paid users for three months under legacy models, after which we will sunset GPT‑5.1.\nGPT‑5.2 Thinking hallucinates less than GPT‑5.1 Thinking. On a set of de-identified queries from ChatGPT, responses with errors were 30%rel less common. For professionals, this means fewer mistakes when using the model for research, writing, analysis, and decision support—making the model more dependable for everyday knowledge work. Reasoning effort was set to the maximum available and a search tool was enabled.\nVersion 2 of the eval fixes ~5% of tasks that had incorrect ground truth values. Mean match ratio measures the average string match ratio between the model’s response and the correct answer. The points at 256k max input tokens represent averages over 128k–256k input tokens, and so forth. Here, 256k represents 256 * 1,024 = 262,144 tokens. Reasoning effort was set to the maximum available. For tasks that benefit from thinking beyond the maximum context window, GPT‑5.2 Thinking is compatible with our new Responses /compact endpoint, which extends the model’s effective context window.\nWe deploy GPT‑5.2 gradually to keep ChatGPT as smooth and reliable as we can; if you don’t see it at first, please try again later. In ChatGPT, GPT‑5.1 will still be available to paid users for three months under legacy models, after which we will sunset GPT‑5.1.\nBelow, we report comprehensive benchmark scores for GPT‑5.2 Thinking, along with a subset for GPT‑5.2 Pro. Models were run with maximum available reasoning effort in our API (xhigh for GPT‑5.2 Thinking & Pro, and high for GPT‑5.1 Thinking), except for the professional evals, where GPT‑5.2 Thinking was run with reasoning effort heavy, the maximum available in ChatGPT Pro.",
+                              "name": "Introducing GPT-5.2 | OpenAI",
+                              "type": "text",
+                              "url": "https://openai.com/index/introducing-gpt-5-2/"
+                            }
+                          },
+                          "originalRank": 2,
+                          "score": 0.016129032258064516,
+                          "snippet": "We deploy GPT‑5.2 gradually to keep ChatGPT as smooth and reliable as we can; if you don’t see it at first, please try again later. In ChatGPT, GPT‑5.1 will still be available to paid users for three months under legacy models, after which we will sunset GPT‑5.1.\nGPT‑5.2 Thinking hallucinates less than GPT‑5.1 Thinking. On a set of de-identified queries from ChatGPT, responses with errors were 30%rel less common. For professionals, this means fewer mistakes when using the model for research, writing, analysis, and decision support—making the model more dependable for everyday knowledge work. Reasoning effort was set to the maximum available and a search tool was enabled.\nVersion 2 of the eval fixes ~5% of tasks that had incorrect ground truth values. Mean match ratio measures the average string match ratio between the model’s response and the correct answer. The points at 256k max input tokens represent averages over 128k–256k input tokens, and so forth. Here, 256k represents 256 * 1,024 = 262,144 tokens. Reasoning effort was set to the maximum available. For tasks that benefit from thinking beyond the maximum context window, GPT‑5.2 Thinking is compatible with our new Responses /compact endpoint, which extends the model’s effective context window.\nWe deploy GPT‑5.2 gradually to keep ChatGPT as smooth and reliable as we can; if you don’t see it at first, please try again later. In ChatGPT, GPT‑5.1 will still be available to paid users for three months under legacy models, after which we will sunset GPT‑5.1.\nBelow, we report comprehensive benchmark scores for GPT‑5.2 Thinking, along with a subset for GPT‑5.2 Pro. Models were run with maximum available reasoning effort in our API (xhigh for GPT‑5.2 Thinking & Pro, and high for GPT‑5.1 Thinking), except for the professional evals, where GPT‑5.2 Thinking was run with reasoning effort heavy, the maximum available in ChatGPT Pro.",
+                          "source": "linkup",
+                          "title": "Introducing GPT-5.2 | OpenAI",
+                          "url": "https://openai.com/index/introducing-gpt-5-2/"
+                        },
+                        {
+                          "contentType": "news",
+                          "fusedRank": 4,
+                          "id": "news-linkup-1767511356057-1",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "Dec 11 (Reuters) - OpenAI on Thursday launched its GPT-5.2 artificial intelligence model, after CEO Sam Altman reportedly issued an internal &quot;code red&quot; in early December pausing non‑core projects and redirecting teams to accelerate development ...\nDec 11 (Reuters) - OpenAI on Thursday launched its GPT-5.2 artificial intelligence model, after CEO Sam Altman reportedly issued an internal \"code red\" in early December pausing non‑core projects and redirecting teams to accelerate development in response to Google's Gemini 3.\nGPT-5.2 comes with improvements in general intelligence, coding and long-context understanding, the company said in a statement. Sign up here. The new model is expected to bring even more economic value for users, as it is better at creating spreadsheets, building presentations and handling complex multi-step projects, OpenAI said.\nMicrosoft-backed (MSFT.O), opens new tab OpenAI said that it currently has no plans to drop GPT‑5.1, GPT‑5, or GPT‑4.1 from its application programming interface.\nAlphabet's (GOOGL.O), opens new tab Google launched the latest version of its Gemini in November, highlighting Gemini 3's lead position on several popular industry leaderboards that measure AI model performance. \"Gemini 3 has had less of an impact on our metrics than we feared,\" Altman said in an interview with CNBC on Thursday, alongside Disney (DIS.N), opens new tab CEO Bob Iger. Google did not immediately respond to a Reuters request for comment. Disney said on Thursday it is investing $1 billion in OpenAI and will let the startup use characters from Star Wars, Pixar and Marvel franchises in its Sora AI video generator.",
+                              "name": "OpenAI launches GPT-5.2 after 'code red' push to counter Google's Gemini 3 | Reuters",
+                              "type": "text",
+                              "url": "https://www.reuters.com/technology/openai-launches-gpt-52-ai-model-with-improved-capabilities-2025-12-11/"
+                            }
+                          },
+                          "originalRank": 2,
+                          "score": 0.016129032258064516,
+                          "snippet": "Dec 11 (Reuters) - OpenAI on Thursday launched its GPT-5.2 artificial intelligence model, after CEO Sam Altman reportedly issued an internal &quot;code red&quot; in early December pausing non‑core projects and redirecting teams to accelerate development ...\nDec 11 (Reuters) - OpenAI on Thursday launched its GPT-5.2 artificial intelligence model, after CEO Sam Altman reportedly issued an internal \"code red\" in early December pausing non‑core projects and redirecting teams to accelerate development in response to Google's Gemini 3.\nGPT-5.2 comes with improvements in general intelligence, coding and long-context understanding, the company said in a statement. Sign up here. The new model is expected to bring even more economic value for users, as it is better at creating spreadsheets, building presentations and handling complex multi-step projects, OpenAI said.\nMicrosoft-backed (MSFT.O), opens new tab OpenAI said that it currently has no plans to drop GPT‑5.1, GPT‑5, or GPT‑4.1 from its application programming interface.\nAlphabet's (GOOGL.O), opens new tab Google launched the latest version of its Gemini in November, highlighting Gemini 3's lead position on several popular industry leaderboards that measure AI model performance. \"Gemini 3 has had less of an impact on our metrics than we feared,\" Altman said in an interview with CNBC on Thursday, alongside Disney (DIS.N), opens new tab CEO Bob Iger. Google did not immediately respond to a Reuters request for comment. Disney said on Thursday it is investing $1 billion in OpenAI and will let the startup use characters from Star Wars, Pixar and Marvel franchises in its Sora AI video generator.",
+                          "source": "news",
+                          "title": "OpenAI launches GPT-5.2 after 'code red' push to counter Google's Gemini 3 | Reuters",
+                          "url": "https://www.reuters.com/technology/openai-launches-gpt-52-ai-model-with-improved-capabilities-2025-12-11/"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 5,
+                          "id": "linkup-1767511356420-2",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "GPT‑5.2 is the latest model family in the GPT‑5 series, and explained in our blog⁠. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT‑5 System Card⁠ and GPT‑5.1 System Card⁠.\nGPT-5.2 is the latest model family in the GPT-5 series. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT-5 System Card and GPT-5.1 System Card. Like OpenAI’s other models, the GPT-5.2 models were trained on diverse datasets, including information that is publicly available on the internet, information that we partner with third parties to access, and information that our users or human trainers and researchers provide or generate.\nGPT‑5.2 is the latest model family in the GPT‑5 series, and explained in our blog⁠. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT‑5 System Card⁠ and GPT‑5.1 System Card⁠.",
+                              "name": "Update to GPT-5 System Card: GPT-5.2 | OpenAI",
+                              "type": "text",
+                              "url": "https://openai.com/index/gpt-5-system-card-update-gpt-5-2/"
+                            }
+                          },
+                          "originalRank": 3,
+                          "score": 0.015873015873015872,
+                          "snippet": "GPT‑5.2 is the latest model family in the GPT‑5 series, and explained in our blog⁠. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT‑5 System Card⁠ and GPT‑5.1 System Card⁠.\nGPT-5.2 is the latest model family in the GPT-5 series. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT-5 System Card and GPT-5.1 System Card. Like OpenAI’s other models, the GPT-5.2 models were trained on diverse datasets, including information that is publicly available on the internet, information that we partner with third parties to access, and information that our users or human trainers and researchers provide or generate.\nGPT‑5.2 is the latest model family in the GPT‑5 series, and explained in our blog⁠. The comprehensive safety mitigation approach for these models is largely the same as that described in the GPT‑5 System Card⁠ and GPT‑5.1 System Card⁠.",
+                          "source": "linkup",
+                          "title": "Update to GPT-5 System Card: GPT-5.2 | OpenAI",
+                          "url": "https://openai.com/index/gpt-5-system-card-update-gpt-5-2/"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 6,
+                          "id": "linkup-1767511356420-3",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "The most advanced agentic coding model for professional software engineering and defensive cybersecurity. ... Today we’re releasing GPT‑5.2-Codex, the most advanced agentic coding model yet for complex, real-world software engineering.\nThe most advanced agentic coding model for professional software engineering and defensive cybersecurity. ... Today we’re releasing GPT‑5.2-Codex, the most advanced agentic coding model yet for complex, real-world software engineering.\nGPT‑5.2-Codex represents a step forward in how advanced AI can support real-world software engineering and specialized domains like cybersecurity—helping developers and defenders tackle complex, long-horizon work, and strengthening the tools available for responsible security research.\nGPT‑5.2⁠ further optimized for agentic coding in Codex, including improvements on long-horizon work through context compaction, stronger performance on large code changes like refactors and migrations, improved performance in Windows environments, and significantly stronger cybersecurity capabilities. As our models continue to advance along the intelligence frontier, we’ve observed that these improvements also translate to capability jumps in specialized domains such as\nGPT‑5.2-Codex has stronger cybersecurity capabilities than any model we’ve released so far. These advances can help strengthen cybersecurity at scale, but they also raise new dual-use risks that require careful deployment.",
+                              "name": "Introducing GPT-5.2-Codex | OpenAI",
+                              "type": "text",
+                              "url": "https://openai.com/index/introducing-gpt-5-2-codex/"
+                            }
+                          },
+                          "originalRank": 4,
+                          "score": 0.015625,
+                          "snippet": "The most advanced agentic coding model for professional software engineering and defensive cybersecurity. ... Today we’re releasing GPT‑5.2-Codex, the most advanced agentic coding model yet for complex, real-world software engineering.\nThe most advanced agentic coding model for professional software engineering and defensive cybersecurity. ... Today we’re releasing GPT‑5.2-Codex, the most advanced agentic coding model yet for complex, real-world software engineering.\nGPT‑5.2-Codex represents a step forward in how advanced AI can support real-world software engineering and specialized domains like cybersecurity—helping developers and defenders tackle complex, long-horizon work, and strengthening the tools available for responsible security research.\nGPT‑5.2⁠ further optimized for agentic coding in Codex, including improvements on long-horizon work through context compaction, stronger performance on large code changes like refactors and migrations, improved performance in Windows environments, and significantly stronger cybersecurity capabilities. As our models continue to advance along the intelligence frontier, we’ve observed that these improvements also translate to capability jumps in specialized domains such as\nGPT‑5.2-Codex has stronger cybersecurity capabilities than any model we’ve released so far. These advances can help strengthen cybersecurity at scale, but they also raise new dual-use risks that require careful deployment.",
+                          "source": "linkup",
+                          "title": "Introducing GPT-5.2-Codex | OpenAI",
+                          "url": "https://openai.com/index/introducing-gpt-5-2-codex/"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 7,
+                          "id": "linkup-1767511356420-4",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "Unlike GPT-5.2, which is a general-purpose model, we recommend using GPT-5.1-Codex-Max only for agentic coding tasks in Codex or Codex-like environments, and GPT-5.2 for use cases in other domains. GPT-5.1-Codex-Max is only available in the Responses API and supports none, medium, high, and xhigh reasoning effort settings as well function calling, structured outputs, compaction, and the web_search tool.\nUnlike GPT-5.2, which is a general-purpose model, we recommend using GPT-5.1-Codex-Max only for agentic coding tasks in Codex or Codex-like environments, and GPT-5.2 for use cases in other domains. GPT-5.1-Codex-Max is only available in the Responses API and supports none, medium, high, and xhigh reasoning effort settings as well function calling, structured outputs, compaction, and the web_search tool.\nLearn about how to use and migrate to GPT-5.2 and the GPT-5 model family, the latest models in the OpenAI API.\nClick through a few demo applications generated entirely with a single prompt, without writing any code by hand. Note that these examples were either generated by GPT-5.2 or our previous flagship model, GPT-5.\nThere are three new models. In general, gpt-5.2 is best for your most complex tasks that require broad world knowledge. It replaces the previous gpt-5.1 model. The model powering ChatGPT is gpt-5.2-chat-latest.",
+                              "name": "Using GPT-5.2 | OpenAI API",
+                              "type": "text",
+                              "url": "https://platform.openai.com/docs/guides/latest-model"
+                            }
+                          },
+                          "originalRank": 5,
+                          "score": 0.015384615384615385,
+                          "snippet": "Unlike GPT-5.2, which is a general-purpose model, we recommend using GPT-5.1-Codex-Max only for agentic coding tasks in Codex or Codex-like environments, and GPT-5.2 for use cases in other domains. GPT-5.1-Codex-Max is only available in the Responses API and supports none, medium, high, and xhigh reasoning effort settings as well function calling, structured outputs, compaction, and the web_search tool.\nUnlike GPT-5.2, which is a general-purpose model, we recommend using GPT-5.1-Codex-Max only for agentic coding tasks in Codex or Codex-like environments, and GPT-5.2 for use cases in other domains. GPT-5.1-Codex-Max is only available in the Responses API and supports none, medium, high, and xhigh reasoning effort settings as well function calling, structured outputs, compaction, and the web_search tool.\nLearn about how to use and migrate to GPT-5.2 and the GPT-5 model family, the latest models in the OpenAI API.\nClick through a few demo applications generated entirely with a single prompt, without writing any code by hand. Note that these examples were either generated by GPT-5.2 or our previous flagship model, GPT-5.\nThere are three new models. In general, gpt-5.2 is best for your most complex tasks that require broad world knowledge. It replaces the previous gpt-5.1 model. The model powering ChatGPT is gpt-5.2-chat-latest.",
+                          "source": "linkup",
+                          "title": "Using GPT-5.2 | OpenAI API",
+                          "url": "https://platform.openai.com/docs/guides/latest-model"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 9,
+                          "id": "linkup-1767511356420-6",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "In the API, they are available now to all developers. Overall, GPT‑5.2 brings significant improvements in general intelligence, long-context understanding, agentic tool-calling, and vision—making it better at executing complex, real-world ...\nThe new ChatGPT Images is powered by our flagship image generation model, delivering more precise edits, consistent details, and image generation up to 4× faster. The upgraded model is rolling out to all ChatGPT users today and is also available in the API as GPT-Image-1.5.\nThe model takes another step ahead in text rendering, capable of handling denser and smaller text. There is a newspaper on a desk. The newspaper shows the markdown below laid out as a **natural** newspaper article. Preserve all content, formatting, and numbers exactly. The image should be tall. ... We are introducing **GPT‑5.2**, the most capable model series yet for professional knowledge work.\nThe new Images model is rolling out today in ChatGPT for all users, and is available in the API as GPT Image 1.5.\nWe designed GPT‑5.2 to unlock even more economic value for people; it’s better at creating spreadsheets, building presentations, writing code, perceiving images, understanding long contexts, using tools, and handling complex, multi-step projects. GPT‑5.2 sets a new state of the art across many benchmarks, including GDPval, where it outperforms industry professionals at well-specified knowledge work tasks spanning 44 occupations.",
+                              "name": "The new ChatGPT Images is here | OpenAI",
+                              "type": "text",
+                              "url": "https://openai.com/index/new-chatgpt-images-is-here/"
+                            }
+                          },
+                          "originalRank": 7,
+                          "score": 0.014925373134328358,
+                          "snippet": "In the API, they are available now to all developers. Overall, GPT‑5.2 brings significant improvements in general intelligence, long-context understanding, agentic tool-calling, and vision—making it better at executing complex, real-world ...\nThe new ChatGPT Images is powered by our flagship image generation model, delivering more precise edits, consistent details, and image generation up to 4× faster. The upgraded model is rolling out to all ChatGPT users today and is also available in the API as GPT-Image-1.5.\nThe model takes another step ahead in text rendering, capable of handling denser and smaller text. There is a newspaper on a desk. The newspaper shows the markdown below laid out as a **natural** newspaper article. Preserve all content, formatting, and numbers exactly. The image should be tall. ... We are introducing **GPT‑5.2**, the most capable model series yet for professional knowledge work.\nThe new Images model is rolling out today in ChatGPT for all users, and is available in the API as GPT Image 1.5.\nWe designed GPT‑5.2 to unlock even more economic value for people; it’s better at creating spreadsheets, building presentations, writing code, perceiving images, understanding long contexts, using tools, and handling complex, multi-step projects. GPT‑5.2 sets a new state of the art across many benchmarks, including GDPval, where it outperforms industry professionals at well-specified knowledge work tasks spanning 44 occupations.",
+                          "source": "linkup",
+                          "title": "The new ChatGPT Images is here | OpenAI",
+                          "url": "https://openai.com/index/new-chatgpt-images-is-here/"
+                        },
+                        {
+                          "contentType": "text",
+                          "fusedRank": 10,
+                          "id": "linkup-1767511356420-7",
+                          "metadata": {
+                            "rawSource": {
+                              "content": "Today, OpenAI’s GPT-5.2 is announced as generally available in Microsoft Foundry, introducing a new frontier model series purposefully built to meet the needs of enterprise developers and technical leaders—setting a new standard for a new era.\nAzure is the foundation for solving these challenges. Today, OpenAI’s GPT-5.2 is announced as generally available in Microsoft Foundry, introducing a new frontier model series purposefully built to meet the needs of enterprise developers and technical leaders—setting a new standard for a new era.\nExplore GPT‑5.2 in Microsoft Foundry—advanced reasoning, agentic execution, and compliance-ready AI for enterprise scale.\nThe GPT-5.2 series is built on new architecture, delivering superior performance, efficiency, and reasoning depth compared to prior generations. It’s also trained on the proven GPT-5.1 dataset and further enhanced with improved safety and integrations. GPT-5.2 leaps beyond previous models with substantial performance improvements across core metrics.\nGPT-5.2: The most advanced reasoning model that solves harder problems more effectively and with more polish.",
+                              "name": "GPT‑5.2 in Microsoft Foundry: Enterprise AI Reinvented | Microsoft Azure Blog",
+                              "type": "text",
+                              "url": "https://azure.microsoft.com/en-us/blog/introducing-gpt-5-2-in-microsoft-foundry-the-new-standard-for-enterprise-ai/"
+                            }
+                          },
+                          "originalRank": 8,
+                          "score": 0.014705882352941176,
+                          "snippet": "Today, OpenAI’s GPT-5.2 is announced as generally available in Microsoft Foundry, introducing a new frontier model series purposefully built to meet the needs of enterprise developers and technical leaders—setting a new standard for a new era.\nAzure is the foundation for solving these challenges. Today, OpenAI’s GPT-5.2 is announced as generally available in Microsoft Foundry, introducing a new frontier model series purposefully built to meet the needs of enterprise developers and technical leaders—setting a new standard for a new era.\nExplore GPT‑5.2 in Microsoft Foundry—advanced reasoning, agentic execution, and compliance-ready AI for enterprise scale.\nThe GPT-5.2 series is built on new architecture, delivering superior performance, efficiency, and reasoning depth compared to prior generations. It’s also trained on the proven GPT-5.1 dataset and further enhanced with improved safety and integrations. GPT-5.2 leaps beyond previous models with substantial performance improvements across core metrics.\nGPT-5.2: The most advanced reasoning model that solves harder problems more effectively and with more polish.",
+                          "source": "linkup",
+                          "title": "GPT‑5.2 in Microsoft Foundry: Enterprise AI Reinvented | Microsoft Azure Blog",
+                          "url": "https://azure.microsoft.com/en-us/blog/introducing-gpt-5-2-in-microsoft-foundry-the-new-standard-for-enterprise-ai/"
+                        }
+                      ],
+                      "sourcesQueried": [
+                        "linkup",
+                        "news"
+                      ],
+                      "timing": {
+                        "linkup": 2349,
+                        "news": 1984
+                      },
+                      "totalBeforeFusion": 12,
+                      "totalTimeMs": 2381
+                    },
+                    "version": 1
+                  },
+                  "success": true
+                },
+                "error": null,
+                "execution_time_ms": 921.978235244751,
+                "success": true,
+                "tool_name": "fusion_search"
+              },
+              "toolName": "fusion_search"
+            },
+            "elapsedMs": 1157,
+            "ok": true
+          },
+          "research_health": {
+            "details": {
+              "data": {
+                "service": "research-mcp-server",
+                "status": "healthy",
+                "timestamp": "2026-01-04T07:23:14.584526",
+                "version": "1.0.0"
+              }
+            },
+            "elapsedMs": 308,
+            "ok": true
+          },
+          "research_listTools": {
+            "details": {
+              "sample": {
+                "count": 4,
+                "success": true,
+                "tools": [
+                  {
+                    "description": "Initialize research context with topic and goals",
+                    "name": "initialize_context",
+                    "parameters": {
+                      "constraints": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "goals": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "topic": {
+                        "required": true,
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "description": "Execute a quick search using LinkUp",
+                    "name": "quick_search",
+                    "parameters": {
+                      "maxResults": {
+                        "default": 10,
+                        "type": "integer"
+                      },
+                      "query": {
+                        "required": true,
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "description": "Execute multi-source search with result fusion",
+                    "name": "fusion_search",
+                    "parameters": {
+                      "mode": {
+                        "enum": [
+                          "fast",
+                          "balanced",
+                          "comprehensive"
+                        ],
+                        "type": "string"
+                      },
+                      "query": {
+                        "required": true,
+                        "type": "string"
+                      },
+                      "sources": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    }
+                  },
+                  {
+                    "description": "Get model migration statistics",
+                    "name": "get_migration_stats",
+                    "parameters": {}
+                  }
+                ]
+              }
+            },
+            "elapsedMs": 166,
+            "ok": true
+          },
+          "youtube_search": {
+            "details": {
+              "firstTitle": "OpenAI",
+              "items": 1
+            },
+            "elapsedMs": 319,
+            "ok": true
+          }
+        }
+      }
+    ],
+    "systemE2E": {
+      "ok": true,
+      "timestamp": 1767511378514,
+      "checks": {
+        "dailyBrief": {
+          "day": "2026-01-04",
+          "elapsedMs": 2350,
+          "landingLog": {
+            "briefEntries": 1,
+            "latestBriefCreatedAt": 1767486869440,
+            "latestBriefTitle": "Morning Dossier - 2026-01-04",
+            "totalEntries": 1
+          },
+          "ok": true,
+          "workflow": {
+            "error": null,
+            "hasResult": true,
+            "ok": true
+          }
+        },
+        "fastAgentLocalContext": {
+          "checks": {
+            "clientLocale": true,
+            "clientUtcOffsetMinutes": true,
+            "latestSnapshotDate": true,
+            "location": true,
+            "nowIso": true,
+            "parsedJson": true,
+            "recentDiscoveries": true,
+            "timezone": true,
+            "trendingTopics": true,
+            "utcDay": true
+          },
+          "elapsedMs": 8885,
+          "expected": {
+            "clientContext": {
+              "locale": "en-US",
+              "location": "San Francisco, CA, US",
+              "timezone": "America/Los_Angeles",
+              "utcOffsetMinutes": 480
+            },
+            "latestSnapshotDate": "2026-01-04",
+            "trendingTopicsSample": [
+              "Trending",
+              "Research",
+              "AI"
+            ]
+          },
+          "got": {
+            "clientLocale": "en-US",
+            "clientUtcOffsetMinutes": 480,
+            "latestSnapshotDate": "2026-01-04",
+            "location": "San Francisco, CA, US",
+            "nowIso": "2026-01-04T07:23:23.176Z",
+            "recentDiscoveries": [
+              "brief: Morning Dossier - 2026-01-04"
+            ],
+            "timezone": "America/Los_Angeles",
+            "trendingTopics": [
+              "Trending",
+              "Research",
+              "AI",
+              "ML",
+              "Python"
+            ],
+            "utcDay": "2026-01-04"
+          },
+          "ok": true,
+          "rawAssistantTextPreview": "```json\n{\n  \"nowIso\": \"2026-01-04T07:23:23.176Z\",\n  \"timezone\": \"America/Los_Angeles\",\n  \"utcDay\": \"2026-01-04\",\n  \"latestSnapshotDate\": \"2026-01-04\",\n  \"trendingTopics\": [\"Trending\", \"Research\", \"AI\", \"ML\", \"Python\"],\n  \"recentDiscoveries\": [\"brief: Morning Dossier - 2026-01-04\"],\n  \"clientLocale\": \"en-US\",\n  \"clientUtcOffsetMinutes\": 480,\n  \"location\": \"San Francisco, CA, US\"\n}\n```",
+          "sessionId": "local_ctx_1767511402299_ycceou0m",
+          "threadId": "wn7bqmxkx574tvp7c1ptce01js7yk9vt"
+        },
+        "anonymousEvalSuite": {
+          "elapsedMs": 9147,
+          "ok": true,
+          "results": [
+            {
+              "failureReasons": [],
+              "passed": true,
+              "queryId": "banker-disco-1",
+              "remainingQueries": 4,
+              "responsePreview": "# DISCO Pharmaceuticals – Banker Outreach Summary\n\n{{fact:ground_truth:DISCO}}\n\n**Company Overview:**\nDISCO Pharmaceuticals is a private biotech company headquartered in **Cologne, Germany**, pioneering novel drug discovery through its proprietary **surfaceome mapping platform**.\n\n**Leadership:**\n- **CEO:** Mark Manfredi\n- **Founder:** Roman Thomas\n\n**Funding:**\n- **Stage & Amount:** Seed round of **€36M** (announced December 2025)\n- **Co-Lead Investors:** Ackermans & van Haaren, NRW.Bank\n\n**Pip...",
+              "score": 1
+            },
+            {
+              "failureReasons": [],
+              "passed": true,
+              "queryId": "cto-quickjs-1",
+              "remainingQueries": 4,
+              "responsePreview": "# QuickJS Vulnerability Assessment: CVE-2025-62495\n\n## Vulnerability Overview\n\n**CVE-2025-62495** affects QuickJS / MicroQuickJS, an open source JavaScript engine created by Fabrice Bellard. The project is available on GitHub and represents a critical component in lightweight JavaScript execution environments.\n\n## Key Details\n\n- **Publication Date:** 2025-09-13\n- **Severity Level:** High\n- **Affected Project:** QuickJS (open source) – {{fact:ground_truth:MQUICKJS}}\n- **Engine Type:** JavaScript ...",
+              "score": 1
+            },
+            {
+              "failureReasons": [],
+              "passed": true,
+              "queryId": "exec-gemini-1",
+              "remainingQueries": 4,
+              "responsePreview": "# Gemini 3 Enterprise Pricing Economics\n\nBased on {{fact:ground_truth:GEMINI_3}}, here's what you need to know:\n\n## Token Pricing\n\n**Gemini 3 Flash:**\n- Input: $0.10 per 1M tokens\n- Output: $1.00 per 1M tokens\n\n**Gemini 3 Pro:**\n- Input: $0.10 per 1M tokens\n- Output: $1.00 per 1M tokens\n\n## Context Caching Economics\n\nBoth models support context caching, which reduces costs for repeated or long-context workloads. Cached tokens are typically billed at a lower rate, making this feature valuable for...",
+              "score": 1
+            }
+          ],
+          "sessionId": "eval_suite_1767511411494_mn49l4ya",
+          "summary": {
+            "failed": 0,
+            "passed": 3,
+            "total": 3
+          }
+        }
+      }
+    }
+  },
+  "summary": {
+    "liveApiSmoke": [
+      {
+        "name": "openbb_executeTool",
+        "passRate": "100%",
+        "ok": 3,
+        "total": 3,
+        "p50": 8811,
+        "p95": 9693,
+        "mean": 8927.333333333334
+      },
+      {
+        "name": "research_executeTool",
+        "passRate": "100%",
+        "ok": 3,
+        "total": 3,
+        "p50": 2332,
+        "p95": 6394.599999999999,
+        "mean": 3445
+      },
+      {
+        "name": "linkup_search",
+        "passRate": "100%",
+        "ok": 3,
+        "total": 3,
+        "p50": 3950,
+        "p95": 4517,
+        "mean": 3992.6666666666665
+      },
+      {
+        "name": "openbb_health",
+        "passRate": "100%",
+        "ok": 3,
+        "total": 3,
+        "p50": 1007,
+        "p95": 2480.3,
+        "mean": 1325.6666666666667
+      },
+      {
+        "name": "coreAgentMcp_toolsCall",
+        "passRate": "100%",
+        "ok": 3,
+        "total": 3,
+        "p50": 1994,
+        "p95": 2454.8,
+        "mean": 2120
+      },
+      {
+        "name": "openai_modelsList",
+        "passRate": "100%",
+        "ok": 3,
+        "total": 3,
+        "p50": 556,
+        "p95": 727,
+        "mean": 602.6666666666666
+      },
+      {
+        "name": "research_health",
+        "passRate": "100%",
+        "ok": 3,
+        "total": 3,
+        "p50": 308,
+        "p95": 334.1,
+        "mean": 302
+      },
+      {
+        "name": "youtube_search",
+        "passRate": "100%",
+        "ok": 3,
+        "total": 3,
+        "p50": 292,
+        "p95": 316.3,
+        "mean": 299
+      },
+      {
+        "name": "openbb_listTools",
+        "passRate": "100%",
+        "ok": 3,
+        "total": 3,
+        "p50": 200,
+        "p95": 203.6,
+        "mean": 194.33333333333334
+      },
+      {
+        "name": "coreAgentMcp_toolsList",
+        "passRate": "100%",
+        "ok": 3,
+        "total": 3,
+        "p50": 156,
+        "p95": 194.7,
+        "mean": 165
+      },
+      {
+        "name": "research_listTools",
+        "passRate": "100%",
+        "ok": 3,
+        "total": 3,
+        "p50": 176,
+        "p95": 180.5,
+        "mean": 174.33333333333334
+      },
+      {
+        "name": "anthropic_modelsList",
+        "passRate": "100%",
+        "ok": 3,
+        "total": 3,
+        "p50": 98,
+        "p95": 125.9,
+        "mean": 102.66666666666667
+      },
+      {
+        "name": "gemini_modelsList",
+        "passRate": "100%",
+        "ok": 3,
+        "total": 3,
+        "p50": 71,
+        "p95": 122.3,
+        "mean": 86.66666666666667
+      }
+    ],
+    "systemE2E": {
+      "ok": true,
+      "checks": [
+        "dailyBrief",
+        "fastAgentLocalContext",
+        "anonymousEvalSuite"
+      ]
+    }
+  }
+}

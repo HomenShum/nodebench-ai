@@ -1,0 +1,367 @@
+{
+  "sessionId": "opt-5c965554",
+  "config": {
+    "maxIterations": 10,
+    "maxSessionSeconds": 600,
+    "benchmarkFamilies": [
+      "company_direction",
+      "relationship_mapping",
+      "repo_intelligence",
+      "world_to_company",
+      "trace_backed_draft"
+    ]
+  },
+  "baseline": {
+    "baselineId": "research-cell-balanced-v1",
+    "commitHash": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+    "throughputMetrics": {
+      "taskCompletionRate": 0.75,
+      "timeToFirstDraftMs": 0.08659999999999854,
+      "humanEditDistance": 0,
+      "wallClockMs": 0.08659999999999854,
+      "toolCallCount": 6
+    },
+    "qualityMetrics": {
+      "factualPrecision": 1,
+      "relationshipPrecision": 0.62,
+      "evidenceLinkage": 1,
+      "receiptCompleteness": 1,
+      "falseConfidenceRate": 0,
+      "canaryRelativeUplift": 0.05
+    },
+    "capturedAt": "2026-03-18T06:13:10.357Z"
+  },
+  "candidates": [
+    {
+      "candidateId": "research-cell-balanced-v1",
+      "baselineId": "baseline-401d5942-1773814353502",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.9142852452029799,
+        "qualityMetrics": {
+          "factualPrecision": 1,
+          "relationshipPrecision": 0.62,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.05
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "promoted",
+      "timestamp": "2026-03-18T06:13:10.357Z",
+      "iterationMs": 55,
+      "proposerRationale": "Simulated strategy: Balanced 3-branch re-analysis. This candidate is tuned to exercise the optimizer's promotion/discard logic under the measured canary baseline."
+    },
+    {
+      "candidateId": "research-cell-gap-focus-v1",
+      "baselineId": "research-cell-balanced-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.9309235871634838,
+        "qualityMetrics": {
+          "factualPrecision": 1,
+          "relationshipPrecision": 0.63,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.11
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.8% < 5% minimum",
+      "timestamp": "2026-03-18T06:13:14.390Z",
+      "iterationMs": 60,
+      "proposerRationale": "Simulated strategy: Evidence gap-fill emphasis (2 branches). This candidate is tuned to exercise the optimizer's promotion/discard logic under the measured canary baseline."
+    },
+    {
+      "candidateId": "research-cell-counter-hyp-v1",
+      "baselineId": "research-cell-balanced-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.9363834714664099,
+        "qualityMetrics": {
+          "factualPrecision": 1,
+          "relationshipPrecision": 0.63,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.09
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 2.4% < 5% minimum",
+      "timestamp": "2026-03-18T06:13:19.317Z",
+      "iterationMs": 195,
+      "proposerRationale": "Simulated strategy: Counter-hypothesis emphasis. This candidate is tuned to exercise the optimizer's promotion/discard logic under the measured canary baseline."
+    },
+    {
+      "candidateId": "research-cell-dimension-v1",
+      "baselineId": "research-cell-balanced-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.9314072770673693,
+        "qualityMetrics": {
+          "factualPrecision": 1,
+          "relationshipPrecision": 0.65,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.1
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.9% < 5% minimum",
+      "timestamp": "2026-03-18T06:13:25.400Z",
+      "iterationMs": 66,
+      "proposerRationale": "Simulated strategy: Dimension coverage emphasis. This candidate is tuned to exercise the optimizer's promotion/discard logic under the measured canary baseline."
+    },
+    {
+      "candidateId": "research-cell-fast-v1",
+      "baselineId": "research-cell-balanced-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.9285648666348623,
+        "qualityMetrics": {
+          "factualPrecision": 1,
+          "relationshipPrecision": 0.63,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.09
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.6% < 5% minimum",
+      "timestamp": "2026-03-18T06:13:30.448Z",
+      "iterationMs": 68,
+      "proposerRationale": "Simulated strategy: Fast single-branch re-analysis. This candidate is tuned to exercise the optimizer's promotion/discard logic under the measured canary baseline."
+    },
+    {
+      "candidateId": "research-cell-deep-v1",
+      "baselineId": "research-cell-balanced-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.9295612711900163,
+        "qualityMetrics": {
+          "factualPrecision": 1,
+          "relationshipPrecision": 0.66,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.12000000000000001
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.7% < 5% minimum",
+      "timestamp": "2026-03-18T06:13:35.271Z",
+      "iterationMs": 216,
+      "proposerRationale": "Simulated strategy: Deep 3-branch with 2 refinement rounds. This candidate is tuned to exercise the optimizer's promotion/discard logic under the measured canary baseline."
+    },
+    {
+      "candidateId": "research-cell-source-div-v1",
+      "baselineId": "research-cell-balanced-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.9259340992300265,
+        "qualityMetrics": {
+          "factualPrecision": 1,
+          "relationshipPrecision": 0.64,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.1
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.3% < 5% minimum",
+      "timestamp": "2026-03-18T06:13:40.575Z",
+      "iterationMs": 86,
+      "proposerRationale": "Simulated strategy: Source diversification emphasis. This candidate is tuned to exercise the optimizer's promotion/discard logic under the measured canary baseline."
+    },
+    {
+      "candidateId": "research-cell-aggressive-v1",
+      "baselineId": "research-cell-balanced-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.9252934475632123,
+        "qualityMetrics": {
+          "factualPrecision": 1,
+          "relationshipPrecision": 0.67,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.13
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.2% < 5% minimum",
+      "timestamp": "2026-03-18T06:13:45.584Z",
+      "iterationMs": 110,
+      "proposerRationale": "Simulated strategy: Aggressive 3-branch max-budget. This candidate is tuned to exercise the optimizer's promotion/discard logic under the measured canary baseline."
+    },
+    {
+      "candidateId": "research-cell-minimal-v1",
+      "baselineId": "research-cell-balanced-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.920638683105713,
+        "qualityMetrics": {
+          "factualPrecision": 1,
+          "relationshipPrecision": 0.63,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.08
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 0.7% < 5% minimum",
+      "timestamp": "2026-03-18T06:13:52.265Z",
+      "iterationMs": 193,
+      "proposerRationale": "Simulated strategy: Minimal overhead single query. This candidate is tuned to exercise the optimizer's promotion/discard logic under the measured canary baseline."
+    },
+    {
+      "candidateId": "research-cell-balanced-v2",
+      "baselineId": "research-cell-balanced-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.933902738486425,
+        "qualityMetrics": {
+          "factualPrecision": 1,
+          "relationshipPrecision": 0.64,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.11
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 2.1% < 5% minimum",
+      "timestamp": "2026-03-18T06:13:57.421Z",
+      "iterationMs": 70,
+      "proposerRationale": "Simulated strategy: Balanced v2 — tuned edit distance. This candidate is tuned to exercise the optimizer's promotion/discard logic under the measured canary baseline."
+    }
+  ],
+  "promotedCandidateId": "research-cell-balanced-v1",
+  "costEntries": [],
+  "costSummary": {
+    "totalInputTokens": 0,
+    "totalOutputTokens": 0,
+    "totalCostUsd": 0,
+    "costByPhase": {},
+    "costByModel": {},
+    "callCount": 0
+  },
+  "startedAt": "2026-03-18T06:13:06.695Z",
+  "completedAt": "2026-03-18T06:13:58.686Z"
+}

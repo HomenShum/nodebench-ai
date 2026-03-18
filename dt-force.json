@@ -1,0 +1,1 @@
+{"path":"workflows/deepTrace:runEntityIntelligenceMission","args":{"entityKey":"test-entity-highconf","entityName":"HighConfCorp","forceResearchCell":true},"format":"json"}

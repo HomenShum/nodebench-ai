@@ -1,0 +1,34 @@
+{
+  "sessionId": "opt-49d7fe1f",
+  "config": {
+    "maxIterations": 0,
+    "maxSessionSeconds": 1,
+    "benchmarkFamilies": [
+      "smoke"
+    ]
+  },
+  "baseline": {
+    "baselineId": "baseline-401d5942-1773607181783",
+    "commitHash": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+    "throughputMetrics": {
+      "taskCompletionRate": 0.9,
+      "timeToFirstDraftMs": 1200,
+      "humanEditDistance": 0.15,
+      "wallClockMs": 2200,
+      "toolCallCount": 6
+    },
+    "qualityMetrics": {
+      "factualPrecision": 0.95,
+      "relationshipPrecision": 0.92,
+      "evidenceLinkage": 0.9,
+      "receiptCompleteness": 0.88,
+      "falseConfidenceRate": 0.04,
+      "canaryRelativeUplift": 0.1
+    },
+    "capturedAt": "2026-03-15T20:39:41.783Z"
+  },
+  "candidates": [],
+  "promotedCandidateId": null,
+  "startedAt": "2026-03-15T20:39:42.717Z",
+  "completedAt": "2026-03-15T20:39:42.718Z"
+}

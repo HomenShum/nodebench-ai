@@ -223,6 +223,7 @@ import type * as domains_agents_promptEnhancer from "../domains/agents/promptEnh
 import type * as domains_agents_receipts_actionReceipts from "../domains/agents/receipts/actionReceipts.js";
 import type * as domains_agents_receipts_emitWithReceipt from "../domains/agents/receipts/emitWithReceipt.js";
 import type * as domains_agents_researchJobs from "../domains/agents/researchJobs.js";
+import type * as domains_agents_selfEvolution from "../domains/agents/selfEvolution.js";
 import type * as domains_agents_swarmMutations from "../domains/agents/swarmMutations.js";
 import type * as domains_agents_swarmOrchestrator from "../domains/agents/swarmOrchestrator.js";
 import type * as domains_agents_swarmOrchestratorEnhanced from "../domains/agents/swarmOrchestratorEnhanced.js";
@@ -302,6 +303,12 @@ import type * as domains_canonicalization_duplicateDetection from "../domains/ca
 import type * as domains_channels_channelIntelligence from "../domains/channels/channelIntelligence.js";
 import type * as domains_channels_engagementOptimizer from "../domains/channels/engagementOptimizer.js";
 import type * as domains_channels_index from "../domains/channels/index.js";
+import type * as domains_deepTrace_dimensionEngine from "../domains/deepTrace/dimensionEngine.js";
+import type * as domains_deepTrace_dimensionModel from "../domains/deepTrace/dimensionModel.js";
+import type * as domains_deepTrace_dimensions from "../domains/deepTrace/dimensions.js";
+import type * as domains_deepTrace_heuristics from "../domains/deepTrace/heuristics.js";
+import type * as domains_deepTrace_integrations from "../domains/deepTrace/integrations.js";
+import type * as domains_deepTrace_researchCell from "../domains/deepTrace/researchCell.js";
 import type * as domains_documents_artifacts_evidenceIndex from "../domains/documents/artifacts/evidenceIndex.js";
 import type * as domains_documents_artifacts_evidenceIndexActions from "../domains/documents/artifacts/evidenceIndexActions.js";
 import type * as domains_documents_artifacts_evidencePacks from "../domains/documents/artifacts/evidencePacks.js";
@@ -397,6 +404,7 @@ import type * as domains_eval_evalStorage from "../domains/eval/evalStorage.js";
 import type * as domains_eval_productionTestCases from "../domains/eval/productionTestCases.js";
 import type * as domains_eval_runBatch from "../domains/eval/runBatch.js";
 import type * as domains_eval_runBatchNative from "../domains/eval/runBatchNative.js";
+import type * as domains_evaluation_agentRunJudge from "../domains/evaluation/agentRunJudge.js";
 import type * as domains_evaluation_benchmarkHarness from "../domains/evaluation/benchmarkHarness.js";
 import type * as domains_evaluation_booleanEvaluator from "../domains/evaluation/booleanEvaluator.js";
 import type * as domains_evaluation_comprehensiveEval from "../domains/evaluation/comprehensiveEval.js";
@@ -585,6 +593,7 @@ import type * as domains_knowledge_learning_adaptiveLearning from "../domains/kn
 import type * as domains_knowledge_nodes from "../domains/knowledge/nodes.js";
 import type * as domains_knowledge_relationTypes from "../domains/knowledge/relationTypes.js";
 import type * as domains_knowledge_relations from "../domains/knowledge/relations.js";
+import type * as domains_knowledge_relationshipGraph from "../domains/knowledge/relationshipGraph.js";
 import type * as domains_knowledge_sourceDiffs from "../domains/knowledge/sourceDiffs.js";
 import type * as domains_knowledge_sourceRegistry from "../domains/knowledge/sourceRegistry.js";
 import type * as domains_knowledge_tags from "../domains/knowledge/tags.js";
@@ -639,6 +648,7 @@ import type * as domains_models_modelRouterQueries from "../domains/models/model
 import type * as domains_monitoring_industryUpdates from "../domains/monitoring/industryUpdates.js";
 import type * as domains_monitoring_industryUpdatesEnhanced from "../domains/monitoring/industryUpdatesEnhanced.js";
 import type * as domains_monitoring_integrationHelpers from "../domains/monitoring/integrationHelpers.js";
+import type * as domains_monitoring_worldMonitor from "../domains/monitoring/worldMonitor.js";
 import type * as domains_narrative_actions_competingExplanations from "../domains/narrative/actions/competingExplanations.js";
 import type * as domains_narrative_actions_hypothesisLifecycle from "../domains/narrative/actions/hypothesisLifecycle.js";
 import type * as domains_narrative_adapters_briefAdapter from "../domains/narrative/adapters/briefAdapter.js";
@@ -765,6 +775,7 @@ import type * as domains_operations_sloFramework from "../domains/operations/slo
 import type * as domains_operations_taskManager_cronWrapper from "../domains/operations/taskManager/cronWrapper.js";
 import type * as domains_operations_taskManager_index from "../domains/operations/taskManager/index.js";
 import type * as domains_operations_taskManager_mutations from "../domains/operations/taskManager/mutations.js";
+import type * as domains_operations_taskManager_proofPack from "../domains/operations/taskManager/proofPack.js";
 import type * as domains_operations_taskManager_queries from "../domains/operations/taskManager/queries.js";
 import type * as domains_operations_tasks_dailyNotes from "../domains/operations/tasks/dailyNotes.js";
 import type * as domains_operations_tasks_eventTaskDocuments from "../domains/operations/tasks/eventTaskDocuments.js";
@@ -1260,7 +1271,9 @@ import type * as workflows_agentProjectIdeaPost from "../workflows/agentProjectI
 import type * as workflows_dailyLinkedInPost from "../workflows/dailyLinkedInPost.js";
 import type * as workflows_dailyLinkedInPostMutations from "../workflows/dailyLinkedInPostMutations.js";
 import type * as workflows_dailyMorningBrief from "../workflows/dailyMorningBrief.js";
+import type * as workflows_deepTrace from "../workflows/deepTrace.js";
 import type * as workflows_emailResearchOrchestrator from "../workflows/emailResearchOrchestrator.js";
+import type * as workflows_endToEndQa from "../workflows/endToEndQa.js";
 import type * as workflows_enhancedMorningBrief from "../workflows/enhancedMorningBrief.js";
 import type * as workflows_enhancedWeeklySummary from "../workflows/enhancedWeeklySummary.js";
 import type * as workflows_founderPostGenerator from "../workflows/founderPostGenerator.js";
@@ -1496,6 +1509,7 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/receipts/actionReceipts": typeof domains_agents_receipts_actionReceipts;
   "domains/agents/receipts/emitWithReceipt": typeof domains_agents_receipts_emitWithReceipt;
   "domains/agents/researchJobs": typeof domains_agents_researchJobs;
+  "domains/agents/selfEvolution": typeof domains_agents_selfEvolution;
   "domains/agents/swarmMutations": typeof domains_agents_swarmMutations;
   "domains/agents/swarmOrchestrator": typeof domains_agents_swarmOrchestrator;
   "domains/agents/swarmOrchestratorEnhanced": typeof domains_agents_swarmOrchestratorEnhanced;
@@ -1575,6 +1589,12 @@ declare const fullApi: ApiFromModules<{
   "domains/channels/channelIntelligence": typeof domains_channels_channelIntelligence;
   "domains/channels/engagementOptimizer": typeof domains_channels_engagementOptimizer;
   "domains/channels/index": typeof domains_channels_index;
+  "domains/deepTrace/dimensionEngine": typeof domains_deepTrace_dimensionEngine;
+  "domains/deepTrace/dimensionModel": typeof domains_deepTrace_dimensionModel;
+  "domains/deepTrace/dimensions": typeof domains_deepTrace_dimensions;
+  "domains/deepTrace/heuristics": typeof domains_deepTrace_heuristics;
+  "domains/deepTrace/integrations": typeof domains_deepTrace_integrations;
+  "domains/deepTrace/researchCell": typeof domains_deepTrace_researchCell;
   "domains/documents/artifacts/evidenceIndex": typeof domains_documents_artifacts_evidenceIndex;
   "domains/documents/artifacts/evidenceIndexActions": typeof domains_documents_artifacts_evidenceIndexActions;
   "domains/documents/artifacts/evidencePacks": typeof domains_documents_artifacts_evidencePacks;
@@ -1670,6 +1690,7 @@ declare const fullApi: ApiFromModules<{
   "domains/eval/productionTestCases": typeof domains_eval_productionTestCases;
   "domains/eval/runBatch": typeof domains_eval_runBatch;
   "domains/eval/runBatchNative": typeof domains_eval_runBatchNative;
+  "domains/evaluation/agentRunJudge": typeof domains_evaluation_agentRunJudge;
   "domains/evaluation/benchmarkHarness": typeof domains_evaluation_benchmarkHarness;
   "domains/evaluation/booleanEvaluator": typeof domains_evaluation_booleanEvaluator;
   "domains/evaluation/comprehensiveEval": typeof domains_evaluation_comprehensiveEval;
@@ -1858,6 +1879,7 @@ declare const fullApi: ApiFromModules<{
   "domains/knowledge/nodes": typeof domains_knowledge_nodes;
   "domains/knowledge/relationTypes": typeof domains_knowledge_relationTypes;
   "domains/knowledge/relations": typeof domains_knowledge_relations;
+  "domains/knowledge/relationshipGraph": typeof domains_knowledge_relationshipGraph;
   "domains/knowledge/sourceDiffs": typeof domains_knowledge_sourceDiffs;
   "domains/knowledge/sourceRegistry": typeof domains_knowledge_sourceRegistry;
   "domains/knowledge/tags": typeof domains_knowledge_tags;
@@ -1912,6 +1934,7 @@ declare const fullApi: ApiFromModules<{
   "domains/monitoring/industryUpdates": typeof domains_monitoring_industryUpdates;
   "domains/monitoring/industryUpdatesEnhanced": typeof domains_monitoring_industryUpdatesEnhanced;
   "domains/monitoring/integrationHelpers": typeof domains_monitoring_integrationHelpers;
+  "domains/monitoring/worldMonitor": typeof domains_monitoring_worldMonitor;
   "domains/narrative/actions/competingExplanations": typeof domains_narrative_actions_competingExplanations;
   "domains/narrative/actions/hypothesisLifecycle": typeof domains_narrative_actions_hypothesisLifecycle;
   "domains/narrative/adapters/briefAdapter": typeof domains_narrative_adapters_briefAdapter;
@@ -2038,6 +2061,7 @@ declare const fullApi: ApiFromModules<{
   "domains/operations/taskManager/cronWrapper": typeof domains_operations_taskManager_cronWrapper;
   "domains/operations/taskManager/index": typeof domains_operations_taskManager_index;
   "domains/operations/taskManager/mutations": typeof domains_operations_taskManager_mutations;
+  "domains/operations/taskManager/proofPack": typeof domains_operations_taskManager_proofPack;
   "domains/operations/taskManager/queries": typeof domains_operations_taskManager_queries;
   "domains/operations/tasks/dailyNotes": typeof domains_operations_tasks_dailyNotes;
   "domains/operations/tasks/eventTaskDocuments": typeof domains_operations_tasks_eventTaskDocuments;
@@ -2533,7 +2557,9 @@ declare const fullApi: ApiFromModules<{
   "workflows/dailyLinkedInPost": typeof workflows_dailyLinkedInPost;
   "workflows/dailyLinkedInPostMutations": typeof workflows_dailyLinkedInPostMutations;
   "workflows/dailyMorningBrief": typeof workflows_dailyMorningBrief;
+  "workflows/deepTrace": typeof workflows_deepTrace;
   "workflows/emailResearchOrchestrator": typeof workflows_emailResearchOrchestrator;
+  "workflows/endToEndQa": typeof workflows_endToEndQa;
   "workflows/enhancedMorningBrief": typeof workflows_enhancedMorningBrief;
   "workflows/enhancedWeeklySummary": typeof workflows_enhancedWeeklySummary;
   "workflows/founderPostGenerator": typeof workflows_founderPostGenerator;

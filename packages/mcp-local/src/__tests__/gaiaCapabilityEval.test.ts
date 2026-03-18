@@ -787,7 +787,7 @@ async function toolAugmentedAnswer(
       try {
         const mod = await import("@google/genai");
         const { GoogleGenAI } = mod as any;
-        let gemModel = process.env.NODEBENCH_GAIA_TOOLS_MODEL ?? "gemini-3-flash-preview";
+        let gemModel = process.env.NODEBENCH_GAIA_TOOLS_MODEL ?? "gemini-3.1-flash-lite-preview";
         if (gemModel.includes(":")) gemModel = gemModel.split(":").pop()!;
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -1046,7 +1046,7 @@ async function toolAugmentedAnswerNativeFC(
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY required");
 
-  let model = process.env.NODEBENCH_GAIA_TOOLS_MODEL ?? "gemini-3-flash-preview";
+  let model = process.env.NODEBENCH_GAIA_TOOLS_MODEL ?? "gemini-3.1-flash-lite-preview";
   if (model.includes(":")) model = model.split(":").pop()!;
 
   const toolIndex = buildToolIndex();
@@ -1274,7 +1274,7 @@ describe("Capability: GAIA accuracy (LLM-only vs LLM+tools)", () => {
       );
     }
 
-    const baselineModel = process.env.NODEBENCH_GAIA_BASELINE_MODEL ?? "gemini-3-flash-preview";
+    const baselineModel = process.env.NODEBENCH_GAIA_BASELINE_MODEL ?? "gemini-3.1-flash-lite-preview";
     const toolsModel = process.env.NODEBENCH_GAIA_TOOLS_MODEL ?? baselineModel;
     const baselineLlm = await createTextLlmClient({ model: baselineModel });
     const toolsLlm = await createTextLlmClient({ model: toolsModel });

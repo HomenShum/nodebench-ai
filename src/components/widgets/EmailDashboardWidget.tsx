@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useMotionConfig } from '@/lib/motion';
 import {
   Mail,
   Inbox,
@@ -18,6 +19,8 @@ interface EmailDashboardWidgetProps {
 }
 
 export function EmailDashboardWidget({ onNavigate }: EmailDashboardWidgetProps) {
+  const { instant, transition } = useMotionConfig();
+
   // Get email stats
   const stats = useQuery(api.domains.integrations.email.emailQueries.getEmailStats);
 
@@ -45,8 +48,9 @@ export function EmailDashboardWidget({ onNavigate }: EmailDashboardWidgetProps) 
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 20 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={transition(0.3)}
       className="p-6 bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-lg border border-slate-700 shadow-lg"
     >
       {/* Header */}

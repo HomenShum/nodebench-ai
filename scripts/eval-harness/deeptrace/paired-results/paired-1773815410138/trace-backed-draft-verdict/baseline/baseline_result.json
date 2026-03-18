@@ -1,0 +1,22 @@
+{
+  "observed_facts": [
+    "Investment memo verdict fact 1: Produce a draft verdict that is ready for human review with receipts and explicit evidence coverage.",
+    "Investment memo verdict fact 2: Produce a draft verdict that is ready for human review with receipts and explicit evidence coverage."
+  ],
+  "relationships": [
+    {
+      "source": "Investment memo verdict",
+      "target": "Investment memo verdict counterpart 1",
+      "relation": "causal_influence",
+      "evidenceRefs": [
+        "ev-1"
+      ]
+    }
+  ],
+  "hypothesis": "Investment memo verdict likely benefits from a coarse next action aligned to trace_backed_draft.",
+  "counter_hypothesis": "Investment memo verdict may instead reflect noise or missing evidence, so claims should remain bounded.",
+  "recommendation": "Prioritize the next review step for Investment memo verdict using the baseline benchmark contract.",
+  "limitations": [
+    "Investment memo verdict limitation 1: evidence remains bounded to the supplied benchmark fixture."
+  ]
+}

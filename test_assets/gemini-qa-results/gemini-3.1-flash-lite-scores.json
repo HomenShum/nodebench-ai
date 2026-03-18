@@ -1,0 +1,3029 @@
+[
+  {
+    "filename": "activity-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Needs telemetry' pill lacks clear visual distinction from the main content.",
+      "The 'Pending' status indicator is subtle and might be missed by users scanning quickly."
+    ]
+  },
+  {
+    "filename": "activity-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Text truncation on mobile ('Analyze the latest AI model benchmark...') is aggressive.",
+      "The filter buttons are slightly cramped on smaller viewports."
+    ]
+  },
+  {
+    "filename": "activity-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Dark mode contrast on the 'Needs telemetry' pill is slightly low, reducing readability.",
+      "Mobile navigation menu icon is well-placed but could be more prominent."
+    ]
+  },
+  {
+    "filename": "activity.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The dark mode background is very deep; ensure text contrast meets WCAG AA standards for all secondary labels.",
+      "The floating action button (FAB) is standard but could benefit from a subtle shadow to lift it from the dark background."
+    ]
+  },
+  {
+    "filename": "agent-marketplace-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' pill is slightly disconnected from the main content flow.",
+      "The breadcrumb navigation is redundant as it appears twice in the header area."
+    ]
+  },
+  {
+    "filename": "agent-marketplace-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Category filter buttons are slightly cramped on smaller mobile widths.",
+      "The floating action button (FAB) overlaps content at the bottom of the screen."
+    ]
+  },
+  {
+    "filename": "agent-marketplace-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Dark mode contrast on the category pills could be slightly improved for better readability.",
+      "FAB placement obscures the bottom-most card content."
+    ]
+  },
+  {
+    "filename": "agent-marketplace.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'All Categories' button active state color is a bit low-contrast against the dark background.",
+      "Redundant breadcrumb navigation in the header."
+    ]
+  },
+  {
+    "filename": "agents-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' pill is slightly disconnected from the main header flow.",
+      "The '0' counters in the empty state could benefit from a slightly higher contrast color to draw more attention."
+    ]
+  },
+  {
+    "filename": "agents-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The header navigation feels slightly cramped on smaller viewports.",
+      "The 'Global commands available' text is quite small for mobile readability.",
+      "The floating action button (FAB) placement is standard but could overlap content if the list grows."
+    ]
+  },
+  {
+    "filename": "agents-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 8,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Dark mode contrast on the secondary text (e.g., 'Live agent threads...') is slightly low, potentially affecting accessibility.",
+      "The mobile header layout is dense, making the 'DeepTrace' breadcrumb feel secondary to the page title."
+    ]
+  },
+  {
+    "filename": "agents.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The dark mode surface colors are well-executed, but the '0' counters in the empty state are very dim, which might be hard to read for some users.",
+      "The border contrast on the cards is very subtle, which is elegant but could be improved for better accessibility."
+    ]
+  },
+  {
+    "filename": "analytics-components-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' pill is slightly disconnected from the main content flow.",
+      "The contrast on the secondary text (e.g., 'from 8 sources') is slightly low for accessibility standards."
+    ]
+  },
+  {
+    "filename": "analytics-components-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The date picker pill is slightly cramped on smaller viewports.",
+      "Vertical spacing between the header and the first card is a bit generous, wasting screen real estate."
+    ]
+  },
+  {
+    "filename": "analytics-components-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Dark mode surface contrast is good, but the border colors on the cards could be slightly more distinct.",
+      "The floating action button (FAB) color is a bit vibrant compared to the muted dark theme palette."
+    ]
+  },
+  {
+    "filename": "analytics-components.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The progress bars in the 'Source Performance' section are very dark against the background, potentially causing readability issues for users with visual impairments.",
+      "The 'Global commands available' text is quite subtle and might be missed by users."
+    ]
+  },
+  {
+    "filename": "analytics-hitl-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' pill is slightly disconnected from the main content flow.",
+      "The breadcrumb navigation is redundant given the page title."
+    ]
+  },
+  {
+    "filename": "analytics-hitl-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Global commands available' pill takes up significant vertical space on mobile.",
+      "The dropdown menu alignment feels slightly cramped against the right edge."
+    ]
+  },
+  {
+    "filename": "analytics-hitl-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Dark mode contrast on the empty state card background is slightly low compared to the main background.",
+      "The floating action button (FAB) could benefit from a subtle shadow to improve depth perception."
+    ]
+  },
+  {
+    "filename": "analytics-hitl.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The empty state card background color is very close to the main background, reducing the visual 'lift' effect.",
+      "Text in the sidebar could have slightly higher contrast for better accessibility."
+    ]
+  },
+  {
+    "filename": "analytics-recommendations-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "Empty states (0%) could be more visually distinct from active data points.",
+      "The 'All Time' dropdown lacks a clear visual indicator of interactivity."
+    ]
+  },
+  {
+    "filename": "analytics-recommendations-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Vertical stacking of cards is clean but creates significant scrolling length.",
+      "Header elements feel slightly crowded on smaller viewports."
+    ]
+  },
+  {
+    "filename": "analytics-recommendations-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Dark mode contrast on secondary text could be slightly improved for accessibility.",
+      "Floating action button (FAB) placement is standard but obscures content at the bottom."
+    ]
+  },
+  {
+    "filename": "analytics-recommendations.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "Some secondary text labels in dark mode are slightly low-contrast.",
+      "The 'Global commands available' pill could benefit from a more distinct hover state."
+    ]
+  },
+  {
+    "filename": "assistant-panel.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 10,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Recent runs' empty state is clear, but the 'Start a task' button could be more prominent to drive action.",
+      "The right-hand sidebar is quite dense; consider increasing vertical rhythm between the 'Performance' and 'Queue Status' cards."
+    ]
+  },
+  {
+    "filename": "benchmarks-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 8,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The contrast on the 'Run Benchmark' button is slightly low against the light background.",
+      "The 'Global commands available' pill is a bit detached from the main content flow."
+    ]
+  },
+  {
+    "filename": "benchmarks-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Global commands available' pill takes up significant vertical space on mobile.",
+      "The 'Run' button is visually distinct but could benefit from a more prominent primary color to stand out from the secondary buttons."
+    ]
+  },
+  {
+    "filename": "benchmarks-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 10,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Run' button is slightly muted compared to the dark background; consider a higher-contrast primary color.",
+      "The text under 'Workbench' is quite small for mobile readability."
+    ]
+  },
+  {
+    "filename": "benchmarks.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' text is slightly disconnected from the main content area.",
+      "The contrast on the secondary text within the benchmark cards could be slightly improved for better accessibility."
+    ]
+  },
+  {
+    "filename": "calendar-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 8,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The calendar sidebar feels slightly cramped compared to the main grid.",
+      "The 'Nothing scheduled' and 'No upcoming items' text is very low contrast against the light background."
+    ]
+  },
+  {
+    "filename": "calendar-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The header area is quite tall, consuming significant vertical space on mobile.",
+      "The 'Global commands available' pill button feels out of place in the mobile flow."
+    ]
+  },
+  {
+    "filename": "calendar-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The header navigation is slightly cluttered for a mobile viewport.",
+      "The calendar grid columns are very narrow, which may make touch interaction difficult."
+    ]
+  },
+  {
+    "filename": "calendar.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 8
+    },
+    "overall": 8.75,
+    "issues": [
+      "The calendar grid is quite dense, which might impact readability on smaller screens.",
+      "The 'Nothing scheduled' text in the sidebar could benefit from slightly more contrast against the dark background."
+    ]
+  },
+  {
+    "filename": "command-palette.png",
+    "scores": {
+      "visual_hierarchy": 7,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 7,
+      "empty_state_quality": null,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 8,
+      "interaction_affordance": 7
+    },
+    "overall": 7.7,
+    "issues": [
+      "The overlay transparency makes the background content distracting, reducing legibility of the command list.",
+      "The 'Good morning' text is partially obscured by the command palette, creating a visual clash."
+    ]
+  },
+  {
+    "filename": "cost-dashboard-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": null,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9.1,
+    "issues": [
+      "The 'Usage & Costs' header is well-placed, but the empty state icon is quite large, potentially overwhelming the call-to-action text."
+    ]
+  },
+  {
+    "filename": "cost-dashboard-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 7,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": null,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Usage & Costs' title breaks into three lines, which is awkward for a primary header.",
+      "The time-range selector (24 Hours, 7 Days) is horizontally cramped, potentially causing overflow issues on smaller devices."
+    ]
+  },
+  {
+    "filename": "cost-dashboard-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.75,
+    "issues": [
+      "The 'Usage & Costs' heading is slightly misaligned with the icon.",
+      "The floating action button (FAB) is quite large for the mobile viewport."
+    ]
+  },
+  {
+    "filename": "cost-dashboard.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The empty state icon is quite small relative to the large amount of negative space.",
+      "The 'Global commands available' pill feels slightly disconnected from the main content area."
+    ]
+  },
+  {
+    "filename": "delegation-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 8,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Approve' and 'Deny' buttons in the pending approvals section have low contrast against the light background.",
+      "The tag colors (e.g., 'Pending', 'SIGNAL') are slightly muted, which may impact readability for some users."
+    ]
+  },
+  {
+    "filename": "delegation-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 8
+    },
+    "overall": 8.4,
+    "issues": [
+      "The card layout for 'Financial Analyst' is quite dense for a mobile screen.",
+      "The 'Approve' and 'Deny' buttons are very close to the edge of the screen, potentially causing accidental taps.",
+      "The text truncation in the header ('...b') is not ideal."
+    ]
+  },
+  {
+    "filename": "delegation-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.4,
+    "issues": [
+      "The 'Pending Approvals' section text is slightly cramped against the card edge.",
+      "The floating action button (FAB) overlaps slightly with the content area at the bottom."
+    ]
+  },
+  {
+    "filename": "delegation.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Needs Approval Log' header is somewhat disconnected from the content below it.",
+      "The contrast on the 'Pending' badge could be slightly higher for better accessibility."
+    ]
+  },
+  {
+    "filename": "document-recommendations-light.png",
+    "scores": {
+      "visual_hierarchy": 7,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 6,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 7
+    },
+    "overall": 6.7,
+    "issues": [
+      "The empty state is too sparse; it lacks a helpful illustration or call-to-action to guide the user.",
+      "The light mode implementation feels a bit sterile compared to the dark mode version."
+    ]
+  },
+  {
+    "filename": "document-recommendations-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 7,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 6,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 7
+    },
+    "overall": 6.6,
+    "issues": [
+      "The empty state box is visually dominant but lacks actionable content.",
+      "The top navigation bar feels slightly disconnected from the main content area."
+    ]
+  },
+  {
+    "filename": "document-recommendations-mobile.png",
+    "scores": {
+      "visual_hierarchy": 7,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 5,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 8,
+      "interaction_affordance": 7
+    },
+    "overall": 7.6,
+    "issues": [
+      "The main content area is completely empty with no guidance or helpful empty state illustration.",
+      "The 'Global commands available' pill feels slightly disconnected from the main content flow.",
+      "The floating action button (FAB) is standard but could benefit from a label or context if it's the primary action."
+    ]
+  },
+  {
+    "filename": "document-recommendations.png",
+    "scores": {
+      "visual_hierarchy": 7,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 5,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 7
+    },
+    "overall": 7.6,
+    "issues": [
+      "Large amount of wasted screen real estate in the main view.",
+      "The empty state lacks a call-to-action or instructional text to help the user get started.",
+      "The breadcrumb navigation is redundant given the sidebar structure."
+    ]
+  },
+  {
+    "filename": "documents-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Calendar' section at the bottom feels slightly cramped compared to the document cards.",
+      "The 'Current Time' dropdown is a bit visually heavy compared to the clean document cards above it."
+    ]
+  },
+  {
+    "filename": "documents-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 7,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 8
+    },
+    "overall": 8.3,
+    "issues": [
+      "The 'My Documents' heading is quite large for a mobile viewport, potentially pushing content too far down.",
+      "The filter pills (All, Calendar, etc.) might overflow on smaller devices; horizontal scrolling needs to be clearly indicated.",
+      "The text inside the document card is truncated abruptly."
+    ]
+  },
+  {
+    "filename": "documents-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "parse error"
+    ]
+  },
+  {
+    "filename": "documents.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "parse error"
+    ]
+  },
+  {
+    "filename": "dogfood-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "parse error"
+    ]
+  },
+  {
+    "filename": "dogfood-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "parse error"
+    ]
+  },
+  {
+    "filename": "dogfood-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.6,
+    "issues": [
+      "The 'Copy commands' button is slightly cramped within its container.",
+      "The hierarchy between the main title and the 'Recorded sessions' header could be more distinct."
+    ]
+  },
+  {
+    "filename": "dogfood.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 10,
+      "interaction_affordance": 9
+    },
+    "overall": 9.1,
+    "issues": [
+      "The 'Open' text links on the video cards are subtle and might be missed as primary actions.",
+      "The contrast of the '2 videos' text is slightly low against the dark background."
+    ]
+  },
+  {
+    "filename": "execution-trace-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 8,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 10,
+      "interaction_affordance": 9
+    },
+    "overall": 7.9,
+    "issues": [
+      "The light mode color palette feels a bit flat compared to the dark mode version.",
+      "The 'Run Source' and 'Run Summary' sections have very similar visual weight, making it hard to distinguish primary info."
+    ]
+  },
+  {
+    "filename": "execution-trace-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 7.4,
+    "issues": [
+      "The large title text creates a significant vertical scroll requirement on mobile.",
+      "The 'Seeded Example' badge is quite small and could be better integrated into the header flow."
+    ]
+  },
+  {
+    "filename": "execution-trace-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Text density is quite high for a mobile viewport, potentially impacting readability.",
+      "The floating action button (FAB) feels slightly disconnected from the content flow."
+    ]
+  },
+  {
+    "filename": "execution-trace.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' text in the top right is quite small and easy to miss.",
+      "The contrast between the dark background and the secondary text in the cards could be slightly improved for accessibility."
+    ]
+  },
+  {
+    "filename": "footnotes-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The search bar placeholder text is slightly low contrast against the light background.",
+      "The 'Go to Research Hub' button is prominent, which is good, but the overall page feels a bit sparse."
+    ]
+  },
+  {
+    "filename": "footnotes-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Back to Brief' and 'Sources & References' section feels a bit cramped on mobile.",
+      "The search input field takes up a significant amount of vertical space relative to the empty state content."
+    ]
+  },
+  {
+    "filename": "footnotes-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.75,
+    "issues": [
+      "The 'Back to Brief' text is slightly misaligned with the icon.",
+      "The search bar placeholder text is truncated on smaller screens."
+    ]
+  },
+  {
+    "filename": "footnotes.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.75,
+    "issues": [
+      "The empty state icon feels a bit small relative to the large amount of negative space.",
+      "The 'Go to Research Hub' button could have more visual weight to act as a primary CTA."
+    ]
+  },
+  {
+    "filename": "for-you-feed-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 8,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9.1,
+    "issues": [
+      "The contrast on the 'Preview' text is slightly low against the light background.",
+      "The 'Viewing' pill in the sidebar is subtle, potentially confusing for users to identify as a status indicator."
+    ]
+  },
+  {
+    "filename": "for-you-feed-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 8
+    },
+    "overall": 8.5,
+    "issues": [
+      "The card content is getting cut off at the bottom, indicating a potential overflow issue.",
+      "The 'Preview' text is very close to the edge of the screen on mobile."
+    ]
+  },
+  {
+    "filename": "for-you-feed-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The '2-3...' text truncation is abrupt and could be handled with a more elegant fade-out.",
+      "The floating action button (FAB) is quite large relative to the screen width."
+    ]
+  },
+  {
+    "filename": "for-you-feed.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The empty placeholder icon in the top card feels generic compared to the high-fidelity content.",
+      "The 'Hugging Face' cards have slightly inconsistent internal alignment."
+    ]
+  },
+  {
+    "filename": "funding-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The contrast on the 'Confidence 100%' text is slightly low against the light background.",
+      "The filter dropdowns feel a bit cramped horizontally when viewed on wider screens."
+    ]
+  },
+  {
+    "filename": "funding-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 7,
+      "color_harmony": 8,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Save to Documents' and 'Download PDF' buttons are stacked awkwardly, creating a large vertical gap.",
+      "The header text 'Startup Funding Brief' is very large for a mobile viewport, causing potential wrapping issues."
+    ]
+  },
+  {
+    "filename": "funding-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 0,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Save to Documents' and 'Download PDF' buttons are slightly cramped on smaller mobile widths.",
+      "The filter dropdowns take up significant vertical space, pushing content below the fold.",
+      "No empty state provided for the data cards."
+    ]
+  },
+  {
+    "filename": "funding.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 0,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 10,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Show details' text is very subtle and might be missed by users as an interactive element.",
+      "No empty state provided for the data cards."
+    ]
+  },
+  {
+    "filename": "github-explorer-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 8,
+      "empty_state_quality": 0,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 10,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "The light mode contrast on the tags is slightly low, making them blend into the background.",
+      "The 'Score' badge color is very similar to the background, reducing its impact.",
+      "No empty state provided for the repository list."
+    ]
+  },
+  {
+    "filename": "github-explorer-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 0,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 8,
+      "interaction_affordance": 8
+    },
+    "overall": 7,
+    "issues": [
+      "The tag cloud wraps awkwardly on mobile, creating uneven spacing.",
+      "The repository title is truncated too aggressively, losing context.",
+      "The 'Score' badge is misaligned with the title on mobile view."
+    ]
+  },
+  {
+    "filename": "github-explorer-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "parse error"
+    ]
+  },
+  {
+    "filename": "github-explorer.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "parse error"
+    ]
+  },
+  {
+    "filename": "home-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "parse error"
+    ]
+  },
+  {
+    "filename": "home-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "parse error"
+    ]
+  },
+  {
+    "filename": "home-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The floating action button (FAB) at the bottom right might overlap with content if the list grows.",
+      "The 'Try:' prompt box is visually heavy compared to the secondary action cards."
+    ]
+  },
+  {
+    "filename": "home.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The search bar 'Ctrl+K' hint is slightly misaligned vertically.",
+      "The bottom action buttons (Review agent receipts, etc.) are quite small compared to the main cards."
+    ]
+  },
+  {
+    "filename": "industry-updates-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 8,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The light mode contrast on the filter chips is slightly low.",
+      "The empty state icon is a bit generic.",
+      "The 'Viewing' badge in the sidebar is a bit disconnected from the main content."
+    ]
+  },
+  {
+    "filename": "industry-updates-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 8,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Filter chips are wrapping in a way that creates uneven whitespace.",
+      "The breadcrumb navigation is slightly cramped on mobile.",
+      "The FAB is very close to the bottom edge, potentially conflicting with mobile OS gestures."
+    ]
+  },
+  {
+    "filename": "industry-updates-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.75,
+    "issues": [
+      "The filter chips are slightly cramped on smaller viewports.",
+      "The floating action button (FAB) at the bottom right could potentially overlap content if the list grows."
+    ]
+  },
+  {
+    "filename": "industry-updates.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 10,
+      "interaction_affordance": 8
+    },
+    "overall": 9.1,
+    "issues": [
+      "The empty state icon is a bit small relative to the surrounding whitespace.",
+      "The filter bar lacks a clear active state indicator for the 'All' chip."
+    ]
+  },
+  {
+    "filename": "interaction-agent-input.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8.6,
+    "issues": [
+      "The input field border is quite subtle, which might affect accessibility for some users.",
+      "The 'Topic canvas' section has a lot of text density that could be broken up better."
+    ]
+  },
+  {
+    "filename": "interaction-agent-query-typed.png",
+    "scores": {
+      "visual_hierarchy": 7,
+      "spacing_consistency": 7,
+      "typography_scale": 7,
+      "color_harmony": 8,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 7.6,
+    "issues": [
+      "The layout is becoming very cluttered with the addition of the right-hand chat panel.",
+      "The text in the right panel is quite small, potentially impacting readability.",
+      "The contrast between the background and the secondary cards in the chat panel is low."
+    ]
+  },
+  {
+    "filename": "interaction-agent-response-stream.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 8
+    },
+    "overall": 8.6,
+    "issues": [
+      "The 'Active Topics' counter text is slightly clipped/overlapping with the container border.",
+      "The search bar placeholder text 'search, or jump' is slightly misaligned vertically within the input field.",
+      "High density of information in the right panel may overwhelm new users."
+    ]
+  },
+  {
+    "filename": "interaction-agent-thread-switch.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 8
+    },
+    "overall": 8.8,
+    "issues": [
+      "The 'AI Ready' badges are visually distinct but could benefit from a subtle icon to improve accessibility for colorblind users.",
+      "The 'Calendar' section at the bottom feels disconnected from the main workspace grid."
+    ]
+  },
+  {
+    "filename": "interaction-calendar-click.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9.1,
+    "issues": [
+      "The 'Focus Mode' badge in the calendar popover is slightly small compared to other UI elements.",
+      "The contrast on the 'Time Block Suggestions' button is slightly lower than the primary action buttons."
+    ]
+  },
+  {
+    "filename": "interaction-document-hover.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 8
+    },
+    "overall": 8.6,
+    "issues": [
+      "The hover state on the document cards is a bit aggressive, making the text inside slightly harder to read.",
+      "The 'AI Pending' status indicator lacks a clear visual distinction from 'AI Ready' beyond color."
+    ]
+  },
+  {
+    "filename": "interaction-dogfood-frame-selected.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 8
+    },
+    "overall": 8.6,
+    "issues": [
+      "High density of information in the center panel may overwhelm users.",
+      "The 'Key frames' section has a slightly cluttered layout compared to the rest of the UI."
+    ]
+  },
+  {
+    "filename": "interaction-github-hover.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Ranked by popularity' text is quite small and low contrast, potentially affecting readability."
+    ]
+  },
+  {
+    "filename": "interaction-search-suggestions.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9.1,
+    "issues": [
+      "The 'Enable Hey NodeBench' button style is slightly inconsistent with the primary action buttons."
+    ]
+  },
+  {
+    "filename": "interaction-sidebar-hover.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9.1,
+    "issues": [
+      "The 'Try:' prompt text is quite long and could benefit from better line-height for readability."
+    ]
+  },
+  {
+    "filename": "interaction-swarm-lanes.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 8
+    },
+    "overall": 8.6,
+    "issues": [
+      "The 'Active Topics' counter area looks slightly disconnected from the main content flow.",
+      "The right-hand chat panel feels a bit cramped compared to the spacious left-hand navigation.",
+      "The 'Pro tip' text is quite small and might be difficult to read for some users."
+    ]
+  },
+  {
+    "filename": "investigation-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Integrity != Truth' badge has low contrast against the light background.",
+      "The floating action button (FAB) is standard but could benefit from a shadow to better distinguish it from the content cards."
+    ]
+  },
+  {
+    "filename": "investigation-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 7,
+      "color_harmony": 8,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 6.9,
+    "issues": [
+      "The header text 'Investigate what the agent did...' is truncated too aggressively.",
+      "The 'Global commands' button takes up significant vertical space on a mobile viewport.",
+      "The FAB overlaps the content cards, which can obscure text."
+    ]
+  },
+  {
+    "filename": "investigation-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 7,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The header text truncation is problematic for readability.",
+      "The FAB placement is slightly intrusive on smaller screens, potentially blocking the last line of text in the cards.",
+      "The 'Integrity != Truth' badge color is slightly muted in dark mode, affecting legibility."
+    ]
+  },
+  {
+    "filename": "investigation.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 10,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' pill button lacks a clear hover state indicator.",
+      "The contrast on the '78% (84% - 6% adversarial)' text is slightly low for accessibility standards."
+    ]
+  },
+  {
+    "filename": "linkedin-posts-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Show more' link is subtle and might be missed by users.",
+      "The filter bar has many items that could benefit from a horizontal scroll indicator if they overflow."
+    ]
+  },
+  {
+    "filename": "linkedin-posts-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Global commands available' pill is awkwardly placed and takes up significant vertical space on mobile.",
+      "The text truncation in the post preview is abrupt.",
+      "The filter bar needs a better mobile-responsive solution (e.g., a dropdown or scrollable container)."
+    ]
+  },
+  {
+    "filename": "linkedin-posts-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The header area is cluttered on mobile view.",
+      "The filter bar is cut off, indicating a lack of proper mobile horizontal scrolling or wrapping.",
+      "The floating action button (FAB) placement is standard but could overlap with content if not handled carefully."
+    ]
+  },
+  {
+    "filename": "linkedin-posts.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 10,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Show more' link is slightly subtle and could be mistaken for a static label.",
+      "The contrast on the secondary metadata text (e.g., '7 min read') is on the lower end of accessibility standards."
+    ]
+  },
+  {
+    "filename": "mcp-ledger-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Enable Enforcement' button is very prominent compared to the rest of the form, potentially distracting from the primary task of filtering.",
+      "The empty state for 'Usage By Risk Tier' is clear but lacks a visual icon to break up the text-heavy layout."
+    ]
+  },
+  {
+    "filename": "mcp-ledger-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Global commands available' pill feels slightly cramped on mobile width.",
+      "The filter form fields are stacked, which is good, but the vertical rhythm between the 'Note' text and the bottom of the container is tight."
+    ]
+  },
+  {
+    "filename": "mcp-ledger-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 10,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Global commands available' pill has low contrast against the dark background.",
+      "The filter container border is quite subtle, which might make it blend too much into the background on lower-brightness mobile screens."
+    ]
+  },
+  {
+    "filename": "mcp-ledger.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 7
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Enable Enforcement' button lacks a clear visual indicator of its current state (on/off).",
+      "The 'Recent Tool Calls' section is quite sparse; consider adding a more prominent call-to-action if empty.",
+      "The filter bar is dense; ensure touch targets are sufficient for tablet users."
+    ]
+  },
+  {
+    "filename": "pr-suggestions-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' pill is slightly disconnected from the main content flow.",
+      "The empty state illustration is clean but could benefit from a slightly higher contrast icon."
+    ]
+  },
+  {
+    "filename": "pr-suggestions-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Global commands available' pill feels cramped on mobile width.",
+      "The button group (Open Industry News / Refresh) might be better stacked on very narrow viewports to prevent text wrapping."
+    ]
+  },
+  {
+    "filename": "pr-suggestions-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The header area is quite tall, consuming significant vertical space on mobile.",
+      "The 'Global commands available' text is small and may be difficult to read on smaller devices.",
+      "The floating action button (FAB) overlaps slightly with the bottom content area."
+    ]
+  },
+  {
+    "filename": "pr-suggestions.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 10,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9.4,
+    "issues": [
+      "The 'Global commands available' text is slightly low contrast against the dark background.",
+      "The floating action button (FAB) is quite large relative to the empty state content."
+    ]
+  },
+  {
+    "filename": "product-direction-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 8,
+      "empty_state_quality": 0,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 7.6,
+    "issues": [
+      "The 'Truth Boundary' box has a very subtle border that might be hard to distinguish on some monitors.",
+      "The tab navigation (Executive Answer, Evidence, etc.) lacks a clear active state indicator.",
+      "The 'Global commands available' pill button feels slightly disconnected from the main content flow."
+    ]
+  },
+  {
+    "filename": "product-direction-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 0,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 7.4,
+    "issues": [
+      "The header area is crowded; the breadcrumbs and title overlap visually.",
+      "The 'Global commands available' button takes up significant vertical space on a mobile viewport.",
+      "The FAB is positioned very close to the edge, potentially interfering with system gestures."
+    ]
+  },
+  {
+    "filename": "product-direction-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 0,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 7.5,
+    "issues": [
+      "The header text 'Product Direction' is truncated with an ellipsis, which is suboptimal for a primary title.",
+      "The FAB placement is slightly intrusive over the content area.",
+      "The contrast of the 'Global commands available' text is borderline for accessibility."
+    ]
+  },
+  {
+    "filename": "product-direction.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 10,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' text is quite small and low contrast, potentially hard to read.",
+      "The floating action button (FAB) at the bottom right is slightly obscured by the content container's shadow/edge."
+    ]
+  },
+  {
+    "filename": "public-docs-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 8,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' text is very subtle and might be missed by users.",
+      "The document card has a lot of whitespace; consider if the card size is appropriate for the amount of content inside."
+    ]
+  },
+  {
+    "filename": "public-docs-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 8,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Global commands available' pill button feels slightly out of place in the mobile header flow.",
+      "The breadcrumb navigation takes up significant vertical space on a small screen."
+    ]
+  },
+  {
+    "filename": "public-docs-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 10,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The contrast on the 'Global commands available' text is slightly low for dark mode.",
+      "The document card border is very subtle, which might make it blend too much into the background on some mobile screens."
+    ]
+  },
+  {
+    "filename": "public-docs.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.75,
+    "issues": [
+      "The 'Public Documents' header feels slightly disconnected from the card below it.",
+      "The card content is sparse, making the large container feel slightly underutilized."
+    ]
+  },
+  {
+    "filename": "receipts-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 8,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 7.75,
+    "issues": [
+      "The light mode color palette is functional but lacks the depth and polish of the dark mode version.",
+      "The 'Global commands available' pill is slightly redundant given the search bar prominence."
+    ]
+  },
+  {
+    "filename": "receipts-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 7.125,
+    "issues": [
+      "The filter pill row is cramped on mobile, potentially causing overflow issues.",
+      "The floating action button (FAB) placement is standard but could overlap content if the list grows."
+    ]
+  },
+  {
+    "filename": "receipts-mobile.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 10,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9.25,
+    "issues": [
+      "The filter row is slightly dense for mobile touch targets.",
+      "The 'Global commands available' text is truncated on smaller screens, which is expected but could be handled more gracefully."
+    ]
+  },
+  {
+    "filename": "receipts.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.8,
+    "issues": [
+      "The 'Approve' and 'Deny' buttons lack distinct visual weight differences, which could lead to accidental clicks.",
+      "The contrast on the secondary text (e.g., 'Action held for human approval...') is slightly low for accessibility standards."
+    ]
+  },
+  {
+    "filename": "research-briefing-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 8,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 7.3,
+    "issues": [
+      "The chart area on the right feels slightly disconnected from the main content flow.",
+      "The 'Pulse' section at the bottom right is cut off, indicating potential overflow issues on smaller desktop resolutions."
+    ]
+  },
+  {
+    "filename": "research-briefing-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 7,
+    "issues": [
+      "The 'Global commands available' pill takes up significant vertical space on mobile.",
+      "The timeline slider is quite dense and may be difficult to interact with precisely on touch devices."
+    ]
+  },
+  {
+    "filename": "research-briefing-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.4,
+    "issues": [
+      "The floating action button (FAB) overlaps with content at the bottom, potentially obscuring data.",
+      "The navigation header is quite crowded with the breadcrumbs and title, reducing readability."
+    ]
+  },
+  {
+    "filename": "research-briefing.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 10,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Pulse' chart on the right is slightly crowded.",
+      "The contrast on the secondary text labels could be slightly improved for accessibility."
+    ]
+  },
+  {
+    "filename": "research-changelog-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Light mode implementation is clean but lacks the depth of the dark mode version.",
+      "Some borders in the 'Recent Documents' section are very faint."
+    ]
+  },
+  {
+    "filename": "research-changelog-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The header area is quite tall, consuming significant vertical space on mobile.",
+      "The 'Global commands' button feels slightly disconnected from the main content flow."
+    ]
+  },
+  {
+    "filename": "research-changelog-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 10,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The timeline slider is quite small and might be difficult to interact with on touch devices.",
+      "The 'Good morning' card has a very bright icon that creates a slight visual imbalance against the dark background."
+    ]
+  },
+  {
+    "filename": "research-changelog.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' button lacks a clear visual indicator that it is interactive.",
+      "The contrast on the secondary text (e.g., 'Updated today') is slightly low for optimal accessibility."
+    ]
+  },
+  {
+    "filename": "research-deals-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 8,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Light mode implementation feels slightly flat compared to the depth of the dark mode version.",
+      "Some borders and separators are too subtle, reducing clarity in the light theme."
+    ]
+  },
+  {
+    "filename": "research-deals-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The tab bar icons are slightly cramped on smaller mobile widths.",
+      "The 'Global commands available' button feels out of place in the mobile header flow."
+    ]
+  },
+  {
+    "filename": "research-deals-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The timeline slider is difficult to manipulate precisely on touch devices.",
+      "The 'Good morning' card takes up significant vertical space, pushing content below the fold."
+    ]
+  },
+  {
+    "filename": "research-deals.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.75,
+    "issues": [
+      "The contrast on the secondary text (e.g., 'Updated today') is slightly low for accessibility.",
+      "The 'Pulse' chart on the right feels slightly cramped compared to the main content area."
+    ]
+  },
+  {
+    "filename": "research-hub-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 8,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 7.75,
+    "issues": [
+      "The light mode background is very bright, potentially causing eye strain.",
+      "The 'Evidence-Grounded Investigation Engine' pill has a very subtle border that might be hard to see on some displays."
+    ]
+  },
+  {
+    "filename": "research-hub-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 7.25,
+    "issues": [
+      "The 'Voice and command deck below' pill feels redundant in a mobile view.",
+      "The floating action button (FAB) is positioned very close to the edge, which may interfere with system gestures."
+    ]
+  },
+  {
+    "filename": "research-hub-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8.6,
+    "issues": [
+      "The text inside the pill buttons is quite small for mobile readability.",
+      "The top navigation bar is slightly cluttered with the 'DeepTrace' title and icons."
+    ]
+  },
+  {
+    "filename": "research-hub.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 10,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Capital feed' call-to-action box feels slightly disconnected from the card structure.",
+      "The bottom-right floating action button (FAB) could benefit from a subtle shadow to improve depth perception against the dark background."
+    ]
+  },
+  {
+    "filename": "research-overview-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 8,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Light mode implementation lacks the high-contrast polish of the dark mode version.",
+      "Some secondary text elements feel slightly washed out against the light gray background."
+    ]
+  },
+  {
+    "filename": "research-overview-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Truncated text in the header ('...navigati...') is suboptimal for mobile UX.",
+      "The 'Voice and command deck below' pill button feels redundant on mobile where vertical space is at a premium."
+    ]
+  },
+  {
+    "filename": "research-overview-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 10,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Header text truncation is present again.",
+      "The card content is very dense for a mobile viewport; consider collapsing some secondary information."
+    ]
+  },
+  {
+    "filename": "research-overview.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 10,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The floating action button (FAB) at the bottom right is slightly obscured by the card edge.",
+      "Some text contrast in the 'Evidence-Linked' footer section could be improved for accessibility."
+    ]
+  },
+  {
+    "filename": "research-signals-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 8,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Light mode color palette feels slightly washed out compared to the high-contrast dark mode.",
+      "The 'Recent Documents' section adds vertical clutter that disrupts the main content flow."
+    ]
+  },
+  {
+    "filename": "research-signals-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 7,
+      "color_harmony": 8,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 8,
+      "interaction_affordance": 7
+    },
+    "overall": 7,
+    "issues": [
+      "Text truncation on the 'Voice and command deck' button is awkward.",
+      "The FAB is positioned very close to the screen edge, potentially interfering with system gestures."
+    ]
+  },
+  {
+    "filename": "research-signals-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 7,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 7
+    },
+    "overall": 8,
+    "issues": [
+      "Header text 'Use the command deck...' is truncated on mobile.",
+      "The card container takes up almost the entire viewport, leaving little room for breathing space."
+    ]
+  },
+  {
+    "filename": "research-signals.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 10,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The 'No funding activity loaded yet' text is quite small and low contrast.",
+      "The floating action button (FAB) at the bottom right could benefit from a subtle shadow to increase perceived depth."
+    ]
+  },
+  {
+    "filename": "roadmap-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Roadmap Hub' title has excessive line height/spacing between the two words.",
+      "The 'Activity Heatmap' section feels slightly disconnected from the grid above it.",
+      "The search bar 'Ctrl+K' hint is a bit faint for accessibility."
+    ]
+  },
+  {
+    "filename": "roadmap-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 7,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Roadmap Hub' title is very large for a mobile viewport, causing awkward wrapping.",
+      "The 'Roadmap Navigator' pill buttons are too crowded for touch targets.",
+      "The breadcrumb navigation takes up significant vertical space."
+    ]
+  },
+  {
+    "filename": "roadmap-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 7,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Roadmap Hub' title wrapping is suboptimal for mobile screens.",
+      "The 'Roadmap Navigator' pill buttons are too dense, risking accidental clicks.",
+      "The contrast on the 'Back to top' button is slightly low against the dark background."
+    ]
+  },
+  {
+    "filename": "roadmap.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.75,
+    "issues": [
+      "The '0' values in the cards are visually prominent but lack context or links to drill down.",
+      "The 'Activity Heatmap' section is very sparse, making the empty state feel slightly disconnected from the rest of the dashboard."
+    ]
+  },
+  {
+    "filename": "settings-account.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.75,
+    "issues": [
+      "The 'Delete Account' button is visually distinct but could benefit from a more prominent warning state before interaction.",
+      "The modal header 'Settings Hub' is slightly small compared to the content density."
+    ]
+  },
+  {
+    "filename": "settings-billing.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8.87,
+    "issues": [
+      "The 'Upgrade for $1' button is well-placed but the pricing model is unusual for a SaaS product, which might confuse users regarding value.",
+      "The API key input fields lack a clear 'copy' icon, which is standard for developer-focused tools."
+    ]
+  },
+  {
+    "filename": "settings-integrations.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Not Connected' status labels are clear, but could benefit from a subtle color indicator (e.g., amber or grey) to differentiate from active states.",
+      "The checkbox alignment for 'Auto-sync sources' is slightly tight against the text labels."
+    ]
+  },
+  {
+    "filename": "settings-preferences.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 0,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Reset to defaults' text is quite small and lacks a clear visual indicator of its clickability compared to the toggle switches.",
+      "The modal background contrast against the main app is good, but the sidebar within the modal feels slightly cramped."
+    ]
+  },
+  {
+    "filename": "settings-profile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 0,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Layout Mode' section introduces a new card-like container that feels slightly disconnected from the 'Theme & Appearance' section above it.",
+      "The toggle switch for 'Reduce Motion' is visually consistent but could benefit from a more distinct active state color."
+    ]
+  },
+  {
+    "filename": "settings-usage.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Upgrade to Supporter' button is high-contrast, which is good for conversion, but it slightly dominates the visual hierarchy over the actual usage data.",
+      "The 'Save' buttons for API keys are small and might be difficult to hit on smaller touch-enabled devices."
+    ]
+  },
+  {
+    "filename": "showcase-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 0,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "The light mode implementation is clean, but the contrast on the secondary text (e.g., 'Stay oriented while moving...') is slightly low for optimal accessibility.",
+      "The 'Phase 1' and 'Phase 2' headers are clear, but the content density within the citation cards could be improved with slightly more vertical padding."
+    ]
+  },
+  {
+    "filename": "showcase-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.5,
+    "issues": [
+      "The floating action button (FAB) feels slightly disconnected from the content flow.",
+      "Breadcrumb navigation is redundant given the page title is already prominent."
+    ]
+  },
+  {
+    "filename": "showcase-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.5,
+    "issues": [
+      "Dark mode contrast on secondary text elements could be slightly improved for better readability.",
+      "The FAB overlaps slightly with the bottom content area."
+    ]
+  },
+  {
+    "filename": "showcase.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The top navigation bar is quite busy with multiple action buttons.",
+      "The 'Recent Documents' section in the sidebar could benefit from more distinct visual separation."
+    ]
+  },
+  {
+    "filename": "signals-light.png",
+    "scores": {
+      "visual_hierarchy": 7,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The main content area is text-heavy, making it difficult to scan quickly.",
+      "The 'Numbers that matter' section lacks visual distinction from the surrounding text blocks."
+    ]
+  },
+  {
+    "filename": "signals-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 0,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 7,
+    "issues": [
+      "Text density is quite high for a mobile view, making it difficult to scan.",
+      "The 'Brief' tag and timestamp are slightly misaligned vertically.",
+      "The floating action button (FAB) is standard but could benefit from a shadow to better distinguish it from the background."
+    ]
+  },
+  {
+    "filename": "signals-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 0,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Dark mode contrast on secondary text (grey on dark grey) is slightly low for accessibility.",
+      "The content area feels cramped on smaller screens; consider increasing line height for better readability.",
+      "The date navigation arrows are subtle, which might hinder discoverability for some users."
+    ]
+  },
+  {
+    "filename": "signals.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 0,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 10,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' pill is slightly detached from the main content flow.",
+      "The search bar placeholder text is a bit generic; could be more descriptive.",
+      "The list of links (e.g., 'r/technology 42') is quite dense and could benefit from slightly more vertical spacing."
+    ]
+  },
+  {
+    "filename": "spreadsheets-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 0,
+      "responsive_layout": 10,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Good morning' header is well-centered, but the surrounding cards could use a slightly more distinct border or shadow to separate them from the background.",
+      "The 'Try:' prompt box is very wide; on ultra-wide monitors, this might lead to excessive line lengths.",
+      "The bottom action buttons are clear, but the icon-to-text ratio is slightly inconsistent across the different button types."
+    ]
+  },
+  {
+    "filename": "spreadsheets-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.75,
+    "issues": [
+      "The floating action button (FAB) at the bottom right might overlap with content if the list grows.",
+      "The 'Try:' prompt box is quite large, taking up significant vertical space on mobile."
+    ]
+  },
+  {
+    "filename": "spreadsheets-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.75,
+    "issues": [
+      "Dark mode contrast on the secondary text within the cards is slightly low, potentially impacting readability for some users.",
+      "The FAB placement is standard but could be better integrated into the bottom navigation if one existed."
+    ]
+  },
+  {
+    "filename": "spreadsheets.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9.1,
+    "issues": [
+      "The 'Open hub' notification badge (9+) is quite prominent and might distract from the primary search bar.",
+      "The footer buttons (Review agent receipts, etc.) are slightly disconnected from the main content block."
+    ]
+  },
+  {
+    "filename": "timeline-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 9,
+      "color_harmony": 8,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.4,
+    "issues": [
+      "The dashboard is heavily populated with '0' values, which feels cluttered; consider hiding empty modules.",
+      "The 'Activity Heatmap' legend is very subtle and might be difficult for users with visual impairments to interpret.",
+      "The 'Back to top' button is floating in a way that feels slightly detached from the content section."
+    ]
+  },
+  {
+    "filename": "timeline-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.5,
+    "issues": [
+      "The 'Roadmap Navigator' button grid is quite dense for mobile touch targets.",
+      "The 'Back to top' button might be redundant on a short mobile view.",
+      "The floating action button (FAB) placement is standard but could overlap content if the list grows."
+    ]
+  },
+  {
+    "filename": "timeline-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8.5,
+    "issues": [
+      "Dark mode contrast on the 'Roadmap Navigator' buttons is slightly low, making labels harder to read.",
+      "The 'Back to top' button lacks a clear border or distinct background, making it blend into the card surface.",
+      "The FAB color is very similar to the primary active state, which might cause confusion."
+    ]
+  },
+  {
+    "filename": "timeline.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 10,
+      "interaction_affordance": 9
+    },
+    "overall": 9.1,
+    "issues": [
+      "The 'Activity Heatmap' legend is very subtle and might be missed by users.",
+      "The 'Recent Documents' section in the sidebar is quite narrow, potentially truncating long file names.",
+      "The search bar placeholder text is slightly low contrast against the dark background."
+    ]
+  }
+]

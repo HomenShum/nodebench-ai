@@ -38,7 +38,7 @@ DISALLOWED_PATTERNS=(
   "claude-sonnet-4-5-20250929"
   "claude-opus-4-5-20251101"
   "claude-haiku-4-5-20251001"
-  "gemini-2.5-flash-lite"
+  "gemini-3.1-flash-lite-preview-lite"
   "gemini-1.5"
   "gemini-1.0"
 )
@@ -93,7 +93,7 @@ if [ $FOUND_ISSUES -gt 0 ]; then
   echo "  - claude-sonnet-4.5"
   echo "  - claude-haiku-4.5"
   echo "  - gemini-3-pro"
-  echo "  - gemini-2.5-flash"
+  echo "  - gemini-3.1-flash-lite-preview"
   echo "  - gemini-2.5-pro"
   echo ""
   echo "Use getLanguageModelSafe() from convex/domains/agents/mcp_tools/models"

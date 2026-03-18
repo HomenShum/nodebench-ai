@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useMotionConfig } from '@/lib/motion';
 import { Sun, Calendar, CheckSquare, ArrowRight } from 'lucide-react';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
@@ -10,6 +11,7 @@ interface MorningDigestWidgetProps {
 }
 
 export function MorningDigestWidget({ userName, onNavigate }: MorningDigestWidgetProps) {
+  const { instant, transition } = useMotionConfig();
   // Get today's tasks
   const tasks = useQuery(api.domains.tasks.tasks.listTasks, {
     status: 'pending',
@@ -26,8 +28,9 @@ export function MorningDigestWidget({ userName, onNavigate }: MorningDigestWidge
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={instant ? { opacity: 0 } : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={transition({})}
       className="p-6 bg-surface-secondary rounded-lg border border-edge"
     >
       {/* Header */}

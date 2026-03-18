@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { useMotionConfig } from '@/lib/motion';
 import ChartTooltip, { type TooltipEvidence } from "./ChartTooltip";
 import type { Annotation, ChartSeries, ChartPoint, TrendLineConfig, TooltipPayload } from "@/features/research/types";
 
@@ -40,6 +41,7 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
   onEvidenceClick,
   evidenceMap,
 }) => {
+  const { instant, transition } = useMotionConfig();
   const [hoveredData, setHoveredData] = useState<HoveredPoint | null>(null);
 
   // useMemo must be called unconditionally (before any early returns)
@@ -147,9 +149,9 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
             strokeWidth={isGhost ? 1.5 : 0}
             strokeDasharray={dash}
             className={className}
-            initial={{ opacity: 0, pathLength: 0, d: fullPath }}
+            initial={{ opacity: 0, pathLength: instant ? 1 : 0, d: fullPath }}
             animate={{ opacity: isGhost ? 0.25 : 0, pathLength: 1, d: fullPath }}
-            transition={{ duration: 1, ease: "easeInOut" }}
+            transition={transition({ duration: 1, ease: "easeInOut" })}
           />
         )}
 
@@ -164,9 +166,9 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
             strokeLinejoin="round"
             strokeDasharray={dash}
             className={className}
-            initial={{ opacity: 0, pathLength: 0, d: visiblePath }}
+            initial={{ opacity: 0, pathLength: instant ? 1 : 0, d: visiblePath }}
             animate={{ opacity: 1, pathLength: 1, d: visiblePath }}
-            transition={{ duration: 1.2, ease: "easeInOut" }}
+            transition={transition({ duration: 1.2, ease: "easeInOut" })}
           />
         )}
 
@@ -187,9 +189,9 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
                 r={isFocused ? 4 : 3}
                 className={`fill-white stroke-2 ${className}`}
                 style={{ opacity: dotOpacity }}
-                initial={{ scale: 0 }}
+                initial={{ scale: instant ? 1 : 0 }}
                 animate={{ scale: 1 }}
-                transition={{ delay: i * 0.05 }}
+                transition={transition({ delay: i * 0.05 })}
               />
 
               {isFocused && (
@@ -200,9 +202,9 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
                   className={className ? className.replace("text-", "fill-") : ""}
                   style={{ opacity: dotOpacity }}
                   fill={fill}
-                  initial={{ opacity: 0.4, scale: 1 }}
-                  animate={{ opacity: 0, scale: 2 }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
+                  initial={{ opacity: instant ? 0 : 0.4, scale: 1 }}
+                  animate={{ opacity: 0, scale: instant ? 1 : 2 }}
+                  transition={transition({ repeat: Infinity, duration: 1.5 })}
                 />
               )}
 
@@ -340,9 +342,9 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
           return (
             <motion.g
               key={note.id}
-              initial={{ opacity: 0 }}
+              initial={{ opacity: instant ? 1 : 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
+              transition={transition({ delay: 0.3 })}
             >
               <circle
                 cx={x}

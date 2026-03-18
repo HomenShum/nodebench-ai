@@ -11,6 +11,7 @@
 
 import React, { useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMotionConfig } from '@/lib/motion';
 import { ChevronRight, Clock, BarChart2, Zap, ExternalLink, Sparkles, RefreshCw } from 'lucide-react';
 import { useMutation } from 'convex/react';
 import { useBriefData } from '../hooks/useBriefData';
@@ -119,6 +120,7 @@ function BriefingSectionInner({
     briefMemory,
   } = useBriefData();
 
+  const { instant } = useMotionConfig();
   const [activeAct, setActiveAct] = useState<ActiveAct>('actI');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCoverageExpanded, setIsCoverageExpanded] = useState(false);
@@ -808,10 +810,14 @@ function BriefingSectionInner({
               <span className="text-2xl font-medium text-content leading-none italic">{act.subtitle}</span>
 
               {activeAct === act.id && (
-                <motion.div
-                  layoutId="act-underline"
-                  className="h-0.5 w-full bg-content mt-3"
-                />
+                instant ? (
+                  <div className="h-0.5 w-full bg-content mt-3" />
+                ) : (
+                  <motion.div
+                    layoutId="act-underline"
+                    className="h-0.5 w-full bg-content mt-3"
+                  />
+                )
               )}
             </button>
             {idx < 2 && (

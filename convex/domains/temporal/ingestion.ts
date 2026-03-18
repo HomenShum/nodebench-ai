@@ -361,6 +361,28 @@ export const ingestStructuredSourceText = action({
       sourceLabel: args.sourceLabel,
     });
 
+    const artifact = await ctx.runMutation(
+      internal.domains.artifacts.sourceArtifacts.upsertSourceArtifact,
+      {
+        sourceType: args.sourceType === "web" ? "url_fetch" : "extracted_text",
+        sourceUrl: args.sourceUrl,
+        rawContent: args.text,
+        title: args.sourceLabel ?? `${args.streamKey} source text`,
+        extractedData: {
+          kind: "structured_source_text",
+          streamKey: args.streamKey,
+          entityKey: args.entityKey,
+          extractionSummary: {
+            entities: extraction.entities.length,
+            claims: extraction.claims.length,
+            temporalMarkers: extraction.temporalMarkers.length,
+            numericFacts: extraction.numericFacts.length,
+          },
+        },
+        fetchedAt: Date.now(),
+      },
+    );
+
     const observations = buildObservationsFromExtraction(extraction, {
       sourceType: args.sourceType,
       sourceLabel: args.sourceLabel,
@@ -383,6 +405,17 @@ export const ingestStructuredSourceText = action({
       observations: enrichedObservations,
       detectSignals: args.detectSignals ?? true,
     });
+
+    const deepTraceSync = await ctx.runAction(
+      internal.domains.deepTrace.integrations.syncStructuredSourceTextToDeepTrace,
+      {
+        entityKey: args.entityKey,
+        entityName: undefined,
+        sourceArtifactId: artifact.id,
+        extraction,
+        observedAt: Date.now(),
+      },
+    );
 
     const numericObservationCount = observations.filter(
       (observation) => observation.observationType === "numeric"
@@ -410,6 +443,8 @@ export const ingestStructuredSourceText = action({
       observationsPrepared: observations.length,
       numericObservationsPrepared: numericObservationCount,
       ingestionResult,
+      sourceArtifactId: artifact.id,
+      deepTraceSync,
       forecast,
       sampleSourceRefs: observations
         .flatMap((observation) => observation.sourceRefs ?? [])

@@ -1,9 +1,15 @@
 /**
  * Animation utilities and presets for consistent micro-interactions
  * Uses Framer Motion variants and spring configurations
+ *
+ * NOTE: All variant objects are module-level constants, so they cannot use React hooks.
+ * Components consuming these variants should use `useMotionConfig()` from `@/lib/motion`
+ * to conditionally apply them (e.g., `variants={instant ? undefined : fadeVariants}`).
+ * The static `prefersReducedMotion()` helper is available for non-component contexts.
  */
 
 import type { Variants, Transition } from 'framer-motion';
+import { prefersReducedMotion } from '@/lib/motion';
 
 // Spring configurations for different interaction types
 export const springs = {
@@ -158,13 +164,18 @@ export const pageTransitionVariants: Variants = {
 
 // Utility function to create stagger delay
 export function staggerDelay(index: number, baseDelay = 0.05): number {
+  if (prefersReducedMotion()) return 0;
   return index * baseDelay;
 }
 
 // Utility to create custom spring
 export function createSpring(stiffness: number, damping: number): Transition {
+  if (prefersReducedMotion()) return { duration: 0 };
   return { type: 'spring', stiffness, damping };
 }
+
+/** Re-export for convenience */
+export { prefersReducedMotion } from '@/lib/motion';
 
 // ═══════════════════════════════════════════════════════════════════
 // HUD / Jarvis-style animation variants

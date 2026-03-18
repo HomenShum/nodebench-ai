@@ -10,6 +10,7 @@ import {
 import { CompactSignalCard } from './CompactSignalCard';
 import { cn } from '@/lib/utils';
 import { sanitizeDocumentTitle } from '@/lib/displayText';
+import { useMotionConfig } from '@/lib/motion';
 
 interface PersonalPulseProps {
     personalizedContext: any;
@@ -51,6 +52,7 @@ function SourceBadges({ sources }: { sources: Array<{ name: string; count: numbe
 }
 
 export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onDocumentSelect }: PersonalPulseProps) {
+    const { instant, transition } = useMotionConfig();
     const [showAllSignals, setShowAllSignals] = useState(false);
     const [contextTab, setContextTab] = useState<'tasks' | 'docs'>('tasks');
     const passingFeatures = personalizedContext?.passingFeatures || [];
@@ -213,10 +215,10 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
                         {contextTab === 'tasks' ? (
                             <motion.div
                                 key="tasks"
-                                initial={{ opacity: 0, y: 6 }}
+                                initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 6 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -6 }}
-                                transition={{ duration: 0.18 }}
+                                exit={{ opacity: instant ? 1 : 0, y: instant ? 0 : -6 }}
+                                transition={transition(0.18)}
                                 className="divide-y divide-gray-100"
                             >
                                 {tasksToday.slice(0, 6).map((task: any) => (
@@ -232,10 +234,10 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
                         ) : (
                             <motion.div
                                 key="docs"
-                                initial={{ opacity: 0, y: 6 }}
+                                initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 6 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -6 }}
-                                transition={{ duration: 0.18 }}
+                                exit={{ opacity: instant ? 1 : 0, y: instant ? 0 : -6 }}
+                                transition={transition(0.18)}
                                 className="divide-y divide-gray-100"
                             >
                                 {recentDocs.slice(0, 6).map((doc: any) => (

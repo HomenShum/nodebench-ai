@@ -1,0 +1,195 @@
+{
+  "generatedAt": "2026-01-08T10:35:43.500Z",
+  "model": "gemini-3-flash",
+  "category": "all",
+  "totalElapsed": 260914,
+  "summary": {
+    "total": 15,
+    "passed": 13,
+    "failed": 2,
+    "passRate": 86.7
+  },
+  "results": [
+    {
+      "id": "cal_disco_meeting",
+      "name": "Calendar: Schedule DISCO review meeting",
+      "category": "calendar",
+      "passed": false,
+      "elapsed": 18955,
+      "toolsCalled": [
+        "lookupGroundTruthEntity",
+        "createEvent"
+      ],
+      "failureReasons": [
+        "persona mismatch: got EARLY_STAGE_VC expected JPM_STARTUP_BANKER"
+      ]
+    },
+    {
+      "id": "cal_salesforce_demo",
+      "name": "Calendar: Schedule Salesforce demo",
+      "category": "calendar",
+      "passed": true,
+      "elapsed": 30402,
+      "toolsCalled": [
+        "lookupGroundTruthEntity",
+        "linkupSearch",
+        "createEvent",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "cal_ambros_followup",
+      "name": "Calendar: Schedule Ambros follow-up",
+      "category": "calendar",
+      "passed": true,
+      "elapsed": 17821,
+      "toolsCalled": [
+        "lookupGroundTruthEntity",
+        "createEvent"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "sheet_disco_metrics",
+      "name": "Spreadsheet: DISCO funding metrics",
+      "category": "spreadsheet",
+      "passed": true,
+      "elapsed": 11322,
+      "toolsCalled": [
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "sheet_ambros_pipeline",
+      "name": "Spreadsheet: Ambros deal pipeline",
+      "category": "spreadsheet",
+      "passed": true,
+      "elapsed": 21754,
+      "toolsCalled": [
+        "lookupGroundTruthEntity",
+        "listSpreadsheets"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "sheet_gemini_pricing",
+      "name": "Spreadsheet: Gemini pricing comparison",
+      "category": "spreadsheet",
+      "passed": true,
+      "elapsed": 18729,
+      "toolsCalled": [
+        "lookupGroundTruthEntity",
+        "createSpreadsheet"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "doc_disco_memo",
+      "name": "Document: DISCO investment memo",
+      "category": "document",
+      "passed": true,
+      "elapsed": 13251,
+      "toolsCalled": [
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "doc_quickjs_assessment",
+      "name": "Document: QuickJS security assessment",
+      "category": "document",
+      "passed": true,
+      "elapsed": 15915,
+      "toolsCalled": [
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "doc_genomiq_diligence",
+      "name": "Document: GenomiQ due diligence",
+      "category": "document",
+      "passed": true,
+      "elapsed": 12247,
+      "toolsCalled": [
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "web_disco_news",
+      "name": "Web: DISCO news search",
+      "category": "web",
+      "passed": true,
+      "elapsed": 13200,
+      "toolsCalled": [
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "web_salesforce_fetch",
+      "name": "Web: Salesforce Agentforce deep dive",
+      "category": "web",
+      "passed": true,
+      "elapsed": 33307,
+      "toolsCalled": [
+        "initScratchpad",
+        "getSystemDateTime",
+        "lookupGroundTruthEntity",
+        "setActiveSection",
+        "linkupSearch",
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "web_disco_multi_source",
+      "name": "Web: DISCO multi-source verification",
+      "category": "web",
+      "passed": true,
+      "elapsed": 11298,
+      "toolsCalled": [
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "media_disco_assets",
+      "name": "Media: DISCO pitch deck assets",
+      "category": "media",
+      "passed": false,
+      "elapsed": 12157,
+      "toolsCalled": [
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": [
+        "persona mismatch: got EARLY_STAGE_VC expected PRODUCT_DESIGNER"
+      ]
+    },
+    {
+      "id": "media_soundcloud_incident",
+      "name": "Media: SoundCloud incident timeline",
+      "category": "media",
+      "passed": true,
+      "elapsed": 12509,
+      "toolsCalled": [
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "media_vaultpay_materials",
+      "name": "Media: VaultPay sales materials",
+      "category": "media",
+      "passed": true,
+      "elapsed": 18047,
+      "toolsCalled": [
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    }
+  ]
+}

@@ -15,6 +15,7 @@ import { useQuery } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { useTimeContext } from '../../../hooks/useTimeContext';
 import { sanitizeDocumentTitle } from '@/lib/displayText';
+import { useMotionConfig } from '@/lib/motion';
 
 interface EnhancedPersonalPulseProps {
   className?: string;
@@ -29,6 +30,7 @@ export function EnhancedPersonalPulse({
   onTaskSelect,
   onNavigate,
 }: EnhancedPersonalPulseProps) {
+  const { instant, transition } = useMotionConfig();
   const [expandedSection, setExpandedSection] = useState<string | null>('tasks');
   const timeContext = useTimeContext();
 
@@ -70,6 +72,7 @@ export function EnhancedPersonalPulse({
           isExpanded={expandedSection === 'tasks'}
           onToggle={() => toggleSection('tasks')}
           color="text-green-600"
+          instant={instant}
         >
           {pendingTasks.length > 0 ? (
             <div className="space-y-2">
@@ -98,6 +101,7 @@ export function EnhancedPersonalPulse({
           isExpanded={expandedSection === 'documents'}
           onToggle={() => toggleSection('documents')}
           color="text-blue-600"
+          instant={instant}
         >
           {recentDocs.length > 0 ? (
             <div className="space-y-2">
@@ -126,6 +130,7 @@ export function EnhancedPersonalPulse({
           isExpanded={expandedSection === 'suggestions'}
           onToggle={() => toggleSection('suggestions')}
           color="text-purple-600"
+          instant={instant}
         >
           {recommendations && recommendations.length > 0 ? (
             <div className="space-y-2">
@@ -155,9 +160,10 @@ interface CollapsibleSectionProps {
   onToggle: () => void;
   color: string;
   children: React.ReactNode;
+  instant: boolean;
 }
 
-function CollapsibleSection({ title, icon: Icon, count, isExpanded, onToggle, color, children }: CollapsibleSectionProps) {
+function CollapsibleSection({ title, icon: Icon, count, isExpanded, onToggle, color, children, instant }: CollapsibleSectionProps) {
   return (
     <div>
       <button onClick={onToggle} className="w-full flex items-center justify-between px-6 py-3 hover:bg-surface-hover dark:hover:bg-white/[0.03] transition-colors">
@@ -170,7 +176,7 @@ function CollapsibleSection({ title, icon: Icon, count, isExpanded, onToggle, co
       </button>
       <AnimatePresence>
         {isExpanded && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+          <motion.div initial={{ height: instant ? 'auto' : 0, opacity: instant ? 1 : 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: instant ? 'auto' : 0, opacity: instant ? 1 : 0 }} className="overflow-hidden">
             <div className="px-6 pb-4">{children}</div>
           </motion.div>
         )}

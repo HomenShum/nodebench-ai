@@ -132,3 +132,23 @@ export const countChunksForArtifact = internalQuery({
   },
 });
 
+export const listChunkIdsForArtifact = internalQuery({
+  args: {
+    artifactId: v.id("sourceArtifacts"),
+    chunkVersion: v.optional(v.number()),
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(v.id("artifactChunks")),
+  handler: async (ctx, args) => {
+    const chunkVersion = args.chunkVersion ?? 1;
+    const limit = Math.max(1, Math.min(args.limit ?? 12, 100));
+    const chunks = await ctx.db
+      .query("artifactChunks")
+      .withIndex("by_artifact_version_offset", (q) =>
+        q.eq("artifactId", args.artifactId).eq("chunkVersion", chunkVersion),
+      )
+      .take(limit);
+    return chunks.map((chunk) => chunk._id);
+  },
+});
+

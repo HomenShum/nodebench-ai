@@ -1,0 +1,28 @@
+{
+  "observed_facts": [
+    "Stealth AI Startup fact 1: Map the strongest investor, operator, and product relationships from sparse evidence.",
+    "Stealth AI Startup fact 2: Map the strongest investor, operator, and product relationships from sparse evidence."
+  ],
+  "relationships": [
+    {
+      "source": "Stealth AI Startup",
+      "target": "Stealth AI Startup counterpart 1",
+      "relation": "linked_signal",
+      "evidenceRefs": [
+        "ev-1"
+      ]
+    },
+    {
+      "source": "Stealth AI Startup",
+      "target": "Stealth AI Startup counterpart 2",
+      "relation": "linked_signal",
+      "evidenceRefs": []
+    }
+  ],
+  "hypothesis": "Stealth AI Startup likely benefits from a coarse next action aligned to relationship_mapping.",
+  "counter_hypothesis": "",
+  "recommendation": "Prioritize the next review step for Stealth AI Startup using the baseline benchmark contract.",
+  "limitations": [
+    "Stealth AI Startup limitation 1: evidence remains bounded to the supplied benchmark fixture."
+  ]
+}

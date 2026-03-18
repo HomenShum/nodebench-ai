@@ -12,6 +12,7 @@
 
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMotionConfig } from "@/lib/motion";
 import {
   RefreshCw,
   Filter,
@@ -179,6 +180,8 @@ export function NarrativeFeed({
   hasMore = false,
   className,
 }: NarrativeFeedProps) {
+  const { instant, transition } = useMotionConfig();
+
   // State
   const [filter, setFilter] = useState<FeedFilter>("all");
   const [sort, setSort] = useState<FeedSort>("recent");
@@ -361,10 +364,10 @@ export function NarrativeFeed({
               return (
                 <motion.div
                   key={post.postId}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
+                  layout={!instant}
+                  initial={instant ? { opacity: 1 } : { opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
+                  exit={instant ? { opacity: 0 } : { opacity: 0, y: -20 }}
                 >
                   <PostCard
                     post={post}
@@ -377,9 +380,9 @@ export function NarrativeFeed({
                   <AnimatePresence>
                     {isExpanded && replies.length > 0 && (
                       <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
+                        initial={instant ? undefined : { opacity: 0, height: 0 }}
+                        animate={instant ? undefined : { opacity: 1, height: "auto" }}
+                        exit={instant ? undefined : { opacity: 0, height: 0 }}
                         className="ml-4 mt-2 pl-4 border-l-2 border-border"
                       >
                         <ReplyThread

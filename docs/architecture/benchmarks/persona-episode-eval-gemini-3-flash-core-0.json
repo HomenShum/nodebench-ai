@@ -1,0 +1,448 @@
+{
+  "generatedAt": "2026-01-20T08:50:44.066Z",
+  "gitSha": "8855f5f82eff2962a0459bd16d1c29720d5d3dc7",
+  "convexUrl": "https://formal-shepherd-851.convex.cloud",
+  "model": "gemini-3-flash",
+  "elapsedMs": 13709,
+  "result": {
+    "ok": true,
+    "elapsedMs": 13341,
+    "summary": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "window": {
+      "suite": "core",
+      "batches": 1,
+      "totalAvailable": 3
+    },
+    "pricing": {
+      "provider": "google",
+      "sourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+      "fetchedAt": "2026-01-20T08:34:08.685Z",
+      "cache": {
+        "source": "cache",
+        "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\google-gemini-api-pricing-latest.json"
+      },
+      "model": {
+        "model": "Gemini 3 Flash Preview",
+        "inputUsdPer1MTokens": 0.5,
+        "outputUsdPer1MTokens": 3,
+        "inputUsdPer1MTokensOver200k": null,
+        "outputUsdPer1MTokensOver200k": null,
+        "contextCacheUsdPer1MTokens": 0.05
+      },
+      "notes": [
+        "Google Gemini API pricing varies by prompt length and modality; for token-cost estimation we use the <=200k 'text' list rates from the first pricing table under each Gemini 3 section.",
+        "If your prompts exceed 200k tokens, use the *Over200k rates captured in this snapshot instead."
+      ]
+    },
+    "estimatedUsage": {
+      "mode": "provider",
+      "inputTokens": 80642,
+      "outputTokens": 779,
+      "cachedInputTokens": 48220,
+      "estimatedCostUsd": 0.042658
+    },
+    "runs": [
+      {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "candidates": [],
+            "canonicalName": "DISCO Pharmaceuticals",
+            "confidence": 0.9,
+            "input": "DISCO",
+            "resolvedId": "DISCO",
+            "type": "private_company (treat oss_project as open source / GitHub / repository)"
+          },
+          "fallbacks": [],
+          "grounding": [
+            "{{fact:ground_truth:DISCO}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "channel": null,
+              "email": "info@discopharma.de"
+            },
+            "freshness": {
+              "ageDays": 16
+            },
+            "funding": {
+              "amount": {
+                "amount": 36,
+                "currency": "EUR",
+                "unit": "M"
+              },
+              "coLeads": [],
+              "date": null,
+              "stage": "Seed"
+            },
+            "hqLocation": "Cologne, Germany",
+            "people": {
+              "ceo": "Mark Manfredi",
+              "founders": [
+                "Roman Thomas"
+              ]
+            },
+            "product": {
+              "leadPrograms": [
+                "Lead ADC candidates"
+              ],
+              "platform": "Surfaceome mapping platform"
+            }
+          },
+          "nextActions": [
+            "Verify primary sources (if required)",
+            "Run a quick contradiction scan",
+            "Draft a share-ready version for stakeholders"
+          ],
+          "persona": {
+            "assumptions": [
+              "Heuristic inference from query keywords for JPM_STARTUP_BANKER"
+            ],
+            "confidence": 0.8,
+            "inferred": "JPM_STARTUP_BANKER"
+          },
+          "planSteps": [
+            "Skill discovery",
+            "Lookup ground truth",
+            "Verify: check required fields + grounding",
+            "Format response + debrief"
+          ],
+          "risks": [],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "error": null,
+              "name": "searchAvailableSkills",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "searchAvailableSkills"
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "verdict": "UNKNOWN"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "artifactBytesAvoided": 0,
+          "citationsInResponse": 0,
+          "citationsResolved": 0,
+          "citationsUnresolved": 0,
+          "costBudgetExceeded": false,
+          "directToolCalls": [
+            "lookupGroundTruthEntity",
+            "lookupGroundTruthEntity"
+          ],
+          "disclosureLevel": "partial",
+          "estimatedToolSchemaTokens": 12250,
+          "resourceLinksCreated": 0,
+          "resourceLinksRetrieved": 0,
+          "skillSearchCalls": 2,
+          "skillsActivated": [],
+          "tokenBudgetExceeded": false,
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity"
+          ],
+          "usedMetaTools": true,
+          "usedSkillFirst": true,
+          "warnings": []
+        },
+        "elapsedMs": 13341,
+        "execution": {
+          "estimatedInputTokens": 1757,
+          "estimatedOutputTokens": 882,
+          "latencyMs": 12869,
+          "modelUsed": "gemini-3-flash",
+          "providerUsage": {
+            "cachedInputTokens": 48220,
+            "completionTokens": 779,
+            "promptTokens": 80642,
+            "reasoningTokens": 410,
+            "totalTokens": 81831
+          },
+          "stepsCount": 3,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "argsPreview": "{\"query\":\"DISCO — I'm trying to figure out if this is worth reaching out on and what I should do with it.\"}",
+              "name": "searchAvailableSkills"
+            },
+            {
+              "argsPreview": "{\"entity\":\"DISCO\"}",
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "searchAvailableSkills",
+              "ok": true,
+              "resultPreview": "Skill search preflight ok (query='DISCO — I'm trying to figure out if this is worth reaching out on and what I should do with it.')"
+            },
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true,
+              "resultPreview": "{{fact:ground_truth:DISCO}}\nEntity ID: DISCO\nCanonical name: DISCO Pharmaceuticals\nEntity type: private_company (treat oss_project as open source / GitHub / repository)\nHQ: Cologne, Germany\nCEO: Mark Manfredi\nFounders: Roman Thomas\nPrimary contact: info@discopharma.de\nPlatform: Surfaceome mapping platform\nLead programs: Lead ADC candidates\nFunding: Seed EUR36M (announced 2025-12-11)\nRequired facts: Cologne, Germany | €36M seed | surfaceome | ADC | bispecific | SCLC | MSS-CRC | Mark Manfredi | Roman Thomas\nForbidden facts: Series A | San Francisco | New York\nFreshness age (days): 16\nWithin banker window: true\nHas primary source requirement: true"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": true,
+        "promptMessageId": "ks79gfn465q3y4jas3b32jczf17zj5sm",
+        "responsePreview": "@@entity:DISCO|DISCO Pharmaceuticals|type:company@@ is a high-conviction target for outreach given its recent €36M Seed funding announcement (December 2025) and its breakthrough surfaceome mapping platform {{fact:ground_truth:DISCO}}. \n\nBased on your inquiry about whether to reach out, here is the breakdown:\n\n### **Why Reach Out Now? (PASS)**\n*   **Recency:** The funding was announced within the last 30 days, placing it squarely in the optimal window for advisory or banking outreach.\n*   **Strong Technical Moat:** The company specializes in mapping the \"surfaceome\" to identify new targets for Antibody-Drug Conjugates (ADCs) and bispecific antibodies.\n*   **High-Value Indications:** They are targeting Small Cell Lung Cancer (SCLC) and Microsatellite Stable Colorectal Cancer (MSS-CRC), areas with significant unmet medical need and high M&A interest.\n*   **Leadership:** Led by @@entity:manf",
+        "threadId": "m574we5xq7zmn4k23ej38ksgw97zkh5z"
+      }
+    ],
+    "rawBatches": [
+      {
+        "elapsedMs": 13341,
+        "model": "gemini-3-flash",
+        "ok": true,
+        "runs": [
+          {
+            "checks": {
+              "contact": true,
+              "entityResolved": true,
+              "fundingStage": true,
+              "grounding": true,
+              "hq": true,
+              "nextActions": true,
+              "persona": true
+            },
+            "debrief": {
+              "entity": {
+                "candidates": [],
+                "canonicalName": "DISCO Pharmaceuticals",
+                "confidence": 0.9,
+                "input": "DISCO",
+                "resolvedId": "DISCO",
+                "type": "private_company (treat oss_project as open source / GitHub / repository)"
+              },
+              "fallbacks": [],
+              "grounding": [
+                "{{fact:ground_truth:DISCO}}"
+              ],
+              "keyFacts": {
+                "contact": {
+                  "channel": null,
+                  "email": "info@discopharma.de"
+                },
+                "freshness": {
+                  "ageDays": 16
+                },
+                "funding": {
+                  "amount": {
+                    "amount": 36,
+                    "currency": "EUR",
+                    "unit": "M"
+                  },
+                  "coLeads": [],
+                  "date": null,
+                  "stage": "Seed"
+                },
+                "hqLocation": "Cologne, Germany",
+                "people": {
+                  "ceo": "Mark Manfredi",
+                  "founders": [
+                    "Roman Thomas"
+                  ]
+                },
+                "product": {
+                  "leadPrograms": [
+                    "Lead ADC candidates"
+                  ],
+                  "platform": "Surfaceome mapping platform"
+                }
+              },
+              "nextActions": [
+                "Verify primary sources (if required)",
+                "Run a quick contradiction scan",
+                "Draft a share-ready version for stakeholders"
+              ],
+              "persona": {
+                "assumptions": [
+                  "Heuristic inference from query keywords for JPM_STARTUP_BANKER"
+                ],
+                "confidence": 0.8,
+                "inferred": "JPM_STARTUP_BANKER"
+              },
+              "planSteps": [
+                "Skill discovery",
+                "Lookup ground truth",
+                "Verify: check required fields + grounding",
+                "Format response + debrief"
+              ],
+              "risks": [],
+              "schemaVersion": "debrief_v1",
+              "toolsUsed": [
+                {
+                  "error": null,
+                  "name": "searchAvailableSkills",
+                  "ok": true
+                },
+                {
+                  "error": null,
+                  "name": "lookupGroundTruthEntity",
+                  "ok": true
+                },
+                {
+                  "error": null,
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "error": null,
+                  "name": "lookupGroundTruthEntity"
+                }
+              ],
+              "verdict": "UNKNOWN"
+            },
+            "debriefValidation": {
+              "errors": [],
+              "ok": true
+            },
+            "disclosure": {
+              "artifactBytesAvoided": 0,
+              "citationsInResponse": 0,
+              "citationsResolved": 0,
+              "citationsUnresolved": 0,
+              "costBudgetExceeded": false,
+              "directToolCalls": [
+                "lookupGroundTruthEntity",
+                "lookupGroundTruthEntity"
+              ],
+              "disclosureLevel": "partial",
+              "estimatedToolSchemaTokens": 12250,
+              "resourceLinksCreated": 0,
+              "resourceLinksRetrieved": 0,
+              "skillSearchCalls": 2,
+              "skillsActivated": [],
+              "tokenBudgetExceeded": false,
+              "toolInvokeErrors": 0,
+              "toolSearchCalls": 0,
+              "toolsExpanded": [],
+              "toolsInvoked": [
+                "lookupGroundTruthEntity"
+              ],
+              "usedMetaTools": true,
+              "usedSkillFirst": true,
+              "warnings": []
+            },
+            "elapsedMs": 13341,
+            "execution": {
+              "estimatedInputTokens": 1757,
+              "estimatedOutputTokens": 882,
+              "latencyMs": 12869,
+              "modelUsed": "gemini-3-flash",
+              "providerUsage": {
+                "cachedInputTokens": 48220,
+                "completionTokens": 779,
+                "promptTokens": 80642,
+                "reasoningTokens": 410,
+                "totalTokens": 81831
+              },
+              "stepsCount": 3,
+              "streamStatus": "completed",
+              "toolCalls": [
+                {
+                  "argsPreview": "{\"query\":\"DISCO — I'm trying to figure out if this is worth reaching out on and what I should do with it.\"}",
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "argsPreview": "{\"entity\":\"DISCO\"}",
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "name": "lookupGroundTruthEntity"
+                }
+              ],
+              "toolResults": [
+                {
+                  "name": "searchAvailableSkills",
+                  "ok": true,
+                  "resultPreview": "Skill search preflight ok (query='DISCO — I'm trying to figure out if this is worth reaching out on and what I should do with it.')"
+                },
+                {
+                  "name": "lookupGroundTruthEntity",
+                  "ok": true,
+                  "resultPreview": "{{fact:ground_truth:DISCO}}\nEntity ID: DISCO\nCanonical name: DISCO Pharmaceuticals\nEntity type: private_company (treat oss_project as open source / GitHub / repository)\nHQ: Cologne, Germany\nCEO: Mark Manfredi\nFounders: Roman Thomas\nPrimary contact: info@discopharma.de\nPlatform: Surfaceome mapping platform\nLead programs: Lead ADC candidates\nFunding: Seed EUR36M (announced 2025-12-11)\nRequired facts: Cologne, Germany | €36M seed | surfaceome | ADC | bispecific | SCLC | MSS-CRC | Mark Manfredi | Roman Thomas\nForbidden facts: Series A | San Francisco | New York\nFreshness age (days): 16\nWithin banker window: true\nHas primary source requirement: true"
+                },
+                {
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "name": "lookupGroundTruthEntity"
+                }
+              ]
+            },
+            "expectedEntityId": "DISCO",
+            "expectedPersona": "JPM_STARTUP_BANKER",
+            "failureReasons": [],
+            "id": "banker_vague_disco",
+            "name": "Banker vague outreach debrief",
+            "ok": true,
+            "promptMessageId": "ks79gfn465q3y4jas3b32jczf17zj5sm",
+            "responsePreview": "@@entity:DISCO|DISCO Pharmaceuticals|type:company@@ is a high-conviction target for outreach given its recent €36M Seed funding announcement (December 2025) and its breakthrough surfaceome mapping platform {{fact:ground_truth:DISCO}}. \n\nBased on your inquiry about whether to reach out, here is the breakdown:\n\n### **Why Reach Out Now? (PASS)**\n*   **Recency:** The funding was announced within the last 30 days, placing it squarely in the optimal window for advisory or banking outreach.\n*   **Strong Technical Moat:** The company specializes in mapping the \"surfaceome\" to identify new targets for Antibody-Drug Conjugates (ADCs) and bispecific antibodies.\n*   **High-Value Indications:** They are targeting Small Cell Lung Cancer (SCLC) and Microsatellite Stable Colorectal Cancer (MSS-CRC), areas with significant unmet medical need and high M&A interest.\n*   **Leadership:** Led by @@entity:manf",
+            "threadId": "m574we5xq7zmn4k23ej38ksgw97zkh5z"
+          }
+        ],
+        "summary": {
+          "failed": 0,
+          "passed": 1,
+          "total": 1
+        },
+        "window": {
+          "limit": 1,
+          "nextOffset": 1,
+          "offset": 0,
+          "suite": "core",
+          "totalAvailable": 3
+        }
+      }
+    ]
+  }
+}

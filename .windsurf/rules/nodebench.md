@@ -53,7 +53,7 @@ Follow this exact loop for every task to ensure stability and transparency:
   1. **Navigate** to the specific view.
   2. **Interact** (Click, Type, Drag) to test functionality.
   3. **Screenshot**: Capture the final state to visually confirm the fix.
-- *Note: Do not write `*.test.ts` files unless explicitly requested; rely on interactive verification.*
+- **Deterministic Coverage Rule**: For contract, data-model, verdict, workflow-panel, or operator-surface changes, add or update targeted tests. Interactive verification does not replace deterministic tests for these slices.
 
 **D. Finalize (Commit & Push)**
 Run git status, review changes, understand readme format, update readme, commit and push

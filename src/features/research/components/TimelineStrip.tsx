@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, History, Zap, Telescope, ChevronLeft, ChevronRight } from "lucide-react";
+import { useMotionConfig } from '@/lib/motion';
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // TYPES
@@ -121,6 +122,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
   sticky = false,
   className = "",
 }) => {
+  const { instant, transition } = useMotionConfig();
   const [internalPhaseFilter, setInternalPhaseFilter] = useState<TemporalPhase | "all">("all");
   const activePhaseFilter = phaseFilter ?? internalPhaseFilter;
   const setPhaseFilter = (next: TemporalPhase | "all") => {
@@ -269,14 +271,14 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
             className="absolute top-0 left-0 h-full bg-[var(--accent-primary)] rounded-full"
             initial={false}
             animate={{ width: `${progressInfo.percentage}%` }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+            transition={transition({ duration: 0.3, ease: "easeOut" })}
           />
           {/* Current position marker */}
           <motion.div
             className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-surface border-2 border-indigo-500/30 rounded-full shadow-sm"
             initial={false}
             animate={{ left: `calc(${progressInfo.percentage}% - 6px)` }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+            transition={transition({ duration: 0.3, ease: "easeOut" })}
           />
         </div>
 
@@ -374,6 +376,7 @@ const TimelineEventChip: React.FC<TimelineEventChipProps> = ({
   isActive,
   onClick,
 }) => {
+  const { instant } = useMotionConfig();
   const colors = getPhaseColors(event.phase, isActive);
   const Icon = getPhaseIcon(event.phase);
 
@@ -388,8 +391,8 @@ const TimelineEventChip: React.FC<TimelineEventChipProps> = ({
         ${isActive ? "shadow-sm ring-2 ring-indigo-500/30" : ""}
         focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-ring
       `}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={!instant ? { scale: 1.02 } : undefined}
+      whileTap={!instant ? { scale: 0.98 } : undefined}
       title={event.description}
     >
       <Icon className="w-3 h-3" />

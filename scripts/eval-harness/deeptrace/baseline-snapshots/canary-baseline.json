@@ -1,0 +1,21 @@
+{
+  "baselineId": "baseline-401d5942-measured",
+  "commitHash": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+  "throughputMetrics": {
+    "taskCompletionRate": 0.60,
+    "timeToFirstDraftMs": 0.074,
+    "humanEditDistance": 33,
+    "wallClockMs": 0.074,
+    "toolCallCount": 6
+  },
+  "qualityMetrics": {
+    "factualPrecision": 1.0,
+    "relationshipPrecision": 0.60,
+    "evidenceLinkage": 1.0,
+    "receiptCompleteness": 0.933,
+    "falseConfidenceRate": 0.0,
+    "canaryRelativeUplift": 0.0
+  },
+  "capturedAt": "2026-03-15T23:24:50.191Z",
+  "measuredFrom": "canary-benchmark.ts (5 fixtures, deterministic)"
+}

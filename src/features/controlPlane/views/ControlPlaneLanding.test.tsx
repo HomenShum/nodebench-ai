@@ -12,9 +12,19 @@ describe("ControlPlaneLanding", () => {
     localStorage.removeItem("nodebench:control-plane:first-run-checklist");
   });
 
-  it("renders buyer, developer, and agent operator paths", () => {
+  it("renders report-aligned landing copy, CTAs, and navigation paths", () => {
     render(<ControlPlaneLanding onNavigate={vi.fn()} />);
 
+    expect(
+      screen.getByRole("heading", { name: /the trust layer for agents\./i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/provenance, not proof\./i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /run the live demo/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /read the api/i })).toHaveAttribute("href", "/v1/specs");
+    expect(screen.getByRole("link", { name: /integrate via mcp \/ sdk/i })).toHaveAttribute(
+      "href",
+      "/api/mcp",
+    );
     expect(screen.getByText("Choose your path")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /review agent actions/i }),
@@ -25,18 +35,20 @@ describe("ControlPlaneLanding", () => {
     expect(
       screen.getAllByRole("button", { name: /investigate a run/i }).length,
     ).toBeGreaterThan(0);
-    expect(screen.getAllByText("Read today's brief").length).toBeGreaterThan(0);
     expect(screen.getByText("Debug evals and replay proof")).toBeInTheDocument();
-    expect(screen.getByText("Inspect tool activity")).toBeInTheDocument();
+    expect(screen.getAllByText("Inspect tool activity").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Read today's brief")).not.toBeInTheDocument();
     expect(screen.getByText("Product Direction")).toBeInTheDocument();
     expect(screen.getByText("Execution Trace")).toBeInTheDocument();
+    expect(screen.getByText("Use cases")).toBeInTheDocument();
+    expect(screen.getByText("Research agent (FTX demo)")).toBeInTheDocument();
   });
 
-  it("stores the preferred path when a primary route is chosen", () => {
+  it("runs the live demo CTA through receipts and stores the preferred path", () => {
     const onNavigate = vi.fn();
     render(<ControlPlaneLanding onNavigate={onNavigate} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /review agent actions/i }));
+    fireEvent.click(screen.getByRole("button", { name: /run the live demo/i }));
 
     expect(onNavigate).toHaveBeenCalledWith("receipts", "/receipts");
     expect(loadBuyerPreferredPath()).toBe("receipts");
@@ -53,10 +65,10 @@ describe("ControlPlaneLanding", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /latest qa agent fundraising/i }));
+    fireEvent.click(screen.getByRole("button", { name: /show denied actions today/i }));
 
     expect(onOpenFastAgentWithPrompt).toHaveBeenCalledWith(
-      "Tell me about the latest startup fundraising in quality assurance AI agents and their backgrounds.",
+      "Show me the agent actions that were denied or approval-gated today, and explain why.",
     );
     expect(onNavigate).not.toHaveBeenCalled();
   });

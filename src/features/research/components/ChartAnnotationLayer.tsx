@@ -9,6 +9,7 @@
 
 import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMotionConfig } from '@/lib/motion';
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { useCurrentAct, type Act } from "../contexts/FocusSyncContext";
@@ -67,6 +68,7 @@ export const ChartAnnotationLayer: React.FC<ChartAnnotationLayerProps> = ({
   chartHeight,
   seriesId,
 }) => {
+  const { instant, transition } = useMotionConfig();
   // Get current act from focus context
   const currentAct = useCurrentAct();
 
@@ -99,10 +101,10 @@ export const ChartAnnotationLayer: React.FC<ChartAnnotationLayerProps> = ({
           return (
             <motion.g
               key={annotation._id}
-              initial={{ opacity: 0, scale: 0.8 }}
+              initial={{ opacity: 0, scale: instant ? 1 : 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              exit={{ opacity: 0, scale: instant ? 1 : 0.8 }}
+              transition={transition({ duration: 0.3, ease: "easeOut" })}
             >
               {/* Connector line from annotation to point */}
               <motion.line
@@ -113,9 +115,9 @@ export const ChartAnnotationLayer: React.FC<ChartAnnotationLayerProps> = ({
                 stroke="#94a3b8"
                 strokeWidth={0.5}
                 strokeDasharray="2 2"
-                initial={{ pathLength: 0 }}
+                initial={{ pathLength: instant ? 1 : 0 }}
                 animate={{ pathLength: 1 }}
-                transition={{ duration: 0.2 }}
+                transition={transition({ duration: 0.2 })}
               />
 
               {/* Background pill for text */}

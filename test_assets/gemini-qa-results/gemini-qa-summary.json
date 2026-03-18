@@ -1,0 +1,14 @@
+{
+  "totalScreenshots": 171,
+  "scored": 91,
+  "averageOverall": 8.4,
+  "criticalCount": 0,
+  "issueCount": 272,
+  "scoreDistribution": {
+    "excellent_9_10": 34,
+    "good_7_8": 57,
+    "acceptable_5_6": 0,
+    "poor_below_5": 0
+  },
+  "criticalScreenshots": []
+}

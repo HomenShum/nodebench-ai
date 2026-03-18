@@ -1,0 +1,839 @@
+{
+  "generatedAt": "2026-01-08T07:39:47.368Z",
+  "totalElapsed": 42875,
+  "modelsToTest": [
+    "gpt-5-mini",
+    "claude-haiku-4.5"
+  ],
+  "suite": "core",
+  "scenarios": 3,
+  "totalEvaluations": 6,
+  "results": [
+    {
+      "model": "gpt-5-mini",
+      "scenarioId": "banker_vague_disco",
+      "result": {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "canonicalName": "DISCO Pharmaceuticals",
+            "confidence": 0,
+            "input": "DISCO"
+          },
+          "grounding": [
+            "{{fact:ground_truth:DISCO}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "email": "info@discopharma.de"
+            },
+            "funding": {
+              "amount": {
+                "amount": 36,
+                "currency": "EUR",
+                "unit": "M"
+              },
+              "stage": "Seed"
+            },
+            "hqLocation": "Cologne, Germany"
+          },
+          "nextActions": [
+            "Draft 1-page talk track",
+            "Email info@discopharma.de with the 30–60s intro",
+            "If available, request warm intro via investors (Ackermans & van Haaren, NRW.Bank)"
+          ],
+          "persona": {
+            "confidence": 0.8,
+            "inferred": "JPM_STARTUP_BANKER"
+          },
+          "planSteps": [
+            "Lookup ground truth",
+            "Verify facts",
+            "Format response"
+          ],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            }
+          ],
+          "verdict": "PASS"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "directToolCalls": [
+            "lookupGroundTruthEntity"
+          ],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity"
+          ],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": [
+            "No skill search before tool invoke",
+            "No progressive disclosure meta-tools used"
+          ]
+        },
+        "elapsedMs": 41456,
+        "execution": {
+          "estimatedInputTokens": 1400,
+          "estimatedOutputTokens": 1318,
+          "latencyMs": 40936,
+          "modelUsed": "gpt-5-mini",
+          "providerUsage": {
+            "cachedInputTokens": 50432,
+            "completionTokens": 2615,
+            "promptTokens": 54559,
+            "reasoningTokens": 1280,
+            "totalTokens": 57174
+          },
+          "stepsCount": 2,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": true,
+        "promptMessageId": "ks7ajcsa4xy0avctn93cq3bcq97ytjzq",
+        "responsePreview": "I’m treating this as an outreach readiness question (JPM_STARTUP_BANKER persona). I asked lookupGroundTruthEntity to retrieve authoritative facts about DISCO and used that to evaluate whether it’s worth reaching out.\n\nSummary / Verdict\n- Verdict: PASS — DISCO looks worth outreach now (recent seed raise + clear lead programs; within the banker freshness window). {{fact:ground_truth:DISCO}}\n\nKey verified facts (ground-truth)\n- Name: DISCO Pharmaceuticals (canonical) {{fact:ground_truth:DISCO}}\n- HQ: Cologne, Germany {{fact:ground_truth:DISCO}}\n- Funding: Seed round, €36M (announced 2025-12-11) {{fact:ground_truth:DISCO}}\n- Platform & focus: Surfaceome mapping platform; lead ADC candidates (including bispecific approaches; indications noted: SCLC and MSS-CRC) {{fact:ground_truth:DISCO}}\n- Leadership & contact: CEO Mark Manfredi; Founder Roman Thomas; primary contact info@discopharma.de {{fa",
+        "threadId": "m571kb18y5gcpcms7ae2dw02rd7yvc53"
+      },
+      "elapsed": 42875,
+      "error": null
+    },
+    {
+      "model": "gpt-5-mini",
+      "scenarioId": "vc_vague_openautoglm",
+      "result": {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "canonicalName": "OpenAutoGLM",
+            "confidence": 0,
+            "input": "OpenAutoGLM"
+          },
+          "grounding": [
+            "{{fact:ground_truth:OPEN-AUTOGLM}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "email": null
+            },
+            "funding": {
+              "amount": {
+                "amount": null,
+                "currency": null,
+                "unit": null
+              },
+              "stage": null
+            },
+            "hqLocation": null
+          },
+          "nextActions": [
+            "Diligence agent-to-action connectors",
+            "Prototype a mobile-native agent UX in target vertical",
+            "Track OpenAutoGLM GitHub activity for community momentum"
+          ],
+          "persona": {
+            "confidence": 0.8,
+            "inferred": "EARLY_STAGE_VC"
+          },
+          "planSteps": [
+            "Lookup ground truth",
+            "Verify facts",
+            "Format response"
+          ],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            }
+          ],
+          "verdict": "PASS"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "directToolCalls": [
+            "lookupGroundTruthEntity"
+          ],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity"
+          ],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": [
+            "No skill search before tool invoke",
+            "No skill search for EARLY_STAGE_VC scenario",
+            "No progressive disclosure meta-tools used"
+          ]
+        },
+        "elapsedMs": 34103,
+        "execution": {
+          "estimatedInputTokens": 1344,
+          "estimatedOutputTokens": 1398,
+          "latencyMs": 33363,
+          "modelUsed": "gpt-5-mini",
+          "providerUsage": {
+            "cachedInputTokens": 28800,
+            "completionTokens": 1964,
+            "promptTokens": 53523,
+            "reasoningTokens": 704,
+            "totalTokens": 55487
+          },
+          "stepsCount": 2,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "OPEN-AUTOGLM",
+        "expectedPersona": "EARLY_STAGE_VC",
+        "failureReasons": [],
+        "id": "vc_vague_openautoglm",
+        "name": "VC wedge from OSS signal",
+        "ok": true,
+        "promptMessageId": "ks7fkwv78ycng26kqes6gb4zp17yvqgw",
+        "responsePreview": "I inferred the EARLY_STAGE_VC persona (looking for a wedge/thesis). I asked lookupGroundTruthEntity to fetch verified facts about OpenAutoGLM and used those to ground the analysis. {{fact:ground_truth:OPEN-AUTOGLM}}\n\nTop-line summary (thesis)\n- Thesis: OpenAutoGLM is an open-source, phone-focused agent project (GitHub, Apache-2.0) that signals a commoditization of core agent stacks and shifts the competitive wedge to productized UX, device-level optimization, data connectors, and trust/verification layers where startups can capture value. {{fact:ground_truth:OPEN-AUTOGLM}}\n\nWhy this matters now\n- The presence of an Apache-2.0, GitHub-hosted open-source agent optimized for phone use lowers the cost and time to ship base agent capabilities (LLM orchestration, phone input/output, basic state management). That makes the foundational plumbing less defensible and pushes differentiation up the ",
+        "threadId": "m57c54bg4dct95mmxr0xea9wtd7ytdmg"
+      },
+      "elapsed": 34464,
+      "error": null
+    },
+    {
+      "model": "gpt-5-mini",
+      "scenarioId": "cto_vague_quickjs",
+      "result": {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "canonicalName": "QuickJS / MicroQuickJS",
+            "confidence": 0,
+            "input": "QuickJS"
+          },
+          "grounding": [
+            "{{fact:ground_truth:MQUICKJS}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "email": null
+            },
+            "funding": {
+              "amount": {
+                "amount": null,
+                "currency": null,
+                "unit": null
+              },
+              "stage": null
+            },
+            "hqLocation": null
+          },
+          "nextActions": [
+            "Inventory sweep for quickjs/microquickjs across repos and images",
+            "Isolate or disable exposed scripting endpoints until patched",
+            "Apply upstream patch or mitigations and roll out phased deployment",
+            "Add monitoring/IDS rules and validate patched binaries"
+          ],
+          "persona": {
+            "confidence": 0.8,
+            "inferred": "CTO_TECH_LEAD"
+          },
+          "planSteps": [
+            "Lookup ground truth",
+            "Verify facts",
+            "Format response"
+          ],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            }
+          ],
+          "verdict": "PASS"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "directToolCalls": [
+            "lookupGroundTruthEntity"
+          ],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity"
+          ],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": [
+            "No skill search before tool invoke",
+            "No skill search for CTO_TECH_LEAD scenario",
+            "No progressive disclosure meta-tools used"
+          ]
+        },
+        "elapsedMs": 33938,
+        "execution": {
+          "estimatedInputTokens": 1353,
+          "estimatedOutputTokens": 1642,
+          "latencyMs": 33423,
+          "modelUsed": "gpt-5-mini",
+          "providerUsage": {
+            "cachedInputTokens": 30592,
+            "completionTokens": 1961,
+            "promptTokens": 53896,
+            "reasoningTokens": 384,
+            "totalTokens": 55857
+          },
+          "stepsCount": 2,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [],
+        "id": "cto_vague_quickjs",
+        "name": "CTO risk exposure + patch plan",
+        "ok": true,
+        "promptMessageId": "ks78yxe2xgnb5ztmb8haew2yth7yvkmc",
+        "responsePreview": "Assumption (persona): You're asking as a CTO / Tech Lead focused on security and patching. I'll prioritize exposure assessment, impact, and an actionable patch plan. (Persona: CTO_TECH_LEAD, confidence 0.8)\n\nSummary (top-line)\n- QuickJS / MicroQuickJS is an open-source JavaScript engine (repository on GitHub) and there is a high-severity vulnerability recorded as CVE-2025-62495 with attribution to Fabrice Bellard and date 2025-09-13. {{fact:ground_truth:MQUICKJS}}\n\nRisk exposure — checklist and assessment\n1. Asset inventory: Do you run QuickJS (or MicroQuickJS) directly in any production/service components? Common integration points:\n   - Embedded scripting in edge devices, IoT firmware, or custom runtimes\n   - Server-side components that embed QuickJS for user-provided scripts\n   - Build-time tooling or CI helpers that execute JS via QuickJS\n   If any of the above apply → you have poten",
+        "threadId": "m573mdc45t65pe9hxzy08a7fkd7ytfm9"
+      },
+      "elapsed": 35592,
+      "error": null
+    },
+    {
+      "model": "claude-haiku-4.5",
+      "scenarioId": "banker_vague_disco",
+      "result": {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "canonicalName": "DISCO Pharmaceuticals",
+            "confidence": 0,
+            "input": "DISCO",
+            "type": "company"
+          },
+          "grounding": [
+            "{{fact:ground_truth:DISCO}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "email": "info@discopharma.de"
+            },
+            "founding": "2025-12-11",
+            "funding": {
+              "amount": {
+                "amount": 36,
+                "currency": "EUR",
+                "unit": "M"
+              },
+              "stage": "Seed"
+            },
+            "hqLocation": "Cologne, Germany",
+            "investors": [
+              "Ackermans & van Haaren",
+              "NRW.Bank"
+            ],
+            "leadPrograms": "ADC candidates (SCLC, MSS-CRC)",
+            "people": {
+              "ceo": "Mark Manfredi",
+              "founders": [
+                "Roman Thomas"
+              ]
+            },
+            "platform": "Surfaceome mapping platform"
+          },
+          "nextActions": [
+            "Draft outreach email to info@discopharma.de with Seed-round congratulations hook",
+            "Research German biotech or ADC-space exits in your prior portfolio for credibility references",
+            "Prepare 2-minute advisor value proposition (Series A readiness, investor network, clinical-to-commercial transition support)",
+            "Flag DISCO for weekly pipeline tracking through Q1 2026 (Series A likely 18–24 months out)"
+          ],
+          "persona": {
+            "confidence": 0.95,
+            "inferred": "JPM_STARTUP_BANKER"
+          },
+          "planSteps": [
+            "Verify DISCO is within banker window (news freshness < 30 days) ✓",
+            "Confirm Seed round timing and lead investors ✓",
+            "Identify primary contact and outreach channel ✓",
+            "Prepare personalized outreach email with advisor value prop"
+          ],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            }
+          ],
+          "verdict": "PASS"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "directToolCalls": [
+            "lookupGroundTruthEntity"
+          ],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity"
+          ],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": [
+            "No skill search before tool invoke",
+            "No progressive disclosure meta-tools used"
+          ]
+        },
+        "elapsedMs": 14558,
+        "execution": {
+          "estimatedInputTokens": 1439,
+          "estimatedOutputTokens": 741,
+          "latencyMs": 14040,
+          "modelUsed": "claude-haiku-4.5",
+          "providerUsage": {
+            "cachedInputTokens": 0,
+            "completionTokens": 1046,
+            "promptTokens": 89715,
+            "reasoningTokens": 0,
+            "totalTokens": 90761
+          },
+          "stepsCount": 2,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": true,
+        "promptMessageId": "ks73rw0e3zmppk3qc6haaefsh17ytygn",
+        "responsePreview": "## DISCO Pharmaceuticals – Banker Outreach Assessment\n\n**Verdict: PASS – Worth reaching out this week**\n\nDISCO Pharmaceuticals is a **strong banker target** right now. The company closed a €36M Seed round just 28 days ago (announced 2025-12-11), led by Ackermans & van Haaren and NRW.Bank. {{fact:ground_truth:DISCO}} This timing is ideal: the funding is fresh, the company has capital in the bank, and leadership is likely still in execution mode—exactly when strategic advisors add value.\n\nThe company is based in **Cologne, Germany**, with CEO Mark Manfredi and founder Roman Thomas leading a focused platform around **surfaceome mapping and ADC (antibody-drug conjugate) candidates**. Their lead programs target SCLC (small cell lung cancer) and MSS-CRC (microsatellite-stable colorectal cancer), both high-value oncology indications where ADC biologics command premium valuations. The primary co",
+        "threadId": "m574h7ytq5z7n5a4vzpjk385ph7yvcf3"
+      },
+      "elapsed": 15944,
+      "error": null
+    },
+    {
+      "model": "claude-haiku-4.5",
+      "scenarioId": "vc_vague_openautoglm",
+      "result": {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "competitiveMap": {
+            "losers": [
+              "Standalone phone-agent SaaS companies (their moat is now commoditized)",
+              "Closed-source mobile automation vendors (e.g., enterprise screen-scraping tools)"
+            ],
+            "winners": [
+              "Android/OS vendors (Google, Samsung, Xiaomi)",
+              "Super-app platforms (WeChat, Telegram, WhatsApp)",
+              "Telecom operators pursuing agentic services",
+              "Enterprise RPA vendors who can integrate local agent execution"
+            ]
+          },
+          "entity": {
+            "canonicalName": "OpenAutoGLM",
+            "confidence": 0,
+            "input": "OpenAutoGLM",
+            "note": "Open-source project, not a company; Apache-2.0 and MIT licensed",
+            "type": "oss_project"
+          },
+          "grounding": [
+            "{{fact:ground_truth:OPEN-AUTOGLM}}",
+            "Source: linkupSearch—OpenAutoGLM is open-source phone agent framework released 2025-12-08 with MIT/Apache-2.0 licenses",
+            "Source: linkupSearch (agent market)—AI agents market $7.6B (2025), 46% CAGR, 2026 super-apps + agents trend"
+          ],
+          "keyFacts": {
+            "distribution": "GitHub (https://github.com/zai-org/Open-AutoGLM), Hugging Face",
+            "entityType": "open-source project (GitHub: zai-org/Open-AutoGLM)",
+            "marketContext": {
+              "aiAgentsMarketSize_2025": "$7.6B",
+              "key2026Trend": "AI agents + super-apps collision",
+              "projectedCAGR": "46%",
+              "projectedSize_2030": "$50B+"
+            },
+            "releaseDate": "2025-12-08",
+            "techStack": {
+              "capability": "Vision-language model for autonomous Android task execution",
+              "license": [
+                "Apache-2.0",
+                "MIT"
+              ],
+              "model": "AutoGLM-Phone-9B"
+            }
+          },
+          "nextActions": [
+            "If you own a phone-agent company: Evaluate whether your differentiation is intent, context, or distribution—not the underlying agent tech. Consider acqui-hire targets or pivot to vertical use cases (real estate tours, field service).",
+            "If you're building an agent-enabled super-app: OpenAutoGLM now means you can add phone automation to your platform at near-zero marginal cost. Competitive clock is running; first-mover advantage goes to whoever ships agents + distribution first.",
+            "If you're evaluating agent market investment: The 2026 inflection is NOT about agent tech (commoditized) but about ecosystem lock-in and telecom/super-app penetration. Look for plays where agents become the UX for existing distribution, not the distribution itself."
+          ],
+          "persona": {
+            "confidence": 0.95,
+            "inferred": "EARLY_STAGE_VC",
+            "reasoning": "Query explicitly asks 'what does this imply' (thesis) and 'where is the wedge' (opportunity analysis)—textbook VC thesis validation"
+          },
+          "planSteps": [
+            "Lookup ground truth for OpenAutoGLM",
+            "Analyze market size and growth trajectory for AI agents",
+            "Map competitive moat destruction to market dynamics",
+            "Identify where wedge opportunity has shifted (super-apps, telecom, OS vendors)"
+          ],
+          "schemaVersion": "debrief_v1",
+          "thesisStatement": "OpenAutoGLM kills the standalone phone-agent company category by open-sourcing the technical moat. The wedge shifts from 'how do we control phones' to 'whose ecosystem owns the agent execution context.' Winners: platform players (OS, super-apps, telecom). Losers: point solutions without distribution.",
+          "toolsUsed": [
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true,
+              "result": "Confirmed open-source, phone-use, GitHub, Apache-2.0"
+            },
+            {
+              "name": "linkupSearch (OpenAutoGLM)",
+              "ok": true,
+              "result": "Technical scope: vision-language model, ADB control, 50+ app demos, local execution"
+            },
+            {
+              "name": "linkupSearch (agent market)",
+              "ok": true,
+              "result": "Market size $7.6B (2025), 46% CAGR to $50B (2030); 2026 trend: super-apps + agents"
+            }
+          ],
+          "verdict": "THESIS_VALIDATED",
+          "wedgeAnalysis": {
+            "currentWedge": "Intent understanding + multi-app orchestration + user context",
+            "futureWedge": "Platform lock-in: whose super-app / OS / telecom network owns the agent layer",
+            "implications": [
+              "Standalone phone-agent startups must pivot or die (no moat left)",
+              "Android OEMs can now embed agents natively (Samsung, Google advantage)",
+              "Super-app platforms (WeChat, Telegram) gain phone-level automation for free",
+              "Telecom operators can offer agentic services without expensive R&D"
+            ],
+            "priorWedge": "Proprietary phone-control APIs and vision-language models (high switching cost, closed ecosystem)"
+          }
+        },
+        "debriefValidation": {
+          "errors": [
+            "verdict must be PASS|FAIL|UNKNOWN"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [
+            "lookupGroundTruthEntity",
+            "linkupSearch",
+            "linkupSearch"
+          ],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity",
+            "linkupSearch"
+          ],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": [
+            "No skill search before tool invoke",
+            "No skill search for EARLY_STAGE_VC scenario",
+            "No progressive disclosure meta-tools used"
+          ]
+        },
+        "elapsedMs": 34407,
+        "execution": {
+          "estimatedInputTokens": 1382,
+          "estimatedOutputTokens": 1713,
+          "latencyMs": 33878,
+          "modelUsed": "claude-haiku-4.5",
+          "providerUsage": {
+            "cachedInputTokens": 0,
+            "completionTokens": 2183,
+            "promptTokens": 138978,
+            "reasoningTokens": 0,
+            "totalTokens": 141161
+          },
+          "stepsCount": 3,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "linkupSearch"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "linkupSearch"
+            }
+          ]
+        },
+        "expectedEntityId": "OPEN-AUTOGLM",
+        "expectedPersona": "EARLY_STAGE_VC",
+        "failureReasons": [],
+        "id": "vc_vague_openautoglm",
+        "name": "VC wedge from OSS signal",
+        "ok": true,
+        "promptMessageId": "ks7b7fvaagmnk16w0jpz0gjwf57yvwm9",
+        "responsePreview": "## Analysis: OpenAutoGLM's Strategic Implications for the Agent Market\n\n**The Market Signal:** OpenAutoGLM represents a critical democratization moment in the agent market. {{fact:ground_truth:OPEN-AUTOGLM}} As an open-source phone agent framework with downloadable models released under Apache-2.0 and MIT licenses, it signals that autonomous mobile task execution is transitioning from proprietary SaaS territory into commodity infrastructure. The project enables developers to run AI agents locally on Android devices via natural language—\"Open WeChat and send a message\"—without relying on closed-platform APIs.\n\n**Why This Matters for Market Dynamics:** The global AI agents market is projected to reach $7.6 billion in 2025, growing at ~46% CAGR to exceed $50 billion by 2030. The agent opportunity is **no longer about building AI; it's about controlling the execution layer**. OpenAutoGLM com",
+        "threadId": "m57cfxjek57hxjk4tq3cjc341n7ytvy3"
+      },
+      "elapsed": 36067,
+      "error": null
+    },
+    {
+      "model": "claude-haiku-4.5",
+      "scenarioId": "cto_vague_quickjs",
+      "result": {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "canonicalName": "QuickJS / MicroQuickJS",
+            "confidence": 0,
+            "input": "QuickJS",
+            "type": "oss_project"
+          },
+          "exposureLevel": "HIGH if directly embedded | MEDIUM if transitive dependency | LOW if sandboxed-only",
+          "grounding": [
+            "{{fact:ground_truth:MQUICKJS}}"
+          ],
+          "keyFacts": {
+            "creator": "Fabrice Bellard",
+            "cve": "CVE-2025-62495",
+            "cvePublished": "2025-09-13",
+            "cveSeverity": "High",
+            "project": "QuickJS / MicroQuickJS",
+            "projectType": "open source JavaScript engine",
+            "repository": "GitHub: bellard/quickjs (or maintained fork)"
+          },
+          "nextActions": [
+            "Scan codebase for QuickJS imports/dependencies (grep, dependency audit tools)",
+            "Categorize by criticality: production, dev-only, optional, sandboxed",
+            "Check upstream releases and patch compatibility notes on GitHub",
+            "Plan upgrade timeline (aim for within 2 weeks for production systems)",
+            "Execute full regression test suite post-upgrade",
+            "Set up monitoring/alerts for future CVEs (GitHub watch, security advisories)"
+          ],
+          "persona": {
+            "confidence": 0.95,
+            "inferred": "CTO_TECH_LEAD"
+          },
+          "planSteps": [
+            "Lookup ground truth CVE and severity",
+            "Assess dependency inventory and blast radius",
+            "Verify patch availability and compatibility",
+            "Execute upgrade and regression testing",
+            "Monitor upstream for future advisories"
+          ],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            }
+          ],
+          "verdict": "HIGH_RISK_ACTIONABLE"
+        },
+        "debriefValidation": {
+          "errors": [
+            "verdict must be PASS|FAIL|UNKNOWN"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [
+            "lookupGroundTruthEntity"
+          ],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity"
+          ],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": [
+            "No skill search before tool invoke",
+            "No skill search for CTO_TECH_LEAD scenario",
+            "No progressive disclosure meta-tools used"
+          ]
+        },
+        "elapsedMs": 14973,
+        "execution": {
+          "estimatedInputTokens": 1392,
+          "estimatedOutputTokens": 980,
+          "latencyMs": 14440,
+          "modelUsed": "claude-haiku-4.5",
+          "providerUsage": {
+            "cachedInputTokens": 0,
+            "completionTokens": 1277,
+            "promptTokens": 89489,
+            "reasoningTokens": 0,
+            "totalTokens": 90766
+          },
+          "stepsCount": 2,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [],
+        "id": "cto_vague_quickjs",
+        "name": "CTO risk exposure + patch plan",
+        "ok": true,
+        "promptMessageId": "ks7886kykjve2ajsd6becryp197yt8me",
+        "responsePreview": "---\n\n## Risk Exposure & Patch Plan Analysis\n\n**QuickJS** is an open-source JavaScript engine developed by Fabrice Bellard {{fact:ground_truth:MQUICKJS}}. Your exposure depends on whether your projects directly embed or depend on QuickJS.\n\n### Risk Exposure Assessment\n\n**CVE-2025-62495** (published 2025-09-13) affects QuickJS {{fact:ground_truth:MQUICKJS}}. This is classified as **High severity**, meaning:\n- If you embed QuickJS in application code, you have **direct exposure** to the vulnerability\n- If you use QuickJS indirectly (via a framework or runtime), you have **transitive exposure**\n- If you only execute third-party JavaScript in isolated/sandboxed environments, your blast radius is limited but still present\n\n**Key risk questions to answer:**\n1. Do you embed QuickJS in production applications or libraries?\n2. Are you using QuickJS for server-side JavaScript execution (backend scr",
+        "threadId": "m57037ehgq1yz420qv54xgpbgd7yv1wf"
+      },
+      "elapsed": 16441,
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+{
+  "sessionId": "opt-e91284e4",
+  "config": {
+    "maxIterations": 15,
+    "maxSessionSeconds": 600,
+    "benchmarkFamilies": [
+      "company_direction",
+      "relationship_mapping",
+      "repo_intelligence",
+      "world_to_company",
+      "trace_backed_draft"
+    ]
+  },
+  "baseline": {
+    "baselineId": "baseline-401d5942-1773609609024",
+    "commitHash": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+    "throughputMetrics": {
+      "taskCompletionRate": 0.72,
+      "timeToFirstDraftMs": 45000,
+      "humanEditDistance": 180,
+      "wallClockMs": 90000,
+      "toolCallCount": 28
+    },
+    "qualityMetrics": {
+      "factualPrecision": 0.82,
+      "relationshipPrecision": 0.78,
+      "evidenceLinkage": 0.8,
+      "receiptCompleteness": 0.85,
+      "falseConfidenceRate": 0.07,
+      "canaryRelativeUplift": 0
+    },
+    "capturedAt": "2026-03-15T22:35:00.000Z"
+  },
+  "candidates": [
+    {
+      "candidateId": "compound-adaptive-trigger-plus-early-term-v1",
+      "baselineId": "baseline-401d5942-1773609609024",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.8569025057743063,
+        "qualityMetrics": {
+          "factualPrecision": 1,
+          "relationshipPrecision": 0.6,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 0.9333333333333333,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.3067860637746397
+        },
+        "guardsPass": false,
+        "guardFailures": [
+          "relationshipPrecision dropped 18.0pp (max 1pp)"
+        ]
+      },
+      "verdict": "discarded",
+      "rejectionReason": "guard failures: relationshipPrecision dropped 18.0pp (max 1pp)",
+      "timestamp": "2026-03-15T23:29:25.172Z",
+      "iterationMs": 37,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T23:29:25.067Z"
+        },
+        {
+          "phase": "benchmark",
+          "model": "deterministic",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T23:29:25.135Z"
+        }
+      ],
+      "proposerRationale": "[COMPOUND][MEASURED] Stacks adaptive-trigger-thresholds (promoted round 2, +6.1%) with early-termination-low-usefulness (near-miss, +3.4%). Combined: entity-type-aware triggers fire more precisely, AND when branches produce low-usefulness results, the cell terminates early instead of wasting a refinement round. Compound discount: estimating +7% net vs +9.5% additive. — benchmark: 67ms, 5 fixtures, avg score 0.933"
+    }
+  ],
+  "promotedCandidateId": null,
+  "costEntries": [
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T23:29:25.067Z"
+    },
+    {
+      "phase": "benchmark",
+      "model": "deterministic",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T23:29:25.135Z"
+    }
+  ],
+  "costSummary": {
+    "totalInputTokens": 0,
+    "totalOutputTokens": 0,
+    "totalCostUsd": 0,
+    "costByPhase": {
+      "propose": 0,
+      "benchmark": 0
+    },
+    "costByModel": {
+      "claude-opus-4-6-session": 0,
+      "deterministic": 0
+    },
+    "callCount": 2
+  },
+  "startedAt": "2026-03-15T23:29:22.147Z",
+  "completedAt": "2026-03-15T23:29:29.888Z"
+}

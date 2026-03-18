@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMotionConfig } from '@/lib/motion';
 import {
   Mail,
   Inbox,
@@ -208,6 +209,7 @@ function EmailThreadRow({
   onClick: () => void;
   index: number;
 }) {
+  const { instant, transition } = useMotionConfig();
   const priorityColors = {
     urgent: 'bg-red-500',
     high: 'bg-orange-500',
@@ -217,9 +219,9 @@ function EmailThreadRow({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.03 }}
+      transition={transition({ delay: index * 0.03 })}
       onClick={onClick}
       className={`p-4 border-b border-edge cursor-pointer transition-colors ${
         isSelected

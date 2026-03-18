@@ -23,6 +23,48 @@ export interface OracleSourceRef {
   kind?: string;
 }
 
+export type TaskSessionProofVerdict =
+  | "verified"
+  | "provisionally_verified"
+  | "needs_review"
+  | "awaiting_approval"
+  | "failed"
+  | "in_progress";
+
+export interface TaskSessionProofPack {
+  verdict: TaskSessionProofVerdict;
+  verdictLabel: string;
+  summary: string;
+  confidence: number;
+  evidenceCount: number;
+  citationCount: number;
+  sourceRefCount: number;
+  decisionCount: number;
+  progressiveDisclosureUsed: boolean;
+  progressiveDisclosureTools: string[];
+  verificationCounts: {
+    total: number;
+    passed: number;
+    warning: number;
+    failed: number;
+    fixed: number;
+  };
+  approvalCounts: {
+    total: number;
+    pending: number;
+  };
+  keyFindings: string[];
+  openIssues: string[];
+  nextActions: string[];
+  topSourceRefs: OracleSourceRef[];
+  traceHighlights: Array<{
+    traceId: string;
+    workflowName: string;
+    status: string;
+    summary?: string;
+  }>;
+}
+
 export interface TaskSession {
   _id: Id<"agentTaskSessions">;
   title: string;
@@ -160,4 +202,3 @@ export interface DateRange {
   from: Date | null;
   to: Date | null;
 }
-

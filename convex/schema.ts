@@ -59,6 +59,16 @@ import {
   proofPacks,
   specDocs,
 } from "./domains/temporal/schema";
+import {
+  relationshipObservations,
+  relationshipEdges,
+  worldEvents,
+  watchlists,
+  dimensionProfiles,
+  dimensionSnapshots,
+  dimensionEvidence,
+  dimensionInteractions,
+} from "./domains/deepTrace/schema";
 
 // Oracle career progression schema imports
 import {
@@ -68,6 +78,47 @@ import {
   oracleClassAdvancementLog,
   oracleTemporalOpportunities,
 } from "./domains/oracle/schema";
+
+// Mission execution schema imports (v2 Layer A + C)
+import {
+  missions,
+  taskPlans,
+  runSteps,
+  judgeReviews,
+  retryAttempts,
+  sniffChecks,
+  mergeBoundaries,
+  agentPolicies,
+} from "./domains/missions/schema";
+
+// Intelligence graph schema imports (v2 Layer E)
+import {
+  intelligenceEntities,
+  entityAliases,
+  peopleProfiles,
+  investorProfiles,
+  fundHoldings,
+  ownershipSnapshots,
+  stakeholderGraphs,
+} from "./domains/intelligence/schema";
+
+// World graph schema imports (v2 Layer E)
+import {
+  geoEntities,
+  geoRelationships,
+  infrastructureAssets,
+  countryRiskSnapshots,
+  entityExposureEdges,
+  marketSignals,
+} from "./domains/world/schema";
+
+// Evaluation schema imports (v2 Layer H)
+import {
+  inferenceCalls,
+  baselineComparisons,
+  routingRecommendations,
+  canaryRuns,
+} from "./domains/evaluation/schema";
 
 /* ------------------------------------------------------------------ */
 /* 1.  DOCUMENTS  â€“  page/board/post level metadata                    */
@@ -3371,6 +3422,14 @@ export default defineSchema({
   zeroDraftArtifacts,
   proofPacks,
   specDocs,
+  relationshipObservations,
+  relationshipEdges,
+  worldEvents,
+  watchlists,
+  dimensionProfiles,
+  dimensionSnapshots,
+  dimensionEvidence,
+  dimensionInteractions,
 
   /* ------------------------------------------------------------------ */
   /* ORACLE â€” Career progression gamification                           */
@@ -4059,6 +4118,41 @@ export default defineSchema({
     .index("by_run", ["runId"])
     .index("by_testId", ["testId"])
     .index("by_run_passed", ["runId", "passed"]),
+
+  /* ------------------------------------------------------------------ */
+  /* RUBRIC EVOLUTIONS - Self-evolution audit trail (Karpathy loop)     */
+  /* ------------------------------------------------------------------ */
+  rubricEvolutions: defineTable({
+    cycleId: v.string(),
+    version: v.number(),
+    changes: v.array(v.object({
+      type: v.union(
+        v.literal("add_gate"),
+        v.literal("remove_gate"),
+        v.literal("adjust_threshold"),
+        v.literal("add_disqualifier"),
+      ),
+      gateName: v.string(),
+      reasoning: v.string(),
+      confidence: v.number(),
+      before: v.string(),
+      after: v.string(),
+    })),
+    overallReasoning: v.string(),
+    expectedImpact: v.string(),
+    analysisSnapshot: v.object({
+      totalDecisions: v.number(),
+      postRate: v.number(),
+      falsePositiveRate: v.number(),
+      dataWindowDays: v.number(),
+      gateCount: v.number(),
+    }),
+    appliedAt: v.number(),
+    status: v.union(v.literal("applied"), v.literal("skipped")),
+  })
+    .index("by_cycleId", ["cycleId"])
+    .index("by_appliedAt", ["appliedAt"])
+    .index("by_status", ["status", "appliedAt"]),
 
   // Human-in-the-Loop (HITL) Interrupts for agent approval workflow
   agentInterrupts: defineTable({
@@ -6271,7 +6365,7 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   workbenchRuns: defineTable({
     // Identity
-    model: v.string(),              // "claude-sonnet-4-6", "gpt-4o", "gemini-3-flash-preview"
+    model: v.string(),              // "claude-sonnet-4-6", "gpt-4o", "gemini-3.1-flash-lite-preview"
     provider: v.string(),           // "anthropic" | "openai" | "google" | "open-source"
     scenarioId: v.string(),         // "ui-transform" | "agent-integration" | "long-run-reliability" | "architect-mode"
     appSubstrate: v.string(),       // Frozen repo slug, e.g. "chef-todo-v1"
@@ -12686,4 +12780,45 @@ export default defineSchema({
     .index("by_user_status", ["userId", "status"])
     .index("by_schedule", ["scheduleId"])
     .index("by_started", ["startedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* MISSION EXECUTION — v2 Layer A + C                                  */
+  /* ------------------------------------------------------------------ */
+  missions,
+  taskPlans,
+  runSteps,
+  judgeReviews,
+  retryAttempts,
+  sniffChecks,
+  mergeBoundaries,
+  agentPolicies,
+
+  /* ------------------------------------------------------------------ */
+  /* INTELLIGENCE GRAPH — v2 Layer E                                      */
+  /* ------------------------------------------------------------------ */
+  intelligenceEntities,
+  entityAliases,
+  peopleProfiles,
+  investorProfiles,
+  fundHoldings,
+  ownershipSnapshots,
+  stakeholderGraphs,
+
+  /* ------------------------------------------------------------------ */
+  /* WORLD GRAPH — v2 Layer E                                             */
+  /* ------------------------------------------------------------------ */
+  geoEntities,
+  geoRelationships,
+  infrastructureAssets,
+  countryRiskSnapshots,
+  entityExposureEdges,
+  marketSignals,
+
+  /* ------------------------------------------------------------------ */
+  /* EVALUATION — v2 Layer H                                              */
+  /* ------------------------------------------------------------------ */
+  inferenceCalls,
+  baselineComparisons,
+  routingRecommendations,
+  canaryRuns,
 });

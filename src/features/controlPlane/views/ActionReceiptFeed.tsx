@@ -14,18 +14,50 @@ import { ReceiptCard } from "../components/ReceiptCard";
 import { toActionReceipt } from "../lib/receiptPresentation";
 
 type FilterMode = "all" | "allowed" | "needs-approval" | "denied" | "reversible";
+type DemoRollbackMap = Record<string, { rolledBackAt: string; rollbackRef: string }>;
 
 export const ActionReceiptFeed = memo(function ActionReceiptFeed() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<FilterMode>("all");
+  const [demoRollbackMap, setDemoRollbackMap] = useState<DemoRollbackMap>({});
 
   const convexReceipts = useQuery(api.domains.agents.receipts.actionReceipts.list, { limit: 100 });
   const liveReceipts = useMemo(
     () => (convexReceipts && convexReceipts.length > 0 ? convexReceipts.map((row) => toActionReceipt(row as Record<string, unknown>)) : null),
     [convexReceipts],
   );
-  const receipts = liveReceipts ?? DEMO_RECEIPTS;
   const isDemo = !liveReceipts;
+
+  const receipts = useMemo(() => {
+    if (liveReceipts) {
+      return liveReceipts;
+    }
+
+    return DEMO_RECEIPTS.map((receipt) => {
+      const rollback = demoRollbackMap[receipt.receiptId];
+      if (!rollback) {
+        return receipt;
+      }
+
+      return {
+        ...receipt,
+        result: {
+          ...receipt.result,
+          success: true,
+          summary: `Rolled back in demo mode. ${receipt.reversible.undoInstructions ?? "The action was reverted locally from the receipt feed."}`,
+        },
+        approval: receipt.approval
+          ? {
+              ...receipt.approval,
+              state: receipt.approval.state === "pending" ? "denied" : receipt.approval.state,
+              reviewedAt: receipt.approval.reviewedAt ?? rollback.rolledBackAt,
+              reviewedBy: receipt.approval.reviewedBy ?? "demo-operator",
+              reviewNotes: "Rolled back locally from the action receipt feed.",
+            }
+          : receipt.approval,
+      };
+    });
+  }, [demoRollbackMap, liveReceipts]);
 
   const filteredReceipts = useMemo(() => {
     if (filter === "all") return receipts;
@@ -52,6 +84,26 @@ export const ActionReceiptFeed = memo(function ActionReceiptFeed() {
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
+    });
+  };
+
+  const handleUndo = (receiptId: string) => {
+    if (!isDemo) {
+      return;
+    }
+
+    setDemoRollbackMap((prev) => {
+      if (prev[receiptId]) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [receiptId]: {
+          rolledBackAt: new Date().toISOString(),
+          rollbackRef: `demo_rb_${receiptId.slice(-8)}`,
+        },
+      };
     });
   };
 
@@ -134,6 +186,13 @@ export const ActionReceiptFeed = memo(function ActionReceiptFeed() {
             receipt={receipt}
             isExpanded={expandedIds.has(receipt.receiptId)}
             onToggle={() => toggleExpand(receipt.receiptId)}
+            onUndo={isDemo ? () => handleUndo(receipt.receiptId) : undefined}
+            rollbackState={demoRollbackMap[receipt.receiptId]
+              ? {
+                  ...demoRollbackMap[receipt.receiptId],
+                  modeLabel: "Demo rollback",
+                }
+              : undefined}
           />
         ))}
         {filteredReceipts.length === 0 && (
@@ -143,7 +202,7 @@ export const ActionReceiptFeed = memo(function ActionReceiptFeed() {
 
       <div className="border-t border-edge/30 pt-4 text-center text-[11px] text-content-muted">
         {isDemo
-          ? "Demo mode. Showing the golden action-receipt dataset until live runtime data is available."
+          ? "Demo mode. Showing the golden action-receipt dataset until live runtime data is available. Undo executes locally for reversible demo receipts."
           : `Live. Showing ${receipts.length} receipts from Convex.`}
       </div>
     </div>

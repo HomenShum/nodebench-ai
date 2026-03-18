@@ -203,6 +203,7 @@ export function FocalArea({
               embedded
               initialTab={researchHubInitialTab}
               onGoHome={goToResearchHome}
+              onNavigateToPath={(path) => navigate(path)}
               onDocumentSelect={(id) => onDocumentSelect(id as Id<"documents">)}
               onEnterWorkspace={goToWorkspaceRoot}
               activeSources={activeSources}

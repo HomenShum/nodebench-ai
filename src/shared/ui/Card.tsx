@@ -14,7 +14,7 @@ import React, { useRef, useCallback } from 'react';
 import { motion, type HTMLMotionProps } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { useMouseProximity } from '../../hooks/useMouseProximity';
-import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { useMotionConfig } from '@/lib/motion';
 
 interface CardProps extends HTMLMotionProps<'div'> {
   /** Make the card interactive with hover/click effects */
@@ -54,13 +54,13 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ) => {
     const isClickable = interactive || !!onClick;
     const enableTilt = tilt ?? isClickable;
-    const reduced = useReducedMotion();
+    const { instant, transition: motionTransition } = useMotionConfig();
     const internalRef = useRef<HTMLDivElement>(null);
     const cardRef = (ref as React.RefObject<HTMLDivElement>) || internalRef;
     const { isNear, normalizedDistance, relativeX, relativeY } = useMouseProximity(cardRef, { radius: 250 });
 
-    const shouldTilt = enableTilt && isNear && !reduced;
-    const glowStrength = isNear && !reduced ? Math.round((1 - normalizedDistance) * 25) : 0;
+    const shouldTilt = enableTilt && isNear && !instant;
+    const glowStrength = isNear && !instant ? Math.round((1 - normalizedDistance) * 25) : 0;
 
     // Tilt transform based on relative mouse position
     const tiltStyle: React.CSSProperties = shouldTilt
@@ -80,9 +80,9 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     return (
       <motion.div
         ref={cardRef}
-        whileHover={isClickable && !shouldTilt ? { y: -2, boxShadow: '0 0 0 1px rgba(0,0,0,0.03), 0 4px 8px rgba(0,0,0,0.04), 0 24px 48px rgba(0,0,0,0.08)' } : undefined}
-        whileTap={isClickable ? { scale: 0.995 } : undefined}
-        transition={{ type: 'tween', duration: 0.15 }}
+        whileHover={isClickable && !shouldTilt && !instant ? { y: -2, boxShadow: '0 0 0 1px rgba(0,0,0,0.03), 0 4px 8px rgba(0,0,0,0.04), 0 24px 48px rgba(0,0,0,0.08)' } : undefined}
+        whileTap={isClickable && !instant ? { scale: 0.995 } : undefined}
+        transition={motionTransition({ type: 'tween', duration: 0.15 })}
         className={cn(
           'bg-card rounded-lg',
           bordered && 'border border-edge/60',

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMotionConfig } from '@/lib/motion';
 import {
   Building2,
   User,
@@ -267,6 +268,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
   onExternalClick,
   className = "",
 }) => {
+  const { instant, transition } = useMotionConfig();
   const tooltipId = useId();
   const Icon = getEntityIcon(data.type);
   const colors = getEntityColors(data.type);
@@ -277,10 +279,10 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
         <motion.div
           id={tooltipId}
           role="tooltip"
-          initial={{ opacity: 0, scale: 0.95, y: -4 }}
+          initial={{ opacity: 0, scale: instant ? 1 : 0.95, y: instant ? 0 : -4 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: -4 }}
-          transition={{ duration: 0.15, ease: "easeOut" }}
+          exit={{ opacity: 0, scale: instant ? 1 : 0.95, y: instant ? 0 : -4 }}
+          transition={transition({ duration: 0.15, ease: "easeOut" })}
           style={{
             marginTop: offset.y,
             marginLeft: offset.x,

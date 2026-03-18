@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, FileText } from "lucide-react";
+import { useMotionConfig } from '@/lib/motion';
 
 export interface TooltipEvidence {
   id: string;
@@ -33,6 +34,7 @@ interface TooltipProps {
  * Features: Dark slate/blue-gray background, rich content structure, evidence links
  */
 export const ChartTooltip = ({ active, data, onEvidenceClick }: TooltipProps) => {
+  const { instant, transition } = useMotionConfig();
   if (!data) return null;
 
   // Sentiment-based accent colors (AI 2027 style)
@@ -67,10 +69,10 @@ export const ChartTooltip = ({ active, data, onEvidenceClick }: TooltipProps) =>
     <AnimatePresence>
       {active && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 10, x: "-50%" }}
+          initial={{ opacity: 0, scale: instant ? 1 : 0.95, y: instant ? 0 : 10, x: "-50%" }}
           animate={{ opacity: 1, scale: 1, y: 0, x: "-50%" }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
+          exit={{ opacity: 0, scale: instant ? 1 : 0.95 }}
+          transition={transition({ duration: 0.2, ease: "easeOut" })}
           className="absolute z-50 pointer-events-none w-72"
           style={{
             left: `${position.x}%`,
@@ -90,8 +92,8 @@ export const ChartTooltip = ({ active, data, onEvidenceClick }: TooltipProps) =>
             {/* Header with indicator dot and kicker */}
             <div className="relative flex items-center gap-2 mb-2">
               <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
+                animate={!instant ? { scale: [1, 1.2, 1] } : undefined}
+                transition={transition({ duration: 2, repeat: Infinity })}
                 className={`w-2 h-2 rounded-full ${colors.accent} ${colors.glow}`}
               />
               <span className={`font-mono text-xs font-bold ${colors.accentText}/80`}>
@@ -153,9 +155,9 @@ export const ChartTooltip = ({ active, data, onEvidenceClick }: TooltipProps) =>
 
             {/* Bottom accent line */}
             <motion.div
-              initial={{ scaleX: 0 }}
+              initial={{ scaleX: instant ? 1 : 0 }}
               animate={{ scaleX: 1 }}
-              transition={{ delay: 0.1, duration: 0.3 }}
+              transition={transition({ delay: 0.1, duration: 0.3 })}
               className={`absolute bottom-0 left-0 right-0 h-0.5 ${colors.accent}/50 origin-left`}
             />
           </div>

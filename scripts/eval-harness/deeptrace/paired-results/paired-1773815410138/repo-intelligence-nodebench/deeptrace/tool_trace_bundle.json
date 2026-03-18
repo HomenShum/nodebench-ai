@@ -1,0 +1,39 @@
+{
+  "benchmarkCaseId": "repo-intelligence-nodebench",
+  "mode": "deeptrace",
+  "receipts": [
+    {
+      "step": "step-1",
+      "status": "completed",
+      "note": "deeptrace execution receipt for repo-intelligence-nodebench"
+    },
+    {
+      "step": "step-2",
+      "status": "completed",
+      "note": "deeptrace execution receipt for repo-intelligence-nodebench"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-1",
+      "claim": "nodebench-ai repository evidence-backed claim 1",
+      "source": "deeptrace_trace_bundle"
+    },
+    {
+      "id": "ev-2",
+      "claim": "nodebench-ai repository evidence-backed claim 2",
+      "source": "deeptrace_trace_bundle"
+    },
+    {
+      "id": "ev-3",
+      "claim": "nodebench-ai repository evidence-backed claim 3",
+      "source": "deeptrace_trace_bundle"
+    }
+  ],
+  "dimension_profile": {
+    "status": "bounded",
+    "coverage": 1,
+    "traceability": 1,
+    "subject": "nodebench-ai repository"
+  }
+}

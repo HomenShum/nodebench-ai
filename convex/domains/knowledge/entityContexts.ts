@@ -4,6 +4,7 @@
 
 import { v } from "convex/values";
 import { mutation, query, internalMutation, internalQuery } from "../../_generated/server";
+import { internal } from "../../_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Id, Doc } from "../../_generated/dataModel";
 import {
@@ -55,6 +56,7 @@ export const storeEntityContext = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
+    const canonicalKey = buildCanonicalKey(args.entityType, args.entityName);
 
     // Check if entity context already exists
     const existing = await ctx.db
@@ -82,12 +84,19 @@ export const storeEntityContext = mutation({
         personaHooks: args.personaHooks,
         spreadsheetId: args.spreadsheetId,
         rowIndex: args.rowIndex,
+        canonicalKey,
         researchedAt: now,
         researchedBy: args.researchedBy,
         lastAccessedAt: now,
         version: existing.version + 1,
         isStale: false,
       });
+
+      await ctx.scheduler.runAfter(
+        0,
+        internal.domains.deepTrace.integrations.syncEntityContextToDeepTrace,
+        { entityContextId: existing._id },
+      );
 
       console.log(`[entityContexts] Updated context for ${args.entityType}: ${args.entityName}`);
       return existing._id;
@@ -111,6 +120,7 @@ export const storeEntityContext = mutation({
         personaHooks: args.personaHooks,
         spreadsheetId: args.spreadsheetId,
         rowIndex: args.rowIndex,
+        canonicalKey,
         researchedAt: now,
         researchedBy: args.researchedBy,
         lastAccessedAt: now,
@@ -118,6 +128,12 @@ export const storeEntityContext = mutation({
         version: 1,
         isStale: false,
       });
+
+      await ctx.scheduler.runAfter(
+        0,
+        internal.domains.deepTrace.integrations.syncEntityContextToDeepTrace,
+        { entityContextId: id },
+      );
 
       console.log(`[entityContexts] Created context for ${args.entityType}: ${args.entityName}`);
       return id;

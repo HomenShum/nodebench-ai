@@ -1,0 +1,472 @@
+{
+  "generatedAt": "2026-01-20T10:15:22.602Z",
+  "gitSha": "8855f5f82eff2962a0459bd16d1c29720d5d3dc7",
+  "convexUrl": "https://formal-shepherd-851.convex.cloud",
+  "model": "glm-4.7-flash",
+  "elapsedMs": 105648,
+  "result": {
+    "ok": true,
+    "elapsedMs": 105263,
+    "summary": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "window": {
+      "suite": "core",
+      "batches": 1,
+      "totalAvailable": 3
+    },
+    "pricing": {
+      "provider": "openrouter",
+      "sourceUrl": "https://openrouter.ai/api/v1/models",
+      "fetchedAt": "2026-01-20T10:15:22.600Z",
+      "cache": {
+        "source": "repo",
+        "path": "shared/llm/modelCatalog.ts"
+      },
+      "model": {
+        "model": "glm-4.7-flash",
+        "inputUsdPer1MTokens": 0.07,
+        "outputUsdPer1MTokens": 0.4,
+        "cachedInputUsdPer1MTokens": 0.01,
+        "contextWindow": 200000
+      },
+      "notes": "Pricing sourced from repo model catalog; verify with OpenRouter /models endpoint as needed."
+    },
+    "estimatedUsage": {
+      "mode": "provider",
+      "inputTokens": 129621,
+      "outputTokens": 1618,
+      "cachedInputTokens": 32015,
+      "estimatedCostUsd": 0.007799770000000001
+    },
+    "runs": [
+      {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "candidates": [],
+            "canonicalName": "QuickJS / MicroQuickJS",
+            "confidence": 0.9,
+            "input": "QuickJS",
+            "resolvedId": "MQUICKJS",
+            "type": "oss_project (treat oss_project as open source / GitHub / repository)"
+          },
+          "fallbacks": [],
+          "grounding": [
+            "{{fact:ground_truth:MQUICKJS}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "channel": null,
+              "email": null
+            },
+            "freshness": {
+              "ageDays": null
+            },
+            "funding": {
+              "amount": {
+                "amount": null,
+                "currency": null,
+                "unit": null
+              },
+              "coLeads": [],
+              "date": null,
+              "stage": null
+            },
+            "hqLocation": null,
+            "people": {
+              "ceo": null,
+              "founders": []
+            },
+            "product": {
+              "leadPrograms": [],
+              "platform": null
+            }
+          },
+          "nextActions": [
+            "Verify primary sources (if required)",
+            "Run a quick contradiction scan",
+            "Draft a share-ready version for stakeholders"
+          ],
+          "persona": {
+            "assumptions": [
+              "Heuristic inference from query keywords for CTO_TECH_LEAD"
+            ],
+            "confidence": 0.8,
+            "inferred": "CTO_TECH_LEAD"
+          },
+          "planSteps": [
+            "Skill discovery",
+            "Lookup ground truth",
+            "Verify: check required fields + grounding",
+            "Format response + debrief"
+          ],
+          "risks": [],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "error": null,
+              "name": "searchAvailableSkills",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "searchAvailableSkills"
+            },
+            {
+              "error": null,
+              "name": "describeSkill"
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "verdict": "UNKNOWN"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "artifactBytesAvoided": 0,
+          "citationsInResponse": 0,
+          "citationsResolved": 0,
+          "citationsUnresolved": 0,
+          "costBudgetExceeded": false,
+          "directToolCalls": [
+            "lookupGroundTruthEntity",
+            "lookupGroundTruthEntity",
+            "lookupGroundTruthEntity",
+            "lookupGroundTruthEntity"
+          ],
+          "disclosureLevel": "partial",
+          "estimatedToolSchemaTokens": 12250,
+          "resourceLinksCreated": 0,
+          "resourceLinksRetrieved": 0,
+          "skillSearchCalls": 2,
+          "skillsActivated": [],
+          "tokenBudgetExceeded": false,
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity"
+          ],
+          "usedMetaTools": true,
+          "usedSkillFirst": true,
+          "warnings": []
+        },
+        "elapsedMs": 105263,
+        "execution": {
+          "estimatedInputTokens": 1709,
+          "estimatedOutputTokens": 1001,
+          "latencyMs": 104663,
+          "modelUsed": "glm-4.7-flash",
+          "providerUsage": {
+            "cachedInputTokens": 32015,
+            "completionTokens": 1618,
+            "promptTokens": 129621,
+            "reasoningTokens": 832,
+            "totalTokens": 131239
+          },
+          "stepsCount": 4,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "argsPreview": "{\"query\":\"QuickJS — do I have risk exposure and what is my patch plan?\"}",
+              "name": "searchAvailableSkills"
+            },
+            {
+              "argsPreview": "{\"entity\":\"MQUICKJS\"}",
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "describeSkill"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "searchAvailableSkills",
+              "ok": true,
+              "resultPreview": "Skill search preflight ok (query='QuickJS — do I have risk exposure and what is my patch plan?')"
+            },
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true,
+              "resultPreview": "{{fact:ground_truth:MQUICKJS}}\nEntity ID: MQUICKJS\nCanonical name: QuickJS / MicroQuickJS\nEntity type: oss_project (treat oss_project as open source / GitHub / repository)\nSeverity (ground truth hint): High\nRequired facts: CVE-2025-62495 | Fabrice Bellard | 2025-09-13 | JavaScript engine\nForbidden facts: Cloudflare Workers uses QuickJS | critical severity\nWithin banker window: true\nHas primary source requirement: true"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "describeSkill"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [],
+        "id": "cto_vague_quickjs",
+        "name": "CTO risk exposure + patch plan",
+        "ok": true,
+        "promptMessageId": "ks77zym55zf5a3x7eds5e847mx7zkn0n",
+        "responsePreview": "## QuickJS Risk Exposure & Patch Plan\n\n**Severity: High** {{fact:ground_truth:MQUICKJS}} — this assessment assumes High severity and excludes contradictory claims.\n\n### ⚠️ Risk Exposure\n\n| Risk Factor | Details |\n|-------------|---------|\n| **Vulnerability** | CVE-2025-62495 (9 months since disclosure) |\n| **Release Timeline** | Vulnerability disclosed on 2025-09-13 |\n| **Technology Type** | JavaScript engine |\n| **Vulnerability Source** | QuickJS / MicroQuickJS project |\n\n### 🔧 Immediate Patch Plan\n\n#### Phase 1: Assessment (Day 1-2)\n1. **Inventory** — Confirm all systems using QuickJS or MicroQuickJS; map to hostnames and owners\n2. **Impact Review** — Identify which workloads depend on QuickJS / MicroQuickJS\n\n#### Phase 2: Remediation (Day 3-7)\n3. **Vendor Communications** — Notify vendors using QuickJS / MicroQuickJS (e.g., OS distributions, SDKs) and request vendor-signed CVE fixes ",
+        "threadId": "m5713a9fcrk6wh9m3vzktv90q17zjcqp"
+      }
+    ],
+    "rawBatches": [
+      {
+        "elapsedMs": 105263,
+        "model": "glm-4.7-flash",
+        "ok": true,
+        "runs": [
+          {
+            "checks": {
+              "contact": true,
+              "entityResolved": true,
+              "fundingStage": true,
+              "grounding": true,
+              "hq": true,
+              "nextActions": true,
+              "persona": true
+            },
+            "debrief": {
+              "entity": {
+                "candidates": [],
+                "canonicalName": "QuickJS / MicroQuickJS",
+                "confidence": 0.9,
+                "input": "QuickJS",
+                "resolvedId": "MQUICKJS",
+                "type": "oss_project (treat oss_project as open source / GitHub / repository)"
+              },
+              "fallbacks": [],
+              "grounding": [
+                "{{fact:ground_truth:MQUICKJS}}"
+              ],
+              "keyFacts": {
+                "contact": {
+                  "channel": null,
+                  "email": null
+                },
+                "freshness": {
+                  "ageDays": null
+                },
+                "funding": {
+                  "amount": {
+                    "amount": null,
+                    "currency": null,
+                    "unit": null
+                  },
+                  "coLeads": [],
+                  "date": null,
+                  "stage": null
+                },
+                "hqLocation": null,
+                "people": {
+                  "ceo": null,
+                  "founders": []
+                },
+                "product": {
+                  "leadPrograms": [],
+                  "platform": null
+                }
+              },
+              "nextActions": [
+                "Verify primary sources (if required)",
+                "Run a quick contradiction scan",
+                "Draft a share-ready version for stakeholders"
+              ],
+              "persona": {
+                "assumptions": [
+                  "Heuristic inference from query keywords for CTO_TECH_LEAD"
+                ],
+                "confidence": 0.8,
+                "inferred": "CTO_TECH_LEAD"
+              },
+              "planSteps": [
+                "Skill discovery",
+                "Lookup ground truth",
+                "Verify: check required fields + grounding",
+                "Format response + debrief"
+              ],
+              "risks": [],
+              "schemaVersion": "debrief_v1",
+              "toolsUsed": [
+                {
+                  "error": null,
+                  "name": "searchAvailableSkills",
+                  "ok": true
+                },
+                {
+                  "error": null,
+                  "name": "lookupGroundTruthEntity",
+                  "ok": true
+                },
+                {
+                  "error": null,
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "error": null,
+                  "name": "describeSkill"
+                },
+                {
+                  "error": null,
+                  "name": "lookupGroundTruthEntity"
+                }
+              ],
+              "verdict": "UNKNOWN"
+            },
+            "debriefValidation": {
+              "errors": [],
+              "ok": true
+            },
+            "disclosure": {
+              "artifactBytesAvoided": 0,
+              "citationsInResponse": 0,
+              "citationsResolved": 0,
+              "citationsUnresolved": 0,
+              "costBudgetExceeded": false,
+              "directToolCalls": [
+                "lookupGroundTruthEntity",
+                "lookupGroundTruthEntity",
+                "lookupGroundTruthEntity",
+                "lookupGroundTruthEntity"
+              ],
+              "disclosureLevel": "partial",
+              "estimatedToolSchemaTokens": 12250,
+              "resourceLinksCreated": 0,
+              "resourceLinksRetrieved": 0,
+              "skillSearchCalls": 2,
+              "skillsActivated": [],
+              "tokenBudgetExceeded": false,
+              "toolInvokeErrors": 0,
+              "toolSearchCalls": 0,
+              "toolsExpanded": [],
+              "toolsInvoked": [
+                "lookupGroundTruthEntity"
+              ],
+              "usedMetaTools": true,
+              "usedSkillFirst": true,
+              "warnings": []
+            },
+            "elapsedMs": 105263,
+            "execution": {
+              "estimatedInputTokens": 1709,
+              "estimatedOutputTokens": 1001,
+              "latencyMs": 104663,
+              "modelUsed": "glm-4.7-flash",
+              "providerUsage": {
+                "cachedInputTokens": 32015,
+                "completionTokens": 1618,
+                "promptTokens": 129621,
+                "reasoningTokens": 832,
+                "totalTokens": 131239
+              },
+              "stepsCount": 4,
+              "streamStatus": "completed",
+              "toolCalls": [
+                {
+                  "argsPreview": "{\"query\":\"QuickJS — do I have risk exposure and what is my patch plan?\"}",
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "argsPreview": "{\"entity\":\"MQUICKJS\"}",
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "name": "describeSkill"
+                },
+                {
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "name": "lookupGroundTruthEntity"
+                }
+              ],
+              "toolResults": [
+                {
+                  "name": "searchAvailableSkills",
+                  "ok": true,
+                  "resultPreview": "Skill search preflight ok (query='QuickJS — do I have risk exposure and what is my patch plan?')"
+                },
+                {
+                  "name": "lookupGroundTruthEntity",
+                  "ok": true,
+                  "resultPreview": "{{fact:ground_truth:MQUICKJS}}\nEntity ID: MQUICKJS\nCanonical name: QuickJS / MicroQuickJS\nEntity type: oss_project (treat oss_project as open source / GitHub / repository)\nSeverity (ground truth hint): High\nRequired facts: CVE-2025-62495 | Fabrice Bellard | 2025-09-13 | JavaScript engine\nForbidden facts: Cloudflare Workers uses QuickJS | critical severity\nWithin banker window: true\nHas primary source requirement: true"
+                },
+                {
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "name": "describeSkill"
+                },
+                {
+                  "name": "lookupGroundTruthEntity"
+                }
+              ]
+            },
+            "expectedEntityId": "MQUICKJS",
+            "expectedPersona": "CTO_TECH_LEAD",
+            "failureReasons": [],
+            "id": "cto_vague_quickjs",
+            "name": "CTO risk exposure + patch plan",
+            "ok": true,
+            "promptMessageId": "ks77zym55zf5a3x7eds5e847mx7zkn0n",
+            "responsePreview": "## QuickJS Risk Exposure & Patch Plan\n\n**Severity: High** {{fact:ground_truth:MQUICKJS}} — this assessment assumes High severity and excludes contradictory claims.\n\n### ⚠️ Risk Exposure\n\n| Risk Factor | Details |\n|-------------|---------|\n| **Vulnerability** | CVE-2025-62495 (9 months since disclosure) |\n| **Release Timeline** | Vulnerability disclosed on 2025-09-13 |\n| **Technology Type** | JavaScript engine |\n| **Vulnerability Source** | QuickJS / MicroQuickJS project |\n\n### 🔧 Immediate Patch Plan\n\n#### Phase 1: Assessment (Day 1-2)\n1. **Inventory** — Confirm all systems using QuickJS or MicroQuickJS; map to hostnames and owners\n2. **Impact Review** — Identify which workloads depend on QuickJS / MicroQuickJS\n\n#### Phase 2: Remediation (Day 3-7)\n3. **Vendor Communications** — Notify vendors using QuickJS / MicroQuickJS (e.g., OS distributions, SDKs) and request vendor-signed CVE fixes ",
+            "threadId": "m5713a9fcrk6wh9m3vzktv90q17zjcqp"
+          }
+        ],
+        "summary": {
+          "failed": 0,
+          "passed": 1,
+          "total": 1
+        },
+        "window": {
+          "limit": 1,
+          "nextOffset": 2,
+          "offset": 1,
+          "suite": "core",
+          "totalAvailable": 3
+        }
+      }
+    ]
+  }
+}

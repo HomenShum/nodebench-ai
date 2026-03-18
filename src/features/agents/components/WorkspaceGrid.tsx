@@ -1,5 +1,6 @@
 import React, { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useMotionConfig } from '@/lib/motion';
 import {
   FileText,
   CheckSquare,
@@ -30,12 +31,13 @@ interface QuickAccessCardProps {
 }
 
 const QuickAccessCard = React.memo(function QuickAccessCard({ title, description, icon: Icon, color, count, onClick }: QuickAccessCardProps) {
+  const { instant } = useMotionConfig();
   return (
     <motion.button
       onClick={onClick}
       className={`p-5 rounded-lg border ${color} text-left transition-all group`}
-      whileHover={{ scale: 1.02, y: -2 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={!instant ? { scale: 1.02, y: -2 } : undefined}
+      whileTap={!instant ? { scale: 0.98 } : undefined}
     >
       <div className="flex items-start justify-between mb-3">
         <div className="p-2 rounded-lg bg-surface/50">
@@ -60,6 +62,7 @@ export const WorkspaceGrid = memo(function WorkspaceGrid({
   onDocumentSelect,
   onCreateDocument,
 }: WorkspaceGridProps) {
+  const { instant } = useMotionConfig();
   // Fetch only what we need - 4 recent docs for display, counts come from separate queries if needed
   const documents = useQuery(api.domains.documents.documents.listDocuments, { limit: 10 });
   const tasks = useQuery(api.domains.tasks.tasks.listTasks, { limit: 20 });
@@ -141,7 +144,7 @@ export const WorkspaceGrid = memo(function WorkspaceGrid({
                 key={doc._id}
                 onClick={() => onDocumentSelect?.(doc._id)}
                 className="p-4 bg-surface rounded-lg border border-edge text-left hover:border-blue-300 transition-all group"
-                whileHover={{ y: -2 }}
+                whileHover={!instant ? { y: -2 } : undefined}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <FileText className="h-4 w-4 text-content-muted group-hover:text-blue-500 transition-colors" />

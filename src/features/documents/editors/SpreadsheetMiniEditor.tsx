@@ -463,7 +463,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
               <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 bg-surface border border-edge rounded shadow-sm font-mono text-xs">Esc</kbd>Close</span>
               <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 bg-surface border border-edge rounded shadow-sm font-mono text-xs">⌘S</kbd>Save changes</span>
             </div>
-            <button type="button" onClick={() => void handleSave()} disabled={saveHint !== "unsaved" || isSaving} className={`px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-lg ${saveHint === "unsaved" && !isSaving ? "bg-content text-surface hover:opacity-90 shadow-edge" : "bg-surface-secondary text-content-secondary cursor-not-allowed shadow-none"}`}>Save Changes</button>
+            <button type="button" onClick={() => void handleSave()} disabled={saveHint !== "unsaved" || isSaving} className={`px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-lg ${saveHint === "unsaved" && !isSaving ? "bg-content text-surface hover:opacity-90 shadow-sm" : "bg-surface-secondary text-content-secondary cursor-not-allowed shadow-none"}`}>Save Changes</button>
           </div>
         </div>
       </div>

@@ -1,0 +1,69 @@
+{
+  "sessionId": "opt-0b393ada",
+  "config": {
+    "maxIterations": 10,
+    "maxSessionSeconds": 600,
+    "benchmarkFamilies": [
+      "company_direction",
+      "relationship_mapping",
+      "repo_intelligence",
+      "world_to_company",
+      "trace_backed_draft"
+    ]
+  },
+  "baseline": {
+    "baselineId": "nodebench-research-cell-v1",
+    "commitHash": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+    "throughputMetrics": {
+      "taskCompletionRate": 0.82,
+      "timeToFirstDraftMs": 46200,
+      "humanEditDistance": 135,
+      "wallClockMs": 91200,
+      "toolCallCount": 31
+    },
+    "qualityMetrics": {
+      "factualPrecision": 0.71,
+      "relationshipPrecision": 0.72,
+      "evidenceLinkage": 0.7799999999999999,
+      "receiptCompleteness": 0.82,
+      "falseConfidenceRate": 0.07,
+      "canaryRelativeUplift": 0.05
+    },
+    "capturedAt": "2026-03-15T21:42:02.207Z"
+  },
+  "candidates": [
+    {
+      "candidateId": "nodebench-research-cell-v1",
+      "baselineId": "baseline-401d5942-1773609609024",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.6916789206027383,
+        "qualityMetrics": {
+          "factualPrecision": 0.71,
+          "relationshipPrecision": 0.72,
+          "evidenceLinkage": 0.7799999999999999,
+          "receiptCompleteness": 0.82,
+          "falseConfidenceRate": 0.07,
+          "canaryRelativeUplift": 0.05
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "promoted",
+      "timestamp": "2026-03-15T21:42:02.207Z",
+      "iterationMs": 177
+    }
+  ],
+  "promotedCandidateId": "nodebench-research-cell-v1",
+  "startedAt": "2026-03-15T21:41:59.011Z",
+  "completedAt": "2026-03-15T21:42:06.617Z"
+}

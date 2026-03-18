@@ -1,0 +1,151 @@
+{
+  "generatedAt": "2026-01-08T08:16:33.474Z",
+  "totalElapsed": 133881,
+  "modelsToTest": [
+    "deepseek-v3.2"
+  ],
+  "suite": "core",
+  "scenarios": 1,
+  "totalEvaluations": 1,
+  "results": [
+    {
+      "model": "deepseek-v3.2",
+      "scenarioId": "banker_vague_disco",
+      "result": {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "canonicalName": "DISCO Pharmaceuticals",
+            "confidence": 0,
+            "input": "DISCO",
+            "type": "company"
+          },
+          "grounding": [
+            "{{fact:ground_truth:DISCO}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "email": "info@discopharma.de"
+            },
+            "funding": {
+              "amount": {
+                "amount": 36,
+                "currency": "EUR",
+                "unit": "M"
+              },
+              "stage": "Seed"
+            },
+            "hqLocation": "Cologne, Germany",
+            "people": {
+              "ceo": "Mark Manfredi",
+              "founders": [
+                "Roman Thomas"
+              ]
+            }
+          },
+          "nextActions": [
+            "Reach out via email to info@discopharma.de within the next 3 business days",
+            "Prepare a brief on German biotech ecosystem context for discussion",
+            "Research additional leadership team members beyond CEO/founder",
+            "Monitor for follow-on funding announcements or clinical milestones",
+            "Check for recent publications or conference presentations about surfaceome platform"
+          ],
+          "persona": {
+            "confidence": 0.9,
+            "inferred": "JPM_STARTUP_BANKER"
+          },
+          "planSteps": [
+            "Verify ground truth data",
+            "Assess outreach readiness",
+            "Prepare contact strategy"
+          ],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            }
+          ],
+          "verdict": "PASS"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "directToolCalls": [
+            "lookupGroundTruthEntity",
+            "lookupGroundTruthEntity"
+          ],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity"
+          ],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": [
+            "No skill search before tool invoke",
+            "No progressive disclosure meta-tools used"
+          ]
+        },
+        "elapsedMs": 133468,
+        "execution": {
+          "estimatedInputTokens": 1439,
+          "estimatedOutputTokens": 827,
+          "latencyMs": 132119,
+          "modelUsed": "deepseek-v3.2",
+          "providerUsage": {
+            "cachedInputTokens": 0,
+            "completionTokens": 862,
+            "promptTokens": 80626,
+            "reasoningTokens": 0,
+            "totalTokens": 81488
+          },
+          "stepsCount": 2,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": true,
+        "promptMessageId": "ks7a2fx94at4ggyqz70916ezvs7yv25y",
+        "responsePreview": "Based on the verified ground truth data, I'll provide an analysis of DISCO Pharmaceuticals for outreach consideration.\n\n**Analysis of DISCO Pharmaceuticals:****Persona Inference**: Your query focuses on \"worth reaching out on\" and \"what I should do with it\" – this directly maps to **JPM_STARTUP_BANKER** persona. You're evaluating this as an outbound target for banker outreach, which aligns with pipeline building and weekly target validation.\n\n**Verdict: PASS** – DISCO Pharmaceuticals meets the JPM_STARTUP_BANKER criteria for several key reasons. First, the company is fresh within the 30-day banker window with a Seed round announced just 16 days ago (2025-12-11). {{fact:ground_truth:DISCO}} Second, they have substantial funding (€36M Seed) with credible institutional co-leads (Ackermans & van Haaren and NRW.Bank), signaling validation from established investors. The surfaceome mapping pla",
+        "threadId": "m574x93abcw4n7racg53k1a6c97yvrf3"
+      },
+      "elapsed": 133881,
+      "error": null
+    }
+  ]
+}

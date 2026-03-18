@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMutation } from 'convex/react';
+import { useMotionConfig } from '@/lib/motion';
 import { api } from '../../../convex/_generated/api';
 import { toast } from 'sonner';
 import {
@@ -22,6 +23,7 @@ interface QuickCaptureWidgetProps {
 }
 
 export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) {
+  const { instant, transition } = useMotionConfig();
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<CaptureMode>('note');
   const [content, setContent] = useState('');
@@ -107,9 +109,10 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: instant ? 1 : 0.9, y: instant ? 0 : 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            exit={{ opacity: 0, scale: instant ? 1 : 0.9, y: instant ? 0 : 20 }}
+            transition={transition({ type: 'spring', stiffness: 300, damping: 25 })}
             className="absolute bottom-14 sm:bottom-16 right-0 w-80 bg-surface rounded-xl shadow-xl border border-edge overflow-hidden"
           >
             {/* Header */}
@@ -221,8 +224,9 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
 
       {/* FAB Button */}
       <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={!instant ? { scale: 1.05 } : undefined}
+        whileTap={!instant ? { scale: 0.95 } : undefined}
+        transition={transition({ type: 'spring', stiffness: 400, damping: 17 })}
         onClick={() => setIsOpen(!isOpen)}
         aria-label={isOpen ? 'Close quick capture' : 'Open quick capture'}
         title={isOpen ? 'Close quick capture' : 'Quick capture - add note, task, or voice memo'}
@@ -230,7 +234,7 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
           isOpen ? 'bg-surface-secondary text-content' : 'bg-primary text-primary-foreground hover:opacity-90 shadow-primary/20'
         }`}
       >
-        <motion.div animate={{ rotate: isOpen ? 45 : 0 }} className="flex items-center justify-center">
+        <motion.div animate={{ rotate: isOpen ? 45 : 0 }} transition={transition({ duration: 0.2 })} className="flex items-center justify-center">
           <Plus className="h-6 w-6" />
         </motion.div>
       </motion.button>

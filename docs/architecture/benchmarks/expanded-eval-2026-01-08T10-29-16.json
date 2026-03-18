@@ -1,0 +1,51 @@
+{
+  "generatedAt": "2026-01-08T10:29:16.782Z",
+  "model": "gemini-3-flash",
+  "category": "web",
+  "totalElapsed": 61142,
+  "summary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "passRate": 100
+  },
+  "results": [
+    {
+      "id": "web_disco_news",
+      "name": "Web: DISCO news search",
+      "category": "web",
+      "passed": true,
+      "elapsed": 14007,
+      "toolsCalled": [
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "web_salesforce_fetch",
+      "name": "Web: Salesforce Agentforce deep dive",
+      "category": "web",
+      "passed": true,
+      "elapsed": 33171,
+      "toolsCalled": [
+        "initScratchpad",
+        "setActiveSection",
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity",
+        "linkupSearch"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "web_disco_multi_source",
+      "name": "Web: DISCO multi-source verification",
+      "category": "web",
+      "passed": true,
+      "elapsed": 13964,
+      "toolsCalled": [
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": []
+    }
+  ]
+}

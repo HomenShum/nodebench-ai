@@ -238,7 +238,7 @@ describe("GAIA capability: audio lane", () => {
       );
     }
 
-    const baselineModel = process.env.NODEBENCH_GAIA_BASELINE_MODEL ?? "gemini-3-flash-preview";
+    const baselineModel = process.env.NODEBENCH_GAIA_BASELINE_MODEL ?? "gemini-3.1-flash-lite-preview";
     const toolsModel = process.env.NODEBENCH_GAIA_TOOLS_MODEL ?? baselineModel;
     const baselineLlm = await createTextLlmClient({ model: baselineModel });
     const toolsLlm = await createTextLlmClient({ model: toolsModel });

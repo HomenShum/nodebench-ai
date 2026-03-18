@@ -91,7 +91,7 @@ export async function evaluateText(
   signal?: AbortSignal,
 ): Promise<JudgeResult> {
   const threshold = config.threshold ?? 70;
-  const model = config.model ?? "gemini-2.5-flash";
+  const model = config.model ?? "gemini-3.1-flash-lite-preview";
   const start = Date.now();
 
   const raw = await callLLM<RawJudgeResponse>({
@@ -115,7 +115,7 @@ export async function evaluatePair(
   signal?: AbortSignal,
 ): Promise<JudgeResult> {
   const threshold = config.threshold ?? 70;
-  const model = config.model ?? "gemini-2.5-flash";
+  const model = config.model ?? "gemini-3.1-flash-lite-preview";
   const start = Date.now();
 
   const raw = await callLLM<RawJudgeResponse>({

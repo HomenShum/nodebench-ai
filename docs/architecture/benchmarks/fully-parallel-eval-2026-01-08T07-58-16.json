@@ -1,0 +1,65 @@
+{
+  "generatedAt": "2026-01-08T07:58:16.352Z",
+  "totalElapsed": 1720,
+  "modelsToTest": [
+    "claude-haiku-4.5"
+  ],
+  "suite": "core",
+  "scenarios": 1,
+  "totalEvaluations": 1,
+  "results": [
+    {
+      "model": "claude-haiku-4.5",
+      "scenarioId": "banker_vague_disco",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 1393,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": false,
+        "promptMessageId": "ks7ec3x4r42qyw8q29c0jhvzth7yv6ye",
+        "responsePreview": "",
+        "threadId": "m57ftgs85xt888ay07k782vb4s7ytc3e"
+      },
+      "elapsed": 1720,
+      "error": null
+    }
+  ]
+}

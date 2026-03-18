@@ -1,0 +1,1282 @@
+{
+  "generatedAt": "2026-01-20T10:18:08.114Z",
+  "gitSha": "8855f5f82eff2962a0459bd16d1c29720d5d3dc7",
+  "convexUrl": "https://formal-shepherd-851.convex.cloud",
+  "model": "gemini-3-flash",
+  "elapsedMs": 65000,
+  "result": {
+    "ok": true,
+    "elapsedMs": 64638,
+    "summary": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0
+    },
+    "window": {
+      "suite": "core",
+      "batches": 1,
+      "totalAvailable": 3
+    },
+    "pricing": {
+      "provider": "google",
+      "sourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+      "fetchedAt": "2026-01-20T08:34:08.685Z",
+      "cache": {
+        "source": "cache",
+        "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\google-gemini-api-pricing-latest.json"
+      },
+      "model": {
+        "model": "Gemini 3 Flash Preview",
+        "inputUsdPer1MTokens": 0.5,
+        "outputUsdPer1MTokens": 3,
+        "inputUsdPer1MTokensOver200k": null,
+        "outputUsdPer1MTokensOver200k": null,
+        "contextCacheUsdPer1MTokens": 0.05
+      },
+      "notes": [
+        "Google Gemini API pricing varies by prompt length and modality; for token-cost estimation we use the <=200k 'text' list rates from the first pricing table under each Gemini 3 section.",
+        "If your prompts exceed 200k tokens, use the *Over200k rates captured in this snapshot instead."
+      ]
+    },
+    "estimatedUsage": {
+      "mode": "provider",
+      "inputTokens": 276036,
+      "outputTokens": 2793,
+      "cachedInputTokens": 217060,
+      "estimatedCostUsd": 0.146397
+    },
+    "runs": [
+      {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "candidates": [],
+            "canonicalName": "DISCO Pharmaceuticals",
+            "confidence": 0.9,
+            "input": "DISCO",
+            "resolvedId": "DISCO",
+            "type": "private_company (treat oss_project as open source / GitHub / repository)"
+          },
+          "fallbacks": [],
+          "grounding": [
+            "{{fact:ground_truth:DISCO}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "channel": null,
+              "email": "info@discopharma.de"
+            },
+            "freshness": {
+              "ageDays": 16
+            },
+            "funding": {
+              "amount": {
+                "amount": 36,
+                "currency": "EUR",
+                "unit": "M"
+              },
+              "coLeads": [],
+              "date": null,
+              "stage": "Seed"
+            },
+            "hqLocation": "Cologne, Germany",
+            "people": {
+              "ceo": "Mark Manfredi",
+              "founders": [
+                "Roman Thomas"
+              ]
+            },
+            "product": {
+              "leadPrograms": [
+                "Lead ADC candidates"
+              ],
+              "platform": "Surfaceome mapping platform"
+            }
+          },
+          "nextActions": [
+            "Verify primary sources (if required)",
+            "Run a quick contradiction scan",
+            "Draft a share-ready version for stakeholders"
+          ],
+          "persona": {
+            "assumptions": [
+              "Heuristic inference from query keywords for JPM_STARTUP_BANKER"
+            ],
+            "confidence": 0.8,
+            "inferred": "JPM_STARTUP_BANKER"
+          },
+          "planSteps": [
+            "Skill discovery",
+            "Lookup ground truth",
+            "Verify: check required fields + grounding",
+            "Format response + debrief"
+          ],
+          "risks": [],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "error": null,
+              "name": "searchAvailableSkills",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "searchAvailableSkills"
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "error": null,
+              "name": "linkupSearch"
+            }
+          ],
+          "verdict": "UNKNOWN"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "artifactBytesAvoided": 0,
+          "citationsInResponse": 0,
+          "citationsResolved": 0,
+          "citationsUnresolved": 0,
+          "costBudgetExceeded": false,
+          "directToolCalls": [
+            "lookupGroundTruthEntity",
+            "initScratchpad",
+            "lookupGroundTruthEntity",
+            "linkupSearch"
+          ],
+          "disclosureLevel": "partial",
+          "estimatedToolSchemaTokens": 12250,
+          "resourceLinksCreated": 0,
+          "resourceLinksRetrieved": 0,
+          "skillSearchCalls": 2,
+          "skillsActivated": [],
+          "tokenBudgetExceeded": false,
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity",
+            "initScratchpad",
+            "linkupSearch"
+          ],
+          "usedMetaTools": true,
+          "usedSkillFirst": true,
+          "warnings": []
+        },
+        "elapsedMs": 28156,
+        "execution": {
+          "estimatedInputTokens": 1757,
+          "estimatedOutputTokens": 1077,
+          "latencyMs": 27571,
+          "modelUsed": "gemini-3-flash",
+          "providerUsage": {
+            "cachedInputTokens": 72369,
+            "completionTokens": 1021,
+            "promptTokens": 112215,
+            "reasoningTokens": 1566,
+            "totalTokens": 114802
+          },
+          "stepsCount": 4,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "argsPreview": "{\"query\":\"DISCO — I'm trying to figure out if this is worth reaching out on and what I should do with it.\"}",
+              "name": "searchAvailableSkills"
+            },
+            {
+              "argsPreview": "{\"entity\":\"DISCO\"}",
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "initScratchpad"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "linkupSearch"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "searchAvailableSkills",
+              "ok": true,
+              "resultPreview": "Skill search preflight ok (query='DISCO — I'm trying to figure out if this is worth reaching out on and what I should do with it.')"
+            },
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true,
+              "resultPreview": "{{fact:ground_truth:DISCO}}\nEntity ID: DISCO\nCanonical name: DISCO Pharmaceuticals\nEntity type: private_company (treat oss_project as open source / GitHub / repository)\nHQ: Cologne, Germany\nCEO: Mark Manfredi\nFounders: Roman Thomas\nPrimary contact: info@discopharma.de\nPlatform: Surfaceome mapping platform\nLead programs: Lead ADC candidates\nFunding: Seed EUR36M (announced 2025-12-11)\nRequired facts: Cologne, Germany | €36M seed | surfaceome | ADC | bispecific | SCLC | MSS-CRC | Mark Manfredi | Roman Thomas\nForbidden facts: Series A | San Francisco | New York\nFreshness age (days): 16\nWithin banker window: true\nHas primary source requirement: true"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "linkupSearch"
+            }
+          ]
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": true,
+        "promptMessageId": "ks71qrevpafq6769zm1eb7akeh7zkz2z",
+        "responsePreview": "Based on your interest in outreach and pipeline development, @@entity:disco-pharmaceuticals|DISCO Pharmaceuticals|type:company@@ is a high-priority target that is absolutely worth reaching out on right now.{{cite:websrc_c0c49bfc}}{{cite:websrc_f67198ab}}{{cite:websrc_b6fa2018}}{{cite:websrc_2c83f885}}{{cite:websrc_71795943}}\n\n### **Banker's Evaluation: DISCO Pharmaceuticals**\nThe company has transitioned from a promising seed-stage biotech to a major strategic player in the oncology space within the last 60 days.\n\n*   **Verdict:** **PASS** (Ready for Outreach)\n*   **Key Signal:** On **January 7, 2026**, DISCO announced an exclusive license agreement with **Amgen** to advance novel therapeutic candidates addressing a cancer target discovered via DISCO's platform [1][5]. This follow-on signal, occurring just weeks after their funding, indicates rapid commercial validation.\n*   **Funding Pr",
+        "threadId": "m578yfnxdpwxp28gvtbtg3sw897zk1c9"
+      },
+      {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "candidates": [],
+            "canonicalName": "QuickJS / MicroQuickJS",
+            "confidence": 0.9,
+            "input": "QuickJS",
+            "resolvedId": "MQUICKJS",
+            "type": "oss_project (treat oss_project as open source / GitHub / repository)"
+          },
+          "fallbacks": [],
+          "grounding": [
+            "{{fact:ground_truth:MQUICKJS}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "channel": null,
+              "email": null
+            },
+            "freshness": {
+              "ageDays": null
+            },
+            "funding": {
+              "amount": {
+                "amount": null,
+                "currency": null,
+                "unit": null
+              },
+              "coLeads": [],
+              "date": null,
+              "stage": null
+            },
+            "hqLocation": null,
+            "people": {
+              "ceo": null,
+              "founders": []
+            },
+            "product": {
+              "leadPrograms": [],
+              "platform": null
+            }
+          },
+          "nextActions": [
+            "Verify primary sources (if required)",
+            "Run a quick contradiction scan",
+            "Draft a share-ready version for stakeholders"
+          ],
+          "persona": {
+            "assumptions": [
+              "Heuristic inference from query keywords for CTO_TECH_LEAD"
+            ],
+            "confidence": 0.8,
+            "inferred": "CTO_TECH_LEAD"
+          },
+          "planSteps": [
+            "Skill discovery",
+            "Lookup ground truth",
+            "Verify: check required fields + grounding",
+            "Format response + debrief"
+          ],
+          "risks": [],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "error": null,
+              "name": "searchAvailableSkills",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "searchAvailableSkills"
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "verdict": "UNKNOWN"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "artifactBytesAvoided": 0,
+          "citationsInResponse": 0,
+          "citationsResolved": 0,
+          "citationsUnresolved": 0,
+          "costBudgetExceeded": false,
+          "directToolCalls": [
+            "lookupGroundTruthEntity",
+            "initScratchpad",
+            "lookupGroundTruthEntity"
+          ],
+          "disclosureLevel": "partial",
+          "estimatedToolSchemaTokens": 12250,
+          "resourceLinksCreated": 0,
+          "resourceLinksRetrieved": 0,
+          "skillSearchCalls": 2,
+          "skillsActivated": [],
+          "tokenBudgetExceeded": false,
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity",
+            "initScratchpad"
+          ],
+          "usedMetaTools": true,
+          "usedSkillFirst": true,
+          "warnings": []
+        },
+        "elapsedMs": 14233,
+        "execution": {
+          "estimatedInputTokens": 1709,
+          "estimatedOutputTokens": 827,
+          "latencyMs": 13839,
+          "modelUsed": "gemini-3-flash",
+          "providerUsage": {
+            "cachedInputTokens": 72329,
+            "completionTokens": 740,
+            "promptTokens": 81063,
+            "reasoningTokens": 641,
+            "totalTokens": 82444
+          },
+          "stepsCount": 3,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "argsPreview": "{\"query\":\"QuickJS — do I have risk exposure and what is my patch plan?\"}",
+              "name": "searchAvailableSkills"
+            },
+            {
+              "argsPreview": "{\"entity\":\"MQUICKJS\"}",
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "initScratchpad"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "searchAvailableSkills",
+              "ok": true,
+              "resultPreview": "Skill search preflight ok (query='QuickJS — do I have risk exposure and what is my patch plan?')"
+            },
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true,
+              "resultPreview": "{{fact:ground_truth:MQUICKJS}}\nEntity ID: MQUICKJS\nCanonical name: QuickJS / MicroQuickJS\nEntity type: oss_project (treat oss_project as open source / GitHub / repository)\nSeverity (ground truth hint): High\nRequired facts: CVE-2025-62495 | Fabrice Bellard | 2025-09-13 | JavaScript engine\nForbidden facts: Cloudflare Workers uses QuickJS | critical severity\nWithin banker window: true\nHas primary source requirement: true"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [],
+        "id": "cto_vague_quickjs",
+        "name": "CTO risk exposure + patch plan",
+        "ok": true,
+        "promptMessageId": "ks73mj5jt6s6gvxj3xbcgvjajn7zkzm9",
+        "responsePreview": "Regarding your risk exposure to @@entity:mquickjs|QuickJS|type:technology@@, you are currently vulnerable to a significant security flaw identified as `CVE-2025-62495`. \n\nAs an @@entity:mquickjs|open source|type:technology@@ JavaScript engine project created by @@entity:fabrice-bellard|Fabrice Bellard|type:person@@, QuickJS is widely embedded in various applications. The discovery of this vulnerability on 2025-09-13 presents a **High** severity risk to any system utilizing the engine for executing untrusted JavaScript.\n\n### Risk Assessment\n*   **Vulnerability:** CVE-2025-62495\n*   **Severity:** High (Source: Internal Ground Truth)\n*   **Exposure:** Any application embedding the QuickJS JavaScript engine that processes external or untrusted scripts is at risk of memory corruption or potential arbitrary code execution.\n*   **Ground Truth Reference:** {{fact:ground_truth:MQUICKJS}}\n\n### Pat",
+        "threadId": "m573bs0sy46j5dqrt4kgy8jqmn7zjq1c"
+      },
+      {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "candidates": [],
+            "canonicalName": "Google Gemini 3",
+            "confidence": 0.9,
+            "input": "Gemini",
+            "resolvedId": "GEMINI_3",
+            "type": "model_platform (treat oss_project as open source / GitHub / repository)"
+          },
+          "fallbacks": [],
+          "grounding": [
+            "{{fact:ground_truth:GEMINI_3}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "channel": null,
+              "email": null
+            },
+            "freshness": {
+              "ageDays": null
+            },
+            "funding": {
+              "amount": {
+                "amount": null,
+                "currency": null,
+                "unit": null
+              },
+              "coLeads": [],
+              "date": null,
+              "stage": null
+            },
+            "hqLocation": null,
+            "people": {
+              "ceo": null,
+              "founders": []
+            },
+            "product": {
+              "leadPrograms": [],
+              "platform": null
+            }
+          },
+          "nextActions": [
+            "Verify primary sources (if required)",
+            "Run a quick contradiction scan",
+            "Draft a share-ready version for stakeholders"
+          ],
+          "persona": {
+            "assumptions": [
+              "Heuristic inference from query keywords for ENTERPRISE_EXEC"
+            ],
+            "confidence": 0.8,
+            "inferred": "ENTERPRISE_EXEC"
+          },
+          "planSteps": [
+            "Skill discovery",
+            "Lookup ground truth",
+            "Verify: check required fields + grounding",
+            "Format response + debrief"
+          ],
+          "risks": [],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "error": null,
+              "name": "searchAvailableSkills",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "linkupSearch",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "searchAvailableSkills"
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "error": null,
+              "name": "linkupSearch"
+            }
+          ],
+          "verdict": "UNKNOWN"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "artifactBytesAvoided": 0,
+          "citationsInResponse": 0,
+          "citationsResolved": 0,
+          "citationsUnresolved": 0,
+          "costBudgetExceeded": false,
+          "directToolCalls": [
+            "lookupGroundTruthEntity",
+            "linkupSearch",
+            "lookupGroundTruthEntity",
+            "linkupSearch"
+          ],
+          "disclosureLevel": "partial",
+          "estimatedToolSchemaTokens": 12250,
+          "resourceLinksCreated": 0,
+          "resourceLinksRetrieved": 0,
+          "skillSearchCalls": 2,
+          "skillsActivated": [],
+          "tokenBudgetExceeded": false,
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity",
+            "linkupSearch"
+          ],
+          "usedMetaTools": true,
+          "usedSkillFirst": true,
+          "warnings": []
+        },
+        "elapsedMs": 22249,
+        "execution": {
+          "estimatedInputTokens": 1671,
+          "estimatedOutputTokens": 1147,
+          "latencyMs": 21875,
+          "modelUsed": "gemini-3-flash",
+          "providerUsage": {
+            "cachedInputTokens": 72362,
+            "completionTokens": 1032,
+            "promptTokens": 82758,
+            "reasoningTokens": 681,
+            "totalTokens": 84471
+          },
+          "stepsCount": 3,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "argsPreview": "{\"query\":\"Gemini 3 — should we consider this, and what's the procurement next step?\"}",
+              "name": "searchAvailableSkills"
+            },
+            {
+              "argsPreview": "{\"entity\":\"GEMINI_3\"}",
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "argsPreview": "{\"query\":\"Gemini 3 — should we consider this, and what's the procurement next step?\",\"depth\":\"standard\",\"outputType\":\"searchResults\",\"maxResults\":3,\"includeInlineCitations\":true,\"includeSources\":true,\"includeImages\":false}",
+              "name": "linkupSearch"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "linkupSearch"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "searchAvailableSkills",
+              "ok": true,
+              "resultPreview": "Skill search preflight ok (query='Gemini 3 — should we consider this, and what's the procurement next step?')"
+            },
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true,
+              "resultPreview": "{{fact:ground_truth:GEMINI_3}}\nEntity ID: GEMINI_3\nCanonical name: Google Gemini 3\nEntity type: model_platform (treat oss_project as open source / GitHub / repository)\nRequired facts: Gemini 3 Flash | Gemini 3 Pro | context caching | $0.10 | $1.00\nForbidden facts: $0.05 input | no caching support\nWithin banker window: true\nHas primary source requirement: true"
+            },
+            {
+              "name": "linkupSearch",
+              "ok": true,
+              "resultPreview": "linkupSearch preflight recorded (eval telemetry)"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "linkupSearch"
+            }
+          ]
+        },
+        "expectedEntityId": "GEMINI_3",
+        "expectedPersona": "ENTERPRISE_EXEC",
+        "failureReasons": [],
+        "id": "exec_vague_gemini",
+        "name": "Exec vendor evaluation",
+        "ok": true,
+        "promptMessageId": "ks746rep4hm1pc0hhnqvjg4bhd7zk8cy",
+        "responsePreview": "For your evaluation of @@entity:google-gemini-3|Google Gemini 3|type:model_platform@@, here is the breakdown of suitability and the procurement roadmap for enterprise adoption.{{cite:websrc_b895efd8}}{{cite:websrc_b8c4f142}}{{cite:websrc_17b89105}}{{cite:websrc_e3b216d2}}{{cite:websrc_fecf3599}}\n\n### **Suitability Analysis: Should We Consider It?**\nYes, @@entity:google-gemini-3|Google Gemini 3|type:model_platform@@ is a strong candidate for enterprise workloads, particularly for high-frequency or long-context applications due to its advanced architecture.\n\n*   **Model Tiers:** The platform is segmented into @@entity:gemini-3-flash|Gemini 3 Flash|type:product@@ for high-speed, cost-efficient tasks and @@entity:gemini-3-pro|Gemini 3 Pro|type:product@@ for complex reasoning and multimodal analysis {{fact:ground_truth:GEMINI_3}}.\n*   **Context Caching:** A standout feature for procurement ef",
+        "threadId": "m5732vanv48n9jgxzdhry8an3s7zkm60"
+      }
+    ],
+    "rawBatches": [
+      {
+        "elapsedMs": 64638,
+        "model": "gemini-3-flash",
+        "ok": true,
+        "runs": [
+          {
+            "checks": {
+              "contact": true,
+              "entityResolved": true,
+              "fundingStage": true,
+              "grounding": true,
+              "hq": true,
+              "nextActions": true,
+              "persona": true
+            },
+            "debrief": {
+              "entity": {
+                "candidates": [],
+                "canonicalName": "DISCO Pharmaceuticals",
+                "confidence": 0.9,
+                "input": "DISCO",
+                "resolvedId": "DISCO",
+                "type": "private_company (treat oss_project as open source / GitHub / repository)"
+              },
+              "fallbacks": [],
+              "grounding": [
+                "{{fact:ground_truth:DISCO}}"
+              ],
+              "keyFacts": {
+                "contact": {
+                  "channel": null,
+                  "email": "info@discopharma.de"
+                },
+                "freshness": {
+                  "ageDays": 16
+                },
+                "funding": {
+                  "amount": {
+                    "amount": 36,
+                    "currency": "EUR",
+                    "unit": "M"
+                  },
+                  "coLeads": [],
+                  "date": null,
+                  "stage": "Seed"
+                },
+                "hqLocation": "Cologne, Germany",
+                "people": {
+                  "ceo": "Mark Manfredi",
+                  "founders": [
+                    "Roman Thomas"
+                  ]
+                },
+                "product": {
+                  "leadPrograms": [
+                    "Lead ADC candidates"
+                  ],
+                  "platform": "Surfaceome mapping platform"
+                }
+              },
+              "nextActions": [
+                "Verify primary sources (if required)",
+                "Run a quick contradiction scan",
+                "Draft a share-ready version for stakeholders"
+              ],
+              "persona": {
+                "assumptions": [
+                  "Heuristic inference from query keywords for JPM_STARTUP_BANKER"
+                ],
+                "confidence": 0.8,
+                "inferred": "JPM_STARTUP_BANKER"
+              },
+              "planSteps": [
+                "Skill discovery",
+                "Lookup ground truth",
+                "Verify: check required fields + grounding",
+                "Format response + debrief"
+              ],
+              "risks": [],
+              "schemaVersion": "debrief_v1",
+              "toolsUsed": [
+                {
+                  "error": null,
+                  "name": "searchAvailableSkills",
+                  "ok": true
+                },
+                {
+                  "error": null,
+                  "name": "lookupGroundTruthEntity",
+                  "ok": true
+                },
+                {
+                  "error": null,
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "error": null,
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "error": null,
+                  "name": "linkupSearch"
+                }
+              ],
+              "verdict": "UNKNOWN"
+            },
+            "debriefValidation": {
+              "errors": [],
+              "ok": true
+            },
+            "disclosure": {
+              "artifactBytesAvoided": 0,
+              "citationsInResponse": 0,
+              "citationsResolved": 0,
+              "citationsUnresolved": 0,
+              "costBudgetExceeded": false,
+              "directToolCalls": [
+                "lookupGroundTruthEntity",
+                "initScratchpad",
+                "lookupGroundTruthEntity",
+                "linkupSearch"
+              ],
+              "disclosureLevel": "partial",
+              "estimatedToolSchemaTokens": 12250,
+              "resourceLinksCreated": 0,
+              "resourceLinksRetrieved": 0,
+              "skillSearchCalls": 2,
+              "skillsActivated": [],
+              "tokenBudgetExceeded": false,
+              "toolInvokeErrors": 0,
+              "toolSearchCalls": 0,
+              "toolsExpanded": [],
+              "toolsInvoked": [
+                "lookupGroundTruthEntity",
+                "initScratchpad",
+                "linkupSearch"
+              ],
+              "usedMetaTools": true,
+              "usedSkillFirst": true,
+              "warnings": []
+            },
+            "elapsedMs": 28156,
+            "execution": {
+              "estimatedInputTokens": 1757,
+              "estimatedOutputTokens": 1077,
+              "latencyMs": 27571,
+              "modelUsed": "gemini-3-flash",
+              "providerUsage": {
+                "cachedInputTokens": 72369,
+                "completionTokens": 1021,
+                "promptTokens": 112215,
+                "reasoningTokens": 1566,
+                "totalTokens": 114802
+              },
+              "stepsCount": 4,
+              "streamStatus": "completed",
+              "toolCalls": [
+                {
+                  "argsPreview": "{\"query\":\"DISCO — I'm trying to figure out if this is worth reaching out on and what I should do with it.\"}",
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "argsPreview": "{\"entity\":\"DISCO\"}",
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "name": "initScratchpad"
+                },
+                {
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "name": "linkupSearch"
+                }
+              ],
+              "toolResults": [
+                {
+                  "name": "searchAvailableSkills",
+                  "ok": true,
+                  "resultPreview": "Skill search preflight ok (query='DISCO — I'm trying to figure out if this is worth reaching out on and what I should do with it.')"
+                },
+                {
+                  "name": "lookupGroundTruthEntity",
+                  "ok": true,
+                  "resultPreview": "{{fact:ground_truth:DISCO}}\nEntity ID: DISCO\nCanonical name: DISCO Pharmaceuticals\nEntity type: private_company (treat oss_project as open source / GitHub / repository)\nHQ: Cologne, Germany\nCEO: Mark Manfredi\nFounders: Roman Thomas\nPrimary contact: info@discopharma.de\nPlatform: Surfaceome mapping platform\nLead programs: Lead ADC candidates\nFunding: Seed EUR36M (announced 2025-12-11)\nRequired facts: Cologne, Germany | €36M seed | surfaceome | ADC | bispecific | SCLC | MSS-CRC | Mark Manfredi | Roman Thomas\nForbidden facts: Series A | San Francisco | New York\nFreshness age (days): 16\nWithin banker window: true\nHas primary source requirement: true"
+                },
+                {
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "name": "linkupSearch"
+                }
+              ]
+            },
+            "expectedEntityId": "DISCO",
+            "expectedPersona": "JPM_STARTUP_BANKER",
+            "failureReasons": [],
+            "id": "banker_vague_disco",
+            "name": "Banker vague outreach debrief",
+            "ok": true,
+            "promptMessageId": "ks71qrevpafq6769zm1eb7akeh7zkz2z",
+            "responsePreview": "Based on your interest in outreach and pipeline development, @@entity:disco-pharmaceuticals|DISCO Pharmaceuticals|type:company@@ is a high-priority target that is absolutely worth reaching out on right now.{{cite:websrc_c0c49bfc}}{{cite:websrc_f67198ab}}{{cite:websrc_b6fa2018}}{{cite:websrc_2c83f885}}{{cite:websrc_71795943}}\n\n### **Banker's Evaluation: DISCO Pharmaceuticals**\nThe company has transitioned from a promising seed-stage biotech to a major strategic player in the oncology space within the last 60 days.\n\n*   **Verdict:** **PASS** (Ready for Outreach)\n*   **Key Signal:** On **January 7, 2026**, DISCO announced an exclusive license agreement with **Amgen** to advance novel therapeutic candidates addressing a cancer target discovered via DISCO's platform [1][5]. This follow-on signal, occurring just weeks after their funding, indicates rapid commercial validation.\n*   **Funding Pr",
+            "threadId": "m578yfnxdpwxp28gvtbtg3sw897zk1c9"
+          },
+          {
+            "checks": {
+              "contact": true,
+              "entityResolved": true,
+              "fundingStage": true,
+              "grounding": true,
+              "hq": true,
+              "nextActions": true,
+              "persona": true
+            },
+            "debrief": {
+              "entity": {
+                "candidates": [],
+                "canonicalName": "QuickJS / MicroQuickJS",
+                "confidence": 0.9,
+                "input": "QuickJS",
+                "resolvedId": "MQUICKJS",
+                "type": "oss_project (treat oss_project as open source / GitHub / repository)"
+              },
+              "fallbacks": [],
+              "grounding": [
+                "{{fact:ground_truth:MQUICKJS}}"
+              ],
+              "keyFacts": {
+                "contact": {
+                  "channel": null,
+                  "email": null
+                },
+                "freshness": {
+                  "ageDays": null
+                },
+                "funding": {
+                  "amount": {
+                    "amount": null,
+                    "currency": null,
+                    "unit": null
+                  },
+                  "coLeads": [],
+                  "date": null,
+                  "stage": null
+                },
+                "hqLocation": null,
+                "people": {
+                  "ceo": null,
+                  "founders": []
+                },
+                "product": {
+                  "leadPrograms": [],
+                  "platform": null
+                }
+              },
+              "nextActions": [
+                "Verify primary sources (if required)",
+                "Run a quick contradiction scan",
+                "Draft a share-ready version for stakeholders"
+              ],
+              "persona": {
+                "assumptions": [
+                  "Heuristic inference from query keywords for CTO_TECH_LEAD"
+                ],
+                "confidence": 0.8,
+                "inferred": "CTO_TECH_LEAD"
+              },
+              "planSteps": [
+                "Skill discovery",
+                "Lookup ground truth",
+                "Verify: check required fields + grounding",
+                "Format response + debrief"
+              ],
+              "risks": [],
+              "schemaVersion": "debrief_v1",
+              "toolsUsed": [
+                {
+                  "error": null,
+                  "name": "searchAvailableSkills",
+                  "ok": true
+                },
+                {
+                  "error": null,
+                  "name": "lookupGroundTruthEntity",
+                  "ok": true
+                },
+                {
+                  "error": null,
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "error": null,
+                  "name": "lookupGroundTruthEntity"
+                }
+              ],
+              "verdict": "UNKNOWN"
+            },
+            "debriefValidation": {
+              "errors": [],
+              "ok": true
+            },
+            "disclosure": {
+              "artifactBytesAvoided": 0,
+              "citationsInResponse": 0,
+              "citationsResolved": 0,
+              "citationsUnresolved": 0,
+              "costBudgetExceeded": false,
+              "directToolCalls": [
+                "lookupGroundTruthEntity",
+                "initScratchpad",
+                "lookupGroundTruthEntity"
+              ],
+              "disclosureLevel": "partial",
+              "estimatedToolSchemaTokens": 12250,
+              "resourceLinksCreated": 0,
+              "resourceLinksRetrieved": 0,
+              "skillSearchCalls": 2,
+              "skillsActivated": [],
+              "tokenBudgetExceeded": false,
+              "toolInvokeErrors": 0,
+              "toolSearchCalls": 0,
+              "toolsExpanded": [],
+              "toolsInvoked": [
+                "lookupGroundTruthEntity",
+                "initScratchpad"
+              ],
+              "usedMetaTools": true,
+              "usedSkillFirst": true,
+              "warnings": []
+            },
+            "elapsedMs": 14233,
+            "execution": {
+              "estimatedInputTokens": 1709,
+              "estimatedOutputTokens": 827,
+              "latencyMs": 13839,
+              "modelUsed": "gemini-3-flash",
+              "providerUsage": {
+                "cachedInputTokens": 72329,
+                "completionTokens": 740,
+                "promptTokens": 81063,
+                "reasoningTokens": 641,
+                "totalTokens": 82444
+              },
+              "stepsCount": 3,
+              "streamStatus": "completed",
+              "toolCalls": [
+                {
+                  "argsPreview": "{\"query\":\"QuickJS — do I have risk exposure and what is my patch plan?\"}",
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "argsPreview": "{\"entity\":\"MQUICKJS\"}",
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "name": "initScratchpad"
+                },
+                {
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "name": "lookupGroundTruthEntity"
+                }
+              ],
+              "toolResults": [
+                {
+                  "name": "searchAvailableSkills",
+                  "ok": true,
+                  "resultPreview": "Skill search preflight ok (query='QuickJS — do I have risk exposure and what is my patch plan?')"
+                },
+                {
+                  "name": "lookupGroundTruthEntity",
+                  "ok": true,
+                  "resultPreview": "{{fact:ground_truth:MQUICKJS}}\nEntity ID: MQUICKJS\nCanonical name: QuickJS / MicroQuickJS\nEntity type: oss_project (treat oss_project as open source / GitHub / repository)\nSeverity (ground truth hint): High\nRequired facts: CVE-2025-62495 | Fabrice Bellard | 2025-09-13 | JavaScript engine\nForbidden facts: Cloudflare Workers uses QuickJS | critical severity\nWithin banker window: true\nHas primary source requirement: true"
+                },
+                {
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "name": "lookupGroundTruthEntity"
+                }
+              ]
+            },
+            "expectedEntityId": "MQUICKJS",
+            "expectedPersona": "CTO_TECH_LEAD",
+            "failureReasons": [],
+            "id": "cto_vague_quickjs",
+            "name": "CTO risk exposure + patch plan",
+            "ok": true,
+            "promptMessageId": "ks73mj5jt6s6gvxj3xbcgvjajn7zkzm9",
+            "responsePreview": "Regarding your risk exposure to @@entity:mquickjs|QuickJS|type:technology@@, you are currently vulnerable to a significant security flaw identified as `CVE-2025-62495`. \n\nAs an @@entity:mquickjs|open source|type:technology@@ JavaScript engine project created by @@entity:fabrice-bellard|Fabrice Bellard|type:person@@, QuickJS is widely embedded in various applications. The discovery of this vulnerability on 2025-09-13 presents a **High** severity risk to any system utilizing the engine for executing untrusted JavaScript.\n\n### Risk Assessment\n*   **Vulnerability:** CVE-2025-62495\n*   **Severity:** High (Source: Internal Ground Truth)\n*   **Exposure:** Any application embedding the QuickJS JavaScript engine that processes external or untrusted scripts is at risk of memory corruption or potential arbitrary code execution.\n*   **Ground Truth Reference:** {{fact:ground_truth:MQUICKJS}}\n\n### Pat",
+            "threadId": "m573bs0sy46j5dqrt4kgy8jqmn7zjq1c"
+          },
+          {
+            "checks": {
+              "contact": true,
+              "entityResolved": true,
+              "fundingStage": true,
+              "grounding": true,
+              "hq": true,
+              "nextActions": true,
+              "persona": true
+            },
+            "debrief": {
+              "entity": {
+                "candidates": [],
+                "canonicalName": "Google Gemini 3",
+                "confidence": 0.9,
+                "input": "Gemini",
+                "resolvedId": "GEMINI_3",
+                "type": "model_platform (treat oss_project as open source / GitHub / repository)"
+              },
+              "fallbacks": [],
+              "grounding": [
+                "{{fact:ground_truth:GEMINI_3}}"
+              ],
+              "keyFacts": {
+                "contact": {
+                  "channel": null,
+                  "email": null
+                },
+                "freshness": {
+                  "ageDays": null
+                },
+                "funding": {
+                  "amount": {
+                    "amount": null,
+                    "currency": null,
+                    "unit": null
+                  },
+                  "coLeads": [],
+                  "date": null,
+                  "stage": null
+                },
+                "hqLocation": null,
+                "people": {
+                  "ceo": null,
+                  "founders": []
+                },
+                "product": {
+                  "leadPrograms": [],
+                  "platform": null
+                }
+              },
+              "nextActions": [
+                "Verify primary sources (if required)",
+                "Run a quick contradiction scan",
+                "Draft a share-ready version for stakeholders"
+              ],
+              "persona": {
+                "assumptions": [
+                  "Heuristic inference from query keywords for ENTERPRISE_EXEC"
+                ],
+                "confidence": 0.8,
+                "inferred": "ENTERPRISE_EXEC"
+              },
+              "planSteps": [
+                "Skill discovery",
+                "Lookup ground truth",
+                "Verify: check required fields + grounding",
+                "Format response + debrief"
+              ],
+              "risks": [],
+              "schemaVersion": "debrief_v1",
+              "toolsUsed": [
+                {
+                  "error": null,
+                  "name": "searchAvailableSkills",
+                  "ok": true
+                },
+                {
+                  "error": null,
+                  "name": "lookupGroundTruthEntity",
+                  "ok": true
+                },
+                {
+                  "error": null,
+                  "name": "linkupSearch",
+                  "ok": true
+                },
+                {
+                  "error": null,
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "error": null,
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "error": null,
+                  "name": "linkupSearch"
+                }
+              ],
+              "verdict": "UNKNOWN"
+            },
+            "debriefValidation": {
+              "errors": [],
+              "ok": true
+            },
+            "disclosure": {
+              "artifactBytesAvoided": 0,
+              "citationsInResponse": 0,
+              "citationsResolved": 0,
+              "citationsUnresolved": 0,
+              "costBudgetExceeded": false,
+              "directToolCalls": [
+                "lookupGroundTruthEntity",
+                "linkupSearch",
+                "lookupGroundTruthEntity",
+                "linkupSearch"
+              ],
+              "disclosureLevel": "partial",
+              "estimatedToolSchemaTokens": 12250,
+              "resourceLinksCreated": 0,
+              "resourceLinksRetrieved": 0,
+              "skillSearchCalls": 2,
+              "skillsActivated": [],
+              "tokenBudgetExceeded": false,
+              "toolInvokeErrors": 0,
+              "toolSearchCalls": 0,
+              "toolsExpanded": [],
+              "toolsInvoked": [
+                "lookupGroundTruthEntity",
+                "linkupSearch"
+              ],
+              "usedMetaTools": true,
+              "usedSkillFirst": true,
+              "warnings": []
+            },
+            "elapsedMs": 22249,
+            "execution": {
+              "estimatedInputTokens": 1671,
+              "estimatedOutputTokens": 1147,
+              "latencyMs": 21875,
+              "modelUsed": "gemini-3-flash",
+              "providerUsage": {
+                "cachedInputTokens": 72362,
+                "completionTokens": 1032,
+                "promptTokens": 82758,
+                "reasoningTokens": 681,
+                "totalTokens": 84471
+              },
+              "stepsCount": 3,
+              "streamStatus": "completed",
+              "toolCalls": [
+                {
+                  "argsPreview": "{\"query\":\"Gemini 3 — should we consider this, and what's the procurement next step?\"}",
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "argsPreview": "{\"entity\":\"GEMINI_3\"}",
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "argsPreview": "{\"query\":\"Gemini 3 — should we consider this, and what's the procurement next step?\",\"depth\":\"standard\",\"outputType\":\"searchResults\",\"maxResults\":3,\"includeInlineCitations\":true,\"includeSources\":true,\"includeImages\":false}",
+                  "name": "linkupSearch"
+                },
+                {
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "name": "linkupSearch"
+                }
+              ],
+              "toolResults": [
+                {
+                  "name": "searchAvailableSkills",
+                  "ok": true,
+                  "resultPreview": "Skill search preflight ok (query='Gemini 3 — should we consider this, and what's the procurement next step?')"
+                },
+                {
+                  "name": "lookupGroundTruthEntity",
+                  "ok": true,
+                  "resultPreview": "{{fact:ground_truth:GEMINI_3}}\nEntity ID: GEMINI_3\nCanonical name: Google Gemini 3\nEntity type: model_platform (treat oss_project as open source / GitHub / repository)\nRequired facts: Gemini 3 Flash | Gemini 3 Pro | context caching | $0.10 | $1.00\nForbidden facts: $0.05 input | no caching support\nWithin banker window: true\nHas primary source requirement: true"
+                },
+                {
+                  "name": "linkupSearch",
+                  "ok": true,
+                  "resultPreview": "linkupSearch preflight recorded (eval telemetry)"
+                },
+                {
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "name": "linkupSearch"
+                }
+              ]
+            },
+            "expectedEntityId": "GEMINI_3",
+            "expectedPersona": "ENTERPRISE_EXEC",
+            "failureReasons": [],
+            "id": "exec_vague_gemini",
+            "name": "Exec vendor evaluation",
+            "ok": true,
+            "promptMessageId": "ks746rep4hm1pc0hhnqvjg4bhd7zk8cy",
+            "responsePreview": "For your evaluation of @@entity:google-gemini-3|Google Gemini 3|type:model_platform@@, here is the breakdown of suitability and the procurement roadmap for enterprise adoption.{{cite:websrc_b895efd8}}{{cite:websrc_b8c4f142}}{{cite:websrc_17b89105}}{{cite:websrc_e3b216d2}}{{cite:websrc_fecf3599}}\n\n### **Suitability Analysis: Should We Consider It?**\nYes, @@entity:google-gemini-3|Google Gemini 3|type:model_platform@@ is a strong candidate for enterprise workloads, particularly for high-frequency or long-context applications due to its advanced architecture.\n\n*   **Model Tiers:** The platform is segmented into @@entity:gemini-3-flash|Gemini 3 Flash|type:product@@ for high-speed, cost-efficient tasks and @@entity:gemini-3-pro|Gemini 3 Pro|type:product@@ for complex reasoning and multimodal analysis {{fact:ground_truth:GEMINI_3}}.\n*   **Context Caching:** A standout feature for procurement ef",
+            "threadId": "m5732vanv48n9jgxzdhry8an3s7zkm60"
+          }
+        ],
+        "summary": {
+          "failed": 0,
+          "passed": 3,
+          "total": 3
+        },
+        "window": {
+          "limit": 3,
+          "nextOffset": null,
+          "offset": 0,
+          "suite": "core",
+          "totalAvailable": 3
+        }
+      }
+    ]
+  }
+}

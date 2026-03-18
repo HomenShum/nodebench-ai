@@ -1,0 +1,47 @@
+{
+  "overallPassRate": 100,
+  "passRateByModel": {
+    "devstral-2-free": 100,
+    "mimo-v2-flash-free": 100
+  },
+  "passRateByScenario": {
+    "banker_vague_disco": 100,
+    "vc_vague_openautoglm": 100,
+    "cto_vague_quickjs": 100,
+    "exec_vague_gemini": 100,
+    "ecosystem_vague_soundcloud": 100,
+    "founder_salesforce_positioning": 100,
+    "academic_ryr2_anchor": 100,
+    "quant_disco_signal": 100,
+    "product_disco_card": 100,
+    "sales_disco_onepager": 100
+  },
+  "memoryFirstComplianceRate": 100,
+  "memoryFirstByModel": {
+    "devstral-2-free": 100,
+    "mimo-v2-flash-free": 100
+  },
+  "toolOrderingAccuracy": 100,
+  "toolOrderingByModel": {
+    "devstral-2-free": 100,
+    "mimo-v2-flash-free": 100
+  },
+  "invariantViolations": {
+    "A": 0,
+    "C": 0,
+    "D": 0
+  },
+  "avgLatencyMs": 78351.25,
+  "p50LatencyMs": 76659,
+  "p95LatencyMs": 168451,
+  "latencyByModel": {
+    "devstral-2-free": 65353.2,
+    "mimo-v2-flash-free": 91349.3
+  },
+  "avgDisclosureLevel": {
+    "none": 0,
+    "partial": 85,
+    "full": 15
+  },
+  "skillFirstRate": 100
+}

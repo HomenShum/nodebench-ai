@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useMotionConfig } from '@/lib/motion';
 import {
   Activity,
   AlertTriangle,
@@ -537,6 +538,7 @@ function TraceDetailsTab({
   run: InspectorRun;
   selectedStepId: string | null;
 }) {
+  const { instant, transition } = useMotionConfig();
   const selectStep = useTelemetryInspectorStore((state) => state.selectStep);
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
 
@@ -605,10 +607,10 @@ function TraceDetailsTab({
                   {expanded ? (
                     <motion.div
                       key="details"
-                      initial={{ height: 0, opacity: 0 }}
+                      initial={{ height: instant ? "auto" : 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      transition={transition({ duration: 0.2, ease: "easeOut" })}
                       className="overflow-hidden"
                     >
                       <div className="border-t border-edge px-4 py-4">
@@ -669,22 +671,24 @@ function MetricsTab({ run }: { run: InspectorRun }) {
       <div className="rounded-2xl border border-edge bg-[#111111] p-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Latency bottlenecks</div>
         <div className="mt-4 h-72">
+          {/* TODO: Migrate chart stroke/fill colors to CSS custom properties (e.g. --chart-grid, --chart-axis)
+              when a charting design system is established. Recharts requires inline style strings. */}
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
-              <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+              <CartesianGrid stroke="hsl(0 0% 100% / 0.08)" vertical={false} />
               <XAxis
                 dataKey="shortName"
-                stroke="rgba(255,255,255,0.45)"
+                stroke="hsl(0 0% 100% / 0.45)"
                 tick={{ fontSize: 11 }}
                 interval={0}
                 angle={-15}
                 textAnchor="end"
                 height={56}
               />
-              <YAxis stroke="rgba(255,255,255,0.45)" tick={{ fontSize: 11 }} />
+              <YAxis stroke="hsl(0 0% 100% / 0.45)" tick={{ fontSize: 11 }} />
               <Tooltip
-                cursor={{ fill: "rgba(255,255,255,0.04)" }}
-                contentStyle={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14 }}
+                cursor={{ fill: "hsl(0 0% 100% / 0.04)" }}
+                contentStyle={{ background: "#0A0A0A", border: "1px solid hsl(0 0% 100% / 0.12)", borderRadius: 14 }}
               />
               <Bar dataKey="latencyMs" fill="#60A5FA" radius={[8, 8, 0, 0]} />
             </BarChart>
@@ -695,22 +699,23 @@ function MetricsTab({ run }: { run: InspectorRun }) {
       <div className="rounded-2xl border border-edge bg-[#111111] p-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Token burn per step</div>
         <div className="mt-4 h-72">
+          {/* TODO: Migrate chart stroke/fill colors to CSS custom properties when a charting design system is established. */}
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
-              <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+              <CartesianGrid stroke="hsl(0 0% 100% / 0.08)" vertical={false} />
               <XAxis
                 dataKey="shortName"
-                stroke="rgba(255,255,255,0.45)"
+                stroke="hsl(0 0% 100% / 0.45)"
                 tick={{ fontSize: 11 }}
                 interval={0}
                 angle={-15}
                 textAnchor="end"
                 height={56}
               />
-              <YAxis stroke="rgba(255,255,255,0.45)" tick={{ fontSize: 11 }} />
+              <YAxis stroke="hsl(0 0% 100% / 0.45)" tick={{ fontSize: 11 }} />
               <Tooltip
-                cursor={{ fill: "rgba(255,255,255,0.04)" }}
-                contentStyle={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14 }}
+                cursor={{ fill: "hsl(0 0% 100% / 0.04)" }}
+                contentStyle={{ background: "#0A0A0A", border: "1px solid hsl(0 0% 100% / 0.12)", borderRadius: 14 }}
               />
               <Bar dataKey="tokens" fill="#34D399" radius={[8, 8, 0, 0]} />
             </BarChart>
@@ -1124,7 +1129,7 @@ export function TelemetryInspector() {
         <button
           type="button"
           onClick={openFeedback}
-          className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/90 px-4 py-3 text-sm font-medium text-white shadow-[0_18px_40px_rgba(0,0,0,0.38)] hover:bg-primary"
+          className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/90 px-4 py-3 text-sm font-medium text-white shadow-[0_18px_40px_hsl(0_0%_0%/0.38)] hover:bg-primary"
         >
           <MessageSquareWarning className="h-4 w-4" />
           Report UI Issue

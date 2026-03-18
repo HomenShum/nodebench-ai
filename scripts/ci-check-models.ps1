@@ -34,7 +34,7 @@ $DisallowedPatterns = @(
     "gpt-3.5",
     "claude-3",
     "claude-3.5",
-    "gemini-2.5-flash-lite",
+    "gemini-3.1-flash-lite-preview-lite",
     "gemini-1.5",
     "gemini-1.0"
 )
@@ -46,7 +46,7 @@ $SdkIdPatterns = @(
     "claude-opus-4-5-20251101",
     "claude-haiku-4-5-20251001",
     "gemini-3.0-pro-preview-0325",
-    "gemini-2.5-flash-preview-04-17",
+    "gemini-3.1-flash-lite-preview-preview-04-17",
     "gemini-2.5-pro-preview-05-06"
 )
 

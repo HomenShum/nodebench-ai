@@ -22,19 +22,77 @@ export interface EnterpriseInvestigationPayload {
   meta?: {
     query?: string;
     confidence_score?: number;
+    overall_confidence?: number;
+    [key: string]: unknown;
   };
   temporal_intelligence?: {
     anomalies_detected?: Array<Record<string, unknown>>;
-    forecast?: Record<string, unknown> | null;
+    forecast?: {
+      prediction?: string;
+      summary?: string;
+      confidence?: number;
+      [key: string]: unknown;
+    } | null;
   };
   causal_chain?: Array<Record<string, unknown>>;
-  game_theory_analysis?: Record<string, unknown> | null;
-  zero_friction_execution?: Record<string, unknown> | null;
+  game_theory_analysis?: {
+    organizational_friction?: string;
+    [key: string]: unknown;
+  } | null;
+  zero_friction_execution?: {
+    proposed_action?: string;
+    [key: string]: unknown;
+  } | null;
   audit_proof_pack?: {
     replay_url?: string | null;
     source_snapshot_hashes?: string[];
     [key: string]: unknown;
   } | null;
+  observed_facts?: Array<{
+    statement?: string;
+    evidence_refs?: string[];
+    [key: string]: unknown;
+  }>;
+  derived_signals?: {
+    anomalies?: Array<Record<string, unknown>>;
+    forecast?: {
+      summary?: string;
+      confidence?: number;
+      evidence_refs?: string[];
+      [key: string]: unknown;
+    } | null;
+  };
+  hypotheses?: Array<{
+    statement?: string;
+    status?: string;
+    confidence?: number;
+    [key: string]: unknown;
+  }>;
+  counter_analysis?: {
+    result?: string;
+    questions_tested?: string[];
+    [key: string]: unknown;
+  };
+  recommended_actions?: Array<{
+    action?: string;
+    priority?: string;
+    human_gate?: string;
+    [key: string]: unknown;
+  }>;
+  evidence_catalog?: Array<{
+    content_hash?: string;
+    source_uri?: string;
+    [key: string]: unknown;
+  }>;
+  traceability?: {
+    trace_id?: string;
+    tool_calls?: number;
+    replay_url?: string | null;
+    otel_spans_recorded?: boolean;
+    artifact_integrity?: string;
+    [key: string]: unknown;
+  };
+  limitations?: string[];
 }
 
 export interface EnterpriseEvalArtifact {
@@ -172,6 +230,63 @@ function wrapPayload(text: string | undefined, extra?: Record<string, unknown>) 
   };
 }
 
+function getInvestigationConfidence(investigation?: EnterpriseInvestigationPayload) {
+  const confidence = investigation?.meta?.overall_confidence ?? investigation?.meta?.confidence_score;
+  return typeof confidence === "number" ? confidence : 0.9;
+}
+
+function getInvestigationAnomalyCount(investigation?: EnterpriseInvestigationPayload) {
+  return investigation?.derived_signals?.anomalies?.length ?? investigation?.temporal_intelligence?.anomalies_detected?.length ?? 0;
+}
+
+function getInvestigationSummary(investigation?: EnterpriseInvestigationPayload) {
+  return (
+    investigation?.counter_analysis?.result ??
+    investigation?.game_theory_analysis?.organizational_friction ??
+    investigation?.hypotheses?.[0]?.statement ??
+    investigation?.derived_signals?.forecast?.summary ??
+    investigation?.temporal_intelligence?.forecast?.summary ??
+    investigation?.temporal_intelligence?.forecast?.prediction ??
+    investigation?.observed_facts?.[0]?.statement ??
+    null
+  );
+}
+
+function getInvestigationReplayUrl(investigation?: EnterpriseInvestigationPayload) {
+  const replayUrl = investigation?.traceability?.replay_url ?? investigation?.audit_proof_pack?.replay_url;
+  return typeof replayUrl === "string" && replayUrl.length > 0 ? replayUrl : null;
+}
+
+function getInvestigationSourceHashCount(investigation?: EnterpriseInvestigationPayload) {
+  return (
+    investigation?.evidence_catalog?.filter(
+      (item) => typeof item.content_hash === "string" && item.content_hash.length > 0,
+    ).length ?? investigation?.audit_proof_pack?.source_snapshot_hashes?.length ?? 0
+  );
+}
+
+function getInvestigationAuditProofPack(investigation?: EnterpriseInvestigationPayload) {
+  if (!investigation) return null;
+
+  const replay_url = getInvestigationReplayUrl(investigation);
+  const source_snapshot_hashes =
+    investigation.audit_proof_pack?.source_snapshot_hashes ??
+    investigation.evidence_catalog
+      ?.map((item) => item.content_hash)
+      .filter((hash): hash is string => typeof hash === "string" && hash.length > 0) ??
+    [];
+
+  if (!replay_url && source_snapshot_hashes.length === 0 && !investigation.traceability) {
+    return null;
+  }
+
+  return {
+    replay_url,
+    source_snapshot_hashes,
+    traceability: investigation.traceability ?? null,
+  };
+}
+
 function coerceStepType(type: string): InspectorStepType {
   if (type.includes("judge")) return "human_gate";
   if (type.includes("investigation")) return "llm_inference";
@@ -271,7 +386,7 @@ function buildStepFromStreamEvent(
     event.type === "case.started"
       ? "The run starts with the exact query, source bundle, and temporal boundaries so the chain stays anchored to real evidence."
       : event.type === "case.investigation_built"
-      ? caseRecord.investigation?.game_theory_analysis?.organizational_friction?.toString() ??
+      ? getInvestigationSummary(caseRecord.investigation) ??
         "This is the synthesis step where temporal signals and evidence become an operator-readable diagnosis."
       : event.type === "case.llm_judge_requested"
       ? "A required low-cost LLM judge checks whether the investigation matches the known human postmortem instead of only sounding plausible."
@@ -287,8 +402,8 @@ function buildStepFromStreamEvent(
       : event.type === "case.completed"
       ? {
           telemetry: caseRecord.telemetry,
-          auditProofPack: caseRecord.investigation?.audit_proof_pack ?? null,
-          replayUrl: caseRecord.investigation?.audit_proof_pack?.replay_url ?? null,
+          auditProofPack: getInvestigationAuditProofPack(caseRecord.investigation),
+          replayUrl: getInvestigationReplayUrl(caseRecord.investigation),
         }
       : {};
 
@@ -296,10 +411,9 @@ function buildStepFromStreamEvent(
     ...(typeof telemetry.confidenceScore === "number" && telemetry.confidenceScore < 0.92
       ? [`Confidence trimmed to ${telemetry.confidenceScore}.`]
       : []),
-    ...(event.type === "case.investigation_built" &&
-    (caseRecord.investigation?.temporal_intelligence?.anomalies_detected?.length ?? 0) > 0
+    ...(event.type === "case.investigation_built" && getInvestigationAnomalyCount(caseRecord.investigation) > 0
       ? [
-          `${caseRecord.investigation?.temporal_intelligence?.anomalies_detected?.length ?? 0} anomaly signal(s) detected before synthesis.`,
+          `${getInvestigationAnomalyCount(caseRecord.investigation)} anomaly signal(s) detected before synthesis.`,
         ]
       : []),
   ];
@@ -410,7 +524,7 @@ export function buildTelemetryInspectorRunsFromEvalArtifact(
       evidenceFrameIds: frameIdsByStep.get(step.id) ?? [],
     }));
 
-    const confidence = Number(caseRecord.investigation?.meta?.confidence_score ?? 0.9);
+    const confidence = getInvestigationConfidence(caseRecord.investigation);
 
     return {
       id: caseRecord.caseId,
@@ -433,12 +547,10 @@ export function buildTelemetryInspectorRunsFromEvalArtifact(
         "enterpriseInvestigation",
         "public-fixture",
         caseRecord.caseId,
-        ...(caseRecord.investigation?.audit_proof_pack?.source_snapshot_hashes?.length
-          ? ["traceable"]
-          : []),
+        ...(getInvestigationSourceHashCount(caseRecord.investigation) > 0 ? ["traceable"] : []),
       ],
       summary:
-        caseRecord.investigation?.game_theory_analysis?.organizational_friction?.toString() ??
+        getInvestigationSummary(caseRecord.investigation) ??
         caseRecord.llmJudge.reasoning ??
         "Temporal investigation completed from the public eval artifact.",
       videoUrl,

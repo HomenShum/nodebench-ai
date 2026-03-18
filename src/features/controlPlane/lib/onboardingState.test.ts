@@ -27,6 +27,13 @@ describe("onboardingState", () => {
     expect(loadBuyerPreferredPath()).toBe("investigation");
   });
 
+  it("migrates the legacy research briefing preferred path", () => {
+    localStorage.setItem(CONTROL_PLANE_PREFERRED_PATH_KEY, "research-briefing");
+
+    expect(loadBuyerPreferredPath()).toBe("mcp-ledger");
+    expect(localStorage.getItem(CONTROL_PLANE_PREFERRED_PATH_KEY)).toBe("mcp-ledger");
+  });
+
   it("reorders role cards by the saved preferred path", () => {
     const ordered = orderByBuyerPreference(
       [
@@ -43,11 +50,11 @@ describe("onboardingState", () => {
   it("derives checklist completion from route visits instead of clicks", () => {
     expect(
       deriveChecklistCompletionsFromRoute({
-        currentView: "research",
-        showResearchDossier: true,
-        researchHubInitialTab: "briefing",
+        currentView: "mcp-ledger",
+        showResearchDossier: false,
+        researchHubInitialTab: "overview",
       }),
-    ).toEqual(["brief"]);
+    ).toEqual(["tool-activity"]);
 
     expect(
       deriveChecklistCompletionsFromRoute({
@@ -59,8 +66,8 @@ describe("onboardingState", () => {
   });
 
   it("merges route completions into stored checklist state", () => {
-    const merged = mergeChecklistCompletions({ receipt: true }, ["delegation", "brief"]);
-    expect(merged).toEqual({ receipt: true, delegation: true, brief: true });
+    const merged = mergeChecklistCompletions({ receipt: true }, ["delegation", "tool-activity"]);
+    expect(merged).toEqual({ receipt: true, delegation: true, "tool-activity": true });
   });
 
   it("persists checklist dismissal and state separately", () => {
@@ -69,6 +76,15 @@ describe("onboardingState", () => {
 
     saveBuyerChecklistState("dismissed");
     expect(loadBuyerChecklistState()).toBe("dismissed");
+  });
+
+  it("migrates the legacy briefing checklist entry", () => {
+    localStorage.setItem(CONTROL_PLANE_CHECKLIST_KEY, JSON.stringify({ receipt: true, brief: true }));
+
+    expect(loadBuyerChecklistState()).toEqual({ receipt: true, "tool-activity": true });
+    expect(localStorage.getItem(CONTROL_PLANE_CHECKLIST_KEY)).toBe(
+      JSON.stringify({ receipt: true, "tool-activity": true }),
+    );
   });
 
   it("persists the agents hub view mode", () => {

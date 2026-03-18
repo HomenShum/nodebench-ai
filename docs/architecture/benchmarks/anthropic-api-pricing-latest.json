@@ -1,0 +1,87 @@
+{
+  "provider": "anthropic",
+  "sourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing",
+  "fetchedAt": "2026-01-07T05:51:59.235Z",
+  "models": [
+    {
+      "model": "Claude Haiku 3",
+      "baseInputUsdPer1MTokens": 0.25,
+      "cacheWrite5mUsdPer1MTokens": 0.3,
+      "cacheWrite1hUsdPer1MTokens": 0.5,
+      "cacheHitUsdPer1MTokens": 0.03,
+      "outputUsdPer1MTokens": 1.25
+    },
+    {
+      "model": "Claude Haiku 3.5",
+      "baseInputUsdPer1MTokens": 0.8,
+      "cacheWrite5mUsdPer1MTokens": 1,
+      "cacheWrite1hUsdPer1MTokens": 1.6,
+      "cacheHitUsdPer1MTokens": 0.08,
+      "outputUsdPer1MTokens": 4
+    },
+    {
+      "model": "Claude Haiku 4.5",
+      "baseInputUsdPer1MTokens": 1,
+      "cacheWrite5mUsdPer1MTokens": 1.25,
+      "cacheWrite1hUsdPer1MTokens": 2,
+      "cacheHitUsdPer1MTokens": 0.1,
+      "outputUsdPer1MTokens": 5
+    },
+    {
+      "model": "Claude Opus 3 (deprecated)",
+      "baseInputUsdPer1MTokens": 15,
+      "cacheWrite5mUsdPer1MTokens": 18.75,
+      "cacheWrite1hUsdPer1MTokens": 30,
+      "cacheHitUsdPer1MTokens": 1.5,
+      "outputUsdPer1MTokens": 75
+    },
+    {
+      "model": "Claude Opus 4",
+      "baseInputUsdPer1MTokens": 15,
+      "cacheWrite5mUsdPer1MTokens": 18.75,
+      "cacheWrite1hUsdPer1MTokens": 30,
+      "cacheHitUsdPer1MTokens": 1.5,
+      "outputUsdPer1MTokens": 75
+    },
+    {
+      "model": "Claude Opus 4.1",
+      "baseInputUsdPer1MTokens": 15,
+      "cacheWrite5mUsdPer1MTokens": 18.75,
+      "cacheWrite1hUsdPer1MTokens": 30,
+      "cacheHitUsdPer1MTokens": 1.5,
+      "outputUsdPer1MTokens": 75
+    },
+    {
+      "model": "Claude Opus 4.5",
+      "baseInputUsdPer1MTokens": 5,
+      "cacheWrite5mUsdPer1MTokens": 6.25,
+      "cacheWrite1hUsdPer1MTokens": 10,
+      "cacheHitUsdPer1MTokens": 0.5,
+      "outputUsdPer1MTokens": 25
+    },
+    {
+      "model": "Claude Sonnet 3.7 (deprecated)",
+      "baseInputUsdPer1MTokens": 3,
+      "cacheWrite5mUsdPer1MTokens": 3.75,
+      "cacheWrite1hUsdPer1MTokens": 6,
+      "cacheHitUsdPer1MTokens": 0.3,
+      "outputUsdPer1MTokens": 15
+    },
+    {
+      "model": "Claude Sonnet 4",
+      "baseInputUsdPer1MTokens": 3,
+      "cacheWrite5mUsdPer1MTokens": 3.75,
+      "cacheWrite1hUsdPer1MTokens": 6,
+      "cacheHitUsdPer1MTokens": 0.3,
+      "outputUsdPer1MTokens": 15
+    },
+    {
+      "model": "Claude Sonnet 4.5",
+      "baseInputUsdPer1MTokens": 3,
+      "cacheWrite5mUsdPer1MTokens": 3.75,
+      "cacheWrite1hUsdPer1MTokens": 6,
+      "cacheHitUsdPer1MTokens": 0.3,
+      "outputUsdPer1MTokens": 15
+    }
+  ]
+}

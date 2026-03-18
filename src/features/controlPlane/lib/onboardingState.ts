@@ -8,13 +8,13 @@ export type BuyerPreferredPath =
   | "receipts"
   | "delegation"
   | "investigation"
-  | "research-briefing";
+  | "mcp-ledger";
 
 export type BuyerChecklistId =
   | "receipt"
   | "delegation"
   | "investigation"
-  | "brief";
+  | "tool-activity";
 
 export type BuyerChecklistState = Partial<Record<BuyerChecklistId, boolean>>;
 
@@ -24,16 +24,42 @@ export interface ControlPlaneRouteSnapshot {
   researchHubInitialTab: ResearchTab;
 }
 
+const LEGACY_PREFERRED_PATH = "research-briefing";
+const LEGACY_CHECKLIST_ID = "brief";
+
+function normalizeBuyerPreferredPath(raw: string | null): BuyerPreferredPath | null {
+  if (raw === LEGACY_PREFERRED_PATH) return "mcp-ledger";
+  if (raw === "receipts" || raw === "delegation" || raw === "investigation" || raw === "mcp-ledger") {
+    return raw;
+  }
+  return null;
+}
+
+function normalizeBuyerChecklistState(state: unknown): BuyerChecklistState {
+  if (!state || typeof state !== "object") return {};
+
+  const parsed = state as Record<string, unknown>;
+  const next: BuyerChecklistState = {};
+
+  if (parsed.receipt === true) next.receipt = true;
+  if (parsed.delegation === true) next.delegation = true;
+  if (parsed.investigation === true) next.investigation = true;
+  if (parsed[LEGACY_CHECKLIST_ID] === true || parsed["tool-activity"] === true) {
+    next["tool-activity"] = true;
+  }
+
+  return next;
+}
+
 export function loadBuyerPreferredPath(): BuyerPreferredPath | null {
   try {
     const raw = localStorage.getItem(CONTROL_PLANE_PREFERRED_PATH_KEY);
-    if (
-      raw === "receipts" ||
-      raw === "delegation" ||
-      raw === "investigation" ||
-      raw === "research-briefing"
-    ) {
-      return raw;
+    const normalized = normalizeBuyerPreferredPath(raw);
+    if (normalized) {
+      if (raw !== normalized) {
+        localStorage.setItem(CONTROL_PLANE_PREFERRED_PATH_KEY, normalized);
+      }
+      return normalized;
     }
   } catch {
     // noop
@@ -66,8 +92,12 @@ export function loadBuyerChecklistState(): BuyerChecklistState | "dismissed" {
     const raw = localStorage.getItem(CONTROL_PLANE_CHECKLIST_KEY);
     if (raw === "dismissed") return "dismissed";
     if (!raw) return {};
-    const parsed = JSON.parse(raw) as BuyerChecklistState;
-    return typeof parsed === "object" && parsed ? parsed : {};
+    const parsed = JSON.parse(raw) as unknown;
+    const normalized = normalizeBuyerChecklistState(parsed);
+    if (JSON.stringify(parsed) !== JSON.stringify(normalized)) {
+      localStorage.setItem(CONTROL_PLANE_CHECKLIST_KEY, JSON.stringify(normalized));
+    }
+    return normalized;
   } catch {
     return {};
   }
@@ -91,13 +121,7 @@ export function deriveChecklistCompletionsFromRoute(
   if (route.currentView === "receipts") return ["receipt"];
   if (route.currentView === "delegation") return ["delegation"];
   if (route.currentView === "investigation") return ["investigation"];
-  if (
-    route.currentView === "research" &&
-    route.showResearchDossier &&
-    route.researchHubInitialTab === "briefing"
-  ) {
-    return ["brief"];
-  }
+  if (route.currentView === "mcp-ledger") return ["tool-activity"];
   return [];
 }
 

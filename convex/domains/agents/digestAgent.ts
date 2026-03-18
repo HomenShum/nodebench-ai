@@ -2265,7 +2265,7 @@ export const generateDigestWithFactChecks = internalAction({
     // 3. Generate digest (with model fallback)
     // Strategy: try ALL free models first, then paid models
     const allFreeModels = getFreeModels();
-    const paidFallbacks: ApprovedModel[] = [FALLBACK_MODEL, "gemini-2.5-flash" as ApprovedModel, "claude-haiku-4.5" as ApprovedModel];
+    const paidFallbacks: ApprovedModel[] = [FALLBACK_MODEL, "gemini-3.1-flash-lite-preview" as ApprovedModel, "claude-haiku-4.5" as ApprovedModel];
 
     // Build chain: requested model first, then remaining free models, then paid
     const modelsToTry: string[] = [model];

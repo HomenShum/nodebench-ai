@@ -66,6 +66,119 @@ export interface Alert {
   resolvedAt?: number;
 }
 
+type CanonicalHealthCheck = Doc<"healthChecks">;
+
+const HEALTH_COMPONENTS: HealthCheckType[] = [
+  "signal_ingestion",
+  "research_queue",
+  "publishing",
+  "delivery",
+  "entity_lifecycle",
+  "validation",
+  "budget",
+  "database",
+];
+
+const DEFAULT_HEALTH_WINDOW_MINUTES = Math.max(1, Math.round(HEALTH_CONFIG.healthCheckIntervalMs / 60_000));
+const HEALTH_CHECK_STALE_MS = HEALTH_CONFIG.healthCheckIntervalMs * 3;
+
+function asFiniteNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function toLegacyStatus(status: string): ComponentStatus {
+  if (status === "healthy" || status === "degraded" || status === "unknown") {
+    return status;
+  }
+  return status === "down" || status === "unhealthy" ? "unhealthy" : "unknown";
+}
+
+function toCanonicalStatus(status: string): CanonicalHealthCheck["status"] {
+  if (status === "healthy" || status === "degraded") {
+    return status;
+  }
+  return "down";
+}
+
+function toRecentErrors(issues: string[], timestamp: number): CanonicalHealthCheck["recentErrors"] {
+  if (issues.length === 0) {
+    return undefined;
+  }
+
+  return issues.map((message) => ({
+    timestamp,
+    message,
+    count: 1,
+  }));
+}
+
+function toLegacyIssues(check: CanonicalHealthCheck): string[] {
+  const recentErrors = Array.isArray(check.recentErrors)
+    ? check.recentErrors.map((error) => String(error.message)).filter(Boolean)
+    : [];
+
+  if (recentErrors.length > 0) {
+    return recentErrors;
+  }
+
+  const status = toLegacyStatus(check.status);
+  return status === "healthy" ? [] : [`${check.component} is ${status}`];
+}
+
+function toLegacyMetrics(check: CanonicalHealthCheck): Record<string, number> {
+  const metrics: Record<string, number> = {
+    errorRate: check.errorRate,
+    latencyP50: check.latencyP50,
+    latencyP99: check.latencyP99,
+  };
+
+  if (check.throughput !== undefined) metrics.throughput = check.throughput;
+  if (check.queueDepth !== undefined) metrics.queueDepth = check.queueDepth;
+  if (check.oldestItemAge !== undefined) metrics.oldestItemAge = check.oldestItemAge;
+  if (check.memoryUsage !== undefined) metrics.memoryUsage = check.memoryUsage;
+  if (check.cpuUsage !== undefined) metrics.cpuUsage = check.cpuUsage;
+
+  return metrics;
+}
+
+export function normalizeHealthCheckDoc(check: CanonicalHealthCheck): HealthCheckResult {
+  return {
+    component: check.component as HealthCheckType,
+    status: toLegacyStatus(check.status),
+    latencyMs: check.latencyP99 ?? check.latencyP50 ?? 0,
+    metrics: toLegacyMetrics(check),
+    issues: toLegacyIssues(check),
+    timestamp: check.checkedAt,
+  };
+}
+
+export function isActiveHealthStatus(status: string): boolean {
+  const normalizedStatus = toLegacyStatus(status);
+  return normalizedStatus === "unhealthy" || normalizedStatus === "degraded";
+}
+
+function isStaleHealthCheck(check: HealthCheckResult | undefined, now: number): boolean {
+  return !check || check.timestamp <= 0 || now - check.timestamp > HEALTH_CHECK_STALE_MS;
+}
+
+async function loadRecentHealthChecks(ctx: any, limit: number): Promise<CanonicalHealthCheck[]> {
+  return await ctx.db
+    .query("healthChecks")
+    .withIndex("by_checked", (q) => q.gte("checkedAt", 0))
+    .order("desc")
+    .take(limit) as CanonicalHealthCheck[];
+}
+
+function getLatestNormalizedHealthChecks(checks: CanonicalHealthCheck[]): HealthCheckResult[] {
+  const latestByComponent = new Map<string, HealthCheckResult>();
+  for (const check of checks) {
+    if (!latestByComponent.has(check.component)) {
+      latestByComponent.set(check.component, normalizeHealthCheckDoc(check));
+    }
+  }
+  return [...latestByComponent.values()];
+}
+
 /* ================================================================== */
 /* HEALTH CHECK IMPLEMENTATIONS                                        */
 /* ================================================================== */
@@ -512,21 +625,9 @@ export const pingDatabase = internalQuery({
  */
 export const getLatestHealthChecks = internalQuery({
   args: {},
-  handler: async (ctx): Promise<Doc<"healthChecks">[]> => {
-    const checks = await ctx.db
-      .query("healthChecks")
-      .order("desc")
-      .take(50) as Doc<"healthChecks">[];
-
-    // Return only the most recent check per component
-    const latestByComponent = new Map<string, Doc<"healthChecks">>();
-    for (const check of checks) {
-      if (!latestByComponent.has(check.component)) {
-        latestByComponent.set(check.component, check);
-      }
-    }
-
-    return [...latestByComponent.values()];
+  handler: async (ctx): Promise<HealthCheckResult[]> => {
+    const checks = await loadRecentHealthChecks(ctx, 50);
+    return getLatestNormalizedHealthChecks(checks);
   },
 });
 
@@ -538,15 +639,16 @@ export const getHealthHistory = internalQuery({
     component: v.string(),
     hours: v.optional(v.number()),
   },
-  handler: async (ctx, { component, hours = 24 }): Promise<Doc<"healthChecks">[]> => {
+  handler: async (ctx, { component, hours = 24 }): Promise<HealthCheckResult[]> => {
     const cutoff = Date.now() - hours * 60 * 60 * 1000;
 
-    return await ctx.db
+    const checks = await ctx.db
       .query("healthChecks")
-      .withIndex("by_component", (q) => q.eq("component", component))
-      .filter((q) => q.gte(q.field("timestamp"), cutoff))
+      .withIndex("by_component", (q) => q.eq("component", component).gte("checkedAt", cutoff))
       .order("desc")
-      .collect() as Doc<"healthChecks">[];
+      .collect() as CanonicalHealthCheck[];
+
+    return checks.map(normalizeHealthCheckDoc);
   },
 });
 
@@ -555,16 +657,9 @@ export const getHealthHistory = internalQuery({
  */
 export const getActiveAlerts = internalQuery({
   args: {},
-  handler: async (ctx): Promise<Doc<"healthChecks">[]> => {
-    const checks = await ctx.db
-      .query("healthChecks")
-      .order("desc")
-      .take(100) as Doc<"healthChecks">[];
-
-    // Filter for unhealthy/degraded checks
-    return checks.filter(
-      (c: Doc<"healthChecks">) => (c.status === "unhealthy" || c.status === "degraded") && c.issues.length > 0
-    );
+  handler: async (ctx): Promise<HealthCheckResult[]> => {
+    const checks = await loadRecentHealthChecks(ctx, 100);
+    return getLatestNormalizedHealthChecks(checks).filter((check) => isActiveHealthStatus(check.status));
   },
 });
 
@@ -574,30 +669,19 @@ export const getActiveAlerts = internalQuery({
 export const getSystemHealth = query({
   args: {},
   handler: async (ctx): Promise<SystemHealth> => {
-    const checks = await ctx.db
-      .query("healthChecks")
-      .order("desc")
-      .take(50) as Doc<"healthChecks">[];
+    const checks = getLatestNormalizedHealthChecks(await loadRecentHealthChecks(ctx, 50));
+    const checksByComponent = new Map(checks.map((check) => [check.component, check]));
+    const now = Date.now();
 
     // Get latest check per component
     const components: Record<HealthCheckType, HealthCheckResult> = {} as Record<HealthCheckType, HealthCheckResult>;
-    const componentTypes: HealthCheckType[] = [
-      "signal_ingestion",
-      "research_queue",
-      "publishing",
-      "delivery",
-      "entity_lifecycle",
-      "validation",
-      "budget",
-      "database",
-    ];
 
-    for (const type of componentTypes) {
-      const check = checks.find((c: Doc<"healthChecks">) => c.component === type);
-      if (check) {
+    for (const type of HEALTH_COMPONENTS) {
+      const check = checksByComponent.get(type);
+      if (check && !isStaleHealthCheck(check, now)) {
         components[type] = {
           component: type,
-          status: check.status as ComponentStatus,
+          status: check.status,
           latencyMs: check.latencyMs,
           metrics: check.metrics,
           issues: check.issues,
@@ -628,21 +712,24 @@ export const getSystemHealth = query({
     }
 
     // Count active alerts
-    const activeAlerts = checks.filter(
-      (c: Doc<"healthChecks">) => c.status === "unhealthy" || c.status === "degraded"
-    ).length;
+    const activeAlerts = Object.values(components).filter((check) => isActiveHealthStatus(check.status)).length;
 
     // Calculate uptime (simplified - time since last unhealthy check)
-    const lastUnhealthy = checks.find((c: Doc<"healthChecks">) => c.status === "unhealthy");
+    const lastUnhealthy = checks
+      .filter((check) => check.status === "unhealthy")
+      .sort((a, b) => b.timestamp - a.timestamp)[0];
+    const lastChecked = Math.max(0, ...checks.map((check) => check.timestamp));
     const uptime = lastUnhealthy
-      ? Date.now() - lastUnhealthy.timestamp
-      : Date.now() - (checks[checks.length - 1]?.timestamp || Date.now());
+      ? now - lastUnhealthy.timestamp
+      : lastChecked > 0
+        ? now - lastChecked
+        : 0;
 
     return {
       overall,
       components,
       activeAlerts,
-      lastChecked: checks[0]?.timestamp || 0,
+      lastChecked,
       uptime,
     };
   },
@@ -664,13 +751,37 @@ export const storeHealthCheck = internalMutation({
     issues: v.array(v.string()),
   },
   handler: async (ctx, args): Promise<Id<"healthChecks">> => {
+    const metrics = (args.metrics ?? {}) as Record<string, unknown>;
+    const checkedAt = Date.now();
+    const errorRate = asFiniteNumber(metrics.errorRate) ?? asFiniteNumber(metrics.failureRate) ?? 0;
+    const throughput =
+      asFiniteNumber(metrics.throughput) ??
+      asFiniteNumber(metrics.recentSignalCount) ??
+      asFiniteNumber(metrics.completedToday) ??
+      asFiniteNumber(metrics.publishedToday);
+    const queueDepth =
+      asFiniteNumber(metrics.queueDepth) ??
+      asFiniteNumber(metrics.queuedTasks) ??
+      asFiniteNumber(metrics.pendingTasks);
+    const oldestItemAge = asFiniteNumber(metrics.oldestItemAge);
+    const memoryUsage = asFiniteNumber(metrics.memoryUsage);
+    const cpuUsage = asFiniteNumber(metrics.cpuUsage);
+    const recentErrors = toRecentErrors(args.issues, checkedAt);
+
     return await ctx.db.insert("healthChecks", {
       component: args.component,
-      status: args.status as ComponentStatus,
-      latencyMs: args.latencyMs,
-      metrics: args.metrics,
-      issues: args.issues,
-      timestamp: Date.now(),
+      status: toCanonicalStatus(args.status),
+      latencyP50: args.latencyMs,
+      latencyP99: args.latencyMs,
+      errorRate: Math.max(0, Math.min(1, errorRate)),
+      ...(throughput !== undefined ? { throughput } : {}),
+      ...(queueDepth !== undefined ? { queueDepth } : {}),
+      ...(oldestItemAge !== undefined ? { oldestItemAge } : {}),
+      ...(memoryUsage !== undefined ? { memoryUsage } : {}),
+      ...(cpuUsage !== undefined ? { cpuUsage } : {}),
+      ...(recentErrors ? { recentErrors } : {}),
+      checkedAt,
+      windowMinutes: Math.max(1, Math.round(asFiniteNumber(metrics.windowMinutes) ?? DEFAULT_HEALTH_WINDOW_MINUTES)),
     });
   },
 });
@@ -723,7 +834,8 @@ export const getOldHealthChecks = internalQuery({
   handler: async (ctx, { before, limit = 500 }): Promise<Doc<"healthChecks">[]> => {
     return await ctx.db
       .query("healthChecks")
-      .filter((q) => q.lt(q.field("timestamp"), before))
+      .withIndex("by_checked", (q) => q.lt("checkedAt", before))
+      .order("desc")
       .take(limit) as Doc<"healthChecks">[];
   },
 });
@@ -846,27 +958,27 @@ export const generateHealthReport = internalAction({
     );
 
     // Calculate uptime percentage
-    const healthyChecks = checks.filter((c: Doc<"healthChecks">) => c.status === "healthy" && c.timestamp >= cutoff);
-    const totalChecks = checks.filter((c: Doc<"healthChecks">) => c.timestamp >= cutoff);
+    const healthyChecks = checks.filter((c: HealthCheckResult) => c.status === "healthy" && c.timestamp >= cutoff);
+    const totalChecks = checks.filter((c: HealthCheckResult) => c.timestamp >= cutoff);
     const uptimePercent = totalChecks.length > 0 ? (healthyChecks.length / totalChecks.length) * 100 : 100;
 
     // Calculate average latency
     const avgLatency =
       checks.length > 0
-        ? checks.reduce((sum: number, c: Doc<"healthChecks">) => sum + c.latencyMs, 0) / checks.length
+        ? checks.reduce((sum: number, c: HealthCheckResult) => sum + c.latencyMs, 0) / checks.length
         : 0;
 
     // Count unique issues
-    const allIssues = checks.flatMap((c: Doc<"healthChecks">) => c.issues);
+    const allIssues = checks.flatMap((c: HealthCheckResult) => c.issues);
     const issueCount = new Set(allIssues).size;
 
     // Generate recommendations
     const recommendations: string[] = [];
 
-    const unhealthyComponents = checks.filter((c: Doc<"healthChecks">) => c.status === "unhealthy");
+    const unhealthyComponents = checks.filter((c: HealthCheckResult) => c.status === "unhealthy");
     if (unhealthyComponents.length > 0) {
       recommendations.push(
-        `Investigate unhealthy components: ${unhealthyComponents.map((c: Doc<"healthChecks">) => c.component).join(", ")}`
+        `Investigate unhealthy components: ${unhealthyComponents.map((c: HealthCheckResult) => c.component).join(", ")}`
       );
     }
 

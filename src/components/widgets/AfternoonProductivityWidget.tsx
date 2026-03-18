@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useMotionConfig } from '@/lib/motion';
 import { Zap, Target, Clock, ArrowRight } from 'lucide-react';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
@@ -10,6 +11,7 @@ interface AfternoonProductivityWidgetProps {
 }
 
 export function AfternoonProductivityWidget({ onNavigate, onStartFocus }: AfternoonProductivityWidgetProps) {
+  const { instant, transition } = useMotionConfig();
   // Get task progress
   const allTasks = useQuery(api.domains.tasks.tasks.listTasks, { limit: 50 });
   const completedTasks = allTasks?.filter((t) => t.status === 'completed') ?? [];
@@ -21,8 +23,9 @@ export function AfternoonProductivityWidget({ onNavigate, onStartFocus }: Aftern
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={instant ? { opacity: 0 } : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={transition({})}
       className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm"
     >
       {/* Header */}

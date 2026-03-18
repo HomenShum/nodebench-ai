@@ -1,11 +1,13 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Cpu, Activity, Server, Database } from 'lucide-react';
+import { useMotionConfig } from '@/lib/motion';
 
 interface IntelPulseMonitorProps {
     taskResults: any[];
 }
 
 export function IntelPulseMonitor({ taskResults }: IntelPulseMonitorProps) {
+    const { instant } = useMotionConfig();
     const enabled =
         import.meta.env.DEV &&
         typeof window !== 'undefined' &&
@@ -20,7 +22,7 @@ export function IntelPulseMonitor({ taskResults }: IntelPulseMonitorProps) {
 
     return (
         <motion.div
-            initial={{ y: 20, opacity: 0 }}
+            initial={{ y: instant ? 0 : 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             className="fixed bottom-0 left-0 right-0 h-10 bg-surface/80  border-t border-edge z-[30] flex items-center px-12 overflow-hidden pointer-events-none group/monitor"
         >
@@ -33,7 +35,7 @@ export function IntelPulseMonitor({ taskResults }: IntelPulseMonitorProps) {
                 {activeResults.map((res: any, idx: number) => (
                     <motion.div
                         key={res._id || idx}
-                        initial={{ opacity: 0, x: 20 }}
+                        initial={{ opacity: 0, x: instant ? 0 : 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         className="flex items-center gap-3"
                     >

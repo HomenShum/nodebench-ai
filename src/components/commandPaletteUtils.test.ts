@@ -25,7 +25,7 @@ describe("rankCommandPaletteCommands", () => {
     const ranked = rankCommandPaletteCommands(
       [
         makeCommand("nav-benchmarks"),
-        makeCommand("nav-research"),
+        makeCommand("nav-tool-activity"),
         makeCommand("nav-delegation"),
         makeCommand("nav-investigation"),
         makeCommand("nav-receipts"),
@@ -37,17 +37,17 @@ describe("rankCommandPaletteCommands", () => {
       "nav-receipts",
       "nav-delegation",
       "nav-investigation",
-      "nav-research",
+      "nav-tool-activity",
     ]);
   });
 
   it("puts the saved preferred path first", () => {
-    saveBuyerPreferredPath("research-briefing");
+    saveBuyerPreferredPath("mcp-ledger");
 
     const ranked = rankCommandPaletteCommands(
       [
         makeCommand("nav-benchmarks"),
-        makeCommand("nav-research"),
+        makeCommand("nav-tool-activity"),
         makeCommand("nav-delegation"),
         makeCommand("nav-investigation"),
         makeCommand("nav-receipts"),
@@ -55,14 +55,14 @@ describe("rankCommandPaletteCommands", () => {
       "",
     );
 
-    expect(ranked[0]?.id).toBe("nav-research");
+    expect(ranked[0]?.id).toBe("nav-tool-activity");
   });
 
   it("does not reorder typed search results", () => {
     const commands = [
       makeCommand("nav-investigation"),
       makeCommand("nav-receipts"),
-      makeCommand("nav-research"),
+      makeCommand("nav-tool-activity"),
     ];
 
     expect(rankCommandPaletteCommands(commands, "invest")).toEqual(commands);

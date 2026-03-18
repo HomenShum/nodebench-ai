@@ -21,6 +21,9 @@ import { planningTools } from "./tools/planningTools.js";
 import { memoryTools } from "./tools/memoryTools.js";
 import { searchTools } from "./tools/searchTools.js";
 import { financialTools } from "./tools/financialTools.js";
+import { missionTools } from "./tools/missionTools.js";
+import { intelligenceTools } from "./tools/intelligenceTools.js";
+import { evalTools } from "./tools/evalTools.js";
 import { createMetaTools } from "./tools/metaTools.js";
 import { callGateway } from "./convexClient.js";
 import { getRequestContext, runWithRequestContext } from "./requestContext.js";
@@ -35,6 +38,9 @@ const domainTools = [
   ...memoryTools,
   ...searchTools,
   ...financialTools,
+  ...missionTools,
+  ...intelligenceTools,
+  ...evalTools,
 ];
 
 const allTools = [...domainTools, ...createMetaTools(domainTools)];

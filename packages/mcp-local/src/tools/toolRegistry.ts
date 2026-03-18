@@ -3542,6 +3542,110 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     phase: "research",
     complexity: "low",
   },
+  {
+    name: "compute_dimension_profile",
+    category: "mission_harness",
+    tags: ["deeptrace", "dimension", "profile", "regime", "company", "capital", "capability", "time"],
+    quickRef: {
+      nextAction: "Profile computed. Export the full bundle, inspect evidence rows and interaction effects, then record any regime-sensitive recommendation in the execution trace.",
+      nextTools: ["export_dimension_bundle", "list_dimension_evidence", "list_dimension_interactions", "record_execution_decision"],
+      methodology: "mission_execution_harness",
+      tip: "Recompute after new company evidence, hiring signals, financing events, or world events land.",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "get_dimension_profile",
+    category: "mission_harness",
+    tags: ["deeptrace", "dimension", "profile", "regime", "policy_context", "confidence", "company"],
+    quickRef: {
+      nextAction: "Read the latest normalized state, regime label, and policy context. If it looks stale, recompute. If it looks material, drill into bundle details.",
+      nextTools: ["compute_dimension_profile", "export_dimension_bundle", "list_dimension_snapshots"],
+      methodology: "mission_execution_harness",
+      tip: "Use this for a fast read before pulling the heavier evidence and snapshot bundle.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "list_dimension_snapshots",
+    category: "mission_harness",
+    tags: ["deeptrace", "dimension", "snapshots", "history", "regime_transition", "timeline"],
+    quickRef: {
+      nextAction: "Review how the entity moved across regimes over time, then use those transitions to qualify the current recommendation.",
+      nextTools: ["get_dimension_profile", "export_dimension_bundle", "record_execution_verification"],
+      methodology: "mission_execution_harness",
+      tip: "Use snapshots to answer whether a company became stronger after funding, hiring, or strategic events rather than assuming a static state.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "list_dimension_evidence",
+    category: "mission_harness",
+    tags: ["deeptrace", "dimension", "evidence", "audit", "verified", "estimated", "inferred"],
+    quickRef: {
+      nextAction: "Audit the evidence behind each score and availability status. If a recommendation depends on a weak signal, call that out explicitly.",
+      nextTools: ["list_dimension_interactions", "record_execution_decision", "record_execution_verification"],
+      methodology: "mission_execution_harness",
+      tip: "Availability labels matter. Verified and inferred evidence should not be treated as equally strong.",
+    },
+    phase: "verify",
+    complexity: "low",
+  },
+  {
+    name: "list_dimension_interactions",
+    category: "mission_harness",
+    tags: ["deeptrace", "dimension", "interaction", "causal", "capital", "network", "fragility"],
+    quickRef: {
+      nextAction: "Use interaction effects to explain why the recommendation changes under different regimes instead of collapsing everything into one score.",
+      nextTools: ["export_dimension_bundle", "record_execution_decision", "record_execution_verification"],
+      methodology: "mission_execution_harness",
+      tip: "Interaction effects are where capital, capability, and narrative signals become causal rather than just descriptive.",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "export_dimension_bundle",
+    category: "mission_harness",
+    tags: ["deeptrace", "dimension", "bundle", "profile", "snapshots", "evidence", "interactions", "audit"],
+    quickRef: {
+      nextAction: "Use the bundle as the auditable substrate for your memo, execution trace, or judge review. Cite the profile, evidence, and interactions directly.",
+      nextTools: ["record_execution_step", "record_execution_decision", "record_execution_verification"],
+      methodology: "mission_execution_harness",
+      tip: "This is the safest handoff artifact for Claude Code because it preserves the profile, evidence, and history in one fetch.",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "run_research_cell",
+    category: "mission_harness",
+    tags: ["deeptrace", "research", "reanalysis", "confidence", "coverage", "evidence", "gaps", "counter_hypothesis"],
+    quickRef: {
+      nextAction: "Review the merged findings for gaps, counter-hypotheses, and coverage deficiencies. If evidence is still sparse, escalate to due-diligence orchestrator for external acquisition.",
+      nextTools: ["export_dimension_bundle", "compute_dimension_profile", "run_entity_intelligence_mission", "record_execution_decision"],
+      methodology: "mission_execution_harness",
+      tip: "This cell re-analyzes existing DeepTrace data — it does NOT acquire new evidence. Use it to surface what is missing before committing to expensive external research.",
+    },
+    phase: "research",
+    complexity: "high",
+  },
+  {
+    name: "run_entity_intelligence_mission",
+    category: "mission_harness",
+    tags: ["deeptrace", "mission", "entity", "intelligence", "investigation", "relationship", "ownership", "supply_chain", "research_cell"],
+    quickRef: {
+      nextAction: "Review the unified mission output (graph, ownership, supply chain, signals, causal chains). If researchCell was enabled or forceResearchCell was used, check whether the cell triggered and review its findings.",
+      nextTools: ["run_research_cell", "export_dimension_bundle", "record_execution_step", "record_execution_verification"],
+      methodology: "mission_execution_harness",
+      tip: "Pass researchCell=true for threshold-driven bounded re-analysis, or forceResearchCell=true when an operator wants the cell to run even if confidence and coverage look healthy.",
+    },
+    phase: "research",
+    complexity: "high",
+  },
 ];
 
 // ── Exported lookup structures ───────────────────────────────────────────
@@ -3557,6 +3661,14 @@ export const ALL_REGISTRY_ENTRIES = REGISTRY_ENTRIES;
 /** Get quick ref for a tool, with fallback for unregistered tools */
 export function getQuickRef(toolName: string): ToolQuickRef | null {
   return TOOL_REGISTRY.get(toolName)?.quickRef ?? null;
+}
+
+/**
+ * Compatibility helper for older callers that expect a "related tools" list.
+ * The current registry models this through quickRef.nextTools.
+ */
+export function computeRelatedTools(toolName: string): string[] {
+  return getQuickRef(toolName)?.nextTools ?? [];
 }
 
 /** Get all tools in a category */
@@ -4110,7 +4222,7 @@ export function _setDbAccessor(accessor: () => any): void {
  * Approach: for each session, pull the ordered tool sequence, then count
  * pairs within a sliding window of 5 calls. O(n) per session, no self-join.
  */
-function getCooccurrenceEdges(): Map<string, string[]> {
+export function getCooccurrenceEdges(): Map<string, string[]> {
   const now = Date.now();
   if (_cooccurrenceCache && now - _cooccurrenceCacheTime < COOCCURRENCE_TTL_MS) {
     return _cooccurrenceCache;
@@ -4630,6 +4742,28 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
       { tool: "save_session_note", action: "Save traceability note — cite original request, record root cause and fix" },
     ],
   },
+  autonomous_qa_bug: {
+    name: "Autonomous QA Bug Verdict",
+    description: "Evidence-first bug reproduction with trigger/verify split, bounded retries, blocked-infra classification, and anomaly isolation",
+    steps: [
+      { tool: "search_all_knowledge", action: "Check prior bug signatures, setup blockers, and learned repro patterns before touching the workflow" },
+      { tool: "start_execution_run", action: "Open an execution trace so setup, trigger, verification, and verdict all land in one auditable run" },
+      { tool: "plan_decompose_mission", action: "Break the bug into setup, trigger, verify, evidence, and verdict subtasks with bounded contracts" },
+      { tool: "record_execution_step", action: "Log environment setup and preconditions before attempting reproduction" },
+      { tool: "record_execution_verification", action: "Verify setup state explicitly before trigger; classify missing environment or auth as blocked infra" },
+      { tool: "record_execution_step", action: "Execute the smallest trigger needed to reproduce the reported symptom" },
+      { tool: "attach_execution_evidence", action: "Attach screenshots, logs, videos, metrics, or diffs that show actual behavior" },
+      { tool: "get_gate_preset", action: "Load the agent_bug_verdict gate so the pre-verdict checks stay explicit and boolean" },
+      { tool: "run_quality_gate", action: "Run the agent_bug_verdict gate before deciding pass/fail/block" },
+      { tool: "judge_verify_subtask", action: "Judge the primary bug against the output contract with evidence-backed verdict and confidence" },
+      { tool: "judge_request_retry", action: "Retry only the failing trigger or setup step, up to budget; escalate blocked infra instead of looping blindly" },
+      { tool: "log_gap", action: "Log anomalies or newly found bugs separately so they do not overwrite the main bug verdict" },
+      { tool: "sniff_record_human_review", action: "Record human sniff-check when the verdict is high-risk, ambiguous, or externally visible" },
+      { tool: "complete_execution_run", action: "Close the trace with final status, evidence summary, and any drift from the original bug mission" },
+      { tool: "save_session_note", action: "Save traceability note — cite original bug, blocker classification, evidence path, and final verdict" },
+      { tool: "record_learning", action: "Record the reproduction pattern, blocker signature, and anomaly handling guidance for future runs" },
+    ],
+  },
   ui_change: {
     name: "UI/UX Change",
     description: "Frontend implementation with visual verification",
@@ -5020,6 +5154,50 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
       { tool: "save_session_note", action: "Fix P1 issues (6pts each) then P2 (2pts) then P3 (1pt) — root-cause each before fixing" },
       { tool: "get_overstory_qa_gate", action: "Check QA gate for per-route stability grades and issue counts" },
       { tool: "record_learning", action: "Record QA trajectory and Gemini finding patterns for regression tracking" },
+    ],
+  },
+  six_hour_qa: {
+    name: "6-Hour Comprehensive QA Workflow",
+    description: "9-phase automated pipeline covering all 39 routes, 18 interaction scenarios (before/during/after captures), 12 animation-critical routes (SSIM burst analysis), 6 screenshot variants (dark/light × desktop/mobile × normal/reduced-motion), 15 Jony Ive aesthetic criteria, Gemini Vision dogfood, 10 agent eval scenarios via LLM judge, learning loop, and final verdict synthesis. Parallelized in batches of 6 concurrent routes.",
+    steps: [
+      { tool: "start_verification_cycle", action: "Phase 1 SETUP: Create root QA session, run vite build + tsc --noEmit + vitest, capture baseline test counts and screenshot manifest" },
+      { tool: "run_closed_loop", action: "Phase 1 SETUP: Verify build compiles, zero type errors, all tests pass — establish baseline metrics" },
+      { tool: "get_gate_preset", action: "Phase 2 APP_QA: Load a11y gate (12 WCAG 2.1 AA rules) — ARIA, contrast, keyboard, focus, skip-link, tab-order, touch-targets" },
+      { tool: "run_quality_gate", action: "Phase 2 APP_QA: Run a11y + visual_regression + code_review + ui_ux_qa + performance gates on all 39 routes (batched ×6 parallel)" },
+      { tool: "capture_ui_screenshot", action: "Phase 3 INTERACTIONS: Capture BEFORE state for 18 interaction scenarios (command palette, sidebar hover, tab switch, entity search, etc.)" },
+      { tool: "run_visual_qa_suite", action: "Phase 3 INTERACTIONS: Trigger each interaction, capture DURING state (tooltip visible, modal open, thread expanding), wait settle delay" },
+      { tool: "diff_screenshots", action: "Phase 3 INTERACTIONS: Capture AFTER state (settled, restored), diff BEFORE→AFTER to verify clean state restoration" },
+      { tool: "run_visual_qa_suite", action: "Phase 4 ANIMATION: Burst capture 12 animation-critical routes (10-15 frames each, 40-100ms interval), compute SSIM stability scores" },
+      { tool: "compute_web_stability", action: "Phase 4 ANIMATION: Verify no jank frames (SSIM>threshold), effective FPS>30, frame delta variance<2× median per route" },
+      { tool: "run_visual_qa_suite", action: "Phase 4 ANIMATION: Re-test all 12 routes with prefers-reduced-motion:reduce — SSIM must be >0.98 (near-static)" },
+      { tool: "analyze_screenshot", action: "Phase 5 AESTHETIC: Gemini Vision Pro review of 39 routes × 4 variants — 15 Jony Ive criteria (earned complexity, visual hierarchy, spacing, typography, color harmony, alignment, whitespace, icons, loading elegance, empty states, mobile adaptation, dark mode refinement, animation purpose, focus states, error states)" },
+      { tool: "save_session_note", action: "Phase 6 DOGFOOD: Trigger Gemini Vision dogfood QA (screenshotQa + videoQa) on 6 screenshot variants, compute score (100 - P0×10 - P1×6 - P2×2 - P3×1)" },
+      { tool: "start_eval_run", action: "Phase 7 AGENT_EVAL: Create eval suite with 10 agent scenarios (research thesis, DD verify, QA bug, contract compliance, workflow chain, discovery, evidence gathering, cross-check, multi-agent coordination, error recovery)" },
+      { tool: "save_session_note", action: "Phase 7 AGENT_EVAL: Execute each scenario, grade with LLM judge (8 boolean criteria), record evalResults with per-scenario reasoning" },
+      { tool: "complete_eval_run", action: "Phase 7 AGENT_EVAL: Finalize eval run — pass rate, critical criteria check (noHallucination + noForbiddenActions), failure patterns" },
+      { tool: "compare_eval_runs", action: "Phase 7 AGENT_EVAL: Compare against baseline — DEPLOY/REVERT/INVESTIGATE recommendation" },
+      { tool: "get_improvement_recommendations", action: "Phase 8 LEARNING: Extract failure patterns from all 9 phases — gate failures, interaction mismatches, jank, aesthetic violations, agent failures" },
+      { tool: "record_learning", action: "Phase 8 LEARNING: 5-whys root cause → targeted fix → re-eval → compare. Bank edge cases for regression prevention" },
+      { tool: "save_session_note", action: "Phase 9 SYNTHESIS: Cross-check all evidence, compute final verdict (verified/provisionally_verified/needs_review/failed), generate proof pack with coverage: 39 routes × 6 variants × 18 interactions × 12 animation routes" },
+    ],
+  },
+  comprehensive_qa: {
+    name: "Comprehensive QA Suite",
+    description: "Full QA pipeline: accessibility audit, visual regression, code review, deploy readiness, and verdict derivation",
+    steps: [
+      { tool: "start_verification_cycle", action: "Open a QA verification cycle to track all checks in one auditable run" },
+      { tool: "get_gate_preset", action: "Load the a11y gate preset — 8 WCAG 2.1 AA rules for accessibility compliance" },
+      { tool: "run_quality_gate", action: "Run the a11y gate against changed components — check ARIA, contrast, keyboard, focus, motion, forms, landmarks" },
+      { tool: "get_gate_preset", action: "Load the visual_regression gate — 6 rules for baseline comparison, layout shift, responsive, dark/light" },
+      { tool: "run_quality_gate", action: "Run the visual_regression gate — compare screenshots against baselines at 3 viewports" },
+      { tool: "get_gate_preset", action: "Load the code_review gate — compile, lint, tests, secrets, error handling, patterns, regression test" },
+      { tool: "run_quality_gate", action: "Run the code_review gate against all changed files" },
+      { tool: "run_closed_loop", action: "Execute compile→lint→test→debug closed loop until full green" },
+      { tool: "get_gate_preset", action: "Load deploy_readiness gate — all tests, no critical gaps, eval scores, learnings, no TODOs" },
+      { tool: "run_quality_gate", action: "Run deploy_readiness gate to confirm the change is ready to ship" },
+      { tool: "log_test_result", action: "Record the full QA suite result with layer=integration and all gate scores" },
+      { tool: "record_learning", action: "Bank QA findings, edge cases, and accessibility patterns for future runs" },
+      { tool: "save_session_note", action: "Save traceability note linking this QA run to the original request, with citedFrom reference" },
     ],
   },
   content_pipeline: {

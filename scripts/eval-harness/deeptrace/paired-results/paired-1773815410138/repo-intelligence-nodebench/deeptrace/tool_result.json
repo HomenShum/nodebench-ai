@@ -1,0 +1,76 @@
+{
+  "observed_facts": [
+    "nodebench-ai repository fact 1: Summarize repository intelligence, contributor signals, and the most credible maintenance hypothesis.",
+    "nodebench-ai repository fact 2: Summarize repository intelligence, contributor signals, and the most credible maintenance hypothesis.",
+    "nodebench-ai repository fact 3: Summarize repository intelligence, contributor signals, and the most credible maintenance hypothesis.",
+    "nodebench-ai repository fact 4: Summarize repository intelligence, contributor signals, and the most credible maintenance hypothesis."
+  ],
+  "relationships": [
+    {
+      "source": "nodebench-ai repository",
+      "target": "nodebench-ai repository counterpart 1",
+      "relation": "causal_influence",
+      "evidenceRefs": [
+        "ev-1"
+      ]
+    },
+    {
+      "source": "nodebench-ai repository",
+      "target": "nodebench-ai repository counterpart 2",
+      "relation": "linked_signal",
+      "evidenceRefs": [
+        "ev-2"
+      ]
+    },
+    {
+      "source": "nodebench-ai repository",
+      "target": "nodebench-ai repository counterpart 3",
+      "relation": "linked_signal",
+      "evidenceRefs": [
+        "ev-3"
+      ]
+    }
+  ],
+  "dimension_profile": {
+    "status": "bounded",
+    "coverage": 1,
+    "traceability": 1,
+    "subject": "nodebench-ai repository"
+  },
+  "hypothesis": "nodebench-ai repository likely benefits from a trace-backed next action aligned to repo_intelligence.",
+  "counter_hypothesis": "nodebench-ai repository may instead reflect noise or missing evidence, so claims should remain bounded.",
+  "recommendation": "Prioritize the next review step for nodebench-ai repository using the deeptrace benchmark contract.",
+  "limitations": [
+    "nodebench-ai repository limitation 1: evidence remains bounded to the supplied benchmark fixture.",
+    "nodebench-ai repository limitation 2: evidence remains bounded to the supplied benchmark fixture."
+  ],
+  "receipts": [
+    {
+      "step": "step-1",
+      "status": "completed",
+      "note": "deeptrace execution receipt for repo-intelligence-nodebench"
+    },
+    {
+      "step": "step-2",
+      "status": "completed",
+      "note": "deeptrace execution receipt for repo-intelligence-nodebench"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-1",
+      "claim": "nodebench-ai repository evidence-backed claim 1",
+      "source": "deeptrace_trace_bundle"
+    },
+    {
+      "id": "ev-2",
+      "claim": "nodebench-ai repository evidence-backed claim 2",
+      "source": "deeptrace_trace_bundle"
+    },
+    {
+      "id": "ev-3",
+      "claim": "nodebench-ai repository evidence-backed claim 3",
+      "source": "deeptrace_trace_bundle"
+    }
+  ]
+}

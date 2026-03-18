@@ -1,0 +1,184 @@
+{
+  "generatedAt": "2026-01-10T22:43:21.630Z",
+  "totalElapsed": 175196,
+  "modelsToTest": [
+    "gpt-5-mini"
+  ],
+  "suite": "pack",
+  "totalAvailable": 100,
+  "scenarios": 1,
+  "totalEvaluations": 1,
+  "results": [
+    {
+      "model": "gpt-5-mini",
+      "offset": 0,
+      "scenarioId": "fin_revenue_tesla_2024",
+      "scenarioName": "Financial: Tesla 2024 Revenue",
+      "result": {
+        "checks": {
+          "persona": false
+        },
+        "debrief": {
+          "entity": {
+            "canonicalName": "Tesla, Inc.",
+            "confidence": 0,
+            "input": "Tesla"
+          },
+          "grounding": [
+            "{{fact:company_overview:total_revenue_2024}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "email": null
+            },
+            "funding": {
+              "amount": {
+                "amount": null,
+                "currency": null,
+                "unit": null
+              },
+              "stage": null
+            },
+            "hqLocation": "Austin, Texas, U.S."
+          },
+          "nextActions": [
+            "Open/download the official Tesla Form 10-K (Dec 31, 2024) HTML/PDF and confirm the Consolidated Statements of Operations table",
+            "If you need, I can extract other line items (net income, gross profit, revenue by segment or geography)",
+            "Compute trailing growth rates (3‑year CAGR) or convert figures to per-share metrics if required"
+          ],
+          "persona": {
+            "confidence": 0.8,
+            "inferred": "QUANT_ANALYST"
+          },
+          "planSteps": [
+            "Search SEC filings for Tesla FY2024 10-K/8-K",
+            "Locate consolidated statements of operations totals",
+            "Compute YoY growth and report with citation"
+          ],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "name": "fusionSearch",
+              "ok": true
+            },
+            {
+              "name": "linkupSearch",
+              "ok": true
+            },
+            {
+              "name": "quickSearch",
+              "ok": true
+            },
+            {
+              "name": "initScratchpad",
+              "ok": false
+            }
+          ],
+          "verdict": "PASS"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "directToolCalls": [
+            "initScratchpad",
+            "initScratchpad",
+            "fusionSearch",
+            "delegateToSECAgent",
+            "linkupSearch",
+            "quickSearch",
+            "fusionSearch"
+          ],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "initScratchpad",
+            "fusionSearch",
+            "delegateToSECAgent",
+            "linkupSearch",
+            "quickSearch"
+          ],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": [
+            "No skill search before tool invoke",
+            "No progressive disclosure meta-tools used"
+          ]
+        },
+        "elapsedMs": 175056,
+        "execution": {
+          "estimatedInputTokens": 1406,
+          "estimatedOutputTokens": 521,
+          "latencyMs": 174237,
+          "modelUsed": "gpt-5-mini",
+          "providerUsage": {
+            "cachedInputTokens": 239232,
+            "completionTokens": 5976,
+            "promptTokens": 277438,
+            "reasoningTokens": 4928,
+            "totalTokens": 283414
+          },
+          "stepsCount": 8,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "name": "initScratchpad"
+            },
+            {
+              "name": "initScratchpad"
+            },
+            {
+              "name": "fusionSearch"
+            },
+            {
+              "name": "delegateToSECAgent"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "quickSearch"
+            },
+            {
+              "name": "fusionSearch"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "fusionSearch"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "quickSearch"
+            },
+            {
+              "name": "fusionSearch"
+            }
+          ]
+        },
+        "expectedEntityId": "0001318605",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "persona mismatch: got QUANT_ANALYST expected JPM_STARTUP_BANKER",
+          "unknown ground truth entity: 0001318605"
+        ],
+        "id": "fin_revenue_tesla_2024",
+        "name": "Financial: Tesla 2024 Revenue",
+        "ok": false,
+        "promptMessageId": "ks7fwct26vrwb6szh2j7f76kk17yy3dw",
+        "responsePreview": "I searched Tesla’s SEC filings and financial summary (Form 10-K / related 8‑K) and pulled the reported totals.\n\n- Total revenues (year ended Dec 31, 2024): $97,690 million (≈ $97.69B). {{fact:company_overview:total_revenue_2024}} {{cite:linkup-1768084941309-0|Tesla FY2024 financial summary|type:source}}  \n- Total revenues (year ended Dec 31, 2023): $96,773 million (≈ $96.77B). {{cite:linkup-1768084941309-0|Tesla FY2024 financial summary|type:source}}  \n- Year-over-year growth (2024 vs 2023): (97,690 − 96,773) / 96,773 = 0.00947 → ≈ 0.95% (reported as ~1%). {{cite:linkup-1768084941309-0|Tesla FY2024 financial summary|type:source}}\n\nSource: Tesla’s FY2024 financial summary as reported in its SEC filing/related 8‑K (numbers are presented in the company’s filings in millions of USD). {{cite:linkup-1768084941309-0|Tesla FY2024 financial summary|type:source}}\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVers",
+        "threadId": "m57bvr36p2p76yevk5q516r9m57yzvx7"
+      },
+      "elapsed": 175196,
+      "error": null
+    }
+  ]
+}

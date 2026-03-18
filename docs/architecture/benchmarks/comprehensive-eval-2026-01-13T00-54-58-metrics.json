@@ -1,0 +1,42 @@
+{
+  "overallPassRate": 100,
+  "passRateByModel": {
+    "devstral-2-free": 100,
+    "mimo-v2-flash-free": 100
+  },
+  "passRateByScenario": {
+    "banker_vague_disco": 100,
+    "vc_vague_openautoglm": 100,
+    "cto_vague_quickjs": 100,
+    "exec_vague_gemini": 100,
+    "ecosystem_vague_soundcloud": 100
+  },
+  "memoryFirstComplianceRate": 100,
+  "memoryFirstByModel": {
+    "devstral-2-free": 100,
+    "mimo-v2-flash-free": 100
+  },
+  "toolOrderingAccuracy": 100,
+  "toolOrderingByModel": {
+    "devstral-2-free": 100,
+    "mimo-v2-flash-free": 100
+  },
+  "invariantViolations": {
+    "A": 0,
+    "C": 0,
+    "D": 0
+  },
+  "avgLatencyMs": 68870.4,
+  "p50LatencyMs": 76675,
+  "p95LatencyMs": 116163,
+  "latencyByModel": {
+    "devstral-2-free": 54369,
+    "mimo-v2-flash-free": 83371.8
+  },
+  "avgDisclosureLevel": {
+    "none": 0,
+    "partial": 90,
+    "full": 10
+  },
+  "skillFirstRate": 100
+}

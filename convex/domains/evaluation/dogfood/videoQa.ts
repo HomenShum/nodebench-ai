@@ -8,12 +8,16 @@ import { GoogleGenAI, createPartFromUri, Type } from "@google/genai";
 import { getLlmModel } from "../../../../shared/llm/modelCatalog";
 import crypto from "node:crypto";
 
-const DEFAULT_GEMINI_DOGFOOD_MODEL = "gemini-3.1-pro-preview";
+/** Primary: gemini-3.1-flash for temporal video reasoning.
+ *  Burst/fallback: gemini-3.1-flash-lite for frame analysis. */
+const DEFAULT_GEMINI_DOGFOOD_MODEL = "gemini-3.1-flash-lite-preview";
+const GEMINI_PRO_MODEL = "gemini-3.1-pro-preview";
+const GEMINI_FLASH_MODEL = "gemini-3.1-flash-lite-preview";
 
 function getGeminiModelFallbackChain(override?: string | null | undefined): string[] {
   const explicit = (override ?? "").trim();
   if (explicit) return [explicit];
-  return [DEFAULT_GEMINI_DOGFOOD_MODEL, "gemini-3-flash-preview", "gemini-2.5-flash"];
+  return [DEFAULT_GEMINI_DOGFOOD_MODEL, GEMINI_FLASH_MODEL, "gemini-2.0-flash"];
 }
 
 function looksLikeModelNotFound(err: unknown): boolean {
@@ -312,13 +316,13 @@ export const runDogfoodVideoQa = action({
       const runCount = await ctx.runQuery(internal.domains.dogfood.videoQaQueries.countMyDogfoodQaRuns, {});
 
       if (!modelOverride) {
-        const isProRun = runCount % 4 === 0;
+        const isProRun = runCount % 6 === 0;
         if (isProRun) {
-          modelOverride = "gemini-3.1-pro-preview";
-          console.log(`[videoQa] Pro rotation: run #${runCount + 1} (pro), using gemini-3.1-pro-preview`);
+          modelOverride = GEMINI_PRO_MODEL;
+          console.log(`[videoQa] Pro rotation: run #${runCount + 1} (pro), using ${GEMINI_PRO_MODEL}`);
         } else {
-          modelOverride = "gemini-3-flash-preview";
-          console.log(`[videoQa] Flash rotation: run #${runCount + 1} (flash ${(runCount % 4)}/3), using gemini-3-flash-preview`);
+          modelOverride = GEMINI_FLASH_MODEL;
+          console.log(`[videoQa] Flash-lite rotation: run #${runCount + 1} (flash ${(runCount % 6)}/5), using ${GEMINI_FLASH_MODEL}`);
 
           // Load latest pro analysis as reference for flash runs
           const proAnalysis = await ctx.runQuery(internal.domains.dogfood.videoQaQueries.getLatestProAnalysis, { source: "video" });

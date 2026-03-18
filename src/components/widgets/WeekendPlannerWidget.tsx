@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useMotionConfig } from '@/lib/motion';
 import { Coffee, ListTodo, Sparkles, ArrowRight, Calendar } from 'lucide-react';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
@@ -10,6 +11,7 @@ interface WeekendPlannerWidgetProps {
 }
 
 export function WeekendPlannerWidget({ onNavigate }: WeekendPlannerWidgetProps) {
+  const { instant, transition } = useMotionConfig();
   // Get all tasks for next week planning
   const allTasks = useQuery(api.domains.tasks.tasks.listTasks, { limit: 50 });
   const pendingTasks = allTasks?.filter((t) => t.status === 'pending').slice(0, 5) ?? [];
@@ -21,8 +23,9 @@ export function WeekendPlannerWidget({ onNavigate }: WeekendPlannerWidgetProps) 
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={instant ? { opacity: 0 } : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={transition({})}
       className="p-6 bg-gradient-to-br from-green-50 to-indigo-50 rounded-lg border border-green-200 shadow-sm"
     >
       {/* Header */}

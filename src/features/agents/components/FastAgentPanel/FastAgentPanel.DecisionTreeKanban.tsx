@@ -12,6 +12,7 @@
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMotionConfig } from '@/lib/motion';
 import {
   Users,
   Shield,
@@ -92,6 +93,8 @@ export function DecisionTreeKanban({
   className = "",
   onNodeClick,
 }: DecisionTreeKanbanProps) {
+  const { instant, transition } = useMotionConfig();
+
   // Group nodes by type
   const { sourcingNodes, candidateNodes, synthesisNode } = useMemo(() => {
     const nodes = Object.values(graph.nodes);
@@ -133,9 +136,9 @@ export function DecisionTreeKanban({
       <div className="relative h-1.5 bg-surface-secondary rounded-full overflow-hidden">
         <motion.div
           className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-500 to-indigo-500"
-          initial={{ width: 0 }}
+          initial={{ width: instant ? `${graph.phaseProgress}%` : 0 }}
           animate={{ width: `${graph.phaseProgress}%` }}
-          transition={{ duration: 0.3 }}
+          transition={transition(0.3)}
         />
       </div>
 
@@ -238,6 +241,7 @@ function SourceCard({ node }: { node: ReasoningNode }) {
 
 function CandidateCard({ node, onClick }: { node: ReasoningNode; onClick?: () => void }) {
   const [expanded, setExpanded] = React.useState(false);
+  const { instant, transition } = useMotionConfig();
   const isPruned = node.status === "pruned";
   const isVerified = node.status === "verified" || node.status === "completed";
   const isRunning = node.status === "running";
@@ -246,9 +250,9 @@ function CandidateCard({ node, onClick }: { node: ReasoningNode; onClick?: () =>
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, x: -10 }}
+      initial={{ opacity: instant ? (isPruned ? 0.5 : 1) : 0, x: instant ? 0 : -10 }}
       animate={{ opacity: isPruned ? 0.5 : 1, x: 0 }}
-      exit={{ opacity: 0, x: -10 }}
+      exit={{ opacity: instant ? (isPruned ? 0.5 : 1) : 0, x: instant ? 0 : -10 }}
       className={`relative rounded-lg border transition-colors cursor-pointer ${
         isPruned
           ? "bg-surface-secondary border-edge grayscale"
@@ -320,9 +324,10 @@ function CandidateCard({ node, onClick }: { node: ReasoningNode; onClick?: () =>
       <AnimatePresence>
         {expanded && !isPruned && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
+            initial={{ height: instant ? "auto" : 0, opacity: instant ? 1 : 0 }}
             animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            exit={{ height: instant ? "auto" : 0, opacity: instant ? 1 : 0 }}
+            transition={transition(0.2)}
             className="overflow-hidden"
           >
             <div className="px-3 pb-3 pt-0">
@@ -448,12 +453,14 @@ function EnrichmentGrid({ data }: { data?: CandidateData }) {
 // ============================================================================
 
 function SynthesisCard({ node }: { node: ReasoningNode }) {
+  const { instant, transition } = useMotionConfig();
   const isComplete = node.status === "completed";
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 10 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={transition(0.3)}
       className={`rounded-lg border p-4 ${
         isComplete
           ? "bg-gradient-to-br from-green-500/5 to-indigo-500/5 border-green-500/20"

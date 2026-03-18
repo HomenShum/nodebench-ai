@@ -99,7 +99,7 @@ export async function fetchGoogleGeminiApiPricingSnapshot(options?: {
       const normalize = (s) => String(s || '').replace(/\\s+/g,' ').trim();
       const anchors = [
         { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview' },
-        { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview' },
+        { id: 'gemini-3.1-flash-lite-preview', name: 'Gemini 3 Flash Preview' },
       ];
 
       const out = [];

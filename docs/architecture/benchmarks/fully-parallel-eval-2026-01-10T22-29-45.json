@@ -1,0 +1,140 @@
+{
+  "generatedAt": "2026-01-10T22:29:45.819Z",
+  "totalElapsed": 23269,
+  "modelsToTest": [
+    "mimo-v2-flash-free"
+  ],
+  "suite": "pack",
+  "totalAvailable": 100,
+  "scenarios": 1,
+  "totalEvaluations": 1,
+  "results": [
+    {
+      "model": "mimo-v2-flash-free",
+      "offset": 0,
+      "scenarioId": "fin_revenue_tesla_2024",
+      "scenarioName": "Financial: Tesla 2024 Revenue",
+      "result": {
+        "checks": {
+          "persona": false
+        },
+        "debrief": {
+          "entity": {
+            "canonicalName": "Tesla, Inc.",
+            "confidence": 0,
+            "input": "Tesla"
+          },
+          "grounding": [
+            "{{fact:ground_truth:tesla_2024_10k_revenue}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "email": null
+            },
+            "funding": {
+              "amount": {
+                "amount": 665000000000,
+                "currency": "USD",
+                "unit": "market cap"
+              },
+              "stage": "Public Company"
+            },
+            "hqLocation": "Austin, Texas, United States"
+          },
+          "nextActions": [
+            "Verify against Tesla's official investor relations documentation",
+            "Compare against analyst consensus estimates",
+            "Analyze revenue breakdown by segment (automotive vs energy vs services)"
+          ],
+          "persona": {
+            "confidence": 0.8,
+            "inferred": "QUANT_ANALYST"
+          },
+          "planSteps": [
+            "Search Tesla's 2024 10-K filing",
+            "Extract revenue data for FY2024 and FY2023",
+            "Calculate year-over-year growth rate"
+          ],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "name": "linkupSearch",
+              "ok": true
+            }
+          ],
+          "verdict": "PASS"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "directToolCalls": [
+            "delegateToSECAgent",
+            "linkupSearch"
+          ],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "delegateToSECAgent",
+            "linkupSearch"
+          ],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": [
+            "No skill search before tool invoke",
+            "No progressive disclosure meta-tools used"
+          ]
+        },
+        "elapsedMs": 23137,
+        "execution": {
+          "estimatedInputTokens": 1406,
+          "estimatedOutputTokens": 394,
+          "latencyMs": 22693,
+          "modelUsed": "mimo-v2-flash-free",
+          "providerUsage": {
+            "cachedInputTokens": 16,
+            "completionTokens": 666,
+            "promptTokens": 135319,
+            "reasoningTokens": 0,
+            "totalTokens": 135985
+          },
+          "stepsCount": 3,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "name": "delegateToSECAgent"
+            },
+            {
+              "name": "linkupSearch"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "linkupSearch"
+            }
+          ]
+        },
+        "expectedEntityId": "0001318605",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "persona mismatch: got QUANT_ANALYST expected JPM_STARTUP_BANKER",
+          "unknown ground truth entity: 0001318605"
+        ],
+        "id": "fin_revenue_tesla_2024",
+        "name": "Financial: Tesla 2024 Revenue",
+        "ok": false,
+        "promptMessageId": "ks710v2yrnctd6d58q4gt9hzj57yy5y7",
+        "responsePreview": "## Tesla's 2024 Financial Performance\n\nBased on Tesla's 2024 10-K filing, here are the key revenue figures:\n\n**Revenue Amounts:**\n- **FY2024 Total Revenue:** $97.69 billion\n- **FY2023 Total Revenue:** $96.77 billion\n\n**Year-over-Year Growth Rate:**\n- **Absolute Growth:** $0.92 billion\n- **Growth Rate:** ~0.95%\n\nTesla's revenue growth in 2024 was relatively modest at approximately 0.95%, representing a slight increase from the previous year. This represents a significant deceleration compared to previous years' growth rates, as noted in the financial analysis.\n\nThe data comes directly from Tesla's official SEC 10-K filing for fiscal year 2024.\n\n[DEBRIEF_V1_JSON]\n{\n  \"schemaVersion\": \"debrief_v1\",\n  \"persona\": { \"inferred\": \"QUANT_ANALYST\", \"confidence\": 0.8 },\n  \"entity\": { \"input\": \"Tesla\", \"canonicalName\": \"Tesla, Inc.\" },\n  \"planSteps\": [\"Search Tesla's 2024 10-K filing\", \"Extract reve",
+        "threadId": "m57az1d8gq7fn1zerkk4ysty2x7yz867"
+      },
+      "elapsed": 23268,
+      "error": null
+    }
+  ]
+}

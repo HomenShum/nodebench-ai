@@ -1,0 +1,798 @@
+{
+  "sessionId": "opt-ac218f04",
+  "config": {
+    "maxIterations": 15,
+    "maxSessionSeconds": 600,
+    "benchmarkFamilies": [
+      "company_direction",
+      "relationship_mapping",
+      "repo_intelligence",
+      "world_to_company",
+      "trace_backed_draft"
+    ]
+  },
+  "baseline": {
+    "baselineId": "compound-full-stack-v1",
+    "commitHash": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+    "throughputMetrics": {
+      "taskCompletionRate": 1,
+      "timeToFirstDraftMs": 20000,
+      "humanEditDistance": 0,
+      "wallClockMs": 1000,
+      "toolCallCount": 3
+    },
+    "qualityMetrics": {
+      "factualPrecision": 0.92,
+      "relationshipPrecision": 0.8500000000000001,
+      "evidenceLinkage": 1,
+      "receiptCompleteness": 1,
+      "falseConfidenceRate": 0,
+      "canaryRelativeUplift": 0.34
+    },
+    "capturedAt": "2026-03-15T23:01:33.405Z"
+  },
+  "candidates": [
+    {
+      "candidateId": "compound-adaptive-trigger-plus-early-term-v1",
+      "baselineId": "baseline-401d5942-1773609609024",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7119771969888451,
+        "qualityMetrics": {
+          "factualPrecision": 0.83,
+          "relationshipPrecision": 0.79,
+          "evidenceLinkage": 0.8400000000000001,
+          "receiptCompleteness": 0.9,
+          "falseConfidenceRate": 0.060000000000000005,
+          "canaryRelativeUplift": 0.06
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "promoted",
+      "timestamp": "2026-03-15T23:00:10.414Z",
+      "iterationMs": 64,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T23:00:10.350Z"
+        }
+      ],
+      "proposerRationale": "[COMPOUND] Stacks adaptive-trigger-thresholds (promoted round 2, +6.1%) with early-termination-low-usefulness (near-miss, +3.4%). Combined: entity-type-aware triggers fire more precisely, AND when branches produce low-usefulness results, the cell terminates early instead of wasting a refinement round. Compound discount: estimating +7% net vs +9.5% additive."
+    },
+    {
+      "candidateId": "compound-adaptive-trigger-plus-merge-conf-v1",
+      "baselineId": "compound-adaptive-trigger-plus-early-term-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7533175766760605,
+        "qualityMetrics": {
+          "factualPrecision": 0.85,
+          "relationshipPrecision": 0.8,
+          "evidenceLinkage": 0.9000000000000001,
+          "receiptCompleteness": 0.96,
+          "falseConfidenceRate": 0.030000000000000006,
+          "canaryRelativeUplift": 0.12
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "promoted",
+      "timestamp": "2026-03-15T23:00:16.322Z",
+      "iterationMs": 54,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T23:00:16.268Z"
+        }
+      ],
+      "proposerRationale": "[COMPOUND] Stacks adaptive-trigger-thresholds (promoted, +6.1%) with merge-confidence-weighted (near-miss, +3.5%). Combined: triggers fire more precisely per entity type, AND hypothesis selection during merge prefers evidence-backed branches over raw usefulness. Discount: +6.5% net vs +9.6% additive."
+    },
+    {
+      "candidateId": "compound-triple-stack-v1",
+      "baselineId": "compound-adaptive-trigger-plus-merge-conf-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.8246769940131881,
+        "qualityMetrics": {
+          "factualPrecision": 0.87,
+          "relationshipPrecision": 0.81,
+          "evidenceLinkage": 0.9500000000000002,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 6.938893903907228e-18,
+          "canaryRelativeUplift": 0.19
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "promoted",
+      "timestamp": "2026-03-15T23:00:22.300Z",
+      "iterationMs": 199,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T23:00:22.101Z"
+        }
+      ],
+      "proposerRationale": "[COMPOUND] Triple stack: adaptive-trigger + early-termination + merge-confidence. Entity-aware triggers reduce false fires, early termination saves wall clock on dead ends, confidence-weighted merge improves output quality. Heavy discount: +8% net vs +13% additive."
+    },
+    {
+      "candidateId": "fresh-branch-parallel-timeout-v1",
+      "baselineId": "compound-triple-stack-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.8428932438278233,
+        "qualityMetrics": {
+          "factualPrecision": 0.87,
+          "relationshipPrecision": 0.81,
+          "evidenceLinkage": 0.9600000000000002,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 6.938893903907228e-18,
+          "canaryRelativeUplift": 0.23
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 2.2% < 5% minimum",
+      "timestamp": "2026-03-15T23:00:28.756Z",
+      "iterationMs": 59,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T23:00:28.696Z"
+        }
+      ],
+      "proposerRationale": "[FRESH] Fresh proposal: add per-branch wall clock timeout (30s) so a single slow branch can't consume the entire 90s budget. Currently branches run without individual timeouts — if one branch's query takes 60s, the other branches get only 30s for refinement. Promise.race with per-branch abort improves worst-case latency."
+    },
+    {
+      "candidateId": "fresh-signal-recency-weighting-v1",
+      "baselineId": "compound-triple-stack-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.8375457875457875,
+        "qualityMetrics": {
+          "factualPrecision": 0.9,
+          "relationshipPrecision": 0.8200000000000001,
+          "evidenceLinkage": 0.9800000000000002,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.24
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.6% < 5% minimum",
+      "timestamp": "2026-03-15T23:00:34.674Z",
+      "iterationMs": 54,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T23:00:34.620Z"
+        }
+      ],
+      "proposerRationale": "[FRESH] Fresh proposal: counter_hypothesis branch treats all signals equally regardless of age. A 6-month-old revenue signal is less reliable than yesterday's funding announcement. Adding recency decay (weight = 1 / (1 + daysSinceObserved/90)) to signal contribution in hypothesis generation improves factual precision."
+    },
+    {
+      "candidateId": "fresh-relationship-graph-depth2-v1",
+      "baselineId": "compound-triple-stack-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.8343017366597115,
+        "qualityMetrics": {
+          "factualPrecision": 0.88,
+          "relationshipPrecision": 0.8400000000000001,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.24
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.2% < 5% minimum",
+      "timestamp": "2026-03-15T23:00:40.468Z",
+      "iterationMs": 54,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T23:00:40.414Z"
+        }
+      ],
+      "proposerRationale": "[FRESH] Fresh proposal: evidence_gap_fill queries the entity graph with limit=12 at depth 1 only. For entities with sparse direct relationships, adding a second hop (depth=2, limit=6) through connected entities can surface transitive relationships that explain gaps."
+    },
+    {
+      "candidateId": "fresh-availability-plausibility-filter-v1",
+      "baselineId": "compound-triple-stack-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.8383306235367753,
+        "qualityMetrics": {
+          "factualPrecision": 0.89,
+          "relationshipPrecision": 0.8200000000000001,
+          "evidenceLinkage": 0.9900000000000002,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.23
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.7% < 5% minimum",
+      "timestamp": "2026-03-15T23:00:46.523Z",
+      "iterationMs": 62,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T23:00:46.461Z"
+        }
+      ],
+      "proposerRationale": "[FRESH] Fresh proposal: evidence_gap_fill reports all 'unavailable' dimensions equally. But burn rate is structurally unknowable for pre-seed startups, while funding is structurally available for any funded company. Filtering gaps by entity-type plausibility prevents the operator from chasing structurally unavailable data."
+    },
+    {
+      "candidateId": "fresh-dedup-max-confidence-v1",
+      "baselineId": "compound-triple-stack-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.8332176092179345,
+        "qualityMetrics": {
+          "factualPrecision": 0.88,
+          "relationshipPrecision": 0.8400000000000001,
+          "evidenceLinkage": 0.9700000000000002,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.23
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.0% < 5% minimum",
+      "timestamp": "2026-03-15T23:00:52.482Z",
+      "iterationMs": 72,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T23:00:52.410Z"
+        }
+      ],
+      "proposerRationale": "[FRESH] Fresh proposal: dedupeRelationships keeps the first occurrence of a from|to|type triple. When multiple branches find the same relationship with different confidence levels, we should keep the highest confidence version rather than the first-seen one."
+    },
+    {
+      "candidateId": "compound-quad-stack-v1",
+      "baselineId": "compound-triple-stack-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.8790347976696583,
+        "qualityMetrics": {
+          "factualPrecision": 0.89,
+          "relationshipPrecision": 0.8300000000000001,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.26
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "promoted",
+      "timestamp": "2026-03-15T23:00:58.409Z",
+      "iterationMs": 56,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T23:00:58.353Z"
+        }
+      ],
+      "proposerRationale": "[COMPOUND] Quad stack: adaptive-trigger + early-termination + merge-confidence + priority-aware-branch-planning. All four near-misses combined. Fires more precisely, terminates dead ends, selects evidence-backed hypotheses, and allocates branch slots to the highest-value strategies. Heavy discount: +9% net."
+    },
+    {
+      "candidateId": "fresh-limitation-severity-v1",
+      "baselineId": "compound-quad-stack-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.8800314091904876,
+        "qualityMetrics": {
+          "factualPrecision": 0.9,
+          "relationshipPrecision": 0.8400000000000001,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.3
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 0.1% < 5% minimum",
+      "timestamp": "2026-03-15T23:01:04.155Z",
+      "iterationMs": 56,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T23:01:04.099Z"
+        }
+      ],
+      "proposerRationale": "[FRESH] Fresh proposal: limitations are flat strings with no triage guidance. Adding severity (critical/warning/info) lets operators skip info-level limitations and focus on critical gaps, reducing time-to-first-action on the research cell output."
+    },
+    {
+      "candidateId": "fresh-source-kind-quality-weighting-v1",
+      "baselineId": "compound-quad-stack-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.8800314091904876,
+        "qualityMetrics": {
+          "factualPrecision": 0.91,
+          "relationshipPrecision": 0.8400000000000001,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.3
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 0.1% < 5% minimum",
+      "timestamp": "2026-03-15T23:01:10.354Z",
+      "iterationMs": 198,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T23:01:10.156Z"
+        }
+      ],
+      "proposerRationale": "[FRESH] Fresh proposal: source diversification counts distinct kind values equally. A 'filing' source should count 3x a 'social' source for diversification quality. Weighted diversity score produces more actionable recommendations for which source types to pursue."
+    },
+    {
+      "candidateId": "compound-dual-plus-signal-recency-v1",
+      "baselineId": "compound-quad-stack-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.9166904541282591,
+        "qualityMetrics": {
+          "factualPrecision": 0.92,
+          "relationshipPrecision": 0.8400000000000001,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.32
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 4.3% < 5% minimum",
+      "timestamp": "2026-03-15T23:01:16.286Z",
+      "iterationMs": 190,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T23:01:16.096Z"
+        }
+      ],
+      "proposerRationale": "[COMPOUND] Stacks the promoted adaptive-trigger with early-termination AND signal-recency-weighting. Triggers precisely, terminates dead ends, and weights hypothesis generation by signal freshness. Compound discount: +8% net."
+    },
+    {
+      "candidateId": "fresh-causal-chain-depth-scoring-v1",
+      "baselineId": "compound-quad-stack-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.8797467804170954,
+        "qualityMetrics": {
+          "factualPrecision": 0.9,
+          "relationshipPrecision": 0.8400000000000001,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.3
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 0.1% < 5% minimum",
+      "timestamp": "2026-03-15T23:01:22.021Z",
+      "iterationMs": 142,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T23:01:21.879Z"
+        }
+      ],
+      "proposerRationale": "[FRESH] Fresh proposal: counter_hypothesis treats all causal chains as equal. A chain with 5 linked events is stronger evidence than a chain with 1. Adding depth-based quality scoring (depth * 0.15 bonus to usefulness) helps operators focus on the most substantiated narratives."
+    },
+    {
+      "candidateId": "fresh-tool-call-budget-right-size-v1",
+      "baselineId": "compound-quad-stack-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.8935926773455378,
+        "qualityMetrics": {
+          "factualPrecision": 0.89,
+          "relationshipPrecision": 0.8300000000000001,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.3
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.7% < 5% minimum",
+      "timestamp": "2026-03-15T23:01:27.898Z",
+      "iterationMs": 123,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T23:01:27.775Z"
+        }
+      ],
+      "proposerRationale": "[FRESH] Fresh proposal: maxToolCallsPerBranch=15 is 7x the actual usage (max 2 calls per branch). Right-sizing to 6 creates conceptual clarity — budget documents reality. Also signals to future optimizers where the actual capacity ceiling is."
+    },
+    {
+      "candidateId": "compound-full-stack-v1",
+      "baselineId": "compound-quad-stack-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.9305999532200218,
+        "qualityMetrics": {
+          "factualPrecision": 0.92,
+          "relationshipPrecision": 0.8500000000000001,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.34
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "promoted",
+      "timestamp": "2026-03-15T23:01:33.405Z",
+      "iterationMs": 89,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T23:01:33.316Z"
+        }
+      ],
+      "proposerRationale": "[COMPOUND] Full compound: adaptive-trigger + early-termination + merge-confidence + branch-planning + signal-recency + dedup-max-confidence. All strong near-misses in one candidate. Maximum possible throughput lift with heavy compounding discount: +10% net."
+    }
+  ],
+  "promotedCandidateId": "compound-full-stack-v1",
+  "costEntries": [
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T23:00:10.350Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T23:00:16.268Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T23:00:22.101Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T23:00:28.696Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T23:00:34.620Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T23:00:40.414Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T23:00:46.461Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T23:00:52.410Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T23:00:58.353Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T23:01:04.099Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T23:01:10.156Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T23:01:16.096Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T23:01:21.879Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T23:01:27.775Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T23:01:33.316Z"
+    }
+  ],
+  "costSummary": {
+    "totalInputTokens": 0,
+    "totalOutputTokens": 0,
+    "totalCostUsd": 0,
+    "costByPhase": {
+      "propose": 0
+    },
+    "costByModel": {
+      "claude-opus-4-6-session": 0
+    },
+    "callCount": 15
+  },
+  "startedAt": "2026-03-15T23:00:05.831Z",
+  "completedAt": "2026-03-15T23:01:34.388Z"
+}

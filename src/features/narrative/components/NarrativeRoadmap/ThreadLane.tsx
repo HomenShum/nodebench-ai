@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import type { NarrativeThread, NarrativeEvent, WeekColumn, ThreadPhase } from "../../types";
 import { PHASE_COLORS } from "../../types";
+import { useMotionConfig } from "@/lib/motion";
 import EventMarker from "./EventMarker";
 
 interface ThreadLaneProps {
@@ -68,6 +69,7 @@ export function ThreadLane({
   onEventClick,
   index,
 }: ThreadLaneProps) {
+  const { instant, transition } = useMotionConfig();
   const phaseColors = PHASE_COLORS[thread.currentPhase];
   const phaseInfo = getPhaseIndicator(thread.currentPhase);
 
@@ -79,9 +81,9 @@ export function ThreadLane({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
+      transition={transition({ delay: index * 0.05 })}
       className={`border-b border-edge ${index % 2 === 0 ? "bg-surface dark:bg-transparent" : "bg-gray-50/30 dark:bg-white/[0.01]"}`}
     >
       {/* Main Lane Row */}
@@ -192,10 +194,10 @@ export function ThreadLane({
       <AnimatePresence>
         {isExpanded && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
+            initial={{ height: instant ? "auto" : 0, opacity: instant ? 1 : 0 }}
             animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            exit={{ height: instant ? "auto" : 0, opacity: instant ? 1 : 0 }}
+            transition={transition(0.2)}
             className="overflow-hidden"
           >
             <div className="px-4 py-4 bg-gray-50/50 border-t border-edge">

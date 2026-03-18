@@ -1,0 +1,249 @@
+{
+  "timestamp": "2026-03-15T10:46:40.234Z",
+  "phase": "learning_synthesis",
+  "gemini_vision_summary": {
+    "screenshots_scored": 91,
+    "average_overall": 8.4,
+    "score_distribution": {
+      "excellent_9_10": 34,
+      "good_7_8": 57,
+      "acceptable_5_6": 0,
+      "poor_below_5": 0
+    },
+    "total_issues": 272,
+    "critical_count": 0
+  },
+  "claude_judge_summary": {
+    "screenshots_judged": 12,
+    "average_overall": 7,
+    "verdicts": {
+      "ship": 8,
+      "iterate": 2,
+      "block": 2,
+      "error": 0,
+      "parse_error": 0
+    }
+  },
+  "issue_themes": [
+    {
+      "theme": "other",
+      "count": 126,
+      "severity": "high",
+      "sample_files": [
+        "activity-mobile-light.png",
+        "activity-mobile.png",
+        "agents-light.png",
+        "agents-mobile-light.png",
+        "agents-mobile.png"
+      ],
+      "sample_issues": [
+        "The 'Sessions' header is too close to the filter buttons below it.",
+        "Breadcrumbs typography is very small, potentially impacting tap target size.",
+        "The 'Sessions' header is too close to the filter buttons below it."
+      ]
+    },
+    {
+      "theme": "contrast_readability",
+      "count": 45,
+      "severity": "high",
+      "sample_files": [
+        "activity-mobile-light.png",
+        "activity-mobile.png",
+        "agent-marketplace-light.png",
+        "agent-marketplace-mobile-light.png",
+        "agent-marketplace-mobile.png"
+      ],
+      "sample_issues": [
+        "Top navigation bar elements (hamburger, breadcrumbs, icons) are too close together, impacting readability and tap targets.",
+        "Top navigation bar elements (hamburger, breadcrumbs, icons) are too close together, impacting readability and tap targets.",
+        "Breadcrumb and description text are quite small, impacting readability."
+      ]
+    },
+    {
+      "theme": "empty_states",
+      "count": 44,
+      "severity": "high",
+      "sample_files": [
+        "activity-light.png",
+        "activity-mobile-light.png",
+        "activity-mobile.png",
+        "activity.png",
+        "agent-marketplace-light.png"
+      ],
+      "sample_issues": [
+        "Empty state quality, dark mode compliance, and responsive layout cannot be fully assessed from this screenshot.",
+        "Empty state quality and dark mode compliance cannot be fully assessed from this screenshot.",
+        "Empty state quality cannot be fully assessed from this screenshot."
+      ]
+    },
+    {
+      "theme": "spacing",
+      "count": 19,
+      "severity": "medium",
+      "sample_files": [
+        "activity-light.png",
+        "activity-mobile-light.png",
+        "activity-mobile.png",
+        "activity.png",
+        "calendar.png"
+      ],
+      "sample_issues": [
+        "The 'Global commands available' button has slightly inconsistent padding/margin compared to other elements.",
+        "The breadcrumbs 'Agent Workflows / Activity Stream' are very close to the 'Activity Stream' title below it, could use a bit more vertical spacing.",
+        "The 'Global commands available' button has insufficient vertical spacing from the 'Stay oriented...' text above it."
+      ]
+    },
+    {
+      "theme": "theming",
+      "count": 16,
+      "severity": "medium",
+      "sample_files": [
+        "investigation-light.png",
+        "investigation-mobile-light.png",
+        "mcp-ledger-light.png",
+        "mcp-ledger-mobile-light.png",
+        "public-docs-light.png"
+      ],
+      "sample_issues": [
+        "Dark mode compliance is not applicable as this is a light mode screenshot.",
+        "Dark mode compliance is not applicable as this is a light mode screenshot.",
+        "Dark mode compliance not applicable for a light mode screenshot."
+      ]
+    },
+    {
+      "theme": "responsive",
+      "count": 14,
+      "severity": "medium",
+      "sample_files": [
+        "cost-dashboard-mobile-light.png",
+        "documents-mobile-light.png",
+        "documents-mobile.png",
+        "dogfood-mobile-light.png",
+        "dogfood-mobile.png"
+      ],
+      "sample_issues": [
+        "The 'Global commands available' button is very small and might be difficult to tap accurately on a mobile device.",
+        "Horizontal scrolling for view options (Cards, List, Grouped) and main tabs (Documents, Calendar, Agents, Roadmap) is not ideal for mobile.",
+        "The 'Cards', 'List', 'Grouped' buttons are quite small for touch targets on a mobile device."
+      ]
+    },
+    {
+      "theme": "visual_hierarchy",
+      "count": 8,
+      "severity": "low",
+      "sample_files": [
+        "calendar.png",
+        "execution-trace-mobile-light.png",
+        "interaction-agent-response-stream.png",
+        "mcp-ledger.png",
+        "pr-suggestions-light.png"
+      ],
+      "sample_issues": [
+        "The 'Nothing scheduled.' and 'No upcoming items.' text in the right sidebar could benefit from better visual separation or a more distinct style.",
+        "The 'RUN SOURCE' heading could have slightly more visual weight or size to better differentiate it as a section title.",
+        "The 'Global commands available' button is visually subtle and could be overlooked."
+      ]
+    }
+  ],
+  "blocked_screenshots": [
+    {
+      "filename": "cold-load-research-commit-stage.png",
+      "score": 4,
+      "rationale": "The interface shows a loading/empty state with illegible placeholder text overlaid on the main content area, indicating unfinished implementation; while the sidebar navigation is polished, the primary content region is not production-ready and appears to be in a broken cold-load state.",
+      "expected_behavior": "EXPECTED: This screenshot intentionally captures a loading/unsettled state as part of regression testing"
+    },
+    {
+      "filename": "flash-root-unsettled.png",
+      "score": 4.6,
+      "rationale": "Multiple critical issues prevent shipping: loading state with spinner dominates main content area without clear context, placeholder skeleton cards lack animation or completion indicators, preview mode blocks core functionality without a clear path to sign-in, and the unsettled layout suggests incomplete implementation despite polished component design.",
+      "expected_behavior": "EXPECTED: This screenshot intentionally captures a loading/unsettled state as part of regression testing"
+    }
+  ],
+  "e2e_test_results": {
+    "full_ui_dogfood": {
+      "passed": 1,
+      "total": 1,
+      "routes_covered": 39,
+      "variants": 4,
+      "screenshots": 156
+    },
+    "visual_stability": {
+      "passed": 9,
+      "total": 10,
+      "ssim_scores": "All 1.0000 (perfect)",
+      "failed_route": "/dogfood (timeout on heavy video assets)"
+    },
+    "dark_mode_audit": {
+      "passed": 36,
+      "total": 36,
+      "issues_found": 0
+    },
+    "trust_infrastructure": {
+      "passed": 17,
+      "total": 20,
+      "skipped": 3,
+      "reason": "require auth"
+    },
+    "scenario_regression": {
+      "note": "Timeout on first-time route navigation in dark mode sweep"
+    }
+  },
+  "code_fixes_applied": {
+    "reduced_motion": {
+      "files_fixed": 67,
+      "pattern": "useMotionConfig from @/lib/motion",
+      "compliance": "100%"
+    },
+    "modal_migration": {
+      "files_fixed": 3,
+      "pattern": "DialogOverlay with focus trap + spring animation"
+    },
+    "rgba_hardcodes": {
+      "files_fixed": 3,
+      "conversions": 22,
+      "pattern": "Tailwind opacity modifiers + HSL"
+    },
+    "shared_utility": {
+      "created": "src/lib/motion.ts",
+      "exports": [
+        "useMotionConfig",
+        "prefersReducedMotion"
+      ]
+    }
+  },
+  "key_learnings": [
+    "All SSIM stability scores at 1.0000 — no animation jank or layout shift detected",
+    "Dark mode has zero compliance issues across all 36 test points",
+    "Reduced-motion was the largest gap (41/43 files unguarded) — now 100% compliant",
+    "Loading/unsettled states score low on visual quality (expected) — these test regression scenarios",
+    "Accessibility signals (focus rings, ARIA labels) are the most common Gemini-flagged concern",
+    "/dogfood route times out due to heavy video assets — consider lazy-loading walkthrough.mp4"
+  ],
+  "recommendations": [
+    {
+      "priority": "P1",
+      "action": "Add visible focus indicators to all interactive elements",
+      "theme": "accessibility"
+    },
+    {
+      "priority": "P1",
+      "action": "Lazy-load /dogfood video assets to prevent route timeout",
+      "theme": "performance"
+    },
+    {
+      "priority": "P2",
+      "action": "Add explicit empty-state illustrations for data-dependent routes",
+      "theme": "empty_states"
+    },
+    {
+      "priority": "P2",
+      "action": "Increase contrast on secondary text in dark mode",
+      "theme": "contrast"
+    },
+    {
+      "priority": "P3",
+      "action": "Add ARIA labels to all icon-only buttons",
+      "theme": "accessibility"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 ﻿import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { ArrowRight, Newspaper, Zap, TrendingUp, LayoutGrid, Layers } from "lucide-react";
+import { ArrowRight, Newspaper, Zap, TrendingUp, LayoutGrid, Layers, Globe2, ShieldCheck } from "lucide-react";
 import { formatBriefDate, isBriefDateToday } from "@/lib/briefDate";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
@@ -63,6 +63,7 @@ export interface ResearchHubProps {
   activeSources?: string[];
   onToggleSource?: (sourceId: string) => void;
   onGoHome?: () => void;
+  onNavigateToPath?: (path: string) => void;
 }
 
 function ResearchHubContent(props: ResearchHubProps) {
@@ -74,6 +75,7 @@ function ResearchHubContent(props: ResearchHubProps) {
     activeSources: _activeSources,
     onToggleSource: _onToggleSource,
     onGoHome,
+    onNavigateToPath,
   } = props;
 
   const { openWithContext } = useFastAgent();
@@ -598,6 +600,24 @@ function ResearchHubContent(props: ResearchHubProps) {
                   {isBriefToday ? "Updated today" : `Latest brief: ${briefDateLabel}`}
                 </div>
               )}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => onNavigateToPath?.("/research/world-monitor")}
+                className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface px-4 py-2 text-sm text-content-secondary transition hover:bg-surface-hover"
+              >
+                <Globe2 className="w-4 h-4" />
+                World Monitor
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigateToPath?.("/research/watchlists")}
+                className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface px-4 py-2 text-sm text-content-secondary transition hover:bg-surface-hover"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                Watchlists
+              </button>
             </div>
           </div>
         )}

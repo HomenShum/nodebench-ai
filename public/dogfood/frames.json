@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-03-12T09:14:42.628Z",
+  "capturedAtIso": "2026-03-14T07:05:13.193Z",
   "videoPath": "/dogfood/walkthrough.mp4",
   "items": [
     {
@@ -38,7 +38,7 @@
       "index": 5,
       "name": "Research: Briefing",
       "path": "/research/briefing",
-      "startSec": 8.3,
+      "startSec": 8.4,
       "file": "05-research-briefing.jpg",
       "image": "/dogfood/frames/05-research-briefing.jpg"
     },
@@ -118,7 +118,7 @@
       "index": 15,
       "name": "Sources",
       "path": "/footnotes",
-      "startSec": 29.4,
+      "startSec": 29.5,
       "file": "15-sources.jpg",
       "image": "/dogfood/frames/15-sources.jpg"
     },
@@ -126,7 +126,7 @@
       "index": 16,
       "name": "Signals Log",
       "path": "/signals",
-      "startSec": 31.5,
+      "startSec": 31.6,
       "file": "16-signals-log.jpg",
       "image": "/dogfood/frames/16-signals-log.jpg"
     },
@@ -222,7 +222,7 @@
       "index": 28,
       "name": "GitHub Explorer",
       "path": "/github",
-      "startSec": 56.9,
+      "startSec": 56.8,
       "file": "28-github-explorer.jpg",
       "image": "/dogfood/frames/28-github-explorer.jpg"
     },

@@ -12,6 +12,7 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
+import { useMotionConfig } from '@/lib/motion';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -75,6 +76,7 @@ export function EnhancedTimelineStrip({
   sticky = false,
   className = '',
 }: EnhancedTimelineStripProps) {
+  const { instant, transition } = useMotionConfig();
   const [activeFilters, setActiveFilters] = useState<Set<EventCategory>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
@@ -147,9 +149,9 @@ export function EnhancedTimelineStrip({
         <AnimatePresence>
           {showFilters && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
+              initial={{ height: instant ? 'auto' : 0, opacity: instant ? 1 : 0 }}
               animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
+              exit={{ height: instant ? 'auto' : 0, opacity: instant ? 1 : 0 }}
               className="overflow-hidden mb-2"
             >
               <div className="flex items-center gap-2 flex-wrap py-2">
@@ -206,17 +208,17 @@ export function EnhancedTimelineStrip({
                     <motion.button
                       key={event.id}
                       layout
-                      initial={{ opacity: 0, scale: 0.8 }}
+                      initial={{ opacity: instant ? 1 : 0, scale: instant ? 1 : 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
+                      exit={{ opacity: instant ? 1 : 0, scale: instant ? 1 : 0.8 }}
                       onClick={() => onEventClick?.(event)}
                       className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border transition-all ${
                         isActive
                           ? 'bg-gray-900 text-white border-gray-900'
                           : `${config.color}`
                       }`}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                      whileHover={!instant ? { scale: 1.02 } : undefined}
+                      whileTap={!instant ? { scale: 0.98 } : undefined}
                       title={event.description}
                     >
                       <Icon className="w-3 h-3" />

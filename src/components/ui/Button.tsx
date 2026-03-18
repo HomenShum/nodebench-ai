@@ -12,6 +12,7 @@ import React from 'react';
 import { motion, type HTMLMotionProps } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useMotionConfig } from '@/lib/motion';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -57,13 +58,14 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const isDisabled = disabled || loading;
+    const { instant, transition } = useMotionConfig();
 
     return (
       <motion.button
         ref={ref}
-        whileHover={!isDisabled ? { y: -1 } : undefined}
-        whileTap={!isDisabled ? { scale: 0.98 } : undefined}
-        transition={{ type: 'tween', duration: 0.1 }}
+        whileHover={!isDisabled && !instant ? { y: -1 } : undefined}
+        whileTap={!isDisabled && !instant ? { scale: 0.98 } : undefined}
+        transition={transition({ type: 'tween', duration: 0.1 })}
         className={cn(
           'inline-flex items-center justify-center font-medium transition-colors will-change-transform',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
@@ -122,13 +124,14 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
     ref
   ) => {
     const isDisabled = disabled || loading;
+    const { instant, transition } = useMotionConfig();
 
     return (
       <motion.button
         ref={ref}
-        whileHover={!isDisabled ? { scale: 1.05 } : undefined}
-        whileTap={!isDisabled ? { scale: 0.95 } : undefined}
-        transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+        whileHover={!isDisabled && !instant ? { scale: 1.05 } : undefined}
+        whileTap={!isDisabled && !instant ? { scale: 0.95 } : undefined}
+        transition={transition({ type: 'spring', stiffness: 400, damping: 17 })}
         className={cn(
           'inline-flex items-center justify-center transition-colors will-change-transform',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',

@@ -1,0 +1,155 @@
+{
+  "model": "claude-haiku-4.5",
+  "scenario": {
+    "id": "test_banker_vague_disco",
+    "name": "Banker vague: DISCO outreach",
+    "query": "DISCO — can we cover them this week? Give me the fastest banker-grade debrief.",
+    "expectedPersona": "JPM_STARTUP_BANKER",
+    "expectedEntityId": "DISCO"
+  },
+  "result": {
+    "elapsedMs": 18783,
+    "model": "claude-haiku-4.5",
+    "ok": true,
+    "runs": [
+      {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "canonicalName": "DISCO Pharmaceuticals",
+            "confidence": 0,
+            "input": "DISCO",
+            "type": "company"
+          },
+          "freshness": {
+            "bankerWindowDays": 30,
+            "daysOld": 16,
+            "withinBankerWindow": true
+          },
+          "grounding": [
+            "{{fact:ground_truth:DISCO}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "email": "info@discopharma.de"
+            },
+            "funding": {
+              "amount": {
+                "amount": 36,
+                "currency": "EUR",
+                "unit": "M"
+              },
+              "announcementDate": "2025-12-11",
+              "coLeads": [
+                "Ackermans & van Haaren",
+                "NRW.Bank"
+              ],
+              "stage": "Seed"
+            },
+            "hqLocation": "Cologne, Germany",
+            "leadPrograms": "ADC candidates targeting SCLC and MSS-CRC",
+            "people": {
+              "ceo": "Mark Manfredi",
+              "founders": [
+                "Roman Thomas"
+              ]
+            },
+            "platform": "Surfaceome mapping platform"
+          },
+          "nextActions": [
+            "Add to weekly syndication pipeline; research Manfredi's track record for prior exits",
+            "Map 2–3 BD leads at BMS/Pfizer ADC groups for partnership angle",
+            "Schedule Series A follow-up outreach for Q3 2026 (12–18mo out)"
+          ],
+          "persona": {
+            "confidence": 0.95,
+            "inferred": "JPM_STARTUP_BANKER"
+          },
+          "planSteps": [
+            "Call lookupGroundTruthEntity to verify freshness & banker readiness",
+            "Extract funding, contacts, and lead programs from ground truth",
+            "Identify 3 outreach angles (syndication, partnerships, corp dev)",
+            "Confirm within 30-day banker window",
+            "Generate next actions & risk summary"
+          ],
+          "risks": [
+            "German regulatory/IP environment requires local counsel",
+            "ADC modality crowding may compress post-seed valuations",
+            "Unfamiliarity with EU funding ecosystem (NRW.Bank)"
+          ],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            }
+          ],
+          "verdict": "PASS"
+        },
+        "debriefValidation": {
+          "errors": [
+            "entity.confidence must be a number",
+            "fallbacks must be an array"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 18783,
+        "execution": {
+          "estimatedInputTokens": 1347,
+          "estimatedOutputTokens": 963,
+          "latencyMs": 18271,
+          "modelUsed": "claude-haiku-4.5",
+          "providerUsage": {
+            "cachedInputTokens": 0,
+            "completionTokens": 1363,
+            "promptTokens": 86446,
+            "reasoningTokens": 0,
+            "totalTokens": 87809
+          },
+          "stepsCount": 2,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [],
+        "id": "test_banker_vague_disco",
+        "name": "Banker vague: DISCO outreach",
+        "ok": true,
+        "promptMessageId": "ks75vx7jh0gqycbza9krnf3qs57yq07n",
+        "responsePreview": "Perfect. DISCO is **BANKER-READY** — fresh news within the 30-day banker window, solid primary sourcing, and all the required contact/context data present. Here's your debrief:\n\n---\n\n## **DISCO Pharmaceuticals – Banker-Grade Debrief (JPM_STARTUP_BANKER)**\n\n**Verdict: PASS** — Ready for outreach this week.\n\nDISCO Pharmaceuticals (Cologne, Germany) just announced a **€36M seed round** (announced 2025-12-11, ~16 days old) led by Ackermans & van Haaren and NRW.Bank. {{fact:ground_truth:DISCO}} The company is building a **surfaceome mapping platform** to identify and validate novel targets for antibody-drug conjugates (ADCs)—a hot category in oncology. Lead programs are ADC candidates targeting SCLC (small cell lung cancer) and MSS-CRC (microsatellite-stable colorectal cancer).\n\n**Why now:** The surfaceome is an underexplored surface protein discovery angle. ADC modality is red-hot (Seagen, D",
+        "threadId": "m573hz91pww0qbjsbwv96jxxt17yq01t"
+      }
+    ],
+    "summary": {
+      "failed": 0,
+      "passed": 1,
+      "total": 1
+    },
+    "window": {
+      "limit": 1,
+      "nextOffset": null,
+      "offset": 0,
+      "suite": "core",
+      "totalAvailable": 1
+    }
+  },
+  "elapsed": 19114
+}

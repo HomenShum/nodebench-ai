@@ -1,0 +1,1 @@
+{"path":"workflows/deepTrace:runEntityIntelligenceMission","args":{"entityKey":"test-entity-001","entityName":"TestCorp","researchCell":true},"format":"json"}

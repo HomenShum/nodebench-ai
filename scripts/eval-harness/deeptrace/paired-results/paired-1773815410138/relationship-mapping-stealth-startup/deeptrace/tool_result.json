@@ -1,0 +1,93 @@
+{
+  "observed_facts": [
+    "Stealth AI Startup fact 1: Map the strongest investor, operator, and product relationships from sparse evidence.",
+    "Stealth AI Startup fact 2: Map the strongest investor, operator, and product relationships from sparse evidence.",
+    "Stealth AI Startup fact 3: Map the strongest investor, operator, and product relationships from sparse evidence."
+  ],
+  "relationships": [
+    {
+      "source": "Stealth AI Startup",
+      "target": "Stealth AI Startup counterpart 1",
+      "relation": "causal_influence",
+      "evidenceRefs": [
+        "ev-1"
+      ]
+    },
+    {
+      "source": "Stealth AI Startup",
+      "target": "Stealth AI Startup counterpart 2",
+      "relation": "linked_signal",
+      "evidenceRefs": [
+        "ev-2"
+      ]
+    },
+    {
+      "source": "Stealth AI Startup",
+      "target": "Stealth AI Startup counterpart 3",
+      "relation": "linked_signal",
+      "evidenceRefs": [
+        "ev-3"
+      ]
+    },
+    {
+      "source": "Stealth AI Startup",
+      "target": "Stealth AI Startup counterpart 4",
+      "relation": "linked_signal",
+      "evidenceRefs": [
+        "ev-4"
+      ]
+    }
+  ],
+  "dimension_profile": {
+    "status": "bounded",
+    "coverage": 1,
+    "traceability": 1,
+    "subject": "Stealth AI Startup"
+  },
+  "hypothesis": "Stealth AI Startup likely benefits from a trace-backed next action aligned to relationship_mapping.",
+  "counter_hypothesis": "Stealth AI Startup may instead reflect noise or missing evidence, so claims should remain bounded.",
+  "recommendation": "Prioritize the next review step for Stealth AI Startup using the deeptrace benchmark contract.",
+  "limitations": [
+    "Stealth AI Startup limitation 1: evidence remains bounded to the supplied benchmark fixture.",
+    "Stealth AI Startup limitation 2: evidence remains bounded to the supplied benchmark fixture."
+  ],
+  "receipts": [
+    {
+      "step": "step-1",
+      "status": "completed",
+      "note": "deeptrace execution receipt for relationship-mapping-stealth-startup"
+    },
+    {
+      "step": "step-2",
+      "status": "completed",
+      "note": "deeptrace execution receipt for relationship-mapping-stealth-startup"
+    },
+    {
+      "step": "step-3",
+      "status": "completed",
+      "note": "deeptrace execution receipt for relationship-mapping-stealth-startup"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-1",
+      "claim": "Stealth AI Startup evidence-backed claim 1",
+      "source": "deeptrace_trace_bundle"
+    },
+    {
+      "id": "ev-2",
+      "claim": "Stealth AI Startup evidence-backed claim 2",
+      "source": "deeptrace_trace_bundle"
+    },
+    {
+      "id": "ev-3",
+      "claim": "Stealth AI Startup evidence-backed claim 3",
+      "source": "deeptrace_trace_bundle"
+    },
+    {
+      "id": "ev-4",
+      "claim": "Stealth AI Startup evidence-backed claim 4",
+      "source": "deeptrace_trace_bundle"
+    }
+  ]
+}

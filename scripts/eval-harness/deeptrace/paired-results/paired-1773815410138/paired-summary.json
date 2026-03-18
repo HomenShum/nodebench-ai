@@ -1,0 +1,529 @@
+{
+  "suiteId": "paired-1773815410138",
+  "benchmarkName": "deeptrace_claude_code_canary",
+  "benchmarkVersion": "2026-03-15",
+  "timestamp": "2026-03-18T06:30:10.177Z",
+  "repoCommit": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+  "promptTemplateHashes": {
+    "baseline": "a469fe9b736199461701daa43ee09499371be3ce2bec5a04776d3ae7f26bc366",
+    "deeptrace": "03525bf7d5265c4de42502e83da0f0cf76c2dc378d4689bc6c6758918ee3c09f"
+  },
+  "scorecardWeights": {
+    "factualAccuracy": 0.2,
+    "relationshipAccuracy": 0.15,
+    "causalChainQuality": 0.15,
+    "counterHypothesisQuality": 0.1,
+    "limitationsHonesty": 0.1,
+    "evidenceLinkage": 0.1,
+    "receiptCompleteness": 0.1,
+    "humanEditDistance": 0.1
+  },
+  "metadataKeys": [
+    "runId",
+    "benchmarkCaseId",
+    "mode",
+    "timestamp",
+    "repoCommit",
+    "inputSnapshotHash",
+    "promptTemplateHash",
+    "mcpConfigHash",
+    "modelName",
+    "claudeCodeVersion",
+    "wallClockMs",
+    "toolCallCount",
+    "tokenCount",
+    "artifactPaths"
+  ],
+  "comparisonOutputs": [
+    "baselineScore",
+    "deeptraceScore",
+    "relativeUplift",
+    "regression"
+  ],
+  "cases": [
+    {
+      "benchmarkCaseId": "company-direction-anthropic",
+      "familyId": "company_direction",
+      "familyLabel": "Company direction analysis",
+      "baseline": {
+        "metadata": {
+          "runId": "paired-1773815410138-company-direction-anthropic-baseline",
+          "benchmarkCaseId": "company-direction-anthropic",
+          "mode": "baseline",
+          "timestamp": "2026-03-18T06:30:10.139Z",
+          "repoCommit": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+          "inputSnapshotHash": "7bff18228716165cc7d102e5a819a325a81d7617c7ecc2c5d9d3cc80d0ef862f",
+          "promptTemplateHash": "a469fe9b736199461701daa43ee09499371be3ce2bec5a04776d3ae7f26bc366",
+          "mcpConfigHash": "6c88a21151c3812e9d7cdaf876e62c1dfdd9a4c601dcf07669f9b8a7243f828e",
+          "modelName": "claude-code-simulated-baseline",
+          "claudeCodeVersion": null,
+          "wallClockMs": 1420,
+          "toolCallCount": 4,
+          "tokenCount": 980,
+          "artifactPaths": [
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/company-direction-anthropic/baseline/baseline_result.json",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/company-direction-anthropic/baseline/baseline_report.md",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/company-direction-anthropic/baseline/run-metadata.json"
+          ]
+        },
+        "score": 0.556,
+        "dimensions": {
+          "factualAccuracy": 0.75,
+          "relationshipAccuracy": 0.6666666666666666,
+          "causalChainQuality": 0.5,
+          "counterHypothesisQuality": 1,
+          "limitationsHonesty": 0.5,
+          "evidenceLinkage": 0.25,
+          "receiptCompleteness": 0,
+          "humanEditDistance": 0.56
+        },
+        "trackedMetrics": {
+          "taskCompletionRate": 0.88,
+          "confidenceCalibration": 0.63,
+          "falseConfidenceRate": 0.08,
+          "timeToFirstUsableDraftMs": 1180,
+          "blockedStepCount": 1
+        }
+      },
+      "deeptrace": {
+        "metadata": {
+          "runId": "paired-1773815410138-company-direction-anthropic-deeptrace",
+          "benchmarkCaseId": "company-direction-anthropic",
+          "mode": "deeptrace",
+          "timestamp": "2026-03-18T06:30:10.145Z",
+          "repoCommit": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+          "inputSnapshotHash": "7bff18228716165cc7d102e5a819a325a81d7617c7ecc2c5d9d3cc80d0ef862f",
+          "promptTemplateHash": "03525bf7d5265c4de42502e83da0f0cf76c2dc378d4689bc6c6758918ee3c09f",
+          "mcpConfigHash": "5df8da77b4a20c64ec10f76ac7e9292e273274e1e4b35804bda8be4f81fedc23",
+          "modelName": "claude-code-simulated-nodebench",
+          "claudeCodeVersion": null,
+          "wallClockMs": 1960,
+          "toolCallCount": 8,
+          "tokenCount": 1610,
+          "artifactPaths": [
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/company-direction-anthropic/deeptrace/tool_result.json",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/company-direction-anthropic/deeptrace/tool_report.md",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/company-direction-anthropic/deeptrace/tool_trace_bundle.json",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/company-direction-anthropic/deeptrace/run-metadata.json"
+          ]
+        },
+        "score": 0.9839999999999999,
+        "dimensions": {
+          "factualAccuracy": 1,
+          "relationshipAccuracy": 1,
+          "causalChainQuality": 1,
+          "counterHypothesisQuality": 1,
+          "limitationsHonesty": 1,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "humanEditDistance": 0.84
+        },
+        "trackedMetrics": {
+          "taskCompletionRate": 0.97,
+          "confidenceCalibration": 0.87,
+          "falseConfidenceRate": 0.03,
+          "timeToFirstUsableDraftMs": 1510,
+          "blockedStepCount": 0
+        }
+      },
+      "comparison": {
+        "baselineScore": 0.556,
+        "deeptraceScore": 0.9839999999999999,
+        "relativeUplift": 0.7697841726618702,
+        "regression": false
+      }
+    },
+    {
+      "benchmarkCaseId": "relationship-mapping-stealth-startup",
+      "familyId": "relationship_mapping",
+      "familyLabel": "Relationship graph mapping",
+      "baseline": {
+        "metadata": {
+          "runId": "paired-1773815410138-relationship-mapping-stealth-startup-baseline",
+          "benchmarkCaseId": "relationship-mapping-stealth-startup",
+          "mode": "baseline",
+          "timestamp": "2026-03-18T06:30:10.148Z",
+          "repoCommit": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+          "inputSnapshotHash": "52750e2d02915c80858933134424b2bcdd86f62d66983ebecd9c6ba14db3c997",
+          "promptTemplateHash": "a469fe9b736199461701daa43ee09499371be3ce2bec5a04776d3ae7f26bc366",
+          "mcpConfigHash": "6c88a21151c3812e9d7cdaf876e62c1dfdd9a4c601dcf07669f9b8a7243f828e",
+          "modelName": "claude-code-simulated-baseline",
+          "claudeCodeVersion": null,
+          "wallClockMs": 1280,
+          "toolCallCount": 3,
+          "tokenCount": 860,
+          "artifactPaths": [
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/relationship-mapping-stealth-startup/baseline/baseline_result.json",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/relationship-mapping-stealth-startup/baseline/baseline_report.md",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/relationship-mapping-stealth-startup/baseline/run-metadata.json"
+          ]
+        },
+        "score": 0.3343333333333333,
+        "dimensions": {
+          "factualAccuracy": 0.6666666666666666,
+          "relationshipAccuracy": 0.5,
+          "causalChainQuality": 0,
+          "counterHypothesisQuality": 0,
+          "limitationsHonesty": 0.5,
+          "evidenceLinkage": 0.25,
+          "receiptCompleteness": 0,
+          "humanEditDistance": 0.51
+        },
+        "trackedMetrics": {
+          "taskCompletionRate": 0.82,
+          "confidenceCalibration": 0.58,
+          "falseConfidenceRate": 0.09,
+          "timeToFirstUsableDraftMs": 1040,
+          "blockedStepCount": 2
+        }
+      },
+      "deeptrace": {
+        "metadata": {
+          "runId": "paired-1773815410138-relationship-mapping-stealth-startup-deeptrace",
+          "benchmarkCaseId": "relationship-mapping-stealth-startup",
+          "mode": "deeptrace",
+          "timestamp": "2026-03-18T06:30:10.150Z",
+          "repoCommit": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+          "inputSnapshotHash": "52750e2d02915c80858933134424b2bcdd86f62d66983ebecd9c6ba14db3c997",
+          "promptTemplateHash": "03525bf7d5265c4de42502e83da0f0cf76c2dc378d4689bc6c6758918ee3c09f",
+          "mcpConfigHash": "5df8da77b4a20c64ec10f76ac7e9292e273274e1e4b35804bda8be4f81fedc23",
+          "modelName": "claude-code-simulated-nodebench",
+          "claudeCodeVersion": null,
+          "wallClockMs": 2010,
+          "toolCallCount": 9,
+          "tokenCount": 1690,
+          "artifactPaths": [
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/relationship-mapping-stealth-startup/deeptrace/tool_result.json",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/relationship-mapping-stealth-startup/deeptrace/tool_report.md",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/relationship-mapping-stealth-startup/deeptrace/tool_trace_bundle.json",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/relationship-mapping-stealth-startup/deeptrace/run-metadata.json"
+          ]
+        },
+        "score": 0.9809999999999999,
+        "dimensions": {
+          "factualAccuracy": 1,
+          "relationshipAccuracy": 1,
+          "causalChainQuality": 1,
+          "counterHypothesisQuality": 1,
+          "limitationsHonesty": 1,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "humanEditDistance": 0.81
+        },
+        "trackedMetrics": {
+          "taskCompletionRate": 0.94,
+          "confidenceCalibration": 0.84,
+          "falseConfidenceRate": 0.04,
+          "timeToFirstUsableDraftMs": 1430,
+          "blockedStepCount": 0
+        }
+      },
+      "comparison": {
+        "baselineScore": 0.3343333333333333,
+        "deeptraceScore": 0.9809999999999999,
+        "relativeUplift": 1.9341974077766695,
+        "regression": false
+      }
+    },
+    {
+      "benchmarkCaseId": "repo-intelligence-nodebench",
+      "familyId": "repo_intelligence",
+      "familyLabel": "Repository and contributor intelligence",
+      "baseline": {
+        "metadata": {
+          "runId": "paired-1773815410138-repo-intelligence-nodebench-baseline",
+          "benchmarkCaseId": "repo-intelligence-nodebench",
+          "mode": "baseline",
+          "timestamp": "2026-03-18T06:30:10.155Z",
+          "repoCommit": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+          "inputSnapshotHash": "dd9c5fb313eb57012562b40df2490cfc39a033e203486cf67733e030ce09d61e",
+          "promptTemplateHash": "a469fe9b736199461701daa43ee09499371be3ce2bec5a04776d3ae7f26bc366",
+          "mcpConfigHash": "6c88a21151c3812e9d7cdaf876e62c1dfdd9a4c601dcf07669f9b8a7243f828e",
+          "modelName": "claude-code-simulated-baseline",
+          "claudeCodeVersion": null,
+          "wallClockMs": 1470,
+          "toolCallCount": 4,
+          "tokenCount": 1020,
+          "artifactPaths": [
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/repo-intelligence-nodebench/baseline/baseline_result.json",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/repo-intelligence-nodebench/baseline/baseline_report.md",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/repo-intelligence-nodebench/baseline/run-metadata.json"
+          ]
+        },
+        "score": 0.6923333333333334,
+        "dimensions": {
+          "factualAccuracy": 0.75,
+          "relationshipAccuracy": 0.6666666666666666,
+          "causalChainQuality": 1,
+          "counterHypothesisQuality": 1,
+          "limitationsHonesty": 1,
+          "evidenceLinkage": 0.3333333333333333,
+          "receiptCompleteness": 0,
+          "humanEditDistance": 0.5900000000000001
+        },
+        "trackedMetrics": {
+          "taskCompletionRate": 0.86,
+          "confidenceCalibration": 0.66,
+          "falseConfidenceRate": 0.07,
+          "timeToFirstUsableDraftMs": 1250,
+          "blockedStepCount": 1
+        }
+      },
+      "deeptrace": {
+        "metadata": {
+          "runId": "paired-1773815410138-repo-intelligence-nodebench-deeptrace",
+          "benchmarkCaseId": "repo-intelligence-nodebench",
+          "mode": "deeptrace",
+          "timestamp": "2026-03-18T06:30:10.158Z",
+          "repoCommit": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+          "inputSnapshotHash": "dd9c5fb313eb57012562b40df2490cfc39a033e203486cf67733e030ce09d61e",
+          "promptTemplateHash": "03525bf7d5265c4de42502e83da0f0cf76c2dc378d4689bc6c6758918ee3c09f",
+          "mcpConfigHash": "5df8da77b4a20c64ec10f76ac7e9292e273274e1e4b35804bda8be4f81fedc23",
+          "modelName": "claude-code-simulated-nodebench",
+          "claudeCodeVersion": null,
+          "wallClockMs": 1880,
+          "toolCallCount": 7,
+          "tokenCount": 1490,
+          "artifactPaths": [
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/repo-intelligence-nodebench/deeptrace/tool_result.json",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/repo-intelligence-nodebench/deeptrace/tool_report.md",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/repo-intelligence-nodebench/deeptrace/tool_trace_bundle.json",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/repo-intelligence-nodebench/deeptrace/run-metadata.json"
+          ]
+        },
+        "score": 0.982,
+        "dimensions": {
+          "factualAccuracy": 1,
+          "relationshipAccuracy": 1,
+          "causalChainQuality": 1,
+          "counterHypothesisQuality": 1,
+          "limitationsHonesty": 1,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "humanEditDistance": 0.8200000000000001
+        },
+        "trackedMetrics": {
+          "taskCompletionRate": 0.95,
+          "confidenceCalibration": 0.85,
+          "falseConfidenceRate": 0.03,
+          "timeToFirstUsableDraftMs": 1490,
+          "blockedStepCount": 0
+        }
+      },
+      "comparison": {
+        "baselineScore": 0.6923333333333334,
+        "deeptraceScore": 0.982,
+        "relativeUplift": 0.41839191141068843,
+        "regression": false
+      }
+    },
+    {
+      "benchmarkCaseId": "world-to-company-gpu-controls",
+      "familyId": "world_to_company",
+      "familyLabel": "World event to company impact",
+      "baseline": {
+        "metadata": {
+          "runId": "paired-1773815410138-world-to-company-gpu-controls-baseline",
+          "benchmarkCaseId": "world-to-company-gpu-controls",
+          "mode": "baseline",
+          "timestamp": "2026-03-18T06:30:10.161Z",
+          "repoCommit": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+          "inputSnapshotHash": "322cbf0300228419f36d251bfed5b16b3a1229b8a6f4cd06f074cbc704c4d442",
+          "promptTemplateHash": "a469fe9b736199461701daa43ee09499371be3ce2bec5a04776d3ae7f26bc366",
+          "mcpConfigHash": "6c88a21151c3812e9d7cdaf876e62c1dfdd9a4c601dcf07669f9b8a7243f828e",
+          "modelName": "claude-code-simulated-baseline",
+          "claudeCodeVersion": null,
+          "wallClockMs": 1390,
+          "toolCallCount": 4,
+          "tokenCount": 930,
+          "artifactPaths": [
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/world-to-company-gpu-controls/baseline/baseline_result.json",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/world-to-company-gpu-controls/baseline/baseline_report.md",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/world-to-company-gpu-controls/baseline/run-metadata.json"
+          ]
+        },
+        "score": 0.5456666666666666,
+        "dimensions": {
+          "factualAccuracy": 0.6666666666666666,
+          "relationshipAccuracy": 0.6666666666666666,
+          "causalChainQuality": 0.5,
+          "counterHypothesisQuality": 1,
+          "limitationsHonesty": 0.5,
+          "evidenceLinkage": 0.3333333333333333,
+          "receiptCompleteness": 0,
+          "humanEditDistance": 0.54
+        },
+        "trackedMetrics": {
+          "taskCompletionRate": 0.84,
+          "confidenceCalibration": 0.61,
+          "falseConfidenceRate": 0.08,
+          "timeToFirstUsableDraftMs": 1130,
+          "blockedStepCount": 2
+        }
+      },
+      "deeptrace": {
+        "metadata": {
+          "runId": "paired-1773815410138-world-to-company-gpu-controls-deeptrace",
+          "benchmarkCaseId": "world-to-company-gpu-controls",
+          "mode": "deeptrace",
+          "timestamp": "2026-03-18T06:30:10.165Z",
+          "repoCommit": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+          "inputSnapshotHash": "322cbf0300228419f36d251bfed5b16b3a1229b8a6f4cd06f074cbc704c4d442",
+          "promptTemplateHash": "03525bf7d5265c4de42502e83da0f0cf76c2dc378d4689bc6c6758918ee3c09f",
+          "mcpConfigHash": "5df8da77b4a20c64ec10f76ac7e9292e273274e1e4b35804bda8be4f81fedc23",
+          "modelName": "claude-code-simulated-nodebench",
+          "claudeCodeVersion": null,
+          "wallClockMs": 1940,
+          "toolCallCount": 8,
+          "tokenCount": 1570,
+          "artifactPaths": [
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/world-to-company-gpu-controls/deeptrace/tool_result.json",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/world-to-company-gpu-controls/deeptrace/tool_report.md",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/world-to-company-gpu-controls/deeptrace/tool_trace_bundle.json",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/world-to-company-gpu-controls/deeptrace/run-metadata.json"
+          ]
+        },
+        "score": 0.98,
+        "dimensions": {
+          "factualAccuracy": 1,
+          "relationshipAccuracy": 1,
+          "causalChainQuality": 1,
+          "counterHypothesisQuality": 1,
+          "limitationsHonesty": 1,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "humanEditDistance": 0.8
+        },
+        "trackedMetrics": {
+          "taskCompletionRate": 0.93,
+          "confidenceCalibration": 0.82,
+          "falseConfidenceRate": 0.04,
+          "timeToFirstUsableDraftMs": 1460,
+          "blockedStepCount": 0
+        }
+      },
+      "comparison": {
+        "baselineScore": 0.5456666666666666,
+        "deeptraceScore": 0.98,
+        "relativeUplift": 0.795968234575443,
+        "regression": false
+      }
+    },
+    {
+      "benchmarkCaseId": "trace-backed-draft-verdict",
+      "familyId": "trace_backed_draft",
+      "familyLabel": "Trace-backed draft and verdict generation",
+      "baseline": {
+        "metadata": {
+          "runId": "paired-1773815410138-trace-backed-draft-verdict-baseline",
+          "benchmarkCaseId": "trace-backed-draft-verdict",
+          "mode": "baseline",
+          "timestamp": "2026-03-18T06:30:10.169Z",
+          "repoCommit": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+          "inputSnapshotHash": "7d7d99fef409526b9d958525d768e4651a5d5aabd1371d54911df0e504f30364",
+          "promptTemplateHash": "a469fe9b736199461701daa43ee09499371be3ce2bec5a04776d3ae7f26bc366",
+          "mcpConfigHash": "6c88a21151c3812e9d7cdaf876e62c1dfdd9a4c601dcf07669f9b8a7243f828e",
+          "modelName": "claude-code-simulated-baseline",
+          "claudeCodeVersion": null,
+          "wallClockMs": 1320,
+          "toolCallCount": 3,
+          "tokenCount": 880,
+          "artifactPaths": [
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/trace-backed-draft-verdict/baseline/baseline_result.json",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/trace-backed-draft-verdict/baseline/baseline_report.md",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/trace-backed-draft-verdict/baseline/run-metadata.json"
+          ]
+        },
+        "score": 0.5803333333333334,
+        "dimensions": {
+          "factualAccuracy": 0.6666666666666666,
+          "relationshipAccuracy": 0.5,
+          "causalChainQuality": 1,
+          "counterHypothesisQuality": 1,
+          "limitationsHonesty": 0.5,
+          "evidenceLinkage": 0.25,
+          "receiptCompleteness": 0,
+          "humanEditDistance": 0.47
+        },
+        "trackedMetrics": {
+          "taskCompletionRate": 0.8,
+          "confidenceCalibration": 0.55,
+          "falseConfidenceRate": 0.1,
+          "timeToFirstUsableDraftMs": 1010,
+          "blockedStepCount": 2
+        }
+      },
+      "deeptrace": {
+        "metadata": {
+          "runId": "paired-1773815410138-trace-backed-draft-verdict-deeptrace",
+          "benchmarkCaseId": "trace-backed-draft-verdict",
+          "mode": "deeptrace",
+          "timestamp": "2026-03-18T06:30:10.172Z",
+          "repoCommit": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+          "inputSnapshotHash": "7d7d99fef409526b9d958525d768e4651a5d5aabd1371d54911df0e504f30364",
+          "promptTemplateHash": "03525bf7d5265c4de42502e83da0f0cf76c2dc378d4689bc6c6758918ee3c09f",
+          "mcpConfigHash": "5df8da77b4a20c64ec10f76ac7e9292e273274e1e4b35804bda8be4f81fedc23",
+          "modelName": "claude-code-simulated-nodebench",
+          "claudeCodeVersion": null,
+          "wallClockMs": 2050,
+          "toolCallCount": 10,
+          "tokenCount": 1740,
+          "artifactPaths": [
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/trace-backed-draft-verdict/deeptrace/tool_result.json",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/trace-backed-draft-verdict/deeptrace/tool_report.md",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/trace-backed-draft-verdict/deeptrace/tool_trace_bundle.json",
+            "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/trace-backed-draft-verdict/deeptrace/run-metadata.json"
+          ]
+        },
+        "score": 0.9849999999999999,
+        "dimensions": {
+          "factualAccuracy": 1,
+          "relationshipAccuracy": 1,
+          "causalChainQuality": 1,
+          "counterHypothesisQuality": 1,
+          "limitationsHonesty": 1,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "humanEditDistance": 0.85
+        },
+        "trackedMetrics": {
+          "taskCompletionRate": 0.96,
+          "confidenceCalibration": 0.89,
+          "falseConfidenceRate": 0.02,
+          "timeToFirstUsableDraftMs": 1440,
+          "blockedStepCount": 0
+        }
+      },
+      "comparison": {
+        "baselineScore": 0.5803333333333334,
+        "deeptraceScore": 0.9849999999999999,
+        "relativeUplift": 0.6973004020677768,
+        "regression": false
+      }
+    }
+  ],
+  "summary": {
+    "baselineScore": 0.5417333333333334,
+    "deeptraceScore": 0.9823999999999999,
+    "relativeUplift": 0.8134383460497167,
+    "regression": false,
+    "averages": {
+      "baseline": {
+        "evidenceLinkage": 0.2833333333333333,
+        "receiptCompleteness": 0,
+        "falseConfidenceRate": 0.084
+      },
+      "deeptrace": {
+        "evidenceLinkage": 1,
+        "receiptCompleteness": 1,
+        "falseConfidenceRate": 0.032
+      }
+    }
+  },
+  "releaseGuards": {
+    "relativeUpliftPass": true,
+    "evidenceLinkagePass": true,
+    "receiptCompletenessPass": true,
+    "falseConfidencePass": true
+  }
+}

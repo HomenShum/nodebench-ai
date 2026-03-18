@@ -4,7 +4,7 @@
 
 import { memo, useMemo, useState } from "react";
 import { useQuery } from "convex/react";
-import { Database, KeyRound, Lock, ShieldAlert, ShieldCheck, ShieldX } from "lucide-react";
+import { ArrowRight, Database, KeyRound, Lock, ShieldAlert, ShieldCheck, ShieldX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "../../../../convex/_generated/api";
 import { ReceiptApprovalQueue } from "../components/ReceiptApprovalQueue";
@@ -19,6 +19,48 @@ const TIER_STYLES: Record<TrustTier, { label: string; className: string }> = {
   supervised: { label: "Supervised", className: "border-amber-500/20 bg-amber-500/10 text-amber-400" },
   autonomous: { label: "Autonomous", className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" },
 };
+
+const PERMISSION_STYLES = {
+  allowed: {
+    label: "Allowed",
+    className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
+    marker: <ShieldCheck className="h-3.5 w-3.5" />,
+  },
+  escalated: {
+    label: "Require approval",
+    className: "border-amber-500/20 bg-amber-500/10 text-amber-400",
+    marker: <ShieldAlert className="h-3.5 w-3.5" />,
+  },
+  denied: {
+    label: "Deny",
+    className: "border-red-500/20 bg-red-500/10 text-red-400",
+    marker: <ShieldX className="h-3.5 w-3.5" />,
+  },
+} as const;
+
+const GRAPH_NODE_STYLES = {
+  amber: "border-amber-500/20 bg-amber-500/10 text-amber-300",
+  emerald: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
+  indigo: "border-indigo-500/20 bg-indigo-500/10 text-indigo-300",
+  red: "border-red-500/20 bg-red-500/10 text-red-300",
+} as const;
+
+function GraphNodeCard({
+  title,
+  detail,
+  tone,
+}: {
+  title: string;
+  detail: string;
+  tone: keyof typeof GRAPH_NODE_STYLES;
+}) {
+  return (
+    <div className={cn("rounded-xl border px-3 py-3 text-center", GRAPH_NODE_STYLES[tone])}>
+      <div className="text-sm font-medium">{title}</div>
+      <div className="mt-1 text-[11px] text-inherit/80">{detail}</div>
+    </div>
+  );
+}
 
 export const DelegationShowcase = memo(function DelegationShowcase() {
   const passport = DEMO_PASSPORT;
@@ -36,6 +78,34 @@ export const DelegationShowcase = memo(function DelegationShowcase() {
   }, [liveEscalated]);
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const permissionRows = useMemo(
+    () => [
+      ...passport.allowedTools.map((tool) => ({ tool, permission: "allowed" as const })),
+      ...passport.escalatedTools.map((tool) => ({ tool, permission: "escalated" as const })),
+      ...passport.deniedTools.map((tool) => ({ tool, permission: "denied" as const })),
+    ],
+    [passport.allowedTools, passport.deniedTools, passport.escalatedTools],
+  );
+  const scopeToken = useMemo(
+    () => ({
+      passport_id: passport.passportId,
+      subject_type: "agent",
+      subject_id: "financial-analyst-02",
+      agent_id: "financial-analyst-02",
+      created_at: passport.createdAt,
+      revoked_at: passport.revokedAt,
+      scopes: [
+        ...passport.dataScope.map((scope) => ({ resource: scope, action: "read" })),
+        ...passport.allowedTools.map((tool) => ({ resource: `tool:${tool}`, action: "execute" })),
+      ],
+      approval_policy: {
+        mode: passport.trustTier,
+        requires_human_approval: passport.escalatedTools.length > 0,
+        max_spend_usd: passport.spendLimit,
+      },
+    }),
+    [passport],
+  );
   const toggleExpand = (id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
@@ -46,7 +116,7 @@ export const DelegationShowcase = memo(function DelegationShowcase() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8 px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6">
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <KeyRound className="h-5 w-5 text-emerald-400" />
@@ -118,6 +188,124 @@ export const DelegationShowcase = memo(function DelegationShowcase() {
                   {scope}
                 </span>
               ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="passport-scope-matrix-heading" className="space-y-3">
+        <div>
+          <h2 id="passport-scope-matrix-heading" className="text-sm font-medium text-content-secondary">
+            Passport scope matrix
+          </h2>
+          <p className="mt-1 text-xs text-content-muted">
+            Tool-level delegation policy for this passport. Approval-gated actions inherit the same subject but narrow execution behind a human checkpoint.
+          </p>
+        </div>
+        <div className="overflow-hidden rounded-xl border border-edge bg-surface-secondary/50">
+          <table className="min-w-full text-left text-xs">
+            <thead className="border-b border-edge/60 bg-black/10 text-content-muted">
+              <tr>
+                <th className="px-4 py-3 font-medium">Tool</th>
+                <th className="px-4 py-3 font-medium">Allowed</th>
+                <th className="px-4 py-3 font-medium">Require Approval</th>
+                <th className="px-4 py-3 font-medium">Deny</th>
+              </tr>
+            </thead>
+            <tbody>
+              {permissionRows.map((row) => (
+                <tr key={row.tool} className="border-b border-edge/40 last:border-b-0">
+                  <td className="px-4 py-3 font-mono text-[11px] text-content-secondary">{row.tool}</td>
+                  {(["allowed", "escalated", "denied"] as const).map((permission) => {
+                    const selected = row.permission === permission;
+                    const style = PERMISSION_STYLES[permission];
+                    return (
+                      <td key={permission} className="px-4 py-3">
+                        {selected ? (
+                          <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-1 font-medium", style.className)}>
+                            {style.marker}
+                            {style.label}
+                          </span>
+                        ) : (
+                          <span className="text-content-muted/50">—</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="scope-token-heading" className="space-y-3">
+        <div>
+          <h2 id="scope-token-heading" className="text-sm font-medium text-content-secondary">
+            Scope token object
+          </h2>
+          <p className="mt-1 text-xs text-content-muted">
+            Demo token aligned to the headless <code className="font-mono text-[11px]">V2Passport</code> shape so the UI mirrors the current API contract.
+          </p>
+        </div>
+        <div className="rounded-xl border border-edge bg-black/20 p-4">
+          <pre className="overflow-x-auto text-[11px] leading-5 text-content-secondary">{JSON.stringify(scopeToken, null, 2)}</pre>
+        </div>
+      </section>
+
+      <section aria-labelledby="delegation-graph-heading" className="space-y-3">
+        <div>
+          <h2 id="delegation-graph-heading" className="text-sm font-medium text-content-secondary">
+            Delegation graph v0
+          </h2>
+          <p className="mt-1 text-xs text-content-muted">
+            Visualizes how the supervisor issues a scoped passport and where authority narrows into allowed, approval-gated, and denied paths.
+          </p>
+        </div>
+        <div className="rounded-xl border border-edge bg-surface-secondary/50 p-4">
+          <div className="mx-auto max-w-4xl space-y-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:items-center">
+              <GraphNodeCard title="Human supervisor" detail="Issues and audits the passport" tone="amber" />
+              <div className="hidden items-center justify-center md:flex text-content-muted">
+                <ArrowRight className="h-4 w-4" />
+              </div>
+              <GraphNodeCard
+                title="Financial Analyst Passport"
+                detail="Supervised tier · spend limit $0 · public research only"
+                tone="emerald"
+              />
+            </div>
+
+            <div className="hidden md:block">
+              <div className="mx-auto h-6 w-px bg-edge" />
+              <div className="mx-auto h-px w-2/3 bg-edge" />
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="space-y-2">
+                <div className="hidden md:block mx-auto h-4 w-px bg-edge" />
+                <GraphNodeCard
+                  title="Public data scope"
+                  detail="web_search, fetch_url, analyze_data · read public_filings/news_articles/market_data"
+                  tone="indigo"
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="hidden md:block mx-auto h-4 w-px bg-edge" />
+                <GraphNodeCard
+                  title="Approval gate"
+                  detail="send_email, publish_report, share_externally require human sign-off"
+                  tone="amber"
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="hidden md:block mx-auto h-4 w-px bg-edge" />
+                <GraphNodeCard
+                  title="Denied sink"
+                  detail="execute_trade, transfer_funds, delete_data never inherit authority"
+                  tone="red"
+                />
+              </div>
             </div>
           </div>
         </div>

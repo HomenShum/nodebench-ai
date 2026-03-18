@@ -1,0 +1,226 @@
+[
+  {
+    "filename": "convex/domains/agents/selfEvolution.ts",
+    "checks": {
+      "BOUND": {
+        "pass": false,
+        "reason": "queryRecentTraces takes 500 items and queryRecentEvalRuns takes 100 without memory ceiling or eviction policy; no max heap/LRU guard on decisions array or skipReasons accumulation."
+      },
+      "HONEST_STATUS": {
+        "pass": false,
+        "reason": "proposeRubricChanges returns 200-like success (RubricProposal object) on LLM parse failure with empty changes array, masking the error state."
+      },
+      "HONEST_SCORES": {
+        "pass": false,
+        "reason": "confidence defaults to 0.5 hardcoded (Number(c.confidence) || 0.5) without validation that LLM confidence scores are trustworthy or bounded."
+      },
+      "TIMEOUT": {
+        "pass": false,
+        "reason": "generateText() call in proposeRubricChanges has no AbortController, timeout budget, or maxTokens enforcement beyond 2000 tokens; ctx.runQuery/runAction/runMutation have no timeout gates."
+      },
+      "SSRF": {
+        "pass": true,
+        "reason": "No external fetch or URL construction; all operations are internal Convex queries/mutations and LLM model resolution via getLanguageModelSafe."
+      },
+      "BOUND_READ": {
+        "pass": true,
+        "reason": "No external HTTP response bodies consumed; LLM response is bounded by maxTokens=2000 and extractJson limits parsing to text.length."
+      },
+      "ERROR_BOUNDARY": {
+        "pass": false,
+        "reason": "runSelfEvolutionCycle has no try-catch wrapping ctx.runAction/runMutation calls; parse failure in proposeRubricChanges is caught but returns silently with empty changes instead of propagating error."
+      },
+      "DETERMINISTIC": {
+        "pass": false,
+        "reason": "cycleId uses Math.random() for uniqueness (non-deterministic); RubricChange objects and proposal sorting are not stable-key hashed for idempotency or CAS."
+      }
+    },
+    "passCount": 2,
+    "verdict": "FAIL",
+    "p0Issues": [
+      "HONEST_STATUS: LLM parse failures return 200-like success with empty changes, hiding failures from caller. Proposal object is identical whether parse succeeded or failed.",
+      "TIMEOUT: generateText() unbounded; no AbortController. If LLM hangs, action blocks indefinitely. ctx.runQuery on 500-item agentTaskTraces has no timeout.",
+      "BOUND: queryRecentTraces and queryRecentEvalRuns have hardcoded limits (500, 100) but no memory cap on accumulated decisions array or skipReasons object in analyzeDecisionLogs."
+    ],
+    "spotFixes": [
+      {
+        "file": "convex/domains/agents/selfEvolution.ts",
+        "line": "~180",
+        "fix": "Add try-catch in proposeRubricChanges and throw explicitly on parse failure instead of returning empty proposal. Change to: `throw new Error('LLM proposal parse failed: ' + result.text.slice(0, 200));`"
+      },
+      {
+        "file": "convex/domains/agents/selfEvolution.ts",
+        "line": "~160",
+        "fix": "Wrap generateText in AbortController with 30s timeout: `const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 30000); const result = await generateText({model, system, prompt, maxTokens: 2000, signal: controller.signal});`"
+      },
+      {
+        "file": "convex/domains/agents/selfEvolution.ts",
+        "line": "~210",
+        "fix": "Cap decisions array: `const decisions = traces.slice(0, 1000).map(...)` and skipReasons: `if (Object.keys(skipReasons).length > 100) { /* truncate or error */ }`"
+      },
+      {
+        "file": "convex/domains/agents/selfEvolution.ts",
+        "line": "~135",
+        "fix": "Replace Math.random() with deterministic hash: `const cycleId = 'evo-' + Date.now() + '-' + crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(analysis))).then(h => Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 8));`"
+      },
+      {
+        "file": "convex/domains/agents/selfEvolution.ts",
+        "line": "~188",
+        "fix": "Validate confidence is in [0, 1] range: `confidence: Math.max(0, Math.min(1, Number(c.confidence) ?? 0.5)),`"
+      },
+      {
+        "file": "convex/domains/agents/selfEvolution.ts",
+        "line": "~245",
+        "fix": "Wrap full runSelfEvolutionCycle in try-catch: `try { const analysis = await ctx.runAction(...); } catch (e) { return {cycleId, error: e.message, status: 'failed'}; }`"
+      }
+    ]
+  },
+  {
+    "filename": "convex/domains/agents/swarmDeliberation.ts",
+    "checks": {
+      "BOUND": {
+        "pass": false,
+        "reason": "extraRoundsMap and allRounds arrays grow unbounded; no max size cap or eviction policy. allRounds could accumulate many RoundResult objects with nested assessments indefinitely."
+      },
+      "HONEST_STATUS": {
+        "pass": false,
+        "reason": "Line 440: catch block calls updateDeliberationState with status 'failed' but does NOT prevent the error from propagating (throws it). However, the upstream caller in startSwarmDeliberation may catch and return 2xx-like success; no explicit HTTP status check in route, but mutation state contradicts return."
+      },
+      "HONEST_SCORES": {
+        "pass": false,
+        "reason": "Lines 294, 369: confidence is clamped to [0, 1] and overallConfidence defaulted to 0.5 as hardcoded floors. Score synthesis defaults to 0.2 (line 381) and 0.5 (line 369) without justification—artificial floor values."
+      },
+      "TIMEOUT": {
+        "pass": false,
+        "reason": "No AbortController, timeout, or budget gates on genai.models.generateContent() calls (lines 287, 334). LLM calls at lines 287, 334 have no deadline or cancellation mechanism. MAX_ROUNDS loop has no outer time budget."
+      },
+      "SSRF": {
+        "pass": true,
+        "reason": "No fetch() or URL-based external requests in this file. GoogleGenAI client is initialized from environment variable and used via SDK methods; no raw URL construction."
+      },
+      "BOUND_READ": {
+        "pass": false,
+        "reason": "Line 287 & 334: genai.models.generateContent() response.text is consumed without size limits. response.text could be arbitrarily large; no cap on LLM response body before storing in RoundResult or synthesis."
+      },
+      "ERROR_BOUNDARY": {
+        "pass": false,
+        "reason": "Lines 287, 334 (LLM calls in runDeliberationRound and synthesizeDeliberation actions) have catch blocks only for JSON parse failures. generateContent() network/API errors are not caught; will propagate unhandled. Top-level try-catch in startSwarmDeliberation only wraps Phase 2–3, not Phase 1."
+      },
+      "DETERMINISTIC": {
+        "pass": false,
+        "reason": "extraRoundsMap at line 415 uses roleId keys but iteration order is undefined (Map iteration in JS is insertion-order, but role selection and penalty logic is not deterministic across reruns). No stable ordering or sorted-key hashing for idempotency checks."
+      }
+    },
+    "passCount": 1,
+    "verdict": "FAIL",
+    "p0Issues": [
+      "TIMEOUT P0: No timeout or AbortController on genai.models.generateContent() calls (lines 287, 334). LLM requests can hang indefinitely, blocking Convex action execution.",
+      "BOUND_READ P0: No size cap on response.text from LLM. Unbounded response bodies will be stored in RoundResult.compactedContext and synthesis output, causing memory exhaustion.",
+      "ERROR_BOUNDARY P0: Unhandled promise rejections in generateContent() network calls (lines 287, 334) will crash the action. JSON parse fallbacks mask root cause.",
+      "BOUND P0: allRounds array accumulates all RoundResult objects (up to MAX_ROUNDS + QUALITY_PENALTY_ROUNDS). If each RoundResult contains 6 RoleAssessment objects with large text fields, memory grows unbounded within a single action execution."
+    ],
+    "spotFixes": [
+      {
+        "file": "convex/domains/agents/swarmDeliberation.ts",
+        "line": "~287",
+        "fix": "Add AbortController + timeout: const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 30000); const response = await genai.models.generateContent({...}, {signal: controller.signal}); clearTimeout(timeout); Wrap in try-catch for AbortError."
+      },
+      {
+        "file": "convex/domains/agents/swarmDeliberation.ts",
+        "line": "~287",
+        "fix": "Cap response.text size: const text = (response.text ?? '').slice(0, 8192); to prevent unbounded memory allocation."
+      },
+      {
+        "file": "convex/domains/agents/swarmDeliberation.ts",
+        "line": "~287",
+        "fix": "Wrap generateRoleAssessment try-catch to include generateContent: try { const response = await genai.models.generateContent(...); } catch (e) { if (e.name === 'AbortError') throw; /* fallback parsing */ }"
+      },
+      {
+        "file": "convex/domains/agents/swarmDeliberation.ts",
+        "line": "~415",
+        "fix": "Sort extraRoundsMap keys before iteration: const penaltyRoleIds = Array.from(extraRoundsMap.keys()).sort(); for deterministic penalty round selection."
+      },
+      {
+        "file": "convex/domains/agents/swarmDeliberation.ts",
+        "line": "~406",
+        "fix": "Cap allRounds array: if (allRounds.length > 50) { allRounds = allRounds.slice(-50); } to prevent unbounded growth."
+      },
+      {
+        "file": "convex/domains/agents/swarmDeliberation.ts",
+        "line": "~432",
+        "fix": "Trim roundSummaries before synthesis: const roundSummaries = allRounds.map(...).join('\\n\\n').slice(0, 16384); to cap context size."
+      }
+    ]
+  },
+  {
+    "filename": "convex/domains/agents/autonomousCrons.ts",
+    "checks": {
+      "BOUND": {
+        "pass": false,
+        "reason": "queryRecentSessions and querySwarmSessions load unbounded result sets into memory; MAX_SESSIONS_QUERY=50 limits only one caller, others use .take(args.limit) with user-controlled limit arg; no eviction or LRU implemented."
+      },
+      "HONEST_STATUS": {
+        "pass": false,
+        "reason": "callGemini throws on non-2xx but multiple error handlers catch and return fallback data (e.g., 'Unable to parse LLM response') while storeCronResult always returns 200 success, masking failures as valid results."
+      },
+      "HONEST_SCORES": {
+        "pass": false,
+        "reason": "Multiple hardcoded score floors: alignmentScore clamped to [0, 1] but fallback defaults to 0.5; confidence floors at 0.3 (drift), 0.1 (lens failure); weightedConfidence has no floor but fallback predictions return 0.3/0.1."
+      },
+      "TIMEOUT": {
+        "pass": true,
+        "reason": "callGemini uses AbortController with 60s timeout; Promise.all gates on async operations; no budget exhaustion risk identified in query loops."
+      },
+      "SSRF": {
+        "pass": true,
+        "reason": "All fetch targets are hardcoded to google.ai (generativelanguage.googleapis.com); no user-controlled URL parameters."
+      },
+      "BOUND_READ": {
+        "pass": false,
+        "reason": "callGemini calls res.json() without size cap; maxOutputTokens=4096 is soft limit only; error handler slices body to 500 chars but success path reads full JSON response unbounded."
+      },
+      "ERROR_BOUNDARY": {
+        "pass": false,
+        "reason": "runDriftDetection, runCompetitiveAnalysis, runPrediction, runSwarmEvolution are internalActions but lack try-catch at handler level; callGemini errors are caught in individual lens promises but top-level handler could crash on ctx.runQuery/runMutation failures."
+      },
+      "DETERMINISTIC": {
+        "pass": false,
+        "reason": "No CAS/idempotency keys used; storeCronResult always inserts new record with Date.now() as timestamp, allowing duplicates if cron fires twice; queryLatestCronSession relies on .order('desc').first() which is non-deterministic on ties."
+      }
+    },
+    "passCount": 2,
+    "verdict": "FAIL",
+    "p0Issues": [
+      "HONEST_STATUS: Failures masked as success — callGemini errors caught but stored as 'Unable to parse' metadata, hiding actual API failures from downstream consumers.",
+      "ERROR_BOUNDARY: Top-level handler crash risk — ctx.runQuery/runMutation in runDriftDetection/runCompetitiveAnalysis/runPrediction/runSwarmEvolution uncaught; single failure crashes entire cron.",
+      "BOUND_READ: Unbounded JSON response — res.json() reads full Gemini response (4096 tokens max ~16KB, but no hard cap enforced in code); malicious API response or model config change could OOM."
+    ],
+    "spotFixes": [
+      {
+        "file": "convex/domains/agents/autonomousCrons.ts",
+        "line": "~81",
+        "fix": "Add response size check: const text = await res.text(); if (text.length > 50000) throw new Error('Response too large'); then parse JSON from clamped text."
+      },
+      {
+        "file": "convex/domains/agents/autonomousCrons.ts",
+        "line": "~108",
+        "fix": "Wrap entire internalAction handler in try-catch: handler: async (ctx): Promise<null> => { try { ... } catch (err) { console.error(...); await ctx.runMutation(...storeCronResult with error metadata); } }"
+      },
+      {
+        "file": "convex/domains/agents/autonomousCrons.ts",
+        "line": "~148",
+        "fix": "Add idempotency: storeCronResult should accept optional idempotencyKey; use db.query to check/upsert by (cronJobName, date_bucket) to prevent duplicate cron runs."
+      },
+      {
+        "file": "convex/domains/agents/autonomousCrons.ts",
+        "line": "~315",
+        "fix": "Add limit to queryRecentSessions/querySwarmSessions args validation: v.number().min(1).max(100) to prevent unbounded memory queries."
+      },
+      {
+        "file": "convex/domains/agents/autonomousCrons.ts",
+        "line": "~96",
+        "fix": "Return explicit failure status in result: if (!res.ok) throw { code: 'GEMINI_API_ERROR', status: res.status } and catch at handler level to store as metadata with status='failed'."
+      }
+    ]
+  }
+]

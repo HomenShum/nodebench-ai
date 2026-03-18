@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link2, Link2Off, TrendingUp, BookOpen, Lightbulb, Target } from "lucide-react";
 import { useFastAgentDossierMode } from "../context/FastAgentContext";
 import { cn } from "@/lib/utils";
+import { useMotionConfig } from "@/lib/motion";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -65,6 +66,7 @@ export const DossierModeIndicator: React.FC<DossierModeIndicatorProps> = ({
   className,
   compact = false,
 }) => {
+  const { instant, transition } = useMotionConfig();
   const { isDossierMode, currentAct, chartContext, focusedDataIndex } = useFastAgentDossierMode();
 
   // Not in dossier mode - show disconnected state
@@ -91,10 +93,10 @@ export const DossierModeIndicator: React.FC<DossierModeIndicatorProps> = ({
     <AnimatePresence mode="wait">
       <motion.div
         key={currentAct}
-        initial={{ opacity: 0, y: -4 }}
+        initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : -4 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 4 }}
-        transition={{ duration: 0.2 }}
+        exit={{ opacity: instant ? 1 : 0, y: instant ? 0 : 4 }}
+        transition={transition(0.2)}
         className={cn(
           "flex items-center gap-2 px-2.5 py-1.5 rounded-lg",
           "border shadow-sm",

@@ -1,0 +1,338 @@
+{
+  "generatedAt": "2026-01-05T23:55:26.561Z",
+  "gitSha": "d547fac9b26843b5b6921d9b9b7b3297e918324e",
+  "convexUrl": "https://formal-shepherd-851.convex.cloud",
+  "model": "gpt-5.2",
+  "elapsedMs": 27882,
+  "result": {
+    "ok": true,
+    "elapsedMs": 27536,
+    "summary": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "window": {
+      "suite": "pack",
+      "batches": 1,
+      "totalAvailable": 24
+    },
+    "pricing": {
+      "provider": "openai",
+      "sourceUrl": "https://openai.com/api/pricing/",
+      "fetchedAt": "2026-01-05T01:27:20.594Z",
+      "cache": {
+        "source": "cache",
+        "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\openai-api-pricing-latest.json"
+      },
+      "model": {
+        "model": "GPT-5.2",
+        "inputUsdPer1MTokens": 1.75,
+        "cachedInputUsdPer1MTokens": 0.175,
+        "outputUsdPer1MTokens": 14
+      }
+    },
+    "estimatedUsage": {
+      "mode": "provider",
+      "inputTokens": 52437,
+      "outputTokens": 1412,
+      "cachedInputTokens": 50560,
+      "estimatedCostUsd": 0.03190075
+    },
+    "runs": [
+      {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "minToolCalls": true,
+          "nextActions": true,
+          "persona": true,
+          "requireTools": true
+        },
+        "debrief": {
+          "clarifyingQuestions": [],
+          "clarifyingQuestionsAsked": 0,
+          "entity": {
+            "candidates": [
+              {
+                "id": "DISCO",
+                "name": "DISCO Pharmaceuticals"
+              }
+            ],
+            "canonicalName": "DISCO Pharmaceuticals",
+            "confidence": 0.95,
+            "input": "DISCO",
+            "resolvedId": "DISCO",
+            "type": "private_company"
+          },
+          "fallbacks": [],
+          "grounding": [
+            "{{fact:ground_truth:DISCO}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "channel": "email",
+              "email": "info@discopharma.de"
+            },
+            "freshness": {
+              "ageDays": 16
+            },
+            "funding": {
+              "amount": {
+                "amount": 36,
+                "currency": "EUR",
+                "unit": "M"
+              },
+              "coLeads": [],
+              "date": "2025-12-11",
+              "stage": "Seed"
+            },
+            "hqLocation": "Cologne, Germany",
+            "people": {
+              "ceo": "Mark Manfredi",
+              "founders": [
+                "Roman Thomas"
+              ]
+            },
+            "product": {
+              "leadPrograms": [
+                "Lead ADC candidates"
+              ],
+              "platform": "Surfaceome mapping platform"
+            }
+          },
+          "nextActions": [
+            "Verify investors and use-of-proceeds by pulling the primary Seed announcement materials and extracting participants/milestones.",
+            "Confirm pipeline maturity (preclinical/IND timing) and whether 'bispecific' refers to a defined program or platform capability.",
+            "Prepare a one-page banker brief + outreach email draft to info@discopharma.de requesting an intro call and current milestones."
+          ],
+          "persona": {
+            "assumptions": [
+              "User asked 'can we cover them this week' and requested a banker-grade debrief, implying outreach/readiness framing and freshness gating."
+            ],
+            "confidence": 0.74,
+            "inferred": "JPM_STARTUP_BANKER"
+          },
+          "planSteps": [
+            "Verify: entity ground truth (HQ, funding stage/amount/date, leadership, platform, indications) and confirm within banker freshness window.",
+            "Draft: banker debrief (what/why now/outreach angles/risks) using only verified facts; enumerate unknowns explicitly.",
+            "Prepare: next actions to close gaps (investors, milestones, program detail) and create outbound motion."
+          ],
+          "risks": [
+            "Missing investor syndicate / lead investors for the Seed round (unknown from ground truth).",
+            "Program specifics (targets, asset names, and development stage) are not specified; risk of over-claiming if published without primary sourcing.",
+            "Indication focus is stated (SCLC, MSS-CRC) but evidence depth/timelines are unspecified."
+          ],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            }
+          ],
+          "verdict": "PASS"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "elapsedMs": 27536,
+        "execution": {
+          "estimatedInputTokens": 1716,
+          "estimatedOutputTokens": 1315,
+          "latencyMs": 27051,
+          "modelUsed": "gpt-5.2",
+          "providerUsage": {
+            "cachedInputTokens": 50560,
+            "completionTokens": 1412,
+            "promptTokens": 52437,
+            "reasoningTokens": 0,
+            "totalTokens": 53849
+          },
+          "stepsCount": 2,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [],
+        "id": "next_banker_vague_disco_cover_this_week",
+        "name": "Next: banker vague (fast debrief)",
+        "ok": true,
+        "promptMessageId": "ks72jchphesncrbx0f3f8g6wsx7ynm7f",
+        "responsePreview": "**Verdict (this week): PASS** — DISCO Pharmaceuticals is within the banker freshness window (news age 16 days) and has the minimum “who/what/where/funding” facts to cover credibly this week. {{fact:ground_truth:DISCO}}\n\n### Banker-grade debrief (fast)\n- **Company**: DISCO Pharmaceuticals (private). {{fact:ground_truth:DISCO}}  \n- **HQ**: Cologne, Germany. {{fact:ground_truth:DISCO}}  \n- **Leadership / founding**: CEO **Mark Manfredi**; founder **Roman Thomas**. {{fact:ground_truth:DISCO}}  \n- **What they do**: **Surfaceome mapping platform** to identify cell-surface targets. {{fact:ground_truth:DISCO}}  \n- **Programs / modality**: **Lead ADC candidates**; also **bispecific** angle is part of the required fact set. {{fact:ground_truth:DISCO}}  \n- **Indications mentioned**: **SCLC** and **MSS-CRC**. {{fact:ground_truth:DISCO}}  \n- **Funding**: **€36M Seed** (announced **2025-12-11**). {{fa",
+        "threadId": "m572x0xnqx9q9pyebpg9rt0hvh7ynaxa"
+      }
+    ],
+    "rawBatches": [
+      {
+        "elapsedMs": 27536,
+        "model": "gpt-5.2",
+        "ok": true,
+        "runs": [
+          {
+            "checks": {
+              "contact": true,
+              "entityResolved": true,
+              "fundingStage": true,
+              "grounding": true,
+              "hq": true,
+              "minToolCalls": true,
+              "nextActions": true,
+              "persona": true,
+              "requireTools": true
+            },
+            "debrief": {
+              "clarifyingQuestions": [],
+              "clarifyingQuestionsAsked": 0,
+              "entity": {
+                "candidates": [
+                  {
+                    "id": "DISCO",
+                    "name": "DISCO Pharmaceuticals"
+                  }
+                ],
+                "canonicalName": "DISCO Pharmaceuticals",
+                "confidence": 0.95,
+                "input": "DISCO",
+                "resolvedId": "DISCO",
+                "type": "private_company"
+              },
+              "fallbacks": [],
+              "grounding": [
+                "{{fact:ground_truth:DISCO}}"
+              ],
+              "keyFacts": {
+                "contact": {
+                  "channel": "email",
+                  "email": "info@discopharma.de"
+                },
+                "freshness": {
+                  "ageDays": 16
+                },
+                "funding": {
+                  "amount": {
+                    "amount": 36,
+                    "currency": "EUR",
+                    "unit": "M"
+                  },
+                  "coLeads": [],
+                  "date": "2025-12-11",
+                  "stage": "Seed"
+                },
+                "hqLocation": "Cologne, Germany",
+                "people": {
+                  "ceo": "Mark Manfredi",
+                  "founders": [
+                    "Roman Thomas"
+                  ]
+                },
+                "product": {
+                  "leadPrograms": [
+                    "Lead ADC candidates"
+                  ],
+                  "platform": "Surfaceome mapping platform"
+                }
+              },
+              "nextActions": [
+                "Verify investors and use-of-proceeds by pulling the primary Seed announcement materials and extracting participants/milestones.",
+                "Confirm pipeline maturity (preclinical/IND timing) and whether 'bispecific' refers to a defined program or platform capability.",
+                "Prepare a one-page banker brief + outreach email draft to info@discopharma.de requesting an intro call and current milestones."
+              ],
+              "persona": {
+                "assumptions": [
+                  "User asked 'can we cover them this week' and requested a banker-grade debrief, implying outreach/readiness framing and freshness gating."
+                ],
+                "confidence": 0.74,
+                "inferred": "JPM_STARTUP_BANKER"
+              },
+              "planSteps": [
+                "Verify: entity ground truth (HQ, funding stage/amount/date, leadership, platform, indications) and confirm within banker freshness window.",
+                "Draft: banker debrief (what/why now/outreach angles/risks) using only verified facts; enumerate unknowns explicitly.",
+                "Prepare: next actions to close gaps (investors, milestones, program detail) and create outbound motion."
+              ],
+              "risks": [
+                "Missing investor syndicate / lead investors for the Seed round (unknown from ground truth).",
+                "Program specifics (targets, asset names, and development stage) are not specified; risk of over-claiming if published without primary sourcing.",
+                "Indication focus is stated (SCLC, MSS-CRC) but evidence depth/timelines are unspecified."
+              ],
+              "schemaVersion": "debrief_v1",
+              "toolsUsed": [
+                {
+                  "error": null,
+                  "name": "lookupGroundTruthEntity",
+                  "ok": true
+                }
+              ],
+              "verdict": "PASS"
+            },
+            "debriefValidation": {
+              "errors": [],
+              "ok": true
+            },
+            "elapsedMs": 27536,
+            "execution": {
+              "estimatedInputTokens": 1716,
+              "estimatedOutputTokens": 1315,
+              "latencyMs": 27051,
+              "modelUsed": "gpt-5.2",
+              "providerUsage": {
+                "cachedInputTokens": 50560,
+                "completionTokens": 1412,
+                "promptTokens": 52437,
+                "reasoningTokens": 0,
+                "totalTokens": 53849
+              },
+              "stepsCount": 2,
+              "streamStatus": "completed",
+              "toolCalls": [
+                {
+                  "name": "lookupGroundTruthEntity"
+                }
+              ],
+              "toolResults": [
+                {
+                  "name": "lookupGroundTruthEntity"
+                }
+              ]
+            },
+            "expectedEntityId": "DISCO",
+            "expectedPersona": "JPM_STARTUP_BANKER",
+            "failureReasons": [],
+            "id": "next_banker_vague_disco_cover_this_week",
+            "name": "Next: banker vague (fast debrief)",
+            "ok": true,
+            "promptMessageId": "ks72jchphesncrbx0f3f8g6wsx7ynm7f",
+            "responsePreview": "**Verdict (this week): PASS** — DISCO Pharmaceuticals is within the banker freshness window (news age 16 days) and has the minimum “who/what/where/funding” facts to cover credibly this week. {{fact:ground_truth:DISCO}}\n\n### Banker-grade debrief (fast)\n- **Company**: DISCO Pharmaceuticals (private). {{fact:ground_truth:DISCO}}  \n- **HQ**: Cologne, Germany. {{fact:ground_truth:DISCO}}  \n- **Leadership / founding**: CEO **Mark Manfredi**; founder **Roman Thomas**. {{fact:ground_truth:DISCO}}  \n- **What they do**: **Surfaceome mapping platform** to identify cell-surface targets. {{fact:ground_truth:DISCO}}  \n- **Programs / modality**: **Lead ADC candidates**; also **bispecific** angle is part of the required fact set. {{fact:ground_truth:DISCO}}  \n- **Indications mentioned**: **SCLC** and **MSS-CRC**. {{fact:ground_truth:DISCO}}  \n- **Funding**: **€36M Seed** (announced **2025-12-11**). {{fa",
+            "threadId": "m572x0xnqx9q9pyebpg9rt0hvh7ynaxa"
+          }
+        ],
+        "summary": {
+          "failed": 0,
+          "passed": 1,
+          "total": 1
+        },
+        "window": {
+          "limit": 1,
+          "nextOffset": 1,
+          "offset": 0,
+          "suite": "pack",
+          "totalAvailable": 24
+        }
+      }
+    ]
+  }
+}

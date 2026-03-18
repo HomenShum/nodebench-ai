@@ -1,0 +1,129 @@
+{
+  "model": "gemini-3-flash",
+  "scenario": {
+    "id": "test_minimal",
+    "name": "Minimal test: Just entity name",
+    "query": "DISCO",
+    "expectedPersona": "JPM_STARTUP_BANKER",
+    "expectedEntityId": "DISCO"
+  },
+  "result": {
+    "elapsedMs": 13657,
+    "model": "gemini-3-flash",
+    "ok": false,
+    "runs": [
+      {
+        "checks": {
+          "contact": false,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "canonicalName": "DISCO Pharmaceuticals",
+            "confidence": 0,
+            "input": "DISCO"
+          },
+          "grounding": [
+            "{{fact:ground_truth:DISCO}}"
+          ],
+          "keyFacts": {
+            "funding": {
+              "amount": {
+                "amount": 36,
+                "currency": "EUR",
+                "unit": "M"
+              },
+              "stage": "Seed"
+            },
+            "hqLocation": "Cologne, Germany"
+          },
+          "nextActions": [
+            "Initiate introductory outreach to Mark Manfredi regarding cash management",
+            "Prepare competitive landscape briefing on European ADC platforms",
+            "Coordinate with DACH region coverage team to leverage NRW.Bank relationships"
+          ],
+          "persona": {
+            "confidence": 0.9,
+            "inferred": "JPM_STARTUP_BANKER"
+          },
+          "planSteps": [
+            "Lookup ground truth",
+            "Verify facts",
+            "Format response"
+          ],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            }
+          ],
+          "verdict": "PASS"
+        },
+        "debriefValidation": {
+          "errors": [
+            "entity.confidence must be a number",
+            "fallbacks must be an array",
+            "risks must be an array"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 13657,
+        "execution": {
+          "estimatedInputTokens": 1250,
+          "estimatedOutputTokens": 846,
+          "latencyMs": 12658,
+          "modelUsed": "gemini-3-flash",
+          "providerUsage": {
+            "cachedInputTokens": 56547,
+            "completionTokens": 899,
+            "promptTokens": 65803,
+            "reasoningTokens": 496,
+            "totalTokens": 67198
+          },
+          "stepsCount": 2,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "contact.email missing or mismatched"
+        ],
+        "id": "test_minimal",
+        "name": "Minimal test: Just entity name",
+        "ok": false,
+        "promptMessageId": "ks75fentry5wsn8bchgpw2ncn57yq0d5",
+        "responsePreview": "### DISCO Pharmaceuticals: Banker Debrief\n\n**Verdict: PASS**\nDISCO Pharmaceuticals is a high-conviction target for immediate outreach. The entity meets all quality gates for the JPM Startup Banker persona, including verified funding within the last 30 days and a clear technical wedge in the oncology space. {{fact:ground_truth:DISCO}}\n\n**Funding & Capitalization**\n*   **Stage:** Seed\n*   **Amount:** €36 Million (EUR)\n*   **Date:** Announced December 11, 2025\n*   **Lead Investors:** Ackermans & van Haaren, NRW.Bank\n*   **HQ:** Cologne, Germany\n\n**Company Overview & Why Now**\nDISCO (DIfferential Surfaceome COmparison) Pharmaceuticals is a Cologne-based biotech focused on mapping the \"surfaceome\"—the complete set of proteins on the surface of cancer cells. They are developing next-generation Antibody-Drug Conjugates (ADCs) and bispecific antibodies to treat difficult cancers like Small Cell ",
+        "threadId": "m57f8f02ex33f0t3wce5asypps7ypq39"
+      }
+    ],
+    "summary": {
+      "failed": 1,
+      "passed": 0,
+      "total": 1
+    },
+    "window": {
+      "limit": 1,
+      "nextOffset": null,
+      "offset": 0,
+      "suite": "core",
+      "totalAvailable": 1
+    }
+  },
+  "elapsed": 15397
+}

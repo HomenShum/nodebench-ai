@@ -16,6 +16,7 @@ import {
   expandVariants,
   springs,
 } from '../utils/animations';
+import { useMotionConfig } from '@/lib/motion';
 
 // Animated button with press effect
 interface AnimatedButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -24,6 +25,7 @@ interface AnimatedButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEleme
 }
 
 export function AnimatedButton({ children, variant = 'primary', className = '', ...props }: AnimatedButtonProps) {
+  const { instant } = useMotionConfig();
   const baseStyles = 'px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2';
   const variantStyles = {
     primary: 'bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring',
@@ -34,10 +36,10 @@ export function AnimatedButton({ children, variant = 'primary', className = '', 
   return (
     <motion.button
       className={`${baseStyles} ${variantStyles[variant]} ${className}`}
-      variants={buttonPressVariants}
+      variants={instant ? undefined : buttonPressVariants}
       initial="idle"
-      whileHover="hover"
-      whileTap="tap"
+      whileHover={!instant ? "hover" : undefined}
+      whileTap={!instant ? "tap" : undefined}
       {...props}
     >
       {children}
@@ -53,6 +55,7 @@ interface AnimatedCardProps {
 }
 
 export function AnimatedCard({ children, className = '', onClick }: AnimatedCardProps) {
+  const { instant } = useMotionConfig();
   const interactiveProps = onClick ? {
     role: 'button' as const,
     tabIndex: 0,
@@ -67,9 +70,9 @@ export function AnimatedCard({ children, className = '', onClick }: AnimatedCard
   return (
     <motion.div
       className={`bg-surface rounded-lg border border-edge p-4 ${onClick ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2' : ''} ${className}`}
-      variants={cardHoverVariants}
+      variants={instant ? undefined : cardHoverVariants}
       initial="idle"
-      whileHover="hover"
+      whileHover={!instant ? "hover" : undefined}
       onClick={onClick}
       {...interactiveProps}
     >
@@ -86,15 +89,16 @@ interface FadeProps {
 }
 
 export function Fade({ children, show = true, className = '' }: FadeProps) {
+  const { instant } = useMotionConfig();
   return (
     <AnimatePresence>
       {show && (
         <motion.div
           className={className}
-          variants={fadeVariants}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
+          variants={instant ? undefined : fadeVariants}
+          initial={instant ? undefined : "hidden"}
+          animate={instant ? undefined : "visible"}
+          exit={instant ? undefined : "exit"}
         >
           {children}
         </motion.div>
@@ -111,15 +115,16 @@ interface ScaleFadeProps {
 }
 
 export function ScaleFade({ children, show = true, className = '' }: ScaleFadeProps) {
+  const { instant } = useMotionConfig();
   return (
     <AnimatePresence>
       {show && (
         <motion.div
           className={className}
-          variants={scaleFadeVariants}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
+          variants={instant ? undefined : scaleFadeVariants}
+          initial={instant ? undefined : "hidden"}
+          animate={instant ? undefined : "visible"}
+          exit={instant ? undefined : "exit"}
         >
           {children}
         </motion.div>
@@ -136,15 +141,16 @@ interface SlideUpProps {
 }
 
 export function SlideUp({ children, show = true, className = '' }: SlideUpProps) {
+  const { instant } = useMotionConfig();
   return (
     <AnimatePresence>
       {show && (
         <motion.div
           className={className}
-          variants={slideUpVariants}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
+          variants={instant ? undefined : slideUpVariants}
+          initial={instant ? undefined : "hidden"}
+          animate={instant ? undefined : "visible"}
+          exit={instant ? undefined : "exit"}
         >
           {children}
         </motion.div>
@@ -160,12 +166,13 @@ interface StaggerListProps {
 }
 
 export function StaggerList({ children, className = '' }: StaggerListProps) {
+  const { instant } = useMotionConfig();
   return (
     <motion.div
       className={className}
-      variants={staggerContainerVariants}
-      initial="hidden"
-      animate="visible"
+      variants={instant ? undefined : staggerContainerVariants}
+      initial={instant ? undefined : "hidden"}
+      animate={instant ? undefined : "visible"}
     >
       {children}
     </motion.div>
@@ -179,8 +186,9 @@ interface StaggerItemProps {
 }
 
 export function StaggerItem({ children, className = '' }: StaggerItemProps) {
+  const { instant } = useMotionConfig();
   return (
-    <motion.div className={className} variants={staggerItemVariants}>
+    <motion.div className={className} variants={instant ? undefined : staggerItemVariants}>
       {children}
     </motion.div>
   );
@@ -194,15 +202,16 @@ interface CollapsibleProps {
 }
 
 export function Collapsible({ children, isOpen, className = '' }: CollapsibleProps) {
+  const { instant } = useMotionConfig();
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
           className={className}
-          variants={expandVariants}
-          initial="collapsed"
-          animate="expanded"
-          exit="collapsed"
+          variants={instant ? undefined : expandVariants}
+          initial={instant ? undefined : "collapsed"}
+          animate={instant ? undefined : "expanded"}
+          exit={instant ? undefined : "collapsed"}
         >
           {children}
         </motion.div>

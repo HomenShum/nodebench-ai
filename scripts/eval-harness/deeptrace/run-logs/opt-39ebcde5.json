@@ -1,0 +1,92 @@
+{
+  "sessionId": "opt-39ebcde5",
+  "config": {
+    "maxIterations": 10,
+    "maxSessionSeconds": 600,
+    "benchmarkFamilies": [
+      "company_direction",
+      "relationship_mapping",
+      "repo_intelligence",
+      "world_to_company",
+      "trace_backed_draft"
+    ]
+  },
+  "baseline": {
+    "baselineId": "baseline-401d5942-1773609609024",
+    "commitHash": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+    "throughputMetrics": {
+      "taskCompletionRate": 1,
+      "timeToFirstDraftMs": 4800,
+      "humanEditDistance": 0,
+      "wallClockMs": 4800,
+      "toolCallCount": 5
+    },
+    "qualityMetrics": {
+      "factualPrecision": 0.7,
+      "relationshipPrecision": 0.7,
+      "evidenceLinkage": 0.7,
+      "receiptCompleteness": 0.72,
+      "falseConfidenceRate": 0.1,
+      "canaryRelativeUplift": 0
+    },
+    "capturedAt": "2026-03-15T21:20:09.024Z"
+  },
+  "candidates": [
+    {
+      "candidateId": "nodebench-research-cell-v1",
+      "baselineId": "baseline-401d5942-1773609609024",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [
+        "scripts/release.js",
+        "scripts/run-stress-test.mjs",
+        "shared/artifactExtractors.ts",
+        "shared/artifacts.ts",
+        "shared/citations/index.ts",
+        "shared/citations/injectInlineCitations.ts",
+        "shared/sectionIds.ts",
+        "shared/verification/citationScrubber.ts",
+        "src/components/Editor/editor-blocks.css",
+        "src/components/sidebar/README.md",
+        "src/styles/agentDashboard.css",
+        "tailwind.config.js",
+        "tests/L1-simple-lookup.spec.ts",
+        "tests/L2-multi-source.spec.ts",
+        "tests/L3-deep-research.spec.ts",
+        "tests/linkupSmoke.js",
+        "tests/linkupSmoke.mjs",
+        "tsconfig.app.json",
+        "tsconfig.node.json"
+      ],
+      "compileSuccess": false,
+      "testSuccess": false,
+      "score": {
+        "throughputScore": 0,
+        "qualityMetrics": {
+          "factualPrecision": 0.71,
+          "relationshipPrecision": 0.72,
+          "evidenceLinkage": 0.7799999999999999,
+          "receiptCompleteness": 0.82,
+          "falseConfidenceRate": 0.07,
+          "canaryRelativeUplift": 0.05
+        },
+        "guardsPass": false,
+        "guardFailures": [
+          "Allowlist violation: scripts/release.js, scripts/run-stress-test.mjs, shared/artifactExtractors.ts, shared/artifacts.ts, shared/citations/index.ts, shared/citations/injectInlineCitations.ts, shared/sectionIds.ts, shared/verification/citationScrubber.ts, src/components/Editor/editor-blocks.css, src/components/sidebar/README.md, src/styles/agentDashboard.css, tailwind.config.js, tests/L1-simple-lookup.spec.ts, tests/L2-multi-source.spec.ts, tests/L3-deep-research.spec.ts, tests/linkupSmoke.js, tests/linkupSmoke.mjs, tsconfig.app.json, tsconfig.node.json"
+        ]
+      },
+      "verdict": "discarded",
+      "rejectionReason": "Candidate mutated disallowed files: scripts/release.js, scripts/run-stress-test.mjs, shared/artifactExtractors.ts, shared/artifacts.ts, shared/citations/index.ts, shared/citations/injectInlineCitations.ts, shared/sectionIds.ts, shared/verification/citationScrubber.ts, src/components/Editor/editor-blocks.css, src/components/sidebar/README.md, src/styles/agentDashboard.css, tailwind.config.js, tests/L1-simple-lookup.spec.ts, tests/L2-multi-source.spec.ts, tests/L3-deep-research.spec.ts, tests/linkupSmoke.js, tests/linkupSmoke.mjs, tsconfig.app.json, tsconfig.node.json",
+      "timestamp": "2026-03-15T21:27:42.409Z",
+      "iterationMs": 56
+    }
+  ],
+  "promotedCandidateId": null,
+  "startedAt": "2026-03-15T21:27:39.053Z",
+  "completedAt": "2026-03-15T21:27:46.781Z"
+}

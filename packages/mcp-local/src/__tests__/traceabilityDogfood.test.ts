@@ -181,6 +181,17 @@ describe("Traceability: workflow chains", () => {
     );
     expect(traceStep).toBeDefined();
   });
+
+  it("autonomous_qa_bug chain includes save_session_note traceability step", async () => {
+    const { WORKFLOW_CHAINS } = await import("../tools/toolRegistry.js");
+    const chain = WORKFLOW_CHAINS.autonomous_qa_bug;
+    const traceStep = chain.steps.find(
+      (s) =>
+        s.tool === "save_session_note" &&
+        s.action.toLowerCase().includes("traceability")
+    );
+    expect(traceStep).toBeDefined();
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════

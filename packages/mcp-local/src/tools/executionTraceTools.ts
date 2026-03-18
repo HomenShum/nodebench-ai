@@ -39,9 +39,12 @@ async function callGateway<T>(fn: string, args: Record<string, unknown>): Promis
 
   const payload = (await res.json()) as GatewayResult<T> & { message?: string };
   if (!res.ok) {
+    const errorMessage = ("error" in payload ? payload.error : undefined)
+      || payload.message
+      || `Execution trace backend returned HTTP ${res.status}`;
     return {
       success: false,
-      error: payload.error || payload.message || `Execution trace backend returned HTTP ${res.status}`,
+      error: errorMessage,
     };
   }
   return payload;

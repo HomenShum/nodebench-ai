@@ -1,0 +1,229 @@
+{
+  "generatedAt": "2026-01-08T08:12:22.329Z",
+  "totalElapsed": 3815,
+  "modelsToTest": [
+    "deepseek-v3.2",
+    "qwen-2.5-72b"
+  ],
+  "suite": "core",
+  "scenarios": 2,
+  "totalEvaluations": 4,
+  "results": [
+    {
+      "model": "deepseek-v3.2",
+      "scenarioId": "banker_vague_disco",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2046,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": false,
+        "promptMessageId": "ks77w4kjr0jeq3sm4eac7regd97ytmcb",
+        "responsePreview": "",
+        "threadId": "m572wgxb27twkt88epe1xxqhcs7yv0zm"
+      },
+      "elapsed": 3547,
+      "error": null
+    },
+    {
+      "model": "deepseek-v3.2",
+      "scenarioId": "vc_vague_openautoglm",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": [
+            "No skill search for EARLY_STAGE_VC scenario"
+          ]
+        },
+        "elapsedMs": 2076,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "OPEN-AUTOGLM",
+        "expectedPersona": "EARLY_STAGE_VC",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "vc_vague_openautoglm",
+        "name": "VC wedge from OSS signal",
+        "ok": false,
+        "promptMessageId": "ks72fzez7zqe3ec8hvpsfv580n7yt98j",
+        "responsePreview": "",
+        "threadId": "m576kbqn719352bz32kg3y7xkx7ytkyt"
+      },
+      "elapsed": 3545,
+      "error": null
+    },
+    {
+      "model": "qwen-2.5-72b",
+      "scenarioId": "banker_vague_disco",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2195,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": false,
+        "promptMessageId": "ks72d1eqhc3k3xq7j2tnpjmhjx7ytq0b",
+        "responsePreview": "",
+        "threadId": "m57b23dd5g351zqnx05jkc3c4h7ytsz0"
+      },
+      "elapsed": 3802,
+      "error": null
+    },
+    {
+      "model": "qwen-2.5-72b",
+      "scenarioId": "vc_vague_openautoglm",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": [
+            "No skill search for EARLY_STAGE_VC scenario"
+          ]
+        },
+        "elapsedMs": 1997,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "OPEN-AUTOGLM",
+        "expectedPersona": "EARLY_STAGE_VC",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "vc_vague_openautoglm",
+        "name": "VC wedge from OSS signal",
+        "ok": false,
+        "promptMessageId": "ks7dat8ew087g99fhj883yzm7x7yvysv",
+        "responsePreview": "",
+        "threadId": "m578dwjysew1mghv0121h2cr2d7yvas3"
+      },
+      "elapsed": 3522,
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "observed_facts": [
+    "Anthropic fact 1: Assess current company direction, likely priorities, and immediate decision posture.",
+    "Anthropic fact 2: Assess current company direction, likely priorities, and immediate decision posture.",
+    "Anthropic fact 3: Assess current company direction, likely priorities, and immediate decision posture."
+  ],
+  "relationships": [
+    {
+      "source": "Anthropic",
+      "target": "Anthropic counterpart 1",
+      "relation": "causal_influence",
+      "evidenceRefs": [
+        "ev-1"
+      ]
+    },
+    {
+      "source": "Anthropic",
+      "target": "Anthropic counterpart 2",
+      "relation": "linked_signal",
+      "evidenceRefs": []
+    }
+  ],
+  "hypothesis": "Anthropic likely benefits from a coarse next action aligned to company_direction.",
+  "counter_hypothesis": "Anthropic may instead reflect noise or missing evidence, so claims should remain bounded.",
+  "recommendation": "Prioritize the next review step for Anthropic using the baseline benchmark contract.",
+  "limitations": [
+    "Anthropic limitation 1: evidence remains bounded to the supplied benchmark fixture."
+  ]
+}

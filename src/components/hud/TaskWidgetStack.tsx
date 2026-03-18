@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMotionConfig } from '@/lib/motion';
 import { cn } from '../../lib/utils';
 import type { ThreadEntry } from './useMultiThread';
 
@@ -18,6 +19,7 @@ interface TaskWidgetStackProps {
 }
 
 export function TaskWidgetStack({ threads, onExpand, onClose, isMobile = false }: TaskWidgetStackProps) {
+    const { instant, transition } = useMotionConfig();
     if (threads.length === 0) return null;
 
     return (
@@ -35,15 +37,15 @@ export function TaskWidgetStack({ threads, onExpand, onClose, isMobile = false }
                     <motion.div
                         key={thread.threadId}
                         layout
-                        initial={{ opacity: 0, x: -20, scale: 0.95 }}
+                        initial={instant ? { opacity: 0 } : { opacity: 0, x: -20, scale: 0.95 }}
                         animate={{ opacity: 1, x: 0, scale: 1 }}
-                        exit={{ opacity: 0, x: -20, scale: 0.95 }}
-                        transition={{
+                        exit={instant ? { opacity: 0 } : { opacity: 0, x: -20, scale: 0.95 }}
+                        transition={transition({
                             type: 'spring',
                             stiffness: 300,
                             damping: 25,
                             delay: isMobile ? 0 : index * 0.05,
-                        }}
+                        })}
                         onClick={() => onExpand(thread.threadId)}
                         className={cn(
                             isMobile ? 'w-full px-3 py-3' : 'w-64 px-3 py-2.5',
@@ -53,8 +55,8 @@ export function TaskWidgetStack({ threads, onExpand, onClose, isMobile = false }
                             'hover:border-edge-strong hover:shadow-md',
                             'transition-[border-color,box-shadow] duration-200',
                         )}
-                        whileHover={isMobile ? undefined : { scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        whileHover={!instant && !isMobile ? { scale: 1.02 } : undefined}
+                        whileTap={!instant ? { scale: 0.98 } : undefined}
                         role="button"
                         aria-label={`Expand task: ${thread.currentAction || 'Idle'}`}
                     >

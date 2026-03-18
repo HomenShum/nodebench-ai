@@ -23,6 +23,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useMotionConfig } from "@/lib/motion";
 
 /**
  * Reply type
@@ -112,14 +113,16 @@ function Reply({
   onViewEvidence?: (artifactIds: string[]) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const { instant, transition } = useMotionConfig();
   const typeDisplay = getReplyTypeDisplay(reply.replyType);
   const hasChildren = reply.children && reply.children.length > 0;
 
   return (
     <div className={cn("relative", depth > 0 && "ml-4 pl-3 border-l border-border")}>
       <motion.div
-        initial={{ opacity: 0, x: -5 }}
+        initial={{ opacity: instant ? 1 : 0, x: instant ? 0 : -5 }}
         animate={{ opacity: 1, x: 0 }}
+        transition={transition(0.2)}
         className={cn(
           "rounded-md p-2 mb-2 border",
           typeDisplay.color
@@ -187,9 +190,10 @@ function Reply({
           <AnimatePresence>
             {!collapsed && depth < maxDepth && (
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
+                initial={{ opacity: instant ? 1 : 0, height: instant ? "auto" : 0 }}
                 animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
+                exit={{ opacity: instant ? 1 : 0, height: instant ? "auto" : 0 }}
+                transition={transition(0.2)}
               >
                 {reply.children!.map((child) => (
                   <Reply

@@ -155,6 +155,48 @@ test.describe("Action Receipts Feed", () => {
       fullPage: true,
     });
   });
+
+  test("reversible demo receipts can be rolled back and irreversible ones are explicit", async ({ page }) => {
+    await setupTheme(page);
+    await page.goto("/receipts");
+    await page.waitForLoadState("networkidle");
+
+    await page.locator("button").filter({ hasText: /Created investigation dossier from gathered evidence/i }).click();
+    await page.getByRole("button", { name: /Undo action/i }).click();
+
+    await expect(page.locator("text=Rolled back in demo mode").first()).toBeVisible();
+    await expect(page.locator("text=rollback_ref:").first()).toBeVisible();
+
+    await page.locator("button").filter({ hasText: /Searched SEC EDGAR for FTX bankruptcy filings/i }).click();
+    await expect(page.locator("text=No rollback available.").first()).toBeVisible();
+
+    await page.screenshot({
+      path: join(OUT_DIR, "receipts-rollback.png"),
+      fullPage: true,
+    });
+  });
+});
+
+// ─── Passport & Delegation ───────────────────────────────────────────────────
+
+test.describe("Passport & Delegation", () => {
+  test("renders the scope matrix, scope token, and delegation graph", async ({ page }) => {
+    await setupTheme(page);
+    await page.goto("/passport");
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.locator("h1").filter({ hasText: /passport & delegation/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Passport scope matrix").first()).toBeVisible();
+    await expect(page.locator("text=Scope token object").first()).toBeVisible();
+    await expect(page.locator("text=Delegation graph v0").first()).toBeVisible();
+    await expect(page.locator("text=share_externally").first()).toBeVisible();
+    await expect(page.locator("text=Human supervisor").first()).toBeVisible();
+
+    await page.screenshot({
+      path: join(OUT_DIR, "passport-scope-matrix.png"),
+      fullPage: true,
+    });
+  });
 });
 
 // ─── Enterprise Investigation ───────────────────────────────────────────────

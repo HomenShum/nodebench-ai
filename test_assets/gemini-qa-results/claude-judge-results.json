@@ -1,0 +1,158 @@
+[
+  {
+    "filename": "after-storage-clear-funding.png",
+    "scores": {
+      "production_readiness": 8,
+      "visual_polish": 8,
+      "information_density": 8,
+      "accessibility_signals": 6,
+      "error_resilience": 7
+    },
+    "overall": 7.4,
+    "verdict": "ship",
+    "rationale": "A polished, feature-complete funding dashboard with strong visual hierarchy and information architecture, though accessibility signals (focus states, ARIA labels) and empty-state design could be more explicit."
+  },
+  {
+    "filename": "cold-load-research-commit-stage.png",
+    "scores": {
+      "production_readiness": 4,
+      "visual_polish": 6,
+      "information_density": 3,
+      "accessibility_signals": 5,
+      "error_resilience": 2
+    },
+    "overall": 4,
+    "verdict": "block",
+    "rationale": "The interface shows a loading/empty state with illegible placeholder text overlaid on the main content area, indicating unfinished implementation; while the sidebar navigation is polished, the primary content region is not production-ready and appears to be in a broken cold-load state."
+  },
+  {
+    "filename": "dark-home-settled.png",
+    "scores": {
+      "production_readiness": 8,
+      "visual_polish": 9,
+      "information_density": 8,
+      "accessibility_signals": 6,
+      "error_resilience": 8
+    },
+    "overall": 8,
+    "verdict": "ship",
+    "rationale": "Polished dark-mode dashboard with clear hierarchy, intentional empty state, and good information architecture, though accessibility signals (focus indicators, aria-labels) could be more explicit for keyboard navigation."
+  },
+  {
+    "filename": "dark-os-analytics-components.png",
+    "scores": {
+      "production_readiness": 8,
+      "visual_polish": 9,
+      "information_density": 8,
+      "accessibility_signals": 6,
+      "error_resilience": 7
+    },
+    "overall": 7.6,
+    "verdict": "ship",
+    "rationale": "Polished dark-mode interface with strong visual hierarchy and intentional onboarding, but lacks visible focus indicators and ARIA labels typical of production-grade a11y compliance."
+  },
+  {
+    "filename": "dark-os-analytics-recommendations.png",
+    "scores": {
+      "production_readiness": 8,
+      "visual_polish": 9,
+      "information_density": 8,
+      "accessibility_signals": 6,
+      "error_resilience": 7
+    },
+    "overall": 8,
+    "verdict": "ship",
+    "rationale": "Polished dark-mode dashboard with strong visual hierarchy and intentional onboarding flow, though accessibility signals (focus states, ARIA labels) and empty-state resilience could be more explicit for enterprise production use."
+  },
+  {
+    "filename": "dark-os-funding.png",
+    "scores": {
+      "production_readiness": 8,
+      "visual_polish": 8,
+      "information_density": 8,
+      "accessibility_signals": 7,
+      "error_resilience": 7
+    },
+    "overall": 7.6,
+    "verdict": "ship",
+    "rationale": "Polished dark-mode dashboard with strong visual hierarchy, efficient layout, and clear data presentation, though accessibility could be strengthened with more explicit focus indicators and semantic labeling."
+  },
+  {
+    "filename": "dark-os-mcp-ledger.png",
+    "scores": {
+      "production_readiness": 8,
+      "visual_polish": 8,
+      "information_density": 8,
+      "accessibility_signals": 6,
+      "error_resilience": 7
+    },
+    "overall": 7.4,
+    "verdict": "ship",
+    "rationale": "Polished enterprise dashboard with strong visual hierarchy and intentional empty states, though accessibility indicators (focus rings, ARIA labels) are not visibly present and could be enhanced."
+  },
+  {
+    "filename": "dark-os-showcase.png",
+    "scores": {
+      "production_readiness": 8,
+      "visual_polish": 8,
+      "information_density": 8,
+      "accessibility_signals": 7,
+      "error_resilience": 8
+    },
+    "overall": 7.8,
+    "verdict": "ship",
+    "rationale": "Polished dark-mode research interface with strong visual hierarchy, efficient space usage, and clear navigation; minor accessibility improvements needed (focus ring visibility, color contrast on some text elements) but ready for production with minor refinements."
+  },
+  {
+    "filename": "dogfood-after-signin.png",
+    "scores": {
+      "production_readiness": 6,
+      "visual_polish": 7,
+      "information_density": 8,
+      "accessibility_signals": 6,
+      "error_resilience": 5
+    },
+    "overall": 6.4,
+    "verdict": "iterate",
+    "rationale": "Solid design fundamentals and information architecture, but loading states lack intentionality, accessibility labels are minimal, and empty video placeholders need polish before production launch."
+  },
+  {
+    "filename": "dogfood-artifacts-ingested.png",
+    "scores": {
+      "production_readiness": 8,
+      "visual_polish": 8,
+      "information_density": 8,
+      "accessibility_signals": 6,
+      "error_resilience": 7
+    },
+    "overall": 7.4,
+    "verdict": "ship",
+    "rationale": "Well-designed, polished dark-mode interface with strong visual hierarchy and intentional spacing, though accessibility signaling (focus states, ARIA labels) and error state clarity could be marginally improved."
+  },
+  {
+    "filename": "dogfood-before-signin.png",
+    "scores": {
+      "production_readiness": 7,
+      "visual_polish": 8,
+      "information_density": 8,
+      "accessibility_signals": 6,
+      "error_resilience": 7
+    },
+    "overall": 7.2,
+    "verdict": "iterate",
+    "rationale": "Polished dark UI with good information hierarchy and intentional loading states, but lacks visible focus indicators, color contrast could be stronger for some text elements, and the guest user state suggests incomplete authentication flow for production."
+  },
+  {
+    "filename": "flash-root-unsettled.png",
+    "scores": {
+      "production_readiness": 4,
+      "visual_polish": 6,
+      "information_density": 5,
+      "accessibility_signals": 5,
+      "error_resilience": 3
+    },
+    "overall": 4.6,
+    "verdict": "block",
+    "rationale": "Multiple critical issues prevent shipping: loading state with spinner dominates main content area without clear context, placeholder skeleton cards lack animation or completion indicators, preview mode blocks core functionality without a clear path to sign-in, and the unsettled layout suggests incomplete implementation despite polished component design."
+  }
+]

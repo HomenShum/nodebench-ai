@@ -1,0 +1,2764 @@
+{
+  "generatedAt": "2026-01-12T20:50:11.936Z",
+  "totalElapsed": 318761,
+  "modelsToTest": [
+    "mimo-v2-flash-free",
+    "devstral-2-free",
+    "deepseek-r1-free",
+    "llama-4-maverick-free",
+    "llama-4-scout-free",
+    "glm-4.5-air-free",
+    "kat-coder-pro-free",
+    "deepseek-chimera-free",
+    "grok-4-fast-free",
+    "venice-dolphin-free",
+    "nemotron-free"
+  ],
+  "suite": "core",
+  "totalAvailable": 3,
+  "scenarios": 3,
+  "totalEvaluations": 33,
+  "results": [
+    {
+      "model": "mimo-v2-flash-free",
+      "offset": 0,
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "result": {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "candidates": [],
+            "canonicalName": "DISCO Pharmaceuticals",
+            "confidence": 0.9,
+            "input": "DISCO",
+            "resolvedId": "DISCO",
+            "type": "private_company (treat oss_project as open source / GitHub / repository)"
+          },
+          "fallbacks": [],
+          "grounding": [
+            "{{fact:ground_truth:DISCO}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "channel": null,
+              "email": "info@discopharma.de"
+            },
+            "freshness": {
+              "ageDays": 16
+            },
+            "funding": {
+              "amount": {
+                "amount": 36,
+                "currency": "EUR",
+                "unit": "M"
+              },
+              "coLeads": [],
+              "date": null,
+              "stage": "Seed"
+            },
+            "hqLocation": "Cologne, Germany",
+            "people": {
+              "ceo": "Mark Manfredi",
+              "founders": [
+                "Roman Thomas"
+              ]
+            },
+            "product": {
+              "leadPrograms": [
+                "Lead ADC candidates"
+              ],
+              "platform": "Surfaceome mapping platform"
+            }
+          },
+          "nextActions": [
+            "Verify primary sources (if required)",
+            "Run a quick contradiction scan",
+            "Draft a share-ready version for stakeholders"
+          ],
+          "persona": {
+            "assumptions": [
+              "Heuristic inference from query keywords for JPM_STARTUP_BANKER"
+            ],
+            "confidence": 0.8,
+            "inferred": "JPM_STARTUP_BANKER"
+          },
+          "planSteps": [
+            "Skill discovery",
+            "Lookup ground truth",
+            "Verify: check required fields + grounding",
+            "Format response + debrief"
+          ],
+          "risks": [],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "error": null,
+              "name": "searchAvailableSkills",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "searchAvailableSkills"
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "verdict": "UNKNOWN"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "directToolCalls": [
+            "lookupGroundTruthEntity",
+            "lookupGroundTruthEntity"
+          ],
+          "disclosureLevel": "partial",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 2,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity"
+          ],
+          "usedMetaTools": true,
+          "usedSkillFirst": true,
+          "warnings": []
+        },
+        "elapsedMs": 18259,
+        "execution": {
+          "estimatedInputTokens": 1760,
+          "estimatedOutputTokens": 892,
+          "latencyMs": 17505,
+          "modelUsed": "mimo-v2-flash-free",
+          "providerUsage": {
+            "cachedInputTokens": 9,
+            "completionTokens": 485,
+            "promptTokens": 109708,
+            "reasoningTokens": 0,
+            "totalTokens": 110193
+          },
+          "stepsCount": 3,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "argsPreview": "{\"query\":\"DISCO — I'm trying to figure out if this is worth reaching out on and what I should do with it.\"}",
+              "name": "searchAvailableSkills"
+            },
+            {
+              "argsPreview": "{\"entity\":\"DISCO\"}",
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "searchAvailableSkills",
+              "ok": true,
+              "resultPreview": "Skill search preflight ok (query='DISCO — I'm trying to figure out if this is worth reaching out on and what I should do with it.')"
+            },
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true,
+              "resultPreview": "{{fact:ground_truth:DISCO}}\nEntity ID: DISCO\nCanonical name: DISCO Pharmaceuticals\nEntity type: private_company (treat oss_project as open source / GitHub / repository)\nHQ: Cologne, Germany\nCEO: Mark Manfredi\nFounders: Roman Thomas\nPrimary contact: info@discopharma.de\nPlatform: Surfaceome mapping platform\nLead programs: Lead ADC candidates\nFunding: Seed EUR36M (announced 2025-12-11)\nRequired facts: Cologne, Germany | €36M seed | surfaceome | ADC | bispecific | SCLC | MSS-CRC | Mark Manfredi | Roman Thomas\nForbidden facts: Series A | San Francisco | New York\nFreshness age (days): 16\nWithin banker window: true\nHas primary source requirement: true"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": true,
+        "promptMessageId": "ks753vq3kjrmpjs2te8cf5tgdn7z3mc2",
+        "responsePreview": "Based on the ground truth data and your outreach context, here's what I found about **DISCO Pharmaceuticals**:\n\n## Key Facts for Outreach Decision\n\n**Company Profile:**\n- **Location**: Cologne, Germany\n- **Leadership**: CEO Mark Manfredi, Founder Roman Thomas\n- **Contact**: info@discopharma.de\n- **Status**: Private company, seed-stage\n\n**Funding & Timing:**\n- **€36M seed round** announced December 11, 2025 (16 days old)\n- Within the 30-day window for banker outreach relevance\n- Fresh funding = active buying/budget cycle\n\n**Technology & Focus:**\n- **Platform**: Surfaceome mapping platform\n- **Lead Programs**: ADC (Antibody-Drug Conjugate) candidates\n- **Therapeutic Areas**: SCLC (Small Cell Lung Cancer), MSS-CRC (Microsatellite Stable Colorectal Cancer)\n- **Approach**: Bispecific antibodies\n\n## Outreach Recommendation: **YES, Worth Contacting**\n\n**Why now is good timing:**\n- Fresh €36M fu",
+        "threadId": "m570zz8vwtqmaeysx9d7940wy17z3652"
+      },
+      "elapsed": 318761,
+      "error": null
+    },
+    {
+      "model": "mimo-v2-flash-free",
+      "offset": 1,
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "result": {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "candidates": [],
+            "canonicalName": "QuickJS / MicroQuickJS",
+            "confidence": 0.9,
+            "input": "QuickJS",
+            "resolvedId": "MQUICKJS",
+            "type": "oss_project (treat oss_project as open source / GitHub / repository)"
+          },
+          "fallbacks": [],
+          "grounding": [
+            "{{fact:ground_truth:MQUICKJS}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "channel": null,
+              "email": null
+            },
+            "freshness": {
+              "ageDays": null
+            },
+            "funding": {
+              "amount": {
+                "amount": null,
+                "currency": null,
+                "unit": null
+              },
+              "coLeads": [],
+              "date": null,
+              "stage": null
+            },
+            "hqLocation": null,
+            "people": {
+              "ceo": null,
+              "founders": []
+            },
+            "product": {
+              "leadPrograms": [],
+              "platform": null
+            }
+          },
+          "nextActions": [
+            "Verify primary sources (if required)",
+            "Run a quick contradiction scan",
+            "Draft a share-ready version for stakeholders"
+          ],
+          "persona": {
+            "assumptions": [
+              "Heuristic inference from query keywords for CTO_TECH_LEAD"
+            ],
+            "confidence": 0.8,
+            "inferred": "CTO_TECH_LEAD"
+          },
+          "planSteps": [
+            "Skill discovery",
+            "Lookup ground truth",
+            "Verify: check required fields + grounding",
+            "Format response + debrief"
+          ],
+          "risks": [],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "error": null,
+              "name": "searchAvailableSkills",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "searchAvailableSkills"
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "error": null,
+              "name": "linkupSearch"
+            },
+            {
+              "error": null,
+              "name": "linkupSearch"
+            },
+            {
+              "error": null,
+              "name": "linkupSearch"
+            },
+            {
+              "error": null,
+              "name": "linkupSearch"
+            },
+            {
+              "error": null,
+              "name": "linkupSearch"
+            },
+            {
+              "error": null,
+              "name": "linkupSearch"
+            }
+          ],
+          "verdict": "UNKNOWN"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "directToolCalls": [
+            "lookupGroundTruthEntity",
+            "lookupGroundTruthEntity",
+            "linkupSearch",
+            "linkupSearch",
+            "linkupSearch",
+            "linkupSearch",
+            "linkupSearch",
+            "linkupSearch"
+          ],
+          "disclosureLevel": "partial",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 2,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity",
+            "linkupSearch"
+          ],
+          "usedMetaTools": true,
+          "usedSkillFirst": true,
+          "warnings": []
+        },
+        "elapsedMs": 102232,
+        "execution": {
+          "estimatedInputTokens": 1713,
+          "estimatedOutputTokens": 1139,
+          "latencyMs": 101023,
+          "modelUsed": "mimo-v2-flash-free",
+          "providerUsage": {
+            "cachedInputTokens": 36516,
+            "completionTokens": 1346,
+            "promptTokens": 371027,
+            "reasoningTokens": 0,
+            "totalTokens": 372373
+          },
+          "stepsCount": 9,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "argsPreview": "{\"query\":\"QuickJS — do I have risk exposure and what is my patch plan?\"}",
+              "name": "searchAvailableSkills"
+            },
+            {
+              "argsPreview": "{\"entity\":\"MQUICKJS\"}",
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "linkupSearch"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "searchAvailableSkills",
+              "ok": true,
+              "resultPreview": "Skill search preflight ok (query='QuickJS — do I have risk exposure and what is my patch plan?')"
+            },
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true,
+              "resultPreview": "{{fact:ground_truth:MQUICKJS}}\nEntity ID: MQUICKJS\nCanonical name: QuickJS / MicroQuickJS\nEntity type: oss_project (treat oss_project as open source / GitHub / repository)\nSeverity (ground truth hint): High\nRequired facts: CVE-2025-62495 | Fabrice Bellard | 2025-09-13 | JavaScript engine\nForbidden facts: Cloudflare Workers uses QuickJS | critical severity\nWithin banker window: true\nHas primary source requirement: true"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "linkupSearch"
+            }
+          ]
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [],
+        "id": "cto_vague_quickjs",
+        "name": "CTO risk exposure + patch plan",
+        "ok": true,
+        "promptMessageId": "ks79apsgy270f1z97s90shs7sx7z36gw",
+        "responsePreview": "Based on my research, here's your **QuickJS risk assessment and patch plan**:{{cite:websrc_3478035c}}{{cite:websrc_a8f8940e}}{{cite:websrc_1ce82c40}}{{cite:websrc_b19b0e45}}{{cite:websrc_5b86dd72}}\n\n## 🔍 **Risk Exposure Assessment**\n\n**CVE-2025-62495** affects QuickJS (open-source JavaScript engine by Fabrice Bellard) with **High severity**. The vulnerability involves:\n\n- **Type**: Stack-based buffer overflow in quickjs.c\n- **Attack Vector**: Remote attackers can exploit this\n- **Impact**: Denial of service, potential code execution\n- **Affected Component**: JavaScript parsing/execution engine\n\n**Risk Level**: **HIGH** - The vulnerability allows remote exploitation and is present in the core JavaScript engine.\n\n## 📋 **Patch Plan & Mitigation Steps**\n\n### **Immediate Actions**\n1. **Version Check**: Verify your current QuickJS version\n2. **Upgrade Path**: **Upgrade to version 0.9.0 or la",
+        "threadId": "m57bjbj76wxknx0wt1xr4jj3cs7z3pax"
+      },
+      "elapsed": 103818,
+      "error": null
+    },
+    {
+      "model": "mimo-v2-flash-free",
+      "offset": 2,
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "result": {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "candidates": [],
+            "canonicalName": "Google Gemini 3",
+            "confidence": 0.9,
+            "input": "Gemini",
+            "resolvedId": "GEMINI_3",
+            "type": "model_platform (treat oss_project as open source / GitHub / repository)"
+          },
+          "fallbacks": [],
+          "grounding": [
+            "{{fact:ground_truth:GEMINI_3}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "channel": null,
+              "email": null
+            },
+            "freshness": {
+              "ageDays": null
+            },
+            "funding": {
+              "amount": {
+                "amount": null,
+                "currency": null,
+                "unit": null
+              },
+              "coLeads": [],
+              "date": null,
+              "stage": null
+            },
+            "hqLocation": null,
+            "people": {
+              "ceo": null,
+              "founders": []
+            },
+            "product": {
+              "leadPrograms": [],
+              "platform": null
+            }
+          },
+          "nextActions": [
+            "Verify primary sources (if required)",
+            "Run a quick contradiction scan",
+            "Draft a share-ready version for stakeholders"
+          ],
+          "persona": {
+            "assumptions": [
+              "Heuristic inference from query keywords for ENTERPRISE_EXEC"
+            ],
+            "confidence": 0.8,
+            "inferred": "ENTERPRISE_EXEC"
+          },
+          "planSteps": [
+            "Skill discovery",
+            "Lookup ground truth",
+            "Verify: check required fields + grounding",
+            "Format response + debrief"
+          ],
+          "risks": [],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "error": null,
+              "name": "searchAvailableSkills",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "linkupSearch",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "searchAvailableSkills"
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "verdict": "UNKNOWN"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "directToolCalls": [
+            "lookupGroundTruthEntity",
+            "linkupSearch",
+            "lookupGroundTruthEntity"
+          ],
+          "disclosureLevel": "partial",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 2,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity",
+            "linkupSearch"
+          ],
+          "usedMetaTools": true,
+          "usedSkillFirst": true,
+          "warnings": []
+        },
+        "elapsedMs": 32857,
+        "execution": {
+          "estimatedInputTokens": 1674,
+          "estimatedOutputTokens": 819,
+          "latencyMs": 31453,
+          "modelUsed": "mimo-v2-flash-free",
+          "providerUsage": {
+            "cachedInputTokens": 36221,
+            "completionTokens": 407,
+            "promptTokens": 109215,
+            "reasoningTokens": 0,
+            "totalTokens": 109622
+          },
+          "stepsCount": 3,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "argsPreview": "{\"query\":\"Gemini 3 — should we consider this, and what's the procurement next step?\"}",
+              "name": "searchAvailableSkills"
+            },
+            {
+              "argsPreview": "{\"entity\":\"GEMINI_3\"}",
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "argsPreview": "{\"query\":\"Gemini 3 — should we consider this, and what's the procurement next step?\",\"depth\":\"standard\",\"outputType\":\"searchResults\",\"maxResults\":3,\"includeInlineCitations\":true,\"includeSources\":true,\"includeImages\":false}",
+              "name": "linkupSearch"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "searchAvailableSkills",
+              "ok": true,
+              "resultPreview": "Skill search preflight ok (query='Gemini 3 — should we consider this, and what's the procurement next step?')"
+            },
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true,
+              "resultPreview": "{{fact:ground_truth:GEMINI_3}}\nEntity ID: GEMINI_3\nCanonical name: Google Gemini 3\nEntity type: model_platform (treat oss_project as open source / GitHub / repository)\nRequired facts: Gemini 3 Flash | Gemini 3 Pro | context caching | $0.10 | $1.00\nForbidden facts: $0.05 input | no caching support\nWithin banker window: true\nHas primary source requirement: true"
+            },
+            {
+              "name": "linkupSearch",
+              "ok": true,
+              "resultPreview": "linkupSearch preflight recorded (eval telemetry)"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "GEMINI_3",
+        "expectedPersona": "ENTERPRISE_EXEC",
+        "failureReasons": [],
+        "id": "exec_vague_gemini",
+        "name": "Exec vendor evaluation",
+        "ok": true,
+        "promptMessageId": "ks74skrpqppgz2649jzqp811yh7z3qfq",
+        "responsePreview": "## Gemini 3 Procurement Analysis\n\n### Should You Consider Gemini 3?\n\n**Yes, Gemini 3 merits consideration for enterprise AI deployment.** Based on verified ground truth data, the platform offers:\n\n- **Two model tiers**: Gemini 3 Flash and Gemini 3 Pro\n- **Context caching support** for improved efficiency\n- **Pricing structure**: $0.10 (output), $1.00 (input) per million tokens\n\n### Recommended Procurement Next Steps\n\n1. **Technical Evaluation Phase**\n   - Request API access through Google Cloud AI Platform\n   - Run pilot tests comparing Flash (lightweight/fast) vs Pro (high-quality) for your use cases\n   - Benchmark against current solutions for latency and accuracy\n\n2. **Commercial Engagement**\n   - Contact Google Cloud sales for enterprise pricing (may offer volume discounts beyond standard rates)\n   - Negotiate committed use discounts for predictable workloads\n   - Review Google Cloud",
+        "threadId": "m5743p6pyx1f33g52ajctw1tjd7z36yx"
+      },
+      "elapsed": 34556,
+      "error": null
+    },
+    {
+      "model": "devstral-2-free",
+      "offset": 0,
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "result": {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "candidates": [],
+            "canonicalName": "DISCO Pharmaceuticals",
+            "confidence": 0.9,
+            "input": "DISCO",
+            "resolvedId": "DISCO",
+            "type": "private_company (treat oss_project as open source / GitHub / repository)"
+          },
+          "fallbacks": [],
+          "grounding": [
+            "{{fact:ground_truth:DISCO}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "channel": null,
+              "email": "info@discopharma.de"
+            },
+            "freshness": {
+              "ageDays": 16
+            },
+            "funding": {
+              "amount": {
+                "amount": 36,
+                "currency": "EUR",
+                "unit": "M"
+              },
+              "coLeads": [],
+              "date": null,
+              "stage": "Seed"
+            },
+            "hqLocation": "Cologne, Germany",
+            "people": {
+              "ceo": "Mark Manfredi",
+              "founders": [
+                "Roman Thomas"
+              ]
+            },
+            "product": {
+              "leadPrograms": [
+                "Lead ADC candidates"
+              ],
+              "platform": "Surfaceome mapping platform"
+            }
+          },
+          "nextActions": [
+            "Verify primary sources (if required)",
+            "Run a quick contradiction scan",
+            "Draft a share-ready version for stakeholders"
+          ],
+          "persona": {
+            "assumptions": [
+              "Heuristic inference from query keywords for JPM_STARTUP_BANKER"
+            ],
+            "confidence": 0.8,
+            "inferred": "JPM_STARTUP_BANKER"
+          },
+          "planSteps": [
+            "Skill discovery",
+            "Lookup ground truth",
+            "Verify: check required fields + grounding",
+            "Format response + debrief"
+          ],
+          "risks": [],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "error": null,
+              "name": "searchAvailableSkills",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "searchAvailableSkills"
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "error": null,
+              "name": "describeSkill"
+            },
+            {
+              "error": null,
+              "name": "getBankerGradeEntityInsights"
+            },
+            {
+              "error": null,
+              "name": "getBankerGradeEntityInsights"
+            },
+            {
+              "error": null,
+              "name": "evaluateEntityForPersona"
+            }
+          ],
+          "verdict": "UNKNOWN"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "directToolCalls": [
+            "lookupGroundTruthEntity",
+            "lookupGroundTruthEntity",
+            "getBankerGradeEntityInsights",
+            "getBankerGradeEntityInsights",
+            "evaluateEntityForPersona"
+          ],
+          "disclosureLevel": "partial",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 2,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity",
+            "getBankerGradeEntityInsights",
+            "evaluateEntityForPersona"
+          ],
+          "usedMetaTools": true,
+          "usedSkillFirst": true,
+          "warnings": []
+        },
+        "elapsedMs": 161302,
+        "execution": {
+          "estimatedInputTokens": 1759,
+          "estimatedOutputTokens": 850,
+          "latencyMs": 159895,
+          "modelUsed": "devstral-2-free",
+          "providerUsage": {
+            "cachedInputTokens": 0,
+            "completionTokens": 714,
+            "promptTokens": 235385,
+            "reasoningTokens": 0,
+            "totalTokens": 236099
+          },
+          "stepsCount": 7,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "argsPreview": "{\"query\":\"DISCO — I'm trying to figure out if this is worth reaching out on and what I should do with it.\"}",
+              "name": "searchAvailableSkills"
+            },
+            {
+              "argsPreview": "{\"entity\":\"DISCO\"}",
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "describeSkill"
+            },
+            {
+              "name": "getBankerGradeEntityInsights"
+            },
+            {
+              "name": "getBankerGradeEntityInsights"
+            },
+            {
+              "name": "evaluateEntityForPersona"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "searchAvailableSkills",
+              "ok": true,
+              "resultPreview": "Skill search preflight ok (query='DISCO — I'm trying to figure out if this is worth reaching out on and what I should do with it.')"
+            },
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true,
+              "resultPreview": "{{fact:ground_truth:DISCO}}\nEntity ID: DISCO\nCanonical name: DISCO Pharmaceuticals\nEntity type: private_company (treat oss_project as open source / GitHub / repository)\nHQ: Cologne, Germany\nCEO: Mark Manfredi\nFounders: Roman Thomas\nPrimary contact: info@discopharma.de\nPlatform: Surfaceome mapping platform\nLead programs: Lead ADC candidates\nFunding: Seed EUR36M (announced 2025-12-11)\nRequired facts: Cologne, Germany | €36M seed | surfaceome | ADC | bispecific | SCLC | MSS-CRC | Mark Manfredi | Roman Thomas\nForbidden facts: Series A | San Francisco | New York\nFreshness age (days): 16\nWithin banker window: true\nHas primary source requirement: true"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "describeSkill"
+            },
+            {
+              "name": "getBankerGradeEntityInsights"
+            },
+            {
+              "name": "getBankerGradeEntityInsights"
+            },
+            {
+              "name": "evaluateEntityForPersona"
+            }
+          ]
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": true,
+        "promptMessageId": "ks7c2fmk6n0fnbs65z2vz2ecd97z2x50",
+        "responsePreview": "Based on the ground truth data for DISCO Pharmaceuticals, here's the analysis:\n\nDISCO Pharmaceuticals is a private company headquartered in Cologne, Germany, led by CEO Mark Manfredi and founded by Roman Thomas. The company specializes in a surfaceome mapping platform and is developing lead ADC (Antibody-Drug Conjugate) candidates. DISCO recently announced a €36 million seed funding round on December 11, 2025, with co-lead investors Ackermans & van Haaren and NRW.Bank. The company's focus areas include bispecific therapies, small cell lung cancer (SCLC), and microsatellite stable colorectal cancer (MSS-CRC).\n\nThis company appears to be a strong candidate for outreach, especially given its recent funding and innovative platform. The seed funding indicates early-stage potential, and the focus on ADC candidates and surfaceome mapping suggests a cutting-edge approach in the biopharmaceutical",
+        "threadId": "m575txgeppc1389dczswe3ye0h7z2fme"
+      },
+      "elapsed": 162953,
+      "error": null
+    },
+    {
+      "model": "devstral-2-free",
+      "offset": 1,
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "result": {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "candidates": [],
+            "canonicalName": "QuickJS / MicroQuickJS",
+            "confidence": 0.9,
+            "input": "QuickJS",
+            "resolvedId": "MQUICKJS",
+            "type": "oss_project (treat oss_project as open source / GitHub / repository)"
+          },
+          "fallbacks": [],
+          "grounding": [
+            "{{fact:ground_truth:MQUICKJS}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "channel": null,
+              "email": null
+            },
+            "freshness": {
+              "ageDays": null
+            },
+            "funding": {
+              "amount": {
+                "amount": null,
+                "currency": null,
+                "unit": null
+              },
+              "coLeads": [],
+              "date": null,
+              "stage": null
+            },
+            "hqLocation": null,
+            "people": {
+              "ceo": null,
+              "founders": []
+            },
+            "product": {
+              "leadPrograms": [],
+              "platform": null
+            }
+          },
+          "nextActions": [
+            "Verify primary sources (if required)",
+            "Run a quick contradiction scan",
+            "Draft a share-ready version for stakeholders"
+          ],
+          "persona": {
+            "assumptions": [
+              "Heuristic inference from query keywords for CTO_TECH_LEAD"
+            ],
+            "confidence": 0.8,
+            "inferred": "CTO_TECH_LEAD"
+          },
+          "planSteps": [
+            "Skill discovery",
+            "Lookup ground truth",
+            "Verify: check required fields + grounding",
+            "Format response + debrief"
+          ],
+          "risks": [],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "error": null,
+              "name": "searchAvailableSkills",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "searchAvailableSkills"
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "verdict": "UNKNOWN"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "directToolCalls": [
+            "lookupGroundTruthEntity",
+            "lookupGroundTruthEntity"
+          ],
+          "disclosureLevel": "partial",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 2,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity"
+          ],
+          "usedMetaTools": true,
+          "usedSkillFirst": true,
+          "warnings": []
+        },
+        "elapsedMs": 22971,
+        "execution": {
+          "estimatedInputTokens": 1712,
+          "estimatedOutputTokens": 696,
+          "latencyMs": 21405,
+          "modelUsed": "devstral-2-free",
+          "providerUsage": {
+            "cachedInputTokens": 0,
+            "completionTokens": 561,
+            "promptTokens": 99129,
+            "reasoningTokens": 0,
+            "totalTokens": 99690
+          },
+          "stepsCount": 3,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "argsPreview": "{\"query\":\"QuickJS — do I have risk exposure and what is my patch plan?\"}",
+              "name": "searchAvailableSkills"
+            },
+            {
+              "argsPreview": "{\"entity\":\"MQUICKJS\"}",
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "searchAvailableSkills",
+              "ok": true,
+              "resultPreview": "Skill search preflight ok (query='QuickJS — do I have risk exposure and what is my patch plan?')"
+            },
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true,
+              "resultPreview": "{{fact:ground_truth:MQUICKJS}}\nEntity ID: MQUICKJS\nCanonical name: QuickJS / MicroQuickJS\nEntity type: oss_project (treat oss_project as open source / GitHub / repository)\nSeverity (ground truth hint): High\nRequired facts: CVE-2025-62495 | Fabrice Bellard | 2025-09-13 | JavaScript engine\nForbidden facts: Cloudflare Workers uses QuickJS | critical severity\nWithin banker window: true\nHas primary source requirement: true"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [],
+        "id": "cto_vague_quickjs",
+        "name": "CTO risk exposure + patch plan",
+        "ok": true,
+        "promptMessageId": "ks737dpzpgzy1vwxgtbrc75enn7z2v9r",
+        "responsePreview": "QuickJS is an open-source JavaScript engine created by Fabrice Bellard. A high-severity vulnerability, CVE-2025-62495, was disclosed on 2025-09-13. This vulnerability could expose systems using QuickJS to potential security risks. To assess your risk exposure and formulate a patch plan, you should:\n\n1. **Identify Usage**: Determine if your projects or systems are using QuickJS. Check dependencies and libraries that might rely on QuickJS.\n2. **Assess Impact**: Evaluate how critical QuickJS is to your operations. If it is a core component, prioritize patching.\n3. **Patch Plan**:\n   - **Update**: Check the official QuickJS GitHub repository for the latest patches or updates addressing CVE-2025-62495.\n   - **Monitor**: Keep an eye on security advisories and updates from the QuickJS maintainers.\n   - **Test**: After applying patches, thoroughly test your systems to ensure the updates do not i",
+        "threadId": "m5748banf8bew1fp0grx64353d7z21m2"
+      },
+      "elapsed": 24578,
+      "error": null
+    },
+    {
+      "model": "devstral-2-free",
+      "offset": 2,
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "result": {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "candidates": [],
+            "canonicalName": "Google Gemini 3",
+            "confidence": 0.9,
+            "input": "Gemini",
+            "resolvedId": "GEMINI_3",
+            "type": "model_platform (treat oss_project as open source / GitHub / repository)"
+          },
+          "fallbacks": [],
+          "grounding": [
+            "{{fact:ground_truth:GEMINI_3}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "channel": null,
+              "email": null
+            },
+            "freshness": {
+              "ageDays": null
+            },
+            "funding": {
+              "amount": {
+                "amount": null,
+                "currency": null,
+                "unit": null
+              },
+              "coLeads": [],
+              "date": null,
+              "stage": null
+            },
+            "hqLocation": null,
+            "people": {
+              "ceo": null,
+              "founders": []
+            },
+            "product": {
+              "leadPrograms": [],
+              "platform": null
+            }
+          },
+          "nextActions": [
+            "Verify primary sources (if required)",
+            "Run a quick contradiction scan",
+            "Draft a share-ready version for stakeholders"
+          ],
+          "persona": {
+            "assumptions": [
+              "Heuristic inference from query keywords for ENTERPRISE_EXEC"
+            ],
+            "confidence": 0.8,
+            "inferred": "ENTERPRISE_EXEC"
+          },
+          "planSteps": [
+            "Skill discovery",
+            "Lookup ground truth",
+            "Verify: check required fields + grounding",
+            "Format response + debrief"
+          ],
+          "risks": [],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "error": null,
+              "name": "searchAvailableSkills",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "linkupSearch",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "searchAvailableSkills"
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "verdict": "UNKNOWN"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "directToolCalls": [
+            "lookupGroundTruthEntity",
+            "linkupSearch",
+            "lookupGroundTruthEntity"
+          ],
+          "disclosureLevel": "partial",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 2,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity",
+            "linkupSearch"
+          ],
+          "usedMetaTools": true,
+          "usedSkillFirst": true,
+          "warnings": []
+        },
+        "elapsedMs": 23257,
+        "execution": {
+          "estimatedInputTokens": 1673,
+          "estimatedOutputTokens": 775,
+          "latencyMs": 21713,
+          "modelUsed": "devstral-2-free",
+          "providerUsage": {
+            "cachedInputTokens": 0,
+            "completionTokens": 532,
+            "promptTokens": 98982,
+            "reasoningTokens": 0,
+            "totalTokens": 99514
+          },
+          "stepsCount": 3,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "argsPreview": "{\"query\":\"Gemini 3 — should we consider this, and what's the procurement next step?\"}",
+              "name": "searchAvailableSkills"
+            },
+            {
+              "argsPreview": "{\"entity\":\"GEMINI_3\"}",
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "argsPreview": "{\"query\":\"Gemini 3 — should we consider this, and what's the procurement next step?\",\"depth\":\"standard\",\"outputType\":\"searchResults\",\"maxResults\":3,\"includeInlineCitations\":true,\"includeSources\":true,\"includeImages\":false}",
+              "name": "linkupSearch"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "searchAvailableSkills",
+              "ok": true,
+              "resultPreview": "Skill search preflight ok (query='Gemini 3 — should we consider this, and what's the procurement next step?')"
+            },
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true,
+              "resultPreview": "{{fact:ground_truth:GEMINI_3}}\nEntity ID: GEMINI_3\nCanonical name: Google Gemini 3\nEntity type: model_platform (treat oss_project as open source / GitHub / repository)\nRequired facts: Gemini 3 Flash | Gemini 3 Pro | context caching | $0.10 | $1.00\nForbidden facts: $0.05 input | no caching support\nWithin banker window: true\nHas primary source requirement: true"
+            },
+            {
+              "name": "linkupSearch",
+              "ok": true,
+              "resultPreview": "linkupSearch preflight recorded (eval telemetry)"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "GEMINI_3",
+        "expectedPersona": "ENTERPRISE_EXEC",
+        "failureReasons": [],
+        "id": "exec_vague_gemini",
+        "name": "Exec vendor evaluation",
+        "ok": true,
+        "promptMessageId": "ks70c2572jew5s11zs7ne2426n7z3f4c",
+        "responsePreview": "Google Gemini 3 is a model platform offering two variants: Gemini 3 Flash and Gemini 3 Pro. It supports context caching, which enhances performance by reusing previously computed contexts. The pricing for Gemini 3 Flash is $0.10, while Gemini 3 Pro is priced at $1.00. These models are designed to cater to different use cases, balancing cost and performance. Given these features and pricing, Gemini 3 could be a strong candidate for your needs, depending on the specific requirements and budget.\n\nTo proceed with procurement, the next steps would typically involve:\n\n1. **Evaluation**: Assess the specific needs of your project or organization to determine which variant (Flash or Pro) aligns best with your requirements.\n2. **Contact Google Sales**: Reach out to Google's sales team or their official procurement channel to discuss pricing, licensing, and any custom requirements.\n3. **Pilot Testi",
+        "threadId": "m572qtf8wtbc217qar3aex1tj17z394e"
+      },
+      "elapsed": 24804,
+      "error": null
+    },
+    {
+      "model": "deepseek-r1-free",
+      "offset": 0,
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 1555,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": false,
+        "promptMessageId": "ks7fr4mpz0a8j23sfwxpm13ewh7z2r30",
+        "responsePreview": "",
+        "threadId": "m57a6g4xqj48wxgag9h3kke1n57z2nd5"
+      },
+      "elapsed": 3221,
+      "error": null
+    },
+    {
+      "model": "deepseek-r1-free",
+      "offset": 1,
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2469,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "cto_vague_quickjs",
+        "name": "CTO risk exposure + patch plan",
+        "ok": false,
+        "promptMessageId": "ks71fwxaw55e0qcj57kvwdhken7z31k1",
+        "responsePreview": "",
+        "threadId": "m5733ke91mpwjam38qff8xzgxh7z244g"
+      },
+      "elapsed": 3999,
+      "error": null
+    },
+    {
+      "model": "deepseek-r1-free",
+      "offset": 2,
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 1111,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "GEMINI_3",
+        "expectedPersona": "ENTERPRISE_EXEC",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "exec_vague_gemini",
+        "name": "Exec vendor evaluation",
+        "ok": false,
+        "promptMessageId": "ks7c1pgv2287sdw6a5ws3742jx7z2jqf",
+        "responsePreview": "",
+        "threadId": "m5759p9sw6vj3sk9hgk3b47wad7z2rwy"
+      },
+      "elapsed": 1587,
+      "error": null
+    },
+    {
+      "model": "llama-4-maverick-free",
+      "offset": 0,
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2032,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": false,
+        "promptMessageId": "ks790e64rtfx19tgpvvdzb0pdd7z371t",
+        "responsePreview": "",
+        "threadId": "m57cbkv7yv56k7ztxj8ntzfd6x7z2sza"
+      },
+      "elapsed": 3563,
+      "error": null
+    },
+    {
+      "model": "llama-4-maverick-free",
+      "offset": 1,
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 1994,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "cto_vague_quickjs",
+        "name": "CTO risk exposure + patch plan",
+        "ok": false,
+        "promptMessageId": "ks7bqt2va0315hrk618w49kqas7z38m9",
+        "responsePreview": "",
+        "threadId": "m57aezdst0yexbw94829anakdd7z230h"
+      },
+      "elapsed": 3797,
+      "error": null
+    },
+    {
+      "model": "llama-4-maverick-free",
+      "offset": 2,
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2341,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "GEMINI_3",
+        "expectedPersona": "ENTERPRISE_EXEC",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "exec_vague_gemini",
+        "name": "Exec vendor evaluation",
+        "ok": false,
+        "promptMessageId": "ks76jbseb8m79ps9smvkqkrd3x7z29g2",
+        "responsePreview": "",
+        "threadId": "m5713csta7ast2w3phy2e4ggsd7z3gmj"
+      },
+      "elapsed": 4051,
+      "error": null
+    },
+    {
+      "model": "llama-4-scout-free",
+      "offset": 0,
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2245,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": false,
+        "promptMessageId": "ks70mrp41tbyv3skrhq55jm1rs7z2hcz",
+        "responsePreview": "",
+        "threadId": "m5770zbeh3eydqv4r7t6k0var57z3s3a"
+      },
+      "elapsed": 3734,
+      "error": null
+    },
+    {
+      "model": "llama-4-scout-free",
+      "offset": 1,
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2135,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "cto_vague_quickjs",
+        "name": "CTO risk exposure + patch plan",
+        "ok": false,
+        "promptMessageId": "ks70cxceg4m7hq2qn3h20v9tds7z2j4n",
+        "responsePreview": "",
+        "threadId": "m573v97585t9ak0ka3d754kkrs7z21f2"
+      },
+      "elapsed": 3724,
+      "error": null
+    },
+    {
+      "model": "llama-4-scout-free",
+      "offset": 2,
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 1093,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "GEMINI_3",
+        "expectedPersona": "ENTERPRISE_EXEC",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "exec_vague_gemini",
+        "name": "Exec vendor evaluation",
+        "ok": false,
+        "promptMessageId": "ks7et0a6mh65pjkmwgs1r2ax717z2ee0",
+        "responsePreview": "",
+        "threadId": "m576q2y040z09350nncz7rdsq57z3fsd"
+      },
+      "elapsed": 1448,
+      "error": null
+    },
+    {
+      "model": "glm-4.5-air-free",
+      "offset": 0,
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2192,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": false,
+        "promptMessageId": "ks7dqby0j3k92f8qqk77qyz7eh7z2b0h",
+        "responsePreview": "",
+        "threadId": "m577627h0fj0h0b8tgh7r9kmg97z20ag"
+      },
+      "elapsed": 3796,
+      "error": null
+    },
+    {
+      "model": "glm-4.5-air-free",
+      "offset": 1,
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2117,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "cto_vague_quickjs",
+        "name": "CTO risk exposure + patch plan",
+        "ok": false,
+        "promptMessageId": "ks77bkk0fk0mbd2kjrdhrncdpd7z3ep8",
+        "responsePreview": "",
+        "threadId": "m578qkr73b2y3eazk3fy8qg71n7z2dap"
+      },
+      "elapsed": 3637,
+      "error": null
+    },
+    {
+      "model": "glm-4.5-air-free",
+      "offset": 2,
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 1941,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "GEMINI_3",
+        "expectedPersona": "ENTERPRISE_EXEC",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "exec_vague_gemini",
+        "name": "Exec vendor evaluation",
+        "ok": false,
+        "promptMessageId": "ks7ew1m5p35cx11da4b0fjpsm17z2kyt",
+        "responsePreview": "",
+        "threadId": "m579nqa628sz20c2dwgzw3xkxh7z3rf9"
+      },
+      "elapsed": 3455,
+      "error": null
+    },
+    {
+      "model": "kat-coder-pro-free",
+      "offset": 0,
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 1949,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": false,
+        "promptMessageId": "ks7fsrz7rv9ztd7nc5we0rxtfd7z20pp",
+        "responsePreview": "",
+        "threadId": "m57bm7rn2hwk73qba7k26g5z6h7z3ryj"
+      },
+      "elapsed": 3686,
+      "error": null
+    },
+    {
+      "model": "kat-coder-pro-free",
+      "offset": 1,
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2225,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "cto_vague_quickjs",
+        "name": "CTO risk exposure + patch plan",
+        "ok": false,
+        "promptMessageId": "ks75205vyczw69dnkm44eehagn7z3q61",
+        "responsePreview": "",
+        "threadId": "m570hjnrc6m8830czhfdt871sn7z2rzx"
+      },
+      "elapsed": 3835,
+      "error": null
+    },
+    {
+      "model": "kat-coder-pro-free",
+      "offset": 2,
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2175,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "GEMINI_3",
+        "expectedPersona": "ENTERPRISE_EXEC",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "exec_vague_gemini",
+        "name": "Exec vendor evaluation",
+        "ok": false,
+        "promptMessageId": "ks7678fdhqaq054ckf5c1re3817z3616",
+        "responsePreview": "",
+        "threadId": "m57cha5ex18jy6j306v18d8r9h7z2xna"
+      },
+      "elapsed": 3689,
+      "error": null
+    },
+    {
+      "model": "deepseek-chimera-free",
+      "offset": 0,
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2460,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": false,
+        "promptMessageId": "ks7fgbmc7ghnpvcfmbhcyf18xh7z2dsx",
+        "responsePreview": "",
+        "threadId": "m575hjxc08n54q485b14q711717z333c"
+      },
+      "elapsed": 4049,
+      "error": null
+    },
+    {
+      "model": "deepseek-chimera-free",
+      "offset": 1,
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2108,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "cto_vague_quickjs",
+        "name": "CTO risk exposure + patch plan",
+        "ok": false,
+        "promptMessageId": "ks73g2ezpvn1gw42hsabxd8dwd7z2eyr",
+        "responsePreview": "",
+        "threadId": "m576yd54303mx4r1rz8p1fjb4d7z36sa"
+      },
+      "elapsed": 3741,
+      "error": null
+    },
+    {
+      "model": "deepseek-chimera-free",
+      "offset": 2,
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2352,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "GEMINI_3",
+        "expectedPersona": "ENTERPRISE_EXEC",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "exec_vague_gemini",
+        "name": "Exec vendor evaluation",
+        "ok": false,
+        "promptMessageId": "ks73y2ez83h8ycrx3g3rv5mbt57z3xke",
+        "responsePreview": "",
+        "threadId": "m575c94da3a9ft6k1817bznbx57z3fxj"
+      },
+      "elapsed": 4027,
+      "error": null
+    },
+    {
+      "model": "grok-4-fast-free",
+      "offset": 0,
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2290,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": false,
+        "promptMessageId": "ks70wgpygffq7qs0f5dgn5w2cx7z332e",
+        "responsePreview": "",
+        "threadId": "m57ayfjbjqsq8v2efg25w2tahd7z3pyj"
+      },
+      "elapsed": 4104,
+      "error": null
+    },
+    {
+      "model": "grok-4-fast-free",
+      "offset": 1,
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2395,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "cto_vague_quickjs",
+        "name": "CTO risk exposure + patch plan",
+        "ok": false,
+        "promptMessageId": "ks79papsf7bacwsed9cdd3x5q97z3smh",
+        "responsePreview": "",
+        "threadId": "m578re9vtz0tq29x41h51wndp97z2pt1"
+      },
+      "elapsed": 3960,
+      "error": null
+    },
+    {
+      "model": "grok-4-fast-free",
+      "offset": 2,
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2000,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "GEMINI_3",
+        "expectedPersona": "ENTERPRISE_EXEC",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "exec_vague_gemini",
+        "name": "Exec vendor evaluation",
+        "ok": false,
+        "promptMessageId": "ks77jbb7p6hh3x1mcpyfa33be17z3gx8",
+        "responsePreview": "",
+        "threadId": "m575skaqjk2s0xdce1230d67td7z2tsq"
+      },
+      "elapsed": 3742,
+      "error": null
+    },
+    {
+      "model": "venice-dolphin-free",
+      "offset": 0,
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 4289,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": false,
+        "promptMessageId": "ks72vh1gq79e9zc6depeqqkc7n7z3j5h",
+        "responsePreview": "",
+        "threadId": "m57f8cxrabf74j5szyp1kh10b57z3cp6"
+      },
+      "elapsed": 5972,
+      "error": null
+    },
+    {
+      "model": "venice-dolphin-free",
+      "offset": 1,
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 2097,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "cto_vague_quickjs",
+        "name": "CTO risk exposure + patch plan",
+        "ok": false,
+        "promptMessageId": "ks7dt49mrwqmxmygzydddwyt597z36we",
+        "responsePreview": "",
+        "threadId": "m5720vnsxma9mgrysrkwpgc2an7z2jkh"
+      },
+      "elapsed": 3698,
+      "error": null
+    },
+    {
+      "model": "venice-dolphin-free",
+      "offset": 2,
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 1939,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "GEMINI_3",
+        "expectedPersona": "ENTERPRISE_EXEC",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "exec_vague_gemini",
+        "name": "Exec vendor evaluation",
+        "ok": false,
+        "promptMessageId": "ks73xfhcbmqe1h1rafavzkrkph7z2e5w",
+        "responsePreview": "",
+        "threadId": "m5749h9rardrp1m4mbcnpyrnws7z2gqk"
+      },
+      "elapsed": 3524,
+      "error": null
+    },
+    {
+      "model": "nemotron-free",
+      "offset": 0,
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 1878,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": false,
+        "promptMessageId": "ks77savpms3rmve12gjmjfnwjx7z308h",
+        "responsePreview": "",
+        "threadId": "m57acdm20f3mfwp1w013630m017z31j6"
+      },
+      "elapsed": 3456,
+      "error": null
+    },
+    {
+      "model": "nemotron-free",
+      "offset": 1,
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 1937,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "cto_vague_quickjs",
+        "name": "CTO risk exposure + patch plan",
+        "ok": false,
+        "promptMessageId": "ks7bazx8ww8benna1kyxmqe8gn7z2gtz",
+        "responsePreview": "",
+        "threadId": "m5702sj1x014jdey9h480p4s1x7z2c9b"
+      },
+      "elapsed": 3471,
+      "error": null
+    },
+    {
+      "model": "nemotron-free",
+      "offset": 2,
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "result": {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "disclosure": {
+          "directToolCalls": [],
+          "disclosureLevel": "none",
+          "estimatedToolSchemaTokens": 12250,
+          "skillSearchCalls": 0,
+          "skillsActivated": [],
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [],
+          "usedMetaTools": false,
+          "usedSkillFirst": false,
+          "warnings": []
+        },
+        "elapsedMs": 3081,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "error",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "GEMINI_3",
+        "expectedPersona": "ENTERPRISE_EXEC",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "exec_vague_gemini",
+        "name": "Exec vendor evaluation",
+        "ok": false,
+        "promptMessageId": "ks77jpjdvp6mbvfbkkt98vanks7z2nw9",
+        "responsePreview": "",
+        "threadId": "m57aa8se65qrjpqsv67ynsecz57z37ca"
+      },
+      "elapsed": 4804,
+      "error": null
+    }
+  ]
+}

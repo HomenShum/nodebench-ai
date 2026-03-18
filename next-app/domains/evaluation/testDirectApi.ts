@@ -196,7 +196,7 @@ const modelMap: Record<string, { provider: Provider; sdkId: string }> = {
   "claude-haiku-4.5": { provider: "anthropic", sdkId: "claude-haiku-4-5-20251001" },
   "claude-sonnet-4.5": { provider: "anthropic", sdkId: "claude-sonnet-4-5-20250929" },
   "claude-opus-4.5": { provider: "anthropic", sdkId: "claude-opus-4-5-20251101" },
-  "gemini-3-flash": { provider: "google", sdkId: "gemini-3-flash-preview" },
+  "gemini-3-flash": { provider: "google", sdkId: "gemini-3.1-flash-lite-preview" },
   "gemini-3-pro": { provider: "google", sdkId: "gemini-3-pro-preview" },
 };
 

@@ -1,0 +1,21 @@
+{
+  "runId": "paired-1773815410138-repo-intelligence-nodebench-deeptrace",
+  "benchmarkCaseId": "repo-intelligence-nodebench",
+  "mode": "deeptrace",
+  "timestamp": "2026-03-18T06:30:10.158Z",
+  "repoCommit": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+  "inputSnapshotHash": "dd9c5fb313eb57012562b40df2490cfc39a033e203486cf67733e030ce09d61e",
+  "promptTemplateHash": "03525bf7d5265c4de42502e83da0f0cf76c2dc378d4689bc6c6758918ee3c09f",
+  "mcpConfigHash": "5df8da77b4a20c64ec10f76ac7e9292e273274e1e4b35804bda8be4f81fedc23",
+  "modelName": "claude-code-simulated-nodebench",
+  "claudeCodeVersion": null,
+  "wallClockMs": 1880,
+  "toolCallCount": 7,
+  "tokenCount": 1490,
+  "artifactPaths": [
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/repo-intelligence-nodebench/deeptrace/tool_result.json",
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/repo-intelligence-nodebench/deeptrace/tool_report.md",
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/repo-intelligence-nodebench/deeptrace/tool_trace_bundle.json",
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/repo-intelligence-nodebench/deeptrace/run-metadata.json"
+  ]
+}

@@ -57,12 +57,15 @@ B\[sub1,sub2\]
 
 # Implementation notes (keep only core docs)
 docs/
+!docs/
 !docs/FEATURES.md
 !docs/DESIGN_SYSTEM.md
 !docs/CODESTYLE.md
 !docs/QA_MANUAL.md
 !docs/agents/
+!docs/agents/**
 !docs/architecture/
+!docs/architecture/**
 !docs/prototypes/
 !docs/BIDIRECTIONAL_FOCUS_IMPLEMENTATION_PLAN.md
 !docs/BIDIRECTIONAL_FOCUS_TEST_PLAN.md

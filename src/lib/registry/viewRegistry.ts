@@ -54,7 +54,11 @@ export type MainView =
   | "receipts"
   | "delegation"
   | "product-direction"
-  | "execution-trace";
+  | "execution-trace"
+  | "world-monitor"
+  | "watchlists"
+  | "mission-control"
+  | "evolution";
 
 export type ResearchTab = "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
 
@@ -182,6 +186,28 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "control-plane",
+  },
+  {
+    id: "world-monitor",
+    title: "World Monitor",
+    subtitle: "Open-source event map for geography, severity, and company impact routing",
+    path: "/research/world-monitor",
+    aliases: ["/world-monitor", "/hub/world-monitor"],
+    component: lazyView(() => import("@/features/research/views/WorldMonitorView")),
+    group: "nested",
+    navVisible: false,
+    parentId: "research",
+  },
+  {
+    id: "watchlists",
+    title: "Watchlists",
+    subtitle: "Persistent monitors for company, sector, geography, and theme-based DeepTrace missions",
+    path: "/research/watchlists",
+    aliases: ["/watchlists", "/hub/watchlists"],
+    component: lazyView(() => import("@/features/research/views/WatchlistsView")),
+    group: "nested",
+    navVisible: false,
+    parentId: "research",
   },
   {
     id: "signals",
@@ -521,6 +547,32 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     parentId: "control-plane",
   },
+
+  // ── Mission Control ───────────────────────────────────────────────────────
+  {
+    id: "mission-control",
+    title: "Mission Control",
+    subtitle: "Active missions, task execution, judge queue, and sniff checks",
+    path: "/internal/mission-control",
+    aliases: ["/mission-control", "/missions"],
+    component: lazyView(() => import("@/features/missions/views/MissionControlView")),
+    group: "internal",
+    navVisible: false,
+    parentId: "control-plane",
+  },
+
+  // ── Evolution Dashboard ───────────────────────────────────────────────────
+  {
+    id: "evolution",
+    title: "Evolution",
+    subtitle: "Canary benchmarks, model routing, baseline comparisons, and telemetry health",
+    path: "/internal/evolution",
+    aliases: ["/evolution-dashboard", "/eval-dashboard", "/canary"],
+    component: lazyView(() => import("@/features/evaluation/views/EvolutionDashboardView")),
+    group: "internal",
+    navVisible: false,
+    parentId: "control-plane",
+  },
 ];
 
 // ─── Derived lookup tables (computed once, used by all consumers) ─────────────
@@ -579,6 +631,12 @@ export function resolvePathToView(rawPathname: string): {
   }
 
   if (pathname.startsWith("/research") || pathname.startsWith("/hub")) {
+    if (pathname.startsWith("/research/world-monitor") || pathname.startsWith("/hub/world-monitor")) {
+      return { view: "world-monitor", entityName: null, spreadsheetId: null, researchTab: "overview" };
+    }
+    if (pathname.startsWith("/research/watchlists") || pathname.startsWith("/hub/watchlists")) {
+      return { view: "watchlists", entityName: null, spreadsheetId: null, researchTab: "overview" };
+    }
     const tabMatch = pathname.match(
       /^\/(?:research|hub)\/(overview|signals|briefing|deals|changes|changelog)/,
     );

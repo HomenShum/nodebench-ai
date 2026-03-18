@@ -1,0 +1,413 @@
+{
+  "generatedAt": "2026-01-08T22:20:46.366Z",
+  "totalElapsed": 26156,
+  "modelsToTest": [
+    "claude-haiku-4.5",
+    "gemini-3-flash"
+  ],
+  "suite": "core",
+  "scenarios": 3,
+  "totalEvaluations": 6,
+  "enableJudge": true,
+  "metrics": {
+    "overallPassRate": 100,
+    "passRateByModel": {
+      "claude-haiku-4.5": 100,
+      "gemini-3-flash": 100
+    },
+    "passRateByScenario": {
+      "banker_vague_disco": 100,
+      "vc_vague_openautoglm": 100,
+      "cto_vague_quickjs": 100
+    },
+    "memoryFirstComplianceRate": 0,
+    "memoryFirstByModel": {
+      "claude-haiku-4.5": 0,
+      "gemini-3-flash": 0
+    },
+    "toolOrderingAccuracy": 0,
+    "toolOrderingByModel": {
+      "claude-haiku-4.5": 0,
+      "gemini-3-flash": 0
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "judgeMetrics": {
+      "avgScore": 6,
+      "scoreByModel": {
+        "claude-haiku-4.5": 6,
+        "gemini-3-flash": 6
+      },
+      "criteriaPassRates": {
+        "appropriateFormat": 83.33333333333334,
+        "citesGroundTruth": 100,
+        "entityCorrect": 83.33333333333334,
+        "factuallyAccurate": 0,
+        "hasDebrief": 0,
+        "isActionable": 66.66666666666666,
+        "isCoherent": 33.33333333333333,
+        "noContradictions": 50,
+        "noHallucinations": 100,
+        "personaMatch": 83.33333333333334
+      }
+    },
+    "avgLatencyMs": 17911.833333333332,
+    "p50LatencyMs": 18469,
+    "p95LatencyMs": 20205,
+    "latencyByModel": {
+      "claude-haiku-4.5": 19430.666666666668,
+      "gemini-3-flash": 16393
+    },
+    "avgDisclosureLevel": {
+      "none": 100,
+      "partial": 0,
+      "full": 0
+    },
+    "skillFirstRate": 0
+  },
+  "results": [
+    {
+      "model": "claude-haiku-4.5",
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "passed": true,
+      "elapsed": 19618,
+      "disclosure": {
+        "directToolCalls": [
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": [
+          "No skill search before tool invoke",
+          "No progressive disclosure meta-tools used"
+        ]
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": false,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": false,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 6,
+        "summary": "Response demonstrates banker persona competence but fails on core factual accuracy with fabricated funding details (€36M, 2025-12-11 date), missing debrief block, and incomplete content cutoff.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "## Analysis\n\n**Verdict: PASS for banker outreach.** DISCO Pharmaceuticals is a **hot Seed-stage biotech** that closed €36M just 28 days ago (announced 2025-12-11), putting it squarely within the JPM banker 30-day outreach window. {{fact:ground_truth:DISCO}} The company's surfaceome ADC platform targeting SCLC and MSS-CRC is differentiated technology with clear lead programs, and the co-lead investor pedigree (Ackermans & van Haaren + NRW.Bank) signals strong European validation.\n\n**Why reach out"
+    },
+    {
+      "model": "claude-haiku-4.5",
+      "scenarioId": "vc_vague_openautoglm",
+      "scenarioName": "VC wedge from OSS signal",
+      "passed": true,
+      "elapsed": 18469,
+      "disclosure": {
+        "directToolCalls": [
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": [
+          "No skill search before tool invoke",
+          "No skill search for EARLY_STAGE_VC scenario",
+          "No progressive disclosure meta-tools used"
+        ]
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": false,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": false,
+          "isCoherent": false,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": false
+        },
+        "score": 4,
+        "summary": "Response correctly identifies OpenAutoGLM as an open-source project but fails to match early-stage VC persona expectations, lacks debrief structure, and cuts off mid-analysis without actionable investment insights or proper completion.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "## Analysis: OpenAutoGLM and the Agent Market Wedge\n\n**Key Finding**: OpenAutoGLM is an **open-source agent project** {{fact:ground_truth:OPEN-AUTOGLM}} on GitHub under the Apache-2.0 license. This is fundamentally different from a venture-backed company—it's a community-driven software artifact, not a commercial entity.\n\n### What This Tells Us About the Agent Market\n\nOpenAutoGLM's existence as a phone-capable autonomous agent framework signals several critical market dynamics:\n\n1. **Commoditiza"
+    },
+    {
+      "model": "claude-haiku-4.5",
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "passed": true,
+      "elapsed": 20205,
+      "disclosure": {
+        "directToolCalls": [
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": [
+          "No skill search before tool invoke",
+          "No skill search for CTO_TECH_LEAD scenario",
+          "No progressive disclosure meta-tools used"
+        ]
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": true,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 8,
+        "summary": "Response correctly addresses QuickJS risk with CTO-appropriate framing and cites ground truth, but lacks debrief block, contains unverifiable CVE claim (CVE-2025-62495 appears fabricated for a future date), and is incomplete.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "---\n\n## Risk Exposure & Patch Plan: QuickJS\n\n**Yes, you have risk exposure from CVE-2025-62495.** {{fact:ground_truth:MQUICKJS}}\n\nQuickJS is an open-source JavaScript engine maintained by Fabrice Bellard. On **2025-09-13**, a vulnerability (CVE-2025-62495) was disclosed that affects this lightweight JavaScript runtime. The vulnerability has been rated as **High severity**, meaning it can impact security posture in production deployments.\n\n### Risk Assessment (CTO Perspective)\n\n**Exposure exists "
+    },
+    {
+      "model": "gemini-3-flash",
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "passed": true,
+      "elapsed": 15978,
+      "disclosure": {
+        "directToolCalls": [
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": [
+          "No skill search before tool invoke",
+          "No progressive disclosure meta-tools used"
+        ]
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": false,
+          "noContradictions": false,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 6,
+        "summary": "Response correctly identifies DISCO with appropriate JPM banker persona and cites ground truth anchors, but contains incomplete content, lacks required debrief JSON, and the funding facts appear questionable (€36M Seed with major institutional leads is atypical), making it unsuitable for delivery.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "### DISCO Pharmaceuticals | Outreach Debrief (JPM_STARTUP_BANKER)\n\nBased on verified ground truth data, **DISCO Pharmaceuticals** is a high-priority target for outreach. The company is currently in a \"hot\" window following their recent major funding announcement.\n\n#### **Verdict: PASS**\nDISCO meets all criteria for immediate banker engagement. The funding is fresh (announced Dec 11, 2025), the round size is significant for a Seed stage, and the technology platform is highly differentiated. {{fac"
+    },
+    {
+      "model": "gemini-3-flash",
+      "scenarioId": "vc_vague_openautoglm",
+      "scenarioName": "VC wedge from OSS signal",
+      "passed": true,
+      "elapsed": 16529,
+      "disclosure": {
+        "directToolCalls": [
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": [
+          "No skill search before tool invoke",
+          "No skill search for EARLY_STAGE_VC scenario",
+          "No progressive disclosure meta-tools used"
+        ]
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": true,
+          "isCoherent": false,
+          "noContradictions": true,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 7,
+        "summary": "Response correctly identifies the entity and uses VC-appropriate framing but lacks debrief block, contains incomplete content, and makes unverified factual claims about the project's scope and license.",
+        "verdict": "PARTIAL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "OpenAutoGLM represents a significant shift in the autonomous agent landscape, moving the frontier from browser-based \"click-bots\" to full mobile device interaction. As an **open-source** project available on **GitHub** under the **Apache-2.0** license, it democratizes the technical primitives required for agents to navigate mobile interfaces directly. {{fact:ground_truth:OPEN-AUTOGLM}}\n\n### **VC Investment Thesis: The \"Phone-Use\" Wedge**\nThe core \"wedge\" here is the transition from high-friction"
+    },
+    {
+      "model": "gemini-3-flash",
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "passed": true,
+      "elapsed": 16672,
+      "disclosure": {
+        "directToolCalls": [
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "none",
+        "estimatedToolSchemaTokens": 12250,
+        "skillSearchCalls": 0,
+        "skillsActivated": [],
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": false,
+        "usedSkillFirst": false,
+        "warnings": [
+          "No skill search before tool invoke",
+          "No skill search for CTO_TECH_LEAD scenario",
+          "No progressive disclosure meta-tools used"
+        ]
+      },
+      "judge": {
+        "criteria": {
+          "appropriateFormat": true,
+          "citesGroundTruth": true,
+          "entityCorrect": true,
+          "factuallyAccurate": false,
+          "hasDebrief": false,
+          "isActionable": false,
+          "isCoherent": false,
+          "noContradictions": false,
+          "noHallucinations": true,
+          "personaMatch": true
+        },
+        "score": 5,
+        "summary": "Response correctly identifies the entity and persona, cites ground truth, but contains fabricated vulnerability details (CVE-2025-62495), is incomplete/truncated, lacks a debrief block, and provides no actionable patch plan despite promising one.",
+        "verdict": "FAIL"
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "### CTO Security Assessment: QuickJS / MicroQuickJS\n\nBased on verified ground truth data, your exposure to **QuickJS**, the open source **JavaScript engine** developed by **Fabrice Bellard**, involves a **High-severity** security vulnerability.\n\n#### **Exposure Assessment**\nThe primary risk stems from **CVE-2025-62495**, which was disclosed on **2025-09-13**. As an open source project widely used for its small footprint and high performance, any application embedding QuickJS or MicroQuickJS as i"
+    }
+  ]
+}

@@ -25,7 +25,7 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   "claude-haiku-3.5": { input: 0.8, output: 4, cacheRead: 0.08, cacheWrite: 1 },
 
   // Google
-  "gemini-2.5-flash": { input: 0.15, output: 0.60, cacheRead: 0.0375, cacheWrite: 0.15 },
+  "gemini-3.1-flash-lite-preview": { input: 0.15, output: 0.60, cacheRead: 0.0375, cacheWrite: 0.15 },
   "gemini-2.5-pro": { input: 1.25, output: 10, cacheRead: 0.3125, cacheWrite: 1.25 },
 
   // OpenAI

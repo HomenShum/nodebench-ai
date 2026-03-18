@@ -1,0 +1,20 @@
+{
+  "runId": "paired-1773815410138-repo-intelligence-nodebench-baseline",
+  "benchmarkCaseId": "repo-intelligence-nodebench",
+  "mode": "baseline",
+  "timestamp": "2026-03-18T06:30:10.155Z",
+  "repoCommit": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+  "inputSnapshotHash": "dd9c5fb313eb57012562b40df2490cfc39a033e203486cf67733e030ce09d61e",
+  "promptTemplateHash": "a469fe9b736199461701daa43ee09499371be3ce2bec5a04776d3ae7f26bc366",
+  "mcpConfigHash": "6c88a21151c3812e9d7cdaf876e62c1dfdd9a4c601dcf07669f9b8a7243f828e",
+  "modelName": "claude-code-simulated-baseline",
+  "claudeCodeVersion": null,
+  "wallClockMs": 1470,
+  "toolCallCount": 4,
+  "tokenCount": 1020,
+  "artifactPaths": [
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/repo-intelligence-nodebench/baseline/baseline_result.json",
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/repo-intelligence-nodebench/baseline/baseline_report.md",
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/repo-intelligence-nodebench/baseline/run-metadata.json"
+  ]
+}

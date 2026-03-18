@@ -1,0 +1,802 @@
+{
+  "sessionId": "opt-f54736de",
+  "config": {
+    "maxIterations": 15,
+    "maxSessionSeconds": 600,
+    "benchmarkFamilies": [
+      "company_direction",
+      "relationship_mapping",
+      "repo_intelligence",
+      "world_to_company",
+      "trace_backed_draft"
+    ]
+  },
+  "baseline": {
+    "baselineId": "adaptive-trigger-thresholds-v1",
+    "commitHash": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+    "throughputMetrics": {
+      "taskCompletionRate": 0.7999999999999999,
+      "timeToFirstDraftMs": 43000,
+      "humanEditDistance": 140,
+      "wallClockMs": 85000,
+      "toolCallCount": 26
+    },
+    "qualityMetrics": {
+      "factualPrecision": 0.83,
+      "relationshipPrecision": 0.79,
+      "evidenceLinkage": 0.8300000000000001,
+      "receiptCompleteness": 0.89,
+      "falseConfidenceRate": 0.060000000000000005,
+      "canaryRelativeUplift": 0.05
+    },
+    "capturedAt": "2026-03-15T22:35:35.881Z"
+  },
+  "candidates": [
+    {
+      "candidateId": "weighted-usefulness-scoring-v1",
+      "baselineId": "baseline-401d5942-1773609609024",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.6744425402829236,
+        "qualityMetrics": {
+          "factualPrecision": 0.83,
+          "relationshipPrecision": 0.79,
+          "evidenceLinkage": 0.8600000000000001,
+          "receiptCompleteness": 0.88,
+          "falseConfidenceRate": 0.05,
+          "canaryRelativeUplift": 0.04
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 2.9% < 5% minimum",
+      "timestamp": "2026-03-15T22:35:12.469Z",
+      "iterationMs": 56,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T22:35:12.413Z"
+        }
+      ],
+      "proposerRationale": "The usefulness scoring in executeBranch treats all signal types equally (0.3 facts, 0.3 relationships, 0.2 evidence, 0.1+0.1 hypotheses). Real investigations weight counter-hypotheses and evidence refs higher because they directly reduce false confidence. Reweight to 0.2/0.2/0.25/0.15+0.2 to prioritize evidence-backed findings."
+    },
+    {
+      "candidateId": "priority-aware-branch-planning-v1",
+      "baselineId": "baseline-401d5942-1773609609024",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.6824713001832956,
+        "qualityMetrics": {
+          "factualPrecision": 0.84,
+          "relationshipPrecision": 0.79,
+          "evidenceLinkage": 0.8400000000000001,
+          "receiptCompleteness": 0.89,
+          "falseConfidenceRate": 0.04000000000000001,
+          "canaryRelativeUplift": 0.05
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 4.1% < 5% minimum",
+      "timestamp": "2026-03-15T22:35:18.555Z",
+      "iterationMs": 60,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T22:35:18.495Z"
+        }
+      ],
+      "proposerRationale": "planResearchBranches always adds source_diversification as a fallback when branches.length < maxBranches, even when the trigger reason is purely about confidence — wasting a branch slot. Instead, when triggered by low confidence, add a second counter_hypothesis branch with a different query focus (financial vs operational) to maximize the information gained per branch."
+    },
+    {
+      "candidateId": "dimension-coverage-gap-targeting-v1",
+      "baselineId": "baseline-401d5942-1773609609024",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.6742040012707962,
+        "qualityMetrics": {
+          "factualPrecision": 0.83,
+          "relationshipPrecision": 0.8,
+          "evidenceLinkage": 0.88,
+          "receiptCompleteness": 0.9,
+          "falseConfidenceRate": 0.060000000000000005,
+          "canaryRelativeUplift": 0.05
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 2.8% < 5% minimum",
+      "timestamp": "2026-03-15T22:35:24.395Z",
+      "iterationMs": 59,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T22:35:24.336Z"
+        }
+      ],
+      "proposerRationale": "The dimension_coverage branch only reports which families have gaps but doesn't query for relationship or signal data that could fill those gaps. By cross-referencing the missing dimension families with relationship graph edges (e.g., investor relationships can inform capital.financingQualityScore), we can surface actionable fill paths."
+    },
+    {
+      "candidateId": "counter-hypothesis-chain-depth-v1",
+      "baselineId": "baseline-401d5942-1773609609024",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.6684739570470566,
+        "qualityMetrics": {
+          "factualPrecision": 0.84,
+          "relationshipPrecision": 0.79,
+          "evidenceLinkage": 0.8300000000000001,
+          "receiptCompleteness": 0.88,
+          "falseConfidenceRate": 0.030000000000000006,
+          "canaryRelativeUplift": 0.04
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.9% < 5% minimum",
+      "timestamp": "2026-03-15T22:35:30.349Z",
+      "iterationMs": 55,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T22:35:30.294Z"
+        }
+      ],
+      "proposerRationale": "The counter_hypothesis branch only looks at the first 2 causal chains. If there are 3+ chains, the third often represents an underexplored alternative narrative. Increasing the slice to 4 chains and generating explicit falsification criteria for each would give operators a stronger basis for adjudication."
+    },
+    {
+      "candidateId": "adaptive-trigger-thresholds-v1",
+      "baselineId": "baseline-401d5942-1773609609024",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.6954754196941559,
+        "qualityMetrics": {
+          "factualPrecision": 0.83,
+          "relationshipPrecision": 0.79,
+          "evidenceLinkage": 0.8300000000000001,
+          "receiptCompleteness": 0.89,
+          "falseConfidenceRate": 0.060000000000000005,
+          "canaryRelativeUplift": 0.05
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "promoted",
+      "timestamp": "2026-03-15T22:35:35.880Z",
+      "iterationMs": 120,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T22:35:35.761Z"
+        }
+      ],
+      "proposerRationale": "The trigger thresholds are static (confidence < 0.65, coverage < 0.70, sources < 3). Different entity types need different thresholds — a well-covered public company may have 0.60 confidence as normal, while a private startup at 0.60 is dangerously uncertain. Adding entity-type awareness to shouldTriggerResearchCell lets the cell fire more precisely."
+    },
+    {
+      "candidateId": "early-termination-low-usefulness-v1",
+      "baselineId": "adaptive-trigger-thresholds-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7189114452798663,
+        "qualityMetrics": {
+          "factualPrecision": 0.83,
+          "relationshipPrecision": 0.79,
+          "evidenceLinkage": 0.8400000000000001,
+          "receiptCompleteness": 0.91,
+          "falseConfidenceRate": 0.060000000000000005,
+          "canaryRelativeUplift": 0.09
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 3.4% < 5% minimum",
+      "timestamp": "2026-03-15T22:35:41.393Z",
+      "iterationMs": 53,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T22:35:41.340Z"
+        }
+      ],
+      "proposerRationale": "The refinement loop re-runs branches where usefulness < 0.5. But if ALL branches in round 0 score < 0.2, the entity likely has insufficient data for re-analysis — spending a second round won't help. Adding an early termination check when mean usefulness < 0.25 saves 30-40s of wall clock time on dead-end investigations."
+    },
+    {
+      "candidateId": "source-diversification-kind-map-v1",
+      "baselineId": "adaptive-trigger-thresholds-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7132261377282703,
+        "qualityMetrics": {
+          "factualPrecision": 0.85,
+          "relationshipPrecision": 0.8,
+          "evidenceLinkage": 0.8800000000000001,
+          "receiptCompleteness": 0.93,
+          "falseConfidenceRate": 0.04000000000000001,
+          "canaryRelativeUplift": 0.09
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 2.6% < 5% minimum",
+      "timestamp": "2026-03-15T22:35:47.258Z",
+      "iterationMs": 61,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T22:35:47.197Z"
+        }
+      ],
+      "proposerRationale": "Source diversification counts distinct kind values but doesn't weight by quality. A single 'filing' source is worth more than five 'news' sources for factual precision. Adding a kind-quality map (filing=3x, academic=2x, news=1x, social=0.5x) to the diversity score produces more actionable diversification recommendations."
+    },
+    {
+      "candidateId": "merge-confidence-weighted-v1",
+      "baselineId": "adaptive-trigger-thresholds-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7191563439449038,
+        "qualityMetrics": {
+          "factualPrecision": 0.85,
+          "relationshipPrecision": 0.8,
+          "evidenceLinkage": 0.8900000000000001,
+          "receiptCompleteness": 0.9400000000000001,
+          "falseConfidenceRate": 0.030000000000000006,
+          "canaryRelativeUplift": 0.1
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 3.4% < 5% minimum",
+      "timestamp": "2026-03-15T22:35:53.271Z",
+      "iterationMs": 191,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T22:35:53.080Z"
+        }
+      ],
+      "proposerRationale": "mergeBranchResults takes the strongest hypothesis from the highest-ranked branch by raw usefulness. But a branch with usefulness=0.8 and 3 evidence refs should dominate over usefulness=0.9 with 0 evidence refs when building the merged hypothesis. Weighting by evidence-backed confidence during merge produces more defensible outputs."
+    },
+    {
+      "candidateId": "relationship-dedup-confidence-max-v1",
+      "baselineId": "adaptive-trigger-thresholds-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7085087486201505,
+        "qualityMetrics": {
+          "factualPrecision": 0.84,
+          "relationshipPrecision": 0.8200000000000001,
+          "evidenceLinkage": 0.8500000000000001,
+          "receiptCompleteness": 0.91,
+          "falseConfidenceRate": 0.05,
+          "canaryRelativeUplift": 0.09
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.9% < 5% minimum",
+      "timestamp": "2026-03-15T22:35:59.399Z",
+      "iterationMs": 213,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T22:35:59.186Z"
+        }
+      ],
+      "proposerRationale": "dedupeRelationships keeps the first occurrence of a from|to|type triple. When multiple branches discover the same relationship with different confidence scores, we should keep the highest confidence version. This prevents the merged output from underreporting relationship strength."
+    },
+    {
+      "candidateId": "receipt-tool-call-accuracy-v1",
+      "baselineId": "adaptive-trigger-thresholds-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7039555784243147,
+        "qualityMetrics": {
+          "factualPrecision": 0.83,
+          "relationshipPrecision": 0.79,
+          "evidenceLinkage": 0.8400000000000001,
+          "receiptCompleteness": 0.97,
+          "falseConfidenceRate": 0.060000000000000005,
+          "canaryRelativeUplift": 0.09
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.2% < 5% minimum",
+      "timestamp": "2026-03-15T22:36:05.330Z",
+      "iterationMs": 197,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T22:36:05.133Z"
+        }
+      ],
+      "proposerRationale": "The receipts array captures toolCallCount per branch, but executeBranch doesn't count the getDimensionProfile call in dimension_coverage or the second graph query in source_diversification consistently. Some branches report 1 tool call when they actually made 2. Fixing the count makes receipts trustworthy for cost attribution."
+    },
+    {
+      "candidateId": "heuristics-regex-overlap-v1",
+      "baselineId": "adaptive-trigger-thresholds-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7101558313374553,
+        "qualityMetrics": {
+          "factualPrecision": 0.86,
+          "relationshipPrecision": 0.81,
+          "evidenceLinkage": 0.8500000000000001,
+          "receiptCompleteness": 0.91,
+          "falseConfidenceRate": 0.04000000000000001,
+          "canaryRelativeUplift": 0.09
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 2.1% < 5% minimum",
+      "timestamp": "2026-03-15T22:36:10.642Z",
+      "iterationMs": 89,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T22:36:10.553Z"
+        }
+      ],
+      "proposerRationale": "In heuristics.ts, RELATIONSHIP_PATTERNS has overlapping regex for 'investor' and 'holder' — an entity described as 'major holder and investor' matches both, creating duplicate relationship observations. Adding a priority ranking and first-match-wins policy eliminates these false duplicates that inflate relationship counts."
+    },
+    {
+      "candidateId": "evidence-gap-availability-filter-v1",
+      "baselineId": "adaptive-trigger-thresholds-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7137403641969392,
+        "qualityMetrics": {
+          "factualPrecision": 0.85,
+          "relationshipPrecision": 0.8,
+          "evidenceLinkage": 0.8700000000000001,
+          "receiptCompleteness": 0.92,
+          "falseConfidenceRate": 0.04000000000000001,
+          "canaryRelativeUplift": 0.09
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 2.6% < 5% minimum",
+      "timestamp": "2026-03-15T22:36:16.702Z",
+      "iterationMs": 62,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T22:36:16.640Z"
+        }
+      ],
+      "proposerRationale": "The evidence_gap_fill branch reports total unavailable evidence rows but doesn't distinguish between dimensions where data could plausibly exist (e.g., capital.fundingRaisedUsd for a funded startup) vs dimensions that are structurally unavailable (e.g., capital.burnEstimateUsdPerMonth for a public company). Filtering by plausibility before reporting gaps reduces operator false leads."
+    },
+    {
+      "candidateId": "causal-chain-quality-signal-v1",
+      "baselineId": "adaptive-trigger-thresholds-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7087503713778188,
+        "qualityMetrics": {
+          "factualPrecision": 0.84,
+          "relationshipPrecision": 0.8,
+          "evidenceLinkage": 0.8600000000000001,
+          "receiptCompleteness": 0.92,
+          "falseConfidenceRate": 0.04000000000000001,
+          "canaryRelativeUplift": 0.09
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.9% < 5% minimum",
+      "timestamp": "2026-03-15T22:36:22.468Z",
+      "iterationMs": 63,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T22:36:22.405Z"
+        }
+      ],
+      "proposerRationale": "The counter_hypothesis branch generates hypothesis/counterHypothesis from causal chains but doesn't assess chain quality. A chain with 1 event is weaker than one with 5 linked events. Adding chain-depth as a quality signal to the branch output helps operators prioritize which narratives to investigate first."
+    },
+    {
+      "candidateId": "parallel-branch-budget-v1",
+      "baselineId": "adaptive-trigger-thresholds-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7123771190222519,
+        "qualityMetrics": {
+          "factualPrecision": 0.83,
+          "relationshipPrecision": 0.79,
+          "evidenceLinkage": 0.8400000000000001,
+          "receiptCompleteness": 0.91,
+          "falseConfidenceRate": 0.060000000000000005,
+          "canaryRelativeUplift": 0.09
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 2.4% < 5% minimum",
+      "timestamp": "2026-03-15T22:36:28.223Z",
+      "iterationMs": 52,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T22:36:28.171Z"
+        }
+      ],
+      "proposerRationale": "maxToolCallsPerBranch is set to 15 but the most complex branch (evidence_gap_fill) only uses 2 calls. The budget is far too generous — it should be 6 per branch to match reality, freeing up conceptual headroom for the refinement loop to add more targeted queries instead of over-allocating to branches that finish in 2 calls."
+    },
+    {
+      "candidateId": "limitation-severity-grading-v1",
+      "baselineId": "adaptive-trigger-thresholds-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7158702413771334,
+        "qualityMetrics": {
+          "factualPrecision": 0.84,
+          "relationshipPrecision": 0.8,
+          "evidenceLinkage": 0.8500000000000001,
+          "receiptCompleteness": 0.93,
+          "falseConfidenceRate": 0.05,
+          "canaryRelativeUplift": 0.09
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 2.9% < 5% minimum",
+      "timestamp": "2026-03-15T22:36:33.820Z",
+      "iterationMs": 118,
+      "costEntries": [
+        {
+          "phase": "propose",
+          "model": "claude-opus-4-6-session",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "costUsd": 0,
+          "timestamp": "2026-03-15T22:36:33.702Z"
+        }
+      ],
+      "proposerRationale": "mergeBranchResults generates limitations as flat strings with no severity. 'No new facts discovered' is critical while 'Evidence bundle remains sparse' may be acceptable for early-stage entities. Adding a severity field (critical/warning/info) to limitations lets operators triage the output faster, reducing human edit distance."
+    }
+  ],
+  "promotedCandidateId": "adaptive-trigger-thresholds-v1",
+  "costEntries": [
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T22:35:12.413Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T22:35:18.495Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T22:35:24.336Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T22:35:30.294Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T22:35:35.761Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T22:35:41.340Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T22:35:47.197Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T22:35:53.080Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T22:35:59.186Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T22:36:05.133Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T22:36:10.553Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T22:36:16.640Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T22:36:22.405Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T22:36:28.171Z"
+    },
+    {
+      "phase": "propose",
+      "model": "claude-opus-4-6-session",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-15T22:36:33.702Z"
+    }
+  ],
+  "costSummary": {
+    "totalInputTokens": 0,
+    "totalOutputTokens": 0,
+    "totalCostUsd": 0,
+    "costByPhase": {
+      "propose": 0
+    },
+    "costByModel": {
+      "claude-opus-4-6-session": 0
+    },
+    "callCount": 15
+  },
+  "startedAt": "2026-03-15T22:35:07.590Z",
+  "completedAt": "2026-03-15T22:36:34.828Z"
+}

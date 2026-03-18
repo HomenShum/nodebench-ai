@@ -13,6 +13,8 @@ import {
 } from "../apps/api-headless/src/lib/enterprise-investigation-eval.js";
 import { evaluatePair } from "../packages/eval-engine/src/judges/text-judge.js";
 
+type EnterpriseInvestigationPayload = Awaited<ReturnType<typeof runEnterpriseInvestigationCase>>["investigation"];
+
 dotenv.config({ path: ".env.local" });
 dotenv.config();
 
@@ -66,9 +68,37 @@ function previewText(text: string, limit = 220) {
   return `${normalized.slice(0, limit - 1)}…`;
 }
 
+function getObservationCount(investigation: EnterpriseInvestigationPayload) {
+  return investigation.observed_facts.length;
+}
+
+function getAnomalyCount(investigation: EnterpriseInvestigationPayload) {
+  return investigation.derived_signals.anomalies.length;
+}
+
+function getSourceHashCount(investigation: EnterpriseInvestigationPayload) {
+  return investigation.evidence_catalog.filter((item) => item.content_hash.length > 0).length;
+}
+
+function getProposedAction(investigation: EnterpriseInvestigationPayload) {
+  return investigation.recommended_actions[0]?.action ?? "Action pending operator review";
+}
+
+function getForecastSummary(investigation: EnterpriseInvestigationPayload) {
+  return investigation.derived_signals.forecast.summary;
+}
+
+function getObservedFactsSummary(investigation: EnterpriseInvestigationPayload) {
+  return investigation.observed_facts.map((fact) => fact.statement).join(" | ");
+}
+
+function getConfidenceScore(investigation: EnterpriseInvestigationPayload) {
+  return investigation.meta.overall_confidence;
+}
+
 function estimateJudgeCostUsd(model: string, inputTokens: number, outputTokens: number) {
   const normalized = model.toLowerCase();
-  if (normalized.includes("gemini-2.0-flash") || normalized.includes("gemini-2.5-flash")) {
+  if (normalized.includes("gemini-2.0-flash") || normalized.includes("gemini-3.1-flash-lite-preview")) {
     return Number((((inputTokens / 1_000_000) * 0.1) + ((outputTokens / 1_000_000) * 0.4)).toFixed(6));
   }
   if (normalized.includes("gpt-4o-mini")) {
@@ -205,17 +235,17 @@ async function main() {
         caseId: testCase.id,
         detail: `${testCase.title} produced enterprise investigation output.`,
         response: previewText(
-          `Forecast: ${evaluation.investigation.temporal_intelligence.forecast.prediction}\nAction: ${evaluation.investigation.zero_friction_execution.proposed_action}\nCausal chain: ${evaluation.investigation.causal_chain.map((event) => event.event).join(" | ")}`,
+          `Forecast: ${getForecastSummary(evaluation.investigation)}\nAction: ${getProposedAction(evaluation.investigation)}\nObserved facts: ${getObservedFactsSummary(evaluation.investigation)}`,
           420,
         ),
         telemetry: {
           lane,
           buildDurationMs,
-          causalChainLength: evaluation.investigation.causal_chain.length,
-          anomalyCount: evaluation.investigation.temporal_intelligence.anomalies_detected.length,
-          sourceHashCount: evaluation.investigation.audit_proof_pack.source_snapshot_hashes.length,
+          causalChainLength: getObservationCount(evaluation.investigation),
+          anomalyCount: getAnomalyCount(evaluation.investigation),
+          sourceHashCount: getSourceHashCount(evaluation.investigation),
           deterministicScore: evaluation.deterministic.overall,
-          confidenceScore: evaluation.investigation.meta.confidence_score,
+          confidenceScore: getConfidenceScore(evaluation.investigation),
         },
       });
 
@@ -366,6 +396,7 @@ async function main() {
     generatedAt,
     gitSha,
     suite: "enterprise-investigation-eval-v1",
+    suiteVersion: "v2_investigation_payload",
     strategy: {
       mode: "free_first_with_required_llm_judge",
       judgeModel,
@@ -393,10 +424,10 @@ async function main() {
       meta: result.investigation.meta,
       telemetry: {
         totalDurationMs: result.totalDurationMs,
-        anomalyCount: result.investigation.temporal_intelligence.anomalies_detected.length,
-        causalChainLength: result.investigation.causal_chain.length,
-        sourceHashCount: result.investigation.audit_proof_pack.source_snapshot_hashes.length,
-        proposedAction: result.investigation.zero_friction_execution.proposed_action,
+        anomalyCount: getAnomalyCount(result.investigation),
+        causalChainLength: getObservationCount(result.investigation),
+        sourceHashCount: getSourceHashCount(result.investigation),
+        proposedAction: getProposedAction(result.investigation),
       },
       investigation: result.investigation,
     })),
@@ -472,8 +503,8 @@ async function main() {
       `- Deterministic: ${item.deterministic.overall} (${item.deterministic.passed ? "pass" : "fail"})`,
       `- LLM judge: ${item.llmJudge.score} (${item.llmJudge.passed ? "pass" : "fail"})`,
       `- LLM judge estimated spend: $${(item.llmJudge.estimatedJudgeCostUsd ?? 0).toFixed(6)}`,
-      `- Causal chain events: ${item.telemetry.causalChainLength}`,
-      `- Source hashes: ${item.telemetry.sourceHashCount}`,
+      `- Observed facts: ${item.telemetry.causalChainLength}`,
+      `- Evidence hashes: ${item.telemetry.sourceHashCount}`,
       `- Proposed action: ${item.telemetry.proposedAction}`,
       "",
     ]),

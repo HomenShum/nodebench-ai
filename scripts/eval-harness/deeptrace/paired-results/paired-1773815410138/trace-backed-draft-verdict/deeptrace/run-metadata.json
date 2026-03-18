@@ -1,0 +1,21 @@
+{
+  "runId": "paired-1773815410138-trace-backed-draft-verdict-deeptrace",
+  "benchmarkCaseId": "trace-backed-draft-verdict",
+  "mode": "deeptrace",
+  "timestamp": "2026-03-18T06:30:10.172Z",
+  "repoCommit": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+  "inputSnapshotHash": "7d7d99fef409526b9d958525d768e4651a5d5aabd1371d54911df0e504f30364",
+  "promptTemplateHash": "03525bf7d5265c4de42502e83da0f0cf76c2dc378d4689bc6c6758918ee3c09f",
+  "mcpConfigHash": "5df8da77b4a20c64ec10f76ac7e9292e273274e1e4b35804bda8be4f81fedc23",
+  "modelName": "claude-code-simulated-nodebench",
+  "claudeCodeVersion": null,
+  "wallClockMs": 2050,
+  "toolCallCount": 10,
+  "tokenCount": 1740,
+  "artifactPaths": [
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/trace-backed-draft-verdict/deeptrace/tool_result.json",
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/trace-backed-draft-verdict/deeptrace/tool_report.md",
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/trace-backed-draft-verdict/deeptrace/tool_trace_bundle.json",
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/trace-backed-draft-verdict/deeptrace/run-metadata.json"
+  ]
+}

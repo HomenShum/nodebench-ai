@@ -18,6 +18,7 @@ import {
   Check,
 } from 'lucide-react';
 import { scaleFadeVariants, springs } from '../../../utils/animations';
+import { useMotionConfig } from '@/lib/motion';
 
 interface OnboardingStep {
   id: string;
@@ -83,6 +84,7 @@ interface OnboardingFlowProps {
 }
 
 export function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowProps) {
+  const { instant, transition } = useMotionConfig();
   const [currentStep, setCurrentStep] = useState(0);
   const step = ONBOARDING_STEPS[currentStep];
   const isLastStep = currentStep === ONBOARDING_STEPS.length - 1;
@@ -108,16 +110,16 @@ export function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <motion.div
         className="bg-surface rounded-lg shadow-2xl max-w-md w-full mx-4 overflow-hidden"
-        variants={scaleFadeVariants}
-        initial="hidden"
-        animate="visible"
+        variants={instant ? undefined : scaleFadeVariants}
+        initial={instant ? undefined : "hidden"}
+        animate={instant ? undefined : "visible"}
       >
         {/* Header */}
         <div className={`${step.color} p-8 text-white relative`}>
           <button onClick={onSkip} className="absolute top-4 right-4 p-1 rounded-full hover:bg-white/20 transition-colors" aria-label="Skip onboarding">
             <X className="h-5 w-5" />
           </button>
-          <motion.div key={step.id} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={springs.bouncy} className="w-16 h-16 bg-white/20 rounded-lg flex items-center justify-center mb-4">
+          <motion.div key={step.id} initial={instant ? undefined : { scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={transition(springs.bouncy)} className="w-16 h-16 bg-white/20 rounded-lg flex items-center justify-center mb-4">
             <Icon className="h-8 w-8" />
           </motion.div>
           <h2 className="text-2xl font-bold">{step.title}</h2>
@@ -126,7 +128,7 @@ export function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowProps) {
         {/* Content */}
         <div className="p-6">
           <AnimatePresence mode="wait">
-            <motion.div key={step.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+            <motion.div key={step.id} initial={instant ? { opacity: 1 } : { opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={instant ? { opacity: 0 } : { opacity: 0, x: -20 }} transition={transition({ duration: 0.2 })}>
               <p className="text-content-secondary mb-4">{step.description}</p>
               {step.tip && (
                 <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 rounded-lg p-3 text-sm text-blue-700 dark:text-blue-300">

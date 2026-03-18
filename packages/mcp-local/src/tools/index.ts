@@ -37,7 +37,7 @@ export {
   computeRelatedTools,
   getCooccurrenceEdges,
 } from "./toolRegistry.js";
-export { metaTools } from "./metaTools.js";
+export { createMetaTools, createMetaTools as metaTools } from "./metaTools.js";
 
 // ─── Agent ──────────────────────────────────────────────────────────────────
 export { agentBootstrapTools } from "./agentBootstrapTools.js";
@@ -67,7 +67,10 @@ export { toonTools } from "./toonTools.js";
 export { patternTools } from "./patternTools.js";
 export { seoTools } from "./seoTools.js";
 export { skillUpdateTools } from "./skillUpdateTools.js";
-export { thompsonProtocolTools } from "./thompsonProtocolTools.js";
+export {
+  createThompsonProtocolTools,
+  createThompsonProtocolTools as thompsonProtocolTools,
+} from "./thompsonProtocolTools.js";
 export { documentationTools } from "./documentationTools.js";
 
 // ─── Media ──────────────────────────────────────────────────────────────────
@@ -84,6 +87,7 @@ export { scraplingTools } from "./scraplingTools.js";
 export { forecastingTools } from "./forecastingTools.js";
 export { temporalIntelligenceTools } from "./temporalIntelligenceTools.js";
 export { executionTraceTools } from "./executionTraceTools.js";
+export { dimensionTools } from "./dimensionTools.js";
 
 // ─── Ops ────────────────────────────────────────────────────────────────────
 export { qualityGateTools } from "./qualityGateTools.js";
@@ -120,5 +124,6 @@ export { githubTools } from "./githubTools.js";
 // ─── Infrastructure ─────────────────────────────────────────────────────────
 export {
   initEmbeddingIndex,
-  getQueryEmbedding,
+  embedQuery,
+  embedQuery as getQueryEmbedding,
 } from "./embeddingProvider.js";

@@ -334,14 +334,14 @@ export function createProgressiveDiscoveryTools(
     {
       name: "get_workflow_chain",
       description:
-        'Get a recommended tool sequence for a common workflow. Returns step-by-step tool chain with actions for each step. 35 chains available covering feature dev, debugging, security, deployment, research, academic writing, CI/CD, multi-agent coordination, content production, and more. Call with chain="list" to see all.',
+        'Get a recommended tool sequence for a common workflow. Returns step-by-step tool chain with actions for each step across feature dev, debugging, security, deployment, research, academic writing, CI/CD, multi-agent coordination, content production, and more. Call with chain="list" to see all.',
       inputSchema: {
         type: "object",
         properties: {
           chain: {
             type: "string",
             enum: [
-              "new_feature", "fix_bug", "ui_change", "parallel_project",
+              "new_feature", "fix_bug", "autonomous_qa_bug", "ui_change", "parallel_project",
               "research_phase", "academic_paper", "c_compiler_benchmark",
               "security_audit", "code_review", "deployment", "migration",
               "coordinator_spawn", "self_setup", "flicker_detection",
@@ -349,7 +349,7 @@ export function createProgressiveDiscoveryTools(
               "ablation_eval", "session_recovery", "attention_refresh",
               "task_bank_setup", "pr_review", "seo_audit", "voice_pipeline",
               "intentionality_check", "research_digest", "email_assistant",
-              "webmcp_discovery", "batch_autopilot", "daily_review", "deep_interaction", "gemini_qa", "agent_traversal", "content_pipeline", "content_publish", "research_optimizer", "parallel_research", "competitive_intel", "price_monitor", "thompson_protocol", "system_observability", "mission_execution", "list",
+              "webmcp_discovery", "batch_autopilot", "daily_review", "deep_interaction", "gemini_qa", "agent_traversal", "content_pipeline", "content_publish", "research_optimizer", "parallel_research", "competitive_intel", "price_monitor", "thompson_protocol", "system_observability", "mission_execution", "comprehensive_qa", "six_hour_qa", "list",
             ],
             description: 'Which workflow chain to retrieve. Use "list" to see all available chains with descriptions.',
           },

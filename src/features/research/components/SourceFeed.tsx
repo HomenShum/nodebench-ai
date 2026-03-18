@@ -4,6 +4,7 @@ import { ExternalLink, Github, ArrowUpRight, MessageSquare } from "lucide-react"
 import clsx from "clsx";
 import type { FeedItem } from "./FeedCard";
 import { normalizeSourceLabel, sanitizeReadableText } from "@/lib/displayText";
+import { useMotionConfig } from '@/lib/motion';
 
 type SourceFilter = { id: string; label: string; icon?: React.ElementType };
 
@@ -69,6 +70,7 @@ export const SourceFeed: React.FC<SourceFeedProps> = ({ items, sources, activeSo
 };
 
 const FeedCard = ({ item }: { item: FeedItem }) => {
+  const { instant, transition } = useMotionConfig();
   const normalizedSource = normalizeSourceLabel(item.source || "News", "News");
   const normalizedTitle = sanitizeReadableText(item.title);
   const normalizedSubtitle = sanitizeReadableText(item.subtitle || item.type);
@@ -88,10 +90,10 @@ const FeedCard = ({ item }: { item: FeedItem }) => {
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, scale: 0.97 }}
+      initial={{ opacity: instant ? 1 : 0, scale: instant ? 1 : 0.97 }}
       animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.97 }}
-      transition={{ duration: 0.15 }}
+      exit={{ opacity: instant ? 1 : 0, scale: instant ? 1 : 0.97 }}
+      transition={transition(0.15)}
       className="group relative flex flex-col justify-between rounded-lg border border-edge bg-surface p-4 hover:border-indigo-200 transition-all"
     >
       <div>

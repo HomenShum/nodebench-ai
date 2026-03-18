@@ -1,0 +1,458 @@
+{
+  "generatedAt": "2026-01-13T00:54:58.617Z",
+  "totalElapsed": 116189,
+  "modelsToTest": [
+    "devstral-2-free",
+    "mimo-v2-flash-free"
+  ],
+  "suite": "core",
+  "scenarios": 5,
+  "totalEvaluations": 10,
+  "enableJudge": false,
+  "metrics": {
+    "overallPassRate": 100,
+    "passRateByModel": {
+      "devstral-2-free": 100,
+      "mimo-v2-flash-free": 100
+    },
+    "passRateByScenario": {
+      "banker_vague_disco": 100,
+      "vc_vague_openautoglm": 100,
+      "cto_vague_quickjs": 100,
+      "exec_vague_gemini": 100,
+      "ecosystem_vague_soundcloud": 100
+    },
+    "memoryFirstComplianceRate": 100,
+    "memoryFirstByModel": {
+      "devstral-2-free": 100,
+      "mimo-v2-flash-free": 100
+    },
+    "toolOrderingAccuracy": 100,
+    "toolOrderingByModel": {
+      "devstral-2-free": 100,
+      "mimo-v2-flash-free": 100
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "avgLatencyMs": 68870.4,
+    "p50LatencyMs": 76675,
+    "p95LatencyMs": 116163,
+    "latencyByModel": {
+      "devstral-2-free": 54369,
+      "mimo-v2-flash-free": 83371.8
+    },
+    "avgDisclosureLevel": {
+      "none": 0,
+      "partial": 90,
+      "full": 10
+    },
+    "skillFirstRate": 100
+  },
+  "results": [
+    {
+      "model": "devstral-2-free",
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "passed": true,
+      "elapsed": 43404,
+      "disclosure": {
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "delegateToEntityResearchAgent"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "delegateToEntityResearchAgent"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "DISCO Pharmaceuticals is a private company based in Cologne, Germany, focused on a surfaceome mapping platform and lead ADC (antibody-drug conjugate) candidates. It was founded by Roman Thomas and is led by CEO Mark Manfredi. The company recently announced a €36M seed funding round on December 11, 2025, with co-lead investors Ackermans & van Haaren and NRW.Bank. The platform targets surfaceome mapping, with applications in bispecific therapies, small cell lung cancer (SCLC), and microsatellite s"
+    },
+    {
+      "model": "devstral-2-free",
+      "scenarioId": "vc_vague_openautoglm",
+      "scenarioName": "VC wedge from OSS signal",
+      "passed": true,
+      "elapsed": 27948,
+      "disclosure": {
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "OpenAutoGLM is an open-source project focused on developing agents capable of interacting with and using phones. The project is hosted on GitHub and is licensed under the Apache-2.0 license. The existence of OpenAutoGLM suggests a growing interest in the agent market, particularly in agents that can perform tasks on mobile devices. This could imply a shift toward more versatile and mobile-integrated AI agents, which could be a significant wedge in the market. The open-source nature of the projec"
+    },
+    {
+      "model": "devstral-2-free",
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "passed": true,
+      "elapsed": 76675,
+      "disclosure": {
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "QuickJS is an open-source JavaScript engine developed by Fabrice Bellard. A notable vulnerability, CVE-2025-62495, was identified on 2025-09-13, highlighting a high-severity issue. To assess your risk exposure and formulate a patch plan, follow these steps:\n\n1. **Identify Usage**: Determine if your systems or applications rely on QuickJS. This includes checking dependencies in your projects or any third-party services that might use QuickJS under the hood.\n\n2. **Assess Impact**: Evaluate the pot"
+    },
+    {
+      "model": "devstral-2-free",
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "passed": true,
+      "elapsed": 29721,
+      "disclosure": {
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "lookupGroundTruthEntity"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Google Gemini 3 is a model platform offering two variants: Gemini 3 Flash and Gemini 3 Pro. It supports context caching, which enhances performance and efficiency. The pricing for Gemini 3 Flash is $0.10, while Gemini 3 Pro is priced at $1.00. These details are grounded in the authoritative source {{fact:ground_truth:GEMINI_3}}.\n\nTo proceed with procurement, the next steps typically involve evaluating the specific needs of your organization, such as the required model capabilities, budget constr"
+    },
+    {
+      "model": "devstral-2-free",
+      "scenarioId": "ecosystem_vague_soundcloud",
+      "scenarioName": "Ecosystem second-order effects",
+      "passed": true,
+      "elapsed": 94097,
+      "disclosure": {
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "disclosureLevel": "full",
+        "estimatedToolSchemaTokens": 525,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 1,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "The VPN issue at SoundCloud, which resulted in users receiving 403 errors when accessing the platform via VPN, has created both challenges and opportunities. The primary beneficiaries of this situation are likely VPN service providers and cybersecurity firms. VPN providers may see increased demand as users seek alternative solutions to access SoundCloud, while cybersecurity firms could be engaged to help SoundCloud address the underlying vulnerabilities and improve their security infrastructure."
+    },
+    {
+      "model": "mimo-v2-flash-free",
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "passed": true,
+      "elapsed": 90391,
+      "disclosure": {
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "getBankerGradeEntityInsights",
+          "linkupSearch",
+          "evaluateEntityForPersona"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "getBankerGradeEntityInsights",
+          "linkupSearch",
+          "evaluateEntityForPersona"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Based on my research, here's my assessment of **DISCO Pharmaceuticals** for your outreach consideration:{{cite:websrc_585312cd}}{{cite:websrc_f8f71f39}}{{cite:websrc_eda1014d}}{{cite:websrc_2f50b57c}}{{cite:websrc_92e76ff3}}\n\n## **Quick Verdict: WORTH REACHING OUT - NEW DEAL ALERT** 🎯\n\n**DISCO is highly relevant for banker outreach** - they're in the sweet spot: freshly funded (€36M seed, 11-Dec-2025), just appointed a new CEO, and have an active license agreement as of 7-Jan-2026.\n\n---\n\n## **T"
+    },
+    {
+      "model": "mimo-v2-flash-free",
+      "scenarioId": "vc_vague_openautoglm",
+      "scenarioName": "VC wedge from OSS signal",
+      "passed": true,
+      "elapsed": 116163,
+      "disclosure": {
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "linkupSearch",
+          "linkupSearch"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Based on my research, here's what **OpenAutoGLM** implies about the agent market and the key **wedges**:{{cite:websrc_e6f78821}}{{cite:websrc_53543c28}}{{cite:websrc_20a732f2}}{{cite:websrc_876d48c7}}{{cite:websrc_a171cd1e}}\n\n## OpenAutoGLM: Market Implications & Wedge Analysis\n\n**What OpenAutoGLM is:**\n- **Open-source phone agent framework** built on ChatGLM family\n- **Autonomous task completion** on Android devices via natural language\n- **Apache 2.0 licensed** (per ground truth)\n- **Multimoda"
+    },
+    {
+      "model": "mimo-v2-flash-free",
+      "scenarioId": "cto_vague_quickjs",
+      "scenarioName": "CTO risk exposure + patch plan",
+      "passed": true,
+      "elapsed": 104688,
+      "disclosure": {
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "linkupSearch",
+          "linkupSearch",
+          "linkupSearch",
+          "linkupSearch",
+          "delegateToMediaAgent"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "skillSearchCalls": 1,
+        "skillsActivated": [],
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "delegateToMediaAgent"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Based on my research into the ground truth and available security information, here's your **QuickJS risk assessment and patch plan**:{{cite:websrc_3478035c}}{{cite:websrc_a8f8940e}}{{cite:websrc_5b86dd72}}{{cite:websrc_5c74bfc4}}{{cite:websrc_1ce82c40}}\n\n## 🚨 Risk Exposure Assessment\n\n**HIGH SEVERITY - Immediate Action Required**\n\nYour QuickJS implementation has exposure to **CVE-2025-62495**:\n- **Severity**: High (ground truth confirmed)\n- **Disclosure Date**: September 13, 2025\n- **Vulnerabi"
+    },
+    {
+      "model": "mimo-v2-flash-free",
+      "scenarioId": "exec_vague_gemini",
+      "scenarioName": "Exec vendor evaluation",
+      "passed": true,
+      "elapsed": 49953,
+      "disclosure": {
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "linkupSearch"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Based on my research, here's my assessment of **Gemini 3** for procurement:{{cite:websrc_76f3189c}}{{cite:websrc_e3b216d2}}{{cite:websrc_bb52119b}}{{cite:websrc_f4c917e4}}{{cite:websrc_d89382ba}}\n\n## **Should You Consider Gemini 3? YES** - Here's Why\n\n### **Cost-Benefit Analysis**\nGemini 3 Flash and Pro offer compelling pricing:\n- **Gemini 3 Flash**: $0.50 per M input tokens, $3.00 per M output tokens\n- **Gemini 3 Pro**: Higher tier with advanced reasoning capabilities  \n- **Context caching**: A"
+    },
+    {
+      "model": "mimo-v2-flash-free",
+      "scenarioId": "ecosystem_vague_soundcloud",
+      "scenarioName": "Ecosystem second-order effects",
+      "passed": true,
+      "elapsed": 55664,
+      "disclosure": {
+        "directToolCalls": [
+          "lookupGroundTruthEntity",
+          "lookupGroundTruthEntity",
+          "linkupSearch",
+          "linkupSearch",
+          "linkupSearch"
+        ],
+        "disclosureLevel": "partial",
+        "estimatedToolSchemaTokens": 12250,
+        "skillSearchCalls": 2,
+        "skillsActivated": [],
+        "toolInvokeErrors": 0,
+        "toolSearchCalls": 0,
+        "toolsExpanded": [],
+        "toolsInvoked": [
+          "lookupGroundTruthEntity",
+          "linkupSearch"
+        ],
+        "usedMetaTools": true,
+        "usedSkillFirst": true,
+        "warnings": []
+      },
+      "checks": {
+        "contact": true,
+        "entityResolved": true,
+        "fundingStage": true,
+        "grounding": true,
+        "hq": true,
+        "nextActions": true,
+        "persona": true
+      },
+      "failureReasons": [],
+      "responsePreview": "Based on my research of the SoundCloud VPN issue, here's the analysis of **who benefits** and the **partnerships created**:{{cite:websrc_484b10c5}}{{cite:websrc_5f6fa18d}}{{cite:websrc_601ad3da}}{{cite:websrc_04f58e27}}{{cite:websrc_f6053234}}\n\n## SoundCloud VPN Issue: Beneficiaries & Partnerships\n\n### **Who Benefits from This Incident?**\n\n1. **AWS (Amazon Web Services) & CloudFront**\n   - SoundCloud is using AWS CloudFront with WAF's **AWSManagedRulesAnonymousIpList** rule group for VPN blockin"
+    }
+  ]
+}

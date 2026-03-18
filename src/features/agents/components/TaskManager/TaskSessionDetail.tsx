@@ -38,6 +38,7 @@ import {
   formatUsd,
   getCrossCheckPresentation,
 } from '../oracleControlTowerUtils';
+import type { TaskSessionProofPack } from './types';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // UTILITIES
@@ -66,6 +67,45 @@ function formatLinkLabel(href?: string): string {
     return url.hostname.replace(/^www\./, "");
   } catch {
     return href;
+  }
+}
+
+function formatConfidence(confidence: number): string {
+  return `${Math.round(confidence * 100)}%`;
+}
+
+function getProofVerdictPresentation(verdict: TaskSessionProofPack["verdict"]) {
+  switch (verdict) {
+    case 'verified':
+      return {
+        className: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+        icon: CheckCircle2,
+      };
+    case 'provisionally_verified':
+      return {
+        className: 'border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300',
+        icon: CheckCircle2,
+      };
+    case 'awaiting_approval':
+      return {
+        className: 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+        icon: ShieldAlert,
+      };
+    case 'failed':
+      return {
+        className: 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300',
+        icon: AlertCircle,
+      };
+    case 'needs_review':
+      return {
+        className: 'border-orange-500/30 bg-orange-500/10 text-orange-700 dark:text-orange-300',
+        icon: AlertCircle,
+      };
+    default:
+      return {
+        className: 'border-indigo-500/30 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300',
+        icon: Loader2,
+      };
   }
 }
 
@@ -186,8 +226,10 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
     );
   }
 
-  const { session, traces } = sessionData;
+  const { session, traces, proofPack } = sessionData;
   const crossCheck = getCrossCheckPresentation(session.crossCheckStatus);
+  const verdictPresentation = getProofVerdictPresentation(proofPack.verdict);
+  const VerdictIcon = verdictPresentation.icon;
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
@@ -262,6 +304,169 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
               <Users className="w-3.5 h-3.5" />
               {session.agentsInvolved.length} agents
             </span>
+          )}
+        </div>
+
+        <div className="mt-4 rounded-lg border border-edge bg-surface p-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium",
+                    verdictPresentation.className,
+                  )}
+                >
+                  <VerdictIcon
+                    className={cn(
+                      "w-3.5 h-3.5",
+                      proofPack.verdict === 'in_progress' && "motion-safe:animate-spin",
+                    )}
+                  />
+                  {proofPack.verdictLabel}
+                </span>
+                <span className="text-xs text-content-muted">
+                  Confidence {formatConfidence(proofPack.confidence)}
+                </span>
+              </div>
+              <p className="mt-2 text-sm leading-6 text-content-secondary">
+                {proofPack.summary}
+              </p>
+            </div>
+
+            <div className="grid min-w-[220px] grid-cols-2 gap-2 text-xs text-content-muted">
+              <div className="rounded-md border border-edge bg-background/40 px-2 py-2">
+                <div className="font-medium text-content">{proofPack.evidenceCount}</div>
+                <div>Evidence items</div>
+              </div>
+              <div className="rounded-md border border-edge bg-background/40 px-2 py-2">
+                <div className="font-medium text-content">{proofPack.citationCount}</div>
+                <div>Citations</div>
+              </div>
+              <div className="rounded-md border border-edge bg-background/40 px-2 py-2">
+                <div className="font-medium text-content">{proofPack.verificationCounts.total}</div>
+                <div>Verification checks</div>
+              </div>
+              <div className="rounded-md border border-edge bg-background/40 px-2 py-2">
+                <div className="font-medium text-content">{proofPack.approvalCounts.pending}</div>
+                <div>Pending approvals</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full border border-edge bg-background/40 px-2 py-1 text-xs text-content-secondary">
+              <Wrench className="w-3 h-3" />
+              {proofPack.progressiveDisclosureUsed
+                ? `Progressive disclosure: ${proofPack.progressiveDisclosureTools.join(", ")}`
+                : "Progressive disclosure tools were not recorded"}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-edge bg-background/40 px-2 py-1 text-xs text-content-secondary">
+              <CheckCircle2 className="w-3 h-3" />
+              {proofPack.verificationCounts.passed + proofPack.verificationCounts.fixed} passed or fixed
+            </span>
+            {proofPack.verificationCounts.warning > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-edge bg-background/40 px-2 py-1 text-xs text-content-secondary">
+                <AlertCircle className="w-3 h-3" />
+                {proofPack.verificationCounts.warning} warnings
+              </span>
+            )}
+            {proofPack.verificationCounts.failed > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-edge bg-background/40 px-2 py-1 text-xs text-content-secondary">
+                <AlertCircle className="w-3 h-3" />
+                {proofPack.verificationCounts.failed} failed checks
+              </span>
+            )}
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <div>
+              <div className="text-xs font-medium uppercase tracking-[0.16em] text-content-muted">
+                Next Actions
+              </div>
+              {proofPack.nextActions.length === 0 ? (
+                <p className="mt-2 text-sm text-content-secondary">
+                  No follow-up actions were inferred from the current run.
+                </p>
+              ) : (
+                <ul className="mt-2 space-y-1 text-sm text-content-secondary">
+                  {proofPack.nextActions.map((action) => (
+                    <li key={action} className="flex items-start gap-2">
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-accent" />
+                      <span>{action}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div>
+              <div className="text-xs font-medium uppercase tracking-[0.16em] text-content-muted">
+                Open Issues
+              </div>
+              {proofPack.openIssues.length === 0 ? (
+                <p className="mt-2 text-sm text-content-secondary">
+                  No blocking evidence gaps or review issues were recorded.
+                </p>
+              ) : (
+                <ul className="mt-2 space-y-1 text-sm text-content-secondary">
+                  {proofPack.openIssues.map((issue) => (
+                    <li key={issue} className="flex items-start gap-2">
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-orange-500" />
+                      <span>{issue}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+
+          {(proofPack.keyFindings.length > 0 || proofPack.topSourceRefs.length > 0) && (
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <div>
+                <div className="text-xs font-medium uppercase tracking-[0.16em] text-content-muted">
+                  Key Findings
+                </div>
+                <ul className="mt-2 space-y-1 text-sm text-content-secondary">
+                  {proofPack.keyFindings.slice(0, 4).map((finding) => (
+                    <li key={finding} className="flex items-start gap-2">
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      <span>{finding}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <div className="text-xs font-medium uppercase tracking-[0.16em] text-content-muted">
+                  Citation Pack
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {proofPack.topSourceRefs.map((ref, idx) => (
+                    ref.href ? (
+                      <a
+                        key={`${ref.label}-${idx}`}
+                        href={ref.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 rounded-full border border-edge bg-background/40 px-2 py-1 text-xs text-content-secondary hover:text-content"
+                      >
+                        <Link2 className="w-3 h-3" />
+                        {ref.label || formatLinkLabel(ref.href)}
+                      </a>
+                    ) : (
+                      <span
+                        key={`${ref.label}-${idx}`}
+                        className="inline-flex items-center gap-1 rounded-full border border-edge bg-background/40 px-2 py-1 text-xs text-content-secondary"
+                      >
+                        <Link2 className="w-3 h-3" />
+                        {ref.label}
+                      </span>
+                    )
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
         </div>
 

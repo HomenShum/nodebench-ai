@@ -1,0 +1,63 @@
+{
+  "model": "gemini-3-flash",
+  "scenario": {
+    "id": "test_minimal",
+    "name": "Minimal test: Just entity name",
+    "query": "DISCO",
+    "expectedPersona": "JPM_STARTUP_BANKER",
+    "expectedEntityId": "DISCO"
+  },
+  "result": {
+    "elapsedMs": 2403,
+    "model": "gemini-3-flash",
+    "ok": false,
+    "runs": [
+      {
+        "checks": {},
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 2403,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block"
+        ],
+        "id": "test_minimal",
+        "name": "Minimal test: Just entity name",
+        "ok": false,
+        "promptMessageId": "ks74b1zthwtk4ezrs90xdqk4r57yqyf7",
+        "responsePreview": "",
+        "threadId": "m57awx0a9cebmj6sjay8nm84wh7ypa4g"
+      }
+    ],
+    "summary": {
+      "failed": 1,
+      "passed": 0,
+      "total": 1
+    },
+    "window": {
+      "limit": 1,
+      "nextOffset": null,
+      "offset": 0,
+      "suite": "core",
+      "totalAvailable": 1
+    }
+  },
+  "elapsed": 3857
+}

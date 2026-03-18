@@ -13,6 +13,7 @@ import {
 import { useQuery } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { useTimeContext } from '../../../hooks/useTimeContext';
+import { useMotionConfig } from '@/lib/motion';
 
 interface PersonalDashboardProps {
   className?: string;
@@ -29,12 +30,13 @@ interface StatCardProps {
 }
 
 const StatCard = React.memo(function StatCard({ label, value, icon: Icon, trend, color, onClick }: StatCardProps) {
+  const { instant } = useMotionConfig();
   return (
     <motion.button
       onClick={onClick}
       className={`p-4 rounded-lg border ${color} text-left transition-all`}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={!instant ? { scale: 1.02 } : undefined}
+      whileTap={!instant ? { scale: 0.98 } : undefined}
     >
       <div className="flex items-start justify-between mb-2">
         <Icon className="h-5 w-5 opacity-70" />
@@ -52,6 +54,7 @@ const StatCard = React.memo(function StatCard({ label, value, icon: Icon, trend,
 });
 
 export function PersonalDashboard({ className = '', onNavigate }: PersonalDashboardProps) {
+  const { instant, transition } = useMotionConfig();
   const timeContext = useTimeContext();
 
   // Fetch user stats - reduced limits since we only need counts
@@ -137,9 +140,9 @@ export function PersonalDashboard({ className = '', onNavigate }: PersonalDashbo
         <div className="w-full h-2 bg-surface/50 rounded-full overflow-hidden">
           <motion.div
             className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"
-            initial={{ width: 0 }}
+            initial={{ width: instant ? `${stats.productivityScore}%` : 0 }}
             animate={{ width: `${stats.productivityScore}%` }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
+            transition={transition({ duration: 0.8, ease: 'easeOut' })}
           />
         </div>
         <p className="text-xs text-content-secondary mt-2">

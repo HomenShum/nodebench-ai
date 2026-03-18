@@ -1,0 +1,590 @@
+{
+  "generatedAt": "2026-01-20T09:00:54.553Z",
+  "gitSha": "8855f5f82eff2962a0459bd16d1c29720d5d3dc7",
+  "convexUrl": "https://formal-shepherd-851.convex.cloud",
+  "model": "glm-4.7-flash",
+  "elapsedMs": 224380,
+  "result": {
+    "ok": true,
+    "elapsedMs": 224013,
+    "summary": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "window": {
+      "suite": "pack",
+      "batches": 1,
+      "totalAvailable": 26
+    },
+    "pricing": {
+      "provider": "openrouter",
+      "sourceUrl": "https://openrouter.ai/api/v1/models",
+      "fetchedAt": "2026-01-20T09:00:54.552Z",
+      "cache": {
+        "source": "repo",
+        "path": "shared/llm/modelCatalog.ts"
+      },
+      "model": {
+        "model": "glm-4.7-flash",
+        "inputUsdPer1MTokens": 0.07,
+        "outputUsdPer1MTokens": 0.4,
+        "cachedInputUsdPer1MTokens": 0.01,
+        "contextWindow": 200000
+      },
+      "notes": "Pricing sourced from repo model catalog; verify with OpenRouter /models endpoint as needed."
+    },
+    "estimatedUsage": {
+      "mode": "provider",
+      "inputTokens": 133404,
+      "outputTokens": 2529,
+      "cachedInputTokens": 30956,
+      "estimatedCostUsd": 0.008492520000000002
+    },
+    "runs": [
+      {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "minToolCalls": true,
+          "nextActions": true,
+          "persona": true,
+          "requireTools": true
+        },
+        "debrief": {
+          "entity": {
+            "candidates": [],
+            "canonicalName": "DISCO Pharmaceuticals",
+            "confidence": 0.9,
+            "input": "DISCO",
+            "resolvedId": "DISCO",
+            "type": "private_company (treat oss_project as open source / GitHub / repository)"
+          },
+          "fallbacks": [],
+          "grounding": [
+            "{{fact:ground_truth:DISCO}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "channel": null,
+              "email": "info@discopharma.de"
+            },
+            "freshness": {
+              "ageDays": 16
+            },
+            "funding": {
+              "amount": {
+                "amount": 36,
+                "currency": "EUR",
+                "unit": "M"
+              },
+              "coLeads": [],
+              "date": null,
+              "stage": "Seed"
+            },
+            "hqLocation": "Cologne, Germany",
+            "people": {
+              "ceo": "Mark Manfredi",
+              "founders": [
+                "Roman Thomas"
+              ]
+            },
+            "product": {
+              "leadPrograms": [
+                "Lead ADC candidates"
+              ],
+              "platform": "Surfaceome mapping platform"
+            }
+          },
+          "nextActions": [
+            "Verify primary sources (if required)",
+            "Run a quick contradiction scan",
+            "Draft a share-ready version for stakeholders"
+          ],
+          "persona": {
+            "assumptions": [
+              "Heuristic inference from query keywords for JPM_STARTUP_BANKER"
+            ],
+            "confidence": 0.8,
+            "inferred": "JPM_STARTUP_BANKER"
+          },
+          "planSteps": [
+            "Skill discovery",
+            "Lookup ground truth",
+            "Verify: check required fields + grounding",
+            "Format response + debrief"
+          ],
+          "risks": [],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "error": null,
+              "name": "searchAvailableSkills",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "searchAvailableSkills"
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "error": null,
+              "name": "evaluateEntityForPersona"
+            },
+            {
+              "error": null,
+              "name": "getBankerGradeEntityInsights"
+            },
+            {
+              "error": null,
+              "name": "searchFundingEvents"
+            },
+            {
+              "error": null,
+              "name": "linkupSearch"
+            },
+            {
+              "error": null,
+              "name": "linkupSearch"
+            },
+            {
+              "error": null,
+              "name": "searchTodaysFunding"
+            }
+          ],
+          "verdict": "UNKNOWN"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "artifactBytesAvoided": 0,
+          "citationsInResponse": 1,
+          "citationsResolved": 0,
+          "citationsUnresolved": 1,
+          "costBudgetExceeded": false,
+          "directToolCalls": [
+            "lookupGroundTruthEntity",
+            "lookupGroundTruthEntity",
+            "getBankerGradeEntityInsights",
+            "evaluateEntityForPersona",
+            "linkupSearch",
+            "searchFundingEvents",
+            "linkupSearch",
+            "searchTodaysFunding"
+          ],
+          "disclosureLevel": "partial",
+          "estimatedToolSchemaTokens": 12250,
+          "resourceLinksCreated": 0,
+          "resourceLinksRetrieved": 0,
+          "skillSearchCalls": 2,
+          "skillsActivated": [],
+          "tokenBudgetExceeded": false,
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity",
+            "getBankerGradeEntityInsights",
+            "evaluateEntityForPersona",
+            "linkupSearch",
+            "searchFundingEvents",
+            "searchTodaysFunding"
+          ],
+          "usedMetaTools": true,
+          "usedSkillFirst": true,
+          "warnings": []
+        },
+        "elapsedMs": 224013,
+        "execution": {
+          "estimatedInputTokens": 1564,
+          "estimatedOutputTokens": 1672,
+          "latencyMs": 223115,
+          "modelUsed": "glm-4.7-flash",
+          "providerUsage": {
+            "cachedInputTokens": 30956,
+            "completionTokens": 2529,
+            "promptTokens": 133404,
+            "reasoningTokens": 882,
+            "totalTokens": 135933
+          },
+          "stepsCount": 4,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "argsPreview": "{\"query\":\"DISCO — can we cover them this week? Give me the fastest banker-grade debrief and tell me what you’re unsure about.\"}",
+              "name": "searchAvailableSkills"
+            },
+            {
+              "argsPreview": "{\"entity\":\"DISCO\"}",
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "getBankerGradeEntityInsights"
+            },
+            {
+              "name": "evaluateEntityForPersona"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "searchFundingEvents"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "searchTodaysFunding"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "searchAvailableSkills",
+              "ok": true,
+              "resultPreview": "Skill search preflight ok (query='DISCO — can we cover them this week? Give me the fastest banker-grade debrief and tell me what you’re unsure about.')"
+            },
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true,
+              "resultPreview": "{{fact:ground_truth:DISCO}}\nEntity ID: DISCO\nCanonical name: DISCO Pharmaceuticals\nEntity type: private_company (treat oss_project as open source / GitHub / repository)\nHQ: Cologne, Germany\nCEO: Mark Manfredi\nFounders: Roman Thomas\nPrimary contact: info@discopharma.de\nPlatform: Surfaceome mapping platform\nLead programs: Lead ADC candidates\nFunding: Seed EUR36M (announced 2025-12-11)\nRequired facts: Cologne, Germany | €36M seed | surfaceome | ADC | bispecific | SCLC | MSS-CRC | Mark Manfredi | Roman Thomas\nForbidden facts: Series A | San Francisco | New York\nFreshness age (days): 16\nWithin banker window: true\nHas primary source requirement: true"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "name": "evaluateEntityForPersona"
+            },
+            {
+              "name": "getBankerGradeEntityInsights"
+            },
+            {
+              "name": "searchFundingEvents"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "linkupSearch"
+            },
+            {
+              "name": "searchTodaysFunding"
+            }
+          ]
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [],
+        "id": "next_banker_vague_disco_cover_this_week",
+        "name": "Next: banker vague (fast debrief)",
+        "ok": true,
+        "promptMessageId": "ks77r2wszpn22fhvzt917cnp3s7zkfkb",
+        "responsePreview": "## BANKER-GRADE DEBRIEF — DISCO Pharmaceuticals\n\n---\n\n### 🎯 EXECUTIVE OVERVIEW\n**Surfaceome mapping platform** with **€36M Seed** (Dec 2025) to advance **ADC candidates** in **SCLC** and **MSS-CRC** toward IND. Platform to expand druggable target space beyond traditional targets, with exclusive **Amgen partnership** covering identified surfaceome targets.\n\n---\n\n### 📊 KEY METRICS (QUICK VIEW)\n\n| Metric | Value |\n|--------|-------|\n| Funding | **€36M Seed** (EUR 36M) — final close Dec 2025, raised to €36M by Dec 11, 2025 |\n| HQ | Cologne, Germany (Schlieren, Switzerland also operational) |\n| CEO | Mark Manfredi (appointed Dec 2025) |\n| Founder | Roman Thomas |\n| Platform | Surfaceome mapping — maps cell-surface proteins (ADC focus) |\n| Lead Programs | Small Cell Lung Cancer (SCLC), Microsatellite-Stable Colorectal Cancer (MSS-CRC) |\n| Stakes | Lead ADC candidates in SCLC and MSS-CRC; exc",
+        "threadId": "m576peydaf0m26gr3n208nrf4s7zj8ms"
+      }
+    ],
+    "rawBatches": [
+      {
+        "elapsedMs": 224013,
+        "model": "glm-4.7-flash",
+        "ok": true,
+        "runs": [
+          {
+            "checks": {
+              "contact": true,
+              "entityResolved": true,
+              "fundingStage": true,
+              "grounding": true,
+              "hq": true,
+              "minToolCalls": true,
+              "nextActions": true,
+              "persona": true,
+              "requireTools": true
+            },
+            "debrief": {
+              "entity": {
+                "candidates": [],
+                "canonicalName": "DISCO Pharmaceuticals",
+                "confidence": 0.9,
+                "input": "DISCO",
+                "resolvedId": "DISCO",
+                "type": "private_company (treat oss_project as open source / GitHub / repository)"
+              },
+              "fallbacks": [],
+              "grounding": [
+                "{{fact:ground_truth:DISCO}}"
+              ],
+              "keyFacts": {
+                "contact": {
+                  "channel": null,
+                  "email": "info@discopharma.de"
+                },
+                "freshness": {
+                  "ageDays": 16
+                },
+                "funding": {
+                  "amount": {
+                    "amount": 36,
+                    "currency": "EUR",
+                    "unit": "M"
+                  },
+                  "coLeads": [],
+                  "date": null,
+                  "stage": "Seed"
+                },
+                "hqLocation": "Cologne, Germany",
+                "people": {
+                  "ceo": "Mark Manfredi",
+                  "founders": [
+                    "Roman Thomas"
+                  ]
+                },
+                "product": {
+                  "leadPrograms": [
+                    "Lead ADC candidates"
+                  ],
+                  "platform": "Surfaceome mapping platform"
+                }
+              },
+              "nextActions": [
+                "Verify primary sources (if required)",
+                "Run a quick contradiction scan",
+                "Draft a share-ready version for stakeholders"
+              ],
+              "persona": {
+                "assumptions": [
+                  "Heuristic inference from query keywords for JPM_STARTUP_BANKER"
+                ],
+                "confidence": 0.8,
+                "inferred": "JPM_STARTUP_BANKER"
+              },
+              "planSteps": [
+                "Skill discovery",
+                "Lookup ground truth",
+                "Verify: check required fields + grounding",
+                "Format response + debrief"
+              ],
+              "risks": [],
+              "schemaVersion": "debrief_v1",
+              "toolsUsed": [
+                {
+                  "error": null,
+                  "name": "searchAvailableSkills",
+                  "ok": true
+                },
+                {
+                  "error": null,
+                  "name": "lookupGroundTruthEntity",
+                  "ok": true
+                },
+                {
+                  "error": null,
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "error": null,
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "error": null,
+                  "name": "evaluateEntityForPersona"
+                },
+                {
+                  "error": null,
+                  "name": "getBankerGradeEntityInsights"
+                },
+                {
+                  "error": null,
+                  "name": "searchFundingEvents"
+                },
+                {
+                  "error": null,
+                  "name": "linkupSearch"
+                },
+                {
+                  "error": null,
+                  "name": "linkupSearch"
+                },
+                {
+                  "error": null,
+                  "name": "searchTodaysFunding"
+                }
+              ],
+              "verdict": "UNKNOWN"
+            },
+            "debriefValidation": {
+              "errors": [],
+              "ok": true
+            },
+            "disclosure": {
+              "artifactBytesAvoided": 0,
+              "citationsInResponse": 1,
+              "citationsResolved": 0,
+              "citationsUnresolved": 1,
+              "costBudgetExceeded": false,
+              "directToolCalls": [
+                "lookupGroundTruthEntity",
+                "lookupGroundTruthEntity",
+                "getBankerGradeEntityInsights",
+                "evaluateEntityForPersona",
+                "linkupSearch",
+                "searchFundingEvents",
+                "linkupSearch",
+                "searchTodaysFunding"
+              ],
+              "disclosureLevel": "partial",
+              "estimatedToolSchemaTokens": 12250,
+              "resourceLinksCreated": 0,
+              "resourceLinksRetrieved": 0,
+              "skillSearchCalls": 2,
+              "skillsActivated": [],
+              "tokenBudgetExceeded": false,
+              "toolInvokeErrors": 0,
+              "toolSearchCalls": 0,
+              "toolsExpanded": [],
+              "toolsInvoked": [
+                "lookupGroundTruthEntity",
+                "getBankerGradeEntityInsights",
+                "evaluateEntityForPersona",
+                "linkupSearch",
+                "searchFundingEvents",
+                "searchTodaysFunding"
+              ],
+              "usedMetaTools": true,
+              "usedSkillFirst": true,
+              "warnings": []
+            },
+            "elapsedMs": 224013,
+            "execution": {
+              "estimatedInputTokens": 1564,
+              "estimatedOutputTokens": 1672,
+              "latencyMs": 223115,
+              "modelUsed": "glm-4.7-flash",
+              "providerUsage": {
+                "cachedInputTokens": 30956,
+                "completionTokens": 2529,
+                "promptTokens": 133404,
+                "reasoningTokens": 882,
+                "totalTokens": 135933
+              },
+              "stepsCount": 4,
+              "streamStatus": "completed",
+              "toolCalls": [
+                {
+                  "argsPreview": "{\"query\":\"DISCO — can we cover them this week? Give me the fastest banker-grade debrief and tell me what you’re unsure about.\"}",
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "argsPreview": "{\"entity\":\"DISCO\"}",
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "name": "getBankerGradeEntityInsights"
+                },
+                {
+                  "name": "evaluateEntityForPersona"
+                },
+                {
+                  "name": "linkupSearch"
+                },
+                {
+                  "name": "searchFundingEvents"
+                },
+                {
+                  "name": "linkupSearch"
+                },
+                {
+                  "name": "searchTodaysFunding"
+                }
+              ],
+              "toolResults": [
+                {
+                  "name": "searchAvailableSkills",
+                  "ok": true,
+                  "resultPreview": "Skill search preflight ok (query='DISCO — can we cover them this week? Give me the fastest banker-grade debrief and tell me what you’re unsure about.')"
+                },
+                {
+                  "name": "lookupGroundTruthEntity",
+                  "ok": true,
+                  "resultPreview": "{{fact:ground_truth:DISCO}}\nEntity ID: DISCO\nCanonical name: DISCO Pharmaceuticals\nEntity type: private_company (treat oss_project as open source / GitHub / repository)\nHQ: Cologne, Germany\nCEO: Mark Manfredi\nFounders: Roman Thomas\nPrimary contact: info@discopharma.de\nPlatform: Surfaceome mapping platform\nLead programs: Lead ADC candidates\nFunding: Seed EUR36M (announced 2025-12-11)\nRequired facts: Cologne, Germany | €36M seed | surfaceome | ADC | bispecific | SCLC | MSS-CRC | Mark Manfredi | Roman Thomas\nForbidden facts: Series A | San Francisco | New York\nFreshness age (days): 16\nWithin banker window: true\nHas primary source requirement: true"
+                },
+                {
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "name": "evaluateEntityForPersona"
+                },
+                {
+                  "name": "getBankerGradeEntityInsights"
+                },
+                {
+                  "name": "searchFundingEvents"
+                },
+                {
+                  "name": "linkupSearch"
+                },
+                {
+                  "name": "linkupSearch"
+                },
+                {
+                  "name": "searchTodaysFunding"
+                }
+              ]
+            },
+            "expectedEntityId": "DISCO",
+            "expectedPersona": "JPM_STARTUP_BANKER",
+            "failureReasons": [],
+            "id": "next_banker_vague_disco_cover_this_week",
+            "name": "Next: banker vague (fast debrief)",
+            "ok": true,
+            "promptMessageId": "ks77r2wszpn22fhvzt917cnp3s7zkfkb",
+            "responsePreview": "## BANKER-GRADE DEBRIEF — DISCO Pharmaceuticals\n\n---\n\n### 🎯 EXECUTIVE OVERVIEW\n**Surfaceome mapping platform** with **€36M Seed** (Dec 2025) to advance **ADC candidates** in **SCLC** and **MSS-CRC** toward IND. Platform to expand druggable target space beyond traditional targets, with exclusive **Amgen partnership** covering identified surfaceome targets.\n\n---\n\n### 📊 KEY METRICS (QUICK VIEW)\n\n| Metric | Value |\n|--------|-------|\n| Funding | **€36M Seed** (EUR 36M) — final close Dec 2025, raised to €36M by Dec 11, 2025 |\n| HQ | Cologne, Germany (Schlieren, Switzerland also operational) |\n| CEO | Mark Manfredi (appointed Dec 2025) |\n| Founder | Roman Thomas |\n| Platform | Surfaceome mapping — maps cell-surface proteins (ADC focus) |\n| Lead Programs | Small Cell Lung Cancer (SCLC), Microsatellite-Stable Colorectal Cancer (MSS-CRC) |\n| Stakes | Lead ADC candidates in SCLC and MSS-CRC; exc",
+            "threadId": "m576peydaf0m26gr3n208nrf4s7zj8ms"
+          }
+        ],
+        "summary": {
+          "failed": 0,
+          "passed": 1,
+          "total": 1
+        },
+        "window": {
+          "limit": 1,
+          "nextOffset": 1,
+          "offset": 0,
+          "suite": "pack",
+          "totalAvailable": 26
+        }
+      }
+    ]
+  }
+}

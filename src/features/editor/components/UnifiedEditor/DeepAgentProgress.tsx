@@ -14,13 +14,15 @@ import type { PendingEdit, ThreadEditStats } from "../../hooks/usePendingEdits";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 
 // Thread colors for multi-agent scenarios (up to 6 distinct colors)
+// Tailwind class equivalents: bg-blue-500/10, bg-emerald-500/10, etc.
+// Using Tailwind classNames instead of inline rgba for bg; border/text stay as tokens for inline style consumption.
 const THREAD_COLORS = [
-  { bg: "rgba(59, 130, 246, 0.1)", border: "#3b82f6", text: "#3b82f6" }, // Blue
-  { bg: "rgba(16, 185, 129, 0.1)", border: "#10b981", text: "#10b981" }, // Green
-  { bg: "rgba(168, 85, 247, 0.1)", border: "#a855f7", text: "#a855f7" }, // Purple
-  { bg: "rgba(249, 115, 22, 0.1)", border: "#f97316", text: "#f97316" }, // Orange
-  { bg: "rgba(236, 72, 153, 0.1)", border: "#ec4899", text: "#ec4899" }, // Pink
-  { bg: "rgba(20, 184, 166, 0.1)", border: "#14b8a6", text: "#14b8a6" }, // Teal
+  { bgClass: "bg-blue-500/10", border: "#3b82f6", text: "#3b82f6" },    // Blue
+  { bgClass: "bg-emerald-500/10", border: "#10b981", text: "#10b981" }, // Green
+  { bgClass: "bg-purple-500/10", border: "#a855f7", text: "#a855f7" }, // Purple
+  { bgClass: "bg-orange-500/10", border: "#f97316", text: "#f97316" }, // Orange
+  { bgClass: "bg-pink-500/10", border: "#ec4899", text: "#ec4899" },   // Pink
+  { bgClass: "bg-teal-500/10", border: "#14b8a6", text: "#14b8a6" },   // Teal
 ];
 
 function getThreadColor(threadId: string, allThreadIds: string[]) {
@@ -105,15 +107,12 @@ export function DeepAgentProgress({
     return (
       <div
         onClick={onToggleMinimized}
+        className="bg-violet-500/10 border border-violet-500/30 rounded-lg cursor-pointer"
         style={{
           display: "flex",
           alignItems: "center",
           gap: "8px",
           padding: "8px 12px",
-          backgroundColor: "rgba(139, 92, 246, 0.1)",
-          border: "1px solid rgba(139, 92, 246, 0.3)",
-          borderRadius: "8px",
-          cursor: "pointer",
           fontSize: "13px",
         }}
       >
@@ -138,7 +137,7 @@ export function DeepAgentProgress({
         borderRadius: "12px",
         padding: "12px",
         maxWidth: "360px",
-        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+        boxShadow: "0 4px 12px hsl(0 0% 0% / 0.15)",
         fontSize: "13px",
       }}
     >
@@ -202,13 +201,12 @@ export function DeepAgentProgress({
 
       {/* Overall Progress */}
       <div
+        className="bg-white/5 rounded-lg"
         style={{
           display: "flex",
           gap: "12px",
           marginBottom: "12px",
           padding: "8px",
-          backgroundColor: "rgba(255, 255, 255, 0.05)",
-          borderRadius: "8px",
         }}
       >
         <StatBadge label="Pending" count={totals.pending} color="#f59e0b" />
@@ -281,15 +279,15 @@ function StatBadge({ label, count, color }: { label: string; count: number; colo
   );
 }
 
-function CurrentEditCard({ edit, threadColor }: { edit: PendingEdit; threadColor: { bg: string; border: string; text: string } }) {
+function CurrentEditCard({ edit, threadColor }: { edit: PendingEdit; threadColor: { bgClass: string; border: string; text: string } }) {
   const opType = getOperationType(edit);
   const opColor = getOperationColor(opType);
 
   return (
     <div
+      className={threadColor.bgClass}
       style={{
         padding: "10px",
-        backgroundColor: threadColor.bg,
         border: `1px solid ${threadColor.border}`,
         borderRadius: "8px",
         marginBottom: "8px",
@@ -354,18 +352,18 @@ function ThreadProgressRow({
   onCancel,
 }: {
   stats: ThreadEditStats;
-  color: { bg: string; border: string; text: string };
+  color: { bgClass: string; border: string; text: string };
   onCancel: () => void;
 }) {
   return (
     <div
+      className={color.bgClass}
       style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
         padding: "6px 8px",
         marginBottom: "4px",
-        backgroundColor: color.bg,
         borderRadius: "6px",
         borderLeft: `3px solid ${color.border}`,
       }}
@@ -445,13 +443,13 @@ function FailedEditsSection({
         return (
           <div
             key={edit._id}
+            className="bg-red-500/10"
             style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
               padding: "6px 8px",
               marginBottom: "4px",
-              backgroundColor: "rgba(239, 68, 68, 0.1)",
               borderRadius: "6px",
               borderLeft: `3px solid ${color.border}`,
             }}
@@ -484,12 +482,10 @@ function FailedEditsSection({
             </div>
             <button
               onClick={() => onRetry(edit._id)}
+              className="bg-blue-500/20 border border-blue-500 text-blue-500"
               style={{
-                background: "rgba(59, 130, 246, 0.2)",
-                border: "1px solid #3b82f6",
                 borderRadius: "4px",
                 cursor: "pointer",
-                color: "#3b82f6",
                 fontSize: "10px",
                 padding: "4px 8px",
                 marginLeft: "8px",

@@ -1,0 +1,56 @@
+{
+  "generatedAt": "2026-03-09T04:38:46.025Z",
+  "baseUrl": "http://127.0.0.1:51752",
+  "usedExternalBaseUrl": false,
+  "config": {
+    "iterations": 3,
+    "warmups": 1,
+    "fastQuery": "latest Oracle AI infrastructure news",
+    "enterpriseQuery": "Oracle Stargate AI infrastructure timeline 2025 2026",
+    "thresholds": {
+      "fastSearchP95Ms": 2000,
+      "enterpriseInvestigationP95Ms": 5000
+    }
+  },
+  "checks": {
+    "fastSearch": {
+      "object": "search_result",
+      "resultCount": 5,
+      "citationCount": 5,
+      "telemetry": {
+        "totalBeforeFusion": 10,
+        "totalTimeMs": 1164,
+        "reranked": false,
+        "sourcesQueried": [
+          "linkup"
+        ],
+        "timing": {
+          "linkup": 1162
+        },
+        "errors": []
+      },
+      "averageMs": 1330.0533666666668,
+      "p95Ms": 1381.5661,
+      "passesBudget": true
+    },
+    "enterpriseInvestigation": {
+      "object": "enterprise_investigation",
+      "causalChainLength": 1,
+      "snapshotHashCount": 1,
+      "replayUrl": "/v1/replay/req_HffEtO7lzmBlVjp7",
+      "proposedAction": "Contain the latest failure mode first, then restore the guardrail that disappeared before \"Observed source event\".",
+      "averageMs": 963.1164666666667,
+      "p95Ms": 2136.1555000000008,
+      "passesBudget": true
+    }
+  },
+  "realityCheck": {
+    "invariants": [
+      "fast search must return grounded results plus citations",
+      "enterprise investigation must return a causal chain, source hashes, and replay URL",
+      "both lanes must stay within the configured p95 latency budgets"
+    ],
+    "remainingRisk": "This live guard depends on the current Convex search backend and public source availability, so failures can come from backend drift or external source churn as well as api-headless regressions."
+  },
+  "failures": []
+}

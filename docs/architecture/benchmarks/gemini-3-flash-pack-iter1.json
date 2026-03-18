@@ -1,0 +1,2043 @@
+{
+  "generatedAt": "2026-01-06T05:23:01.263Z",
+  "gitSha": "48f80b32fb12f7fed3732e6edc41a0bbf9e6ec1b",
+  "convexUrl": "https://formal-shepherd-851.convex.cloud",
+  "model": "gemini-3-flash",
+  "elapsedMs": 31613,
+  "result": {
+    "ok": false,
+    "elapsedMs": 22957,
+    "summary": {
+      "total": 24,
+      "passed": 0,
+      "failed": 24
+    },
+    "window": {
+      "suite": "pack",
+      "batches": 8,
+      "totalAvailable": 24
+    },
+    "pricing": {
+      "provider": "google",
+      "sourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+      "fetchedAt": "2026-01-06T05:23:00.856Z",
+      "cache": {
+        "source": "live",
+        "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\google-gemini-api-pricing-latest.json"
+      },
+      "model": {
+        "model": "Gemini 3 Flash Preview",
+        "inputUsdPer1MTokens": 0.5,
+        "outputUsdPer1MTokens": 3,
+        "inputUsdPer1MTokensOver200k": null,
+        "outputUsdPer1MTokensOver200k": null,
+        "contextCacheUsdPer1MTokens": 0.05
+      },
+      "notes": [
+        "Google Gemini API pricing varies by prompt length and modality; for token-cost estimation we use the <=200k 'text' list rates from the first pricing table under each Gemini 3 section.",
+        "If your prompts exceed 200k tokens, use the *Over200k rates captured in this snapshot instead."
+      ]
+    },
+    "estimatedUsage": {
+      "mode": "estimated",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "cachedInputTokens": 0,
+      "estimatedCostUsd": 0
+    },
+    "runs": [
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 2075,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_banker_vague_disco_cover_this_week",
+        "name": "Next: banker vague (fast debrief)",
+        "ok": false,
+        "promptMessageId": "ks7c00mkhdkaq6h2x9hhf3ghmx7ypzff",
+        "responsePreview": "",
+        "threadId": "m57a08ckmefhy3ghdv2sr0mqen7yqpkq"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 969,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "AMBROS",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_banker_tool_ambros_outbound_pack",
+        "name": "Next: banker tool-driven outbound pack",
+        "ok": false,
+        "promptMessageId": "ks7ecwny5qqtnrjwytaqkd8na97ypr4c",
+        "responsePreview": "",
+        "threadId": "m57622m6mq8z5ana88ff11aswx7yqtv8"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 863,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "EARLY_STAGE_VC",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_vc_vague_disco_wedge",
+        "name": "Next: VC vague wedge",
+        "ok": false,
+        "promptMessageId": "ks76saxjzzeapxkjf7yb13x9ys7yqc5b",
+        "responsePreview": "",
+        "threadId": "m57argjwk3ekdw287mc9m2gp357ypzqy"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 960,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "EARLY_STAGE_VC",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_vc_tool_disco_comps",
+        "name": "Next: VC tool-driven comps + diligence",
+        "ok": false,
+        "promptMessageId": "ks72zwkzxdthm02s91d761gr8h7yp41z",
+        "responsePreview": "",
+        "threadId": "m571ms5fpk9q2fj9tt6tbfpgx17ypmre"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 949,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_cto_vague_quickjs_exposure",
+        "name": "Next: CTO vague exposure",
+        "ok": false,
+        "promptMessageId": "ks74sxfk8ky5t2vjrs3rs52pnx7yq9mx",
+        "responsePreview": "",
+        "threadId": "m57agwxram5cv85xv6nt6f84hs7ypyr5"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 951,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_cto_tool_cve_plan",
+        "name": "Next: CTO tool-driven CVE plan",
+        "ok": false,
+        "promptMessageId": "ks7ej4x7f481d9qkryc0egyfcs7yqqy7",
+        "responsePreview": "",
+        "threadId": "m574ms7gqz2zqetvewm9ffjwt97ypzpm"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 1005,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "SALESFORCE",
+        "expectedPersona": "FOUNDER_STRATEGY",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_founder_vague_salesforce_agentforce",
+        "name": "Next: founder vague positioning",
+        "ok": false,
+        "promptMessageId": "ks76h4nes0ja4m2nazwydk65rn7yq3ct",
+        "responsePreview": "",
+        "threadId": "m572kxc0xrwt3w26xmqyd3mrch7ypmey"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 910,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "SALESFORCE",
+        "expectedPersona": "FOUNDER_STRATEGY",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_founder_tool_salesforce_memo",
+        "name": "Next: founder tool-driven memo",
+        "ok": false,
+        "promptMessageId": "ks768nqqwa6b8gvvckrhzb7wyd7yqhqc",
+        "responsePreview": "",
+        "threadId": "m573mt9rzw2m8egh71egqy36497yqdsv"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 861,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "ALZHEIMERS",
+        "expectedPersona": "ACADEMIC_RD",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_academic_vague_ryr2_alz",
+        "name": "Next: academic vague anchor",
+        "ok": false,
+        "promptMessageId": "ks7d3b6m324sbv6s3j57s5g9797ypve1",
+        "responsePreview": "",
+        "threadId": "m576wjvrz2b5rygc1xarntvah57yq5m3"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 851,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "ALZHEIMERS",
+        "expectedPersona": "ACADEMIC_RD",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_academic_tool_lit_debrief",
+        "name": "Next: academic tool-driven literature debrief",
+        "ok": false,
+        "promptMessageId": "ks74dqdgezv22t4t6tvkxrpy497yq5nb",
+        "responsePreview": "",
+        "threadId": "m571rcgz364kdsx16zxb2qxnch7ypm5a"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 872,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "GEMINI_3",
+        "expectedPersona": "ENTERPRISE_EXEC",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_exec_vague_gemini_standardize",
+        "name": "Next: exec vague standardize",
+        "ok": false,
+        "promptMessageId": "ks7acf122njxr2g0rbm44t9swd7yqyy6",
+        "responsePreview": "",
+        "threadId": "m570e8xyt8edp9w0yrm9xtvvdd7yp3mk"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 884,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "GEMINI_3",
+        "expectedPersona": "ENTERPRISE_EXEC",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_exec_tool_cost_model",
+        "name": "Next: exec tool-driven cost model",
+        "ok": false,
+        "promptMessageId": "ks73v4a59nnmexqvnp6j6wns5h7ypq88",
+        "responsePreview": "",
+        "threadId": "m574ynagammvd437kte9p3b2hd7yp5z2"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 817,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "SOUNDCLOUD",
+        "expectedPersona": "ECOSYSTEM_PARTNER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_ecosystem_vague_soundcloud_vpn",
+        "name": "Next: ecosystem vague incident",
+        "ok": false,
+        "promptMessageId": "ks76qy2qgefkkpanszefyrqnh97yqx54",
+        "responsePreview": "",
+        "threadId": "m57bqfwxvn7mvm5cjszhschpk17yqspk"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 860,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "SOUNDCLOUD",
+        "expectedPersona": "ECOSYSTEM_PARTNER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_ecosystem_tool_second_order_brief",
+        "name": "Next: ecosystem tool-driven second-order brief",
+        "ok": false,
+        "promptMessageId": "ks73zc1h6byf57wbc67jc3zzch7yp672",
+        "responsePreview": "",
+        "threadId": "m570tsjkx1sfzmas6rsdgd7ja57ypact"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 916,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "QUANT_ANALYST",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_quant_vague_disco_track",
+        "name": "Next: quant vague what to track",
+        "ok": false,
+        "promptMessageId": "ks78mcb06eerce3t5j07x2fz957yph0s",
+        "responsePreview": "",
+        "threadId": "m5784q9t06ja1sjzthas3fvn797yqx2e"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 805,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "QUANT_ANALYST",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_quant_tool_signal_json",
+        "name": "Next: quant tool-driven signal set JSON",
+        "ok": false,
+        "promptMessageId": "ks7dct4mynnzy2d9adhsc2q6r97yp1zs",
+        "responsePreview": "",
+        "threadId": "m570w703nxadey0jr5h6gxv38x7ypsqk"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 1036,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "PRODUCT_DESIGNER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_product_vague_make_usable_ui",
+        "name": "Next: product vague UI usable",
+        "ok": false,
+        "promptMessageId": "ks7cjp4ay55he0cjxpqyagm41s7yp30m",
+        "responsePreview": "",
+        "threadId": "m5769291fx65f39apzacd5tctd7yp5wy"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 959,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "PRODUCT_DESIGNER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_product_tool_expandable_card",
+        "name": "Next: product tool-driven expandable card schema",
+        "ok": false,
+        "promptMessageId": "ks787cq8fz0x2hkwest96a6k6h7yqgnh",
+        "responsePreview": "",
+        "threadId": "m57bb87kvhmahdy84adsy2s9n97yp5jn"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 882,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "SALES_ENGINEER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_sales_vague_shareable",
+        "name": "Next: sales vague shareable",
+        "ok": false,
+        "promptMessageId": "ks72hmjezhpze8jzkf7jxn551n7ypvc9",
+        "responsePreview": "",
+        "threadId": "m57bvh9dfgj0mefy8eg0gs5bxn7yq83v"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 1121,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "SALES_ENGINEER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "next_sales_tool_one_screen_objections",
+        "name": "Next: sales tool-driven one-screen + objections",
+        "ok": false,
+        "promptMessageId": "ks78f921qwdq3c9tp882j3bfx97yp6f4",
+        "responsePreview": "",
+        "threadId": "m5769fd0exgxe7n2n4x9cs8v6x7yq29t"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 894,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "stress_ambiguous_persona_disco_wedge_outreach",
+        "name": "Stress: ambiguous persona (wedge + outreach)",
+        "ok": false,
+        "promptMessageId": "ks7ey62skdcar727a0xycdfk3d7ypf5a",
+        "responsePreview": "",
+        "threadId": "m57dye4gq11055khghw0gqdpvx7yqjat"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 885,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected lookupGroundTruthEntity got []"
+        ],
+        "id": "stress_contradiction_disco_series_a_claim",
+        "name": "Stress: contradiction handling (Seed vs Series A)",
+        "ok": false,
+        "promptMessageId": "ks70zh3q1zf7edqqee9vqzqngx7ypf1j",
+        "responsePreview": "",
+        "threadId": "m571pdp2t6eq4k72j1j016mmex7yqrsv"
+      },
+      {
+        "checks": {
+          "minToolCalls": false,
+          "requireTools": false,
+          "verificationStep": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 787,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "GEMINI_3",
+        "expectedPersona": "ENTERPRISE_EXEC",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "minToolCalls not met: got 0 expected >= 1",
+          "missing required tools: expected linkupSearch got []",
+          "missing verification loop (no planSteps entry includes 'verify' or 'validate')"
+        ],
+        "id": "pack_exec_cross_provider_pricing",
+        "name": "Pack: exec cross-provider pricing comparison",
+        "ok": false,
+        "promptMessageId": "ks70wcbz5mdzxzejy8fn87hpzh7yqbg2",
+        "responsePreview": "",
+        "threadId": "m57cgjp2xbeqgdw1kmnaa6hams7ypjmr"
+      },
+      {
+        "checks": {
+          "maxClarifyingQuestions": true,
+          "maxCostUsd": true,
+          "maxToolCalls": true,
+          "providerUsage": false,
+          "requireTools": false,
+          "verificationStep": false
+        },
+        "debrief": null,
+        "debriefValidation": {
+          "errors": [
+            "Missing [DEBRIEF_V1_JSON] block"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 845,
+        "execution": {
+          "estimatedInputTokens": 0,
+          "estimatedOutputTokens": 0,
+          "latencyMs": null,
+          "modelUsed": null,
+          "providerUsage": null,
+          "stepsCount": 0,
+          "streamStatus": "completed_no_output",
+          "toolCalls": [],
+          "toolResults": []
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "EARLY_STAGE_VC",
+        "failureReasons": [
+          "Missing [DEBRIEF_V1_JSON] block",
+          "missing required tools: expected lookupGroundTruthEntity got []",
+          "missing verification loop (no planSteps entry includes 'verify' or 'validate')",
+          "provider usage metadata missing (expected providerUsage.totalTokens > 0)"
+        ],
+        "id": "pack_meta_budgeted_deep_dive",
+        "name": "Pack: meta budgeted deep dive (<=3 tools, <=$0.25)",
+        "ok": false,
+        "promptMessageId": "ks74p4apdq7ks1pyy9ktvb5cx57yqyt7",
+        "responsePreview": "",
+        "threadId": "m57688rz8y8jctd1jj19r8a1jx7yq0gr"
+      }
+    ],
+    "rawBatches": [
+      {
+        "elapsedMs": 3907,
+        "model": "gemini-3-flash",
+        "ok": false,
+        "runs": [
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 2075,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "DISCO",
+            "expectedPersona": "JPM_STARTUP_BANKER",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_banker_vague_disco_cover_this_week",
+            "name": "Next: banker vague (fast debrief)",
+            "ok": false,
+            "promptMessageId": "ks7c00mkhdkaq6h2x9hhf3ghmx7ypzff",
+            "responsePreview": "",
+            "threadId": "m57a08ckmefhy3ghdv2sr0mqen7yqpkq"
+          },
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 969,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "AMBROS",
+            "expectedPersona": "JPM_STARTUP_BANKER",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_banker_tool_ambros_outbound_pack",
+            "name": "Next: banker tool-driven outbound pack",
+            "ok": false,
+            "promptMessageId": "ks7ecwny5qqtnrjwytaqkd8na97ypr4c",
+            "responsePreview": "",
+            "threadId": "m57622m6mq8z5ana88ff11aswx7yqtv8"
+          },
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 863,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "DISCO",
+            "expectedPersona": "EARLY_STAGE_VC",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_vc_vague_disco_wedge",
+            "name": "Next: VC vague wedge",
+            "ok": false,
+            "promptMessageId": "ks76saxjzzeapxkjf7yb13x9ys7yqc5b",
+            "responsePreview": "",
+            "threadId": "m57argjwk3ekdw287mc9m2gp357ypzqy"
+          }
+        ],
+        "summary": {
+          "failed": 3,
+          "passed": 0,
+          "total": 3
+        },
+        "window": {
+          "limit": 3,
+          "nextOffset": 3,
+          "offset": 0,
+          "suite": "pack",
+          "totalAvailable": 24
+        }
+      },
+      {
+        "elapsedMs": 2860,
+        "model": "gemini-3-flash",
+        "ok": false,
+        "runs": [
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 960,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "DISCO",
+            "expectedPersona": "EARLY_STAGE_VC",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_vc_tool_disco_comps",
+            "name": "Next: VC tool-driven comps + diligence",
+            "ok": false,
+            "promptMessageId": "ks72zwkzxdthm02s91d761gr8h7yp41z",
+            "responsePreview": "",
+            "threadId": "m571ms5fpk9q2fj9tt6tbfpgx17ypmre"
+          },
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 949,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "MQUICKJS",
+            "expectedPersona": "CTO_TECH_LEAD",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_cto_vague_quickjs_exposure",
+            "name": "Next: CTO vague exposure",
+            "ok": false,
+            "promptMessageId": "ks74sxfk8ky5t2vjrs3rs52pnx7yq9mx",
+            "responsePreview": "",
+            "threadId": "m57agwxram5cv85xv6nt6f84hs7ypyr5"
+          },
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 951,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "MQUICKJS",
+            "expectedPersona": "CTO_TECH_LEAD",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_cto_tool_cve_plan",
+            "name": "Next: CTO tool-driven CVE plan",
+            "ok": false,
+            "promptMessageId": "ks7ej4x7f481d9qkryc0egyfcs7yqqy7",
+            "responsePreview": "",
+            "threadId": "m574ms7gqz2zqetvewm9ffjwt97ypzpm"
+          }
+        ],
+        "summary": {
+          "failed": 3,
+          "passed": 0,
+          "total": 3
+        },
+        "window": {
+          "limit": 3,
+          "nextOffset": 6,
+          "offset": 3,
+          "suite": "pack",
+          "totalAvailable": 24
+        }
+      },
+      {
+        "elapsedMs": 2776,
+        "model": "gemini-3-flash",
+        "ok": false,
+        "runs": [
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 1005,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "SALESFORCE",
+            "expectedPersona": "FOUNDER_STRATEGY",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_founder_vague_salesforce_agentforce",
+            "name": "Next: founder vague positioning",
+            "ok": false,
+            "promptMessageId": "ks76h4nes0ja4m2nazwydk65rn7yq3ct",
+            "responsePreview": "",
+            "threadId": "m572kxc0xrwt3w26xmqyd3mrch7ypmey"
+          },
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 910,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "SALESFORCE",
+            "expectedPersona": "FOUNDER_STRATEGY",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_founder_tool_salesforce_memo",
+            "name": "Next: founder tool-driven memo",
+            "ok": false,
+            "promptMessageId": "ks768nqqwa6b8gvvckrhzb7wyd7yqhqc",
+            "responsePreview": "",
+            "threadId": "m573mt9rzw2m8egh71egqy36497yqdsv"
+          },
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 861,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "ALZHEIMERS",
+            "expectedPersona": "ACADEMIC_RD",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_academic_vague_ryr2_alz",
+            "name": "Next: academic vague anchor",
+            "ok": false,
+            "promptMessageId": "ks7d3b6m324sbv6s3j57s5g9797ypve1",
+            "responsePreview": "",
+            "threadId": "m576wjvrz2b5rygc1xarntvah57yq5m3"
+          }
+        ],
+        "summary": {
+          "failed": 3,
+          "passed": 0,
+          "total": 3
+        },
+        "window": {
+          "limit": 3,
+          "nextOffset": 9,
+          "offset": 6,
+          "suite": "pack",
+          "totalAvailable": 24
+        }
+      },
+      {
+        "elapsedMs": 2607,
+        "model": "gemini-3-flash",
+        "ok": false,
+        "runs": [
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 851,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "ALZHEIMERS",
+            "expectedPersona": "ACADEMIC_RD",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_academic_tool_lit_debrief",
+            "name": "Next: academic tool-driven literature debrief",
+            "ok": false,
+            "promptMessageId": "ks74dqdgezv22t4t6tvkxrpy497yq5nb",
+            "responsePreview": "",
+            "threadId": "m571rcgz364kdsx16zxb2qxnch7ypm5a"
+          },
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 872,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "GEMINI_3",
+            "expectedPersona": "ENTERPRISE_EXEC",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_exec_vague_gemini_standardize",
+            "name": "Next: exec vague standardize",
+            "ok": false,
+            "promptMessageId": "ks7acf122njxr2g0rbm44t9swd7yqyy6",
+            "responsePreview": "",
+            "threadId": "m570e8xyt8edp9w0yrm9xtvvdd7yp3mk"
+          },
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 884,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "GEMINI_3",
+            "expectedPersona": "ENTERPRISE_EXEC",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_exec_tool_cost_model",
+            "name": "Next: exec tool-driven cost model",
+            "ok": false,
+            "promptMessageId": "ks73v4a59nnmexqvnp6j6wns5h7ypq88",
+            "responsePreview": "",
+            "threadId": "m574ynagammvd437kte9p3b2hd7yp5z2"
+          }
+        ],
+        "summary": {
+          "failed": 3,
+          "passed": 0,
+          "total": 3
+        },
+        "window": {
+          "limit": 3,
+          "nextOffset": 12,
+          "offset": 9,
+          "suite": "pack",
+          "totalAvailable": 24
+        }
+      },
+      {
+        "elapsedMs": 2593,
+        "model": "gemini-3-flash",
+        "ok": false,
+        "runs": [
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 817,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "SOUNDCLOUD",
+            "expectedPersona": "ECOSYSTEM_PARTNER",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_ecosystem_vague_soundcloud_vpn",
+            "name": "Next: ecosystem vague incident",
+            "ok": false,
+            "promptMessageId": "ks76qy2qgefkkpanszefyrqnh97yqx54",
+            "responsePreview": "",
+            "threadId": "m57bqfwxvn7mvm5cjszhschpk17yqspk"
+          },
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 860,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "SOUNDCLOUD",
+            "expectedPersona": "ECOSYSTEM_PARTNER",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_ecosystem_tool_second_order_brief",
+            "name": "Next: ecosystem tool-driven second-order brief",
+            "ok": false,
+            "promptMessageId": "ks73zc1h6byf57wbc67jc3zzch7yp672",
+            "responsePreview": "",
+            "threadId": "m570tsjkx1sfzmas6rsdgd7ja57ypact"
+          },
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 916,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "DISCO",
+            "expectedPersona": "QUANT_ANALYST",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_quant_vague_disco_track",
+            "name": "Next: quant vague what to track",
+            "ok": false,
+            "promptMessageId": "ks78mcb06eerce3t5j07x2fz957yph0s",
+            "responsePreview": "",
+            "threadId": "m5784q9t06ja1sjzthas3fvn797yqx2e"
+          }
+        ],
+        "summary": {
+          "failed": 3,
+          "passed": 0,
+          "total": 3
+        },
+        "window": {
+          "limit": 3,
+          "nextOffset": 15,
+          "offset": 12,
+          "suite": "pack",
+          "totalAvailable": 24
+        }
+      },
+      {
+        "elapsedMs": 2800,
+        "model": "gemini-3-flash",
+        "ok": false,
+        "runs": [
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 805,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "DISCO",
+            "expectedPersona": "QUANT_ANALYST",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_quant_tool_signal_json",
+            "name": "Next: quant tool-driven signal set JSON",
+            "ok": false,
+            "promptMessageId": "ks7dct4mynnzy2d9adhsc2q6r97yp1zs",
+            "responsePreview": "",
+            "threadId": "m570w703nxadey0jr5h6gxv38x7ypsqk"
+          },
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 1036,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "DISCO",
+            "expectedPersona": "PRODUCT_DESIGNER",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_product_vague_make_usable_ui",
+            "name": "Next: product vague UI usable",
+            "ok": false,
+            "promptMessageId": "ks7cjp4ay55he0cjxpqyagm41s7yp30m",
+            "responsePreview": "",
+            "threadId": "m5769291fx65f39apzacd5tctd7yp5wy"
+          },
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 959,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "DISCO",
+            "expectedPersona": "PRODUCT_DESIGNER",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_product_tool_expandable_card",
+            "name": "Next: product tool-driven expandable card schema",
+            "ok": false,
+            "promptMessageId": "ks787cq8fz0x2hkwest96a6k6h7yqgnh",
+            "responsePreview": "",
+            "threadId": "m57bb87kvhmahdy84adsy2s9n97yp5jn"
+          }
+        ],
+        "summary": {
+          "failed": 3,
+          "passed": 0,
+          "total": 3
+        },
+        "window": {
+          "limit": 3,
+          "nextOffset": 18,
+          "offset": 15,
+          "suite": "pack",
+          "totalAvailable": 24
+        }
+      },
+      {
+        "elapsedMs": 2897,
+        "model": "gemini-3-flash",
+        "ok": false,
+        "runs": [
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 882,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "DISCO",
+            "expectedPersona": "SALES_ENGINEER",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_sales_vague_shareable",
+            "name": "Next: sales vague shareable",
+            "ok": false,
+            "promptMessageId": "ks72hmjezhpze8jzkf7jxn551n7ypvc9",
+            "responsePreview": "",
+            "threadId": "m57bvh9dfgj0mefy8eg0gs5bxn7yq83v"
+          },
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 1121,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "DISCO",
+            "expectedPersona": "SALES_ENGINEER",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "next_sales_tool_one_screen_objections",
+            "name": "Next: sales tool-driven one-screen + objections",
+            "ok": false,
+            "promptMessageId": "ks78f921qwdq3c9tp882j3bfx97yp6f4",
+            "responsePreview": "",
+            "threadId": "m5769fd0exgxe7n2n4x9cs8v6x7yq29t"
+          },
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 894,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "DISCO",
+            "expectedPersona": "JPM_STARTUP_BANKER",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "stress_ambiguous_persona_disco_wedge_outreach",
+            "name": "Stress: ambiguous persona (wedge + outreach)",
+            "ok": false,
+            "promptMessageId": "ks7ey62skdcar727a0xycdfk3d7ypf5a",
+            "responsePreview": "",
+            "threadId": "m57dye4gq11055khghw0gqdpvx7yqjat"
+          }
+        ],
+        "summary": {
+          "failed": 3,
+          "passed": 0,
+          "total": 3
+        },
+        "window": {
+          "limit": 3,
+          "nextOffset": 21,
+          "offset": 18,
+          "suite": "pack",
+          "totalAvailable": 24
+        }
+      },
+      {
+        "elapsedMs": 2517,
+        "model": "gemini-3-flash",
+        "ok": false,
+        "runs": [
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 885,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "DISCO",
+            "expectedPersona": "JPM_STARTUP_BANKER",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected lookupGroundTruthEntity got []"
+            ],
+            "id": "stress_contradiction_disco_series_a_claim",
+            "name": "Stress: contradiction handling (Seed vs Series A)",
+            "ok": false,
+            "promptMessageId": "ks70zh3q1zf7edqqee9vqzqngx7ypf1j",
+            "responsePreview": "",
+            "threadId": "m571pdp2t6eq4k72j1j016mmex7yqrsv"
+          },
+          {
+            "checks": {
+              "minToolCalls": false,
+              "requireTools": false,
+              "verificationStep": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 787,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "GEMINI_3",
+            "expectedPersona": "ENTERPRISE_EXEC",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "minToolCalls not met: got 0 expected >= 1",
+              "missing required tools: expected linkupSearch got []",
+              "missing verification loop (no planSteps entry includes 'verify' or 'validate')"
+            ],
+            "id": "pack_exec_cross_provider_pricing",
+            "name": "Pack: exec cross-provider pricing comparison",
+            "ok": false,
+            "promptMessageId": "ks70wcbz5mdzxzejy8fn87hpzh7yqbg2",
+            "responsePreview": "",
+            "threadId": "m57cgjp2xbeqgdw1kmnaa6hams7ypjmr"
+          },
+          {
+            "checks": {
+              "maxClarifyingQuestions": true,
+              "maxCostUsd": true,
+              "maxToolCalls": true,
+              "providerUsage": false,
+              "requireTools": false,
+              "verificationStep": false
+            },
+            "debrief": null,
+            "debriefValidation": {
+              "errors": [
+                "Missing [DEBRIEF_V1_JSON] block"
+              ],
+              "ok": false
+            },
+            "elapsedMs": 845,
+            "execution": {
+              "estimatedInputTokens": 0,
+              "estimatedOutputTokens": 0,
+              "latencyMs": null,
+              "modelUsed": null,
+              "providerUsage": null,
+              "stepsCount": 0,
+              "streamStatus": "completed_no_output",
+              "toolCalls": [],
+              "toolResults": []
+            },
+            "expectedEntityId": "DISCO",
+            "expectedPersona": "EARLY_STAGE_VC",
+            "failureReasons": [
+              "Missing [DEBRIEF_V1_JSON] block",
+              "missing required tools: expected lookupGroundTruthEntity got []",
+              "missing verification loop (no planSteps entry includes 'verify' or 'validate')",
+              "provider usage metadata missing (expected providerUsage.totalTokens > 0)"
+            ],
+            "id": "pack_meta_budgeted_deep_dive",
+            "name": "Pack: meta budgeted deep dive (<=3 tools, <=$0.25)",
+            "ok": false,
+            "promptMessageId": "ks74p4apdq7ks1pyy9ktvb5cx57yqyt7",
+            "responsePreview": "",
+            "threadId": "m57688rz8y8jctd1jj19r8a1jx7yq0gr"
+          }
+        ],
+        "summary": {
+          "failed": 3,
+          "passed": 0,
+          "total": 3
+        },
+        "window": {
+          "limit": 3,
+          "nextOffset": null,
+          "offset": 21,
+          "suite": "pack",
+          "totalAvailable": 24
+        }
+      }
+    ]
+  }
+}

@@ -87,6 +87,56 @@ describe("buildViewBreadcrumbs", () => {
     ]);
   });
 
+  it("builds research breadcrumbs for world monitor", () => {
+    expect(
+      buildViewBreadcrumbs({
+        currentView: "world-monitor",
+        researchHubInitialTab: "overview",
+        showResearchDossier: false,
+      }),
+    ).toEqual([
+      {
+        id: "research",
+        isCurrent: false,
+        label: "Research Hub",
+        path: "/research",
+        view: "research",
+      },
+      {
+        id: "world-monitor",
+        isCurrent: true,
+        label: "World Monitor",
+        path: "/research/world-monitor",
+        view: "world-monitor",
+      },
+    ]);
+  });
+
+  it("builds research breadcrumbs for watchlists", () => {
+    expect(
+      buildViewBreadcrumbs({
+        currentView: "watchlists",
+        researchHubInitialTab: "overview",
+        showResearchDossier: false,
+      }),
+    ).toEqual([
+      {
+        id: "research",
+        isCurrent: false,
+        label: "Research Hub",
+        path: "/research",
+        view: "research",
+      },
+      {
+        id: "watchlists",
+        isCurrent: true,
+        label: "Watchlists",
+        path: "/research/watchlists",
+        view: "watchlists",
+      },
+    ]);
+  });
+
   it("builds research tab breadcrumbs when the dossier shell is open", () => {
     expect(
       buildViewBreadcrumbs({

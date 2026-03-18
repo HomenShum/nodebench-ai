@@ -43,6 +43,7 @@ import { HumanApprovalQueue } from "../components/HumanApprovalQueue";
 import { AgentSidebar } from "../components/AgentSidebar";
 import { AutonomousOperationsPanel } from "../components/AutonomousOperationsPanel";
 import { OracleControlTowerPanel } from "../components/OracleControlTowerPanel";
+import { TopicCanvasPanel } from "../components/TopicCanvasPanel";
 
 // Lazy-loaded heavy sub-components (behind tabs/expandable sections)
 const SwarmLanesView = lazy(() =>
@@ -413,6 +414,10 @@ export function AgentsHub() {
             {/* Command Bar — always visible */}
             <div className="mb-6">
               <AgentCommandBar onSubmit={handleCommandSubmit} />
+            </div>
+
+            <div className="mb-6">
+              <TopicCanvasPanel />
             </div>
 
             {!advancedMode && (

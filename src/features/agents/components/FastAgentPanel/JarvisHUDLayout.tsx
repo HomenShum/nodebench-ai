@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Loader2, Mic, Search } from "lucide-react";
-import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { useMotionConfig } from "@/lib/motion";
 import { useRealtimeTranscription } from "@/hooks/useRealtimeTranscription";
 import { useVoiceInput, type VoiceMode } from "@/hooks/useVoiceInput";
 import { useWakeVoiceFeedback } from "@/hooks/useWakeVoiceFeedback";
@@ -69,7 +69,8 @@ export function JarvisHUDLayout({
   onPromptSubmit,
   voiceMode = "whisper",
 }: JarvisHUDLayoutProps) {
-  const reducedMotion = useReducedMotion();
+  const { instant, transition } = useMotionConfig();
+  const reducedMotion = instant;
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [voiceChatMode, setVoiceChatMode] = useState(false);
@@ -316,9 +317,9 @@ export function JarvisHUDLayout({
                     ? "border-amber-500/35 bg-amber-500/10 text-amber-200"
                     : "border-edge bg-surface/85 text-content-secondary",
           )}
-          initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+          initial={instant ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
+          transition={transition(0.2)}
         >
           {wakeWordStatus === "permission" && !showVoiceChatMode ? (
             <button
@@ -366,10 +367,10 @@ export function JarvisHUDLayout({
               <motion.div
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-x-4 -inset-y-3 rounded-[1.5rem] bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.24),rgba(99,102,241,0.08)_42%,transparent_72%)] blur-2xl"
-                initial={{ opacity: 0, scale: 0.94 }}
+                initial={{ opacity: instant ? 0.95 : 0, scale: instant ? 1.02 : 0.94 }}
                 animate={{ opacity: 0.95, scale: 1.02 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+                exit={{ opacity: 0, scale: instant ? 1.02 : 0.98 }}
+                transition={transition({ duration: 0.42, ease: [0.22, 1, 0.36, 1] })}
               />
             )}
           </AnimatePresence>
@@ -442,7 +443,7 @@ export function JarvisHUDLayout({
                 opacity: prompt.trim().length > 0 || isLoading ? 1 : 0,
                 scale: prompt.trim().length > 0 || isLoading ? 1 : 0.92,
               }}
-              transition={{ duration: 0.18, ease: "easeOut" }}
+              transition={transition({ duration: 0.18, ease: "easeOut" })}
               className={cn(
                 "absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2",
                 "bg-primary text-white transition-colors",

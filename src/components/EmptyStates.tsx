@@ -19,6 +19,7 @@ import {
   WifiOff,
 } from 'lucide-react';
 import { scaleFadeVariants } from '../utils/animations';
+import { useMotionConfig } from '@/lib/motion';
 
 interface EmptyStateProps {
   title: string;
@@ -32,12 +33,13 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ title, description, icon: Icon = Inbox, action, className = '' }: EmptyStateProps) {
+  const { instant } = useMotionConfig();
   return (
     <motion.div
       className={`flex flex-col items-center justify-center py-6 sm:py-12 px-4 sm:px-6 text-center ${className}`}
-      variants={scaleFadeVariants}
-      initial="hidden"
-      animate="visible"
+      variants={instant ? undefined : scaleFadeVariants}
+      initial={instant ? undefined : "hidden"}
+      animate={instant ? undefined : "visible"}
     >
       <div className="w-16 h-16 bg-surface-secondary rounded-lg flex items-center justify-center mb-4">
         <Icon className="h-8 w-8 text-content-muted" />
@@ -130,12 +132,13 @@ interface ErrorStateProps {
 }
 
 export function ErrorState({ title = 'Something went wrong', message = 'An unexpected error occurred. Please try again.', onRetry, className = '' }: ErrorStateProps) {
+  const { instant } = useMotionConfig();
   return (
     <motion.div
       className={`flex flex-col items-center justify-center py-6 sm:py-12 px-4 sm:px-6 text-center ${className}`}
-      variants={scaleFadeVariants}
-      initial="hidden"
-      animate="visible"
+      variants={instant ? undefined : scaleFadeVariants}
+      initial={instant ? undefined : "hidden"}
+      animate={instant ? undefined : "visible"}
     >
       <div className="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center mb-4">
         <AlertCircle className="h-8 w-8 text-red-500" />
@@ -153,12 +156,13 @@ export function ErrorState({ title = 'Something went wrong', message = 'An unexp
 }
 
 export function OfflineState() {
+  const { instant } = useMotionConfig();
   return (
     <motion.div
       className="flex flex-col items-center justify-center py-6 sm:py-12 px-4 sm:px-6 text-center"
-      variants={scaleFadeVariants}
-      initial="hidden"
-      animate="visible"
+      variants={instant ? undefined : scaleFadeVariants}
+      initial={instant ? undefined : "hidden"}
+      animate={instant ? undefined : "visible"}
     >
       <div className="w-16 h-16 bg-amber-100 rounded-lg flex items-center justify-center mb-4">
         <WifiOff className="h-8 w-8 text-amber-500" />

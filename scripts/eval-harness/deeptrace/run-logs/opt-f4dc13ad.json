@@ -1,0 +1,501 @@
+{
+  "sessionId": "opt-f4dc13ad",
+  "config": {
+    "maxIterations": 15,
+    "maxSessionSeconds": 600,
+    "benchmarkFamilies": [
+      "company_direction",
+      "relationship_mapping",
+      "repo_intelligence",
+      "world_to_company",
+      "trace_backed_draft"
+    ]
+  },
+  "baseline": {
+    "baselineId": "research-cell-balanced-v2",
+    "commitHash": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+    "throughputMetrics": {
+      "taskCompletionRate": 1,
+      "timeToFirstDraftMs": 48400,
+      "humanEditDistance": 30,
+      "wallClockMs": 93400,
+      "toolCallCount": 37
+    },
+    "qualityMetrics": {
+      "factualPrecision": 0.75,
+      "relationshipPrecision": 0.75,
+      "evidenceLinkage": 0.9899999999999999,
+      "receiptCompleteness": 1,
+      "falseConfidenceRate": 0.030000000000000006,
+      "canaryRelativeUplift": 0.16999999999999998
+    },
+    "capturedAt": "2026-03-15T21:46:07.937Z"
+  },
+  "candidates": [
+    {
+      "candidateId": "research-cell-balanced-v1",
+      "baselineId": "baseline-401d5942-1773609609024",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.6916789206027383,
+        "qualityMetrics": {
+          "factualPrecision": 0.71,
+          "relationshipPrecision": 0.72,
+          "evidenceLinkage": 0.7799999999999999,
+          "receiptCompleteness": 0.82,
+          "falseConfidenceRate": 0.07,
+          "canaryRelativeUplift": 0.05
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "promoted",
+      "timestamp": "2026-03-15T21:45:33.597Z",
+      "iterationMs": 36
+    },
+    {
+      "candidateId": "research-cell-gap-focus-v1",
+      "baselineId": "research-cell-balanced-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7262737110608015,
+        "qualityMetrics": {
+          "factualPrecision": 0.73,
+          "relationshipPrecision": 0.73,
+          "evidenceLinkage": 0.8999999999999999,
+          "receiptCompleteness": 0.8999999999999999,
+          "falseConfidenceRate": 0.060000000000000005,
+          "canaryRelativeUplift": 0.11
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "promoted",
+      "timestamp": "2026-03-15T21:45:37.498Z",
+      "iterationMs": 37
+    },
+    {
+      "candidateId": "research-cell-counter-hyp-v1",
+      "baselineId": "research-cell-gap-focus-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7618474276017265,
+        "qualityMetrics": {
+          "factualPrecision": 0.76,
+          "relationshipPrecision": 0.74,
+          "evidenceLinkage": 0.95,
+          "receiptCompleteness": 0.96,
+          "falseConfidenceRate": 0.010000000000000002,
+          "canaryRelativeUplift": 0.15
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 4.9% < 5% minimum",
+      "timestamp": "2026-03-15T21:45:41.211Z",
+      "iterationMs": 33
+    },
+    {
+      "candidateId": "research-cell-dimension-v1",
+      "baselineId": "research-cell-gap-focus-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7620217045582409,
+        "qualityMetrics": {
+          "factualPrecision": 0.74,
+          "relationshipPrecision": 0.76,
+          "evidenceLinkage": 0.96,
+          "receiptCompleteness": 0.9899999999999999,
+          "falseConfidenceRate": 0.04000000000000001,
+          "canaryRelativeUplift": 0.16
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 4.9% < 5% minimum",
+      "timestamp": "2026-03-15T21:45:44.924Z",
+      "iterationMs": 141
+    },
+    {
+      "candidateId": "research-cell-fast-v1",
+      "baselineId": "research-cell-gap-focus-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7606136219879664,
+        "qualityMetrics": {
+          "factualPrecision": 0.74,
+          "relationshipPrecision": 0.74,
+          "evidenceLinkage": 0.94,
+          "receiptCompleteness": 0.95,
+          "falseConfidenceRate": 0.05,
+          "canaryRelativeUplift": 0.15
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 4.7% < 5% minimum",
+      "timestamp": "2026-03-15T21:45:48.754Z",
+      "iterationMs": 39
+    },
+    {
+      "candidateId": "research-cell-deep-v1",
+      "baselineId": "research-cell-gap-focus-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7552098017214296,
+        "qualityMetrics": {
+          "factualPrecision": 0.76,
+          "relationshipPrecision": 0.77,
+          "evidenceLinkage": 0.9999999999999999,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0.020000000000000004,
+          "canaryRelativeUplift": 0.18
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 4.0% < 5% minimum",
+      "timestamp": "2026-03-15T21:45:52.760Z",
+      "iterationMs": 123
+    },
+    {
+      "candidateId": "research-cell-source-div-v1",
+      "baselineId": "research-cell-gap-focus-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7555192358273923,
+        "qualityMetrics": {
+          "factualPrecision": 0.75,
+          "relationshipPrecision": 0.75,
+          "evidenceLinkage": 0.9899999999999999,
+          "receiptCompleteness": 0.97,
+          "falseConfidenceRate": 0.04000000000000001,
+          "canaryRelativeUplift": 0.16
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 4.0% < 5% minimum",
+      "timestamp": "2026-03-15T21:45:56.514Z",
+      "iterationMs": 36
+    },
+    {
+      "candidateId": "research-cell-aggressive-v1",
+      "baselineId": "research-cell-gap-focus-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7508033379001122,
+        "qualityMetrics": {
+          "factualPrecision": 0.77,
+          "relationshipPrecision": 0.78,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0.010000000000000002,
+          "canaryRelativeUplift": 0.19
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 3.4% < 5% minimum",
+      "timestamp": "2026-03-15T21:46:00.176Z",
+      "iterationMs": 33
+    },
+    {
+      "candidateId": "research-cell-minimal-v1",
+      "baselineId": "research-cell-gap-focus-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7537510093265998,
+        "qualityMetrics": {
+          "factualPrecision": 0.73,
+          "relationshipPrecision": 0.74,
+          "evidenceLinkage": 0.9199999999999999,
+          "receiptCompleteness": 0.9299999999999999,
+          "falseConfidenceRate": 0.060000000000000005,
+          "canaryRelativeUplift": 0.14
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 3.8% < 5% minimum",
+      "timestamp": "2026-03-15T21:46:04.203Z",
+      "iterationMs": 176
+    },
+    {
+      "candidateId": "research-cell-balanced-v2",
+      "baselineId": "research-cell-gap-focus-v1",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7688755344643446,
+        "qualityMetrics": {
+          "factualPrecision": 0.75,
+          "relationshipPrecision": 0.75,
+          "evidenceLinkage": 0.9899999999999999,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0.030000000000000006,
+          "canaryRelativeUplift": 0.16999999999999998
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "promoted",
+      "timestamp": "2026-03-15T21:46:07.937Z",
+      "iterationMs": 148
+    },
+    {
+      "candidateId": "research-cell-quality-guard-edge",
+      "baselineId": "research-cell-balanced-v2",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7766222968036115,
+        "qualityMetrics": {
+          "factualPrecision": 0.745,
+          "relationshipPrecision": 0.745,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0.020000000000000004,
+          "canaryRelativeUplift": 0.21
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.0% < 5% minimum",
+      "timestamp": "2026-03-15T21:46:11.676Z",
+      "iterationMs": 38
+    },
+    {
+      "candidateId": "research-cell-evidence-regress",
+      "baselineId": "research-cell-balanced-v2",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7780722947636263,
+        "qualityMetrics": {
+          "factualPrecision": 0.76,
+          "relationshipPrecision": 0.76,
+          "evidenceLinkage": 0.9399999999999998,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0.010000000000000005,
+          "canaryRelativeUplift": 0.21999999999999997
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.2% < 5% minimum",
+      "timestamp": "2026-03-15T21:46:15.646Z",
+      "iterationMs": 36
+    },
+    {
+      "candidateId": "research-cell-false-conf-regress",
+      "baselineId": "research-cell-balanced-v2",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7769518063635711,
+        "qualityMetrics": {
+          "factualPrecision": 0.76,
+          "relationshipPrecision": 0.76,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0.05,
+          "canaryRelativeUplift": 0.21
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.1% < 5% minimum",
+      "timestamp": "2026-03-15T21:46:19.601Z",
+      "iterationMs": 38
+    },
+    {
+      "candidateId": "research-cell-receipt-regress",
+      "baselineId": "research-cell-balanced-v2",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7766222968036115,
+        "qualityMetrics": {
+          "factualPrecision": 0.76,
+          "relationshipPrecision": 0.76,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 0.95,
+          "falseConfidenceRate": 0.010000000000000005,
+          "canaryRelativeUplift": 0.21999999999999997
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement 1.0% < 5% minimum",
+      "timestamp": "2026-03-15T21:46:23.403Z",
+      "iterationMs": 36
+    },
+    {
+      "candidateId": "research-cell-throughput-neutral",
+      "baselineId": "research-cell-balanced-v2",
+      "benchmarkCaseIds": [
+        "company_direction",
+        "relationship_mapping",
+        "repo_intelligence",
+        "world_to_company",
+        "trace_backed_draft"
+      ],
+      "changedFiles": [],
+      "compileSuccess": true,
+      "testSuccess": true,
+      "score": {
+        "throughputScore": 0.7660905432220679,
+        "qualityMetrics": {
+          "factualPrecision": 0.78,
+          "relationshipPrecision": 0.78,
+          "evidenceLinkage": 1,
+          "receiptCompleteness": 1,
+          "falseConfidenceRate": 0,
+          "canaryRelativeUplift": 0.22999999999999998
+        },
+        "guardsPass": true,
+        "guardFailures": []
+      },
+      "verdict": "discarded",
+      "rejectionReason": "throughput improvement -0.4% < 5% minimum",
+      "timestamp": "2026-03-15T21:46:27.068Z",
+      "iterationMs": 153
+    }
+  ],
+  "promotedCandidateId": "research-cell-balanced-v2",
+  "startedAt": "2026-03-15T21:45:30.405Z",
+  "completedAt": "2026-03-15T21:46:27.652Z"
+}

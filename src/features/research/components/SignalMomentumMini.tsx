@@ -4,13 +4,14 @@ import React, { useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { SparkBars } from "./Sparkline";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 interface SignalMomentumMiniProps {
   keyword: string;
   days?: number;
 }
 
-export const SignalMomentumMini: React.FC<SignalMomentumMiniProps> = ({ keyword, days = 10 }) => {
+function SignalMomentumMiniContent({ keyword, days = 10 }: SignalMomentumMiniProps) {
   const cleanedKeyword = useMemo(() => {
     const words = keyword.split(/\s+/).map((word) => word.replace(/[^a-z0-9]/gi, ""));
     const candidate = words.find((word) => word.length > 3);
@@ -41,6 +42,29 @@ export const SignalMomentumMini: React.FC<SignalMomentumMiniProps> = ({ keyword,
         </div>
       </div>
     </div>
+  );
+}
+
+function SignalMomentumMiniFallback({ keyword }: { keyword: string }) {
+  return (
+    <div className="mt-6 rounded-md border border-edge bg-surface px-3 py-2 text-xs text-content-secondary">
+      <div className="text-xs text-content-muted">Momentum</div>
+      <div className="text-xs font-semibold text-content-secondary">{keyword}</div>
+      <div className="mt-1 text-xs text-content-muted">Temporarily unavailable</div>
+    </div>
+  );
+}
+
+export const SignalMomentumMini: React.FC<SignalMomentumMiniProps> = (props) => {
+  if (!props.keyword) return null;
+
+  return (
+    <ErrorBoundary
+      section="Signal momentum"
+      fallback={<SignalMomentumMiniFallback keyword={props.keyword} />}
+    >
+      <SignalMomentumMiniContent {...props} />
+    </ErrorBoundary>
   );
 };
 

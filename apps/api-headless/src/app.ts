@@ -12,6 +12,10 @@ import evidenceRouter from "./routes/evidence.js";
 import replayRouter from "./routes/replay.js";
 import searchRouter from "./routes/search.js";
 import fetchRouter from "./routes/fetch.js";
+import passportsRouter from "./routes/passports.js";
+import receiptsRouter from "./routes/receipts.js";
+import investigationsRouter from "./routes/investigations.js";
+import intentLedgersRouter from "./routes/intent-ledgers.js";
 
 export function createApp() {
   const app = express();
@@ -38,6 +42,7 @@ export function createApp() {
 
   app.use(telemetryMiddleware);
   app.use("/v1", authMiddleware);
+  app.use("/v2", authMiddleware);
 
   app.use("/v1/specs", specsRouter);
   app.use("/v1/runs", runsRouter);
@@ -45,6 +50,10 @@ export function createApp() {
   app.use("/v1/replay", replayRouter);
   app.use("/v1/search", searchRouter);
   app.use("/v1/fetch", fetchRouter);
+  app.use("/v2/passports", passportsRouter);
+  app.use("/v2/receipts", receiptsRouter);
+  app.use("/v2/investigations", investigationsRouter);
+  app.use("/v2/intent-ledgers", intentLedgersRouter);
 
   app.get("/health", (_req: Request, res: Response) => {
     res.json({

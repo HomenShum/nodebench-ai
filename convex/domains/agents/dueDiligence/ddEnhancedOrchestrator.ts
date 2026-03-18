@@ -881,9 +881,26 @@ async function executeEnhancedBranch(
           result: JSON.stringify(findings),
           resultSummary: findingsSummary.summaryText,
           confidence,
-        }),
+      }),
       `updateTaskStatus-completed-${branchType}`
     );
+
+    try {
+      await ctx.runAction(
+        internal.domains.deepTrace.integrations.syncDueDiligenceBranchToDeepTrace,
+        {
+          jobId,
+          branchType,
+          entityName,
+          entityType,
+          findings,
+          sources,
+          confidence,
+        },
+      );
+    } catch (deepTraceError) {
+      console.warn(`[DD-Enhanced] DeepTrace sync failed for ${branchType}:`, deepTraceError);
+    }
 
     return { branchType, findings, confidence, sources };
   } catch (error) {

@@ -16,7 +16,7 @@ import {
     TrendingUp,
 } from 'lucide-react';
 import { useQuery } from 'convex/react';
-import { prefersReducedMotion } from '../../../utils/a11y';
+import { useMotionConfig } from '@/lib/motion';
 import { SignatureOrb } from '../../../shared/ui/SignatureOrb';
 import { api } from '../../../../convex/_generated/api';
 import { JarvisHUDLayout } from '@/features/agents/components/FastAgentPanel/JarvisHUDLayout';
@@ -40,7 +40,7 @@ export default function CinematicHome({
     onOpenWorkbench,
     onOpenAgents,
 }: CinematicHomeProps) {
-    const reduceMotion = useMemo(() => prefersReducedMotion(), []);
+    const { instant, transition } = useMotionConfig();
     const navigate = useNavigate();
 
     const userStats = useQuery(api.domains.auth.userStats.getUserActivitySummary);
@@ -369,9 +369,9 @@ export default function CinematicHome({
                     <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_320px] lg:items-start">
                         <div className="min-w-0">
                             <motion.section
-                                initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                                initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 8 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.3, delay: 0.1 }}
+                                transition={transition({ duration: 0.3, delay: 0.1 })}
                                 className="relative overflow-hidden rounded-[28px] border border-edge bg-[linear-gradient(180deg,rgba(99,102,241,0.1),rgba(15,23,42,0.02)_36%,transparent_100%)] px-5 py-5 shadow-[0_24px_80px_rgba(2,6,23,0.08)] md:px-7 md:py-7"
                             >
                                 <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.16),transparent_68%)]" />
@@ -449,9 +449,9 @@ export default function CinematicHome({
                                 </div>
 
                                 <motion.div
-                                    initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                                    initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 8 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.3, delay: 0.2 }}
+                                    transition={transition({ duration: 0.3, delay: 0.2 })}
                                     className="relative z-10 mt-5 rounded-[24px] border border-edge bg-surface/72 px-3 py-4 backdrop-blur-sm md:px-4"
                                 >
                                     <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1">
@@ -487,9 +487,9 @@ export default function CinematicHome({
                             </motion.section>
 
                             <motion.section
-                                initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                                initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 8 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.3, delay: 0.28 }}
+                                transition={transition({ duration: 0.3, delay: 0.28 })}
                                 className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]"
                             >
                                 <div className="rounded-[24px] border border-edge bg-surface/72 p-4 backdrop-blur-sm">
@@ -536,9 +536,9 @@ export default function CinematicHome({
                             </motion.section>
 
                             <motion.section
-                                initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                                initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 8 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.3, delay: 0.31 }}
+                                transition={transition({ duration: 0.3, delay: 0.31 })}
                                 className="mt-5 grid gap-3 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]"
                             >
                                 <div className="rounded-[24px] border border-edge bg-surface/72 p-4 backdrop-blur-sm">
@@ -578,9 +578,9 @@ export default function CinematicHome({
                             </motion.section>
 
                             <motion.section
-                                initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                                initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 8 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.3, delay: 0.34 }}
+                                transition={transition({ duration: 0.3, delay: 0.34 })}
                                 className="mt-5 rounded-[24px] border border-edge bg-surface/72 p-4 backdrop-blur-sm"
                             >
                                 <SectionHeading
@@ -611,9 +611,9 @@ export default function CinematicHome({
                             </motion.section>
 
                             <motion.section
-                                initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                                initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 8 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.3, delay: 0.4 }}
+                                transition={transition({ duration: 0.3, delay: 0.4 })}
                                 className="mt-5 rounded-[24px] border border-edge bg-[linear-gradient(180deg,rgba(99,102,241,0.08),rgba(15,23,42,0.01)_100%)] p-5 shadow-[0_16px_48px_rgba(15,23,42,0.08)]"
                             >
                                 <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
@@ -640,9 +640,9 @@ export default function CinematicHome({
 
                         <aside className="min-w-0 lg:sticky lg:top-24">
                             <motion.div
-                                initial={reduceMotion ? false : { opacity: 0, x: 8 }}
+                                initial={{ opacity: instant ? 1 : 0, x: instant ? 0 : 8 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.3, delay: 0.18 }}
+                                transition={transition({ duration: 0.3, delay: 0.18 })}
                                 className="space-y-3"
                             >
                                 <IntelCard

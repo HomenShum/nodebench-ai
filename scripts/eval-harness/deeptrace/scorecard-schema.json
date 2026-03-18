@@ -1,0 +1,25 @@
+{
+  "weights": {
+    "factualAccuracy": 0.2,
+    "relationshipAccuracy": 0.15,
+    "causalChainQuality": 0.15,
+    "counterHypothesisQuality": 0.1,
+    "limitationsHonesty": 0.1,
+    "evidenceLinkage": 0.1,
+    "receiptCompleteness": 0.1,
+    "humanEditDistance": 0.1
+  },
+  "trackedMetrics": [
+    "taskCompletionRate",
+    "confidenceCalibration",
+    "falseConfidenceRate",
+    "timeToFirstUsableDraftMs",
+    "blockedStepCount"
+  ],
+  "comparisonOutputs": [
+    "baselineScore",
+    "deeptraceScore",
+    "relativeUplift",
+    "regression"
+  ]
+}

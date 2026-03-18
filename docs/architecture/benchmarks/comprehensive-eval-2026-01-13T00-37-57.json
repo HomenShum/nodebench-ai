@@ -1,0 +1,55 @@
+{
+  "generatedAt": "2026-01-13T00:37:57.768Z",
+  "totalElapsed": 328,
+  "modelsToTest": [
+    "devstral-2-free"
+  ],
+  "suite": "core",
+  "scenarios": 1,
+  "totalEvaluations": 1,
+  "enableJudge": false,
+  "metrics": {
+    "overallPassRate": 0,
+    "passRateByModel": {
+      "devstral-2-free": 0
+    },
+    "passRateByScenario": {
+      "banker_vague_disco": 0
+    },
+    "memoryFirstComplianceRate": 0,
+    "memoryFirstByModel": {
+      "devstral-2-free": 0
+    },
+    "toolOrderingAccuracy": 0,
+    "toolOrderingByModel": {
+      "devstral-2-free": 0
+    },
+    "invariantViolations": {
+      "A": 0,
+      "C": 0,
+      "D": 0
+    },
+    "avgLatencyMs": 328,
+    "p50LatencyMs": 328,
+    "p95LatencyMs": 328,
+    "latencyByModel": {
+      "devstral-2-free": 328
+    },
+    "avgDisclosureLevel": {
+      "none": 0,
+      "partial": 0,
+      "full": 0
+    },
+    "skillFirstRate": 0
+  },
+  "results": [
+    {
+      "model": "devstral-2-free",
+      "scenarioId": "banker_vague_disco",
+      "scenarioName": "Banker vague outreach debrief",
+      "passed": false,
+      "elapsed": 328,
+      "failureReasons": []
+    }
+  ]
+}

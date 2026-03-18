@@ -186,6 +186,30 @@ export function CommandPalette({
                 }
             },
             {
+                id: 'nav-world-monitor',
+                label: 'Open World Monitor',
+                description: 'Review world events, geography clusters, and causal impact candidates',
+                icon: <Globe className="w-4 h-4" />,
+                keywords: ['world monitor', 'events', 'geopolitics', 'map', 'causal'],
+                section: 'ai',
+                action: () => {
+                    onNavigate?.('world-monitor');
+                    onClose();
+                }
+            },
+            {
+                id: 'nav-watchlists',
+                label: 'Open Watchlists',
+                description: 'Inspect active monitors for companies, sectors, regions, and themes',
+                icon: <Activity className="w-4 h-4" />,
+                keywords: ['watchlists', 'alerts', 'monitoring', 'deeptrace', 'theme'],
+                section: 'ai',
+                action: () => {
+                    onNavigate?.('watchlists');
+                    onClose();
+                }
+            },
+            {
                 id: 'nav-benchmarks',
                 label: 'Open Benchmark Workbench',
                 description: 'Inspect internal benchmark receipts, replay, and published proof',

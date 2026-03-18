@@ -2,13 +2,13 @@ import type { CommandAction } from "./CommandPalette";
 import { loadBuyerPreferredPath, type BuyerPreferredPath } from "@/features/controlPlane/lib/onboardingState";
 
 const BUYER_ROUTE_PRIORITY: Record<BuyerPreferredPath, string[]> = {
-  receipts: ["nav-receipts", "nav-delegation", "nav-investigation", "nav-research"],
-  delegation: ["nav-delegation", "nav-receipts", "nav-investigation", "nav-research"],
-  investigation: ["nav-investigation", "nav-receipts", "nav-delegation", "nav-research"],
-  "research-briefing": ["nav-research", "nav-receipts", "nav-investigation", "nav-delegation"],
+  receipts: ["nav-receipts", "nav-delegation", "nav-investigation", "nav-tool-activity"],
+  delegation: ["nav-delegation", "nav-receipts", "nav-investigation", "nav-tool-activity"],
+  investigation: ["nav-investigation", "nav-receipts", "nav-delegation", "nav-tool-activity"],
+  "mcp-ledger": ["nav-tool-activity", "nav-receipts", "nav-investigation", "nav-delegation"],
 };
 
-const DEFAULT_BUYER_ROUTE_PRIORITY = ["nav-receipts", "nav-delegation", "nav-investigation", "nav-research"];
+const DEFAULT_BUYER_ROUTE_PRIORITY = ["nav-receipts", "nav-delegation", "nav-investigation", "nav-tool-activity"];
 
 export function getBuyerPreferredPriority(): string[] {
   const preferred = loadBuyerPreferredPath();

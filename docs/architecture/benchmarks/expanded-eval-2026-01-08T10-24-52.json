@@ -1,0 +1,61 @@
+{
+  "generatedAt": "2026-01-08T10:24:52.298Z",
+  "model": "gemini-3-flash",
+  "category": "web",
+  "totalElapsed": 79189,
+  "summary": {
+    "total": 3,
+    "passed": 0,
+    "failed": 3,
+    "passRate": 0
+  },
+  "results": [
+    {
+      "id": "web_search_news",
+      "name": "Web: Search recent news",
+      "category": "web",
+      "passed": false,
+      "elapsed": 24257,
+      "toolsCalled": [
+        "initScratchpad",
+        "lookupGroundTruthEntity",
+        "setActiveSection",
+        "linkupSearch"
+      ],
+      "failureReasons": [
+        "entity mismatch: got resolvedId='N/A' canonical='German Biotech Funding Landscape' expected 'DISCO'"
+      ]
+    },
+    {
+      "id": "web_deep_fetch",
+      "name": "Web: Fetch and analyze webpage",
+      "category": "web",
+      "passed": false,
+      "elapsed": 39329,
+      "toolsCalled": [
+        "lookupGroundTruthEntity",
+        "lookupGroundTruthEntity",
+        "initScratchpad",
+        "fusionSearch"
+      ],
+      "failureReasons": [
+        "Missing required tool call: linkupFetch"
+      ]
+    },
+    {
+      "id": "web_multi_source",
+      "name": "Web: Multi-source verification",
+      "category": "web",
+      "passed": false,
+      "elapsed": 15602,
+      "toolsCalled": [
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": [
+        "Missing required tool call: linkupSearch",
+        "Tool call minimum not met: 1 < 2",
+        "persona mismatch: got JPM_STARTUP_BANKER expected ACADEMIC_RD"
+      ]
+    }
+  ]
+}

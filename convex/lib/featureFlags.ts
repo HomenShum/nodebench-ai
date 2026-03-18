@@ -120,6 +120,12 @@ export const UI_FLAGS = {
    * Requires sandbox validation (data.url rejection) to be in place.
    */
   ENABLE_VIZ_ARTIFACT: true,
+
+  /**
+   * Enable the control-plane demo affordances on the landing page.
+   * This gates hero-level demo assets without hiding the core product framing.
+   */
+  CONTROL_PLANE_DEMO: true,
 };
 
 export type UIFlagKey = keyof typeof UI_FLAGS;

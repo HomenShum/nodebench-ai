@@ -29,7 +29,7 @@ This document outlines the **complete restructure** of the NodeBench AI agent sy
 | Anthropic | `claude-haiku-4.5` | `claude-haiku-4-5` | Fast/cheap |
 | Google | `gemini-3-pro-preview` | `gemini-3-pro-preview` | Multimodal flagship |
 | Google | `gemini-2.5-pro` | `gemini-2.5-pro` | Best quality (2M ctx) |
-| Google | `gemini-2.5-flash` | `gemini-2.5-flash` | Fast (1M ctx) |
+| Google | `gemini-3.1-flash-lite-preview` | `gemini-3.1-flash-lite-preview` | Fast (1M ctx) |
 
 ## Models to DELETE (16 Total)
 
@@ -51,7 +51,7 @@ This document outlines the **complete restructure** of the NodeBench AI agent sy
 - `claude-opus-4` - Old Claude 4.0 series
 
 ### Google (1 to delete)
-- `gemini-2.5-flash-lite` - Not in approved list
+- `gemini-3.1-flash-lite-preview-lite` - Not in approved list
 
 ---
 
@@ -68,7 +68,7 @@ may temporarily differ due to provider availability:
 | `claude-haiku-4.5`         | `claude-haiku-4-5`                   | Direct Anthropic ID |
 | `gemini-3-pro-preview`     | `gemini-3-pro-preview`               | Direct Google ID |
 | `gemini-2.5-pro`           | `gemini-2.5-pro`                     | Direct Google ID |
-| `gemini-2.5-flash`         | `gemini-2.5-flash`                   | Direct Google ID |
+| `gemini-3.1-flash-lite-preview`         | `gemini-3.1-flash-lite-preview`                   | Direct Google ID |
 
 **Logging requirement:** Every model resolution **must** log both `requestedAlias` and
 `resolvedSdkModelId` so we can:
@@ -234,7 +234,7 @@ nodebench-ai/
  * APPROVED MODELS (7 total):
  * - OpenAI:    gpt-5.2
  * - Anthropic: claude-opus-4.5, claude-sonnet-4.5, claude-haiku-4.5
- * - Google:    gemini-3-pro-preview, gemini-2.5-pro, gemini-2.5-flash
+ * - Google:    gemini-3-pro-preview, gemini-2.5-pro, gemini-3.1-flash-lite-preview
  *
  * Design:
  * - NO prefix-based inference (brittle).
@@ -262,7 +262,7 @@ export type ApprovedModel =
   | "claude-haiku-4.5"
   | "gemini-3-pro-preview"
   | "gemini-2.5-pro"
-  | "gemini-2.5-flash";
+  | "gemini-3.1-flash-lite-preview";
 
 export interface ModelSpec {
   alias: ApprovedModel;
@@ -316,10 +316,10 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
     sdkId: "gemini-2.5-pro",
     capabilities: { vision: true, toolUse: true, maxContext: 2_000_000 },
   },
-  "gemini-2.5-flash": {
-    alias: "gemini-2.5-flash",
+  "gemini-3.1-flash-lite-preview": {
+    alias: "gemini-3.1-flash-lite-preview",
     provider: "google",
-    sdkId: "gemini-2.5-flash",
+    sdkId: "gemini-3.1-flash-lite-preview",
     capabilities: { vision: true, toolUse: true, maxContext: 1_000_000 },
   },
 };
@@ -402,7 +402,7 @@ export function getDefaultModel(
     case "coding":
       return "claude-opus-4.5";
     case "fast":
-      return "gemini-2.5-flash";
+      return "gemini-3.1-flash-lite-preview";
     case "vision":
       return "gemini-3-pro-preview";
     case "chat":
@@ -1100,7 +1100,7 @@ These files were found to have hardcoded old model references that must be updat
 { id: "gpt-5-mini", name: "GPT-5 Mini", ... }
 { id: "gpt-5-nano", name: "GPT-5 Nano", ... }
 { id: "gpt-5.1-codex", name: "GPT-5.1 Codex", ... }
-{ id: "gemini-2.5-flash-lite", name: "Gemini Flash Lite", ... }
+{ id: "gemini-3.1-flash-lite-preview-lite", name: "Gemini Flash Lite", ... }
 ```
 **Fix:** Replace with 7 approved models only
 
@@ -1341,7 +1341,7 @@ DISALLOWED=(
   "gpt-5.1" "gpt-5.1-codex" "gpt-5-mini" "gpt-5-nano"
   "gpt-4.1" "gpt-4.1-mini" "gpt-4.1-nano" "gpt-4o"
   "claude-sonnet-4-5-20250929" "claude-opus-4-5-20251101" "claude-haiku-4-5-20251001"
-  "gemini-2.5-flash-lite"
+  "gemini-3.1-flash-lite-preview-lite"
 )
 
 EXCLUDE="modelResolver.ts|modelCatalog.ts|MODEL_CONSOLIDATION_PLAN.md"
@@ -1365,7 +1365,7 @@ Add to CI workflow (GitHub Actions, etc.) so regressions are caught before merge
 - [ ] Grep / search for any remaining references to:
   - `gpt-5.1`, `gpt-5-mini`, `gpt-5-nano`, `gpt-4.1`, `gpt-4.1-mini`, `gpt-4.1-nano`, `gpt-4o`
   - `claude-sonnet-4-5-20250929`, `claude-opus-4-5-20251101`, `claude-haiku-4-5-20251001`
-  - `gemini-2.5-flash-lite`
+  - `gemini-3.1-flash-lite-preview-lite`
 
 ## 11.2 Critical Flows to Manually Verify
 
@@ -1378,7 +1378,7 @@ Add to CI workflow (GitHub Actions, etc.) so regressions are caught before merge
   - `claude-haiku-4.5`
   - `gemini-3-pro-preview`
   - `gemini-2.5-pro`
-  - `gemini-2.5-flash`
+  - `gemini-3.1-flash-lite-preview`
 - [ ] Multi-agent coordinator flow (delegation to subagents) still runs end-to-end.
 
 ### Data Access & Arbitrage

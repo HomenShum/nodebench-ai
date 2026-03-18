@@ -1,0 +1,2282 @@
+[
+  {
+    "filename": "activity-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 8,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 7,
+      "interaction_affordance": 9
+    },
+    "overall": 8.1,
+    "issues": [
+      "The 'Global commands available' button has slightly inconsistent padding/margin compared to other elements.",
+      "The breadcrumbs 'Agent Workflows / Activity Stream' are very close to the 'Activity Stream' title below it, could use a bit more vertical spacing.",
+      "Empty state quality, dark mode compliance, and responsive layout cannot be fully assessed from this screenshot."
+    ]
+  },
+  {
+    "filename": "activity-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 7,
+      "spacing_consistency": 6,
+      "typography_scale": 7,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 7.3,
+    "issues": [
+      "Top navigation bar elements (hamburger, breadcrumbs, icons) are too close together, impacting readability and tap targets.",
+      "The 'Global commands available' button has insufficient vertical spacing from the 'Stay oriented...' text above it.",
+      "The 'Sessions' header is too close to the filter buttons below it.",
+      "Breadcrumbs typography is very small, potentially impacting tap target size.",
+      "Empty state quality and dark mode compliance cannot be fully assessed from this screenshot."
+    ]
+  },
+  {
+    "filename": "activity-mobile.png",
+    "scores": {
+      "visual_hierarchy": 7,
+      "spacing_consistency": 6,
+      "typography_scale": 7,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 7.5,
+    "issues": [
+      "Top navigation bar elements (hamburger, breadcrumbs, icons) are too close together, impacting readability and tap targets.",
+      "The 'Global commands available' button has insufficient vertical spacing from the 'Stay oriented...' text above it.",
+      "The 'Sessions' header is too close to the filter buttons below it.",
+      "Breadcrumbs typography is very small, potentially impacting tap target size.",
+      "Empty state quality cannot be fully assessed from this screenshot."
+    ]
+  },
+  {
+    "filename": "activity.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 8,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 7,
+      "interaction_affordance": 9
+    },
+    "overall": 8.4,
+    "issues": [
+      "The 'Global commands available' button has slightly inconsistent padding/margin compared to other elements.",
+      "The breadcrumbs 'Agent Workflows / Activity Stream' are very close to the 'Activity Stream' title below it, could use a bit more vertical spacing.",
+      "Empty state quality and responsive layout cannot be fully assessed from this screenshot."
+    ]
+  },
+  {
+    "filename": "agent-marketplace-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 7,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "Breadcrumb and description text are quite small, impacting readability.",
+      "Empty state quality and dark mode compliance could not be fully assessed from this light mode desktop screenshot."
+    ]
+  },
+  {
+    "filename": "agent-marketplace-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "Breadcrumb and description text are quite small, impacting readability.",
+      "Empty state quality and dark mode compliance could not be fully assessed from this light mode mobile screenshot."
+    ]
+  },
+  {
+    "filename": "agent-marketplace-mobile.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "Breadcrumb and description text are quite small, impacting readability.",
+      "Empty state quality could not be fully assessed from this screenshot."
+    ]
+  },
+  {
+    "filename": "agent-marketplace.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 7,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "Breadcrumb and description text are quite small, impacting readability.",
+      "Empty state quality and responsive layout could not be fully assessed from this dark mode desktop screenshot."
+    ]
+  },
+  {
+    "filename": "agents-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "agents-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "agents-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "agents.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "analytics-components-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "analytics-components-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "analytics-components-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "analytics-components.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "analytics-hitl-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "analytics-hitl-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "analytics-hitl-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "analytics-hitl.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "analytics-recommendations-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "analytics-recommendations-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "analytics-recommendations-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "analytics-recommendations.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "assistant-panel.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "benchmarks-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "benchmarks-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "benchmarks-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "benchmarks.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "calendar-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "calendar-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "calendar-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "calendar.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 8,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8.75,
+    "issues": [
+      "The 'Global commands available' text is very small and low contrast, making it hard to read.",
+      "The vertical spacing between 'February 2026' and the day names in the right sidebar calendar feels slightly cramped.",
+      "The 'Nothing scheduled.' and 'No upcoming items.' text in the right sidebar could benefit from better visual separation or a more distinct style."
+    ]
+  },
+  {
+    "filename": "command-palette.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8.88,
+    "issues": [
+      "The background text ('Good morning', 'How to ask a question naturally...') is very faint and adds visual noise without being easily readable, which can be distracting.",
+      "The 'Global commands available' text in the top right is very small and low contrast, similar to other screens.",
+      "The 'DeepTrace' breadcrumb in the top left is also quite small and low contrast."
+    ]
+  },
+  {
+    "filename": "cost-dashboard-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8.88,
+    "issues": [
+      "The 'Global commands available' text is very small and low contrast.",
+      "The 'DeepTrace' breadcrumb is also quite small and low contrast.",
+      "The 'VIEWING' tag in the left sidebar under 'EXPLORE' is a bit small and could have slightly better contrast or visual weight."
+    ]
+  },
+  {
+    "filename": "cost-dashboard-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 8,
+      "interaction_affordance": 8
+    },
+    "overall": 8.62,
+    "issues": [
+      "The time range buttons ('24 Hours', '7 Days', '30 Days') are partially cut off, suggesting a horizontal scroll. This isn't immediately obvious and could hinder discoverability of all options.",
+      "The 'Global commands available' button is very small and might be difficult to tap accurately on a mobile device.",
+      "The 'DeepTrace / Spend' breadcrumb is quite small and could be hard to read."
+    ]
+  },
+  {
+    "filename": "cost-dashboard-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "cost-dashboard.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "delegation-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "delegation-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "delegation-mobile.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 8,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 6,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Pending Approvals' section shows a description but lacks a clear empty state message or illustration if there are no items.",
+      "The 'Global commands available' button could benefit from slightly more vertical padding from the description above it."
+    ]
+  },
+  {
+    "filename": "delegation.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 8,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 6,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Pending Approvals' and 'Needs Approval Log' sections show descriptions but lack clear empty state messages or illustrations if there are no items.",
+      "The 'Global commands available' button appears quite small and could be difficult to click accurately.",
+      "The text 'financial-analyst-02' and 'agent:main:signal:user:+14155550123' in the 'Pending Approvals' section are very close together, which could be improved with more line-height or vertical spacing."
+    ]
+  },
+  {
+    "filename": "document-recommendations-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 4,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 7
+    },
+    "overall": 8,
+    "issues": [
+      "The empty state for 'Recommended Docs' is too minimal; it needs a clear message (e.g., 'No recommendations found') and potentially a suggestion or call to action. The current icon and arrow are ambiguous.",
+      "The 'Global commands available' button is very small and could be hard to click.",
+      "The 'VIEWING' tag in the left navigation is quite small and might be difficult to read for some users."
+    ]
+  },
+  {
+    "filename": "document-recommendations-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 4,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 7
+    },
+    "overall": 8,
+    "issues": [
+      "The empty state for 'Recommended Docs' is too minimal; it needs a clear message (e.g., 'No recommendations found') and potentially a suggestion or call to action. The current icon and arrow are ambiguous.",
+      "The 'Global commands available' button is very small and could be hard to click."
+    ]
+  },
+  {
+    "filename": "document-recommendations-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 4,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 7
+    },
+    "overall": 8,
+    "issues": [
+      "Empty state provides no guidance or explanation for why there are no recommendations.",
+      "\"Global commands available\" appears as a tag, but its interactive nature (if any) is unclear."
+    ]
+  },
+  {
+    "filename": "document-recommendations.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 4,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 7
+    },
+    "overall": 8,
+    "issues": [
+      "Empty state provides no guidance or explanation for why there are no recommendations.",
+      "\"Global commands available\" appears as a tag, but its interactive nature (if any) is unclear."
+    ]
+  },
+  {
+    "filename": "documents-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "\"Global commands available\" appears as a tag, but its interactive nature (if any) is unclear."
+    ]
+  },
+  {
+    "filename": "documents-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 7,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 6,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Horizontal scrolling for view options (Cards, List, Grouped) and main tabs (Documents, Calendar, Agents, Roadmap) is not ideal for mobile.",
+      "Minor inconsistencies in button heights/alignment (e.g., \"All (2)\" vs \"Calendar\" buttons, and \"Cards\", \"List\", \"Grouped\" buttons).",
+      "\"Global commands available\" appears as a tag, but its interactive nature (if any) is unclear."
+    ]
+  },
+  {
+    "filename": "documents-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 7,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 7.9,
+    "issues": [
+      "The 'Cards', 'List', 'Grouped' buttons are quite small for touch targets on a mobile device.",
+      "The date 'Saturday, March 14' feels a bit cramped next to the 'My Documents' title."
+    ]
+  },
+  {
+    "filename": "documents.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9.1,
+    "issues": []
+  },
+  {
+    "filename": "dogfood-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 8,
+      "interaction_affordance": 8
+    },
+    "overall": 8.1,
+    "issues": [
+      "The 'Copy playback command' button's placement feels a bit disconnected from the 'Recorded sessions' title and its content.",
+      "The 'FULL SESSIONS' label appears twice, once above the videos and redundantly below them."
+    ]
+  },
+  {
+    "filename": "dogfood-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 5,
+      "interaction_affordance": 8
+    },
+    "overall": 7.5,
+    "issues": [
+      "The descriptive text 'UI evidence and route-by-route review. Fix root causes, then publish proof here.' wraps into a very narrow column, significantly impacting readability on mobile.",
+      "The 'Copy playback command' button's placement is still awkward and takes up valuable vertical space on mobile."
+    ]
+  },
+  {
+    "filename": "dogfood-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 6,
+      "color_harmony": 8,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "Body text and metadata text (e.g., 'Last published', descriptions) are often too small for comfortable mobile reading.",
+      "The 'Global commands available' button has slightly too much top margin from the breadcrumbs."
+    ]
+  },
+  {
+    "filename": "dogfood.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' button has slightly too much top margin from the breadcrumbs."
+    ]
+  },
+  {
+    "filename": "execution-trace-light.png",
+    "scores": {
+      "visual_hierarchy": 10,
+      "spacing_consistency": 10,
+      "typography_scale": 10,
+      "color_harmony": 10,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 10
+    },
+    "overall": 10,
+    "issues": []
+  },
+  {
+    "filename": "execution-trace-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 10,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'RUN SOURCE' heading could have slightly more visual weight or size to better differentiate it as a section title."
+    ]
+  },
+  {
+    "filename": "execution-trace-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "execution-trace.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "footnotes-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "footnotes-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "footnotes-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "footnotes.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "for-you-feed-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "for-you-feed-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "for-you-feed-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "for-you-feed.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "funding-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "funding-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "funding-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 7,
+      "typography_scale": 6,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 7,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "The main heading 'Startup Funding Brief' is excessively large for a mobile viewport, potentially causing unnecessary scrolling and reducing content density.",
+      "Spacing between the main heading and its descriptive text could be improved for better readability."
+    ]
+  },
+  {
+    "filename": "funding.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": []
+  },
+  {
+    "filename": "github-explorer-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 8,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": []
+  },
+  {
+    "filename": "github-explorer-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 8,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": []
+  },
+  {
+    "filename": "github-explorer-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "github-explorer.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "home-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "home-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "home-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 7,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Global commands available' button has low text contrast, making it less readable.",
+      "The large purple icon below the main title feels somewhat redundant with the 'Good morning' heading immediately following it."
+    ]
+  },
+  {
+    "filename": "home.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 7,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Global commands available' button has low text contrast, making it less readable.",
+      "The large purple icon below the main title feels somewhat redundant with the 'Good morning' heading immediately following it."
+    ]
+  },
+  {
+    "filename": "industry-updates-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 7,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' button has low text contrast, making it less readable, especially in light mode."
+    ]
+  },
+  {
+    "filename": "industry-updates-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 7,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 10,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' button has low text contrast, making it less readable, especially in light mode."
+    ]
+  },
+  {
+    "filename": "industry-updates-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Global commands available' tag's interactivity is not immediately clear."
+    ]
+  },
+  {
+    "filename": "industry-updates.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' tag's interactivity is not immediately clear."
+    ]
+  },
+  {
+    "filename": "interaction-agent-input.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The interactivity of the 'Topic canvas' cards is ambiguous; if they are interactive, they need clearer affordance.",
+      "The 'Global commands available' tag's interactivity is not immediately clear."
+    ]
+  },
+  {
+    "filename": "interaction-agent-query-typed.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "The interactivity of the 'Topic canvas' cards is ambiguous; if they are interactive, they need clearer affordance.",
+      "The 'Global commands available' tag's interactivity is not immediately clear."
+    ]
+  },
+  {
+    "filename": "interaction-agent-response-stream.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 7,
+      "typography_scale": 7,
+      "color_harmony": 8,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Text in the 'Topic canvas' section is very small, impacting readability.",
+      "The 'Global commands available' button is visually subtle and could be overlooked.",
+      "The 'Recent chats' section feels a bit cramped, especially with the prompt below."
+    ]
+  },
+  {
+    "filename": "interaction-agent-thread-switch.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 7,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Recent chats' section still feels a bit cramped.",
+      "Filter buttons ('All', 'Calendar', 'Documents') are positioned a bit too close together."
+    ]
+  },
+  {
+    "filename": "interaction-calendar-click.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 7,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Presets' buttons ('Sprint Week', 'Meetings Day', 'Personal') are a bit close together.",
+      "The 'Add Event' and 'Prep Day' buttons are quite close, potentially leading to mis-clicks."
+    ]
+  },
+  {
+    "filename": "interaction-document-hover.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 7,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 7,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "Filter buttons ('All', 'Calendar', 'Documents') are positioned a bit too close together.",
+      "The calendar widget at the bottom feels somewhat disconnected from the 'My Documents' section above it."
+    ]
+  },
+  {
+    "filename": "interaction-dogfood-frame-selected.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "interaction-github-hover.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "interaction-search-suggestions.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "interaction-sidebar-hover.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "interaction-swarm-lanes.png",
+    "scores": {
+      "visual_hierarchy": 7,
+      "spacing_consistency": 6,
+      "typography_scale": 7,
+      "color_harmony": 8,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 7,
+    "issues": [
+      "The 'Topic canvas' section feels visually disconnected and has tight spacing for its content.",
+      "Some vertical spacing inconsistencies are present in the main content area.",
+      "The empty state for 'Topics, not sessions' could be more descriptive or action-oriented."
+    ]
+  },
+  {
+    "filename": "investigation-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 8,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "Empty state quality is not applicable as data is present.",
+      "Dark mode compliance is not applicable as this is a light mode screenshot."
+    ]
+  },
+  {
+    "filename": "investigation-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 10,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "Empty state quality is not applicable as data is present.",
+      "Dark mode compliance is not applicable as this is a light mode screenshot."
+    ]
+  },
+  {
+    "filename": "investigation-mobile.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 10,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "Empty state quality is not applicable as data is present."
+    ]
+  },
+  {
+    "filename": "investigation.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "linkedin-posts-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "linkedin-posts-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "linkedin-posts-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "linkedin-posts.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 7,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "Empty state not visible for evaluation.",
+      "Responsive layout cannot be fully assessed from a single desktop view."
+    ]
+  },
+  {
+    "filename": "mcp-ledger-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 7,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "Dark mode compliance not applicable for a light mode screenshot.",
+      "Responsive layout cannot be fully assessed from a single desktop view."
+    ]
+  },
+  {
+    "filename": "mcp-ledger-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 10,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "Empty state not visible for evaluation.",
+      "Dark mode compliance not applicable for a light mode screenshot."
+    ]
+  },
+  {
+    "filename": "mcp-ledger-mobile.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 10,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "Empty state not visible for evaluation."
+    ]
+  },
+  {
+    "filename": "mcp-ledger.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Note' text under filters is quite small and could benefit from a slightly larger font size for better readability.",
+      "The 'Global commands available' button appears somewhat visually isolated and could be better integrated into the header or a more contextual area."
+    ]
+  },
+  {
+    "filename": "pr-suggestions-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 7,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' button appears somewhat visually isolated and could be better integrated into the header or a more contextual area."
+    ]
+  },
+  {
+    "filename": "pr-suggestions-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 10,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' button, while less prominent on mobile, still feels a bit like an afterthought and could be better integrated or removed if not critical for mobile context."
+    ]
+  },
+  {
+    "filename": "pr-suggestions-mobile.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 10,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 10,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Global commands available' button, while less prominent on mobile, still feels a bit like an afterthought and could be better integrated or removed if not critical for mobile context."
+    ]
+  },
+  {
+    "filename": "pr-suggestions.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "product-direction-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "product-direction-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "product-direction-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "product-direction.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 8,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 5,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 7,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "Empty state quality not applicable to this screenshot as data is present.",
+      "Responsive layout cannot be fully assessed from a single desktop screenshot."
+    ]
+  },
+  {
+    "filename": "public-docs-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 8,
+      "typography_scale": 9,
+      "color_harmony": 7,
+      "empty_state_quality": 5,
+      "dark_mode_compliance": 5,
+      "responsive_layout": 7,
+      "interaction_affordance": 8
+    },
+    "overall": 7,
+    "issues": [
+      "Empty state quality not applicable to this screenshot as data is present.",
+      "Dark mode compliance not applicable to this screenshot as it is in light mode.",
+      "Responsive layout cannot be fully assessed from a single desktop screenshot.",
+      "Potential low contrast for some tags (e.g., 'ifsari') on the light background, which might impact accessibility for some users."
+    ]
+  },
+  {
+    "filename": "public-docs-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 7,
+      "empty_state_quality": 5,
+      "dark_mode_compliance": 5,
+      "responsive_layout": 10,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Empty state quality not applicable to this screenshot as data is present.",
+      "Dark mode compliance not applicable to this screenshot as it is in light mode.",
+      "Potential low contrast for some tags (e.g., 'ifsari') on the light background, which might impact accessibility for some users."
+    ]
+  },
+  {
+    "filename": "public-docs-mobile.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 5,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 10,
+      "interaction_affordance": 8
+    },
+    "overall": 9,
+    "issues": [
+      "Empty state quality not applicable to this screenshot as data is present."
+    ]
+  },
+  {
+    "filename": "public-docs.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "receipts-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "receipts-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "receipts-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "receipts.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "Empty state not visible for assessment."
+    ]
+  },
+  {
+    "filename": "research-briefing-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 9,
+      "color_harmony": 7,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "Low contrast for 'Updated today' text against the background.",
+      "Graph lines are very light, potentially lacking sufficient contrast.",
+      "Empty state not visible for assessment.",
+      "Dark mode compliance not applicable for light theme screenshot."
+    ]
+  },
+  {
+    "filename": "research-briefing-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 7,
+      "typography_scale": 9,
+      "color_harmony": 6,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 9,
+      "interaction_affordance": 7
+    },
+    "overall": 8,
+    "issues": [
+      "Very low contrast for 'Global commands available' button text, impacting readability and accessibility.",
+      "Spacing between filter buttons and the right arrow icon is tight.",
+      "Empty state not visible for assessment.",
+      "Dark mode compliance not applicable for light theme screenshot."
+    ]
+  },
+  {
+    "filename": "research-briefing-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 7,
+      "typography_scale": 9,
+      "color_harmony": 8,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "Spacing between filter buttons and the right arrow icon is tight.",
+      "Contrast of 'Global commands available' button text could be slightly improved for optimal readability.",
+      "Empty state not visible for assessment."
+    ]
+  },
+  {
+    "filename": "research-briefing.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 5,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 7,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "Empty state quality cannot be assessed from this screenshot.",
+      "The graph on the right side is visually less prominent and could benefit from better integration or sizing.",
+      "The 'Pulse' section at the bottom right feels somewhat isolated from the main content flow."
+    ]
+  },
+  {
+    "filename": "research-changelog-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 5,
+      "dark_mode_compliance": 5,
+      "responsive_layout": 7,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "Empty state quality cannot be assessed from this screenshot.",
+      "Dark mode compliance cannot be assessed from this light mode screenshot.",
+      "The graph on the right side is visually less prominent and could benefit from better integration or sizing."
+    ]
+  },
+  {
+    "filename": "research-changelog-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 7,
+      "spacing_consistency": 7,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 5,
+      "dark_mode_compliance": 5,
+      "responsive_layout": 8,
+      "interaction_affordance": 7
+    },
+    "overall": 7,
+    "issues": [
+      "Empty state quality cannot be assessed from this screenshot.",
+      "Dark mode compliance cannot be assessed from this light mode screenshot.",
+      "The timeline elements ('Past', 'Present', 'Future' dots and labels) are very cramped, impacting readability and touch target size.",
+      "The tabs below the timeline are quite small, potentially affecting touch interaction."
+    ]
+  },
+  {
+    "filename": "research-changelog-mobile.png",
+    "scores": {
+      "visual_hierarchy": 7,
+      "spacing_consistency": 7,
+      "typography_scale": 8,
+      "color_harmony": 9,
+      "empty_state_quality": 5,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 7
+    },
+    "overall": 8,
+    "issues": [
+      "Empty state quality cannot be assessed from this screenshot.",
+      "The timeline elements ('Past', 'Present', 'Future' dots and labels) are very cramped, impacting readability and touch target size.",
+      "The tabs below the timeline are quite small, potentially affecting touch interaction."
+    ]
+  },
+  {
+    "filename": "research-changelog.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 7,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "No explicit empty state shown, cannot fully assess.",
+      "Responsiveness not fully assessable from a single desktop image."
+    ]
+  },
+  {
+    "filename": "research-deals-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 7,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "No explicit empty state shown, cannot fully assess.",
+      "Responsiveness not fully assessable from a single desktop image.",
+      "Dark mode compliance is not applicable for this light mode screenshot."
+    ]
+  },
+  {
+    "filename": "research-deals-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "No explicit empty state shown, cannot fully assess.",
+      "Dark mode compliance is not applicable for this light mode screenshot."
+    ]
+  },
+  {
+    "filename": "research-deals-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "No explicit empty state shown, cannot fully assess."
+    ]
+  },
+  {
+    "filename": "research-deals.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "research-hub-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "research-hub-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "research-hub-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "research-hub.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "research-overview-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "research-overview-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "research-overview-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "research-overview.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 8,
+      "typography_scale": 7,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 8,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "Typography in some secondary sections (right panels, input field placeholder) is a bit small, potentially impacting readability for some users.",
+      "Empty state quality cannot be assessed from this screenshot."
+    ]
+  },
+  {
+    "filename": "research-signals-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 8,
+      "typography_scale": 7,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 8,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "Typography in some secondary sections (right panels, input field placeholder) is a bit small, potentially impacting readability for some users.",
+      "Empty state quality cannot be assessed from this screenshot.",
+      "Dark mode compliance cannot be assessed as this is a light mode screenshot."
+    ]
+  },
+  {
+    "filename": "research-signals-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 10,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "Empty state quality cannot be assessed from this screenshot.",
+      "Dark mode compliance cannot be assessed as this is a light mode screenshot."
+    ]
+  },
+  {
+    "filename": "research-signals-mobile.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 10,
+      "responsive_layout": 10,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "Empty state quality cannot be assessed from this screenshot."
+    ]
+  },
+  {
+    "filename": "research-signals.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "roadmap-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "roadmap-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "roadmap-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "roadmap.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "settings-account.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "settings-billing.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "settings-integrations.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "settings-preferences.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 8,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Currently using: dark mode' text has slightly low contrast against the dark background, though still readable.",
+      "The 'Reset to defaults' button icon is a bit small and could be more prominent for a potentially destructive action."
+    ]
+  },
+  {
+    "filename": "settings-profile.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 8,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Currently using: dark mode' text has slightly low contrast against the dark background, though still readable.",
+      "The 'Reset to defaults' button icon is a bit small and could be more prominent for a potentially destructive action."
+    ]
+  },
+  {
+    "filename": "settings-usage.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 8,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The 'Mar 14' date next to daily usage metrics lacks clear context; it's unclear if it's the last update or a specific date for the data shown.",
+      "The 'Save' buttons next to API key fields are small and could be more prominent, especially for a critical action like saving credentials."
+    ]
+  },
+  {
+    "filename": "showcase-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 9,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": [
+      "The instructional text 'Stay oriented while moving between surfaces' is quite small and could be more prominent if it's an important user guide.",
+      "The 'Global commands available' text in the top right is very small and blends into the background, reducing its visibility.",
+      "The inline footnote markers (e.g., '[1]', '[2]') are very small, potentially making them difficult to tap or click accurately, especially on touch devices."
+    ]
+  },
+  {
+    "filename": "showcase-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": []
+  },
+  {
+    "filename": "showcase-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": []
+  },
+  {
+    "filename": "showcase.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 8,
+      "typography_scale": 9,
+      "color_harmony": 9,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 9,
+    "issues": []
+  },
+  {
+    "filename": "signals-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 7,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 7,
+      "dark_mode_compliance": 7,
+      "responsive_layout": 7,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "The main content column appears quite narrow on a wide screen due to large left/right margins, potentially underutilizing horizontal space."
+    ]
+  },
+  {
+    "filename": "signals-mobile-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "signals-mobile.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "signals.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "spreadsheets-light.png",
+    "scores": {},
+    "overall": 0,
+    "issues": [
+      "JSON parse error"
+    ]
+  },
+  {
+    "filename": "spreadsheets-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 5,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "\"Global commands available\" button has low contrast.",
+      "\"Try:\" text is a bit small for optimal readability."
+    ]
+  },
+  {
+    "filename": "spreadsheets-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 9,
+      "typography_scale": 8,
+      "color_harmony": 7,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 8,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "\"Global commands available\" button has low contrast against the dark background.",
+      "\"Try:\" text is a bit small for optimal readability."
+    ]
+  },
+  {
+    "filename": "spreadsheets.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 8,
+      "typography_scale": 8,
+      "color_harmony": 7,
+      "empty_state_quality": 9,
+      "dark_mode_compliance": 8,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "\"Global commands available\" button has low contrast.",
+      "Search bar placeholder text has slightly low contrast.",
+      "Spacing within the \"Deep Trace Behind Every Thesis\" section could be slightly improved for better readability.",
+      "\"Try:\" text is a bit small for optimal readability."
+    ]
+  },
+  {
+    "filename": "timeline-light.png",
+    "scores": {
+      "visual_hierarchy": 9,
+      "spacing_consistency": 7,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 8,
+      "dark_mode_compliance": 5,
+      "responsive_layout": 9,
+      "interaction_affordance": 9
+    },
+    "overall": 8,
+    "issues": [
+      "Spacing within the \"Roadmap Navigator\" sub-tabs is a bit tight.",
+      "\"Global commands available\" button has low contrast.",
+      "\"Back to top\" link is a bit light, reducing its prominence.",
+      "Large vertical spacing between \"Roadmap Navigator\" and the data cards below it."
+    ]
+  },
+  {
+    "filename": "timeline-mobile-light.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 7,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 5,
+      "dark_mode_compliance": 5,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 7,
+    "issues": [
+      "The 'Global commands available' button is positioned very close to the description text above it.",
+      "The 'Back to top' button is too close to the 'Section 1 of 14' text, impacting readability and visual separation.",
+      "Empty state for lists/sections is not explicitly shown, only counts of 0 on cards.",
+      "Dark mode compliance cannot be assessed from this light mode screenshot."
+    ]
+  },
+  {
+    "filename": "timeline-mobile.png",
+    "scores": {
+      "visual_hierarchy": 8,
+      "spacing_consistency": 7,
+      "typography_scale": 8,
+      "color_harmony": 8,
+      "empty_state_quality": 5,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Global commands available' button is positioned very close to the description text above it.",
+      "The 'Back to top' button is too close to the 'Section 1 of 14' text, impacting readability and visual separation.",
+      "Empty state for lists/sections is not explicitly shown, only counts of 0 on cards."
+    ]
+  },
+  {
+    "filename": "timeline.png",
+    "scores": {
+      "visual_hierarchy": 7,
+      "spacing_consistency": 7,
+      "typography_scale": 7,
+      "color_harmony": 8,
+      "empty_state_quality": 5,
+      "dark_mode_compliance": 9,
+      "responsive_layout": 9,
+      "interaction_affordance": 8
+    },
+    "overall": 8,
+    "issues": [
+      "The 'Roadmap Hub' title is excessively large, potentially too dominant and disproportionate for a desktop view.",
+      "The 'Files' section title is quite small, reducing its prominence and hierarchy as a section header.",
+      "The 'Back to top' button is too close to the 'Section 1 of 14' text, impacting readability and visual separation.",
+      "Vertical spacing between the 'Roadmap Navigator', 'Files', and 'Activity Heatmap' sections feels inconsistent, with section titles being too close to the content above them.",
+      "Empty state for lists/sections is not explicitly shown, only counts of 0 on cards."
+    ]
+  }
+]

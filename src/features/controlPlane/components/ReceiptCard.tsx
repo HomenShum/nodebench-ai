@@ -84,18 +84,31 @@ export const ViolationCard = memo(function ViolationCard({
   );
 });
 
+export interface ReceiptRollbackState {
+  isUndoing?: boolean;
+  rolledBackAt?: string;
+  rollbackRef?: string;
+  modeLabel?: string;
+}
+
 export const ReceiptCard = memo(function ReceiptCard({
   receipt,
   isExpanded,
   onToggle,
+  onUndo,
+  rollbackState,
 }: {
   receipt: ActionReceipt;
   isExpanded: boolean;
   onToggle: () => void;
+  onUndo?: (receipt: ActionReceipt) => void;
+  rollbackState?: ReceiptRollbackState;
 }) {
   const hasViolations = receipt.violations.length > 0;
   const policyStyle = POLICY_STYLES[receipt.policyRef.action];
   const approvalState = receipt.approval?.state ?? "not_required";
+  const rolledBackAt = rollbackState?.rolledBackAt;
+  const canExecuteUndo = receipt.reversible.canUndo && Boolean(onUndo) && !rolledBackAt;
   const time = new Date(receipt.timestamp).toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
@@ -140,6 +153,11 @@ export const ReceiptCard = memo(function ReceiptCard({
 
         <div className="flex shrink-0 items-center gap-2">
           <PolicyBadge action={receipt.policyRef.action} />
+          {rolledBackAt && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-[11px] font-medium text-indigo-300">
+              Rolled back
+            </span>
+          )}
           {approvalState !== "not_required" && (
             <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium", APPROVAL_STYLES[approvalState])}>
               {approvalState}
@@ -269,18 +287,45 @@ export const ReceiptCard = memo(function ReceiptCard({
             </div>
           )}
 
-          {receipt.reversible.canUndo && (
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 rounded-md border border-edge bg-surface-hover px-3 py-1.5 text-xs font-medium text-content-secondary transition-colors hover:bg-surface-secondary"
-              onClick={(event) => {
-                event.stopPropagation();
-              }}
-            >
-              <Undo2 className="h-3 w-3" />
-              Undo action
-            </button>
-          )}
+          <div className="rounded-lg border border-edge/60 bg-black/10 p-3 text-xs">
+            <div className="font-medium text-content-muted">Rollback</div>
+            {!receipt.reversible.canUndo ? (
+              <div className="mt-1 text-content-muted">
+                <span className="font-medium text-content-secondary">No rollback available.</span> This receipt is a
+                read-only observation or a blocked attempt, so there is no state change to reverse.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="mt-1 text-content-secondary">
+                  {rolledBackAt
+                    ? `${rollbackState?.modeLabel ?? "Rollback"} completed ${new Date(rolledBackAt).toLocaleString()}.`
+                    : receipt.reversible.undoInstructions ?? "Rollback instructions are available for this action."}
+                </div>
+                {rollbackState?.rollbackRef && (
+                  <div className="font-mono text-[11px] text-content-muted">rollback_ref: {rollbackState.rollbackRef}</div>
+                )}
+                {!rolledBackAt && (
+                  <button
+                    type="button"
+                    disabled={!canExecuteUndo || rollbackState?.isUndoing}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-edge bg-surface-hover px-3 py-1.5 text-xs font-medium text-content-secondary transition-colors hover:bg-surface-secondary disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onUndo?.(receipt);
+                    }}
+                  >
+                    <Undo2 className="h-3 w-3" />
+                    {rollbackState?.isUndoing ? "Undoing…" : "Undo action"}
+                  </button>
+                )}
+                {!canExecuteUndo && !rolledBackAt && !rollbackState?.isUndoing && (
+                  <div className="text-content-muted">
+                    Rollback is available for this receipt, but no live rollback handler is connected yet.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="border-t border-edge/30 pt-2 font-mono text-[10px] text-content-muted">
             Receipt: {receipt.receiptId}

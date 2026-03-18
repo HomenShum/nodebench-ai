@@ -15,6 +15,7 @@ describe("ExecutionTraceView", () => {
   beforeEach(() => {
     useConvexAuthMock.mockReset();
     useQueryMock.mockReset();
+    window.history.replaceState({}, "", "/execution-trace");
   });
 
   it("falls back to the seeded example when no live runs are available", () => {
@@ -115,5 +116,78 @@ describe("ExecutionTraceView", () => {
     fireEvent.click(screen.getByRole("tab", { name: /Why/i }));
     expect(screen.getByText(/Why this outcome/i)).toBeInTheDocument();
     expect(screen.getByText(/Evidence boundary/i)).toBeInTheDocument();
+  });
+
+  it("honors a session query param when deep-linking from another operator surface", async () => {
+    useConvexAuthMock.mockReturnValue({ isAuthenticated: false });
+    window.history.replaceState({}, "", "/execution-trace?session=session_target");
+
+    useQueryMock.mockImplementation((_queryRef: unknown, args: unknown) => {
+      if (args === "skip") return undefined;
+      if (typeof args === "object" && args !== null && "limit" in args) {
+        return {
+          sessions: [
+            {
+              _id: "session_other",
+              title: "Other session",
+              type: "agent",
+              status: "completed",
+              startedAt: Date.parse("2026-03-12T18:00:00.000Z"),
+            },
+            {
+              _id: "session_target",
+              title: "Deep-linked topic session",
+              type: "swarm",
+              status: "completed",
+              startedAt: Date.parse("2026-03-13T18:00:00.000Z"),
+            },
+          ],
+        };
+      }
+      if (typeof args === "object" && args !== null && "sessionId" in args) {
+        if (args.sessionId === "session_target") {
+          return {
+            session: {
+              _id: "session_target",
+              title: "Deep-linked topic session",
+              description: "Opened from the topic canvas.",
+              type: "swarm",
+              visibility: "public",
+              status: "completed",
+              startedAt: Date.parse("2026-03-13T18:00:00.000Z"),
+            },
+            traces: [],
+            traceCount: 0,
+          };
+        }
+        return {
+          session: {
+            _id: "session_other",
+            title: "Other session",
+            type: "agent",
+            visibility: "public",
+            status: "completed",
+            startedAt: Date.parse("2026-03-12T18:00:00.000Z"),
+          },
+          traces: [],
+          traceCount: 0,
+        };
+      }
+      if (typeof args === "object" && args !== null && "traceId" in args) {
+        return {
+          spans: [],
+          rootSpans: [],
+          childrenByParent: {},
+          spanCount: 0,
+        };
+      }
+      return undefined;
+    });
+
+    render(<ExecutionTraceView />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Deep-linked topic session" })).toBeInTheDocument();
+    });
   });
 });

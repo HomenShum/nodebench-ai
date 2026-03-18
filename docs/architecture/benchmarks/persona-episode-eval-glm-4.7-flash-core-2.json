@@ -1,0 +1,474 @@
+{
+  "generatedAt": "2026-01-20T08:50:14.164Z",
+  "gitSha": "8855f5f82eff2962a0459bd16d1c29720d5d3dc7",
+  "convexUrl": "https://formal-shepherd-851.convex.cloud",
+  "model": "glm-4.7-flash",
+  "elapsedMs": 80043,
+  "result": {
+    "ok": true,
+    "elapsedMs": 79680,
+    "summary": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "window": {
+      "suite": "core",
+      "batches": 1,
+      "totalAvailable": 3
+    },
+    "pricing": {
+      "provider": "openrouter",
+      "sourceUrl": "https://openrouter.ai/api/v1/models",
+      "fetchedAt": "2026-01-20T08:50:14.162Z",
+      "cache": {
+        "source": "repo",
+        "path": "shared/llm/modelCatalog.ts"
+      },
+      "model": {
+        "model": "glm-4.7-flash",
+        "inputUsdPer1MTokens": 0.07,
+        "outputUsdPer1MTokens": 0.4,
+        "cachedInputUsdPer1MTokens": 0.01,
+        "contextWindow": 200000
+      },
+      "notes": "Pricing sourced from repo model catalog; verify with OpenRouter /models endpoint as needed."
+    },
+    "estimatedUsage": {
+      "mode": "provider",
+      "inputTokens": 128850,
+      "outputTokens": 1052,
+      "cachedInputTokens": 125553,
+      "estimatedCostUsd": 0.00190712
+    },
+    "runs": [
+      {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "candidates": [],
+            "canonicalName": "Google Gemini 3",
+            "confidence": 0.9,
+            "input": "Gemini",
+            "resolvedId": "GEMINI_3",
+            "type": "model_platform (treat oss_project as open source / GitHub / repository)"
+          },
+          "fallbacks": [],
+          "grounding": [
+            "{{fact:ground_truth:GEMINI_3}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "channel": null,
+              "email": null
+            },
+            "freshness": {
+              "ageDays": null
+            },
+            "funding": {
+              "amount": {
+                "amount": null,
+                "currency": null,
+                "unit": null
+              },
+              "coLeads": [],
+              "date": null,
+              "stage": null
+            },
+            "hqLocation": null,
+            "people": {
+              "ceo": null,
+              "founders": []
+            },
+            "product": {
+              "leadPrograms": [],
+              "platform": null
+            }
+          },
+          "nextActions": [
+            "Verify primary sources (if required)",
+            "Run a quick contradiction scan",
+            "Draft a share-ready version for stakeholders"
+          ],
+          "persona": {
+            "assumptions": [
+              "Heuristic inference from query keywords for ENTERPRISE_EXEC"
+            ],
+            "confidence": 0.8,
+            "inferred": "ENTERPRISE_EXEC"
+          },
+          "planSteps": [
+            "Skill discovery",
+            "Lookup ground truth",
+            "Verify: check required fields + grounding",
+            "Format response + debrief"
+          ],
+          "risks": [],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "error": null,
+              "name": "searchAvailableSkills",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "linkupSearch",
+              "ok": true
+            },
+            {
+              "error": null,
+              "name": "searchAvailableSkills"
+            },
+            {
+              "error": null,
+              "name": "describeSkill"
+            }
+          ],
+          "verdict": "UNKNOWN"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "disclosure": {
+          "artifactBytesAvoided": 0,
+          "citationsInResponse": 0,
+          "citationsResolved": 0,
+          "citationsUnresolved": 0,
+          "costBudgetExceeded": false,
+          "directToolCalls": [
+            "lookupGroundTruthEntity",
+            "linkupSearch",
+            "lookupGroundTruthEntity"
+          ],
+          "disclosureLevel": "partial",
+          "estimatedToolSchemaTokens": 12250,
+          "resourceLinksCreated": 0,
+          "resourceLinksRetrieved": 0,
+          "skillSearchCalls": 2,
+          "skillsActivated": [],
+          "tokenBudgetExceeded": false,
+          "toolInvokeErrors": 0,
+          "toolSearchCalls": 0,
+          "toolsExpanded": [],
+          "toolsInvoked": [
+            "lookupGroundTruthEntity",
+            "linkupSearch"
+          ],
+          "usedMetaTools": true,
+          "usedSkillFirst": true,
+          "warnings": []
+        },
+        "elapsedMs": 79680,
+        "execution": {
+          "estimatedInputTokens": 1671,
+          "estimatedOutputTokens": 756,
+          "latencyMs": 78498,
+          "modelUsed": "glm-4.7-flash",
+          "providerUsage": {
+            "cachedInputTokens": 125553,
+            "completionTokens": 1052,
+            "promptTokens": 128850,
+            "reasoningTokens": 452,
+            "totalTokens": 129902
+          },
+          "stepsCount": 4,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "argsPreview": "{\"query\":\"Gemini 3 — should we consider this, and what's the procurement next step?\"}",
+              "name": "searchAvailableSkills"
+            },
+            {
+              "argsPreview": "{\"entity\":\"GEMINI_3\"}",
+              "name": "lookupGroundTruthEntity"
+            },
+            {
+              "argsPreview": "{\"query\":\"Gemini 3 — should we consider this, and what's the procurement next step?\",\"depth\":\"standard\",\"outputType\":\"searchResults\",\"maxResults\":3,\"includeInlineCitations\":true,\"includeSources\":true,\"includeImages\":false}",
+              "name": "linkupSearch"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "describeSkill"
+            },
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "searchAvailableSkills",
+              "ok": true,
+              "resultPreview": "Skill search preflight ok (query='Gemini 3 — should we consider this, and what's the procurement next step?')"
+            },
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true,
+              "resultPreview": "{{fact:ground_truth:GEMINI_3}}\nEntity ID: GEMINI_3\nCanonical name: Google Gemini 3\nEntity type: model_platform (treat oss_project as open source / GitHub / repository)\nRequired facts: Gemini 3 Flash | Gemini 3 Pro | context caching | $0.10 | $1.00\nForbidden facts: $0.05 input | no caching support\nWithin banker window: true\nHas primary source requirement: true"
+            },
+            {
+              "name": "linkupSearch",
+              "ok": true,
+              "resultPreview": "linkupSearch preflight recorded (eval telemetry)"
+            },
+            {
+              "name": "searchAvailableSkills"
+            },
+            {
+              "name": "describeSkill"
+            }
+          ]
+        },
+        "expectedEntityId": "GEMINI_3",
+        "expectedPersona": "ENTERPRISE_EXEC",
+        "failureReasons": [],
+        "id": "exec_vague_gemini",
+        "name": "Exec vendor evaluation",
+        "ok": true,
+        "promptMessageId": "ks7dqv7pt4q43th2wx53bphw6n7zkvgc",
+        "responsePreview": "Per the ground truth, we should consider Gemini 3—here's the procurement-focused next step:\n\nGemini 3 (Flash/Pro) – enterprise usage positioning\n\n- Capability: context caching\n- Pricing: $0.10 / 1M tokens (input) and $1.00 / 1M tokens (output)\n\nProcurement next step:\n- Issue a small scoped POC (e.g., a few million tokens/month) and validate:\n  - Context-caching ROI in your latency/SKU mix\n  - Token-cost accuracy vs. provenance or internal benchmarks\n  - Reliability, SLA, and support tiers for your workload profile\n\nDETAILED BREAKDOWN\n\nConsideration (Enterprise-focused):\n- Efficiency advantage: context caching lets you amortize or avoid repeated high-cost reads, supporting lower effective input spend if your use patterns are repeatitive. Align this with your cost models and TCO analysis.\n- Model capabilities: Fast inference (Flash) and strong reasoning/emerging agent workflows (Pro) may m",
+        "threadId": "m578bd2abft0df9q050y368vrx7zk8bm"
+      }
+    ],
+    "rawBatches": [
+      {
+        "elapsedMs": 79680,
+        "model": "glm-4.7-flash",
+        "ok": true,
+        "runs": [
+          {
+            "checks": {
+              "contact": true,
+              "entityResolved": true,
+              "fundingStage": true,
+              "grounding": true,
+              "hq": true,
+              "nextActions": true,
+              "persona": true
+            },
+            "debrief": {
+              "entity": {
+                "candidates": [],
+                "canonicalName": "Google Gemini 3",
+                "confidence": 0.9,
+                "input": "Gemini",
+                "resolvedId": "GEMINI_3",
+                "type": "model_platform (treat oss_project as open source / GitHub / repository)"
+              },
+              "fallbacks": [],
+              "grounding": [
+                "{{fact:ground_truth:GEMINI_3}}"
+              ],
+              "keyFacts": {
+                "contact": {
+                  "channel": null,
+                  "email": null
+                },
+                "freshness": {
+                  "ageDays": null
+                },
+                "funding": {
+                  "amount": {
+                    "amount": null,
+                    "currency": null,
+                    "unit": null
+                  },
+                  "coLeads": [],
+                  "date": null,
+                  "stage": null
+                },
+                "hqLocation": null,
+                "people": {
+                  "ceo": null,
+                  "founders": []
+                },
+                "product": {
+                  "leadPrograms": [],
+                  "platform": null
+                }
+              },
+              "nextActions": [
+                "Verify primary sources (if required)",
+                "Run a quick contradiction scan",
+                "Draft a share-ready version for stakeholders"
+              ],
+              "persona": {
+                "assumptions": [
+                  "Heuristic inference from query keywords for ENTERPRISE_EXEC"
+                ],
+                "confidence": 0.8,
+                "inferred": "ENTERPRISE_EXEC"
+              },
+              "planSteps": [
+                "Skill discovery",
+                "Lookup ground truth",
+                "Verify: check required fields + grounding",
+                "Format response + debrief"
+              ],
+              "risks": [],
+              "schemaVersion": "debrief_v1",
+              "toolsUsed": [
+                {
+                  "error": null,
+                  "name": "searchAvailableSkills",
+                  "ok": true
+                },
+                {
+                  "error": null,
+                  "name": "lookupGroundTruthEntity",
+                  "ok": true
+                },
+                {
+                  "error": null,
+                  "name": "linkupSearch",
+                  "ok": true
+                },
+                {
+                  "error": null,
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "error": null,
+                  "name": "describeSkill"
+                }
+              ],
+              "verdict": "UNKNOWN"
+            },
+            "debriefValidation": {
+              "errors": [],
+              "ok": true
+            },
+            "disclosure": {
+              "artifactBytesAvoided": 0,
+              "citationsInResponse": 0,
+              "citationsResolved": 0,
+              "citationsUnresolved": 0,
+              "costBudgetExceeded": false,
+              "directToolCalls": [
+                "lookupGroundTruthEntity",
+                "linkupSearch",
+                "lookupGroundTruthEntity"
+              ],
+              "disclosureLevel": "partial",
+              "estimatedToolSchemaTokens": 12250,
+              "resourceLinksCreated": 0,
+              "resourceLinksRetrieved": 0,
+              "skillSearchCalls": 2,
+              "skillsActivated": [],
+              "tokenBudgetExceeded": false,
+              "toolInvokeErrors": 0,
+              "toolSearchCalls": 0,
+              "toolsExpanded": [],
+              "toolsInvoked": [
+                "lookupGroundTruthEntity",
+                "linkupSearch"
+              ],
+              "usedMetaTools": true,
+              "usedSkillFirst": true,
+              "warnings": []
+            },
+            "elapsedMs": 79680,
+            "execution": {
+              "estimatedInputTokens": 1671,
+              "estimatedOutputTokens": 756,
+              "latencyMs": 78498,
+              "modelUsed": "glm-4.7-flash",
+              "providerUsage": {
+                "cachedInputTokens": 125553,
+                "completionTokens": 1052,
+                "promptTokens": 128850,
+                "reasoningTokens": 452,
+                "totalTokens": 129902
+              },
+              "stepsCount": 4,
+              "streamStatus": "completed",
+              "toolCalls": [
+                {
+                  "argsPreview": "{\"query\":\"Gemini 3 — should we consider this, and what's the procurement next step?\"}",
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "argsPreview": "{\"entity\":\"GEMINI_3\"}",
+                  "name": "lookupGroundTruthEntity"
+                },
+                {
+                  "argsPreview": "{\"query\":\"Gemini 3 — should we consider this, and what's the procurement next step?\",\"depth\":\"standard\",\"outputType\":\"searchResults\",\"maxResults\":3,\"includeInlineCitations\":true,\"includeSources\":true,\"includeImages\":false}",
+                  "name": "linkupSearch"
+                },
+                {
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "name": "describeSkill"
+                },
+                {
+                  "name": "lookupGroundTruthEntity"
+                }
+              ],
+              "toolResults": [
+                {
+                  "name": "searchAvailableSkills",
+                  "ok": true,
+                  "resultPreview": "Skill search preflight ok (query='Gemini 3 — should we consider this, and what's the procurement next step?')"
+                },
+                {
+                  "name": "lookupGroundTruthEntity",
+                  "ok": true,
+                  "resultPreview": "{{fact:ground_truth:GEMINI_3}}\nEntity ID: GEMINI_3\nCanonical name: Google Gemini 3\nEntity type: model_platform (treat oss_project as open source / GitHub / repository)\nRequired facts: Gemini 3 Flash | Gemini 3 Pro | context caching | $0.10 | $1.00\nForbidden facts: $0.05 input | no caching support\nWithin banker window: true\nHas primary source requirement: true"
+                },
+                {
+                  "name": "linkupSearch",
+                  "ok": true,
+                  "resultPreview": "linkupSearch preflight recorded (eval telemetry)"
+                },
+                {
+                  "name": "searchAvailableSkills"
+                },
+                {
+                  "name": "describeSkill"
+                }
+              ]
+            },
+            "expectedEntityId": "GEMINI_3",
+            "expectedPersona": "ENTERPRISE_EXEC",
+            "failureReasons": [],
+            "id": "exec_vague_gemini",
+            "name": "Exec vendor evaluation",
+            "ok": true,
+            "promptMessageId": "ks7dqv7pt4q43th2wx53bphw6n7zkvgc",
+            "responsePreview": "Per the ground truth, we should consider Gemini 3—here's the procurement-focused next step:\n\nGemini 3 (Flash/Pro) – enterprise usage positioning\n\n- Capability: context caching\n- Pricing: $0.10 / 1M tokens (input) and $1.00 / 1M tokens (output)\n\nProcurement next step:\n- Issue a small scoped POC (e.g., a few million tokens/month) and validate:\n  - Context-caching ROI in your latency/SKU mix\n  - Token-cost accuracy vs. provenance or internal benchmarks\n  - Reliability, SLA, and support tiers for your workload profile\n\nDETAILED BREAKDOWN\n\nConsideration (Enterprise-focused):\n- Efficiency advantage: context caching lets you amortize or avoid repeated high-cost reads, supporting lower effective input spend if your use patterns are repeatitive. Align this with your cost models and TCO analysis.\n- Model capabilities: Fast inference (Flash) and strong reasoning/emerging agent workflows (Pro) may m",
+            "threadId": "m578bd2abft0df9q050y368vrx7zk8bm"
+          }
+        ],
+        "summary": {
+          "failed": 0,
+          "passed": 1,
+          "total": 1
+        },
+        "window": {
+          "limit": 1,
+          "nextOffset": null,
+          "offset": 2,
+          "suite": "core",
+          "totalAvailable": 3
+        }
+      }
+    ]
+  }
+}

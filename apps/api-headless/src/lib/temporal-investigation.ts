@@ -715,7 +715,7 @@ export async function buildEnterpriseInvestigation(args: {
     evidence_catalog: evidenceCatalog,
     traceability: {
       trace_id: args.traceId,
-      tool_calls: args.telemetry?.toolCalls ?? 0,
+      tool_calls: args.telemetry?.sourcesQueried.length ?? 0,
       replay_url: null,
       otel_spans_recorded: true,
       artifact_integrity: evidenceCatalog.some((e) => e.content_hash.startsWith("sha256:unverified"))

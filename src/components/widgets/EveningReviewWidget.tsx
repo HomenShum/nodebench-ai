@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useMotionConfig } from '@/lib/motion';
 import { Sunset, CheckCircle, Calendar, BookOpen, ArrowRight } from 'lucide-react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
@@ -9,6 +10,7 @@ interface EveningReviewWidgetProps {
 }
 
 export function EveningReviewWidget({ onNavigate }: EveningReviewWidgetProps) {
+  const { instant, transition } = useMotionConfig();
   const [reflection, setReflection] = useState('');
 
   // Get completed tasks
@@ -25,8 +27,9 @@ export function EveningReviewWidget({ onNavigate }: EveningReviewWidgetProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={instant ? { opacity: 0 } : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={transition({})}
       className="p-6 bg-surface-secondary rounded-lg border border-edge"
     >
       {/* Header */}

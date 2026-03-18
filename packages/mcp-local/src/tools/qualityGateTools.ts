@@ -159,6 +159,64 @@ const GATE_PRESETS: Record<
         "Check if a .stories.tsx file exists for the component. FAIL if new component has no story.",
     },
   ],
+  agent_bug_verdict: [
+    {
+      name: "preconditions_verified",
+      description:
+        "Environment, auth, and test data preconditions were verified before the trigger step.",
+      evaluationHint:
+        "FAIL if the run skipped explicit setup verification or could not establish the required preconditions.",
+    },
+    {
+      name: "trigger_verify_split",
+      description:
+        "The action that attempts reproduction is separate from the step that verifies the resulting UI or system state.",
+      evaluationHint:
+        "FAIL if the same step both triggered and asserted success without an independent verification pass.",
+    },
+    {
+      name: "evidence_attached",
+      description:
+        "The verdict cites concrete evidence such as screenshots, logs, videos, metrics, or diffs.",
+      evaluationHint:
+        "FAIL if the verdict is based on narrative alone with no attached evidence references.",
+    },
+    {
+      name: "primary_mission_preserved",
+      description:
+        "The run stayed focused on the reported bug instead of drifting into unrelated exploration.",
+      evaluationHint:
+        "FAIL if the primary bug was not resolved to a defensible verdict because the run wandered into side issues.",
+    },
+    {
+      name: "anomalies_logged_separately",
+      description:
+        "Secondary anomalies or newly discovered bugs were recorded separately from the main verdict.",
+      evaluationHint:
+        "FAIL if unrelated anomalies replaced or polluted the primary bug verdict instead of being logged independently.",
+    },
+    {
+      name: "retry_budget_respected",
+      description:
+        "Retries were bounded and targeted at the failing trigger or precondition, not the whole workflow.",
+      evaluationHint:
+        "FAIL if the run kept retrying indiscriminately or exceeded the stated retry budget.",
+    },
+    {
+      name: "blocked_infra_classified",
+      description:
+        "Infrastructure or environment blockers were classified explicitly instead of being mislabeled as app defects.",
+      evaluationHint:
+        "FAIL if a setup outage, missing permission, or unavailable environment was reported as a product bug.",
+    },
+    {
+      name: "verdict_is_defensible",
+      description:
+        "The final verdict includes a clear outcome, confidence, and the reasoning needed for human review.",
+      evaluationHint:
+        "FAIL if the final verdict lacks a concrete conclusion, confidence level, or explanation tied to the evidence.",
+    },
+  ],
   agent_comparison: [
     {
       name: "task_success",
@@ -209,6 +267,80 @@ const GATE_PRESETS: Record<
       name: "no_forbidden_behaviors",
       description: "Agent did not perform forbidden actions (unsafe operations without risk assessment, skipping tests, hardcoding secrets)",
       evaluationHint: "Check for unsafe patterns: skipped tests, hardcoded values, unassessed high-risk actions. FAIL if any found.",
+    },
+  ],
+  a11y: [
+    {
+      name: "aria_labels_complete",
+      description: "All interactive elements (buttons, links, inputs) have accessible names via aria-label, aria-labelledby, or visible text content",
+      evaluationHint: "Inspect all <button>, <a>, <input>, <select>, <textarea> in changed components. FAIL if any lacks an accessible name.",
+    },
+    {
+      name: "heading_hierarchy",
+      description: "Heading levels (h1-h6) are sequential and not skipped (no h1→h3 without h2)",
+      evaluationHint: "Check heading elements in order. FAIL if any level is skipped (e.g., h2 followed by h4).",
+    },
+    {
+      name: "color_contrast_sufficient",
+      description: "Text meets WCAG 2.1 AA contrast ratios: 4.5:1 for normal text, 3:1 for large text (18px+ or 14px+ bold)",
+      evaluationHint: "Check foreground/background color pairs in changed components. FAIL if contrast ratio is below threshold.",
+    },
+    {
+      name: "keyboard_navigable",
+      description: "All interactive elements are reachable via Tab and activatable via Enter/Space. No keyboard traps exist.",
+      evaluationHint: "Tab through the changed UI. FAIL if any interactive element is unreachable or creates a focus trap.",
+    },
+    {
+      name: "focus_visible",
+      description: "Focus indicators are visible on all interactive elements when navigated via keyboard",
+      evaluationHint: "Tab through elements and check for visible focus rings/outlines. FAIL if focus state is invisible.",
+    },
+    {
+      name: "reduced_motion_respected",
+      description: "Animations/transitions honor prefers-reduced-motion media query or provide a UI toggle",
+      evaluationHint: "Check CSS for animation/transition usage. FAIL if @media (prefers-reduced-motion: reduce) is not handled.",
+    },
+    {
+      name: "form_labels_linked",
+      description: "All form inputs have associated <label> elements via htmlFor/id or are wrapped in <label>",
+      evaluationHint: "Check <input>/<select>/<textarea> elements. FAIL if any lacks a linked or wrapping <label>.",
+    },
+    {
+      name: "landmark_regions_present",
+      description: "Page uses semantic landmarks (main, nav, aside, header, footer) or ARIA roles for screen reader navigation",
+      evaluationHint: "Check for semantic HTML5 landmarks or role attributes. FAIL if the page has no navigable landmarks.",
+    },
+  ],
+  visual_regression: [
+    {
+      name: "baseline_exists",
+      description: "A visual baseline screenshot exists for the changed route/component at all target viewports",
+      evaluationHint: "Check public/dogfood/screenshots/ for baseline screenshots matching the changed routes. FAIL if no baseline.",
+    },
+    {
+      name: "pixel_diff_within_threshold",
+      description: "Visual diff between baseline and current screenshot is below 2% changed pixels",
+      evaluationHint: "Compare baseline vs current screenshots. FAIL if more than 2% of pixels changed unexpectedly.",
+    },
+    {
+      name: "no_layout_shift",
+      description: "No unexpected layout shifts (elements moving, resizing, or reflowing) compared to baseline",
+      evaluationHint: "Overlay baseline and current screenshots. FAIL if element positions shifted significantly.",
+    },
+    {
+      name: "responsive_breakpoints_intact",
+      description: "Layout is correct at mobile (375px), tablet (768px), and desktop (1280px) viewpoints",
+      evaluationHint: "Capture screenshots at all 3 viewports. FAIL if any shows broken layout, overflow, or misalignment.",
+    },
+    {
+      name: "dark_light_variants_consistent",
+      description: "Both dark and light theme variants render correctly without missing theme tokens or invisible text",
+      evaluationHint: "Toggle between dark/light themes. FAIL if any text is invisible, icons missing, or colors broken.",
+    },
+    {
+      name: "loading_skeleton_present",
+      description: "Async-loaded content shows a skeleton/placeholder instead of empty space or layout jump",
+      evaluationHint: "Throttle network and observe initial load. FAIL if content area is empty then suddenly fills.",
     },
   ],
   deploy_readiness: [
@@ -334,13 +466,13 @@ export const qualityGateTools: McpTool[] = [
   {
     name: "get_gate_preset",
     description:
-      "Get the rules for a built-in quality gate preset. Returns rule names, descriptions, and evaluation instructions so you can check each one. Presets: engagement (content quality), code_review (implementation quality), deploy_readiness (pre-deploy checklist), ui_ux_qa (frontend UI/UX verification).",
+      "Get the rules for a built-in quality gate preset. Returns rule names, descriptions, and evaluation instructions so you can check each one. Presets: engagement (content quality), code_review (implementation quality), deploy_readiness (pre-deploy checklist), ui_ux_qa (frontend UI/UX verification), agent_bug_verdict (evidence-first QA verdict discipline), agent_comparison (A/B agent eval), a11y (WCAG 2.1 AA accessibility audit), visual_regression (baseline visual diff checks).",
     inputSchema: {
       type: "object",
       properties: {
         preset: {
           type: "string",
-          enum: ["engagement", "code_review", "deploy_readiness", "ui_ux_qa"],
+          enum: ["engagement", "code_review", "deploy_readiness", "ui_ux_qa", "agent_bug_verdict", "agent_comparison", "a11y", "visual_regression"],
           description: "Which preset to retrieve",
         },
       },

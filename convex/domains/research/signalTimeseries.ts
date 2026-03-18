@@ -1,13 +1,35 @@
 import { v } from "convex/values";
 import { query } from "../../_generated/server";
 
+type SignalEvent = { title: string; url?: string; source?: string };
+
 function buildDateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+function parsePublishedAt(publishedAt: string | undefined): Date | null {
+  if (!publishedAt) return null;
+  const parsed = new Date(publishedAt);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function resolveSearchTerm(keyword?: string, signalType?: string): string | null {
+  const candidate = (keyword ?? signalType)?.trim();
+  return candidate ? candidate.toLowerCase() : null;
+}
+
+function buildEmptySeries(start: Date, days: number) {
+  return Array.from({ length: days }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    return { date: buildDateKey(d), count: 0, events: [] as SignalEvent[] };
+  });
+}
+
 export const getSignalTimeseries = query({
   args: {
-    keyword: v.string(),
+    keyword: v.optional(v.string()),
+    signalType: v.optional(v.string()),
     days: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
@@ -18,26 +40,31 @@ export const getSignalTimeseries = query({
 
     const from = buildDateKey(start);
     const to = buildDateKey(now);
+    const seed = buildEmptySeries(start, days);
+    const term = resolveSearchTerm(args.keyword, args.signalType);
+
+    if (!term) {
+      return seed;
+    }
 
     const items = await ctx.db
       .query("feedItems")
       .withIndex("by_published", (q) => q.gte("publishedAt", from).lte("publishedAt", `${to}T23:59:59.999Z`))
       .collect();
 
-    const term = args.keyword.toLowerCase();
     const counts = new Map<string, number>();
-    const events = new Map<string, Array<{ title: string; url?: string; source?: string }>>();
-    for (let i = 0; i < days; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      counts.set(buildDateKey(d), 0);
-      events.set(buildDateKey(d), []);
-    }
+    const events = new Map<string, SignalEvent[]>();
+    seed.forEach((point) => {
+      counts.set(point.date, point.count);
+      events.set(point.date, [...point.events]);
+    });
 
     items.forEach((item) => {
       const haystack = `${item.title ?? ""} ${item.summary ?? ""} ${(item.tags ?? []).join(" ")}`.toLowerCase();
       if (!haystack.includes(term)) return;
-      const dayKey = buildDateKey(new Date(item.publishedAt));
+      const publishedAt = parsePublishedAt(item.publishedAt);
+      if (!publishedAt) return;
+      const dayKey = buildDateKey(publishedAt);
       if (counts.has(dayKey)) {
         counts.set(dayKey, (counts.get(dayKey) ?? 0) + 1);
       }
@@ -54,10 +81,6 @@ export const getSignalTimeseries = query({
       }
     });
 
-    return Array.from(counts.entries()).map(([date, count]) => ({
-      date,
-      count,
-      events: events.get(date) ?? [],
-    }));
+    return seed.map(({ date }) => ({ date, count: counts.get(date) ?? 0, events: events.get(date) ?? [] }));
   },
 });

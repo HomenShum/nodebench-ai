@@ -28,6 +28,7 @@ import {
   Edit,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useMotionConfig } from "@/lib/motion";
 
 /**
  * Post type for display
@@ -157,12 +158,14 @@ export function PostCard({
   className,
 }: PostCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const { instant, transition } = useMotionConfig();
   const typeDisplay = getPostTypeDisplay(post.postType);
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 10 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={transition(0.3)}
       className={cn(
         "bg-card border border-border rounded-lg p-4 hover:border-muted-foreground/30 transition-colors",
         post.requiresAdjudication && "border-amber-500/50",

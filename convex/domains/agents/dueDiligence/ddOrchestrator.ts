@@ -667,6 +667,23 @@ async function executeBranch(
       `updateTaskStatus-completed-${branchType}`
     );
 
+    try {
+      await ctx.runAction(
+        internal.domains.deepTrace.integrations.syncDueDiligenceBranchToDeepTrace,
+        {
+          jobId,
+          branchType,
+          entityName,
+          entityType,
+          findings,
+          sources,
+          confidence,
+        },
+      );
+    } catch (deepTraceError) {
+      console.warn(`[DD] DeepTrace sync failed for ${branchType}:`, deepTraceError);
+    }
+
     return { branchType, findings, confidence, sources };
 
   } catch (error) {

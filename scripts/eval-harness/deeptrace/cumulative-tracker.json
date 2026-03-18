@@ -1,0 +1,70 @@
+{
+  "round": 3,
+  "promotions": [
+    {
+      "round": 2,
+      "candidateId": "adaptive-trigger-thresholds-v1",
+      "throughputScore": 0.695,
+      "strategy": "trigger_threshold",
+      "timestamp": "2026-03-15T22:35:07.590Z"
+    },
+    {
+      "round": 3,
+      "candidateId": "compound-adaptive-trigger-plus-early-term-v1",
+      "throughputScore": 0.712,
+      "strategy": "trigger_threshold+wall_clock_optimization",
+      "timestamp": "2026-03-15T23:00:05.831Z"
+    },
+    {
+      "round": 3,
+      "candidateId": "compound-adaptive-trigger-plus-merge-conf-v1",
+      "throughputScore": 0.753,
+      "strategy": "trigger_threshold+merge_quality",
+      "timestamp": "2026-03-15T23:00:05.831Z"
+    },
+    {
+      "round": 3,
+      "candidateId": "compound-triple-stack-v1",
+      "throughputScore": 0.825,
+      "strategy": "trigger_threshold+wall_clock+merge_quality",
+      "timestamp": "2026-03-15T23:00:05.831Z"
+    },
+    {
+      "round": 3,
+      "candidateId": "compound-quad-stack-v1",
+      "throughputScore": 0.879,
+      "strategy": "trigger+wallclock+merge+branch_planning",
+      "timestamp": "2026-03-15T23:00:05.831Z"
+    },
+    {
+      "round": 3,
+      "candidateId": "compound-full-stack-v1",
+      "throughputScore": 0.931,
+      "strategy": "all_near_misses_combined",
+      "timestamp": "2026-03-15T23:00:05.831Z"
+    }
+  ],
+  "baseEdits": [],
+  "exhaustedStrategies": [],
+  "throughputCurve": [0.655, 0.695, 0.931],
+  "nearMisses": [
+    {
+      "candidateId": "compound-dual-plus-signal-recency-v1",
+      "throughputScore": 0.917,
+      "improvementPct": 4.3,
+      "strategy": "trigger+wallclock+factual_precision"
+    },
+    {
+      "candidateId": "fresh-tool-call-budget-right-size-v1",
+      "throughputScore": 0.894,
+      "improvementPct": 1.7,
+      "strategy": "branch_budget_tuning"
+    },
+    {
+      "candidateId": "fresh-branch-parallel-timeout-v1",
+      "throughputScore": 0.843,
+      "improvementPct": 2.2,
+      "strategy": "wall_clock_optimization"
+    }
+  ]
+}

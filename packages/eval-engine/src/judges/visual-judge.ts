@@ -111,7 +111,7 @@ export async function evaluateScreenshot(
   criteria: string,
   options?: { model?: string; threshold?: number; signal?: AbortSignal },
 ): Promise<VisualJudgeResult> {
-  const model = options?.model ?? "gemini-2.5-flash";
+  const model = options?.model ?? "gemini-3.1-flash-lite-preview";
   const threshold = options?.threshold ?? 70;
   const start = Date.now();
 
@@ -137,7 +137,7 @@ export async function compareScreenshots(
   criteria: string,
   options?: { model?: string; threshold?: number; signal?: AbortSignal },
 ): Promise<VisualJudgeResult> {
-  const model = options?.model ?? "gemini-2.5-flash";
+  const model = options?.model ?? "gemini-3.1-flash-lite-preview";
   const threshold = options?.threshold ?? 70;
   const start = Date.now();
 

@@ -208,6 +208,42 @@ describe("Static: ui_ux_qa preset", () => {
   });
 });
 
+describe("Static: agent_bug_verdict preset", () => {
+  it("should return 8 rules from get_gate_preset", async () => {
+    const tool = findTool("get_gate_preset");
+    const result = (await tool.handler({ preset: "agent_bug_verdict" })) as any;
+    expect(result.preset).toBe("agent_bug_verdict");
+    expect(result.ruleCount).toBe(8);
+    expect(result.rules.map((r: any) => r.name)).toContain("preconditions_verified");
+    expect(result.rules.map((r: any) => r.name)).toContain("trigger_verify_split");
+    expect(result.rules.map((r: any) => r.name)).toContain("blocked_infra_classified");
+    expect(result.rules.map((r: any) => r.name)).toContain("verdict_is_defensible");
+  });
+
+  it("should accept agent_bug_verdict results via run_quality_gate", async () => {
+    const tool = findTool("run_quality_gate");
+    const result = (await tool.handler({
+      gateName: "agent_bug_verdict",
+      target: "android-login-bug",
+      rules: [
+        { name: "preconditions_verified", passed: true },
+        { name: "trigger_verify_split", passed: true },
+        { name: "evidence_attached", passed: true },
+        { name: "primary_mission_preserved", passed: true },
+        { name: "anomalies_logged_separately", passed: false },
+        { name: "retry_budget_respected", passed: true },
+        { name: "blocked_infra_classified", passed: true },
+        { name: "verdict_is_defensible", passed: false },
+      ],
+    })) as any;
+    expect(result.passed).toBe(false);
+    expect(result.totalRules).toBe(8);
+    expect(result.passedCount).toBe(6);
+    expect(result.failures).toContain("anomalies_logged_separately");
+    expect(result.failures).toContain("verdict_is_defensible");
+  });
+});
+
 describe("Static: ui capture tools", () => {
   it("should include capture_ui_screenshot and capture_responsive_suite", () => {
     const names = allTools.map((t) => t.name);
@@ -1873,6 +1909,19 @@ describe("Unit: get_workflow_chain", () => {
     const tool = findTool("get_workflow_chain");
     const result = (await tool.handler({ chain: "nonexistent_chain" as any })) as any;
     expect(result.error).toBe(true);
+  });
+
+  it("should return the autonomous QA bug chain with evidence-first steps", async () => {
+    const tool = findTool("get_workflow_chain");
+    const result = (await tool.handler({ chain: "autonomous_qa_bug" })) as any;
+    expect(result.name).toBe("Autonomous QA Bug Verdict");
+    const stepTools = result.steps.map((s: any) => s.tool);
+    expect(stepTools).toContain("start_execution_run");
+    expect(stepTools).toContain("run_quality_gate");
+    expect(stepTools).toContain("judge_verify_subtask");
+    expect(stepTools).toContain("log_gap");
+    expect(stepTools.at(-2)).toBe("save_session_note");
+    expect(stepTools.at(-1)).toBe("record_learning");
   });
 });
 

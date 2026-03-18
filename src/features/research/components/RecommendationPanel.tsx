@@ -4,6 +4,7 @@ import { Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import { useRecommendations } from '../../../hooks/useRecommendations';
 import { RecommendationCard } from './RecommendationCard';
+import { useMotionConfig } from '@/lib/motion';
 
 interface RecommendationPanelProps {
   className?: string;
@@ -11,6 +12,7 @@ interface RecommendationPanelProps {
 }
 
 export function RecommendationPanel({ className = '', onActionClick }: RecommendationPanelProps) {
+  const { instant, transition } = useMotionConfig();
   const { recommendations, isLoading, dismiss, click, recordFeedback } = useRecommendations();
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -72,10 +74,10 @@ export function RecommendationPanel({ className = '', onActionClick }: Recommend
       <AnimatePresence>
         {isExpanded && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
+            initial={{ height: instant ? 'auto' : 0, opacity: instant ? 1 : 0 }}
             animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            exit={{ height: instant ? 'auto' : 0, opacity: instant ? 1 : 0 }}
+            transition={transition(0.2)}
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 space-y-2">

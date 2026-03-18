@@ -289,7 +289,7 @@ function selectVisionModel(task: CapabilityTask): string {
   // Use pro model for tasks requiring spatial reasoning or complex OCR + calculation
   if (q.includes("chess") && q.includes("algebraic notation")) return proModel;
   if (q.includes("comma separated") && q.includes("fractions") && q.includes("sample")) return proModel;
-  return "gemini-3-flash-preview";
+  return "gemini-3.1-flash-lite-preview";
 }
 
 async function callGeminiVision(
@@ -520,7 +520,7 @@ async function tryGeminiCodeExecutionAnswer(
     const ai = new GoogleGenAI({ apiKey });
 
     // Flash for chess (reliable, faster), Flash for others
-    const model = process.env.NODEBENCH_GAIA_CAPABILITY_CODE_EXEC_MODEL ?? "gemini-3-flash-preview";
+    const model = process.env.NODEBENCH_GAIA_CAPABILITY_CODE_EXEC_MODEL ?? "gemini-3.1-flash-lite-preview";
     const prompt = buildCodeExecutionPrompt(task);
 
     // Chess: extract FEN from code execution, then use Stockfish for the best move
@@ -1140,7 +1140,7 @@ describe("Capability: GAIA accuracy (LLM-only vs LLM+media tools)", () => {
       );
     }
 
-    const baselineModel = process.env.NODEBENCH_GAIA_BASELINE_MODEL ?? "gemini-3-flash-preview";
+    const baselineModel = process.env.NODEBENCH_GAIA_BASELINE_MODEL ?? "gemini-3.1-flash-lite-preview";
     const toolsModel = process.env.NODEBENCH_GAIA_TOOLS_MODEL ?? baselineModel;
 
     // This harness is designed to run with a real LLM provider (Gemini/OpenAI/Anthropic).

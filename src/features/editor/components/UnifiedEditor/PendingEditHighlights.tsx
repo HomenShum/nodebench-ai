@@ -15,13 +15,15 @@ import type { PendingEdit } from "../../hooks/usePendingEdits";
 import type { BlockNoteEditor } from "@blocknote/core";
 
 // Thread colors for multi-agent scenarios
+// bg values are used in inline styles for absolute-positioned overlays, so they remain as style strings.
+// Equivalent Tailwind classes: bg-blue-500/15, bg-emerald-500/15, etc.
 const THREAD_COLORS = [
-  { bg: "rgba(59, 130, 246, 0.15)", border: "#3b82f6" },
-  { bg: "rgba(16, 185, 129, 0.15)", border: "#10b981" },
-  { bg: "rgba(168, 85, 247, 0.15)", border: "#a855f7" },
-  { bg: "rgba(249, 115, 22, 0.15)", border: "#f97316" },
-  { bg: "rgba(236, 72, 153, 0.15)", border: "#ec4899" },
-  { bg: "rgba(20, 184, 166, 0.15)", border: "#14b8a6" },
+  { bg: "hsl(217 91% 60% / 0.15)", border: "#3b82f6" },   // blue-500
+  { bg: "hsl(160 84% 39% / 0.15)", border: "#10b981" },   // emerald-500
+  { bg: "hsl(271 91% 65% / 0.15)", border: "#a855f7" },   // purple-500
+  { bg: "hsl(25 95% 53% / 0.15)", border: "#f97316" },    // orange-500
+  { bg: "hsl(330 81% 60% / 0.15)", border: "#ec4899" },   // pink-500
+  { bg: "hsl(173 80% 40% / 0.15)", border: "#14b8a6" },   // teal-500
 ];
 
 interface HighlightPosition {
@@ -202,7 +204,7 @@ function HighlightOverlay({
         left: left - 4,
         width: width + 8,
         height: height + 4,
-        backgroundColor: isCurrentEdit ? "rgba(139, 92, 246, 0.25)" : threadColor.bg,
+        backgroundColor: isCurrentEdit ? "hsl(258 90% 66% / 0.25)" : threadColor.bg, // violet-500/25
         borderLeft: `3px solid ${isCurrentEdit ? "#8b5cf6" : threadColor.border}`,
         borderRadius: "4px",
         pointerEvents: "auto",
@@ -226,7 +228,7 @@ function HighlightOverlay({
           backgroundColor: opBadgeColor.bg,
           color: opBadgeColor.text,
           fontWeight: 600,
-          boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+          boxShadow: "0 1px 2px hsl(0 0% 0% / 0.2)",
         }}
       >
         {operationType}
@@ -243,7 +245,7 @@ function HighlightOverlay({
             backgroundColor: "var(--background-secondary, #1e1e2e)",
             border: "1px solid var(--border-color, #333)",
             borderRadius: "6px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+            boxShadow: "0 4px 12px hsl(0 0% 0% / 0.2)",
             zIndex: 100,
             minWidth: "200px",
             maxWidth: "300px",
@@ -265,8 +267,8 @@ function HighlightOverlay({
 
       <style>{`
         @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
-          50% { box-shadow: 0 0 8px 2px rgba(139, 92, 246, 0.6); }
+          0%, 100% { box-shadow: 0 0 0 0 hsl(258 90% 66% / 0.4); }
+          50% { box-shadow: 0 0 8px 2px hsl(258 90% 66% / 0.6); }
         }
       `}</style>
     </div>

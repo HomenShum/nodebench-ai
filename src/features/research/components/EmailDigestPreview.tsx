@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import { useMotionConfig } from "../../../lib/motion";
 import {
   Mail,
   Clock,
@@ -183,6 +184,7 @@ interface DigestItemCardProps {
 }
 
 const DigestItemCard: React.FC<DigestItemCardProps> = ({ item, onClick }) => {
+  const { instant } = useMotionConfig();
   const Icon = getItemIcon(item.type);
   const colors = getItemColors(item.type);
 
@@ -190,7 +192,7 @@ const DigestItemCard: React.FC<DigestItemCardProps> = ({ item, onClick }) => {
     <motion.button
       type="button"
       onClick={onClick}
-      whileHover={{ scale: 1.01 }}
+      whileHover={!instant ? { scale: 1.01 } : undefined}
       className="w-full text-left p-4 rounded-lg border border-edge hover:shadow-md hover:border-primary/20 transition-all duration-200"
     >
       <div className="flex items-start gap-3">
@@ -369,4 +371,3 @@ export const EmailDigestPreview: React.FC<EmailDigestPreviewProps> = ({
 };
 
 export default EmailDigestPreview;
-

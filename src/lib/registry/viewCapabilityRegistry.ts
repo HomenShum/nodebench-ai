@@ -191,6 +191,68 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     requiresAuth: false,
   },
 
+  "world-monitor": {
+    viewId: "world-monitor",
+    title: "World Monitor",
+    description:
+      "Open-source event map for world developments, clustered by geography and topic, with routing into company-impact and causal-chain analysis.",
+    paths: ["/research/world-monitor", "/world-monitor"],
+    dataEndpoints: [
+      {
+        name: "mapSnapshot",
+        convexQuery: "domains.monitoring.worldMonitor.getMapSnapshot",
+        description: "Aggregated event counts by severity, geography, and topic",
+      },
+      {
+        name: "eventCluster",
+        convexQuery: "domains.monitoring.worldMonitor.getEventCluster",
+        description: "Filtered event cluster for topic, geography, or entity drilldown",
+      },
+    ],
+    actions: [
+      {
+        name: "filterEvents",
+        description: "Filter the world event cluster by topic or country",
+        inputSchema: {
+          type: "object",
+          properties: {
+            topic: { type: "string" },
+            countryCode: { type: "string" },
+          },
+        },
+      },
+      {
+        name: "openEventImpactTrace",
+        description: "Jump from an event cluster into related company or causal-chain analysis",
+      },
+    ],
+    relatedToolCategories: ["research", "recon", "verification"],
+    tags: ["world-monitor", "geopolitics", "events", "map", "causal-analysis"],
+    requiresAuth: false,
+  },
+
+  watchlists: {
+    viewId: "watchlists",
+    title: "Watchlists",
+    description:
+      "Persistent company, sector, geography, and theme monitors with alert thresholds, event rollups, and mission refresh handoffs.",
+    paths: ["/research/watchlists", "/watchlists"],
+    dataEndpoints: [
+      {
+        name: "watchlistDigest",
+        convexQuery: "domains.monitoring.worldMonitor.getWatchlistDigest",
+        description: "Active watchlists with alert counts and latest matching events",
+      },
+    ],
+    actions: [
+      { name: "reviewWatchlist", description: "Inspect a watchlist's latest matching events and threshold status" },
+      { name: "refreshWatchlistMission", description: "Launch or review the DeepTrace watchlist refresh workflow" },
+    ],
+    relatedToolCategories: ["research", "verification", "learning"],
+    tags: ["watchlists", "monitoring", "alerts", "deeptrace", "missions"],
+    requiresAuth: false,
+  },
+
   "for-you-feed": {
     viewId: "for-you-feed",
     title: "For You",

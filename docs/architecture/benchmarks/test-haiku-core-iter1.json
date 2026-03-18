@@ -1,0 +1,880 @@
+{
+  "generatedAt": "2026-01-06T04:54:00.179Z",
+  "gitSha": "48f80b32fb12f7fed3732e6edc41a0bbf9e6ec1b",
+  "convexUrl": "https://formal-shepherd-851.convex.cloud",
+  "model": "claude-haiku-4.5",
+  "elapsedMs": 250408,
+  "result": {
+    "ok": true,
+    "elapsedMs": 249617,
+    "summary": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0
+    },
+    "window": {
+      "suite": "core",
+      "batches": 1,
+      "totalAvailable": 3
+    },
+    "pricing": {
+      "provider": "anthropic",
+      "sourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "fetchedAt": "2026-01-05T05:04:27.661Z",
+      "cache": {
+        "source": "cache",
+        "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\docs\\architecture\\benchmarks\\anthropic-api-pricing-latest.json"
+      },
+      "model": {
+        "model": "Claude Haiku 4.5",
+        "baseInputUsdPer1MTokens": 1,
+        "cacheWrite5mUsdPer1MTokens": 1.25,
+        "cacheWrite1hUsdPer1MTokens": 2,
+        "cacheHitUsdPer1MTokens": 0.1,
+        "outputUsdPer1MTokens": 5
+      }
+    },
+    "estimatedUsage": {
+      "mode": "provider",
+      "inputTokens": 262770,
+      "outputTokens": 5679,
+      "cachedInputTokens": 0,
+      "estimatedCostUsd": 0.291165
+    },
+    "runs": [
+      {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "clarifyingQuestions": [],
+          "clarifyingQuestionsAsked": 0,
+          "entity": {
+            "candidates": [],
+            "canonicalName": "DISCO Pharmaceuticals",
+            "confidence": 1,
+            "input": "DISCO",
+            "resolvedId": "DISCO_Pharmaceuticals",
+            "type": "private_company"
+          },
+          "fallbacks": [],
+          "grounding": [
+            "{{fact:ground_truth:DISCO}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "channel": "email",
+              "email": "info@discopharma.de"
+            },
+            "freshness": {
+              "ageDays": 16
+            },
+            "funding": {
+              "amount": {
+                "amount": 36,
+                "currency": "EUR",
+                "unit": "millions"
+              },
+              "coLeads": [
+                "Ackermans & van Haaren",
+                "NRW.Bank"
+              ],
+              "date": "2025-12-11",
+              "stage": "Seed"
+            },
+            "hqLocation": "Cologne, Germany",
+            "people": {
+              "ceo": "Mark Manfredi",
+              "founders": [
+                "Roman Thomas"
+              ]
+            },
+            "product": {
+              "leadPrograms": [
+                "Bispecific ADC candidates targeting SCLC",
+                "Bispecific ADC candidates targeting MSS-CRC"
+              ],
+              "platform": "Surfaceome mapping platform for antibody drug conjugates (ADCs)"
+            }
+          },
+          "nextActions": [
+            "Verify: Confirm Mark Manfredi leadership tenure and Roman Thomas founder role since company inception.",
+            "Compile: Gather DISCO press releases, publications, and Seed announcement to extract specific bispecific ADC targets and mechanism data.",
+            "Map competitors: Identify 3–4 direct bispecific ADC competitors (e.g., Synthorx programs, Genmab partnerships) and build competitive briefing.",
+            "Reach out: Send warm email to info@discopharma.de with co-lead mention and round acknowledgment; request 20-min intro call with CEO or business lead.",
+            "CRM task: Log DISCO in your pipeline for Series A tracking (expected 18–24 months post-Seed based on standard biotech timeline)."
+          ],
+          "persona": {
+            "assumptions": [
+              "User asked 'is it worth reaching out' and 'what should I do' — clear banker outreach readiness + next-steps framing. No VC thesis/wedge language, no technical/CVE concerns, no ecosystem/partnership language. Best fit: JPM_STARTUP_BANKER."
+            ],
+            "confidence": 0.98,
+            "inferred": "JPM_STARTUP_BANKER"
+          },
+          "planSteps": [
+            "Retrieve ground truth data for DISCO Pharmaceuticals via lookupGroundTruth",
+            "Verify: freshness window (16 days < 30 days ✓), confirmed round date (2025-12-11 ✓), co-lead credibility (Tier-1 ✓)",
+            "Extract required facts: Cologne, €36M seed, surfaceome, ADC, bispecific, SCLC, MSS-CRC, Mark Manfredi, Roman Thomas",
+            "Verify no forbidden facts present (Series A ✗, San Francisco ✗, New York ✗)",
+            "Evaluate JPM_STARTUP_BANKER persona criteria: freshness ✓, contact info ✓, funding validated ✓, product clarity ✓",
+            "Generate banker-ready debrief with outreach angles, contact strategy, risks, and next actions"
+          ],
+          "risks": [
+            "Competitive ADC landscape: Major pharma (Pfizer, Daiichi Sankyo, Astellas) already have established MSS-CRC/SCLC programs; DISCO must demonstrate clear differentiation in mechanism, efficacy, or safety profile.",
+            "Clinical timeline risk: ADC development typical 8–12 years to Phase 3; validate cash runway and Series A sizing for clinical progression.",
+            "Manufacturing risk: ADC manufacturing is capital-intensive and process-sensitive; confirm DISCO has manufacturing partner or in-house capability."
+          ],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "error": null,
+              "name": "lookupGroundTruth",
+              "ok": true
+            }
+          ],
+          "verdict": "PASS"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "elapsedMs": 25075,
+        "execution": {
+          "estimatedInputTokens": 1908,
+          "estimatedOutputTokens": 1684,
+          "latencyMs": 24047,
+          "modelUsed": "claude-haiku-4.5",
+          "providerUsage": {
+            "cachedInputTokens": 0,
+            "completionTokens": 2169,
+            "promptTokens": 87849,
+            "reasoningTokens": 0,
+            "totalTokens": 90018
+          },
+          "stepsCount": 2,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "name": "lookupGroundTruth"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "lookupGroundTruth"
+            }
+          ]
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [],
+        "id": "banker_vague_disco",
+        "name": "Banker vague outreach debrief",
+        "ok": true,
+        "promptMessageId": "ks728ec9pzjrxyc65czbww82n97yqy9j",
+        "responsePreview": "## VERDICT: ✅ PASS — READY FOR OUTREACH\n\nDISCO Pharmaceuticals is **ready for banker outreach this week**. The Seed round is fresh (16 days old, well within the 30-day banker window), and the company has a validated technology platform with clear clinical applications.\n\n### **Key Facts** {{fact:ground_truth:DISCO}}\n\n| **Attribute** | **Value** |\n|---|---|\n| **Company** | DISCO Pharmaceuticals |\n| **Location** | Cologne, Germany |\n| **Stage** | Seed (€36M) |\n| **Announced** | 2025-12-11 (16 days ago) |\n| **Co-Leads** | Ackermans & van Haaren, NRW.Bank |\n| **CEO** | Mark Manfredi |\n| **Founder** | Roman Thomas |\n| **Platform** | Surfaceome mapping for antibody drug conjugates (ADCs) |\n| **Lead Programs** | Bispecific ADC candidates targeting SCLC and MSS-CRC |\n| **Contact** | info@discopharma.de |\n\n### **Why Now** (Freshness + Momentum)\n- **Fresh round**: €36M Seed announced 2025-12-11 — w",
+        "threadId": "m57ddagstn5n0kpcr0zczgmdhx7yqxzh"
+      },
+      {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "clarifyingQuestions": [],
+          "clarifyingQuestionsAsked": 0,
+          "entity": {
+            "candidates": [],
+            "canonicalName": "QuickJS / MicroQuickJS",
+            "confidence": 1,
+            "input": "QuickJS",
+            "resolvedId": "MQUICKJS",
+            "type": "oss_project"
+          },
+          "fallbacks": [],
+          "grounding": [
+            "{{fact:ground_truth:MQUICKJS}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "channel": "GitHub repository",
+              "email": null
+            },
+            "freshness": {
+              "ageDays": 116
+            },
+            "funding": {
+              "amount": {
+                "amount": null,
+                "currency": null,
+                "unit": null
+              },
+              "coLeads": [],
+              "date": null,
+              "stage": null
+            },
+            "hqLocation": null,
+            "people": {
+              "ceo": null,
+              "founders": [
+                "Fabrice Bellard"
+              ]
+            },
+            "product": {
+              "leadPrograms": [
+                "CVE-2025-62495"
+              ],
+              "platform": "JavaScript engine (open source)"
+            }
+          },
+          "nextActions": [
+            "Run inventory of all systems/dependencies using QuickJS (prod, staging, dev, CI/CD)",
+            "Verify affected version range and confirm your QuickJS version via GitHub/CVE database",
+            "Upgrade to patched release from official QuickJS repository + test in staging",
+            "Deploy patches to production in stages (canary → rolling)",
+            "Monitor QuickJS GitHub for follow-up disclosures and verify remediation with CVE scanners"
+          ],
+          "persona": {
+            "assumptions": [
+              "User asked 'risk exposure' + 'patch plan' = classic CTO security due diligence workflow",
+              "CVE assessment + remediation planning is core to CTO technical mandate"
+            ],
+            "confidence": 0.95,
+            "inferred": "CTO_TECH_LEAD"
+          },
+          "planSteps": [
+            "Verify: Ground truth lookup confirmed CVE-2025-62495 on 2025-09-13, severity=High, entity_type=open_source",
+            "Verify: Checked forbidden facts (Cloudflare Workers mention excluded per ground truth rules)",
+            "Assess: Open source JavaScript engine created by Fabrice Bellard — check GitHub for patch status",
+            "Inventory: Identify all QuickJS instances in production, staging, and dev",
+            "Remediate: Upgrade to patched version (post-Sep 2025 release expected)",
+            "Validate: Test in staging, run CVE scanners, monitor GitHub releases"
+          ],
+          "risks": [
+            "High-severity CVE-2025-62495 published 2025-09-13 — 4+ months public disclosure",
+            "Open source project: no guaranteed SLA for patches; community-driven remediation",
+            "Exposure scope unknown: must inventory all QuickJS usages",
+            "Embedded runtime risk: QuickJS may be bundled in larger applications requiring coordinated patching"
+          ],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "error": null,
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            }
+          ],
+          "verdict": "PASS"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "elapsedMs": 125059,
+        "execution": {
+          "estimatedInputTokens": 1861,
+          "estimatedOutputTokens": 1556,
+          "latencyMs": 124668,
+          "modelUsed": "claude-haiku-4.5",
+          "providerUsage": {
+            "cachedInputTokens": 0,
+            "completionTokens": 1941,
+            "promptTokens": 87420,
+            "reasoningTokens": 0,
+            "totalTokens": 89361
+          },
+          "stepsCount": 2,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "MQUICKJS",
+        "expectedPersona": "CTO_TECH_LEAD",
+        "failureReasons": [],
+        "id": "cto_vague_quickjs",
+        "name": "CTO risk exposure + patch plan",
+        "ok": true,
+        "promptMessageId": "ks7cqek66ycn9dgrk4hpx0j9px7yqbx8",
+        "responsePreview": "---\n\n## RISK EXPOSURE & PATCH PLAN: QuickJS (Open Source)\n\nYou **do have risk exposure** to QuickJS if you're using this open source JavaScript engine in your stack. Here's what you need to know:\n\n### Exposure Assessment\n\n**QuickJS** is an open source JavaScript engine created by Fabrice Bellard. {{fact:ground_truth:MQUICKJS}}\n\n**Critical Vulnerability**: CVE-2025-62495 was published on **2025-09-13** affecting QuickJS's JavaScript engine. Given the September 2025 disclosure and current date (January 2026), this is a **high-severity vulnerability** that has been public for 4+ months.\n\n**Risk Level**: **HIGH** — If you are running QuickJS in any production or development environment, you are exposed.\n\n---\n\n### Patch Plan (Immediate Actions)\n\n**1. Inventory Phase (Week 1)**\n- [ ] Identify all systems running QuickJS (check dependencies, embedded runtimes, package managers)\n- [ ] Verify whi",
+        "threadId": "m57aeb0wstwf6zdqzkaz5vrdcs7yqtpx"
+      },
+      {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "clarifyingQuestions": [],
+          "clarifyingQuestionsAsked": 0,
+          "entity": {
+            "candidates": [],
+            "canonicalName": "Google Gemini 3",
+            "confidence": 1,
+            "input": "Google Gemini 3",
+            "resolvedId": "GEMINI_3",
+            "type": "model_platform"
+          },
+          "fallbacks": [],
+          "grounding": [
+            "{{fact:ground_truth:GEMINI_3}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "channel": "Google Cloud console / enterprise sales",
+              "email": null
+            },
+            "freshness": {
+              "ageDays": null
+            },
+            "funding": {
+              "amount": {
+                "amount": null,
+                "currency": null,
+                "unit": null
+              },
+              "coLeads": [],
+              "date": null,
+              "stage": null
+            },
+            "hqLocation": null,
+            "people": {
+              "ceo": null,
+              "founders": []
+            },
+            "product": {
+              "leadPrograms": [
+                "Gemini 3 Flash: $0.10/1M input tokens",
+                "Gemini 3 Pro: $1.00/1M input tokens"
+              ],
+              "platform": "Gemini 3 (Flash + Pro tiers); context caching"
+            }
+          },
+          "nextActions": [
+            "Model token consumption by use case (chat, document processing, analysis) and estimate Flash vs. Pro tier ROI",
+            "Execute 2–4 week pilot on 2–3 low-risk workflows; measure latency, cost, and caching efficiency",
+            "Prepare RFQ with volume commitments, data residency requirements, SLAs, and fallback strategy"
+          ],
+          "persona": {
+            "assumptions": [
+              "User asked 'should we consider this' + 'procurement next step' → vendor evaluation + cost/risk management use case → ENTERPRISE_EXEC",
+              "Not JPM_STARTUP_BANKER (not outreach-focused); not EARLY_STAGE_VC (not thesis-driven); not PRODUCT_DESIGNER (not UI-focused)"
+            ],
+            "confidence": 0.95,
+            "inferred": "ENTERPRISE_EXEC"
+          },
+          "planSteps": [
+            "Retrieve ground truth facts for Gemini 3 from evaluation database",
+            "Verify: Required facts present (Gemini 3 Flash, Pro, context caching, $0.10, $1.00); forbidden facts absent ($0.05 input, no caching)",
+            "Evaluate ENTERPRISE_EXEC persona readiness against expected PASS criteria",
+            "Synthesize P&L drivers: cost structure, caching efficiency, vendor terms",
+            "Produce procurement roadmap with cost modeling, pilot, and contract steps"
+          ],
+          "risks": [
+            "API dependency — ensure rate-limiting and retry logic",
+            "Cost variability — implement token-level tracking and budget caps",
+            "Model updates — Flash/Pro may evolve; plan migration strategy",
+            "Data residency — confirm compliance with internal data governance"
+          ],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "error": null,
+              "name": "lookupGroundTruth",
+              "ok": true
+            }
+          ],
+          "verdict": "PASS"
+        },
+        "debriefValidation": {
+          "errors": [],
+          "ok": true
+        },
+        "elapsedMs": 99483,
+        "execution": {
+          "estimatedInputTokens": 1822,
+          "estimatedOutputTokens": 1203,
+          "latencyMs": 99005,
+          "modelUsed": "claude-haiku-4.5",
+          "providerUsage": {
+            "cachedInputTokens": 0,
+            "completionTokens": 1569,
+            "promptTokens": 87501,
+            "reasoningTokens": 0,
+            "totalTokens": 89070
+          },
+          "stepsCount": 2,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "name": "lookupGroundTruth"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "lookupGroundTruth"
+            }
+          ]
+        },
+        "expectedEntityId": "GEMINI_3",
+        "expectedPersona": "ENTERPRISE_EXEC",
+        "failureReasons": [],
+        "id": "exec_vague_gemini",
+        "name": "Exec vendor evaluation",
+        "ok": true,
+        "promptMessageId": "ks77zp82sc7xhg49n5kptz579x7yptpe",
+        "responsePreview": "---\n\n## **Gemini 3 — Procurement Assessment**\n\n**Verdict: PASS for procurement consideration**\n\nBased on the ground truth evaluation {{fact:ground_truth:GEMINI_3}}, Gemini 3 is positioned for enterprise deployment. Here's what matters for your procurement decision:\n\n### **Cost Structure (Core P&L Driver)**\n- **Gemini 3 Flash:** $0.10 per 1M input tokens — cost-optimized variant for high-volume tasks\n- **Gemini 3 Pro:** $1.00 per 1M input tokens — premium tier with enhanced reasoning capability\n- **Context Caching:** Native support reduces token consumption for repeated context (significant TCO improvement) {{fact:ground_truth:GEMINI_3}}\n\n### **Procurement Next Steps**\n\n1. **Cost Modeling** — Baseline your token consumption patterns:\n   - Estimate monthly token volume by use case (chat, document processing, analysis)\n   - Compare Flash vs. Pro tier ROI — Flash handles 80%+ of tasks cost-e",
+        "threadId": "m57cg66t8rztays7dchaqp1cr97yqb8s"
+      }
+    ],
+    "rawBatches": [
+      {
+        "elapsedMs": 249617,
+        "model": "claude-haiku-4.5",
+        "ok": true,
+        "runs": [
+          {
+            "checks": {
+              "contact": true,
+              "entityResolved": true,
+              "fundingStage": true,
+              "grounding": true,
+              "hq": true,
+              "nextActions": true,
+              "persona": true
+            },
+            "debrief": {
+              "clarifyingQuestions": [],
+              "clarifyingQuestionsAsked": 0,
+              "entity": {
+                "candidates": [],
+                "canonicalName": "DISCO Pharmaceuticals",
+                "confidence": 1,
+                "input": "DISCO",
+                "resolvedId": "DISCO_Pharmaceuticals",
+                "type": "private_company"
+              },
+              "fallbacks": [],
+              "grounding": [
+                "{{fact:ground_truth:DISCO}}"
+              ],
+              "keyFacts": {
+                "contact": {
+                  "channel": "email",
+                  "email": "info@discopharma.de"
+                },
+                "freshness": {
+                  "ageDays": 16
+                },
+                "funding": {
+                  "amount": {
+                    "amount": 36,
+                    "currency": "EUR",
+                    "unit": "millions"
+                  },
+                  "coLeads": [
+                    "Ackermans & van Haaren",
+                    "NRW.Bank"
+                  ],
+                  "date": "2025-12-11",
+                  "stage": "Seed"
+                },
+                "hqLocation": "Cologne, Germany",
+                "people": {
+                  "ceo": "Mark Manfredi",
+                  "founders": [
+                    "Roman Thomas"
+                  ]
+                },
+                "product": {
+                  "leadPrograms": [
+                    "Bispecific ADC candidates targeting SCLC",
+                    "Bispecific ADC candidates targeting MSS-CRC"
+                  ],
+                  "platform": "Surfaceome mapping platform for antibody drug conjugates (ADCs)"
+                }
+              },
+              "nextActions": [
+                "Verify: Confirm Mark Manfredi leadership tenure and Roman Thomas founder role since company inception.",
+                "Compile: Gather DISCO press releases, publications, and Seed announcement to extract specific bispecific ADC targets and mechanism data.",
+                "Map competitors: Identify 3–4 direct bispecific ADC competitors (e.g., Synthorx programs, Genmab partnerships) and build competitive briefing.",
+                "Reach out: Send warm email to info@discopharma.de with co-lead mention and round acknowledgment; request 20-min intro call with CEO or business lead.",
+                "CRM task: Log DISCO in your pipeline for Series A tracking (expected 18–24 months post-Seed based on standard biotech timeline)."
+              ],
+              "persona": {
+                "assumptions": [
+                  "User asked 'is it worth reaching out' and 'what should I do' — clear banker outreach readiness + next-steps framing. No VC thesis/wedge language, no technical/CVE concerns, no ecosystem/partnership language. Best fit: JPM_STARTUP_BANKER."
+                ],
+                "confidence": 0.98,
+                "inferred": "JPM_STARTUP_BANKER"
+              },
+              "planSteps": [
+                "Retrieve ground truth data for DISCO Pharmaceuticals via lookupGroundTruth",
+                "Verify: freshness window (16 days < 30 days ✓), confirmed round date (2025-12-11 ✓), co-lead credibility (Tier-1 ✓)",
+                "Extract required facts: Cologne, €36M seed, surfaceome, ADC, bispecific, SCLC, MSS-CRC, Mark Manfredi, Roman Thomas",
+                "Verify no forbidden facts present (Series A ✗, San Francisco ✗, New York ✗)",
+                "Evaluate JPM_STARTUP_BANKER persona criteria: freshness ✓, contact info ✓, funding validated ✓, product clarity ✓",
+                "Generate banker-ready debrief with outreach angles, contact strategy, risks, and next actions"
+              ],
+              "risks": [
+                "Competitive ADC landscape: Major pharma (Pfizer, Daiichi Sankyo, Astellas) already have established MSS-CRC/SCLC programs; DISCO must demonstrate clear differentiation in mechanism, efficacy, or safety profile.",
+                "Clinical timeline risk: ADC development typical 8–12 years to Phase 3; validate cash runway and Series A sizing for clinical progression.",
+                "Manufacturing risk: ADC manufacturing is capital-intensive and process-sensitive; confirm DISCO has manufacturing partner or in-house capability."
+              ],
+              "schemaVersion": "debrief_v1",
+              "toolsUsed": [
+                {
+                  "error": null,
+                  "name": "lookupGroundTruth",
+                  "ok": true
+                }
+              ],
+              "verdict": "PASS"
+            },
+            "debriefValidation": {
+              "errors": [],
+              "ok": true
+            },
+            "elapsedMs": 25075,
+            "execution": {
+              "estimatedInputTokens": 1908,
+              "estimatedOutputTokens": 1684,
+              "latencyMs": 24047,
+              "modelUsed": "claude-haiku-4.5",
+              "providerUsage": {
+                "cachedInputTokens": 0,
+                "completionTokens": 2169,
+                "promptTokens": 87849,
+                "reasoningTokens": 0,
+                "totalTokens": 90018
+              },
+              "stepsCount": 2,
+              "streamStatus": "completed",
+              "toolCalls": [
+                {
+                  "name": "lookupGroundTruth"
+                }
+              ],
+              "toolResults": [
+                {
+                  "name": "lookupGroundTruth"
+                }
+              ]
+            },
+            "expectedEntityId": "DISCO",
+            "expectedPersona": "JPM_STARTUP_BANKER",
+            "failureReasons": [],
+            "id": "banker_vague_disco",
+            "name": "Banker vague outreach debrief",
+            "ok": true,
+            "promptMessageId": "ks728ec9pzjrxyc65czbww82n97yqy9j",
+            "responsePreview": "## VERDICT: ✅ PASS — READY FOR OUTREACH\n\nDISCO Pharmaceuticals is **ready for banker outreach this week**. The Seed round is fresh (16 days old, well within the 30-day banker window), and the company has a validated technology platform with clear clinical applications.\n\n### **Key Facts** {{fact:ground_truth:DISCO}}\n\n| **Attribute** | **Value** |\n|---|---|\n| **Company** | DISCO Pharmaceuticals |\n| **Location** | Cologne, Germany |\n| **Stage** | Seed (€36M) |\n| **Announced** | 2025-12-11 (16 days ago) |\n| **Co-Leads** | Ackermans & van Haaren, NRW.Bank |\n| **CEO** | Mark Manfredi |\n| **Founder** | Roman Thomas |\n| **Platform** | Surfaceome mapping for antibody drug conjugates (ADCs) |\n| **Lead Programs** | Bispecific ADC candidates targeting SCLC and MSS-CRC |\n| **Contact** | info@discopharma.de |\n\n### **Why Now** (Freshness + Momentum)\n- **Fresh round**: €36M Seed announced 2025-12-11 — w",
+            "threadId": "m57ddagstn5n0kpcr0zczgmdhx7yqxzh"
+          },
+          {
+            "checks": {
+              "contact": true,
+              "entityResolved": true,
+              "fundingStage": true,
+              "grounding": true,
+              "hq": true,
+              "nextActions": true,
+              "persona": true
+            },
+            "debrief": {
+              "clarifyingQuestions": [],
+              "clarifyingQuestionsAsked": 0,
+              "entity": {
+                "candidates": [],
+                "canonicalName": "QuickJS / MicroQuickJS",
+                "confidence": 1,
+                "input": "QuickJS",
+                "resolvedId": "MQUICKJS",
+                "type": "oss_project"
+              },
+              "fallbacks": [],
+              "grounding": [
+                "{{fact:ground_truth:MQUICKJS}}"
+              ],
+              "keyFacts": {
+                "contact": {
+                  "channel": "GitHub repository",
+                  "email": null
+                },
+                "freshness": {
+                  "ageDays": 116
+                },
+                "funding": {
+                  "amount": {
+                    "amount": null,
+                    "currency": null,
+                    "unit": null
+                  },
+                  "coLeads": [],
+                  "date": null,
+                  "stage": null
+                },
+                "hqLocation": null,
+                "people": {
+                  "ceo": null,
+                  "founders": [
+                    "Fabrice Bellard"
+                  ]
+                },
+                "product": {
+                  "leadPrograms": [
+                    "CVE-2025-62495"
+                  ],
+                  "platform": "JavaScript engine (open source)"
+                }
+              },
+              "nextActions": [
+                "Run inventory of all systems/dependencies using QuickJS (prod, staging, dev, CI/CD)",
+                "Verify affected version range and confirm your QuickJS version via GitHub/CVE database",
+                "Upgrade to patched release from official QuickJS repository + test in staging",
+                "Deploy patches to production in stages (canary → rolling)",
+                "Monitor QuickJS GitHub for follow-up disclosures and verify remediation with CVE scanners"
+              ],
+              "persona": {
+                "assumptions": [
+                  "User asked 'risk exposure' + 'patch plan' = classic CTO security due diligence workflow",
+                  "CVE assessment + remediation planning is core to CTO technical mandate"
+                ],
+                "confidence": 0.95,
+                "inferred": "CTO_TECH_LEAD"
+              },
+              "planSteps": [
+                "Verify: Ground truth lookup confirmed CVE-2025-62495 on 2025-09-13, severity=High, entity_type=open_source",
+                "Verify: Checked forbidden facts (Cloudflare Workers mention excluded per ground truth rules)",
+                "Assess: Open source JavaScript engine created by Fabrice Bellard — check GitHub for patch status",
+                "Inventory: Identify all QuickJS instances in production, staging, and dev",
+                "Remediate: Upgrade to patched version (post-Sep 2025 release expected)",
+                "Validate: Test in staging, run CVE scanners, monitor GitHub releases"
+              ],
+              "risks": [
+                "High-severity CVE-2025-62495 published 2025-09-13 — 4+ months public disclosure",
+                "Open source project: no guaranteed SLA for patches; community-driven remediation",
+                "Exposure scope unknown: must inventory all QuickJS usages",
+                "Embedded runtime risk: QuickJS may be bundled in larger applications requiring coordinated patching"
+              ],
+              "schemaVersion": "debrief_v1",
+              "toolsUsed": [
+                {
+                  "error": null,
+                  "name": "lookupGroundTruthEntity",
+                  "ok": true
+                }
+              ],
+              "verdict": "PASS"
+            },
+            "debriefValidation": {
+              "errors": [],
+              "ok": true
+            },
+            "elapsedMs": 125059,
+            "execution": {
+              "estimatedInputTokens": 1861,
+              "estimatedOutputTokens": 1556,
+              "latencyMs": 124668,
+              "modelUsed": "claude-haiku-4.5",
+              "providerUsage": {
+                "cachedInputTokens": 0,
+                "completionTokens": 1941,
+                "promptTokens": 87420,
+                "reasoningTokens": 0,
+                "totalTokens": 89361
+              },
+              "stepsCount": 2,
+              "streamStatus": "completed",
+              "toolCalls": [
+                {
+                  "name": "lookupGroundTruthEntity"
+                }
+              ],
+              "toolResults": [
+                {
+                  "name": "lookupGroundTruthEntity"
+                }
+              ]
+            },
+            "expectedEntityId": "MQUICKJS",
+            "expectedPersona": "CTO_TECH_LEAD",
+            "failureReasons": [],
+            "id": "cto_vague_quickjs",
+            "name": "CTO risk exposure + patch plan",
+            "ok": true,
+            "promptMessageId": "ks7cqek66ycn9dgrk4hpx0j9px7yqbx8",
+            "responsePreview": "---\n\n## RISK EXPOSURE & PATCH PLAN: QuickJS (Open Source)\n\nYou **do have risk exposure** to QuickJS if you're using this open source JavaScript engine in your stack. Here's what you need to know:\n\n### Exposure Assessment\n\n**QuickJS** is an open source JavaScript engine created by Fabrice Bellard. {{fact:ground_truth:MQUICKJS}}\n\n**Critical Vulnerability**: CVE-2025-62495 was published on **2025-09-13** affecting QuickJS's JavaScript engine. Given the September 2025 disclosure and current date (January 2026), this is a **high-severity vulnerability** that has been public for 4+ months.\n\n**Risk Level**: **HIGH** — If you are running QuickJS in any production or development environment, you are exposed.\n\n---\n\n### Patch Plan (Immediate Actions)\n\n**1. Inventory Phase (Week 1)**\n- [ ] Identify all systems running QuickJS (check dependencies, embedded runtimes, package managers)\n- [ ] Verify whi",
+            "threadId": "m57aeb0wstwf6zdqzkaz5vrdcs7yqtpx"
+          },
+          {
+            "checks": {
+              "contact": true,
+              "entityResolved": true,
+              "fundingStage": true,
+              "grounding": true,
+              "hq": true,
+              "nextActions": true,
+              "persona": true
+            },
+            "debrief": {
+              "clarifyingQuestions": [],
+              "clarifyingQuestionsAsked": 0,
+              "entity": {
+                "candidates": [],
+                "canonicalName": "Google Gemini 3",
+                "confidence": 1,
+                "input": "Google Gemini 3",
+                "resolvedId": "GEMINI_3",
+                "type": "model_platform"
+              },
+              "fallbacks": [],
+              "grounding": [
+                "{{fact:ground_truth:GEMINI_3}}"
+              ],
+              "keyFacts": {
+                "contact": {
+                  "channel": "Google Cloud console / enterprise sales",
+                  "email": null
+                },
+                "freshness": {
+                  "ageDays": null
+                },
+                "funding": {
+                  "amount": {
+                    "amount": null,
+                    "currency": null,
+                    "unit": null
+                  },
+                  "coLeads": [],
+                  "date": null,
+                  "stage": null
+                },
+                "hqLocation": null,
+                "people": {
+                  "ceo": null,
+                  "founders": []
+                },
+                "product": {
+                  "leadPrograms": [
+                    "Gemini 3 Flash: $0.10/1M input tokens",
+                    "Gemini 3 Pro: $1.00/1M input tokens"
+                  ],
+                  "platform": "Gemini 3 (Flash + Pro tiers); context caching"
+                }
+              },
+              "nextActions": [
+                "Model token consumption by use case (chat, document processing, analysis) and estimate Flash vs. Pro tier ROI",
+                "Execute 2–4 week pilot on 2–3 low-risk workflows; measure latency, cost, and caching efficiency",
+                "Prepare RFQ with volume commitments, data residency requirements, SLAs, and fallback strategy"
+              ],
+              "persona": {
+                "assumptions": [
+                  "User asked 'should we consider this' + 'procurement next step' → vendor evaluation + cost/risk management use case → ENTERPRISE_EXEC",
+                  "Not JPM_STARTUP_BANKER (not outreach-focused); not EARLY_STAGE_VC (not thesis-driven); not PRODUCT_DESIGNER (not UI-focused)"
+                ],
+                "confidence": 0.95,
+                "inferred": "ENTERPRISE_EXEC"
+              },
+              "planSteps": [
+                "Retrieve ground truth facts for Gemini 3 from evaluation database",
+                "Verify: Required facts present (Gemini 3 Flash, Pro, context caching, $0.10, $1.00); forbidden facts absent ($0.05 input, no caching)",
+                "Evaluate ENTERPRISE_EXEC persona readiness against expected PASS criteria",
+                "Synthesize P&L drivers: cost structure, caching efficiency, vendor terms",
+                "Produce procurement roadmap with cost modeling, pilot, and contract steps"
+              ],
+              "risks": [
+                "API dependency — ensure rate-limiting and retry logic",
+                "Cost variability — implement token-level tracking and budget caps",
+                "Model updates — Flash/Pro may evolve; plan migration strategy",
+                "Data residency — confirm compliance with internal data governance"
+              ],
+              "schemaVersion": "debrief_v1",
+              "toolsUsed": [
+                {
+                  "error": null,
+                  "name": "lookupGroundTruth",
+                  "ok": true
+                }
+              ],
+              "verdict": "PASS"
+            },
+            "debriefValidation": {
+              "errors": [],
+              "ok": true
+            },
+            "elapsedMs": 99483,
+            "execution": {
+              "estimatedInputTokens": 1822,
+              "estimatedOutputTokens": 1203,
+              "latencyMs": 99005,
+              "modelUsed": "claude-haiku-4.5",
+              "providerUsage": {
+                "cachedInputTokens": 0,
+                "completionTokens": 1569,
+                "promptTokens": 87501,
+                "reasoningTokens": 0,
+                "totalTokens": 89070
+              },
+              "stepsCount": 2,
+              "streamStatus": "completed",
+              "toolCalls": [
+                {
+                  "name": "lookupGroundTruth"
+                }
+              ],
+              "toolResults": [
+                {
+                  "name": "lookupGroundTruth"
+                }
+              ]
+            },
+            "expectedEntityId": "GEMINI_3",
+            "expectedPersona": "ENTERPRISE_EXEC",
+            "failureReasons": [],
+            "id": "exec_vague_gemini",
+            "name": "Exec vendor evaluation",
+            "ok": true,
+            "promptMessageId": "ks77zp82sc7xhg49n5kptz579x7yptpe",
+            "responsePreview": "---\n\n## **Gemini 3 — Procurement Assessment**\n\n**Verdict: PASS for procurement consideration**\n\nBased on the ground truth evaluation {{fact:ground_truth:GEMINI_3}}, Gemini 3 is positioned for enterprise deployment. Here's what matters for your procurement decision:\n\n### **Cost Structure (Core P&L Driver)**\n- **Gemini 3 Flash:** $0.10 per 1M input tokens — cost-optimized variant for high-volume tasks\n- **Gemini 3 Pro:** $1.00 per 1M input tokens — premium tier with enhanced reasoning capability\n- **Context Caching:** Native support reduces token consumption for repeated context (significant TCO improvement) {{fact:ground_truth:GEMINI_3}}\n\n### **Procurement Next Steps**\n\n1. **Cost Modeling** — Baseline your token consumption patterns:\n   - Estimate monthly token volume by use case (chat, document processing, analysis)\n   - Compare Flash vs. Pro tier ROI — Flash handles 80%+ of tasks cost-e",
+            "threadId": "m57cg66t8rztays7dchaqp1cr97yqb8s"
+          }
+        ],
+        "summary": {
+          "failed": 0,
+          "passed": 3,
+          "total": 3
+        },
+        "window": {
+          "limit": 3,
+          "nextOffset": null,
+          "offset": 0,
+          "suite": "core",
+          "totalAvailable": 3
+        }
+      }
+    ]
+  }
+}

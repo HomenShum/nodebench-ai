@@ -1,0 +1,21 @@
+{
+  "runId": "paired-1773815410138-relationship-mapping-stealth-startup-deeptrace",
+  "benchmarkCaseId": "relationship-mapping-stealth-startup",
+  "mode": "deeptrace",
+  "timestamp": "2026-03-18T06:30:10.150Z",
+  "repoCommit": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+  "inputSnapshotHash": "52750e2d02915c80858933134424b2bcdd86f62d66983ebecd9c6ba14db3c997",
+  "promptTemplateHash": "03525bf7d5265c4de42502e83da0f0cf76c2dc378d4689bc6c6758918ee3c09f",
+  "mcpConfigHash": "5df8da77b4a20c64ec10f76ac7e9292e273274e1e4b35804bda8be4f81fedc23",
+  "modelName": "claude-code-simulated-nodebench",
+  "claudeCodeVersion": null,
+  "wallClockMs": 2010,
+  "toolCallCount": 9,
+  "tokenCount": 1690,
+  "artifactPaths": [
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/relationship-mapping-stealth-startup/deeptrace/tool_result.json",
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/relationship-mapping-stealth-startup/deeptrace/tool_report.md",
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/relationship-mapping-stealth-startup/deeptrace/tool_trace_bundle.json",
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/relationship-mapping-stealth-startup/deeptrace/run-metadata.json"
+  ]
+}

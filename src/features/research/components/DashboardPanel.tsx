@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useMotionConfig } from '@/lib/motion';
 
 interface DashboardProps {
   data: {
@@ -13,13 +14,14 @@ interface DashboardProps {
 
 
 export const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
+  const { instant, transition } = useMotionConfig();
   return (
     <div className="flex h-full flex-col justify-between rounded-lg bg-surface p-6 border border-edge shadow-sm">
       <div>
         <div className="flex items-center justify-between mb-8">
           <motion.div
             key={data.phaseLabel}
-            initial={{ opacity: 0, y: -5 }}
+            initial={{ opacity: 0, y: instant ? 0 : -5 }}
             animate={{ opacity: 1, y: 0 }}
             className="inline-flex items-center gap-1.5 rounded-full bg-surface-secondary px-3 py-1 text-xs font-semibold text-content border border-edge"
           >
@@ -40,9 +42,9 @@ export const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
           <div className="relative h-2 w-full overflow-hidden rounded-full bg-surface-secondary shadow-inner">
             <motion.div
               className="absolute inset-y-0 left-0 rounded-full bg-[var(--accent-primary)]"
-              initial={{ width: 0 }}
+              initial={{ width: instant ? `${data.marketSentiment}%` : 0 }}
               animate={{ width: `${data.marketSentiment}%` }}
-              transition={{ type: "spring", stiffness: 40, damping: 15 }}
+              transition={transition({ type: "spring", stiffness: 40, damping: 15 })}
             />
           </div>
         </div>
@@ -61,9 +63,9 @@ export const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
             <div className="h-2 w-full overflow-hidden rounded-full bg-surface-secondary">
               <motion.div
                 className={`h-full ${kpi.color}`}
-                initial={{ width: 0 }}
+                initial={{ width: instant ? `${kpi.value}%` : 0 }}
                 animate={{ width: `${kpi.value}%` }}
-                transition={{ duration: 1, ease: "circOut" }}
+                transition={transition({ duration: 1, ease: "circOut" })}
               />
             </div>
           </div>
@@ -75,7 +77,7 @@ export const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
           <span className="font-medium text-content-secondary">Region Focus</span>
           <motion.div
             key={data.activeRegion}
-            initial={{ opacity: 0, x: 10 }}
+            initial={{ opacity: 0, x: instant ? 0 : 10 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-1.5 font-semibold text-content"
           >

@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useMotionConfig } from '@/lib/motion';
 
 interface HeroSectionProps {
     todayFormatted: string;
@@ -14,14 +15,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     readTimeMin,
     isLiveData_ = false,
 }) => {
+    const { instant, transition } = useMotionConfig();
     return (
         <header className="relative mb-12 px-6 py-12 sm:px-12 sm:py-20 max-w-[1400px] mx-auto">
             <div className="relative z-10 mx-auto max-w-4xl text-center">
                 {/* Top Badge - Minimal */}
                 <motion.div
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: instant ? 0 : 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
+                    transition={transition({ duration: 0.6, ease: "easeOut" })}
                     className="mb-8 flex justify-center"
                 >
                     <div className="inline-flex items-center gap-3 rounded-full border border-edge bg-surface px-4 py-1.5 text-sm font-medium">
@@ -38,9 +40,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
                 {/* Main Title - Huge & Clean */}
                 <motion.h1
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: instant ? 0 : 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
+                    transition={transition({ duration: 0.8, delay: 0.1, ease: "easeOut" })}
                     className="mb-6 text-5xl font-bold tracking-tighter text-content sm:text-7xl lg:text-8xl"
                 >
                     The Morning
@@ -52,9 +54,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
                 {/* Subtitle - Crisp */}
                 <motion.p
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: instant ? 0 : 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+                    transition={transition({ duration: 0.8, delay: 0.2, ease: "easeOut" })}
                     className="mx-auto mb-10 max-w-2xl text-lg text-content-secondary sm:text-xl leading-relaxed font-medium"
                 >
                     AI-synthesized briefing on infrastructure, trends, and deep dives.
@@ -71,9 +73,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
                 {/* Call to Action - High Contrast */}
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.98 }}
+                    initial={{ opacity: 0, scale: instant ? 1 : 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5, delay: 0.4 }}
+                    transition={transition({ duration: 0.5, delay: 0.4 })}
                     className="flex justify-center"
                 >
                     <button

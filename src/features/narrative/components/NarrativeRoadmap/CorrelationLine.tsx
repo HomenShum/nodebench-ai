@@ -11,6 +11,7 @@
 
 import React, { useMemo } from "react";
 import { motion } from "framer-motion";
+import { useMotionConfig } from "@/lib/motion";
 
 export interface CorrelationData {
   correlationId: string;
@@ -98,6 +99,8 @@ export function CorrelationLine({
   onCorrelationClick,
   onCorrelationHover,
 }: CorrelationLineProps) {
+  const { instant, transition } = useMotionConfig();
+
   // Calculate line paths for all correlations
   const linePaths = useMemo(() => {
     const paths: Array<{
@@ -191,9 +194,9 @@ export function CorrelationLine({
                 stroke={color}
                 strokeWidth={strokeWidth + 4}
                 strokeOpacity={0.3}
-                initial={{ opacity: 0 }}
+                initial={{ opacity: instant ? 1 : 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.2 }}
+                transition={transition(0.2)}
               />
             )}
 
@@ -209,9 +212,9 @@ export function CorrelationLine({
               markerEnd={correlation.correlationType === "causal" ? "url(#correlation-arrow)" : "none"}
               className="pointer-events-auto cursor-pointer transition-all duration-200"
               style={{ color }}
-              initial={{ pathLength: 0, opacity: 0 }}
+              initial={{ pathLength: instant ? 1 : 0, opacity: instant ? opacity : 0 }}
               animate={{ pathLength: 1, opacity }}
-              transition={{ duration: 0.5, delay: index * 0.05 }}
+              transition={transition({ duration: 0.5, delay: index * 0.05 })}
               onClick={() => onCorrelationClick?.(correlation)}
               onMouseEnter={() => onCorrelationHover?.(correlation)}
               onMouseLeave={() => onCorrelationHover?.(null)}
@@ -271,6 +274,7 @@ export interface CorrelationTooltipProps {
 }
 
 export function CorrelationTooltip({ correlation, position }: CorrelationTooltipProps) {
+  const { instant, transition: motionTransition } = useMotionConfig();
   const typeLabels: Record<CorrelationData["correlationType"], string> = {
     causal: "Causal Relationship",
     temporal: "Temporal Proximity",
@@ -280,9 +284,10 @@ export function CorrelationTooltip({ correlation, position }: CorrelationTooltip
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 5 }}
+      initial={{ opacity: 0, y: instant ? 0 : 5 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 5 }}
+      exit={{ opacity: 0, y: instant ? 0 : 5 }}
+      transition={motionTransition(0.2)}
       className="absolute z-50 bg-surface rounded-lg shadow-lg border border-edge p-3 max-w-xs"
       style={{
         left: position.x,

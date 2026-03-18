@@ -1,0 +1,27 @@
+{
+  "provider": "google",
+  "sourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+  "fetchedAt": "2026-01-20T08:34:08.685Z",
+  "models": [
+    {
+      "model": "Gemini 3 Pro Preview",
+      "inputUsdPer1MTokens": 2,
+      "outputUsdPer1MTokens": 12,
+      "inputUsdPer1MTokensOver200k": 4,
+      "outputUsdPer1MTokensOver200k": 18,
+      "contextCacheUsdPer1MTokens": 0.2
+    },
+    {
+      "model": "Gemini 3 Flash Preview",
+      "inputUsdPer1MTokens": 0.5,
+      "outputUsdPer1MTokens": 3,
+      "inputUsdPer1MTokensOver200k": null,
+      "outputUsdPer1MTokensOver200k": null,
+      "contextCacheUsdPer1MTokens": 0.05
+    }
+  ],
+  "notes": [
+    "Google Gemini API pricing varies by prompt length and modality; for token-cost estimation we use the <=200k 'text' list rates from the first pricing table under each Gemini 3 section.",
+    "If your prompts exceed 200k tokens, use the *Over200k rates captured in this snapshot instead."
+  ]
+}

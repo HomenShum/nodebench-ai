@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMotionConfig } from '@/lib/motion';
 import { StickyDashboard, type WorkflowStep } from './StickyDashboard';
 import type { DashboardState, DailyBriefPayload, SourceSummary, Signal, Evidence, EntityGraph } from '@/features/research/types';
 import { ChartDataPointContext } from './EnhancedLineChart';
@@ -140,6 +141,8 @@ export const ActAwareDashboard: React.FC<ActAwareDashboardProps> = ({
   onDataPointClick,
   onEvidenceClick
 }) => {
+  const { instant, transition } = useMotionConfig();
+
   // Extract evidence relevant to the current act
   const actEvidence = React.useMemo(() => {
     if (!executiveBrief || !evidence.length) return evidence;
@@ -156,10 +159,10 @@ export const ActAwareDashboard: React.FC<ActAwareDashboardProps> = ({
         {activeAct === 'actI' && (
           <motion.div
             key="actI"
-            initial={{ opacity: 0, y: 10 }}
+            initial={instant ? { opacity: 1 } : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.4, ease: "circOut" }}
+            exit={instant ? { opacity: 0 } : { opacity: 0, y: -10 }}
+            transition={transition({ duration: 0.4, ease: "circOut" })}
             className="w-full"
           >
             <StickyDashboard
@@ -179,10 +182,10 @@ export const ActAwareDashboard: React.FC<ActAwareDashboardProps> = ({
         {activeAct === 'actII' && (
           <motion.div
             key="actII"
-            initial={{ opacity: 0, y: 10 }}
+            initial={instant ? { opacity: 1 } : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.4, ease: "circOut" }}
+            exit={instant ? { opacity: 0 } : { opacity: 0, y: -10 }}
+            transition={transition({ duration: 0.4, ease: "circOut" })}
             className="w-full"
           >
             <ActIIChangeView brief={executiveBrief} graph={dashboardData.entityGraph ?? null} />
@@ -196,10 +199,10 @@ export const ActAwareDashboard: React.FC<ActAwareDashboardProps> = ({
         {activeAct === 'actIII' && (
           <motion.div
             key="actIII"
-            initial={{ opacity: 0, y: 10 }}
+            initial={instant ? { opacity: 1 } : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.4, ease: "circOut" }}
+            exit={instant ? { opacity: 0 } : { opacity: 0, y: -10 }}
+            transition={transition({ duration: 0.4, ease: "circOut" })}
             className="w-full"
           >
             <ActIIIVelocityView summary={sourceSummary} />

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useMotionConfig } from '@/lib/motion';
 import {
   ArrowLeft,
   Star,
@@ -199,11 +200,13 @@ function EmailMessage({
 }) {
   const [isExpanded, setIsExpanded] = useState(isLast);
   const [showRaw, setShowRaw] = useState(false);
+  const { instant, transition } = useMotionConfig();
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 10 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={transition(0.3)}
       className="bg-surface/50 rounded-lg border border-edge overflow-hidden"
     >
       {/* Message Header */}

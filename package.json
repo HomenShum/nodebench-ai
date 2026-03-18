@@ -132,7 +132,11 @@
     "content:pipeline": "node scripts/run-content-pipeline.mjs",
     "content:pipeline:stream": "node scripts/run-content-pipeline.mjs --streaming",
     "content:pipeline:publish": "node scripts/run-content-pipeline.mjs --publish --streaming",
-    "content:pipeline:quiet": "node scripts/run-content-pipeline.mjs --quiet"
+    "content:pipeline:quiet": "node scripts/run-content-pipeline.mjs --quiet",
+    "deeptrace:autoresearch:baseline": "tsx scripts/eval-harness/deeptrace/optimizerRunner.ts baseline",
+    "deeptrace:autoresearch:optimize": "tsx scripts/eval-harness/deeptrace/optimizerRunner.ts optimize",
+    "deeptrace:autoresearch:replay": "tsx scripts/eval-harness/deeptrace/optimizerRunner.ts replay",
+    "deeptrace:autoresearch:paired-bench": "tsx scripts/eval-harness/deeptrace/paired-benchmark-runner.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.53",

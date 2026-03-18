@@ -1,0 +1,17 @@
+{
+  "throughputMetrics": {
+    "taskCompletionRate": 1.0,
+    "timeToFirstDraftMs": 4800,
+    "humanEditDistance": 0,
+    "wallClockMs": 4800,
+    "toolCallCount": 5
+  },
+  "qualityMetrics": {
+    "factualPrecision": 0.70,
+    "relationshipPrecision": 0.70,
+    "evidenceLinkage": 0.70,
+    "receiptCompleteness": 0.72,
+    "falseConfidenceRate": 0.10,
+    "canaryRelativeUplift": 0.00
+  }
+}

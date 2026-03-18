@@ -20,6 +20,7 @@ import {
 import { useQuery } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { staggerContainerVariants, staggerItemVariants } from '../../../utils/animations';
+import { useMotionConfig } from '@/lib/motion';
 
 interface PersonalAnalyticsProps {
   className?: string;
@@ -54,16 +55,16 @@ function StatCard({ label, value, icon: Icon, trend, color }: StatCardProps) {
   );
 }
 
-function ActivityBar({ day, value, max }: { day: string; value: number; max: number }) {
+function ActivityBar({ day, value, max, instant, transition }: { day: string; value: number; max: number; instant: boolean; transition: (d?: number | import('framer-motion').Transition) => import('framer-motion').Transition }) {
   const height = max > 0 ? (value / max) * 100 : 0;
   return (
     <div className="flex flex-col items-center gap-1">
       <div className="w-8 h-20 bg-surface-secondary rounded-full overflow-hidden flex items-end">
         <motion.div
           className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-full"
-          initial={{ height: 0 }}
+          initial={{ height: instant ? `${height}%` : 0 }}
           animate={{ height: `${height}%` }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          transition={transition({ duration: 0.5, delay: 0.1 })}
         />
       </div>
       <span className="text-xs text-content-secondary">{day}</span>
@@ -72,6 +73,7 @@ function ActivityBar({ day, value, max }: { day: string; value: number; max: num
 }
 
 export function PersonalAnalytics({ className = '' }: PersonalAnalyticsProps) {
+  const { instant, transition } = useMotionConfig();
   // Fetch data
   const behaviorSummary = useQuery(api.domains.recommendations.behaviorTracking.getBehaviorSummary);
   const tasks = useQuery(api.domains.tasks.tasks.listTasks, { limit: 100 });
@@ -130,9 +132,9 @@ export function PersonalAnalytics({ className = '' }: PersonalAnalyticsProps) {
       {/* Stats Grid */}
       <motion.div
         className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"
-        variants={staggerContainerVariants}
-        initial="hidden"
-        animate="visible"
+        variants={instant ? undefined : staggerContainerVariants}
+        initial={instant ? undefined : "hidden"}
+        animate={instant ? undefined : "visible"}
       >
         <StatCard label="Tasks Done" value={stats.completedTasks} icon={CheckSquare} color="bg-green-50 border-green-200 text-green-800" trend={{ value: 12, label: 'vs last week' }} />
         <StatCard label="Documents" value={stats.totalDocs} icon={FileText} color="bg-blue-50 border-blue-200 text-blue-800" />
@@ -145,7 +147,7 @@ export function PersonalAnalytics({ className = '' }: PersonalAnalyticsProps) {
         <h3 className="text-sm font-medium text-content-secondary mb-4">Weekly Activity</h3>
         <div className="flex items-end justify-between gap-2">
           {weeklyActivity.map((day) => (
-            <ActivityBar key={day.day} day={day.day} value={day.value} max={maxActivity} />
+            <ActivityBar key={day.day} day={day.day} value={day.value} max={maxActivity} instant={instant} transition={transition} />
           ))}
         </div>
       </div>

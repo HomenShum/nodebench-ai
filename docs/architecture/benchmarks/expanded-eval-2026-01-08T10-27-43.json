@@ -1,0 +1,52 @@
+{
+  "generatedAt": "2026-01-08T10:27:43.252Z",
+  "model": "gemini-3-flash",
+  "category": "web",
+  "totalElapsed": 75942,
+  "summary": {
+    "total": 3,
+    "passed": 1,
+    "failed": 2,
+    "passRate": 33.3
+  },
+  "results": [
+    {
+      "id": "web_disco_news",
+      "name": "Web: DISCO news search",
+      "category": "web",
+      "passed": false,
+      "elapsed": 24616,
+      "toolsCalled": [
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": [
+        "Output missing expected content: \"funding\""
+      ]
+    },
+    {
+      "id": "web_salesforce_fetch",
+      "name": "Web: Salesforce Agentforce deep dive",
+      "category": "web",
+      "passed": true,
+      "elapsed": 37546,
+      "toolsCalled": [
+        "lookupGroundTruthEntity",
+        "linkupSearch"
+      ],
+      "failureReasons": []
+    },
+    {
+      "id": "web_disco_multi_source",
+      "name": "Web: DISCO multi-source verification",
+      "category": "web",
+      "passed": false,
+      "elapsed": 13780,
+      "toolsCalled": [
+        "lookupGroundTruthEntity"
+      ],
+      "failureReasons": [
+        "persona mismatch: got EARLY_STAGE_VC expected ACADEMIC_RD"
+      ]
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { X, Link2, Check, Globe, Lock } from "lucide-react";
 import { Id } from "../../../../convex/_generated/dataModel";
+import { DialogOverlay } from "@/shared/components/DialogOverlay";
 
 interface ShareModalProps {
     isOpen: boolean;
@@ -55,10 +56,8 @@ export function ShareModal({
         }
     }, [onApply, sharePublic, publicUrl, onClose]);
 
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <DialogOverlay isOpen={isOpen} onClose={onClose} ariaLabel="Share document">
             <div className="w-full max-w-md rounded-lg border border-edge bg-surface p-5 shadow-xl">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
@@ -147,6 +146,6 @@ export function ShareModal({
                     </button>
                 </div>
             </div>
-        </div>
+        </DialogOverlay>
     );
 }

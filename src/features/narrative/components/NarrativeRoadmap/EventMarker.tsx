@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import type { NarrativeEvent, EventSignificance } from "../../types";
 import { SIGNIFICANCE_COLORS } from "../../types";
+import { useMotionConfig } from "@/lib/motion";
 
 interface EventMarkerProps {
   event: NarrativeEvent;
@@ -69,6 +70,7 @@ export function EventMarker({
   showTooltip = true,
 }: EventMarkerProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const { instant, transition } = useMotionConfig();
   const colors = SIGNIFICANCE_COLORS[event.significance];
   const size = getMarkerSize(event.significance);
 
@@ -91,8 +93,8 @@ export function EventMarker({
           hover:scale-125 focus:outline-none focus:ring-offset-1
           ${isPlotTwist ? "motion-safe:animate-pulse" : ""}
         `}
-        whileHover={{ scale: 1.2 }}
-        whileTap={{ scale: 0.9 }}
+        whileHover={!instant ? { scale: 1.2 } : undefined}
+        whileTap={!instant ? { scale: 0.9 } : undefined}
         title={event.headline}
       >
         {isPlotTwist && (
@@ -104,10 +106,10 @@ export function EventMarker({
       <AnimatePresence>
         {showTooltip && isHovered && (
           <motion.div
-            initial={{ opacity: 0, y: 5, scale: 0.95 }}
+            initial={{ opacity: 0, y: instant ? 0 : 5, scale: instant ? 1 : 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 5, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
+            exit={{ opacity: 0, y: instant ? 0 : 5, scale: instant ? 1 : 0.95 }}
+            transition={transition(0.15)}
             className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 pointer-events-none"
           >
             <div className="bg-content text-white rounded-lg shadow-xl p-3 text-xs">

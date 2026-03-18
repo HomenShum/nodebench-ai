@@ -104,7 +104,7 @@ export async function evaluateVideoClip(
   criteria: string,
   options?: { model?: string; threshold?: number; signal?: AbortSignal },
 ): Promise<VideoJudgeResult> {
-  const model = options?.model ?? "gemini-2.5-flash";
+  const model = options?.model ?? "gemini-3.1-flash-lite-preview";
   const threshold = options?.threshold ?? 70;
   const start = Date.now();
 

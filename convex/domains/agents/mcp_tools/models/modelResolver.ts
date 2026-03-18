@@ -246,7 +246,7 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
   "gemini-3-flash": {
     alias: "gemini-3-flash",
     provider: "google",
-    sdkId: "gemini-3-flash-preview",
+    sdkId: "gemini-3.1-flash-lite-preview",
     capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 1_000_000 },
     pricing: { inputPerMillion: 0.50, outputPerMillion: 3.00 },
   },
@@ -450,8 +450,8 @@ export const LEGACY_ALIASES: Record<string, ApprovedModel> = {
   "claude-haiku": "claude-haiku-4.5",
   "claude": "claude-haiku-4.5",  // Default claude → haiku (fast)
   // Old Gemini names → Gemini 3 Flash (Dec 17, 2025)
-  "gemini-2.5-flash-lite": "gemini-3-flash",
-  "gemini-2.5-flash": "gemini-3-flash",
+  "gemini-3.1-flash-lite-preview-lite": "gemini-3-flash",
+  "gemini-3.1-flash-lite-preview": "gemini-3-flash",
   "gemini-2.5-pro": "gemini-3-flash",
   "gemini-flash": "gemini-3-flash",
   "gemini-pro": "gemini-3-pro",

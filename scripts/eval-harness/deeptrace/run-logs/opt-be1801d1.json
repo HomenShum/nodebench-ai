@@ -1,0 +1,47 @@
+{
+  "sessionId": "opt-be1801d1",
+  "config": {
+    "maxIterations": 15,
+    "maxSessionSeconds": 600,
+    "benchmarkFamilies": [
+      "company_direction",
+      "relationship_mapping",
+      "repo_intelligence",
+      "world_to_company",
+      "trace_backed_draft"
+    ]
+  },
+  "baseline": {
+    "baselineId": "baseline-401d5942-1773609609024",
+    "commitHash": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+    "throughputMetrics": {
+      "taskCompletionRate": 0.72,
+      "timeToFirstDraftMs": 45000,
+      "humanEditDistance": 180,
+      "wallClockMs": 90000,
+      "toolCallCount": 28
+    },
+    "qualityMetrics": {
+      "factualPrecision": 0.82,
+      "relationshipPrecision": 0.78,
+      "evidenceLinkage": 0.8,
+      "receiptCompleteness": 0.85,
+      "falseConfidenceRate": 0.07,
+      "canaryRelativeUplift": 0
+    },
+    "capturedAt": "2026-03-15T22:35:00.000Z"
+  },
+  "candidates": [],
+  "promotedCandidateId": null,
+  "costEntries": [],
+  "costSummary": {
+    "totalInputTokens": 0,
+    "totalOutputTokens": 0,
+    "totalCostUsd": 0,
+    "costByPhase": {},
+    "costByModel": {},
+    "callCount": 0
+  },
+  "startedAt": "2026-03-15T23:28:26.613Z",
+  "completedAt": "2026-03-15T23:28:30.294Z"
+}

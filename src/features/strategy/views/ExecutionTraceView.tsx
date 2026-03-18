@@ -150,6 +150,12 @@ export function ExecutionTraceView() {
   const [selectedSessionId, setSelectedSessionId] = useState<Id<"agentTaskSessions"> | null>(null);
   const { isAuthenticated } = useConvexAuth();
   const effectiveIsPublic = !isAuthenticated;
+  const requestedSessionId = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    const session = params.get("session");
+    return session ? (session as Id<"agentTaskSessions">) : null;
+  }, []);
 
   const publicSessionsData = useQuery(
     api.domains.taskManager.queries.getPublicTaskSessions,
@@ -170,10 +176,19 @@ export function ExecutionTraceView() {
       setSelectedSessionId(null);
       return;
     }
+    if (
+      requestedSessionId &&
+      sessions.some((session) => String(session._id) === String(requestedSessionId))
+    ) {
+      if (String(selectedSessionId) !== String(requestedSessionId)) {
+        setSelectedSessionId(requestedSessionId);
+      }
+      return;
+    }
     if (!selectedSessionId || !sessions.some((session) => session._id === selectedSessionId)) {
       setSelectedSessionId(sessions[0]._id);
     }
-  }, [selectedSessionId, sessions]);
+  }, [requestedSessionId, selectedSessionId, sessions]);
 
   const sessionDetail = useQuery(
     api.domains.taskManager.queries.getTaskSessionDetail,
@@ -230,6 +245,16 @@ export function ExecutionTraceView() {
       ),
     [trace.verification_checks],
   );
+  const deepLinkContext = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    const entity = params.get("entity");
+    const edge = params.get("edge");
+    const event = params.get("event");
+    const evidence = params.get("evidence");
+    if (!entity && !edge && !event && !evidence) return null;
+    return { entity, edge, event, evidence };
+  }, []);
 
   useEffect(() => {
     if (!DISCLOSURE_TABS[disclosureLevel].includes(activeTab)) {
@@ -311,6 +336,19 @@ export function ExecutionTraceView() {
             </div>
             <div className="mt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Truth boundary</div>
             <p className="mt-2 text-sm leading-relaxed text-content-secondary">{truthBoundary}</p>
+            {deepLinkContext ? (
+              <>
+                <div className="mt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
+                  Linked intelligence context
+                </div>
+                <div className="mt-2 rounded-xl border border-edge bg-surface px-3 py-3 text-sm text-content-secondary">
+                  {deepLinkContext.entity ? <div>Entity: {deepLinkContext.entity}</div> : null}
+                  {deepLinkContext.edge ? <div>Edge: {deepLinkContext.edge}</div> : null}
+                  {deepLinkContext.event ? <div>Event: {deepLinkContext.event}</div> : null}
+                  {deepLinkContext.evidence ? <div>Evidence: {deepLinkContext.evidence}</div> : null}
+                </div>
+              </>
+            ) : null}
           </div>
         </div>
       </header>

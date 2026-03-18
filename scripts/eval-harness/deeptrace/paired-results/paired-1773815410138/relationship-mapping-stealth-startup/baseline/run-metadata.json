@@ -1,0 +1,20 @@
+{
+  "runId": "paired-1773815410138-relationship-mapping-stealth-startup-baseline",
+  "benchmarkCaseId": "relationship-mapping-stealth-startup",
+  "mode": "baseline",
+  "timestamp": "2026-03-18T06:30:10.148Z",
+  "repoCommit": "401d5942a56f4b1d98a401a0f368e489002b9b93",
+  "inputSnapshotHash": "52750e2d02915c80858933134424b2bcdd86f62d66983ebecd9c6ba14db3c997",
+  "promptTemplateHash": "a469fe9b736199461701daa43ee09499371be3ce2bec5a04776d3ae7f26bc366",
+  "mcpConfigHash": "6c88a21151c3812e9d7cdaf876e62c1dfdd9a4c601dcf07669f9b8a7243f828e",
+  "modelName": "claude-code-simulated-baseline",
+  "claudeCodeVersion": null,
+  "wallClockMs": 1280,
+  "toolCallCount": 3,
+  "tokenCount": 860,
+  "artifactPaths": [
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/relationship-mapping-stealth-startup/baseline/baseline_result.json",
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/relationship-mapping-stealth-startup/baseline/baseline_report.md",
+    "scripts/eval-harness/deeptrace/paired-results/paired-1773815410138/relationship-mapping-stealth-startup/baseline/run-metadata.json"
+  ]
+}

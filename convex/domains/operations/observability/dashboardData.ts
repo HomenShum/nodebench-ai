@@ -15,6 +15,7 @@ import { internalAction, internalQuery, query } from "../../../_generated/server
 import { internal } from "../../../_generated/api";
 import { PERSONA_CONFIG, type PersonaId } from "../../../config/autonomousConfig";
 import type { Doc } from "../../../_generated/dataModel";
+import { isActiveHealthStatus, normalizeHealthCheckDoc } from "./healthMonitor";
 
 /* ================================================================== */
 /* TYPES                                                               */
@@ -107,13 +108,15 @@ export const getSystemOverview = query({
     // Get health status
     const healthChecks = await ctx.db
       .query("healthChecks")
+      .withIndex("by_checked", (q) => q.gte("checkedAt", 0))
       .order("desc")
       .take(20);
 
     const componentStatuses: Record<string, string> = {};
     for (const check of healthChecks) {
-      if (!componentStatuses[check.component]) {
-        componentStatuses[check.component] = check.status;
+      const normalized = normalizeHealthCheckDoc(check as Doc<"healthChecks">);
+      if (!componentStatuses[normalized.component]) {
+        componentStatuses[normalized.component] = normalized.status;
       }
     }
 
@@ -187,9 +190,7 @@ export const getSystemOverview = query({
         : 0;
 
     // Get active alerts count
-    const activeAlerts = healthChecks.filter(
-      (c) => c.status === "unhealthy" || c.status === "degraded"
-    ).length;
+    const activeAlerts = Object.values(componentStatuses).filter((status) => isActiveHealthStatus(status)).length;
 
     // Get entity update count
     const entityStates = await ctx.db
@@ -442,18 +443,24 @@ export const getActivityFeed = query({
     // Get recent health alerts
     const alerts = await ctx.db
       .query("healthChecks")
-      .filter((q) =>
-        q.or(q.eq(q.field("status"), "unhealthy"), q.eq(q.field("status"), "degraded"))
-      )
+      .withIndex("by_checked", (q) => q.gte("checkedAt", 0))
       .order("desc")
-      .take(10);
+      .take(25);
 
+    const latestAlerts = new Map<string, ReturnType<typeof normalizeHealthCheckDoc>>();
     for (const alert of alerts) {
+      const normalized = normalizeHealthCheckDoc(alert as Doc<"healthChecks">);
+      if (isActiveHealthStatus(normalized.status) && !latestAlerts.has(normalized.component)) {
+        latestAlerts.set(normalized.component, normalized);
+      }
+    }
+
+    for (const alert of [...latestAlerts.values()].slice(0, 10)) {
       feed.push({
-        id: alert._id,
+        id: `${alert.component}-${alert.timestamp}`,
         type: "alert",
         title: `Alert: ${alert.component}`,
-        description: alert.issues.join(", ").slice(0, 100),
+        description: (alert.issues.join(", ") || `${alert.component} is ${alert.status}`).slice(0, 100),
         timestamp: alert.timestamp,
         status: alert.status === "unhealthy" ? "error" : "warning",
       });

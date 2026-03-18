@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMotionConfig } from '@/lib/motion';
 import {
   FileText,
   ChevronDown,
@@ -154,6 +155,7 @@ const SupplementSectionCard: React.FC<SupplementSectionCardProps> = ({
   onToggle,
   onCitationClick,
 }) => {
+  const { instant, transition } = useMotionConfig();
   const Icon = getSupplementIcon(section.type);
   const colors = getSupplementColors(section.type);
 
@@ -185,10 +187,10 @@ const SupplementSectionCard: React.FC<SupplementSectionCardProps> = ({
       <AnimatePresence>
         {isExpanded && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
+            initial={{ height: instant ? "auto" : 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={transition({ duration: 0.2 })}
             className="overflow-hidden"
           >
             <div className="p-4 pt-0 border-t border-edge">

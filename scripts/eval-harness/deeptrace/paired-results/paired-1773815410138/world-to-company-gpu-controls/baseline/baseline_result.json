@@ -1,0 +1,28 @@
+{
+  "observed_facts": [
+    "GPU export control update fact 1: Trace how a world event changes company execution risk, evidence posture, and recommended response.",
+    "GPU export control update fact 2: Trace how a world event changes company execution risk, evidence posture, and recommended response."
+  ],
+  "relationships": [
+    {
+      "source": "GPU export control update",
+      "target": "GPU export control update counterpart 1",
+      "relation": "causal_influence",
+      "evidenceRefs": [
+        "ev-1"
+      ]
+    },
+    {
+      "source": "GPU export control update",
+      "target": "GPU export control update counterpart 2",
+      "relation": "linked_signal",
+      "evidenceRefs": []
+    }
+  ],
+  "hypothesis": "GPU export control update likely benefits from a coarse next action aligned to world_to_company.",
+  "counter_hypothesis": "GPU export control update may instead reflect noise or missing evidence, so claims should remain bounded.",
+  "recommendation": "Prioritize the next review step for GPU export control update using the baseline benchmark contract.",
+  "limitations": [
+    "GPU export control update limitation 1: evidence remains bounded to the supplied benchmark fixture."
+  ]
+}

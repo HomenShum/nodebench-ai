@@ -1,0 +1,49 @@
+{
+  "provider": "openai",
+  "sourceUrl": "https://openai.com/api/pricing/",
+  "fetchedAt": "2026-01-20T10:01:00.715Z",
+  "models": [
+    {
+      "model": "GPT-4.1",
+      "inputUsdPer1MTokens": 3,
+      "cachedInputUsdPer1MTokens": 0.75,
+      "outputUsdPer1MTokens": 12
+    },
+    {
+      "model": "GPT-4.1 mini",
+      "inputUsdPer1MTokens": 0.8,
+      "cachedInputUsdPer1MTokens": 0.2,
+      "outputUsdPer1MTokens": 3.2
+    },
+    {
+      "model": "GPT-4.1 nano",
+      "inputUsdPer1MTokens": 0.2,
+      "cachedInputUsdPer1MTokens": 0.05,
+      "outputUsdPer1MTokens": 0.8
+    },
+    {
+      "model": "GPT-5 mini",
+      "inputUsdPer1MTokens": 0.25,
+      "cachedInputUsdPer1MTokens": 0.025,
+      "outputUsdPer1MTokens": 2
+    },
+    {
+      "model": "GPT-5.2",
+      "inputUsdPer1MTokens": 1.75,
+      "cachedInputUsdPer1MTokens": 0.175,
+      "outputUsdPer1MTokens": 14
+    },
+    {
+      "model": "GPT-5.2 pro",
+      "inputUsdPer1MTokens": 21,
+      "cachedInputUsdPer1MTokens": null,
+      "outputUsdPer1MTokens": 168
+    },
+    {
+      "model": "o4-mini",
+      "inputUsdPer1MTokens": 4,
+      "cachedInputUsdPer1MTokens": 1,
+      "outputUsdPer1MTokens": 16
+    }
+  ]
+}

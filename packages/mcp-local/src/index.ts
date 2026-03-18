@@ -1855,18 +1855,20 @@ Strategic question: ${args.strategicQuestion}
 Required method:
 1. Start a run with start_execution_run using workflowName="company_direction_analysis".
 2. Gather public evidence first. Attach company pages, press, resumes, hiring signals, papers, and adjacent market references as evidence.
-3. Record a decision boundary between:
+3. Call compute_dimension_profile as soon as you have enough evidence to ground the company state. Then use export_dimension_bundle to inspect the regime label, policy context, evidence rows, and interaction effects.
+4. Record a decision boundary between:
    - publicly supported facts
    - supported but incomplete claims
    - not established by public evidence
-4. Build a credibility filter. Record explicit decisions for high-credibility, medium-credibility, and low-credibility directions.
-5. Record the final recommendation as a structured decision with alternatives considered, evidence basis, confidence, and limitations.
-6. Record at least one verification step that checks the final memo still reflects the truth boundary and does not overclaim pedigree.
-7. Complete the run after the recommendation, limitations, and evidence links are all attached.
+5. Build a credibility filter and a dimension-aware regime summary. Record explicit decisions for high-credibility, medium-credibility, and low-credibility directions, and tie them to capital, capability, network, market, operations, and narrative dimensions where relevant.
+6. Record the final recommendation as a structured decision with alternatives considered, evidence basis, confidence, limitations, and the regime you believe the company is operating under.
+7. Record at least one verification step that checks the final memo still reflects the truth boundary, the exported dimension bundle, and does not overclaim pedigree.
+8. Complete the run after the recommendation, limitations, evidence links, and dimension bundle references are all attached.
 
 Output rules:
 - Recommendations must stay adjacent to reputation and public proof.
 - Unsupported claims must be clearly labeled as unsupported.
+- Distinguish verified, estimated, inferred, and unavailable dimension signals.
 - The trace should let another operator audit why a direction was recommended or rejected.`,
         },
       },

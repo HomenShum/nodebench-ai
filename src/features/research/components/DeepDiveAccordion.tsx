@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Sparkles } from "lucide-react";
+import { useMotionConfig } from '@/lib/motion';
 
 interface DeepDiveProps {
   title: string;
@@ -10,6 +11,7 @@ interface DeepDiveProps {
 }
 
 export const DeepDiveAccordion: React.FC<DeepDiveProps> = ({ title, content }) => {
+  const { instant, transition } = useMotionConfig();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -25,7 +27,7 @@ export const DeepDiveAccordion: React.FC<DeepDiveProps> = ({ title, content }) =
         </span>
         <motion.div
           animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
+          transition={transition({ duration: 0.2 })}
           className="text-slate-500"
         >
           <ChevronDown className="h-4 w-4" />
@@ -34,10 +36,10 @@ export const DeepDiveAccordion: React.FC<DeepDiveProps> = ({ title, content }) =
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
+            initial={{ height: instant ? "auto" : 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={transition({ duration: 0.3 })}
           >
             <div className="pr-2 pb-2 pt-3 text-sm leading-relaxed text-slate-700">
               {content}

@@ -3,6 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Building2, User, Zap, Box } from "lucide-react";
+import { useMotionConfig } from '@/lib/motion';
 import type { EntityGraph, GraphNode } from "@/features/research/types";
 
 const IconMap: Record<string, typeof Building2> = {
@@ -18,6 +19,7 @@ function getNodeIcon(node: GraphNode) {
 }
 
 export const EntityRadar: React.FC<{ graph: EntityGraph | null }> = ({ graph }) => {
+  const { instant, transition } = useMotionConfig();
   if (!graph || graph.nodes.length === 0) {
     return (
       <div className="rounded-lg border border-gray-900/10 bg-surface p-6 text-xs text-content-muted">
@@ -88,9 +90,9 @@ export const EntityRadar: React.FC<{ graph: EntityGraph | null }> = ({ graph }) 
                   stroke={isSecondary ? "#e2e8f0" : "#cbd5e1"}
                   strokeWidth={isSecondary ? "0.8" : "1"}
                   strokeDasharray={isSecondary ? "2 4" : "4 4"}
-                  initial={{ pathLength: 0 }}
+                  initial={{ pathLength: instant ? 1 : 0 }}
                   animate={{ pathLength: 1 }}
-                  transition={{ duration: 0.8 }}
+                  transition={transition({ duration: 0.8 })}
                 />
                 {labelText && (
                   <text
@@ -118,9 +120,9 @@ export const EntityRadar: React.FC<{ graph: EntityGraph | null }> = ({ graph }) 
               key={`node-${node.id}`}
               className="absolute flex flex-col items-center gap-1"
               style={{ left: `${left}%`, top: `${top}%`, transform: "translate(-50%, -50%)" }}
-              initial={{ opacity: 0, scale: 0.7 }}
+              initial={{ opacity: 0, scale: instant ? 1 : 0.7 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: idx * 0.05 }}
+              transition={transition({ delay: idx * 0.05 })}
             >
               <div className={`w-8 h-8 rounded-full bg-surface border flex items-center justify-center shadow-sm ${
                 isSecondary ? "border-slate-200/60" : "border-slate-200"
@@ -137,9 +139,9 @@ export const EntityRadar: React.FC<{ graph: EntityGraph | null }> = ({ graph }) 
         <motion.div
           className="absolute left-1/2 top-1/2 flex flex-col items-center"
           style={{ transform: "translate(-50%, -50%)" }}
-          initial={{ scale: 0.9, opacity: 0 }}
+          initial={{ scale: instant ? 1 : 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.4 }}
+          transition={transition({ duration: 0.4 })}
         >
           <div className="w-12 h-12 rounded-full bg-gray-900 flex items-center justify-center shadow-lg border-4 border-indigo-50">
             <Building2 className="w-5 h-5 text-white" />

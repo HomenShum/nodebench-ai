@@ -70,6 +70,29 @@ type EntityType =
   | "funding_event"
   | "research_paper";
 
+type EntityProfileTab =
+  | "overview"
+  | "relationships"
+  | "ownership"
+  | "people"
+  | "competitors"
+  | "supply-chain"
+  | "trace";
+
+const ENTITY_PROFILE_TABS: Array<{
+  id: EntityProfileTab;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}> = [
+  { id: "overview", label: "Overview", icon: Sparkles },
+  { id: "relationships", label: "Relationships", icon: Users },
+  { id: "ownership", label: "Ownership", icon: Banknote },
+  { id: "people", label: "People", icon: User },
+  { id: "competitors", label: "Competitors", icon: Target },
+  { id: "supply-chain", label: "Supply Chain", icon: Package },
+  { id: "trace", label: "Trace", icon: FileText },
+];
+
 const getEntityIcon = (type: EntityType) => {
   switch (type) {
     case "company":
@@ -213,11 +236,21 @@ const StatCard: React.FC<{
   </div>
 );
 
+function deriveEntityKey(entityName: string, entityType: EntityType, canonicalKey?: string | null) {
+  if (canonicalKey) return canonicalKey;
+  const slug = decodeURIComponent(entityName)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return `${entityType}:${slug}`;
+}
+
 export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
   entityName,
   onBack,
 }) => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<EntityProfileTab>("overview");
 
   // Fetch adaptive profile (LLM-enriched with timeline, relationships, etc.)
   const adaptiveProfile = useQuery(
@@ -256,6 +289,8 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
 
   const Icon = getEntityIcon(entityType);
   const colors = getEntityColors(entityType);
+  const decodedEntityName = decodeURIComponent(entityName);
+  const entityKey = deriveEntityKey(entityName, entityType, entityContext?.canonicalKey);
 
   // Extract nested data
   const crm = entityContext?.crmFields;
@@ -264,6 +299,36 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
   const freshness = entityContext?.freshness;
   const recentNews = entityContext?.recentNewsItems;
   const personaHooks = entityContext?.personaHooks;
+
+  const relationshipGraph = useQuery(
+    api.domains.knowledge.relationshipGraph.getEntityGraph,
+    { entityKey, entityName: decodedEntityName, limit: 30 }
+  );
+
+  const ownershipSnapshot = useQuery(
+    api.domains.knowledge.relationshipGraph.getOwnershipSnapshot,
+    { entityKey, entityName: decodedEntityName }
+  );
+
+  const supplyChainView = useQuery(
+    api.domains.knowledge.relationshipGraph.getSupplyChainView,
+    { entityKey, entityName: decodedEntityName }
+  );
+
+  const relationshipTimeline = useQuery(
+    api.domains.knowledge.relationshipGraph.getRelationshipTimeline,
+    { entityKey, entityName: decodedEntityName, limit: 20 }
+  );
+
+  const temporalSignals = useQuery(
+    api.domains.temporal.queries.getSignalsByEntity,
+    { entityKey, limit: 8 }
+  );
+
+  const causalChains = useQuery(
+    api.domains.temporal.queries.getCausalChainsByEntity,
+    { entityKey, limit: 6 }
+  );
 
   const handleBack = () => {
     if (onBack) {
@@ -457,7 +522,32 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
               </div>
             )}
 
+            <div className="rounded-2xl border border-edge bg-surface p-3">
+              <div className="flex flex-wrap gap-2">
+                {ENTITY_PROFILE_TABS.map((tab) => {
+                  const TabIcon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
+                        isActive
+                          ? "border-[var(--accent-primary)] bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]"
+                          : "border-edge bg-background text-content-secondary hover:bg-surface-hover"
+                      }`}
+                    >
+                      <TabIcon className="w-4 h-4" />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Key Facts */}
+            <div className={activeTab === "overview" ? "space-y-6" : "hidden"}>
             {entityContext.keyFacts && entityContext.keyFacts.length > 0 && (
               <CollapsibleSection
                 title="Key Facts"
@@ -962,6 +1052,320 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
             )}
 
             {/* Actions */}
+            </div>
+            {activeTab === "relationships" && (
+              <div className="space-y-6">
+                <CollapsibleSection
+                  title="Relationship Graph"
+                  icon={<Users className="w-4 h-4" />}
+                  badge={`${relationshipGraph?.edges?.length ?? 0} edges`}
+                >
+                  <div className="space-y-3">
+                    {(relationshipGraph?.edges ?? []).length > 0 ? (
+                      (relationshipGraph?.edges ?? []).map((edge: any) => (
+                        <div
+                          key={edge.edgeKey}
+                          className="rounded-lg border border-edge bg-background p-4"
+                        >
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium text-content">{edge.relatedEntityName}</span>
+                            <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-xs text-content-secondary">
+                              {edge.relationshipType.replace(/_/g, " ")}
+                            </span>
+                            <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-xs text-content-secondary">
+                              {Math.round((edge.confidence ?? 0) * 100)}% confidence
+                            </span>
+                          </div>
+                          <p className="mt-2 text-sm text-content-secondary">{edge.summary}</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/execution-trace?entity=${encodeURIComponent(entityKey)}&edge=${encodeURIComponent(edge.edgeKey)}`)}
+                              className="rounded-full border border-edge px-3 py-1 text-xs text-content-secondary transition hover:bg-surface-hover"
+                            >
+                              Open trace context
+                            </button>
+                            {edge.sourceRefs?.[0]?.href ? (
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/execution-trace?entity=${encodeURIComponent(entityKey)}&edge=${encodeURIComponent(edge.edgeKey)}&evidence=${encodeURIComponent(edge.sourceRefs[0].href)}`)}
+                                className="rounded-full border border-edge px-3 py-1 text-xs text-content-secondary transition hover:bg-surface-hover"
+                              >
+                                Evidence deep-link
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-content-secondary">
+                        No relationship edges stored yet for this entity.
+                      </p>
+                    )}
+                  </div>
+                </CollapsibleSection>
+              </div>
+            )}
+
+            {activeTab === "ownership" && (
+              <div className="grid gap-6 lg:grid-cols-2">
+                <CollapsibleSection
+                  title="Investors & Holders"
+                  icon={<Banknote className="w-4 h-4" />}
+                  badge={`${(ownershipSnapshot?.investors?.length ?? 0) + (ownershipSnapshot?.holders?.length ?? 0)} entries`}
+                >
+                  <div className="space-y-3">
+                    {[...(ownershipSnapshot?.investors ?? []), ...(ownershipSnapshot?.holders ?? [])].length > 0 ? (
+                      [...(ownershipSnapshot?.investors ?? []), ...(ownershipSnapshot?.holders ?? [])].map((edge: any) => (
+                        <div key={edge.edgeKey} className="rounded-lg border border-edge bg-background p-4">
+                          <div className="font-medium text-content">{edge.relatedEntityName}</div>
+                          <p className="mt-1 text-xs text-content-secondary">
+                            {edge.relationshipType.replace(/_/g, " ")}
+                          </p>
+                          <p className="mt-2 text-sm text-content-secondary">{edge.summary}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-content-secondary">No holders or investors surfaced yet.</p>
+                    )}
+                  </div>
+                </CollapsibleSection>
+
+                <CollapsibleSection
+                  title="Board & Leadership"
+                  icon={<Briefcase className="w-4 h-4" />}
+                  badge={`${(ownershipSnapshot?.board?.length ?? 0) + (ownershipSnapshot?.executives?.length ?? 0) + (ownershipSnapshot?.founders?.length ?? 0)} people`}
+                >
+                  <div className="space-y-3">
+                    {[
+                      ...(ownershipSnapshot?.board ?? []),
+                      ...(ownershipSnapshot?.executives ?? []),
+                      ...(ownershipSnapshot?.founders ?? []),
+                    ].length > 0 ? (
+                      [
+                        ...(ownershipSnapshot?.board ?? []),
+                        ...(ownershipSnapshot?.executives ?? []),
+                        ...(ownershipSnapshot?.founders ?? []),
+                      ].map((edge: any) => (
+                        <div key={edge.edgeKey} className="rounded-lg border border-edge bg-background p-4">
+                          <div className="font-medium text-content">{edge.relatedEntityName}</div>
+                          <p className="mt-1 text-xs text-content-secondary">
+                            {edge.relationshipType.replace(/_/g, " ")}
+                          </p>
+                          <p className="mt-2 text-sm text-content-secondary">{edge.summary}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-content-secondary">No board or executive links surfaced yet.</p>
+                    )}
+                  </div>
+                </CollapsibleSection>
+              </div>
+            )}
+
+            {activeTab === "people" && (
+              <div className="space-y-6">
+                <CollapsibleSection
+                  title="People Network"
+                  icon={<Users className="w-4 h-4" />}
+                  badge={`${(ownershipSnapshot?.board?.length ?? 0) + (ownershipSnapshot?.executives?.length ?? 0) + (ownershipSnapshot?.founders?.length ?? 0)} connections`}
+                >
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    {[
+                      ...(ownershipSnapshot?.board ?? []),
+                      ...(ownershipSnapshot?.executives ?? []),
+                      ...(ownershipSnapshot?.founders ?? []),
+                    ].length > 0 ? (
+                      [
+                        ...(ownershipSnapshot?.board ?? []),
+                        ...(ownershipSnapshot?.executives ?? []),
+                        ...(ownershipSnapshot?.founders ?? []),
+                      ].map((edge: any) => (
+                        <div key={edge.edgeKey} className="rounded-lg border border-edge bg-background p-4">
+                          <div className="font-medium text-content">{edge.relatedEntityName}</div>
+                          <p className="mt-1 text-xs text-content-secondary">
+                            {edge.relationshipType.replace(/_/g, " ")}
+                          </p>
+                          <p className="mt-2 text-sm text-content-secondary">{edge.summary}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-content-secondary">No structured people graph yet.</p>
+                    )}
+                  </div>
+                </CollapsibleSection>
+              </div>
+            )}
+
+            {activeTab === "competitors" && (
+              <div className="space-y-6">
+                <CollapsibleSection
+                  title="Competitive Graph"
+                  icon={<Target className="w-4 h-4" />}
+                  badge={`${supplyChainView?.competitors?.length ?? crm?.competitors?.length ?? 0} competitors`}
+                >
+                  <div className="space-y-3">
+                    {(supplyChainView?.competitors ?? []).length > 0 ? (
+                      (supplyChainView?.competitors ?? []).map((edge: any) => (
+                        <div key={edge.edgeKey} className="rounded-lg border border-edge bg-background p-4">
+                          <div className="font-medium text-content">{edge.relatedEntityName}</div>
+                          <p className="mt-2 text-sm text-content-secondary">{edge.summary}</p>
+                        </div>
+                      ))
+                    ) : crm?.competitors?.length > 0 ? (
+                      crm.competitors.map((competitor: string, idx: number) => (
+                        <div key={`${competitor}-${idx}`} className="rounded-lg border border-edge bg-background p-4">
+                          <div className="font-medium text-content">{competitor}</div>
+                          {crm.competitorAnalysis && (
+                            <p className="mt-2 text-sm text-content-secondary">{crm.competitorAnalysis}</p>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-content-secondary">No competitor graph surfaced yet.</p>
+                    )}
+                  </div>
+                </CollapsibleSection>
+              </div>
+            )}
+
+            {activeTab === "supply-chain" && (
+              <div className="grid gap-6 lg:grid-cols-2">
+                <CollapsibleSection
+                  title="Suppliers & Customers"
+                  icon={<Package className="w-4 h-4" />}
+                  badge={`${(supplyChainView?.suppliers?.length ?? 0) + (supplyChainView?.customers?.length ?? 0)} links`}
+                >
+                  <div className="space-y-3">
+                    {[...(supplyChainView?.suppliers ?? []), ...(supplyChainView?.customers ?? [])].length > 0 ? (
+                      [...(supplyChainView?.suppliers ?? []), ...(supplyChainView?.customers ?? [])].map((edge: any) => (
+                        <div key={edge.edgeKey} className="rounded-lg border border-edge bg-background p-4">
+                          <div className="font-medium text-content">{edge.relatedEntityName}</div>
+                          <p className="mt-1 text-xs text-content-secondary">
+                            {edge.relationshipType.replace(/_/g, " ")}
+                          </p>
+                          <p className="mt-2 text-sm text-content-secondary">{edge.summary}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-content-secondary">No supplier or customer links surfaced yet.</p>
+                    )}
+                  </div>
+                </CollapsibleSection>
+
+                <CollapsibleSection
+                  title="Partners & Subsidiaries"
+                  icon={<Globe className="w-4 h-4" />}
+                  badge={`${(supplyChainView?.partners?.length ?? 0) + (supplyChainView?.subsidiaries?.length ?? 0)} links`}
+                >
+                  <div className="space-y-3">
+                    {[...(supplyChainView?.partners ?? []), ...(supplyChainView?.subsidiaries ?? [])].length > 0 ? (
+                      [...(supplyChainView?.partners ?? []), ...(supplyChainView?.subsidiaries ?? [])].map((edge: any) => (
+                        <div key={edge.edgeKey} className="rounded-lg border border-edge bg-background p-4">
+                          <div className="font-medium text-content">{edge.relatedEntityName}</div>
+                          <p className="mt-1 text-xs text-content-secondary">
+                            {edge.relationshipType.replace(/_/g, " ")}
+                          </p>
+                          <p className="mt-2 text-sm text-content-secondary">{edge.summary}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-content-secondary">No partner or subsidiary links surfaced yet.</p>
+                    )}
+                  </div>
+                </CollapsibleSection>
+              </div>
+            )}
+
+            {activeTab === "trace" && (
+              <div className="space-y-6">
+                <CollapsibleSection
+                  title="Relationship Timeline"
+                  icon={<Clock className="w-4 h-4" />}
+                  badge={`${relationshipTimeline?.items?.length ?? 0} items`}
+                >
+                  <div className="space-y-3">
+                    {(relationshipTimeline?.items ?? []).length > 0 ? (
+                      (relationshipTimeline?.items ?? []).map((item: any) => (
+                        <div key={item.timelineKey} className="rounded-lg border border-edge bg-background p-4">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="font-medium text-content">{item.title}</div>
+                            <div className="text-xs text-content-secondary">
+                              {item.time ? new Date(item.time).toLocaleDateString() : "Undated"}
+                            </div>
+                          </div>
+                          <p className="mt-2 text-sm text-content-secondary">{item.summary}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-content-secondary">No relationship timeline yet.</p>
+                    )}
+                  </div>
+                </CollapsibleSection>
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <CollapsibleSection
+                    title="Temporal Signals"
+                    icon={<TrendingUp className="w-4 h-4" />}
+                    badge={`${temporalSignals?.length ?? 0} signals`}
+                  >
+                    <div className="space-y-3">
+                      {(temporalSignals ?? []).length > 0 ? (
+                        temporalSignals?.map((signal: any) => (
+                          <div key={signal._id} className="rounded-lg border border-edge bg-background p-4">
+                            <div className="font-medium text-content">{signal.summary}</div>
+                            <p className="mt-1 text-xs text-content-secondary">
+                              {signal.signalType} · {signal.status}
+                            </p>
+                            <p className="mt-2 text-sm text-content-secondary">{signal.plainEnglish}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-content-secondary">No temporal signals linked to this entity yet.</p>
+                      )}
+                    </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection
+                    title="Causal Chains"
+                    icon={<AlertTriangle className="w-4 h-4" />}
+                    badge={`${causalChains?.length ?? 0} chains`}
+                  >
+                    <div className="space-y-3">
+                      {(causalChains ?? []).length > 0 ? (
+                        causalChains?.map((chain: any) => (
+                          <div key={chain._id} className="rounded-lg border border-edge bg-background p-4">
+                            <div className="font-medium text-content">{chain.title}</div>
+                            <p className="mt-1 text-xs text-content-secondary">{chain.status}</p>
+                            <p className="mt-2 text-sm text-content-secondary">{chain.summary}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-content-secondary">No causal chains linked to this entity yet.</p>
+                      )}
+                    </div>
+                  </CollapsibleSection>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/execution-trace?entity=${encodeURIComponent(entityKey)}`)}
+                    className="rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-primary-hover)]"
+                  >
+                    Open Execution Trace
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/research/world-monitor")}
+                    className="rounded-lg border border-edge bg-background px-4 py-2 text-sm font-semibold text-content-secondary transition-colors hover:bg-surface-hover"
+                  >
+                    Open World Monitor
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center gap-4 pt-4">
               {entityContext.dossierId ? (
                 <button

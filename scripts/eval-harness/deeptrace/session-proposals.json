@@ -1,0 +1,298 @@
+[
+  {
+    "candidateId": "compound-adaptive-trigger-plus-early-term-v1",
+    "strategy": "trigger_threshold+wall_clock_optimization",
+    "compound": true,
+    "rationale": "Stacks adaptive-trigger-thresholds (promoted round 2, +6.1%) with early-termination-low-usefulness (near-miss, +3.4%). Combined: entity-type-aware triggers fire more precisely, AND when branches produce low-usefulness results, the cell terminates early instead of wasting a refinement round. Compound discount: estimating +7% net vs +9.5% additive.",
+    "edits": [
+      {
+        "filePath": "convex/domains/deepTrace/researchCell.ts",
+        "newContent": "\"use node\";\n\n/**\n * DeepTrace Runtime Re-Analysis Cell\n *\n * A bounded re-analysis sub-process that triggers when a DeepTrace investigation\n * has low confidence, low dimension coverage, or sparse evidence. It queries\n * existing DeepTrace state (dimension profiles, relationship graph, signals,\n * causal chains) through parallel branches to surface gaps, counter-hypotheses,\n * and coverage deficiencies.\n *\n * SCOPE: This cell does NOT acquire new external evidence or ingest new sources.\n * It re-analyzes and cross-references existing DeepTrace data to identify what\n * is missing and where the current assessment is weakest. For actual evidence\n * expansion, use the due-diligence orchestrator or narrative ingestion pipeline.\n *\n * Structure:\n *   planner → 2-4 parallel re-analysis branches → judge → merger\n *\n * Budget defaults:\n *   - max 3 parallel branches\n *   - max 2 refinement rounds\n *   - max 90 seconds wall clock\n *   - fixed tool-call budget per branch\n *\n * Output stays in standard DeepTrace format.\n */\n\nimport { internalAction } from \"../../_generated/server\";\nimport { api, internal } from \"../../_generated/api\";\nimport { v } from \"convex/values\";\n\n// ---------------------------------------------------------------------------\n// Configuration\n// ---------------------------------------------------------------------------\n\nexport const RESEARCH_CELL_DEFAULTS = {\n  maxBranches: 3,\n  maxRefinementRounds: 2,\n  maxWallClockMs: 90_000,\n  maxToolCallsPerBranch: 15,\n  /** Confidence threshold below which the cell triggers */\n  confidenceThreshold: 0.65,\n  /** Dimension coverage threshold below which the cell triggers */\n  coverageThreshold: 0.70,\n  /** Minimum durable sources required to skip the cell */\n  minDurableSources: 3,\n  /** Mean usefulness below this after round 0 triggers early termination */\n  earlyTerminationUsefulnessFloor: 0.25,\n} as const;\n\n// ---------------------------------------------------------------------------\n// Entity-type-aware trigger adjustments\n// ---------------------------------------------------------------------------\n\nconst ENTITY_TYPE_TRIGGER_ADJUSTMENTS: Record<string, {\n  confidenceDelta: number;\n  coverageDelta: number;\n  minSourcesDelta: number;\n}> = {\n  // Public companies have more data — higher thresholds\n  public_company: { confidenceDelta: 0.05, coverageDelta: 0.05, minSourcesDelta: 2 },\n  // Private startups have less data — lower thresholds\n  private_startup: { confidenceDelta: -0.10, coverageDelta: -0.10, minSourcesDelta: -1 },\n  // People have sparse structured data\n  person: { confidenceDelta: -0.15, coverageDelta: -0.15, minSourcesDelta: -1 },\n  // Default — no adjustment\n  default: { confidenceDelta: 0, coverageDelta: 0, minSourcesDelta: 0 },\n};\n\nfunction getEntityTypeAdjustment(entityType?: string) {\n  if (!entityType) return ENTITY_TYPE_TRIGGER_ADJUSTMENTS.default;\n  const key = entityType.toLowerCase().replace(/[\\s-]+/g, \"_\");\n  return ENTITY_TYPE_TRIGGER_ADJUSTMENTS[key] ?? ENTITY_TYPE_TRIGGER_ADJUSTMENTS.default;\n}\n\n// ---------------------------------------------------------------------------\n// Types\n// ---------------------------------------------------------------------------\n\nexport type ResearchBranchStrategy =\n  | \"evidence_gap_fill\"\n  | \"counter_hypothesis\"\n  | \"dimension_coverage\"\n  | \"source_diversification\";\n\nexport interface ResearchBranch {\n  branchId: string;\n  strategy: ResearchBranchStrategy;\n  query: string;\n  priority: number;\n}\n\nexport interface BranchResult {\n  branchId: string;\n  strategy: ResearchBranchStrategy;\n  observedFacts: string[];\n  relationships: Array<{\n    fromEntity: string;\n    toEntity: string;\n    type: string;\n    confidence: number;\n    evidence: string;\n  }>;\n  hypothesis: string | null;\n  counterHypothesis: string | null;\n  evidenceRefs: Array<{\n    label: string;\n    href?: string;\n    kind?: string;\n  }>;\n  usefulness: number;\n  toolCallCount: number;\n  wallClockMs: number;\n}\n\nexport interface ResearchCellOutput {\n  triggered: boolean;\n  triggerReason: string | null;\n  branchCount: number;\n  refinementRounds: number;\n  totalWallClockMs: number;\n  observedFacts: string[];\n  relationships: Array<{\n    fromEntity: string;\n    toEntity: string;\n    type: string;\n    confidence: number;\n    evidence: string;\n  }>;\n  dimensionProfile: Record<string, number> | null;\n  strongestHypothesis: string | null;\n  counterHypothesis: string | null;\n  recommendation: string | null;\n  limitations: string[];\n  receipts: Array<{\n    branchId: string;\n    strategy: string;\n    toolCallCount: number;\n    wallClockMs: number;\n    usefulness: number;\n  }>;\n  evidenceBundle: Array<{\n    label: string;\n    href?: string;\n    kind?: string;\n  }>;\n  /** Set when early termination fired */\n  earlyTerminated?: boolean;\n}\n\n// ---------------------------------------------------------------------------\n// Trigger evaluation\n// ---------------------------------------------------------------------------\n\nexport interface TriggerInput {\n  confidence: number;\n  dimensionCoverage: number;\n  durableSourceCount: number;\n  operatorRequested: boolean;\n  /** Optional entity type for adaptive thresholds */\n  entityType?: string;\n}\n\nexport function shouldTriggerResearchCell(input: TriggerInput): {\n  trigger: boolean;\n  reason: string | null;\n} {\n  if (input.operatorRequested) {\n    return { trigger: true, reason: \"operator_requested\" };\n  }\n\n  const adj = getEntityTypeAdjustment(input.entityType);\n  const confThreshold = RESEARCH_CELL_DEFAULTS.confidenceThreshold + adj.confidenceDelta;\n  const covThreshold = RESEARCH_CELL_DEFAULTS.coverageThreshold + adj.coverageDelta;\n  const minSources = Math.max(1, RESEARCH_CELL_DEFAULTS.minDurableSources + adj.minSourcesDelta);\n\n  if (input.confidence < confThreshold) {\n    return {\n      trigger: true,\n      reason: `confidence ${input.confidence.toFixed(2)} < ${confThreshold.toFixed(2)} (adjusted for ${input.entityType ?? \"default\"})`,\n    };\n  }\n  if (input.dimensionCoverage < covThreshold) {\n    return {\n      trigger: true,\n      reason: `dimensionCoverage ${input.dimensionCoverage.toFixed(2)} < ${covThreshold.toFixed(2)} (adjusted for ${input.entityType ?? \"default\"})`,\n    };\n  }\n  if (input.durableSourceCount < minSources) {\n    return {\n      trigger: true,\n      reason: `durableSources ${input.durableSourceCount} < ${minSources} (adjusted for ${input.entityType ?? \"default\"})`,\n    };\n  }\n  return { trigger: false, reason: null };\n}\n\n// ---------------------------------------------------------------------------\n// Branch planning\n// ---------------------------------------------------------------------------\n\nexport function planResearchBranches(\n  triggerReason: string,\n  entityKey: string,\n  existingFacts: string[],\n  maxBranches: number = RESEARCH_CELL_DEFAULTS.maxBranches,\n): ResearchBranch[] {\n  const branches: ResearchBranch[] = [];\n  let nextId = 0;\n\n  // Always start with evidence gap fill when sources are sparse\n  if (triggerReason.includes(\"durableSources\") || triggerReason.includes(\"evidenceLinkage\")) {\n    branches.push({\n      branchId: `branch-${nextId++}`,\n      strategy: \"evidence_gap_fill\",\n      query: `Find additional durable evidence sources for ${entityKey} to improve linkage`,\n      priority: 1,\n    });\n  }\n\n  // Counter-hypothesis when confidence is low\n  if (triggerReason.includes(\"confidence\") || triggerReason === \"operator_requested\") {\n    branches.push({\n      branchId: `branch-${nextId++}`,\n      strategy: \"counter_hypothesis\",\n      query: `Generate and evaluate counter-hypotheses for ${entityKey} given: ${existingFacts.slice(0, 3).join(\"; \")}`,\n      priority: 2,\n    });\n  }\n\n  // Dimension coverage when profile is sparse\n  if (triggerReason.includes(\"dimensionCoverage\") || triggerReason === \"operator_requested\") {\n    branches.push({\n      branchId: `branch-${nextId++}`,\n      strategy: \"dimension_coverage\",\n      query: `Fill missing dimension metrics for ${entityKey} across time/capital/people/market/network/operations/narrative`,\n      priority: 1,\n    });\n  }\n\n  // Source diversification as a lower-priority branch\n  if (branches.length < maxBranches) {\n    branches.push({\n      branchId: `branch-${nextId++}`,\n      strategy: \"source_diversification\",\n      query: `Find diverse source types (filings, news, social, academic) for ${entityKey}`,\n      priority: 3,\n    });\n  }\n\n  return branches\n    .sort((a, b) => a.priority - b.priority)\n    .slice(0, maxBranches);\n}\n\n// ---------------------------------------------------------------------------\n// Branch result judging\n// ---------------------------------------------------------------------------\n\nexport function judgeBranches(results: BranchResult[]): BranchResult[] {\n  return [...results].sort((a, b) => b.usefulness - a.usefulness);\n}\n\n// ---------------------------------------------------------------------------\n// Result merging\n// ---------------------------------------------------------------------------\n\nexport function mergeBranchResults(\n  rankedResults: BranchResult[],\n  entityKey: string,\n): Omit<ResearchCellOutput, \"triggered\" | \"triggerReason\" | \"branchCount\" | \"refinementRounds\" | \"totalWallClockMs\"> {\n  const allFacts = dedupeStrings(rankedResults.flatMap((r) => r.observedFacts));\n  const allRelationships = dedupeRelationships(rankedResults.flatMap((r) => r.relationships));\n  const allEvidence = dedupeEvidence(rankedResults.flatMap((r) => r.evidenceRefs));\n\n  // Strongest hypothesis from the highest-ranked branch\n  const strongestHypothesis = rankedResults.find((r) => r.hypothesis)?.hypothesis ?? null;\n  const counterHypothesis = rankedResults.find((r) => r.counterHypothesis)?.counterHypothesis ?? null;\n\n  // Build recommendation from top-2 branches\n  const topBranches = rankedResults.slice(0, 2);\n  const recommendation = topBranches.length > 0\n    ? `Based on ${topBranches.length} research branches for ${entityKey}: ${topBranches.map((b) => `[${b.strategy}] usefulness=${b.usefulness.toFixed(2)}`).join(\", \")}. ${strongestHypothesis ?? \"No dominant hypothesis emerged.\"}`\n    : null;\n\n  const limitations: string[] = [];\n  if (allFacts.length === 0) limitations.push(\"No new facts discovered across branches.\");\n  if (allEvidence.length < 3) limitations.push(\"Evidence bundle remains sparse.\");\n  const lowUseful = rankedResults.filter((r) => r.usefulness < 0.3);\n  if (lowUseful.length > 0) {\n    limitations.push(`${lowUseful.length} branch(es) produced low-usefulness results.`);\n  }\n\n  const receipts = rankedResults.map((r) => ({\n    branchId: r.branchId,\n    strategy: r.strategy,\n    toolCallCount: r.toolCallCount,\n    wallClockMs: r.wallClockMs,\n    usefulness: r.usefulness,\n  }));\n\n  return {\n    observedFacts: allFacts,\n    relationships: allRelationships,\n    dimensionProfile: null,\n    strongestHypothesis,\n    counterHypothesis,\n    recommendation,\n    limitations,\n    receipts,\n    evidenceBundle: allEvidence,\n  };\n}\n\n// ---------------------------------------------------------------------------\n// Convex action: full research cell execution\n// ---------------------------------------------------------------------------\n\nexport const runResearchCell = internalAction({\n  args: {\n    entityKey: v.string(),\n    entityName: v.optional(v.string()),\n    confidence: v.number(),\n    dimensionCoverage: v.number(),\n    durableSourceCount: v.number(),\n    operatorRequested: v.optional(v.boolean()),\n    existingFacts: v.optional(v.array(v.string())),\n    entityType: v.optional(v.string()),\n    maxBranches: v.optional(v.number()),\n    maxRefinementRounds: v.optional(v.number()),\n    maxWallClockMs: v.optional(v.number()),\n  },\n  returns: v.any(),\n  handler: async (ctx, args): Promise<ResearchCellOutput> => {\n    const triggerInput: TriggerInput = {\n      confidence: args.confidence,\n      dimensionCoverage: args.dimensionCoverage,\n      durableSourceCount: args.durableSourceCount,\n      operatorRequested: args.operatorRequested ?? false,\n      entityType: args.entityType,\n    };\n\n    const { trigger, reason } = shouldTriggerResearchCell(triggerInput);\n\n    if (!trigger) {\n      return {\n        triggered: false,\n        triggerReason: null,\n        branchCount: 0,\n        refinementRounds: 0,\n        totalWallClockMs: 0,\n        observedFacts: [],\n        relationships: [],\n        dimensionProfile: null,\n        strongestHypothesis: null,\n        counterHypothesis: null,\n        recommendation: null,\n        limitations: [],\n        receipts: [],\n        evidenceBundle: [],\n      };\n    }\n\n    const maxBranches = Math.min(args.maxBranches ?? RESEARCH_CELL_DEFAULTS.maxBranches, RESEARCH_CELL_DEFAULTS.maxBranches);\n    const maxRounds = Math.min(args.maxRefinementRounds ?? RESEARCH_CELL_DEFAULTS.maxRefinementRounds, RESEARCH_CELL_DEFAULTS.maxRefinementRounds);\n    const wallClockBudget = Math.min(args.maxWallClockMs ?? RESEARCH_CELL_DEFAULTS.maxWallClockMs, RESEARCH_CELL_DEFAULTS.maxWallClockMs);\n\n    const startMs = Date.now();\n    const existingFacts = args.existingFacts ?? [];\n    const branches = planResearchBranches(reason!, args.entityKey, existingFacts, maxBranches);\n\n    // Execute branches — gather data from existing DeepTrace infrastructure\n    const branchResults: BranchResult[] = [];\n    let refinementRound = 0;\n    let earlyTerminated = false;\n\n    for (refinementRound = 0; refinementRound < maxRounds; refinementRound++) {\n      if (Date.now() - startMs > wallClockBudget) break;\n\n      const pendingBranches = refinementRound === 0\n        ? branches\n        : branches.filter((b) => {\n            const existing = branchResults.find((r) => r.branchId === `${b.branchId}-r${refinementRound - 1}`);\n            return !existing || existing.usefulness < 0.5;\n          });\n\n      if (pendingBranches.length === 0) break;\n\n      // Execute branches in parallel against existing DeepTrace queries\n      const roundResults = await Promise.all(\n        pendingBranches.map(async (branch) => {\n          const branchStart = Date.now();\n          const branchId = refinementRound === 0 ? branch.branchId : `${branch.branchId}-r${refinementRound}`;\n\n          try {\n            const result = await executeBranch(ctx, args.entityKey, args.entityName, branch);\n            return {\n              ...result,\n              branchId,\n              wallClockMs: Date.now() - branchStart,\n            };\n          } catch {\n            return {\n              branchId,\n              strategy: branch.strategy,\n              observedFacts: [],\n              relationships: [],\n              hypothesis: null,\n              counterHypothesis: null,\n              evidenceRefs: [],\n              usefulness: 0,\n              toolCallCount: 0,\n              wallClockMs: Date.now() - branchStart,\n            } satisfies BranchResult;\n          }\n        }),\n      );\n\n      branchResults.push(...roundResults);\n\n      // Early termination: if mean usefulness after round 0 is below floor,\n      // the entity likely has insufficient data for re-analysis — further\n      // rounds won't help and would waste 30-40s of wall clock time.\n      if (refinementRound === 0 && roundResults.length > 0) {\n        const meanUsefulness = roundResults.reduce((s, r) => s + r.usefulness, 0) / roundResults.length;\n        if (meanUsefulness < RESEARCH_CELL_DEFAULTS.earlyTerminationUsefulnessFloor) {\n          earlyTerminated = true;\n          break;\n        }\n      }\n    }\n\n    const ranked = judgeBranches(branchResults);\n    const merged = mergeBranchResults(ranked, args.entityKey);\n\n    // Fetch the real dimension profile so the output contract is complete\n    let dimensionProfile: Record<string, number> | null = null;\n    try {\n      const profile = await ctx.runQuery(api.domains.deepTrace.dimensions.getDimensionProfile, {\n        entityKey: args.entityKey,\n      });\n      if (profile && (profile as any).dimensionState) {\n        const state = (profile as any).dimensionState as Record<string, Record<string, any>>;\n        dimensionProfile = {};\n        for (const [family, metrics] of Object.entries(state)) {\n          for (const [name, metric] of Object.entries(metrics)) {\n            if (typeof metric?.score === \"number\") {\n              dimensionProfile[`${family}.${name}`] = metric.score;\n            }\n          }\n        }\n      }\n    } catch {\n      // Non-fatal — profile may not exist yet\n    }\n\n    return {\n      triggered: true,\n      triggerReason: reason,\n      branchCount: branches.length,\n      refinementRounds: refinementRound,\n      totalWallClockMs: Date.now() - startMs,\n      ...merged,\n      dimensionProfile,\n      earlyTerminated,\n    };\n  },\n});\n\n// ---------------------------------------------------------------------------\n// Branch execution — queries existing DeepTrace data\n// ---------------------------------------------------------------------------\n\nasync function executeBranch(\n  ctx: any,\n  entityKey: string,\n  entityName: string | undefined,\n  branch: ResearchBranch,\n): Promise<BranchResult> {\n  let toolCalls = 0;\n  const observedFacts: string[] = [];\n  const relationships: BranchResult[\"relationships\"] = [];\n  const evidenceRefs: BranchResult[\"evidenceRefs\"] = [];\n  let hypothesis: string | null = null;\n  let counterHypothesis: string | null = null;\n\n  switch (branch.strategy) {\n    case \"evidence_gap_fill\": {\n      // Pull existing evidence and identify gaps\n      const bundle = await ctx.runQuery(api.domains.deepTrace.dimensions.getDimensionBundle, {\n        entityKey,\n        evidenceLimit: 40,\n      });\n      toolCalls++;\n\n      const evidence = (bundle as any)?.evidence ?? [];\n      const unavailable = evidence.filter((e: any) => e.availability === \"unavailable\");\n      observedFacts.push(`${evidence.length} evidence rows found, ${unavailable.length} unavailable`);\n\n      // Pull relationship graph for additional evidence\n      const graph = await ctx.runQuery(api.domains.knowledge.relationshipGraph.getEntityGraph, {\n        entityKey,\n        entityName,\n        limit: 12,\n      });\n      toolCalls++;\n\n      for (const edge of (graph as any)?.edges ?? []) {\n        relationships.push({\n          fromEntity: edge.fromEntityKey ?? entityKey,\n          toEntity: edge.toEntityKey ?? \"unknown\",\n          type: edge.relationshipType ?? \"related\",\n          confidence: edge.confidence ?? 0.5,\n          evidence: edge.summary ?? \"\",\n        });\n        if (edge.sourceRefs) {\n          for (const ref of edge.sourceRefs.slice(0, 3)) {\n            evidenceRefs.push({ label: ref.label, href: ref.href, kind: ref.kind });\n          }\n        }\n      }\n\n      hypothesis = relationships.length > 0\n        ? `Entity ${entityKey} has ${relationships.length} documented relationships that may inform missing evidence.`\n        : null;\n      break;\n    }\n\n    case \"counter_hypothesis\": {\n      // Pull signals and causal chains to generate counter-hypotheses\n      const signals = await ctx.runQuery(api.domains.temporal.queries.getSignalsByEntity, {\n        entityKey,\n        limit: 8,\n      });\n      toolCalls++;\n\n      const chains = await ctx.runQuery(api.domains.temporal.queries.getCausalChainsByEntity, {\n        entityKey,\n        limit: 6,\n      });\n      toolCalls++;\n\n      for (const signal of (signals as any) ?? []) {\n        observedFacts.push(`Signal: ${signal.label ?? signal.signalKey} = ${signal.value ?? \"N/A\"}`);\n      }\n\n      const chainList = (chains as any) ?? [];\n      if (chainList.length > 0) {\n        hypothesis = `Primary causal narrative: ${chainList[0]?.summary ?? \"unknown\"}`;\n        counterHypothesis = chainList.length > 1\n          ? `Alternative chain: ${chainList[1]?.summary ?? \"no alternative\"}`\n          : \"No alternative causal chain available — single-narrative risk.\";\n      }\n      break;\n    }\n\n    case \"dimension_coverage\": {\n      // Check which dimension families are missing data\n      const profile = await ctx.runQuery(api.domains.deepTrace.dimensions.getDimensionProfile, {\n        entityKey,\n      });\n      toolCalls++;\n\n      const state = (profile as any)?.dimensionState;\n      if (state) {\n        for (const [family, metrics] of Object.entries(state) as [string, Record<string, any>][]) {\n          const metricEntries = Object.entries(metrics);\n          const available = metricEntries.filter(([, m]) => m.availability !== \"unavailable\");\n          observedFacts.push(`${family}: ${available.length}/${metricEntries.length} metrics available`);\n          if (available.length < metricEntries.length) {\n            hypothesis = hypothesis ?? `Dimension family '${family}' has coverage gaps that may reduce profile reliability.`;\n          }\n        }\n      }\n      break;\n    }\n\n    case \"source_diversification\": {\n      const profile = await ctx.runQuery(api.domains.deepTrace.dimensions.getDimensionProfile, {\n        entityKey,\n      });\n      toolCalls++;\n\n      const sourceRefs: Array<{ label: string; kind?: string; href?: string }> =\n        (profile as any)?.sourceRefs ?? [];\n      const sourceKinds = new Set<string>();\n      for (const ref of sourceRefs) {\n        const kind = ref.kind ?? \"unknown\";\n        sourceKinds.add(kind);\n        evidenceRefs.push({ label: ref.label, href: ref.href, kind });\n      }\n\n      // Also pull relationship graph sourceRefs for additional diversity signal\n      const graph = await ctx.runQuery(api.domains.knowledge.relationshipGraph.getEntityGraph, {\n        entityKey,\n        entityName,\n        limit: 12,\n      });\n      toolCalls++;\n\n      for (const edge of (graph as any)?.edges ?? []) {\n        for (const ref of (edge.sourceRefs ?? []).slice(0, 3)) {\n          const kind = ref.kind ?? \"unknown\";\n          sourceKinds.add(kind);\n          evidenceRefs.push({ label: ref.label, href: ref.href, kind });\n        }\n      }\n\n      observedFacts.push(\n        `Source type diversity: ${sourceKinds.size} distinct kinds detected (${[...sourceKinds].join(\", \")})`,\n      );\n      if (sourceKinds.size < 3) {\n        hypothesis = `Low source diversity (${sourceKinds.size} types: ${[...sourceKinds].join(\", \")}) — findings may be single-source biased.`;\n        counterHypothesis = \"Source diversity may be adequate if the available sources are high-quality and cross-corroborated.\";\n      }\n      break;\n    }\n  }\n\n  // Compute usefulness based on what was gathered\n  const factScore = Math.min(observedFacts.length / 5, 1) * 0.3;\n  const relScore = Math.min(relationships.length / 5, 1) * 0.3;\n  const evidenceScore = Math.min(evidenceRefs.length / 3, 1) * 0.2;\n  const hypothesisScore = (hypothesis ? 0.1 : 0) + (counterHypothesis ? 0.1 : 0);\n  const usefulness = factScore + relScore + evidenceScore + hypothesisScore;\n\n  return {\n    branchId: branch.branchId,\n    strategy: branch.strategy,\n    observedFacts,\n    relationships,\n    hypothesis,\n    counterHypothesis,\n    evidenceRefs,\n    usefulness,\n    toolCallCount: toolCalls,\n    wallClockMs: 0, // Set by caller\n  };\n}\n\n// ---------------------------------------------------------------------------\n// Helpers\n// ---------------------------------------------------------------------------\n\nfunction dedupeStrings(items: string[]): string[] {\n  return [...new Set(items)];\n}\n\nfunction dedupeRelationships(\n  items: BranchResult[\"relationships\"],\n): BranchResult[\"relationships\"] {\n  const seen = new Set<string>();\n  return items.filter((item) => {\n    const key = `${item.fromEntity}|${item.toEntity}|${item.type}`;\n    if (seen.has(key)) return false;\n    seen.add(key);\n    return true;\n  });\n}\n\nfunction dedupeEvidence(\n  items: BranchResult[\"evidenceRefs\"],\n): BranchResult[\"evidenceRefs\"] {\n  const seen = new Set<string>();\n  return items.filter((item) => {\n    const key = `${item.label}|${item.href ?? \"\"}`;\n    if (seen.has(key)) return false;\n    seen.add(key);\n    return true;\n  });\n}\n"
+      }
+    ],
+    "metricDeltas": {
+      "taskCompletionRate": 0.09,
+      "timeToFirstDraftMs": -4500,
+      "humanEditDistance": -45,
+      "wallClockMs": -18000,
+      "toolCallCount": -5,
+      "factualPrecision": 0.01,
+      "relationshipPrecision": 0.01,
+      "evidenceLinkage": 0.04,
+      "receiptCompleteness": 0.05,
+      "falseConfidenceRate": -0.01,
+      "canaryRelativeUplift": 0.06
+    }
+  },
+  {
+    "candidateId": "compound-adaptive-trigger-plus-merge-conf-v1",
+    "strategy": "trigger_threshold+merge_quality",
+    "compound": true,
+    "rationale": "Stacks adaptive-trigger-thresholds (promoted, +6.1%) with merge-confidence-weighted (near-miss, +3.5%). Combined: triggers fire more precisely per entity type, AND hypothesis selection during merge prefers evidence-backed branches over raw usefulness. Discount: +6.5% net vs +9.6% additive.",
+    "edits": [],
+    "metricDeltas": {
+      "taskCompletionRate": 0.08,
+      "timeToFirstDraftMs": -2500,
+      "humanEditDistance": -40,
+      "wallClockMs": -4000,
+      "toolCallCount": -1,
+      "factualPrecision": 0.02,
+      "relationshipPrecision": 0.01,
+      "evidenceLinkage": 0.06,
+      "receiptCompleteness": 0.06,
+      "falseConfidenceRate": -0.03,
+      "canaryRelativeUplift": 0.06
+    }
+  },
+  {
+    "candidateId": "compound-triple-stack-v1",
+    "strategy": "trigger_threshold+wall_clock+merge_quality",
+    "compound": true,
+    "rationale": "Triple stack: adaptive-trigger + early-termination + merge-confidence. Entity-aware triggers reduce false fires, early termination saves wall clock on dead ends, confidence-weighted merge improves output quality. Heavy discount: +8% net vs +13% additive.",
+    "edits": [],
+    "metricDeltas": {
+      "taskCompletionRate": 0.10,
+      "timeToFirstDraftMs": -5000,
+      "humanEditDistance": -50,
+      "wallClockMs": -20000,
+      "toolCallCount": -6,
+      "factualPrecision": 0.02,
+      "relationshipPrecision": 0.01,
+      "evidenceLinkage": 0.05,
+      "receiptCompleteness": 0.06,
+      "falseConfidenceRate": -0.03,
+      "canaryRelativeUplift": 0.07
+    }
+  },
+  {
+    "candidateId": "fresh-branch-parallel-timeout-v1",
+    "strategy": "wall_clock_optimization",
+    "rationale": "Fresh proposal: add per-branch wall clock timeout (30s) so a single slow branch can't consume the entire 90s budget. Currently branches run without individual timeouts — if one branch's query takes 60s, the other branches get only 30s for refinement. Promise.race with per-branch abort improves worst-case latency.",
+    "edits": [],
+    "metricDeltas": {
+      "taskCompletionRate": 0.03,
+      "timeToFirstDraftMs": -2000,
+      "humanEditDistance": -10,
+      "wallClockMs": -12000,
+      "toolCallCount": 0,
+      "factualPrecision": 0.0,
+      "relationshipPrecision": 0.0,
+      "evidenceLinkage": 0.01,
+      "receiptCompleteness": 0.02,
+      "falseConfidenceRate": 0.0,
+      "canaryRelativeUplift": 0.04
+    }
+  },
+  {
+    "candidateId": "fresh-signal-recency-weighting-v1",
+    "strategy": "factual_precision",
+    "rationale": "Fresh proposal: counter_hypothesis branch treats all signals equally regardless of age. A 6-month-old revenue signal is less reliable than yesterday's funding announcement. Adding recency decay (weight = 1 / (1 + daysSinceObserved/90)) to signal contribution in hypothesis generation improves factual precision.",
+    "edits": [],
+    "metricDeltas": {
+      "taskCompletionRate": 0.04,
+      "timeToFirstDraftMs": -600,
+      "humanEditDistance": -25,
+      "wallClockMs": 0,
+      "toolCallCount": 0,
+      "factualPrecision": 0.03,
+      "relationshipPrecision": 0.01,
+      "evidenceLinkage": 0.03,
+      "receiptCompleteness": 0.03,
+      "falseConfidenceRate": -0.02,
+      "canaryRelativeUplift": 0.05
+    }
+  },
+  {
+    "candidateId": "fresh-relationship-graph-depth2-v1",
+    "strategy": "relationship_mapping",
+    "rationale": "Fresh proposal: evidence_gap_fill queries the entity graph with limit=12 at depth 1 only. For entities with sparse direct relationships, adding a second hop (depth=2, limit=6) through connected entities can surface transitive relationships that explain gaps.",
+    "edits": [],
+    "metricDeltas": {
+      "taskCompletionRate": 0.05,
+      "timeToFirstDraftMs": -800,
+      "humanEditDistance": -20,
+      "wallClockMs": 1000,
+      "toolCallCount": 1,
+      "factualPrecision": 0.01,
+      "relationshipPrecision": 0.03,
+      "evidenceLinkage": 0.05,
+      "receiptCompleteness": 0.03,
+      "falseConfidenceRate": -0.01,
+      "canaryRelativeUplift": 0.05
+    }
+  },
+  {
+    "candidateId": "fresh-availability-plausibility-filter-v1",
+    "strategy": "evidence_gap_fill",
+    "rationale": "Fresh proposal: evidence_gap_fill reports all 'unavailable' dimensions equally. But burn rate is structurally unknowable for pre-seed startups, while funding is structurally available for any funded company. Filtering gaps by entity-type plausibility prevents the operator from chasing structurally unavailable data.",
+    "edits": [],
+    "metricDeltas": {
+      "taskCompletionRate": 0.05,
+      "timeToFirstDraftMs": -700,
+      "humanEditDistance": -30,
+      "wallClockMs": 200,
+      "toolCallCount": 1,
+      "factualPrecision": 0.02,
+      "relationshipPrecision": 0.01,
+      "evidenceLinkage": 0.04,
+      "receiptCompleteness": 0.04,
+      "falseConfidenceRate": -0.02,
+      "canaryRelativeUplift": 0.04
+    }
+  },
+  {
+    "candidateId": "fresh-dedup-max-confidence-v1",
+    "strategy": "deduplication",
+    "rationale": "Fresh proposal: dedupeRelationships keeps the first occurrence of a from|to|type triple. When multiple branches find the same relationship with different confidence levels, we should keep the highest confidence version rather than the first-seen one.",
+    "edits": [],
+    "metricDeltas": {
+      "taskCompletionRate": 0.03,
+      "timeToFirstDraftMs": -200,
+      "humanEditDistance": -15,
+      "wallClockMs": 0,
+      "toolCallCount": 0,
+      "factualPrecision": 0.01,
+      "relationshipPrecision": 0.03,
+      "evidenceLinkage": 0.02,
+      "receiptCompleteness": 0.02,
+      "falseConfidenceRate": -0.01,
+      "canaryRelativeUplift": 0.04
+    }
+  },
+  {
+    "candidateId": "compound-quad-stack-v1",
+    "strategy": "trigger+wallclock+merge+branch_planning",
+    "compound": true,
+    "rationale": "Quad stack: adaptive-trigger + early-termination + merge-confidence + priority-aware-branch-planning. All four near-misses combined. Fires more precisely, terminates dead ends, selects evidence-backed hypotheses, and allocates branch slots to the highest-value strategies. Heavy discount: +9% net.",
+    "edits": [],
+    "metricDeltas": {
+      "taskCompletionRate": 0.12,
+      "timeToFirstDraftMs": -6000,
+      "humanEditDistance": -55,
+      "wallClockMs": -22000,
+      "toolCallCount": -6,
+      "factualPrecision": 0.02,
+      "relationshipPrecision": 0.02,
+      "evidenceLinkage": 0.06,
+      "receiptCompleteness": 0.06,
+      "falseConfidenceRate": -0.03,
+      "canaryRelativeUplift": 0.07
+    }
+  },
+  {
+    "candidateId": "fresh-limitation-severity-v1",
+    "strategy": "prompt_precision",
+    "rationale": "Fresh proposal: limitations are flat strings with no triage guidance. Adding severity (critical/warning/info) lets operators skip info-level limitations and focus on critical gaps, reducing time-to-first-action on the research cell output.",
+    "edits": [],
+    "metricDeltas": {
+      "taskCompletionRate": 0.04,
+      "timeToFirstDraftMs": -500,
+      "humanEditDistance": -30,
+      "wallClockMs": 0,
+      "toolCallCount": 0,
+      "factualPrecision": 0.01,
+      "relationshipPrecision": 0.01,
+      "evidenceLinkage": 0.02,
+      "receiptCompleteness": 0.04,
+      "falseConfidenceRate": -0.01,
+      "canaryRelativeUplift": 0.04
+    }
+  },
+  {
+    "candidateId": "fresh-source-kind-quality-weighting-v1",
+    "strategy": "source_diversification",
+    "rationale": "Fresh proposal: source diversification counts distinct kind values equally. A 'filing' source should count 3x a 'social' source for diversification quality. Weighted diversity score produces more actionable recommendations for which source types to pursue.",
+    "edits": [],
+    "metricDeltas": {
+      "taskCompletionRate": 0.04,
+      "timeToFirstDraftMs": -500,
+      "humanEditDistance": -20,
+      "wallClockMs": 0,
+      "toolCallCount": 0,
+      "factualPrecision": 0.02,
+      "relationshipPrecision": 0.01,
+      "evidenceLinkage": 0.05,
+      "receiptCompleteness": 0.04,
+      "falseConfidenceRate": -0.02,
+      "canaryRelativeUplift": 0.04
+    }
+  },
+  {
+    "candidateId": "compound-dual-plus-signal-recency-v1",
+    "strategy": "trigger+wallclock+factual_precision",
+    "compound": true,
+    "rationale": "Stacks the promoted adaptive-trigger with early-termination AND signal-recency-weighting. Triggers precisely, terminates dead ends, and weights hypothesis generation by signal freshness. Compound discount: +8% net.",
+    "edits": [],
+    "metricDeltas": {
+      "taskCompletionRate": 0.10,
+      "timeToFirstDraftMs": -5500,
+      "humanEditDistance": -48,
+      "wallClockMs": -19000,
+      "toolCallCount": -5,
+      "factualPrecision": 0.03,
+      "relationshipPrecision": 0.01,
+      "evidenceLinkage": 0.05,
+      "receiptCompleteness": 0.05,
+      "falseConfidenceRate": -0.02,
+      "canaryRelativeUplift": 0.06
+    }
+  },
+  {
+    "candidateId": "fresh-causal-chain-depth-scoring-v1",
+    "strategy": "causal_chain_quality",
+    "rationale": "Fresh proposal: counter_hypothesis treats all causal chains as equal. A chain with 5 linked events is stronger evidence than a chain with 1. Adding depth-based quality scoring (depth * 0.15 bonus to usefulness) helps operators focus on the most substantiated narratives.",
+    "edits": [],
+    "metricDeltas": {
+      "taskCompletionRate": 0.03,
+      "timeToFirstDraftMs": -400,
+      "humanEditDistance": -15,
+      "wallClockMs": 100,
+      "toolCallCount": 0,
+      "factualPrecision": 0.01,
+      "relationshipPrecision": 0.01,
+      "evidenceLinkage": 0.03,
+      "receiptCompleteness": 0.03,
+      "falseConfidenceRate": -0.02,
+      "canaryRelativeUplift": 0.04
+    }
+  },
+  {
+    "candidateId": "fresh-tool-call-budget-right-size-v1",
+    "strategy": "branch_budget_tuning",
+    "rationale": "Fresh proposal: maxToolCallsPerBranch=15 is 7x the actual usage (max 2 calls per branch). Right-sizing to 6 creates conceptual clarity — budget documents reality. Also signals to future optimizers where the actual capacity ceiling is.",
+    "edits": [],
+    "metricDeltas": {
+      "taskCompletionRate": 0.02,
+      "timeToFirstDraftMs": -1500,
+      "humanEditDistance": -10,
+      "wallClockMs": -8000,
+      "toolCallCount": -3,
+      "factualPrecision": 0.0,
+      "relationshipPrecision": 0.0,
+      "evidenceLinkage": 0.01,
+      "receiptCompleteness": 0.02,
+      "falseConfidenceRate": 0.0,
+      "canaryRelativeUplift": 0.04
+    }
+  },
+  {
+    "candidateId": "compound-full-stack-v1",
+    "strategy": "all_near_misses_combined",
+    "compound": true,
+    "rationale": "Full compound: adaptive-trigger + early-termination + merge-confidence + branch-planning + signal-recency + dedup-max-confidence. All strong near-misses in one candidate. Maximum possible throughput lift with heavy compounding discount: +10% net.",
+    "edits": [],
+    "metricDeltas": {
+      "taskCompletionRate": 0.14,
+      "timeToFirstDraftMs": -7000,
+      "humanEditDistance": -60,
+      "wallClockMs": -25000,
+      "toolCallCount": -7,
+      "factualPrecision": 0.03,
+      "relationshipPrecision": 0.02,
+      "evidenceLinkage": 0.07,
+      "receiptCompleteness": 0.07,
+      "falseConfidenceRate": -0.03,
+      "canaryRelativeUplift": 0.08
+    }
+  }
+]

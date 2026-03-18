@@ -18,6 +18,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { useMotionConfig } from '@/lib/motion';
 import { useMultiThread } from './useMultiThread';
 import { TaskWidgetStack } from './TaskWidgetStack';
 import { TypewriterText } from './TypewriterText';
@@ -140,6 +141,7 @@ function PromptBar({
     onEnableWakeWord?: () => Promise<void> | void;
     onVoiceSessionActiveChange?: (active: boolean) => void;
 }) {
+    const { instant, transition: motionTransition } = useMotionConfig();
     const [input, setInput] = useState('');
     const [voiceChatMode, setVoiceChatMode] = useState(false);
     const [isEnablingWakeWord, setIsEnablingWakeWord] = useState(false);
@@ -319,13 +321,13 @@ function PromptBar({
                     : 'top-1/2 left-1/2',
             )}
             style={isMobile ? undefined : { x: '-50%', y: '-50%' }}
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={instant ? { opacity: 0 } : { opacity: 0, scale: 0.9 }}
             animate={{
                 opacity: 1,
                 scale: showVoiceChatMode ? 1.03 : 1,
                 y: showVoiceChatMode ? -10 : 0,
             }}
-            transition={{ type: 'spring', stiffness: 190, damping: 22 }}
+            transition={motionTransition({ type: 'spring', stiffness: 190, damping: 22 })}
         >
             <form onSubmit={handleSubmit} className="relative">
                 <AnimatePresence>
@@ -336,10 +338,10 @@ function PromptBar({
                                 'pointer-events-none absolute inset-x-6 -inset-y-4 rounded-[2rem] bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.22),rgba(59,130,246,0.08)_42%,transparent_72%)] blur-2xl',
                                 isMobile && 'inset-x-3 -inset-y-3 rounded-[1.5rem]',
                             )}
-                            initial={{ opacity: 0, scale: 0.92 }}
+                            initial={instant ? { opacity: 0 } : { opacity: 0, scale: 0.92 }}
                             animate={{ opacity: 1, scale: 1.04 }}
-                            exit={{ opacity: 0, scale: 0.98 }}
-                            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                            exit={instant ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
+                            transition={motionTransition({ duration: 0.35, ease: [0.22, 1, 0.36, 1] })}
                         />
                     )}
                 </AnimatePresence>
@@ -358,8 +360,9 @@ function PromptBar({
                                         ? 'border-amber-500/35 bg-amber-500/10 text-amber-200'
                                         : 'border-edge bg-surface/85 text-content-secondary',
                     )}
-                    initial={{ opacity: 0, y: 8 }}
+                    initial={instant ? { opacity: 0 } : { opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
+                    transition={motionTransition({})}
                 >
                     {showWakeWordAction ? (
                         <button
@@ -439,8 +442,8 @@ function PromptBar({
                                         ? 'bg-primary/20 border-primary/50 text-primary'
                                         : 'bg-surface-secondary border-edge text-content-secondary hover:bg-surface-hover hover:text-content',
                             )}
-                            whileHover={isAnyTranscribing ? {} : { scale: 1.05 }}
-                            whileTap={isAnyTranscribing ? {} : { scale: 0.95 }}
+                            whileHover={!instant && !isAnyTranscribing ? { scale: 1.05 } : undefined}
+                            whileTap={!instant && !isAnyTranscribing ? { scale: 0.95 } : undefined}
                             title={isAnyTranscribing ? 'Transcribing…' : isAnyListening ? 'Stop listening' : `Voice input (${voice.mode})`}
                             aria-label={isAnyTranscribing ? 'Transcribing audio' : isAnyListening ? 'Stop listening' : `Voice input using ${voice.mode} mode`}
                         >
@@ -491,8 +494,8 @@ function PromptBar({
                             'text-primary hover:bg-primary/20',
                             'transition-colors duration-150',
                         )}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={!instant ? { scale: 1.05 } : undefined}
+                        whileTap={!instant ? { scale: 0.95 } : undefined}
                     >
                         <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
                             <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -526,6 +529,7 @@ function AgentWindow({
     layoutId: string;
     isMobile: boolean;
 }) {
+    const { instant, transition: motionTransition } = useMotionConfig();
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -545,7 +549,7 @@ function AgentWindow({
                 'flex flex-col overflow-hidden',
             )}
             style={isMobile ? undefined : { x: '-50%', y: '-50%' }}
-            transition={{ type: 'spring', stiffness: 200, damping: 28 }}
+            transition={motionTransition({ type: 'spring', stiffness: 200, damping: 28 })}
         >
             {/* Header */}
             <div className={cn(
@@ -572,8 +576,8 @@ function AgentWindow({
                     <motion.button
                         onClick={onMinimize}
                         className="w-7 h-7 rounded-md flex items-center justify-center text-content-muted hover:text-content hover:bg-surface-hover transition-colors"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
+                        whileHover={!instant ? { scale: 1.1 } : undefined}
+                        whileTap={!instant ? { scale: 0.9 } : undefined}
                         title="Minimize"
                     >
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -583,8 +587,8 @@ function AgentWindow({
                     <motion.button
                         onClick={onClose}
                         className="w-7 h-7 rounded-md flex items-center justify-center text-content-muted hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
+                        whileHover={!instant ? { scale: 1.1 } : undefined}
+                        whileTap={!instant ? { scale: 0.9 } : undefined}
                         title="Close"
                     >
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -700,6 +704,7 @@ function TaskWidget({
     layoutId: string;
     isMobile: boolean;
 }) {
+    const { instant, transition: motionTransition } = useMotionConfig();
     return (
         <motion.div
             layoutId={layoutId}
@@ -714,9 +719,9 @@ function TaskWidget({
                 'hover:border-edge-strong hover:shadow-md',
                 'transition-[border-color,box-shadow] duration-200',
             )}
-            transition={{ type: 'spring', stiffness: 200, damping: 28 }}
-            whileHover={isMobile ? undefined : { scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            transition={motionTransition({ type: 'spring', stiffness: 200, damping: 28 })}
+            whileHover={!instant && !isMobile ? { scale: 1.02 } : undefined}
+            whileTap={!instant ? { scale: 0.98 } : undefined}
         >
             <div className={cn(
                 'flex-shrink-0 w-2 h-2 rounded-full',
@@ -744,14 +749,15 @@ function CompactTrigger({
     onClick: () => void;
     isMobile: boolean;
 }) {
+    const { instant, transition: motionTransition } = useMotionConfig();
     return (
         <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={instant ? { opacity: 0 } : { opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.95 }}
+            exit={instant ? { opacity: 0 } : { opacity: 0, scale: 0.8 }}
+            transition={motionTransition({ type: 'spring', stiffness: 300, damping: 25 })}
+            whileHover={!instant ? { scale: 1.08 } : undefined}
+            whileTap={!instant ? { scale: 0.95 } : undefined}
             onClick={onClick}
             className={cn(
                 'fixed z-50',

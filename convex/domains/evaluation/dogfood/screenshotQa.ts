@@ -54,12 +54,16 @@ const responseSchema = {
   required: ["summary", "issues"],
 } as const;
 
-const DEFAULT_GEMINI_DOGFOOD_MODEL = "gemini-3.1-pro-preview";
+/** Primary: gemini-3.1-flash for deep single-image analysis.
+ *  Bulk/fallback: gemini-3.1-flash-lite for high-throughput scoring. */
+const DEFAULT_GEMINI_DOGFOOD_MODEL = "gemini-3.1-flash-lite-preview";
+const GEMINI_PRO_MODEL = "gemini-3.1-pro-preview";
+const GEMINI_FLASH_MODEL = "gemini-3.1-flash-lite-preview";
 
 function getGeminiModelFallbackChain(override?: string | null | undefined): string[] {
   const explicit = (override ?? "").trim();
   if (explicit) return [explicit];
-  return [DEFAULT_GEMINI_DOGFOOD_MODEL, "gemini-3-flash-preview", "gemini-2.5-flash"];
+  return [DEFAULT_GEMINI_DOGFOOD_MODEL, GEMINI_FLASH_MODEL, "gemini-2.0-flash"];
 }
 
 function looksLikeModelNotFound(err: unknown): boolean {
@@ -300,13 +304,13 @@ export const runDogfoodScreenshotQa = action({
       const runCount = await ctx.runQuery(internal.domains.dogfood.videoQaQueries.countMyDogfoodQaRuns, {});
 
       if (!modelOverride) {
-        isProRun = runCount % 4 === 0;
+        isProRun = runCount % 6 === 0; // Pro every 6th run for baseline calibration
         if (isProRun) {
-          modelOverride = "gemini-3.1-pro-preview";
-          console.log(`[screenshotQa] Pro rotation: run #${runCount + 1} (pro), using gemini-3.1-pro-preview`);
+          modelOverride = GEMINI_PRO_MODEL;
+          console.log(`[screenshotQa] Pro rotation: run #${runCount + 1} (pro), using ${GEMINI_PRO_MODEL}`);
         } else {
-          modelOverride = "gemini-3-flash-preview";
-          console.log(`[screenshotQa] Flash rotation: run #${runCount + 1} (flash ${(runCount % 4)}/3), using gemini-3-flash-preview`);
+          modelOverride = GEMINI_FLASH_MODEL;
+          console.log(`[screenshotQa] Flash-lite rotation: run #${runCount + 1} (flash ${(runCount % 6)}/5), using ${GEMINI_FLASH_MODEL}`);
 
           // Load latest pro analysis as reference for flash runs
           const proAnalysis = await ctx.runQuery(internal.domains.dogfood.videoQaQueries.getLatestProAnalysis, { source: "screenshots" });

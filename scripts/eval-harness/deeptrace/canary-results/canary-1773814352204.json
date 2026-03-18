@@ -1,0 +1,133 @@
+{
+  "suiteId": "canary-1773814352204",
+  "fixtures": [
+    {
+      "fixtureId": "public-company-high-confidence",
+      "entityKey": "company:anthropic",
+      "wallClockMs": 0.1893000000000029,
+      "triggered": false,
+      "branchCount": 0,
+      "strategies": [],
+      "mergedFactCount": 0,
+      "mergedRelationshipCount": 0,
+      "mergedEvidenceCount": 0,
+      "triggerCorrect": true,
+      "branchCountCorrect": true,
+      "strategiesCorrect": true,
+      "usefulnessAboveFloor": false,
+      "factsAboveFloor": true,
+      "relationshipsAboveFloor": true,
+      "score": 1
+    },
+    {
+      "fixtureId": "startup-low-confidence",
+      "entityKey": "company:stealth-ai-startup",
+      "wallClockMs": 0.1795999999999367,
+      "triggered": true,
+      "branchCount": 2,
+      "strategies": [
+        "counter_hypothesis",
+        "source_diversification"
+      ],
+      "mergedFactCount": 6,
+      "mergedRelationshipCount": 0,
+      "mergedEvidenceCount": 1,
+      "triggerCorrect": true,
+      "branchCountCorrect": true,
+      "strategiesCorrect": false,
+      "usefulnessAboveFloor": true,
+      "factsAboveFloor": true,
+      "relationshipsAboveFloor": true,
+      "score": 0.8666666666666666
+    },
+    {
+      "fixtureId": "person-sparse-data",
+      "entityKey": "person:jane-doe-cto",
+      "wallClockMs": 0.037299999999959255,
+      "triggered": true,
+      "branchCount": 2,
+      "strategies": [
+        "counter_hypothesis",
+        "source_diversification"
+      ],
+      "mergedFactCount": 4,
+      "mergedRelationshipCount": 2,
+      "mergedEvidenceCount": 2,
+      "triggerCorrect": true,
+      "branchCountCorrect": true,
+      "strategiesCorrect": false,
+      "usefulnessAboveFloor": true,
+      "factsAboveFloor": true,
+      "relationshipsAboveFloor": true,
+      "score": 0.8
+    },
+    {
+      "fixtureId": "operator-forced-review",
+      "entityKey": "company:well-covered-corp",
+      "wallClockMs": 0.009500000000116415,
+      "triggered": false,
+      "branchCount": 0,
+      "strategies": [],
+      "mergedFactCount": 0,
+      "mergedRelationshipCount": 0,
+      "mergedEvidenceCount": 0,
+      "triggerCorrect": true,
+      "branchCountCorrect": true,
+      "strategiesCorrect": true,
+      "usefulnessAboveFloor": false,
+      "factsAboveFloor": true,
+      "relationshipsAboveFloor": true,
+      "score": 1
+    },
+    {
+      "fixtureId": "borderline-confidence",
+      "entityKey": "company:mid-stage-fintech",
+      "wallClockMs": 0.017299999999977445,
+      "triggered": true,
+      "branchCount": 2,
+      "strategies": [
+        "counter_hypothesis",
+        "source_diversification"
+      ],
+      "mergedFactCount": 3,
+      "mergedRelationshipCount": 0,
+      "mergedEvidenceCount": 1,
+      "triggerCorrect": true,
+      "branchCountCorrect": true,
+      "strategiesCorrect": true,
+      "usefulnessAboveFloor": true,
+      "factsAboveFloor": true,
+      "relationshipsAboveFloor": true,
+      "score": 1
+    }
+  ],
+  "metrics": {
+    "throughput": {
+      "taskCompletionRate": 0.6,
+      "timeToFirstDraftMs": 0.08659999999999854,
+      "humanEditDistance": 33,
+      "wallClockMs": 0.08659999999999854,
+      "toolCallCount": 6
+    },
+    "quality": {
+      "factualPrecision": 1,
+      "relationshipPrecision": 0.6,
+      "evidenceLinkage": 1,
+      "receiptCompleteness": 0.9333333333333333,
+      "falseConfidenceRate": 0,
+      "canaryRelativeUplift": 0
+    }
+  },
+  "costEntries": [
+    {
+      "phase": "benchmark",
+      "model": "deterministic",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "costUsd": 0,
+      "timestamp": "2026-03-18T06:12:32.203Z"
+    }
+  ],
+  "wallClockMs": 1.592200000000048,
+  "timestamp": "2026-03-18T06:12:32.204Z"
+}

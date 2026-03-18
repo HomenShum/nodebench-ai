@@ -1,0 +1,87 @@
+{
+  "name": "deeptrace_claude_code_canary",
+  "version": "2026-03-15",
+  "modes": [
+    "baseline",
+    "deeptrace"
+  ],
+  "families": [
+    {
+      "id": "company_direction",
+      "label": "Company direction analysis",
+      "requiredOutputs": [
+        "observed_facts",
+        "relationships",
+        "hypothesis",
+        "counter_hypothesis",
+        "recommendation",
+        "limitations"
+      ]
+    },
+    {
+      "id": "relationship_mapping",
+      "label": "Relationship graph mapping",
+      "requiredOutputs": [
+        "relationships",
+        "dimension_profile",
+        "recommendation",
+        "limitations"
+      ]
+    },
+    {
+      "id": "repo_intelligence",
+      "label": "Repository and contributor intelligence",
+      "requiredOutputs": [
+        "observed_facts",
+        "relationships",
+        "counter_hypothesis",
+        "limitations"
+      ]
+    },
+    {
+      "id": "world_to_company",
+      "label": "World event to company impact",
+      "requiredOutputs": [
+        "observed_facts",
+        "relationships",
+        "dimension_profile",
+        "hypothesis",
+        "recommendation",
+        "limitations"
+      ]
+    },
+    {
+      "id": "trace_backed_draft",
+      "label": "Trace-backed draft and verdict generation",
+      "requiredOutputs": [
+        "observed_facts",
+        "recommendation",
+        "limitations",
+        "receipts",
+        "evidence"
+      ]
+    }
+  ],
+  "metadataKeys": [
+    "runId",
+    "benchmarkCaseId",
+    "mode",
+    "timestamp",
+    "repoCommit",
+    "inputSnapshotHash",
+    "promptTemplateHash",
+    "mcpConfigHash",
+    "modelName",
+    "claudeCodeVersion",
+    "wallClockMs",
+    "toolCallCount",
+    "tokenCount",
+    "artifactPaths"
+  ],
+  "releaseGuards": {
+    "minimumRelativeUplift": 0.03,
+    "minimumEvidenceLinkage": 0.75,
+    "minimumReceiptCompleteness": 0.8,
+    "maximumFalseConfidenceRate": 0.1
+  }
+}

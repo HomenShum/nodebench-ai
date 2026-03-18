@@ -1,5 +1,6 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useMotionConfig } from '@/lib/motion';
 import { useTimeContext, getActiveWidgetType } from '../../hooks/useTimeContext';
 import { MorningDigestWidget } from './MorningDigestWidget';
 import { AfternoonProductivityWidget } from './AfternoonProductivityWidget';
@@ -26,6 +27,7 @@ export function AdaptiveWidget({
   onStartFocus,
   className = '',
 }: AdaptiveWidgetProps) {
+  const { instant, transition } = useMotionConfig();
   const timeContext = useTimeContext();
   const widgetType = getActiveWidgetType(timeContext);
 
@@ -34,10 +36,10 @@ export function AdaptiveWidget({
       <AnimatePresence mode="wait">
         <motion.div
           key={widgetType}
-          initial={{ opacity: 0, y: 10 }}
+          initial={instant ? { opacity: 0 } : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3 }}
+          exit={instant ? { opacity: 0 } : { opacity: 0, y: -10 }}
+          transition={transition({ duration: 0.3 })}
         >
           {widgetType === 'morning' && (
             <MorningDigestWidget userName={userName} onNavigate={onNavigate} />

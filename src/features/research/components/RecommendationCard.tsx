@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Lightbulb, FileText, Users, Bell, Sparkles, ChevronRight, ThumbsUp, ThumbsDown, Star } from 'lucide-react';
 import { Id } from '../../../../convex/_generated/dataModel';
+import { useMotionConfig } from '@/lib/motion';
 
 interface RecommendationCardProps {
   id: Id<"recommendations">;
@@ -41,6 +42,7 @@ export const RecommendationCard = React.memo(function RecommendationCard({
   onFeedback,
   showFeedback = true,
 }: RecommendationCardProps) {
+  const { instant, transition } = useMotionConfig();
   const Icon = typeIcons[type] || Lightbulb;
   const [feedbackGiven, setFeedbackGiven] = useState(false);
   const [showRating, setShowRating] = useState(false);
@@ -65,9 +67,9 @@ export const RecommendationCard = React.memo(function RecommendationCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
+      initial={{ opacity: instant ? 1 : 0, x: instant ? 0 : 20 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
+      exit={{ opacity: instant ? 1 : 0, x: instant ? 0 : -20 }}
       className={`relative rounded-lg border-l-4 p-3 shadow-sm ${priorityColors[priority]}`}
     >
       {/* Dismiss button */}
@@ -130,7 +132,7 @@ export const RecommendationCard = React.memo(function RecommendationCard({
           {/* Rating prompt after accept */}
           {showRating && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
+              initial={{ opacity: instant ? 1 : 0, height: instant ? 'auto' : 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               className="mt-3 p-2 bg-surface/50 dark:bg-white/[0.03] rounded border border-edge"
             >
@@ -181,7 +183,7 @@ export const RecommendationCard = React.memo(function RecommendationCard({
           {/* Feedback confirmation */}
           {feedbackGiven && !showRating && (
             <motion.div
-              initial={{ opacity: 0 }}
+              initial={{ opacity: instant ? 1 : 0 }}
               animate={{ opacity: 1 }}
               className="mt-2 text-xs text-content-secondary"
             >

@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useMotionConfig } from '@/lib/motion';
 import { cn } from '../../lib/utils';
 
 interface HUDPanelProps {
@@ -19,11 +20,12 @@ export function HUDPanel({
     title,
     className = '',
 }: HUDPanelProps) {
+    const { instant, transition } = useMotionConfig();
     return (
         <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
+            initial={instant ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+            transition={transition({ type: 'spring', stiffness: 200, damping: 25 })}
             className={cn(
                 'relative overflow-hidden rounded-lg',
                 'bg-surface/80 backdrop-blur-md',

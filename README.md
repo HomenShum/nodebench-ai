@@ -1,6 +1,12 @@
-# NodeBench AI
+# NodeBench AI / DeepTrace
 
-A comprehensive AI-powered document management and research platform with multi-agent architecture.
+NodeBench AI is a comprehensive AI-powered document management and research platform with a report-driven **DeepTrace** surface for the **Agent Trust Infrastructure / Agent Trust Control Plane** demo.
+
+The current MVP highlights four trust primitives for agent operations:
+- **Agent Passport** for scoped authority
+- **Intent Ledger** for declared plans and approvals
+- **Action Receipts** for tamper-evident execution history
+- **Delegation Graph** for visible trust boundaries
 
 ---
 
@@ -23,6 +29,9 @@ NodeBench AI now includes **6 major enhancements** that bring it to the **top 10
 
 ### Quick Links
 
+- [Agent Trust Infrastructure](./docs/architecture/AGENT_TRUST_INFRASTRUCTURE.md) - Product framing, route map, and control-plane semantics
+- [Control Plane 90-Day Roadmap](./docs/architecture/CONTROL_PLANE_90DAY_ROADMAP.md) - Sequencing, milestones, and MVP acceptance targets
+- [Deep Research Report: Agent Trust Control Plane Demo App and Landing Page](./docs/deep-research-report_NodeBench MVP Rebrand Agent Trust Control Plane Demo App and Landing Page.md) - Source report used for the DeepTrace MVP implementation
 - [Complete Implementation Guide](./docs/INDUSTRY_ENHANCEMENTS_2026.md) - Comprehensive patterns and integration examples
 - [Deployment Summary](./docs/IMPLEMENTATION_COMPLETE.md) - Files delivered, cost analysis, testing validation
 - [UI Design System](./docs/DESIGN_SYSTEM.md) - Persistent theme contract, route convergence rules, and token standards

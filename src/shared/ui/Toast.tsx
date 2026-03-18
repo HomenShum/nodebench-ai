@@ -12,6 +12,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useMotionConfig } from '@/lib/motion';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -78,6 +79,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
   const config = toastConfig[toast.type];
   const Icon = config.icon;
   const duration = toast.duration ?? 4000;
+  const { instant, transition } = useMotionConfig();
 
   useEffect(() => {
     const timer = setTimeout(onRemove, duration);
@@ -87,10 +89,10 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, x: 50, scale: 0.95 }}
+      initial={instant ? { opacity: 1, x: 0, scale: 1 } : { opacity: 0, x: 50, scale: 0.95 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 50, scale: 0.95 }}
-      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+      exit={instant ? { opacity: 0 } : { opacity: 0, x: 50, scale: 0.95 }}
+      transition={transition({ type: 'spring', stiffness: 500, damping: 30 })}
       className={cn(
         'relative flex items-start gap-3 p-4 rounded-lg border shadow-lg backdrop-blur-sm min-w-[320px] max-w-[420px] overflow-hidden',
         config.bg
@@ -109,13 +111,13 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
       >
         <X className="w-4 h-4 text-content-muted" />
       </button>
-      
+
       {/* Progress bar */}
       <motion.div
         className={cn('absolute bottom-0 left-0 h-1 rounded-full', config.progressColor)}
         initial={{ width: '100%' }}
         animate={{ width: '0%' }}
-        transition={{ duration: duration / 1000, ease: 'linear' }}
+        transition={transition({ duration: duration / 1000, ease: 'linear' })}
       />
     </motion.div>
   );

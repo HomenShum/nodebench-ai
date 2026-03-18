@@ -1,0 +1,153 @@
+{
+  "model": "claude-haiku-4.5",
+  "scenario": {
+    "id": "test_minimal",
+    "name": "Minimal test: Just entity name",
+    "query": "DISCO",
+    "expectedPersona": "JPM_STARTUP_BANKER",
+    "expectedEntityId": "DISCO"
+  },
+  "result": {
+    "elapsedMs": 14095,
+    "model": "claude-haiku-4.5",
+    "ok": true,
+    "runs": [
+      {
+        "checks": {
+          "contact": true,
+          "entityResolved": true,
+          "fundingStage": true,
+          "grounding": true,
+          "hq": true,
+          "nextActions": true,
+          "persona": true
+        },
+        "debrief": {
+          "entity": {
+            "canonicalName": "DISCO Pharmaceuticals",
+            "confidence": 0,
+            "input": "DISCO",
+            "type": "company"
+          },
+          "grounding": [
+            "{{fact:ground_truth:DISCO}}"
+          ],
+          "keyFacts": {
+            "contact": {
+              "email": "info@discopharma.de"
+            },
+            "founding": {
+              "founder": "Roman Thomas",
+              "year": null
+            },
+            "funding": {
+              "amount": {
+                "currency": "EUR",
+                "unit": "M",
+                "value": 36
+              },
+              "announcedDate": "2025-12-11",
+              "coLeads": [
+                "Ackermans & van Haaren",
+                "NRW.Bank"
+              ],
+              "stage": "Seed"
+            },
+            "hqLocation": "Cologne, Germany",
+            "leadPrograms": [
+              "Lead ADC candidates targeting SCLC",
+              "Lead ADC candidates targeting MSS-CRC"
+            ],
+            "leadership": {
+              "ceo": "Mark Manfredi"
+            },
+            "technology": {
+              "approach": "ADC discovery",
+              "platform": "Surfaceome mapping platform"
+            }
+          },
+          "nextActions": [
+            "Add DISCO to weekly banker outreach list (freshness window: 16 days, well within 30-day banker criteria)",
+            "Draft initial contact to info@discopharma.de highlighting co-lead investor network strength (NRW.Bank geographic footprint)",
+            "Schedule follow-up to assess Series A readiness timeline and expansion into bispecific ADC space",
+            "Benchmark DISCO's surfaceome platform against existing ADC discovery players for competitive positioning"
+          ],
+          "persona": {
+            "confidence": 0.95,
+            "inferred": "JPM_STARTUP_BANKER"
+          },
+          "planSteps": [
+            "Call lookupGroundTruthEntity for DISCO",
+            "Extract required facts and assess banker window freshness",
+            "Formulate verdict based on outreach readiness criteria",
+            "Verify no forbidden facts mentioned"
+          ],
+          "schemaVersion": "debrief_v1",
+          "toolsUsed": [
+            {
+              "name": "lookupGroundTruthEntity",
+              "ok": true
+            }
+          ],
+          "verdict": "PASS"
+        },
+        "debriefValidation": {
+          "errors": [
+            "entity.confidence must be a number",
+            "fallbacks must be an array",
+            "risks must be an array"
+          ],
+          "ok": false
+        },
+        "elapsedMs": 14095,
+        "execution": {
+          "estimatedInputTokens": 1329,
+          "estimatedOutputTokens": 768,
+          "latencyMs": 13574,
+          "modelUsed": "claude-haiku-4.5",
+          "providerUsage": {
+            "cachedInputTokens": 0,
+            "completionTokens": 955,
+            "promptTokens": 86338,
+            "reasoningTokens": 0,
+            "totalTokens": 87293
+          },
+          "stepsCount": 2,
+          "streamStatus": "completed",
+          "toolCalls": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ],
+          "toolResults": [
+            {
+              "name": "lookupGroundTruthEntity"
+            }
+          ]
+        },
+        "expectedEntityId": "DISCO",
+        "expectedPersona": "JPM_STARTUP_BANKER",
+        "failureReasons": [],
+        "id": "test_minimal",
+        "name": "Minimal test: Just entity name",
+        "ok": true,
+        "promptMessageId": "ks77zg6dgc6tftshw56395wygs7yq8f1",
+        "responsePreview": "Based on verified ground truth data, here is the analysis:\n\n## DISCO Pharmaceuticals — Banker Readiness Assessment\n\n**DISCO Pharmaceuticals** is a recently funded biotech company headquartered in **Cologne, Germany**, founded by Roman Thomas and led by CEO Mark Manfredi. The company raised **€36M in Seed funding** (announced December 11, 2025) from co-leads Ackermans & van Haaren and NRW.Bank, positioning it as a well-capitalized early-stage player in the oncology-focused drug discovery space.\n\nThe company's core technology is a **Surfaceome mapping platform** designed to identify and develop novel antibody-drug conjugates (ADCs) targeting cancer indications including small cell lung cancer (SCLC) and microsatellite-stable colorectal cancer (MSS-CRC). This platform approach enables DISCO to generate a pipeline of lead ADC candidates, with the breadth to explore bispecific formats and exp",
+        "threadId": "m57580ahn8341be4htmv2hk38x7yp20a"
+      }
+    ],
+    "summary": {
+      "failed": 0,
+      "passed": 1,
+      "total": 1
+    },
+    "window": {
+      "limit": 1,
+      "nextOffset": null,
+      "offset": 0,
+      "suite": "core",
+      "totalAvailable": 1
+    }
+  },
+  "elapsed": 14515
+}

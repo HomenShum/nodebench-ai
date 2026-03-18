@@ -5,13 +5,14 @@ import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { SparkBars } from "./Sparkline";
 import { Activity, Download } from "lucide-react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 interface SignalTimeseriesPanelProps {
   keyword: string;
   days?: number;
 }
 
-export const SignalTimeseriesPanel: React.FC<SignalTimeseriesPanelProps> = ({ keyword, days = 14 }) => {
+function SignalTimeseriesPanelContent({ keyword, days = 14 }: SignalTimeseriesPanelProps) {
   const timeseries = useQuery(
     api.domains.research.signalTimeseries.getSignalTimeseries,
     keyword ? { keyword, days } : "skip",
@@ -140,6 +141,34 @@ export const SignalTimeseriesPanel: React.FC<SignalTimeseriesPanelProps> = ({ ke
         </div>
       )}
     </div>
+  );
+}
+
+function SignalTimeseriesPanelFallback({ keyword }: { keyword: string }) {
+  return (
+    <div className="rounded-lg border border-edge bg-surface p-4 space-y-2">
+      <div className="flex items-center gap-2">
+        <Activity className="w-4 h-4 text-content-secondary" />
+        <div>
+          <div className="text-xs font-bold text-content-muted">Signal Momentum</div>
+          <div className="text-sm font-semibold text-content">{keyword}</div>
+        </div>
+      </div>
+      <div className="text-xs text-content-muted">Timeseries temporarily unavailable</div>
+    </div>
+  );
+}
+
+export const SignalTimeseriesPanel: React.FC<SignalTimeseriesPanelProps> = (props) => {
+  if (!props.keyword) return null;
+
+  return (
+    <ErrorBoundary
+      section="Signal timeseries"
+      fallback={<SignalTimeseriesPanelFallback keyword={props.keyword} />}
+    >
+      <SignalTimeseriesPanelContent {...props} />
+    </ErrorBoundary>
   );
 };
 

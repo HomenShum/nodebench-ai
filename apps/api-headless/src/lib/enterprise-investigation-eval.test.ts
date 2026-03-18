@@ -15,15 +15,16 @@ describe("enterprise investigation eval fixtures", () => {
     expect(results).toHaveLength(4);
 
     for (const result of results) {
-      expect(result.investigation.causal_chain.length).toBeGreaterThanOrEqual(3);
-      expect(result.investigation.audit_proof_pack.source_snapshot_hashes.length).toBeGreaterThanOrEqual(3);
+      expect(result.investigation.observed_facts.length).toBeGreaterThanOrEqual(3);
+      expect(result.investigation.evidence_catalog.length).toBeGreaterThanOrEqual(3);
       expect(result.deterministic.dimensions.traceability.score).toBeGreaterThanOrEqual(80);
       expect(result.deterministic.dimensions.temporalEvidence.score).toBeGreaterThanOrEqual(70);
-      expect(result.investigation.zero_friction_execution.proposed_action.length).toBeGreaterThan(20);
+      expect(result.investigation.recommended_actions.length).toBeGreaterThan(0);
+      expect(result.investigation.recommended_actions[0]?.action.length ?? 0).toBeGreaterThan(20);
 
       const judgeText = serializeInvestigationForJudge(result.investigation);
-      expect(judgeText).toContain("Causal chain:");
-      expect(judgeText).toContain("Proposed action:");
+      expect(judgeText).toContain("Observed facts:");
+      expect(judgeText).toContain("Recommended actions:");
     }
   });
 });

@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useId } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useMotionConfig } from '@/lib/motion';
 import {
   Building2,
   User,
@@ -228,6 +229,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
   useMediumPreview = false,
   className = "",
 }) => {
+  const { instant } = useMotionConfig();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
@@ -307,8 +309,8 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
           hover:${colors.bg}
           ${className}
         `}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={!instant ? { scale: 1.02 } : undefined}
+        whileTap={!instant ? { scale: 0.98 } : undefined}
         aria-describedby={showPreview ? tooltipId : undefined}
       >
         <Icon className={`w-3.5 h-3.5 ${colors.icon}`} />

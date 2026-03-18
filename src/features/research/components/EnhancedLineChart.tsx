@@ -17,6 +17,7 @@ import React, { useMemo, useState, useCallback, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion";
 import { TrendingUp, TrendingDown, Minus, Clock, RefreshCw } from "lucide-react";
 import type { ChartSeries, ChartPoint, TrendLineConfig, TooltipPayload } from "@/features/research/types";
+import { useMotionConfig } from '@/lib/motion';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -189,6 +190,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
   onRefresh,
   compact,
 }) => {
+  const { instant, transition: motionTransition } = useMotionConfig();
   const [hoveredPoint, setHoveredPoint] = useState<HoveredPoint | null>(null);
   const [pinnedPoint, setPinnedPoint] = useState<HoveredPoint | null>(null);
   const [isTooltipHovered, setIsTooltipHovered] = useState(false);
@@ -572,10 +574,10 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                 width={CHART.width - CHART.paddingX * 2}
                 height={CHART.height - CHART.paddingY - CHART.paddingTop}
                 fill="rgba(79,70,229,0.10)"
-                initial={{ opacity: 0.35 }}
+                initial={{ opacity: instant ? 0 : 0.35 }}
                 animate={{ opacity: 0 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
+                transition={motionTransition({ duration: 0.6, ease: "easeOut" })}
               />
             )}
           </AnimatePresence>
@@ -590,7 +592,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                 animate={{ y1: tick.y, y2: tick.y }}
                 className="stroke-slate-100"
                 strokeDasharray="2 2"
-                transition={{ duration: 0.4, ease: "easeOut" }}
+                transition={motionTransition({ duration: 0.4, ease: "easeOut" })}
               />
               <motion.text
                 x={CHART.paddingX - 5}
@@ -598,7 +600,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                 animate={{ y: tick.y + 3 }}
                 textAnchor="end"
                 className="text-xs fill-slate-400 font-mono"
-                transition={{ duration: 0.4, ease: "easeOut" }}
+                transition={motionTransition({ duration: 0.4, ease: "easeOut" })}
               >
                 {tick.label}
               </motion.text>
@@ -619,14 +621,14 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                 className="stroke-slate-300 dark:stroke-slate-600"
                 strokeWidth={1.5}
                 strokeDasharray="4 2"
-                transition={{ duration: 0.4, ease: "easeOut" }}
+                transition={motionTransition({ duration: 0.4, ease: "easeOut" })}
               />
               <motion.text
                 x={CHART.width - CHART.paddingX + 3}
                 initial={false}
                 animate={{ y: getCoord(0, config.baseline.value).y + 3 }}
                 className="text-[10px] fill-slate-500 dark:fill-slate-400 font-medium font-mono"
-                transition={{ duration: 0.4, ease: "easeOut" }}
+                transition={motionTransition({ duration: 0.4, ease: "easeOut" })}
               >
                 {config.baseline.label}
               </motion.text>
@@ -695,9 +697,9 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                     strokeLinejoin="round"
                     strokeDasharray={isGhost ? "6 4" : "0"}
                     opacity={isGhost ? 0.4 : 1}
-                    initial={{ pathLength: 0, d: historyPath }}
+                    initial={{ pathLength: instant ? 1 : 0, d: historyPath }}
                     animate={{ pathLength: 1, d: historyPath }}
-                    transition={{ duration: 1.0, ease: "easeOut" }}
+                    transition={motionTransition({ duration: 1.0, ease: "easeOut" })}
                   />
                 )}
 
@@ -711,9 +713,9 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                     strokeLinejoin="round"
                     strokeDasharray="6 4"
                     opacity={0.55}
-                    initial={{ pathLength: 0, d: projectionPath }}
+                    initial={{ pathLength: instant ? 1 : 0, d: projectionPath }}
                     animate={{ pathLength: 1, d: projectionPath }}
-                    transition={{ duration: 1.0, ease: "easeOut" }}
+                    transition={motionTransition({ duration: 1.0, ease: "easeOut" })}
                   />
                 )}
 
@@ -739,9 +741,9 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                         strokeWidth={2}
                         strokeDasharray={isProjected ? "3 3" : "0"}
                         opacity={isProjected ? 0.65 : isGhost ? 0.45 : 1}
-                        initial={{ scale: 0 }}
+                        initial={{ scale: instant ? 1 : 0 }}
                         animate={{ scale: 1 }}
-                        transition={{ delay: i * 0.05 }}
+                        transition={motionTransition({ delay: i * 0.05 })}
                       />
 
                       {/* Evidence indicator */}
@@ -756,7 +758,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                       )}
 
                       {/* Active pulse */}
-                      {isActive && (
+                      {isActive && !instant && (
                         <motion.circle
                           cx={coord.x}
                           cy={coord.y}
@@ -769,7 +771,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                       )}
 
                       {/* Focus pulse (when not actively hovered/pinned) */}
-                      {isFocus && !isActive && (
+                      {isFocus && !isActive && !instant && (
                         <motion.circle
                           cx={coord.x}
                           cy={coord.y}
@@ -881,9 +883,9 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
           {activePoint && (
             <motion.div
               ref={tooltipRef}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: instant ? 1 : 0, y: instant ? 0 : 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+              exit={{ opacity: instant ? 1 : 0 }}
               className="absolute z-50 pointer-events-auto"
               onMouseEnter={() => {
                 if (hoverClearTimeoutRef.current) {

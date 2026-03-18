@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { Id } from "../../../../convex/_generated/dataModel";
+import { DialogOverlay } from "@/shared/components/DialogOverlay";
 
 interface TagPickerModalProps {
     isOpen: boolean;
@@ -22,10 +23,8 @@ export function TagPickerModal({
     onClose,
     onAddTags
 }: TagPickerModalProps) {
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <DialogOverlay isOpen={isOpen} onClose={onClose} ariaLabel="Add tags">
             <div className="w-full max-w-sm rounded-lg border border-edge bg-surface p-4 shadow-xl">
                 <div className="flex items-center justify-between mb-3">
                     <div className="text-sm font-semibold text-content">Add tags</div>
@@ -54,6 +53,6 @@ export function TagPickerModal({
                     </button>
                 </div>
             </div>
-        </div>
+        </DialogOverlay>
     );
 }
