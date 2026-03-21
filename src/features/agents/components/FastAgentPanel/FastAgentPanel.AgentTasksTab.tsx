@@ -16,7 +16,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { api } from '../../../../../convex/_generated/api';
-import { TokenUsageBadge } from '@/components/TokenUsageBadge';
+import { TokenUsageBadge } from './TokenUsageBadge';
 import { cn } from '@/lib/utils';
 
 type AgentTaskStatus = 'pending' | 'running' | 'complete' | 'paused' | 'error';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getViewCapability } from "@/lib/viewCapabilityRegistry";
-import { ALL_VIEW_IDS } from "@/lib/viewRegistry";
+import { getViewCapability } from "@/lib/registry/viewCapabilityRegistry";
+import { ALL_VIEW_IDS } from "@/lib/registry/viewRegistry";
 
 describe("viewCapabilityRegistry", () => {
   it("defines metadata for every main layout view", () => {

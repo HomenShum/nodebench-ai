@@ -17,7 +17,7 @@ import { useBriefDateSelection } from "@/lib/useBriefDateSelection";
 import { formatBriefDate, formatBriefDateTime } from "@/lib/briefDate";
 import { buttonIcon, buttonSecondary } from "@/lib/buttonClasses";
 import { DashboardSkeleton } from "@/components/skeletons";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 
 export interface DashboardSectionProps {
   className?: string;
@@ -249,5 +249,4 @@ export function DashboardSection(props: DashboardSectionProps) {
 }
 
 export default DashboardSection;
-
 

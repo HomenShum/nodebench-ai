@@ -36,16 +36,26 @@ import { TopDividerBar } from "@shared/ui/TopDividerBar";
 import { UnifiedHubPills } from "@/shared/ui/UnifiedHubPills";
 import { PageHeroHeader } from "@shared/ui/PageHeroHeader";
 
-// Agent-specific components
+// Agent-specific components (always visible on initial render)
 import { AgentStatusCard, AGENT_CONFIGS, type AgentStatus } from "../components/AgentStatusCard";
 import { AgentCommandBar, type AgentMode, type ApprovedModel } from "../components/AgentCommandBar";
-import { HumanApprovalQueue } from "../components/HumanApprovalQueue";
-import { AgentSidebar } from "../components/AgentSidebar";
-import { AutonomousOperationsPanel } from "../components/AutonomousOperationsPanel";
-import { OracleControlTowerPanel } from "../components/OracleControlTowerPanel";
-import { TopicCanvasPanel } from "../components/TopicCanvasPanel";
 
-// Lazy-loaded heavy sub-components (behind tabs/expandable sections)
+// Lazy-loaded heavy sub-components (behind tabs/expandable sections/conditional rendering)
+const HumanApprovalQueue = lazy(() =>
+  import("../components/HumanApprovalQueue").then((mod) => ({ default: mod.HumanApprovalQueue }))
+);
+const AgentSidebar = lazy(() =>
+  import("../components/AgentSidebar").then((mod) => ({ default: mod.AgentSidebar }))
+);
+const AutonomousOperationsPanel = lazy(() =>
+  import("../components/AutonomousOperationsPanel").then((mod) => ({ default: mod.AutonomousOperationsPanel }))
+);
+const OracleControlTowerPanel = lazy(() =>
+  import("../components/OracleControlTowerPanel").then((mod) => ({ default: mod.OracleControlTowerPanel }))
+);
+const TopicCanvasPanel = lazy(() =>
+  import("../components/TopicCanvasPanel").then((mod) => ({ default: mod.TopicCanvasPanel }))
+);
 const SwarmLanesView = lazy(() =>
   import("../components/FastAgentPanel/SwarmLanesView").then((mod) => ({ default: mod.SwarmLanesView }))
 );
@@ -390,9 +400,9 @@ export function AgentsHub() {
   );
 
   return (
-    <div className="nb-page-shell">
+    <div className="nb-page-shell view-atmosphere-agents">
       <div className="nb-page-inner">
-        <div className="nb-page-frame flex gap-6">
+        <div className="nb-page-frame flex gap-6 stagger [&>*]:animate-[fade-slide-in_0.5s_var(--ease-out-expo)_both]">
           {/* Main Content */}
           <div className="flex-1 min-w-0">
             {/* Top Divider Bar */}
@@ -417,7 +427,9 @@ export function AgentsHub() {
             </div>
 
             <div className="mb-6">
-              <TopicCanvasPanel />
+              <Suspense fallback={<div className="h-[100px]" />}>
+                <TopicCanvasPanel />
+              </Suspense>
             </div>
 
             {!advancedMode && (
@@ -433,7 +445,9 @@ export function AgentsHub() {
 
             {/* Human Approval Queue — always visible */}
             <div className="mb-6">
-              <HumanApprovalQueue />
+              <Suspense fallback={<div className="h-[80px]" />}>
+                <HumanApprovalQueue />
+              </Suspense>
             </div>
 
             {/* Mode toggle */}
@@ -463,12 +477,16 @@ export function AgentsHub() {
 
                 {/* Autonomous Operations Status */}
                 <div className="mb-6">
-                  <AutonomousOperationsPanel />
+                  <Suspense fallback={<div className="h-[120px]" />}>
+                    <AutonomousOperationsPanel />
+                  </Suspense>
                 </div>
 
                 {/* Oracle Control Tower */}
                 <div className="mb-6">
-                  <OracleControlTowerPanel />
+                  <Suspense fallback={<div className="h-[120px]" />}>
+                    <OracleControlTowerPanel />
+                  </Suspense>
                 </div>
 
                 {/* Agent Status Grid */}
@@ -515,7 +533,7 @@ export function AgentsHub() {
             )}
 
             {/* Background Research Banner — always visible */}
-            <div className="nb-surface-card p-6 bg-gradient-to-r from-[var(--accent-primary-bg)] to-surface-secondary">
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-6">
               <div className="flex items-center gap-3 mb-2">
                 <Sparkles className="w-5 h-5 text-accent" />
                 <h3 className="font-semibold text-content">
@@ -531,7 +549,7 @@ export function AgentsHub() {
           </div>
 
           {/* Sidebar */}
-          {advancedMode ? <AgentSidebar /> : null}
+          {advancedMode ? <Suspense fallback={<div className="w-64" />}><AgentSidebar /></Suspense> : null}
         </div>
       </div>
     </div>

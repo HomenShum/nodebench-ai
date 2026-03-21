@@ -45,6 +45,8 @@ describe("dimensionTools", () => {
       "list_dimension_evidence",
       "list_dimension_interactions",
       "export_dimension_bundle",
+      "run_research_cell",
+      "run_entity_intelligence_mission",
     ]);
   });
 

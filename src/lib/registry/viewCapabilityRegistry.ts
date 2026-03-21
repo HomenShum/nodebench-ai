@@ -8,7 +8,7 @@
  * Pure data — no side effects, no hooks, no React imports.
  */
 
-import type { MainView } from "@/lib/viewRegistry";
+import type { MainView } from "@/lib/registry/viewRegistry";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -59,9 +59,9 @@ export interface ViewCapability {
 export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
   "control-plane": {
     viewId: "control-plane",
-    title: "DeepTrace",
+    title: "Ask",
     description:
-      "Landing surface for the agent trust control plane. Start from receipts, delegation, investigation, and the packaged operator flows.",
+      "Landing surface for the agent trust control plane. Start from receipts, delegation, investigation, and packaged operator flows.",
     paths: ["/", "/control-plane", "/home", "/landing"],
     dataEndpoints: [],
     actions: [
@@ -165,6 +165,24 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     ],
     relatedToolCategories: ["research", "verification", "learning"],
     tags: ["strategy", "product-direction", "memo", "credibility", "evidence"],
+    requiresAuth: false,
+  },
+
+  "deep-sim": {
+    viewId: "deep-sim",
+    title: "Decision Workbench",
+    description:
+      "Deep Sim surface for decision memos, variable maps, source packets, scenario comparison, and ranked interventions under uncertainty.",
+    paths: ["/deep-sim"],
+    dataEndpoints: [],
+    actions: [
+      { name: "switchFixture", description: "Switch between the investor diligence and founder strategy golden demo fixtures" },
+      { name: "reviewScenarioSet", description: "Inspect the three primary scenario branches and their assumptions" },
+      { name: "reviewInterventionLadder", description: "Inspect ranked interventions and their expected deltas" },
+      { name: "openEvidenceDrawer", description: "Open the evidence drawer to inspect claim-level support and contradictions" },
+    ],
+    relatedToolCategories: ["deep_sim", "research", "verification"],
+    tags: ["deep-sim", "decision-workbench", "scenarios", "interventions", "variables", "memo"],
     requiresAuth: false,
   },
 
@@ -749,9 +767,9 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
 
   oracle: {
     viewId: "oracle",
-    title: "The Oracle",
+    title: "System",
     description:
-      "Operational memory and telemetry surface for long-running AI work, strategy loops, and builder oversight.",
+      "Operational health, benchmarks, spend, and quality reviews for agents and infrastructure.",
     paths: ["/oracle", "/career", "/trajectory"],
     dataEndpoints: [],
     actions: [
@@ -776,6 +794,108 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     ],
     relatedToolCategories: ["platform", "verification"],
     tags: ["dev-dashboard", "engineering", "milestones", "timeline", "internal"],
+    requiresAuth: false,
+  },
+
+  "mission-control": {
+    viewId: "mission-control",
+    title: "Mission Control",
+    description:
+      "Active missions, task execution, judge queue, and validation checks. Manage the planner-worker-judge-merge pipeline for multi-step agent workflows.",
+    paths: ["/internal/mission-control", "/mission-control", "/missions"],
+    dataEndpoints: [
+      { method: "query", name: "missions:missionOrchestrator:getMission" },
+      { method: "query", name: "missions:missionOrchestrator:getTasksForMission" },
+      { method: "query", name: "missions:missionOrchestrator:getPendingSniffChecks" },
+    ],
+    actions: [
+      { name: "reviewMissions", description: "View active missions and their execution status" },
+      { name: "inspectJudgeQueue", description: "Review pending validation checks and judge verdicts" },
+      { name: "viewPreExecutionGates", description: "Inspect boolean gate results for mission tasks" },
+    ],
+    relatedToolCategories: ["mission", "verification", "eval"],
+    tags: ["mission-control", "missions", "judge", "sniff-check", "gate", "internal"],
+    requiresAuth: false,
+  },
+
+  "evolution": {
+    viewId: "evolution",
+    title: "Evolution",
+    description:
+      "Self-evolution dashboard showing rubric change proposals, health metrics, and evolution verification results.",
+    paths: ["/internal/evolution"],
+    dataEndpoints: [],
+    actions: [
+      { name: "reviewEvolutionCycles", description: "Inspect recent self-evolution proposals and outcomes" },
+      { name: "checkHealthMetrics", description: "View the 10 boolean health metrics for the agent system" },
+    ],
+    relatedToolCategories: ["eval", "verification"],
+    tags: ["evolution", "self-improvement", "rubric", "health", "internal"],
+    requiresAuth: false,
+  },
+
+  postmortem: {
+    viewId: "postmortem",
+    title: "Postmortem",
+    description:
+      "Compare predictions against reality, score forecasts, and update priors based on outcome evidence.",
+    paths: ["/postmortem", "/forecast-review", "/scorecard"],
+    dataEndpoints: [],
+    actions: [
+      { name: "reviewForecasts", description: "Compare forecast predictions against actual outcomes" },
+      { name: "updatePriors", description: "Update belief priors based on postmortem evidence" },
+    ],
+    relatedToolCategories: ["eval", "verification", "learning"],
+    tags: ["postmortem", "forecast", "scorecard", "priors", "outcomes"],
+    requiresAuth: false,
+  },
+
+  "api-keys": {
+    viewId: "api-keys",
+    title: "API Keys",
+    description:
+      "Manage MCP API keys — create, revoke, and monitor usage of API credentials for external integrations.",
+    paths: ["/internal/api-keys", "/api-keys"],
+    dataEndpoints: [],
+    actions: [
+      { name: "createKey", description: "Generate a new API key" },
+      { name: "revokeKey", description: "Revoke an existing API key" },
+    ],
+    relatedToolCategories: ["platform", "security"],
+    tags: ["api-keys", "credentials", "security", "integrations"],
+    requiresAuth: true,
+  },
+
+  developers: {
+    viewId: "developers",
+    title: "Developers",
+    description:
+      "Developer portal — API documentation, integration guides, and SDK references for building on NodeBench.",
+    paths: ["/developers", "/docs/api"],
+    dataEndpoints: [],
+    actions: [
+      { name: "browseEndpoints", description: "Browse available API endpoints and schemas" },
+      { name: "testEndpoint", description: "Send a test request to an API endpoint" },
+    ],
+    relatedToolCategories: ["platform", "boilerplate"],
+    tags: ["developers", "api", "documentation", "sdk", "integration"],
+    requiresAuth: false,
+  },
+
+  "agent-telemetry": {
+    viewId: "agent-telemetry",
+    title: "Agent Telemetry",
+    description:
+      "Full agent telemetry: every action, tool call breakdown, per-tool cost and latency, error log, and session summary.",
+    paths: ["/agent-telemetry", "/telemetry", "/agent-actions"],
+    dataEndpoints: [],
+    actions: [
+      { name: "sortToolBreakdown", description: "Sort tool call table by calls, cost, latency, or errors" },
+      { name: "expandAction", description: "Expand a recent action to see input/output details" },
+      { name: "filterErrors", description: "View error log with severity filtering" },
+    ],
+    relatedToolCategories: ["platform", "verification", "eval", "flywheel"],
+    tags: ["telemetry", "agent-actions", "tool-calls", "cost", "latency", "errors", "monitoring"],
     requiresAuth: false,
   },
 };

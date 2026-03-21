@@ -10,11 +10,7 @@
  */
 
 import { v } from "convex/values";
-import {
-  internalAction,
-  internalMutation,
-  internalQuery,
-} from "../../_generated/server";
+import { internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { getLanguageModelSafe } from "./mcp_tools/models/modelResolver";
 import { generateText } from "ai";
@@ -36,9 +32,6 @@ const EVOLUTION_SAFETY_GATES = {
   minGatesAfterChange: 3,
 } as const;
 
-/** BOUND: Max traces and eval runs to process per cycle */
-const MAX_TRACES = 500;
-const MAX_EVAL_RUNS = 100;
 /** BOUND: Max decisions to carry in analysis */
 const MAX_DECISIONS = 200;
 /** TIMEOUT: LLM call timeout in ms */
@@ -115,7 +108,7 @@ export const analyzeDecisionLogs = internalAction({
       metadata?: Record<string, unknown>;
       workflowName: string;
     }> = await ctx.runQuery(
-      internal.domains.agents.selfEvolution.queryRecentTraces,
+      internal.domains.agents.selfEvolutionQueries.queryRecentTraces,
       { cutoff },
     );
 
@@ -128,7 +121,7 @@ export const analyzeDecisionLogs = internalAction({
       failedCases: number;
       totalCases: number;
     }> = await ctx.runQuery(
-      internal.domains.agents.selfEvolution.queryRecentEvalRuns,
+      internal.domains.agents.selfEvolutionQueries.queryRecentEvalRuns,
       { cutoff },
     );
 
@@ -280,7 +273,7 @@ Propose rubric changes to improve agent decision quality. Focus on:
           model,
           system: systemPrompt,
           prompt: userPrompt,
-          maxTokens: 2000,
+          maxOutputTokens: 2000,
           abortSignal: controller.signal,
         });
       } finally {
@@ -344,75 +337,6 @@ Propose rubric changes to improve agent decision quality. Focus on:
 });
 
 // ============================================================================
-// Step 3: Persist Evolution
-// ============================================================================
-
-/**
- * Persists proposed changes to the rubricEvolutions table.
- * Tracks version history with before/after state and confidence.
- */
-export const applyRubricEvolution = internalMutation({
-  args: {
-    proposal: v.any(),
-    analysis: v.any(),
-    cycleId: v.string(),
-  },
-  returns: v.id("rubricEvolutions"),
-  handler: async (ctx, args) => {
-    const proposal = args.proposal as RubricProposal;
-    const analysis = args.analysis as DecisionAnalysis;
-
-    const id = await ctx.db.insert("rubricEvolutions", {
-      cycleId: args.cycleId,
-      version: Date.now(),
-      changes: proposal.changes.map((c) => ({
-        type: c.type,
-        gateName: c.gateName,
-        reasoning: c.reasoning,
-        confidence: c.confidence,
-        before: c.before ?? "",
-        after: c.after ?? "",
-      })),
-      overallReasoning: proposal.overallReasoning,
-      expectedImpact: proposal.expectedImpact,
-      analysisSnapshot: {
-        totalDecisions: analysis.totalDecisions,
-        postRate: analysis.postRate,
-        falsePositiveRate: analysis.falsePositiveRate,
-        dataWindowDays: analysis.rubricHealth.dataWindowDays,
-        gateCount: analysis.rubricHealth.gateCount,
-      },
-      appliedAt: Date.now(),
-      status: proposal.changes.length > 0 ? "applied" : "skipped",
-    });
-
-    return id;
-  },
-});
-
-// ============================================================================
-// Step 4: Audit Trail Query
-// ============================================================================
-
-/**
- * Returns the evolution audit trail, most recent first.
- */
-export const getEvolutionHistory = internalQuery({
-  args: {
-    limit: v.optional(v.number()),
-  },
-  returns: v.any(),
-  handler: async (ctx, args) => {
-    const limit = args.limit ?? 20;
-    const evolutions = await ctx.db
-      .query("rubricEvolutions")
-      .order("desc")
-      .take(limit);
-    return evolutions;
-  },
-});
-
-// ============================================================================
 // Step 5: Full Pipeline
 // ============================================================================
 
@@ -458,9 +382,53 @@ export const runSelfEvolutionCycle = internalAction({
       { analysis, currentGateNames: currentGates },
     );
 
+    // Step 2.5: Verification gate — simulate impact and detect thrashing before applying
+    if (proposal.changes.length > 0) {
+      try {
+        const verification = await ctx.runAction(
+          internal.domains.agents.evolutionVerification.verifyRubricProposal,
+          { proposedChanges: proposal.changes },
+        );
+        if (!verification.approved) {
+          // Block the proposal — record as skipped with rejection reason
+          const evolutionId = await ctx.runMutation(
+            internal.domains.agents.selfEvolutionQueries.applyRubricEvolution,
+            {
+              proposal: {
+                ...proposal,
+                changes: [], // Clear changes — they were rejected
+                overallReasoning: `${proposal.overallReasoning} [VERIFICATION BLOCKED: ${verification.rejectionReason}]`,
+                expectedImpact: "none — blocked by verification gate",
+              },
+              analysis,
+              cycleId,
+            },
+          );
+          return {
+            cycleId,
+            evolutionId,
+            changesApplied: 0,
+            overallReasoning: `Verification blocked: ${verification.rejectionReason}`,
+            expectedImpact: "none — blocked by verification gate",
+            analysisSnapshot: {
+              totalDecisions: analysis.totalDecisions,
+              postRate: analysis.postRate,
+              falsePositiveRate: analysis.falsePositiveRate,
+            },
+            verification,
+            durationMs: Date.now() - startedAt,
+          };
+        }
+      } catch (err) {
+        // Non-blocking: if verification fails, proceed with the proposal
+        // (fail-open for verification — we'd rather apply a change than block on verification error)
+        console.error("Verification gate error:", err instanceof Error ? err.message : String(err));
+      }
+    }
+
     // Step 3: Apply
     const evolutionId = await ctx.runMutation(
-      internal.domains.agents.selfEvolution.applyRubricEvolution,
+      internal.domains.agents.selfEvolutionQueries.applyRubricEvolution,
       { proposal, analysis, cycleId },
     );
 
@@ -477,36 +445,6 @@ export const runSelfEvolutionCycle = internalAction({
       },
       durationMs: Date.now() - startedAt,
     };
-  },
-});
-
-// ============================================================================
-// Internal Helper Queries
-// ============================================================================
-
-/** @internal Fetch recent agentTaskTraces after cutoff. */
-export const queryRecentTraces = internalQuery({
-  args: { cutoff: v.number() },
-  returns: v.any(),
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("agentTaskTraces")
-      .filter((q) => q.gte(q.field("startedAt"), args.cutoff))
-      .order("desc")
-      .take(500);
-  },
-});
-
-/** @internal Fetch recent evalRuns after cutoff. */
-export const queryRecentEvalRuns = internalQuery({
-  args: { cutoff: v.number() },
-  returns: v.any(),
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("evalRuns")
-      .filter((q) => q.gte(q.field("startedAt"), args.cutoff))
-      .order("desc")
-      .take(100);
   },
 });
 

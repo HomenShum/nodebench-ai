@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Id } from '../../convex/_generated/dataModel';
-import { MainView } from './useMainLayoutRouting';
+import type { MainView } from '@/lib/registry/viewRegistry';
 
 interface UseGlobalEventListenersOptions {
     // Agent Panel

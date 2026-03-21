@@ -15,8 +15,8 @@
 import { useEffect, useRef } from "react";
 import { useConvex } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import type { MainView } from "./useMainLayoutRouting";
-import { getViewTools, type ViewToolDefinition } from "../lib/viewToolMap";
+import type { MainView } from "@/lib/registry/viewRegistry";
+import { getViewTools, type ViewToolDefinition } from "@/lib/registry/viewToolMap";
 
 // ---------------------------------------------------------------------------
 // Typed route dispatch — maps gateway function names to Convex API refs

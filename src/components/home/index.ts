@@ -5,11 +5,13 @@
 
 // Phase 1: Foundation & Core Infrastructure
 export { ThemeCustomizer } from '../ThemeCustomizer';
-export { SkipLinks } from '../SkipLinks';
-export { LiveRegion } from '../LiveRegion';
+export { SkipLinks } from '../../shared/components/SkipLinks';
+export { LiveRegion } from '../../shared/components/LiveRegion';
+export { ContextPills } from '../../shared/components/ContextPills';
+export { ViewBreadcrumbs } from '../../shared/components/ViewBreadcrumbs';
 
 // Phase 2: Intelligent Features
-export { QuickCaptureWidget } from '../QuickCapture/QuickCaptureWidget';
+export { QuickCaptureWidget } from '../../layouts/chrome/QuickCaptureWidget';
 export { RecommendationCard } from '../RecommendationCard';
 export { RecommendationPanel } from '../RecommendationPanel';
 export {
@@ -36,7 +38,7 @@ export {
   StaggerList,
   StaggerItem,
   Collapsible,
-} from '../AnimatedComponents';
+} from '../../shared/components/AnimatedComponents';
 export { PersonalAnalytics } from '../PersonalAnalytics';
 export { OnboardingFlow } from '../OnboardingFlow';
 export {
@@ -49,7 +51,7 @@ export {
   EmptyRecommendations,
   ErrorState,
   OfflineState,
-} from '../EmptyStates';
+} from '../../shared/components/EmptyStates';
 
 // Hooks
 export { useCommandPalette } from '../../hooks/useCommandPalette';
@@ -65,4 +67,3 @@ export * from '../../utils/a11y';
 
 // Types
 export type { Theme, ThemeMode, AccentColor, DensityLevel } from '../../types/theme';
-

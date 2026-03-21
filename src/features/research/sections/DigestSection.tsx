@@ -10,7 +10,7 @@
 import React, { Suspense } from 'react';
 import { MorningDigest } from '../components/MorningDigest';
 import { DigestSkeleton } from '@/components/skeletons';
-import { ErrorBoundary, DigestErrorFallback } from '@/components/ErrorBoundary';
+import { ErrorBoundary, DigestErrorFallback } from "@/shared/components/ErrorBoundary";
 
 interface DigestSectionProps {
   /** User's display name */

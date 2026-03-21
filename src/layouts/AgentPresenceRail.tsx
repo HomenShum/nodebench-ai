@@ -1,0 +1,269 @@
+import { memo, useEffect, useState } from "react";
+import { useConvexAuth, useQuery } from "convex/react";
+import { Activity, CheckCircle2, Clock, Mic, Shield, TrendingUp, FileText, ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
+import { api } from "../../convex/_generated/api";
+import { cn } from "@/lib/utils";
+import type { CockpitSurfaceId, MainView } from "@/lib/registry/viewRegistry";
+
+interface AgentPresenceRailProps {
+  currentSurface: CockpitSurfaceId;
+  currentView: MainView;
+  currentObjective: string;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
+  onOpenAgent?: () => void;
+  lastVoiceInstruction?: string | null;
+}
+
+const SURFACE_DESCRIPTIONS: Record<CockpitSurfaceId, string> = {
+  ask: "Prompt-first workbench for starting or redirecting a run.",
+  memo: "Decision-grade artifact surface with scenarios and interventions.",
+  research: "Evidence gathering, signals, and source review.",
+  investigate: "Adversarial analysis, provenance review, and counter-arguments.",
+  compare: "Score predictions against reality and update priors.",
+  editor: "Document, spreadsheet, and planning workspace.",
+  graph: "Entity, trust, and relationship context.",
+  trace: "Receipts, approvals, and execution audit trail.",
+  telemetry: "System health, benchmarks, spend, and quality reviews.",
+};
+
+export const AgentPresenceRail = memo(function AgentPresenceRail({
+  currentSurface,
+  currentView,
+  currentObjective,
+  isCollapsed = false,
+  onToggleCollapse,
+  onOpenAgent,
+  lastVoiceInstruction,
+}: AgentPresenceRailProps) {
+  const { isAuthenticated } = useConvexAuth();
+  const agentStats = useQuery(api.domains.agents.agentHubQueries.getAgentStats, isAuthenticated ? {} : "skip");
+  const pendingApprovals = useQuery(
+    api.domains.agents.receipts.actionReceipts.listPendingApprovals,
+    isAuthenticated ? { limit: 5 } : "skip",
+  );
+  const latestReceipts = useQuery(
+    api.domains.agents.receipts.actionReceipts.list,
+    isAuthenticated ? { limit: 12 } : "skip",
+  );
+
+  const approvalCount = Array.isArray(pendingApprovals) ? pendingApprovals.length : 0;
+  const evidenceCount = Array.isArray(latestReceipts) ? latestReceipts.length : 0;
+  const successRate = agentStats?.successRate ?? 0;
+  const activeAgentCount = agentStats?.activeNow ?? 0;
+  const totalAgentCount = agentStats?.totalAgents ?? 0;
+
+  return (
+    <aside
+      className={cn(
+        "relative shrink-0 border-l border-white/[0.06] bg-white/[0.02] backdrop-blur-xl transition-[width] duration-200 ease-in-out",
+        isCollapsed ? "w-0 overflow-visible" : "block w-[292px]",
+      )}
+      role="complementary"
+      aria-label="Agent presence rail"
+      data-agent-id="cockpit:presence-rail"
+    >
+      {onToggleCollapse ? (
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="absolute -left-6 top-3 z-10 flex h-6 w-6 items-center justify-center rounded-l-md border border-r-0 border-white/[0.06] bg-white/[0.04] text-content-muted hover:text-content"
+          aria-label={isCollapsed ? "Expand agent rail" : "Collapse agent rail"}
+        >
+          {isCollapsed ? <ChevronLeft className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+        </button>
+      ) : null}
+
+      <div
+        className={cn(
+          "flex h-full flex-col gap-3 px-3 py-3",
+          isCollapsed ? "pointer-events-none overflow-hidden opacity-0" : "overflow-y-auto opacity-100",
+        )}
+      >
+        {/* Prominent agent toggle — always visible at top */}
+        {onOpenAgent ? (
+          <button
+            type="button"
+            onClick={onOpenAgent}
+            className="flex w-full items-center gap-3 rounded-2xl border border-[#d97757]/30 bg-[#d97757]/10 px-4 py-3 text-left transition-colors hover:bg-[#d97757]/20"
+            aria-label="Open Ask NodeBench agent panel"
+            data-agent-id="cockpit:open-agent"
+            data-agent-action="open-panel"
+          >
+            <Sparkles className="h-4 w-4 shrink-0 text-[#d97757]" />
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-content">Ask NodeBench</div>
+              <div className="truncate text-xs text-content-muted">Docs, architecture, codebase</div>
+            </div>
+          </button>
+        ) : null}
+
+        <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-3">
+          <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-content-muted">
+            <Activity className="h-3.5 w-3.5" />
+            Agent status
+          </div>
+          <div className="mt-2 text-sm font-semibold text-content">{currentObjective}</div>
+          <div className="mt-1 text-xs text-content-muted">{SURFACE_DESCRIPTIONS[currentSurface]}</div>
+          <div className="mt-3 flex items-center gap-2 text-xs text-emerald-400">
+            <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
+            {isAuthenticated ? "Connected runtime" : "Guest runtime"}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-3">
+          <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-content-muted">
+            <FileText className="h-3.5 w-3.5" />
+            Active plan
+          </div>
+          <ol className="mt-3 space-y-2 text-xs text-content-muted">
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
+              Review agent actions and evidence
+            </li>
+            <li className="flex items-start gap-2">
+              <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cyan-400" />
+              Answer questions with traced evidence
+            </li>
+            <li className="flex items-start gap-2">
+              <Shield className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
+              {approvalCount > 0 ? `${approvalCount} action${approvalCount === 1 ? "" : "s"} waiting for approval` : "No actions waiting for approval"}
+            </li>
+          </ol>
+        </section>
+
+        <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-3" data-agent-id="cockpit:runtime-metrics">
+          <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-content-muted">
+            <TrendingUp className="h-3.5 w-3.5" />
+            Runtime metrics
+          </div>
+          {successRate > 0 || evidenceCount > 0 || activeAgentCount > 0 ? (
+            <div className="mt-3 space-y-3">
+              <MetricBar label="Success rate" value={`${successRate}%`} progress={successRate} tone="emerald" />
+              <MetricBar label="Evidence" value={`${evidenceCount} receipts`} progress={Math.min(100, evidenceCount * 8)} tone="cyan" />
+              <MetricBar
+                label="Active agents"
+                value={totalAgentCount > 0 ? `${activeAgentCount}/${totalAgentCount}` : `${activeAgentCount}`}
+                progress={totalAgentCount > 0 ? (activeAgentCount / totalAgentCount) * 100 : 0}
+                tone="amber"
+              />
+              <LatencyBadge />
+            </div>
+          ) : (
+            <div className="mt-3 space-y-1.5 text-xs text-content-muted">
+              {isAuthenticated ? (
+                <span>No activity yet — metrics appear as agents run</span>
+              ) : (
+                <>
+                  <div className="flex justify-between"><span>Actions traced</span><span className="text-content">6</span></div>
+                  <div className="flex justify-between"><span>Denied by policy</span><span className="text-[#c47060]">1</span></div>
+                  <div className="flex justify-between"><span>Facts verified</span><span className="text-emerald-400">4</span></div>
+                </>
+              )}
+              <LatencyBadge />
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-3" data-agent-id="cockpit:voice">
+          <div className="flex items-center gap-2 text-xs text-content-muted">
+            <Mic className="h-3.5 w-3.5 text-emerald-400" />
+            {lastVoiceInstruction ? <span className="truncate" title={lastVoiceInstruction}>Last: {lastVoiceInstruction}</span> : "Voice available"}
+          </div>
+        </section>
+      </div>
+    </aside>
+  );
+});
+
+function MetricBar({
+  label,
+  value,
+  progress,
+  tone,
+}: {
+  label: string;
+  value: string;
+  progress: number;
+  tone: "emerald" | "cyan" | "amber";
+}) {
+  const color =
+    tone === "emerald"
+      ? "bg-emerald-400"
+      : tone === "cyan"
+        ? "bg-cyan-400"
+        : "bg-amber-400";
+
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between text-xs">
+        <span className="text-content-muted">{label}</span>
+        <span className="font-semibold text-content">{value}</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-white/10">
+        <div className={cn("h-full rounded-full", color)} style={{ width: `${Math.max(4, Math.min(100, progress))}%` }} />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * LatencyBadge — shows average tool dispatch latency with color coding.
+ * Fetches from the MCP gateway health endpoint. Falls back to demo value.
+ *
+ * Color thresholds:
+ *   < 200ms  → emerald (fast)
+ *   200-500ms → amber (acceptable)
+ *   > 500ms  → rose (slow)
+ */
+const GATEWAY_HEALTH_URL = "/mcp/health";
+
+function LatencyBadge() {
+  const [avgMs, setAvgMs] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(GATEWAY_HEALTH_URL)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        if (data?.latency?.p50 != null) {
+          setAvgMs(data.latency.p50);
+        }
+      })
+      .catch(() => {
+        // Gateway unavailable — show demo value
+        if (!cancelled) setAvgMs(142);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const displayMs = avgMs ?? 142;
+  const color =
+    displayMs < 200
+      ? "text-emerald-400"
+      : displayMs <= 500
+        ? "text-amber-400"
+        : "text-rose-400";
+  const dotColor =
+    displayMs < 200
+      ? "bg-emerald-400"
+      : displayMs <= 500
+        ? "bg-amber-400"
+        : "bg-rose-400";
+
+  return (
+    <div className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5" data-agent-id="cockpit:latency-badge">
+      <div className="flex items-center gap-1.5 text-xs text-content-muted">
+        <Clock className="h-3 w-3" />
+        Avg latency
+      </div>
+      <div className={cn("flex items-center gap-1.5 text-xs font-semibold tabular-nums", color)}>
+        <span className={cn("inline-block h-1.5 w-1.5 rounded-full", dotColor)} />
+        {displayMs}ms
+      </div>
+    </div>
+  );
+}
+
+export default AgentPresenceRail;

@@ -7,13 +7,13 @@
  * - Visual polish: Softer borders, refined shadows, status dot indicator
  */
 
-import { useRef, memo, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, memo, useMemo, useState, lazy, Suspense } from "react";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 import {
-  Edit3, Star, Trash2, Link2, Sparkles, GripVertical, Table2, FileText, Clock, Play, Eye, Code2
+  Edit3, Star, Trash2, Link2, Sparkles, GripVertical, Clock, Play, Eye,
 } from "lucide-react";
 import { FileTypeIcon } from "@/shared/components/FileTypeIcon";
-import { inferFileType, type FileType } from "@/lib/fileTypes";
+import type { FileType } from "@/lib/fileTypes";
 import { getThemeForFileType } from "@/lib/documentThemes";
 import { getAIStatus, type DocumentCardData } from "../utils/documentHelpers";
 import { useQuery } from "convex/react";
@@ -26,11 +26,16 @@ import {
   MarkdownPreview,
   NotePreview,
   EmptyStateOverlay,
-  ImageFallback,
-} from "../../RichPreviews";
+} from "../../previews";
+import { resolvePreviewDescriptor } from "../../previewDescriptor";
+import { inferDocFileType } from "./cardFileTypeHelpers";
+
+const LazyVisualGlimpse = lazy(() => import("./VisualGlimpse"));
 
 export interface DocumentCardProps {
   doc: DocumentCardData;
+  persistedTags?: Array<{ _id?: Id<"tags">; name: string; kind?: string; importance?: number }>;
+  loadPersistedTags?: boolean;
   onSelect: (documentId: Id<"documents">) => void;
   onDelete?: (documentId: Id<"documents">) => void;
   onToggleFavorite?: (documentId: Id<"documents">) => void;
@@ -84,259 +89,58 @@ function formatFileSize(bytes?: number): string | null {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/** Code file extensions for smart detection */
-const CODE_EXTENSIONS = new Set([
-  'html', 'htm', 'js', 'jsx', 'ts', 'tsx', 'py', 'rb', 'go', 'rs', 'java',
-  'cpp', 'c', 'h', 'hpp', 'cs', 'swift', 'kt', 'scala', 'php', 'vue', 'svelte',
-  'css', 'scss', 'sass', 'less', 'json', 'xml', 'yaml', 'yml', 'toml', 'ini',
-  'sh', 'bash', 'zsh', 'ps1', 'bat', 'sql', 'graphql', 'prisma'
-]);
-
-/** Smart type detection - ensures code files are detected even if labeled as "text" */
-function getSmartFileType(doc: DocumentCardData, baseType: FileType): FileType {
-  const title = String(doc.title || doc.fileName || "").toLowerCase();
-  const ext = title.split('.').pop() || "";
-
-  // Force-detect code files even if system labeled them as "text"
-  if (CODE_EXTENSIONS.has(ext)) {
-    return 'code';
-  }
-
-  // Detect Quick Notes (nbdoc type or title pattern)
-  if (doc.documentType === 'document' && !doc.fileSize) {
-    // NodeBench documents without file size are likely Quick Notes
-    if (title.includes('quick note') || title.startsWith('note ')) {
-      return 'nbdoc';
-    }
-  }
-
-  return baseType;
-}
-
-/** Infer FileType for theming */
-function inferDocFileType(doc: DocumentCardData): FileType {
-  let baseType: FileType;
-
-  if (doc.documentType === "file") {
-    const ft = String(doc.fileType || "").toLowerCase();
-    if (["video", "audio", "image", "csv", "pdf", "excel", "json", "text", "code", "web", "document"].includes(ft)) {
-      baseType = ft as FileType;
-    } else {
-      baseType = inferFileType({ name: doc.fileName || doc.title });
-    }
-  } else {
-    const lower = String(doc.title || "").toLowerCase();
-    const looksLikeFile = /\.(csv|xlsx|xls|pdf|mp4|mov|webm|avi|mkv|jpg|jpeg|png|webp|gif|json|txt|md|markdown|js|ts|tsx|jsx|py|rb|go|rs|html|css|scss|sh)$/.test(lower);
-    baseType = looksLikeFile ? inferFileType({ name: doc.title }) : inferFileType({ name: doc.title, isNodebenchDoc: true });
-  }
-
-  // Apply smart type detection to catch code files labeled as "text"
-  return getSmartFileType(doc, baseType);
-}
-
-/**
- * Visual Glimpse Component - High-fidelity "Miniature Twin" previews
- * Images: Actual thumbnails with zoom on hover + error fallback
- * Videos: Thumbnail/preview with play overlay, loops on hover
- * Spreadsheets: CSS Grid table with cells
- * Code/HTML: Mini-IDE with syntax coloring
- * Docs: Typography layout with headings
- * Empty files: Warning overlay
- */
-function VisualGlimpse({
+function DeferredPreviewPlaceholder({
   doc,
   typeGuess,
   isEmpty = false,
-  onImageError,
-  hasImageError = false,
 }: {
   doc: DocumentCardData;
   typeGuess: FileType;
   isEmpty?: boolean;
-  onImageError?: () => void;
-  hasImageError?: boolean;
 }) {
-  const theme = getThemeForFileType(typeGuess);
-
-  // Wrapper with empty state overlay
-  const renderWithEmptyState = (content: React.ReactNode) => (
-    <div className="w-full h-full relative">
-      {content}
-      {isEmpty && <EmptyStateOverlay variant="empty" />}
-    </div>
-  );
-
-  // IMAGE: Show actual thumbnail with hover zoom effect
-  if (typeGuess === 'image') {
-    const imageUrl = doc.thumbnailUrl || doc.mediaUrl || doc.coverImage;
-    if (hasImageError || !imageUrl) {
-      return renderWithEmptyState(<ImageFallback />);
-    }
-    return renderWithEmptyState(
-      <div className="w-full h-full bg-surface-hover rounded-lg overflow-hidden group/img">
-        <img
-          src={imageUrl}
-          alt={doc.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110"
-          loading="lazy"
-          onError={onImageError}
-        />
-      </div>
-    );
-  }
-
-  // VIDEO: Show thumbnail with play overlay, loops on hover
-  if (typeGuess === 'video') {
-    const videoUrl = doc.mediaUrl;
-    return renderWithEmptyState(
-      <div className="w-full h-full bg-surface rounded-lg overflow-hidden relative group/vid">
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10 pointer-events-none" />
-
-        {/* Play button overlay */}
-        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-          <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 transition-all duration-300 group-hover/vid:scale-110 group-hover/vid:bg-white/30 shadow-lg">
-            <Play className="w-5 h-5 text-white fill-white ml-0.5" />
-          </div>
-        </div>
-
-        {videoUrl ? (
-          <video
-            src={videoUrl}
-            className="w-full h-full object-cover opacity-80 group-hover/vid:opacity-100 transition-opacity duration-300"
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            onMouseOver={(e) => e.currentTarget.play().catch(() => {})}
-            onMouseOut={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-purple-900/40 to-purple-800/20 flex items-center justify-center">
-            <Play className="w-10 h-10 text-purple-300/50" />
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Cover image for non-media documents
-  if (doc.coverImage && !hasImageError) {
-    return renderWithEmptyState(
-      <div className="w-full h-full bg-surface-hover rounded-lg overflow-hidden">
-        <img
-          src={doc.coverImage}
-          alt=""
-          className="w-full h-full object-cover"
-          loading="lazy"
-          onError={onImageError}
-        />
-      </div>
-    );
-  }
-
-  // CSV/Excel: Rich spreadsheet preview with REAL DATA when available
-  // Only show spreadsheet preview if we have a csvUrl (actual file with storage)
-  if ((typeGuess === 'csv' || typeGuess === 'excel') && doc.csvUrl) {
-    return renderWithEmptyState(
-      <div className="w-full h-full rounded-lg overflow-hidden border border-edge">
-        <SpreadsheetPreview
-          url={doc.csvUrl}
-          content={doc.contentPreview}
-          fileType={typeGuess}
-        />
-      </div>
-    );
-  }
-
-  // CSV/Excel meta-documents (like "Analysis: file.csv") without actual file storage
-  // Fall through to text document rendering to show their content with styled preview
-  if ((typeGuess === 'csv' || typeGuess === 'excel') && !doc.csvUrl) {
-    if (doc.contentPreview) {
-      // Show actual content with sticky note style (like Quick Notes)
-      return renderWithEmptyState(
-        <div className="w-full h-full bg-gradient-to-br from-amber-50/80 via-yellow-50/60 to-orange-50/30 rounded-lg p-2.5 overflow-hidden relative">
-          {/* Red margin line */}
-          <div className="absolute top-0 bottom-0 left-3 w-[1px] bg-red-200/40" />
-          <p className="ml-4 line-clamp-4 text-xs leading-relaxed text-content/90 italic">
-            {doc.contentPreview}
-          </p>
-        </div>
-      );
-    }
-    // If no content preview, show abstract document icon
-    return renderWithEmptyState(
-      <div className="w-full h-full rounded-lg overflow-hidden">
+  if (isEmpty) {
+    return (
+      <div className="w-full h-full relative">
         <MarkdownPreview hasContent={false} />
+        <EmptyStateOverlay variant="empty" />
       </div>
     );
   }
 
-  // Quick Notes (nbdoc): Sticky note / paper pad look
-  if (typeGuess === 'nbdoc') {
-    if (doc.contentPreview) {
-      // Show actual content with yellow tint
-      return renderWithEmptyState(
-        <div className="w-full h-full bg-gradient-to-br from-amber-50/80 via-yellow-50/60 to-orange-50/30 rounded-lg p-2.5 overflow-hidden relative">
-          {/* Red margin line */}
-          <div className="absolute top-0 bottom-0 left-3 w-[1px] bg-red-200/40" />
-          <p className="ml-4 line-clamp-4 text-xs leading-relaxed text-content/90 italic">
-            {doc.contentPreview}
-          </p>
-        </div>
-      );
-    }
-    return renderWithEmptyState(
-      <div className="w-full h-full rounded-lg overflow-hidden">
-        <NotePreview />
-      </div>
-    );
-  }
-
-  // Text/PDF/Docs: Typography layout or actual snippet
-  if (['pdf', 'text', 'document'].includes(typeGuess)) {
-    if (doc.contentPreview) {
-      return renderWithEmptyState(
-        <div className="w-full h-full bg-gradient-to-br from-surface-secondary/95 to-surface rounded-lg p-2.5 overflow-hidden">
-          <p className="line-clamp-4 text-xs leading-relaxed text-content/90">
-            {doc.contentPreview}
-          </p>
-        </div>
-      );
-    }
-    return renderWithEmptyState(
-      <div className="w-full h-full rounded-lg overflow-hidden">
-        <MarkdownPreview hasContent={!!doc.contentPreview} />
-      </div>
-    );
-  }
-
-  // Code/Web/HTML: Mini-IDE preview with dark theme
-  if (['code', 'web'].includes(typeGuess)) {
-    return renderWithEmptyState(
-      <div className="w-full h-full rounded-lg overflow-hidden relative group/code">
-        <CodePreview />
-        {/* Hover: Preview Button */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover/code:opacity-100 transition-opacity backdrop-blur-[1px]">
-          <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 text-white text-xs font-medium rounded-full shadow-lg">
-            <Eye className="w-3 h-3" />
-            <span>Preview</span>
-          </div>
+  if (typeGuess === "image" || typeGuess === "video") {
+    return (
+      <div className="w-full h-full rounded-lg bg-gradient-to-br from-surface-secondary via-surface to-surface-hover flex items-center justify-center">
+        <div className="flex items-center gap-1.5 rounded-full border border-edge bg-surface/90 px-2.5 py-1 text-[10px] font-medium text-content-secondary shadow-sm">
+          {typeGuess === "video" ? (
+            <Play className="h-3 w-3" />
+          ) : (
+            <Eye className="h-3 w-3" />
+          )}
+          Preview
         </div>
       </div>
     );
   }
 
-  // Default: Soft gradient with faint icon
-  return renderWithEmptyState(
-    <div className={`w-full h-full rounded-lg flex items-center justify-center bg-gradient-to-br ${theme.gradient || 'from-surface-secondary to-surface-hover/50'}`}>
-      <FileTypeIcon type={typeGuess} className="h-8 w-8 opacity-20" />
-    </div>
-  );
+  if (typeGuess === "csv" || typeGuess === "excel") {
+    return <SpreadsheetPreview fileType={typeGuess} />;
+  }
+
+  if (typeGuess === "code" || typeGuess === "web" || typeGuess === "json") {
+    return <CodePreview />;
+  }
+
+  if (doc.documentType === "document" && !doc.fileSize) {
+    return <NotePreview />;
+  }
+
+  return <MarkdownPreview hasContent={!!doc.contentPreview} />;
 }
 
 export function DocumentCard({
   doc,
+  persistedTags: providedPersistedTags,
+  loadPersistedTags = true,
   onSelect,
   onDelete,
   onToggleFavorite,
@@ -354,19 +158,15 @@ export function DocumentCard({
   onOpenMedia,
 }: DocumentCardProps) {
   const clickTimerRef = useRef<number | null>(null);
+  const previewContainerRef = useRef<HTMLDivElement | null>(null);
   const clickDelay = 250;
-
-  // Check if this is a linked asset and get parent dossier info
-  const parentDossier = useQuery(
-    api.domains.documents.documents.getById,
-    (doc as any).parentDossierId ? { documentId: (doc as any).parentDossierId } : "skip"
-  );
 
   const isLinkedAsset = !!(doc as any).dossierType && (doc as any).dossierType === "media-asset";
   const isDossier = !!(doc as any).dossierType && (doc as any).dossierType === "primary";
 
   // Image error state for fallback rendering
   const [hasImageError, setHasImageError] = useState(false);
+  const [shouldRenderRichPreview, setShouldRenderRichPreview] = useState(false);
   const handleImageError = () => setHasImageError(true);
 
   // Empty file detection (size is 0 or no content)
@@ -378,14 +178,113 @@ export function DocumentCard({
   }, [doc.fileSize, doc.documentType, doc.contentPreview]);
 
   // Fetch tags from database
-  const persistedTags = useQuery(api.tags.listForDocument, { documentId: doc._id });
+  const persistedTags = useQuery(
+    api.tags.listForDocument,
+    loadPersistedTags ? { documentId: doc._id } : "skip",
+  );
+  const resolvedPersistedTags = loadPersistedTags
+    ? persistedTags
+    : providedPersistedTags;
 
   // Memoized computed values
   const typeGuess = useMemo(() => inferDocFileType(doc), [doc]);
+  const previewDescriptor = useMemo(
+    () =>
+      resolvePreviewDescriptor({
+        fileType: doc.fileType,
+        title: doc.title,
+        contentPreview: doc.contentPreview,
+        storageUrl: doc.csvUrl ?? doc.mediaUrl ?? doc.coverImage,
+        isEmpty,
+      }),
+    [doc.fileType, doc.title, doc.contentPreview, doc.csvUrl, doc.mediaUrl, doc.coverImage, isEmpty],
+  );
   const theme = useMemo(() => getThemeForFileType(typeGuess), [typeGuess]);
   const aiStatus = useMemo(() => getAIStatus(doc), [doc]);
   const statusConfig = AI_STATUS_CONFIG[aiStatus];
   const isMedia = typeGuess === 'image' || typeGuess === 'video';
+
+  const activateRichPreview = useCallback(() => {
+    setShouldRenderRichPreview(true);
+  }, []);
+
+  useEffect(() => {
+    if (shouldRenderRichPreview) return;
+
+    const node = previewContainerRef.current;
+    let timeoutId: number | null = null;
+    let idleId: number | null = null;
+
+    const scheduleActivate = () => {
+      if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+        idleId = (
+          window as Window & {
+            requestIdleCallback: (
+              callback: () => void,
+              options?: { timeout: number },
+            ) => number;
+          }
+        ).requestIdleCallback(() => {
+          setShouldRenderRichPreview(true);
+        }, { timeout: 180 });
+        return;
+      }
+
+      timeoutId = window.setTimeout(() => {
+        setShouldRenderRichPreview(true);
+      }, 80);
+    };
+
+    if (!node || typeof IntersectionObserver === "undefined") {
+      scheduleActivate();
+      return () => {
+        if (idleId !== null && typeof window !== "undefined" && "cancelIdleCallback" in window) {
+          (
+            window as Window & {
+              cancelIdleCallback: (handle: number) => void;
+            }
+          ).cancelIdleCallback(idleId);
+        }
+        if (timeoutId !== null) {
+          window.clearTimeout(timeoutId);
+        }
+      };
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          observer.disconnect();
+          scheduleActivate();
+        }
+      },
+      { rootMargin: "180px" },
+    );
+
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+      if (idleId !== null && typeof window !== "undefined" && "cancelIdleCallback" in window) {
+        (
+          window as Window & {
+            cancelIdleCallback: (handle: number) => void;
+          }
+        ).cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [shouldRenderRichPreview]);
+
+  useEffect(() => {
+    return () => {
+      if (clickTimerRef.current) {
+        window.clearTimeout(clickTimerRef.current);
+      }
+    };
+  }, []);
 
   // Format time ago
   const timeAgo = useMemo(() => {
@@ -535,18 +434,31 @@ export function DocumentCard({
         {/* 2. BODY: Visual Glimpse with Hover Overlay */}
         <div className="flex-1 min-h-0 mb-2 relative">
           <div
+            ref={previewContainerRef}
             className={`w-full h-full rounded-lg border overflow-hidden bg-surface-secondary ${
               isEmpty ? 'border-dashed border-amber-200' : 'border-edge'
             } ${isMedia && onOpenMedia ? 'cursor-pointer' : ''}`}
+            onMouseEnter={activateRichPreview}
+            onFocusCapture={activateRichPreview}
             onClick={isMedia && onOpenMedia ? handleGlimpseClick : undefined}
           >
-            <VisualGlimpse
-              doc={doc}
-              typeGuess={typeGuess}
-              isEmpty={isEmpty}
-              hasImageError={hasImageError}
-              onImageError={handleImageError}
-            />
+            {shouldRenderRichPreview ? (
+              <Suspense fallback={<DeferredPreviewPlaceholder doc={doc} typeGuess={typeGuess} isEmpty={isEmpty} />}>
+                <LazyVisualGlimpse
+                  doc={doc}
+                  typeGuess={typeGuess}
+                  isEmpty={isEmpty}
+                  hasImageError={hasImageError}
+                  onImageError={handleImageError}
+                />
+              </Suspense>
+            ) : (
+              <DeferredPreviewPlaceholder
+                doc={doc}
+                typeGuess={typeGuess}
+                isEmpty={isEmpty}
+              />
+            )}
           </div>
 
           {/* Glass-morphism Hover Overlay - different for media vs non-media */}
@@ -577,9 +489,9 @@ export function DocumentCard({
         </div>
 
         {/* 2.5. TAGS ROW: Micro-pills for semantic tags */}
-        {persistedTags && persistedTags.length > 0 && (
+        {resolvedPersistedTags && resolvedPersistedTags.length > 0 && (
           <div className="flex items-center gap-1 mb-1.5 overflow-x-auto no-scrollbar">
-            {persistedTags.slice(0, 3).map((tag) => {
+            {resolvedPersistedTags.slice(0, 3).map((tag, index) => {
               // Semantic color coding by tag kind
               const kindColors: Record<string, string> = {
                 entity: 'bg-purple-50 text-purple-600 border-purple-100', // code key unchanged
@@ -591,7 +503,7 @@ export function DocumentCard({
               const colorClass = kindColors[tag.kind || 'keyword'] || kindColors.keyword;
               return (
                 <span
-                  key={tag._id}
+                  key={tag._id ?? `${tag.name}:${index}`}
                   className={`px-1.5 py-0.5 text-[8px] font-medium rounded border whitespace-nowrap ${colorClass}`}
                   title={tag.kind ? `${tag.kind === 'entity' ? 'topic' : tag.kind}: ${tag.name}` : tag.name}
                 >
@@ -599,8 +511,8 @@ export function DocumentCard({
                 </span>
               );
             })}
-            {persistedTags.length > 3 && (
-              <span className="text-[8px] text-content-muted whitespace-nowrap">+{persistedTags.length - 3}</span>
+            {resolvedPersistedTags.length > 3 && (
+              <span className="text-[8px] text-content-muted whitespace-nowrap">+{resolvedPersistedTags.length - 3}</span>
             )}
           </div>
         )}
@@ -683,7 +595,7 @@ export function DocumentCard({
               </span>
             )}
             {isLinkedAsset && !isDossier && (
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs font-medium rounded-md bg-purple-50/90 text-purple-600 border border-purple-100" title={parentDossier ? `Linked to ${parentDossier.title}` : "Linked"}>
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs font-medium rounded-md bg-purple-50/90 text-purple-600 border border-purple-100" title="Linked asset">
                 <Link2 className="h-2 w-2" />
               </span>
             )}

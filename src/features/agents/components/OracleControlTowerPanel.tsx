@@ -21,6 +21,11 @@ import {
 } from "lucide-react";
 import { api } from "../../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
+import { TrajectorySummaryBand } from "@/features/trajectory/components/TrajectorySummaryBand";
+import type { TrajectorySummaryData } from "@/features/trajectory/types";
+import { SuccessLoopsPanel } from "@/features/agents/components/successLoops/SuccessLoopsPanel";
+import type { SuccessLoopsDashboardSnapshot } from "@/features/agents/components/successLoops/types";
+import { AgentResponseFlywheelPanel } from "./AgentResponseFlywheelPanel";
 import {
   formatCompactNumber,
   formatDurationCompact,
@@ -130,6 +135,56 @@ interface OracleControlTowerSnapshot {
       progress: number;
       status: "completed" | "in_progress" | "pending";
       current: boolean;
+    }>;
+  };
+  successLoops: SuccessLoopsDashboardSnapshot;
+  responseFlywheel: {
+    summary: {
+      totalReviews: number;
+      passCount: number;
+      watchCount: number;
+      failCount: number;
+      passRate: number;
+      averageOverallScore: number;
+      weakestDimension: null | {
+        key: string;
+        label: string;
+        averageScore: number;
+      };
+      strongestDimension: null | {
+        key: string;
+        label: string;
+        averageScore: number;
+      };
+      hottestQuestionCategory: null | {
+        key: string;
+        label: string;
+        count: number;
+      };
+      latestReviewedAt: number | null;
+    };
+    dimensions: Array<{
+      key: string;
+      label: string;
+      averageScore: number;
+      status: "strong" | "watch" | "weak";
+    }>;
+    categories: Array<{
+      key: string;
+      label: string;
+      count: number;
+      outputVariables: string[];
+    }>;
+    recentFindings: Array<{
+      reviewKey: string;
+      messageId: string;
+      promptSummary: string;
+      status: "pass" | "watch" | "fail";
+      overallScore: number;
+      matchedCategoryKeys: string[];
+      weaknesses: string[];
+      recommendations: string[];
+      reviewedAt: number;
     }>;
   };
   nextRecommendedAction: string;
@@ -418,6 +473,15 @@ export const OracleControlTowerPanel = memo(function OracleControlTowerPanel() {
   const snapshot = useQuery(api.domains.taskManager.queries.getOracleControlTowerSnapshot, {
     limit: 6,
   }) as OracleControlTowerSnapshot | undefined;
+  const trajectoryDashboard = useQuery(api.domains.trajectory.queries.getTrajectoryDashboardSnapshot, {
+    windowDays: 90,
+  }) as
+    | {
+        product?: {
+          summary: TrajectorySummaryData;
+        };
+      }
+    | undefined;
   const industryMetrics = useQuery(api.domains.taskManager.queries.getIndustryMetrics) as
     | NonNullable<OracleControlTowerSnapshot["industryMetrics"]>
     | undefined;
@@ -482,7 +546,7 @@ export const OracleControlTowerPanel = memo(function OracleControlTowerPanel() {
         id: "phase_4",
         title: "Enterprise proof-pack execution",
         window: "Weeks 10-12",
-        objective: "Package deterministic replay, telemetry, and dogfood evidence into a proof pack.",
+        objective: "Package deterministic replay, activity monitoring, and quality review evidence into a proof pack.",
         progress: 0,
         status: "pending" as const,
         current: false,
@@ -492,7 +556,7 @@ export const OracleControlTowerPanel = memo(function OracleControlTowerPanel() {
 
   return (
     <div className="nb-surface-card overflow-hidden">
-      <div className="border-b border-edge bg-gradient-to-r from-[var(--accent-primary-bg)] via-surface to-surface px-5 py-4">
+      <div className="border-b border-white/[0.06] bg-white/[0.03] px-5 py-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 text-sm font-semibold text-content">
@@ -500,7 +564,7 @@ export const OracleControlTowerPanel = memo(function OracleControlTowerPanel() {
               Oracle Control Tower
             </div>
             <p className="mt-1 max-w-3xl text-sm text-content-secondary">
-                  Builder-facing loop health for vision alignment, telemetry burn, dogfood evidence, and blocked write steps.
+                  Continuous health monitoring for goal alignment, execution quality, evidence collection, and approval gates.
                 </p>
               </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -517,13 +581,23 @@ export const OracleControlTowerPanel = memo(function OracleControlTowerPanel() {
               href="/dogfood"
               className="inline-flex items-center gap-1 rounded-full border border-edge bg-surface px-2.5 py-1 text-xs text-content-secondary transition-colors hover:text-content"
             >
-              Review dogfood <ExternalLink className="h-3.5 w-3.5" />
+              Review evidence <ExternalLink className="h-3.5 w-3.5" />
             </a>
           </div>
         </div>
       </div>
 
       <div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="md:col-span-2 xl:col-span-4">
+          <TrajectorySummaryBand
+            summary={trajectoryDashboard?.product?.summary ?? null}
+            loading={trajectoryDashboard === undefined}
+            emptyLabel="The product-level trajectory cache has not been backfilled yet. The Oracle control tower is still reading the older monitoring surfaces directly."
+          />
+        </div>
+        <div className="md:col-span-2 xl:col-span-4">
+          <SuccessLoopsPanel snapshot={snapshot.successLoops ?? null} />
+        </div>
         <StatCard
           label="Active quests"
           value={String(snapshot.summary.activeSessions)}
@@ -751,7 +825,7 @@ export const OracleControlTowerPanel = memo(function OracleControlTowerPanel() {
 
           <div className="rounded-xl border border-edge bg-surface p-4">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-sm font-semibold text-content">Dogfood verdict</div>
+              <div className="text-sm font-semibold text-content">Quality review verdict</div>
               <span
                 className={cn(
                   "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium",
@@ -781,10 +855,12 @@ export const OracleControlTowerPanel = memo(function OracleControlTowerPanel() {
               </div>
             ) : (
               <p className="mt-3 text-sm text-content-secondary">
-                No dogfood run is attached yet. Run the builder-facing loop and attach the latest evidence to the session.
+                No quality review is attached yet. Run the builder-facing loop and attach the latest evidence to the session.
               </p>
             )}
           </div>
+
+          <AgentResponseFlywheelPanel snapshot={snapshot.responseFlywheel} />
 
           <div className="rounded-xl border border-edge bg-surface p-4">
             <div className="text-sm font-semibold text-content">Pending confirmations</div>

@@ -197,8 +197,8 @@ const DEMO_ORACLE_DATA = {
 
 const ThompsonBanner = memo(function ThompsonBanner() {
   return (
-    <div className="nb-surface-card overflow-hidden">
-      <div className="px-5 py-3 border-b border-edge bg-gradient-to-r from-[var(--accent-primary-bg)] via-surface to-surface">
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+      <div className="px-5 py-3 border-b border-white/[0.06] bg-white/[0.03]">
         <div className="flex items-center gap-2">
           <Waypoints className="h-4 w-4 text-accent" />
           <span className="text-xs font-medium tracking-widest text-content-muted uppercase">
@@ -235,14 +235,30 @@ function OracleViewScaffold({
     <div className="nb-page-shell">
       <div className="nb-page-inner">
         <div className="nb-page-frame space-y-6 pb-12">
+          {/* Action Hero */}
+          <div className="mb-8 text-center pt-6">
+            <h2 className="text-2xl font-bold text-content">System Health</h2>
+            <p className="mt-2 text-sm text-content-muted">
+              See where agents are drifting, what evidence they collected, and what needs your attention.
+            </p>
+            <div className="mt-4 flex justify-center gap-3">
+              <button className="rounded-xl bg-[#d97757] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#d97757]/20 hover:bg-[#c96a4d]" type="button">
+                Run health check
+              </button>
+              <button className="rounded-xl border border-white/[0.06] px-5 py-2.5 text-sm font-medium text-content-secondary hover:bg-white/[0.04]" type="button">
+                View benchmarks
+              </button>
+            </div>
+          </div>
+
           {/* Page Header */}
-          <div className="pt-6">
+          <div>
             <div className="flex items-center gap-3 mb-1">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--accent-primary-bg)]">
                 <Waypoints className="h-5 w-5 text-accent" />
               </div>
               <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-content-muted">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
                   NodeBench AI
                 </div>
                 <h1 className="text-xl font-bold text-content">Operational memory for long-running AI work</h1>
@@ -252,30 +268,29 @@ function OracleViewScaffold({
               </div>
             </div>
             <div className="mt-4 grid gap-3 md:grid-cols-[1.6fr,1fr]">
-              <div className="rounded-xl border border-edge bg-surface p-4">
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                 <div className="text-sm font-semibold text-content">What this is</div>
                 <p className="mt-2 text-sm leading-6 text-content-secondary">
-                  A control tower for builders, platform teams, and buyers who need agents to keep their intent, show their work,
-                  and stay auditable across long-running sessions.
+                  A control tower that shows where agents are drifting, what evidence they collected, and what a human should approve next.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-content-secondary">
-                  <a href="/benchmarks" className="inline-flex items-center rounded-full border border-edge bg-background/50 px-3 py-1.5 hover:text-content">
+                  <a href="/benchmarks" className="inline-flex items-center rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 hover:text-content">
                     Open benchmarks
                   </a>
-                  <a href="/research" className="inline-flex items-center rounded-full border border-edge bg-background/50 px-3 py-1.5 hover:text-content">
+                  <a href="/research" className="inline-flex items-center rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 hover:text-content">
                     Explore research
                   </a>
-                  <span className="inline-flex items-center rounded-full border border-edge bg-background/50 px-3 py-1.5">
+                  <span className="inline-flex items-center rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1.5">
                     {oracleData.isDemo ? "Preview data active" : "Live data active"}
                   </span>
                 </div>
               </div>
-              <div className="rounded-xl border border-edge bg-surface p-4">
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                 <div className="text-sm font-semibold text-content">How to start</div>
                 <ul className="mt-2 space-y-2 text-sm leading-6 text-content-secondary">
-                  <li>1. Check active loops and drift status below.</li>
-                  <li>2. Open benchmarks to inspect proof, judges, and replay.</li>
-                  <li>3. Use research to trace sources, timelines, and signals.</li>
+                  <li>1. Check drift status and active loops below.</li>
+                  <li>2. Inspect proof and replay in benchmarks.</li>
+                  <li>3. Trace sources and signals in research.</li>
                 </ul>
               </div>
             </div>
@@ -287,7 +302,7 @@ function OracleViewScaffold({
           {/* Primary Surface: Control Tower (real operational data) */}
           <Suspense
             fallback={
-              <div className="nb-surface-card p-8 flex items-center justify-center gap-2 text-sm text-content-secondary">
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-8 flex items-center justify-center gap-2 text-sm text-content-secondary">
                 <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
                 Loading control tower...
               </div>
@@ -297,7 +312,7 @@ function OracleViewScaffold({
           </Suspense>
 
           {/* Secondary: Game-Framed Translation Layer (collapsible) */}
-          <div className="nb-surface-card overflow-hidden">
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
             <button
               type="button"
               onClick={() => setShowGameLayer(!showGameLayer)}
@@ -320,7 +335,7 @@ function OracleViewScaffold({
             </button>
 
             {showGameLayer && (
-              <div className="border-t border-edge p-5">
+              <div className="border-t border-white/[0.06] p-5">
                 <Suspense
                   fallback={
                     <div className="flex items-center gap-2 text-sm text-content-secondary p-4">

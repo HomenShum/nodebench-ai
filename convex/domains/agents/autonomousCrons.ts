@@ -3,9 +3,10 @@
 import { v } from "convex/values";
 import {
   internalAction,
-  internalMutation,
-  internalQuery,
 } from "../../_generated/server";
+
+// Queries & mutations moved to autonomousCronsQueries.ts (non-"use node" file)
+// Import from "domains/agents/autonomousCronsQueries" instead.
 import { internal } from "../../_generated/api";
 
 /* ================================================================== */
@@ -156,7 +157,7 @@ export const runDriftDetection = internalAction({
     // 1. Load recent task sessions as a proxy for roadmap priorities
     const recentSessions: Array<{ title: string; description?: string; status: string }> =
       await ctx.runQuery(
-        internal.domains.agents.autonomousCrons.queryRecentSessions,
+        internal.domains.agents.autonomousCronsQueries.queryRecentSessions,
         { since: sevenDaysAgo, limit: MAX_SESSIONS_QUERY },
       );
 
@@ -188,7 +189,7 @@ If there are few or no sessions, set alignmentScore to 0 and note the data gap i
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[autonomousCrons] Drift detection LLM call failed: ${msg}`);
       await ctx.runMutation(
-        internal.domains.agents.autonomousCrons.storeCronResult,
+        internal.domains.agents.autonomousCronsQueries.storeCronResult,
         {
           title: `Drift Detection — ${new Date(now).toISOString().slice(0, 10)} (FAILED)`,
           cronJobName: "drift_detection",
@@ -208,7 +209,7 @@ If there are few or no sessions, set alignmentScore to 0 and note the data gap i
 
     // 3. Store result
     await ctx.runMutation(
-      internal.domains.agents.autonomousCrons.storeCronResult,
+      internal.domains.agents.autonomousCronsQueries.storeCronResult,
       {
         title: `Drift Detection — ${new Date(now).toISOString().slice(0, 10)}`,
         cronJobName: "drift_detection",
@@ -305,7 +306,7 @@ Include 3-5 competitors and 3-5 strategic insights.`;
     }
 
     await ctx.runMutation(
-      internal.domains.agents.autonomousCrons.storeCronResult,
+      internal.domains.agents.autonomousCronsQueries.storeCronResult,
       {
         title: `Competitive Analysis — ${new Date(now).toISOString().slice(0, 10)}`,
         cronJobName: "competitive_analysis",
@@ -369,7 +370,7 @@ export const runPrediction = internalAction({
     // Load recent sessions for context
     const recentSessions: Array<{ title: string; status: string }> =
       await ctx.runQuery(
-        internal.domains.agents.autonomousCrons.queryRecentSessions,
+        internal.domains.agents.autonomousCronsQueries.queryRecentSessions,
         { since: now - 14 * 24 * 60 * 60 * 1000, limit: 20 },
       );
 
@@ -456,7 +457,7 @@ Return JSON: { "ensemblePrediction": "<string>" }`;
     // Look up prior Brier score from previous prediction session
     const priorPrediction: { metadata?: { brierTracking?: { priorScore: number } } } | null =
       await ctx.runQuery(
-        internal.domains.agents.autonomousCrons.queryLatestCronSession,
+        internal.domains.agents.autonomousCronsQueries.queryLatestCronSession,
         { cronJobName: "prediction" },
       );
 
@@ -470,7 +471,7 @@ Return JSON: { "ensemblePrediction": "<string>" }`;
     };
 
     await ctx.runMutation(
-      internal.domains.agents.autonomousCrons.storeCronResult,
+      internal.domains.agents.autonomousCronsQueries.storeCronResult,
       {
         title: `Prediction — ${new Date(now).toISOString().slice(0, 10)}`,
         cronJobName: "prediction",
@@ -489,95 +490,9 @@ Return JSON: { "ensemblePrediction": "<string>" }`;
 /* 4. COMMAND-WORD GATING                                              */
 /* ================================================================== */
 
-/**
- * Set or clear the command word gate for a channel.
- * When a command word is set, only messages starting with that word
- * (or messages of bypass types like meta-feedback) will be processed.
- */
-export const setCommandWordGate = internalMutation({
-  args: {
-    channelId: v.string(),
-    commandWord: v.union(v.string(), v.null()),
-    bypassTypes: v.optional(v.array(v.string())),
-  },
-  returns: v.null(),
-  handler: async (ctx, args): Promise<null> => {
-    // Store gate config in agentTaskSessions as a persistent config record
-    // Look for existing gate config for this channel
-    const existing = await ctx.db
-      .query("agentTaskSessions")
-      .withIndex("by_cron", (q) =>
-        q.eq("cronJobName", `command_gate:${args.channelId}`),
-      )
-      .order("desc")
-      .first();
+// setCommandWordGate moved to autonomousCronsQueries.ts (non-node file)
 
-    const gateData: CommandWordGate = {
-      channelId: args.channelId,
-      commandWord: args.commandWord,
-      bypassTypes: args.bypassTypes ?? ["meta-feedback"],
-    };
-
-    if (existing) {
-      await ctx.db.patch(existing._id, {
-        metadata: gateData,
-        completedAt: Date.now(),
-      });
-    } else {
-      await ctx.db.insert("agentTaskSessions", {
-        title: `Command Gate: ${args.channelId}`,
-        type: "cron",
-        visibility: "private",
-        status: "completed",
-        startedAt: Date.now(),
-        completedAt: Date.now(),
-        cronJobName: `command_gate:${args.channelId}`,
-        metadata: gateData,
-      });
-    }
-
-    console.log(
-      `[autonomousCrons] Command gate ${args.commandWord ? "set" : "cleared"} for channel ${args.channelId}`,
-    );
-    return null;
-  },
-});
-
-/**
- * Check if command-word gating is active for a channel.
- * Returns the gate configuration or null if no gate is set.
- */
-export const getCommandWordGate = internalQuery({
-  args: { channelId: v.string() },
-  returns: v.union(
-    v.object({
-      channelId: v.string(),
-      commandWord: v.union(v.string(), v.null()),
-      bypassTypes: v.array(v.string()),
-    }),
-    v.null(),
-  ),
-  handler: async (ctx, args) => {
-    const record = await ctx.db
-      .query("agentTaskSessions")
-      .withIndex("by_cron", (q) =>
-        q.eq("cronJobName", `command_gate:${args.channelId}`),
-      )
-      .order("desc")
-      .first();
-
-    if (!record?.metadata) return null;
-
-    const meta = record.metadata as CommandWordGate;
-    if (!meta.commandWord) return null;
-
-    return {
-      channelId: meta.channelId,
-      commandWord: meta.commandWord,
-      bypassTypes: meta.bypassTypes ?? ["meta-feedback"],
-    };
-  },
-});
+// getCommandWordGate moved to autonomousCronsQueries.ts (non-node file)
 
 /**
  * Pure function: determines whether a message should be processed given
@@ -632,14 +547,14 @@ export const runSwarmEvolution = internalAction({
       agentsInvolved?: string[];
       metadata?: unknown;
     }> = await ctx.runQuery(
-      internal.domains.agents.autonomousCrons.querySwarmSessions,
+      internal.domains.agents.autonomousCronsQueries.querySwarmSessions,
       { limit: 4 },
     );
 
     if (swarmSessions.length === 0) {
       console.log("[autonomousCrons] No swarm sessions found — skipping evolution");
       await ctx.runMutation(
-        internal.domains.agents.autonomousCrons.storeCronResult,
+        internal.domains.agents.autonomousCronsQueries.storeCronResult,
         {
           title: `Swarm Evolution — ${new Date(now).toISOString().slice(0, 10)} (skipped)`,
           cronJobName: "swarm_evolution",
@@ -712,7 +627,7 @@ Return JSON with this exact schema:
     };
 
     await ctx.runMutation(
-      internal.domains.agents.autonomousCrons.storeCronResult,
+      internal.domains.agents.autonomousCronsQueries.storeCronResult,
       {
         title: `Swarm Evolution — ${new Date(now).toISOString().slice(0, 10)}`,
         cronJobName: "swarm_evolution",
@@ -731,115 +646,7 @@ Return JSON with this exact schema:
 /* SHARED QUERIES & MUTATIONS                                          */
 /* ================================================================== */
 
-/**
- * Query recent agentTaskSessions within a time window.
- * Used by drift detection and prediction for context gathering.
- */
-export const queryRecentSessions = internalQuery({
-  args: {
-    since: v.number(),
-    limit: v.number(),
-  },
-  returns: v.array(
-    v.object({
-      title: v.string(),
-      description: v.optional(v.string()),
-      status: v.string(),
-    }),
-  ),
-  handler: async (ctx, args) => {
-    const sessions = await ctx.db
-      .query("agentTaskSessions")
-      .withIndex("by_type_date")
-      .order("desc")
-      .filter((q) => q.gte(q.field("startedAt"), args.since))
-      .take(args.limit);
+// queryRecentSessions, queryLatestCronSession, querySwarmSessions
+// moved to autonomousCronsQueries.ts (non-node file)
 
-    return sessions.map((s) => ({
-      title: s.title,
-      description: s.description,
-      status: s.status,
-    }));
-  },
-});
-
-/**
- * Query the latest cron session by cronJobName.
- * Used for Brier-score tracking continuity in predictions.
- */
-export const queryLatestCronSession = internalQuery({
-  args: { cronJobName: v.string() },
-  returns: v.union(
-    v.object({ metadata: v.optional(v.any()) }),
-    v.null(),
-  ),
-  handler: async (ctx, args) => {
-    const session = await ctx.db
-      .query("agentTaskSessions")
-      .withIndex("by_cron", (q) => q.eq("cronJobName", args.cronJobName))
-      .order("desc")
-      .first();
-
-    if (!session) return null;
-    return { metadata: session.metadata };
-  },
-});
-
-/**
- * Query recent swarm-type sessions for evolution analysis.
- */
-export const querySwarmSessions = internalQuery({
-  args: { limit: v.number() },
-  returns: v.array(
-    v.object({
-      title: v.string(),
-      description: v.optional(v.string()),
-      status: v.string(),
-      totalDurationMs: v.optional(v.number()),
-      agentsInvolved: v.optional(v.array(v.string())),
-      metadata: v.optional(v.any()),
-    }),
-  ),
-  handler: async (ctx, args) => {
-    const sessions = await ctx.db
-      .query("agentTaskSessions")
-      .withIndex("by_type_date", (q) => q.eq("type", "swarm"))
-      .order("desc")
-      .take(args.limit);
-
-    return sessions.map((s) => ({
-      title: s.title,
-      description: s.description,
-      status: s.status,
-      totalDurationMs: s.totalDurationMs,
-      agentsInvolved: s.agentsInvolved,
-      metadata: s.metadata,
-    }));
-  },
-});
-
-/**
- * Store a cron job result as a new agentTaskSession.
- * Provides a uniform persistence pattern for all autonomous cron outputs.
- */
-export const storeCronResult = internalMutation({
-  args: {
-    title: v.string(),
-    cronJobName: v.string(),
-    metadata: v.any(),
-  },
-  returns: v.id("agentTaskSessions"),
-  handler: async (ctx, args) => {
-    const now = Date.now();
-    return await ctx.db.insert("agentTaskSessions", {
-      title: args.title,
-      type: "cron",
-      visibility: "public",
-      status: "completed",
-      startedAt: now,
-      completedAt: now,
-      cronJobName: args.cronJobName,
-      metadata: args.metadata,
-    });
-  },
-});
+// storeCronResult moved to autonomousCronsQueries.ts (non-node file)

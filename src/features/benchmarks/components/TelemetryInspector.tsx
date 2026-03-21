@@ -312,7 +312,7 @@ function FeedbackModal({ run, step }: { run: InspectorRun | null; step: Inspecto
           <div>
             <div className="text-sm font-semibold text-white">Report UI issue</div>
             <div className="mt-1 text-xs text-content-muted">
-              Capture the current run, viewport, and your note for the dogfood loop.
+              Capture the current run, viewport, and your note for the quality review loop.
             </div>
           </div>
           <button

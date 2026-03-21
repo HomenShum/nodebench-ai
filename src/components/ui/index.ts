@@ -22,8 +22,3 @@ export {
   EmptyState,
 } from "@shared/ui";
 
-// HUD / Jarvis-style components (live here, not in shared)
-export { CursorGlow } from '../hud/CursorGlow';
-export { GridOverlay, GridOverlayStyles } from '../hud/GridOverlay';
-export { ScanLine } from '../hud/ScanLine';
-export { HUDPanel } from '../hud/HUDPanel';

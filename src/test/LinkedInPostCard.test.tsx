@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { LinkedInPostCard } from "@/features/social/components/LinkedInPostCard";
+import { LinkedInPostCard } from "@/features/narrative/components/social/LinkedInPostCard";
 import { renderWithRouter } from "./testUtils";
 
 describe("LinkedInPostCard", () => {

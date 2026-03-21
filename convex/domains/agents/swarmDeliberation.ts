@@ -16,7 +16,7 @@
  */
 
 import { v } from "convex/values";
-import { internalAction, internalMutation, internalQuery } from "../../_generated/server";
+import { internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 import { GoogleGenAI } from "@google/genai";
@@ -479,90 +479,6 @@ Be specific, cite evidence where possible, and state your position clearly. Do N
 }
 
 // ============================================================================
-// Convex Mutations (State Persistence)
-// ============================================================================
-
-/**
- * Create a new deliberation session in agentTaskSessions.
- * Returns the session ID for subsequent state updates.
- */
-export const createDeliberationSession = internalMutation({
-  args: {
-    topic: v.string(),
-    context: v.optional(v.string()),
-  },
-  handler: async (ctx, args): Promise<Id<"agentTaskSessions">> => {
-    return await ctx.db.insert("agentTaskSessions", {
-      title: `Swarm Deliberation: ${args.topic.slice(0, 80)}`,
-      description: args.context || `Multi-agent deliberation on: ${args.topic}`,
-      type: "swarm",
-      visibility: "public",
-      status: "running",
-      startedAt: Date.now(),
-    });
-  },
-});
-
-/**
- * Update deliberation session with round results and phase progression.
- */
-export const updateDeliberationState = internalMutation({
-  args: {
-    sessionId: v.id("agentTaskSessions"),
-    status: v.optional(
-      v.union(
-        v.literal("pending"),
-        v.literal("running"),
-        v.literal("completed"),
-        v.literal("failed"),
-        v.literal("cancelled"),
-      ),
-    ),
-    description: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const patch: Record<string, unknown> = {};
-    if (args.status) patch.status = args.status;
-    if (args.description) patch.description = args.description;
-    if (args.status === "completed" || args.status === "failed") {
-      patch.completedAt = Date.now();
-      const session = await ctx.db.get(args.sessionId);
-      if (session) {
-        patch.totalDurationMs = Date.now() - session.startedAt;
-      }
-    }
-    await ctx.db.patch(args.sessionId, patch);
-  },
-});
-
-// ============================================================================
-// Convex Queries
-// ============================================================================
-
-/**
- * Get the current status and metadata of a deliberation session.
- *
- * @param sessionId - The agentTaskSessions document ID
- * @returns Session document with status, timing, and description
- */
-export const getDeliberationStatus = internalQuery({
-  args: { sessionId: v.id("agentTaskSessions") },
-  handler: async (ctx, args) => {
-    const session = await ctx.db.get(args.sessionId);
-    if (!session) return null;
-    return {
-      id: session._id,
-      title: session.title,
-      status: session.status,
-      description: session.description,
-      startedAt: session.startedAt,
-      completedAt: session.completedAt,
-      totalDurationMs: session.totalDurationMs,
-    };
-  },
-});
-
-// ============================================================================
 // Core Actions
 // ============================================================================
 
@@ -627,7 +543,7 @@ export const runDeliberationRound = internalAction({
     const compactedContext = compactContext(allMessages, args.roundNumber);
 
     // Persist progress
-    await ctx.runMutation(internal.domains.agents.swarmDeliberation.updateDeliberationState, {
+    await ctx.runMutation(internal.domains.agents.swarmDeliberationQueries.updateDeliberationState, {
       sessionId: args.sessionId,
       description: `Round ${args.roundNumber}/${MAX_ROUNDS} complete. Agreement: ${(consensusCheck.agreementRatio * 100).toFixed(0)}%. ${consensusCheck.converged ? "CONVERGED" : "Continuing..."}`,
     });
@@ -707,7 +623,7 @@ Synthesize the deliberation into a final output. Respond with valid JSON:
       clearTimeout(timeout);
       const msg = err instanceof Error ? err.message : String(err);
       // HONEST_STATUS: surface the failure, don't mask it
-      await ctx.runMutation(internal.domains.agents.swarmDeliberation.updateDeliberationState, {
+      await ctx.runMutation(internal.domains.agents.swarmDeliberationQueries.updateDeliberationState, {
         sessionId: args.sessionId,
         status: "failed",
         description: `Synthesis LLM call failed: ${msg.slice(0, 200)}`,
@@ -742,7 +658,7 @@ Synthesize the deliberation into a final output. Respond with valid JSON:
     }
 
     // Mark session complete
-    await ctx.runMutation(internal.domains.agents.swarmDeliberation.updateDeliberationState, {
+    await ctx.runMutation(internal.domains.agents.swarmDeliberationQueries.updateDeliberationState, {
       sessionId: args.sessionId,
       status: "completed",
       description: `Synthesis complete. Confidence: ${(synthesis.overallConfidence * 100).toFixed(0)}%. ${synthesis.actionItems.length} action items.`,
@@ -770,11 +686,12 @@ export const startSwarmDeliberation = internalAction({
     topic: v.string(),
     context: v.optional(v.string()),
     roleIds: v.optional(v.array(v.string())),
+    autoEvolve: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     // Phase 1: Create session
     const sessionId: Id<"agentTaskSessions"> = await ctx.runMutation(
-      internal.domains.agents.swarmDeliberation.createDeliberationSession,
+      internal.domains.agents.swarmDeliberationQueries.createDeliberationSession,
       { topic: args.topic, context: args.context },
     );
 
@@ -875,17 +792,36 @@ export const startSwarmDeliberation = internalAction({
         },
       );
 
+      // Optional: bridge deliberation consensus to rubric evolution
+      let evolutionResult = undefined;
+      if (args.autoEvolve) {
+        try {
+          evolutionResult = await ctx.runAction(
+            internal.domains.agents.deliberationToEvolution.bridgeDeliberationToEvolution,
+            {
+              synthesisResult: synthesis,
+              domain: args.topic,
+              autoApply: true,
+            },
+          );
+        } catch (err) {
+          // Non-blocking: evolution bridge failure doesn't fail deliberation
+          console.error("Evolution bridge failed:", err instanceof Error ? err.message : String(err));
+        }
+      }
+
       return {
         sessionId,
         totalRounds: allRounds.length,
         converged: lastRound.consensusCheck.converged,
         synthesis,
+        evolutionResult,
       };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       // Mark session as failed
       await ctx.runMutation(
-        internal.domains.agents.swarmDeliberation.updateDeliberationState,
+        internal.domains.agents.swarmDeliberationQueries.updateDeliberationState,
         {
           sessionId,
           status: "failed",

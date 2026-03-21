@@ -1164,7 +1164,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                   ))}
                 </div>
                 <div className="mt-2 h-1 w-full rounded-full bg-surface-secondary overflow-hidden">
-                  <div className="h-full bg-indigo-600 transition-all" style={{ width: `${scrollProgress}%` }} />
+                  <div className="h-full bg-[var(--accent-primary)] transition-all" style={{ width: `${scrollProgress}%` }} />
                 </div>
               </div>
             </section>
@@ -1271,7 +1271,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                     title="Tasks by Status"
                     data={[
                       { label: "To Do", value: analytics.byStatus.tasks.todo, color: "bg-gray-500" },
-                      { label: "In Progress", value: analytics.byStatus.tasks.in_progress, color: "bg-indigo-600" },
+                      { label: "In Progress", value: analytics.byStatus.tasks.in_progress, color: "bg-[var(--accent-primary)]" },
                       { label: "Done", value: analytics.byStatus.tasks.done, color: "bg-green-500" },
                       { label: "Blocked", value: analytics.byStatus.tasks.blocked, color: "bg-red-500" },
                     ]}
@@ -1288,7 +1288,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                     title="Agent Tasks by Status"
                     data={[
                       { label: "Pending", value: analytics.byStatus.agentTasks.pending, color: "bg-gray-500" },
-                      { label: "Running", value: analytics.byStatus.agentTasks.running, color: "bg-indigo-600" },
+                      { label: "Running", value: analytics.byStatus.agentTasks.running, color: "bg-[var(--accent-primary)]" },
                       { label: "Complete", value: analytics.byStatus.agentTasks.complete, color: "bg-green-500" },
                       { label: "Paused", value: analytics.byStatus.agentTasks.paused, color: "bg-yellow-500" },
                       { label: "Error", value: analytics.byStatus.agentTasks.error, color: "bg-red-500" },
@@ -1316,8 +1316,8 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
             )}
 
             <section id="roadmap-overview" className="relative rounded-lg border border-edge bg-surface-secondary p-5 overflow-hidden">
-              <div className="pointer-events-none absolute -right-20 -top-24 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl" />
-              <div className="pointer-events-none absolute -left-24 bottom-0 h-40 w-40 rounded-full bg-indigo-500/10 blur-3xl" />
+              <div className="pointer-events-none absolute -right-20 -top-24 h-48 w-48 rounded-full bg-[var(--accent-primary)]/10 blur-3xl" />
+              <div className="pointer-events-none absolute -left-24 bottom-0 h-40 w-40 rounded-full bg-[var(--accent-primary)]/10 blur-3xl" />
               <div className="relative space-y-4">
                 <div>
                   <h2 className="text-lg font-semibold text-content">
@@ -1628,9 +1628,9 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
 
 function SliceStat({ label, value, total, color }: { label: string; value: number; total: number; color: "emerald" | "indigo" | "rose" }) {
   const percent = pct(value, total);
-  const bar = color === "emerald" ? "bg-green-500" : color === "indigo" ? "bg-indigo-600" : "bg-rose-500";
-  const tint = color === "emerald" ? "bg-green-500/10" : color === "indigo" ? "bg-indigo-500/10" : "bg-rose-500/10";
-  const text = color === "emerald" ? "text-green-600" : color === "indigo" ? "text-indigo-600 dark:text-indigo-400" : "text-rose-600";
+  const bar = color === "emerald" ? "bg-green-500" : color === "indigo" ? "bg-[var(--accent-primary)]" : "bg-rose-500";
+  const tint = color === "emerald" ? "bg-green-500/10" : color === "indigo" ? "bg-[var(--accent-primary)]/10" : "bg-rose-500/10";
+  const text = color === "emerald" ? "text-green-600" : color === "indigo" ? "text-[var(--accent-primary)]" : "text-rose-600";
 
   return (
     <div className="rounded-md border border-edge bg-surface p-3">
@@ -1645,12 +1645,12 @@ function SliceStat({ label, value, total, color }: { label: string; value: numbe
 
 function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
   const colorClasses = {
-    blue: "text-indigo-600 dark:text-indigo-400 bg-indigo-500/10",
+    blue: "text-[var(--accent-primary)] bg-[var(--accent-primary)]/10",
     purple: "text-purple-600 bg-purple-500/10",
     green: "text-green-600 bg-green-500/10",
     orange: "text-orange-600 bg-orange-500/10",
-    indigo: "text-indigo-600 dark:text-indigo-400 bg-indigo-500/10",
-    teal: "text-indigo-600 dark:text-indigo-400 bg-indigo-500/10",
+    indigo: "text-[var(--accent-primary)] bg-[var(--accent-primary)]/10",
+    teal: "text-[var(--accent-primary)] bg-[var(--accent-primary)]/10",
     rose: "text-rose-600 bg-rose-500/10",
     amber: "text-amber-600 bg-amber-500/10",
   };
@@ -1698,11 +1698,11 @@ function StatusBreakdown({ title, data }: { title: string; data: Array<{ label: 
 
 const sectionToneClasses: Record<SectionTone, string> = {
   slate: "border-edge bg-surface text-content-secondary",
-  sky: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
-  indigo: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
-  emerald: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
-  teal: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
-  violet: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
+  sky: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]",
+  indigo: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]",
+  emerald: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]",
+  teal: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]",
+  violet: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]",
   amber: "border-amber-500/20 bg-amber-500/10 text-amber-600",
   rose: "border-rose-500/20 bg-rose-500/10 text-rose-600",
 };
@@ -1737,14 +1737,14 @@ function SectionHeader({
 }
 
 const summaryAccents = [
-  "bg-indigo-600",
-  "bg-indigo-600",
-  "bg-indigo-600",
-  "bg-indigo-600",
-  "bg-indigo-600",
-  "bg-indigo-600",
-  "bg-indigo-600",
-  "bg-indigo-600",
+  "bg-[var(--accent-primary)]",
+  "bg-[var(--accent-primary)]",
+  "bg-[var(--accent-primary)]",
+  "bg-[var(--accent-primary)]",
+  "bg-[var(--accent-primary)]",
+  "bg-[var(--accent-primary)]",
+  "bg-[var(--accent-primary)]",
+  "bg-[var(--accent-primary)]",
 ];
 
 function SummaryStat({ stat, index }: { stat: RoadmapStat; index: number }) {
@@ -1810,8 +1810,8 @@ function RoadmapFlowStrip({ steps }: { steps: RoadmapFlowStep[] }) {
 function TagPill({ label, tone = "default" }: { label: string; tone?: "default" | "success" | "warning" | "info" }) {
   const toneClasses = {
     default: "border-edge bg-surface-secondary text-content-secondary",
-    success: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
-    info: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
+    success: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]",
+    info: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]",
     warning: "border-amber-500/30 bg-amber-500/10 text-amber-600",
   };
   return (
@@ -1986,8 +1986,8 @@ function PriorityColumn({ group }: { group: PriorityGroup }) {
     rose: { bar: "bg-rose-500", pill: "border-rose-500/30 bg-rose-500/10 text-rose-600" },
     amber: { bar: "bg-amber-500", pill: "border-amber-500/30 bg-amber-500/10 text-amber-600" },
     emerald: {
-      bar: "bg-indigo-600",
-      pill: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
+      bar: "bg-[var(--accent-primary)]",
+      pill: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]",
     },
   };
   const tone = priorityStyles[priorityTone];
@@ -2285,10 +2285,10 @@ function PhaseTimelineCard({ phase }: { phase: PhaseTimeline }) {
   const phaseTone = phase.phase === "Now" ? "emerald" : phase.phase === "Next" ? "amber" : "violet";
   const phaseBar =
     phaseTone === "emerald"
-      ? "bg-indigo-600"
+      ? "bg-[var(--accent-primary)]"
       : phaseTone === "amber"
         ? "bg-amber-500"
-        : "bg-indigo-600";
+        : "bg-[var(--accent-primary)]";
   return (
     <div className="relative rounded-lg border border-edge bg-surface p-4 space-y-3 overflow-hidden transition-shadow">
       <div className={`absolute inset-x-0 top-0 h-0.5 ${phaseBar}`} />

@@ -50,6 +50,10 @@ import {
   CheckCircle,
   Circle,
 } from "lucide-react";
+import { TrajectorySummaryBand } from "@/features/trajectory/components/TrajectorySummaryBand";
+import { TrajectoryTimelinePanel } from "@/features/trajectory/components/TrajectoryTimelinePanel";
+import type { TrajectorySummaryData, TrajectoryTimelineItem } from "@/features/trajectory/types";
+import { mapEntityProfileTypeToTrajectoryType } from "@/features/trajectory/lib/trajectoryEntity";
 
 interface EntityProfilePageProps {
   entityName: string;
@@ -329,6 +333,43 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
     api.domains.temporal.queries.getCausalChainsByEntity,
     { entityKey, limit: 6 }
   );
+  const trajectoryEntityType = mapEntityProfileTypeToTrajectoryType(entityType);
+  const trajectorySummary = useQuery(api.domains.trajectory.queries.getTrajectorySummary, {
+    entityKey,
+    entityType: trajectoryEntityType,
+    windowDays: 90,
+  }) as TrajectorySummaryData | undefined;
+  const trajectoryTimeline = useQuery(api.domains.trajectory.queries.getTrajectoryTimeline, {
+    entityKey,
+    entityType: trajectoryEntityType,
+    windowDays: 90,
+  }) as { items: TrajectoryTimelineItem[] } | undefined;
+  const trajectoryBenchmarks = useQuery(api.domains.trajectory.queries.getBenchmarkTrajectory, {
+    entityKey,
+    entityType: trajectoryEntityType,
+    windowDays: 90,
+  }) as
+    | Array<{
+        benchmarkKey: string;
+        benchmarkLabel: string;
+        verdict: string;
+        summary: string;
+      }>
+    | undefined;
+  const trajectoryInterventions = useQuery(api.domains.trajectory.queries.getInterventionAttribution, {
+    entityKey,
+    entityType: trajectoryEntityType,
+    windowDays: 90,
+  }) as
+    | Array<{
+        _id: string;
+        title: string;
+        status: string;
+        actor: string;
+        summary: string;
+        observedScoreDelta?: number;
+      }>
+    | undefined;
 
   const handleBack = () => {
     if (onBack) {
@@ -1279,6 +1320,12 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
 
             {activeTab === "trace" && (
               <div className="space-y-6">
+                <TrajectorySummaryBand
+                  summary={trajectorySummary ?? null}
+                  loading={trajectorySummary === undefined}
+                  emptyLabel="No trajectory summary exists yet for this entity. Temporal signals and causal chains can still be explored below."
+                />
+
                 <CollapsibleSection
                   title="Relationship Timeline"
                   icon={<Clock className="w-4 h-4" />}
@@ -1304,6 +1351,11 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                 </CollapsibleSection>
 
                 <div className="grid gap-6 lg:grid-cols-2">
+                  <TrajectoryTimelinePanel
+                    items={trajectoryTimeline?.items ?? []}
+                    emptyLabel="No trajectory chronology exists yet for this entity."
+                  />
+
                   <CollapsibleSection
                     title="Temporal Signals"
                     icon={<TrendingUp className="w-4 h-4" />}
@@ -1342,6 +1394,58 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                         ))
                       ) : (
                         <p className="text-sm text-content-secondary">No causal chains linked to this entity yet.</p>
+                      )}
+                    </div>
+                  </CollapsibleSection>
+                </div>
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <CollapsibleSection
+                    title="Intervention Attribution"
+                    icon={<Sparkles className="w-4 h-4" />}
+                    badge={`${trajectoryInterventions?.length ?? 0} interventions`}
+                  >
+                    <div className="space-y-3">
+                      {(trajectoryInterventions ?? []).length > 0 ? (
+                        trajectoryInterventions?.map((intervention) => (
+                          <div key={intervention._id} className="rounded-lg border border-edge bg-background p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="font-medium text-content">{intervention.title}</div>
+                              <div className="text-xs text-content-secondary">{intervention.status}</div>
+                            </div>
+                            <p className="mt-2 text-sm text-content-secondary">{intervention.summary}</p>
+                            <div className="mt-2 text-xs text-content-muted">
+                              {intervention.actor}
+                              {typeof intervention.observedScoreDelta === "number"
+                                ? ` · uplift ${Math.round(intervention.observedScoreDelta * 100)}%`
+                                : ""}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-content-secondary">No interventions have been logged for this entity yet.</p>
+                      )}
+                    </div>
+                  </CollapsibleSection>
+
+                  <CollapsibleSection
+                    title="Benchmark Trajectory"
+                    icon={<Award className="w-4 h-4" />}
+                    badge={`${trajectoryBenchmarks?.length ?? 0} runs`}
+                  >
+                    <div className="space-y-3">
+                      {(trajectoryBenchmarks ?? []).length > 0 ? (
+                        trajectoryBenchmarks?.map((benchmark) => (
+                          <div key={benchmark.benchmarkKey} className="rounded-lg border border-edge bg-background p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="font-medium text-content">{benchmark.benchmarkLabel}</div>
+                              <div className="text-xs text-content-secondary">{benchmark.verdict}</div>
+                            </div>
+                            <p className="mt-2 text-sm text-content-secondary">{benchmark.summary}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-content-secondary">No benchmark-linked trajectory rows exist for this entity yet.</p>
                       )}
                     </div>
                   </CollapsibleSection>

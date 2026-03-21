@@ -167,7 +167,7 @@ export default function MissionControlView() {
       {/* Pending sniff checks */}
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-purple-400/80">
-          Pending Sniff Checks ({dashboard.pendingSniffChecks.length})
+          Pending Validation Checks ({dashboard.pendingSniffChecks.length})
         </h2>
         {dashboard.pendingSniffChecks.length === 0 ? (
           <p className="text-sm text-zinc-500">No pending reviews</p>

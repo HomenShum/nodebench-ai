@@ -116,10 +116,10 @@ export const ActionReceiptFeed = memo(function ActionReceiptFeed() {
   ];
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-6 view-atmosphere-receipts stagger [&>*]:animate-[fade-slide-in_0.5s_var(--ease-out-expo)_both]">
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Shield className="h-5 w-5 text-indigo-400" />
+          <Shield className="h-5 w-5 text-[var(--accent-primary)]" />
           <h1 className="text-xl font-semibold tracking-tight text-content">Action Receipts</h1>
         </div>
         <p className="text-sm text-content-muted">
@@ -132,7 +132,7 @@ export const ActionReceiptFeed = memo(function ActionReceiptFeed() {
         {[
           { label: "Total", value: stats.total, color: "text-content" },
           { label: "Needs approval", value: stats.pending, color: "text-amber-400" },
-          { label: "Reversible", value: stats.reversible, color: "text-indigo-300" },
+          { label: "Reversible", value: stats.reversible, color: "text-[var(--accent-primary)]" },
           { label: "Denied", value: stats.denied, color: "text-red-400" },
           { label: "Allowed", value: stats.allowed, color: "text-emerald-400" },
         ].map((stat) => (

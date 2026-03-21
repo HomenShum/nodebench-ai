@@ -782,11 +782,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               </span>
             </div>
             <p className="text-2xl font-bold text-content leading-tight tracking-tight">
-              Good morning{userName ? (
-                <>
-                  , <span className="text-content-secondary">{userName}</span>
-                </>
-              ) : null}
+              Today&apos;s Brief
             </p>
             <div className="flex items-center gap-2 mt-1.5">
               <Clock className="w-3 h-3 text-content-muted" />
@@ -889,6 +885,30 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   onEntityClick={(entity) => onItemClick?.({ text: `Deep dive on ${entity.name}`, relevance: 'high', linkedEntity: entity.name })}
                 />
               </div>
+              {/* Quick action buttons */}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => onItemClick?.({ text: 'Deep dive this brief', relevance: 'high' })}
+                  className="rounded-lg bg-[#d97757] px-4 py-2 text-xs font-semibold text-white hover:bg-[#c96a4d] transition-colors"
+                >
+                  Deep dive this brief
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onItemClick?.({ text: 'Track these entities', relevance: 'medium' })}
+                  className="rounded-lg border border-white/[0.06] px-4 py-2 text-xs font-medium text-content-secondary hover:bg-white/[0.04] transition-colors"
+                >
+                  Track these entities
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onItemClick?.({ text: 'Set alert for changes', relevance: 'medium' })}
+                  className="rounded-lg border border-white/[0.06] px-4 py-2 text-xs font-medium text-content-secondary hover:bg-white/[0.04] transition-colors"
+                >
+                  Set alert for changes
+                </button>
+              </div>
             </div>
           </div>
 
@@ -897,7 +917,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             {densityStats.slice(0, 4).map((stat, idx) => (
               <div
                 key={stat.id}
-                className="group relative rounded-lg border border-edge bg-background hover:bg-surface-hover hover:shadow-sm px-4 py-3 transition-all duration-300 hover:border-primary/20 dark:hover:border-edge cursor-default"
+                className="group relative rounded-lg border border-edge bg-background hover:bg-surface-hover hover:shadow-sm px-4 py-3 transition-all duration-300 cursor-pointer hover:border-white/[0.12]"
                 style={{ animationDelay: `${idx * 50}ms` }}
               >
                 <div className="flex items-baseline gap-1.5">
@@ -931,7 +951,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   {signalHighlights.slice(0, 3).map((item, idx) => (
                     <div
                       key={`${item.label}-${idx}`}
-                      className="group flex items-start gap-3 p-3 rounded-lg border border-transparent hover:border-edge dark:hover:border-edge hover:bg-surface-hover/50 dark:hover:bg-surface-hover/50 transition-all duration-200"
+                      className="group flex items-start gap-3 p-3 rounded-lg border border-transparent cursor-pointer hover:bg-white/[0.04] hover:border-edge dark:hover:border-edge transition-all duration-200"
                     >
                       <button
                         type="button"

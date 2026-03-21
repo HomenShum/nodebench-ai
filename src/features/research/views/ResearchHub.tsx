@@ -1,24 +1,25 @@
-﻿import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { ArrowRight, Newspaper, Zap, TrendingUp, LayoutGrid, Layers, Globe2, ShieldCheck } from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { ArrowRight, Check, Link2, Newspaper, Zap, TrendingUp, LayoutGrid, Layers, Globe2, ShieldCheck } from "lucide-react";
 import { formatBriefDate, isBriefDateToday } from "@/lib/briefDate";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { EvidenceProvider, useEvidence } from "@/features/research/contexts/EvidenceContext";
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
-import { ErrorBoundary as SectionErrorBoundary } from "@/components/ErrorBoundary";
+import { ErrorBoundary as SectionErrorBoundary } from "@/shared/components/ErrorBoundary";
 import type { FeedItem } from "@/features/research/components/FeedCard";
 import type { Evidence } from "@/features/research/types";
-// Critical-path imports: always visible on default 'overview' tab â€” inline to avoid skeleton flash
+// Critical-path imports: always visible on default 'overview' tab
 import { DigestSection } from "@/features/research/sections/DigestSection";
 import { PersonalPulse } from "@/features/research/components/PersonalPulse";
 import { DashboardSection } from "@/features/research/sections/DashboardSection";
 import { ActAwareDashboard } from "@/features/research/components/ActAwareDashboard";
-import { BriefingSection } from "@/features/research/sections/BriefingSection";
-import { FeedSection } from "@/features/research/sections/FeedSection";
-import ForecastCockpit from "@/features/research/components/ForecastCockpit";
-import { IntelPulseMonitor } from "@/features/research/components/IntelPulseMonitor";
-import { NotificationActivityPanel } from "@/components/NotificationActivityPanel";
-// Lazy-load non-default tab sections (only loaded when user switches tabs)
+// Tab-gated sections: lazy-loaded since they only render on non-default tabs
+const BriefingSection = React.lazy(() => import("@/features/research/sections/BriefingSection").then(m => ({ default: m.BriefingSection })));
+const FeedSection = React.lazy(() => import("@/features/research/sections/FeedSection").then(m => ({ default: m.FeedSection })));
+// Lazy-load secondary components (below fold, behind tabs, or in hidden sidebar)
+const ForecastCockpit = React.lazy(() => import("@/features/research/components/ForecastCockpit"));
+const IntelPulseMonitor = React.lazy(() => import("@/features/research/components/IntelPulseMonitor").then(m => ({ default: m.IntelPulseMonitor })));
+const NotificationActivityPanel = React.lazy(() => import("@/features/agents/components/NotificationActivityPanel").then(m => ({ default: m.NotificationActivityPanel })));
 const FeedReaderModal = React.lazy(() => import("@/features/research/components/FeedReaderModal").then(m => ({ default: m.FeedReaderModal })));
 const EntityContextDrawer = React.lazy(() => import("@/features/research/components/EntityContextDrawer").then(m => ({ default: m.EntityContextDrawer })));
 
@@ -26,6 +27,7 @@ import { usePersonalBrief } from "@/features/research/hooks/usePersonalBrief";
 import { TimelineStrip, type TimelineEvent, type TemporalPhase } from "@/features/research/components/TimelineStrip";
 import type { ReaderItem } from "@/features/research/components/FeedReaderModal";
 import { cn } from "@/lib/utils";
+import { SurfacePageHeader } from "@/shared/ui";
 
 function SectionFallback({
   title,
@@ -35,9 +37,9 @@ function SectionFallback({
   message: string;
 }) {
   return (
-    <div className="rounded-lg border border-edge bg-surface p-5">
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
       <h4 className="text-sm font-semibold text-content">{title}</h4>
-      <p className="mt-1 text-xs text-content-secondary">{message}</p>
+      <p className="mt-1 text-xs text-content-muted/70">{message}</p>
     </div>
   );
 }
@@ -64,6 +66,34 @@ export interface ResearchHubProps {
   onToggleSource?: (sourceId: string) => void;
   onGoHome?: () => void;
   onNavigateToPath?: (path: string) => void;
+}
+
+function useShareUrl() {
+  const [copied, setCopied] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const copy = useCallback(() => {
+    navigator.clipboard.writeText(window.location.href).catch(() => {});
+    setCopied(true);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setCopied(false), 2000);
+  }, []);
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+  return { copied, copy };
+}
+
+function ShareButton() {
+  const { copied, copy } = useShareUrl();
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-xs text-content-muted hover:bg-white/[0.04] hover:text-content transition-colors"
+      aria-label={copied ? "Link copied" : "Copy shareable link"}
+    >
+      {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Link2 className="h-3.5 w-3.5" />}
+      {copied ? "Copied!" : "Share"}
+    </button>
+  );
 }
 
 function ResearchHubContent(props: ResearchHubProps) {
@@ -93,6 +123,12 @@ function ResearchHubContent(props: ResearchHubProps) {
   const [activeTab, setActiveTab] = useState<ContentTab>(() =>
     initialTab && validTabs.includes(initialTab) ? initialTab : 'overview'
   );
+
+  useEffect(() => {
+    if (initialTab && validTabs.includes(initialTab) && initialTab !== activeTab) {
+      setActiveTab(initialTab);
+    }
+  }, [activeTab, initialTab, validTabs]);
 
   // Fetch all brief data (Global + Personal)
   const {
@@ -146,11 +182,8 @@ function ResearchHubContent(props: ResearchHubProps) {
       .catch((err) => console.warn("[ResearchHub] Audit signal seed failed:", err?.message || err));
   }, [seedAuditSignals]);
 
-  useEffect(() => {
-    // Warm lazy-only overlays to reduce first-open chunk failures during rapid QA traversal.
-    void import("@/features/research/components/FeedReaderModal");
-    void import("@/features/research/components/EntityContextDrawer");
-  }, []);
+  // FeedReaderModal and EntityContextDrawer are lazy-loaded on demand.
+  // Removed warm imports that defeated the lazy boundary.
 
   const phasedDashboardMetrics = useMemo(() => {
     if (!dashboardMetrics) return null;
@@ -514,7 +547,7 @@ function ResearchHubContent(props: ResearchHubProps) {
   }, [openWithContext, dossierContextBase]);
 
   return (
-    <div className={`${embedded ? "h-full" : "h-screen"} flex flex-col bg-surface overflow-hidden`}>
+    <div className={`${embedded ? "h-full" : "h-screen"} flex flex-col bg-surface overflow-hidden view-atmosphere-research`}>
       {!embedded && (
         <header className="h-16 bg-background/95  sticky top-0 z-50 flex items-center justify-between px-6 lg:px-8 border-b border-edge">
           <div className="flex items-center gap-4">
@@ -586,26 +619,23 @@ function ResearchHubContent(props: ResearchHubProps) {
       <main className="flex-1 overflow-y-auto custom-scrollbar bg-surface pb-20 sm:pb-14">
         {embedded && (
           <div className="mx-auto max-w-[1600px] px-6 md:px-12 xl:px-16 pt-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-edge pb-3">
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-content-muted">
-                  Research Hub
-                </div>
-                <div className="mt-1 text-sm text-content-secondary">
-                  Live signals, source-backed briefs, and forecast context in one place.
-                </div>
-              </div>
-              {briefDateLabel && (
-                <div className="text-xs font-mono text-content-secondary">
-                  {isBriefToday ? "Updated today" : `Latest brief: ${briefDateLabel}`}
-                </div>
-              )}
+            <div className="flex items-start justify-between gap-4">
+              <SurfacePageHeader
+                title="Research Hub"
+                subtitle="Live signals, source-backed briefs, and forecast context in one place."
+                badge={briefDateLabel ? (
+                  <span className="text-xs font-mono text-content-secondary">
+                    {isBriefToday ? "Updated today" : `Latest brief: ${briefDateLabel}`}
+                  </span>
+                ) : undefined}
+              />
+              <ShareButton />
             </div>
             <div className="mt-4 flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={() => onNavigateToPath?.("/research/world-monitor")}
-                className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface px-4 py-2 text-sm text-content-secondary transition hover:bg-surface-hover"
+                className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-4 py-2 text-sm text-content-muted/70 transition hover:bg-white/[0.04] hover:text-content"
               >
                 <Globe2 className="w-4 h-4" />
                 World Monitor
@@ -613,7 +643,7 @@ function ResearchHubContent(props: ResearchHubProps) {
               <button
                 type="button"
                 onClick={() => onNavigateToPath?.("/research/watchlists")}
-                className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface px-4 py-2 text-sm text-content-secondary transition hover:bg-surface-hover"
+                className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-4 py-2 text-sm text-content-muted/70 transition hover:bg-white/[0.04] hover:text-content"
               >
                 <ShieldCheck className="w-4 h-4" />
                 Watchlists
@@ -666,28 +696,26 @@ function ResearchHubContent(props: ResearchHubProps) {
           <div className="flex-1 pl-6 md:pl-10 pr-4 md:pr-6 py-4 pb-28 sm:pb-20">
 
             {/* TAB NAVIGATION */}
-            <nav className="flex items-center gap-1 mb-4 p-1 bg-surface-secondary rounded-lg border border-edge w-fit">
+            <nav className="flex gap-1 border-b border-edge mb-4" role="tablist">
               {CONTENT_TABS.map((tab) => {
                 const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     type="button"
+                    role="tab"
                     onClick={() => setActiveTab(tab.id)}
-                    aria-pressed={activeTab === tab.id}
-                    aria-current={activeTab === tab.id ? 'page' : undefined}
+                    aria-selected={isActive}
                     className={cn(
-                      'relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                      activeTab === tab.id
-                        ? 'bg-[var(--accent-primary)] text-white shadow-[0_10px_24px_rgba(79,70,229,0.24)] ring-1 ring-primary/35 -translate-y-px'
-                        : 'text-content-secondary hover:text-content hover:bg-surface-hover hover:shadow-sm active:scale-[0.99]'
+                      'flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors duration-150',
+                      isActive
+                        ? 'border-indigo-500 text-content'
+                        : 'border-transparent text-content-muted hover:text-content'
                     )}
                   >
                     <Icon className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">{tab.label}</span>
-                    {activeTab === tab.id ? (
-                      <span className="absolute inset-x-2 -bottom-1 h-0.5 rounded-full bg-white/80" aria-hidden="true" />
-                    ) : null}
                   </button>
                 );
               })}
@@ -701,12 +729,12 @@ function ResearchHubContent(props: ResearchHubProps) {
                 <div className="space-y-6">
                   {/* Executive Synthesis */}
                   <section ref={actIRef} data-act-id="actI">
-                    <div className="mb-3 flex items-center justify-between border-b border-edge pb-2">
+                    <div className="mb-3 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <Newspaper className="w-4 h-4 text-content" />
-                        <h3 className="text-sm font-semibold text-content tracking-tight">Daily Summary</h3>
+                        <Newspaper className="w-4 h-4 text-content-muted" />
+                        <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Daily Summary</h3>
                         {selectedDate && (
-                          <span className="px-1.5 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-medium border border-indigo-500/20 rounded">Past</span>
+                          <span className="px-1.5 py-0.5 bg-white/[0.04] text-content-muted/70 text-xs font-medium border border-white/[0.06] rounded">Past</span>
                         )}
                       </div>
                       <div className={cn('w-1.5 h-1.5 rounded-full motion-safe:animate-pulse', selectedDate ? 'bg-content-secondary' : 'bg-[var(--accent-primary)]')} />
@@ -752,12 +780,12 @@ function ResearchHubContent(props: ResearchHubProps) {
               {/* SIGNALS TAB: Live Signal Stream */}
               {activeTab === 'signals' && (
                 <section ref={actIIIRef} data-act-id="actIII" className="animate-in fade-in duration-300">
-                  <div className="mb-3 flex items-center justify-between border-b border-edge pb-2">
+                  <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <TrendingUp className="w-4 h-4 text-content-secondary" />
-                      <h3 className="text-sm font-semibold text-content tracking-tight">Latest Updates</h3>
+                      <TrendingUp className="w-4 h-4 text-content-muted" />
+                      <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Latest Updates</h3>
                     </div>
-                    <div className="px-1.5 py-0.5 bg-indigo-500/10 text-content border border-indigo-500/30 text-xs font-medium rounded">Live</div>
+                    <div className="px-1.5 py-0.5 bg-white/[0.04] text-content-muted/70 border border-white/[0.06] text-xs font-medium rounded">Live</div>
                   </div>
                   <SectionErrorBoundary
                     section="Signals"
@@ -768,7 +796,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                       />
                     }
                   >
-                    <div className="bg-surface-secondary p-4 border border-edge rounded-lg">
+                    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                       <FeedSection
                         onItemClick={handleFeedItemClick}
                         onOpenWithAgent={handleFeedOpenWithAgent}
@@ -781,10 +809,10 @@ function ResearchHubContent(props: ResearchHubProps) {
               {/* BRIEFING TAB: Institutional Briefing */}
               {activeTab === 'briefing' && (
                 <section ref={actIIRef} data-act-id="actII" className="animate-in fade-in duration-300">
-                  <div className="mb-3 flex items-center justify-between border-b border-edge pb-2">
+                  <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <Layers className="w-4 h-4 text-content-secondary" />
-                      <h3 className="text-sm font-semibold text-content tracking-tight">Full Briefing</h3>
+                      <Layers className="w-4 h-4 text-content-muted" />
+                      <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Full Briefing</h3>
                     </div>
                     <span className="text-xs font-medium text-content-muted">In-depth</span>
                   </div>
@@ -821,17 +849,19 @@ function ResearchHubContent(props: ResearchHubProps) {
                       />
                     }
                   >
-                    <ForecastCockpit />
+                    <React.Suspense fallback={<div className="h-[120px]" />}>
+                      <ForecastCockpit />
+                    </React.Suspense>
                   </SectionErrorBoundary>
                 </section>
               )}
 
-              {/* Deals, Changes, Changelog tabs removed â€” accessible via Cmd+K */}
+              {/* Deals, Changes, Changelog tabs removed â€" accessible via Cmd+K */}
             </div>
           </div>
 
           {/* RIGHT: COMPACT HUD SIDEBAR */}
-          <aside className="w-[340px] shrink-0 sticky top-0 h-fit py-4 pr-6 hidden xl:block overflow-hidden">
+          <aside className="w-[340px] shrink-0 sticky top-0 h-fit py-4 pr-6 hidden overflow-hidden">
             {/* Gradient separator */}
             <div className="absolute left-0 top-4 bottom-4 w-px bg-gradient-to-b from-transparent via-edge to-transparent" />
 
@@ -870,12 +900,14 @@ function ResearchHubContent(props: ResearchHubProps) {
                   />
                 }
               >
-                <NotificationActivityPanel
-                  mode="topic"
-                  variant="hub"
-                  title="Activity Log"
-                  limit={4}
-                />
+                <React.Suspense fallback={<div className="h-[80px]" />}>
+                  <NotificationActivityPanel
+                    mode="topic"
+                    variant="hub"
+                    title="Activity Log"
+                    limit={4}
+                  />
+                </React.Suspense>
               </SectionErrorBoundary>
             </div>
           </aside>
@@ -884,7 +916,9 @@ function ResearchHubContent(props: ResearchHubProps) {
 
       {/* LIVE INTEL FLOW MONITOR */}
       <SectionErrorBoundary section="Intel monitor" fallback={null}>
-        <IntelPulseMonitor taskResults={taskResults || []} />
+        <React.Suspense fallback={null}>
+          <IntelPulseMonitor taskResults={taskResults || []} />
+        </React.Suspense>
       </SectionErrorBoundary>
 
       <SectionErrorBoundary section="Reader modal" fallback={null}>

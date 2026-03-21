@@ -1,2 +1,1 @@
-export { QuickCaptureWidget } from './QuickCaptureWidget';
-
+export { QuickCaptureWidget } from '@/layouts/chrome/QuickCaptureWidget';

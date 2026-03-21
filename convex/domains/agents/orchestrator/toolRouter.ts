@@ -65,6 +65,12 @@ export const executeWithRouting = internalAction({
     args: {
         toolName: v.string(),
         toolArgs: v.any(),
+        agentId: v.optional(v.string()),
+        missionId: v.optional(v.id("missions")),
+        spendLimitUsd: v.optional(v.number()),
+        gatePrompt: v.optional(v.string()),
+        gateContext: v.optional(v.string()),
+        gateMissionType: v.optional(v.string()),
         retryConfig: v.optional(v.object({
             maxAttempts: v.number(),
             initialBackoffMs: v.number(),
@@ -80,6 +86,60 @@ export const executeWithRouting = internalAction({
     }),
     handler: async (ctx, args): Promise<ToolResult> => {
         const config = args.retryConfig ?? DEFAULT_RETRY_CONFIG;
+
+        // Pre-execution judgment gate (optional)
+        if (args.gatePrompt) {
+            try {
+                const gate = await ctx.runAction(
+                    internal.domains.missions.preExecutionGate.evaluatePreExecutionGate,
+                    {
+                        prompt: args.gatePrompt,
+                        missionId: args.missionId,
+                        missionType: args.gateMissionType,
+                        context: args.gateContext,
+                    }
+                );
+
+                if (gate.decision === "skip" || gate.decision === "escalate") {
+                    return {
+                        ok: false,
+                        error: `Pre-execution gate ${gate.decision}: ${gate.reasoning}`,
+                    };
+                }
+            } catch (err) {
+                return {
+                    ok: false,
+                    error: `Pre-execution gate error: ${err instanceof Error ? err.message : String(err)}`,
+                };
+            }
+        }
+
+        // Passport enforcement (if agentId provided)
+        if (args.agentId) {
+            try {
+                const passport = await ctx.runAction(
+                    internal.domains.agents.orchestrator.passportEnforcement.enforcePassport,
+                    {
+                        agentId: args.agentId,
+                        toolName: args.toolName,
+                        missionId: args.missionId,
+                        spendLimitUsd: args.spendLimitUsd,
+                    }
+                );
+                if (passport.decision === "denied" || passport.decision === "escalated") {
+                    return {
+                        ok: false,
+                        error: `Passport ${passport.decision}: ${passport.reason}`,
+                    };
+                }
+            } catch (err) {
+                // Fail-closed: deny on passport check failure
+                return {
+                    ok: false,
+                    error: `Passport enforcement error: ${err instanceof Error ? err.message : String(err)}`,
+                };
+            }
+        }
 
         // Check circuit breaker
         const circuitOpen = await ctx.runAction(internal.domains.agents.orchestrator.toolRouter.isCircuitOpen, {

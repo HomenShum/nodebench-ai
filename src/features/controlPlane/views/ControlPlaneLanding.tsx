@@ -1,45 +1,51 @@
 /**
- * ControlPlaneLanding — Agent Trust Control Plane landing + demo surface.
- *
- * Top: Report-aligned product framing and CTA row.
- * Below: In-product demo/dashboard for receipts, passport, investigation, and integrations.
+ * ControlPlaneLanding — Clean ask surface using SurfacePrimitives.
+ * ChatGPT-style: header, input, prompt starters, trust surface cards.
  */
 
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { useRevealOnMount } from "@/hooks/useRevealOnMount";
 import {
   Activity,
   ArrowRight,
   ArrowUp,
-  BadgeCheck,
-  Bot,
-  CheckCircle2,
-  ChevronDown,
-  Circle,
-  FileText,
-  Fingerprint,
   KeyRound,
   Newspaper,
   ScrollText,
   Search,
-  Shield,
-  ShieldCheck,
-  Sparkles,
-  X,
   Zap,
 } from "lucide-react";
 import {
-  type BuyerChecklistId,
-  type BuyerChecklistState,
-  type BuyerPreferredPath,
-  loadBuyerChecklistState,
-  loadBuyerPreferredPath,
-  orderByBuyerPreference,
-  saveBuyerChecklistState,
-  saveBuyerPreferredPath,
-} from "../lib/onboardingState";
-import { VIEW_PATH_MAP, type MainView } from "@/lib/viewRegistry";
-import { useContextualToolSuggestions } from "@/hooks/useContextualToolSuggestions";
-import { isUIFlagEnabled } from "../../../../convex/lib/featureFlags";
+  SurfaceButton,
+  SurfaceCard,
+  SurfaceGrid,
+  SurfacePageHeader,
+  SurfaceScroll,
+  SurfaceSection,
+} from "@/shared/ui";
+import { VIEW_PATH_MAP, type MainView } from "@/lib/registry/viewRegistry";
+import { useQuery } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
+
+function timeAgo(ts: number): string {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return "just now";
+  if (s < 3600) return Math.floor(s / 60) + "m ago";
+  if (s < 86400) return Math.floor(s / 3600) + "h ago";
+  return Math.floor(s / 86400) + "d ago";
+}
+
+const SWARM_STATUS_STYLE: Record<string, { bg: string; text: string; label: string }> = {
+  completed: { bg: "rgba(16,185,129,0.12)", text: "#34d399", label: "Completed" },
+  executing: { bg: "rgba(251,191,36,0.12)", text: "#fbbf24", label: "Running" },
+  spawning: { bg: "rgba(251,191,36,0.12)", text: "#fbbf24", label: "Spawning" },
+  gathering: { bg: "rgba(251,191,36,0.12)", text: "#fbbf24", label: "Gathering" },
+  synthesizing: { bg: "rgba(251,191,36,0.12)", text: "#fbbf24", label: "Synthesizing" },
+  pending: { bg: "rgba(251,191,36,0.12)", text: "#fbbf24", label: "Pending" },
+  failed: { bg: "rgba(244,63,94,0.12)", text: "#fb7185", label: "Failed" },
+};
+
+const DEFAULT_STATUS_STYLE = { bg: "rgba(148,163,184,0.12)", text: "#94a3b8", label: "Unknown" };
 
 interface ControlPlaneLandingProps {
   onNavigate: (view: MainView, path?: string) => void;
@@ -50,78 +56,41 @@ interface ControlPlaneLandingProps {
 const RECEIPTS_PATH = VIEW_PATH_MAP.receipts ?? "/receipts";
 const DELEGATION_PATH = VIEW_PATH_MAP.delegation ?? "/delegation";
 const INVESTIGATION_PATH = VIEW_PATH_MAP.investigation ?? "/investigation";
-const DOCUMENTS_PATH = VIEW_PATH_MAP.documents ?? "/workspace";
-const AGENTS_PATH = VIEW_PATH_MAP.agents ?? "/agents";
-const BENCHMARKS_PATH = VIEW_PATH_MAP.benchmarks ?? "/internal/benchmarks";
 const MCP_LEDGER_PATH = VIEW_PATH_MAP["mcp-ledger"] ?? "/internal/mcp-ledger";
-const API_REFERENCE_PATH = "/v1/specs";
-const MCP_INTEGRATION_PATH = "/api/mcp";
-const ORACLE_PATH = VIEW_PATH_MAP.oracle ?? "/oracle";
-const PRODUCT_DIRECTION_PATH = VIEW_PATH_MAP["product-direction"] ?? "/product-direction";
-const EXECUTION_TRACE_PATH = VIEW_PATH_MAP["execution-trace"] ?? "/execution-trace";
-const WORLD_MONITOR_PATH = VIEW_PATH_MAP["world-monitor"] ?? "/research/world-monitor";
-const WATCHLISTS_PATH = VIEW_PATH_MAP.watchlists ?? "/research/watchlists";
-const RESEARCH_BRIEFING_PATH = "/research/briefing";
 
-/* ── ChatGPT-style suggestion chips ─────────────────────────────── */
-const SUGGESTION_CHIPS = [
+const STARTER_PROMPTS = [
   {
-    icon: ScrollText,
-    label: "Review agent receipts",
+    title: "Show denied actions today",
+    prompt:
+      "Show me the agent actions that were denied or approval-gated today, and explain why.",
     target: "receipts" as MainView,
-    path: RECEIPTS_PATH,
-    preferred: "receipts" as BuyerPreferredPath,
   },
   {
-    icon: Search,
-    label: "Investigate a run",
+    title: "Trace the FTX demo",
+    prompt:
+      "Open the FTX investigation and separate observed facts, hypotheses, and later-confirmation evidence.",
     target: "investigation" as MainView,
-    path: INVESTIGATION_PATH,
-    preferred: "investigation" as BuyerPreferredPath,
   },
   {
-    icon: Zap,
-    label: "Inspect MCP activity",
-    target: "mcp-ledger" as MainView,
-    path: MCP_LEDGER_PATH,
-    preferred: "mcp-ledger" as BuyerPreferredPath,
-  },
-  {
-    icon: KeyRound,
-    label: "Review passport",
+    title: "Review agent permissions",
+    prompt:
+      "Explain what this agent is allowed to do, what requires approval, and what would be blocked.",
     target: "delegation" as MainView,
-    path: DELEGATION_PATH,
-    preferred: "delegation" as BuyerPreferredPath,
   },
 ] as const;
 
-/** Maps dynamic suggestion IDs → icons for the chip row */
-const CHIP_ICON_MAP: Record<string, typeof ScrollText> = {
-  "review-receipts": ScrollText,
-  "investigate-run": Search,
-  "review-passport": KeyRound,
-  "launch-agent": Bot,
-  "open-workspace": FileText,
-  "check-benchmarks": Sparkles,
-  "product-direction": Shield,
-  "world-monitor": Activity,
-  "execution-trace": Fingerprint,
-  "mcp-ledger": Zap,
-  "research-overview": Search,
-};
-
-const QUICK_NAV = [
+const TRUST_SURFACES = [
   {
     icon: ScrollText,
-    label: "Receipts",
+    label: "Agent actions",
     description: "Review what agents did today",
     target: "receipts" as MainView,
     path: RECEIPTS_PATH,
   },
   {
     icon: KeyRound,
-    label: "Passport",
-    description: "Scope tools, approvals, and revocation",
+    label: "Permissions",
+    description: "What each agent can do and what needs approval",
     target: "delegation" as MainView,
     path: DELEGATION_PATH,
   },
@@ -134,256 +103,76 @@ const QUICK_NAV = [
   },
   {
     icon: Zap,
-    label: "MCP Ledger",
-    description: "Inspect tool activity behind integrations",
+    label: "Tool activity",
+    description: "Inspect tool calls and integrations",
     target: "mcp-ledger" as MainView,
     path: MCP_LEDGER_PATH,
   },
 ] as const;
 
-const STARTER_PROMPTS = [
+const DEMO_ACTIVITY = [
   {
-    title: "Show denied actions today",
-    prompt:
-      "Show me the agent actions that were denied or approval-gated today, and explain why.",
-  },
-  {
-    title: "Trace the FTX demo",
-    prompt:
-      "Open the FTX investigation and separate observed facts, hypotheses, and later-confirmation evidence.",
-  },
-  {
-    title: "Review passport scope",
-    prompt:
-      "Explain what this agent is allowed to do, what requires approval, and what would be blocked.",
-  },
-] as const;
-
-const TRUST_REVIEW_DIMENSIONS = [
-  "Passport scope and approval gates",
-  "Action receipts with policy decisions",
-  "Evidence capture methods and content hashes",
-  "Trace boundaries and replay context",
-  "Observed facts, hypotheses, and reviewed limitations",
-] as const;
-
-/* ── Enterprise dashboard data ──────────────────────────────────── */
-const ROLE_PATHS = [
-  {
-    id: "reviewer",
-    icon: ScrollText,
-    label: "Review agent actions",
-    description: "See what agents did and whether it was allowed",
-    target: "receipts",
-    path: RECEIPTS_PATH,
-    preferredPath: "receipts" as BuyerPreferredPath,
-    accent: "border-indigo-500/30 hover:border-indigo-400/50 hover:bg-indigo-500/5",
-    iconColor: "text-indigo-600 dark:text-indigo-400",
-    recommended: true,
-  },
-  {
-    id: "approver",
-    icon: ShieldCheck,
-    label: "Review passport & approvals",
-    description: "See scoped tools, denied actions, and approval-gated steps",
-    target: "delegation",
-    path: DELEGATION_PATH,
-    preferredPath: "delegation" as BuyerPreferredPath,
-    accent: "border-emerald-500/30 hover:border-emerald-400/50 hover:bg-emerald-500/5",
-    iconColor: "text-emerald-600 dark:text-emerald-400",
-  },
-  {
-    id: "investigator",
-    icon: Search,
-    label: "Investigate a run",
-    description: "Trace from action to evidence to approval",
-    target: "investigation",
-    path: INVESTIGATION_PATH,
-    preferredPath: "investigation" as BuyerPreferredPath,
-    accent: "border-amber-500/30 hover:border-amber-400/50 hover:bg-amber-500/5",
-    iconColor: "text-amber-600 dark:text-amber-400",
-  },
-  {
-    id: "operator",
-    icon: Zap,
-    label: "Inspect tool activity",
-    description: "Review internal traces, blocked steps, and request history",
-    target: "mcp-ledger",
-    path: MCP_LEDGER_PATH,
-    preferredPath: "mcp-ledger" as BuyerPreferredPath,
-    accent: "border-violet-500/30 hover:border-violet-400/50 hover:bg-violet-500/5",
-    iconColor: "text-violet-600 dark:text-violet-400",
-  },
-] as const;
-
-interface ChecklistItem {
-  id: BuyerChecklistId;
-  label: string;
-  target: MainView;
-  path: string;
-}
-
-const CHECKLIST_ITEMS: ChecklistItem[] = [
-  { id: "receipt", label: "Open an action receipt", target: "receipts", path: RECEIPTS_PATH },
-  { id: "delegation", label: "Open the passport", target: "delegation", path: DELEGATION_PATH },
-  { id: "investigation", label: "Inspect an investigation", target: "investigation", path: INVESTIGATION_PATH },
-  { id: "tool-activity", label: "Inspect tool activity", target: "mcp-ledger", path: MCP_LEDGER_PATH },
-];
-
-const CORE_SURFACES = [
-  {
-    id: "receipts",
-    icon: ScrollText,
-    title: "Action Receipts",
-    subtitle: "Tamper-evident records of what an agent saw, did, and was allowed to do.",
-    path: RECEIPTS_PATH,
-    accent: "from-indigo-500/20 to-indigo-500/5",
-    iconColor: "text-indigo-600 dark:text-indigo-300",
-    borderColor: "border-indigo-500/25 hover:border-indigo-400/50",
-  },
-  {
-    id: "delegation",
-    icon: KeyRound,
-    title: "Passport",
-    subtitle: "Scope tools, approvals, and authority before an agent acts.",
-    path: DELEGATION_PATH,
-    accent: "from-emerald-500/20 to-emerald-500/5",
-    iconColor: "text-emerald-600 dark:text-emerald-300",
-    borderColor: "border-emerald-500/25 hover:border-emerald-400/50",
-  },
-  {
-    id: "investigation",
-    icon: Search,
-    title: "Investigation",
-    subtitle: "See what the agent did, why it did it, and what evidence supports the result.",
-    path: INVESTIGATION_PATH,
-    accent: "from-amber-500/20 to-amber-500/5",
-    iconColor: "text-amber-600 dark:text-amber-300",
-    borderColor: "border-amber-500/25 hover:border-amber-400/50",
-  },
-] as const;
-
-const SECONDARY_SURFACES = [
-  {
-    id: "research",
-    icon: Shield,
-    title: "Research Hub",
-    subtitle: "Signals, briefings, and evidence-backed context.",
-    path: RESEARCH_BRIEFING_PATH,
-  },
-  {
-    id: "product-direction",
-    icon: Search,
-    title: "Product Direction",
-    subtitle: "Public-evidence memo for what a company should build next.",
-    path: PRODUCT_DIRECTION_PATH,
-  },
-  {
-    id: "execution-trace",
-    icon: FileText,
-    title: "Execution Trace",
-    subtitle: "Search, edit, verify, and export workflows as auditable receipts.",
-    path: EXECUTION_TRACE_PATH,
-  },
-  {
-    id: "world-monitor",
-    icon: Activity,
-    title: "World Monitor",
-    subtitle: "Open-source geopolitical, regulatory, and market events clustered for impact review.",
-    path: WORLD_MONITOR_PATH,
-  },
-  {
-    id: "watchlists",
-    icon: ShieldCheck,
-    title: "Watchlists",
-    subtitle: "Persistent monitors for entities, sectors, regions, and strategic themes.",
-    path: WATCHLISTS_PATH,
-  },
-  {
-    id: "documents",
-    icon: FileText,
-    title: "Workspace",
-    subtitle: "Documents, spreadsheets, and work in progress.",
-    path: DOCUMENTS_PATH,
-  },
-  {
-    id: "agents",
-    icon: Bot,
-    title: "Agent Workflows",
-    subtitle: "Launch work, monitor active threads, and clear operator blockers.",
-    path: AGENTS_PATH,
-  },
-  {
-    id: "oracle",
-    icon: Bot,
-    title: "The Oracle",
-    subtitle: "Builder-facing control tower for long-running loops.",
-    path: ORACLE_PATH,
-  },
-] as const;
-
-const POWER_USER_PATHS = [
-  {
-    id: "developer",
-    icon: Sparkles,
-    eyebrow: "For developers",
-    label: "Debug evals and replay proof",
-    description: "Open benchmark receipts, compare runs, and see where latency or judge quality breaks down.",
-    target: "benchmarks",
-    path: BENCHMARKS_PATH,
-    accent: "border-cyan-500/25 bg-cyan-500/[0.04] hover:border-cyan-400/45 hover:bg-cyan-500/[0.07]",
-    iconColor: "text-cyan-600 dark:text-cyan-300",
-  },
-  {
-    id: "platform-operator",
-    icon: Activity,
-    eyebrow: "For agent operators",
-    label: "Inspect tool activity",
-    description: "Review internal tool traces, blocked steps, and request history behind the primary product surfaces.",
-    target: "mcp-ledger",
-    path: MCP_LEDGER_PATH,
-    accent: "border-fuchsia-500/25 bg-fuchsia-500/[0.04] hover:border-fuchsia-400/45 hover:bg-fuchsia-500/[0.07]",
-    iconColor: "text-fuchsia-600 dark:text-fuchsia-300",
-  },
-] as const;
-
-const USE_CASES = [
-  {
-    id: "banking-assistant",
-    icon: ShieldCheck,
-    title: "Banking assistant",
-    description: "Review sensitive actions, approval gates, and reversible operations before they leave the sandbox.",
-    target: "receipts" as MainView,
-    path: RECEIPTS_PATH,
-    preferredPath: "receipts" as BuyerPreferredPath,
-  },
-  {
-    id: "student-agent",
-    icon: FileText,
-    title: "Student agent",
-    description: "Bound research and writing tools so study workflows stay scoped, reviewable, and easy to explain.",
-    target: "delegation" as MainView,
-    path: DELEGATION_PATH,
-    preferredPath: "delegation" as BuyerPreferredPath,
-  },
-  {
-    id: "work-agent",
-    icon: Bot,
-    title: "BYO agent at work",
-    description: "Register external agents, inspect tool activity, and keep receipts for policy review.",
-    target: "mcp-ledger" as MainView,
-    path: MCP_LEDGER_PATH,
-  },
-  {
-    id: "research-agent",
-    icon: Search,
-    title: "Research agent (FTX demo)",
-    description: "Separate observed facts from hypotheses and later-confirmation evidence before escalating a claim.",
+    label: "FTX/Alameda investigation completed",
+    description: "4 verified facts, 2 hypotheses ranked, 96% severity signals detected",
+    badge: "Investigation",
+    badgeBg: "rgba(217, 119, 87, 0.12)",
+    badgeText: "#d97757",
     target: "investigation" as MainView,
     path: INVESTIGATION_PATH,
-    preferredPath: "investigation" as BuyerPreferredPath,
+    timeLabel: "2m ago",
+  },
+  {
+    label: "Code review completed: streaming handler",
+    description: "Flagged unbounded Map in SSE handler, 3 files reviewed, 1 P0 finding",
+    badge: "Allowed",
+    badgeBg: "rgba(16, 185, 129, 0.12)",
+    badgeText: "#34d399",
+    target: "receipts" as MainView,
+    path: RECEIPTS_PATH,
+    timeLabel: "8m ago",
+  },
+  {
+    label: "Acme AI Series A diligence memo",
+    description: "7 sources analyzed, +68% confidence, raise-now recommendation",
+    badge: "Decision",
+    badgeBg: "rgba(122, 172, 140, 0.12)",
+    badgeText: "#7aac8c",
+    target: "deep-sim" as MainView,
+    path: "/deep-sim",
+    timeLabel: "15m ago",
+  },
+  {
+    label: "Database migration approved: schema v47",
+    description: "Pre-execution gate passed — 5/5 boolean checks, rollback plan verified",
+    badge: "Approval",
+    badgeBg: "rgba(99, 102, 241, 0.12)",
+    badgeText: "#818cf8",
+    target: "receipts" as MainView,
+    path: RECEIPTS_PATH,
+    timeLabel: "32m ago",
+  },
+  {
+    label: "Production deploy blocked: missing canary",
+    description: "Deploy to prod-us-east rejected — canary stage not completed, 0/3 health checks passed",
+    badge: "Denied",
+    badgeBg: "rgba(196, 112, 96, 0.12)",
+    badgeText: "#c47060",
+    target: "receipts" as MainView,
+    path: RECEIPTS_PATH,
+    timeLabel: "1h ago",
+  },
+  {
+    label: "Agent denied: FTT token sell order",
+    description: "Blocked by passport scope — requires human approval for financial transactions",
+    badge: "Denied",
+    badgeBg: "rgba(196, 112, 96, 0.12)",
+    badgeText: "#c47060",
+    target: "receipts" as MainView,
+    path: RECEIPTS_PATH,
+    timeLabel: "2h ago",
   },
 ] as const;
+
 
 export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   onNavigate,
@@ -392,23 +181,20 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
 }: ControlPlaneLandingProps) {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const dashboardRef = useRef<HTMLDivElement>(null);
-  const controlPlaneDemoEnabled = isUIFlagEnabled("CONTROL_PLANE_DEMO");
+  const { ref: revealRef, isVisible, instant } = useRevealOnMount();
 
-  // Enterprise dashboard state
-  const [checklistState, setChecklistState] = useState<BuyerChecklistState>({});
-  const [dismissed, setDismissed] = useState(false);
-  const [preferredPath, setPreferredPath] = useState<BuyerPreferredPath | null>(null);
+  const recentSwarms = useQuery(api.domains.agents.agentHubQueries.getActiveSwarms, { limit: 5 });
+  const dailyBrief = useQuery(api.domains.research.dashboardQueries.getLatestDashboardSnapshot);
 
-  useEffect(() => {
-    const storedChecklist = loadBuyerChecklistState();
-    if (storedChecklist === "dismissed") {
-      setDismissed(true);
-    } else {
-      setChecklistState(storedChecklist);
-    }
-    setPreferredPath(loadBuyerPreferredPath());
-  }, []);
+  const stagger = useCallback(
+    (delay: string): React.CSSProperties => ({
+      opacity: isVisible ? 1 : 0,
+      transform: isVisible ? "none" : "translateY(8px)",
+      transition: instant ? "none" : "opacity 0.2s ease-out, transform 0.2s ease-out",
+      transitionDelay: instant ? "0s" : delay,
+    }),
+    [isVisible, instant],
+  );
 
   // Auto-resize textarea
   useEffect(() => {
@@ -418,36 +204,35 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
     el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
   }, [input]);
 
-  const orderedRolePaths = useMemo(
-    () => orderByBuyerPreference(ROLE_PATHS, preferredPath),
-    [preferredPath],
-  );
-
-  const dynamicSuggestions = useContextualToolSuggestions("control-plane", preferredPath, 4);
-
-  const orderedChips = useMemo(() => {
-    // Use dynamic suggestions when available, fall back to static chips
-    if (dynamicSuggestions.length > 0) {
-      return dynamicSuggestions.map((s) => ({
-        icon: CHIP_ICON_MAP[s.id] ?? Sparkles,
-        label: s.label,
-        target: s.target as MainView,
-        path: s.path ?? VIEW_PATH_MAP[s.target] ?? `/${s.target}`,
-        preferred: (s.id === "review-receipts" ? "receipts"
-          : s.id === "investigate-run" ? "investigation"
-          : s.id === "mcp-ledger" ? "mcp-ledger"
-          : s.id === "review-passport" ? "delegation"
-          : undefined) as BuyerPreferredPath | undefined,
-      }));
+  // Smart routing: match query keywords to surfaces, fall back to agent panel
+  const routeQuery = useCallback((query: string) => {
+    const q = query.toLowerCase();
+    if (q.includes("denied") || q.includes("approval") || q.includes("receipt") || q.includes("action")) {
+      onNavigate("receipts");
+      return true;
     }
-    if (!preferredPath) return SUGGESTION_CHIPS;
-    const idx = SUGGESTION_CHIPS.findIndex((c) => c.preferred === preferredPath);
-    if (idx <= 0) return SUGGESTION_CHIPS;
-    const copy = [...SUGGESTION_CHIPS];
-    const [moved] = copy.splice(idx, 1);
-    copy.unshift(moved);
-    return copy;
-  }, [preferredPath, dynamicSuggestions]);
+    if (q.includes("ftx") || q.includes("investigation") || q.includes("investigate") || q.includes("trace the")) {
+      onNavigate("investigation");
+      return true;
+    }
+    if (q.includes("diligence") || q.includes("series a") || q.includes("decision") || q.includes("memo") || q.includes("should")) {
+      onNavigate("deep-sim" as MainView);
+      return true;
+    }
+    if (q.includes("research") || q.includes("signal") || q.includes("brief") || q.includes("market")) {
+      onNavigate("research");
+      return true;
+    }
+    if (q.includes("permission") || q.includes("passport") || q.includes("scope") || q.includes("allowed")) {
+      onNavigate("delegation");
+      return true;
+    }
+    if (q.includes("health") || q.includes("benchmark") || q.includes("drift") || q.includes("oracle")) {
+      onNavigate("oracle");
+      return true;
+    }
+    return false;
+  }, [onNavigate]);
 
   const handleSubmit = useCallback(() => {
     const trimmed = input.trim();
@@ -455,17 +240,23 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
       onOpenFastAgent?.();
       return;
     }
-    // Open the agent panel with the prompt — this auto-sends the message
+    // Try smart routing first — navigates to the right surface
+    if (routeQuery(trimmed)) {
+      setInput("");
+      return;
+    }
+    // Fall back to agent panel for unknown queries
     if (onOpenFastAgentWithPrompt) {
       onOpenFastAgentWithPrompt(trimmed);
     } else {
       onOpenFastAgent?.();
     }
     setInput("");
-  }, [input, onOpenFastAgent, onOpenFastAgentWithPrompt]);
+  }, [input, onOpenFastAgent, onOpenFastAgentWithPrompt, routeQuery]);
 
   const handleStarterPrompt = useCallback(
-    (prompt: string) => {
+    (prompt: string, _target?: MainView) => {
+      // Always open the agent panel with the prompt for a live-feeling demo
       if (onOpenFastAgentWithPrompt) {
         onOpenFastAgentWithPrompt(prompt);
       } else {
@@ -486,577 +277,335 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
     [handleSubmit],
   );
 
-  const handleChipClick = useCallback(
-    (target: MainView, path: string, preferred?: BuyerPreferredPath) => {
-      if (preferred) {
-        saveBuyerPreferredPath(preferred);
-        setPreferredPath(preferred);
-      }
-      onNavigate(target, path);
-    },
-    [onNavigate],
-  );
-
-  const handleNavigateWithPreference = useCallback(
-    (target: MainView, path?: string, nextPreferredPath?: BuyerPreferredPath) => {
-      if (nextPreferredPath) {
-        saveBuyerPreferredPath(nextPreferredPath);
-        setPreferredPath(nextPreferredPath);
-      }
-      onNavigate(target, path);
-    },
-    [onNavigate],
-  );
-
-  const handleDismissChecklist = useCallback(() => {
-    setDismissed(true);
-    saveBuyerChecklistState("dismissed");
-  }, []);
-
-  const handleRestoreChecklist = useCallback(() => {
-    setDismissed(false);
-    saveBuyerChecklistState(checklistState);
-  }, [checklistState]);
-
-  const scrollToDashboard = useCallback(() => {
-    dashboardRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
-
-  const completedCount = CHECKLIST_ITEMS.filter((item) => checklistState[item.id]).length;
-  const showChecklist = !dismissed && completedCount < CHECKLIST_ITEMS.length;
-
   return (
-    <div className="h-full overflow-y-auto scroll-smooth">
-      {/* ════════════════════════════════════════════════════════════
-       *  SECTION 1: ChatGPT-style Hero (viewport height)
-       * ════════════════════════════════════════════════════════════ */}
-      <div className="flex min-h-full flex-col items-center justify-center px-4 sm:px-6">
-        <div className="flex w-full max-w-2xl flex-col items-center">
-          {/* Logo mark */}
-          <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg shadow-indigo-500/20">
-            <Fingerprint className="h-5 w-5 text-white" aria-hidden="true" />
-          </div>
+    <div className="h-full overflow-y-auto">
+      <div ref={revealRef} className="mx-auto flex min-h-full max-w-3xl flex-col items-center justify-center px-6 py-12">
+        {/* Hero — centered like ChatGPT */}
+        <h1 style={stagger("0s")} className="text-center text-4xl font-bold tracking-tight text-content">
+          NodeBench
+        </h1>
+        <p style={stagger("0.1s")} className="mt-3 max-w-xl text-center text-base leading-relaxed text-content-secondary">
+          The trust layer for agents. Every action gets a receipt.
+          Every decision gets evidence.
+        </p>
 
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-indigo-600 dark:text-indigo-300/80">
-            Agent Trust Control Plane
-          </p>
-          <h1 className="mb-3 text-center text-3xl font-semibold tracking-tight text-content sm:text-5xl">
-            The Trust Layer for Agents.
-          </h1>
-          <p className="mb-4 max-w-2xl text-center text-sm leading-relaxed text-content-secondary sm:text-base">
-            Every permission gets a scope. Every action gets a receipt. Every decision gets evidence.
-          </p>
-
-          <div className="mb-6 w-full rounded-2xl border border-edge bg-surface/40 px-4 py-3 text-left">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
-              Provenance, not proof.
-            </div>
-            <p className="mt-2 text-sm leading-relaxed text-content-secondary">
-              Integrity of captured artifacts ≠ truth claims; hypotheses are scored and reviewed.
-            </p>
-          </div>
-
-          <div className="mb-8 flex w-full flex-wrap items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleNavigateWithPreference("receipts", RECEIPTS_PATH, "receipts")}
-              className="inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-300/50 hover:bg-indigo-500/15 dark:text-indigo-100"
-            >
-              Run the Live Demo
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <a
-              href={API_REFERENCE_PATH}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface/50 px-4 py-2 text-sm font-medium text-content transition hover:bg-surface-hover"
-            >
-              Read the API
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </a>
-            <a
-              href={MCP_INTEGRATION_PATH}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface/50 px-4 py-2 text-sm font-medium text-content transition hover:bg-surface-hover"
-            >
-              Integrate via MCP / SDK
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </a>
-          </div>
-
-          {controlPlaneDemoEnabled ? (
-            <>
-              {/* Input bar */}
-              <div className="group relative w-full rounded-2xl border border-edge bg-surface-secondary shadow-sm transition-all duration-200 focus-within:border-indigo-500/40 focus-within:shadow-md focus-within:shadow-indigo-500/5 hover:border-edge">
-                <textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder='Try: "Show me the agent actions that were denied or approval-gated today, and explain why."'
-                  rows={1}
-                  className="w-full resize-none bg-transparent px-4 py-3.5 pr-12 text-sm text-content placeholder:text-content-muted/60 focus:outline-none sm:text-base"
-                  aria-label="Message NodeBench"
-                />
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={!input.trim() && !onOpenFastAgent}
-                  className="absolute bottom-2.5 right-2.5 flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm transition-all hover:bg-indigo-500 disabled:opacity-30 disabled:hover:bg-indigo-600"
-                  aria-label="Send message"
-                >
-                  <ArrowUp className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Prompt starters */}
-              <div className="mt-4 grid w-full gap-3 sm:grid-cols-3">
-                {STARTER_PROMPTS.map((item) => (
-                  <button
-                    key={item.title}
-                    type="button"
-                    onClick={() => handleStarterPrompt(item.prompt)}
-                    className="group rounded-2xl border border-edge bg-surface/60 px-4 py-3 text-left transition-all hover:border-indigo-500/25 hover:bg-surface-secondary"
-                  >
-                    <div className="text-sm font-medium text-content">{item.title}</div>
-                    <div className="mt-1 text-xs leading-relaxed text-content-muted">{item.prompt}</div>
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-4 w-full rounded-2xl border border-edge bg-surface/40 px-4 py-3 text-left">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
-                  Trust surfaces in the live demo
-                </div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {TRUST_REVIEW_DIMENSIONS.map((item) => (
-                    <div key={item} className="flex items-start gap-2 text-sm text-content-secondary">
-                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-indigo-500 dark:bg-indigo-400" aria-hidden="true" />
-                      <span>{item}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => onNavigate("investigation", INVESTIGATION_PATH)}
-                    className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary transition hover:border-primary/30 hover:text-content"
-                  >
-                    Open Investigation
-                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onNavigate("receipts", RECEIPTS_PATH)}
-                    className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary transition hover:border-primary/30 hover:text-content"
-                  >
-                    Open Receipts
-                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Suggestion chips */}
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                {orderedChips.map((chip) => {
-                  const Icon = chip.icon;
-                  return (
-                    <button
-                      key={chip.label}
-                      type="button"
-                      onClick={() => handleChipClick(chip.target, chip.path, chip.preferred)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-edge bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary transition-all hover:border-indigo-500/30 hover:bg-indigo-500/5 hover:text-content sm:text-sm"
-                    >
-                      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-                      {chip.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Quick-nav cards */}
-              <div className="mt-10 grid w-full grid-cols-2 gap-3 sm:grid-cols-4">
-                {QUICK_NAV.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.label}
-                      type="button"
-                      onClick={() => onNavigate(item.target, item.path)}
-                      className="group flex flex-col items-start gap-2 rounded-xl border border-edge bg-surface/50 px-4 py-3.5 text-left transition-all hover:border-indigo-500/25 hover:bg-surface-secondary"
-                    >
-                      <Icon className="h-4 w-4 text-content-muted transition-colors group-hover:text-indigo-600 dark:group-hover:text-indigo-400" aria-hidden="true" />
-                      <div>
-                        <span className="block text-sm font-medium text-content">{item.label}</span>
-                        <span className="mt-0.5 block text-[11px] leading-snug text-content-muted">
-                          {item.description}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          ) : null}
+        {/* CTA row */}
+        <div style={stagger("0.2s")} className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              const demoPrompt = "Show me the agent actions that were denied or approval-gated today, and explain why.";
+              if (onOpenFastAgentWithPrompt) {
+                onOpenFastAgentWithPrompt(demoPrompt);
+              } else {
+                onOpenFastAgent?.();
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#d97757] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#d97757]/20 transition-all hover:bg-[#c96a4d] hover:shadow-indigo-500/25"
+          >
+            Run Live Demo
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <a href="/v1/specs" target="_blank" rel="noreferrer" className="rounded-xl border border-edge px-5 py-2.5 text-sm font-medium text-content-secondary transition-colors hover:bg-white/[0.04] hover:text-content">
+            Read API
+          </a>
+          <a href="/api/mcp" target="_blank" rel="noreferrer" className="rounded-xl border border-edge px-5 py-2.5 text-sm font-medium text-content-secondary transition-colors hover:bg-white/[0.04] hover:text-content">
+            Integrate via MCP
+          </a>
         </div>
 
-        {/* Scroll hint */}
+        {/* Today's Signal — daily intelligence card */}
         <button
           type="button"
-          onClick={scrollToDashboard}
-          className="mt-8 flex flex-col items-center gap-1 text-content-muted/40 transition-colors hover:text-content-muted animate-bounce"
-          aria-label="Scroll to control plane dashboard"
+          style={stagger("0.25s")}
+          onClick={() => onNavigate("research")}
+          className="mt-8 w-full rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-left transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.04]"
+          data-agent-action="open-daily-brief"
         >
-          <span className="text-[10px] uppercase tracking-widest">Explore more</span>
-          <ChevronDown className="h-4 w-4" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Newspaper className="h-3.5 w-3.5 text-[#d97757]" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
+                Today&apos;s Signal
+              </span>
+              <span className="text-[11px] text-content-muted">
+                {dailyBrief?.dateString ?? new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </span>
+            </div>
+            <ArrowRight className="h-3.5 w-3.5 text-content-muted" />
+          </div>
+          <p className="mt-2 text-sm leading-relaxed text-content-secondary line-clamp-2">
+            {dailyBrief?.dashboardMetrics?.keyStats?.[0]?.label
+              ? `${dailyBrief.dashboardMetrics.keyStats[0].label}: ${dailyBrief.dashboardMetrics.keyStats[0].value}`
+              : "Your daily research brief will appear here once connected. Signals, sources, and entity tracking across your focus areas."}
+          </p>
+          <div className="mt-2.5 flex items-center gap-3 text-[11px] text-content-muted">
+            <span>{dailyBrief?.dashboardMetrics?.keyStats?.length ?? 0} signals</span>
+            <span className="text-content-muted">&middot;</span>
+            <span>{dailyBrief?.sources?.length ?? 0} sources</span>
+            <span className="text-content-muted">&middot;</span>
+            <span>{dailyBrief?.entities?.length ?? 0} entities tracked</span>
+          </div>
         </button>
-      </div>
 
-      {/* ════════════════════════════════════════════════════════════
-       *  SECTION 2: Enterprise Dashboard (below the fold)
-       * ════════════════════════════════════════════════════════════ */}
-      <div ref={dashboardRef} className="mx-auto max-w-6xl px-6 pb-16 pt-12">
-        <div className="w-full rounded-[28px] border border-edge bg-surface-secondary dark:bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.12),transparent_38%),rgba(5,5,5,0.92)] px-6 py-8 sm:px-8 sm:py-10">
-          {/* Header */}
-          <div className="mb-8 space-y-4 text-center">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-edge bg-surface-secondary px-3 py-1.5 text-xs text-content-muted">
-              <Fingerprint className="h-3.5 w-3.5" aria-hidden="true" />
-              NodeBench Control Plane
-            </div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-indigo-600 dark:text-indigo-300/80">
-              The trust layer for agents
-            </p>
-            <h2 className="text-3xl font-semibold tracking-tight text-content sm:text-4xl">
-              Agent Trust Control Plane Demo
-            </h2>
-            <p className="mx-auto max-w-2xl text-base leading-relaxed text-content-secondary">
-              Every permission gets a scope. Every action gets a receipt. Every decision gets evidence.
-            </p>
-            <p className="mx-auto max-w-xl text-sm leading-relaxed text-content-muted">
-              Agents are getting tools faster than trust controls. Start with action receipts, then move into
-              passport &amp; delegation and investigation when a run matters enough to review, approve, or block.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => handleNavigateWithPreference("receipts", RECEIPTS_PATH, "receipts")}
-                className="inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-700 dark:text-indigo-100 transition hover:border-indigo-300/50 hover:bg-indigo-500/15"
-              >
-                Open Receipts
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleNavigateWithPreference("delegation", DELEGATION_PATH, "delegation")}
-                className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface/50 px-4 py-2 text-sm font-medium text-content transition hover:bg-surface-hover"
-              >
-                Open Passport
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleNavigateWithPreference("investigation", INVESTIGATION_PATH, "investigation")}
-                className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface/50 px-4 py-2 text-sm font-medium text-content transition hover:bg-surface-hover"
-              >
-                Open Investigation
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-
-          {/* Role paths */}
-          <div className="mb-8">
-            <p className="mb-3 text-center text-xs font-medium uppercase tracking-[0.18em] text-content-muted">
-              Choose your path
-            </p>
-            <div
-              className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4"
-              role="group"
-              aria-label="Choose your starting path"
+        {/* Input bar — centered, prominent, ChatGPT-style */}
+        <div style={stagger("0.3s")} className="mt-10 w-full">
+          <div className="group relative rounded-2xl border border-white/[0.08] bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_2px_12px_rgba(0,0,0,0.3)] transition-all duration-300 focus-within:border-[#d97757]/30 focus-within:shadow-[0_0_0_1px_rgba(217,119,87,0.15),0_0_24px_rgba(217,119,87,0.08)]">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder='Try: "Show me the agent actions that were denied or approval-gated today, and explain why."'
+              rows={1}
+              className="w-full resize-none bg-transparent px-5 py-4 pr-14 text-[15px] text-content placeholder:text-content-muted focus:outline-none"
+              aria-label="Message NodeBench"
+            />
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!input.trim() && !onOpenFastAgent}
+              className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-xl bg-[#d97757] text-white shadow-sm transition-all hover:bg-[#c96a4d] disabled:opacity-40"
+              aria-label="Send message"
             >
-              {orderedRolePaths.map((path) => {
-                const Icon = path.icon;
-                return (
-                  <button
-                    key={path.id}
-                    type="button"
-                    onClick={() => handleNavigateWithPreference(path.target, path.path, path.preferredPath)}
-                    className={`group flex items-start gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-150 ${path.accent}`}
-                  >
-                    <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${path.iconColor}`} aria-hidden="true" />
-                    <span className="min-w-0">
-                      <span className="flex items-center gap-2 text-sm font-medium text-content">
-                        <span>{path.label}</span>
-                        {"recommended" in path && path.recommended ? (
-                          <span className="rounded-full border border-indigo-400/20 bg-indigo-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-200">
-                            Start here
-                          </span>
-                        ) : null}
-                      </span>
-                      <span className="mt-0.5 block text-[11px] leading-snug text-content-muted">
-                        {path.description}
-                      </span>
-                    </span>
-                    <ArrowRight
-                      className="ml-auto mt-0.5 h-3.5 w-3.5 shrink-0 text-content-muted transition-colors group-hover:text-content-secondary"
-                      aria-hidden="true"
-                    />
-                  </button>
-                );
-              })}
-            </div>
+              <ArrowUp className="h-4 w-4" />
+            </button>
           </div>
+        </div>
 
-          {/* Checklist */}
-          {showChecklist ? (
-            <div className="mb-8 rounded-xl border border-edge bg-surface-secondary px-5 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-content-secondary">Getting started</span>
-                  <span className="rounded-full bg-surface-hover px-2 py-0.5 text-[10px] font-medium text-content-muted">
-                    {completedCount}/{CHECKLIST_ITEMS.length}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleDismissChecklist}
-                  className="rounded p-1 text-content-muted transition hover:bg-surface-hover hover:text-content-muted"
-                  aria-label="Dismiss checklist"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              <div className="mt-3 grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
-                {CHECKLIST_ITEMS.map((item) => {
-                  const done = !!checklistState[item.id];
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => handleNavigateWithPreference(item.target, item.path)}
-                      className={`flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs transition ${
-                        done ? "text-content-muted line-through" : "text-content-secondary hover:bg-surface-hover"
-                      }`}
-                    >
-                      {done ? (
-                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden="true" />
-                      ) : (
-                        <Circle className="h-3.5 w-3.5 shrink-0 text-content-muted" aria-hidden="true" />
-                      )}
-                      {item.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            <div className="mb-8 text-center">
-              <button
-                type="button"
-                onClick={handleRestoreChecklist}
-                className="text-xs text-content-muted transition hover:text-content-secondary"
-              >
-                Getting started
-              </button>
-            </div>
-          )}
+        {/* Prompt starters */}
+        <div style={stagger("0.4s")} className="mt-6 grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
+          {STARTER_PROMPTS.map((item) => (
+            <button
+              key={item.title}
+              type="button"
+              onClick={() => handleStarterPrompt(item.prompt, item.target)}
+              className="group rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5 text-left transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.04]"
+              data-agent-action="starter-prompt"
+            >
+              <div className="text-sm font-medium text-content">{item.title}</div>
+              <div className="mt-1.5 text-xs leading-relaxed text-content-muted">{item.prompt}</div>
+            </button>
+          ))}
+        </div>
 
-          {/* Core surfaces */}
-          <nav
-            className="grid w-full grid-cols-1 gap-4 lg:grid-cols-3"
-            aria-label="Core product surfaces"
-          >
-            {CORE_SURFACES.map((surface) => {
-              const Icon = surface.icon;
-              const preferred = surface.id as BuyerPreferredPath;
+        {/* Trust surfaces — 4 clean cards */}
+        <div style={stagger("0.5s")} className="mt-10 w-full">
+          <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
+            Trust surfaces
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {TRUST_SURFACES.map((item) => {
+              const Icon = item.icon;
               return (
                 <button
+                  key={item.label}
                   type="button"
-                  key={surface.id}
-                  onClick={() => handleNavigateWithPreference(surface.id, surface.path, preferred)}
-                  aria-label={`Navigate to ${surface.title}: ${surface.subtitle}`}
-                  className={`group relative flex flex-col items-start gap-3 rounded-xl border bg-gradient-to-br p-5 text-left transition-all duration-200 ${surface.accent} ${surface.borderColor}`}
+                  onClick={() => onNavigate(item.target, item.path)}
+                  className="group flex flex-col items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-left transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.04]"
+                  data-agent-action="navigate-trust"
+                  data-agent-id={`trust:${item.label.toLowerCase().replace(/\s+/g, "-")}`}
                 >
-                  <div className="flex w-full items-center justify-between">
-                    <Icon className={`h-5 w-5 ${surface.iconColor}`} aria-hidden="true" />
-                    <ArrowRight
-                      className="h-4 w-4 text-content-muted transition-colors group-hover:text-content-secondary"
-                      aria-hidden="true"
-                    />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.05]">
+                    <Icon className="h-4 w-4 text-content-muted transition-colors group-hover:text-[#d97757]" aria-hidden="true" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-medium text-content">{surface.title}</h3>
-                    <p className="mt-1 text-xs leading-relaxed text-content-muted">{surface.subtitle}</p>
+                    <div className="text-sm font-medium text-content">{item.label}</div>
+                    <div className="mt-0.5 text-[11px] leading-snug text-content-muted">
+                      {item.description}
+                    </div>
                   </div>
                 </button>
               );
             })}
-          </nav>
+          </div>
+        </div>
 
-          {/* Explanation cards */}
-          <div className="mt-8 grid grid-cols-1 gap-3 text-left sm:grid-cols-2 xl:grid-cols-4">
-            {[
-              [
-                "Problem",
-                "Agents are getting tools faster than trust controls. Excessive agency and fragile postmortems make failures hard to review.",
-              ],
-              [
-                "Solution",
-                "NodeBench packages Passport, Intent Ledger, Action Receipts, and a Delegation Graph into legible control-plane surfaces.",
-              ],
-              [
-                "Security",
-                "Least privilege, approval gates, denied actions, and reversible workflows reduce blast radius before external actions fire.",
-              ],
-              [
-                "Evidence",
-                "Content hashes, trace IDs, and deterministic review give provenance for captured artifacts without pretending they are proof.",
-              ],
-            ].map(([title, body]) => (
-              <div key={title} className="rounded-xl border border-edge bg-surface-secondary px-4 py-4">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
-                  {title}
-                </div>
-                <p className="mt-2 text-sm leading-relaxed text-content-secondary">{body}</p>
+        {/* Recent activity — live from Convex */}
+        <div style={stagger("0.6s")} className="mt-10 w-full">
+          <div className="mb-4 flex items-center gap-2">
+            <Activity className="h-3.5 w-3.5 text-content-muted" aria-hidden="true" />
+            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
+              Recent activity
+            </span>
+          </div>
+          {recentSwarms === undefined ? (
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-6 text-center text-xs text-content-muted">
+              Loading activity...
+            </div>
+          ) : recentSwarms.length === 0 ? (
+            <div className="space-y-2">
+              {DEMO_ACTIVITY.map((item, index) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => onNavigate(item.target, item.path)}
+                  className="flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-left transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.04]"
+                  data-agent-action="view-activity"
+                  data-agent-id={`activity:${index}`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-content">{item.label}</span>
+                      <span
+                        className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                        style={{ backgroundColor: item.badgeBg, color: item.badgeText }}
+                      >
+                        {item.badge}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 text-[11px] text-content-muted">{item.description}</div>
+                  </div>
+                  <span className="shrink-0 text-[11px] text-content-muted">{item.timeLabel}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {recentSwarms.slice(0, 5).map((swarm) => {
+                const style = SWARM_STATUS_STYLE[swarm.status] ?? DEFAULT_STATUS_STYLE;
+                return (
+                  <div
+                    key={swarm.swarmId}
+                    className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 transition-colors hover:bg-white/[0.04]"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-content truncate">
+                          {swarm.query ?? swarm.swarmId}
+                        </span>
+                        <span
+                          className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                          style={{ backgroundColor: style.bg, color: style.text }}
+                        >
+                          {style.label}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-2 text-[11px] text-content-muted">
+                        <span>{swarm.taskCount} task{swarm.taskCount !== 1 ? "s" : ""}</span>
+                        <span className="text-content-muted">|</span>
+                        <span>{swarm.completedCount} done</span>
+                        {swarm.runningCount > 0 && (
+                          <>
+                            <span className="text-content-muted">|</span>
+                            <span style={{ color: "#fbbf24" }}>{swarm.runningCount} running</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <span className="shrink-0 text-[11px] text-content-muted">
+                      {timeAgo(swarm._creationTime)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Learning — self-improvement indicators */}
+        <div style={stagger("0.7s")} className="mt-10 w-full" data-agent-section="learning">
+          <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
+            Learning
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {([
+              { label: "Tools discovered", value: "304", id: "tools" },
+              { label: "Patterns tracked", value: "47", id: "patterns" },
+              { label: "Sessions remembered", value: "12", id: "sessions" },
+              { label: "Continuously adapting", value: null, id: "status" },
+            ] as const).map((stat) => (
+              <div
+                key={stat.id}
+                className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
+                data-agent-learning={stat.id}
+              >
+                {stat.value ? (
+                  <>
+                    <div className="text-2xl font-bold tabular-nums text-content">{stat.value}</div>
+                    <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
+                      {stat.label}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                    </span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
+                      {stat.label}
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
+        </div>
 
-          <div className="mt-8 rounded-2xl border border-edge bg-surface/40 px-5 py-5 text-left">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
-              Integration
-            </div>
-            <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="max-w-3xl text-sm leading-relaxed text-content-secondary">
-                Use the REST API for Passports, Intent Ledgers, and Receipts, then connect external agents through the
-                MCP surface when you want the same trust primitives outside the demo app.
+        {/* Connect Your Data — integration CTA */}
+        <div style={stagger("0.8s")} className="mt-10 w-full">
+          <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
+            Integrate
+          </div>
+          <p className="mb-4 text-sm text-content-secondary">
+            Connect your agents, tools, and data sources.
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <div className="text-sm font-medium text-content">MCP Server</div>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-content-muted">
+                304 tools via Model Context Protocol.
               </p>
-              <div className="flex flex-wrap gap-2">
-                <a
-                  href={API_REFERENCE_PATH}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary transition hover:border-primary/30 hover:text-content"
-                >
-                  API Reference
-                  <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                </a>
-                <a
-                  href={MCP_INTEGRATION_PATH}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary transition hover:border-primary/30 hover:text-content"
-                >
-                  MCP Surface
-                  <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                </a>
-              </div>
+              <code className="mt-2 block rounded-lg bg-white/[0.04] px-3 py-2 text-[11px] text-content-muted font-mono">
+                npm install @homenshum/nodebench-mcp
+              </code>
+              <button
+                type="button"
+                onClick={() => onNavigate("api-keys" as MainView, "/api-keys")}
+                className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-[#d97757] hover:underline"
+              >
+                Manage keys
+                <ArrowRight className="h-3 w-3" aria-hidden="true" />
+              </button>
+            </div>
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <div className="text-sm font-medium text-content">REST API</div>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-content-muted">
+                Passport, receipts, and investigation endpoints.
+              </p>
+              <a
+                href="/v1/specs"
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-[#d97757] hover:underline"
+              >
+                Read the API docs
+                <ArrowRight className="h-3 w-3" aria-hidden="true" />
+              </a>
+            </div>
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <div className="text-sm font-medium text-content">Claude Code</div>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-content-muted">
+                Add NodeBench to your Claude Code workflow.
+              </p>
+              <code className="mt-2 block rounded-lg bg-white/[0.04] px-3 py-2 text-[11px] text-content-muted font-mono">
+                claude mcp add nodebench
+              </code>
             </div>
           </div>
+        </div>
 
-          {/* Power user paths */}
-          <div
-            className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2"
-            role="navigation"
-            aria-label="Developer and agent operator starting points"
+        {/* Developers link */}
+        <div style={stagger("0.8s")} className="mt-10 w-full text-center">
+          <button
+            type="button"
+            onClick={() => onNavigate("developers" as MainView, "/developers")}
+            className="inline-flex items-center gap-1.5 text-sm text-content-muted transition-colors hover:text-[#d97757]"
           >
-            {POWER_USER_PATHS.map((path) => {
-              const Icon = path.icon;
-              return (
-                <button
-                  key={path.id}
-                  type="button"
-                  onClick={() => handleNavigateWithPreference(path.target, path.path)}
-                  aria-label={`Navigate to ${path.label}`}
-                  className={`rounded-2xl border px-5 py-4 text-left transition ${path.accent}`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
-                        {path.eyebrow}
-                      </div>
-                      <div className="text-sm font-medium text-content">{path.label}</div>
-                    </div>
-                    <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${path.iconColor}`} aria-hidden="true" />
-                  </div>
-                  <p className="mt-2 text-xs leading-relaxed text-content-muted">{path.description}</p>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mt-8">
-            <p className="mb-3 text-center text-xs font-medium uppercase tracking-[0.18em] text-content-muted">
-              Use cases
-            </p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {USE_CASES.map((useCase) => {
-                const Icon = useCase.icon;
-                return (
-                  <button
-                    key={useCase.id}
-                    type="button"
-                    onClick={() =>
-                      handleNavigateWithPreference(useCase.target, useCase.path, useCase.preferredPath)
-                    }
-                    className="rounded-2xl border border-edge bg-surface/50 px-5 py-4 text-left transition hover:border-indigo-500/25 hover:bg-surface-secondary"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="text-sm font-medium text-content">{useCase.title}</div>
-                      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-content-secondary" aria-hidden="true" />
-                    </div>
-                    <p className="mt-2 text-xs leading-relaxed text-content-muted">{useCase.description}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Secondary surfaces */}
-          <div className="mt-8 text-center text-xs font-medium uppercase tracking-[0.18em] text-content-muted">
-            Adjacent workflows
-          </div>
-          <div
-            className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2"
-            role="navigation"
-            aria-label="Secondary navigation"
-          >
-            {SECONDARY_SURFACES.map((surface) => {
-              const Icon = surface.icon;
-              return (
-                <button
-                  key={surface.id}
-                  type="button"
-                  onClick={() =>
-                    handleNavigateWithPreference(
-                      surface.id,
-                      surface.path,
-                      undefined,
-                    )
-                  }
-                  aria-label={`Navigate to ${surface.title}`}
-                  className="flex items-start gap-3 rounded-xl border border-edge bg-surface/50 px-4 py-3 text-left transition hover:bg-surface-hover hover:border-edge"
-                >
-                  <Icon className="mt-0.5 h-4 w-4 text-content-secondary" aria-hidden="true" />
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium text-content">{surface.title}</span>
-                    <span className="mt-1 block text-xs leading-relaxed text-content-muted">
-                      {surface.subtitle}
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Footer badge */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3 rounded-xl border border-edge bg-surface/50 px-4 py-3 text-xs text-content-muted">
-            <BadgeCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-300" aria-hidden="true" />
-            <span>
-              Cold start path: scope an agent in Passport, review Receipts, escalate to Investigation when a run matters, and keep product direction grounded in captured evidence.
-            </span>
-          </div>
+            See what&apos;s under the hood
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
         </div>
       </div>
     </div>

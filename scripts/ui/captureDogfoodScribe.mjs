@@ -75,10 +75,10 @@ async function setDogfoodLocalStorage(page) {
       "nodebench-theme",
       JSON.stringify({
         mode: "dark",
-        accentColor: "indigo",
+        accentColor: "electric-blue",
         density: "comfortable",
-        fontFamily: "Inter",
-        backgroundPattern: "none",
+        fontFamily: "Manrope Studio",
+        backgroundPattern: "spotlight",
         reducedMotion: false,
       }),
     );

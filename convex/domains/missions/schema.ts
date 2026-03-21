@@ -343,3 +343,111 @@ export const agentPolicies = defineTable({
 })
   .index("by_policy_key", ["policyKey"])
   .index("by_scope_active", ["scope", "active"]);
+
+// ---------------------------------------------------------------------------
+// Passport Enforcement Logs -- audit trail for tool dispatch permission checks
+// ---------------------------------------------------------------------------
+
+export const passportEnforcementLogs = defineTable({
+  agentId: v.string(),
+  toolName: v.string(),
+  decision: v.union(v.literal("allowed"), v.literal("denied"), v.literal("escalated")),
+  reason: v.string(),
+  trustTier: v.string(),
+  policyKey: v.optional(v.string()),
+  missionId: v.optional(v.id("missions")),
+  spendCheckResult: v.optional(v.object({
+    totalSpent: v.number(),
+    limit: v.number(),
+    withinBudget: v.boolean(),
+  })),
+  createdAt: v.number(),
+})
+  .index("by_agent_created", ["agentId", "createdAt"])
+  .index("by_mission", ["missionId", "createdAt"])
+  .index("by_decision", ["decision", "createdAt"]);
+
+// ---------------------------------------------------------------------------
+// Pre-Execution Gates — "should I act?" evaluation before task dispatch
+// ---------------------------------------------------------------------------
+
+export const preExecutionGates = defineTable({
+  missionId: v.optional(v.id("missions")),
+  promptHash: v.string(),
+  prompt: v.string(),
+  gates: v.object({
+    opportunity_identified: v.boolean(),
+    unique_value: v.boolean(),
+    actionable_outcome: v.boolean(),
+    right_audience: v.boolean(),
+    information_not_lost: v.boolean(),
+  }),
+  disqualifiers: v.object({
+    already_resolved: v.boolean(),
+    social_only: v.boolean(),
+    bot_already_replied: v.boolean(),
+    sensitive_topic: v.boolean(),
+    rapid_fire: v.boolean(),
+    command_word: v.boolean(),
+  }),
+  decision: v.union(v.literal("proceed"), v.literal("skip"), v.literal("escalate")),
+  reasoning: v.string(),
+  gatesPassed: v.number(),
+  disqualifiersTriggered: v.array(v.string()),
+  latencyMs: v.number(),
+  createdAt: v.number(),
+})
+  .index("by_mission", ["missionId", "createdAt"])
+  .index("by_decision", ["decision", "createdAt"])
+  .index("by_prompt_hash", ["promptHash", "createdAt"]);
+
+// ---------------------------------------------------------------------------
+// Decision Memory — fingerprinted prior decisions for institutional memory
+// ---------------------------------------------------------------------------
+
+export const decisionMemory = defineTable({
+  fingerprint: v.string(),
+  entityRef: v.optional(v.string()),
+  actionType: v.string(),
+  domain: v.string(),
+  verdict: v.string(),
+  confidence: v.number(),
+  reasoning: v.string(),
+  rubricVersion: v.optional(v.number()),
+  sourceJudgeReviewId: v.optional(v.id("judgeReviews")),
+  sourceMissionId: v.optional(v.id("missions")),
+  createdAt: v.number(),
+})
+  .index("by_fingerprint", ["fingerprint", "createdAt"])
+  .index("by_domain_action", ["domain", "actionType", "createdAt"])
+  .index("by_entity", ["entityRef", "createdAt"])
+  .index("by_source_mission", ["sourceMissionId", "createdAt"]);
+
+// ---------------------------------------------------------------------------
+// Consistency Alerts — cross-agent decision conflict detection
+// ---------------------------------------------------------------------------
+
+export const consistencyAlerts = defineTable({
+  scenarioFingerprint: v.string(),
+  agentA: v.string(),
+  agentB: v.string(),
+  verdictA: v.string(),
+  verdictB: v.string(),
+  confidenceA: v.number(),
+  confidenceB: v.number(),
+  missionIdA: v.optional(v.id("missions")),
+  missionIdB: v.optional(v.id("missions")),
+  conflictType: v.union(
+    v.literal("verdict_mismatch"),
+    v.literal("confidence_divergence"),
+    v.literal("recommendation_conflict"),
+  ),
+  severity: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+  resolvedAt: v.optional(v.number()),
+  resolvedBy: v.optional(v.string()),
+  resolution: v.optional(v.string()),
+  createdAt: v.number(),
+})
+  .index("by_fingerprint", ["scenarioFingerprint", "createdAt"])
+  .index("by_unresolved", ["resolvedAt", "createdAt"])
+  .index("by_severity", ["severity", "resolvedAt", "createdAt"]);

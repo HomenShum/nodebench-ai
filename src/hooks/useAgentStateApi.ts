@@ -9,12 +9,12 @@
  */
 
 import { useMemo } from "react";
-import type { MainView } from "./useMainLayoutRouting";
+import type { MainView } from "@/lib/registry/viewRegistry";
 import {
   type ViewCapability,
   getViewCapability,
   getAllViewCapabilities,
-} from "../lib/viewCapabilityRegistry";
+} from "@/lib/registry/viewCapabilityRegistry";
 
 // ---------------------------------------------------------------------------
 // Types

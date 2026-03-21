@@ -1,4 +1,4 @@
-import type { MainView, ResearchTab } from "@/lib/viewRegistry";
+import type { MainView, ResearchTab } from "@/lib/registry/viewRegistry";
 
 export const CONTROL_PLANE_PREFERRED_PATH_KEY = "nodebench:control-plane:preferred-path";
 export const CONTROL_PLANE_CHECKLIST_KEY = "nodebench:control-plane:first-run-checklist";

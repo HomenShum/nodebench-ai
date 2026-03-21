@@ -16,17 +16,17 @@ export interface DocumentTab {
 
 // Predefined color palette for document tabs
 export const TAB_COLORS = [
-  { bg: "bg-indigo-600", ring: "ring-ring", shadow: "shadow-[rgb(79, 70, 229)]/20", accent: "accent-[rgb(79, 70, 229)]" },
+  { bg: "bg-[var(--accent-primary)]", ring: "ring-ring", shadow: "shadow-[var(--accent-primary)]/20", accent: "accent-[var(--accent-primary)]" },
   { bg: "bg-[var(--accent-secondary)]", ring: "ring-[var(--accent-secondary)]/60", shadow: "shadow-[var(--accent-secondary)]/20", accent: "accent-[var(--accent-secondary)]" },
-  { bg: "bg-indigo-600", ring: "ring-ring", shadow: "shadow-[rgb(79, 70, 229)]/20", accent: "accent-[rgb(79, 70, 229)]" },
+  { bg: "bg-[var(--accent-primary)]", ring: "ring-ring", shadow: "shadow-[var(--accent-primary)]/20", accent: "accent-[var(--accent-primary)]" },
   { bg: "bg-[var(--accent-secondary)]", ring: "ring-[var(--accent-secondary)]/60", shadow: "shadow-[var(--accent-secondary)]/20", accent: "accent-[var(--accent-secondary)]" },
-  { bg: "bg-indigo-600", ring: "ring-ring", shadow: "shadow-[rgb(79, 70, 229)]/20", accent: "accent-[rgb(79, 70, 229)]" },
+  { bg: "bg-[var(--accent-primary)]", ring: "ring-ring", shadow: "shadow-[var(--accent-primary)]/20", accent: "accent-[var(--accent-primary)]" },
   { bg: "bg-[var(--accent-secondary)]", ring: "ring-[var(--accent-secondary)]/60", shadow: "shadow-[var(--accent-secondary)]/20", accent: "accent-[var(--accent-secondary)]" },
-  { bg: "bg-indigo-600", ring: "ring-ring", shadow: "shadow-[rgb(79, 70, 229)]/20", accent: "accent-[rgb(79, 70, 229)]" },
+  { bg: "bg-[var(--accent-primary)]", ring: "ring-ring", shadow: "shadow-[var(--accent-primary)]/20", accent: "accent-[var(--accent-primary)]" },
   { bg: "bg-[var(--accent-secondary)]", ring: "ring-[var(--accent-secondary)]/60", shadow: "shadow-[var(--accent-secondary)]/20", accent: "accent-[var(--accent-secondary)]" },
-  { bg: "bg-indigo-600", ring: "ring-ring", shadow: "shadow-[rgb(79, 70, 229)]/20", accent: "accent-[rgb(79, 70, 229)]" },
+  { bg: "bg-[var(--accent-primary)]", ring: "ring-ring", shadow: "shadow-[var(--accent-primary)]/20", accent: "accent-[var(--accent-primary)]" },
   { bg: "bg-[var(--accent-secondary)]", ring: "ring-[var(--accent-secondary)]/60", shadow: "shadow-[var(--accent-secondary)]/20", accent: "accent-[var(--accent-secondary)]" },
-  { bg: "bg-indigo-600", ring: "ring-ring", shadow: "shadow-[rgb(79, 70, 229)]/20", accent: "accent-[rgb(79, 70, 229)]" },
+  { bg: "bg-[var(--accent-primary)]", ring: "ring-ring", shadow: "shadow-[var(--accent-primary)]/20", accent: "accent-[var(--accent-primary)]" },
   { bg: "bg-[var(--accent-secondary)]", ring: "ring-[var(--accent-secondary)]/60", shadow: "shadow-[var(--accent-secondary)]/20", accent: "accent-[var(--accent-secondary)]" },
 ];
 

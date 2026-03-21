@@ -9,7 +9,7 @@
  * - Hover-only actions
  */
 
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
@@ -26,6 +26,8 @@ import type { DocumentCardData } from "../utils/documentHelpers";
 
 export interface DocumentRowProps {
   doc: DocumentCardData;
+  persistedTags?: Array<{ name: string; kind?: string }>;
+  loadPersistedTags?: boolean;
   isSelected?: boolean;
   onSelect: (documentId: Id<"documents">) => void;
   onToggleSelect?: (documentId: Id<"documents">) => void;
@@ -111,8 +113,10 @@ function getTagStyle(kind?: string, fallbackStyle?: string): string {
 // Component
 // ============================================================================
 
-export function DocumentRow({
+export const DocumentRow = memo(function DocumentRow({
   doc,
+  persistedTags: providedPersistedTags,
+  loadPersistedTags = true,
   isSelected = false,
   onSelect,
   onToggleSelect,
@@ -138,13 +142,19 @@ export function DocumentRow({
   const status = getIntelligenceStatus(doc);
 
   // Fetch persisted tags from database (LLM-generated)
-  const persistedTags = useQuery(api.tags.listForDocument, { documentId: doc._id });
+  const persistedTags = useQuery(
+    api.tags.listForDocument,
+    loadPersistedTags ? { documentId: doc._id } : "skip",
+  );
+  const resolvedPersistedTags = loadPersistedTags
+    ? persistedTags
+    : providedPersistedTags;
 
   // Get tags: prefer persisted LLM-generated tags, fall back to file-type inference
   const tags: Array<{ name: string; kind?: string }> = useMemo(() => {
     // If we have persisted tags from the database, use them
-    if (persistedTags && persistedTags.length > 0) {
-      return persistedTags.slice(0, 4).map((t) => ({
+    if (resolvedPersistedTags && resolvedPersistedTags.length > 0) {
+      return resolvedPersistedTags.slice(0, 4).map((t) => ({
         name: t.name,
         kind: t.kind,
       }));
@@ -207,10 +217,10 @@ export function DocumentRow({
     }
 
     return fallbackTags;
-  }, [doc, typeGuess, persistedTags]);
+  }, [doc, resolvedPersistedTags, typeGuess]);
 
   // Check if tags are LLM-generated (from database)
-  const hasAITags = persistedTags && persistedTags.length > 0;
+  const hasAITags = !!(resolvedPersistedTags && resolvedPersistedTags.length > 0);
 
   const isFavorite = !!(doc as any).isFavorite;
   const modifiedAt = (doc as any).updatedAt || (doc as any)._creationTime;
@@ -396,4 +406,4 @@ export function DocumentRow({
       </div>
     </div>
   );
-}
+});

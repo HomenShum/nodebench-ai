@@ -5,7 +5,7 @@
  * from any document viewer and injecting it into Fast Agent context.
  */
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 import type { Id } from '../../../../convex/_generated/dataModel';
 
 export type SelectionSourceType = 
@@ -113,13 +113,15 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
     return `${header}\n\n${content}`;
   }, [selection]);
 
-  const value: SelectionContextValue = {
+  const hasSelection = selection !== null && selection.content.trim().length > 0;
+
+  const value = useMemo<SelectionContextValue>(() => ({
     selection,
     setSelection,
     clearSelection,
     formatForContext,
-    hasSelection: selection !== null && selection.content.trim().length > 0,
-  };
+    hasSelection,
+  }), [selection, setSelection, clearSelection, formatForContext, hasSelection]);
 
   return (
     <SelectionContext.Provider value={value}>

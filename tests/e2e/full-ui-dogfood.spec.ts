@@ -389,7 +389,7 @@ test.describe("Full UI Dogfood", () => {
     activeRoute = "/agents";
     await navigateWithinApp(page, "/agents");
     await page.waitForTimeout(300);
-    const agentInput = page.locator("input[placeholder*='Ask anything'], textarea[placeholder*='Ask anything']").first();
+    const agentInput = page.locator("input[placeholder*='Ask anything']:visible, textarea[placeholder*='Ask anything']:visible").first();
     if (await agentInput.count()) {
       await agentInput.click();
       await agentInput.fill("Show me the latest research signals");
@@ -404,7 +404,7 @@ test.describe("Full UI Dogfood", () => {
     activeRoute = "/calendar";
     await navigateWithinApp(page, "/calendar");
     await page.waitForTimeout(300);
-    const calendarDay = page.locator("div[role='button'][aria-pressed]").first();
+    const calendarDay = page.locator("div[role='button'][aria-pressed]:visible").first();
     if (await calendarDay.count()) {
       await calendarDay.click();
       await page.waitForTimeout(500);
@@ -420,7 +420,7 @@ test.describe("Full UI Dogfood", () => {
     activeRoute = "/research";
     await navigateWithinApp(page, "/research");
     await page.waitForTimeout(300);
-    const entityLink = page.locator("button.border-b-2.border-dashed").first();
+    const entityLink = page.locator("button.border-b-2.border-dashed:visible").first();
     if (await entityLink.count()) {
       await entityLink.hover();
       await page.waitForTimeout(600);
@@ -434,7 +434,7 @@ test.describe("Full UI Dogfood", () => {
     activeRoute = "/research/briefing";
     await navigateWithinApp(page, "/research/briefing");
     await page.waitForTimeout(300);
-    const signalCard = page.locator("button[aria-expanded][type='button']").first();
+    const signalCard = page.locator("button[aria-expanded][type='button']:visible").first();
     if (await signalCard.count()) {
       await signalCard.click();
       await page.waitForTimeout(500);
@@ -448,7 +448,7 @@ test.describe("Full UI Dogfood", () => {
     activeRoute = "/documents";
     await navigateWithinApp(page, "/documents");
     await page.waitForTimeout(300);
-    const docCard = page.locator("div[draggable='true']").first();
+    const docCard = page.locator("div[draggable='true']:visible").first();
     if (await docCard.count()) {
       await docCard.hover();
       await page.waitForTimeout(500);
@@ -462,7 +462,7 @@ test.describe("Full UI Dogfood", () => {
     activeRoute = "/github";
     await navigateWithinApp(page, "/github");
     await page.waitForTimeout(300);
-    const repoLink = page.locator("a[href*='github.com'][target='_blank']").first();
+    const repoLink = page.locator("a[href*='github.com'][target='_blank']:visible").first();
     if (await repoLink.count()) {
       await repoLink.hover();
       await page.waitForTimeout(400);
@@ -476,7 +476,7 @@ test.describe("Full UI Dogfood", () => {
     activeRoute = "/funding";
     await navigateWithinApp(page, "/funding");
     await page.waitForTimeout(300);
-    const dealBtn = page.locator("button[type='button'].w-full.text-left").first();
+    const dealBtn = page.locator("button[type='button'].w-full.text-left:visible").first();
     if (await dealBtn.count()) {
       await dealBtn.click();
       await page.waitForTimeout(500);
@@ -489,7 +489,7 @@ test.describe("Full UI Dogfood", () => {
     // 8. Search input on home — type and see suggestions
     activeRoute = "/";
     await navigateWithinApp(page, "/");
-    const searchInput = page.locator("input[placeholder*='Ask anything']").first();
+    const searchInput = page.locator("input[placeholder*='Ask anything']:visible").first();
     if (await searchInput.count()) {
       await searchInput.click();
       await searchInput.fill("AI agents");
@@ -519,13 +519,13 @@ test.describe("Full UI Dogfood", () => {
     await navigateWithinApp(page, "/agents");
     await page.waitForTimeout(400);
     // Try to open the FastAgent panel via FAB or inline trigger
-    const fabBtn = page.locator("button[aria-label*='Agent'], button[aria-label*='agent']").first();
+    const fabBtn = page.locator("button[aria-label*='Agent']:visible:not([disabled]), button[aria-label*='agent']:visible:not([disabled])").first();
     if (await fabBtn.count()) {
       await fabBtn.click();
       await page.waitForTimeout(800);
     }
     // Find the chat input (textarea or input with message placeholder)
-    const chatInput = page.locator("textarea[placeholder*='Message'], textarea[placeholder*='message'], textarea[placeholder*='Ask'], input[placeholder*='Message']").first();
+    const chatInput = page.locator("textarea[placeholder*='Message']:visible, textarea[placeholder*='message']:visible, textarea[placeholder*='Ask']:visible, input[placeholder*='Message']:visible").first();
     if (await chatInput.count()) {
       await chatInput.click();
       await chatInput.fill("Analyze the latest AI model benchmarks and compare Claude vs GPT performance");
@@ -545,7 +545,7 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // 11. FastAgentPanel — thread management (switch threads, create new)
-    const threadTab = page.locator("[data-thread-id], .thread-item, [role='tab']").first();
+    const threadTab = page.locator("[data-thread-id]:visible, .thread-item:visible, [role='tab']:visible").first();
     if (await threadTab.count()) {
       await threadTab.click();
       await page.waitForTimeout(500);
@@ -556,7 +556,7 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // 12. FastAgentPanel — skills panel / settings
-    const agentSettingsBtn = page.locator("button:has-text('Settings'), button:has-text('Skills'), button[aria-label*='settings']").first();
+    const agentSettingsBtn = page.locator("button:has-text('Settings'):visible, button:has-text('Skills'):visible, button[aria-label*='settings']:visible").first();
     if (await agentSettingsBtn.count()) {
       await agentSettingsBtn.click();
       await page.waitForTimeout(500);
@@ -572,7 +572,7 @@ test.describe("Full UI Dogfood", () => {
     activeRoute = "/agents/live";
     await navigateWithinApp(page, "/agents/live");
     await page.waitForTimeout(400);
-    const laneCard = page.locator("[class*='lane'], [class*='agent-card'], [class*='rounded-xl'][class*='border']").first();
+    const laneCard = page.locator("[class*='lane']:visible, [class*='agent-card']:visible, [class*='rounded-xl'][class*='border']:visible").first();
     if (await laneCard.count()) {
       await laneCard.hover();
       await page.waitForTimeout(400);
@@ -587,7 +587,7 @@ test.describe("Full UI Dogfood", () => {
     await navigateWithinApp(page, "/dogfood");
     await page.waitForTimeout(400);
     // Click a frame thumbnail to select it
-    const frameThumbnail = page.locator("button:has(img), [class*='aspect-'][class*='rounded']").first();
+    const frameThumbnail = page.locator("button:has(img):visible, [class*='aspect-'][class*='rounded']:visible").first();
     if (await frameThumbnail.count()) {
       await frameThumbnail.click();
       await page.waitForTimeout(500);
@@ -598,7 +598,7 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // 15. Dogfood QA results panel — check score display and issue list
-    const qaScoreEl = page.locator("[class*='score']").first();
+    const qaScoreEl = page.locator("[class*='score']:visible").first();
     if (await qaScoreEl.count()) {
       await page.screenshot({
         path: "test-results/full-ui-dogfood/interaction-dogfood-qa-score.png",
@@ -610,7 +610,7 @@ test.describe("Full UI Dogfood", () => {
     activeRoute = "/activity";
     await navigateWithinApp(page, "/activity");
     await page.waitForTimeout(300);
-    const taskCard = page.locator("[class*='task-card'], [class*='session-card'], div[class*='rounded-lg border'][class*='p-4']").first();
+    const taskCard = page.locator("[class*='task-card']:visible, [class*='session-card']:visible, div[class*='rounded-lg border'][class*='p-4']:visible").first();
     if (await taskCard.count()) {
       await taskCard.hover();
       await page.waitForTimeout(400);
@@ -630,7 +630,7 @@ test.describe("Full UI Dogfood", () => {
     activeRoute = "/analytics/recommendations";
     await navigateWithinApp(page, "/analytics/recommendations");
     await page.waitForTimeout(300);
-    const chartArea = page.locator("svg .recharts-bar-rectangle, svg rect[class*='recharts'], svg .recharts-line-dot").first();
+    const chartArea = page.locator("svg .recharts-bar-rectangle:visible, svg rect[class*='recharts']:visible, svg .recharts-line-dot:visible").first();
     if (await chartArea.count()) {
       await chartArea.hover();
       await page.waitForTimeout(400);
@@ -644,7 +644,7 @@ test.describe("Full UI Dogfood", () => {
     activeRoute = "/mcp/ledger";
     await navigateWithinApp(page, "/mcp/ledger");
     await page.waitForTimeout(300);
-    const toolRow = page.locator("tr[role='row'], div[role='row']").first();
+    const toolRow = page.locator("tr[role='row']:visible, div[role='row']:visible").first();
     if (await toolRow.count()) {
       await toolRow.click();
       await page.waitForTimeout(500);
@@ -659,7 +659,7 @@ test.describe("Full UI Dogfood", () => {
     await navigateWithinApp(page, "/");
     await page.keyboard.press("?");
     await page.waitForTimeout(500);
-    const shortcutsOverlay = page.locator("[role='dialog'], [class*='shortcuts'], [class*='overlay']").first();
+    const shortcutsOverlay = page.locator("[role='dialog']:visible, [class*='shortcuts']:visible, [class*='overlay']:visible").first();
     if (await shortcutsOverlay.count()) {
       await page.screenshot({
         path: "test-results/full-ui-dogfood/interaction-keyboard-shortcuts.png",

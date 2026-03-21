@@ -5,7 +5,7 @@
  * discover and invoke. Inspired by Moltbook's feed-based discovery and
  * WebMCP's per-page tool registration pattern.
  *
- * Tools (11 total):
+ * Tools (12 total):
  *   Content:
  *   - nodebench_search: search documents and knowledge
  *   - nodebench_create_document: create a new document
@@ -16,6 +16,7 @@
  *   - nodebench_get_app_state: current view, capabilities, auth status
  *   - nodebench_list_views: full view manifest (27 views with capabilities)
  *   - nodebench_navigate: navigate to a view, returns target capabilities
+ *   - nodebench_get_screen_context: current screen metadata and active scopes
  *
  *   DOM Introspection (Phase 2):
  *   - nodebench_query_elements: all data-agent-* annotated elements on page
@@ -33,13 +34,13 @@
 import { useEffect, useRef } from "react";
 import { useConvex } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import type { MainView } from "./useMainLayoutRouting";
+import type { MainView } from "@/lib/registry/viewRegistry";
 import {
   type ViewCapability,
   getViewCapability,
   getAllViewCapabilities,
   searchViewCapabilities,
-} from "../lib/viewCapabilityRegistry";
+} from "@/lib/registry/viewCapabilityRegistry";
 
 declare global {
   interface Navigator {
@@ -68,6 +69,120 @@ interface WebMcpProviderOptions {
   agentPanelOpen?: boolean;
   /** Callback to navigate to a view */
   onNavigate?: (view: MainView) => void;
+}
+
+type ScreenScopeSummary = {
+  id: string;
+  label: string;
+  role: string;
+  visible: boolean;
+};
+
+function isDomElementVisible(element: Element) {
+  if (!(element instanceof HTMLElement)) return false;
+  const style = window.getComputedStyle(element);
+  if (style.display === "none" || style.visibility === "hidden" || style.opacity === "0") return false;
+  const rect = element.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0 && element.getClientRects().length > 0;
+}
+
+function getScreenRoot() {
+  return document.querySelector<HTMLElement>("[data-screen-id]") ?? document.querySelector<HTMLElement>("[data-main-content]");
+}
+
+function getElementLabel(element: HTMLElement) {
+  return (
+    element.getAttribute("data-agent-label") ??
+    element.getAttribute("aria-label") ??
+    element.getAttribute("title") ??
+    element.getAttribute("placeholder") ??
+    element.innerText?.replace(/\s+/g, " ").trim() ??
+    element.textContent?.replace(/\s+/g, " ").trim() ??
+    element.tagName.toLowerCase()
+  );
+}
+
+function getActiveScopes(): ScreenScopeSummary[] {
+  const roots = [
+    ...document.querySelectorAll<HTMLElement>("[role='dialog'], [aria-modal='true'], [aria-label='AI Chat Panel'], [aria-label='Agent Interface']"),
+  ].filter(isDomElementVisible);
+
+  return roots.map((root, index) => ({
+    id:
+      root.getAttribute("data-agent-id") ??
+      root.getAttribute("data-screen-id") ??
+      root.getAttribute("aria-label") ??
+      `scope-${index + 1}`,
+    label: getElementLabel(root),
+    role: root.getAttribute("role") ?? "dialog",
+    visible: true,
+  }));
+}
+
+function getScreenContext() {
+  const screenRoot = getScreenRoot();
+  const activeScopes = getActiveScopes();
+
+  return {
+    appId: document.querySelector("[data-app-id]")?.getAttribute("data-app-id") ?? "nodebench-ai",
+    screenId:
+      screenRoot?.getAttribute("data-screen-id") ??
+      screenRoot?.getAttribute("data-current-view") ??
+      null,
+    screenTitle:
+      screenRoot?.getAttribute("data-screen-title") ??
+      screenRoot?.getAttribute("data-agent-label") ??
+      screenRoot?.getAttribute("aria-label") ??
+      document.title,
+    screenPath: screenRoot?.getAttribute("data-screen-path") ?? window.location.pathname,
+    routeView: screenRoot?.getAttribute("data-route-view") ?? null,
+    loadState: screenRoot?.getAttribute("data-screen-state") ?? "ready",
+    activeScopes,
+    webmcpEnabled: Boolean(navigator.modelContext),
+    chromeDevtoolsCompatible:
+      document.querySelector("[data-mcp-compat]")?.getAttribute("data-mcp-compat")?.includes("chrome-devtools-mcp") ?? false,
+  };
+}
+
+function queryAnnotatedElements(args: { filter?: string; scope?: string; visibleOnly?: boolean }) {
+  const activeScopes = getActiveScopes();
+  const explicitScope = args.scope
+    ? document.querySelector<HTMLElement>(
+        `[data-agent-id="${args.scope}"], [data-screen-id="${args.scope}"], [aria-label="${args.scope}"]`,
+      )
+    : null;
+  const activeScopeRoot = explicitScope ?? (activeScopes.length > 0
+    ? document.querySelector<HTMLElement>(
+        `[data-agent-id="${activeScopes[activeScopes.length - 1]?.id}"], [aria-label="${activeScopes[activeScopes.length - 1]?.label}"]`,
+      )
+    : null);
+  const searchRoot = activeScopeRoot ?? getScreenRoot() ?? document.body;
+  const elements = searchRoot.querySelectorAll<HTMLElement>("[data-agent-id]");
+
+  return [...elements]
+    .filter((el) => {
+      const agentId = el.getAttribute("data-agent-id") ?? "";
+      if (args.filter && !agentId.includes(args.filter)) return false;
+      if (args.visibleOnly === false) return true;
+      return isDomElementVisible(el);
+    })
+    .map((el) => ({
+      agentId: el.getAttribute("data-agent-id") ?? "",
+      action: el.getAttribute("data-agent-action"),
+      label: el.getAttribute("data-agent-label") ?? getElementLabel(el),
+      target: el.getAttribute("data-agent-target"),
+      tagName: el.tagName.toLowerCase(),
+      role: el.getAttribute("role"),
+      type: el.getAttribute("type"),
+      visible: isDomElementVisible(el),
+      disabled: el.hasAttribute("disabled") || el.getAttribute("aria-disabled") === "true",
+      screenId: getScreenRoot()?.getAttribute("data-screen-id") ?? null,
+      scopeId:
+        activeScopeRoot?.getAttribute("data-agent-id") ??
+        activeScopeRoot?.getAttribute("aria-label") ??
+        getScreenRoot()?.getAttribute("data-screen-id") ??
+        null,
+    }));
 }
 
 export function useWebMcpProvider(enabledOrOptions: boolean | WebMcpProviderOptions) {
@@ -246,7 +361,23 @@ export function useWebMcpProvider(enabledOrOptions: boolean | WebMcpProviderOpti
               isAuthenticated: s.isAuthenticated,
               agentPanelOpen: s.agentPanelOpen,
               viewCapabilities: summarizeView(cap),
+              screenContext: typeof document !== "undefined" ? getScreenContext() : null,
             },
+          };
+        },
+      },
+      {
+        name: "nodebench_get_screen_context",
+        description:
+          "Get the current screen's DOM contract for browser agents: stable screen id, title, path, load state, and any active dialog or panel scopes. Use this before interacting so WebMCP and Chrome DevTools MCP can target the right surface.",
+        inputSchema: {
+          type: "object",
+          properties: {},
+        },
+        execute: async () => {
+          return {
+            success: true,
+            screen: typeof document !== "undefined" ? getScreenContext() : null,
           };
         },
       },
@@ -326,40 +457,26 @@ export function useWebMcpProvider(enabledOrOptions: boolean | WebMcpProviderOpti
               type: "string",
               description: "Optional filter — only return elements whose ID contains this substring",
             },
+            scope: {
+              type: "string",
+              description: "Optional scope selector by data-agent-id, data-screen-id, or aria-label. If omitted, the active dialog/panel scope is preferred.",
+            },
+            visibleOnly: {
+              type: "boolean",
+              description: "Return only visible elements (default: true)",
+            },
           },
         },
-        execute: async (args: { filter?: string }) => {
+        execute: async (args: { filter?: string; scope?: string; visibleOnly?: boolean }) => {
           try {
-            const elements = document.querySelectorAll("[data-agent-id]");
-            const results: Array<{
-              agentId: string;
-              action: string | null;
-              label: string | null;
-              target: string | null;
-              tagName: string;
-              visible: boolean;
-            }> = [];
-
-            elements.forEach((el) => {
-              const agentId = el.getAttribute("data-agent-id") ?? "";
-              if (args.filter && !agentId.includes(args.filter)) return;
-
-              const rect = el.getBoundingClientRect();
-              results.push({
-                agentId,
-                action: el.getAttribute("data-agent-action"),
-                label: el.getAttribute("data-agent-label"),
-                target: el.getAttribute("data-agent-target"),
-                tagName: el.tagName.toLowerCase(),
-                visible: rect.width > 0 && rect.height > 0,
-              });
-            });
+            const results = queryAnnotatedElements(args);
 
             return {
               success: true,
               elements: results,
               count: results.length,
               currentView: stateRef.current.currentView,
+              screenContext: getScreenContext(),
             };
           } catch (e: any) {
             return { success: false, error: e.message };

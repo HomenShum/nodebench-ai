@@ -41,6 +41,48 @@ function criticalCSSPlugin(): Plugin {
   };
 }
 
+/**
+ * Strip <link rel="stylesheet"> tags for heavy lazy-loaded CSS from index.html.
+ *
+ * Vite adds <link> tags for ALL extracted CSS chunks to index.html, even those
+ * that belong to lazy-loaded routes. This plugin removes them post-build so
+ * they only load on-demand when their parent JS chunk is fetched.
+ *
+ * The CSS files remain in dist/assets/ — they're referenced by their JS chunks
+ * via __vite__mapDeps and loaded automatically when the chunk executes.
+ */
+function deferHeavyCSSPlugin(): Plugin {
+  // CSS files matching any of these prefixes are removed from index.html.
+  // They'll still be loaded on-demand by their JS chunk.
+  const deferredCssPrefixes = ['katex-vendor'];
+
+  return {
+    name: 'vite-plugin-defer-heavy-css',
+    apply: 'build',
+    enforce: 'post',
+    async closeBundle() {
+      try {
+        const distDir = path.resolve(__dirname, "dist");
+        const indexPath = path.join(distDir, "index.html");
+        if (!fs.existsSync(indexPath)) return;
+
+        let html = await fs.promises.readFile(indexPath, "utf8");
+        for (const prefix of deferredCssPrefixes) {
+          // Match <link rel="stylesheet" ... href=".../{prefix}-{hash}.css">
+          const re = new RegExp(
+            `\\s*<link[^>]*href="[^"]*/${prefix}-[^"]*\\.css"[^>]*>`,
+            'g'
+          );
+          html = html.replace(re, '');
+        }
+        await fs.promises.writeFile(indexPath, html, "utf8");
+      } catch (error) {
+        console.warn("[Defer Heavy CSS] Failed to process:", error);
+      }
+    },
+  };
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   // Root cause: terser minification can OOM on 2-core / 8GB builders (Vercel + local).
@@ -154,6 +196,8 @@ export default defineConfig(({ mode }) => {
      // Critical CSS inlining can significantly increase build time on constrained builders.
      // Keep it opt-in (NODEBENCH_CRITICAL_CSS=1) and rely on `index.html` baseline styles to prevent FOUC.
      enableCriticalCss ? criticalCSSPlugin() : null,
+     // Remove katex-vendor CSS from index.html — it's only needed in the agents surface
+     deferHeavyCSSPlugin(),
     // Bundle analyzer - run with: ANALYZE=true npm run build
     process.env.ANALYZE === 'true' ? visualizer({
       filename: './dist/stats.html',
@@ -230,8 +274,34 @@ window.addEventListener('message', async (message) => {
     minify,
     target: "es2020",
     cssMinify: true,
-    // Modern browsers don't need module preload polyfill
-    modulePreload: { polyfill: false },
+    // Modern browsers don't need module preload polyfill.
+    // Custom resolveDependencies limits preload to essential first-paint chunks
+    // (vendor + small shared code). Heavy lazy-loaded chunks (agent-fast-panel,
+    // editor-vendor, recharts-vendor, etc.) are excluded — they load on demand
+    // when the user navigates to their surface.
+    modulePreload: {
+      polyfill: false,
+      resolveDependencies(filename, deps) {
+        // Only preload deps for the entry file
+        if (!filename.includes('index')) return [];
+        // Filter out heavy chunks that are lazy-loaded surfaces, not first-paint
+        const heavyChunkPrefixes = [
+          'agent-fast-panel', 'agent-autonomous', 'agent-oracle', 'agent-topic',
+          'agent-sidebar', 'agent-approval', 'agent-notifications',
+          'route-agents', 'route-research', 'route-documents', 'route-calendar',
+          'route-analytics', 'route-spreadsheets',
+          'editor-vendor', 'syntax-vendor', 'katex-vendor', 'katex-lazy', 'recharts-vendor',
+          'spreadsheet-vendor',
+          'bench-telemetry', 'bench-leaderboard', 'bench-scenarios', 'bench-runs',
+          'doc-', 'editor-',
+          'trajectory', 'DevDashboard', 'SettingsModal',
+        ];
+        return deps.filter(dep => {
+          const basename = dep.split('/').pop() ?? dep;
+          return !heavyChunkPrefixes.some(prefix => basename.startsWith(prefix));
+        });
+      },
+    },
     terserOptions: useTerser ? {
       compress: {
         // Keep `console.error`/`console.warn` for diagnostics; strip noisy logs only.
@@ -260,6 +330,14 @@ window.addEventListener('message', async (message) => {
         assetFileNames: "assets/[name]-[hash][extname]",
         // Route-based code splitting for optimal loading
         manualChunks(id) {
+          // KaTeX lazy-loader wrapper — force into its own tiny chunk so Rollup
+          // does NOT inline it into agent-fast-panel. If inlined, Rollup hoists
+          // katex-vendor as a static dep of agent-fast-panel (and transitively
+          // the main bundle). As a separate chunk, the dynamic import boundary
+          // is preserved: agent-fast-panel -> (dynamic) -> katex-lazy -> (static) -> katex-vendor.
+          if (id.includes('lazyRehypeKatex')) {
+            return 'katex-lazy';
+          }
           // Vendor chunks - only split large/important libraries
           if (id.includes('/node_modules/')) {
             // React core (keep small and cacheable)
@@ -295,6 +373,16 @@ window.addEventListener('message', async (message) => {
             if (id.includes('/node_modules/prismjs/') || id.includes('/node_modules/highlight.js/')) {
               return 'syntax-vendor';
             }
+            // KaTeX math rendering (heavy, only used in FastAgentPanel message bubbles)
+            // rehype-katex depends on katex — bundle them together so the entire
+            // katex dependency tree lives in one deferred chunk.
+            if (id.includes('/node_modules/katex/') || id.includes('/node_modules/rehype-katex/')) {
+              return 'katex-vendor';
+            }
+            // Recharts (heavy charting, used in TelemetryInspector + ModelEvalDashboard)
+            if (id.includes('/node_modules/recharts/')) {
+              return 'recharts-vendor';
+            }
             // Zod (validation, commonly used)
             if (id.includes('/node_modules/zod/')) {
               return 'zod-vendor';
@@ -307,11 +395,115 @@ window.addEventListener('message', async (message) => {
           if (id.includes('/features/analytics/')) {
             return 'route-analytics';
           }
+          // Benchmarks: lazy-loaded sub-panels get their own chunks
+          if (id.includes('/features/benchmarks/')) {
+            if (id.includes('/TelemetryInspector')) return 'bench-telemetry';
+            if (id.includes('/ModelLeaderboard')) return 'bench-leaderboard';
+            if (id.includes('/ScenarioCatalog')) return 'bench-scenarios';
+            if (id.includes('/WorkbenchRunsTable')) return 'bench-runs';
+            // WorkbenchView and remaining components stay together
+          }
+          // Trajectory: lazy-loaded from WorkbenchView and other views
+          if (id.includes('/features/trajectory/')) {
+            return 'trajectory';
+          }
+          // Documents feature: per-boundary chunking so only the active
+          // mode/overlay loads. Each chunk matches a React.lazy() boundary.
           if (id.includes('/features/documents/')) {
+            // Per-mode view surfaces (lazy-loaded by DocumentsTabContent)
+            if (id.includes('/viewModes/DocumentsCardsView')) return 'doc-view-cards';
+            if (id.includes('/viewModes/DocumentsListView')) return 'doc-view-list';
+            if (id.includes('/viewModes/DocumentsSegmentedView')) return 'doc-view-segmented';
+            if (id.includes('/viewModes/index')) return undefined; // barrel — let Vite decide
+            // VisualGlimpse preview renderer (lazy-loaded by DocumentCard)
+            if (id.includes('/cards/VisualGlimpse')) return 'doc-visual-glimpse';
+            // Preview family modules (lazy-loadable by family)
+            if (id.includes('/previews/SpreadsheetPreview')) return 'doc-preview-spreadsheet';
+            // Media cinema viewer (lazy-loaded by PlannerOverlays)
+            if (id.includes('/MediaCinemaViewer')) return 'doc-media-viewer';
+            // Sidebar panel (lazy-loaded by WorkspaceSurface)
+            if (id.includes('/DocumentSidebarPanel')) return 'doc-sidebar';
+            // Planner surface island (lazy-loaded by DocumentsHomeHub)
+            if (id.includes('/DocumentsPlannerSurface')) return 'doc-planner-surface';
+            // Planner overlays (lazy-loaded by PlannerSurface)
+            if (id.includes('/DocumentsPlannerOverlays')) return 'doc-planner-overlays';
+            // Planner hooks (loaded by PlannerSurface, not entry)
+            if (id.includes('/hooks/usePlannerController')) return 'doc-planner-surface';
+            if (id.includes('/hooks/usePlannerDateNav')) return 'doc-planner-surface';
+            if (id.includes('/hooks/usePlannerAgendaData')) return 'doc-planner-surface';
+            if (id.includes('/hooks/usePlannerViewPrefs')) return 'doc-planner-surface';
+            if (id.includes('/hooks/usePlannerEditor')) return 'doc-planner-surface';
+            if (id.includes('/hooks/usePlannerMutations')) return 'doc-planner-surface';
+            // Planner provider (loaded by PlannerSurface)
+            if (id.includes('/context/DocumentsPlannerProvider')) return 'doc-planner-surface';
+            // Secondary views — NOT on documents entry path, loaded by
+            // ActiveSurfaceHost or other lazy boundaries
+            if (id.includes('/views/SpreadsheetView')) return 'doc-view-spreadsheet';
+            if (id.includes('/views/FileViewer')) return 'doc-view-file';
+            if (id.includes('/views/DocumentView')) return 'doc-view-document';
+            if (id.includes('/views/PublicDocuments')) return undefined; // tiny, let Vite decide
+            // Components only used by secondary views (not entry path)
+            if (id.includes('/DocumentHeader')) return 'doc-view-document';
+            if (id.includes('/CodeViewer')) return 'doc-view-file';
+            if (id.includes('/DocumentGrid')) return 'doc-legacy-grid'; // dead code, legacy only
+            // Spreadsheet surfaces — lazy-loaded from ActiveSurfaceHost
+            if (id.includes('/surfaces/spreadsheets/')) return 'doc-spreadsheet-surface';
+            // Editors — lazy-loaded from MiniEditorPopover in @shared/
+            if (id.includes('/editors/SpreadsheetMiniEditor')) return 'doc-editor-spreadsheet';
+            if (id.includes('/editors/DossierMiniEditor')) return 'doc-editor-dossier';
+            if (id.includes('/editors/DocumentMiniEditor')) return 'doc-editor-document';
+            if (id.includes('/editors/DualEditMiniPanel')) return 'doc-editor-dual';
+            if (id.includes('/editors/DualCreateMiniPanel')) return 'doc-editor-dual';
+            if (id.includes('/editors/PopoverMiniEditor')) return 'doc-editor-popover';
+            // Everything else stays in route-documents
             return 'route-documents';
           }
+          // Agents feature: carve out lazy-loaded panels so React.lazy() produces separate chunks
           if (id.includes('/features/agents/')) {
-            return 'route-agents';
+            // Heavy panels lazy-loaded from AgentsHub
+            if (id.includes('/AutonomousOperationsPanel')) return 'agent-autonomous-ops';
+            if (id.includes('/OracleControlTowerPanel')) return 'agent-oracle-tower';
+            if (id.includes('/TopicCanvasPanel')) return 'agent-topic-canvas';
+            if (id.includes('/AgentSidebar')) return 'agent-sidebar';
+            if (id.includes('/HumanApprovalQueue')) return 'agent-approval-queue';
+            if (id.includes('/NotificationActivityPanel')) return 'agent-notifications';
+            // Lazy sub-surfaces used by AgentsHub or FastAgentPanel — let Vite split
+            if (id.includes('/SwarmLanesView') || id.includes('/FreeModelRankingsPanel') || id.includes('/TaskManager/')) return undefined;
+            // FastAgentPanel: tab-gated sub-components are lazy-loaded.
+            // Exclude them from the catch-all so they get their own chunks.
+            if (id.includes('/FastAgentPanel/')) {
+              // Tab-gated panels (lazy-loaded on tab switch, not on panel open)
+              if (id.includes('.Settings')) return 'agent-panel-settings';
+              if (id.includes('.DisclosureTrace')) return 'agent-panel-trace';
+              if (id.includes('.TraceAuditPanel')) return 'agent-panel-trace';
+              if (id.includes('.BriefTab')) return 'agent-panel-brief';
+              if (id.includes('.AgentTasksTab')) return 'agent-panel-tasks';
+              if (id.includes('.EditsTab')) return 'agent-panel-edits';
+              if (id.includes('.ParallelTaskTimeline')) return 'agent-panel-timeline';
+              if (id.includes('.DecisionTreeKanban')) return 'agent-panel-kanban';
+              if (id.includes('.PromptEnhancer')) return 'agent-panel-enhancer';
+              if (id.includes('.SkillsPanel')) return 'agent-panel-skills';
+              if (id.includes('.AgentHierarchy')) return 'agent-panel-hierarchy';
+              if (id.includes('JarvisHUD')) return 'agent-panel-hud';
+              if (id.includes('MediaGallery')) return 'agent-panel-media';
+              if (id.includes('FileViewer')) return 'agent-panel-fileviewer';
+              // Core chat shell — stays in agent-fast-panel
+              return 'agent-fast-panel';
+            }
+            // Agent contexts — shared across entry + lazy chunks, let Vite split
+            if (id.includes('/features/agents/context/')) return undefined;
+            // AgentsHub is the landing view — only this stays in route-agents
+            if (id.includes('/views/AgentsHub')) return 'route-agents';
+            // Non-landing views: used as embedded sub-surfaces by AgentsHub or
+            // FastAgentPanel. Let Vite split naturally so they land in the chunk
+            // of their actual consumer, not forced into the landing entry.
+            if (id.includes('/views/LiveAgentLanes')) return undefined;
+            if (id.includes('/views/TaskPlanPanel')) return undefined;
+            if (id.includes('/views/WorkflowMetricsBar')) return undefined;
+            if (id.includes('/views/DeepAgentProgress')) return undefined;
+            if (id.includes('/views/PublicActivityView')) return undefined;
+            // Everything else (shared hooks, types, utils) — let Vite decide
+            return undefined;
           }
           // Research feature: Split into core hub vs lazy-loaded sections
           // This allows React.lazy() components to become separate chunks
@@ -321,9 +513,14 @@ window.addEventListener('message', async (message) => {
           if (id.includes('/features/research/views/CinematicHome')) {
             return 'route-research-home';
           }
-          if (id.includes('/features/research/sections/')) {
-            return 'route-research-sections';
-          }
+          // Research sections: default-tab sections stay with hub (eagerly imported).
+          // Tab-gated sections (BriefingSection, FeedSection) are lazy-loaded by
+          // ResearchHub — let Vite split them into their consumer's chunk naturally.
+          if (id.includes('/features/research/sections/BriefingSection')) return 'research-briefing';
+          if (id.includes('/features/research/sections/FeedSection')) return 'research-feed';
+          if (id.includes('/features/research/sections/DealListSection')) return 'research-deals';
+          // DigestSection and DashboardSection are default-tab — stay in hub
+          if (id.includes('/features/research/sections/')) return 'route-research-hub';
           if (id.includes('/features/research/components/')) {
             // Let components chunk naturally via lazy loading
             return undefined;

@@ -194,7 +194,7 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
                       <div className="flex items-start gap-3">
                         <div className="mt-1">
                           {item.completed ? (
-                            <CheckCircle className="h-4 w-4 text-indigo-400" />
+                            <CheckCircle className="h-4 w-4 text-[var(--accent-primary)]" />
                           ) : (
                             <Circle className="h-4 w-4 text-amber-400" />
                           )}
@@ -282,7 +282,7 @@ function StatCard({
     blue: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
     amber: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
     red: 'bg-red-500/20 text-red-400 border-red-500/30',
-    emerald: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
+    emerald: 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border-[var(--accent-primary)]/30',
   };
 
   return (

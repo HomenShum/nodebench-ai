@@ -1,0 +1,57 @@
+{
+  "id": "golden_investor_diligence_001",
+  "name": "Acme AI Series A Diligence",
+  "workflow": "investor_diligence",
+  "frozenAt": "2026-03-01T00:00:00Z",
+  "question": "Should Acme AI raise a Series A now or wait 6 months?",
+  "sourcePacket": {
+    "sources": [
+      { "type": "filing", "ref": "10-K Q4 2025", "summary": "14 months runway, $2.1M ARR, 34% QoQ growth" },
+      { "type": "interview", "ref": "Founder interview 2026-02-15", "summary": "Targeting $12M pre-money, 3 warm intros to Tier 1 funds" },
+      { "type": "signal", "ref": "Crunchbase 2026-02", "summary": "Competitor Series A closed at $15M, 2 more in pipeline" },
+      { "type": "market", "ref": "PitchBook AI Infrastructure Q1 2026", "summary": "AI infra deal count down 18% QoQ but median round size up 22%" },
+      { "type": "product", "ref": "GitHub commit velocity", "summary": "1,847 commits in 90 days, 94% test pass rate, 3 new integrations shipped" },
+      { "type": "social", "ref": "LinkedIn engagement 2026-02", "summary": "3 posts averaged 12K impressions, 2.1% engagement rate" },
+      { "type": "trust_node", "ref": "Investor network map", "summary": "3 warm intros: Fund A (AI-focused $200M AUM), Fund B (seed-to-A $80M), Angel C (ex-CTO BigCo)" }
+    ]
+  },
+  "goldenMemo": {
+    "recommendation": "Raise now, conditional on activating trust-node intros this week",
+    "confidence": 0.68,
+    "topVariables": [
+      { "name": "Burn rate runway", "weight": 0.18, "category": "constraint" },
+      { "name": "Market timing window", "weight": 0.16, "category": "market" },
+      { "name": "Trust-node density", "weight": 0.15, "category": "network" },
+      { "name": "Product trajectory", "weight": 0.14, "category": "temporal" },
+      { "name": "Founder execution velocity", "weight": 0.12, "category": "intrinsic" }
+    ],
+    "scenarios": [
+      { "title": "Raise Now", "confidence": 0.68, "keyAssumption": "Timing window open through Q2" },
+      { "title": "Wait 6 Months", "confidence": 0.45, "keyAssumption": "Stronger metrics offset timing risk" },
+      { "title": "Pivot to Revenue", "confidence": 0.32, "keyAssumption": "Market cooldown is prolonged" }
+    ],
+    "interventions": [
+      { "rank": 1, "title": "Activate 2 warm intros this week", "expectedDelta": 0.12, "category": "network" },
+      { "rank": 2, "title": "Ship benchmark artifact before partner meetings", "expectedDelta": 0.08, "category": "intrinsic" },
+      { "rank": 3, "title": "Prepare 6-month scenario memo as negotiation tool", "expectedDelta": 0.05, "category": "market" }
+    ],
+    "counterModel": {
+      "thesis": "Market cooldown makes timing moot — wait for stronger metrics",
+      "confidence": 0.38,
+      "whatWouldValidate": "Two or more target funds pass on current pipeline"
+    },
+    "evidence": { "sourceCount": 7, "verifiedCount": 4, "partialCount": 2, "unverifiedCount": 1 }
+  },
+  "knownOutcome": {
+    "checkedAt": "2026-06-01T00:00:00Z",
+    "whatHappened": "TO_BE_FILLED — check at T1",
+    "outcomeCategory": "pending"
+  },
+  "scoreRubric": {
+    "traceability": { "weight": 0.20, "description": "Every claim links to a source" },
+    "variableCompleteness": { "weight": 0.20, "description": "All 6 categories represented, weights sum to 1.0" },
+    "counterModelQuality": { "weight": 0.20, "description": "Counter-model is serious and specific, not strawman" },
+    "interventionUsefulness": { "weight": 0.20, "description": "Interventions are actionable, time-bound, and measurable" },
+    "recommendationClarity": { "weight": 0.20, "description": "Recommendation is specific, conditional, and includes falsification criteria" }
+  }
+}

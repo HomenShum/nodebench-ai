@@ -203,9 +203,9 @@ export function TelemetrySpanTree({ spans, rootSpans, childrenByParent, classNam
     return (
       <div className={cn("flex flex-col items-center justify-center py-8 text-center", className)}>
         <Cpu className="w-8 h-8 text-content-muted mb-2" />
-        <p className="text-sm text-content-secondary">No spans recorded</p>
+        <p className="text-sm text-content-secondary">No actions recorded</p>
         <p className="text-xs text-content-muted mt-1">
-          Telemetry spans will appear here as the agent executes
+          Actions will appear here as the agent executes
         </p>
       </div>
     );
@@ -221,7 +221,7 @@ export function TelemetrySpanTree({ spans, rootSpans, childrenByParent, classNam
       {/* Summary header */}
       <div className="flex items-center gap-3 mb-3 px-2 py-1.5 bg-surface-secondary rounded-md">
         <span className="text-xs text-content font-medium">
-          {spans.length} spans
+          {spans.length} actions tracked
         </span>
         <span className="text-xs text-emerald-600 dark:text-emerald-400">
           {completedSpans} completed

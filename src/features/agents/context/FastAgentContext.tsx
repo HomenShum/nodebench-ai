@@ -8,7 +8,7 @@
  * - Context web URLs (external articles to analyze)
  */
 
-import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode, useEffect } from 'react';
 
 /** Dossier context for bidirectional sync */
 export interface DossierContext {
@@ -126,10 +126,12 @@ export function FastAgentProvider({ children }: { children: ReactNode }) {
   const toggle = useCallback(() => setIsOpen(!isOpen), [setIsOpen, isOpen]);
   const clearOptions = useCallback(() => setOptions(null), []);
 
-  const value: FastAgentContextValue = {
+  const hasExternalHandler = !!externalSetter;
+
+  const value = useMemo<FastAgentContextValue>(() => ({
     isOpen,
     options,
-    hasExternalHandler: !!externalSetter,
+    hasExternalHandler,
     open,
     openWithContext,
     close,
@@ -137,7 +139,7 @@ export function FastAgentProvider({ children }: { children: ReactNode }) {
     setIsOpen,
     clearOptions,
     registerExternalState,
-  };
+  }), [isOpen, options, hasExternalHandler, open, openWithContext, close, toggle, setIsOpen, clearOptions, registerExternalState]);
 
   return (
     <FastAgentContext.Provider value={value}>

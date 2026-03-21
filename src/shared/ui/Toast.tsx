@@ -107,6 +107,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
       </div>
       <button
         onClick={onRemove}
+        aria-label="Dismiss notification"
         className="flex-shrink-0 p-1 rounded-lg hover:bg-black/5 transition-colors"
       >
         <X className="w-4 h-4 text-content-muted" />

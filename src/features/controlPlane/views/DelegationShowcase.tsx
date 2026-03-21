@@ -227,7 +227,7 @@ export const DelegationShowcase = memo(function DelegationShowcase() {
                             {style.label}
                           </span>
                         ) : (
-                          <span className="text-content-muted/50">—</span>
+                          <span className="text-content-muted">—</span>
                         )}
                       </td>
                     );

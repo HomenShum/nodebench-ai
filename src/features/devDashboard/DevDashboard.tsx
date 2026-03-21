@@ -207,7 +207,7 @@ function DomainBranch({
       <span className={`text-sm font-medium ${isActive ? textColor : "text-white/60"} capitalize`}>
         {domain}
       </span>
-      <span className="ml-auto text-[11px] text-white/30 tabular-nums">{stats.commits}</span>
+      <span className="ml-auto text-[11px] text-white/50 tabular-nums">{stats.commits}</span>
     </motion.button>
   );
 }
@@ -288,7 +288,7 @@ function EpochRow({
         </div>
 
         {/* Stats */}
-        <span className="text-[11px] text-white/30 tabular-nums w-8 text-right">
+        <span className="text-[11px] text-white/50 tabular-nums w-8 text-right">
           {filteredCommits.length}
         </span>
         <span className="text-[11px] text-emerald-400/50 tabular-nums w-10 text-right">
@@ -297,9 +297,9 @@ function EpochRow({
 
         {/* Chevron */}
         {isExpanded ? (
-          <ChevronDown size={14} className="text-white/30" />
+          <ChevronDown size={14} className="text-white/50" />
         ) : (
-          <ChevronRight size={14} className="text-white/30" />
+          <ChevronRight size={14} className="text-white/50" />
         )}
       </button>
 
@@ -331,7 +331,7 @@ function CommitRow({ commit }: { commit: Commit }) {
 
   return (
     <div className="flex items-start gap-2 px-2 py-1.5 rounded-md hover:bg-white/[0.02] transition-colors">
-      <GitCommit size={12} className="text-white/20 mt-1 shrink-0" />
+      <GitCommit size={12} className="text-white/40 mt-1 shrink-0" />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className={`text-[10px] font-mono font-medium px-1.5 py-0.5 rounded ${badge.cls}`}>
@@ -343,10 +343,10 @@ function CommitRow({ commit }: { commit: Commit }) {
           <span className="text-xs text-white/60 truncate">{commit.message}</span>
         </div>
         <div className="flex items-center gap-3 mt-0.5">
-          <span className="text-[10px] text-white/25 font-mono">{commit.hash}</span>
-          <span className="text-[10px] text-emerald-400/40">+{commit.insertions}</span>
-          <span className="text-[10px] text-red-400/40">-{commit.deletions}</span>
-          <span className="text-[10px] text-white/25">{commit.fileCount} files</span>
+          <span className="text-[10px] text-white/40 font-mono">{commit.hash}</span>
+          <span className="text-[10px] text-emerald-400/50">+{commit.insertions}</span>
+          <span className="text-[10px] text-red-400/50">-{commit.deletions}</span>
+          <span className="text-[10px] text-white/40">{commit.fileCount} files</span>
         </div>
       </div>
     </div>
@@ -373,7 +373,7 @@ function MilestoneMarker({ milestone }: { milestone: Milestone }) {
         <TrendingUp size={12} className="text-emerald-400 shrink-0" />
       )}
       <span className="text-xs text-white/70 truncate">{milestone.label}</span>
-      <span className="ml-auto text-[10px] text-white/30 shrink-0">
+      <span className="ml-auto text-[10px] text-white/50 shrink-0">
         {formatDate(milestone.date)}
       </span>
       {milestone.linesAdded && (
@@ -464,7 +464,7 @@ export default function DevDashboard() {
         <div className="flex items-center gap-3 mb-4">
           <GitBranch size={20} className="text-blue-400" />
           <h1 className="text-xl font-semibold tracking-tight">Dev Dashboard</h1>
-          <span className="text-xs text-white/30 font-mono ml-2">
+          <span className="text-xs text-white/50 font-mono ml-2">
             {formatDate(data.dateRange.start)} — {formatDate(data.dateRange.end)}
           </span>
         </div>
@@ -497,7 +497,7 @@ export default function DevDashboard() {
           transition={transition({ delay: 0.15 })}
           className="w-52 shrink-0 border-r border-edge overflow-y-auto p-3 space-y-0.5 hidden md:block"
         >
-          <div className="text-[10px] uppercase tracking-widest text-white/30 px-3 py-2">
+          <div className="text-[10px] uppercase tracking-widest text-white/50 px-3 py-2">
             Branches
           </div>
           <button
@@ -508,7 +508,7 @@ export default function DevDashboard() {
           >
             <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-blue-500 to-violet-500 shrink-0" />
             All
-            <span className="ml-auto text-[11px] text-white/30 tabular-nums">
+            <span className="ml-auto text-[11px] text-white/50 tabular-nums">
               {data.totalCommits}
             </span>
           </button>
@@ -532,7 +532,7 @@ export default function DevDashboard() {
             >
               <Layers size={14} />
               Milestones
-              <span className="ml-auto text-[11px] text-white/30">
+              <span className="ml-auto text-[11px] text-white/50">
                 {filteredMilestones.length}
               </span>
             </button>
@@ -544,18 +544,18 @@ export default function DevDashboard() {
           {/* Search + filter bar */}
           <div className="px-4 py-3 border-b border-edge flex items-center gap-3">
             <div className="relative flex-1 max-w-md">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search commits, scopes, domains..."
-                className="w-full pl-8 pr-8 py-1.5 rounded-lg bg-white/[0.04] border border-edge text-sm text-white/80 placeholder:text-white/25 focus:outline-none focus:border-blue-500/30"
+                className="w-full pl-8 pr-8 py-1.5 rounded-lg bg-white/[0.04] border border-edge text-sm text-white/80 placeholder:text-white/40 focus:outline-none focus:border-blue-500/30"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/60"
                 >
                   <X size={14} />
                 </button>
@@ -591,7 +591,7 @@ export default function DevDashboard() {
               </motion.button>
             )}
 
-            <span className="text-[11px] text-white/30 tabular-nums">
+            <span className="text-[11px] text-white/50 tabular-nums">
               {filteredEpochs.reduce((s, e) => s + e.commits.length, 0)} commits
             </span>
           </div>
@@ -605,7 +605,7 @@ export default function DevDashboard() {
                 animate={{ opacity: 1 }}
                 className="mb-4 space-y-1.5"
               >
-                <div className="text-[10px] uppercase tracking-widest text-white/30 px-1 py-1">
+                <div className="text-[10px] uppercase tracking-widest text-white/50 px-1 py-1">
                   Key milestones ({filteredMilestones.length})
                 </div>
                 <div className="grid gap-1.5 max-h-48 overflow-y-auto">
@@ -617,7 +617,7 @@ export default function DevDashboard() {
             )}
 
             {/* Epoch rows (newest first) */}
-            <div className="text-[10px] uppercase tracking-widest text-white/30 px-1 py-2 sticky top-0 bg-[var(--bg-primary)] z-10">
+            <div className="text-[10px] uppercase tracking-widest text-white/50 px-1 py-2 sticky top-0 bg-[var(--bg-primary)] z-10">
               <Calendar size={10} className="inline mr-1.5" />
               Weekly epochs ({filteredEpochs.length} weeks)
             </div>
@@ -634,7 +634,7 @@ export default function DevDashboard() {
             ))}
 
             {filteredEpochs.length === 0 && (
-              <div className="text-center py-16 text-white/30 text-sm">
+              <div className="text-center py-16 text-white/50 text-sm">
                 No commits match your search.
               </div>
             )}

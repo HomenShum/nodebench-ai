@@ -68,18 +68,18 @@ import { initEmbeddingIndex } from "./tools/embeddingProvider.js";
 
 export { TOOLSET_MAP };
 
-const DEFAULT_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate", "skill_update", "context_sandbox", "observability", "execution_trace", "mission_harness"];
+const DEFAULT_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate", "skill_update", "context_sandbox", "observability", "execution_trace", "mission_harness", "deep_sim"];
 
 const PRESETS: Record<string, string[]> = {
   default: DEFAULT_TOOLSETS,
   // Themed presets — bridge between default (81 tools) and full (295 tools)
   web_dev:      [...DEFAULT_TOOLSETS, "ui_capture", "vision", "web", "seo", "git_workflow", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "qa_orchestration", "visual_qa", "design_governance", "web_scraping"],
-  research:     [...DEFAULT_TOOLSETS, "web", "llm", "rss", "email", "docs", "research_optimizer", "web_scraping", "temporal_intelligence"],
+  research:     [...DEFAULT_TOOLSETS, "web", "llm", "rss", "email", "docs", "research_optimizer", "web_scraping", "temporal_intelligence", "deep_sim"],
   data:         [...DEFAULT_TOOLSETS, "local_file", "llm", "web", "research_optimizer", "web_scraping", "temporal_intelligence"],
   devops:       [...DEFAULT_TOOLSETS, "git_workflow", "session_memory", "benchmark", "pattern"],
   mobile:       [...DEFAULT_TOOLSETS, "ui_capture", "vision", "flicker_detection", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "visual_qa"],
   academic:     [...DEFAULT_TOOLSETS, "research_writing", "llm", "web", "local_file"],
-  multi_agent:  [...DEFAULT_TOOLSETS, "parallel", "self_eval", "session_memory", "pattern", "toon", "qa_orchestration", "agent_traverse", "engine_context", "research_optimizer", "web_scraping"],
+  multi_agent:  [...DEFAULT_TOOLSETS, "parallel", "self_eval", "session_memory", "pattern", "toon", "qa_orchestration", "agent_traverse", "engine_context", "research_optimizer", "web_scraping", "deep_sim"],
   content:      [...DEFAULT_TOOLSETS, "llm", "critter", "email", "rss", "platform", "architect", "local_dashboard", "engine_context", "thompson_protocol"],
   full: Object.keys(TOOLSET_MAP),
 };

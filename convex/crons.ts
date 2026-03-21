@@ -203,6 +203,22 @@ crons.daily(
   {}
 );
 
+// Response flywheel maintenance: keep recent assistant replies reviewed and
+// re-sync outer-loop scoring against the latest response-quality signals.
+crons.interval(
+  "response flywheel backfill",
+  { hours: 6 },
+  internal.domains.agents.responseFlywheel.runResponseFlywheelMaintenance,
+  { limit: 24, forceRejudge: false, syncSuccessLoops: true }
+);
+
+crons.daily(
+  "response flywheel rejudge",
+  { hourUTC: 5, minuteUTC: 40 },
+  internal.domains.agents.responseFlywheel.runResponseFlywheelMaintenance,
+  { limit: 16, forceRejudge: true, syncSuccessLoops: true }
+);
+
 // Cleanup stale locks hourly (locks stuck in "running" > 1 hour)
 crons.interval(
   "cleanup stale global locks",

@@ -1,0 +1,123 @@
+/* ═══════════════════════════════════════════════════════════════════════
+ * Surface Design Tokens — Unified visual language for all cockpit surfaces
+ *
+ * RULE: Every surface must use ONLY these tokens. No custom card styles,
+ * no custom badges, no custom section headers. If it's not here, don't use it.
+ *
+ * Modeled after Linear's restraint: one card, one badge, one tab, one accent.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Cards ──────────────────────────────────────────────────────────── */
+.nb-card {
+  @apply rounded-xl border border-edge bg-surface/50 p-5;
+}
+.nb-card-compact {
+  @apply rounded-lg border border-edge bg-surface/50 px-4 py-3;
+}
+.nb-card-interactive {
+  @apply rounded-xl border border-edge bg-surface/50 p-5
+         transition-colors duration-150
+         hover:border-[var(--accent-primary)]/20 hover:bg-surface-hover;
+}
+
+/* ── Section Headers ────────────────────────────────────────────────── */
+.nb-section-title {
+  @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted mb-3;
+}
+.nb-section-subtitle {
+  @apply text-sm text-content-secondary leading-relaxed;
+}
+
+/* ── Badges (4 states only) ─────────────────────────────────────────── */
+.nb-badge {
+  @apply inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium;
+}
+.nb-badge-positive {
+  @apply nb-badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20;
+}
+.nb-badge-info {
+  @apply nb-badge bg-cyan-500/10 text-cyan-400 border border-cyan-500/20;
+}
+.nb-badge-warning {
+  @apply nb-badge bg-amber-500/10 text-amber-400 border border-amber-500/20;
+}
+.nb-badge-danger {
+  @apply nb-badge bg-rose-500/10 text-rose-400 border border-rose-500/20;
+}
+.nb-badge-neutral {
+  @apply nb-badge bg-white/5 text-content-muted border border-edge;
+}
+
+/* ── Tabs (underline only, no pills) ────────────────────────────────── */
+.nb-tabs {
+  @apply flex gap-1 border-b border-edge;
+}
+.nb-tab {
+  @apply px-3 py-2 text-sm font-medium text-content-muted
+         border-b-2 border-transparent transition-colors duration-150
+         hover:text-content;
+}
+.nb-tab[data-active="true"],
+.nb-tab[aria-selected="true"] {
+  @apply text-content border-[var(--accent-primary)];
+}
+
+/* ── Stat Cards ─────────────────────────────────────────────────────── */
+.nb-stat {
+  @apply flex flex-col gap-1;
+}
+.nb-stat-value {
+  @apply text-2xl font-semibold tracking-tight text-content;
+}
+.nb-stat-label {
+  @apply text-[11px] text-content-muted uppercase tracking-wider;
+}
+
+/* ── Chip / Tag (for filters, topics) ───────────────────────────────── */
+.nb-chip {
+  @apply inline-flex items-center gap-1 rounded-full border border-edge
+         bg-surface/50 px-2.5 py-1 text-[11px] font-medium text-content-secondary
+         transition-colors hover:bg-surface-hover;
+}
+
+/* ── Surface scroll area ────────────────────────────────────────────── */
+.nb-surface-scroll {
+  @apply h-full overflow-y-auto scroll-smooth px-6 pb-24 pt-6;
+}
+.nb-surface-scroll-narrow {
+  @apply h-full overflow-y-auto scroll-smooth px-4 pb-24 pt-4;
+}
+
+/* ── Page header (one style, not three) ─────────────────────────────── */
+.nb-page-header {
+  @apply mb-6;
+}
+.nb-page-title {
+  @apply text-xl font-semibold tracking-tight text-content;
+}
+.nb-page-description {
+  @apply mt-1 text-sm text-content-secondary leading-relaxed;
+}
+
+/* ── Action button (primary only) ───────────────────────────────────── */
+.nb-button-primary {
+  @apply inline-flex items-center gap-2 rounded-lg
+         bg-[var(--accent-primary)] px-4 py-2 text-sm font-medium text-white
+         transition-colors hover:bg-[var(--accent-primary-hover)];
+}
+.nb-button-ghost {
+  @apply inline-flex items-center gap-2 rounded-lg
+         border border-edge px-4 py-2 text-sm font-medium text-content-secondary
+         transition-colors hover:bg-surface-hover hover:text-content;
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .nb-card-interactive,
+  .nb-tab,
+  .nb-chip,
+  .nb-button-primary,
+  .nb-button-ghost {
+    transition-duration: 0s;
+  }
+}

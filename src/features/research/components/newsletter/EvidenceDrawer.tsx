@@ -139,12 +139,17 @@ export function EvidenceDrawer({
     if (!isOpen) return null;
 
     return (
-        <div className={`fixed inset-y-0 right-0 w-[400px] bg-surface border-l border-edge shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300 ${className}`}>
+        <div
+            className={`fixed inset-y-0 right-0 w-[400px] bg-surface border-l border-edge shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300 ${className}`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="evidence-drawer-title"
+        >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-edge bg-surface">
                 <div className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-content" />
-                    <h2 className="font-semibold text-content">Evidence</h2>
+                    <h2 id="evidence-drawer-title" className="font-semibold text-content">Evidence</h2>
                     <span className="px-1.5 py-0.5 bg-surface-secondary text-content text-xs rounded-full font-medium">
                         {sources.length}
                     </span>

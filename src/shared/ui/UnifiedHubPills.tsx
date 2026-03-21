@@ -86,7 +86,7 @@ export function UnifiedHubPills({
           aria-selected={active === "roadmap"}
           aria-current={active === "roadmap" ? "page" : undefined}
           aria-disabled={roadmapDisabled}
-          title={roadmapDisabled ? "Coming soon" : "Open roadmap hub"}
+          title={roadmapDisabled ? "Roadmap not available" : "Open roadmap hub"}
           disabled={roadmapDisabled}
         >
           {active === "roadmap" ? <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" /> : null}

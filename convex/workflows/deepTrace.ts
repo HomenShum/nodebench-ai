@@ -66,7 +66,7 @@ export const runEntityIntelligenceMission = action({
 
     // Optionally enable the research cell for threshold-based bounded re-analysis,
     // or force it for operator-driven deeper review.
-    let researchCellOutput = null;
+    let researchCellOutput: { triggered: boolean; [key: string]: unknown } | null = null;
     if (args.researchCell || args.forceResearchCell) {
       const bundle = await ctx.runQuery(api.domains.deepTrace.dimensions.getDimensionBundle, {
         entityKey: args.entityKey,

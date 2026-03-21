@@ -6,14 +6,38 @@ import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
+// KaTeX is 265 KB / 77 KB gzip — lazy-load only when math notation is detected.
+// The dynamic import lives in a SEPARATE module (lazyRehypeKatex.ts) so Rollup
+// creates an isolated async chunk. If the `import('rehype-katex')` were inline
+// here, Rollup would hoist katex-vendor as a static dep of agent-fast-panel.
+// See lazyRehypeKatex.ts for the full explanation.
 import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
-import 'katex/dist/katex.min.css';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _rehypeKatexPromise: Promise<any> | null = null;
+
+function useRehypeKatex(text: string) {
+  const needsMath = /\$[^$]|\\\(|\\begin\{/.test(text);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [plugin, setPlugin] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    if (!needsMath) { setPlugin(null); return; }
+    let cancelled = false;
+    if (!_rehypeKatexPromise) {
+      _rehypeKatexPromise = import('./lazyRehypeKatex').then((m) => m.loadRehypeKatex());
+    }
+    _rehypeKatexPromise.then((p) => { if (!cancelled) setPlugin(() => p); });
+    return () => { cancelled = true; };
+  }, [needsMath]);
+
+  return needsMath ? plugin : null;
+}
 import { LazySyntaxHighlighter } from './LazySyntaxHighlighter';
 import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Copy, Check, BrainCircuit, Zap, ExternalLink, Globe, Calendar, Eye, ThumbsUp, ThumbsDown, Pencil, Bookmark, Volume2, VolumeX, Pin } from 'lucide-react';
 import { useSmoothText, type UIMessage } from '@convex-dev/agent/react';
 import { cn } from '@/lib/utils';
-import { TokenUsageBadge } from '@/components/TokenUsageBadge';
+import { TokenUsageBadge } from './TokenUsageBadge';
 import type { FileUIPart, ToolUIPart } from 'ai';
 // Type imports (static)
 import { type YouTubeVideo, type SECDocument } from './MediaGallery';
@@ -98,6 +122,8 @@ interface FastAgentUIMessageBubbleProps {
   editDiff?: { oldText: string; newText: string } | null;
   /** Whether this message is inside the context window */
   isInContext?: boolean;
+  /** Compact presentation for the cockpit sidebar variant. */
+  compact?: boolean;
 }
 
 /**
@@ -1507,6 +1533,7 @@ export function FastAgentUIMessageBubble({
   fontSize,
   editDiff,
   isInContext,
+  compact = false,
 }: FastAgentUIMessageBubbleProps) {
   const isUser = message.role === 'user';
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -2141,12 +2168,16 @@ export function FastAgentUIMessageBubble({
     return cleaned;
   }, [visibleText]);
 
+  // Lazy-load KaTeX only when math notation ($, \begin{) is detected
+  const rehypeKatexPlugin = useRehypeKatex(cleanedText || visibleText || '');
+
   return (
     <div
       role="article"
       aria-label={isUser ? "Your message" : "Assistant response"}
       className={cn(
-        "flex gap-3 mb-6 group msg-entrance",
+        "flex group msg-entrance",
+        compact ? "gap-2.5 mb-4" : "gap-3 mb-6",
         isUser ? "justify-end" : "justify-start",
         isChild && "ml-0" // Child messages already have margin from parent container
       )}>
@@ -2164,7 +2195,8 @@ export function FastAgentUIMessageBubble({
 
       {/* Message Content */}
       <div ref={bubbleRef} className={cn(
-        "flex flex-col gap-2 max-w-[85%] relative",
+        "flex flex-col gap-2 relative",
+        compact ? "max-w-full" : "max-w-[85%]",
         isUser && "items-end"
       )}>
         {/* Text Selection Toolbar */}
@@ -2558,7 +2590,7 @@ export function FastAgentUIMessageBubble({
               <div className={cn(!isUser && "prose-agent")}>
                 <ReactMarkdown
                   remarkPlugins={[remarkMath]}
-                  rehypePlugins={[rehypeKatex]}
+                  rehypePlugins={rehypeKatexPlugin ? [rehypeKatexPlugin] : []}
                   components={{
                     code({ inline, className, children, ...props }: any) {
                       const match = /language-(\w+)/.exec(className || '');
@@ -2677,7 +2709,7 @@ export function FastAgentUIMessageBubble({
         ) : null}
 
         {/* Smart Actions (assistant messages, after content finishes) */}
-        {!isUser && message.status !== 'streaming' && (cleanedText || visibleText) && (
+        {!compact && !isUser && message.status !== 'streaming' && (cleanedText || visibleText) && (
           <div className="flex flex-wrap gap-1.5 mt-1">
             <div className="relative inline-flex">
               <button
@@ -2762,7 +2794,7 @@ export function FastAgentUIMessageBubble({
         )}
 
         {/* Multi-turn Context Indicator */}
-        {isInContext === false && !isUser && (
+        {!compact && isInContext === false && !isUser && (
           <div className="mt-1 text-[8px] text-content-muted flex items-center gap-1 opacity-60" title="This message may be outside the model's context window">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
             Outside context window
@@ -2770,7 +2802,7 @@ export function FastAgentUIMessageBubble({
         )}
 
         {/* Reading Time Estimate */}
-        {!isUser && message.status !== 'streaming' && (() => {
+        {!compact && !isUser && message.status !== 'streaming' && (() => {
           const text = cleanedText || visibleText || '';
           const wordCount = text.split(/\s+/).length;
           if (wordCount < 80) return null;
@@ -2784,7 +2816,7 @@ export function FastAgentUIMessageBubble({
         })()}
 
         {/* AI Confidence Indicator */}
-        {!isUser && message.status !== 'streaming' && (cleanedText || visibleText) && (() => {
+        {!compact && !isUser && message.status !== 'streaming' && (cleanedText || visibleText) && (() => {
           const text = cleanedText || visibleText || '';
           const hedges = (text.match(/\b(might|may|could|possibly|perhaps|likely|unlikely|uncertain|not sure|it seems|appears to|I think|I believe|approximately|roughly)\b/gi) || []).length;
           const totalWords = text.split(/\s+/).length;
@@ -3023,7 +3055,7 @@ export function FastAgentUIMessageBubble({
                   {new Date(message._creationTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               )}
-              {visibleText && (
+              {!compact && visibleText && (
                 <span className="text-xs text-content-muted tabular-nums mr-1" title={`${visibleText.split(/\s+/).length} words, ${visibleText.length} chars, ~${Math.ceil(visibleText.length / 4)} tokens`}>
                   ~{Math.ceil(visibleText.length / 4)} tok &middot; {visibleText.split(/\s+/).length}w
                 </span>
@@ -3072,7 +3104,7 @@ export function FastAgentUIMessageBubble({
               )}
 
               {/* Bookmark button */}
-              {onToggleBookmark && (
+              {!compact && onToggleBookmark && (
                 <button
                   type="button"
                   onClick={onToggleBookmark}
@@ -3089,7 +3121,7 @@ export function FastAgentUIMessageBubble({
               )}
 
               {/* Pin button */}
-              {onTogglePin && (
+              {!compact && onTogglePin && (
                 <button
                   type="button"
                   onClick={onTogglePin}
@@ -3106,6 +3138,7 @@ export function FastAgentUIMessageBubble({
               )}
 
               {/* Emoji reaction picker */}
+              {!compact && (
               <div className="relative">
                 <button
                   type="button"
@@ -3133,9 +3166,10 @@ export function FastAgentUIMessageBubble({
                   </>
                 )}
               </div>
+              )}
 
               {/* Regenerate button for assistant messages */}
-              {!isUser && onRegenerateMessage && (
+              {!compact && !isUser && onRegenerateMessage && (
                 <button
                   type="button"
                   onClick={handleRegenerate}
@@ -3148,7 +3182,7 @@ export function FastAgentUIMessageBubble({
               )}
 
               {/* Feedback buttons */}
-              {!isUser && (
+              {!compact && !isUser && (
                 <>
                   <button
                     type="button"
@@ -3180,7 +3214,7 @@ export function FastAgentUIMessageBubble({
               )}
 
               {/* Delete button */}
-              {onDeleteMessage && (
+              {!compact && onDeleteMessage && (
                 showDeleteConfirm ? (
                   <div className="flex items-center gap-1">
                     <button

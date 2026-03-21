@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "dev",
-      "runtimeExecutable": "/c/nvm4w/nodejs/npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "npx", "vite", "--port", "5173"],
       "port": 5173
     }
   ]

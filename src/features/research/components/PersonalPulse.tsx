@@ -23,8 +23,8 @@ interface PersonalPulseProps {
 function StatusPill({ isLive, count, total, freshness }: { isLive: boolean; count: number; total: number; freshness: string }) {
     return (
         <div className={cn(
-            'inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold',
-            isLive ? 'bg-indigo-100 text-content' : 'bg-amber-100 text-amber-800'
+            'inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold border border-white/[0.06]',
+            isLive ? 'bg-white/[0.04] text-content' : 'bg-white/[0.04] text-content-muted/70'
         )}>
             <span className={cn('w-1.5 h-1.5 rounded-full', isLive ? 'bg-indigo-500 motion-safe:animate-pulse' : 'bg-amber-500')} />
             {isLive ? `${count}/${total} signals` : 'Waiting'}
@@ -91,16 +91,16 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
         )}>
             {/* LEFT: SIGNAL FEED */}
             <div className={cn(
-                'bg-surface border border-edge rounded-lg overflow-hidden',
+                'rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden',
                 hasWorkspaceContent ? 'lg:col-span-8' : 'lg:col-span-full'
             )}>
                 {/* Header */}
-                <div className="px-4 py-3 bg-surface-secondary border-b border-edge flex items-center justify-between gap-3">
+                <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
-                        <Zap className="w-4 h-4 text-content-secondary" />
+                        <Zap className="w-4 h-4 text-content-muted" />
                         <div>
-                            <h3 className="text-xs font-semibold text-content-secondary">Your Signal Feed</h3>
-                            <p className="text-xs text-content-secondary">Latest headlines from your tracked sources</p>
+                            <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Your Signal Feed</h3>
+                            <p className="text-xs text-content-muted/70">Latest headlines from your tracked sources</p>
                         </div>
                     </div>
                     <StatusPill isLive={isLiveData && hasFeatures} count={totalSignals} total={totalAvailable} freshness={freshnessLabel} />
@@ -108,14 +108,14 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
 
                 {/* Source badges */}
                 {sources.length > 0 && (
-                    <div className="px-4 py-2 border-b border-edge bg-gray-50/50">
+                    <div className="px-4 py-2 border-b border-white/[0.06]">
                         <SourceBadges sources={sources} />
                     </div>
                 )}
 
                 {/* Signal list - expanded with summaries for richer content */}
                 <div className={cn(
-                    'divide-y divide-gray-100 overflow-y-auto',
+                    'divide-y divide-white/[0.06] overflow-y-auto',
                     showAllSignals ? 'max-h-[680px]' : 'max-h-[520px]'
                 )}>
                     {displayFeatures.length > 0 ? (
@@ -159,7 +159,7 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
                     <button
                         type="button"
                         onClick={() => setShowAllSignals(!showAllSignals)}
-                        className="w-full py-2.5 text-xs font-medium text-content-secondary bg-indigo-50/50 hover:bg-indigo-50 border-t border-edge transition-colors flex items-center justify-center gap-1"
+                        className="w-full py-2.5 text-xs font-medium text-content-muted/70 hover:text-content border-t border-white/[0.06] transition-colors flex items-center justify-center gap-1"
                     >
                         {showAllSignals ? 'Show less' : `+${totalSignals - 6} more signals`}
                         <ChevronRight className={cn('w-3 h-3 transition-transform', showAllSignals && 'rotate-90')} />
@@ -169,25 +169,25 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
 
             {/* RIGHT: WORKSPACE CONTEXT (TABBED) - Only show if there's content */}
             {hasWorkspaceContent && (
-                <div className="lg:col-span-4 bg-surface border border-edge rounded-lg overflow-hidden pb-24 lg:pb-16">
-                    <div className="px-4 py-3 bg-surface-secondary border-b border-edge">
+                <div className="lg:col-span-4 rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden pb-24 lg:pb-16">
+                    <div className="px-4 py-3 border-b border-white/[0.06]">
                         <div className="flex items-center justify-between">
-                            <div className="text-xs font-semibold text-content-secondary">Your Context</div>
-                            <div className="text-xs text-content-secondary">Quick access</div>
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Your Context</div>
+                            <div className="text-xs text-content-muted/70">Quick access</div>
                         </div>
-                        <div className="mt-2 inline-flex rounded-lg border border-edge bg-surface p-1">
+                        <div className="mt-2 inline-flex rounded-lg border border-white/[0.06] bg-white/[0.02] p-1">
                             <button
                                 type="button"
                                 onClick={() => setContextTab('tasks')}
                                 className={cn(
                                     'px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5',
-                                    contextTab === 'tasks' ? 'bg-blue-50 text-blue-700' : 'text-content-secondary hover:bg-surface-hover'
+                                    contextTab === 'tasks' ? 'bg-white/[0.06] text-content' : 'text-content-muted/70 hover:bg-white/[0.04]'
                                 )}
                             >
                                 <Calendar className="w-3.5 h-3.5" />
                                 Today
                                 {tasksToday.length > 0 && (
-                                    <span className="ml-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-bold">
+                                    <span className="ml-1 px-1.5 py-0.5 bg-white/[0.06] text-content rounded text-xs font-bold">
                                         {tasksToday.length}
                                     </span>
                                 )}
@@ -197,13 +197,13 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
                                 onClick={() => setContextTab('docs')}
                                 className={cn(
                                     'px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5',
-                                    contextTab === 'docs' ? 'bg-violet-50 text-violet-700' : 'text-content-secondary hover:bg-surface-hover'
+                                    contextTab === 'docs' ? 'bg-white/[0.06] text-content' : 'text-content-muted/70 hover:bg-white/[0.04]'
                                 )}
                             >
                                 <FileText className="w-3.5 h-3.5" />
                                 Recent
                                 {recentDocs.length > 0 && (
-                                    <span className="ml-1 px-1.5 py-0.5 bg-violet-100 text-violet-700 rounded text-xs font-bold">
+                                    <span className="ml-1 px-1.5 py-0.5 bg-white/[0.06] text-content rounded text-xs font-bold">
                                         {recentDocs.length}
                                     </span>
                                 )}
@@ -219,7 +219,7 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: instant ? 1 : 0, y: instant ? 0 : -6 }}
                                 transition={transition(0.18)}
-                                className="divide-y divide-gray-100"
+                                className="divide-y divide-white/[0.06]"
                             >
                                 {tasksToday.slice(0, 6).map((task: any) => (
                                     <div key={task._id} className="px-4 py-2.5 flex items-center gap-2 hover:bg-surface-hover">
@@ -238,7 +238,7 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: instant ? 1 : 0, y: instant ? 0 : -6 }}
                                 transition={transition(0.18)}
-                                className="divide-y divide-gray-100"
+                                className="divide-y divide-white/[0.06]"
                             >
                                 {recentDocs.slice(0, 6).map((doc: any) => (
                                     <button

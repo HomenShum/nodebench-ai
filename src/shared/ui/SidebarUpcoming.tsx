@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import AgendaMiniRow from "@features/calendar/components/agenda/AgendaMiniRow";
 import MiniEditorPopover from "@/shared/components/MiniEditorPopover";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -25,7 +25,7 @@ function TaskCountBadge({
 }) {
   const [showPreview, setShowPreview] = useState(false);
   const badgeRef = useRef<HTMLDivElement>(null);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hoverTimeoutRef = useRef<number | null>(null);
 
   const handleMouseEnter = useCallback(() => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
@@ -35,6 +35,14 @@ function TaskCountBadge({
   const handleMouseLeave = useCallback(() => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     hoverTimeoutRef.current = setTimeout(() => setShowPreview(false), 150);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        window.clearTimeout(hoverTimeoutRef.current);
+      }
+    };
   }, []);
 
   const totalItems = taskCount + eventCount;
@@ -100,9 +108,9 @@ function TaskCountBadge({
   );
 }
 
-export function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingProps) {
+export const SidebarUpcoming = React.memo(function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingProps) {
   const [lastClickedId, setLastClickedId] = useState<string | null>(null);
-  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const clickTimeoutRef = useRef<number | null>(null);
   const [editTarget, setEditTarget] = useState<
     | { kind: "event"; id: string }
     | { kind: "task"; id: string }
@@ -122,6 +130,14 @@ export function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingPro
     if (el) {
       (el as HTMLElement).click();
     }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current) {
+        window.clearTimeout(clickTimeoutRef.current);
+      }
+    };
   }, []);
 
   return (
@@ -304,4 +320,4 @@ export function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingPro
       )}
     </div>
   );
-}
+});

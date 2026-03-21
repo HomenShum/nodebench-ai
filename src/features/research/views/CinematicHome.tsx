@@ -167,7 +167,7 @@ export default function CinematicHome({
         {
             label: 'Sources watched',
             value: isDashboardLoading ? 'Syncing' : formatCompactCount(sourceCount),
-            detail: isDashboardLoading ? 'Building the first evidence graph' : 'Across live telemetry and source feeds',
+            detail: isDashboardLoading ? 'Building the first evidence graph' : 'Across live monitoring and source feeds',
         },
         {
             label: 'Active alerts',
@@ -389,7 +389,7 @@ export default function CinematicHome({
                                             No more unverifiable postmortems.
                                         </h2>
                                         <p className="mt-3 max-w-3xl text-sm leading-6 text-content-secondary md:text-[15px]">
-                                            DeepTrace turns telemetry, documents, and execution traces into evidence-grounded hypotheses,
+                                            NodeBench turns telemetry, documents, and execution traces into evidence-grounded hypotheses,
                                             tamper-evident evidence packs, and approval-gated remediation drafts. Use the home surface to
                                             move from “something changed” to “here is the best-supported explanation and the next action.”
                                         </p>
@@ -544,7 +544,7 @@ export default function CinematicHome({
                                 <div className="rounded-[24px] border border-edge bg-surface/72 p-4 backdrop-blur-sm">
                                     <SectionHeading
                                         eyebrow="Workflow"
-                                        title="How DeepTrace works"
+                                        title="How NodeBench works"
                                         description="The system is strongest when it keeps evidence, uncertainty, and next actions in the same loop."
                                     />
                                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -571,7 +571,7 @@ export default function CinematicHome({
                                         ))}
                                     </div>
                                     <div className="mt-4 rounded-2xl border border-dashed border-edge bg-surface px-4 py-3 text-sm text-content-secondary">
-                                        DeepTrace can verify the integrity of captured artifacts. It does not claim cryptographic proof of causation.
+                                        NodeBench can verify the integrity of captured artifacts. It does not claim cryptographic proof of causation.
                                         Causality still has to be argued from evidence, tested against alternatives, and scored with uncertainty.
                                     </div>
                                 </div>

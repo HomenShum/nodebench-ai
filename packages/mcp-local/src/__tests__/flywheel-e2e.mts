@@ -57,7 +57,7 @@ async function run() {
     name: "test/cost-dashboard",
     componentType: "page",
     selector: ".cost-dashboard",
-    metadata: { route: "/cost", sourceFiles: ["src/components/CostDashboard.tsx"] },
+    metadata: { route: "/cost", sourceFiles: ["src/features/admin/components/CostDashboard.tsx"] },
   }) as any;
   componentId = compResult.componentId;
   console.log(`  Component: ${componentId} (${compResult.name})`);
@@ -103,7 +103,7 @@ async function run() {
     bugId,
     route: "/cost",
     fixDescription: "Added guard: if total === 0, display '0%' instead of computing percentage",
-    filesChanged: ["src/components/CostDashboard.tsx"],
+    filesChanged: ["src/features/admin/components/CostDashboard.tsx"],
     verified: false,
     verificationNotes: "Fix applied, pending visual verification via Playwright",
   }) as any;
@@ -118,7 +118,7 @@ async function run() {
     bugId,
     route: "/cost",
     fixDescription: "Added guard: if total === 0, display '0%' instead of computing percentage",
-    filesChanged: ["src/components/CostDashboard.tsx"],
+    filesChanged: ["src/features/admin/components/CostDashboard.tsx"],
     verified: true,
     verificationNotes: "Confirmed: Cost Dashboard now shows 0% instead of NaN%",
   }) as any;

@@ -24,3 +24,20 @@ export { SignatureOrb } from "./SignatureOrb";
 export { Tooltip } from "./Tooltip";
 export { TopDividerBar } from "./TopDividerBar";
 export { UnifiedHubPills } from "./UnifiedHubPills";
+
+// Surface primitives — unified design language for all cockpit surfaces
+export {
+  SurfaceCard,
+  SurfaceSection,
+  SurfaceBadge,
+  SurfaceTabs,
+  SurfaceStat,
+  SurfaceChip,
+  SurfaceButton,
+  SurfacePageHeader,
+  SurfaceScroll,
+  SurfaceGrid,
+  SurfaceDivider,
+  scoreToBadgeTone,
+  labelToBadgeTone,
+} from "./SurfacePrimitives";

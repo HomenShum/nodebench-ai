@@ -55,7 +55,7 @@ export function createProgressiveDiscoveryTools(
               "boilerplate", "benchmark", "session_memory", "gaia_solvers",
               "toon", "pattern", "git_workflow", "seo", "voice_bridge",
               "critter", "email", "rss", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "skill_update", "qa_orchestration", "visual_qa", "local_dashboard", "design_governance", "agent_traverse", "engine_context", "context_sandbox", "progressive_discovery", "meta", "openclaw", "webmcp", "research_optimizer", "web_scraping", "thompson_protocol", "observability",
-              "temporal_intelligence", "mission_harness",
+              "temporal_intelligence", "mission_harness", "deep_sim",
             ],
             description: "Filter by tool category (optional)",
           },

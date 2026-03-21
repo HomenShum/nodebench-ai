@@ -5,12 +5,12 @@
  * This is a pure presentational component that receives all data via props.
  */
 
-import { type ReactNode } from "react";
+import { type ReactNode, lazy, Suspense } from "react";
 import { Id } from "../../../../../../convex/_generated/dataModel";
 import { SortableList } from "@/shared/components/SortableList";
 import { TaskRowGlobal, HolidayRowGlobal } from "../rows";
 import AgendaMiniRow from "@features/calendar/components/agenda/AgendaMiniRow";
-import MiniAgendaEditorPanel from "@features/calendar/components/agenda/MiniAgendaEditorPanel";
+const LazyMiniAgendaEditorPanel = lazy(() => import("@features/calendar/components/agenda/MiniAgendaEditorPanel"));
 import type { AgendaEntry } from "../types";
 
 // Re-export for convenience
@@ -127,11 +127,13 @@ export function AgendaListSection({
                         onSelect={(id) => onSelectEvent?.(id as Id<"events">)}
                     />
                     {showInlineEditors && selectedEventId === entry.item._id && (
-                        <MiniAgendaEditorPanel
-                            kind="event"
-                            eventId={entry.item._id}
-                            onClose={() => onClearEventSelection?.()}
-                        />
+                        <Suspense fallback={null}>
+                            <LazyMiniAgendaEditorPanel
+                                kind="event"
+                                eventId={entry.item._id}
+                                onClose={() => onClearEventSelection?.()}
+                            />
+                        </Suspense>
                     )}
                 </div>
             );
@@ -158,11 +160,13 @@ export function AgendaListSection({
                     onOpenRef={onOpenReference}
                 />
                 {showInlineEditors && selectedTaskId === entry.item._id && (
-                    <MiniAgendaEditorPanel
-                        kind="task"
-                        taskId={entry.item._id}
-                        onClose={() => onClearTaskSelection?.()}
-                    />
+                    <Suspense fallback={null}>
+                        <LazyMiniAgendaEditorPanel
+                            kind="task"
+                            taskId={entry.item._id}
+                            onClose={() => onClearTaskSelection?.()}
+                        />
+                    </Suspense>
                 )}
             </div>
         );

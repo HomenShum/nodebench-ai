@@ -81,6 +81,78 @@ export const listForDocument = query({
   },
 });
 
+export const listForDocuments = query({
+  args: { documentIds: v.array(v.id("documents")) },
+  returns: v.array(
+    v.object({
+      documentId: v.id("documents"),
+      tags: v.array(TagDocValidator),
+    }),
+  ),
+  handler: async (ctx, { documentIds }) => {
+    const userId = await getAuthUserId(ctx);
+    const uniqueDocumentIds = Array.from(new Set(documentIds));
+    const tagCache = new Map<
+      Id<"tags">,
+      { _id: Id<"tags">; name: string; kind?: string; importance?: number } | null
+    >();
+    const rows: Array<{
+      documentId: Id<"documents">;
+      tags: Array<{
+        _id: Id<"tags">;
+        name: string;
+        kind?: string;
+        importance?: number;
+      }>;
+    }> = [];
+
+    for (const documentId of uniqueDocumentIds) {
+      const doc = (await ctx.db.get(documentId)) as Doc<"documents"> | null;
+      if (!doc) continue;
+      if (!doc.isPublic && doc.createdBy !== userId) continue;
+
+      const refs = await ctx.db
+        .query("tagRefs")
+        .withIndex("by_target", (q) =>
+          q.eq("targetId", String(documentId)).eq("targetType", "documents"),
+        )
+        .collect();
+
+      const tags: Array<{
+        _id: Id<"tags">;
+        name: string;
+        kind?: string;
+        importance?: number;
+      }> = [];
+
+      for (const ref of refs) {
+        if (!tagCache.has(ref.tagId)) {
+          const tag = (await ctx.db.get(ref.tagId)) as Doc<"tags"> | null;
+          tagCache.set(
+            ref.tagId,
+            tag
+              ? {
+                  _id: tag._id,
+                  name: tag.name,
+                  kind: canonicalizeKind(tag.kind, tag.name) || tag.kind,
+                  importance: tag.importance,
+                }
+              : null,
+          );
+        }
+        const cachedTag = tagCache.get(ref.tagId);
+        if (cachedTag) {
+          tags.push(cachedTag);
+        }
+      }
+
+      rows.push({ documentId, tags });
+    }
+
+    return rows;
+  },
+});
+
 // Hover preview for a tag by name
 export const getPreviewByName = query({
   args: { name: v.string(), limit: v.optional(v.number()) },

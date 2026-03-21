@@ -1,7 +1,7 @@
 import net from "node:net";
 import path from "node:path";
 import { existsSync } from "node:fs";
-import { rm, rename } from "node:fs/promises";
+import { cp, rm, rename } from "node:fs/promises";
 import { spawn } from "node:child_process";
 
 function parseArgs(argv) {
@@ -118,6 +118,16 @@ async function waitForHttpOk(url, timeoutMs) {
     await sleep(450);
   }
   throw new Error(`Timed out waiting for HTTP at ${url}`);
+}
+
+async function syncDogfoodArtifactsToDist(repoRoot, distDir) {
+  const publicDogfoodDir = path.join(repoRoot, "public", "dogfood");
+  const distDogfoodDir = path.join(distDir, "dogfood");
+  if (!existsSync(distDir) || !existsSync(publicDogfoodDir)) return false;
+
+  await removePathRobustly(distDogfoodDir);
+  await cp(publicDogfoodDir, distDogfoodDir, { recursive: true, force: true });
+  return true;
 }
 
 async function runShellCommand(command, { cwd = process.cwd(), env = {} } = {}) {
@@ -341,6 +351,14 @@ async function main() {
       });
       const framesCode = await new Promise((resolve) => frames.on("exit", resolve));
       if (framesCode !== 0) throw new Error(`dogfood:frames exited with code ${framesCode}`);
+    }
+
+    if (serverMode !== "dev") {
+      const synced = await syncDogfoodArtifactsToDist(repoRoot, distDir);
+      if (synced) {
+        // eslint-disable-next-line no-console
+        console.log("Synced public/dogfood artifacts into dist/dogfood for preview-mode verification.");
+      }
     }
 
     if (scenarios) {

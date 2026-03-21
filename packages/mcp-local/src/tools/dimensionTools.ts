@@ -30,6 +30,11 @@ function getDimensionConfig(): { siteUrl: string; secret: string } | null {
   return { siteUrl, secret };
 }
 
+/** TIMEOUT: Gateway call timeout in ms */
+const GATEWAY_TIMEOUT_MS = 30_000;
+/** BOUND_READ: Max response body size (2 MB) */
+const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
+
 async function callGateway<T>(fn: string, args: Record<string, unknown>): Promise<GatewayResult<T>> {
   const config = getDimensionConfig();
   if (!config) {
@@ -39,26 +44,68 @@ async function callGateway<T>(fn: string, args: Record<string, unknown>): Promis
     };
   }
 
-  const res = await fetch(`${config.siteUrl}/api/mcpGateway`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-mcp-secret": config.secret,
-    },
-    body: JSON.stringify({ fn, args }),
-  });
+  // ERROR_BOUNDARY: Wrap entire fetch+parse in try/catch
+  try {
+    // TIMEOUT: AbortController with budget gate
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), GATEWAY_TIMEOUT_MS);
 
-  const payload = (await res.json()) as GatewayResult<T> & { message?: string };
-  if (!res.ok) {
-    const errorMessage = ("error" in payload ? payload.error : undefined)
-      || payload.message
-      || `DeepTrace dimension backend returned HTTP ${res.status}`;
-    return {
-      success: false,
-      error: errorMessage,
-    };
+    const res = await fetch(`${config.siteUrl}/api/mcpGateway`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-mcp-secret": config.secret,
+      },
+      body: JSON.stringify({ fn, args }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    // BOUND_READ: Cap response body size before parsing
+    const contentLength = res.headers.get("content-length");
+    if (contentLength && parseInt(contentLength, 10) > MAX_RESPONSE_BYTES) {
+      return {
+        success: false,
+        error: `Response too large (${contentLength} bytes, max ${MAX_RESPONSE_BYTES}). Reduce scope or use pagination.`,
+      };
+    }
+
+    const text = await res.text();
+    if (text.length > MAX_RESPONSE_BYTES) {
+      return {
+        success: false,
+        error: `Response body too large (${text.length} chars, max ${MAX_RESPONSE_BYTES}). Reduce scope or use pagination.`,
+      };
+    }
+
+    let payload: GatewayResult<T> & { message?: string };
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      return {
+        success: false,
+        error: `DeepTrace backend returned non-JSON response (HTTP ${res.status}): ${text.slice(0, 200)}`,
+      };
+    }
+
+    if (!res.ok) {
+      const errorMessage = ("error" in payload ? payload.error : undefined)
+        || payload.message
+        || `DeepTrace dimension backend returned HTTP ${res.status}`;
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+    return payload;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes("abort")) {
+      return { success: false, error: `DeepTrace gateway timed out after ${GATEWAY_TIMEOUT_MS}ms for ${fn}` };
+    }
+    return { success: false, error: `DeepTrace gateway call failed for ${fn}: ${message}` };
   }
-  return payload;
 }
 
 function successOrError<T>(result: GatewayResult<T>, latencyMs: number) {

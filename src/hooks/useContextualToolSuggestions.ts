@@ -8,7 +8,7 @@
  */
 
 import { useMemo } from "react";
-import type { MainView } from "@/lib/viewRegistry";
+import type { MainView } from "@/lib/registry/viewRegistry";
 import type { BuyerPreferredPath } from "@/features/controlPlane/lib/onboardingState";
 
 export interface ToolSuggestion {

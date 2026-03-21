@@ -1,0 +1,22 @@
+{
+  "maxIterations": 15,
+  "candidatesPerRound": 5,
+  "promotionThreshold": 0.05,
+  "throughputWeights": {
+    "taskCompletionRate": 0.30,
+    "inverseTimeToFirstDraft": 0.25,
+    "inverseHumanEditDistance": 0.20,
+    "inverseWallClock": 0.15,
+    "inverseToolCallCount": 0.10
+  },
+  "hardGuards": {
+    "factualPrecision": { "type": "floor", "value": 0.89, "maxRegression": 0.01 },
+    "evidenceLinkage": { "type": "floor", "value": 0.75 },
+    "receiptCompleteness": { "type": "floor", "value": 0.80 },
+    "falseConfidenceRate": { "type": "ceiling", "value": 0.10 }
+  },
+  "goldenSetPaths": [
+    "docs/golden-sets/investor-diligence-acme-ai.json",
+    "docs/golden-sets/founder-strategy-nodebench.json"
+  ]
+}

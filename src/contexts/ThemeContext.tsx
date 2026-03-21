@@ -8,9 +8,51 @@ import {
   LayoutMode,
   DEFAULT_THEME,
   ACCENT_COLORS,
+  FONT_FAMILIES,
+  STYLE_PRESETS,
 } from '../types/theme';
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+function hexToHslTriplet(hex: string): string {
+  const normalized = hex.replace('#', '');
+  const value = normalized.length === 3
+    ? normalized.split('').map((part) => part + part).join('')
+    : normalized;
+
+  const r = Number.parseInt(value.slice(0, 2), 16) / 255;
+  const g = Number.parseInt(value.slice(2, 4), 16) / 255;
+  const b = Number.parseInt(value.slice(4, 6), 16) / 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const lightness = (max + min) / 2;
+
+  if (max === min) {
+    return `0 0% ${Math.round(lightness * 100)}%`;
+  }
+
+  const delta = max - min;
+  const saturation =
+    lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+
+  let hue = 0;
+  switch (max) {
+    case r:
+      hue = (g - b) / delta + (g < b ? 6 : 0);
+      break;
+    case g:
+      hue = (b - r) / delta + 2;
+      break;
+    default:
+      hue = (r - g) / delta + 4;
+      break;
+  }
+
+  hue /= 6;
+
+  return `${Math.round(hue * 360)} ${Math.round(saturation * 100)}% ${Math.round(lightness * 100)}%`;
+}
 
 export function useTheme(): ThemeContextValue {
   const context = useContext(ThemeContext);
@@ -34,6 +76,7 @@ export function useThemeSafe(): ThemeContextValue {
       setBackgroundPattern: () => {},
       setReducedMotion: () => {},
       setLayout: () => {},
+      applyStylePreset: () => {},
       resetToDefaults: () => {},
     };
   }
@@ -115,12 +158,38 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
     // Accent color CSS variables
     const accent = ACCENT_COLORS.find(c => c.name === theme.accentColor) || ACCENT_COLORS[0];
+    const accentHsl = hexToHslTriplet(accent.value);
     root.style.setProperty('--accent-color', accent.value);
     root.style.setProperty('--accent-color-hover', accent.hoverValue);
     root.style.setProperty('--accent-color-light', accent.lightValue);
+    root.style.setProperty('--accent-primary', accent.value);
+    root.style.setProperty('--accent-primary-hover', accent.hoverValue);
+    root.style.setProperty('--accent-primary-bg', accent.lightValue);
+    root.style.setProperty('--primary', accentHsl);
+    root.style.setProperty('--ring', accentHsl);
 
-    // Density
+    // Font pairing CSS variables
+    const fontPair = FONT_FAMILIES.find(font => font.name === theme.fontFamily) || FONT_FAMILIES[0];
+    root.style.setProperty('--font-ui', fontPair.body);
+    root.style.setProperty('--font-display', fontPair.display);
+
+    // Density + background + preset marker
     root.dataset.density = theme.density;
+    root.dataset.backgroundPattern = theme.backgroundPattern;
+
+    // Derive active preset from current theme state for CSS selectors
+    const matchedPreset = STYLE_PRESETS.find(
+      (p) =>
+        p.mode === theme.mode &&
+        p.accentColor === theme.accentColor &&
+        p.fontFamily === theme.fontFamily &&
+        p.backgroundPattern === theme.backgroundPattern,
+    );
+    if (matchedPreset) {
+      root.dataset.preset = matchedPreset.id;
+    } else {
+      delete root.dataset.preset;
+    }
 
     // Reduced motion
     if (theme.reducedMotion) {
@@ -163,6 +232,21 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     setTheme(prev => ({ ...prev, layout }));
   }, []);
 
+  const applyStylePreset = useCallback((presetId: string) => {
+    const preset = STYLE_PRESETS.find((candidate) => candidate.id === presetId);
+    if (!preset) return;
+    // Set data-preset on <html> so CSS selectors like html[data-preset="dark-botanical"] activate
+    document.documentElement.dataset.preset = presetId;
+    setTheme((prev) => ({
+      ...prev,
+      mode: preset.mode,
+      accentColor: preset.accentColor,
+      fontFamily: preset.fontFamily,
+      backgroundPattern: preset.backgroundPattern,
+      density: preset.density ?? prev.density,
+    }));
+  }, []);
+
   const resetToDefaults = useCallback(() => {
     setTheme(DEFAULT_THEME);
   }, []);
@@ -177,8 +261,9 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     setBackgroundPattern,
     setReducedMotion,
     setLayout,
+    applyStylePreset,
     resetToDefaults,
-  }), [theme, resolvedMode, setMode, setAccentColor, setDensity, setFontFamily, setBackgroundPattern, setReducedMotion, setLayout, resetToDefaults]);
+  }), [theme, resolvedMode, setMode, setAccentColor, setDensity, setFontFamily, setBackgroundPattern, setReducedMotion, setLayout, applyStylePreset, resetToDefaults]);
 
   return (
     <ThemeContext.Provider value={value}>

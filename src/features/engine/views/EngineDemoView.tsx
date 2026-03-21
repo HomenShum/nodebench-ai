@@ -105,7 +105,7 @@ const TextButton = memo(({ label, onClick, disabled, active }: {
     onClick={onClick}
     disabled={disabled}
     className={`text-xs font-mono transition-colors ${
-      disabled ? "text-content-muted/60 cursor-not-allowed"
+      disabled ? "text-content-muted cursor-not-allowed"
       : active ? "text-primary underline underline-offset-4"
       : "text-content-muted hover:text-content hover:underline hover:underline-offset-4"
     }`}
@@ -303,7 +303,7 @@ function ScoreboardPanel({ report }: { report: ConformanceReport | null }) {
           {Object.entries(report.breakdown).map(([key, passed]) => (
             <div key={key} className="flex items-center justify-between">
               <span className="text-content-muted">{key.replace(/([A-Z])/g, " $1").toLowerCase()}</span>
-              <span className={passed ? "text-primary" : "text-content-muted/60"}>
+              <span className={passed ? "text-primary" : "text-content-muted"}>
                 {passed ? "\u2713" : "\u25CB"}
               </span>
             </div>

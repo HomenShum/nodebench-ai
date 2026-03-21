@@ -55,7 +55,7 @@ export default function WorldMonitorView() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-content-secondary">
-              DeepTrace World Monitor
+              NodeBench World Monitor
             </p>
             <h1 className="text-3xl font-semibold text-content">Open-source geopolitical and market event map</h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-content-secondary">

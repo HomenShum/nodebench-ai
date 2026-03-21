@@ -4,10 +4,10 @@
  */
 export {
   listForDocument,
+  listForDocuments,
   getPreviewByName,
   search,
   addTagsToDocument,
   removeTagFromDocument,
   updateTagKind,
 } from "./domains/knowledge/tags";
-

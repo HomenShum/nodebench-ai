@@ -89,6 +89,10 @@ import {
   sniffChecks,
   mergeBoundaries,
   agentPolicies,
+  passportEnforcementLogs,
+  decisionMemory,
+  preExecutionGates,
+  consistencyAlerts,
 } from "./domains/missions/schema";
 
 // Intelligence graph schema imports (v2 Layer E)
@@ -119,6 +123,30 @@ import {
   routingRecommendations,
   canaryRuns,
 } from "./domains/evaluation/schema";
+import {
+  trajectoryEntities,
+  trajectorySpans,
+  trajectoryEvidenceBundles,
+  trajectoryJudgeVerdicts,
+  trajectoryFeedbackEvents,
+  trajectoryInterventionEvents,
+  trajectoryTrustNodes,
+  trajectoryTrustEdges,
+  trajectorySummaries,
+  trajectoryCompoundingScores,
+  trajectoryBenchmarkRuns,
+} from "./domains/trajectory/schema";
+import {
+  successLoopRegistry,
+  successLoopEvents,
+  successLoopExperiments,
+  frozenDecisions,
+  successOutcomeLinks,
+} from "./domains/successLoops/schema";
+import { agentResponseReviews } from "./domains/agents/schema";
+
+// MCP Gateway API key & session schema
+import { mcpApiKeys, mcpGatewaySessions } from "./domains/mcp/apiKeysSchema";
 
 /* ------------------------------------------------------------------ */
 /* 1.  DOCUMENTS  â€“  page/board/post level metadata                    */
@@ -1454,11 +1482,15 @@ const slackAccounts = defineTable({
   // Default channel for digest/notification delivery
   defaultChannelId: v.optional(v.string()),
   defaultChannelName: v.optional(v.string()),
+  commandCenterThreadTs: v.optional(v.string()),
+  commandCenterChannelId: v.optional(v.string()),
+  lastCommandCenterDate: v.optional(v.string()),
   createdAt: v.number(),
   updatedAt: v.number(),
 })
   .index("by_user", ["userId"])
-  .index("by_user_provider", ["userId", "provider"]);
+  .index("by_user_provider", ["userId", "provider"])
+  .index("by_teamId", ["teamId"]);
 
 const githubAccounts = defineTable({
   userId: v.id("users"),
@@ -12792,6 +12824,10 @@ export default defineSchema({
   sniffChecks,
   mergeBoundaries,
   agentPolicies,
+  passportEnforcementLogs,
+  decisionMemory,
+  preExecutionGates,
+  consistencyAlerts,
 
   /* ------------------------------------------------------------------ */
   /* INTELLIGENCE GRAPH — v2 Layer E                                      */
@@ -12821,4 +12857,35 @@ export default defineSchema({
   baselineComparisons,
   routingRecommendations,
   canaryRuns,
+
+  /* ------------------------------------------------------------------ */
+  /* TRAJECTORY INTELLIGENCE — V3                                         */
+  /* ------------------------------------------------------------------ */
+  trajectoryEntities,
+  trajectorySpans,
+  trajectoryEvidenceBundles,
+  trajectoryJudgeVerdicts,
+  trajectoryFeedbackEvents,
+  trajectoryInterventionEvents,
+  trajectoryTrustNodes,
+  trajectoryTrustEdges,
+  trajectorySummaries,
+  trajectoryCompoundingScores,
+  trajectoryBenchmarkRuns,
+
+  /* ------------------------------------------------------------------ */
+  /* SUCCESS LOOPS OS                                                    */
+  /* ------------------------------------------------------------------ */
+  successLoopRegistry,
+  successLoopEvents,
+  successLoopExperiments,
+  frozenDecisions,
+  successOutcomeLinks,
+  agentResponseReviews,
+
+  /* ------------------------------------------------------------------ */
+  /* MCP GATEWAY — API keys & session telemetry                          */
+  /* ------------------------------------------------------------------ */
+  mcpApiKeys,
+  mcpGatewaySessions,
 });

@@ -51,14 +51,14 @@ export function SidebarButton({
       className={cn(
         'group flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium rounded-md transition-colors duration-150 w-[calc(100%-0.5rem)] mx-1 text-left border-l-2',
         isActive
-          ? 'border-l-[rgb(79, 70, 229)] bg-indigo-500/10 text-content'
+          ? 'border-l-[var(--accent-primary)] bg-[var(--accent-primary)]/10 text-content'
           : 'border-l-transparent text-content-secondary hover:bg-surface-hover hover:text-content',
         className
       )}
     >
       <span className={cn(
         'w-4 h-4 flex-shrink-0 [&>svg]:w-full [&>svg]:h-full transition-opacity',
-        isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-content-muted opacity-60 group-hover:opacity-100'
+        isActive ? 'text-[var(--accent-primary)]' : 'text-content-muted opacity-60 group-hover:opacity-100'
       )}>
         {icon}
       </span>

@@ -1,4 +1,4 @@
-import { VIEW_MAP, type MainView, type ResearchTab } from "@/lib/viewRegistry";
+import { VIEW_MAP, type MainView, type ResearchTab } from "@/lib/registry/viewRegistry";
 
 export interface ViewBreadcrumbItem {
   id: string;

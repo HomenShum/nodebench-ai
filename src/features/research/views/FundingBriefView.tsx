@@ -549,9 +549,9 @@ export function FundingBriefView() {
   }, [data?.stats?.byRoundType]);
 
   return (
-    <div className="nb-page-shell editorial-layout">
+    <div className="nb-page-shell editorial-layout view-atmosphere-funding">
       <div className="nb-page-inner">
-        <div className="nb-page-frame-narrow">
+        <div className="nb-page-frame-narrow stagger [&>*]:animate-[fade-slide-in_0.5s_var(--ease-out-expo)_both]">
         {/* Header */}
         <div className="mb-6 flex items-start justify-between">
           <div>

@@ -3,8 +3,8 @@
  *
  * Adding a new view = adding ONE entry here. All consumers derive from this registry:
  *   - useMainLayoutRouting.ts (URL → view parsing)
- *   - MainLayout.tsx (VIEW_TITLES, VIEW_SUBTITLES, lazy component rendering)
- *   - CleanSidebar.tsx (navigation items)
+ *   - CockpitLayout / ActiveSurfaceHost (surface resolution + rendering)
+ *   - WorkspaceRail / command palette (navigation items)
  *   - cockpitModes.ts (mode groupings)
  *   - viewCapabilityRegistry.ts (WebMCP capabilities)
  *
@@ -58,7 +58,12 @@ export type MainView =
   | "world-monitor"
   | "watchlists"
   | "mission-control"
-  | "evolution";
+  | "evolution"
+  | "deep-sim"
+  | "postmortem"
+  | "agent-telemetry"
+  | "api-keys"
+  | "developers";
 
 export type ResearchTab = "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
 
@@ -73,6 +78,19 @@ export type ResearchTab = "overview" | "signals" | "briefing" | "deals" | "chang
  * - legacy:   Deprecated routes that redirect — never rendered directly
  */
 export type RouteGroup = "core" | "nested" | "internal" | "legacy";
+
+// ─── Cockpit surface model ──────────────────────────────────────────────────
+
+export type CockpitSurfaceId =
+  | "ask"          // Default: simplified landing + chat input
+  | "memo"         // Decision workbench (DecisionMemoView)
+  | "research"     // Research hub (ResearchHub)
+  | "investigate"  // Adversarial analysis (InvestigationView)
+  | "compare"      // Postmortem / prediction vs reality
+  | "editor"       // Documents + spreadsheets workspace
+  | "graph"        // Entity profile + trust graph
+  | "trace"        // Action receipts + execution trace
+  | "telemetry";   // Stacked ops: benchmarks + health + spend + quality
 
 // ─── Registry entry shape ────────────────────────────────────────────────────
 
@@ -89,7 +107,7 @@ export interface ViewRegistryEntry {
   aliases?: string[];
   /**
    * Lazy component factory. Returns the component to render for this view.
-   * null = view has custom rendering logic in MainLayout (research, entity, spreadsheets).
+   * null = view has custom rendering logic in the cockpit surface host.
    */
   component: LazyExoticComponent<ComponentType<any>> | null;
   /** Whether this view requires a dynamic segment (e.g. /entity/:name) */
@@ -102,6 +120,49 @@ export interface ViewRegistryEntry {
   parentId?: MainView;
   /** For legacy routes: the view id to redirect to instead of rendering */
   redirectTo?: MainView;
+
+  // ── Cockpit surface metadata (consolidation refactor) ──────────────────
+  /** Which cockpit surface this view belongs to */
+  surfaceId?: CockpitSurfaceId;
+  /** If set, this route redirects to the cockpit with this query string */
+  legacyRedirectTo?: string;
+  /** Whether this view appears in the Cmd+K command palette (default: true) */
+  commandPaletteVisible?: boolean;
+}
+
+export interface CockpitState {
+  surfaceId: CockpitSurfaceId;
+  view: MainView;
+  entityName: string | null;
+  spreadsheetId: string | null;
+  researchTab: ResearchTab;
+  panel: string | null;
+  runId: string | null;
+  docId: string | null;
+  workspace: string | null;
+  canonicalPath: string;
+  isLegacyRedirect: boolean;
+}
+
+export interface ActiveSurfaceParams {
+  surfaceId: CockpitSurfaceId;
+  view: MainView;
+  entityName: string | null;
+  docId: string | null;
+  workspace: string | null;
+  panel: string | null;
+  researchTab: ResearchTab;
+}
+
+export interface SurfaceCacheEntry {
+  surfaceId: CockpitSurfaceId;
+  view: MainView;
+  entityName: string | null;
+  docId: string | null;
+  workspace: string | null;
+  panel: string | null;
+  researchTab: ResearchTab;
+  lastVisitedAt: number;
 }
 
 // ─── Lazy component factories ────────────────────────────────────────────────
@@ -122,35 +183,54 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
   // ── Control Plane (landing) ──────────────────────────────────────────────
   {
     id: "control-plane",
-    title: "DeepTrace",
+    title: "Ask",
     subtitle: "Agent trust control plane by NodeBench",
     path: "/",
     aliases: ["/control-plane", "/home", "/landing"],
-    component: null, // Custom rendering in MainLayout (passes onNavigate)
+    component: null, // Custom rendering in ActiveSurfaceHost
     group: "core",
     navVisible: true,
+    surfaceId: "ask",
   },
   {
     id: "receipts",
-    title: "Action Receipts",
-    subtitle: "Denied, approval-gated, and reversible records of what agents saw, did, and were allowed to do",
+    title: "Agent Actions",
+    subtitle: "What your agents did, what was denied, and what needs approval",
     path: "/receipts",
     aliases: ["/action-receipts", "/control-plane/receipts"],
     component: lazyView(() => import("@/features/controlPlane/views/ActionReceiptFeed")),
     group: "nested",
     navVisible: false,
     parentId: "control-plane",
+    surfaceId: "trace",
+    legacyRedirectTo: "/?surface=trace",
   },
   {
     id: "delegation",
-    title: "Passport",
-    subtitle: "Scoped permissions, approval gates, and trust boundaries before an agent acts",
+    title: "Permissions",
+    subtitle: "What each agent is allowed to do, and what requires approval",
     path: "/delegation",
     aliases: ["/delegate", "/passport", "/control-plane/delegation", "/control-plane/passport"],
     component: lazyView(() => import("@/features/controlPlane/views/DelegationShowcase")),
     group: "nested",
     navVisible: false,
     parentId: "control-plane",
+    surfaceId: "trace",
+    legacyRedirectTo: "/?surface=trace&panel=permissions",
+  },
+
+  // ── Developers ──────────────────────────────────────────────────────────────
+  {
+    id: "developers",
+    title: "Developers",
+    subtitle: "Architecture, tools, and integrations under the hood",
+    path: "/developers",
+    component: lazyNamed(() => import("@/features/controlPlane/views/DevelopersPage"), "DevelopersPage"),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
   },
 
   // ── Research & Intelligence ────────────────────────────────────────────────
@@ -164,6 +244,8 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "control-plane",
+    surfaceId: "research",
+    legacyRedirectTo: "/?surface=research",
   },
   {
     id: "product-direction",
@@ -175,6 +257,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "research",
+    surfaceId: "research",
   },
   {
     id: "execution-trace",
@@ -186,6 +269,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "control-plane",
+    surfaceId: "research",
   },
   {
     id: "world-monitor",
@@ -197,6 +281,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "research",
+    surfaceId: "research",
   },
   {
     id: "watchlists",
@@ -208,6 +293,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "research",
+    surfaceId: "research",
   },
   {
     id: "signals",
@@ -217,6 +303,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "research",
+    surfaceId: "research",
   },
   {
     id: "for-you-feed",
@@ -228,6 +315,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "research",
+    surfaceId: "research",
   },
   {
     id: "industry-updates",
@@ -235,10 +323,14 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     subtitle: "Market movement and company updates",
     path: "/industry",
     aliases: ["/dashboard/industry"],
-    component: lazyNamed(() => import("@/components/IndustryUpdatesPanel"), "IndustryUpdatesPanel"),
+    component: lazyNamed(
+      () => import("@/features/research/components/IndustryUpdatesPanel"),
+      "IndustryUpdatesPanel",
+    ),
     group: "nested",
     navVisible: false,
     parentId: "research",
+    surfaceId: "research",
   },
   {
     id: "funding",
@@ -249,26 +341,31 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "research",
+    surfaceId: "research",
   },
   {
     id: "showcase",
     title: "Showcase",
     path: "/showcase",
     aliases: ["/demo"],
-    component: null, // Custom rendering in MainLayout (passes onBack prop)
+    component: null, // Custom rendering in ActiveSurfaceHost
     group: "nested",
     navVisible: false,
     parentId: "research",
+    surfaceId: "research",
+    commandPaletteVisible: true,
   },
   {
     id: "footnotes",
     title: "Sources",
     path: "/footnotes",
     aliases: ["/sources"],
-    component: null, // Custom rendering in MainLayout (passes library/onBack props)
+    component: null, // Custom rendering in ActiveSurfaceHost
     group: "nested",
     navVisible: false,
     parentId: "research",
+    surfaceId: "research",
+    commandPaletteVisible: true,
   },
   {
     id: "entity",
@@ -279,6 +376,8 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "research",
+    surfaceId: "graph",
+    legacyRedirectTo: "/?surface=graph",
   },
   {
     id: "benchmarks",
@@ -290,6 +389,8 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "internal",
     navVisible: false,
     parentId: "control-plane",
+    surfaceId: "telemetry",
+    legacyRedirectTo: "/?surface=telemetry",
   },
   {
     id: "investigation",
@@ -300,6 +401,8 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     component: lazyView(() => import("@/features/investigation/views/EnterpriseInvestigationView")),
     group: "core",
     navVisible: true,
+    surfaceId: "investigate",
+    legacyRedirectTo: "/?surface=investigate",
   },
 
   // ── Workspace & Build ──────────────────────────────────────────────────────
@@ -312,6 +415,8 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     component: lazyNamed(() => import("@/features/documents/components/DocumentsHomeHub"), "DocumentsHomeHub"),
     group: "core",
     navVisible: true,
+    surfaceId: "editor",
+    legacyRedirectTo: "/?surface=editor",
   },
   {
     id: "spreadsheets",
@@ -321,15 +426,19 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "documents",
+    surfaceId: "editor",
+    legacyRedirectTo: "/?surface=editor",
   },
   {
     id: "calendar",
     title: "Calendar",
     path: "/calendar",
-    component: null, // Custom rendering in MainLayout (passes onDocumentSelect/onGridModeToggle)
+    component: null, // Custom rendering in ActiveSurfaceHost
     group: "nested",
     navVisible: false,
     parentId: "documents",
+    surfaceId: "editor",
+    legacyRedirectTo: "/?surface=editor",
   },
   {
     id: "roadmap",
@@ -339,6 +448,8 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "documents",
+    surfaceId: "editor",
+    legacyRedirectTo: "/?surface=editor",
   },
   {
     id: "timeline",
@@ -348,16 +459,19 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "documents",
+    surfaceId: "editor",
+    legacyRedirectTo: "/?surface=editor",
   },
   {
     id: "public",
     title: "Shared with You",
     path: "/public",
     aliases: ["/shared"],
-    component: null, // Custom rendering in MainLayout (passes onDocumentSelect prop)
+    component: null, // Custom rendering in ActiveSurfaceHost
     group: "nested",
     navVisible: false,
     parentId: "documents",
+    surfaceId: "editor",
   },
   {
     id: "document-recommendations",
@@ -365,10 +479,16 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     subtitle: "Suggested reading and follow-up documents",
     path: "/recommendations",
     aliases: ["/discover"],
-    component: lazyView(() => import("@/components/RecommendationCard").then((m) => ({ default: (m as any).DocumentRecommendations ?? m.default }))),
+    component: lazyView(
+      () =>
+        import("@/features/documents/components/DocumentRecommendations").then((m) => ({
+          default: (m as any).DocumentRecommendations ?? m.default,
+        })),
+    ),
     group: "nested",
     navVisible: false,
     parentId: "documents",
+    surfaceId: "editor",
   },
 
   // ── Agents & Automation ────────────────────────────────────────────────────
@@ -381,6 +501,8 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "control-plane",
+    surfaceId: "telemetry",
+    legacyRedirectTo: "/?surface=telemetry",
   },
   {
     id: "agent-marketplace",
@@ -392,6 +514,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "agents",
+    surfaceId: "telemetry",
   },
   {
     id: "activity",
@@ -402,6 +525,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "agents",
+    surfaceId: "telemetry",
   },
   {
     id: "mcp-ledger",
@@ -413,6 +537,8 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "internal",
     navVisible: false,
     parentId: "agents",
+    surfaceId: "telemetry",
+    legacyRedirectTo: "/?surface=telemetry",
   },
 
   // ── Code & Social Intelligence ─────────────────────────────────────────────
@@ -426,6 +552,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "research",
+    surfaceId: "research",
   },
   {
     id: "pr-suggestions",
@@ -437,16 +564,18 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "research",
+    surfaceId: "research",
   },
   {
     id: "linkedin-posts",
     title: "Social Archive",
     subtitle: "Social output history and archive",
     path: "/linkedin",
-    component: lazyNamed(() => import("@/features/social/views/LinkedInPostArchiveView"), "LinkedInPostArchiveView"),
+    component: lazyNamed(() => import("@/features/narrative/components/social/LinkedInPostArchiveView"), "LinkedInPostArchiveView"),
     group: "nested",
     navVisible: false,
     parentId: "research",
+    surfaceId: "research",
   },
 
   // ── Analytics & System ─────────────────────────────────────────────────────
@@ -455,30 +584,36 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     title: "Review Queue",
     path: "/internal/analytics/hitl",
     aliases: ["/analytics/hitl", "/analytics/review-queue", "/review-queue"],
-    component: lazyView(() => import("@/features/analytics/views/HITLAnalyticsDashboard")),
+    component: lazyView(() => import("@/features/admin/dashboards/HITLAnalyticsDashboard")),
     group: "internal",
     navVisible: false,
     parentId: "control-plane",
+    surfaceId: "telemetry",
+    commandPaletteVisible: true,
   },
   {
     id: "analytics-components",
     title: "Performance Analytics",
     path: "/internal/analytics/components",
     aliases: ["/analytics/components"],
-    component: lazyView(() => import("@/features/analytics/views/ComponentMetricsDashboard")),
+    component: lazyView(() => import("@/features/admin/dashboards/ComponentMetricsDashboard")),
     group: "internal",
     navVisible: false,
     parentId: "control-plane",
+    surfaceId: "telemetry",
+    commandPaletteVisible: true,
   },
   {
     id: "analytics-recommendations",
     title: "Feedback",
     path: "/internal/analytics/recommendations",
     aliases: ["/analytics/recommendations"],
-    component: lazyNamed(() => import("@/features/analytics/views/RecommendationAnalyticsDashboard"), "default"),
+    component: lazyNamed(() => import("@/features/admin/dashboards/RecommendationAnalyticsDashboard"), "default"),
     group: "internal",
     navVisible: false,
     parentId: "control-plane",
+    surfaceId: "telemetry",
+    commandPaletteVisible: true,
   },
   {
     id: "cost-dashboard",
@@ -486,10 +621,12 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     subtitle: "Usage and spend trends",
     path: "/internal/cost",
     aliases: ["/cost", "/dashboard/cost"],
-    component: lazyNamed(() => import("@/components/CostDashboard"), "CostDashboard"),
+    component: lazyNamed(() => import("@/features/admin/components/CostDashboard"), "CostDashboard"),
     group: "internal",
     navVisible: false,
     parentId: "control-plane",
+    surfaceId: "telemetry",
+    legacyRedirectTo: "/?surface=telemetry",
   },
   {
     id: "dogfood",
@@ -500,6 +637,8 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "internal",
     navVisible: false,
     parentId: "control-plane",
+    surfaceId: "telemetry",
+    commandPaletteVisible: true,
   },
   {
     id: "observability",
@@ -511,6 +650,8 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "internal",
     navVisible: false,
     parentId: "control-plane",
+    surfaceId: "telemetry",
+    legacyRedirectTo: "/?surface=telemetry",
   },
   {
     id: "engine-demo",
@@ -521,18 +662,22 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "internal",
     navVisible: false,
     parentId: "control-plane",
+    surfaceId: "telemetry",
+    commandPaletteVisible: true,
   },
 
   // ── Oracle ─────────────────────────────────────────────────────────────────
   {
     id: "oracle",
-    title: "The Oracle",
-    subtitle: "Operational memory and telemetry for long-running AI work",
+    title: "System",
+    subtitle: "Operational health, benchmarks, spend, and quality reviews",
     path: "/oracle",
     aliases: ["/career", "/trajectory"],
     component: lazyNamed(() => import("@/features/oracle/views/OracleView"), "OracleView"),
     group: "core",
     navVisible: true,
+    surfaceId: "telemetry",
+    legacyRedirectTo: "/?surface=telemetry",
   },
 
   // ── Dev Dashboard ────────────────────────────────────────────────────────
@@ -546,19 +691,23 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "internal",
     navVisible: false,
     parentId: "control-plane",
+    surfaceId: "telemetry",
+    commandPaletteVisible: true,
   },
 
   // ── Mission Control ───────────────────────────────────────────────────────
   {
     id: "mission-control",
     title: "Mission Control",
-    subtitle: "Active missions, task execution, judge queue, and sniff checks",
+    subtitle: "Active missions, task execution, judge queue, and validation checks",
     path: "/internal/mission-control",
     aliases: ["/mission-control", "/missions"],
     component: lazyView(() => import("@/features/missions/views/MissionControlView")),
     group: "internal",
     navVisible: false,
     parentId: "control-plane",
+    surfaceId: "telemetry",
+    commandPaletteVisible: true,
   },
 
   // ── Evolution Dashboard ───────────────────────────────────────────────────
@@ -572,6 +721,64 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "internal",
     navVisible: false,
     parentId: "control-plane",
+    surfaceId: "telemetry",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "deep-sim",
+    title: "Decision Workbench",
+    subtitle: "Deep Sim analysis: variables, scenarios, interventions, and decision memos with evidence",
+    path: "/deep-sim",
+    aliases: ["/decision-memo", "/decision-workbench"],
+    component: lazyView(() => import("@/features/deepSim/views/DecisionMemoView")),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "memo",
+    legacyRedirectTo: "/?surface=memo",
+  },
+  {
+    id: "postmortem",
+    title: "Postmortem",
+    subtitle: "Compare predictions against reality, score forecasts, update priors",
+    path: "/postmortem",
+    aliases: ["/forecast-review", "/scorecard"],
+    component: lazyView(() => import("@/features/deepSim/views/PostmortemView")),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "compare",
+    legacyRedirectTo: "/?surface=compare",
+  },
+
+  // ── Agent Telemetry ─────────────────────────────────────────────────────
+  {
+    id: "agent-telemetry",
+    title: "Agent Telemetry",
+    subtitle: "Full action log, tool call breakdown, costs, latency, and error tracking",
+    path: "/agent-telemetry",
+    aliases: ["/telemetry", "/agent-actions"],
+    component: lazyView(() => import("@/features/monitoring/views/AgentTelemetryDashboard")),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "telemetry",
+    legacyRedirectTo: "/?surface=telemetry",
+  },
+
+  // ── API Key Management ────────────────────────────────────────────────
+  {
+    id: "api-keys",
+    title: "API Keys",
+    subtitle: "Create, view, and revoke API keys for MCP, REST, and WebSocket access",
+    path: "/api-keys",
+    aliases: ["/keys", "/api-key-management"],
+    component: lazyView(() => import("@/features/mcp/views/ApiKeyManagementPage")),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "telemetry",
+    commandPaletteVisible: true,
   },
 ];
 
@@ -596,6 +803,188 @@ export const VIEW_SUBTITLES: Record<string, string> = Object.fromEntries(
 export const VIEW_PATH_MAP: Partial<Record<MainView, string>> = Object.fromEntries(
   VIEW_REGISTRY.map((e) => [e.id, e.path]),
 );
+
+export const SURFACE_DEFAULT_VIEW: Record<CockpitSurfaceId, MainView> = {
+  ask: "control-plane",
+  memo: "deep-sim",
+  research: "research",
+  investigate: "investigation",
+  compare: "postmortem",
+  editor: "documents",
+  graph: "entity",
+  trace: "receipts",
+  telemetry: "oracle",
+};
+
+export const SURFACE_TITLES: Record<CockpitSurfaceId, string> = {
+  ask: "Ask",
+  memo: "Decision Workbench",
+  research: "Research Hub",
+  investigate: "Investigation",
+  compare: "Forecast Review",
+  editor: "Workspace",
+  graph: "Entity Graph",
+  trace: "Audit Trail",
+  telemetry: "System",
+};
+
+export function getSurfaceForView(viewId: MainView): CockpitSurfaceId {
+  return VIEW_MAP[viewId]?.surfaceId ?? "ask";
+}
+
+export function getDefaultViewForSurface(surfaceId: CockpitSurfaceId): MainView {
+  return SURFACE_DEFAULT_VIEW[surfaceId];
+}
+
+export function buildCockpitPath({
+  surfaceId,
+  view,
+  entity,
+  run,
+  doc,
+  workspace,
+  panel,
+  tab,
+}: {
+  surfaceId: CockpitSurfaceId;
+  view?: MainView | null;
+  entity?: string | null;
+  run?: string | null;
+  doc?: string | null;
+  workspace?: string | null;
+  panel?: string | null;
+  tab?: string | null;
+}): string {
+  const params = new URLSearchParams();
+  params.set("surface", surfaceId);
+  if (view && view !== getDefaultViewForSurface(surfaceId)) params.set("view", view);
+  if (entity) params.set("entity", entity);
+  if (run) params.set("run", run);
+  if (doc) params.set("doc", doc);
+  if (workspace) params.set("workspace", workspace);
+  if (panel) params.set("panel", panel);
+  if (tab) params.set("tab", tab);
+  return `/?${params.toString()}`;
+}
+
+export function buildCockpitPathForView({
+  view,
+  entity,
+  run,
+  doc,
+  workspace,
+  panel,
+  tab,
+}: {
+  view: MainView;
+  entity?: string | null;
+  run?: string | null;
+  doc?: string | null;
+  workspace?: string | null;
+  panel?: string | null;
+  tab?: string | null;
+}): string {
+  const surfaceId = getSurfaceForView(view);
+  return buildCockpitPath({
+    surfaceId,
+    view,
+    entity,
+    run,
+    doc,
+    workspace,
+    panel: panel ?? (view === "delegation" ? "permissions" : null),
+    tab: surfaceId === "research" ? tab ?? null : null,
+  });
+}
+
+export function resolvePathToCockpitState(rawPathname: string, rawSearch = ""): CockpitState {
+  const params = new URLSearchParams(rawSearch || "");
+  const requestedSurface = params.get("surface") as CockpitSurfaceId | null;
+  const currentPath = `${rawPathname || "/"}${rawSearch || ""}`;
+  const inferredSurface =
+    (rawPathname || "/") === "/" && !requestedSurface
+      ? params.get("entity")
+        ? "graph"
+        : params.get("run") || params.get("panel")
+          ? "trace"
+          : params.get("doc") || params.get("workspace")
+            ? "editor"
+            : null
+      : null;
+  const activeSurface = requestedSurface ?? inferredSurface;
+
+  if ((rawPathname || "/") === "/" && activeSurface && activeSurface in SURFACE_DEFAULT_VIEW) {
+    const tabParam = params.get("tab");
+    const researchTab = (tabParam as ResearchTab | null) ?? "overview";
+    const requestedViewParam = params.get("view");
+    const requestedView =
+      requestedViewParam && requestedViewParam in VIEW_MAP
+        ? (requestedViewParam as MainView)
+        : null;
+    const view =
+      requestedView && getSurfaceForView(requestedView) === activeSurface
+        ? requestedView
+        : activeSurface === "graph" && params.get("entity")
+          ? "entity"
+          : activeSurface === "trace" && params.get("panel") === "permissions"
+            ? "delegation"
+            : activeSurface === "research" && tabParam
+              ? "research"
+              : getDefaultViewForSurface(activeSurface);
+
+    const canonicalPath = buildCockpitPath({
+      surfaceId: activeSurface,
+      view,
+      entity: params.get("entity"),
+      run: params.get("run"),
+      doc: params.get("doc"),
+      workspace: params.get("workspace"),
+      panel: params.get("panel"),
+      tab: activeSurface === "research" ? researchTab : null,
+    });
+
+    return {
+      surfaceId: activeSurface,
+      view,
+      entityName: params.get("entity"),
+      spreadsheetId: null,
+      researchTab,
+      panel: params.get("panel"),
+      runId: params.get("run"),
+      docId: params.get("doc"),
+      workspace: params.get("workspace"),
+      canonicalPath,
+      isLegacyRedirect: false, // cockpit-style ?surface= URLs are never legacy redirects
+    };
+  }
+
+  const resolved = resolvePathToView(rawPathname);
+  const surfaceId = getSurfaceForView(resolved.view);
+  const entityName = resolved.entityName;
+  const canonicalPath = buildCockpitPathForView({
+    view: resolved.view,
+    entity: entityName,
+    run: params.get("run"),
+    doc: params.get("doc"),
+    workspace: params.get("workspace"),
+    panel: resolved.view === "delegation" ? "permissions" : null,
+    tab: surfaceId === "research" ? resolved.researchTab : null,
+  });
+
+  return {
+    surfaceId,
+    view: resolved.view,
+    entityName,
+    spreadsheetId: resolved.spreadsheetId,
+    researchTab: resolved.researchTab,
+    panel: resolved.view === "delegation" ? "permissions" : null,
+    runId: params.get("run"),
+    docId: params.get("doc"),
+    workspace: params.get("workspace"),
+    canonicalPath,
+    isLegacyRedirect: currentPath !== canonicalPath,
+  };
+}
 
 /**
  * Resolve a URL pathname to a MainView.

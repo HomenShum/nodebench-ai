@@ -2,17 +2,25 @@ import React from "react";
 import { MiniMonthCalendar } from "@/features/calendar/components/MiniMonthCalendar";
 
 export interface SidebarMiniCalendarProps {
+  anchorDateMs?: number;
   onSelectDate?: (ms: number) => void;
   onViewDay?: (ms: number) => void;
   onViewWeek?: (ms: number) => void;
   showViewFullCalendarLink?: boolean;
 }
 
-export function SidebarMiniCalendar({ onSelectDate, onViewDay, onViewWeek, showViewFullCalendarLink }: SidebarMiniCalendarProps) {
+export const SidebarMiniCalendar = React.memo(function SidebarMiniCalendar({
+  anchorDateMs,
+  onSelectDate,
+  onViewDay,
+  onViewWeek,
+  showViewFullCalendarLink,
+}: SidebarMiniCalendarProps) {
   return (
     <div>
       <div className="text-xs tracking-wide text-content-muted mb-2">Calendar</div>
       <MiniMonthCalendar
+        anchorDateMs={anchorDateMs}
         onSelectDate={onSelectDate}
         onViewDay={onViewDay}
         onViewWeek={onViewWeek}
@@ -32,5 +40,4 @@ export function SidebarMiniCalendar({ onSelectDate, onViewDay, onViewWeek, showV
       )}
     </div>
   );
-}
-
+});

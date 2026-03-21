@@ -1,8 +1,8 @@
 {
-  "capturedAtIso": "2026-03-14T07:02:39.843Z",
+  "capturedAtIso": "2026-03-20T02:05:22.880Z",
   "basePath": "/dogfood/screenshots",
   "variants": {
-    "darkDesktop": 52,
+    "darkDesktop": 49,
     "lightDesktop": 38,
     "darkMobile": 38,
     "lightMobile": 38
@@ -604,23 +604,9 @@
       "viewport": "desktop"
     },
     {
-      "file": "interaction-document-hover.png",
-      "kind": "route",
-      "label": "Interaction Document Hover",
-      "theme": "dark",
-      "viewport": "desktop"
-    },
-    {
       "file": "interaction-dogfood-frame-selected.png",
       "kind": "route",
       "label": "Interaction Dogfood Frame Selected",
-      "theme": "dark",
-      "viewport": "desktop"
-    },
-    {
-      "file": "interaction-github-hover.png",
-      "kind": "route",
-      "label": "Interaction Github Hover",
       "theme": "dark",
       "viewport": "desktop"
     },
@@ -1150,9 +1136,9 @@
       "viewport": "desktop"
     },
     {
-      "file": "settings-account.png",
+      "file": "settings-integrations.png",
       "kind": "settings",
-      "label": "Account",
+      "label": "Integrations",
       "theme": "dark",
       "viewport": "desktop"
     },
@@ -1160,13 +1146,6 @@
       "file": "settings-profile.png",
       "kind": "settings",
       "label": "Profile",
-      "theme": "dark",
-      "viewport": "desktop"
-    },
-    {
-      "file": "settings-usage.png",
-      "kind": "settings",
-      "label": "Usage",
       "theme": "dark",
       "viewport": "desktop"
     }

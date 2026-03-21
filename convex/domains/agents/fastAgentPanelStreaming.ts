@@ -37,6 +37,7 @@ import { searchAvailableSkills } from "../../tools/meta/skillDiscovery";
 import { lookupGroundTruthEntity } from "../../tools/evaluation/groundTruthLookupTool";
 import { linkupSearch } from "../../tools/media/linkupSearch";
 import { GROUND_TRUTH_ENTITIES } from "../evaluation/groundTruth";
+import { reviewStreamMessage as reviewCompletedAgentResponse } from "./responseFlywheel";
 
 // Import prompt injection protection
 import {
@@ -4197,6 +4198,12 @@ export const markStreamComplete = internalMutation({
       status: args.status,
       updatedAt: Date.now(),
     });
+
+    if (args.status === "complete" && args.finalContent.trim().length > 0) {
+      await ctx.scheduler.runAfter(0, reviewCompletedAgentResponse, {
+        messageId: args.messageId,
+      });
+    }
 
     // Update thread timestamp
     await ctx.db.patch(message.threadId, { updatedAt: Date.now() });

@@ -35,7 +35,7 @@ export default function WatchlistsView() {
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-8">
       <header className="rounded-3xl border border-edge bg-surface p-6">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-content-secondary">
-          DeepTrace Watchlists
+          NodeBench Watchlists
         </p>
         <h1 className="text-3xl font-semibold text-content">Persistent monitors for companies, sectors, and geographies</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-content-secondary">

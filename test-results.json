@@ -65,20 +65,54 @@
   },
   "suites": [
     {
-      "title": "trust-infrastructure-routes.spec.ts",
-      "file": "trust-infrastructure-routes.spec.ts",
+      "title": "scenario-regression.spec.ts",
+      "file": "scenario-regression.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Action Receipts Feed",
-          "file": "trust-infrastructure-routes.spec.ts",
-          "line": 86,
+          "title": "Scenario: Dogfood artifacts ingestion — UI loads screenshots, scribe, video, frames",
+          "file": "scenario-regression.spec.ts",
+          "line": 211,
           "column": 6,
           "specs": [
             {
-              "title": "reversible demo receipts can be rolled back and irreversible ones are explicit",
+              "title": "dogfood route renders keyframes + scribe steps + screenshots and assets load",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1402,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-03-20T02:02:53.307Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-dfbea26ee9cc1d6129ac",
+              "file": "scenario-regression.spec.ts",
+              "line": 212,
+              "column": 3
+            },
+            {
+              "title": "clicking a key frame seeks the walkthrough video",
               "ok": true,
               "tags": [],
               "tests": [
@@ -93,12 +127,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4301,
+                      "duration": 1298,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-15T11:38:50.304Z",
+                      "startTime": "2026-03-20T02:02:54.972Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -106,21 +140,21 @@
                   "status": "expected"
                 }
               ],
-              "id": "33a2010455b2deeffa41-82bb4ab3f88d044baae3",
-              "file": "trust-infrastructure-routes.spec.ts",
-              "line": 159,
+              "id": "22ead876be6e602f6ef4-09fa5bcc9678f0522753",
+              "file": "scenario-regression.spec.ts",
+              "line": 272,
               "column": 3
             }
           ]
         },
         {
-          "title": "Passport & Delegation",
-          "file": "trust-infrastructure-routes.spec.ts",
-          "line": 182,
+          "title": "Scenario: Gemini QA pipeline — auth, upload, and error states",
+          "file": "scenario-regression.spec.ts",
+          "line": 423,
           "column": 6,
           "specs": [
             {
-              "title": "renders the scope matrix, scope token, and delegation graph",
+              "title": "QA engineer opens /dogfood, signs in anonymously, QA buttons become enabled",
               "ok": true,
               "tags": [],
               "tests": [
@@ -135,12 +169,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1471,
+                      "duration": 2811,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-15T11:38:56.404Z",
+                      "startTime": "2026-03-20T02:02:56.281Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -148,9 +182,9 @@
                   "status": "expected"
                 }
               ],
-              "id": "33a2010455b2deeffa41-c67cff1c26ecae19a92e",
-              "file": "trust-infrastructure-routes.spec.ts",
-              "line": 183,
+              "id": "22ead876be6e602f6ef4-60862dbb7bcebf18060b",
+              "file": "scenario-regression.spec.ts",
+              "line": 435,
               "column": 3
             }
           ]
@@ -160,9 +194,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-03-15T11:38:49.352Z",
-    "duration": 8834.948,
-    "expected": 2,
+    "startTime": "2026-03-20T02:02:52.395Z",
+    "duration": 7301.207,
+    "expected": 3,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

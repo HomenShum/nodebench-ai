@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { SparkBars } from "./Sparkline";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 
 interface SignalMomentumMiniProps {
   keyword: string;

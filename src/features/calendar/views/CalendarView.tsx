@@ -1,7 +1,7 @@
 ﻿// import { useBlockNoteSyncSafe } from "../lib/useBlockNoteSyncSafe";
 
 import { useQuery, useMutation, useConvexAuth } from "convex/react";
-import { useEffect, useState, useRef, useMemo, useCallback } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback, lazy, Suspense } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 
@@ -25,8 +25,8 @@ import { PresetChip } from "@shared/ui/PresetChip";
 
 import { createCalendarDocument } from "@/lib/calendarHelpers";
 import { useCalendarAgenda, getWeekRangeUtc, type CalendarEvent } from "../hooks/useCalendarAgenda";
-import MiniAgendaEditorPanel from "@features/calendar/components/agenda/MiniAgendaEditorPanel";
-import EventEditorPanel from "@/features/calendar/components/EventEditorPanel";
+const LazyMiniAgendaEditorPanel = lazy(() => import("@features/calendar/components/agenda/MiniAgendaEditorPanel"));
+const LazyEventEditorPanel = lazy(() => import("@/features/calendar/components/EventEditorPanel"));
 
 // Custom hook for calendar document
 const useCalendarDocument = () => {
@@ -144,7 +144,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
 
   // Use unified calendar agenda hook for consistent data across all calendar views
   const weekRange = useMemo(() => getWeekRangeUtc(effectiveFocusedDateMs, tzOffsetMinutes), [effectiveFocusedDateMs, tzOffsetMinutes]);
-  const { events: agendaEvents, isLoading: _isLoadingAgenda } = useCalendarAgenda({
+  const { events: agendaEvents, isLoading: isLoadingAgenda } = useCalendarAgenda({
     startMs: weekRange.startMs,
     endMs: weekRange.endMs,
     skip: !loggedInUser,
@@ -275,6 +275,10 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
 
   // (Removed popup composer; inline draft used instead)
 
+  // TODO: Extract GoogleWeekView to module scope to avoid inline component identity churn.
+  // Currently kept inline because it captures parent closures (loggedInUser, anchorDate,
+  // createEvent, _onViewDay, setSelectedEventId). The other perf fixes in this file
+  // (memoized filters, ref-based hover, stable styles) reduce the cost of each re-render.
   const GoogleWeekView = ({
     events,
     onCreate,
@@ -313,10 +317,10 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
     const hourHeightLocal = density === 'compact' ? 32 : density === 'cozy' ? 44 : 56; // px per hour
     const visibleStartHour = showWorkHoursOnly ? workdayStartHour : 0;
     const visibleEndHour = showWorkHoursOnly ? Math.max(workdayEndHour, workdayStartHour + 1) : 24;
-    const renderedHours = showWorkHoursOnly ? hours.slice(visibleStartHour, visibleEndHour) : hours;
+    const renderedHours = useMemo(() => showWorkHoursOnly ? hours.slice(visibleStartHour, visibleEndHour) : hours, [showWorkHoursOnly, visibleStartHour, visibleEndHour]);
     const currentTimeTop = ((now.getHours() + now.getMinutes() / 60) - visibleStartHour) * hourHeightLocal;
     const slotHeight = hourHeightLocal / 4; // 15-minute slots
-    const [hoverSlot, setHoverSlot] = useState<{ dayIdx: number; slotIdx: number } | null>(null);
+    const hoverIndicatorRefs = useRef<Array<HTMLDivElement | null>>([]);
     const [draft, setDraft] = useState<{ dayIdx: number; start: number; end: number; title: string } | null>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingTitle, setEditingTitle] = useState<string>("");
@@ -324,6 +328,18 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
     const dayRefs = useRef<Array<HTMLDivElement | null>>([]);
     const eventRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const [expandedGaps, setExpandedGaps] = useState<Record<number, Set<number>>>({});
+    const showHoverIndicator = useCallback((dayIdx: number, slotIdx: number) => {
+      const indicator = hoverIndicatorRefs.current[dayIdx];
+      if (!indicator) return;
+      indicator.style.top = `${slotIdx * slotHeight}px`;
+      indicator.style.display = "block";
+    }, [slotHeight]);
+    const hideHoverIndicator = useCallback((dayIdx: number) => {
+      const indicator = hoverIndicatorRefs.current[dayIdx];
+      if (indicator) {
+        indicator.style.display = "none";
+      }
+    }, []);
 
     // ===== All-day events layout (strip above the grid) =====
     const isAllDayEvent = (e: WeekEvent): boolean => {
@@ -449,12 +465,37 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
       }
     };
 
+    // Memoize stable style objects to avoid creating new objects every render
+    const gridTemplateStyle = useMemo(() => ({
+      gridTemplateColumns: collapseEmpty ? `repeat(7, minmax(0, 1fr))` : `auto repeat(7, minmax(0, 1fr))`
+    }), [collapseEmpty]);
+    const hourCellStyle = useMemo(() => ({ height: hourHeightLocal }), [hourHeightLocal]);
+    const slotHighlightStyle = useMemo(() => ({ display: 'none' as const, height: slotHeight }), [slotHeight]);
+
+    // Pre-compute day events for each column to avoid re-filtering on every render
+    const dayEventsMap = useMemo(() => {
+      return weekDaysToUse.map((d) => {
+        const dayStart = new Date(d);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(d);
+        dayEnd.setHours(23, 59, 59, 999);
+        return events
+          .filter((e) => {
+            const eStart = new Date(e.startTime);
+            const eEnd = new Date(e.endTime ?? e.startTime + defaultDurationMs);
+            return eStart <= dayEnd && eEnd >= dayStart;
+          })
+          .filter((e) => !isAllDayEvent(e))
+          .sort((a, b) => a.startTime - b.startTime);
+      });
+    }, [events, weekDaysToUse, defaultDurationMs]);
+
     return (
       <div className="bg-surface border border-edge rounded-lg overflow-hidden shadow-sm relative h-[calc(100vh-280px)] min-h-[600px] flex flex-col">
         {/* Day header */}
         <div
           className="grid px-2 py-1 bg-surface-secondary/95 backdrop-blur supports-[backdrop-filter]:bg-surface-secondary/80 border-b border-edge text-xs text-content-secondary"
-          style={{ gridTemplateColumns: collapseEmpty ? `repeat(7, minmax(0, 1fr))` : `auto repeat(7, minmax(0, 1fr))` }}
+          style={gridTemplateStyle}
         >
           {!collapseEmpty && (
             <div className="p-2 flex items-center justify-center">
@@ -609,13 +650,13 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
         <div
           ref={containerRef}
           className="grid flex-1 overflow-y-auto"
-          style={{ gridTemplateColumns: collapseEmpty ? `repeat(7, minmax(0, 1fr))` : `auto repeat(7, minmax(0, 1fr))` }}
+          style={gridTemplateStyle}
         >
           {/* Time gutter (hidden in collapsed mode due to non-linear scale) */}
           {!collapseEmpty && (
             <div className="relative">
               {renderedHours.map((h) => (
-                <div key={h} style={{ height: hourHeightLocal }} className="text-xs text-content-muted pr-2 pl-2 flex items-start justify-end">
+                <div key={h} style={hourCellStyle} className="text-xs text-content-muted pr-2 pl-2 flex items-start justify-end">
                   {hourLabel(h)}
                 </div>
               ))}
@@ -629,15 +670,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
             const dayEnd = new Date(d);
             dayEnd.setHours(23, 59, 59, 999);
 
-            const dayEvents = events
-              .filter((e) => {
-                // Include any event that overlaps this day (not just those starting today)
-                const eStart = new Date(e.startTime);
-                const eEnd = new Date(e.endTime ?? e.startTime + defaultDurationMs);
-                return eStart <= dayEnd && eEnd >= dayStart;
-              })
-              .filter((e) => !isAllDayEvent(e))
-              .sort((a, b) => a.startTime - b.startTime);
+            const dayEvents = dayEventsMap[dayIdx] ?? [];
 
             // Build merged busy intervals (minutes from visible start)
             const totalMins = (visibleEndHour - visibleStartHour) * 60;
@@ -823,7 +856,9 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                   let y = e.clientY - rect.top;
                   if (y < 0) y = 0;
                   const idx = Math.floor(y / slotHeight);
-                  if (!collapseEmpty) setHoverSlot({ dayIdx, slotIdx: idx });
+                  if (!collapseEmpty) {
+                    showHoverIndicator(dayIdx, idx);
+                  }
                   if (dragState && dragState.isActive && dragState.dayIdx === dayIdx) {
                     const minute = collapseEmpty ? yToTime(y) : ((y / hourHeightLocal) * 60) + (showWorkHoursOnly ? visibleStartHour * 60 : 0);
                     const rounded = Math.round(minute / 15) * 15;
@@ -833,7 +868,9 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                     setDragState({ ...dragState, currentMinute: Math.max(0, Math.min(totalMins, rounded)) });
                   }
                 }}
-                onMouseLeave={() => setHoverSlot(null)}
+                onMouseLeave={() => {
+                  hideHoverIndicator(dayIdx);
+                }}
                 onClick={(e) => {
                   if (dragState && dragState.isActive) return; // avoid click create when finishing drag
                   if (justDraggedRef.current) { justDraggedRef.current = false; return; }
@@ -900,14 +937,16 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                 )}
                 {/* Hour lines (disabled in collapsed mode) */}
                 {!collapseEmpty && renderedHours.map((h) => (
-                  <div key={h} style={{ height: hourHeightLocal }} className="relative border-b border-edge transition-colors hover:bg-surface-hover/40" />
+                  <div key={h} style={hourCellStyle} className="relative border-b border-edge transition-colors hover:bg-surface-hover/40" />
                 ))}
 
                 {/* Hovered slot highlight (15-min granularity) - off in collapsed mode */}
-                {!collapseEmpty && hoverSlot && hoverSlot.dayIdx === dayIdx && (
+                {!collapseEmpty && (
                   <div
+                    id={`hover-slot-${dayIdx}`}
+                    ref={(el) => { hoverIndicatorRefs.current[dayIdx] = el; }}
                     className="absolute left-0 right-0 bg-indigo-500/10 ring-1 ring-ring pointer-events-none"
-                    style={{ top: hoverSlot.slotIdx * slotHeight, height: slotHeight }}
+                    style={slotHighlightStyle}
                   />
                 )}
 
@@ -1068,15 +1107,17 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                     >
                       {editingId === e._id ? (
                         <div onClick={(ev) => ev.stopPropagation()}>
-                          <MiniAgendaEditorPanel
-                            kind="event"
-                            eventId={e._id}
-                            onClose={() => {
-                              setEditingId(null);
-                              // Return focus to the event block after close for keyboard users
-                              setTimeout(() => eventRefs.current[String(e._id)]?.focus(), 0);
-                            }}
-                          />
+                          <Suspense fallback={null}>
+                            <LazyMiniAgendaEditorPanel
+                              kind="event"
+                              eventId={e._id}
+                              onClose={() => {
+                                setEditingId(null);
+                                // Return focus to the event block after close for keyboard users
+                                setTimeout(() => eventRefs.current[String(e._id)]?.focus(), 0);
+                              }}
+                            />
+                          </Suspense>
                         </div>
                       ) : (
                         <>
@@ -1202,6 +1243,32 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
 
             {/* Google Calendar-like Week View */}
             <div className="mb-6 flex-1 min-h-0">
+              {isLoadingAgenda ? (
+                <div className="bg-surface border border-edge rounded-lg overflow-hidden shadow-sm h-[calc(100vh-280px)] min-h-[600px]" role="status" aria-label="Loading calendar events">
+                  {/* Skeleton header row */}
+                  <div className="grid grid-cols-7 gap-px bg-surface-secondary/80 border-b border-edge px-2 py-3">
+                    {Array.from({ length: 7 }).map((_, i) => (
+                      <div key={i} className="flex flex-col items-center gap-1">
+                        <div className="h-3 w-8 bg-edge/60 rounded animate-pulse" />
+                        <div className="h-5 w-5 bg-edge/40 rounded-full animate-pulse" />
+                      </div>
+                    ))}
+                  </div>
+                  {/* Skeleton time grid */}
+                  <div className="p-2 space-y-0">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <div key={i} className="flex items-start gap-2 border-b border-edge/30 py-3">
+                        <div className="h-3 w-10 bg-edge/40 rounded animate-pulse shrink-0" />
+                        <div className="flex-1 grid grid-cols-7 gap-2">
+                          {Array.from({ length: 7 }).map((_, j) => (
+                            <div key={j} className={`rounded ${i % 3 === 0 && j % 2 === 0 ? 'h-8 bg-indigo-500/10' : 'h-4 bg-transparent'}`} />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
               <GoogleWeekView
                 events={eventsThisWeek}
                 onCreate={onCreateInline}
@@ -1215,6 +1282,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                 collapseEmpty={collapseEmpty}
                 weekDaysFromParent={weekDays}
               />
+              )}
             </div>
 
           </div>
@@ -1226,11 +1294,13 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
 
       {/* Event Editor Panel Overlay */}
       {selectedEventId && (
-        <EventEditorPanel
-          eventId={selectedEventId}
-          onClose={() => setSelectedEventId(null)}
-          documentIdForAssociation={calendarDocId ?? null}
-        />
+        <Suspense fallback={null}>
+          <LazyEventEditorPanel
+            eventId={selectedEventId}
+            onClose={() => setSelectedEventId(null)}
+            documentIdForAssociation={calendarDocId ?? null}
+          />
+        </Suspense>
       )}
     </>
   );

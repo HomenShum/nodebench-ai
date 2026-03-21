@@ -23,14 +23,14 @@ describe("buildViewBreadcrumbs", () => {
       {
         id: "control-plane",
         isCurrent: false,
-        label: "DeepTrace",
+        label: "Ask",
         path: "/",
         view: "control-plane",
       },
       {
         id: "receipts",
         isCurrent: true,
-        label: "Action Receipts",
+        label: "Agent Actions",
         path: "/receipts",
         view: "receipts",
       },
@@ -73,7 +73,7 @@ describe("buildViewBreadcrumbs", () => {
       {
         id: "control-plane",
         isCurrent: false,
-        label: "DeepTrace",
+        label: "Ask",
         path: "/",
         view: "control-plane",
       },

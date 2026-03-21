@@ -79,7 +79,7 @@ export function ShareModal({
                 >
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                         sharePublic
-                            ? 'bg-indigo-100 dark:bg-indigo-800/30 text-indigo-600 dark:text-indigo-400'
+                            ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]'
                             : 'bg-surface-secondary text-content-muted'
                     }`}>
                         {sharePublic ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
@@ -96,7 +96,7 @@ export function ShareModal({
                         </div>
                     </div>
                     <div className={`w-10 h-5 rounded-full transition-colors duration-200 relative ${
-                        sharePublic ? 'bg-indigo-500' : 'bg-gray-300 dark:bg-gray-600'
+                        sharePublic ? 'bg-[var(--accent-primary)]' : 'bg-gray-300 dark:bg-gray-600'
                     }`}>
                         <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
                             sharePublic ? 'translate-x-5' : 'translate-x-0.5'
@@ -117,7 +117,7 @@ export function ShareModal({
                                 className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
                                     linkCopied
                                         ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400'
-                                        : 'bg-indigo-600 text-white hover:opacity-90'
+                                        : 'bg-[var(--accent-primary)] text-white hover:opacity-90'
                                 }`}
                             >
                                 {linkCopied ? (
@@ -140,7 +140,7 @@ export function ShareModal({
                     </button>
                     <button
                         onClick={handleApplyAndCopy}
-                        className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:opacity-90 transition-opacity"
+                        className="px-4 py-2 rounded-lg bg-[var(--accent-primary)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
                     >
                         {sharePublic ? 'Share & Copy Link' : 'Apply'}
                     </button>

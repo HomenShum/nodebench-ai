@@ -3613,7 +3613,7 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     tags: ["deeptrace", "dimension", "bundle", "profile", "snapshots", "evidence", "interactions", "audit"],
     quickRef: {
       nextAction: "Use the bundle as the auditable substrate for your memo, execution trace, or judge review. Cite the profile, evidence, and interactions directly.",
-      nextTools: ["record_execution_step", "record_execution_decision", "record_execution_verification"],
+      nextTools: ["run_research_cell", "record_execution_step", "record_execution_decision", "record_execution_verification"],
       methodology: "mission_execution_harness",
       tip: "This is the safest handoff artifact for Claude Code because it preserves the profile, evidence, and history in one fetch.",
     },
@@ -3645,6 +3645,92 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     },
     phase: "research",
     complexity: "high",
+  },
+
+  // ═══ DEEP SIM (claim graph → simulation → decision memo) ═══
+  {
+    name: "build_claim_graph",
+    category: "deep_sim",
+    tags: ["deeptrace", "claims", "evidence", "graph", "provenance"],
+    quickRef: {
+      nextAction: "Claim graph built. Extract variables to identify levers, or generate countermodels to stress-test the graph.",
+      nextTools: ["extract_variables", "generate_countermodels"],
+      methodology: "deep_sim",
+    },
+    phase: "research",
+    complexity: "high",
+  },
+  {
+    name: "extract_variables",
+    category: "deep_sim",
+    tags: ["deeptrace", "variables", "weights", "sensitivity"],
+    quickRef: {
+      nextAction: "Variables extracted with sensitivity weights. Generate countermodels to falsify, run a sim to explore branches, or score compounding drift.",
+      nextTools: ["generate_countermodels", "run_deep_sim", "score_compounding"],
+      methodology: "deep_sim",
+    },
+    phase: "research",
+    complexity: "high",
+  },
+  {
+    name: "generate_countermodels",
+    category: "deep_sim",
+    tags: ["deeptrace", "counter", "hypothesis", "falsification"],
+    quickRef: {
+      nextAction: "Countermodels generated. Run a deep sim to test them under branching scenarios, or rank interventions by delta.",
+      nextTools: ["run_deep_sim", "rank_interventions"],
+      methodology: "deep_sim",
+    },
+    phase: "research",
+    complexity: "high",
+  },
+  {
+    name: "run_deep_sim",
+    category: "deep_sim",
+    tags: ["deeptrace", "simulation", "scenario", "branching", "agents"],
+    quickRef: {
+      nextAction: "Simulation complete. Rank interventions by impact delta, render a decision memo, or score compounding trajectory drift.",
+      nextTools: ["rank_interventions", "render_decision_memo", "score_compounding"],
+      methodology: "deep_sim",
+    },
+    phase: "research",
+    complexity: "high",
+  },
+  {
+    name: "rank_interventions",
+    category: "deep_sim",
+    tags: ["deeptrace", "interventions", "ranking", "delta"],
+    quickRef: {
+      nextAction: "Interventions ranked by delta. Render a decision memo for stakeholders, or score compounding to check trajectory drift.",
+      nextTools: ["render_decision_memo", "score_compounding"],
+      methodology: "deep_sim",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "score_compounding",
+    category: "deep_sim",
+    tags: ["deeptrace", "trajectory", "compounding", "drift", "score"],
+    quickRef: {
+      nextAction: "Compounding score computed. Render a decision memo summarizing the trajectory, or re-rank interventions if drift is significant.",
+      nextTools: ["render_decision_memo", "rank_interventions"],
+      methodology: "deep_sim",
+    },
+    phase: "verify",
+    complexity: "medium",
+  },
+  {
+    name: "render_decision_memo",
+    category: "deep_sim",
+    tags: ["deeptrace", "memo", "decision", "executive", "report"],
+    quickRef: {
+      nextAction: "Decision memo rendered. Share with stakeholders. To iterate, rebuild the claim graph or extract new variables.",
+      nextTools: ["build_claim_graph", "extract_variables"],
+      methodology: "deep_sim",
+    },
+    phase: "ship",
+    complexity: "medium",
   },
 ];
 

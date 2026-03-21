@@ -18,7 +18,7 @@ import { useBriefData } from '../hooks/useBriefData';
 import { CrossLinkedText } from '../components/CrossLinkedText';
 import SignalMomentumMini from '../components/SignalMomentumMini';
 import { BriefingSkeleton } from '@/components/skeletons';
-import { ErrorBoundary, BriefingErrorFallback } from '@/components/ErrorBoundary';
+import { ErrorBoundary, BriefingErrorFallback } from "@/shared/components/ErrorBoundary";
 import { formatBriefDate, isBriefDateToday } from '@/lib/briefDate';
 import { api } from '../../../../convex/_generated/api';
 
@@ -1132,4 +1132,3 @@ export function BriefingSection(props: BriefingSectionProps) {
 }
 
 export default BriefingSection;
-

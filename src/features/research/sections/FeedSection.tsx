@@ -13,7 +13,7 @@ import { Search, Filter, ChevronDown } from 'lucide-react';
 import { useFeedData, FEED_CATEGORIES } from '../hooks/useFeedData';
 import { FeedCard, type FeedItem } from '../components/FeedCard';
 import { FeedGridSkeleton } from '@/components/skeletons';
-import { ErrorBoundary, FeedErrorFallback } from '@/components/ErrorBoundary';
+import { ErrorBoundary, FeedErrorFallback } from "@/shared/components/ErrorBoundary";
 
 interface FeedSectionProps {
   /** Called when a feed item is clicked */

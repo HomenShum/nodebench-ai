@@ -6,7 +6,9 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Inter", "Inter var", ...fontFamily.sans],
+        /* Resolved at runtime by ThemeContext via --font-ui / --font-display */
+        sans: ["var(--font-ui)", ...fontFamily.sans],
+        display: ["var(--font-display)", ...fontFamily.sans],
         mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "monospace"],
       },
       borderRadius: {
@@ -36,7 +38,7 @@ module.exports = {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
-          hover: "#4F5BC0",
+          hover: "var(--accent-primary-hover)",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -54,7 +56,7 @@ module.exports = {
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
-          hover: "#4F5BC0",
+          hover: "var(--accent-primary-hover)",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -157,9 +159,32 @@ module.exports = {
           '0%': { transform: 'translateY(8px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
+        /* frontend-slides entrance patterns */
+        'reveal-up': {
+          '0%': { opacity: '0', transform: 'translateY(30px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'reveal-scale': {
+          '0%': { opacity: '0', transform: 'scale(0.92)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        'reveal-left': {
+          '0%': { opacity: '0', transform: 'translateX(-40px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+        'reveal-blur': {
+          '0%': { opacity: '0', filter: 'blur(10px)' },
+          '100%': { opacity: '1', filter: 'blur(0)' },
+        },
+        'reveal-right': {
+          '0%': { opacity: '0', transform: 'translateX(40px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
       },
       transitionTimingFunction: {
         'smooth': 'cubic-bezier(0.25, 0.1, 0.25, 1)',
+        'expo-out': 'cubic-bezier(0.16, 1, 0.3, 1)',
+        'spring': 'cubic-bezier(0.32, 0.72, 0, 1)',
       },
       animation: {
         shimmer: 'shimmer 2s ease-in-out infinite',
@@ -176,6 +201,12 @@ module.exports = {
         'skeleton-shimmer': 'skeleton-shimmer 1.5s ease-in-out infinite',
         'spring-in': 'spring-in 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards',
         'slide-up-spring': 'slide-up-spring 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards',
+        /* frontend-slides entrance animations */
+        'reveal-up': 'reveal-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'reveal-scale': 'reveal-scale 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'reveal-left': 'reveal-left 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'reveal-blur': 'reveal-blur 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'reveal-right': 'reveal-right 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
       },
     },
   },

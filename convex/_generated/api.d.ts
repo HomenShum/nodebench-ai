@@ -66,10 +66,14 @@ import type * as domains_agents_arbitrage_tools_deltaDetection from "../domains/
 import type * as domains_agents_arbitrage_tools_index from "../domains/agents/arbitrage/tools/index.js";
 import type * as domains_agents_arbitrage_tools_sourceHealthCheck from "../domains/agents/arbitrage/tools/sourceHealthCheck.js";
 import type * as domains_agents_arbitrage_tools_sourceQualityRanking from "../domains/agents/arbitrage/tools/sourceQualityRanking.js";
+import type * as domains_agents_autonomousCrons from "../domains/agents/autonomousCrons.js";
+import type * as domains_agents_autonomousCronsQueries from "../domains/agents/autonomousCronsQueries.js";
 import type * as domains_agents_batchAPI from "../domains/agents/batchAPI.js";
 import type * as domains_agents_chatPanelBackend from "../domains/agents/chatPanelBackend.js";
 import type * as domains_agents_chatThreads from "../domains/agents/chatThreads.js";
 import type * as domains_agents_checkpointing from "../domains/agents/checkpointing.js";
+import type * as domains_agents_consistencyIndex from "../domains/agents/consistencyIndex.js";
+import type * as domains_agents_consistencyIndexQueries from "../domains/agents/consistencyIndexQueries.js";
 import type * as domains_agents_coordinator_agent from "../domains/agents/coordinator/agent.js";
 import type * as domains_agents_coordinator_config from "../domains/agents/coordinator/config.js";
 import type * as domains_agents_coordinator_contextPack from "../domains/agents/coordinator/contextPack.js";
@@ -127,6 +131,9 @@ import type * as domains_agents_dataAccess_index from "../domains/agents/dataAcc
 import type * as domains_agents_dataAccess_tools_calendarTools from "../domains/agents/dataAccess/tools/calendarTools.js";
 import type * as domains_agents_dataAccess_tools_index from "../domains/agents/dataAccess/tools/index.js";
 import type * as domains_agents_dataAccess_tools_taskTools from "../domains/agents/dataAccess/tools/taskTools.js";
+import type * as domains_agents_decisionMemory from "../domains/agents/decisionMemory.js";
+import type * as domains_agents_decisionMemoryQueries from "../domains/agents/decisionMemoryQueries.js";
+import type * as domains_agents_deliberationToEvolution from "../domains/agents/deliberationToEvolution.js";
 import type * as domains_agents_digestAgent from "../domains/agents/digestAgent.js";
 import type * as domains_agents_dueDiligence_branches_companyProfile from "../domains/agents/dueDiligence/branches/companyProfile.js";
 import type * as domains_agents_dueDiligence_branches_conditionalBranches from "../domains/agents/dueDiligence/branches/conditionalBranches.js";
@@ -186,6 +193,7 @@ import type * as domains_agents_dueDiligence_microBranches from "../domains/agen
 import type * as domains_agents_dueDiligence_riskScoring from "../domains/agents/dueDiligence/riskScoring.js";
 import type * as domains_agents_dueDiligence_types from "../domains/agents/dueDiligence/types.js";
 import type * as domains_agents_emailAgent from "../domains/agents/emailAgent.js";
+import type * as domains_agents_evolutionVerification from "../domains/agents/evolutionVerification.js";
 import type * as domains_agents_fastAgentChat from "../domains/agents/fastAgentChat.js";
 import type * as domains_agents_fastAgentChatHelpers from "../domains/agents/fastAgentChatHelpers.js";
 import type * as domains_agents_fastAgentDocumentCreation from "../domains/agents/fastAgentDocumentCreation.js";
@@ -212,6 +220,8 @@ import type * as domains_agents_mcp_tools_testReasoningPersonas from "../domains
 import type * as domains_agents_mcp_tools_tracking_index from "../domains/agents/mcp_tools/tracking/index.js";
 import type * as domains_agents_mcp_tools_tracking_taskTrackerTool from "../domains/agents/mcp_tools/tracking/taskTrackerTool.js";
 import type * as domains_agents_orchestrator_geminiVideoWrapper from "../domains/agents/orchestrator/geminiVideoWrapper.js";
+import type * as domains_agents_orchestrator_passportEnforcement from "../domains/agents/orchestrator/passportEnforcement.js";
+import type * as domains_agents_orchestrator_passportEnforcementQueries from "../domains/agents/orchestrator/passportEnforcementQueries.js";
 import type * as domains_agents_orchestrator_queueProtocol from "../domains/agents/orchestrator/queueProtocol.js";
 import type * as domains_agents_orchestrator_secEdgarWrapper from "../domains/agents/orchestrator/secEdgarWrapper.js";
 import type * as domains_agents_orchestrator_toolHealth from "../domains/agents/orchestrator/toolHealth.js";
@@ -223,7 +233,11 @@ import type * as domains_agents_promptEnhancer from "../domains/agents/promptEnh
 import type * as domains_agents_receipts_actionReceipts from "../domains/agents/receipts/actionReceipts.js";
 import type * as domains_agents_receipts_emitWithReceipt from "../domains/agents/receipts/emitWithReceipt.js";
 import type * as domains_agents_researchJobs from "../domains/agents/researchJobs.js";
+import type * as domains_agents_responseFlywheel from "../domains/agents/responseFlywheel.js";
 import type * as domains_agents_selfEvolution from "../domains/agents/selfEvolution.js";
+import type * as domains_agents_selfEvolutionQueries from "../domains/agents/selfEvolutionQueries.js";
+import type * as domains_agents_swarmDeliberation from "../domains/agents/swarmDeliberation.js";
+import type * as domains_agents_swarmDeliberationQueries from "../domains/agents/swarmDeliberationQueries.js";
 import type * as domains_agents_swarmMutations from "../domains/agents/swarmMutations.js";
 import type * as domains_agents_swarmOrchestrator from "../domains/agents/swarmOrchestrator.js";
 import type * as domains_agents_swarmOrchestratorEnhanced from "../domains/agents/swarmOrchestratorEnhanced.js";
@@ -303,6 +317,7 @@ import type * as domains_canonicalization_duplicateDetection from "../domains/ca
 import type * as domains_channels_channelIntelligence from "../domains/channels/channelIntelligence.js";
 import type * as domains_channels_engagementOptimizer from "../domains/channels/engagementOptimizer.js";
 import type * as domains_channels_index from "../domains/channels/index.js";
+import type * as domains_deepTrace_causalChainEngine from "../domains/deepTrace/causalChainEngine.js";
 import type * as domains_deepTrace_dimensionEngine from "../domains/deepTrace/dimensionEngine.js";
 import type * as domains_deepTrace_dimensionModel from "../domains/deepTrace/dimensionModel.js";
 import type * as domains_deepTrace_dimensions from "../domains/deepTrace/dimensions.js";
@@ -313,6 +328,7 @@ import type * as domains_documents_artifacts_evidenceIndex from "../domains/docu
 import type * as domains_documents_artifacts_evidenceIndexActions from "../domains/documents/artifacts/evidenceIndexActions.js";
 import type * as domains_documents_artifacts_evidencePacks from "../domains/documents/artifacts/evidencePacks.js";
 import type * as domains_documents_artifacts_evidenceSearch from "../domains/documents/artifacts/evidenceSearch.js";
+import type * as domains_documents_artifacts_ingestionPipeline from "../domains/documents/artifacts/ingestionPipeline.js";
 import type * as domains_documents_artifacts_sourceArtifacts from "../domains/documents/artifacts/sourceArtifacts.js";
 import type * as domains_documents_batchOperations from "../domains/documents/batchOperations.js";
 import type * as domains_documents_calendar_calendar from "../domains/documents/calendar/calendar.js";
@@ -450,6 +466,7 @@ import type * as domains_evaluation_mediaContextScenarios from "../domains/evalu
 import type * as domains_evaluation_memoryFirstScenarios from "../domains/evaluation/memoryFirstScenarios.js";
 import type * as domains_evaluation_migrateEvaluationScenarios from "../domains/evaluation/migrateEvaluationScenarios.js";
 import type * as domains_evaluation_multiTurnScenarios from "../domains/evaluation/multiTurnScenarios.js";
+import type * as domains_evaluation_operations from "../domains/evaluation/operations.js";
 import type * as domains_evaluation_personaEpisodeEval from "../domains/evaluation/personaEpisodeEval.js";
 import type * as domains_evaluation_personaInferenceScenarios from "../domains/evaluation/personaInferenceScenarios.js";
 import type * as domains_evaluation_personaLiveEval from "../domains/evaluation/personaLiveEval.js";
@@ -583,6 +600,7 @@ import type * as domains_integrations_telegramAgent from "../domains/integration
 import type * as domains_integrations_voice_voiceActions from "../domains/integrations/voice/voiceActions.js";
 import type * as domains_integrations_voice_voiceAgent from "../domains/integrations/voice/voiceAgent.js";
 import type * as domains_integrations_voice_voiceMutations from "../domains/integrations/voice/voiceMutations.js";
+import type * as domains_intelligence_operations from "../domains/intelligence/operations.js";
 import type * as domains_knowledge_adaptiveEntityEnrichment from "../domains/knowledge/adaptiveEntityEnrichment.js";
 import type * as domains_knowledge_adaptiveEntityQueries from "../domains/knowledge/adaptiveEntityQueries.js";
 import type * as domains_knowledge_entityContexts from "../domains/knowledge/entityContexts.js";
@@ -639,6 +657,11 @@ import type * as domains_messaging_providers_slackProvider from "../domains/mess
 import type * as domains_messaging_providers_smsProvider from "../domains/messaging/providers/smsProvider.js";
 import type * as domains_messaging_providers_telegramProvider from "../domains/messaging/providers/telegramProvider.js";
 import type * as domains_messaging_providers_uiProvider from "../domains/messaging/providers/uiProvider.js";
+import type * as domains_missions_costQueries from "../domains/missions/costQueries.js";
+import type * as domains_missions_index from "../domains/missions/index.js";
+import type * as domains_missions_missionOrchestrator from "../domains/missions/missionOrchestrator.js";
+import type * as domains_missions_preExecutionGate from "../domains/missions/preExecutionGate.js";
+import type * as domains_missions_preExecutionGateQueries from "../domains/missions/preExecutionGateQueries.js";
 import type * as domains_models_autonomousModelResolver from "../domains/models/autonomousModelResolver.js";
 import type * as domains_models_freeModelDiscovery from "../domains/models/freeModelDiscovery.js";
 import type * as domains_models_index from "../domains/models/index.js";
@@ -765,6 +788,7 @@ import type * as domains_operations_observability_selfHealer from "../domains/op
 import type * as domains_operations_observability_telemetry from "../domains/operations/observability/telemetry.js";
 import type * as domains_operations_observability_traces from "../domains/operations/observability/traces.js";
 import type * as domains_operations_personaChangeTracking from "../domains/operations/personaChangeTracking.js";
+import type * as domains_operations_postExecutionHygiene from "../domains/operations/postExecutionHygiene.js";
 import type * as domains_operations_privacyEnforcement from "../domains/operations/privacyEnforcement.js";
 import type * as domains_operations_selfMaintenance from "../domains/operations/selfMaintenance.js";
 import type * as domains_operations_selfMaintenanceChecks from "../domains/operations/selfMaintenanceChecks.js";
@@ -1054,6 +1078,11 @@ import type * as domains_social_publishing_deliveryQueue from "../domains/social
 import type * as domains_social_publishing_index from "../domains/social/publishing/index.js";
 import type * as domains_social_publishing_publishingOrchestrator from "../domains/social/publishing/publishingOrchestrator.js";
 import type * as domains_social_specializedPostQueries from "../domains/social/specializedPostQueries.js";
+import type * as domains_successLoops_index from "../domains/successLoops/index.js";
+import type * as domains_successLoops_lib from "../domains/successLoops/lib.js";
+import type * as domains_successLoops_mutations from "../domains/successLoops/mutations.js";
+import type * as domains_successLoops_projection from "../domains/successLoops/projection.js";
+import type * as domains_successLoops_queries from "../domains/successLoops/queries.js";
 import type * as domains_taskManager_cronWrapper from "../domains/taskManager/cronWrapper.js";
 import type * as domains_taskManager_index from "../domains/taskManager/index.js";
 import type * as domains_taskManager_mutations from "../domains/taskManager/mutations.js";
@@ -1077,6 +1106,11 @@ import type * as domains_temporal_mutations from "../domains/temporal/mutations.
 import type * as domains_temporal_queries from "../domains/temporal/queries.js";
 import type * as domains_temporal_specDoc from "../domains/temporal/specDoc.js";
 import type * as domains_testing_testingFramework from "../domains/testing/testingFramework.js";
+import type * as domains_trajectory_index from "../domains/trajectory/index.js";
+import type * as domains_trajectory_lib from "../domains/trajectory/lib.js";
+import type * as domains_trajectory_mutations from "../domains/trajectory/mutations.js";
+import type * as domains_trajectory_projection from "../domains/trajectory/projection.js";
+import type * as domains_trajectory_queries from "../domains/trajectory/queries.js";
 import type * as domains_utilities_migrations from "../domains/utilities/migrations.js";
 import type * as domains_utilities_seedGoldenDataset from "../domains/utilities/seedGoldenDataset.js";
 import type * as domains_utilities_snapshotMigrations from "../domains/utilities/snapshotMigrations.js";
@@ -1111,6 +1145,7 @@ import type * as domains_verification_validation_personaValidators from "../doma
 import type * as domains_verification_validation_selfQuestionAgent from "../domains/verification/validation/selfQuestionAgent.js";
 import type * as domains_verification_verificationAuditTrail from "../domains/verification/verificationAuditTrail.js";
 import type * as domains_verification_verificationWorkflow from "../domains/verification/verificationWorkflow.js";
+import type * as domains_world_operations from "../domains/world/operations.js";
 import type * as feed from "../feed.js";
 import type * as globalResearch_artifacts from "../globalResearch/artifacts.js";
 import type * as globalResearch_cacheSimple from "../globalResearch/cacheSimple.js";
@@ -1155,6 +1190,9 @@ import type * as schema_apiUsage from "../schema/apiUsage.js";
 import type * as schema_emailSchema from "../schema/emailSchema.js";
 import type * as schema_searchQuota from "../schema/searchQuota.js";
 import type * as schema_toolSearchSchema from "../schema/toolSearchSchema.js";
+import type * as shared_actionSpan from "../shared/actionSpan.js";
+import type * as shared_actionSpanReplay from "../shared/actionSpanReplay.js";
+import type * as shared_actionSpanReplayQueries from "../shared/actionSpanReplayQueries.js";
 import type * as tags from "../tags.js";
 import type * as tags_actions from "../tags_actions.js";
 import type * as tests_fastAgentPanelStreamingTests from "../tests/fastAgentPanelStreamingTests.js";
@@ -1352,10 +1390,14 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/arbitrage/tools/index": typeof domains_agents_arbitrage_tools_index;
   "domains/agents/arbitrage/tools/sourceHealthCheck": typeof domains_agents_arbitrage_tools_sourceHealthCheck;
   "domains/agents/arbitrage/tools/sourceQualityRanking": typeof domains_agents_arbitrage_tools_sourceQualityRanking;
+  "domains/agents/autonomousCrons": typeof domains_agents_autonomousCrons;
+  "domains/agents/autonomousCronsQueries": typeof domains_agents_autonomousCronsQueries;
   "domains/agents/batchAPI": typeof domains_agents_batchAPI;
   "domains/agents/chatPanelBackend": typeof domains_agents_chatPanelBackend;
   "domains/agents/chatThreads": typeof domains_agents_chatThreads;
   "domains/agents/checkpointing": typeof domains_agents_checkpointing;
+  "domains/agents/consistencyIndex": typeof domains_agents_consistencyIndex;
+  "domains/agents/consistencyIndexQueries": typeof domains_agents_consistencyIndexQueries;
   "domains/agents/coordinator/agent": typeof domains_agents_coordinator_agent;
   "domains/agents/coordinator/config": typeof domains_agents_coordinator_config;
   "domains/agents/coordinator/contextPack": typeof domains_agents_coordinator_contextPack;
@@ -1413,6 +1455,9 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/dataAccess/tools/calendarTools": typeof domains_agents_dataAccess_tools_calendarTools;
   "domains/agents/dataAccess/tools/index": typeof domains_agents_dataAccess_tools_index;
   "domains/agents/dataAccess/tools/taskTools": typeof domains_agents_dataAccess_tools_taskTools;
+  "domains/agents/decisionMemory": typeof domains_agents_decisionMemory;
+  "domains/agents/decisionMemoryQueries": typeof domains_agents_decisionMemoryQueries;
+  "domains/agents/deliberationToEvolution": typeof domains_agents_deliberationToEvolution;
   "domains/agents/digestAgent": typeof domains_agents_digestAgent;
   "domains/agents/dueDiligence/branches/companyProfile": typeof domains_agents_dueDiligence_branches_companyProfile;
   "domains/agents/dueDiligence/branches/conditionalBranches": typeof domains_agents_dueDiligence_branches_conditionalBranches;
@@ -1472,6 +1517,7 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/dueDiligence/riskScoring": typeof domains_agents_dueDiligence_riskScoring;
   "domains/agents/dueDiligence/types": typeof domains_agents_dueDiligence_types;
   "domains/agents/emailAgent": typeof domains_agents_emailAgent;
+  "domains/agents/evolutionVerification": typeof domains_agents_evolutionVerification;
   "domains/agents/fastAgentChat": typeof domains_agents_fastAgentChat;
   "domains/agents/fastAgentChatHelpers": typeof domains_agents_fastAgentChatHelpers;
   "domains/agents/fastAgentDocumentCreation": typeof domains_agents_fastAgentDocumentCreation;
@@ -1498,6 +1544,8 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/mcp_tools/tracking/index": typeof domains_agents_mcp_tools_tracking_index;
   "domains/agents/mcp_tools/tracking/taskTrackerTool": typeof domains_agents_mcp_tools_tracking_taskTrackerTool;
   "domains/agents/orchestrator/geminiVideoWrapper": typeof domains_agents_orchestrator_geminiVideoWrapper;
+  "domains/agents/orchestrator/passportEnforcement": typeof domains_agents_orchestrator_passportEnforcement;
+  "domains/agents/orchestrator/passportEnforcementQueries": typeof domains_agents_orchestrator_passportEnforcementQueries;
   "domains/agents/orchestrator/queueProtocol": typeof domains_agents_orchestrator_queueProtocol;
   "domains/agents/orchestrator/secEdgarWrapper": typeof domains_agents_orchestrator_secEdgarWrapper;
   "domains/agents/orchestrator/toolHealth": typeof domains_agents_orchestrator_toolHealth;
@@ -1509,7 +1557,11 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/receipts/actionReceipts": typeof domains_agents_receipts_actionReceipts;
   "domains/agents/receipts/emitWithReceipt": typeof domains_agents_receipts_emitWithReceipt;
   "domains/agents/researchJobs": typeof domains_agents_researchJobs;
+  "domains/agents/responseFlywheel": typeof domains_agents_responseFlywheel;
   "domains/agents/selfEvolution": typeof domains_agents_selfEvolution;
+  "domains/agents/selfEvolutionQueries": typeof domains_agents_selfEvolutionQueries;
+  "domains/agents/swarmDeliberation": typeof domains_agents_swarmDeliberation;
+  "domains/agents/swarmDeliberationQueries": typeof domains_agents_swarmDeliberationQueries;
   "domains/agents/swarmMutations": typeof domains_agents_swarmMutations;
   "domains/agents/swarmOrchestrator": typeof domains_agents_swarmOrchestrator;
   "domains/agents/swarmOrchestratorEnhanced": typeof domains_agents_swarmOrchestratorEnhanced;
@@ -1589,6 +1641,7 @@ declare const fullApi: ApiFromModules<{
   "domains/channels/channelIntelligence": typeof domains_channels_channelIntelligence;
   "domains/channels/engagementOptimizer": typeof domains_channels_engagementOptimizer;
   "domains/channels/index": typeof domains_channels_index;
+  "domains/deepTrace/causalChainEngine": typeof domains_deepTrace_causalChainEngine;
   "domains/deepTrace/dimensionEngine": typeof domains_deepTrace_dimensionEngine;
   "domains/deepTrace/dimensionModel": typeof domains_deepTrace_dimensionModel;
   "domains/deepTrace/dimensions": typeof domains_deepTrace_dimensions;
@@ -1599,6 +1652,7 @@ declare const fullApi: ApiFromModules<{
   "domains/documents/artifacts/evidenceIndexActions": typeof domains_documents_artifacts_evidenceIndexActions;
   "domains/documents/artifacts/evidencePacks": typeof domains_documents_artifacts_evidencePacks;
   "domains/documents/artifacts/evidenceSearch": typeof domains_documents_artifacts_evidenceSearch;
+  "domains/documents/artifacts/ingestionPipeline": typeof domains_documents_artifacts_ingestionPipeline;
   "domains/documents/artifacts/sourceArtifacts": typeof domains_documents_artifacts_sourceArtifacts;
   "domains/documents/batchOperations": typeof domains_documents_batchOperations;
   "domains/documents/calendar/calendar": typeof domains_documents_calendar_calendar;
@@ -1736,6 +1790,7 @@ declare const fullApi: ApiFromModules<{
   "domains/evaluation/memoryFirstScenarios": typeof domains_evaluation_memoryFirstScenarios;
   "domains/evaluation/migrateEvaluationScenarios": typeof domains_evaluation_migrateEvaluationScenarios;
   "domains/evaluation/multiTurnScenarios": typeof domains_evaluation_multiTurnScenarios;
+  "domains/evaluation/operations": typeof domains_evaluation_operations;
   "domains/evaluation/personaEpisodeEval": typeof domains_evaluation_personaEpisodeEval;
   "domains/evaluation/personaInferenceScenarios": typeof domains_evaluation_personaInferenceScenarios;
   "domains/evaluation/personaLiveEval": typeof domains_evaluation_personaLiveEval;
@@ -1869,6 +1924,7 @@ declare const fullApi: ApiFromModules<{
   "domains/integrations/voice/voiceActions": typeof domains_integrations_voice_voiceActions;
   "domains/integrations/voice/voiceAgent": typeof domains_integrations_voice_voiceAgent;
   "domains/integrations/voice/voiceMutations": typeof domains_integrations_voice_voiceMutations;
+  "domains/intelligence/operations": typeof domains_intelligence_operations;
   "domains/knowledge/adaptiveEntityEnrichment": typeof domains_knowledge_adaptiveEntityEnrichment;
   "domains/knowledge/adaptiveEntityQueries": typeof domains_knowledge_adaptiveEntityQueries;
   "domains/knowledge/entityContexts": typeof domains_knowledge_entityContexts;
@@ -1925,6 +1981,11 @@ declare const fullApi: ApiFromModules<{
   "domains/messaging/providers/smsProvider": typeof domains_messaging_providers_smsProvider;
   "domains/messaging/providers/telegramProvider": typeof domains_messaging_providers_telegramProvider;
   "domains/messaging/providers/uiProvider": typeof domains_messaging_providers_uiProvider;
+  "domains/missions/costQueries": typeof domains_missions_costQueries;
+  "domains/missions/index": typeof domains_missions_index;
+  "domains/missions/missionOrchestrator": typeof domains_missions_missionOrchestrator;
+  "domains/missions/preExecutionGate": typeof domains_missions_preExecutionGate;
+  "domains/missions/preExecutionGateQueries": typeof domains_missions_preExecutionGateQueries;
   "domains/models/autonomousModelResolver": typeof domains_models_autonomousModelResolver;
   "domains/models/freeModelDiscovery": typeof domains_models_freeModelDiscovery;
   "domains/models/index": typeof domains_models_index;
@@ -2051,6 +2112,7 @@ declare const fullApi: ApiFromModules<{
   "domains/operations/observability/telemetry": typeof domains_operations_observability_telemetry;
   "domains/operations/observability/traces": typeof domains_operations_observability_traces;
   "domains/operations/personaChangeTracking": typeof domains_operations_personaChangeTracking;
+  "domains/operations/postExecutionHygiene": typeof domains_operations_postExecutionHygiene;
   "domains/operations/privacyEnforcement": typeof domains_operations_privacyEnforcement;
   "domains/operations/selfMaintenance": typeof domains_operations_selfMaintenance;
   "domains/operations/selfMaintenanceChecks": typeof domains_operations_selfMaintenanceChecks;
@@ -2340,6 +2402,11 @@ declare const fullApi: ApiFromModules<{
   "domains/social/publishing/index": typeof domains_social_publishing_index;
   "domains/social/publishing/publishingOrchestrator": typeof domains_social_publishing_publishingOrchestrator;
   "domains/social/specializedPostQueries": typeof domains_social_specializedPostQueries;
+  "domains/successLoops/index": typeof domains_successLoops_index;
+  "domains/successLoops/lib": typeof domains_successLoops_lib;
+  "domains/successLoops/mutations": typeof domains_successLoops_mutations;
+  "domains/successLoops/projection": typeof domains_successLoops_projection;
+  "domains/successLoops/queries": typeof domains_successLoops_queries;
   "domains/taskManager/cronWrapper": typeof domains_taskManager_cronWrapper;
   "domains/taskManager/index": typeof domains_taskManager_index;
   "domains/taskManager/mutations": typeof domains_taskManager_mutations;
@@ -2363,6 +2430,11 @@ declare const fullApi: ApiFromModules<{
   "domains/temporal/queries": typeof domains_temporal_queries;
   "domains/temporal/specDoc": typeof domains_temporal_specDoc;
   "domains/testing/testingFramework": typeof domains_testing_testingFramework;
+  "domains/trajectory/index": typeof domains_trajectory_index;
+  "domains/trajectory/lib": typeof domains_trajectory_lib;
+  "domains/trajectory/mutations": typeof domains_trajectory_mutations;
+  "domains/trajectory/projection": typeof domains_trajectory_projection;
+  "domains/trajectory/queries": typeof domains_trajectory_queries;
   "domains/utilities/migrations": typeof domains_utilities_migrations;
   "domains/utilities/seedGoldenDataset": typeof domains_utilities_seedGoldenDataset;
   "domains/utilities/snapshotMigrations": typeof domains_utilities_snapshotMigrations;
@@ -2397,6 +2469,7 @@ declare const fullApi: ApiFromModules<{
   "domains/verification/validation/selfQuestionAgent": typeof domains_verification_validation_selfQuestionAgent;
   "domains/verification/verificationAuditTrail": typeof domains_verification_verificationAuditTrail;
   "domains/verification/verificationWorkflow": typeof domains_verification_verificationWorkflow;
+  "domains/world/operations": typeof domains_world_operations;
   feed: typeof feed;
   "globalResearch/artifacts": typeof globalResearch_artifacts;
   "globalResearch/cacheSimple": typeof globalResearch_cacheSimple;
@@ -2441,6 +2514,9 @@ declare const fullApi: ApiFromModules<{
   "schema/emailSchema": typeof schema_emailSchema;
   "schema/searchQuota": typeof schema_searchQuota;
   "schema/toolSearchSchema": typeof schema_toolSearchSchema;
+  "shared/actionSpan": typeof shared_actionSpan;
+  "shared/actionSpanReplay": typeof shared_actionSpanReplay;
+  "shared/actionSpanReplayQueries": typeof shared_actionSpanReplayQueries;
   tags: typeof tags;
   tags_actions: typeof tags_actions;
   "tests/fastAgentPanelStreamingTests": typeof tests_fastAgentPanelStreamingTests;

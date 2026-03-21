@@ -167,6 +167,9 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
       <div
         ref={modalRef}
         className="relative w-full max-w-6xl h-[90vh] bg-surface rounded-lg shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 ring-1 ring-white/10 pointer-events-auto"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="feed-reader-modal-title"
       >
         <div className="px-8 py-5 border-b border-edge flex items-center justify-between bg-surface z-10">
           <div className="flex items-center gap-3">
@@ -226,7 +229,7 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
                   )}
                 </div>
 
-                <h1 className="text-2xl md:text-3xl font-bold text-content leading-tight mb-8">{item.title}</h1>
+                <h1 id="feed-reader-modal-title" className="text-2xl md:text-3xl font-bold text-content leading-tight mb-8">{item.title}</h1>
 
                 <div className="prose prose-lg prose-gray max-w-none leading-relaxed text-content">
                   <p className="text-xl leading-relaxed text-content font-sans mb-8 border-l-4 border-blue-500 pl-6 italic">

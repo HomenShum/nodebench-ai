@@ -23,6 +23,7 @@ import { CSS } from "@dnd-kit/utilities";
 interface DocumentsGridSortableProps<T extends string | number = string> {
   items: T[];
   renderItem: (id: T, index: number, isDragging: boolean) => React.ReactNode;
+  renderOverlayItem?: (id: T, index: number) => React.ReactNode;
   onReorder: (newOrder: T[]) => void;
   gridClassName?: string;
 }
@@ -30,6 +31,7 @@ interface DocumentsGridSortableProps<T extends string | number = string> {
 export function DocumentsGridSortable<T extends string | number = string>({
   items,
   renderItem,
+  renderOverlayItem,
   onReorder,
   // ✅ stable auto-fill grid w/ larger gaps for premium spacing
   gridClassName = "grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] auto-rows-fr gap-5",
@@ -91,10 +93,12 @@ export function DocumentsGridSortable<T extends string | number = string>({
       </SortableContext>
 
       {/* ✅ Overlay clone prevents layout shift while dragging; enable smooth drop animation */}
-      <DragOverlay>
+      <DragOverlay dropAnimation={null}>
         {activeId != null && activeIndex >= 0 ? (
           <div className="ring-2 ring-gray-900/20 rounded-lg shadow-lg">
-            {renderItem(activeId, activeIndex, true)}
+            {renderOverlayItem
+              ? renderOverlayItem(activeId, activeIndex)
+              : renderItem(activeId, activeIndex, true)}
           </div>
         ) : null}
       </DragOverlay>

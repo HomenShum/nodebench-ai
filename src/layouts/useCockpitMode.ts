@@ -1,5 +1,5 @@
 /**
- * useCockpitMode — Hook that wraps useMainLayoutRouting with mode awareness.
+ * useCockpitMode — Hook that wraps useCockpitRouting with mode awareness.
  *
  * Adds CockpitMode derivation on top of the existing routing system.
  * Navigating to a mode switches to that mode's default view.
@@ -7,19 +7,19 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useMainLayoutRouting } from "../hooks/useMainLayoutRouting";
+import { useCockpitRouting } from "../hooks/useCockpitRouting";
+import { buildCockpitPath, getSurfaceForView } from "@/lib/registry/viewRegistry";
 import {
   type CockpitMode,
   VIEW_TO_MODE,
   MODES,
   getModeForView,
-  VIEW_PATH_MAP,
 } from "./cockpitModes";
 
 const COCKPIT_MODE_KEY = "nodebench-cockpit-mode";
 
 export function useCockpitMode() {
-  const routing = useMainLayoutRouting();
+  const routing = useCockpitRouting();
   const { setCurrentView } = routing;
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,7 +53,7 @@ export function useCockpitMode() {
       const config = MODES.find((m) => m.id === saved);
       if (config) {
         setCurrentView(config.defaultView);
-        const path = VIEW_PATH_MAP[config.defaultView] ?? `/${config.defaultView}`;
+        const path = buildCockpitPath({ surfaceId: getSurfaceForView(config.defaultView) });
         navigate(path);
       }
     }
@@ -65,7 +65,7 @@ export function useCockpitMode() {
       const config = MODES.find((c) => c.id === m);
       if (config) {
         setCurrentView(config.defaultView);
-        const path = VIEW_PATH_MAP[config.defaultView] ?? `/${config.defaultView}`;
+        const path = buildCockpitPath({ surfaceId: getSurfaceForView(config.defaultView) });
         navigate(path);
       }
     },

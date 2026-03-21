@@ -15,16 +15,16 @@ const callTool = async (name: string, args: any) => {
 
 // ── Real files in the monorepo ──────────────────────────────────────────────
 
-/** React component with useState, useEffect, useRef, useCallback, framer-motion, lazy loading */
+/** React component with useState, useEffect, useRef, useCallback, useMemo, lazy loading */
 const MAIN_LAYOUT = resolve(
   import.meta.dirname,
-  "../../../../src/components/MainLayout.tsx",
+  "../../../../src/layouts/CockpitLayout.tsx",
 );
 
 /** React component with useState, useEffect, useRef, useMemo, framer-motion, keyboard input */
 const COMMAND_PALETTE = resolve(
   import.meta.dirname,
-  "../../../../src/components/CommandPalette.tsx",
+  "../../../../src/layouts/chrome/CommandPalette.tsx",
 );
 
 /** HTTP server with routes, middleware-like patterns, auth token check */

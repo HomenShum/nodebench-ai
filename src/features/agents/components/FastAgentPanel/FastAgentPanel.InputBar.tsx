@@ -181,6 +181,8 @@ interface FastAgentInputBarProps {
   onResponseLengthChange?: (length: 'brief' | 'detailed' | 'exhaustive') => void;
   /** Voice intent router — intercepts UI commands before agent send. Return true if handled. */
   onVoiceIntent?: (text: string, source?: 'voice' | 'text') => boolean;
+  /** Compact presentation for the cockpit sidebar variant. */
+  compact?: boolean;
 }
 
 /**
@@ -206,12 +208,13 @@ export function FastAgentInputBar({
   onRemoveCalendarEvent,
   threadId,
   enableEnhancement = true,
-  placeholder = 'Message...',
+  placeholder = 'Ask NodeBench...',
   maxLength = 10000,
   onSpawn,
   responseLength = 'detailed',
   onResponseLengthChange,
   onVoiceIntent,
+  compact = false,
 }: FastAgentInputBarProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingMode, setRecordingMode] = useState<'audio' | 'video' | null>(null);
@@ -706,6 +709,12 @@ export function FastAgentInputBar({
   };
 
   const canSend = (input.trim().length > 0 || attachedFiles.length > 0 || contextDocuments.length > 0 || selection !== null || contextCalendarEvents.length > 0) && !isStreaming;
+  const hasContextPills =
+    (selectedDocumentIds?.size ?? 0) > 0 ||
+    contextDocuments.length > 0 ||
+    selection !== null ||
+    contextCalendarEvents.length > 0;
+  const showTopContextRow = !compact || hasContextPills;
 
   // Get drag feedback colors based on type
   const getDragFeedbackClasses = () => {
@@ -792,9 +801,11 @@ export function FastAgentInputBar({
       )}>
 
         {/* Context Pills Area (Documents, Models, etc.) */}
-        <div className="px-3 pt-3 flex flex-wrap gap-2 items-center">
-          {/* Model Selector */}
-          <div className="relative">
+        {showTopContextRow && (
+          <div className={cn("px-3 pt-3 flex flex-wrap gap-2 items-center", compact && "pt-2.5")}>
+            {/* Model Selector */}
+            {!compact && (
+              <div className="relative">
             <button
               type="button"
               onClick={() => setShowModelSelector(!showModelSelector)}
@@ -807,43 +818,44 @@ export function FastAgentInputBar({
               <ChevronUp className={cn("w-3 h-3 text-content-muted transition-transform duration-200", showModelSelector ? "rotate-180" : "")} />
             </button>
 
-            {/* Model Dropdown */}
-            {showModelSelector && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setShowModelSelector(false)} />
-                <div className="absolute bottom-full left-0 mb-2 w-64 bg-surface rounded-lg border border-edge shadow-xl z-20 py-1.5 max-h-80 overflow-y-auto dropdown-enter" style={{ '--dropdown-origin': 'bottom left' } as React.CSSProperties}>
-                  <div className="px-3 py-2 border-b border-edge/50">
-                    <span className="text-xs font-bold text-content-muted">Select Model</span>
+              {/* Model Dropdown */}
+              {showModelSelector && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowModelSelector(false)} />
+                  <div className="absolute bottom-full left-0 mb-2 w-64 bg-surface rounded-lg border border-edge shadow-xl z-20 py-1.5 max-h-80 overflow-y-auto dropdown-enter" style={{ '--dropdown-origin': 'bottom left' } as React.CSSProperties}>
+                    <div className="px-3 py-2 border-b border-edge/50">
+                      <span className="text-xs font-bold text-content-muted">Select Model</span>
+                    </div>
+                    {APPROVED_MODEL_LIST.map((model) => (
+                      <button
+                        type="button"
+                        key={model.id}
+                        onClick={() => {
+                          onSelectModel(model.id);
+                          setShowModelSelector(false);
+                        }}
+                        className={cn(
+                          "w-full px-3 py-2.5 text-left hover:bg-surface-secondary transition-all duration-150",
+                          selectedModel === model.id && "bg-surface-secondary border-l-2 border-l-[rgb(79, 70, 229)]"
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className={cn("text-[12px] flex items-center gap-1.5", selectedModel === model.id ? "font-semibold text-content" : "font-medium text-content-secondary")}>
+                            {model.isFree && <Gift className="w-3 h-3 text-violet-500" />}
+                            {model.name}
+                          </span>
+                          <span className="text-xs text-content-muted font-medium">{model.contextWindow}</span>
+                        </div>
+                        <div className="text-xs text-content-muted mt-1 leading-relaxed">
+                          {model.description}
+                        </div>
+                      </button>
+                    ))}
                   </div>
-                  {APPROVED_MODEL_LIST.map((model) => (
-                    <button
-                      type="button"
-                      key={model.id}
-                      onClick={() => {
-                        onSelectModel(model.id);
-                        setShowModelSelector(false);
-                      }}
-                      className={cn(
-                        "w-full px-3 py-2.5 text-left hover:bg-surface-secondary transition-all duration-150",
-                        selectedModel === model.id && "bg-surface-secondary border-l-2 border-l-[rgb(79, 70, 229)]"
-                      )}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className={cn("text-[12px] flex items-center gap-1.5", selectedModel === model.id ? "font-semibold text-content" : "font-medium text-content-secondary")}>
-                          {model.isFree && <Gift className="w-3 h-3 text-violet-500" />}
-                          {model.name}
-                        </span>
-                        <span className="text-xs text-content-muted font-medium">{model.contextWindow}</span>
-                      </div>
-                      <div className="text-xs text-content-muted mt-1 leading-relaxed">
-                        {model.description}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </>
+                </>
+              )}
+            </div>
             )}
-          </div>
 
           {/* Document Pills (legacy) */}
            {selectedDocumentIds && selectedDocumentIds.size > 0 && Array.from(selectedDocumentIds).map((docId) => (
@@ -938,7 +950,8 @@ export function FastAgentInputBar({
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
 
         {/* Attached Files Preview */}
         {attachedFiles.length > 0 && (
@@ -1032,7 +1045,7 @@ export function FastAgentInputBar({
         )}
 
         {/* Input Area */}
-        <div className="p-3 flex items-end gap-1.5">
+        <div className={cn("p-3 flex items-end gap-1.5", compact && "pt-2.5")}>
           {/* Attachment Button */}
           <button
             type="button"
@@ -1068,16 +1081,18 @@ export function FastAgentInputBar({
           >
             <Mic className="w-4.5 h-4.5" />
           </button>
-          <button
-            type="button"
-            onClick={() => startRecording("video")}
-            disabled={isStreaming || isRecording}
-            className="p-2 text-content-muted hover:text-content hover:bg-surface-secondary rounded-lg transition-all duration-200"
-            title="Record video"
-            aria-label="Record video"
-          >
-            <Video className="w-4.5 h-4.5" />
-          </button>
+          {!compact && (
+            <button
+              type="button"
+              onClick={() => startRecording("video")}
+              disabled={isStreaming || isRecording}
+              className="p-2 text-content-muted hover:text-content hover:bg-surface-secondary rounded-lg transition-all duration-200"
+              title="Record video"
+              aria-label="Record video"
+            >
+              <Video className="w-4.5 h-4.5" />
+            </button>
+          )}
           <input
             ref={fileInputRef}
             type="file"
@@ -1172,7 +1187,7 @@ export function FastAgentInputBar({
           )}
 
           {/* Typing Speed Indicator */}
-          {input.length > 10 && (() => {
+          {!compact && input.length > 10 && (() => {
             const words = input.split(/\s+/).filter(Boolean).length;
             return (
               <span className="text-xs tabular-nums text-content-muted whitespace-nowrap px-1">
@@ -1182,7 +1197,7 @@ export function FastAgentInputBar({
           })()}
 
           {/* Response Length Toggle */}
-          {onResponseLengthChange && (
+          {!compact && onResponseLengthChange && (
             <button
               type="button"
               onClick={() => {
@@ -1201,7 +1216,7 @@ export function FastAgentInputBar({
           )}
 
           {/* Enhance Button (Ctrl+P) */}
-          {enableEnhancement && (
+          {!compact && enableEnhancement && (
             <InlineEnhancer
               value={input}
               onEnhance={handleEnhance}
@@ -1211,7 +1226,7 @@ export function FastAgentInputBar({
           )}
 
           {/* Input Token Budget Preview */}
-          {input.length > 20 && !isStreaming && (
+          {!compact && input.length > 20 && !isStreaming && (
             <span className="text-[8px] tabular-nums text-content-muted whitespace-nowrap" title={`Your message: ~${Math.ceil(input.length / 4)} tokens`}>
               ~{Math.ceil(input.length / 4)}t
             </span>
@@ -1248,11 +1263,13 @@ export function FastAgentInputBar({
       </div>
 
       {/* Keyboard shortcut hints */}
-      <div className="flex items-center gap-3 mt-1 px-1 text-[8px] text-content-muted opacity-40">
-        <span className="flex items-center gap-1"><span className="kbd-hint">Enter</span> send</span>
-        <span className="flex items-center gap-1"><span className="kbd-hint">Shift+Enter</span> newline</span>
-        <span className="flex items-center gap-1"><span className="kbd-hint">/</span> commands</span>
-      </div>
+      {!compact && (
+        <div className="flex items-center gap-3 mt-1 px-1 text-[8px] text-content-muted opacity-40">
+          <span className="flex items-center gap-1"><span className="kbd-hint">Enter</span> send</span>
+          <span className="flex items-center gap-1"><span className="kbd-hint">Shift+Enter</span> newline</span>
+          <span className="flex items-center gap-1"><span className="kbd-hint">/</span> commands</span>
+        </div>
+      )}
 
       {/* Character count only when near limit */}
       {input.length > maxLength * 0.8 && (

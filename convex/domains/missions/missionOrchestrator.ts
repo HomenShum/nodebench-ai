@@ -41,13 +41,16 @@ export const getMissionByKey = query({
   },
 });
 
+/** BOUND: Max tasks per mission query */
+const MAX_TASKS_PER_MISSION = 500;
+
 export const getTasksForMission = query({
   args: { missionId: v.id("missions") },
   handler: async (ctx, { missionId }) => {
     return ctx.db
       .query("taskPlans")
       .withIndex("by_mission_order", (q) => q.eq("missionId", missionId))
-      .collect();
+      .take(MAX_TASKS_PER_MISSION);
   },
 });
 
@@ -68,7 +71,58 @@ export const getJudgeReviewsForMission = query({
     return ctx.db
       .query("judgeReviews")
       .withIndex("by_mission_verdict", (q) => q.eq("missionId", missionId))
-      .collect();
+      .take(MAX_TASKS_PER_MISSION);
+  },
+});
+
+export const getMissionJudgmentSummary = query({
+  args: { missionId: v.id("missions") },
+  handler: async (ctx, { missionId }) => {
+    const [latestGate, latestDecisionMemory, latestPassport] = await Promise.all([
+      ctx.db
+        .query("preExecutionGates")
+        .withIndex("by_mission", (q) => q.eq("missionId", missionId))
+        .order("desc")
+        .first(),
+      ctx.db
+        .query("decisionMemory")
+        .withIndex("by_source_mission", (q) => q.eq("sourceMissionId", missionId))
+        .order("desc")
+        .first(),
+      ctx.db
+        .query("passportEnforcementLogs")
+        .withIndex("by_mission", (q) => q.eq("missionId", missionId))
+        .order("desc")
+        .first(),
+    ]);
+
+    return {
+      latestGate: latestGate
+        ? {
+            decision: latestGate.decision,
+            gatesPassed: latestGate.gatesPassed,
+            disqualifiersTriggered: latestGate.disqualifiersTriggered,
+            reasoning: latestGate.reasoning,
+            createdAt: latestGate.createdAt,
+          }
+        : null,
+      latestDecisionMemory: latestDecisionMemory
+        ? {
+            verdict: latestDecisionMemory.verdict,
+            confidence: latestDecisionMemory.confidence,
+            reasoning: latestDecisionMemory.reasoning,
+            createdAt: latestDecisionMemory.createdAt,
+          }
+        : null,
+      latestPassport: latestPassport
+        ? {
+            decision: latestPassport.decision,
+            toolName: latestPassport.toolName,
+            reason: latestPassport.reason,
+            createdAt: latestPassport.createdAt,
+          }
+        : null,
+    };
   },
 });
 
@@ -332,6 +386,30 @@ export const recordRunStep = mutation({
     )),
   },
   handler: async (ctx, args) => {
+    // BUDGET ENFORCEMENT: Check accumulated cost against mission budget before recording
+    const mission = await ctx.db.get(args.missionId);
+    if (mission) {
+      const budgetCostUsd = mission.budgetCostUsd;
+      const budgetTokens = mission.budgetTokens;
+      if (budgetCostUsd != null || budgetTokens != null) {
+        const priorSteps = await ctx.db
+          .query("runSteps")
+          .withIndex("by_mission_created", (q: any) => q.eq("missionId", args.missionId))
+          .collect();
+        // BOUND: cap in-memory accumulation to first 2000 steps
+        const bounded = priorSteps.slice(0, 2000);
+        const totalCost = bounded.reduce((sum, s) => sum + (s.costUsd ?? 0), 0) + (args.costUsd ?? 0);
+        const totalTokens = bounded.reduce((sum, s) => sum + (s.inputTokens ?? 0) + (s.outputTokens ?? 0), 0)
+          + (args.inputTokens ?? 0) + (args.outputTokens ?? 0);
+        if (budgetCostUsd != null && totalCost > budgetCostUsd) {
+          throw new Error(`Mission budget exceeded: $${totalCost.toFixed(4)} > $${budgetCostUsd.toFixed(4)} limit`);
+        }
+        if (budgetTokens != null && totalTokens > budgetTokens) {
+          throw new Error(`Mission token budget exceeded: ${totalTokens} > ${budgetTokens} limit`);
+        }
+      }
+    }
+
     return ctx.db.insert("runSteps", {
       ...args,
       artifactIds: undefined,
@@ -382,14 +460,49 @@ export const recordJudgeReview = mutation({
     latencyMs: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    // HONEST_SCORES: Clamp compositeConfidence to [0, 1]
+    const clampedConfidence = Math.max(0, Math.min(1, args.compositeConfidence));
+
     const reviewId = await ctx.db.insert("judgeReviews", {
       ...args,
+      compositeConfidence: clampedConfidence,
       customCriteria: undefined,
       createdAt: Date.now(),
     });
 
+    const [task, mission] = await Promise.all([
+      ctx.db.get(args.taskId),
+      ctx.db.get(args.missionId),
+    ]);
+
+    // ERROR_BOUNDARY: Decision memory is advisory — never block judge review storage
+    if (mission) {
+      try {
+        const fingerprint = await createDecisionFingerprint({
+          actionType: task?.taskKey ?? mission.missionType,
+          domain: mission.missionType,
+          entityRef: mission.entityKey,
+        });
+
+        await ctx.db.insert("decisionMemory", {
+          fingerprint,
+          entityRef: mission.entityKey,
+          actionType: task?.taskKey ?? mission.missionType,
+          domain: mission.missionType,
+          verdict: args.verdict,
+          confidence: clampedConfidence,
+          reasoning: args.reasoning,
+          sourceJudgeReviewId: reviewId,
+          sourceMissionId: args.missionId,
+          createdAt: Date.now(),
+        });
+      } catch (_err) {
+        // Advisory: decision memory failure must not block the judge review
+        console.warn("Decision memory insert failed for judge review", reviewId);
+      }
+    }
+
     // Update task status based on verdict
-    const task = await ctx.db.get(args.taskId);
     if (!task) return reviewId;
 
     if (args.recommendation === "promote") {
@@ -568,6 +681,28 @@ async function unblockDependents(
       }
     }
   }
+}
+
+async function createDecisionFingerprint({
+  entityRef,
+  actionType,
+  domain,
+}: {
+  entityRef?: string;
+  actionType: string;
+  domain: string;
+}) {
+  const payload = JSON.stringify({
+    actionType,
+    domain,
+    entityRef: entityRef ?? "",
+  });
+  const bytes = new TextEncoder().encode(payload);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 16);
 }
 
 async function checkMissionCompletion(ctx: { db: any }, missionId: any) {

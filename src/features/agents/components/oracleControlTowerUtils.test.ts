@@ -16,10 +16,10 @@ describe("oracleControlTowerUtils", () => {
   });
 
   it("maps dogfood verdicts to builder-friendly summaries", () => {
-    expect(getDogfoodPresentation("pass").label).toBe("Dogfood clear");
-    expect(getDogfoodPresentation("watch").label).toBe("Dogfood watch");
-    expect(getDogfoodPresentation("fail").label).toBe("Dogfood blocked");
-    expect(getDogfoodPresentation("missing").label).toBe("No dogfood evidence");
+    expect(getDogfoodPresentation("pass").label).toBe("Review clear");
+    expect(getDogfoodPresentation("watch").label).toBe("Review watch");
+    expect(getDogfoodPresentation("fail").label).toBe("Review blocked");
+    expect(getDogfoodPresentation("missing").label).toBe("No review evidence");
   });
 
   it("maps institutional verdicts to readable signals", () => {

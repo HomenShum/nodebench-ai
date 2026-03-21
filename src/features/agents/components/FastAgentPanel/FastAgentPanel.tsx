@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useConvex, usePaginatedQuery, useQuery, useMutation, useAction, useConvexAuth } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
-import { X, Plus, Radio, Bot, Loader2, ChevronDown, ArrowDown, MessageSquare, Activity, Minimize2, Maximize2, BookOpen, LogIn, Share2, MoreHorizontal, Download, ClipboardCopy, Search, ArrowUp, ArrowDownIcon, Eye, Palette, GripVertical } from 'lucide-react';
+import { X, Bot, Loader2, ChevronDown, ArrowDown, MessageSquare, Activity, LogIn, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUIMessages } from '@convex-dev/agent/react';
 
@@ -17,27 +17,30 @@ import { UIMessageStream } from './FastAgentPanel.UIMessageStream';
 import { FastAgentInputBar } from './FastAgentPanel.InputBar';
 import { FileUpload } from './FastAgentPanel.FileUpload';
 import { ExportMenu } from './FastAgentPanel.ExportMenu';
-import { Settings as SettingsPanel } from './FastAgentPanel.Settings';
-import { AgentHierarchy } from './FastAgentPanel.AgentHierarchy';
+// Core chat components — always needed on panel open
 import { HumanRequestList } from './HumanRequestCard';
 import { FastAgentUIMessageBubble } from './FastAgentPanel.UIMessageBubble';
 import { MessageHandlersProvider } from './MessageHandlersContext';
 import { VirtualizedMessageList, useMessageVirtualization } from './VirtualizedMessageList';
-import { SkillsPanel } from './FastAgentPanel.SkillsPanel';
-import { DisclosureTrace, type DisclosureEvent } from './FastAgentPanel.DisclosureTrace';
-import { AgentTasksTab } from './FastAgentPanel.AgentTasksTab';
-import { TraceAuditPanel, TraceContentLabeler } from './FastAgentPanel.TraceAuditPanel';
-import { ParallelTaskTimeline } from './FastAgentPanel.ParallelTaskTimeline';
-import { EditsTab } from './FastAgentPanel.EditsTab';
-import { BriefTab } from './FastAgentPanel.BriefTab';
-import { TaskManagerView } from '../TaskManager';
-// ThreadTabBar removed - functionality consolidated into simplified header
-import { SwarmLanesView } from './SwarmLanesView';
-import { SwarmQuickActions } from './SwarmQuickActions';
 import { useSwarmByThread, useSwarmActions, parseSpawnCommand, isSpawnCommand } from '@/hooks/useSwarm';
 import { MemoryStatusHeader, type PlanItem } from './MemoryStatusHeader';
 import { ContextBar, type ContextConstraint } from './ContextBar';
-import { LiveAgentLanes } from '@/features/agents/views/LiveAgentLanes';
+import { SwarmQuickActions } from './SwarmQuickActions';
+
+// Tab-gated / conditional components — lazy-loaded on first use
+import type { DisclosureEvent } from './FastAgentPanel.DisclosureTrace';
+const SettingsPanel = React.lazy(() => import('./FastAgentPanel.Settings').then(m => ({ default: m.Settings })));
+const AgentHierarchy = React.lazy(() => import('./FastAgentPanel.AgentHierarchy').then(m => ({ default: m.AgentHierarchy })));
+const SkillsPanel = React.lazy(() => import('./FastAgentPanel.SkillsPanel').then(m => ({ default: m.SkillsPanel })));
+const DisclosureTrace = React.lazy(() => import('./FastAgentPanel.DisclosureTrace').then(m => ({ default: m.DisclosureTrace })));
+const AgentTasksTab = React.lazy(() => import('./FastAgentPanel.AgentTasksTab').then(m => ({ default: m.AgentTasksTab })));
+const TraceAuditPanel = React.lazy(() => import('./FastAgentPanel.TraceAuditPanel').then(m => ({ default: m.TraceAuditPanel })));
+const ParallelTaskTimeline = React.lazy(() => import('./FastAgentPanel.ParallelTaskTimeline').then(m => ({ default: m.ParallelTaskTimeline })));
+const EditsTab = React.lazy(() => import('./FastAgentPanel.EditsTab').then(m => ({ default: m.EditsTab })));
+const BriefTab = React.lazy(() => import('./FastAgentPanel.BriefTab').then(m => ({ default: m.BriefTab })));
+const TaskManagerView = React.lazy(() => import('../TaskManager').then(m => ({ default: m.TaskManagerView })));
+const SwarmLanesView = React.lazy(() => import('./SwarmLanesView').then(m => ({ default: m.SwarmLanesView })));
+const LiveAgentLanes = React.lazy(() => import('@/features/agents/views/LiveAgentLanes').then(m => ({ default: m.LiveAgentLanes })));
 import type { LiveEvent } from './LiveEventCard';
 import { RichMediaSection } from './RichMediaSection';
 import { DocumentActionGrid, extractDocumentActions, type DocumentAction } from './DocumentActionCard';
@@ -45,8 +48,14 @@ import { extractMediaFromText, type ExtractedMedia } from './utils/mediaExtracto
 import type { SpawnedAgent } from './types/agent';
 import type { AgentOpenOptions, DossierContext } from '@/features/agents/context/FastAgentContext';
 import { buildDossierContextPrefix } from '@/features/agents/context/FastAgentContext';
+import { findDemoConversation, GUEST_FALLBACK_RESPONSE, type DemoConversation } from './demoConversation';
+import { MinimizedStrip } from './FastAgentPanel.MinimizedStrip';
+import { PanelHeader } from './FastAgentPanel.PanelHeader';
+import { PanelOverlays } from './FastAgentPanel.PanelOverlays';
+import { PanelDialogs } from './FastAgentPanel.PanelDialogs';
 import { DossierModeIndicator } from '@/features/agents/components/DossierModeIndicator';
 import { DEFAULT_MODEL, MODEL_UI_INFO, type ApprovedModel } from '@shared/llm/approvedModels';
+import { cn } from '@/lib/utils';
 import { useAnonymousSession } from '../../hooks/useAnonymousSession';
 import { useAgentNavigation } from '../../hooks/useAgentNavigation';
 import { useIntentTelemetry } from '@/lib/hooks/useIntentTelemetry';
@@ -143,6 +152,80 @@ export const FastAgentPanel = memo(function FastAgentPanel({
 
   // ========== ORACLE SESSION (auto-track agent threads as Oracle sessions) ==========
   const oracleSession = useOracleSessionContext();
+  const isCompactSidebar = variant === 'sidebar';
+
+  // ========== DEMO CONVERSATION STATE (guest mode) ==========
+  interface DemoMessage {
+    role: 'user' | 'assistant';
+    text: string;
+    key: string;
+    status: 'complete' | 'typing';
+    sources?: DemoConversation['sources'];
+    keyInsight?: string;
+  }
+  const [demoMessages, setDemoMessages] = useState<DemoMessage[]>([]);
+  const [isDemoThinking, setIsDemoThinking] = useState(false);
+  const demoTypingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Play a pre-scripted demo conversation (guest mode only). */
+  const playDemoConversation = useCallback((demo: DemoConversation, questionOverride?: string) => {
+    const question = questionOverride ?? demo.question;
+    const userMsg: DemoMessage = {
+      role: 'user',
+      text: question,
+      key: `demo-user-${Date.now()}`,
+      status: 'complete',
+    };
+    setDemoMessages((prev) => [...prev, userMsg]);
+    setInput('');
+    setIsDemoThinking(true);
+
+    // Simulate thinking delay, then progressively reveal the response
+    setTimeout(() => {
+      setIsDemoThinking(false);
+      const fullText = demo.response;
+      const assistantKey = `demo-assistant-${Date.now()}`;
+
+      // Start with empty typing message
+      const assistantMsg: DemoMessage = {
+        role: 'assistant',
+        text: '',
+        key: assistantKey,
+        status: 'typing',
+        sources: demo.sources,
+        keyInsight: demo.keyInsight,
+      };
+      setDemoMessages((prev) => [...prev, assistantMsg]);
+
+      // Progressive character reveal over ~2 seconds
+      const totalChars = fullText.length;
+      const revealIntervalMs = Math.max(4, Math.floor(2000 / totalChars));
+      let revealed = 0;
+
+      const tick = () => {
+        revealed = Math.min(revealed + Math.ceil(totalChars / 80), totalChars);
+        const partialText = fullText.slice(0, revealed);
+        setDemoMessages((prev) =>
+          prev.map((m) =>
+            m.key === assistantKey
+              ? { ...m, text: partialText, status: revealed >= totalChars ? 'complete' : 'typing' }
+              : m
+          )
+        );
+        if (revealed < totalChars) {
+          demoTypingRef.current = setTimeout(tick, revealIntervalMs);
+        }
+      };
+      demoTypingRef.current = setTimeout(tick, 60);
+    }, demo.thinkingDuration);
+  }, []);
+
+  // Cleanup demo typing interval on unmount
+  useEffect(() => {
+    return () => {
+      if (demoTypingRef.current) clearTimeout(demoTypingRef.current);
+    };
+  }, []);
 
   // ========== STATE ==========
   // Agent component uses string threadIds, not Id<"chatThreads">
@@ -540,14 +623,12 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     });
   }, []);
 
-  // Conversation starters
+  // Conversation starters — docs-relevant for Ask NodeBench
   const conversationStarters = useMemo(() => [
-    { icon: '💡', label: 'Brainstorm ideas', prompt: 'Help me brainstorm creative ideas for ' },
-    { icon: '📊', label: 'Analyze data', prompt: 'Analyze the following data and provide insights: ' },
-    { icon: '✍️', label: 'Write content', prompt: 'Write a professional ' },
-    { icon: '🔍', label: 'Research topic', prompt: 'Research and summarize the key points about ' },
-    { icon: '🐛', label: 'Debug code', prompt: 'Help me debug this code:\n```\n' },
-    { icon: '📝', label: 'Summarize', prompt: 'Summarize the following:\n' },
+    { icon: '📊', label: 'Trajectory scoring', prompt: 'How does trajectory scoring work in NodeBench?' },
+    { icon: '🔒', label: 'Judgment gates', prompt: 'Explain the boolean judgment gates and disqualifiers' },
+    { icon: '🔍', label: 'MCP tools', prompt: 'What MCP tools handle research workflows?' },
+    { icon: '📋', label: 'Agent activity', prompt: 'Show me recent agent activity and denied actions' },
   ], []);
 
   // Image paste preview
@@ -1092,10 +1173,23 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     }
   }, [streamingThread?.runStatus]);
 
-  const isBusy = isStreaming || isGenerating;
+  const isBusy = isStreaming || isGenerating || isDemoThinking;
 
   // Prepare messages for rendering - must be before any useMemo/useCallback/useEffect that references messagesToRender
   const messagesToRender = useMemo(() => {
+    // In guest mode with demo messages, render those instead of (empty) backend messages
+    if (!isAuthenticated && demoMessages.length > 0) {
+      return demoMessages.map((m) => ({
+        role: m.role,
+        text: m.text,
+        content: m.text,
+        status: m.status,
+        key: m.key,
+        parts: [{ type: 'text' as const, text: m.text }],
+        _demoSources: m.sources,
+        _demoKeyInsight: m.keyInsight,
+      }));
+    }
     if (chatMode === 'agent-streaming') {
       return streamingMessages;
     }
@@ -1108,7 +1202,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
       _creationTime: msg._creationTime,
       model: msg.model,
     }));
-  }, [chatMode, streamingMessages, agentMessages]);
+  }, [chatMode, streamingMessages, agentMessages, isAuthenticated, demoMessages]);
 
   // Auto-title from first exchange (must be after messagesToRender)
   const autoTitle = useMemo(() => {
@@ -1503,6 +1597,13 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     const text = (content ?? input).trim();
     if (!text || isBusy) return;
 
+    // Guest/demo mode intercept: play scripted or fallback response
+    if (!isAuthenticated) {
+      const demo = findDemoConversation(text);
+      playDemoConversation(demo ?? GUEST_FALLBACK_RESPONSE, text);
+      return;
+    }
+
     // ⚡ CRITICAL GUARD: Prevent duplicate sends of same message within 3 seconds
     const now = Date.now();
     const DEDUPE_WINDOW_MS = 3000;
@@ -1743,6 +1844,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     streamingThread,
     autoNameThread,
     isAuthenticated,
+    playDemoConversation,
     anonymousSession,
     oracleSession,
   ]);
@@ -2133,70 +2235,15 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     return (
       <>
         {focusSubscription}
-        <div className="fixed right-0 top-1/2 -translate-y-1/2 z-[1000] flex flex-col items-center gap-2 p-2 bg-surface border border-edge rounded-l-xl shadow-lg">
-          {/* Expand button */}
-          <button
-            type="button"
-            onClick={() => setIsMinimized(false)}
-            className="p-2 rounded-lg hover:bg-surface-hover transition-colors"
-            title="Expand panel"
-            aria-label="Expand panel"
-          >
-            <Maximize2 className="w-5 h-5 text-content" aria-hidden="true" />
-          </button>
-
-          {/* Status indicator */}
-          <div
-            role="status"
-            aria-label={isStreaming ? 'Agent is active' : 'Agent is ready'}
-            className={`w-3 h-3 rounded-full ${isStreaming ? 'bg-violet-500 motion-safe:animate-pulse' : 'bg-green-500'}`}
-          />
-
-          {/* Recent threads icons */}
-          {threads?.slice(0, 3).map((thread) => (
-            <button
-              key={thread._id}
-              type="button"
-              onClick={() => {
-                setActiveThreadId(thread._id);
-                setIsMinimized(false);
-              }}
-              className={`p-2 rounded-lg transition-colors ${activeThreadId === thread._id
-                ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-600'
-                : 'hover:bg-surface-hover text-content-muted'
-                }`}
-              title={thread.title || 'Untitled Thread'}
-              aria-label={thread.title || 'Untitled Thread'}
-            >
-              <MessageSquare className="w-4 h-4" aria-hidden="true" />
-            </button>
-          ))}
-
-          {/* New chat button */}
-          <button
-            type="button"
-            onClick={() => {
-              setActiveThreadId(null);
-              setIsMinimized(false);
-            }}
-            className="p-2 rounded-lg hover:bg-surface-hover text-content-muted transition-colors"
-            title="New chat"
-            aria-label="New chat"
-          >
-            <Plus className="w-4 h-4" aria-hidden="true" />
-          </button>
-
-          {/* Close button */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-content-muted hover:text-red-600 transition-colors mt-2"
-            title="Close panel"
-            aria-label="Close panel"
-          >
-            <X className="w-4 h-4" aria-hidden="true" />
-          </button>
-        </div>
+        <MinimizedStrip
+          isStreaming={isStreaming}
+          threads={threads}
+          activeThreadId={activeThreadId}
+          onSelectThread={(id) => { setActiveThreadId(id); setIsMinimized(false); }}
+          onNewChat={() => { setActiveThreadId(null); setIsMinimized(false); }}
+          onExpand={() => setIsMinimized(false)}
+          onClose={onClose}
+        />
       </>
     );
   }
@@ -2204,16 +2251,23 @@ export const FastAgentPanel = memo(function FastAgentPanel({
   return (
     <>
       {focusSubscription}
-      {/* Backdrop for mobile */}
-      {isOpen && (
+      {/* Backdrop for tablet/intermediate — mobile uses full-screen takeover via CockpitLayout */}
+      {isOpen && !isCompactSidebar && (
         <div
-          className="fixed inset-0 bg-surface-secondary dark:bg-black/50 backdrop-blur-sm z-[999] lg:hidden"
+          className="fixed inset-0 bg-surface-secondary dark:bg-black/50 backdrop-blur-sm z-[999] hidden sm:block lg:hidden"
           onClick={onClose}
         />
       )}
 
       <div
-        className={`fast-agent-panel noise-bg ${variant === 'sidebar' ? 'sidebar-mode' : ''} ${isWideMode ? 'wide-mode' : ''} ${isFocusMode ? 'focus-mode' : ''} ${highContrast ? 'high-contrast' : ''} bg-surface border-l border-edge`}
+        className={cn(
+          "fast-agent-panel noise-bg",
+          variant === 'sidebar' && 'sidebar-mode',
+          isWideMode && 'wide-mode',
+          isFocusMode && 'focus-mode',
+          highContrast && 'high-contrast',
+          isCompactSidebar ? "bg-transparent border-0 shadow-none" : "bg-surface border-l border-edge",
+        )}
         style={{ fontSize: `${fontSize}px` }}
         role="complementary"
         aria-label="AI Chat Panel"
@@ -2225,299 +2279,46 @@ export const FastAgentPanel = memo(function FastAgentPanel({
           Skip to chat input
         </a>
 
-        {/* Simplified Header - Single Row (Glassmorphism) */}
-        <div className="glass-header flex items-center gap-2 px-3 py-2">
-          {/* Status dot + Title */}
-          <div className="flex items-center gap-2 min-w-0">
-            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isStreaming || isSwarmActive ? 'bg-violet-500 motion-safe:animate-pulse' : 'bg-green-500'}`} />
-            <span className="text-sm font-semibold text-content truncate tracking-[-0.02em]">
-              {isSwarmActive ? `Team ${swarmTasks.filter(t => t.status === 'completed').length}/${swarmTasks.length}` :
-               isStreaming ? 'Thinking...' : 'Chat'}
-            </span>
-            {/* Auto-detected conversation topic */}
-            {!isStreaming && activeThreadId && messagesToRender && messagesToRender.length > 0 && (() => {
-              const firstUserMsg = messagesToRender.find((m: any) => m.role === 'user');
-              if (!firstUserMsg) return null;
-              const topic = (firstUserMsg.text || firstUserMsg.content || '').slice(0, 40);
-              if (!topic) return null;
-              return (
-                <span className="text-xs text-content-muted truncate max-w-[120px] hidden sm:inline" title={firstUserMsg.text || firstUserMsg.content || ''}>
-                  {topic}{(firstUserMsg.text || firstUserMsg.content || '').length > 40 ? '...' : ''}
-                </span>
-              );
-            })()}
-          </div>
-
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* Primary Actions */}
-          <div className="flex items-center gap-1">
-            {/* Persona Switcher */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowPersonaPicker(p => !p)}
-                className="flex items-center gap-1 px-2 py-1 text-xs rounded-md hover:bg-surface-secondary text-content-secondary transition-colors"
-                title={`Persona: ${currentPersona.name}`}
-                aria-haspopup="listbox"
-                aria-expanded={showPersonaPicker}
-              >
-                <span>{currentPersona.icon}</span>
-                <span className="hidden sm:inline text-xs">{currentPersona.name}</span>
-                <ChevronDown className="w-3 h-3 opacity-50" />
-              </button>
-              {showPersonaPicker && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowPersonaPicker(false)} />
-                  <div className="absolute right-0 top-full mt-1 w-44 bg-surface rounded-lg border border-edge shadow-lg z-50 py-1" role="listbox" aria-label="Select persona">
-                    {personas.map(p => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        role="option"
-                        aria-selected={p.id === activePersona}
-                        onClick={() => { setActivePersona(p.id); setShowPersonaPicker(false); toast.success(`Switched to ${p.name}`); }}
-                        className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left transition-colors ${p.id === activePersona ? 'bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 font-medium' : 'text-content-secondary hover:bg-surface-secondary'}`}
-                      >
-                        <span>{p.icon}</span>
-                        <span>{p.name}</span>
-                        {p.id === activePersona && <span className="ml-auto text-xs">✓</span>}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* New Chat */}
-            <button
-              type="button"
-              onClick={() => {
-                setActiveThreadId(null);
-                setInput('');
-                setAttachedFiles([]);
-              }}
-              className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md hover:bg-surface-secondary text-content-secondary hover:text-content transition-colors"
-              title="New chat (⌘1)"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">New</span>
-            </button>
-
-            {/* Overflow Menu */}
-            <div className="relative" ref={overflowMenuRef}>
-              <button
-                type="button"
-                onClick={() => setShowOverflowMenu(!showOverflowMenu)}
-                className={`p-1.5 rounded-md transition-colors ${showOverflowMenu ? 'bg-surface-secondary' : 'hover:bg-surface-secondary'}`}
-                aria-label="More options"
-                aria-expanded={showOverflowMenu}
-              >
-                <MoreHorizontal className="w-4 h-4 text-content-muted" aria-hidden="true" />
-              </button>
-
-              {/* Overflow Dropdown */}
-              {showOverflowMenu && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowOverflowMenu(false)} />
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-surface rounded-lg border border-edge shadow-lg z-50 py-1">
-                    {/* Live Events */}
-                    <button
-                      type="button"
-                      onClick={() => { setShowEventsPanel(!showEventsPanel); setShowOverflowMenu(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-surface-secondary text-left"
-                    >
-                      <Activity className={`w-3.5 h-3.5 ${isStreaming ? 'text-violet-500' : ''}`} />
-                      <span>Live Events</span>
-                      {liveEvents.filter(e => e.status === 'running').length > 0 && (
-                        <span className="ml-auto px-1.5 py-0.5 text-xs bg-violet-500 text-white rounded-full">
-                          {liveEvents.filter(e => e.status === 'running').length}
-                        </span>
-                      )}
-                    </button>
-
-                    {/* Skills */}
-                    <button
-                      type="button"
-                      onClick={() => { setShowSkillsPanel(true); setShowOverflowMenu(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-surface-secondary text-left"
-                    >
-                      <BookOpen className="w-3.5 h-3.5" />
-                      <span>Skills</span>
-                    </button>
-
-                    {/* Signals */}
-                    <button
-                      type="button"
-                      onClick={() => { navigate('/signals'); setShowOverflowMenu(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-surface-secondary text-left"
-                    >
-                      <Radio className="w-3.5 h-3.5" />
-                      <span>Signals</span>
-                    </button>
-
-                    {/* Share (only if authenticated and has thread) */}
-                    {isAuthenticated && activeThreadId && (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          setShowOverflowMenu(false);
-                          try {
-                            const threadTitle = threads.find((t) => t._id === activeThreadId)?.title || 'Agent Thread Summary';
-                            const recentMsgs = (streamingMessages ?? [])
-                              .filter((m) => m.role === 'assistant' && m.content)
-                              .slice(-3)
-                              .map((m) => typeof m.content === 'string' ? m.content : JSON.stringify(m.content))
-                              .join('\n\n---\n\n');
-                            if (!recentMsgs.trim()) {
-                              toast.error('No assistant messages to share');
-                              return;
-                            }
-                            await appendToSignalsLog({
-                              kind: 'note',
-                              title: threadTitle,
-                              markdown: recentMsgs.slice(0, 10000),
-                              agentThreadId: activeThreadId,
-                              tags: ['agent', 'shared'],
-                            });
-                            toast.success('Shared to Signals');
-                          } catch (err: any) {
-                            toast.error(err?.message || 'Failed to share');
-                          }
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-surface-secondary text-left"
-                      >
-                        <Share2 className="w-3.5 h-3.5" />
-                        <span>Share to Signals</span>
-                      </button>
-                    )}
-
-                    {/* Export options (when thread has messages) */}
-                    {activeThreadId && messagesToRender && messagesToRender.length > 0 && (
-                      <>
-                        <div className="border-t border-edge my-1" />
-                        <button
-                          type="button"
-                          onClick={() => { void handleCopyAsMarkdown(); setShowOverflowMenu(false); }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-surface-secondary text-left"
-                        >
-                          <ClipboardCopy className="w-3.5 h-3.5" />
-                          <span>Copy as Markdown</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { handleDownloadMarkdown(); setShowOverflowMenu(false); }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-surface-secondary text-left"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span>Download .md</span>
-                        </button>
-                      </>
-                    )}
-
-                    {/* System Prompt */}
-                    {activeThreadId && (
-                      <button
-                        type="button"
-                        onClick={() => { setShowSystemPrompt(true); setShowOverflowMenu(false); }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-surface-secondary text-left"
-                      >
-                        <Bot className="w-3.5 h-3.5" />
-                        <span>System Prompt</span>
-                        {systemPrompt && <span className="ml-auto text-xs text-green-500">●</span>}
-                      </button>
-                    )}
-
-                    {/* Conversation Analytics */}
-                    {messagesToRender && messagesToRender.length > 0 && (
-                      <>
-                        <div className="border-t border-edge my-1" />
-                        <div className="px-3 py-2 text-xs text-content-muted space-y-1">
-                          <div className="font-medium text-content-secondary text-xs mb-1">Thread Stats</div>
-                          <div className="flex justify-between">
-                            <span>Messages</span>
-                            <span className="tabular-nums">{messagesToRender.length}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Words</span>
-                            <span className="tabular-nums">{messagesToRender.reduce((sum: number, m: any) => sum + ((m.text || m.content || '').split(/\s+/).filter(Boolean).length), 0).toLocaleString()}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Est. tokens</span>
-                            <span className="tabular-nums">~{Math.ceil(messagesToRender.reduce((sum: number, m: any) => sum + (m.text || m.content || '').length, 0) / 4).toLocaleString()}</span>
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    <div className="border-t border-edge my-1" />
-
-                    {/* Focus Mode Toggle */}
-                    <button
-                      type="button"
-                      onClick={() => { setIsFocusMode(prev => !prev); setShowOverflowMenu(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-surface-secondary text-left"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>{isFocusMode ? 'Exit Focus Mode' : 'Focus Mode'}</span>
-                    </button>
-
-                    {/* Share Thread */}
-                    {activeThreadId && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const url = `${window.location.origin}/chat/${activeThreadId}`;
-                          navigator.clipboard.writeText(url);
-                          toast.success('Thread link copied to clipboard');
-                          setShowOverflowMenu(false);
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-surface-secondary text-left"
-                      >
-                        <Share2 className="w-3.5 h-3.5" />
-                        <span>Share Thread Link</span>
-                      </button>
-                    )}
-
-                    {/* Wide Mode / Split View Toggle */}
-                    <button
-                      type="button"
-                      onClick={() => { setIsWideMode(prev => !prev); setShowOverflowMenu(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-surface-secondary text-left"
-                    >
-                      <Maximize2 className="w-3.5 h-3.5" />
-                      <span>{isWideMode ? 'Normal Width' : 'Wide Mode'}</span>
-                    </button>
-
-                    {/* Minimize */}
-                    <button
-                      type="button"
-                      onClick={() => { setIsMinimized(true); setShowOverflowMenu(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-surface-secondary text-left"
-                    >
-                      <Minimize2 className="w-3.5 h-3.5" />
-                      <span>Minimize</span>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Dossier indicator (compact) */}
-            <DossierModeIndicator compact />
-
-            {/* Close */}
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors"
-              aria-label="Close panel"
-            >
-              <X className="w-4 h-4 text-content-muted hover:text-red-600" aria-hidden="true" />
-            </button>
-          </div>
-        </div>
+        {/* Simplified Header */}
+        <PanelHeader
+          isCompactSidebar={isCompactSidebar}
+          isStreaming={isStreaming}
+          isSwarmActive={isSwarmActive}
+          swarmTasks={swarmTasks}
+          isAuthenticated={isAuthenticated}
+          activeThreadId={activeThreadId}
+          messagesToRender={messagesToRender}
+          streamingMessages={streamingMessages}
+          threads={threads}
+          selectedModel={selectedModel}
+          systemPrompt={systemPrompt}
+          isFocusMode={isFocusMode}
+          isWideMode={isWideMode}
+          liveEvents={liveEvents}
+          personas={personas}
+          activePersona={activePersona}
+          anonymousSession={anonymousSession}
+          setActiveThreadId={setActiveThreadId}
+          setInput={setInput}
+          setAttachedFiles={setAttachedFiles}
+          setShowOverflowMenu={setShowOverflowMenu}
+          setShowEventsPanel={setShowEventsPanel}
+          setShowSkillsPanel={setShowSkillsPanel}
+          setShowSystemPrompt={setShowSystemPrompt}
+          setShowAnalytics={setShowAnalytics}
+          setShowTimeline={setShowTimeline}
+          setIsFocusMode={setIsFocusMode}
+          setIsWideMode={setIsWideMode}
+          setIsMinimized={setIsMinimized}
+          setActivePersona={setActivePersona}
+          setShowPersonaPicker={setShowPersonaPicker}
+          showOverflowMenu={showOverflowMenu}
+          showPersonaPicker={showPersonaPicker}
+          onClose={onClose}
+          handleCopyAsMarkdown={handleCopyAsMarkdown}
+          handleDownloadMarkdown={handleDownloadMarkdown}
+          appendToSignalsLog={appendToSignalsLog}
+        />
 
         {/* Conversation Search Bar */}
         {showSearch && (
@@ -2568,25 +2369,36 @@ export const FastAgentPanel = memo(function FastAgentPanel({
         )}
 
         {/* Tab Bar - Primary tabs visible, power-user tabs behind overflow (hidden in focus mode) */}
-        <div className={`flex items-center px-3 border-b border-edge/50 ${isFocusMode ? 'hidden' : ''}`}>
+        <div className={cn(
+          "flex items-center border-b border-edge/50",
+          isCompactSidebar ? "mx-4 mt-3 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5" : "px-3",
+          isFocusMode && "hidden"
+        )}>
           {([
-            { id: 'chat', label: 'Chat' },
+            { id: 'chat', label: 'Answer' },
             { id: 'sources', label: 'Sources' },
           ] as const).map((tab) => (
             <button
               type="button"
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-2 text-xs font-medium border-b-2 transition-all -mb-px ${activeTab === tab.id
-                ? 'border-indigo-500/30 text-indigo-600 dark:text-indigo-400'
-                : 'border-transparent text-content-secondary hover:text-content'
-                }`}
+              className={cn(
+                "text-xs font-medium transition-all",
+                isCompactSidebar ? "flex-1 rounded-xl px-3.5 py-2" : "px-3 py-2 border-b-2 -mb-px",
+                activeTab === tab.id
+                  ? isCompactSidebar
+                    ? "bg-surface text-content shadow-sm"
+                    : "border-indigo-500/30 text-indigo-600 dark:text-indigo-400"
+                  : isCompactSidebar
+                    ? "text-content-secondary hover:bg-surface-hover hover:text-content"
+                    : "border-transparent text-content-secondary hover:text-content"
+              )}
             >
               {tab.label}
             </button>
           ))}
           {/* Overflow menu for power-user tabs */}
-          <div className="relative ml-auto group">
+          {!isCompactSidebar && <div className="relative ml-auto group">
             <button
               type="button"
               className="px-2 py-2 text-xs text-content-secondary hover:text-content transition-colors"
@@ -2612,7 +2424,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                 </button>
               ))}
             </div>
-          </div>
+          </div>}
         </div>
 
         {/* Swarm Lanes View - Shows when thread has active swarm */}
@@ -2641,21 +2453,23 @@ export const FastAgentPanel = memo(function FastAgentPanel({
         {/* Content Area */}
         <div className="fast-agent-panel-content bg-surface">
           {/* Left Sidebar (Thread List) - Only show on chat tab when sidebar is toggled */}
-          <div className={`panel-sidebar ${showSidebar && activeTab === 'chat' && !isFocusMode ? 'visible' : ''} border-r border-edge bg-surface-secondary`}>
-            <FastAgentThreadList
-              threads={threads}
-              activeThreadId={activeThreadId}
-              onSelectThread={setActiveThreadId}
-              onDeleteThread={handleDeleteThread}
-              hasMore={hasMoreThreads}
-              onLoadMore={() => loadMoreThreads(10)}
-              isLoadingMore={isLoadingMoreThreads}
-              className="h-full"
-            />
-          </div>
+          {!isCompactSidebar && (
+            <div className={`panel-sidebar ${showSidebar && activeTab === 'chat' && !isFocusMode ? 'visible' : ''} border-r border-edge bg-surface-secondary`}>
+              <FastAgentThreadList
+                threads={threads}
+                activeThreadId={activeThreadId}
+                onSelectThread={setActiveThreadId}
+                onDeleteThread={handleDeleteThread}
+                hasMore={hasMoreThreads}
+                onLoadMore={() => loadMoreThreads(10)}
+                isLoadingMore={isLoadingMoreThreads}
+                className="h-full"
+              />
+            </div>
+          )}
 
           {/* Main Content Area */}
-          <div className="flex-1 flex flex-col min-w-0 bg-surface relative">
+          <div className={cn("flex-1 flex flex-col min-w-0 relative", isCompactSidebar ? "bg-transparent" : "bg-surface")}>
             {activeTab === 'telemetry' ? (
               <TaskManagerView isPublic={false} className="h-full" />
             ) : activeTab === 'trace' ? (
@@ -2752,10 +2566,19 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                 )}
 
                 {/* Main scrollable chat area */}
-                <div ref={scrollContainerRef} role="log" aria-label="Chat messages" aria-live="polite" className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth relative scroll-fade">
+                <div
+                  ref={scrollContainerRef}
+                  role="log"
+                  aria-label="Chat messages"
+                  aria-live="polite"
+                  className={cn(
+                    "flex-1 overflow-y-auto space-y-6 scroll-smooth relative scroll-fade",
+                    isCompactSidebar ? "px-4 py-4" : "p-4",
+                  )}
+                >
 
                   {/* Conversation Starters (empty thread) */}
-                  {(!messagesToRender || messagesToRender.length === 0) && !isBusy && (
+                  {(!messagesToRender || messagesToRender.length === 0) && !isBusy && !isCompactSidebar && (
                     <div className="flex flex-col items-center justify-center h-full py-12 animate-in fade-in duration-500">
                       <div className="text-3xl mb-3">👋</div>
                       <h3 className="text-sm font-semibold text-content mb-1">How can I help you today?</h3>
@@ -2833,26 +2656,33 @@ export const FastAgentPanel = memo(function FastAgentPanel({
 
                         {/* Title */}
                         <h2 className="text-base font-semibold text-content mb-2">
-                          Assistant
+                          Ask NodeBench
                         </h2>
 
                        {/* Marketing Tagline */}
-                       <p className="text-[13px] text-content-muted text-center max-w-[280px] leading-relaxed">
-                         Your intelligent research assistant. Search, analyze, and discover insights across documents, filings, and media.
+                       <p className="text-[13px] text-content-muted text-center max-w-[320px] leading-relaxed">
+                         Product docs, architecture, codebase behavior, workflows, and live system context.
                        </p>
 
                        {/* Suggestion Chips (ChatGPT pattern) */}
-                       <div className="flex flex-wrap justify-center gap-2 mt-5 max-w-[340px]">
+                       <div className="flex flex-wrap justify-center gap-2 mt-5 max-w-[380px]">
                          {[
-                           { label: 'Analyze NVIDIA financials', icon: '📊' },
-                           { label: 'Compare Tesla vs Rivian', icon: '⚡' },
-                           { label: 'Latest FDA approvals', icon: '💊' },
-                           { label: 'Summarize SEC filings', icon: '📄' },
+                           { label: 'How does trajectory scoring work?', icon: '📊' },
+                           { label: 'Explain the judgment layer gates', icon: '⚡' },
+                           { label: 'What MCP tools handle research?', icon: '🔍' },
+                           { label: 'Show recent agent activity', icon: '📋' },
                          ].map((chip) => (
                            <button
                              key={chip.label}
                              type="button"
                              onClick={() => {
+                               if (!isAuthenticated) {
+                                 const demo = findDemoConversation(chip.label);
+                                 if (demo) {
+                                   playDemoConversation(demo, chip.label);
+                                   return;
+                                 }
+                               }
                                setInput(chip.label);
                              }}
                              className="chip-press inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-content-secondary bg-surface-secondary border border-edge hover:bg-surface-secondary hover:text-content hover:border-content-muted"
@@ -2862,23 +2692,25 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                            </button>
                          ))}
                        </div>
+
+                       {/* Learning badge */}
+                       <div
+                         className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1"
+                         data-agent-learning="badge"
+                       >
+                         <svg className="h-3 w-3 text-content-muted" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                           <path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L8 1z" fill="currentColor" opacity="0.7" />
+                         </svg>
+                         <span className="text-[11px] text-content-muted">Learns from every conversation</span>
+                       </div>
                      </div>
 
                       {/* Recent threads / last run */}
-                      <div className="px-4 pb-5">
+                      {threads.length > 0 && <div className="px-4 pb-5">
                         <div className="flex items-center justify-between mb-3">
                           <div className="text-xs font-bold text-content-secondary">
-                            Recent chats
+                            Recent conversations
                           </div>
-                          {threads.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => setShowSidebar(true)}
-                              className="text-xs text-content-muted hover:text-content-secondary underline underline-offset-2"
-                            >
-                              View all
-                            </button>
-                          )}
                         </div>
                         <div className="space-y-2">
                           {threadsStatus === "LoadingFirstPage" ? (
@@ -2889,7 +2721,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                           ) : threads.length === 0 ? (
                             <div className="rounded-lg border border-dashed border-edge bg-surface-secondary/30 px-4 py-3 text-center">
                               <div className="text-[12px] text-content-muted">
-                                No chats yet — try a quick action below to start one.
+                                No conversations yet — ask a question above to get started.
                               </div>
                             </div>
                           ) : (
@@ -2935,10 +2767,10 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                             })
                           )}
                         </div>
-                      </div>
+                      </div>}
 
-                      {/* Swarm Quick Actions */}
-                      <SwarmQuickActions
+                      {/* Swarm Quick Actions — hidden for clean panel */}
+                      {false && <SwarmQuickActions
                         onSpawn={async (query, agents) => {
                           try {
                             toast.info(`Starting team with ${agents.length} agents...`);
@@ -2955,7 +2787,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                           }
                         }}
                         className="flex-1"
-                      />
+                      />}
                     </div>
                   )}
 
@@ -3034,6 +2866,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                             onFeedback={(vote) => handleFeedback(message._id || message.id || message.key, vote)}
                             fontSize={fontSize}
                             editDiff={editDiffs[message._id || message.id || message.key] || null}
+                            compact={isCompactSidebar}
                             isInContext={(() => {
                               if (!messagesToRender) return true;
                               const idx = messagesToRender.indexOf(message);
@@ -3041,6 +2874,31 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                               return idx >= startIdx;
                             })()}
                           />
+                          {/* Demo source badges + key insight */}
+                          {message._demoSources && message._demoSources.length > 0 && message.role === 'assistant' && message.status === 'complete' && (
+                            <div className="ml-10 mt-1.5 mb-2 animate-in fade-in slide-in-from-bottom-1 duration-300">
+                              <div className="flex flex-wrap gap-1.5 mb-1.5">
+                                {message._demoSources.map((src: { label: string; type: string }, i: number) => (
+                                  <span
+                                    key={i}
+                                    className={cn(
+                                      "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium",
+                                      src.type === 'code' && "bg-blue-500/10 text-blue-400 border border-blue-500/20",
+                                      src.type === 'docs' && "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+                                      src.type === 'data' && "bg-amber-500/10 text-amber-400 border border-amber-500/20",
+                                    )}
+                                  >
+                                    {src.type === 'code' ? '{ }' : src.type === 'docs' ? '\u{1F4D6}' : '\u{1F4CA}'} {src.label}
+                                  </span>
+                                ))}
+                              </div>
+                              {message._demoKeyInsight && (
+                                <p className="text-[11px] text-content-muted italic leading-relaxed">
+                                  Key insight: {message._demoKeyInsight}
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
                       containerRef={scrollContainerRef}
@@ -3063,6 +2921,20 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                     </div>
                   )}
 
+                  {/* Demo thinking indicator (guest mode) */}
+                  {isDemoThinking && (
+                    <div className="flex items-center gap-2 px-4 mb-4 animate-in fade-in duration-200">
+                      <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-secondary border border-edge">
+                        <div className="flex gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 motion-safe:animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 motion-safe:animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 motion-safe:animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                        <span className="text-xs text-content-muted ml-1">Analyzing...</span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Streaming Indicator */}
                   {isBusy && (
                     <div className="flex items-center gap-2 text-xs text-content-muted px-4 motion-safe:animate-pulse">
@@ -3072,7 +2944,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                   )}
 
                   {/* Follow-up suggestion chips (shown after last assistant message, not while streaming) */}
-                  {!isBusy && messagesToRender && messagesToRender.length > 0 && (() => {
+                  {!isCompactSidebar && !isBusy && messagesToRender && messagesToRender.length > 0 && (() => {
                     const lastMsg = messagesToRender[messagesToRender.length - 1];
                     if (lastMsg?.role !== 'assistant') return null;
                     const txt = (lastMsg.text || lastMsg.content || '').slice(0, 600);
@@ -3158,8 +3030,8 @@ export const FastAgentPanel = memo(function FastAgentPanel({
               </div>
             )}
 
-            {/* Anonymous User Banner */}
-            {anonymousSession.isAnonymous && !anonymousSession.isLoading && (
+            {/* Anonymous User Banner — minimized for clean panel */}
+            {false && anonymousSession.isAnonymous && !anonymousSession.isLoading && (
               <div className={`mx-3 mt-2 px-3 py-2.5 rounded-lg border backdrop-blur-sm ${anonymousSession.canSendMessage
                 ? 'bg-gradient-to-r from-violet-50/80 to-indigo-50/80 border-violet-200/50'
                 : 'bg-gradient-to-r from-amber-50/80 to-orange-50/80 border-amber-200/50'
@@ -3199,7 +3071,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
             )}
 
             {/* Quick Actions Toolbar */}
-            {messagesToRender && messagesToRender.length > 0 && !isBusy && (
+            {!isCompactSidebar && messagesToRender && messagesToRender.length > 0 && !isBusy && (
               <div className="flex items-center gap-1 px-3 pt-1.5">
                 <span className="text-[8px] text-content-muted mr-1">Quick:</span>
                 {[
@@ -3221,7 +3093,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
             )}
 
             {/* Focus Mode + Tone Picker Chips */}
-            <div className="flex items-center gap-1.5 px-3 pt-1">
+            {!isCompactSidebar && <div className="flex items-center gap-1.5 px-3 pt-1">
               {/* Focus Mode Picker */}
               <div className="relative">
                 <button
@@ -3264,10 +3136,10 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                   {tone.icon}
                 </button>
               ))}
-            </div>
+            </div>}
 
             {/* Follow-up Suggestion Chips */}
-            {messagesToRender && messagesToRender.length > 0 && !isBusy && (() => {
+            {!isCompactSidebar && messagesToRender && messagesToRender.length > 0 && !isBusy && (() => {
               const lastMsg = messagesToRender[messagesToRender.length - 1] as any;
               if (!lastMsg || lastMsg.role === 'user') return null;
               const text = (lastMsg.text || lastMsg.content || '').slice(0, 300).toLowerCase();
@@ -3310,7 +3182,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
             )}
 
             {/* Language Detection Indicator */}
-            {detectedLanguage && !isBusy && (
+            {!isCompactSidebar && detectedLanguage && !isBusy && (
               <div className="mx-3 mt-1 flex items-center gap-1.5">
                 <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 font-medium">
                   🌐 {detectedLanguage} detected
@@ -3355,7 +3227,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
             {/* Voice Input + Input Area */}
             <div className="p-3 border-t border-edge">
               {/* Voice Input Button */}
-              <div className="flex items-center gap-2 mb-1.5">
+              {!isCompactSidebar && <div className="flex items-center gap-2 mb-1.5">
                 <button
                   type="button"
                   onClick={isRecording ? stopVoiceInput : startVoiceInput}
@@ -3381,7 +3253,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                   />
                   <span className="text-xs text-content-muted">A</span>
                 </div>
-              </div>
+              </div>}
               <FastAgentInputBar
                 id="fa-chat-input"
                 input={input}
@@ -3404,6 +3276,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                 responseLength={responseLength}
                 onResponseLengthChange={setResponseLength}
                 onVoiceIntent={onVoiceIntent}
+                compact={isCompactSidebar}
                 onSpawn={async (query, agents) => {
                   try {
                     toast.info(`Starting team with ${agents.length} agents...`);
@@ -3424,7 +3297,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
             </div>
 
             {/* Simplified Status Bar */}
-            <div className="status-bar">
+            {!isCompactSidebar && <div className="status-bar">
               <div className={`status-dot ${isAuthenticated ? 'connected' : 'disconnected'}`} />
               {isBusy ? (
                 <span className="text-violet-500 flex items-center gap-1.5">
@@ -3452,7 +3325,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                   Timeline
                 </button>
               </span>
-            </div>
+            </div>}
           </div>
 
         </div>
@@ -3487,597 +3360,84 @@ export const FastAgentPanel = memo(function FastAgentPanel({
           );
         })()}
 
-        {/* Keyboard Shortcuts Overlay */}
-        {showShortcutsOverlay && (
-          <>
-            <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowShortcutsOverlay(false)} />
-            <div className="absolute inset-0 z-50 flex items-center justify-center p-6 pointer-events-none">
-              <div className="pointer-events-auto bg-surface border border-edge rounded-lg shadow-2xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-content">Keyboard Shortcuts</h3>
-                  <button type="button" onClick={() => setShowShortcutsOverlay(false)} className="action-btn p-1 text-content-muted hover:text-content rounded-md hover:bg-surface-secondary" aria-label="Close keyboard shortcuts">
-                    <X className="w-4 h-4" aria-hidden="true" />
-                  </button>
-                </div>
-                <div className="space-y-2.5 text-xs">
-                  {[
-                    { keys: '/', desc: 'Focus message input' },
-                    { keys: '?', desc: 'Toggle this overlay' },
-                    { keys: 'Ctrl+F', desc: 'Search messages' },
-                    { keys: 'Ctrl+K', desc: 'Command palette' },
-                    { keys: 'Ctrl+T', desc: 'Conversation timeline' },
-                    { keys: 'Ctrl+Shift+N', desc: 'New conversation' },
-                    { keys: 'j', desc: 'Next message' },
-                    { keys: 'k', desc: 'Previous message' },
-                    { keys: 'Escape', desc: 'Close overlays / blur / close' },
-                    { keys: 'Enter', desc: 'Send message' },
-                    { keys: 'Shift+Enter', desc: 'New line in message' },
-                  ].map((s) => (
-                    <div key={s.keys} className="flex items-center justify-between">
-                      <span className="text-content-secondary">{s.desc}</span>
-                      <div className="flex items-center gap-1">
-                        {s.keys.split('+').map((k) => (
-                          <kbd key={k} className="px-1.5 py-0.5 bg-surface-secondary border border-edge rounded text-xs font-mono text-content-muted">{k}</kbd>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <p className="mt-4 text-xs text-content-muted text-center">Press <kbd className="px-1 py-0.5 bg-surface-secondary border border-edge rounded text-xs font-mono">?</kbd> or <kbd className="px-1 py-0.5 bg-surface-secondary border border-edge rounded text-xs font-mono">Esc</kbd> to close</p>
-              </div>
-            </div>
-          </>
-        )}
+        <PanelOverlays
+          showShortcutsOverlay={showShortcutsOverlay}
+          setShowShortcutsOverlay={setShowShortcutsOverlay}
+          showSystemPrompt={showSystemPrompt}
+          setShowSystemPrompt={setShowSystemPrompt}
+          systemPrompt={systemPrompt}
+          setSystemPrompt={setSystemPrompt}
+          saveSystemPrompt={saveSystemPrompt}
+          activeThreadId={activeThreadId}
+          showQuickReplies={showQuickReplies}
+          setShowQuickReplies={setShowQuickReplies}
+          quickReplies={quickReplies}
+          setQuickReplies={setQuickReplies}
+          setInput={setInput}
+          showCommandPalette={showCommandPalette}
+          setShowCommandPalette={setShowCommandPalette}
+          commandQuery={commandQuery}
+          setCommandQuery={setCommandQuery}
+          commandInputRef={commandInputRef}
+          threads={threads}
+          setActiveThreadId={setActiveThreadId}
+          setShowSearch={setShowSearch}
+          searchInputRef={searchInputRef}
+          setIsFocusMode={setIsFocusMode}
+          setIsWideMode={setIsWideMode}
+          setShowTimeline={setShowTimeline}
+          setShowContextPruning={setShowContextPruning}
+          setShowAnalytics={setShowAnalytics}
+          setShowBranchTree={setShowBranchTree}
+          setShowMemoryPanel={setShowMemoryPanel}
+          setShowImport={setShowImport}
+          setHighContrast={setHighContrast}
+          shareConversation={shareConversation}
+          saveSnapshot={saveSnapshot}
+          showTimeline={showTimeline}
+          setShowTimelineState={setShowTimeline}
+          messagesToRender={messagesToRender}
+          scrollContainerRef={scrollContainerRef}
+          showContextPruning={showContextPruning}
+          setShowContextPruningState={setShowContextPruning}
+          contextLimit={contextLimit}
+          selectedModel={selectedModel}
+        />
 
-        {/* System Prompt Editor Modal */}
-        {showSystemPrompt && (
-          <>
-            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm z-50" onClick={() => setShowSystemPrompt(false)} />
-            <div className="absolute inset-x-4 top-20 z-50 bg-surface border border-edge rounded-lg shadow-2xl p-4 max-h-[300px] flex flex-col">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-content">Custom System Prompt</h3>
-                <button type="button" onClick={() => setShowSystemPrompt(false)} className="p-1 text-content-muted hover:text-content rounded-md hover:bg-surface-secondary" aria-label="Close system prompt editor">
-                  <X className="w-4 h-4" aria-hidden="true" />
-                </button>
-              </div>
-              <textarea
-                value={systemPrompt}
-                onChange={(e) => setSystemPrompt(e.target.value)}
-                placeholder="Enter a custom system prompt for this thread (e.g., 'You are a financial analyst specializing in tech stocks...')"
-                aria-label="Custom system prompt"
-                className="flex-1 bg-surface-secondary border border-edge rounded-lg p-3 text-xs text-content placeholder:text-content-muted resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                rows={5}
-              />
-              <div className="flex items-center justify-between mt-3">
-                <button
-                  type="button"
-                  onClick={() => { setSystemPrompt(''); if (activeThreadId) localStorage.removeItem(`fa_sysprompt_${activeThreadId}`); toast.success('System prompt cleared'); }}
-                  className="text-xs text-red-500 hover:text-red-600 px-2 py-1"
-                >
-                  Clear
-                </button>
-                <button
-                  type="button"
-                  onClick={saveSystemPrompt}
-                  className="text-xs px-4 py-1.5 rounded-lg bg-content text-surface hover:opacity-80 font-medium"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Quick Reply Templates */}
-        {showQuickReplies && (
-          <>
-            <div className="absolute inset-0 z-40" onClick={() => setShowQuickReplies(false)} />
-            <div className="absolute bottom-24 left-3 right-3 z-50 bg-surface border border-edge rounded-lg shadow-2xl p-3">
-              <div className="text-xs font-medium text-content-secondary mb-2">Quick Replies</div>
-              <div className="space-y-1 max-h-[200px] overflow-y-auto">
-                {quickReplies.map((reply, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => { setInput(reply); setShowQuickReplies(false); }}
-                    className="w-full text-left text-xs px-3 py-2 rounded-lg hover:bg-surface-secondary text-content transition-colors truncate"
-                  >
-                    {reply}
-                  </button>
-                ))}
-              </div>
-              <div className="mt-2 pt-2 border-t border-edge">
-                <input
-                  type="text"
-                  placeholder="Add a new template..."
-                  aria-label="Add quick reply template"
-                  className="w-full text-xs bg-surface-secondary border border-edge rounded-lg px-3 py-1.5 text-content placeholder:text-content-muted focus:outline-none"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) {
-                      const val = (e.target as HTMLInputElement).value.trim();
-                      const updated = [...quickReplies, val];
-                      setQuickReplies(updated);
-                      localStorage.setItem('fa_quick_replies', JSON.stringify(updated));
-                      (e.target as HTMLInputElement).value = '';
-                      toast.success('Template added');
-                    }
-                  }}
-                />
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Command Palette (Ctrl+K) */}
-        {showCommandPalette && (
-          <>
-            <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={() => setShowCommandPalette(false)} />
-            <div className="absolute inset-x-4 top-16 z-50 bg-surface border border-edge rounded-lg shadow-2xl overflow-hidden max-h-[400px] flex flex-col">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-edge focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/30 focus-within:border-[var(--accent-primary)]/50 transition-colors">
-                <Search className="w-4 h-4 text-content-muted" aria-hidden="true" />
-                <input
-                  ref={commandInputRef}
-                  type="text"
-                  value={commandQuery}
-                  onChange={(e) => setCommandQuery(e.target.value)}
-                  placeholder="Search commands, threads, actions..."
-                  aria-label="Search commands"
-                  className="flex-1 bg-transparent text-sm text-content placeholder:text-content-muted focus:outline-none"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Escape') { setShowCommandPalette(false); setCommandQuery(''); }
-                  }}
-                />
-                <kbd className="px-1.5 py-0.5 bg-surface-secondary border border-edge rounded text-xs font-mono text-content-muted">Esc</kbd>
-              </div>
-              <div className="overflow-y-auto p-2 space-y-0.5">
-                {[
-                  { label: 'New Thread', shortcut: 'Ctrl+Shift+N', action: () => { setActiveThreadId(null); setInput(''); } },
-                  { label: 'Search Messages', shortcut: 'Ctrl+F', action: () => { setShowSearch(true); setTimeout(() => searchInputRef.current?.focus(), 50); } },
-                  { label: 'Focus Mode', shortcut: '', action: () => setIsFocusMode(prev => !prev) },
-                  { label: 'Wide Mode', shortcut: '', action: () => setIsWideMode(prev => !prev) },
-                  { label: 'System Prompt', shortcut: '', action: () => setShowSystemPrompt(true) },
-                  { label: 'Quick Replies', shortcut: '', action: () => setShowQuickReplies(true) },
-                  { label: 'Keyboard Shortcuts', shortcut: '?', action: () => setShowShortcutsOverlay(true) },
-                  { label: 'Conversation Timeline', shortcut: 'Ctrl+T', action: () => setShowTimeline(true) },
-                  { label: 'Context Window Usage', shortcut: '', action: () => setShowContextPruning(true) },
-                  { label: '📊 Analytics Dashboard', shortcut: '', action: () => setShowAnalytics(true) },
-                  { label: '🌳 Thread Branches', shortcut: '', action: () => setShowBranchTree(true) },
-                  { label: '🔗 Share Conversation', shortcut: '', action: () => shareConversation() },
-                  { label: '⚙️ System Prompt', shortcut: '', action: () => setShowSystemPrompt(true) },
-                  { label: '🧠 Memory Panel', shortcut: '', action: () => setShowMemoryPanel(true) },
-                  { label: '📥 Import Conversation', shortcut: '', action: () => setShowImport(true) },
-                  { label: '📸 Save Snapshot', shortcut: '', action: () => saveSnapshot() },
-                  { label: '🔆 High Contrast Mode', shortcut: '', action: () => setHighContrast(p => !p) },
-                  ...(threads || []).slice(0, 5).map(t => ({ label: `Thread: ${t.title || 'New Chat'}`, shortcut: '', action: () => setActiveThreadId(t._id) })),
-                ].filter(cmd => !commandQuery || cmd.label.toLowerCase().includes(commandQuery.toLowerCase())).map((cmd, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => { cmd.action(); setShowCommandPalette(false); setCommandQuery(''); }}
-                    className="w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg hover:bg-surface-secondary text-left transition-colors"
-                  >
-                    <span className="text-content">{cmd.label}</span>
-                    {cmd.shortcut && (
-                      <kbd className="px-1.5 py-0.5 bg-surface-secondary border border-edge rounded text-xs font-mono text-content-muted">{cmd.shortcut}</kbd>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Conversation Timeline Overlay */}
-        {showTimeline && messagesToRender && messagesToRender.length > 0 && (
-          <>
-            <div className="absolute inset-0 z-40" onClick={() => setShowTimeline(false)} />
-            <div className="absolute inset-x-3 top-14 bottom-14 z-50 bg-surface border border-edge rounded-lg shadow-2xl overflow-hidden flex flex-col">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-edge">
-                <span className="text-xs font-semibold text-content">Conversation Timeline</span>
-                <button type="button" onClick={() => setShowTimeline(false)} className="text-content-muted hover:text-content text-sm">&times;</button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-3">
-                <div className="relative border-l-2 border-edge ml-3 space-y-0">
-                  {messagesToRender.map((msg: any, idx: number) => {
-                    const isUser = msg.role === 'user';
-                    const text = (msg.text || msg.content || '').slice(0, 80);
-                    const charLen = (msg.text || msg.content || '').length;
-                    const tokEst = Math.ceil(charLen / 4);
-                    return (
-                      <div
-                        key={idx}
-                        className="relative pl-6 py-1.5 group hover:bg-surface-secondary rounded-r-lg transition-colors cursor-pointer"
-                        onClick={() => {
-                          const msgEls = scrollContainerRef.current?.querySelectorAll('.msg-entrance');
-                          if (msgEls && msgEls[idx]) {
-                            msgEls[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            (msgEls[idx] as HTMLElement).style.outline = '2px solid var(--accent-primary, #3b82f6)';
-                            (msgEls[idx] as HTMLElement).style.outlineOffset = '4px';
-                            (msgEls[idx] as HTMLElement).style.borderRadius = '12px';
-                            setTimeout(() => { (msgEls[idx] as HTMLElement).style.outline = 'none'; }, 2000);
-                          }
-                          setShowTimeline(false);
-                        }}
-                        title="Click to scroll to this message"
-                      >
-                        <div className={`absolute left-[-5px] top-3 w-2.5 h-2.5 rounded-full border-2 border-surface ${isUser ? 'bg-indigo-600' : 'bg-green-500'}`} />
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-surface-secondary text-content-muted">{isUser ? 'You' : 'AI'}</span>
-                          <span className="text-xs tabular-nums text-content-muted">~{tokEst} tok</span>
-                        </div>
-                        <p className="text-xs text-content-secondary mt-0.5 truncate">{text || '(empty)'}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="px-4 py-2 border-t border-edge text-xs text-content-muted flex items-center justify-between">
-                <span>{messagesToRender.length} messages</span>
-                <span>~{Math.ceil(messagesToRender.reduce((s: number, m: any) => s + (m.text || m.content || '').length, 0) / 4).toLocaleString()} tokens total</span>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Context Pruning UI */}
-        {showContextPruning && messagesToRender && messagesToRender.length > 0 && (
-          <>
-            <div className="absolute inset-0 z-40" onClick={() => setShowContextPruning(false)} />
-            <div className="absolute inset-x-3 bottom-12 z-50 bg-surface border border-edge rounded-lg shadow-2xl overflow-hidden max-h-[320px] flex flex-col">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-edge">
-                <span className="text-xs font-semibold text-content">Context Window</span>
-                <button type="button" onClick={() => setShowContextPruning(false)} className="text-content-muted hover:text-content text-sm">&times;</button>
-              </div>
-              <div className="px-4 py-2 border-b border-edge">
-                {(() => {
-                  const totalChars = messagesToRender.reduce((s: number, m: any) => s + (m.text || m.content || '').length, 0);
-                  const tokUsed = Math.ceil(totalChars / 4);
-                  const pct = Math.min((tokUsed / contextLimit) * 100, 100);
-                  return (
-                    <div>
-                      <div className="flex items-center justify-between text-xs text-content-muted mb-1">
-                        <span>{tokUsed.toLocaleString()} tokens used</span>
-                        <span>{(contextLimit / 1000).toFixed(0)}K limit ({selectedModel})</span>
-                      </div>
-                      <div className="w-full h-2 bg-surface-secondary rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-500"
-                          style={{ width: `${pct}%`, background: pct > 85 ? '#ef4444' : pct > 60 ? '#f59e0b' : '#22c55e' }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-              <div className="flex-1 overflow-y-auto divide-y divide-[var(--border-color)]">
-                {messagesToRender.map((msg: any, idx: number) => {
-                  const isUser = msg.role === 'user';
-                  const charLen = (msg.text || msg.content || '').length;
-                  const tokEst = Math.ceil(charLen / 4);
-                  const pctOfTotal = messagesToRender.length > 0
-                    ? ((tokEst / Math.max(1, Math.ceil(messagesToRender.reduce((s: number, m: any) => s + (m.text || m.content || '').length, 0) / 4))) * 100)
-                    : 0;
-                  return (
-                    <div key={idx} className="flex items-center gap-2 px-4 py-1.5 text-xs">
-                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isUser ? 'bg-indigo-600' : 'bg-green-500'}`} />
-                      <span className="font-medium text-content-secondary w-6">{isUser ? 'You' : 'AI'}</span>
-                      <span className="flex-1 truncate text-content-muted">{(msg.text || msg.content || '').slice(0, 60)}</span>
-                      <div className="flex items-center gap-1">
-                        <div className="w-[30px] h-[3px] bg-[var(--border-color)] rounded-full overflow-hidden">
-                          <div className="h-full bg-content-muted rounded-full" style={{ width: `${Math.min(pctOfTotal * 2, 100)}%` }} />
-                        </div>
-                        <span className="tabular-nums text-content-muted">{tokEst}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Artifacts/Canvas Panel */}
-        {showArtifacts && artifactContent && (
-          <>
-            <div className="absolute inset-0 z-40 bg-surface-secondary" onClick={() => setShowArtifacts(false)} />
-            <div className="absolute inset-y-2 right-2 w-[45%] min-w-[300px] z-50 bg-surface border border-edge rounded-lg shadow-2xl overflow-hidden flex flex-col">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-edge glass-header">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-content">
-                    {artifactContent.type === 'html' ? '🌐 HTML Preview' : artifactContent.type === 'svg' ? '🎨 SVG Preview' : `📄 ${artifactContent.language || 'Code'}`}
-                  </span>
-                  <span className="text-xs px-1.5 py-0.5 rounded bg-surface-secondary text-content-muted">
-                    {artifactContent.content.length} chars
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => { navigator.clipboard.writeText(artifactContent.content); toast.success('Copied'); }}
-                    className="text-xs px-2 py-1 rounded-md hover:bg-surface-secondary text-content-muted"
-                  >
-                    Copy
-                  </button>
-                  <button type="button" onClick={() => setShowArtifacts(false)} className="text-content-muted hover:text-content text-sm px-1">&times;</button>
-                </div>
-              </div>
-              <div className="flex-1 overflow-auto">
-                {artifactContent.type === 'html' || artifactContent.type === 'svg' ? (
-                  <iframe
-                    srcDoc={artifactContent.type === 'svg'
-                      ? `<!DOCTYPE html><html><body style="margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f9fafb">${artifactContent.content}</body></html>`
-                      : artifactContent.content}
-                    className="w-full h-full border-none bg-surface"
-                    sandbox="allow-scripts"
-                    title="Artifact Preview"
-                  />
-                ) : (
-                  <pre className="text-xs font-mono p-4 overflow-auto text-content-secondary whitespace-pre-wrap leading-relaxed">
-                    {artifactContent.content}
-                  </pre>
-                )}
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Drag-and-Drop File Upload Overlay */}
-        {isDragOver && (
-          <div
-            className="absolute inset-0 z-[60] bg-violet-500/10 border-2 border-dashed border-violet-500 rounded-lg flex items-center justify-center backdrop-blur-sm"
-            onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-            onDragLeave={() => setIsDragOver(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsDragOver(false);
-              const files = Array.from(e.dataTransfer.files);
-              if (files.length > 0) {
-                setAttachedFiles(prev => [...prev, ...files]);
-                toast.success(`${files.length} file(s) attached`);
-              }
-            }}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-12 h-12 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                <Download className="w-6 h-6 text-violet-600" />
-              </div>
-              <span className="text-sm font-medium text-violet-700 dark:text-violet-300">Drop files here</span>
-              <span className="text-xs text-violet-500">Images, PDFs, documents</span>
-            </div>
-          </div>
-        )}
-
-        {/* Conversation Analytics Dashboard */}
-        {showAnalytics && messagesToRender && messagesToRender.length > 0 && (
-          <>
-            <div className="absolute inset-0 z-40" onClick={() => setShowAnalytics(false)} />
-            <div className="absolute inset-x-3 top-14 bottom-14 z-50 bg-surface border border-edge rounded-lg shadow-2xl overflow-hidden flex flex-col">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-edge">
-                <span className="text-xs font-semibold text-content">📊 Conversation Analytics</span>
-                <button type="button" onClick={() => setShowAnalytics(false)} className="text-content-muted hover:text-content text-sm">&times;</button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {(() => {
-                  const userMsgs = messagesToRender.filter((m: any) => m.role === 'user');
-                  const aiMsgs = messagesToRender.filter((m: any) => m.role === 'assistant');
-                  const totalChars = messagesToRender.reduce((s: number, m: any) => s + (m.text || m.content || '').length, 0);
-                  const totalTokens = Math.ceil(totalChars / 4);
-                  const avgUserLen = userMsgs.length > 0 ? Math.ceil(userMsgs.reduce((s: number, m: any) => s + (m.text || m.content || '').length, 0) / userMsgs.length) : 0;
-                  const avgAiLen = aiMsgs.length > 0 ? Math.ceil(aiMsgs.reduce((s: number, m: any) => s + (m.text || m.content || '').length, 0) / aiMsgs.length) : 0;
-                  const costEstimate = (totalTokens / 1000000 * 3).toFixed(4);
-                  return (
-                    <>
-                      <div className="grid grid-cols-3 gap-3">
-                        {[
-                          { label: 'Messages', value: messagesToRender.length, sub: `${userMsgs.length} you / ${aiMsgs.length} AI` },
-                          { label: 'Tokens', value: totalTokens.toLocaleString(), sub: `~$${costEstimate} est.` },
-                          { label: 'Model', value: selectedModel.split('/').pop() || selectedModel, sub: `${(contextLimit / 1000).toFixed(0)}K ctx` },
-                        ].map((stat, i) => (
-                          <div key={i} className="bg-surface-secondary rounded-lg p-3 text-center">
-                            <div className="text-lg font-bold text-content">{stat.value}</div>
-                            <div className="text-xs text-content-muted">{stat.label}</div>
-                            <div className="text-xs text-content-muted mt-0.5">{stat.sub}</div>
-                          </div>
-                        ))}
-                      </div>
-                      <div>
-                        <div className="text-xs font-semibold text-content-secondary mb-2">Token Distribution</div>
-                        <div className="flex items-end gap-1 h-[80px]">
-                          {messagesToRender.map((msg: any, idx: number) => {
-                            const len = Math.ceil((msg.text || msg.content || '').length / 4);
-                            const maxLen = Math.max(...messagesToRender.map((m: any) => Math.ceil((m.text || m.content || '').length / 4)));
-                            const height = Math.max(4, (len / Math.max(1, maxLen)) * 100);
-                            return (
-                              <div
-                                key={idx}
-                                className="flex-1 rounded-t-sm transition-all"
-                                style={{ height: `${height}%`, background: msg.role === 'user' ? '#3b82f6' : '#22c55e', opacity: 0.7 }}
-                                title={`${msg.role === 'user' ? 'You' : 'AI'}: ~${len} tokens`}
-                              />
-                            );
-                          })}
-                        </div>
-                        <div className="flex justify-between text-[8px] text-content-muted mt-1">
-                          <span>Start</span>
-                          <span>Latest</span>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs font-semibold text-content-secondary mb-2">Average Length</div>
-                        <div className="space-y-1.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs w-8 text-content-muted">You</span>
-                            <div className="flex-1 h-2 bg-surface-secondary rounded-full overflow-hidden">
-                              <div className="h-full bg-indigo-600 rounded-full" style={{ width: `${Math.min((avgUserLen / Math.max(avgUserLen, avgAiLen, 1)) * 100, 100)}%` }} />
-                            </div>
-                            <span className="text-xs text-content-muted tabular-nums w-12 text-right">{avgUserLen} ch</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs w-8 text-content-muted">AI</span>
-                            <div className="flex-1 h-2 bg-surface-secondary rounded-full overflow-hidden">
-                              <div className="h-full bg-green-500 rounded-full" style={{ width: `${Math.min((avgAiLen / Math.max(avgUserLen, avgAiLen, 1)) * 100, 100)}%` }} />
-                            </div>
-                            <span className="text-xs text-content-muted tabular-nums w-12 text-right">{avgAiLen} ch</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-xs text-content-muted">
-                        Context: {contextWindowMsgs.inContext}/{contextWindowMsgs.total} messages in window
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Thread Branch Tree */}
-        {showBranchTree && threads && threads.length > 0 && (
-          <>
-            <div className="absolute inset-0 z-40" onClick={() => setShowBranchTree(false)} />
-            <div className="absolute inset-x-3 top-14 bottom-14 z-50 bg-surface border border-edge rounded-lg shadow-2xl overflow-hidden flex flex-col">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-edge">
-                <span className="text-xs font-semibold text-content">🌳 Thread Branches</span>
-                <button type="button" onClick={() => setShowBranchTree(false)} className="text-content-muted hover:text-content text-sm">&times;</button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-3">
-                <div className="relative border-l-2 border-edge ml-4 space-y-0">
-                  {threads.slice(0, 20).map((thread: any, idx: number) => {
-                    const isActive = thread._id === activeThreadId;
-                    return (
-                      <div
-                        key={thread._id || idx}
-                        className={`relative pl-6 py-2 cursor-pointer rounded-r-lg transition-colors ${isActive ? 'bg-indigo-600/10' : 'hover:bg-surface-secondary'}`}
-                        onClick={() => { setActiveThreadId(thread._id); setShowBranchTree(false); }}
-                      >
-                        <div className={`absolute left-[-5px] top-4 w-2.5 h-2.5 rounded-full border-2 border-surface ${isActive ? 'bg-indigo-600' : 'bg-content-muted'}`} />
-                        <div className="text-xs font-medium text-content truncate">{thread.title || 'Untitled'}</div>
-                        <div className="text-xs text-content-muted">
-                          {(thread as any).messageCount || '?'} msgs · {new Date(thread._creationTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Right-Click Context Menu */}
-        {contextMenu && (
-          <>
-            <div className="fixed inset-0 z-[70]" onClick={() => setContextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }} />
-            <div
-              className="fixed z-[80] bg-surface border border-edge rounded-lg shadow-2xl py-1 min-w-[160px] animate-in fade-in zoom-in-95 duration-100"
-              style={{ left: contextMenu.x, top: contextMenu.y }}
-            >
-              {[
-                { label: '📋 Copy text', action: () => { const m = messagesToRender?.find((m: any) => (m._id || m.id || m.key) === contextMenu.msgId); if (m) navigator.clipboard.writeText((m as any).text || (m as any).content || ''); toast.success('Copied'); } },
-                { label: '↩️ Reply', action: () => setReplyToMsgId(contextMenu.msgId) },
-                { label: '🧠 Remember this', action: () => { const m = messagesToRender?.find((m: any) => (m._id || m.id || m.key) === contextMenu.msgId); if (m) addMemory(((m as any).text || (m as any).content || '').slice(0, 200)); } },
-                { label: '📌 Pin', action: () => togglePinMsg(contextMenu.msgId) },
-                { label: '🔖 Bookmark', action: () => toggleBookmark(contextMenu.msgId) },
-                ...(contextMenu.role === 'user' ? [{ label: '✏️ Edit', action: () => { /* editing handled in bubble */ } }] : []),
-                { label: '🗑️ Delete', action: () => handleDeleteMessage(contextMenu.msgId as any) },
-              ].map((item, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => { item.action(); setContextMenu(null); }}
-                  className="w-full text-left px-3 py-1.5 text-xs text-content-secondary hover:bg-surface-secondary hover:text-content transition-colors"
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* Memory Panel */}
-        {showMemoryPanel && (
-          <>
-            <div className="absolute inset-0 z-40" onClick={() => setShowMemoryPanel(false)} />
-            <div className="absolute inset-x-3 top-14 bottom-14 z-50 bg-surface border border-edge rounded-lg shadow-2xl overflow-hidden flex flex-col">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-edge">
-                <span className="text-xs font-semibold text-content">🧠 Memory ({memories.length})</span>
-                <button type="button" onClick={() => setShowMemoryPanel(false)} className="text-content-muted hover:text-content text-sm">&times;</button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                {memories.length === 0 && (
-                  <div className="text-center py-8 text-content-muted text-xs">
-                    <p>No memories saved yet.</p>
-                    <p className="mt-1 text-xs">Right-click a message and select "Remember this"</p>
-                  </div>
-                )}
-                {memories.map(mem => (
-                  <div key={mem.id} className="flex items-start gap-2 p-2 rounded-lg bg-surface-secondary border border-edge">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-content-secondary">{mem.text}</p>
-                      <span className="text-xs text-content-muted">{new Date(mem.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                    </div>
-                    <button type="button" onClick={() => removeMemory(mem.id)} className="text-content-muted hover:text-red-500 text-xs flex-shrink-0">&times;</button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Conversation Import Dialog */}
-        {showImport && (
-          <>
-            <div className="absolute inset-0 z-40" onClick={() => setShowImport(false)} />
-            <div className="absolute inset-x-3 top-1/4 z-50 bg-surface border border-edge rounded-lg shadow-2xl overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-edge">
-                <span className="text-xs font-semibold text-content">📥 Import Conversation</span>
-                <button type="button" onClick={() => setShowImport(false)} className="text-content-muted hover:text-content text-sm">&times;</button>
-              </div>
-              <div className="p-4 space-y-3">
-                <p className="text-xs text-content-muted">Paste a ChatGPT or Claude conversation export (JSON format)</p>
-                <textarea
-                  className="w-full h-[120px] p-2 text-xs font-mono bg-surface-secondary border border-edge rounded-lg text-content resize-none focus:outline-none focus:ring-1 focus:ring-ring"
-                  placeholder='{"messages": [{"role": "user", "content": "..."}, ...]}'
-                />
-                <div className="flex justify-end gap-2">
-                  <button type="button" onClick={() => setShowImport(false)} className="text-xs px-3 py-1.5 rounded-lg bg-surface-secondary text-content-muted">Cancel</button>
-                  <button type="button" onClick={() => { toast.info('Import feature coming soon'); setShowImport(false); }} className="text-xs px-3 py-1.5 rounded-lg bg-[var(--accent-primary)] text-white">Import</button>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Drag-to-resize handle (left edge) */}
-        {variant !== 'sidebar' && (
-          <div
-            className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-600/30 transition-colors z-50 group"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              const startX = e.clientX;
-              const panel = (e.target as HTMLElement).closest('.fast-agent-panel') as HTMLElement;
-              if (!panel) return;
-              const startWidth = panel.offsetWidth;
-              const onMove = (ev: MouseEvent) => {
-                const delta = startX - ev.clientX;
-                const newWidth = Math.max(400, Math.min(1200, startWidth + delta));
-                panel.style.width = `${newWidth}px`;
-              };
-              const onUp = () => {
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup', onUp);
-              };
-              document.addEventListener('mousemove', onMove);
-              document.addEventListener('mouseup', onUp);
-            }}
-          >
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <GripVertical className="w-3 h-3 text-content-muted" />
-            </div>
-          </div>
-        )}
+        <PanelDialogs
+          showArtifacts={showArtifacts}
+          setShowArtifacts={setShowArtifacts}
+          artifactContent={artifactContent}
+          isDragOver={isDragOver}
+          setIsDragOver={setIsDragOver}
+          setAttachedFiles={setAttachedFiles}
+          showAnalytics={showAnalytics}
+          setShowAnalytics={setShowAnalytics}
+          messagesToRender={messagesToRender}
+          selectedModel={selectedModel}
+          contextLimit={contextLimit}
+          contextWindowMsgs={contextWindowMsgs}
+          showBranchTree={showBranchTree}
+          setShowBranchTree={setShowBranchTree}
+          threads={threads}
+          activeThreadId={activeThreadId}
+          setActiveThreadId={setActiveThreadId}
+          contextMenu={contextMenu}
+          setContextMenu={setContextMenu}
+          togglePinMsg={togglePinMsg}
+          toggleBookmark={toggleBookmark}
+          addMemory={addMemory}
+          handleDeleteMessage={handleDeleteMessage}
+          setReplyToMsgId={setReplyToMsgId}
+          showMemoryPanel={showMemoryPanel}
+          setShowMemoryPanel={setShowMemoryPanel}
+          memories={memories}
+          removeMemory={removeMemory}
+          showImport={showImport}
+          setShowImport={setShowImport}
+          variant={variant}
+          showSettings={showSettings}
+        />
 
         {/* Settings Panel */}
         {showSettings && (
@@ -4161,12 +3521,4 @@ function ArtifactsTab({ media, documents, hasThread, onDocumentSelect }: Artifac
               <DocumentActionGrid
                 documents={documents}
                 title="Generated Documents"
-                onDocumentSelect={onDocumentSelect}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
+                onDocumentSelect={onDocume

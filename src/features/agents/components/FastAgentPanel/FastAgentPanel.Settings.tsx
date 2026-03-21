@@ -5,8 +5,8 @@ import React, { useState, useEffect } from 'react';
 import { X, Zap, Thermometer, Hash, FileText, Scale, BarChart3, Sparkles, BookOpen } from 'lucide-react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
-import { ModelSelector } from '../../../../components/ModelSelector';
-import { UsageDashboard } from '../../../../components/UsageDashboard';
+import { ModelSelector } from '../ModelSelector';
+import { UsageDashboard } from '@/features/admin/components/UsageDashboard';
 import type { Id } from '../../../../../convex/_generated/dataModel';
 
 // Extended to support all providers

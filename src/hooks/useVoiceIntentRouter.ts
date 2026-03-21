@@ -1,6 +1,6 @@
 import { useCallback, useRef } from "react";
 
-import type { MainView } from "./useMainLayoutRouting";
+import type { MainView } from "@/lib/registry/viewRegistry";
 import type { CockpitMode } from "../layouts/cockpitModes";
 
 export interface VoiceIntentActions {

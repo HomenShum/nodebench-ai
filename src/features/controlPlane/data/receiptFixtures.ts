@@ -20,7 +20,7 @@ export const DEMO_PASSPORT: AgentPassport = {
   escalatedTools: ["send_email", "publish_report", "share_externally"],
   spendLimit: 0,
   dataScope: ["public_filings", "news_articles", "market_data"],
-  createdAt: "2024-11-01T00:00:00Z",
+  createdAt: "2026-03-01T00:00:00Z",
   revokedAt: null,
 };
 

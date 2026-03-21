@@ -147,6 +147,7 @@ function formatTimezoneLabel(timeZone: string): string {
 
 export interface MiniMonthCalendarProps {
   tzOffsetMinutes?: number; // default derived from browser
+  anchorDateMs?: number; // optional externally-selected day to keep the month header in sync
   onSelectDate?: (dateMs: number) => void; // UTC ms of selected local day start
   onViewDay?: (dateMs: number) => void; // Optional: explicit day view handler
   onViewWeek?: (dateMs: number) => void; // Optional: explicit week view handler
@@ -157,7 +158,7 @@ export interface MiniMonthCalendarProps {
   constrainToSidebar?: boolean; // If true, keep previews within sidebar width
 }
 
-export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate, onViewDay: _onViewDay, onViewWeek: _onViewWeek, onWeeklyReview: _onWeeklyReview, onAddTask: _onAddTask, onAddEvent: _onAddEvent, onOpenDocument, constrainToSidebar = false }: MiniMonthCalendarProps) {
+export function MiniMonthCalendar({ tzOffsetMinutes, anchorDateMs, onSelectDate: _onSelectDate, onViewDay: _onViewDay, onViewWeek: _onViewWeek, onWeeklyReview: _onWeeklyReview, onAddTask: _onAddTask, onAddEvent: _onAddEvent, onOpenDocument, constrainToSidebar = false }: MiniMonthCalendarProps) {
   // Clock state (ticks every second)
   const [now, setNow] = useState<number>(() => Date.now());
   useEffect(() => {
@@ -197,9 +198,25 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
     return -new Date(anchor).getTimezoneOffset();
   }, [selectedTz, tzOffsetMinutes, anchor]);
   const offsetMs = effectiveOffsetMinutes * 60 * 1000;
+
+  useEffect(() => {
+    if (typeof anchorDateMs !== "number" || !Number.isFinite(anchorDateMs)) return;
+    const externalAnchor = toLocalDateInZone(anchorDateMs, selectedTz);
+    const nextMonth = externalAnchor.getMonth();
+    const nextYear = externalAnchor.getFullYear();
+    setAnchor((prev) => {
+      if (prev.getFullYear() === nextYear && prev.getMonth() === nextMonth) {
+        return prev;
+      }
+      return new Date(nextYear, nextMonth, 1);
+    });
+  }, [anchorDateMs, selectedTz]);
+
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
   const [pinnedKey, setPinnedKey] = useState<string | null>(null);
   const previewRef = useRef<HTMLDivElement | null>(null);
+  const hoverOpenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [editTarget, setEditTarget] = useState<
     | { kind: "task"; id: string }
     | { kind: "event"; id: string }
@@ -223,6 +240,59 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
     const day = String(d.getUTCDate()).padStart(2, "0");
     return `${y}-${m}-${day}`;
   }, [selectedTz, now, offsetMs]);
+
+  const clearHoverTimers = React.useCallback(() => {
+    if (hoverOpenTimerRef.current) {
+      clearTimeout(hoverOpenTimerRef.current);
+      hoverOpenTimerRef.current = null;
+    }
+    if (hoverCloseTimerRef.current) {
+      clearTimeout(hoverCloseTimerRef.current);
+      hoverCloseTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleHoverOpen = React.useCallback((key: string) => {
+    if (pinnedKey) return;
+    if (hoverCloseTimerRef.current) {
+      clearTimeout(hoverCloseTimerRef.current);
+      hoverCloseTimerRef.current = null;
+    }
+    if (hoverOpenTimerRef.current) {
+      clearTimeout(hoverOpenTimerRef.current);
+    }
+    hoverOpenTimerRef.current = setTimeout(() => {
+      setHoveredKey(key);
+      hoverOpenTimerRef.current = null;
+    }, 110);
+  }, [pinnedKey]);
+
+  const scheduleHoverClose = React.useCallback((key: string) => {
+    if (pinnedKey === key) return;
+    if (hoverOpenTimerRef.current) {
+      clearTimeout(hoverOpenTimerRef.current);
+      hoverOpenTimerRef.current = null;
+    }
+    if (hoverCloseTimerRef.current) {
+      clearTimeout(hoverCloseTimerRef.current);
+    }
+    hoverCloseTimerRef.current = setTimeout(() => {
+      setHoveredKey((current) => (current === key ? null : current));
+      hoverCloseTimerRef.current = null;
+    }, 140);
+  }, [pinnedKey]);
+
+  const keepHoverPreviewOpen = React.useCallback((key: string) => {
+    if (hoverCloseTimerRef.current) {
+      clearTimeout(hoverCloseTimerRef.current);
+      hoverCloseTimerRef.current = null;
+    }
+    if (!pinnedKey) {
+      setHoveredKey(key);
+    }
+  }, [pinnedKey]);
+
+  useEffect(() => () => clearHoverTimers(), [clearHoverTimers]);
 
   const handleAcceptProposed = React.useCallback(async (eventId: string) => {
     try {
@@ -441,9 +511,10 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
 
   // Active preview day: either pinned or hovered
   const activeKey = pinnedKey ?? hoveredKey;
+  const activeIdx = useMemo(() => activeKey ? gridDays.findIndex((d) => d.key === activeKey) : -1, [gridDays, activeKey]);
   const activeInfo = useMemo(() => {
-    return activeKey ? gridDays.find((d) => d.key === activeKey) ?? null : null;
-  }, [gridDays, activeKey]);
+    return activeIdx >= 0 ? gridDays[activeIdx] ?? null : null;
+  }, [gridDays, activeIdx]);
   const activeStartUtc = useMemo(() => {
     if (!activeInfo) return null;
     // Compute start of day for the hovered/pinned date in the SELECTED time zone,
@@ -553,9 +624,15 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
   }, [previewAgenda]);
 
   const monthLabel = useMemo(() => {
-    const d = toLocalDateInZone(monthStart, selectedTz);
-    return d.toLocaleString(undefined, { month: "long", year: "numeric" });
-  }, [monthStart, selectedTz]);
+    // Format from the anchor month directly so the header stays aligned with the
+    // visible grid even when timezone math shifts the UTC boundary backward.
+    const d = new Date(Date.UTC(anchor.getFullYear(), anchor.getMonth(), 15, 12, 0, 0));
+    return new Intl.DateTimeFormat(undefined, {
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(d);
+  }, [anchor]);
 
   const dayLabels = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"] as const;
 
@@ -722,6 +799,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                 aria-label={`${isInteractive ? "Select" : "Outside current month"} ${d.date.toLocaleDateString('en-US', { month: "short", day: "numeric", year: "numeric" })}`}
                 onClick={isInteractive ? (e) => {
                   e.preventDefault();
+                  clearHoverTimers();
                   // Toggle pin on click; keep hover state consistent
                   setPinnedKey((cur) => (cur === d.key ? null : d.key));
                   setHoveredKey(d.key);
@@ -751,6 +829,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                 onKeyDown={isInteractive ? (e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
+                    clearHoverTimers();
                     setPinnedKey((cur) => (cur === d.key ? null : d.key));
                     setHoveredKey(d.key);
                     try {
@@ -764,13 +843,13 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                     }
                   }
                 } : undefined}
-                onMouseEnter={isInteractive ? () => setHoveredKey(d.key) : undefined}
-                onMouseLeave={isInteractive ? () => setHoveredKey((cur) => (cur === d.key ? null : cur)) : undefined}
+                onMouseEnter={isInteractive ? () => scheduleHoverOpen(d.key) : undefined}
+                onMouseLeave={isInteractive ? () => scheduleHoverClose(d.key) : undefined}
                 className={`relative rounded-lg p-1.5 text-left border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] min-w-[44px] ${
                   d.isToday && isInteractive
                     ? "border-indigo-500/40 bg-gradient-to-br from-[var(--accent-primary-bg)] to-surface-secondary shadow-sm"
                     : "border-transparent hover:bg-surface-hover hover:border-edge"
-                  } ${isInteractive ? "text-content" : "text-content-muted/50 dark:text-content-muted/50 opacity-60 pointer-events-none"}`}
+                  } ${isInteractive ? "text-content" : "text-content-muted opacity-50 pointer-events-none"}`}
                 title={d.date.toDateString()}
               >
                 <div className="text-[13px] font-semibold">
@@ -811,109 +890,117 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                   </div>
                 )}
 
-                {/* Hover/Pinned Preview */}
-                {activeKey === d.key && (
-                  <div
-                    className={`absolute z-30 top-1 ${constrainToSidebar ? "right-2" : ((idx % 7) >= 4 ? "right-full mr-2" : "left-full ml-2")}`}
-                    role="dialog"
-                    aria-label={`Preview for ${d.date.toDateString()}`}
-                    ref={pinnedKey === d.key ? previewRef : undefined}
-                    onMouseDown={(e) => e.stopPropagation()}
-                  >
-                    <CalendarDatePopover
-                      date={d.date}
-                      events={previewEvents}
-                      tasks={previewTasks}
-                      notes={previewNotes}
-                      holidays={previewHolidays}
-                      files={previewFiles}
-                      isLoading={previewAgenda === undefined}
-                      onClose={() => {
-                        setPinnedKey(null);
-                        setHoveredKey(null);
-                        setEditTarget(null);
-                        setShowQuickNote(false);
-                        setQuickNoteAnchorEl(null);
-                      }}
-                      onAddEvent={() => {
-                        const dayStart = startOfLocalDay(d.date);
-                        handleAddEventForDay(dayStart);
-                      }}
-                      onPrepDay={() => {
-                        const dayStart = startOfLocalDay(d.date);
-                        handlePrepDay(dayStart);
-                      }}
-                      onTimeBlock={() => {
-                        const dayStart = startOfLocalDay(d.date);
-                        handleTimeBlock(dayStart);
-                      }}
-                      onAcceptProposed={(eventId) => {
-                        if (!eventId) return;
-                        void handleAcceptProposed(eventId);
-                      }}
-                      onDeclineProposed={(eventId) => {
-                        if (!eventId) return;
-                        void handleDeclineProposed(eventId);
-                      }}
-                      onSelectEvent={(_eventId, documentId) => {
-                        if (documentId) {
-                          onOpenDocument?.(documentId as Id<"documents">);
-                        }
-                      }}
-                      onSelectTask={(_taskId, documentId) => {
-                        if (documentId) {
-                          onOpenDocument?.(documentId as Id<"documents">);
-                        }
-                      }}
-                      onSelectNote={(_noteId, documentId) => {
-                        if (documentId) {
-                          onOpenDocument?.(documentId as Id<"documents">);
-                        }
-                      }}
-                    />
-                    {editTarget && (
-                      <div className="mt-2 w-80 max-w-[20rem] rounded-lg border border-edge bg-surface shadow-lg p-2">
-                        {editTarget.kind === "create" && (
-                          <DualCreateMiniPanel
-                            dateMs={editTarget.dateMs}
-                            defaultTitle={editTarget.defaultTitle}
-                            defaultAllDay={editTarget.defaultAllDay}
-                            onClose={() => setEditTarget(null)}
-                          />
-                        )}
-                        {editTarget.kind === "createBoth" && (
-                          <DualEditMiniPanel
-                            dateMs={editTarget.dateMs}
-                            defaultTitle={editTarget.defaultTitle}
-                            defaultAllDay={editTarget.defaultAllDay}
-                            onClose={() => setEditTarget(null)}
-                          />
-                        )}
-                      </div>
-                    )}
-                    {showQuickNote && activeInfo && activeStartUtc !== null && (
-                      <div
-                        className="mt-2"
-                        onClick={(e) => e.stopPropagation()}
-                        onMouseDown={(e) => e.stopPropagation()}
-                      >
-                        <QuickNoteInitializer
-                          isOpen={showQuickNote}
-                          activeInfo={activeInfo}
-                          activeStartUtc={activeStartUtc}
-                          anchorEl={quickNoteAnchorEl ?? previewRef.current}
-                          onClose={() => {
-                            setShowQuickNote(false);
-                            setQuickNoteAnchorEl(null);
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
+                {/* Preview hoisted out of per-cell map — see below grid */}
               </div>
             );
           })}
+          {/* Hoisted preview — rendered once as a grid overlay item instead of per-cell */}
+          {activeIdx >= 0 && activeInfo && (
+            <div
+              style={{ gridRow: Math.floor(activeIdx / 7) + 1, gridColumn: (activeIdx % 7) + 1 }}
+              className="relative pointer-events-none"
+            >
+              <div
+                className={`pointer-events-auto absolute z-30 top-1 ${constrainToSidebar ? "right-2" : ((activeIdx % 7) >= 4 ? "right-full mr-2" : "left-full ml-2")}`}
+                role="dialog"
+                aria-label={`Preview for ${activeInfo.date.toDateString()}`}
+                ref={pinnedKey === activeKey ? previewRef : undefined}
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseEnter={() => keepHoverPreviewOpen(activeKey!)}
+                onMouseLeave={() => scheduleHoverClose(activeKey!)}
+              >
+                <CalendarDatePopover
+                  date={activeInfo.date}
+                  events={previewEvents}
+                  tasks={previewTasks}
+                  notes={previewNotes}
+                  holidays={previewHolidays}
+                  files={previewFiles}
+                  isLoading={previewAgenda === undefined}
+                  onClose={() => {
+                    setPinnedKey(null);
+                    setHoveredKey(null);
+                    setEditTarget(null);
+                    setShowQuickNote(false);
+                    setQuickNoteAnchorEl(null);
+                  }}
+                  onAddEvent={() => {
+                    const dayStart = startOfLocalDay(activeInfo.date);
+                    handleAddEventForDay(dayStart);
+                  }}
+                  onPrepDay={() => {
+                    const dayStart = startOfLocalDay(activeInfo.date);
+                    handlePrepDay(dayStart);
+                  }}
+                  onTimeBlock={() => {
+                    const dayStart = startOfLocalDay(activeInfo.date);
+                    handleTimeBlock(dayStart);
+                  }}
+                  onAcceptProposed={(eventId) => {
+                    if (!eventId) return;
+                    void handleAcceptProposed(eventId);
+                  }}
+                  onDeclineProposed={(eventId) => {
+                    if (!eventId) return;
+                    void handleDeclineProposed(eventId);
+                  }}
+                  onSelectEvent={(_eventId, documentId) => {
+                    if (documentId) {
+                      onOpenDocument?.(documentId as Id<"documents">);
+                    }
+                  }}
+                  onSelectTask={(_taskId, documentId) => {
+                    if (documentId) {
+                      onOpenDocument?.(documentId as Id<"documents">);
+                    }
+                  }}
+                  onSelectNote={(_noteId, documentId) => {
+                    if (documentId) {
+                      onOpenDocument?.(documentId as Id<"documents">);
+                    }
+                  }}
+                />
+                {editTarget && (
+                  <div className="mt-2 w-80 max-w-[20rem] rounded-lg border border-edge bg-surface shadow-lg p-2">
+                    {editTarget.kind === "create" && (
+                      <DualCreateMiniPanel
+                        dateMs={editTarget.dateMs}
+                        defaultTitle={editTarget.defaultTitle}
+                        defaultAllDay={editTarget.defaultAllDay}
+                        onClose={() => setEditTarget(null)}
+                      />
+                    )}
+                    {editTarget.kind === "createBoth" && (
+                      <DualEditMiniPanel
+                        dateMs={editTarget.dateMs}
+                        defaultTitle={editTarget.defaultTitle}
+                        defaultAllDay={editTarget.defaultAllDay}
+                        onClose={() => setEditTarget(null)}
+                      />
+                    )}
+                  </div>
+                )}
+                {showQuickNote && activeInfo && activeStartUtc !== null && (
+                  <div
+                    className="mt-2"
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <QuickNoteInitializer
+                      isOpen={showQuickNote}
+                      activeInfo={activeInfo}
+                      activeStartUtc={activeStartUtc}
+                      anchorEl={quickNoteAnchorEl ?? previewRef.current}
+                      onClose={() => {
+                        setShowQuickNote(false);
+                        setQuickNoteAnchorEl(null);
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

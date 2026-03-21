@@ -147,7 +147,7 @@ function renderSourceBadge(item: any) {
   );
 }
 
-export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSelect, showCheckbox, onToggleComplete, onAcceptProposed, onDeclineProposed }) => {
+export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = React.memo(function AgendaMiniRow({ item, kind, onSelect, showCheckbox, onToggleComplete, onAcceptProposed, onDeclineProposed }) {
   const title: string = String(
     item?.title || (
       kind === "event"
@@ -164,6 +164,8 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
   const [hovered, setHovered] = React.useState(false);
   const anchorRef = React.useRef<HTMLDivElement | null>(null);
   const [pos, setPos] = React.useState<{ top: number; left: number } | null>(null);
+  const openHoverTimerRef = React.useRef<number | null>(null);
+  const closeHoverTimerRef = React.useRef<number | null>(null);
 
   const updatePosition = React.useCallback(() => {
     const el = anchorRef.current;
@@ -191,6 +193,39 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
     };
   }, [hovered, updatePosition]);
 
+  React.useEffect(() => {
+    return () => {
+      if (openHoverTimerRef.current) window.clearTimeout(openHoverTimerRef.current);
+      if (closeHoverTimerRef.current) window.clearTimeout(closeHoverTimerRef.current);
+    };
+  }, []);
+
+  const openHoverCard = React.useCallback(() => {
+    if (closeHoverTimerRef.current) {
+      window.clearTimeout(closeHoverTimerRef.current);
+      closeHoverTimerRef.current = null;
+    }
+    if (hovered) return;
+    if (openHoverTimerRef.current) window.clearTimeout(openHoverTimerRef.current);
+    openHoverTimerRef.current = window.setTimeout(() => {
+      updatePosition();
+      setHovered(true);
+      openHoverTimerRef.current = null;
+    }, 90);
+  }, [hovered, updatePosition]);
+
+  const closeHoverCard = React.useCallback(() => {
+    if (openHoverTimerRef.current) {
+      window.clearTimeout(openHoverTimerRef.current);
+      openHoverTimerRef.current = null;
+    }
+    if (closeHoverTimerRef.current) window.clearTimeout(closeHoverTimerRef.current);
+    closeHoverTimerRef.current = window.setTimeout(() => {
+      setHovered(false);
+      closeHoverTimerRef.current = null;
+    }, 120);
+  }, []);
+
   return (
     <div
       ref={anchorRef}
@@ -211,10 +246,10 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
       tabIndex={onSelect ? 0 : -1}
       onClick={() => onSelect?.(id)}
       onKeyDown={(e) => { if (onSelect && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onSelect(id); } }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onFocus={() => setHovered(true)}
-      onBlur={() => setHovered(false)}
+      onMouseEnter={openHoverCard}
+      onMouseLeave={closeHoverCard}
+      onFocus={openHoverCard}
+      onBlur={closeHoverCard}
     >
       <span className={`absolute left-0 top-0 bottom-0 w-0.5 ${stripeClass(kind, item?.status)}`} aria-hidden />
       <div className="min-w-0 flex flex-col gap-0.5">
@@ -255,8 +290,8 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
         <div
           className="fixed z-[9999] w-64 max-w-[80vw] rounded-md border border-edge bg-surface shadow-lg p-2 text-content"
           style={{ top: pos.top, left: pos.left }}
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
+          onMouseEnter={openHoverCard}
+          onMouseLeave={closeHoverCard}
         >
           {/* Header */}
           <div className="flex items-center justify-between gap-2">
@@ -353,6 +388,6 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
       )}
     </div>
   );
-};
+});
 
 export default AgendaMiniRow;

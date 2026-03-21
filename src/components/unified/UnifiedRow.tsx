@@ -44,7 +44,7 @@ export function UnifiedRow({
       {/* Active indicator - left border accent */}
       {isSelected && (
         <span
-          className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 bg-indigo-600 rounded-full"
+          className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 bg-[var(--accent-primary)] rounded-full"
           aria-hidden="true"
         />
       )}

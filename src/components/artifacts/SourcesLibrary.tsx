@@ -144,7 +144,7 @@ function SourceItem({ artifact }: SourceItemProps) {
           </h4>
           <div className="flex items-center gap-1 flex-shrink-0">
             {flags.isPinned && <Pin className="w-3.5 h-3.5 text-slate-500" />}
-            {flags.isCited && <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />}
+            {flags.isCited && <CheckCircle2 className="w-3.5 h-3.5 text-[var(--accent-primary)]" />}
           </div>
         </div>
 
@@ -247,7 +247,7 @@ export function SourcesLibrary({
             <p className="text-xs text-content-secondary">
               {artifacts.length} source{artifacts.length !== 1 ? 's' : ''} discovered
               {artifacts.filter(a => a.flags.isPinned).length > 0 && (
-                <span className="ml-2 text-indigo-600 dark:text-indigo-400">
+                <span className="ml-2 text-[var(--accent-primary)]">
                   • {artifacts.filter(a => a.flags.isPinned).length} pinned
                 </span>
               )}
@@ -317,7 +317,7 @@ export function SourcesLibrary({
                     <button
                       type="button"
                       onClick={() => setShowAll(true)}
-                      className="mt-2 text-xs text-indigo-600 dark:text-indigo-400 hover:opacity-80 font-medium"
+                      className="mt-2 text-xs text-[var(--accent-primary)] hover:opacity-80 font-medium"
                     >
                       +{items.length - 4} more
                     </button>

@@ -1,6 +1,5 @@
 import { Authenticated, Unauthenticated, useConvexAuth } from "convex/react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { MainLayout } from "./components/MainLayout";
 import { CockpitLayout } from "./layouts/CockpitLayout";
 import { TutorialPage } from "@/features/onboarding/views/TutorialPage";
 import { useState, useEffect, useCallback, lazy, Suspense } from "react";
@@ -9,15 +8,15 @@ import { ContextPillsProvider } from "./hooks/contextPills";
 import { FastAgentProvider, useFastAgent } from "@/features/agents/context/FastAgentContext";
 import { SelectionProvider } from "@/features/agents/context/SelectionContext";
 import { FeedbackListener } from "@/shared/hooks/FeedbackListener";
-import { ThemeProvider, useThemeSafe } from "./contexts/ThemeContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { OracleSessionProvider } from "./contexts/OracleSessionContext";
-import { SkipLinks } from "./components/SkipLinks";
+import { SkipLinks } from "./shared/components/SkipLinks";
 import { EvidenceProvider } from "@/features/research/contexts/EvidenceContext";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { ViewSkeleton } from "@/components/skeletons/ViewSkeleton";
 import { useWebMcpProvider } from "./hooks/useWebMcpProvider";
-import type { MainView } from "./hooks/useMainLayoutRouting";
-import { VIEW_PATH_MAP } from "./layouts/cockpitModes";
+import type { MainView } from "@/lib/registry/viewRegistry";
+import { buildCockpitPathForView } from "@/lib/registry/viewRegistry";
 
 const FastAgentPanel = lazy(() =>
   import("@/features/agents/components/FastAgentPanel/FastAgentPanel").then((mod) => ({
@@ -26,16 +25,15 @@ const FastAgentPanel = lazy(() =>
 );
 
 /**
- * GlobalFastAgentPanel - Renders FastAgentPanel connected to FastAgentContext
- * This allows the FloatingAgentButton to open the panel from anywhere.
- * 
- * NOTE: When MainLayout is mounted, it registers its own panel handler via
- * registerExternalState, so we skip rendering here to avoid duplicates.
+ * GlobalFastAgentPanel - Renders FastAgentPanel connected to FastAgentContext.
+ *
+ * The cockpit shell owns the in-layout agent panel, so this global overlay only
+ * appears when no external handler is registered.
  */
 function GlobalFastAgentPanel() {
   const { isOpen, close, options, clearOptions, hasExternalHandler } = useFastAgent();
 
-  // Skip if MainLayout is handling the panel
+  // Skip when the active shell is handling the panel directly.
   if (hasExternalHandler) return null;
 
   const handleClose = () => {
@@ -56,37 +54,6 @@ function GlobalFastAgentPanel() {
   );
 }
 
-/** Renders CockpitLayout or MainLayout based on theme.layout preference */
-function LayoutSwitch({
-  selectedDocumentId,
-  onDocumentSelect,
-  onShowWelcome,
-  onShowResearchHub,
-}: {
-  selectedDocumentId: Id<"documents"> | null;
-  onDocumentSelect: (id: Id<"documents"> | null) => void;
-  onShowWelcome?: () => void;
-  onShowResearchHub?: () => void;
-}) {
-  const { theme } = useThemeSafe();
-  if (theme.layout === "cockpit") {
-    return (
-      <CockpitLayout
-        selectedDocumentId={selectedDocumentId}
-        onDocumentSelect={onDocumentSelect}
-      />
-    );
-  }
-  return (
-    <MainLayout
-      selectedDocumentId={selectedDocumentId}
-      onDocumentSelect={onDocumentSelect}
-      onShowWelcome={onShowWelcome}
-      onShowResearchHub={onShowResearchHub}
-    />
-  );
-}
-
 function App() {
   const location = useLocation();
   const [showTutorial, setShowTutorial] = useState(false);
@@ -97,8 +64,7 @@ function App() {
   const { isAuthenticated: webmcpIsAuth } = useConvexAuth();
   const nav = useNavigate();
   const handleWebMcpNavigate = useCallback((view: MainView) => {
-    const path = VIEW_PATH_MAP[view] ?? `/${view}`;
-    nav(path);
+    nav(buildCockpitPathForView({ view }));
   }, [nav]);
   useWebMcpProvider({
     enabled: webmcpEnabled,
@@ -135,32 +101,29 @@ function App() {
     setShowTutorial(false);
   };
 
-  const handleShowTutorial = () => {
-    setShowTutorial(true);
-  };
-
-  const handleShowResearchHub = () => {
-    setShowTutorial(false);
-  };
-
   return (
     <ThemeProvider>
       <EvidenceProvider>
         <SkipLinks />
-        <main id="main-content" className="h-screen bg-surface text-content">
+        <main
+          id="main-content"
+          className="h-screen bg-surface text-content"
+          data-app-id="nodebench-ai"
+          data-app-shell="main"
+          data-agent-surface="app"
+          data-mcp-compat="webmcp chrome-devtools-mcp"
+          data-webmcp-enabled={webmcpEnabled ? "true" : "false"}
+        >
           <Unauthenticated>
             <FastAgentProvider>
               <SelectionProvider>
                 <OracleSessionProvider>
                 <ContextPillsProvider>
-                  {/* Use LayoutSwitch for visual consistency - limited features for guests */}
                   <ErrorBoundary title="Something went wrong">
                     <Suspense fallback={<ViewSkeleton />}>
-                      <LayoutSwitch
+                      <CockpitLayout
                         selectedDocumentId={null}
                         onDocumentSelect={() => { }}
-                        onShowWelcome={() => { }}
-                        onShowResearchHub={() => { }}
                       />
                     </Suspense>
                   </ErrorBoundary>
@@ -184,12 +147,9 @@ function App() {
                           onDocumentSelect={handleDocumentSelect}
                         />
                       ) : (
-                        /* LayoutSwitch picks cockpit or classic based on theme.layout */
-                        <LayoutSwitch
+                        <CockpitLayout
                           selectedDocumentId={selectedDocumentId}
                           onDocumentSelect={setSelectedDocumentId}
-                          onShowWelcome={handleShowTutorial}
-                          onShowResearchHub={handleShowResearchHub}
                         />
                       )}
                     </Suspense>

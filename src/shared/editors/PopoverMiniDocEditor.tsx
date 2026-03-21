@@ -86,7 +86,7 @@ export default function PopoverMiniDocEditor({
         <div className="flex items-center gap-2">
           {title ? <div className="text-xs text-content-muted">{title}</div> : null}
           <button
-            className={`h-7 px-3 rounded-md flex items-center justify-center border text-[12px] ${dirty ? "bg-indigo-600 text-white border-indigo-500/30 hover:bg-indigo-600/90" : "bg-surface-secondary text-content-secondary border-edge opacity-70 cursor-not-allowed"}`}
+            className={`h-7 px-3 rounded-md flex items-center justify-center border text-[12px] ${dirty ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]/30 hover:bg-[var(--accent-primary-hover)]" : "bg-surface-secondary text-content-secondary border-edge opacity-70 cursor-not-allowed"}`}
             title={saveLabel}
             onClick={() => void handleSave()}
             disabled={!dirty || saving}

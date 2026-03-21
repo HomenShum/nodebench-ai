@@ -10,6 +10,8 @@ import { query } from "../../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Id, Doc } from "../../../_generated/dataModel";
 import { buildTaskSessionProofPack } from "./proofPack";
+import { buildSuccessLoopsDashboardSnapshot } from "../../successLoops/projection";
+import { buildAgentResponseFlywheelSnapshot } from "../../agents/responseFlywheel";
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // PUBLIC QUERIES (Unauthenticated Access)
@@ -614,6 +616,9 @@ export const getOracleControlTowerSnapshot = query({
       });
     }
 
+    const successLoops = await buildSuccessLoopsDashboardSnapshot(ctx, userId);
+    const responseFlywheel = await buildAgentResponseFlywheelSnapshot(ctx, userId);
+
     let nextRecommendedAction = `Advance ${currentPhase.title.toLowerCase()} by creating the first durable artifact for that phase.`;
     if (violatedCount > 0) {
       nextRecommendedAction =
@@ -636,6 +641,19 @@ export const getOracleControlTowerSnapshot = query({
     } else if (temporalCounts.proofPacks === 0) {
       nextRecommendedAction =
         "Phase 4 is open. Package the current loop into a proof pack with telemetry, citations, and the linked dogfood verdict.";
+    } else if (
+      successLoops.summary.weakestLoop &&
+      ["weakening", "missing", "mixed"].includes(
+        successLoops.loops.find((loop) => loop.loopType === successLoops.summary.weakestLoop?.loopType)?.status ?? "missing",
+      )
+    ) {
+      nextRecommendedAction = successLoops.nextRecommendedAction;
+    } else if (
+      responseFlywheel.summary.weakestDimension &&
+      responseFlywheel.summary.weakestDimension.averageScore < 0.62
+    ) {
+      nextRecommendedAction =
+        `Tighten the response flywheel first. ${responseFlywheel.summary.weakestDimension.label} is the weakest lane, so re-judge recent replies and strengthen evidence, dates, and concrete next actions.`;
     }
 
     return {
@@ -687,6 +705,8 @@ export const getOracleControlTowerSnapshot = query({
         counts: temporalCounts,
         phases,
       },
+      successLoops,
+      responseFlywheel,
       nextRecommendedAction,
     };
   },

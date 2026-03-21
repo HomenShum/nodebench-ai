@@ -137,14 +137,14 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
                 : "Sources are cited automatically as your daily briefings, signals, and analyses are generated. Start by visiting the Research Hub."}
             </p>
             {!searchQuery && (
-              <a
-                href="#"
-                onClick={(e) => { e.preventDefault(); window.location.hash = 'research'; }}
+              <button
+                type="button"
+                onClick={() => { window.location.hash = 'research'; }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white rounded-lg text-sm font-medium transition-colors"
               >
                 <FileText className="w-4 h-4" />
                 Go to Research Hub
-              </a>
+              </button>
             )}
           </div>
         ) : (

@@ -698,9 +698,9 @@ function buildOutputArtifacts(session: LiveTaskSession, traces: LiveTaskTrace[])
 
 function buildLimitations(session: LiveTaskSession, traces: LiveTaskTrace[], spans: LiveTaskSpan[]): string[] {
   return uniqueStrings([
-    "This live execution trace is reconstructed from saved task sessions, traces, spans, and Oracle cross-check metadata rather than raw chain-of-thought.",
+    "This live execution trace is reconstructed from saved task sessions, traces, actions, and Oracle cross-check metadata rather than raw chain-of-thought.",
     traces.length === 0 ? "No saved traces were attached to this session, so the reconstruction is based on session-level metadata only." : null,
-    spans.length === 0 ? "No saved spans were available for the primary trace, so the fine-grained tool timeline is partial." : null,
+    spans.length === 0 ? "No saved actions were available for the primary trace, so the fine-grained tool timeline is partial." : null,
     session.crossCheckStatus === "violated" || traces.some((trace) => trace.crossCheckStatus === "violated")
       ? "At least one checkpoint on this run was marked as violated and should be reviewed before treating the workflow as fully trustworthy."
       : null,

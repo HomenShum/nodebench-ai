@@ -1,0 +1,32 @@
+{
+  "version": "1.0.0",
+  "createdAt": "2026-03-19T00:00:00Z",
+  "metrics": {
+    "taskCompletionRate": 0.85,
+    "timeToFirstDraftMs": 12000,
+    "humanEditDistance": 0.35,
+    "wallClockMs": 45000,
+    "toolCallCount": 18,
+    "factualPrecision": 0.90,
+    "evidenceLinkage": 0.78,
+    "receiptCompleteness": 0.82,
+    "falseConfidenceRate": 0.08
+  },
+  "throughputScore": 0.62,
+  "hardGuards": {
+    "factualPrecisionFloor": 0.89,
+    "evidenceLinkageFloor": 0.75,
+    "receiptCompletenessFloor": 0.80,
+    "falseConfidenceRateCeiling": 0.10
+  },
+  "promotionThreshold": 0.05,
+  "toolsUnderTest": [
+    "build_claim_graph",
+    "extract_variables",
+    "generate_countermodels",
+    "run_deep_sim",
+    "rank_interventions",
+    "score_compounding",
+    "render_decision_memo"
+  ]
+}

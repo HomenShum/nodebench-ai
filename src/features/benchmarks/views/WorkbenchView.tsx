@@ -24,12 +24,29 @@
 import React, { useEffect, useState, lazy, Suspense } from "react";
 import { useQuery } from "convex/react";
 import { ChevronDown, ChevronUp, Settings, Play, CheckCircle2, AlertTriangle, Activity } from "lucide-react";
-import { ModelLeaderboard } from "../components/ModelLeaderboard";
-import { ScenarioCatalog } from "../components/ScenarioCatalog";
-import { WorkbenchRunsTable } from "../components/WorkbenchRunsTable";
-import { TelemetryInspector } from "../components/TelemetryInspector";
 import { SignatureOrb } from "@/shared/ui/SignatureOrb";
 import { api } from "../../../../convex/_generated/api";
+import type { TrajectorySummaryData, TrajectoryTimelineItem } from "@/features/trajectory/types";
+
+// Lazy-load sub-panels — these are below the fold or behind expandable sections
+const ModelLeaderboard = lazy(() =>
+  import("../components/ModelLeaderboard").then((mod) => ({ default: mod.ModelLeaderboard }))
+);
+const ScenarioCatalog = lazy(() =>
+  import("../components/ScenarioCatalog").then((mod) => ({ default: mod.ScenarioCatalog }))
+);
+const WorkbenchRunsTable = lazy(() =>
+  import("../components/WorkbenchRunsTable").then((mod) => ({ default: mod.WorkbenchRunsTable }))
+);
+const TelemetryInspector = lazy(() =>
+  import("../components/TelemetryInspector").then((mod) => ({ default: mod.TelemetryInspector }))
+);
+const TrajectorySummaryBand = lazy(() =>
+  import("@/features/trajectory/components/TrajectorySummaryBand").then((mod) => ({ default: mod.TrajectorySummaryBand }))
+);
+const TrajectoryTimelinePanel = lazy(() =>
+  import("@/features/trajectory/components/TrajectoryTimelinePanel").then((mod) => ({ default: mod.TrajectoryTimelinePanel }))
+);
 
 // Workbench live data is opt-in until the backing Convex functions are deployed
 // in the current environment. This avoids noisy runtime errors in QA/dev sessions
@@ -658,7 +675,7 @@ function EnterpriseEvalPanel() {
             </div>
           </div>
           <div className="rounded-xl border border-edge bg-surface p-3">
-            <div className="text-xs font-medium text-content mb-2">Final stream telemetry</div>
+            <div className="text-xs font-medium text-content mb-2">Final stream activity summary</div>
             <div className="space-y-1 text-xs text-content-muted">
               <div>Verdict: {artifact.stream.finalVerdict}</div>
               <div>Events captured: {artifact.stream.events.length}</div>
@@ -721,15 +738,41 @@ function EnterpriseEvalPanel() {
 // ─── Main view ────────────────────────────────────────────────────────────────
 
 export function WorkbenchView() {
+  const trajectorySummary = useQuery(api.domains.trajectory.queries.getTrajectorySummary, {
+    entityKey: "product:nodebench-ai",
+    entityType: "product",
+    windowDays: 90,
+  }) as TrajectorySummaryData | undefined;
+  const benchmarkTimeline = useQuery(api.domains.trajectory.queries.getTrajectoryTimeline, {
+    entityKey: "product:nodebench-ai",
+    entityType: "product",
+    windowDays: 90,
+  }) as { items: TrajectoryTimelineItem[] } | undefined;
+
   return (
     <div className="nb-page-shell flex flex-col">
       <WorkbenchHeader />
 
       <div className="nb-page-inner pb-28 sm:pb-24">
         <div className="nb-page-frame space-y-8">
+          <Suspense fallback={<div className="h-[60px]" />}>
+            <TrajectorySummaryBand
+              summary={trajectorySummary ?? null}
+              loading={trajectorySummary === undefined}
+              emptyLabel="No product-level trajectory summary is available for benchmarks yet."
+            />
+          </Suspense>
+          <Suspense fallback={<div className="h-[100px]" />}>
+            <TrajectoryTimelinePanel
+              items={(benchmarkTimeline?.items ?? []).filter((item) => item.kind === "benchmark" || item.kind === "intervention")}
+              emptyLabel="No benchmark or intervention timeline has been projected yet."
+            />
+          </Suspense>
           <LiveGuardPanel />
           <EnterpriseEvalPanel />
-          <TelemetryInspector />
+          <Suspense fallback={<div className="h-[200px]" />}>
+            <TelemetryInspector />
+          </Suspense>
 
           {/* NOTE(coworker): Keep Workbench resilient if the Convex backend isn't updated yet.
               If `useQuery` throws (missing function/schema), fall back to static empty states
@@ -764,7 +807,7 @@ function WorkbenchData() {
   );
 
   return (
-    <>
+    <Suspense fallback={<div className="h-[300px]" />}>
       {/* 1. Model leaderboard — score strip */}
       <ModelLeaderboard liveScores={WORKBENCH_LIVE_DATA_ENABLED ? (leaderboard ?? undefined) : undefined} />
 
@@ -773,7 +816,7 @@ function WorkbenchData() {
 
       {/* 3. Runs table — empty state in Phase 1 */}
       <WorkbenchRunsTable runs={WORKBENCH_LIVE_DATA_ENABLED ? runs : []} />
-    </>
+    </Suspense>
   );
 }
 
@@ -796,11 +839,11 @@ class WorkbenchDataBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <>
+        <Suspense fallback={<div className="h-[300px]" />}>
           <ModelLeaderboard />
           <ScenarioCatalog />
           <WorkbenchRunsTable runs={[]} />
-        </>
+        </Suspense>
       );
     }
     return this.props.children;

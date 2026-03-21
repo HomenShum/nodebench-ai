@@ -71,7 +71,7 @@ function EnterpriseInvestigationViewContent() {
   }, [evidenceItems, registerEvidence]);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 p-6">
+    <div className="mx-auto max-w-4xl space-y-8 p-6 view-atmosphere-investigation stagger [&>*]:animate-[fade-slide-in_0.5s_var(--ease-out-expo)_both]">
       {/* ── Section 1: Investigation Header ─────────────────────────── */}
       <header className="space-y-3">
         <div className="flex items-center gap-3 text-xs font-medium uppercase tracking-widest text-content-secondary">
@@ -103,7 +103,7 @@ function EnterpriseInvestigationViewContent() {
           />
         </div>
         <p className="text-xs text-content-quaternary italic">
-          DeepTrace provides tamper-evident provenance for captured artifacts and evidence-grounded hypotheses about what happened; it does not provide cryptographic proof of causation.
+          DeepTrace Investigation provides tamper-evident provenance for captured artifacts and evidence-grounded hypotheses about what happened; it does not provide cryptographic proof of causation.
         </p>
       </header>
 
@@ -304,7 +304,7 @@ function EnterpriseInvestigationViewContent() {
             <span>{investigation.traceability.tool_calls}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="font-medium text-content-secondary">OTel spans:</span>
+            <span className="font-medium text-content-secondary">OTel actions:</span>
             <span>{investigation.traceability.otel_spans_recorded ? "Recorded" : "Not recorded"}</span>
           </div>
           <div className="flex items-center gap-2">

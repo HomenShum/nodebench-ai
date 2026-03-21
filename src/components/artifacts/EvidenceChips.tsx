@@ -64,7 +64,7 @@ function EvidenceChip({
 
   <button
     onClick={onClick}
-    className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-xs font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white rounded border border-indigo-500/20 transition-all cursor-pointer active:scale-95"
+    className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-xs font-semibold bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-white rounded border border-[var(--accent-primary)]/20 transition-all cursor-pointer active:scale-95"
     title={artifact.title || artifact.canonicalUrl}
   >
     {index}
@@ -249,7 +249,7 @@ export function SourceFooter({ sectionId, evidenceLinks, onSourceClick }: Source
                   onSourceClick(artifact);
                 }
               }}
-              className="text-indigo-600 dark:text-indigo-400 hover:opacity-80 hover:underline truncate flex items-center gap-1 font-medium transition-opacity"
+              className="text-[var(--accent-primary)] hover:opacity-80 hover:underline truncate flex items-center gap-1 font-medium transition-opacity"
             >
               {artifact.title || artifact.host}
               <ExternalLink className="w-3 h-3 shrink-0 opacity-60" />

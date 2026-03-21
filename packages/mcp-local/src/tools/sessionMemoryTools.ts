@@ -17,6 +17,11 @@ import type { McpTool } from "../types.js";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
+import {
+  archiveOldNotes,
+  getDecayStats,
+  loadArchivedNotes,
+} from "./memoryDecay.js";
 
 const NOTES_DIR = path.join(os.homedir(), ".nodebench", "notes");
 
@@ -173,12 +178,18 @@ export const sessionMemoryTools: McpTool[] = [
           type: "number",
           description: "Max notes to return (default: 10)",
         },
+        includeArchived: {
+          type: "boolean",
+          description:
+            "Also search archived notes that were decayed out of the hot working set (default: false)",
+        },
       },
       required: [],
     },
     handler: async (args) => {
       ensureNotesDir();
-      const { date, category, keyword, limit = 10 } = args;
+      archiveOldNotes();
+      const { date, category, keyword, limit = 10, includeArchived = false } = args;
 
       const files = fs.readdirSync(NOTES_DIR).filter((f) => f.endsWith(".md"));
 
@@ -234,20 +245,40 @@ export const sessionMemoryTools: McpTool[] = [
         });
       }
 
+      const archivedNotes =
+        includeArchived || notes.length === 0
+          ? loadArchivedNotes({ keyword }).slice(0, Math.max(0, limit - notes.length))
+          : [];
+
       return {
-        noteCount: notes.length,
+        noteCount: notes.length + archivedNotes.length,
         totalFiles: files.length,
-        notes: notes.map((n) => ({
-          filename: n.filename,
-          title: n.title,
-          category: n.category,
-          preview: n.content.slice(0, 300),
-          fullContent: n.content,
-        })),
+        archivedCount: archivedNotes.length,
+        notes: [
+          ...notes.map((n) => ({
+            filename: n.filename,
+            title: n.title,
+            category: n.category,
+            preview: n.content.slice(0, 300),
+            fullContent: n.content,
+            archived: false,
+          })),
+          ...archivedNotes.map((n, index) => ({
+            filename: `archive-${n.date}-${index + 1}.md`,
+            title: `Archived note from ${n.date}`,
+            category: "archived",
+            preview: n.content.slice(0, 300),
+            fullContent: n.content,
+            archived: true,
+          })),
+        ],
+        decayStats: getDecayStats(),
         tip:
-          notes.length === 0
+          notes.length + archivedNotes.length === 0
             ? "No notes found. Use save_session_note to persist findings during your session."
-            : "Notes loaded. Review findings and continue where you left off.",
+            : archivedNotes.length > 0
+              ? "Notes loaded. Archived notes were included because the hot note set was empty or includeArchived=true."
+              : "Notes loaded. Review findings and continue where you left off.",
       };
     },
   },
@@ -371,6 +402,7 @@ export const sessionMemoryTools: McpTool[] = [
       // 4. Today's session notes
       if (includeNotes) {
         ensureNotesDir();
+        archiveOldNotes();
         const today = new Date().toISOString().slice(0, 10);
         const files = fs
           .readdirSync(NOTES_DIR)
@@ -391,6 +423,22 @@ export const sessionMemoryTools: McpTool[] = [
             };
           });
         }
+
+        const archiveKeyword =
+          typeof taskDescription === "string" && taskDescription.trim().length > 0
+            ? taskDescription
+            : typeof originalRequest === "string" && originalRequest.trim().length > 0
+              ? originalRequest
+              : undefined;
+        const archivedNotes = loadArchivedNotes({ keyword: archiveKeyword }).slice(0, 3);
+        if (archivedNotes.length > 0) {
+          context.archivedNotes = archivedNotes.map((note) => ({
+            title: `Archived note from ${note.date}`,
+            preview: note.content.slice(0, 200),
+            weight: note.weight,
+          }));
+        }
+        context.memoryDecay = getDecayStats();
       }
 
       // 5. Tool call stats for this session

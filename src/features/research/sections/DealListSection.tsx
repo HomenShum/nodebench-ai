@@ -9,7 +9,7 @@ import { useAction, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { RefreshCw } from "lucide-react";
 import { DealFlyout, DealListPanel, type Deal } from "../components/DealListPanel";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
 
 export interface DealListSectionProps {

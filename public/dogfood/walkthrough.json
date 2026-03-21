@@ -1,6 +1,6 @@
 {
-  "capturedAtIso": "2026-03-14T07:05:06.982Z",
-  "baseURL": "http://127.0.0.1:4175",
+  "capturedAtIso": "2026-03-20T02:07:55.656Z",
+  "baseURL": "http://127.0.0.1:4174",
   "mime": "video/mp4",
   "publish": "static",
   "chapters": [
@@ -32,7 +32,7 @@
       "index": 5,
       "name": "Research: Briefing",
       "path": "/research/briefing",
-      "startSec": 8.4
+      "startSec": 8.3
     },
     {
       "index": 6,
@@ -86,7 +86,7 @@
       "index": 14,
       "name": "Showcase",
       "path": "/showcase",
-      "startSec": 27.3
+      "startSec": 27.4
     },
     {
       "index": 15,
@@ -152,25 +152,25 @@
       "index": 25,
       "name": "For You",
       "path": "/for-you",
-      "startSec": 50.5
+      "startSec": 50.6
     },
     {
       "index": 26,
       "name": "Recommendations",
       "path": "/recommendations",
-      "startSec": 52.6
+      "startSec": 52.7
     },
     {
       "index": 27,
       "name": "Agent Templates",
       "path": "/marketplace",
-      "startSec": 54.7
+      "startSec": 54.8
     },
     {
       "index": 28,
       "name": "GitHub Explorer",
       "path": "/github",
-      "startSec": 56.8
+      "startSec": 56.9
     },
     {
       "index": 29,
@@ -212,16 +212,16 @@
       "index": 35,
       "name": "Interaction: Settings",
       "path": "(interaction)",
-      "startSec": 70.8
+      "startSec": 70.9
     },
     {
       "index": 36,
       "name": "End",
       "path": "(end)",
-      "startSec": 73.3
+      "startSec": 72.6
     }
   ],
   "videoUrl": null,
   "videoPath": "/dogfood/walkthrough.mp4",
-  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-03-14_000331.mp4"
+  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-03-19_190615.mp4"
 }

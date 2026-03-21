@@ -1,27 +1,16 @@
 /**
- * layouts/ — All page-level layout components
+ * layouts/ — canonical cockpit shell exports.
  *
- * Primary layouts:
- *   MainLayout — Standard app shell (sidebar + header + content)
- *   CockpitLayout — Jarvis-style 4-zone HUD layout
- *
- * Infrastructure files in this directory are Cockpit-specific:
- *   CommandBar, StatusStrip, FocalArea, ModeRail, CockpitIntelRail,
- *   HUDContext, useCockpitMode, cockpitModes
+ * NodeBench now ships one active shell: the persistent cockpit. Legacy page-first
+ * layout modules remain in the repo for compatibility and audits, but they are
+ * intentionally not re-exported from this barrel.
  */
 
-// Main app layout (canonical source: src/components/MainLayout.tsx)
-export { MainLayout } from "../components/MainLayout";
-export { CleanSidebar } from "../components/CleanSidebar";
-export { CleanHeader } from "../components/CleanHeader";
-export { SidebarGlobalNav } from "../components/SidebarGlobalNav";
-
-// Cockpit / HUD layout
 export { CockpitLayout } from "./CockpitLayout";
 export { CommandBar } from "./CommandBar";
 export { StatusStrip } from "./StatusStrip";
-export { FocalArea } from "./FocalArea";
-export { ModeRail } from "./ModeRail";
-export { CockpitIntelRail } from "./CockpitIntelRail";
-export { HUDProvider, useHUD } from "./HUDContext";
+export { ActiveSurfaceHost } from "./ActiveSurfaceHost";
+export { WorkspaceRail } from "./WorkspaceRail";
+export { AgentPresenceRail } from "./AgentPresenceRail";
+export { CommandPalette, AgentMetadata, HashtagQuickNotePopover } from "./chrome";
 export { useCockpitMode } from "./useCockpitMode";

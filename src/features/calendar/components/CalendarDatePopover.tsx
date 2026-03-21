@@ -119,7 +119,7 @@ export function CalendarDatePopover({
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
-      <div className={`px-5 py-4 ${(hasEvents || hasTasks || hasNotes || hasHolidays || hasFiles) ? "bg-surface" : "bg-gradient-to-br from-[var(--accent-primary-bg)] to-surface-secondary"}`}>
+      <div className={`px-5 py-4 ${(hasEvents || hasTasks || hasNotes || hasHolidays || hasFiles) ? "bg-surface" : "bg-white/[0.03]"}`}>
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs font-bold text-content-secondary">
             {isToday ? "Today" : weekday}

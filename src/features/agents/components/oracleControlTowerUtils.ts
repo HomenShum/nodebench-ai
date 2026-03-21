@@ -32,24 +32,24 @@ export function getCrossCheckPresentation(status?: OracleCrossCheckStatus) {
 export function getDogfoodPresentation(verdict?: "missing" | "watch" | "fail" | "pass" | null) {
   if (verdict === "pass") {
     return {
-      label: "Dogfood clear",
+      label: "Review clear",
       className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
     };
   }
   if (verdict === "watch") {
     return {
-      label: "Dogfood watch",
+      label: "Review watch",
       className: "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
     };
   }
   if (verdict === "fail") {
     return {
-      label: "Dogfood blocked",
+      label: "Review blocked",
       className: "border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300",
     };
   }
   return {
-    label: "No dogfood evidence",
+    label: "No review evidence",
     className: "border-edge bg-surface-secondary/50 text-content-muted",
   };
 }

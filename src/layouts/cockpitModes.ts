@@ -5,8 +5,8 @@
  * Within a mode, individual views are accessible via CommandBar tabs or Cmd+K.
  */
 
-import type { MainView } from "@/lib/viewRegistry";
-export { VIEW_TITLES, VIEW_PATH_MAP } from "@/lib/viewRegistry";
+import type { MainView } from "@/lib/registry/viewRegistry";
+export { VIEW_TITLES, VIEW_PATH_MAP } from "@/lib/registry/viewRegistry";
 import type { LucideIcon } from "lucide-react";
 import { Target, Radar, Code, Bot, Settings } from "lucide-react";
 
@@ -33,73 +33,45 @@ export const MODES: ModeConfig[] = [
     label: "Mission",
     description: "Active research, signals, receipts, and passport review",
     icon: "Target",
-    views: ["research", "signals", "for-you-feed", "industry-updates", "control-plane", "receipts", "delegation"],
+    views: ["control-plane", "research", "receipts"],
     defaultView: "control-plane",
-    color: "var(--hud-cyan)",
+    color: "var(--accent-primary, #d97757)",
   },
   {
     id: "intel",
     label: "Intel",
     description: "Code intelligence, market data, funding, and competitive signals",
     icon: "Radar",
-    views: [
-      "github-explorer",
-      "pr-suggestions",
-      "funding",
-      "benchmarks",
-      "linkedin-posts",
-      "entity",
-      "footnotes",
-      "showcase",
-      "investigation",
-    ],
-    defaultView: "github-explorer",
-    color: "var(--hud-amber)",
+    views: ["investigation", "funding", "benchmarks"],
+    defaultView: "investigation",
+    color: "var(--accent-primary, #d97757)",
   },
   {
     id: "build",
     label: "Build",
     description: "Documents, spreadsheets, calendar, and project planning",
     icon: "Code",
-    views: [
-      "documents",
-      "spreadsheets",
-      "calendar",
-      "roadmap",
-      "timeline",
-      "public",
-      "document-recommendations",
-    ],
+    views: ["documents", "spreadsheets", "calendar"],
     defaultView: "documents",
-    color: "var(--hud-green)",
+    color: "var(--accent-primary, #d97757)",
   },
   {
     id: "agents",
     label: "Agents",
     description: "AI assistant orchestration, task automation, and agent marketplace",
     icon: "Bot",
-    views: ["agents", "agent-marketplace", "activity", "mcp-ledger"],
+    views: ["agents", "activity", "mcp-ledger"],
     defaultView: "agents",
-    color: "var(--hud-purple)",
+    color: "var(--accent-primary, #d97757)",
   },
   {
     id: "system",
     label: "System",
     description: "Analytics, cost monitoring, QA review, and operational health",
     icon: "Settings",
-    views: [
-      "analytics-hitl",
-      "analytics-components",
-      "analytics-recommendations",
-      "cost-dashboard",
-      "dogfood",
-      "observability",
-      "engine-demo",
-      "oracle",
-      "dev-dashboard",
-    ],
+    views: ["oracle", "cost-dashboard", "observability"],
     defaultView: "oracle",
-    color: "var(--hud-red)",
+    color: "var(--accent-primary, #d97757)",
   },
 ];
 

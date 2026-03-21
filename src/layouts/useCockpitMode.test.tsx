@@ -5,8 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const setCurrentView = vi.fn();
 let mockCurrentView: "oracle" | "research" | "control-plane" = "oracle";
 
-vi.mock("../hooks/useMainLayoutRouting", () => ({
-  useMainLayoutRouting: () => ({
+vi.mock("../hooks/useCockpitRouting", () => ({
+  useCockpitRouting: () => ({
     currentView: mockCurrentView,
     setCurrentView,
     entityName: null,

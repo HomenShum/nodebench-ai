@@ -41,12 +41,17 @@ export function ConfirmationDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-surface rounded-lg shadow-xl max-w-md w-full mx-4">
+      <div
+        className="bg-surface rounded-lg shadow-xl max-w-md w-full mx-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirmation-dialog-title"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-edge">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-yellow-600" />
-            <h3 className="font-semibold text-content">{title}</h3>
+            <h3 id="confirmation-dialog-title" className="font-semibold text-content">{title}</h3>
           </div>
           <button
             onClick={onCancel}

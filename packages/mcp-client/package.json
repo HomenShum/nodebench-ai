@@ -1,0 +1,42 @@
+{
+  "name": "@homenshum/nodebench-mcp-client",
+  "version": "0.1.0",
+  "description": "Thin MCP client SDK for connecting to NodeBench's WebSocket gateway",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "nodebench",
+    "model-context-protocol",
+    "websocket",
+    "ai-agents"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HomenShum/nodebench-ai.git",
+    "directory": "packages/mcp-client"
+  },
+  "license": "MIT",
+  "author": "HomenShum",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

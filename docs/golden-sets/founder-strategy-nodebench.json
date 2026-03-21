@@ -1,0 +1,58 @@
+{
+  "id": "golden_founder_strategy_001",
+  "name": "NodeBench GTM Strategy",
+  "workflow": "founder_strategy",
+  "frozenAt": "2026-03-15T00:00:00Z",
+  "question": "What is NodeBench's best next distribution move to get 10 paying pilots in 90 days?",
+  "sourcePacket": {
+    "sources": [
+      { "type": "product", "ref": "NodeBench MCP usage stats", "summary": "289 tools, 950+ tests, 63 Convex domains, 3 published npm packages" },
+      { "type": "market", "ref": "MCP ecosystem March 2026", "summary": "5,200+ MCP servers on npm, Claude Code 2M+ downloads, Cursor 1.5M+ users" },
+      { "type": "social", "ref": "LinkedIn posts Feb-Mar 2026", "summary": "Daily research posts averaging 8K impressions, 1.8% engagement" },
+      { "type": "signal", "ref": "Inbound interest tracker", "summary": "4 DMs from founders, 2 from VCs, 1 enterprise inquiry in 30 days" },
+      { "type": "benchmark", "ref": "DeepTrace eval results", "summary": "87% hybrid search accuracy, 8-dimension trajectory scoring operational" },
+      { "type": "trust_node", "ref": "Network map", "summary": "Active in 3 Discord communities, 1 Twitter/X thread with 50K impressions" }
+    ]
+  },
+  "goldenMemo": {
+    "recommendation": "Focus on Claude Code power users who already use MCP servers — offer a 'decision workbench' preset that ships inside their existing workflow",
+    "confidence": 0.62,
+    "topVariables": [
+      { "name": "Distribution friction", "weight": 0.22, "category": "market" },
+      { "name": "Product-channel fit", "weight": 0.19, "category": "intrinsic" },
+      { "name": "Trust-node activation rate", "weight": 0.16, "category": "network" },
+      { "name": "Time to first value", "weight": 0.15, "category": "temporal" },
+      { "name": "Competitor density", "weight": 0.14, "category": "market" },
+      { "name": "Team bandwidth", "weight": 0.14, "category": "constraint" }
+    ],
+    "scenarios": [
+      { "title": "MCP-first distribution", "confidence": 0.62, "keyAssumption": "Claude Code users adopt MCP tools with low friction" },
+      { "title": "Content-led inbound", "confidence": 0.48, "keyAssumption": "LinkedIn posts convert to demo requests at 0.5% rate" },
+      { "title": "Enterprise direct sales", "confidence": 0.28, "keyAssumption": "Enterprise buyers will evaluate a pre-revenue tool" }
+    ],
+    "interventions": [
+      { "rank": 1, "title": "Publish nodebench-mcp to npm with 'decision workbench' preset", "expectedDelta": 0.15, "category": "market" },
+      { "rank": 2, "title": "Create 3-minute demo video showing CEO workflow end-to-end", "expectedDelta": 0.10, "category": "intrinsic" },
+      { "rank": 3, "title": "Reach out to 5 Claude Code power users for beta feedback", "expectedDelta": 0.08, "category": "network" },
+      { "rank": 4, "title": "Submit to MCP server directories and awesome-mcp lists", "expectedDelta": 0.06, "category": "market" }
+    ],
+    "counterModel": {
+      "thesis": "MCP ecosystem is too fragmented — users want integrated SaaS, not CLI tools",
+      "confidence": 0.35,
+      "whatWouldValidate": "npm install rate < 50/week after 30 days of promotion"
+    },
+    "evidence": { "sourceCount": 6, "verifiedCount": 3, "partialCount": 2, "unverifiedCount": 1 }
+  },
+  "knownOutcome": {
+    "checkedAt": "2026-06-15T00:00:00Z",
+    "whatHappened": "TO_BE_FILLED — check at T1",
+    "outcomeCategory": "pending"
+  },
+  "scoreRubric": {
+    "traceability": { "weight": 0.20, "description": "Every claim links to a source" },
+    "variableCompleteness": { "weight": 0.20, "description": "All 6 categories represented" },
+    "counterModelQuality": { "weight": 0.20, "description": "Counter-model is specific and actionable" },
+    "interventionUsefulness": { "weight": 0.20, "description": "Interventions are time-bound and measurable" },
+    "recommendationClarity": { "weight": 0.20, "description": "Recommendation includes clear wedge and falsification criteria" }
+  }
+}

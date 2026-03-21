@@ -23,7 +23,9 @@ describe("telemetryInspectorArtifacts", () => {
     expect(runs.length).toBeGreaterThanOrEqual(artifact.cases.length);
     expect(runs.some((run) => run.tags.includes("enterpriseInvestigation"))).toBe(true);
     expect(runs.every((run) => run.steps.length >= 3)).toBe(true);
-    expect(runs.some((run) => run.videoUrl === artifact.stream.video?.url)).toBe(true);
+    // Fixture video url is null (pending_capture) — conversion normalizes null → undefined
+    const expectedVideoUrl = artifact.stream.video?.url ?? undefined;
+    expect(runs.every((run) => run.videoUrl === expectedVideoUrl)).toBe(true);
     expect(
       runs.some((run) =>
         run.steps.some(

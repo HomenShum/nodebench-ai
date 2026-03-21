@@ -9,7 +9,7 @@
 export { useMcp } from "./useMcp";
 export { useWebMcpProvider } from "./useWebMcpProvider";
 export { useViewWebMcpTools } from "./useViewWebMcpTools";
-export { useMainLayoutRouting } from "./useMainLayoutRouting";
+export { useCockpitRouting, useCockpitSurfaceFromUrl } from "./useCockpitRouting";
 
 // Navigation & interaction
 export { useCommandPalette } from "./useCommandPalette";
@@ -24,9 +24,9 @@ export { useVoiceInput } from "./useVoiceInput";
 
 // UI utilities
 export { useZoom } from "./useZoom";
-export { usePanelResize } from "./usePanelResize";
 export { useScreenCapture } from "./useScreenCapture";
 export { useReducedMotion } from "./useReducedMotion";
+export { useRevealOnMount } from "./useRevealOnMount";
 export { useStableQuery } from "./useStableQuery";
 export { useTimeContext } from "./useTimeContext";
 export { useInlineCitations } from "./useInlineCitations";

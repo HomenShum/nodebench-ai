@@ -41,8 +41,8 @@ const SWARM_PRESETS: SwarmPreset[] = [
     placeholder: "e.g., Tesla competitors and market position",
     agents: ["DocumentAgent", "MediaAgent", "SECAgent"],
     icon: Search,
-    color: "text-violet-600",
-    bgColor: "bg-violet-500/10 hover:bg-violet-500/20 border-violet-500/20",
+    color: "text-content-secondary",
+    bgColor: "bg-white/[0.04] hover:bg-white/[0.07] border-white/[0.06]",
   },
   {
     id: "financial",
@@ -51,8 +51,8 @@ const SWARM_PRESETS: SwarmPreset[] = [
     placeholder: "e.g., AAPL Q4 earnings analysis",
     agents: ["SECAgent", "OpenBBAgent", "DocumentAgent"],
     icon: TrendingUp,
-    color: "text-indigo-600",
-    bgColor: "bg-indigo-500/10 hover:bg-indigo-500/20 border-indigo-500/20",
+    color: "text-content-secondary",
+    bgColor: "bg-white/[0.04] hover:bg-white/[0.07] border-white/[0.06]",
   },
   {
     id: "media",
@@ -61,8 +61,8 @@ const SWARM_PRESETS: SwarmPreset[] = [
     placeholder: "e.g., Latest AI announcements from Google",
     agents: ["MediaAgent", "DocumentAgent"],
     icon: Video,
-    color: "text-purple-600",
-    bgColor: "bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/20",
+    color: "text-content-secondary",
+    bgColor: "bg-white/[0.04] hover:bg-white/[0.07] border-white/[0.06]",
   },
   {
     id: "entity",
@@ -71,8 +71,8 @@ const SWARM_PRESETS: SwarmPreset[] = [
     placeholder: "e.g., Who are the key executives at Anthropic?",
     agents: ["EntityResearchAgent", "DocumentAgent", "SECAgent"],
     icon: Building,
-    color: "text-amber-600",
-    bgColor: "bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/20",
+    color: "text-content-secondary",
+    bgColor: "bg-white/[0.04] hover:bg-white/[0.07] border-white/[0.06]",
   },
 ];
 
@@ -105,7 +105,7 @@ const QuickActionCard = memo(function QuickActionCard({
       className={cn(
         "group relative rounded-lg border transition-all duration-150 cursor-pointer overflow-hidden will-change-transform",
         preset.bgColor,
-        isExpanded ? "ring-2 ring-offset-1 ring-violet-500/40" : "hover:translate-y-[-2px]"
+        isExpanded ? "ring-1 ring-white/[0.12]" : "hover:translate-y-[-2px]"
       )}
       onClick={() => !isExpanded && setIsExpanded(true)}
     >
@@ -151,7 +151,7 @@ const QuickActionCard = memo(function QuickActionCard({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={preset.placeholder}
-              className="w-full px-3.5 py-2.5 pr-11 text-[13px] bg-surface border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-violet-300 text-content placeholder:text-content-muted transition-all duration-200"
+              className="w-full px-3.5 py-2.5 pr-11 text-[13px] bg-surface border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-white/20 text-content placeholder:text-content-muted transition-all duration-200"
               autoFocus
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => {
@@ -174,7 +174,7 @@ const QuickActionCard = memo(function QuickActionCard({
               className={cn(
                 "absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all duration-200",
                 query.trim()
-                  ? "bg-gradient-to-r from-violet-500 to-indigo-500 text-white hover:from-violet-600 hover:to-indigo-600 shadow-sm"
+                  ? "bg-white/[0.12] text-content hover:bg-white/[0.18]"
                   : "bg-surface-secondary text-content-muted cursor-not-allowed"
               )}
             >
@@ -214,8 +214,8 @@ export function SwarmQuickActions({
     <div className={cn("px-4 pb-4", className)}>
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-sm">
-          <Sparkles className="w-4.5 h-4.5 text-white" />
+        <div className="w-9 h-9 rounded-lg bg-white/[0.06] flex items-center justify-center">
+          <Sparkles className="w-4.5 h-4.5 text-content-secondary" />
         </div>
         <div>
           <h2 className="text-sm font-bold text-content">

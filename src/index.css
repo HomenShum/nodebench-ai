@@ -1,5 +1,5 @@
-/* Fonts: Inter for UI, JetBrains Mono for code */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=optional');
+/* Curated UI type system inspired by frontend-slides presets. */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=optional');
 
 @tailwind base;
 @tailwind components;
@@ -44,55 +44,65 @@
     --bg-hover: #E5E7EB;
     --bg-tertiary: #F3F4F6;
     --border-color: rgba(0, 0, 0, 0.06);
-    --accent-primary: #5E6AD2;
-    --accent-secondary: #818CF8;
-    --accent-primary-bg: rgba(94, 106, 210, 0.08);
-    --accent-primary-hover: #4F5BC0;
+    --accent-primary: #d97757;
+    --accent-secondary: #e08a6c;
+    --accent-primary-bg: rgba(217, 119, 87, 0.08);
+    --accent-primary-hover: #c96a4d;
     --text-disabled: #9CA3AF;
     --text-tertiary: #9CA3AF;
     --text-placeholder: #9CA3AF;
+    --font-ui: "Manrope", system-ui, sans-serif;
+    --font-display: "Manrope", system-ui, sans-serif;
+
+    /* frontend-slides easing tokens */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+    --duration-normal: 0.2s;
+    --duration-fast: 0.12s;
+    --duration-slow: 0.4s;
   }
 
   .dark {
-    --background: 240 6% 4%;
-    /* #09090B - Near black */
-    --foreground: 0 0% 95%;
-    --card: 240 4% 10%;
-    /* #18181B */
-    --card-foreground: 0 0% 95%;
-    --popover: 240 4% 10%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 234 56% 65%;
-    /* Lighter indigo for dark mode */
+    /* Warm charcoal palette — CLUI CC inspired */
+    --background: 40 4% 8%;
+    /* #151413 - warm near-black */
+    --foreground: 40 8% 85%;
+    --card: 40 3% 13%;
+    /* #222120 - warm dark surface */
+    --card-foreground: 40 8% 85%;
+    --popover: 40 3% 11%;
+    --popover-foreground: 40 8% 85%;
+    --primary: 18 60% 55%;
+    /* Warm terracotta accent */
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 4% 16%;
-    /* #27272A */
-    --secondary-foreground: 0 0% 95%;
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 65%;
-    --accent: 240 4% 16%;
-    --accent-foreground: 234 56% 65%;
+    --secondary: 40 3% 17%;
+    /* #2c2b28 */
+    --secondary-foreground: 40 8% 85%;
+    --muted: 40 3% 17%;
+    --muted-foreground: 40 4% 55%;
+    --accent: 40 3% 17%;
+    --accent-foreground: 18 60% 55%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 100%;
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-    --ring: 234 56% 65%;
+    --border: 40 4% 18%;
+    --input: 40 3% 17%;
+    --ring: 18 60% 55%;
 
-    --text-primary: #FAFAFA;
-    --text-secondary: #A1A1AA;
-    --text-muted: #8A8A97;
-    --bg-primary: #0a0a0e;
-    --bg-secondary: #1a1a1f;
-    --bg-hover: #2a2a32;
-    --bg-tertiary: #201f27;
-    --border-color: rgba(255, 255, 255, 0.12);
-    --accent-primary: #7C8AE4;
-    --accent-secondary: #818CF8;
-    --accent-primary-bg: rgba(124, 138, 228, 0.1);
-    --accent-primary-hover: #8B97E8;
-    --text-disabled: #6B7280;
-    --text-tertiary: #A1A1AA;
-    --text-placeholder: #71717A;
+    --text-primary: #d4d0c8;
+    --text-secondary: #a8a49a;
+    --text-muted: #908d85;
+    --bg-primary: #151413;
+    --bg-secondary: #1e1d1b;
+    --bg-hover: #2a2926;
+    --bg-tertiary: #222120;
+    --border-color: rgba(255, 248, 230, 0.08);
+    --accent-primary: #d97757;
+    --accent-secondary: #e08a6c;
+    --accent-primary-bg: rgba(217, 119, 87, 0.1);
+    --accent-primary-hover: #c96a4d;
+    --text-disabled: #5a5750;
+    --text-tertiary: #a8a49a;
+    --text-placeholder: #5a5750;
   }
 }
 
@@ -108,17 +118,22 @@
   }
 
   .dark :focus-visible {
-    outline: 2px solid rgb(79, 70, 229);
+    outline: 2px solid var(--accent-primary);
     outline-offset: 2px;
-    box-shadow: 0 0 0 4px rgba(124, 138, 228, 0.25);
+    box-shadow: 0 0 0 4px var(--accent-primary-bg);
   }
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-ui);
     font-size: 14px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-attachment: fixed;
+    background-image:
+      radial-gradient(circle at top, rgba(67, 97, 238, 0.08), transparent 28%),
+      radial-gradient(circle at bottom right, rgba(255, 87, 34, 0.06), transparent 22%);
   }
 
   h1,
@@ -127,14 +142,181 @@
   h4,
   h5,
   h6 {
-    @apply font-sans tracking-tight;
+    font-family: var(--font-display);
+    @apply tracking-tight;
   }
+}
+
+@layer base {
+  html[data-background-pattern='none'] body {
+    background-image:
+      radial-gradient(circle at top, rgba(67, 97, 238, 0.08), transparent 28%),
+      radial-gradient(circle at bottom right, rgba(255, 87, 34, 0.06), transparent 22%);
+  }
+
+  html[data-background-pattern='spotlight'] body {
+    background-image:
+      radial-gradient(circle at 12% 12%, rgba(255, 255, 255, 0.08), transparent 0, transparent 24rem),
+      radial-gradient(circle at 85% 18%, rgba(67, 97, 238, 0.16), transparent 0, transparent 20rem),
+      radial-gradient(circle at 72% 86%, rgba(255, 87, 34, 0.12), transparent 0, transparent 18rem);
+  }
+
+  html[data-background-pattern='grid'] body {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+      radial-gradient(circle at top, rgba(67, 97, 238, 0.1), transparent 28%);
+    background-size: 36px 36px, 36px 36px, cover;
+  }
+
+  html[data-background-pattern='dots'] body {
+    background-image:
+      radial-gradient(rgba(99, 102, 241, 0.18) 1px, transparent 1px),
+      radial-gradient(circle at top, rgba(67, 97, 238, 0.1), transparent 28%);
+    background-size: 18px 18px, cover;
+  }
+
+  html[data-background-pattern='lines'] body {
+    background-image:
+      repeating-linear-gradient(
+        180deg,
+        rgba(57, 211, 83, 0.08) 0,
+        rgba(57, 211, 83, 0.08) 1px,
+        transparent 1px,
+        transparent 16px
+      ),
+      linear-gradient(180deg, rgba(9, 17, 23, 0.25), transparent 40%);
+    background-size: auto, cover;
+  }
+
+  html[data-background-pattern='noise'] body {
+    background-image:
+      radial-gradient(circle at top, rgba(212, 165, 116, 0.12), transparent 24%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.025) 25%, transparent 25%),
+      linear-gradient(225deg, rgba(255, 255, 255, 0.025) 25%, transparent 25%);
+    background-size: cover, 18px 18px, 18px 18px;
+  }
+
+  html[data-background-pattern='paper'] body {
+    background-image:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.72)),
+      linear-gradient(rgba(214, 202, 187, 0.28) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(214, 202, 187, 0.14) 1px, transparent 1px);
+    background-size: cover, 32px 32px, 32px 32px;
+  }
+
+  html.dark[data-background-pattern='paper'] body {
+    background-image:
+      linear-gradient(180deg, rgba(15, 15, 18, 0.88), rgba(15, 15, 18, 0.88)),
+      linear-gradient(rgba(212, 165, 116, 0.09) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(212, 165, 116, 0.06) 1px, transparent 1px);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DENSITY — compact / comfortable / spacious spacing scales
+   ═══════════════════════════════════════════════════════════════ */
+
+html[data-density='compact'] {
+  --density-page-px: clamp(0.75rem, 2vw, 1.5rem);
+  --density-page-py: 1rem;
+  --density-card-p: 0.75rem;
+  --density-gap: 0.5rem;
+  --density-text-sm: 0.75rem;
+  font-size: 13px;
+}
+
+html[data-density='comfortable'] {
+  --density-page-px: clamp(1.5rem, 4vw, 2.5rem);
+  --density-page-py: 2rem;
+  --density-card-p: 1.25rem;
+  --density-gap: 1rem;
+  --density-text-sm: 0.875rem;
+  font-size: 14px;
+}
+
+html[data-density='spacious'] {
+  --density-page-px: clamp(2rem, 5vw, 4rem);
+  --density-page-py: 3rem;
+  --density-card-p: 1.75rem;
+  --density-gap: 1.5rem;
+  --density-text-sm: 0.875rem;
+  font-size: 15px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ENTRANCE ANIMATIONS (from frontend-slides)
+   Apply .reveal + .visible parent for scroll-triggered entrances
+   ═══════════════════════════════════════════════════════════════ */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity var(--duration-normal) var(--ease-out-expo),
+              transform var(--duration-normal) var(--ease-out-expo);
+}
+.visible .reveal,
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.92);
+  transition: opacity var(--duration-normal) var(--ease-out-expo),
+              transform var(--duration-normal) var(--ease-out-expo);
+}
+.visible .reveal-scale,
+.reveal-scale.is-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.reveal-blur {
+  opacity: 0;
+  filter: blur(10px);
+  transition: opacity 0.8s var(--ease-out-expo),
+              filter 0.8s var(--ease-out-expo);
+}
+.visible .reveal-blur,
+.reveal-blur.is-visible {
+  opacity: 1;
+  filter: blur(0);
+}
+
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: opacity var(--duration-normal) var(--ease-out-expo),
+              transform var(--duration-normal) var(--ease-out-expo);
+}
+.visible .reveal-left,
+.reveal-left.is-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Stagger reveal children — use with .reveal on each child */
+.reveal-stagger > .reveal:nth-child(1) { transition-delay: 0.1s; }
+.reveal-stagger > .reveal:nth-child(2) { transition-delay: 0.2s; }
+.reveal-stagger > .reveal:nth-child(3) { transition-delay: 0.3s; }
+.reveal-stagger > .reveal:nth-child(4) { transition-delay: 0.4s; }
+.reveal-stagger > .reveal:nth-child(5) { transition-delay: 0.5s; }
+.reveal-stagger > .reveal:nth-child(n+6) { transition-delay: 0.6s; }
+
+/* Gradient mesh — layered radial gradients for atmospheric depth */
+.gradient-mesh {
+  background:
+    radial-gradient(ellipse at 20% 80%, rgba(var(--accent-mesh-r, 67), var(--accent-mesh-g, 97), var(--accent-mesh-b, 238), 0.18) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(0, 255, 200, 0.1) 0%, transparent 50%),
+    var(--bg-primary);
 }
 
 /* ───── Type Scale (Linear/Vercel consistency) ───── */
 @layer components {
-  .type-page-title { @apply text-[1.95rem] leading-tight font-bold tracking-[-0.02em]; }
-  .type-section-title { @apply text-[1.02rem] leading-tight font-semibold tracking-tight; }
+  .type-page-title { @apply text-[1.95rem] leading-tight font-bold tracking-[-0.02em]; font-family: var(--font-display); }
+  .type-section-title { @apply text-[1.02rem] leading-tight font-semibold tracking-tight; font-family: var(--font-display); }
   .type-card-title { @apply text-sm font-semibold tracking-tight; }
   .type-body { @apply text-sm leading-6; }
   .type-caption { @apply text-xs text-content-muted; }
@@ -235,15 +417,15 @@
   }
 }
 
-/* Preserve serif in editorial/research views */
+/* Preserve display font in editorial/research views */
 .editorial-layout h1,
 .editorial-layout h2,
 .editorial-layout h3,
 .editorial-layout h4,
 .editorial-layout h5,
 .editorial-layout h6 {
-  font-family: Georgia, serif;
-  letter-spacing: normal;
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
 }
 
 /*
@@ -282,18 +464,18 @@
 /* Refined focus ring — soft glow instead of harsh outline */
 .focus-ring:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px rgb(79, 70, 229), 0 0 12px rgba(94, 106, 210, 0.15);
+  box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--accent-primary), 0 0 12px var(--accent-primary-bg);
 }
 
-/* Inline code — monospace with subtle accent background */
+/* Inline code — monospace with accent-aware background */
 :not(pre) > code {
   background: var(--accent-primary-bg);
   border-radius: 4px;
   padding: 2px 6px;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 0.875em;
-  color: rgb(79, 70, 229);
-  border: 1px solid rgba(94, 106, 210, 0.12);
+  color: var(--accent-primary);
+  border: 1px solid var(--accent-primary-bg);
 }
 
 /* Dark mode: elevate with subtle inset border instead of box-shadow */
@@ -798,6 +980,16 @@
     opacity: 1;
   }
 
+  .reveal,
+  .reveal-scale,
+  .reveal-blur,
+  .reveal-left {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+
   .animate-cursor,
   .typewriter-cursor {
     animation: none;
@@ -922,6 +1114,380 @@
   @keyframes hud-grid-drift {
     from { background-position: 0 0; }
     to { background-position: 0 0; }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Frontend-Slides Design Activation
+   Atmosphere, card variants, animated counters
+   ═══════════════════════════════════════════════════════════ */
+
+/* ───── CSS Counter Animation (animated number displays) ───── */
+@property --num {
+  syntax: '<integer>';
+  initial-value: 0;
+  inherits: false;
+}
+
+.animate-counter {
+  transition: --num 1.2s var(--ease-out-expo);
+  counter-reset: num var(--num);
+}
+.animate-counter::after {
+  content: counter(num);
+}
+.reduce-motion .animate-counter,
+.animate-counter.no-animate {
+  transition-duration: 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-counter {
+    transition-duration: 0s;
+  }
+}
+
+/* ───── View-Specific Atmosphere Gradients ───── */
+/* Layer on top of global background pattern for per-view color identity */
+
+.dark .view-atmosphere-investigation {
+  background-image:
+    radial-gradient(ellipse at 10% 90%, rgba(196, 30, 58, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 10%, rgba(99, 102, 241, 0.05) 0%, transparent 40%);
+}
+.dark .view-atmosphere-funding {
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(212, 165, 116, 0.08) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 100%, rgba(67, 97, 238, 0.05) 0%, transparent 35%);
+}
+.dark .view-atmosphere-agents {
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(57, 211, 83, 0.06) 0%, transparent 45%),
+    radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.04) 0%, transparent 40%);
+}
+.dark .view-atmosphere-research {
+  background-image:
+    radial-gradient(ellipse at 30% 70%, rgba(67, 97, 238, 0.07) 0%, transparent 45%),
+    radial-gradient(ellipse at 70% 20%, rgba(0, 255, 200, 0.04) 0%, transparent 35%);
+}
+.dark .view-atmosphere-receipts {
+  background-image:
+    radial-gradient(ellipse at 15% 15%, rgba(245, 158, 11, 0.05) 0%, transparent 40%),
+    radial-gradient(ellipse at 85% 85%, rgba(99, 102, 241, 0.04) 0%, transparent 35%);
+}
+.dark .view-atmosphere-home {
+  background-image:
+    radial-gradient(ellipse at 50% 30%, rgba(99, 102, 241, 0.08) 0%, transparent 45%),
+    radial-gradient(ellipse at 20% 80%, rgba(0, 255, 200, 0.04) 0%, transparent 40%);
+}
+
+/* Light mode — warmer, subtler */
+:root:not(.dark) .view-atmosphere-investigation {
+  background-image:
+    radial-gradient(ellipse at 10% 90%, rgba(196, 30, 58, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 10%, rgba(99, 102, 241, 0.03) 0%, transparent 40%);
+}
+:root:not(.dark) .view-atmosphere-funding {
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(212, 165, 116, 0.04) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 100%, rgba(67, 97, 238, 0.03) 0%, transparent 35%);
+}
+:root:not(.dark) .view-atmosphere-agents {
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(57, 211, 83, 0.03) 0%, transparent 45%),
+    radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.02) 0%, transparent 40%);
+}
+:root:not(.dark) .view-atmosphere-research {
+  background-image:
+    radial-gradient(ellipse at 30% 70%, rgba(67, 97, 238, 0.04) 0%, transparent 45%),
+    radial-gradient(ellipse at 70% 20%, rgba(0, 200, 160, 0.02) 0%, transparent 35%);
+}
+:root:not(.dark) .view-atmosphere-receipts {
+  background-image:
+    radial-gradient(ellipse at 15% 15%, rgba(245, 158, 11, 0.03) 0%, transparent 40%),
+    radial-gradient(ellipse at 85% 85%, rgba(99, 102, 241, 0.02) 0%, transparent 35%);
+}
+:root:not(.dark) .view-atmosphere-home {
+  background-image:
+    radial-gradient(ellipse at 50% 30%, rgba(99, 102, 241, 0.04) 0%, transparent 45%),
+    radial-gradient(ellipse at 20% 80%, rgba(0, 200, 160, 0.02) 0%, transparent 40%);
+}
+
+/* ───── Card Surface Variants ───── */
+@layer components {
+  .card-surface-elevated {
+    @apply rounded-xl border border-edge/40;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.03);
+  }
+  .dark .card-surface-elevated {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  }
+  .card-surface-inset {
+    @apply rounded-xl border border-edge/30;
+    background: var(--bg-secondary);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+  .dark .card-surface-inset {
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+  .card-surface-glass {
+    @apply rounded-xl border border-edge/20;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(8px);
+  }
+  .dark .card-surface-glass {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+  }
+
+  /* Status-tinted cards for receipt/approval feeds */
+  .card-status-allowed {
+    border-left: 3px solid rgba(57, 211, 83, 0.6);
+  }
+  .card-status-pending {
+    border-left: 3px solid rgba(245, 158, 11, 0.6);
+  }
+  .card-status-denied {
+    border-left: 3px solid rgba(239, 68, 68, 0.6);
+  }
+  .card-status-needs-approval {
+    border-left: 3px solid rgba(99, 102, 241, 0.6);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK BOTANICAL PRESET — frontend-slides: elegant dark, warm gold/pink
+   Activates via html.dark[data-preset="dark-botanical"]
+   ═══════════════════════════════════════════════════════════════ */
+
+html.dark[data-preset="dark-botanical"] {
+  --background: 0 0% 6%;
+  --foreground: 30 10% 90%;
+  --card: 20 6% 10%;
+  --card-foreground: 30 10% 90%;
+  --popover: 20 6% 10%;
+  --popover-foreground: 30 10% 90%;
+  --muted: 20 4% 14%;
+  --muted-foreground: 25 6% 55%;
+  --secondary: 20 4% 14%;
+  --secondary-foreground: 30 10% 90%;
+  --border: 25 8% 16%;
+  --input: 25 8% 16%;
+
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #1a1816;
+  --bg-hover: #252220;
+  --bg-tertiary: #1e1b19;
+  --text-primary: #e8e4df;
+  --text-secondary: #9a9590;
+  --text-muted: #7a7570;
+  --border-color: rgba(212, 165, 116, 0.12);
+  --text-disabled: #6a6560;
+  --text-tertiary: #9a9590;
+  --text-placeholder: #6a6560;
+}
+
+/* Botanical background pattern — warm radial orbs + organic noise drift */
+html.dark[data-preset="dark-botanical"][data-background-pattern='noise'] body {
+  background-image:
+    radial-gradient(ellipse at 20% 80%, rgba(212, 165, 116, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(232, 180, 184, 0.05) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 50%, rgba(201, 184, 150, 0.03) 0%, transparent 60%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.015) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(255, 255, 255, 0.015) 25%, transparent 25%);
+  background-size: cover, cover, cover, 18px 18px, 18px 18px;
+  animation: botanical-drift 30s ease-in-out infinite alternate;
+}
+
+@keyframes botanical-drift {
+  0% { background-position: 0% 0%, 100% 0%, 50% 50%, 0 0, 0 0; }
+  100% { background-position: 5% 8%, 95% 5%, 52% 48%, 0 0, 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.dark[data-preset="dark-botanical"][data-background-pattern='noise'] body {
+    animation: none;
+  }
+}
+.reduce-motion html.dark[data-preset="dark-botanical"][data-background-pattern='noise'] body,
+html.dark.reduce-motion[data-preset="dark-botanical"][data-background-pattern='noise'] body {
+  animation: none;
+}
+
+/* Botanical dark shadows — warmer than default cool greys */
+html.dark[data-preset="dark-botanical"] .shadow-sm,
+html.dark[data-preset="dark-botanical"] .shadow,
+html.dark[data-preset="dark-botanical"] .shadow-md {
+  --tw-shadow: 0 0 0 1px rgba(212, 165, 116, 0.04);
+}
+html.dark[data-preset="dark-botanical"] .shadow-lg,
+html.dark[data-preset="dark-botanical"] .shadow-xl,
+html.dark[data-preset="dark-botanical"] .shadow-2xl {
+  --tw-shadow: 0 0 0 1px rgba(212, 165, 116, 0.06), 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Botanical scrollbar */
+html.dark[data-preset="dark-botanical"] ::-webkit-scrollbar-thumb {
+  background: rgba(212, 165, 116, 0.12);
+}
+html.dark[data-preset="dark-botanical"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 165, 116, 0.22);
+}
+html.dark[data-preset="dark-botanical"] * {
+  scrollbar-color: rgba(212, 165, 116, 0.12) transparent;
+}
+
+/* Botanical type polish — Cormorant italic titles */
+html.dark[data-preset="dark-botanical"] .type-page-title {
+  font-style: italic;
+  letter-spacing: -0.025em;
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+}
+html.dark[data-preset="dark-botanical"] .type-section-title {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+}
+
+/* ───── Botanical Signature Elements ───── */
+
+/* Soft radial gradient circles — Dark Botanical's visual signature */
+.botanical-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(80px);
+  opacity: 0.06;
+  z-index: 0;
+}
+html.dark[data-preset="dark-botanical"] .botanical-orb {
+  opacity: 0.08;
+}
+.botanical-orb-gold {
+  background: radial-gradient(circle, rgba(212, 165, 116, 0.8) 0%, transparent 70%);
+  width: 400px;
+  height: 400px;
+}
+.botanical-orb-pink {
+  background: radial-gradient(circle, rgba(232, 180, 184, 0.6) 0%, transparent 70%);
+  width: 300px;
+  height: 300px;
+}
+.botanical-orb-sage {
+  background: radial-gradient(circle, rgba(201, 184, 150, 0.5) 0%, transparent 70%);
+  width: 350px;
+  height: 350px;
+}
+
+/* Elegant horizontal rule with warm gradient */
+.botanical-rule {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(212, 165, 116, 0.3) 20%, rgba(232, 180, 184, 0.2) 80%, transparent 100%);
+  margin: 1.5rem 0;
+}
+
+/* Italic accent text for captions/attributions */
+.botanical-italic-signature {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--text-secondary);
+  letter-spacing: -0.01em;
+}
+
+/* Botanical atmosphere overrides — warm tones instead of cold indigo */
+html.dark[data-preset="dark-botanical"] .view-atmosphere-investigation {
+  background-image:
+    radial-gradient(ellipse at 10% 90%, rgba(196, 30, 58, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 10%, rgba(212, 165, 116, 0.06) 0%, transparent 40%);
+}
+html.dark[data-preset="dark-botanical"] .view-atmosphere-funding {
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(212, 165, 116, 0.1) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 100%, rgba(201, 184, 150, 0.05) 0%, transparent 35%);
+}
+html.dark[data-preset="dark-botanical"] .view-atmosphere-agents {
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(201, 184, 150, 0.06) 0%, transparent 45%),
+    radial-gradient(ellipse at 80% 80%, rgba(212, 165, 116, 0.04) 0%, transparent 40%);
+}
+html.dark[data-preset="dark-botanical"] .view-atmosphere-research {
+  background-image:
+    radial-gradient(ellipse at 30% 70%, rgba(212, 165, 116, 0.07) 0%, transparent 45%),
+    radial-gradient(ellipse at 70% 20%, rgba(232, 180, 184, 0.04) 0%, transparent 35%);
+}
+html.dark[data-preset="dark-botanical"] .view-atmosphere-home {
+  background-image:
+    radial-gradient(ellipse at 50% 30%, rgba(212, 165, 116, 0.08) 0%, transparent 45%),
+    radial-gradient(ellipse at 20% 80%, rgba(232, 180, 184, 0.04) 0%, transparent 40%);
+}
+html.dark[data-preset="dark-botanical"] .view-atmosphere-receipts {
+  background-image:
+    radial-gradient(ellipse at 15% 15%, rgba(212, 165, 116, 0.06) 0%, transparent 40%),
+    radial-gradient(ellipse at 85% 85%, rgba(201, 184, 150, 0.04) 0%, transparent 35%);
+}
+
+/* Botanical gradient mesh — warm golds instead of cool blues */
+html.dark[data-preset="dark-botanical"] .gradient-mesh {
+  background:
+    radial-gradient(ellipse at 20% 80%, rgba(212, 165, 116, 0.14) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(232, 180, 184, 0.08) 0%, transparent 50%),
+    var(--bg-primary);
+}
+
+/* Botanical inline code */
+html.dark[data-preset="dark-botanical"] :not(pre) > code {
+  background: rgba(212, 165, 116, 0.1);
+  color: #d4a574;
+  border-color: rgba(212, 165, 116, 0.15);
+}
+
+/* Botanical focus ring */
+html.dark[data-preset="dark-botanical"] :focus-visible {
+  outline-color: #d4a574;
+}
+html.dark[data-preset="dark-botanical"] .focus-ring:focus-visible {
+  box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px #d4a574, 0 0 12px rgba(212, 165, 116, 0.15);
+}
+
+/* Premium scrollbar — moved from DocumentsHomeHub inline <style> to avoid per-render style recalc */
+.premium-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.premium-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.premium-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+}
+.premium-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ─── Cockpit Grid Layout ─── */
+/* Responsive grid: mobile = full-bleed center, desktop = left rail + center + right rail */
+.cockpit-grid {
+  display: grid;
+  grid-template-areas:
+    "status  status  status"
+    "left    center  right"
+    "trace   trace   trace";
+  grid-template-rows: auto 1fr auto;
+  /* Mobile: no rails, center gets all space */
+  grid-template-columns: 0px 1fr 0px;
+}
+@media (min-width: 1024px) {
+  .cockpit-grid {
+    grid-template-columns: 240px 1fr 292px;
+  }
+  .cockpit-grid[data-left-collapsed] {
+    grid-template-columns: 48px 1fr 292px;
+  }
+  .cockpit-grid[data-right-collapsed] {
+    grid-template-columns: 240px 1fr 0px;
+  }
+  .cockpit-grid[data-left-collapsed][data-right-collapsed] {
+    grid-template-columns: 48px 1fr 0px;
   }
 }
 

@@ -5,7 +5,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { SparkBars } from "./Sparkline";
 import { Activity, Download } from "lucide-react";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 
 interface SignalTimeseriesPanelProps {
   keyword: string;

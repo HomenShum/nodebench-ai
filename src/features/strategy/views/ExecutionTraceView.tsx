@@ -22,6 +22,9 @@ import type {
   TaskSpan,
   TaskTrace,
 } from "@/features/agents/components/TaskManager/types";
+import { TrajectorySummaryBand } from "@/features/trajectory/components/TrajectorySummaryBand";
+import { TrajectoryTimelinePanel } from "@/features/trajectory/components/TrajectoryTimelinePanel";
+import type { TrajectorySummaryData, TrajectoryTimelineItem } from "@/features/trajectory/types";
 
 import { SPREADSHEET_EXECUTION_TRACE } from "../data/spreadsheetExecutionTrace";
 import { buildExecutionTraceFromLiveRun } from "../lib/executionTraceAdapter";
@@ -154,7 +157,9 @@ export function ExecutionTraceView() {
     if (typeof window === "undefined") return null;
     const params = new URLSearchParams(window.location.search);
     const session = params.get("session");
-    return session ? (session as Id<"agentTaskSessions">) : null;
+    // Validate: Convex IDs are non-empty alphanumeric strings (no slashes, no spaces)
+    if (!session || !/^[a-zA-Z0-9_-]+$/.test(session)) return null;
+    return session as Id<"agentTaskSessions">;
   }, []);
 
   const publicSessionsData = useQuery(
@@ -216,6 +221,35 @@ export function ExecutionTraceView() {
 
   const trace = liveTrace ?? SPREADSHEET_EXECUTION_TRACE;
   const usingLiveRun = Boolean(liveTrace);
+  const activeWorkflowName = useMemo(
+    () =>
+      sessionDetail?.traces?.[0]?.workflowName ??
+      trace.meta.workflow_name ??
+      trace.run.workflow_type ??
+      trace.meta.workflow_template ??
+      null,
+    [sessionDetail?.traces, trace.meta.workflow_name, trace.meta.workflow_template, trace.run.workflow_type],
+  );
+  const trajectorySummary = useQuery(
+    api.domains.trajectory.queries.getTrajectorySummary,
+    activeWorkflowName
+      ? {
+          entityKey: activeWorkflowName,
+          entityType: "workflow",
+          windowDays: 90,
+        }
+      : "skip",
+  ) as TrajectorySummaryData | undefined;
+  const trajectoryTimeline = useQuery(
+    api.domains.trajectory.queries.getTrajectoryTimeline,
+    activeWorkflowName
+      ? {
+          entityKey: activeWorkflowName,
+          entityType: "workflow",
+          windowDays: 90,
+        }
+      : "skip",
+  ) as { items: TrajectoryTimelineItem[] } | undefined;
   const activeSession = sessionDetail?.session as TaskSession | undefined;
   const isLoadingSessions = (effectiveIsPublic ? publicSessionsData : userSessionsData) === undefined;
   const isLoadingDetail = Boolean(selectedSessionId) && sessionDetail === undefined;
@@ -352,6 +386,12 @@ export function ExecutionTraceView() {
           </div>
         </div>
       </header>
+
+      <TrajectorySummaryBand
+        summary={trajectorySummary ?? null}
+        loading={trajectorySummary === undefined}
+        emptyLabel="No workflow-level trajectory cache exists yet for this trace. Rebuild the trajectory entity after the next saved run if you want persisted slope attribution."
+      />
 
       {(isLoadingSessions || isLoadingDetail) && !usingLiveRun ? (
         <div className="rounded-2xl border border-edge bg-surface/50 px-4 py-3 text-sm text-content-muted">
@@ -571,44 +611,51 @@ export function ExecutionTraceView() {
       ) : null}
 
       {activeTab === "timeline" ? (
-        <SectionCard title="Step Timeline" icon={<Waypoints className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />}>
-          <div className="space-y-4">
-            {trace.steps.map((step, index) => (
-              <div key={step.step_id} className="grid gap-3 rounded-2xl border border-edge bg-surface/50 p-4 lg:grid-cols-[120px_1fr]">
-                <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">{step.stage}</div>
-                  <div className="mt-1 text-xs text-content-muted">Step {index + 1}</div>
-                </div>
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="text-sm font-medium text-content">{step.title}</div>
-                    <span className="rounded-full border border-edge bg-surface-secondary/50 px-2 py-1 text-[10px] uppercase tracking-wide text-content-muted">
-                      {step.tool}
-                    </span>
+        <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
+          <SectionCard title="Step Timeline" icon={<Waypoints className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />}>
+            <div className="space-y-4">
+              {trace.steps.map((step, index) => (
+                <div key={step.step_id} className="grid gap-3 rounded-2xl border border-edge bg-surface/50 p-4 lg:grid-cols-[120px_1fr]">
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">{step.stage}</div>
+                    <div className="mt-1 text-xs text-content-muted">Step {index + 1}</div>
                   </div>
-                  <p className="mt-2 text-sm leading-relaxed text-content-secondary">{step.result_summary}</p>
-                  <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-content-muted">
-                    <span>action: {step.action}</span>
-                    <span>target: {step.target}</span>
-                    {typeof step.confidence === "number" ? (
-                      <span>confidence {(step.confidence * 100).toFixed(0)}%</span>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="text-sm font-medium text-content">{step.title}</div>
+                      <span className="rounded-full border border-edge bg-surface-secondary/50 px-2 py-1 text-[10px] uppercase tracking-wide text-content-muted">
+                        {step.tool}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm leading-relaxed text-content-secondary">{step.result_summary}</p>
+                    <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-content-muted">
+                      <span>action: {step.action}</span>
+                      <span>target: {step.target}</span>
+                      {typeof step.confidence === "number" ? (
+                        <span>confidence {(step.confidence * 100).toFixed(0)}%</span>
+                      ) : null}
+                    </div>
+                    {step.verification.length ? (
+                      <div className="mt-3 rounded-xl border border-edge bg-surface-secondary p-3">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                          Verification notes
+                        </div>
+                        <div className="mt-2">
+                          <BulletList items={step.verification} />
+                        </div>
+                      </div>
                     ) : null}
                   </div>
-                  {step.verification.length ? (
-                    <div className="mt-3 rounded-xl border border-edge bg-surface-secondary p-3">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
-                        Verification notes
-                      </div>
-                      <div className="mt-2">
-                        <BulletList items={step.verification} />
-                      </div>
-                    </div>
-                  ) : null}
                 </div>
-              </div>
-            ))}
-          </div>
-        </SectionCard>
+              ))}
+            </div>
+          </SectionCard>
+
+          <TrajectoryTimelinePanel
+            items={trajectoryTimeline?.items ?? []}
+            emptyLabel="No span-level trajectory overlays are available for this workflow yet."
+          />
+        </div>
       ) : null}
 
       {activeTab === "evidence" ? (

@@ -166,7 +166,7 @@ export function ApiUsageDisplay() {
             <div>• <strong>YouTube:</strong> Video search (10K free units/day)</div>
             <div>• <strong>OpenAI:</strong> GPT-5 token-based pricing</div>
             <div className="mt-2 pt-1 border-t border-edge/30 text-[10px] text-content-muted italic">
-              Pricing updated August 2025. Actual costs may vary.
+              Pricing updated March 2026. Actual costs may vary.
             </div>
           </div>
         </div>

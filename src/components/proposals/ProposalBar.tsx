@@ -100,7 +100,7 @@ export function ProposalBar({
       <div className="flex items-center gap-2">
         <button
           onClick={applySelected}
-          className="text-xs px-2 py-0.5 rounded bg-indigo-600 text-white"
+          className="text-xs px-2 py-0.5 rounded bg-[var(--accent-primary)] text-white"
           title="Apply only the selected lines across all blocks"
         >
           Apply Selected

@@ -415,7 +415,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
                     Chat with Selection
                   </button>
                 )}
-                <button type="button" onClick={() => { setIsAnalyzing(true); toast.info('AI analysis coming soon!'); setIsAnalyzing(false); }} disabled={isAnalyzing} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-purple-500/25 disabled:opacity-50">
+                <button type="button" onClick={() => { setIsAnalyzing(true); toast.info('Select cells and use "Chat with Selection" for AI analysis'); setIsAnalyzing(false); }} disabled={isAnalyzing} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-purple-500/25 disabled:opacity-50">
                   {isAnalyzing ? <Loader2 className="w-4 h-4 motion-safe:animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   Analyze All
                 </button>

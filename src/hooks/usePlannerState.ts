@@ -177,6 +177,27 @@ export function usePlannerState() {
     setMiniSelectedDateMs(next.getTime());
   }, [miniSelectedDateMs]);
 
+  const upcoming = useMemo(() => ({
+    today: { tasks: tasksToday, events: eventsToday, holidays: holidaysToday },
+    next: { tasks: nextTasks, events: eventsThisWeek },
+    sevenDays: { tasks: tasksThisWeek, events: eventsThisWeek, holidays: holidaysThisWeek },
+    counts: upcomingCounts,
+    ranges: { agendaStartUtc, agendaEndUtc, weekStartUtc, weekEndUtc },
+  }), [
+    tasksToday,
+    eventsToday,
+    holidaysToday,
+    nextTasks,
+    tasksThisWeek,
+    eventsThisWeek,
+    holidaysThisWeek,
+    upcomingCounts,
+    agendaStartUtc,
+    agendaEndUtc,
+    weekStartUtc,
+    weekEndUtc,
+  ]);
+
   return {
     focusedDateMs,
     setFocusedDateMs,
@@ -184,14 +205,7 @@ export function usePlannerState() {
     handleViewWeek,
     handleAddTaskForDate,
     // Upcoming aggregates
-    upcoming: {
-      today: { tasks: tasksToday, events: eventsToday, holidays: holidaysToday },
-      next: { tasks: nextTasks, events: eventsThisWeek },
-      sevenDays: { tasks: tasksThisWeek, events: eventsThisWeek, holidays: holidaysThisWeek },
-      counts: upcomingCounts,
-      // expose canonical ranges if needed by UIs
-      ranges: { agendaStartUtc, agendaEndUtc, weekStartUtc, weekEndUtc },
-    },
+    upcoming,
     // Mini-month calendar data
     miniMonth: {
       selectedDateMs: miniSelectedDateMs,
@@ -202,4 +216,3 @@ export function usePlannerState() {
     },
   } as const;
 }
-
