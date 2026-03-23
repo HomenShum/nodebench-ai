@@ -12,26 +12,36 @@ import {
   SEARCH_MODES,
 } from "../tools/toolRegistry.js";
 import { createProgressiveDiscoveryTools, type DiscoveryOptions } from "../tools/progressiveDiscoveryTools.js";
-import { TOOLSET_MAP, TOOL_TO_TOOLSET } from "../toolsetRegistry.js";
+import { TOOLSET_MAP, TOOL_TO_TOOLSET, loadAllToolsets, ALL_DOMAIN_KEYS } from "../toolsetRegistry.js";
 import type { McpTool } from "../types.js";
+import { beforeAll } from "vitest";
 
 // ── Helpers ────────────────────────────────────────────────────────────
 // Simulate a "default" loaded set: only verification + eval + quality_gate + learning + flywheel + recon
 const DEFAULT_TOOLSET_NAMES = new Set(["verification", "eval", "quality_gate", "learning", "flywheel", "recon"]);
-const defaultTools: McpTool[] = [];
-for (const [tsName, tools] of Object.entries(TOOLSET_MAP)) {
-  if (DEFAULT_TOOLSET_NAMES.has(tsName)) {
-    defaultTools.push(...tools);
+let defaultTools: McpTool[] = [];
+let defaultToolNames: Set<string> = new Set();
+
+// Must load all toolsets before any test accesses TOOLSET_MAP
+beforeAll(async () => {
+  await loadAllToolsets();
+  for (const [tsName, tools] of Object.entries(TOOLSET_MAP)) {
+    if (DEFAULT_TOOLSET_NAMES.has(tsName)) {
+      defaultTools.push(...tools);
+    }
   }
-}
-const defaultToolNames = new Set(defaultTools.map(t => t.name));
+  defaultToolNames = new Set(defaultTools.map(t => t.name));
+}, 30_000);
 
 // ═══════════════════════════════════════════════════════════════════════
 // hybridSearch with searchFullRegistry
 // ═══════════════════════════════════════════════════════════════════════
 
 describe("Dynamic Loading: hybridSearch searchFullRegistry", () => {
-  const smallLoadedTools = defaultTools.map(t => ({ name: t.name, description: t.description }));
+  let smallLoadedTools: { name: string; description: string }[];
+  beforeAll(() => {
+    smallLoadedTools = defaultTools.map(t => ({ name: t.name, description: t.description }));
+  });
 
   it("searchFullRegistry=true searches all 175 registry entries", () => {
     const results = hybridSearch("analyze screenshot visual regression", smallLoadedTools, {
@@ -94,16 +104,19 @@ describe("Dynamic Loading: hybridSearch searchFullRegistry", () => {
 // ═══════════════════════════════════════════════════════════════════════
 
 describe("Dynamic Loading: discover_tools _loadSuggestions", () => {
-  // Create discovery tools with dynamic loading awareness
-  const options: DiscoveryOptions = {
-    getLoadedToolNames: () => defaultToolNames,
-    getToolToToolset: () => TOOL_TO_TOOLSET,
-  };
-  const discoveryTools = createProgressiveDiscoveryTools(
-    defaultTools.map(t => ({ name: t.name, description: t.description })),
-    options,
-  );
-  const discoverTool = discoveryTools.find(t => t.name === "discover_tools")!;
+  let discoverTool: McpTool;
+
+  beforeAll(() => {
+    const options: DiscoveryOptions = {
+      getLoadedToolNames: () => defaultToolNames,
+      getToolToToolset: () => TOOL_TO_TOOLSET,
+    };
+    const discoveryTools = createProgressiveDiscoveryTools(
+      defaultTools.map(t => ({ name: t.name, description: t.description })),
+      options,
+    );
+    discoverTool = discoveryTools.find(t => t.name === "discover_tools")!;
+  });
 
   it("returns _loadSuggestions when results include unloaded tools", async () => {
     const result = await discoverTool.handler({ query: "analyze screenshot UI regression", limit: 10 }) as any;
@@ -151,10 +164,14 @@ describe("Dynamic Loading: discover_tools _loadSuggestions", () => {
 // ═══════════════════════════════════════════════════════════════════════
 
 describe("Dynamic Loading: discover_tools without options", () => {
-  const discoveryToolsNoOpts = createProgressiveDiscoveryTools(
-    defaultTools.map(t => ({ name: t.name, description: t.description })),
-  );
-  const discoverToolNoOpts = discoveryToolsNoOpts.find(t => t.name === "discover_tools")!;
+  let discoverToolNoOpts: McpTool;
+
+  beforeAll(() => {
+    const discoveryToolsNoOpts = createProgressiveDiscoveryTools(
+      defaultTools.map(t => ({ name: t.name, description: t.description })),
+    );
+    discoverToolNoOpts = discoveryToolsNoOpts.find(t => t.name === "discover_tools")!;
+  });
 
   it("does NOT return _loadSuggestions when no options provided", async () => {
     const result = await discoverToolNoOpts.handler({ query: "analyze screenshot", limit: 10 }) as any;
@@ -313,7 +330,7 @@ describe("Dynamic Loading: load/unload edge cases (simulated)", () => {
     state.load("vision");
 
     const loaded = [...state.activeToolsets];
-    const allToolsetNames = Object.keys(TOOLSET_MAP);
+    const allToolsetNames = ALL_DOMAIN_KEYS;
     const available = allToolsetNames.filter(ts => !state.activeToolsets.has(ts));
 
     expect(loaded).toContain("verification");

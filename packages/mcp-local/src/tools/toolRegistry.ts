@@ -2883,6 +2883,20 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     complexity: "low",
   },
 
+  {
+    name: "open_operating_dashboard",
+    category: "local_dashboard",
+    tags: ["open", "dashboard", "operating", "business", "trajectory", "events", "changes", "packets", "local", "ambient"],
+    quickRef: {
+      nextAction: "Dashboard is running. Open the URL to see business truth, initiatives, competitors, trajectory, events, and packet readiness.",
+      nextTools: ["record_event", "track_action", "flag_important_change", "start_dogfood_session"],
+      methodology: "ai_flywheel",
+      tip: "Starts the Operating Dashboard on port 6274. Shows business intelligence + system data. Auto-seeds demo data on first run.",
+    },
+    phase: "utility",
+    complexity: "low",
+  },
+
   // ═══════════════════════════════════════════
   // DESIGN GOVERNANCE — Spec enforcement & compliance
   // ═══════════════════════════════════════════
@@ -3732,6 +3746,426 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     phase: "ship",
     complexity: "medium",
   },
+
+  // ═══ FOUNDER ═══
+  {
+    name: "founder_deep_context_gather",
+    category: "founder",
+    tags: ["founder", "artifact", "packet", "context", "gather", "deep-search", "ocd", "nudge"],
+    quickRef: {
+      nextAction: "Context gather protocol returned. Complete ALL required steps, then call founder_packet_validate before saving.",
+      nextTools: ["founder_packet_validate", "founder_packet_diff"],
+      methodology: "founder",
+      tip: "Always call this BEFORE generating an artifact packet. It ensures OCD-level thoroughness.",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "founder_packet_validate",
+    category: "founder",
+    tags: ["founder", "artifact", "packet", "validate", "quality-gate", "audit"],
+    quickRef: {
+      nextAction: "Packet validated. If passed, save and export. If failed, fix the flagged issues and re-validate.",
+      nextTools: ["founder_packet_diff", "founder_deep_context_gather"],
+      methodology: "founder",
+    },
+    phase: "verify",
+    complexity: "low",
+  },
+  {
+    name: "founder_packet_diff",
+    category: "founder",
+    tags: ["founder", "artifact", "packet", "diff", "history", "drift", "comparison"],
+    quickRef: {
+      nextAction: "Diff generated. Surface new contradictions and unresolved actions to the founder. Feed findings into the next packet generation.",
+      nextTools: ["founder_deep_context_gather", "founder_packet_validate"],
+      methodology: "founder",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+
+  // ═══ FOUNDER TRACKING ═══
+  {
+    name: "track_action",
+    category: "founder",
+    tags: ["founder", "track", "action", "journal", "before-after", "state", "temporal", "log"],
+    quickRef: {
+      nextAction: "Action recorded. Continue working, or call get_session_journal to review your session's full action log.",
+      nextTools: ["get_session_journal", "track_milestone", "get_daily_log"],
+      methodology: "founder",
+      tip: "Always include beforeState/afterState for important changes — this powers the quarterly state-span view.",
+    },
+    phase: "implement",
+    complexity: "low",
+  },
+  {
+    name: "track_milestone",
+    category: "founder",
+    tags: ["founder", "milestone", "deploy", "ship", "launch", "pivot", "decision", "phase", "achievement"],
+    quickRef: {
+      nextAction: "Milestone recorded. It will appear in weekly/monthly/quarterly summaries. Continue building.",
+      nextTools: ["track_action", "get_weekly_summary", "get_monthly_report"],
+      methodology: "founder",
+      tip: "Include metrics for quantitative tracking over time (e.g. {tools: 304, tests: 1510}).",
+    },
+    phase: "ship",
+    complexity: "low",
+  },
+  {
+    name: "get_session_journal",
+    category: "founder",
+    tags: ["founder", "session", "journal", "log", "history", "review", "actions"],
+    quickRef: {
+      nextAction: "Session journal retrieved. Review the action sequence for patterns, then track_milestone if a phase completed.",
+      nextTools: ["track_milestone", "get_daily_log", "get_weekly_summary"],
+      methodology: "founder",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "get_daily_log",
+    category: "founder",
+    tags: ["founder", "daily", "log", "today", "date", "actions", "sessions"],
+    quickRef: {
+      nextAction: "Daily log retrieved. Check for patterns across sessions. Use get_weekly_summary for broader trends.",
+      nextTools: ["get_weekly_summary", "get_session_journal", "track_milestone"],
+      methodology: "founder",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "get_weekly_summary",
+    category: "founder",
+    tags: ["founder", "weekly", "summary", "aggregate", "category", "impact", "files", "trends"],
+    quickRef: {
+      nextAction: "Weekly summary retrieved. Look at category distribution and top files for focus areas. Use get_monthly_report for longer trends.",
+      nextTools: ["get_monthly_report", "get_daily_log", "track_milestone"],
+      methodology: "founder",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "get_monthly_report",
+    category: "founder",
+    tags: ["founder", "monthly", "report", "velocity", "trends", "milestones", "aggregate"],
+    quickRef: {
+      nextAction: "Monthly report retrieved. Check velocity trends and milestone timeline. Use get_quarterly_review for strategic view.",
+      nextTools: ["get_quarterly_review", "get_weekly_summary", "track_milestone"],
+      methodology: "founder",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "get_quarterly_review",
+    category: "founder",
+    tags: ["founder", "quarterly", "review", "strategic", "trends", "velocity", "state-span"],
+    quickRef: {
+      nextAction: "Quarterly review retrieved. Compare category shifts across months. Use get_annual_retrospective for full-year perspective.",
+      nextTools: ["get_annual_retrospective", "get_monthly_report", "track_milestone"],
+      methodology: "founder",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "get_annual_retrospective",
+    category: "founder",
+    tags: ["founder", "annual", "yearly", "retrospective", "growth", "distribution", "milestones"],
+    quickRef: {
+      nextAction: "Annual retrospective retrieved. Review growth trajectory and category evolution. Use quarterly views for deeper dives.",
+      nextTools: ["get_quarterly_review", "get_monthly_report", "track_milestone"],
+      methodology: "founder",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+
+  // ═══ CAUSAL MEMORY ═══
+  {
+    name: "record_event",
+    category: "founder",
+    tags: ["causal_memory", "event_ledger", "trajectory", "event", "record", "causality", "actor"],
+    quickRef: {
+      nextAction: "Event recorded. Link follow-up events via causedByEventId. Use get_event_ledger to review or get_causal_chain to trace causality.",
+      nextTools: ["get_event_ledger", "get_causal_chain", "record_state_diff"],
+      methodology: "founder",
+      tip: "Always set causedByEventId when an event is a direct consequence of another — this powers causal chain tracing.",
+    },
+    phase: "implement",
+    complexity: "medium",
+  },
+  {
+    name: "record_path_step",
+    category: "founder",
+    tags: ["causal_memory", "event_ledger", "trajectory", "path", "navigation", "session", "surface"],
+    quickRef: {
+      nextAction: "Path step recorded. Continue navigating, or call get_path_replay to review the session's exploration path.",
+      nextTools: ["get_path_replay", "record_event", "record_state_diff"],
+      methodology: "founder",
+      tip: "Use transitionFrom to create explicit step-to-step links for non-sequential navigation.",
+    },
+    phase: "implement",
+    complexity: "medium",
+  },
+  {
+    name: "record_state_diff",
+    category: "founder",
+    tags: ["causal_memory", "event_ledger", "trajectory", "state", "diff", "before-after", "change"],
+    quickRef: {
+      nextAction: "State diff recorded. Use get_state_diff_history to review entity change history. Flag significant changes with flag_important_change.",
+      nextTools: ["get_state_diff_history", "flag_important_change", "record_event"],
+      methodology: "founder",
+      tip: "Always include changedFields for quick scanning. Include reason for strategic changes.",
+    },
+    phase: "implement",
+    complexity: "medium",
+  },
+  {
+    name: "get_event_ledger",
+    category: "founder",
+    tags: ["causal_memory", "event_ledger", "trajectory", "query", "filter", "events", "history"],
+    quickRef: {
+      nextAction: "Events retrieved. Trace causality with get_causal_chain on interesting events, or get_trajectory_summary for aggregated view.",
+      nextTools: ["get_causal_chain", "get_trajectory_summary", "get_state_diff_history"],
+      methodology: "founder",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "get_causal_chain",
+    category: "founder",
+    tags: ["causal_memory", "event_ledger", "trajectory", "causality", "chain", "trace", "root-cause"],
+    quickRef: {
+      nextAction: "Causal chain traced. Identify the root cause event. Use get_state_diff_history on affected entities for state-level detail.",
+      nextTools: ["get_state_diff_history", "get_event_ledger", "flag_important_change"],
+      methodology: "founder",
+      tip: "If maxDepthReached is true, increase maxDepth to trace deeper chains.",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "get_path_replay",
+    category: "founder",
+    tags: ["causal_memory", "event_ledger", "trajectory", "path", "replay", "session", "navigation", "dwell"],
+    quickRef: {
+      nextAction: "Path replayed. Analyze dwell times to identify where the user spent most time. Use get_event_ledger to correlate with events.",
+      nextTools: ["get_event_ledger", "get_trajectory_summary", "record_path_step"],
+      methodology: "founder",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "get_state_diff_history",
+    category: "founder",
+    tags: ["causal_memory", "event_ledger", "trajectory", "state", "diff", "history", "entity", "changes"],
+    quickRef: {
+      nextAction: "State diff history retrieved. Look for patterns in changedFields and changeType. Flag significant patterns with flag_important_change.",
+      nextTools: ["flag_important_change", "get_event_ledger", "get_trajectory_summary"],
+      methodology: "founder",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "get_trajectory_summary",
+    category: "founder",
+    tags: ["causal_memory", "event_ledger", "trajectory", "summary", "aggregate", "date-range", "overview"],
+    quickRef: {
+      nextAction: "Trajectory summary computed. Review top affected entities and event distribution. Drill into specific entities with get_state_diff_history.",
+      nextTools: ["get_state_diff_history", "get_event_ledger", "get_important_changes"],
+      methodology: "founder",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "flag_important_change",
+    category: "founder",
+    tags: ["causal_memory", "event_ledger", "trajectory", "flag", "important", "impact", "alert", "risk"],
+    quickRef: {
+      nextAction: "Important change flagged. It will appear in get_important_changes. Use record_event to create a corresponding event with causedByEventId.",
+      nextTools: ["get_important_changes", "record_event", "get_trajectory_summary"],
+      methodology: "founder",
+      tip: "Set impactScore >= 0.7 for changes that require immediate attention.",
+    },
+    phase: "implement",
+    complexity: "medium",
+  },
+  {
+    name: "get_important_changes",
+    category: "founder",
+    tags: ["causal_memory", "event_ledger", "trajectory", "important", "changes", "alerts", "status", "triage"],
+    quickRef: {
+      nextAction: "Important changes retrieved. Triage by impactScore. Use get_causal_chain on related events to understand context.",
+      nextTools: ["get_causal_chain", "get_event_ledger", "flag_important_change"],
+      methodology: "founder",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+
+  // ═══ DOGFOOD JUDGE (Phase 13 — compound verification) ═══
+  {
+    name: "start_dogfood_session",
+    category: "dogfood_judge",
+    tags: ["dogfood", "session", "start", "loop", "weekly_reset", "pre_delegation", "company_search"],
+    quickRef: {
+      nextAction: "Session started. Use the product for the canonical loop. Record corrections with record_manual_correction and repeated questions with record_repeated_question.",
+      nextTools: ["record_manual_correction", "record_repeated_question", "end_dogfood_session"],
+      methodology: "dogfood_judge",
+      tip: "Always specify loopType — the regression gate checks all 3 canonical loops.",
+    },
+    phase: "implement",
+    complexity: "medium",
+  },
+  {
+    name: "end_dogfood_session",
+    category: "dogfood_judge",
+    tags: ["dogfood", "session", "end", "summary", "delegation", "export", "time_to_value"],
+    quickRef: {
+      nextAction: "Session ended. Now judge it with judge_session (6-dimension scoring) and rate_packet_usefulness.",
+      nextTools: ["judge_session", "rate_packet_usefulness", "get_dogfood_sessions"],
+      methodology: "dogfood_judge",
+    },
+    phase: "implement",
+    complexity: "medium",
+  },
+  {
+    name: "record_manual_correction",
+    category: "dogfood_judge",
+    tags: ["dogfood", "correction", "manual", "human", "edit", "factual", "priority", "scope", "tone", "missing"],
+    quickRef: {
+      nextAction: "Correction recorded. Every correction is a system gap. After session ends, classify root cause with classify_failure.",
+      nextTools: ["classify_failure", "end_dogfood_session", "record_repeated_question"],
+      methodology: "dogfood_judge",
+      tip: "Include beforeValue and afterValue — the delta reveals whether the system was wrong (factual) or incomplete (missing).",
+    },
+    phase: "implement",
+    complexity: "medium",
+  },
+  {
+    name: "record_repeated_question",
+    category: "dogfood_judge",
+    tags: ["dogfood", "repeat", "question", "cognition", "memory", "warm", "cold", "compounding"],
+    quickRef: {
+      nextAction: "Repeat question recorded. This is the core failure signal. After session, check get_repeat_cognition_metrics for compound score.",
+      nextTools: ["get_repeat_cognition_metrics", "classify_failure", "end_dogfood_session"],
+      methodology: "dogfood_judge",
+      tip: "If priorSessionId is known, include it — the system calculates time-since-last-asked to measure memory decay.",
+    },
+    phase: "implement",
+    complexity: "medium",
+  },
+  {
+    name: "rate_packet_usefulness",
+    category: "dogfood_judge",
+    tags: ["dogfood", "packet", "usefulness", "export", "delegate", "reuse", "abandon", "edits"],
+    quickRef: {
+      nextAction: "Packet rated. Check get_repeat_cognition_metrics to see abandonment rate trend. High abandonment = packets aren't useful enough.",
+      nextTools: ["get_repeat_cognition_metrics", "get_dogfood_sessions", "classify_failure"],
+      methodology: "dogfood_judge",
+    },
+    phase: "implement",
+    complexity: "medium",
+  },
+  {
+    name: "judge_session",
+    category: "dogfood_judge",
+    tags: ["dogfood", "judge", "score", "truth", "compression", "anticipation", "output", "delegation", "trust"],
+    quickRef: {
+      nextAction: "Session judged. If overallScore < 3.5, classify failures with classify_failure. Check get_regression_gate for loop-level pass/fail.",
+      nextTools: ["classify_failure", "get_regression_gate", "get_dogfood_sessions"],
+      methodology: "dogfood_judge",
+      tip: "Be honest — inflated scores defeat the purpose. Score 1-2 for failures, 3 for mediocre, 4-5 for genuinely useful.",
+    },
+    phase: "verify",
+    complexity: "medium",
+  },
+  {
+    name: "classify_failure",
+    category: "dogfood_judge",
+    tags: ["dogfood", "failure", "classify", "taxonomy", "layer", "symptom", "root_cause", "triage"],
+    quickRef: {
+      nextAction: "Failure classified. Check get_failure_triage for the full triage board. Fix the root cause, then record with record_fix_attempt.",
+      nextTools: ["get_failure_triage", "record_fix_attempt", "get_regression_gate"],
+      methodology: "dogfood_judge",
+      tip: "Use 5-whys to find the real root cause. The systemLayer determines which code path to fix.",
+    },
+    phase: "verify",
+    complexity: "medium",
+  },
+  {
+    name: "record_fix_attempt",
+    category: "dogfood_judge",
+    tags: ["dogfood", "fix", "attempt", "replay", "proof", "regression", "protection", "verify"],
+    quickRef: {
+      nextAction: "Fix recorded. If replayProof.improved is true, the fix is verified. Run get_regression_gate to confirm no regressions.",
+      nextTools: ["get_regression_gate", "get_failure_triage", "get_repeat_cognition_metrics"],
+      methodology: "dogfood_judge",
+      tip: "Always include replayProof with before/after scores. Fixes without proof are just guesses.",
+    },
+    phase: "implement",
+    complexity: "medium",
+  },
+  {
+    name: "get_dogfood_sessions",
+    category: "dogfood_judge",
+    tags: ["dogfood", "sessions", "list", "history", "scores", "query", "review"],
+    quickRef: {
+      nextAction: "Sessions listed. Look for score trends. Use get_repeat_cognition_metrics for the compound metric view.",
+      nextTools: ["get_repeat_cognition_metrics", "get_regression_gate", "judge_session"],
+      methodology: "dogfood_judge",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "get_failure_triage",
+    category: "dogfood_judge",
+    tags: ["dogfood", "failure", "triage", "board", "open", "layer", "severity", "critical", "high"],
+    quickRef: {
+      nextAction: "Triage board retrieved. Fix critical/high severity first. Use record_fix_attempt after each fix.",
+      nextTools: ["record_fix_attempt", "classify_failure", "get_regression_gate"],
+      methodology: "dogfood_judge",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "get_regression_gate",
+    category: "dogfood_judge",
+    tags: ["dogfood", "regression", "gate", "pass", "fail", "loop", "weekly_reset", "pre_delegation", "company_search"],
+    quickRef: {
+      nextAction: "Gate checked. If passed=false, identify which loop is failing and run a new dogfood session for that loop. If regressions=true, investigate recent fix_attempts.",
+      nextTools: ["start_dogfood_session", "get_failure_triage", "get_repeat_cognition_metrics"],
+      methodology: "dogfood_judge",
+      tip: "All 3 canonical loops must score >= 3.5 to pass. This is the ship gate.",
+    },
+    phase: "verify",
+    complexity: "medium",
+  },
+  {
+    name: "get_repeat_cognition_metrics",
+    category: "dogfood_judge",
+    tags: ["dogfood", "repeat", "cognition", "compound", "metric", "abandonment", "delegation", "time_to_value", "edits"],
+    quickRef: {
+      nextAction: "Compound metrics retrieved. If compoundScore < 75, the system isn't compounding. Focus on the lowest-scoring dimension.",
+      nextTools: ["get_failure_triage", "get_regression_gate", "start_dogfood_session"],
+      methodology: "dogfood_judge",
+      tip: "repeatQuestionRate is the single most important number — if it's rising, the memory system is failing.",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
 ];
 
 // ── Exported lookup structures ───────────────────────────────────────────
@@ -3760,6 +4194,16 @@ export function computeRelatedTools(toolName: string): string[] {
 /** Get all tools in a category */
 export function getToolsByCategory(category: string): ToolRegistryEntry[] {
   return REGISTRY_ENTRIES.filter((e) => e.category === category);
+}
+
+/**
+ * Return only registry entries whose category is in the selected domains.
+ * Avoids iterating over all 338 metadata entries when only a subset of
+ * domains is active (e.g. default preset = 28 domains).
+ */
+export function getFilteredRegistry(selectedDomains: string[]): ToolRegistryEntry[] {
+  const domainSet = new Set(selectedDomains);
+  return REGISTRY_ENTRIES.filter((e) => domainSet.has(e.category));
 }
 
 /** Get all tools in a workflow phase */
@@ -4021,17 +4465,64 @@ const TOOL_ANNOTATION_OVERRIDES: Record<string, McpToolAnnotations> = {
 };
 
 /**
+ * Infer annotations from tool name prefix when no category or override exists.
+ * Follows MCP 2025-06-18 spec conventions for auto-approval hints.
+ */
+function inferAnnotationsFromPrefix(toolName: string): McpToolAnnotations {
+  // Read-only prefixes
+  if (/^(get_|list_|search_|discover_|check_|describe_|find_|read_)/.test(toolName)) {
+    return { readOnlyHint: true, destructiveHint: false };
+  }
+  // Destructive prefixes
+  if (/^(delete_|remove_|clear_|reset_|purge_)/.test(toolName)) {
+    return { destructiveHint: true, readOnlyHint: false };
+  }
+  // Open-world prefixes (side effects + external)
+  if (/^(run_|execute_|open_|sync_)/.test(toolName)) {
+    return { readOnlyHint: false, destructiveHint: false, openWorldHint: true };
+  }
+  // Mutation prefixes (non-destructive writes)
+  if (/^(create_|add_|record_|start_|save_|track_|flag_|rate_|judge_|classify_)/.test(toolName)) {
+    return { readOnlyHint: false, destructiveHint: false };
+  }
+  // Default: no hints
+  return { readOnlyHint: false, destructiveHint: false };
+}
+
+/**
+ * Convert snake_case tool name to Title Case for the MCP `title` annotation.
+ * e.g. "get_daily_brief_summary" → "Get Daily Brief Summary"
+ */
+export function toolNameToTitle(toolName: string): string {
+  return toolName
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+/**
  * Get MCP security annotations for a tool.
- * Resolution: per-tool override merged ON TOP of category default → empty (no hints).
+ * Resolution order:
+ *   1. Per-tool override (TOOL_ANNOTATION_OVERRIDES)
+ *   2. Category default (CATEGORY_ANNOTATIONS)
+ *   3. Name-prefix inference (inferAnnotationsFromPrefix)
+ * Each layer merges on top of the previous.
  */
 export function getToolAnnotations(toolName: string): McpToolAnnotations {
   const entry = TOOL_REGISTRY.get(toolName);
   const categoryDefaults = entry ? (CATEGORY_ANNOTATIONS[entry.category] ?? {}) : {};
+  const hasCategoryAnnotations = entry && entry.category in CATEGORY_ANNOTATIONS;
   const overrides = TOOL_ANNOTATION_OVERRIDES[toolName];
+
+  // If we have explicit category or override, use the existing merge logic
   if (overrides) {
     return { ...categoryDefaults, ...overrides };
   }
-  return categoryDefaults;
+  if (hasCategoryAnnotations) {
+    return categoryDefaults;
+  }
+  // Fallback: infer from tool name prefix
+  return inferAnnotationsFromPrefix(toolName);
 }
 
 // ── Multi-modal search engine ─────────────────────────────────────────────

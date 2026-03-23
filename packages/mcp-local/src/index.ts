@@ -29,16 +29,17 @@ import Database from "better-sqlite3";
 import { getDb, genId } from "./db.js";
 import { redactSecrets, auditLog, SecurityError, flushAuditLog } from "./security/index.js";
 import { startDashboardServer, getDashboardUrl, stopDashboardServer } from "./dashboard/server.js";
+import { startOperatingDashboardServer, getOperatingDashboardUrl, stopOperatingDashboardServer } from "./dashboard/operatingServer.js";
 import { startEngineServer, getEngineUrl } from "./engine/server.js";
 import { getAnalyticsDb, closeAnalyticsDb, clearOldRecords } from "./analytics/index.js";
 import { AnalyticsTracker } from "./analytics/toolTracker.js";
 import { generateSmartPreset, formatPresetRecommendation, listPresets } from "./analytics/index.js";
 import { getProjectUsageSummary, exportUsageStats, formatStatsDisplay } from "./analytics/index.js";
-import { TOOLSET_MAP, TOOL_TO_TOOLSET } from "./toolsetRegistry.js";
+import { TOOLSET_MAP, TOOL_TO_TOOLSET, loadToolsets, ALL_DOMAIN_KEYS, TOOLSET_LOADERS } from "./toolsetRegistry.js";
 import { initObservability, startWatchdog, stopWatchdog } from "./tools/observabilityTools.js";
 import { createMetaTools } from "./tools/metaTools.js";
 import { createProgressiveDiscoveryTools } from "./tools/progressiveDiscoveryTools.js";
-import { getQuickRef, ALL_REGISTRY_ENTRIES, TOOL_REGISTRY, getToolComplexity, getToolAnnotations, _setDbAccessor, hybridSearch, WORKFLOW_CHAINS } from "./tools/toolRegistry.js";
+import { getQuickRef, ALL_REGISTRY_ENTRIES, TOOL_REGISTRY, getToolComplexity, getToolAnnotations, toolNameToTitle, _setDbAccessor, hybridSearch, WORKFLOW_CHAINS } from "./tools/toolRegistry.js";
 import type { McpTool } from "./types.js";
 
 // TOON format — ~40% token savings on tool responses
@@ -68,7 +69,7 @@ import { initEmbeddingIndex } from "./tools/embeddingProvider.js";
 
 export { TOOLSET_MAP };
 
-const DEFAULT_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate", "skill_update", "context_sandbox", "observability", "execution_trace", "mission_harness", "deep_sim"];
+const DEFAULT_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate", "skill_update", "context_sandbox", "observability", "execution_trace", "mission_harness", "deep_sim", "founder"];
 
 const PRESETS: Record<string, string[]> = {
   default: DEFAULT_TOOLSETS,
@@ -81,7 +82,10 @@ const PRESETS: Record<string, string[]> = {
   academic:     [...DEFAULT_TOOLSETS, "research_writing", "llm", "web", "local_file"],
   multi_agent:  [...DEFAULT_TOOLSETS, "parallel", "self_eval", "session_memory", "pattern", "toon", "qa_orchestration", "agent_traverse", "engine_context", "research_optimizer", "web_scraping", "deep_sim"],
   content:      [...DEFAULT_TOOLSETS, "llm", "critter", "email", "rss", "platform", "architect", "local_dashboard", "engine_context", "thompson_protocol"],
-  full: Object.keys(TOOLSET_MAP),
+  // Cursor IDE has a hard 40-tool limit across ALL MCP servers.
+  // 28 tools = 22 domain + 3 meta + 3 discovery — leaves 12 slots for other servers.
+  cursor:       ["deep_sim", "quality_gate", "learning", "session_memory", "web", "toon"],
+  full: ALL_DOMAIN_KEYS,
 };
 
 const PRESET_DESCRIPTIONS: Record<string, string> = {
@@ -94,10 +98,11 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
   academic:    "Academic papers — adds polish, review, translate, logic check, data analysis",
   multi_agent: "Multi-agent teams — adds task locking, messaging, roles, oracle testing, frontend traversal",
   content:     "Content & publishing — adds LLM, accountability, email, RSS, platform queue",
+  cursor:      "Cursor IDE (28 tools) — decision intelligence, research, quality gates, session memory, web, TOON encoding. Leaves 12 slots for other MCP servers.",
   full:        "Everything — all toolsets for maximum coverage",
 };
 
-   function parseToolsets(): McpTool[] {
+   async function parseToolsets(): Promise<McpTool[]> {
     if (cliArgs.includes("--help")) {
       const lines = [
         "nodebench-mcp v2.30.0 — Development Methodology MCP Server",
@@ -127,12 +132,11 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
         "  --help              Show this help and exit",
         "",
         "Available toolsets:",
-        ...Object.entries(TOOLSET_MAP).map(([k, v]) => `  ${k.padEnd(16)} ${v.length} tools`),
+        ...ALL_DOMAIN_KEYS.map((k) => `  ${k.padEnd(16)} (lazy-loaded)`),
         "",
         "Presets:",
         ...Object.entries(PRESETS).map(([k, v]) => {
-          const count = v.reduce((s, ts) => s + (TOOLSET_MAP[ts]?.length ?? 0), 0) + 12;
-          return `  ${k.padEnd(14)} ${String(count).padStart(3)} tools  ${PRESET_DESCRIPTIONS[k] ?? ''}`;
+          return `  ${k.padEnd(14)} ${String(v.length).padStart(3)} domains  ${PRESET_DESCRIPTIONS[k] ?? ''}`;
         }),
         "",
         "Examples:",
@@ -162,40 +166,40 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
       console.error(`Unknown preset: ${presetName}. Available: ${Object.keys(PRESETS).join(", ")}`);
       process.exit(1);
     }
-    return presetKeys.flatMap((k) => TOOLSET_MAP[k] ?? []);
+    return loadToolsets(presetKeys);
   }
 
   const tsIdx = cliArgs.indexOf("--toolsets");
   if (tsIdx !== -1 && cliArgs[tsIdx + 1]) {
     const requested = cliArgs[tsIdx + 1].split(",").map((s) => s.trim());
-    const invalid = requested.filter((k) => !TOOLSET_MAP[k]);
+    const invalid = requested.filter((k) => !TOOLSET_LOADERS[k]);
     if (invalid.length) {
-      console.error(`Unknown toolsets: ${invalid.join(", ")}. Available: ${Object.keys(TOOLSET_MAP).join(", ")}`);
+      console.error(`Unknown toolsets: ${invalid.join(", ")}. Available: ${ALL_DOMAIN_KEYS.join(", ")}`);
       process.exit(1);
     }
-    return requested.flatMap((k) => TOOLSET_MAP[k]);
+    return loadToolsets(requested);
   }
 
   const exIdx = cliArgs.indexOf("--exclude");
   if (exIdx !== -1 && cliArgs[exIdx + 1]) {
     const excluded = new Set(cliArgs[exIdx + 1].split(",").map((s) => s.trim()));
-    const invalid = [...excluded].filter((k) => !TOOLSET_MAP[k]);
+    const invalid = [...excluded].filter((k) => !TOOLSET_LOADERS[k]);
     if (invalid.length) {
-      console.error(`Unknown toolsets: ${invalid.join(", ")}. Available: ${Object.keys(TOOLSET_MAP).join(", ")}`);
+      console.error(`Unknown toolsets: ${invalid.join(", ")}. Available: ${ALL_DOMAIN_KEYS.join(", ")}`);
       process.exit(1);
     }
-    return Object.entries(TOOLSET_MAP)
-      .filter(([k]) => !excluded.has(k))
-      .flatMap(([, v]) => v);
+    const domainsToLoad = ALL_DOMAIN_KEYS.filter((k) => !excluded.has(k));
+    return loadToolsets(domainsToLoad);
   }
 
    // Default to default preset (50 tools - complete AI Flywheel)
-   return PRESETS.default.flatMap((k) => TOOLSET_MAP[k] ?? []);
+   return loadToolsets(PRESETS.default);
 }
 
 // ── Analytics CLI flag handling ─────────────────────────────────────────
 // Handle --list-presets
 if (listPresetsFlag) {
+  await loadToolsets(ALL_DOMAIN_KEYS);
   const presets = listPresets(TOOLSET_MAP);
   console.log(JSON.stringify(presets, null, 2));
   process.exit(0);
@@ -209,6 +213,7 @@ if (resetStats || useSmartPreset || showStats || exportStats) {
       clearOldRecords(aDb, 0);
       console.error("Usage analytics data cleared (tool_usage + cache). Project context and preset history preserved.");
     } else if (useSmartPreset) {
+      await loadToolsets(ALL_DOMAIN_KEYS);
       const recommendation = generateSmartPreset(aDb, TOOLSET_MAP);
       console.error(formatPresetRecommendation(recommendation, TOOLSET_MAP));
     } else if (showStats) {
@@ -260,6 +265,7 @@ if (explainIdx !== -1) {
   }
 
   // Find the actual McpTool for description + inputSchema
+  await loadToolsets(ALL_DOMAIN_KEYS);
   const allDomainTools = Object.values(TOOLSET_MAP).flat();
   const mcpTool = allDomainTools.find(t => t.name === toolName);
 
@@ -440,7 +446,8 @@ if (autoPresetFlag) {
   const hasLatex = fs.existsSync(path.join(cwd, "main.tex")) || fs.existsSync(path.join(cwd, "paper.tex"));
   if (hasLatex) { signals.push("academic: LaTeX files found"); recommended = "academic"; }
 
-  // Output
+  // Output — load all toolsets to get accurate counts
+  await loadToolsets(ALL_DOMAIN_KEYS);
   const presetToolsets = (PRESETS as Record<string, string[]>)[recommended];
   const toolCount = presetToolsets
     ? presetToolsets.reduce((s: number, k: string) => s + (TOOLSET_MAP[k]?.length ?? 0), 0) + 12
@@ -482,9 +489,10 @@ if (healthFlag) {
   lines.push(`${B}NodeBench MCP v2.30.0 — Health Check${X}`);
   lines.push("");
 
-  // 1. Tool count + preset
-  const presetIdx = cliArgs.indexOf("--preset");
-  const activePreset = presetIdx !== -1 && cliArgs[presetIdx + 1] ? cliArgs[presetIdx + 1] : "default";
+  // 1. Tool count + preset — load all toolsets to get accurate counts
+  await loadToolsets(ALL_DOMAIN_KEYS);
+  const presetIdx2 = cliArgs.indexOf("--preset");
+  const activePreset = presetIdx2 !== -1 && cliArgs[presetIdx2 + 1] ? cliArgs[presetIdx2 + 1] : "default";
   const domainCount = Object.keys(TOOLSET_MAP).length;
   const totalTools = Object.values(TOOLSET_MAP).reduce((s, v) => s + v.length, 0);
   const presetToolsets = (PRESETS as Record<string, string[]>)[activePreset];
@@ -957,6 +965,322 @@ if (syncConfigsFlag) {
   process.exit(0);
 }
 
+// ── CLI subcommand detection ──────────────────────────────────────────
+// First positional arg (not starting with --) is a subcommand
+const subCmd = cliArgs.find(a => !a.startsWith("--") && !cliArgs.some((f, i) => f.startsWith("--") && cliArgs[i + 1] === a));
+
+// CLI subcommands and the welcome screen need TOOLSET_MAP populated for tool counts / listing.
+// Load all domains eagerly — these paths exit after running anyway.
+const isCliMode = subCmd !== undefined || cliArgs.length === 0 || (!cliArgs.includes("--stdio") && !cliArgs.some(a => a.startsWith("--")));
+if (isCliMode) {
+  await loadToolsets(ALL_DOMAIN_KEYS);
+}
+
+// ── Welcome screen (no arguments at all) ─────────────────────────────
+if (cliArgs.length === 0 || (subCmd === undefined && !cliArgs.includes("--stdio") && !cliArgs.some(a => a.startsWith("--")))) {
+  const USE_COLOR = process.stdout.isTTY;
+  const B = USE_COLOR ? "\x1b[1m" : "";
+  const C = USE_COLOR ? "\x1b[36m" : "";
+  const G = USE_COLOR ? "\x1b[32m" : "";
+  const D = USE_COLOR ? "\x1b[2m" : "";
+  const Y = USE_COLOR ? "\x1b[33m" : "";
+  const X = USE_COLOR ? "\x1b[0m" : "";
+
+  const totalTools = Object.values(TOOLSET_MAP).reduce((s, v) => s + v.length, 0) + 12;
+  const domainCount = Object.keys(TOOLSET_MAP).length;
+
+  const welcome = [
+    "",
+    `  ${B}NodeBench AI${X} ${D}— The trust layer for agents${X}`,
+    "",
+    `  ${C}Quick start${X}`,
+    `    ${G}$${X} npx nodebench-mcp discover              ${D}Show available tools${X}`,
+    `    ${G}$${X} npx nodebench-mcp demo                   ${D}Run a live demo (no keys needed)${X}`,
+    `    ${G}$${X} npx nodebench-mcp quickref research       ${D}Get research workflow guide${X}`,
+    `    ${G}$${X} npx nodebench-mcp --explain run_recon     ${D}Deep-dive on any tool${X}`,
+    "",
+    `  ${C}Connect to your IDE${X}`,
+    `    ${G}$${X} claude mcp add nodebench -- npx nodebench-mcp --stdio`,
+    `    ${G}$${X} npx nodebench-mcp --sync-configs          ${D}Auto-write to Claude/Cursor/Windsurf${X}`,
+    "",
+    `  ${C}Start the MCP server${X}`,
+    `    ${G}$${X} npx nodebench-mcp --stdio                 ${D}Default preset${X}`,
+    `    ${G}$${X} npx nodebench-mcp --preset research       ${D}Research workflows${X}`,
+    `    ${G}$${X} npx nodebench-mcp --auto-preset           ${D}Detect from your project${X}`,
+    "",
+    `  ${Y}${totalTools} tools${X} ${D}·${X} ${Y}${domainCount} domains${X} ${D}· Progressive discovery · Agent-as-a-Graph${X}`,
+    "",
+  ];
+  console.log(welcome.join("\n"));
+  process.exit(0);
+}
+
+// ── Demo subcommand (run-and-exit) ───────────────────────────────────
+if (subCmd === "demo") {
+  const USE_COLOR = process.stdout.isTTY;
+  const B = USE_COLOR ? "\x1b[1m" : "";
+  const C = USE_COLOR ? "\x1b[36m" : "";
+  const G = USE_COLOR ? "\x1b[32m" : "";
+  const D = USE_COLOR ? "\x1b[2m" : "";
+  const Y = USE_COLOR ? "\x1b[33m" : "";
+  const X = USE_COLOR ? "\x1b[0m" : "";
+
+  const demoLines: string[] = [];
+  demoLines.push("");
+  demoLines.push(`  ${B}NodeBench AI — Live Demo${X}`);
+  demoLines.push(`  ${D}No API keys needed. Everything runs locally.${X}`);
+  demoLines.push("");
+
+  // 1. Show research tools via hybridSearch
+  demoLines.push(`  ${C}1. Discovering research tools...${X}`);
+  demoLines.push("");
+  const stubTools = ALL_REGISTRY_ENTRIES.map(e => ({ name: e.name, description: e.category }));
+  const researchResults = hybridSearch("research", stubTools, { limit: 5, mode: "hybrid" });
+  for (const r of researchResults.slice(0, 5)) {
+    const entry = TOOL_REGISTRY.get(r.name);
+    const phase = entry?.phase ?? "";
+    demoLines.push(`     ${G}>${X} ${B}${r.name}${X}  ${D}(${phase})${X}`);
+    if (entry?.quickRef?.nextAction) {
+      demoLines.push(`       ${entry.quickRef.nextAction.slice(0, 80)}`);
+    }
+  }
+  demoLines.push("");
+
+  // 2. Show a workflow chain
+  demoLines.push(`  ${C}2. Workflow chain: "Build a New Feature"${X}`);
+  demoLines.push("");
+  const chain = WORKFLOW_CHAINS["new_feature"];
+  if (chain) {
+    demoLines.push(`     ${B}${chain.name}${X}  ${D}— ${chain.description}${X}`);
+    demoLines.push("");
+    for (let i = 0; i < Math.min(chain.steps.length, 8); i++) {
+      const step = chain.steps[i];
+      const num = String(i + 1).padStart(2, " ");
+      demoLines.push(`     ${Y}${num}.${X} ${step.tool}  ${D}→ ${step.action}${X}`);
+    }
+    if (chain.steps.length > 8) {
+      demoLines.push(`     ${D}    ... +${chain.steps.length - 8} more steps${X}`);
+    }
+  }
+  demoLines.push("");
+
+  // 3. Summary stats
+  const totalTools = Object.values(TOOLSET_MAP).reduce((s, v) => s + v.length, 0) + 12;
+  const domainCount = Object.keys(TOOLSET_MAP).length;
+  const chainCount = Object.keys(WORKFLOW_CHAINS).length;
+  demoLines.push(`  ${C}3. What's available${X}`);
+  demoLines.push("");
+  demoLines.push(`     ${Y}${totalTools}${X} tools across ${Y}${domainCount}${X} domains`);
+  demoLines.push(`     ${Y}${chainCount}${X} pre-built workflow chains`);
+  demoLines.push(`     ${Y}${ALL_REGISTRY_ENTRIES.length}${X} entries in the tool registry`);
+  demoLines.push("");
+
+  // 4. Next steps
+  demoLines.push(`  ${C}Next steps${X}`);
+  demoLines.push(`    ${G}$${X} npx nodebench-mcp --explain run_recon     ${D}Deep-dive on any tool${X}`);
+  demoLines.push(`    ${G}$${X} npx nodebench-mcp --health                ${D}Check your environment${X}`);
+  demoLines.push(`    ${G}$${X} npx nodebench-mcp --sync-configs          ${D}Wire into your IDE${X}`);
+  demoLines.push("");
+
+  console.log(demoLines.join("\n"));
+  process.exit(0);
+}
+
+// ── Discover subcommand (run-and-exit) ───────────────────────────────
+if (subCmd === "discover") {
+  const USE_COLOR = process.stdout.isTTY;
+  const B = USE_COLOR ? "\x1b[1m" : "";
+  const C = USE_COLOR ? "\x1b[36m" : "";
+  const G = USE_COLOR ? "\x1b[32m" : "";
+  const D = USE_COLOR ? "\x1b[2m" : "";
+  const Y = USE_COLOR ? "\x1b[33m" : "";
+  const X = USE_COLOR ? "\x1b[0m" : "";
+
+  const query = cliArgs.find(a => a !== "discover" && !a.startsWith("--")) ?? "";
+  const limit = 10;
+
+  const lines: string[] = [];
+  lines.push("");
+  if (query) {
+    lines.push(`  ${B}Discovering tools for:${X} ${C}${query}${X}`);
+    const stubTools = ALL_REGISTRY_ENTRIES.map(e => ({ name: e.name, description: e.category }));
+    const results = hybridSearch(query, stubTools, { limit, mode: "hybrid" });
+    lines.push("");
+    for (const r of results) {
+      const entry = TOOL_REGISTRY.get(r.name);
+      lines.push(`  ${G}>${X} ${B}${r.name}${X}  ${D}score: ${r.score.toFixed(2)}${X}`);
+      if (entry) {
+        lines.push(`    ${D}${entry.category} · ${entry.phase}${X}`);
+        if (entry.quickRef?.nextAction) lines.push(`    ${entry.quickRef.nextAction.slice(0, 90)}`);
+      }
+      lines.push("");
+    }
+    if (results.length === 0) lines.push(`  ${Y}No results.${X} Try a broader query.\n`);
+  } else {
+    lines.push(`  ${B}Tool domains${X}  ${D}(${Object.keys(TOOLSET_MAP).length} domains)${X}`);
+    lines.push("");
+    for (const [domain, tools] of Object.entries(TOOLSET_MAP)) {
+      lines.push(`  ${G}>${X} ${domain.padEnd(24)} ${Y}${String(tools.length).padStart(3)}${X} tools`);
+    }
+    lines.push("");
+    lines.push(`  ${D}Search: npx nodebench-mcp discover <query>${X}`);
+  }
+  lines.push("");
+  console.log(lines.join("\n"));
+  process.exit(0);
+}
+
+// ── Quickref subcommand (run-and-exit) ───────────────────────────────
+if (subCmd === "quickref") {
+  const USE_COLOR = process.stdout.isTTY;
+  const B = USE_COLOR ? "\x1b[1m" : "";
+  const C = USE_COLOR ? "\x1b[36m" : "";
+  const G = USE_COLOR ? "\x1b[32m" : "";
+  const D = USE_COLOR ? "\x1b[2m" : "";
+  const Y = USE_COLOR ? "\x1b[33m" : "";
+  const X = USE_COLOR ? "\x1b[0m" : "";
+
+  const toolName = cliArgs.find(a => a !== "quickref" && !a.startsWith("--")) ?? "";
+  const lines: string[] = [];
+  lines.push("");
+
+  if (!toolName) {
+    lines.push(`  ${B}Usage:${X} npx nodebench-mcp quickref <tool_or_workflow>`);
+    lines.push("");
+    lines.push(`  ${C}Workflows${X}`);
+    for (const [key, chain] of Object.entries(WORKFLOW_CHAINS).slice(0, 10)) {
+      lines.push(`  ${G}>${X} ${key.padEnd(28)} ${D}${chain.name}${X}`);
+    }
+    lines.push(`  ${D}  ... +${Object.keys(WORKFLOW_CHAINS).length - 10} more${X}`);
+    lines.push("");
+  } else {
+    // Try workflow first
+    const chain = WORKFLOW_CHAINS[toolName];
+    if (chain) {
+      lines.push(`  ${B}${chain.name}${X}  ${D}(${toolName})${X}`);
+      lines.push(`  ${chain.description}`);
+      lines.push("");
+      for (let i = 0; i < chain.steps.length; i++) {
+        const step = chain.steps[i];
+        lines.push(`  ${Y}${String(i + 1).padStart(2)}.${X} ${step.tool}  ${D}→ ${step.action}${X}`);
+      }
+      lines.push("");
+    } else {
+      // Try tool registry
+      const entry = TOOL_REGISTRY.get(toolName);
+      if (entry) {
+        lines.push(`  ${B}${entry.name}${X}  ${D}(${entry.category}, ${entry.phase})${X}`);
+        lines.push(`  ${entry.quickRef.nextAction}`);
+        if (entry.quickRef.tip) lines.push(`  ${Y}Tip:${X} ${entry.quickRef.tip}`);
+        if (entry.quickRef.nextTools.length > 0) {
+          lines.push("");
+          lines.push(`  ${C}Next tools${X}`);
+          for (const nt of entry.quickRef.nextTools) lines.push(`    ${G}>${X} ${nt}`);
+        }
+        lines.push("");
+      } else {
+        lines.push(`  ${Y}Not found:${X} ${toolName}`);
+        lines.push(`  ${D}Try: npx nodebench-mcp quickref new_feature${X}`);
+        lines.push("");
+      }
+    }
+  }
+  console.log(lines.join("\n"));
+  process.exit(0);
+}
+
+// ── Call subcommand (run-and-exit) ───────────────────────────────────
+if (subCmd === "call") {
+  const toolName = cliArgs.find(a => a !== "call" && !a.startsWith("--") && !a.startsWith("{"));
+  const argsJson = cliArgs.find(a => a.startsWith("{")) ?? "{}";
+  const USE_COLOR = process.stdout.isTTY;
+  const B = USE_COLOR ? "\x1b[1m" : "";
+  const G = USE_COLOR ? "\x1b[32m" : "";
+  const R = USE_COLOR ? "\x1b[31m" : "";
+  const D = USE_COLOR ? "\x1b[2m" : "";
+  const X = USE_COLOR ? "\x1b[0m" : "";
+
+  if (!toolName) {
+    console.log(`\n  ${B}Usage:${X} npx nodebench-mcp call <tool_name> [json_args]\n`);
+    console.log(`  ${D}Example:${X} npx nodebench-mcp call founder_deep_context_gather '{"packetType":"weekly_reset"}'`);
+    console.log(`  ${D}Example:${X} npx nodebench-mcp call discover_tools '{"query":"founder"}'`);
+    console.log(`  ${D}Example:${X} npx nodebench-mcp call save_session_note '{"note":"test"}'\n`);
+    process.exit(0);
+  }
+
+  // Find tool in all toolsets — meta/discovery tools are created later,
+  // so for CLI call we build them inline
+  const cliDomainTools = Object.values(TOOLSET_MAP).flat();
+  const cliMetaTools = createMetaTools(cliDomainTools);
+  const cliDiscoveryTools = createProgressiveDiscoveryTools(cliDomainTools);
+  const allCallable = [...cliDomainTools, ...cliMetaTools, ...cliDiscoveryTools];
+  const tool = allCallable.find(t => t.name === toolName);
+  if (!tool) {
+    console.log(`\n  ${R}Tool not found:${X} ${toolName}`);
+    console.log(`  ${D}Run: npx nodebench-mcp discover ${toolName}${X}\n`);
+    process.exit(1);
+  }
+
+  let parsedArgs: Record<string, unknown>;
+  try {
+    parsedArgs = JSON.parse(argsJson);
+  } catch {
+    console.log(`\n  ${R}Invalid JSON args:${X} ${argsJson}\n`);
+    process.exit(1);
+  }
+
+  console.log(`\n  ${D}Calling${X} ${B}${toolName}${X} ${D}...${X}`);
+  try {
+    const result = await tool.handler(parsedArgs);
+    const output = typeof result === "string" ? result : JSON.stringify(result, null, 2);
+    console.log(`\n  ${G}Result:${X}\n`);
+    // Pretty-print, indent 4 spaces
+    for (const line of output.split("\n")) {
+      console.log(`    ${line}`);
+    }
+    console.log("");
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.log(`\n  ${R}Error:${X} ${msg}\n`);
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
+// ── Setup subcommand (run-and-exit) ──────────────────────────────────
+if (subCmd === "setup") {
+  const USE_COLOR = process.stdout.isTTY;
+  const B = USE_COLOR ? "\x1b[1m" : "";
+  const C = USE_COLOR ? "\x1b[36m" : "";
+  const G = USE_COLOR ? "\x1b[32m" : "";
+  const D = USE_COLOR ? "\x1b[2m" : "";
+  const Y = USE_COLOR ? "\x1b[33m" : "";
+  const X = USE_COLOR ? "\x1b[0m" : "";
+
+  const lines: string[] = [];
+  lines.push("");
+  lines.push(`  ${B}NodeBench MCP — Quick Setup${X}`);
+  lines.push("");
+  lines.push(`  ${G}1.${X} ${B}Claude Code${X}`);
+  lines.push(`     claude mcp add nodebench -- npx -y nodebench-mcp`);
+  lines.push("");
+  lines.push(`  ${G}2.${X} ${B}Cursor${X}  ${D}(.cursor/mcp.json)${X}`);
+  lines.push(`     { "mcpServers": { "nodebench": { "command": "npx", "args": ["-y", "nodebench-mcp"] } } }`);
+  lines.push("");
+  lines.push(`  ${G}3.${X} ${B}Windsurf${X}  ${D}(.windsurf/mcp.json)${X}`);
+  lines.push(`     { "mcpServers": { "nodebench": { "command": "npx", "args": ["-y", "nodebench-mcp"] } } }`);
+  lines.push("");
+  lines.push(`  ${C}Verify:${X}  npx nodebench-mcp call discover_tools '{"query":"founder"}'`);
+  lines.push(`  ${C}Dashboard:${X}  https://www.nodebenchai.com/founder`);
+  lines.push(`  ${C}Agent setup:${X}  https://www.nodebenchai.com/agent-setup.txt`);
+  lines.push("");
+  lines.push(`  ${Y}Presets:${X}  --preset default (99 tools) | --preset full (313 tools)`);
+  lines.push(`  ${Y}Founder tools:${X}  founder_deep_context_gather, founder_packet_validate, founder_packet_diff`);
+  lines.push("");
+  console.log(lines.join("\n"));
+  process.exit(0);
+}
+
 // Initialize DB (creates ~/.nodebench/ and schema on first run)
 getDb();
 
@@ -964,7 +1288,7 @@ getDb();
 _setDbAccessor(getDb);
 
 // Assemble tools (filtered by --toolsets / --exclude / --preset if provided)
-let domainTools: McpTool[] = parseToolsets();
+let domainTools: McpTool[] = await parseToolsets();
 
 // Determine current preset name for analytics
 let currentPreset: string = 'default';
@@ -1023,15 +1347,15 @@ const dynamicLoadingTools: McpTool[] = [
       properties: {
         toolset: {
           type: "string",
-          description: `Toolset name to load. Available: ${Object.keys(TOOLSET_MAP).filter(k => !activeToolsets.has(k)).join(", ") || "(all loaded)"}`,
+          description: `Toolset name to load. Available: ${ALL_DOMAIN_KEYS.filter(k => !activeToolsets.has(k)).join(", ") || "(all loaded)"}`,
         },
       },
       required: ["toolset"],
     },
     handler: async (args) => {
       const { toolset } = args as { toolset: string };
-      if (!TOOLSET_MAP[toolset]) {
-        return { error: true, message: `Unknown toolset: ${toolset}`, available: Object.keys(TOOLSET_MAP) };
+      if (!TOOLSET_LOADERS[toolset]) {
+        return { error: true, message: `Unknown toolset: ${toolset}`, available: ALL_DOMAIN_KEYS };
       }
       if (activeToolsets.has(toolset)) {
         return { alreadyLoaded: true, toolset, message: `Toolset '${toolset}' is already active.`, activeToolCount: allTools.length };
@@ -1039,6 +1363,9 @@ const dynamicLoadingTools: McpTool[] = [
 
       const startMs = Date.now();
       const toolsBefore = allTools.length;
+
+      // Dynamically load the toolset (populates TOOLSET_MAP[toolset])
+      await loadToolsets([toolset]);
 
       // Add toolset to active set
       activeToolsets.add(toolset);
@@ -1133,14 +1460,17 @@ const dynamicLoadingTools: McpTool[] = [
       "List all available toolsets showing which are currently loaded and which can be dynamically added. Includes tool counts and descriptions for each toolset.",
     inputSchema: { type: "object", properties: {} },
     handler: async () => {
-      const toolsets = Object.entries(TOOLSET_MAP).map(([name, tools]) => ({
-        name,
-        toolCount: tools.length,
-        loaded: activeToolsets.has(name),
-        isInitialPreset: initialToolsetNames.has(name),
-        description: PRESET_DESCRIPTIONS[name] ?? null,
-        tools: tools.map(t => t.name),
-      }));
+      const toolsets = ALL_DOMAIN_KEYS.map((name) => {
+        const tools = TOOLSET_MAP[name];
+        return {
+          name,
+          toolCount: tools ? tools.length : null,
+          loaded: activeToolsets.has(name),
+          isInitialPreset: initialToolsetNames.has(name),
+          description: PRESET_DESCRIPTIONS[name] ?? null,
+          tools: tools ? tools.map(t => t.name) : [],
+        };
+      });
 
       const loaded = toolsets.filter(t => t.loaded);
       const available = toolsets.filter(t => !t.loaded);
@@ -1584,7 +1914,7 @@ const INTENT_PATTERNS: Array<{ pattern: RegExp; toolsets: string[] }> = [
   { pattern: /content|publish|post|newsletter|email|campaign|linkedin/i,                 toolsets: ["llm", "critter", "email", "rss", "platform", "architect"] },
 ];
 
-function classifyAndExpand(toolName: string, args: Record<string, unknown> | undefined): string[] | null {
+async function classifyAndExpand(toolName: string, args: Record<string, unknown> | undefined): Promise<string[] | null> {
   // Only expand if on default preset — user explicitly chose a preset, respect it
   if (currentPreset !== "default") return null;
 
@@ -1597,7 +1927,7 @@ function classifyAndExpand(toolName: string, args: Record<string, unknown> | und
   for (const { pattern, toolsets } of INTENT_PATTERNS) {
     if (pattern.test(haystack)) {
       for (const ts of toolsets) {
-        if (TOOLSET_MAP[ts] && !activeToolsets.has(ts)) {
+        if (TOOLSET_LOADERS[ts] && !activeToolsets.has(ts)) {
           toLoad.add(ts);
         }
       }
@@ -1606,7 +1936,8 @@ function classifyAndExpand(toolName: string, args: Record<string, unknown> | und
 
   if (toLoad.size === 0) return null;
 
-  // Load matched toolsets
+  // Dynamically load matched toolsets
+  await loadToolsets([...toLoad]);
   for (const ts of toLoad) {
     activeToolsets.add(ts);
   }
@@ -2709,7 +3040,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: t.inputSchema,
         ...(entry ? {
           annotations: {
-            title: t.name.replace(/_/g, " "),
+            title: toolNameToTitle(t.name),
             category: entry.category,
             phase: entry.phase,
             complexity: getToolComplexity(t.name),
@@ -2717,6 +3048,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           },
         } : {
           annotations: {
+            title: toolNameToTitle(t.name),
             ...securityAnnotations,
           },
         }),
@@ -2734,7 +3066,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   // Intent-based auto-expansion: on first call, classify and load relevant toolsets
   if (!_intentClassified) {
     _intentClassified = true;
-    const expanded = classifyAndExpand(name, args as Record<string, unknown> | undefined);
+    const expanded = await classifyAndExpand(name, args as Record<string, unknown> | undefined);
     if (expanded) {
       console.error(`[intent-classify] Auto-loaded toolsets: ${expanded.join(", ")} (from tool: ${name})`);
     }
@@ -2928,10 +3260,17 @@ process.on('exit', () => {
 const transport = new StdioServerTransport();
 await server.connect(transport);
 
-// Start local dashboard server (non-blocking, best-effort)
+// Start local dashboard servers (non-blocking, best-effort)
+// Operating Dashboard is PRIMARY — shows business intelligence + system data
+let operatingDashboardPort = 0;
+try {
+  operatingDashboardPort = await startOperatingDashboardServer(getDb(), 6274);
+} catch { /* operating dashboard is optional — don't block MCP */ }
+
+// UI Dive dashboard is secondary — shows UI review sessions
 let dashboardPort = 0;
 try {
-  dashboardPort = await startDashboardServer(getDb(), 6274);
+  dashboardPort = await startDashboardServer(getDb(), 6278);
 } catch { /* dashboard is optional — don't block MCP */ }
 
 // Start engine API server (non-blocking, best-effort)
@@ -2963,6 +3302,7 @@ process.on("SIGTERM", () => { stopWatchdog(); process.exit(0); });
 const toolsetInfo = cliArgs.includes("--toolsets") || cliArgs.includes("--exclude") || cliArgs.includes("--preset")
   ? ` [gated: ${domainTools.length} domain + 2 meta]`
   : "";
-const dashInfo = dashboardPort ? ` dashboard at http://127.0.0.1:${dashboardPort}` : "";
+const dashInfo = operatingDashboardPort ? ` dashboard at http://127.0.0.1:${operatingDashboardPort}` : "";
+const uiDiveInfo = dashboardPort ? ` ui-dive at http://127.0.0.1:${dashboardPort}` : "";
 const engineInfo = enginePort ? ` engine at http://127.0.0.1:${enginePort}` : "";
-console.error(`nodebench-mcp ready (${allTools.length} tools, ${PROMPTS.length} prompts${toolsetInfo}, SQLite at ~/.nodebench/${dashInfo}${engineInfo})`);
+console.error(`nodebench-mcp ready (${allTools.length} tools, ${PROMPTS.length} prompts${toolsetInfo}, SQLite at ~/.nodebench/${dashInfo}${uiDiveInfo}${engineInfo})`);

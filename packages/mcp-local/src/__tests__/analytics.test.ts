@@ -603,7 +603,11 @@ describe("toolsetRegistry", () => {
 
   beforeAll(async () => {
     registry = await importRegistry();
-  }, 20_000);
+    // Dynamic imports: must load all toolsets before checking TOOLSET_MAP
+    if (registry.loadAllToolsets) {
+      await registry.loadAllToolsets();
+    }
+  }, 30_000);
 
   it("exports TOOLSET_MAP with expected toolsets", () => {
     const { TOOLSET_MAP } = registry;
