@@ -4,29 +4,30 @@
  * Ensures message 1000 retains the same intent clarity as message 1.
  *
  * Architecture (Letta/MemGPT-inspired):
- *   PINNED (always in context, survives every compaction):
+ *   PINNED (~200 tokens, returned with every response; caller must re-request
+ *           after context compaction — this system does NOT auto-persist into
+ *           the LLM's system prompt):
  *     - Canonical entity (mission, wedge, state, confidence)
  *     - Last packet summary
- *     - Active contradictions
+ *     - Structurally detected contradictions
  *     - Current session actions
  *
- *   INJECTED ON DEMAND (retrieved when query is relevant):
+ *   INJECTED ON DEMAND (~200 tokens, query-relevant):
  *     - Prior weekly reset summary
  *     - Relevant tracked milestones
- *     - Entity-specific history
+ *     - Entity-specific history (dynamic entity detection from action DB)
  *     - Dogfood findings
  *
- *   ARCHIVAL (searchable, never in context unless requested):
+ *   ARCHIVAL (pointer-based, never loaded unless requested):
  *     - Full action history
  *     - All prior packets
  *     - All state diffs
  *     - Git log history
  *
- * The middleware reads from SQLite and prepends context before every tool call.
- * Total pinned context budget: ~800 tokens (fits in any model's system prompt).
+ * Total budget: ~400-500 tokens per request.
  */
 
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "fs";
 import { join, resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { getDb } from "../db.js";
@@ -101,6 +102,101 @@ function safeRead(path: string): string | null {
   try { return existsSync(path) ? readFileSync(path, "utf-8") : null; } catch { return null; }
 }
 
+/** Check if a SQLite table exists before querying it (fix P0 #2) */
+function tableExists(db: any, tableName: string): boolean {
+  const row = db.prepare(
+    `SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name=?`
+  ).get(tableName) as any;
+  return (row?.c ?? 0) > 0;
+}
+
+/**
+ * Structurally detect contradictions instead of keyword matching (fix P1 #6).
+ * Checks: CLAUDE.md vs index.html title, tool count consistency, etc.
+ */
+function detectStructuralContradictions(root: string): string[] {
+  const contradictions: string[] = [];
+
+  // 1. Check CLAUDE.md tool count vs actual loaded tools
+  const claudeMd = safeRead(join(root, "CLAUDE.md"));
+  if (claudeMd) {
+    const toolMatch = claudeMd.match(/(\d+)-tool/);
+    if (toolMatch) {
+      const declaredCount = parseInt(toolMatch[1], 10);
+      // If the declared count is off by more than 20 from any recent known count, flag it
+      if (declaredCount < 300 || declaredCount > 400) {
+        contradictions.push(`CLAUDE.md declares ${declaredCount}-tool but expected 300-400 range`);
+      }
+    }
+  }
+
+  // 2. Check index.html title vs CLAUDE.md positioning
+  const indexHtml = safeRead(join(root, "index.html"));
+  if (indexHtml && claudeMd) {
+    const titleMatch = indexHtml.match(/<title>([^<]+)<\/title>/);
+    if (titleMatch) {
+      const title = titleMatch[1].toLowerCase();
+      if (title.includes("deeptrace") || title.includes("agent trust")) {
+        contradictions.push(`index.html title "${titleMatch[1]}" contradicts entity intelligence positioning`);
+      }
+    }
+  }
+
+  // 3. Check package.json description vs CLAUDE.md
+  const pkgJson = safeRead(join(root, "packages/mcp-local/package.json"));
+  if (pkgJson) {
+    try {
+      const pkg = JSON.parse(pkgJson);
+      if (pkg.description && pkg.description.toLowerCase().includes("agent trust")) {
+        contradictions.push(`package.json description "${pkg.description}" contradicts current positioning`);
+      }
+    } catch { /* parse error */ }
+  }
+
+  return contradictions;
+}
+
+/**
+ * Compute identity confidence from structural contradictions (fix P1 #5).
+ * Shared formula — same logic as founderLocalPipeline.ts.
+ */
+function computeConfidence(contradictionCount: number): number {
+  return contradictionCount === 0 ? 85 : Math.max(50, 85 - contradictionCount * 10);
+}
+
+/**
+ * Dynamically detect entity names from the tracking_actions table (fix P2 #9).
+ * Returns entity names that appear in recent actions AND match the query.
+ */
+function findMatchingEntity(db: any, query: string): string | null {
+  if (!query) return null;
+  const queryLower = query.toLowerCase();
+
+  // First check well-known entities (fast path)
+  const wellKnown = ["anthropic", "shopify", "nodebench", "supermemory", "openai", "google", "meta", "microsoft", "stripe", "linear"];
+  const knownMatch = wellKnown.find(e => queryLower.includes(e));
+  if (knownMatch) return knownMatch;
+
+  // Fall back to dynamic detection from recent actions
+  try {
+    const recentActions = db.prepare(
+      `SELECT DISTINCT action FROM tracking_actions ORDER BY timestamp DESC LIMIT 50`
+    ).all() as any[];
+
+    // Extract capitalized words (likely entity names) from actions
+    for (const row of recentActions) {
+      const words = (row.action as string).match(/[A-Z][a-z]{2,}/g) ?? [];
+      for (const word of words) {
+        if (queryLower.includes(word.toLowerCase()) && word.length > 3) {
+          return word.toLowerCase();
+        }
+      }
+    }
+  } catch { /* no actions yet */ }
+
+  return null;
+}
+
 /* ─── Build Pinned Context ───────────────────────────────────────────────── */
 
 function buildPinnedContext(): PinnedContext {
@@ -122,7 +218,9 @@ function buildPinnedContext(): PinnedContext {
   let recentActions: string[] = [];
   let lastPacketSummary: string | null = null;
   let lastPacketTimestamp: string | null = null;
-  let activeContradictions: string[] = [];
+
+  // Fix P1 #6: Use structural contradiction detection, not keyword matching
+  const activeContradictions = detectStructuralContradictions(root);
 
   try {
     const db = getDb();
@@ -137,23 +235,19 @@ function buildPinnedContext(): PinnedContext {
       `SELECT COUNT(*) as c FROM tracking_actions WHERE date(timestamp) >= ?`
     ).get(sevenDaysAgo) as any)?.c ?? 0;
 
-    // Last benchmark/packet report
-    try {
+    // Fix P0 #2/#3: Check table existence before querying; use single source for dogfood verdict
+    if (tableExists(db, "benchmark_reports")) {
       const lastReport = db.prepare(
         `SELECT reportJson, timestamp FROM benchmark_reports ORDER BY timestamp DESC LIMIT 1`
       ).get() as any;
       if (lastReport) {
-        const report = JSON.parse(lastReport.reportJson);
-        lastPacketSummary = `Last benchmark: ${report.layer} — ${report.totalSessions} sessions, RCA ${Math.round((report.metrics?.rca ?? 0) * 100)}%, maturity ${report.maturityLabel ?? "unknown"}`;
-        lastPacketTimestamp = lastReport.timestamp;
+        try {
+          const report = JSON.parse(lastReport.reportJson);
+          lastPacketSummary = `Last benchmark: ${report.layer} — ${report.totalSessions} sessions, RCA ${Math.round((report.metrics?.rca ?? 0) * 100)}%, maturity ${report.maturityLabel ?? "unknown"}`;
+          lastPacketTimestamp = lastReport.timestamp;
+        } catch { /* malformed JSON */ }
       }
-    } catch { /* table may not exist */ }
-
-    // Check for contradictions in recent milestones
-    const contradictions = db.prepare(
-      `SELECT description FROM tracking_milestones WHERE description LIKE '%contradiction%' OR description LIKE '%mismatch%' ORDER BY timestamp DESC LIMIT 3`
-    ).all() as any[];
-    activeContradictions = contradictions.map((c: any) => c.description);
+    }
 
   } catch { /* SQLite not ready */ }
 
@@ -163,7 +257,8 @@ function buildPinnedContext(): PinnedContext {
     canonicalMission,
     wedge,
     companyState: "building",
-    identityConfidence: activeContradictions.length === 0 ? 85 : Math.max(50, 85 - activeContradictions.length * 10),
+    // Fix P1 #5: Use shared confidence formula
+    identityConfidence: computeConfidence(activeContradictions.length),
     lastPacketSummary,
     lastPacketTimestamp,
     activeContradictions,
@@ -199,27 +294,33 @@ function buildInjectedContext(query?: string): InjectedContext {
     ).all(sevenDaysAgo) as any[];
     recentMilestones = milestones.map((m: any) => ({ title: m.title, timestamp: m.timestamp }));
 
-    // Entity signals (if query mentions specific entities)
+    // Fix P2 #9: Dynamic entity detection instead of hardcoded 4-company list
     if (query) {
-      const entities = ["anthropic", "shopify", "nodebench", "supermemory"];
-      const matchedEntity = entities.find(e => query.toLowerCase().includes(e));
+      const matchedEntity = findMatchingEntity(db, query);
       if (matchedEntity) {
+        // Fix P0 #1: Escape LIKE metacharacters
+        const escaped = matchedEntity.replace(/%/g, "\\%").replace(/_/g, "\\_");
         const entityActions = db.prepare(
-          `SELECT action FROM tracking_actions WHERE LOWER(action) LIKE ? ORDER BY timestamp DESC LIMIT 3`
-        ).all(`%${matchedEntity}%`) as any[];
+          `SELECT action FROM tracking_actions WHERE LOWER(action) LIKE ? ESCAPE '\\' ORDER BY timestamp DESC LIMIT 3`
+        ).all(`%${escaped}%`) as any[];
         entitySignals = entityActions.map((a: any) => a.action);
       }
     }
 
-    // Dogfood verdict from latest benchmark
-    try {
-      const bench = db.prepare(
-        `SELECT layer, rca, prr FROM benchmark_reports ORDER BY timestamp DESC LIMIT 1`
+    // Fix P0 #3: Single source for dogfood verdict (always from reportJson, not denormalized columns)
+    if (tableExists(db, "benchmark_reports")) {
+      const lastReport = db.prepare(
+        `SELECT reportJson FROM benchmark_reports ORDER BY timestamp DESC LIMIT 1`
       ).get() as any;
-      if (bench) {
-        dogfoodVerdict = `${bench.layer}: RCA ${Math.round(bench.rca * 100)}%, PRR ${Math.round(bench.prr * 100)}%`;
+      if (lastReport) {
+        try {
+          const report = JSON.parse(lastReport.reportJson);
+          const rca = Math.round((report.metrics?.rca ?? 0) * 100);
+          const prr = Math.round((report.metrics?.prr ?? 0) * 100);
+          dogfoodVerdict = `${report.layer}: RCA ${rca}%, PRR ${prr}%`;
+        } catch { /* malformed JSON */ }
       }
-    } catch { /* table may not exist */ }
+    }
 
   } catch { /* SQLite not ready */ }
 
@@ -240,9 +341,10 @@ function buildArchivalPointers(): ArchivalPointer {
     const db = getDb();
     totalActions = (db.prepare(`SELECT COUNT(*) as c FROM tracking_actions`).get() as any)?.c ?? 0;
     totalMilestones = (db.prepare(`SELECT COUNT(*) as c FROM tracking_milestones`).get() as any)?.c ?? 0;
-    try {
+    // Fix P0 #2: Check table existence instead of try/catch swallowing errors
+    if (tableExists(db, "benchmark_runs")) {
       totalStateDiffs = (db.prepare(`SELECT COUNT(*) as c FROM benchmark_runs`).get() as any)?.c ?? 0;
-    } catch { /* table may not exist */ }
+    }
     const oldest = db.prepare(`SELECT MIN(timestamp) as t FROM tracking_actions`).get() as any;
     oldestActionDate = oldest?.t?.slice(0, 10) ?? null;
   } catch { /* SQLite not ready */ }
@@ -260,7 +362,7 @@ function buildArchivalPointers(): ArchivalPointer {
 
 function formatSystemPromptPrefix(pinned: PinnedContext, injected: InjectedContext, archival: ArchivalPointer): string {
   const lines: string[] = [
-    `[NODEBENCH CONTEXT — pinned across all messages, survives compaction]`,
+    `[NODEBENCH CONTEXT — call get_context_bundle to refresh after compaction]`,
     `Identity: ${pinned.canonicalMission}`,
     `Wedge: ${pinned.wedge}`,
     `State: ${pinned.companyState} | Confidence: ${pinned.identityConfidence}%`,

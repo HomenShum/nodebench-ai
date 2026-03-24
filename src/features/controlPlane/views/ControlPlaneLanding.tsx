@@ -42,6 +42,7 @@ import {
 } from "../components/searchTypes";
 
 const SinceLastSession = lazy(() => import("../../founder/components/SinceLastSession"));
+const FeedbackSummary = lazy(() => import("../../founder/components/FeedbackSummary").then(m => ({ default: m.FeedbackSummary })));
 
 /* ─── Demo packet keyword aliases (shared across submit + example click) ── */
 
@@ -423,11 +424,18 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
 
         {/* ── Since last session ──────────────────────────────────────────── */}
         {!activeResult && (
-          <div style={stagger("0.26s")} className="mt-8">
-            <Suspense fallback={null}>
-              <SinceLastSession />
-            </Suspense>
-          </div>
+          <>
+            <div style={stagger("0.26s")} className="mt-8">
+              <Suspense fallback={null}>
+                <SinceLastSession />
+              </Suspense>
+            </div>
+            <div style={stagger("0.32s")} className="mt-6">
+              <Suspense fallback={null}>
+                <FeedbackSummary />
+              </Suspense>
+            </div>
+          </>
         )}
 
         {/* ── Loading state ────────────────────────────────────────────────── */}
@@ -438,7 +446,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
               <span className="h-2 w-2 animate-pulse rounded-full bg-[#d97757] [animation-delay:0.15s]" />
               <span className="h-2 w-2 animate-pulse rounded-full bg-[#d97757] [animation-delay:0.3s]" />
             </div>
-            <p className="text-sm text-content-muted">Analyzing across {346} tools and sources...</p>
+            <p className="text-sm text-content-muted">Analyzing across {350} tools and sources...</p>
           </div>
         )}
 
@@ -489,7 +497,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
             Operational
           </span>
-          <span>346 MCP tools</span>
+          <span>350 MCP tools</span>
           <span>63 backend domains</span>
           <span>Sub-200ms dispatch</span>
           <span>1,510+ tests</span>
@@ -568,7 +576,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
               <div className="text-sm font-medium text-content">Claude Code</div>
               <p className="mt-1.5 text-[11px] leading-relaxed text-content-muted">
-                One command. 346 tools instantly.
+                One command. 350 tools instantly.
               </p>
             </div>
             <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
@@ -612,7 +620,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
               <div className="text-xs font-medium text-content-secondary mb-1">Open infrastructure</div>
               <div className="text-sm font-semibold text-content">Full source available</div>
               <div className="mt-1 text-xs text-content-muted leading-relaxed">
-                346 MCP tools, 63 backend domains, 1,510+ tests.
+                350 MCP tools, 63 backend domains, 1,510+ tests.
                 Inspect the code — we have nothing to hide.
               </div>
               <button
@@ -640,7 +648,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 <code className="text-xs text-content-muted font-mono">npx nodebench-mcp demo</code>
               </div>
               <div className="mt-1 text-xs text-content-muted">
-                Run locally in 3 seconds. See 346 tools. No API keys needed.
+                Run locally in 3 seconds. See 350 tools. No API keys needed.
               </div>
             </div>
           </div>

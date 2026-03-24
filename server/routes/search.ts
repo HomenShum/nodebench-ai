@@ -94,6 +94,9 @@ export function createSearchRouter(tools: McpTool[]) {
     const classification = classifyQuery(query.trim());
     const resolvedLens = lens ?? classification.lens;
 
+    // Fix P2 #10: Compute context bundle BEFORE tool dispatch so tools can use it
+    const contextBundle = buildContextBundle(query.trim());
+
     try {
       let result: any;
 
@@ -159,9 +162,7 @@ export function createSearchRouter(tools: McpTool[]) {
 
       const latencyMs = Date.now() - startMs;
 
-      // Inject persistent context bundle — ensures message 1000 retains intent from message 1
-      const contextBundle = buildContextBundle(query.trim());
-
+      // Use the pre-computed contextBundle (computed before dispatch)
       return res.json({
         success: true,
         classification: classification.type,

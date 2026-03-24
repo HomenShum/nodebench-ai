@@ -12,7 +12,7 @@
  */
 
 import { execSync } from "child_process";
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, readdirSync, statSync } from "fs";
 import { join, resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import type { McpTool } from "../types.js";
@@ -142,7 +142,9 @@ function gatherLocalContext(daysBack: number = 7): GatheredContext {
   }
 
   // ── Recent changes (git) ──────────────────────────────────────
-  const gitLog = safeExec(`git log --oneline --since="${daysBack} days ago" -30`, root);
+  // Fix P0 #12: Sanitize daysBack to prevent command injection
+  const safeDays = Math.max(1, Math.min(365, Math.floor(Number(daysBack) || 7)));
+  const gitLog = safeExec(`git log --oneline --since="${safeDays} days ago" -30`, root);
   const gitDiffStat = safeExec(`git diff --stat HEAD~10 HEAD 2>/dev/null || echo "no diff"`, root);
   const modifiedFiles = safeExec(`git diff --name-only HEAD~10 HEAD 2>/dev/null || echo ""`, root)
     .split("\n")
@@ -219,12 +221,16 @@ function gatherLocalContext(daysBack: number = 7): GatheredContext {
   const dogfoodFindings: string[] = [];
 
   try {
-    const files = safeExec(`ls -1t "${docsDir}"/dogfood-findings-*.json 2>/dev/null || echo ""`, root)
-      .split("\n")
-      .filter(Boolean);
-    if (files.length > 0) {
-      latestDogfoodFile = files[0];
-      const content = safeRead(files[0]);
+    // Fix P2 #11: Windows-safe file listing (no Unix `ls`)
+    const dogfoodFiles = existsSync(docsDir)
+      ? readdirSync(docsDir)
+          .filter((f: string) => f.startsWith("dogfood-findings-") && f.endsWith(".json"))
+          .map((f: string) => join(docsDir, f))
+          .sort((a: string, b: string) => (statSync(b).mtimeMs ?? 0) - (statSync(a).mtimeMs ?? 0))
+      : [];
+    if (dogfoodFiles.length > 0) {
+      latestDogfoodFile = dogfoodFiles[0];
+      const content = safeRead(dogfoodFiles[0]);
       if (content) {
         const parsed = JSON.parse(content);
         dogfoodVerdict = parsed.verdict ?? null;
@@ -242,11 +248,16 @@ function gatherLocalContext(daysBack: number = 7): GatheredContext {
   const archDir = join(root, "docs", "architecture");
   const architectureDocs: string[] = [];
   try {
-    const archFiles = safeExec(`ls -1t "${archDir}"/*.md 2>/dev/null | head -10`, root)
-      .split("\n")
-      .filter(Boolean);
+    // Fix P2 #11: Windows-safe file listing (no Unix `ls`)
+    const archFiles = existsSync(archDir)
+      ? readdirSync(archDir)
+          .filter((f: string) => f.endsWith(".md"))
+          .map((f: string) => join(archDir, f))
+          .sort((a: string, b: string) => (statSync(b).mtimeMs ?? 0) - (statSync(a).mtimeMs ?? 0))
+          .slice(0, 10)
+      : [];
     for (const f of archFiles) {
-      const name = f.split("/").pop() ?? f;
+      const name = f.split(/[/\\]/).pop() ?? f;
       architectureDocs.push(name);
     }
   } catch { /* ignore */ }

@@ -1,7 +1,7 @@
 # NodeBench AI — Claude Code Project Instructions
 
 ## Project overview
-NodeBench — the local-first operating-memory and entity-context layer for agent-native businesses. 346-tool MCP server with progressive discovery, lazy-loading toolset registry, persona presets (starter/founder/banker/operator/researcher), search-first AI app with 6 role lenses and 8-section entity intelligence workspace. Monorepo with `packages/mcp-local` (main server), `packages/mcp-client` (typed client SDK), and `packages/convex-mcp-nodebench` (Convex auditor). Design system: glass card DNA, warm terracotta `#d97757` accent, Manrope + JetBrains Mono typography.
+NodeBench — the local-first operating-memory and entity-context layer for agent-native businesses. 350-tool MCP server with progressive discovery, lazy-loading toolset registry, persona presets (starter/founder/banker/operator/researcher), search-first AI app with 6 role lenses and 8-section entity intelligence workspace. Monorepo with `packages/mcp-local` (main server), `packages/mcp-client` (typed client SDK), and `packages/convex-mcp-nodebench` (Convex auditor). Design system: glass card DNA, warm terracotta `#d97757` accent, Manrope + JetBrains Mono typography.
 
 ## Key files
 - `AGENTS.md` — Full methodology, eval bench, tool pipeline, agent contract
@@ -45,7 +45,7 @@ Modular rules live in `.claude/rules/` — each focused on one concern with `rel
 **Two-hop discovery**: Follow a rule's `related_` to reach its neighbors, then follow *their* `related_` for second-degree connections. Example: `process` → `a11y` → `keyboard`.
 
 ## Progressive Discovery features
-- **`relatedTools`**: Conceptually adjacent tools auto-populated on all 346 entries
+- **`relatedTools`**: Conceptually adjacent tools auto-populated on all 350 entries
 - **Cursor pagination**: `discover_tools` supports `offset`/`limit` with stable `totalMatches` and `hasMore`
 - **Result expansion**: `discover_tools({ expand: 3 })` adds `relatedTools` neighbors at 50% parent score
 - **Multi-hop BFS**: `get_tool_quick_ref({ depth: 2 })` traverses `nextTools` + `relatedTools` edges, returns `hopDistance` and `reachedVia`
@@ -61,7 +61,7 @@ Modular rules live in `.claude/rules/` — each focused on one concern with `rel
 - **Self-direction**: Never wait for permission or next instructions. When a task completes, immediately identify and start the next highest-impact action. Verify visually first, code-grep second. Only pause for user input when direction is genuinely ambiguous.
 - **Scenario-based testing**: Never write simple tests. Every test must start from a real user persona and goal, simulate realistic behavior, and verify at scale. Required: all behavior angles (happy/sad/adversarial/concurrent/degraded), both short-running (burst) and long-running (sustained accumulation) scenarios. Shallow tests that pass in isolation but miss production failure modes are banned. Use `/scenario-testing` command to audit existing tests.
 - **Agentic reliability**: On every backend/infra change, run the 8-point checklist automatically: BOUND (memory eviction), HONEST_STATUS (no fake 2xx), HONEST_SCORES (no hardcoded floors), TIMEOUT (abort controllers), SSRF (URL validation), BOUND_READ (response size caps), ERROR_BOUNDARY (async error handling), DETERMINISTIC (stable hashing). Use `/agentic-reliability-audit` for full codebase sweep. See `.claude/rules/agentic_reliability.md`.
-- Presets: starter (15 tools), founder, banker, operator, researcher persona presets, plus legacy domain presets: default (81), web_dev (150), research (115), data (122), devops (92), mobile (126), academic (113), multi_agent (136), content (115), full (346) — see `toolsetRegistry.ts`
+- Presets: starter (15 tools), founder, banker, operator, researcher persona presets, plus legacy domain presets: default (81), web_dev (150), research (115), data (122), devops (92), mobile (126), academic (113), multi_agent (136), content (115), full (350) — see `toolsetRegistry.ts`
 - CLI subcommands: `discover`, `setup`, `workflow`, `quickref`, `call`, `demo` — run-and-exit, bypass MCP transport, call tool handlers directly. Respects `--preset` and `--no-embedding`. Test with `cliSubcommands.test.ts`.
 - New domains: `deep_sim` (7 tools — simulation, postmortem, trajectory scoring)
 
