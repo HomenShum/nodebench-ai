@@ -4018,6 +4018,110 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     complexity: "medium",
   },
 
+  // ═══ BENCHMARK TOOLS ═══
+  {
+    name: "run_benchmark_batch",
+    category: "benchmark",
+    tags: ["benchmark", "batch", "eval", "suite", "run"],
+    quickRef: { nextAction: "Batch complete. Use get_benchmark_report for results.", nextTools: ["get_benchmark_report", "get_benchmark_history"], methodology: "ai_flywheel", tip: "Runs a batch of benchmark scenarios." },
+    phase: "test",
+    complexity: "medium",
+  },
+  {
+    name: "get_benchmark_history",
+    category: "benchmark",
+    tags: ["benchmark", "history", "results", "trend"],
+    quickRef: { nextAction: "Review history. Use get_benchmark_report for detailed analysis.", nextTools: ["get_benchmark_report", "run_benchmark_batch"], methodology: "ai_flywheel", tip: "Returns prior benchmark run results." },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "get_benchmark_report",
+    category: "benchmark",
+    tags: ["benchmark", "report", "summary", "analysis"],
+    quickRef: { nextAction: "Report ready. Review pass rates and regressions.", nextTools: ["run_benchmark_batch", "get_benchmark_history"], methodology: "ai_flywheel", tip: "Generates a formatted benchmark report." },
+    phase: "research",
+    complexity: "low",
+  },
+
+  // ═══ DOGFOOD JUDGE BATCH ═══
+  {
+    name: "judge_tool_output",
+    category: "dogfood_judge",
+    tags: ["judge", "eval", "llm", "boolean", "criteria", "output"],
+    quickRef: { nextAction: "Output judged. Use get_judge_history to track trends.", nextTools: ["get_judge_history", "run_judge_loop"], methodology: "ai_flywheel", tip: "Uses Gemini 3.1 Flash Lite to judge a tool output against boolean criteria." },
+    phase: "verify",
+    complexity: "medium",
+  },
+  {
+    name: "run_judge_loop",
+    category: "dogfood_judge",
+    tags: ["judge", "loop", "flywheel", "self-improving", "eval"],
+    quickRef: { nextAction: "Judge loop complete. Review diagnosis and improvements.", nextTools: ["get_judge_history", "judge_tool_output"], methodology: "ai_flywheel", tip: "Self-improving eval loop: run → diagnose → fix → grow corpus → re-run." },
+    phase: "verify",
+    complexity: "high",
+  },
+  {
+    name: "get_judge_history",
+    category: "dogfood_judge",
+    tags: ["judge", "history", "trend", "regression", "eval"],
+    quickRef: { nextAction: "History loaded. Compare runs to detect regressions.", nextTools: ["run_judge_loop", "judge_tool_output"], methodology: "ai_flywheel", tip: "Returns prior LLM judge eval runs with pass rates and deltas." },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "run_dogfood_batch_with_judge",
+    category: "dogfood_judge",
+    tags: ["dogfood", "batch", "judge", "eval", "flywheel"],
+    quickRef: { nextAction: "Batch judged. Use get_judge_history for trends.", nextTools: ["get_judge_history", "run_judge_loop"], methodology: "ai_flywheel", tip: "Runs dogfood scenarios then judges outputs with LLM." },
+    phase: "verify",
+    complexity: "high",
+  },
+
+  // ═══ SESSION MEMORY / CONTEXT ═══
+  {
+    name: "get_context_bundle",
+    category: "session_memory",
+    tags: ["context", "bundle", "session", "memory", "recovery", "compaction"],
+    quickRef: { nextAction: "Context bundle ready. Inject into prompt for continuity.", nextTools: ["inject_context_into_prompt", "summarize_session"], methodology: "founder", tip: "Gathers session context into a reusable bundle for handoff or recovery." },
+    phase: "utility",
+    complexity: "low",
+  },
+  {
+    name: "inject_context_into_prompt",
+    category: "session_memory",
+    tags: ["context", "inject", "prompt", "session", "memory", "compaction"],
+    quickRef: { nextAction: "Context injected. Resume work with full continuity.", nextTools: ["get_context_bundle", "summarize_session"], methodology: "founder", tip: "Injects a context bundle into the current prompt for post-compaction recovery." },
+    phase: "utility",
+    complexity: "low",
+  },
+
+  // ═══ ENTITY ENRICHMENT ═══
+  {
+    name: "enrich_entity",
+    category: "founder",
+    tags: ["entity", "enrichment", "company", "profile", "web", "search"],
+    quickRef: { nextAction: "Entity enriched. Use detect_contradictions to validate.", nextTools: ["detect_contradictions", "founder_deep_context_gather"], methodology: "founder", tip: "Enriches an entity profile with web search data and structured extraction." },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "detect_contradictions",
+    category: "founder",
+    tags: ["contradiction", "detection", "entity", "validation", "truth"],
+    quickRef: { nextAction: "Contradictions detected. Review and resolve or flag.", nextTools: ["enrich_entity", "flag_important_change"], methodology: "founder", tip: "Scans entity data for contradictory claims or stale facts." },
+    phase: "verify",
+    complexity: "medium",
+  },
+  {
+    name: "ingest_upload",
+    category: "founder",
+    tags: ["ingest", "upload", "document", "notes", "pdf", "context"],
+    quickRef: { nextAction: "Upload ingested. Use founder_deep_context_gather to build packet.", nextTools: ["founder_deep_context_gather", "enrich_entity"], methodology: "founder", tip: "Ingests uploaded documents (notes, PDFs, transcripts) into entity context." },
+    phase: "research",
+    complexity: "medium",
+  },
+
   // ═══ CAUSAL MEMORY ═══
   {
     name: "record_event",

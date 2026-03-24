@@ -283,6 +283,7 @@ function gatherLocalContext(daysBack: number = 7): GatheredContext {
 function synthesizePacket(
   ctx: GatheredContext,
   packetType: "weekly_reset" | "pre_delegation" | "important_change" | "competitor_brief" | "role_switch",
+  originalQuery?: string,
 ): FounderPacket {
   const packetId = genId("pkt");
 
@@ -454,17 +455,28 @@ function synthesizePacket(
     `**Generated:** ${new Date().toISOString().slice(0, 10)} by founder_local_pipeline`,
     `**Package:** ${ctx.identity.packageName}@${ctx.identity.packageVersion}`,
     `**Packet type:** ${packetType}`,
+    ...(originalQuery ? [`**Query:** ${originalQuery}`] : []),
     ``,
   ];
 
   if (packetType === "competitor_brief") {
     memoLines.push(
+      `## Query Context`,
+      originalQuery ? `Analyzing: ${originalQuery}` : `General competitive analysis`,
+      ``,
       `## Competitive Position`,
       `NodeBench is: ${canonicalMission}`,
       `Wedge: ${wedge}`,
       ``,
       `## What Changed Competitively`,
       ...whatChanged.slice(0, 5).map((c, i) => `${i + 1}. ${c.description}`),
+      ``,
+      `## Competitor Moats and Differentiators`,
+      `When comparing competitors, key dimensions to evaluate:`,
+      `- Distribution advantage (plugin ecosystem, MCP-native onboarding)`,
+      `- Technical moat (proprietary data, infrastructure lock-in, network effects)`,
+      `- Market positioning (category creation vs category capture)`,
+      `- Benchmark rigor and provider abstraction depth`,
       ``,
       `## Strategic Contradictions (${contradictions.length})`,
       ...contradictions.map((c) => `- **[${c.severity}]** ${c.claim}\n  Evidence: ${c.evidence}`),
@@ -475,7 +487,7 @@ function synthesizePacket(
       `## Market Signals`,
       ...signals.map((s) => `- ${s.direction === "up" ? "+" : s.direction === "down" ? "-" : "="} ${s.name} (${s.impact})`),
       ``,
-      `## What to Absorb vs Avoid`,
+      `## Strategic Recommendation`,
       `Absorb: plugin-led distribution, MCP-native onboarding, benchmark rigor, provider abstraction`,
       `Own: causal memory, before/after state, packets/artifacts, role overlays, trajectory`,
       `Avoid: competing directly on raw memory API or universal connector layer`,
@@ -506,7 +518,8 @@ function synthesizePacket(
   } else if (packetType === "pre_delegation") {
     memoLines.push(
       `## Delegation Objective`,
-      `Hand off the following context so the delegate does not need to re-ask.`,
+      originalQuery ? `Task: ${originalQuery}` : `Hand off the following context so the delegate does not need to re-ask.`,
+      `Scope: Hand off context so the delegate does not need to re-ask.`,
       ``,
       `## Current State`,
       `- Identity: ${canonicalMission}`,
@@ -676,13 +689,17 @@ export const founderLocalPipelineTools: McpTool[] = [
           type: "number",
           description: "How many days of history to include (default: 7)",
         },
+        query: {
+          type: "string",
+          description: "Original user query — incorporated into the memo for context-specific output",
+        },
       },
       required: ["packetType"],
     },
-    handler: async (args: { packetType: string; daysBack?: number }) => {
+    handler: async (args: { packetType: string; daysBack?: number; query?: string }) => {
       const packetType = args.packetType as FounderPacket["packetType"];
       const ctx = gatherLocalContext(args.daysBack ?? 7);
-      const packet = synthesizePacket(ctx, packetType);
+      const packet = synthesizePacket(ctx, packetType, args.query);
       return packet;
     },
   },
