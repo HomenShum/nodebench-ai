@@ -110,6 +110,10 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
     const { cCompilerBenchmarkTools } = await import("./tools/cCompilerBenchmarkTools.js");
     return cCompilerBenchmarkTools;
   },
+  longitudinal_benchmark: async () => {
+    const { benchmarkTools } = await import("./benchmarks/benchmarkTools.js");
+    return benchmarkTools;
+  },
   session_memory: async () => {
     const { sessionMemoryTools } = await import("./tools/sessionMemoryTools.js");
     return sessionMemoryTools;
