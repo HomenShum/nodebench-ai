@@ -75,8 +75,9 @@ export function createSearchRouter(tools: McpTool[]) {
 
     // Company search — detect entity names
     const companyPatterns = [
-      /(?:analyze|search|tell me about|company|profile|diligence)\s+(.+?)(?:\s+for|\s+from|$)/i,
-      /^(.+?)\s+(?:competitive position|strategy|valuation|revenue|risk)/i,
+      /(?:analyze|search|tell me about|company|profile|diligence|research)\s+(.+?)(?:\s+for|\s+from|\s+—|$)/i,
+      /^(.+?)\s+(?:competitive position|strategy|valuation|revenue|risk|overview)/i,
+      /^search\s+(.+?)(?:\s+—|\s+–|\s+-|$)/i,
     ];
     for (const pattern of companyPatterns) {
       const match = query.match(pattern);
@@ -151,36 +152,63 @@ export function createSearchRouter(tools: McpTool[]) {
           const competitors = recon?.competitors ?? recon?.comparables ?? [];
 
           // Build canonicalEntity + memo structure the frontend expects
+          // When recon/gather return empty data, generate meaningful defaults
+          const mappedFindings = findings.slice(0, 5).map((f: any) => ({
+            description: typeof f === "string" ? f : f.summary ?? f.title ?? String(f),
+            date: f.date ?? new Date().toISOString().slice(0, 10),
+          }));
+          const mappedSignals = sources.slice(0, 5).map((s: any, i: number) => ({
+            name: typeof s === "string" ? s : s.name ?? s.source ?? String(s),
+            direction: "neutral" as const,
+            impact: (i < 2 ? "high" : "medium") as "high" | "medium",
+          }));
+          const mappedRisks = (recon?.risks ?? recon?.contradictions ?? []).slice(0, 3).map((r: any) => ({
+            claim: typeof r === "string" ? r : r.title ?? r.claim ?? String(r),
+            evidence: typeof r === "string" ? "" : r.description ?? r.evidence ?? "",
+          }));
+
+          // Default signals when recon returns nothing
+          const defaultSignals = [
+            { name: `${entityName} market positioning`, direction: "neutral" as const, impact: "high" as const },
+            { name: `Competitive landscape analysis needed`, direction: "neutral" as const, impact: "high" as const },
+            { name: `Revenue and growth trajectory`, direction: "neutral" as const, impact: "medium" as const },
+            { name: `Team and leadership assessment`, direction: "neutral" as const, impact: "medium" as const },
+          ];
+          const defaultChanges = [
+            { description: `Research initiated for ${entityName}`, date: new Date().toISOString().slice(0, 10) },
+            { description: `Entity profile created — enrich with uploads or connected agents for deeper analysis`, date: new Date().toISOString().slice(0, 10) },
+          ];
+          const defaultRisks = [
+            { claim: `Limited data available for ${entityName}`, evidence: "Initial search returned limited structured data. Upload documents, connect agents, or run a deeper recon to enrich this entity profile." },
+          ];
+
           result = {
             canonicalEntity: {
               name: entityName,
               canonicalMission: recon?.summary
                 ?? recon?.overview
-                ?? `Entity intelligence workspace for ${entityName}. ${findings.length > 0 ? findings[0]?.summary ?? "" : "Research plan generated — execute sources for deeper analysis."}`,
+                ?? `Entity intelligence workspace for ${entityName}. ${findings.length > 0 ? findings[0]?.summary ?? "" : "Search initiated — upload documents or connect agents for deeper intelligence."}`,
               identityConfidence: Math.min(95, 50 + sources.length * 5 + findings.length * 10),
             },
-            memo: true, // Signals to frontend that this is a structured result
-            whatChanged: findings.slice(0, 5).map((f: any) => ({
-              description: typeof f === "string" ? f : f.summary ?? f.title ?? String(f),
-              date: f.date ?? new Date().toISOString().slice(0, 10),
-            })),
-            signals: sources.slice(0, 5).map((s: any, i: number) => ({
-              name: typeof s === "string" ? s : s.name ?? s.source ?? String(s),
-              direction: "neutral",
-              impact: i < 2 ? "high" : "medium",
-            })),
-            contradictions: (recon?.risks ?? recon?.contradictions ?? []).slice(0, 3).map((r: any) => ({
-              claim: typeof r === "string" ? r : r.title ?? r.claim ?? String(r),
-              evidence: typeof r === "string" ? "" : r.description ?? r.evidence ?? "",
-            })),
+            memo: true,
+            whatChanged: mappedFindings.length > 0 ? mappedFindings : defaultChanges,
+            signals: mappedSignals.length > 0 ? mappedSignals : defaultSignals,
+            contradictions: mappedRisks.length > 0 ? mappedRisks : defaultRisks,
             comparables: competitors.slice(0, 4).map((c: any) => ({
               name: typeof c === "string" ? c : c.name ?? String(c),
               relevance: "medium",
               note: typeof c === "string" ? "" : c.note ?? c.description ?? "",
             })),
-            nextActions: (recon?.nextSteps ?? []).slice(0, 4).map((a: any) => ({
-              action: typeof a === "string" ? a : a.action ?? a.step ?? String(a),
-            })),
+            nextActions: (recon?.nextSteps ?? []).length > 0
+              ? (recon.nextSteps).slice(0, 4).map((a: any) => ({
+                  action: typeof a === "string" ? a : a.action ?? a.step ?? String(a),
+                }))
+              : [
+                  { action: `Deep-dive ${entityName}'s financials and unit economics` },
+                  { action: `Map ${entityName}'s competitive landscape` },
+                  { action: `Upload relevant documents to enrich this entity profile` },
+                  { action: `Monitor ${entityName} for material changes` },
+                ],
             nextQuestions: [
               `What are ${entityName}'s key competitive advantages?`,
               `How does ${entityName} compare to its closest competitors?`,
@@ -196,29 +224,48 @@ export function createSearchRouter(tools: McpTool[]) {
           // General query — gather local context and map to ResultPacket shape
           const gather = await callTool("founder_local_gather", { daysBack: daysBack ?? 7 }) as any;
           const g = gather ?? {};
+
+          const gChanges = (g.recentActions ?? g.changes ?? []).slice(0, 5).map((a: any) => ({
+            description: typeof a === "string" ? a : a.description ?? a.action ?? String(a),
+            date: a.date ?? a.timestamp,
+          }));
+          const gSignals = (g.signals ?? g.milestones ?? []).slice(0, 5).map((s: any, i: number) => ({
+            name: typeof s === "string" ? s : s.name ?? s.title ?? String(s),
+            direction: s.direction ?? "neutral",
+            impact: i < 2 ? "high" : "medium",
+          }));
+          const gContradictions = (g.contradictions ?? []).slice(0, 3).map((c: any) => ({
+            claim: typeof c === "string" ? c : c.claim ?? c.title ?? String(c),
+            evidence: typeof c === "string" ? "" : c.evidence ?? c.description ?? "",
+          }));
+          const gActions = (g.nextActions ?? g.pendingActions ?? []).slice(0, 4).map((a: any) => ({
+            action: typeof a === "string" ? a : a.action ?? a.title ?? String(a),
+          }));
+
           result = {
             canonicalEntity: {
               name: g.company?.name ?? "Your Workspace",
-              canonicalMission: g.company?.canonicalMission ?? g.summary ?? `Analysis for: ${query.trim()}`,
+              canonicalMission: g.company?.canonicalMission ?? g.summary ?? `Workspace intelligence for: "${query.trim()}". Upload documents, connect agents, or search specific entities for deeper results.`,
               identityConfidence: g.company?.identityConfidence ?? 50,
             },
             memo: true,
-            whatChanged: (g.recentActions ?? g.changes ?? []).slice(0, 5).map((a: any) => ({
-              description: typeof a === "string" ? a : a.description ?? a.action ?? String(a),
-              date: a.date ?? a.timestamp,
-            })),
-            signals: (g.signals ?? g.milestones ?? []).slice(0, 5).map((s: any, i: number) => ({
-              name: typeof s === "string" ? s : s.name ?? s.title ?? String(s),
-              direction: s.direction ?? "neutral",
-              impact: i < 2 ? "high" : "medium",
-            })),
-            contradictions: (g.contradictions ?? []).slice(0, 3).map((c: any) => ({
-              claim: typeof c === "string" ? c : c.claim ?? c.title ?? String(c),
-              evidence: typeof c === "string" ? "" : c.evidence ?? c.description ?? "",
-            })),
-            nextActions: (g.nextActions ?? g.pendingActions ?? []).slice(0, 4).map((a: any) => ({
-              action: typeof a === "string" ? a : a.action ?? a.title ?? String(a),
-            })),
+            whatChanged: gChanges.length > 0 ? gChanges : [
+              { description: `Query received: "${query.trim().slice(0, 60)}"`, date: new Date().toISOString().slice(0, 10) },
+              { description: "Upload documents or connect agents for richer context", date: new Date().toISOString().slice(0, 10) },
+            ],
+            signals: gSignals.length > 0 ? gSignals : [
+              { name: "Current workspace context", direction: "neutral", impact: "high" },
+              { name: "Agent connection status", direction: "neutral", impact: "medium" },
+              { name: "Upload pipeline readiness", direction: "up", impact: "medium" },
+            ],
+            contradictions: gContradictions.length > 0 ? gContradictions : [
+              { claim: "Limited context available", evidence: "General queries work best with local context. Try a founder weekly reset or search a specific entity for richer results." },
+            ],
+            nextActions: gActions.length > 0 ? gActions : [
+              { action: "Generate a founder weekly reset for structured insights" },
+              { action: "Search a specific company for entity intelligence" },
+              { action: "Upload documents to build your knowledge base" },
+            ],
             nextQuestions: [
               "Generate my founder weekly reset — what changed, main contradiction, next 3 moves",
               "What are the most important changes in the last 7 days?",

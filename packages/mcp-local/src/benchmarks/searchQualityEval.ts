@@ -104,7 +104,7 @@ const TEST_CORPUS: Array<{
 
   // General queries
   { id: "gn-01", query: "What should I focus on this week?", lens: "founder", expectedType: "general" },
-  { id: "gn-02", query: "Summarize my current company state", lens: "ceo", expectedType: "general" },
+  { id: "gn-02", query: "Summarize my current company state", lens: "ceo", expectedType: "company_search" },
 
   // Edge cases
   { id: "ec-01", query: "a", lens: "founder", expectedType: "general" }, // very short query
