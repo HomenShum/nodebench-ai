@@ -130,38 +130,100 @@ export function createSearchRouter(tools: McpTool[]) {
 
         case "company_search":
         case "competitor": {
-          // First try run_recon for a research plan
-          const reconResult = await callTool("run_recon", {
-            target: classification.entity ?? query.trim(),
-            focus: query.trim(),
-          });
+          const entityName = classification.entity ?? query.trim().split(/\s+/).slice(0, 3).join(" ");
 
-          // Also gather local context
-          const localCtx = await callTool("founder_local_gather", { daysBack: daysBack ?? 7 });
+          // Run recon + local context in parallel
+          const [reconResult, localCtx] = await Promise.all([
+            callTool("run_recon", {
+              target: entityName,
+              focus: query.trim(),
+            }).catch(() => null),
+            callTool("founder_local_gather", { daysBack: daysBack ?? 7 }).catch(() => null),
+          ]);
 
+          // Map to ResultPacket-compatible shape so the frontend can render it
+          const recon = reconResult as any;
+          const local = localCtx as any;
+
+          // Extract structured data from recon result
+          const sources = recon?.plan?.sources ?? recon?.sources ?? [];
+          const findings = recon?.findings ?? [];
+          const competitors = recon?.competitors ?? recon?.comparables ?? [];
+
+          // Build canonicalEntity + memo structure the frontend expects
           result = {
-            packetType: "company_search",
-            query: query.trim(),
-            entityName: classification.entity ?? "Unknown",
-            lens: resolvedLens,
-            recon: reconResult,
-            localContext: localCtx,
-            // The frontend will need to assemble these into a ResultPacket
-            // or display the recon plan + local context directly
-            note: "Research plan generated. Use the recon session to execute each source, then synthesize into a packet.",
+            canonicalEntity: {
+              name: entityName,
+              canonicalMission: recon?.summary
+                ?? recon?.overview
+                ?? `Entity intelligence workspace for ${entityName}. ${findings.length > 0 ? findings[0]?.summary ?? "" : "Research plan generated — execute sources for deeper analysis."}`,
+              identityConfidence: Math.min(95, 50 + sources.length * 5 + findings.length * 10),
+            },
+            memo: true, // Signals to frontend that this is a structured result
+            whatChanged: findings.slice(0, 5).map((f: any) => ({
+              description: typeof f === "string" ? f : f.summary ?? f.title ?? String(f),
+              date: f.date ?? new Date().toISOString().slice(0, 10),
+            })),
+            signals: sources.slice(0, 5).map((s: any, i: number) => ({
+              name: typeof s === "string" ? s : s.name ?? s.source ?? String(s),
+              direction: "neutral",
+              impact: i < 2 ? "high" : "medium",
+            })),
+            contradictions: (recon?.risks ?? recon?.contradictions ?? []).slice(0, 3).map((r: any) => ({
+              claim: typeof r === "string" ? r : r.title ?? r.claim ?? String(r),
+              evidence: typeof r === "string" ? "" : r.description ?? r.evidence ?? "",
+            })),
+            comparables: competitors.slice(0, 4).map((c: any) => ({
+              name: typeof c === "string" ? c : c.name ?? String(c),
+              relevance: "medium",
+              note: typeof c === "string" ? "" : c.note ?? c.description ?? "",
+            })),
+            nextActions: (recon?.nextSteps ?? []).slice(0, 4).map((a: any) => ({
+              action: typeof a === "string" ? a : a.action ?? a.step ?? String(a),
+            })),
+            nextQuestions: [
+              `What are ${entityName}'s key competitive advantages?`,
+              `How does ${entityName} compare to its closest competitors?`,
+              `What are the main risks facing ${entityName}?`,
+              `What changed for ${entityName} in the last quarter?`,
+            ],
+            localContext: local,
           };
           break;
         }
 
         default: {
-          // General query — gather local context and return it
-          const gather = await callTool("founder_local_gather", { daysBack: daysBack ?? 7 });
+          // General query — gather local context and map to ResultPacket shape
+          const gather = await callTool("founder_local_gather", { daysBack: daysBack ?? 7 }) as any;
+          const g = gather ?? {};
           result = {
-            packetType: "general",
-            query: query.trim(),
-            lens: resolvedLens,
-            localContext: gather,
-            note: "General query. Local context gathered. For deeper analysis, use the FastAgent panel.",
+            canonicalEntity: {
+              name: g.company?.name ?? "Your Workspace",
+              canonicalMission: g.company?.canonicalMission ?? g.summary ?? `Analysis for: ${query.trim()}`,
+              identityConfidence: g.company?.identityConfidence ?? 50,
+            },
+            memo: true,
+            whatChanged: (g.recentActions ?? g.changes ?? []).slice(0, 5).map((a: any) => ({
+              description: typeof a === "string" ? a : a.description ?? a.action ?? String(a),
+              date: a.date ?? a.timestamp,
+            })),
+            signals: (g.signals ?? g.milestones ?? []).slice(0, 5).map((s: any, i: number) => ({
+              name: typeof s === "string" ? s : s.name ?? s.title ?? String(s),
+              direction: s.direction ?? "neutral",
+              impact: i < 2 ? "high" : "medium",
+            })),
+            contradictions: (g.contradictions ?? []).slice(0, 3).map((c: any) => ({
+              claim: typeof c === "string" ? c : c.claim ?? c.title ?? String(c),
+              evidence: typeof c === "string" ? "" : c.evidence ?? c.description ?? "",
+            })),
+            nextActions: (g.nextActions ?? g.pendingActions ?? []).slice(0, 4).map((a: any) => ({
+              action: typeof a === "string" ? a : a.action ?? a.title ?? String(a),
+            })),
+            nextQuestions: [
+              "Generate my founder weekly reset — what changed, main contradiction, next 3 moves",
+              "What are the most important changes in the last 7 days?",
+              "Build a pre-delegation packet for my agent",
+            ],
           };
         }
       }
@@ -239,6 +301,31 @@ export function createSearchRouter(tools: McpTool[]) {
     }
   });
 
+  // ── POST /search/upload — Ingest uploaded file content ────────────
+  router.post("/upload", async (req, res) => {
+    const { content, fileName, fileType } = req.body as {
+      content?: string;
+      fileName?: string;
+      fileType?: string;
+    };
+
+    if (!content || typeof content !== "string") {
+      return res.status(400).json({ error: true, message: "Content is required" });
+    }
+
+    try {
+      const result = await callTool("ingest_upload", {
+        content,
+        fileName: fileName ?? "upload",
+        fileType: fileType ?? "text/plain",
+        sourceProvider: "user_upload",
+      });
+      return res.json({ success: true, result });
+    } catch (err: any) {
+      return res.status(500).json({ error: true, message: err?.message ?? "Upload ingestion failed" });
+    }
+  });
+
   // ── GET /search/health ────────────────────────────────────────────
   router.get("/health", (_req, res) => {
     const availableTools = [
@@ -247,6 +334,9 @@ export function createSearchRouter(tools: McpTool[]) {
       "founder_local_gather",
       "run_recon",
       "track_action",
+      "enrich_entity",
+      "detect_contradictions",
+      "ingest_upload",
     ];
     const found = availableTools.filter((name) => findTool(name));
     res.json({

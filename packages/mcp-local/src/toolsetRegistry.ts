@@ -254,6 +254,10 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
     ]);
     return [...f.founderTools, ...ft.founderTrackingTools, ...cm.causalMemoryTools, ...lp.founderLocalPipelineTools, ...ci.contextInjectionTools];
   },
+  entity_enrichment: async () => {
+    const { entityEnrichmentTools } = await import("./tools/entityEnrichmentTools.js");
+    return entityEnrichmentTools;
+  },
 };
 
 // ── All known domain keys (available before any load) ──────────────────────

@@ -93,7 +93,7 @@ interface GatheredContext {
 
 interface FounderPacket {
   packetId: string;
-  packetType: "weekly_reset" | "pre_delegation" | "important_change";
+  packetType: "weekly_reset" | "pre_delegation" | "important_change" | "competitor_brief" | "role_switch";
   generatedAt: string;
   generatedBy: "founder_local_pipeline";
   canonicalEntity: {
@@ -282,7 +282,7 @@ function gatherLocalContext(daysBack: number = 7): GatheredContext {
 
 function synthesizePacket(
   ctx: GatheredContext,
-  packetType: "weekly_reset" | "pre_delegation" | "important_change",
+  packetType: "weekly_reset" | "pre_delegation" | "important_change" | "competitor_brief" | "role_switch",
 ): FounderPacket {
   const packetId = genId("pkt");
 
@@ -440,36 +440,143 @@ function synthesizePacket(
     publicMismatches.push("README still uses 'Operating intelligence' instead of 'Entity intelligence'");
   }
 
-  // ── Generate memo ─────────────────────────────────────────────
+  // ── Generate memo (adapted to packetType) ────────────────────
+  const memoTitle: Record<string, string> = {
+    weekly_reset: "Founder Weekly Reset",
+    pre_delegation: "Pre-Delegation Packet",
+    important_change: "Important Change Review",
+    competitor_brief: "Competitor Intelligence Brief",
+    role_switch: "Role-Adapted Analysis",
+  };
+
   const memoLines: string[] = [
-    `# NodeBench Founder Weekly Reset`,
+    `# NodeBench ${memoTitle[packetType] ?? packetType}`,
     `**Generated:** ${new Date().toISOString().slice(0, 10)} by founder_local_pipeline`,
     `**Package:** ${ctx.identity.packageName}@${ctx.identity.packageVersion}`,
+    `**Packet type:** ${packetType}`,
     ``,
-    `## What We Are Building`,
-    canonicalMission,
-    ``,
-    `## What Changed This Week`,
-    ...whatChanged.slice(0, 5).map((c, i) => `${i + 1}. ${c.description}`),
-    ``,
-    `## Contradictions (${contradictions.length})`,
-    ...contradictions.map((c) => `- **[${c.severity}]** ${c.claim}\n  Evidence: ${c.evidence}`),
-    ``,
-    `## Next 3 Moves`,
-    ...nextActions.slice(0, 3).map((a) => `${a.priority}. **${a.action}**\n   ${a.reasoning}`),
-    ``,
-    `## Signals`,
-    ...signals.map((s) => `- ${s.direction === "up" ? "+" : s.direction === "down" ? "-" : "="} ${s.name} (${s.impact})`),
-    ``,
-    `## Public Narrative`,
-    publicMismatches.length === 0
-      ? "All public surfaces aligned with internal thesis."
-      : publicMismatches.map((m) => `- MISMATCH: ${m}`).join("\n"),
-    ``,
-    `## Session Memory`,
-    `- ${ctx.sessionMemory.totalActions7d} actions tracked / ${ctx.sessionMemory.totalMilestones7d} milestones in last 7 days`,
-    `- Dogfood: ${ctx.dogfoodFindings.verdict ?? "no runs yet"}`,
   ];
+
+  if (packetType === "competitor_brief") {
+    memoLines.push(
+      `## Competitive Position`,
+      `NodeBench is: ${canonicalMission}`,
+      `Wedge: ${wedge}`,
+      ``,
+      `## What Changed Competitively`,
+      ...whatChanged.slice(0, 5).map((c, i) => `${i + 1}. ${c.description}`),
+      ``,
+      `## Strategic Contradictions (${contradictions.length})`,
+      ...contradictions.map((c) => `- **[${c.severity}]** ${c.claim}\n  Evidence: ${c.evidence}`),
+      ``,
+      `## Recommended Competitive Moves`,
+      ...nextActions.slice(0, 3).map((a) => `${a.priority}. **${a.action}**\n   ${a.reasoning}`),
+      ``,
+      `## Market Signals`,
+      ...signals.map((s) => `- ${s.direction === "up" ? "+" : s.direction === "down" ? "-" : "="} ${s.name} (${s.impact})`),
+      ``,
+      `## What to Absorb vs Avoid`,
+      `Absorb: plugin-led distribution, MCP-native onboarding, benchmark rigor, provider abstraction`,
+      `Own: causal memory, before/after state, packets/artifacts, role overlays, trajectory`,
+      `Avoid: competing directly on raw memory API or universal connector layer`,
+    );
+  } else if (packetType === "role_switch") {
+    memoLines.push(
+      `## Current Identity`,
+      canonicalMission,
+      ``,
+      `## Available Lenses`,
+      `- **Founder:** weekly reset, packet management, delegation, contradiction detection`,
+      `- **Banker:** credit analysis, risk assessment, due diligence, regulatory monitoring`,
+      `- **CEO:** executive summary, OKR tracking, board updates, leadership attention`,
+      `- **Researcher:** literature review, research digest, methodology comparison`,
+      `- **Student:** accessible explanations, study plans, beginner resources`,
+      `- **Operator:** system health, incident review, deployment monitoring`,
+      `- **Investor:** pitch evaluation, market sizing, competitive moats, deal assessment`,
+      `- **Legal:** regulatory exposure, compliance signals, governance review`,
+      ``,
+      `## Active Context`,
+      `- ${ctx.sessionMemory.totalActions7d} actions / ${ctx.sessionMemory.totalMilestones7d} milestones (7d)`,
+      `- Dogfood: ${ctx.dogfoodFindings.verdict ?? "no runs yet"}`,
+      `- Contradictions: ${contradictions.length}`,
+      ``,
+      `## Signals for Current Role`,
+      ...signals.map((s) => `- ${s.direction === "up" ? "+" : s.direction === "down" ? "-" : "="} ${s.name} (${s.impact})`),
+    );
+  } else if (packetType === "pre_delegation") {
+    memoLines.push(
+      `## Delegation Objective`,
+      `Hand off the following context so the delegate does not need to re-ask.`,
+      ``,
+      `## Current State`,
+      `- Identity: ${canonicalMission}`,
+      `- Package: ${ctx.identity.packageName}@${ctx.identity.packageVersion}`,
+      `- Recent commits: ${whatChanged.length}`,
+      `- Active contradictions: ${contradictions.length}`,
+      ``,
+      `## What Changed (Context for Delegate)`,
+      ...whatChanged.slice(0, 5).map((c, i) => `${i + 1}. ${c.description}`),
+      ``,
+      `## Constraints`,
+      `- Do not expand generic shell behavior`,
+      `- Do not drift from entity intelligence positioning`,
+      `- Do not add surfaces without proving the first 3 habits`,
+      ``,
+      `## Success Criteria`,
+      ...nextActions.slice(0, 3).map((a) => `- ${a.action}`),
+      ``,
+      `## Files Likely Affected`,
+      ...ctx.recentChanges.modifiedFiles.slice(0, 10).map((f) => `- ${f}`),
+    );
+  } else if (packetType === "important_change") {
+    memoLines.push(
+      `## Important Changes Since Last Session`,
+      `Showing only strategy, positioning, architecture, and competitive changes that matter.`,
+      ``,
+      `## Changes Detected`,
+      ...whatChanged.slice(0, 8).map((c, i) => `${i + 1}. **${c.description}** (${c.source})`),
+      ``,
+      `## Impact Assessment`,
+      contradictions.length > 0
+        ? `**${contradictions.length} active contradiction(s):**\n` + contradictions.map((c) => `- [${c.severity}] ${c.claim}`).join("\n")
+        : `No active contradictions — positioning is consistent.`,
+      ``,
+      `## Packet Refresh Needed?`,
+      whatChanged.length > 3 || contradictions.length > 0
+        ? `Yes — ${whatChanged.length} changes and ${contradictions.length} contradictions warrant a packet refresh.`
+        : `No — changes are incremental. Current packet remains valid.`,
+      ``,
+      `## Signals`,
+      ...signals.map((s) => `- ${s.direction === "up" ? "+" : s.direction === "down" ? "-" : "="} ${s.name} (${s.impact})`),
+    );
+  } else {
+    // weekly_reset (default)
+    memoLines.push(
+      `## What We Are Building`,
+      canonicalMission,
+      ``,
+      `## What Changed This Week`,
+      ...whatChanged.slice(0, 5).map((c, i) => `${i + 1}. ${c.description}`),
+      ``,
+      `## Contradictions (${contradictions.length})`,
+      ...contradictions.map((c) => `- **[${c.severity}]** ${c.claim}\n  Evidence: ${c.evidence}`),
+      ``,
+      `## Next 3 Moves`,
+      ...nextActions.slice(0, 3).map((a) => `${a.priority}. **${a.action}**\n   ${a.reasoning}`),
+      ``,
+      `## Signals`,
+      ...signals.map((s) => `- ${s.direction === "up" ? "+" : s.direction === "down" ? "-" : "="} ${s.name} (${s.impact})`),
+      ``,
+      `## Public Narrative`,
+      publicMismatches.length === 0
+        ? "All public surfaces aligned with internal thesis."
+        : publicMismatches.map((m) => `- MISMATCH: ${m}`).join("\n"),
+      ``,
+      `## Session Memory`,
+      `- ${ctx.sessionMemory.totalActions7d} actions tracked / ${ctx.sessionMemory.totalMilestones7d} milestones in last 7 days`,
+      `- Dogfood: ${ctx.dogfoodFindings.verdict ?? "no runs yet"}`,
+    );
+  }
 
   return {
     packetId,
@@ -562,7 +669,7 @@ export const founderLocalPipelineTools: McpTool[] = [
       properties: {
         packetType: {
           type: "string",
-          enum: ["weekly_reset", "pre_delegation", "important_change"],
+          enum: ["weekly_reset", "pre_delegation", "important_change", "competitor_brief", "role_switch"],
           description: "Type of artifact packet to produce",
         },
         daysBack: {

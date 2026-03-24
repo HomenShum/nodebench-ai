@@ -188,9 +188,22 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
               { label: "Contradictions", value: String(r.contradictions?.length ?? 0) },
               { label: "Actions", value: String(r.nextActions?.length ?? 0) },
             ],
-            changes: r.whatChanged?.map((c: any) => ({ description: c.description, date: c.date })),
-            risks: r.contradictions?.map((c: any) => ({ title: c.claim ?? "Contradiction", description: c.evidence ?? "" })),
-            nextQuestions: r.nextActions?.map((a: any) => a.action),
+            changes: r.whatChanged?.map((c: any) => ({ description: c.description ?? String(c), date: c.date })),
+            risks: r.contradictions?.map((c: any) => ({
+              title: c.claim ?? "Contradiction",
+              description: c.evidence ?? "",
+              falsification: c.falsification,
+            })),
+            comparables: r.comparables?.map((c: any) => ({
+              name: c.name ?? String(c),
+              relevance: c.relevance ?? "medium",
+              note: c.note ?? "",
+            })),
+            interventions: r.nextActions?.slice(0, 4).map((a: any) => ({
+              action: a.action ?? String(a),
+              impact: a.impact ?? "medium",
+            })),
+            nextQuestions: r.nextQuestions ?? r.nextActions?.map((a: any) => a.action) ?? [],
           };
           showResult(packet);
           trackEvent("search_live_result", { entity: packet.entityName, type: data.classification });
@@ -281,6 +294,79 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
     setTimeout(() => setCopiedInstall(false), 2000);
   }, [activeInstallTab]);
 
+  // File upload handler — reads text from files and submits to ingestion
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = useCallback(async (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    if (fileArray.length === 0) return;
+
+    setIsSearching(true);
+    const results: string[] = [];
+
+    for (const file of fileArray.slice(0, 5)) { // Max 5 files
+      try {
+        const text = await file.text();
+        if (!text.trim()) continue;
+
+        // Send to ingestion endpoint
+        const resp = await fetch("/search/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: text.slice(0, 100_000),
+            fileName: file.name,
+            fileType: file.type || "text/plain",
+          }),
+        });
+        const data = await resp.json();
+        if (data.success && data.result) {
+          const r = data.result;
+          results.push(
+            `${file.name}: ${r.extractedEntities?.length ?? 0} entities, ` +
+            `${r.extractedSignals ?? 0} signals, ${r.extractedActions ?? 0} actions`
+          );
+        }
+      } catch { /* non-fatal */ }
+    }
+
+    // Show upload summary as a result packet
+    const entityNames = results.join("; ");
+    const packet: ResultPacket = {
+      query: `Uploaded ${fileArray.length} file(s): ${fileArray.map(f => f.name).join(", ")}`,
+      entityName: "Upload Ingestion",
+      answer: `Successfully ingested ${fileArray.length} file(s). ${entityNames || "Processing entities..."}. Content is queued for canonicalization and will enrich future searches.`,
+      confidence: 60,
+      sourceCount: fileArray.length,
+      variables: [],
+      nextQuestions: [
+        "Generate my founder weekly reset — what changed, main contradiction, next 3 moves",
+        "What entities were mentioned in the uploaded files?",
+        "Build a pre-delegation packet from my uploaded context",
+      ],
+    };
+    showResult(packet);
+    trackEvent("upload_complete", { fileCount: fileArray.length });
+  }, [showResult]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files.length > 0) {
+      handleFileUpload(e.dataTransfer.files);
+    }
+  }, [handleFileUpload]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
   // Focus search on mount
   useEffect(() => {
     const timer = setTimeout(() => textareaRef.current?.focus(), 300);
@@ -311,20 +397,57 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           </p>
         </div>
 
-        {/* ── Search input ─────────────────────────────────────────────────── */}
+        {/* ── Search input with upload dropzone ─────────────────────────── */}
         <div style={stagger("0.12s")} className="mt-8">
-          <div className="group relative rounded-2xl border border-white/[0.08] bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_2px_12px_rgba(0,0,0,0.3)] transition-all duration-300 focus-within:border-[#d97757]/30 focus-within:shadow-[0_0_0_1px_rgba(217,119,87,0.15),0_0_24px_rgba(217,119,87,0.08)]">
+          <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            className={`group relative rounded-2xl border transition-all duration-300 ${
+              isDragging
+                ? "border-[#d97757]/50 bg-[#d97757]/[0.05] shadow-[0_0_0_2px_rgba(217,119,87,0.2),0_0_32px_rgba(217,119,87,0.1)]"
+                : "border-white/[0.08] bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_2px_12px_rgba(0,0,0,0.3)]"
+            } focus-within:border-[#d97757]/30 focus-within:shadow-[0_0_0_1px_rgba(217,119,87,0.15),0_0_24px_rgba(217,119,87,0.08)]`}
+          >
+            {isDragging && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-[#d97757]/[0.08] backdrop-blur-sm">
+                <div className="flex items-center gap-2 text-[#d97757]">
+                  <Upload className="h-5 w-5" />
+                  <span className="text-sm font-medium">Drop files to analyze</span>
+                </div>
+              </div>
+            )}
             <textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Search a company, paste a task, or ask a strategic question..."
+              placeholder="Search a company, paste a task, upload files, or ask a strategic question..."
               rows={1}
-              className="w-full resize-none bg-transparent px-5 py-4 pr-28 text-[15px] text-content placeholder:text-content-muted/60 focus:outline-none"
+              className="w-full resize-none bg-transparent px-5 py-4 pr-36 text-[15px] text-content placeholder:text-content-muted/60 focus:outline-none"
               aria-label="Search NodeBench"
             />
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept=".txt,.md,.csv,.json,.pdf,.docx,.xlsx"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files) handleFileUpload(e.target.files);
+                e.target.value = "";
+              }}
+            />
             <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-content-muted transition-colors hover:text-[#d97757] hover:bg-[#d97757]/10"
+                aria-label="Upload files"
+                title="Upload files (PDF, DOCX, CSV, JSON, TXT)"
+              >
+                <Upload className="h-4 w-4" />
+              </button>
               {voice.isSupported && (
                 <button
                   type="button"
@@ -344,7 +467,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={!input.trim()}
+                disabled={!input.trim() && !isSearching}
                 className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#d97757] text-white shadow-sm transition-all hover:bg-[#c96a4d] disabled:opacity-30 disabled:cursor-not-allowed"
                 aria-label="Search"
               >
