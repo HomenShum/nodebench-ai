@@ -59,25 +59,39 @@ export function createSearchRouter(tools: McpTool[]) {
   } {
     const lq = query.toLowerCase();
 
-    if (lq.includes("weekly reset") || lq.includes("founder reset") || lq.includes("founder weekly")) {
+    if (lq.includes("weekly reset") || lq.includes("founder reset") || lq.includes("founder weekly")
+        || lq.includes("weekly summary") || lq.includes("week in review") || lq.match(/weekly\b.*\b(next moves|recap|update)/)) {
       return { type: "weekly_reset", lens: "founder" };
     }
-    if (lq.includes("pre-delegation") || lq.includes("delegation packet") || lq.includes("agent-ready")) {
+    if (lq.includes("pre-delegation") || lq.includes("delegation packet") || lq.includes("agent-ready")
+        || lq.includes("handoff brief") || lq.includes("handoff packet") || lq.includes("agent delegation")
+        || (lq.includes("delegation") && lq.includes("agent"))) {
       return { type: "pre_delegation", lens: "founder" };
     }
-    if (lq.includes("important change") || lq.includes("what changed") || lq.includes("since my last")) {
+    if (lq.includes("important change") || lq.includes("what changed") || lq.includes("since my last")
+        || lq.includes("what's different") || lq.includes("what is different") || lq.includes("since yesterday")
+        || lq.includes("biggest contradictions") || lq.includes("recent changes")) {
       return { type: "important_change", lens: "founder" };
     }
-    if (lq.includes("competitor") || lq.includes("supermemory") || lq.includes("versus") || lq.includes("vs ")) {
+    if (lq.includes("competitor") || lq.includes("supermemory") || lq.includes("versus") || lq.includes(" vs ")
+        || lq.includes("compare ") || lq.includes("competitive landscape")) {
       const entityMatch = query.match(/(?:competitor|analyze|compare)\s+(\w+)/i);
       return { type: "competitor", entity: entityMatch?.[1] ?? undefined, lens: "researcher" };
     }
 
+    // Skip company search if the query is about user's own documents/uploads or is a general strategic question
+    const isUploadContext = lq.match(/\b(meeting transcript|meeting notes|uploaded|my documents|my files|research files|my research)\b/);
+    const isGeneralStrategic = lq.match(/\b(should i track|should i build|should i present|for my thesis|as a legal|as a banker|as an investor|what deals|portfolio companies)\b/);
+    if (isUploadContext || isGeneralStrategic) {
+      return { type: "general", lens: "founder" };
+    }
+
     // Company search — detect entity names
     const companyPatterns = [
-      /(?:analyze|search|tell me about|company|profile|diligence|research)\s+(.+?)(?:\s+for|\s+from|\s+—|$)/i,
+      /(?:analyze|search|tell me about|company|profile|diligence on|research)\s+(.+?)(?:\s+for\b|\s+from\b|\s+—|$)/i,
       /^(.+?)\s+(?:competitive position|strategy|valuation|revenue|risk|overview)/i,
       /^search\s+(.+?)(?:\s+—|\s+–|\s+-|$)/i,
+      /(?:top \d+ risks across|risks across|landscape for)\s+(.+?)$/i,
     ];
     for (const pattern of companyPatterns) {
       const match = query.match(pattern);

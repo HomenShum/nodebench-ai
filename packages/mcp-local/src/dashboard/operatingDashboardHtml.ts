@@ -9,6 +9,7 @@
  *  2. Session Delta — hero card with strategy/competitors/contradictions/attention
  *  3. Trajectory Score — sparkline + 7 dimension bars
  *  4. Event Ledger — last 20 events with actor badges and type filters
+ *  4b. Agent Trajectory — waterfall timeline + step list for session actions
  *  5. Important Changes — status summary + actionable change cards
  *  6. Path Replay — horizontal scrollable session path
  *  7. Time Rollups — period tabs + metric grid with delta badges
@@ -508,6 +509,150 @@ export function getOperatingDashboardHtml(): string {
       color: var(--text-dim);
     }
     .action-states .arrow { color: var(--accent); margin: 0 2px; }
+
+    /* ── Trajectory Waterfall ─────────────────────────────── */
+    .traj-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    @media (min-width: 640px) {
+      .traj-stats { grid-template-columns: repeat(4, 1fr); }
+    }
+    .traj-waterfall {
+      position: relative;
+      overflow-x: auto;
+      margin-bottom: 16px;
+      padding: 8px 0;
+    }
+    .traj-wf-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      height: 24px;
+    }
+    .traj-wf-label {
+      width: 120px;
+      flex-shrink: 0;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-align: right;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .traj-wf-bar {
+      height: 18px;
+      border-radius: 3px;
+      min-width: 4px;
+      position: relative;
+      cursor: pointer;
+      transition: opacity var(--transition-fast);
+    }
+    .traj-wf-bar:hover { opacity: 0.8; }
+    .traj-wf-tooltip {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 0;
+      background: #1a1a1e;
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      z-index: 10;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .traj-wf-bar:hover .traj-wf-tooltip { display: block; }
+    .traj-step-list {
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 8px;
+    }
+    .traj-step-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background var(--transition-fast);
+    }
+    .traj-step-row:last-child { border-bottom: none; }
+    .traj-step-row:hover { background: rgba(255,255,255,0.02); }
+    .traj-step-num {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      width: 24px;
+      flex-shrink: 0;
+      text-align: right;
+    }
+    .traj-step-tool {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-primary);
+      width: 140px;
+      flex-shrink: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .traj-step-dur {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 9999px;
+      background: rgba(255,255,255,0.06);
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .traj-step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+    .traj-step-input {
+      flex: 1;
+      font-size: 12px;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+    .traj-step-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .traj-step-expand {
+      display: none;
+      margin-top: 6px;
+      padding: 8px 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .traj-step-expand.open { display: block; }
+    @media (max-width: 640px) {
+      .traj-wf-label { width: 80px; font-size: 10px; }
+      .traj-step-tool { width: 100px; }
+    }
 
     /* ── Status Summary Bar ────────────────────────────────── */
     .status-bar {
@@ -1279,6 +1424,23 @@ export function getOperatingDashboardHtml(): string {
       </div>
     </div>
 
+    <!-- 4b. Agent Trajectory -->
+    <div class="section fade-in fade-in-4" id="section-agent-trajectory">
+      <div class="section-header">Agent Trajectory <span class="count" id="traj-count"></span></div>
+      <div class="card">
+        <!-- Summary stats -->
+        <div class="traj-stats" id="traj-stats"></div>
+        <!-- Waterfall timeline -->
+        <div class="traj-waterfall" id="traj-waterfall"></div>
+        <!-- Step list -->
+        <div class="traj-step-list" id="traj-step-list">
+          <div class="empty-state">
+            No agent trajectories recorded yet.<br>Run <code>track_action</code> or use the agent panel to start recording.
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 5. Important Changes -->
     <div class="section fade-in fade-in-4" id="section-changes">
       <div class="section-header">Important Changes</div>
@@ -1379,6 +1541,7 @@ export function getOperatingDashboardHtml(): string {
     rollups: '/api/causal/rollups',
     packets: '/api/ambient/packets',
     actions: '/api/tracking/actions',
+    agentTrajectory: '/api/trajectory/recent',
   };
 
   // ── State ───────────────────────────────────────────────
@@ -1921,6 +2084,116 @@ export function getOperatingDashboardHtml(): string {
     container.innerHTML = html;
   }
 
+  function renderAgentTrajectory(data) {
+    var statsEl = document.getElementById('traj-stats');
+    var wfEl = document.getElementById('traj-waterfall');
+    var listEl = document.getElementById('traj-step-list');
+    var countEl = document.getElementById('traj-count');
+
+    if (!data || !data.actions || data.actions.length === 0) {
+      statsEl.innerHTML = '';
+      wfEl.innerHTML = '';
+      listEl.innerHTML = '<div class="empty-state">No agent trajectories recorded yet.<br>Run <code>track_action</code> or use the agent panel to start recording.</div>';
+      countEl.textContent = '';
+      return;
+    }
+
+    var actions = data.actions;
+    countEl.textContent = '(' + actions.length + ')';
+
+    // Summary stats
+    var total = actions.length;
+    var passCount = 0, failCount = 0, skipCount = 0, totalDurMs = 0;
+    var lastTs = null;
+    actions.forEach(function(a) {
+      var st = (a.status || '').toLowerCase();
+      if (st === 'success' || st === 'ok' || st === 'pass') passCount++;
+      else if (st === 'error' || st === 'fail' || st === 'failed') failCount++;
+      else if (st === 'skipped' || st === 'skip') skipCount++;
+      var dur = a.durationMs || a.duration_ms || 0;
+      totalDurMs += dur;
+      var ts = a.timestampMs || a.timestamp_ms || a.timestamp || a.createdAt;
+      if (ts && (!lastTs || ts > lastTs)) lastTs = ts;
+    });
+
+    statsEl.innerHTML =
+      '<div class="mini-stat"><div class="mini-stat-label">Actions</div><div class="mini-stat-value">' + total + '</div></div>'
+      + '<div class="mini-stat"><div class="mini-stat-label">Pass / Fail / Skip</div><div class="mini-stat-value">'
+      + '<span style="color:var(--emerald)">' + passCount + '</span>'
+      + ' <span style="color:var(--text-dim)">/</span> '
+      + '<span style="color:var(--red)">' + failCount + '</span>'
+      + ' <span style="color:var(--text-dim)">/</span> '
+      + '<span style="color:var(--amber)">' + skipCount + '</span>'
+      + '</div></div>'
+      + '<div class="mini-stat"><div class="mini-stat-label">Total Duration</div><div class="mini-stat-value">'
+      + (totalDurMs >= 1000 ? (totalDurMs / 1000).toFixed(1) + 's' : totalDurMs + 'ms') + '</div></div>'
+      + '<div class="mini-stat"><div class="mini-stat-label">Last Trajectory</div><div class="mini-stat-value" style="font-size:13px;">'
+      + (lastTs ? timeAgo(typeof lastTs === 'number' ? new Date(lastTs).toISOString() : lastTs) : 'n/a') + '</div></div>';
+
+    // Waterfall
+    var maxDur = 1;
+    actions.forEach(function(a) {
+      var d = a.durationMs || a.duration_ms || 0;
+      if (d > maxDur) maxDur = d;
+    });
+
+    var wfHtml = '';
+    actions.forEach(function(a) {
+      var dur = a.durationMs || a.duration_ms || 0;
+      var pct = Math.max(2, (dur / maxDur) * 100);
+      var st = (a.status || '').toLowerCase();
+      var barColor = st === 'error' || st === 'fail' || st === 'failed' ? 'var(--red)'
+        : st === 'skipped' || st === 'skip' ? 'var(--amber)'
+        : st === 'running' ? 'var(--blue)'
+        : 'var(--emerald)';
+      var toolName = esc(a.toolName || a.tool_name || a.action || 'unknown');
+      var inputSummary = esc(String(a.inputSummary || a.input_summary || a.input || '').substring(0, 80));
+      var outputSize = a.outputSize || a.output_size || a.outputBytes || '';
+
+      wfHtml += '<div class="traj-wf-row">'
+        + '<div class="traj-wf-label">' + toolName + '</div>'
+        + '<div class="traj-wf-bar" style="width:' + pct.toFixed(1) + '%;background:' + barColor + ';">'
+        + '<div class="traj-wf-tooltip">'
+        + '<div><strong>' + toolName + '</strong></div>'
+        + '<div>Duration: ' + (dur >= 1000 ? (dur / 1000).toFixed(1) + 's' : dur + 'ms') + '</div>'
+        + (inputSummary ? '<div>Input: ' + inputSummary + '</div>' : '')
+        + (outputSize ? '<div>Output: ' + outputSize + ' bytes</div>' : '')
+        + '</div></div></div>';
+    });
+    wfEl.innerHTML = wfHtml;
+
+    // Step list
+    var listHtml = '';
+    actions.forEach(function(a, idx) {
+      var st = (a.status || '').toLowerCase();
+      var dotColor = st === 'error' || st === 'fail' || st === 'failed' ? 'var(--red)'
+        : st === 'skipped' || st === 'skip' ? 'var(--amber)'
+        : st === 'running' ? 'var(--blue)'
+        : 'var(--emerald)';
+      var dur = a.durationMs || a.duration_ms || 0;
+      var durLabel = dur >= 1000 ? (dur / 1000).toFixed(1) + 's' : dur + 'ms';
+      var toolName = esc(a.toolName || a.tool_name || a.action || 'unknown');
+      var inputTrunc = esc(String(a.inputSummary || a.input_summary || a.input || '').substring(0, 60));
+      var output = esc(JSON.stringify(a.output || a.result || '', null, 2) || '').substring(0, 2000);
+      var rowId = 'traj-expand-' + idx;
+
+      listHtml += '<div>'
+        + '<div class="traj-step-row">'
+        + '<div class="traj-step-num">' + (idx + 1) + '</div>'
+        + '<div class="traj-step-tool">' + toolName + '</div>'
+        + '<div class="traj-step-dur">' + durLabel + '</div>'
+        + '<div class="traj-step-dot" style="background:' + dotColor + ';"></div>'
+        + '<div class="traj-step-input">' + (inputTrunc || '<span style="color:var(--text-dim);">no input</span>') + '</div>'
+        + '<div class="traj-step-actions">'
+        + '<button class="btn" onclick="(function(){var el=document.getElementById(\\'' + rowId + '\\');el.classList.toggle(\\'open\\');})()">Expand</button>'
+        + '<button class="btn btn-accent" onclick="(function(){var t=\\'Step ' + (idx + 1) + ': ' + toolName.replace(/'/g, '') + ' (' + durLabel + ')\\';navigator.clipboard.writeText(t);})()">Cite</button>'
+        + '</div></div>'
+        + '<div class="traj-step-expand" id="' + rowId + '">' + (output || 'No output recorded') + '</div>'
+        + '</div>';
+    });
+    listEl.innerHTML = listHtml;
+  }
+
   function renderActions(data) {
     var container = document.getElementById('action-list');
     if (!data || !data.actions || data.actions.length === 0) {
@@ -2005,6 +2278,7 @@ export function getOperatingDashboardHtml(): string {
       refreshSection('rollups', ENDPOINTS.rollups, renderRollups),
       refreshSection('packets', ENDPOINTS.packets, renderPackets),
       refreshSection('actions', ENDPOINTS.actions, renderActions),
+      refreshSection('agentTrajectory', ENDPOINTS.agentTrajectory, renderAgentTrajectory),
     ]);
   }
 

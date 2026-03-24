@@ -308,6 +308,9 @@ function handleRequest(db: Database.Database, req: IncomingMessage, res: ServerR
     if (path === "/api/tracking/actions") return apiTrackingActions(db, url, res);
     if (path === "/api/tracking/milestones") return apiTrackingMilestones(db, res);
 
+    // ── Trajectory API ──
+    if (path === "/api/trajectory/recent") return apiTrajectoryRecent(db, res);
+
     // ── Ambient API ──
     if (path === "/api/ambient/session-delta") return apiSessionDelta(db, res);
     if (path === "/api/ambient/packets") return apiPacketReadiness(db, res);
@@ -663,6 +666,34 @@ function apiTrackingActions(db: Database.Database, url: URL, res: ServerResponse
     })),
     total: rows.length,
   });
+}
+
+// ── Trajectory Recent API ──────────────────────────────────────────────
+
+function apiTrajectoryRecent(db: Database.Database, res: ServerResponse) {
+  // Try session_actions table first (dedicated trajectory table)
+  let rows = safeQuery(
+    db,
+    `SELECT * FROM session_actions ORDER BY timestampMs DESC LIMIT 20`,
+  );
+
+  if (rows.length > 0) {
+    json(res, {
+      actions: rows.map((r: any) => ({
+        toolName: r.toolName || r.tool_name || r.action,
+        status: r.status || "success",
+        durationMs: r.durationMs || r.duration_ms || 0,
+        inputSummary: r.inputSummary || r.input_summary || r.input || "",
+        outputSize: r.outputSize || r.output_size || 0,
+        output: r.output || r.result || null,
+        timestampMs: r.timestampMs || r.timestamp_ms || r.timestamp,
+      })),
+    });
+    return;
+  }
+
+  // Fallback: no session_actions table or no data
+  json(res, { actions: [], note: "No trajectory data yet" });
 }
 
 // ── Tracking Milestones API ────────────────────────────────────────────
