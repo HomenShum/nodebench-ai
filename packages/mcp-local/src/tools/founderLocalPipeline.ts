@@ -743,9 +743,45 @@ export const founderLocalPipelineTools: McpTool[] = [
       },
       required: ["packetType"],
     },
-    handler: async (args: { packetType: string; daysBack?: number; query?: string; webResults?: Array<{title: string; url: string; snippet: string}> }) => {
+    handler: async (args: { packetType: string; daysBack?: number; query?: string; lens?: string; webResults?: Array<{title: string; url: string; snippet: string}> }) => {
       const packetType = args.packetType as FounderPacket["packetType"];
       const ctx = gatherLocalContext(args.daysBack ?? 7);
+
+      // If web results provided + query exists, use LLM content generation
+      if (args.webResults && args.webResults.length > 0 && args.query) {
+        try {
+          const { synthesizeContent } = await import("./contentSynthesis.js");
+          const synthesis = await synthesizeContent({
+            query: args.query,
+            scenario: packetType === "pre_delegation" ? "delegation" : packetType as any,
+            lens: args.lens ?? "founder",
+            webResults: args.webResults,
+            localContext: {
+              mission: ctx.identity.claudeMdSnippet || undefined,
+              recentChanges: ctx.recentChanges.gitLogOneline.slice(0, 5),
+              contradictions: [],
+              signals: [],
+            },
+          });
+
+          // Build packet with LLM-generated content as memo
+          const packet = synthesizePacket(ctx, packetType, args.query, args.webResults);
+          // Replace the static memo with LLM-generated content
+          if (synthesis.content.length > 100) {
+            (packet as any).memo = synthesis.content;
+            (packet as any).llmGenerated = true;
+            (packet as any).entityNames = synthesis.entityNames;
+            (packet as any).keyFacts = synthesis.keyFacts;
+            (packet as any).sources = synthesis.sources;
+            (packet as any).synthesisTokens = synthesis.tokensUsed;
+            (packet as any).synthesisLatencyMs = synthesis.latencyMs;
+          }
+          return packet;
+        } catch {
+          // Fall through to static template
+        }
+      }
+
       const packet = synthesizePacket(ctx, packetType, args.query, args.webResults);
       return packet;
     },

@@ -883,7 +883,7 @@ async function executeQueryTools(
 
   // 2b. Web enrichment: fetch live web data for scenarios that need entity-specific content
   let webResults: Array<{title: string; url: string; snippet: string}> = [];
-  const webEnrichScenarios = ["company_search", "competitor_brief", "important_change"];
+  const webEnrichScenarios = ["company_search", "competitor_brief", "important_change", "delegation", "memo_export", "weekly_reset", "packet_diff", "role_switch"];
   if (webEnrichScenarios.includes(query.scenario)) {
     const webSearchTool = findTool(allTools, "web_search");
     if (webSearchTool) {
@@ -920,7 +920,7 @@ async function executeQueryTools(
     // Seed with query-specific competitor brief via founder_local_synthesize + web results
     const synthTool = findTool(allTools, "founder_local_synthesize");
     if (synthTool && !toolsFired.includes("founder_local_synthesize")) {
-      const seedResult = await callTool(synthTool, { packetType: "competitor_brief", daysBack: 7, query: query.query, webResults });
+      const seedResult = await callTool(synthTool, { packetType: "competitor_brief", daysBack: 7, query: query.query, lens: query.persona, webResults });
       totalMs += seedResult.ms;
       if (seedResult.ok) {
         toolsFired.push("founder_local_synthesize");
@@ -933,7 +933,7 @@ async function executeQueryTools(
     // Seed with an important_change packet that shows what changed (our best before/after proxy)
     const synthTool = findTool(allTools, "founder_local_synthesize");
     if (synthTool && !toolsFired.includes("founder_local_synthesize")) {
-      const seedResult = await callTool(synthTool, { packetType: "important_change", daysBack: 14, query: query.query, webResults });
+      const seedResult = await callTool(synthTool, { packetType: "important_change", daysBack: 14, query: query.query, lens: query.persona, webResults });
       totalMs += seedResult.ms;
       if (seedResult.ok) {
         toolsFired.push("founder_local_synthesize");
@@ -974,8 +974,9 @@ async function executeQueryTools(
     if (tool) {
       // Build minimal args based on tool name patterns, inject webResults for synthesize
       const args = buildMinimalArgs(toolName, query);
-      if (toolName === "founder_local_synthesize" && webResults.length > 0) {
-        (args as any).webResults = webResults;
+      if (toolName === "founder_local_synthesize") {
+        if (webResults.length > 0) (args as any).webResults = webResults;
+        (args as any).lens = query.persona;
       }
       const result = await callTool(tool, args);
       totalMs += result.ms;

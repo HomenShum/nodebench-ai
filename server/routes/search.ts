@@ -52,9 +52,34 @@ export function createSearchRouter(tools: McpTool[]) {
   }
 
   // Classify query intent
+  /** Split multi-entity queries like "Anthropic, OpenAI, and Google" into individual names.
+   *  Only activates when there's clear multi-entity syntax (commas + and, or vs). */
+  function extractMultipleEntities(query: string): string[] {
+    const lq = query.toLowerCase();
+    // Require explicit multi-entity syntax: comma, "and" with comma, "vs"
+    const hasMultiSyntax = /,\s*(?:and\s+)?\w/.test(lq) || /\bvs\.?\s/i.test(lq) || /\bversus\b/i.test(lq);
+    if (!hasMultiSyntax) return [];
+    // Don't split personal/upload queries
+    if (/\b(my |uploaded|transcript|meeting|document|file|research file)/i.test(lq)) return [];
+
+    const cleaned = query
+      .replace(/(?:compare|analyze|research|tell me about|search|profile|diligence on)\s+/gi, "")
+      .replace(/(?:in the|the|an?)\s+(?:AI|tech|fintech|payments?|commerce|market|race|landscape|space|industry)\b.*/gi, "")
+      .replace(/(?:top \d+ risks across|risks across|what changed.*?for)\s*/gi, "")
+      .replace(/(?:competitive landscape|competitive position|strategy|overview).*$/gi, "")
+      .trim();
+    // Split on comma, "and", "vs", "&"
+    const parts = cleaned.split(/\s*(?:,\s*(?:and\s+)?|,?\s+and\s+|\s+vs\.?\s+|\s+versus\s+|\s*&\s*)\s*/i)
+      .map(p => p.trim().replace(/^['"]|['"]$/g, "").replace(/'s$/g, ""))
+      .filter(p => p.length > 1 && p.length < 40 && /^[a-zA-Z]/.test(p));  // Must start with letter
+    // Need at least 2 valid entity names
+    return parts.length >= 2 ? parts : [];
+  }
+
   function classifyQuery(query: string): {
-    type: "weekly_reset" | "pre_delegation" | "important_change" | "company_search" | "competitor" | "general";
+    type: "weekly_reset" | "pre_delegation" | "important_change" | "company_search" | "competitor" | "multi_entity" | "general";
     entity?: string;
+    entities?: string[];
     lens: string;
   } {
     const lq = query.toLowerCase();
@@ -71,8 +96,20 @@ export function createSearchRouter(tools: McpTool[]) {
     if (lq.includes("important change") || lq.includes("what changed") || lq.includes("since my last")
         || lq.includes("what's different") || lq.includes("what is different") || lq.includes("since yesterday")
         || lq.includes("biggest contradictions") || lq.includes("recent changes")) {
+      // Check if this is a multi-entity change query like "What changed for Shopify, Amazon, and Google?"
+      const changeEntities = extractMultipleEntities(query);
+      if (changeEntities.length >= 2) {
+        return { type: "multi_entity", entities: changeEntities, lens: "investor" };
+      }
       return { type: "important_change", lens: "founder" };
     }
+
+    // Multi-entity detection — check BEFORE single-entity competitor/company
+    const multiEntities = extractMultipleEntities(query);
+    if (multiEntities.length >= 2) {
+      return { type: "multi_entity", entities: multiEntities, lens: "investor" };
+    }
+
     if (lq.includes("competitor") || lq.includes("supermemory") || lq.includes("versus") || lq.includes(" vs ")
         || lq.includes("compare ") || lq.includes("competitive landscape")) {
       const entityMatch = query.match(/(?:competitor|analyze|compare)\s+(\w+)/i);
@@ -169,6 +206,119 @@ export function createSearchRouter(tools: McpTool[]) {
           break;
         }
 
+        case "multi_entity": {
+          const entities = classification.entities ?? [];
+          const entityNames = entities.slice(0, 4); // Cap at 4 entities
+
+          // Run web_search for each entity in parallel
+          const multiWebTrace = traceStep("tool_call", `web_search x${entityNames.length}`);
+          const entityResults = await Promise.all(
+            entityNames.map(async (eName) => {
+              try {
+                const webRes = await Promise.race([
+                  callTool("web_search", {
+                    query: `${eName} company overview strategy ${new Date().getFullYear()}`,
+                    maxResults: 3,
+                  }),
+                  new Promise(resolve => setTimeout(() => resolve(null), 8_000)),
+                ]) as any;
+                const snippets = (webRes?.results ?? []).map((r: any) => r.snippet ?? r.description ?? "").filter(Boolean);
+                return { name: eName, snippets, sources: (webRes?.results ?? []).map((r: any) => r.url).filter(Boolean), resultCount: webRes?.resultCount ?? 0 };
+              } catch { return { name: eName, snippets: [], sources: [], resultCount: 0 }; }
+            })
+          );
+          multiWebTrace.ok(`${entityResults.reduce((s, e) => s + e.resultCount, 0)} total results`);
+
+          // Use Gemini to produce a comparative analysis
+          let comparison: any = null;
+          if (process.env.GEMINI_API_KEY) {
+            const extractTrace = traceStep("llm_extract", "gemini-3.1-flash-lite-preview");
+            try {
+              const entityContext = entityResults.map(e => `## ${e.name}\n${e.snippets.slice(0, 2).join("\n")}`).join("\n\n");
+              const geminiResp = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${process.env.GEMINI_API_KEY}`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    contents: [{ parts: [{ text: `Compare these ${entityNames.length} entities for a ${resolvedLens} audience. Original query: "${query}"
+
+${entityContext}
+
+Return ONLY valid JSON:
+{
+  "summary": "2-3 sentence comparative overview",
+  "entities": [{"name": "entity name", "description": "1-sentence description", "strengths": ["str1"], "risks": ["risk1"]}],
+  "signals": [{"name": "comparative signal", "direction": "up|down|neutral", "impact": "high|medium|low"}],
+  "changes": [{"description": "recent change affecting these entities", "date": null}],
+  "risks": [{"title": "comparative risk", "description": "description"}],
+  "keyDifferences": ["difference 1", "difference 2"]
+}` }] }],
+                    generationConfig: { temperature: 0.1, maxOutputTokens: 2000, responseMimeType: "application/json" },
+                  }),
+                  signal: AbortSignal.timeout(10_000),
+                },
+              );
+              if (geminiResp.ok) {
+                const gJson = await geminiResp.json() as any;
+                const gText = gJson?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (gText) {
+                  const cleaned = gText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+                  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+                  if (jsonMatch) comparison = JSON.parse(jsonMatch[0].replace(/,\s*([\]}])/g, "$1"));
+                }
+              }
+              extractTrace.ok(`extracted ${comparison ? "ok" : "empty"}`);
+            } catch { extractTrace.error("gemini comparison failed"); }
+          }
+
+          const cmp = comparison ?? {};
+          const allSources = entityResults.flatMap(e => e.sources).slice(0, 8);
+          const totalResults = entityResults.reduce((s, e) => s + e.resultCount, 0);
+
+          result = {
+            canonicalEntity: {
+              name: entityNames.join(" vs "),
+              canonicalMission: cmp.summary ?? `Comparative analysis of ${entityNames.join(", ")}. ${(cmp.keyDifferences ?? []).slice(0, 2).join(". ")}`,
+              identityConfidence: Math.min(90, 40 + totalResults * 2 + (comparison ? 25 : 0)),
+            },
+            memo: true,
+            whatChanged: (cmp.changes ?? []).slice(0, 5).map((c: any) => ({
+              description: c.description ?? String(c),
+              date: c.date ?? new Date().toISOString().slice(0, 10),
+            })),
+            signals: (cmp.signals ?? []).slice(0, 6).map((s: any, i: number) => ({
+              name: s.name ?? `Signal ${i + 1}`,
+              direction: s.direction ?? "neutral",
+              impact: s.impact ?? (i < 2 ? "high" : "medium"),
+            })),
+            contradictions: (cmp.risks ?? []).slice(0, 4).map((r: any) => ({
+              claim: r.title ?? String(r),
+              evidence: r.description ?? "",
+            })),
+            comparables: (cmp.entities ?? entityResults).slice(0, 4).map((e: any) => ({
+              name: e.name,
+              relevance: "high",
+              note: e.description ?? (e.strengths ?? []).join(", "),
+            })),
+            keyMetrics: (cmp.keyDifferences ?? []).slice(0, 4).map((d: any, i: number) => ({
+              label: `Difference ${i + 1}`,
+              value: typeof d === "string" ? d : String(d),
+            })),
+            nextActions: [
+              { action: `Deep-dive into ${entityNames[0]} vs ${entityNames[1] ?? entityNames[0]} head-to-head` },
+              { action: `Map the competitive dynamics between ${entityNames.join(", ")}` },
+              { action: `Monitor all ${entityNames.length} entities for material changes` },
+              { action: `Build a decision memo choosing between these options` },
+            ],
+            nextQuestions: entityNames.slice(0, 3).map(n => `What are ${n}'s key competitive advantages?`).concat(
+              [`How do these ${entityNames.length} entities compare on risk?`]
+            ),
+            webSources: allSources,
+          };
+          break;
+        }
+
         case "company_search":
         case "competitor": {
           const entityName = classification.entity ?? query.trim().split(/\s+/).slice(0, 3).join(" ");
@@ -218,19 +368,33 @@ export function createSearchRouter(tools: McpTool[]) {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    contents: [{ parts: [{ text: `Extract structured entity intelligence from these web search results about "${entityName}" for a ${resolvedLens} user.
+                    contents: [{ parts: [{ text: `You are an entity intelligence analyst. Extract SPECIFIC, FACTUAL intelligence about "${entityName}" from these web search results. The user is a ${resolvedLens}. Original query: "${query}"
+
+${resolvedLens === "investor" ? "Focus on: valuation, funding rounds, revenue, growth metrics, competitive moat, market size, team quality." :
+  resolvedLens === "banker" ? "Focus on: deal relevance, financial metrics, M&A activity, capital structure, regulatory exposure." :
+  resolvedLens === "legal" ? "Focus on: regulatory risks, compliance, litigation, IP, governance issues." :
+  resolvedLens === "founder" ? "Focus on: product strategy, competitive positioning, go-to-market, hiring signals, technology stack." :
+  resolvedLens === "student" ? "Focus on: company overview, industry context, key products, career relevance." :
+  "Focus on: competitive positioning, market strategy, key metrics, risks."}
 
 WEB RESULTS:
 ${webSnippets.slice(0, 5).join("\n\n")}
 
-Return ONLY valid JSON with these fields:
+RULES:
+- ONLY include facts that appear in the web results above. Do NOT invent numbers, dates, or claims.
+- Every signal should reference something from the web results. If the web results lack data, include fewer signals rather than inventing them.
+- Every risk MUST be specific to ${entityName} (not generic industry risks)
+- Summary MUST describe what ${entityName} actually does based on the web results
+- If the web results are thin, return fewer items rather than hallucinating
+
+Return ONLY valid JSON:
 {
-  "summary": "2-3 sentence description of ${entityName}",
-  "signals": [{"name": "signal name", "direction": "up|down|neutral", "impact": "high|medium|low"}],
-  "changes": [{"description": "what changed", "date": "YYYY-MM-DD or null"}],
-  "risks": [{"title": "risk title", "description": "risk description"}],
+  "summary": "2-3 sentence factual description of ${entityName} — what they do, key metrics, current position",
+  "signals": [{"name": "signal grounded in web results above", "direction": "up|down|neutral", "impact": "high|medium|low"}],
+  "changes": [{"description": "recent event from web results", "date": "YYYY-MM-DD or null"}],
+  "risks": [{"title": "risk specific to ${entityName}", "description": "evidence from web results"}],
   "comparables": [{"name": "competitor name", "relevance": "high|medium|low", "note": "why relevant"}],
-  "metrics": [{"label": "metric name", "value": "metric value"}]
+  "metrics": [{"label": "metric name", "value": "specific value from web results"}]
 }` }] }],
                     generationConfig: { temperature: 0.1, maxOutputTokens: 1500, responseMimeType: "application/json" },
                   }),
