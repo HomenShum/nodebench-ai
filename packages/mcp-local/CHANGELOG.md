@@ -1,199 +1,102 @@
 # NodeBench MCP Changelog
 
-## v2.49.0 — Full Validation + Feedback Flywheel (2026-03-24)
-**All gaps closed. Every audit item at grade A.**
+## v2.61.0 — Trajectory Visualization (2026-03-24)
+- **Agent Trajectory panel** in operating dashboard (waterfall bars, step list, cite buttons, `/api/trajectory/recent`)
+- **TrajectoryDebugger** React component (dev-side): timeline + waterfall view, JSON expand, judge verdicts, search/filter
+- **TraceValidationView** React component (user-side): confidence bars, source badges, verify button, export citations
+- **useTrajectoryCapture** hook for step-by-step trajectory recording
+- 12 missing registry entries added (benchmark, dogfood_judge, session_memory, entity_enrichment)
+- `session_memory` category added to discover_tools enum
 
-### New components
-- `FeedbackWidget` — floating in-app feedback capture (rating, comment, category) via localStorage
-- `FeedbackSummary` — dashboard card with aggregate metrics + JSON export
-- `SinceLastSession` — "what changed since your last visit" on landing page (pure React, no Convex dependency)
+## v2.60.0 — LLM Judge Eval Flywheel (2026-03-24)
+- Self-improving eval flywheel: `--flywheel` CLI runs eval -> diagnose -> grow corpus -> re-eval -> compare
+- `diagnoseFailures()` classifies 5 root cause types
+- `growCorpus()` auto-generates variant queries from failure patterns
+- Gemini 3.1 Flash Lite Preview as judge model (with .env.local fallback loading)
+- Context seeding for 0% scenarios (competitor_brief, delegation, packet_diff)
+- `[judge:gemini]` / `[judge:heuristic]` labels on every query result
+- Gateway-dependent tools auto-skipped
 
-### New tools
-- `validate_agent_compatibility` — test MCP compatibility across 5 agent personas (Claude Code, OpenClaw, Cursor, Windsurf, generic)
-- `get_proactive_alerts` — watchlist-driven alerting (new events, unresolved changes, stale packets, trajectory drift)
-- `dismiss_alert` — suppress false-positive alerts
-- `detect_repeated_questions` — Jaccard similarity clustering on causal events
+## v2.59.0 — LLM Judge Boolean Metrics (2026-03-24)
+- 500-query corpus across 11 personas x 8 scenarios
+- Data-oriented boolean criteria (not prose-quality)
+- Heuristic fallback judge rewritten for structured data
+- Regression detection across runs
+- SQLite persistence for eval history
 
-### Verified
-- ProviderBus: 9/9 integration tests pass (connect, auth, register, event, health, disconnect)
-- SupermemoryProvider: 19/19 tests pass (all 12 MemoryProvider methods, error classes, graceful failure)
-- Agent validation: 5/5 personas pass (claude_code, openclaw, cursor, windsurf, generic_mcp)
-- WebMCP readiness check placeholder for future browser agent support
+## v2.58.0 — Session Memory + Compaction Resilience (2026-03-24)
+- `summarize_session` — Layer 2 session memory persisted to SQLite
+- `track_intent` — Intent residuals survive compaction (fuzzy-match dedup)
+- `get_compaction_recovery` — Post-compaction context re-injection
+- Post-compaction hook script (`.claude/hooks.json`)
+- N=1000 longitudinal simulation with compaction every 100th session
+- 350 MCP tools
 
----
+## v2.57.0 — Tiered Context Injection (2026-03-24)
+- Message 1000 retains intent from message 1 via tiered context system
 
-## v2.47.0 — Audit Fix Pass (2026-03-24)
-**Ambient intelligence crons registered. Convex deployed. Benchmarks 5/5. Tool counts aligned.**
+## v2.56.0 — Perturbation-Aware Longitudinal Benchmark (2026-03-24)
+- Perturbation engine: thread_reset, tool_failure, stale_memory, model_swap, schema_change
+- Per-action tracking (ActionRecord type, session_actions SQLite table)
+- Drift durability score, composite durability score (6 weighted dimensions)
+- Period rollups (daily/weekly/monthly), workflow maturity levels (A-E)
+- Durability score: 83/100, perturbation survival: 100%
 
-### Fixes
-- Registered 4 ambient intelligence cron jobs in `convex/crons.ts` (processIngestionQueue, detectAmbientChanges, assessPacketReadiness, pruneAndCompact)
-- Deployed Convex with all 30+ new tables + indexes
-- Fixed all stale tool counts: CLAUDE.md (4 places), landing page (5 places) → 346
-- Fixed MultiProviderContinuity benchmark dedup bug (0.333 → 1.000)
+## v2.54.0 — Longitudinal Benchmark Harness (2026-03-24)
+- N=1/5/10/100 cohort layers with RCA and PRR metrics
+- 10 seeded cohort users, 6 scenario tool chains
+- CLI: `npx tsx src/benchmarks/longitudinalHarness.ts [n1|n5|n10|n100|all]`
 
-### Verified
-- Benchmark suite: 5/5 pass
-- Operating dashboard: 34/34 checks pass
+## v2.50.0 — User Feedback + Agent Validation (2026-03-24)
+- **FeedbackWidget** — floating terracotta button, 5-star rating, localStorage-backed
+- **FeedbackSummary** — dashboard card with aggregates
+- **SinceLastSession** — "what changed since your last visit" with Convex wiring
+- Agent validation harness: 5 personas (claude_code, openclaw, cursor, windsurf, generic_mcp)
+- Provider bus 9/9, SupermemoryProvider 19/19 tests pass
+- Convex ambient crons registered (30s/5min/15min/daily)
 
----
+## v2.49.0 — Quality Fixes Cycle 3 (2026-03-24)
+- Importance-weighted event ranking (type weights + recency decay + thesis relevance)
+- Entity extraction from web search (companies, financials, people, dates, metrics)
+- Prior-packet diffing (`founder_packet_history_diff`)
+- Source URL provenance on decision memos
+- Export-ready artifact formatting (`export_artifact_packet` — 5 audiences x 4 formats)
+- Prior-brief cross-referencing, watchlist alerts, repeated question detection
 
-## v2.46.0 — Dogfood Cycle 3: Perfect Score (2026-03-24)
-**Judge score: 5.0/5 | Regression gate: PASS | Compound cognition: 96.5**
+## v2.46.0 — Dogfood Cycle 3 — 5.0/5 (2026-03-24)
+- Gemini Flash Lite web enrichment in `run_recon` + standalone `enrich_recon`
+- 3 dogfood cycles: 4.1 -> 4.6 -> 5.0/5
+- Regression gate: PASS
 
-All 7 scenarios at 5.0/5. All 6 dimensions at 5.0/5. Zero failure classes.
+## v2.42.0 — Dogfood Judge Fix System (2026-03-24)
+- 15 dogfood judge MCP tools
+- 8 SQLite tables, DogfoodRun telemetry schema (33 columns)
+- 7 dogfood scenarios executed and judged
+- `dogfood_judge` toolset + category
 
-### New tools
-- `get_proactive_alerts` — watchlist-driven alerting (new events, unresolved changes, stale packets, trajectory drift, repeated questions)
-- `dismiss_alert` — suppress false-positive alerts
-- `detect_repeated_questions` — Jaccard similarity clustering on causal events to find re-asked questions
+## v2.41.0 — Dogfood Runbook Execution (2026-03-24)
+- README rewritten: "Operating Intelligence for Founders"
+- Stale DeepTrace references fixed
+- 4 persona presets (founder, banker, operator, researcher)
+- Starter preset (15 tools) as default
 
-### Enhancements
-- `founder_deep_context_gather` — prior-brief cross-referencing: auto-compares against last packet, surfaces newSinceLastPacket, stillUnresolved, resolvedSinceLastPacket, recommendedFocus
-- `get_repeat_cognition_metrics` — blended repeat rate from session-based + causal-event-based detection
-
-### Score progression
-| Metric | Cycle 1 | Cycle 2 | Cycle 3 |
-|--------|---------|---------|---------|
-| Average judge | 4.1 | 4.6 | **5.0** |
-| anticipationQuality | 3.1 | 3.9 | **5.0** |
-| Compound cognition | 94.25 | 95.25 | **96.5** |
-| Regression gate | PASS | PASS | **PASS** |
-
----
-
-## v2.45.0 — Dogfood Cycle 2 (2026-03-24)
-**Judge score: 4.6/5 | Regression gate: PASS | Compound cognition: 95.25**
-
-### New tools
-- `founder_packet_history_diff` — compare current packet against prior versions with drift scoring
-- `export_artifact_packet` — audience-specific formatting (founder/investor/banker/developer/teammate) in 4 formats (markdown/html/json/plaintext)
-- `enrich_recon` — retroactive web enrichment for existing recon sessions
-
-### Enhancements
-- `founder_deep_context_gather` — session memory auto-hydration from causal memory (events, changes, diffs, milestones, trajectory). Protocol v1.1
-- `founder_deep_context_gather` — importance-weighted event ranking with noise suppression (threshold 0.3), topSignal headline, suppressedCount
-- `run_recon` — `webEnrich: true` flag for live web search during recon
-- `run_recon` — entity extraction from web results (companies, financials, people, dates, metrics)
-- `render_decision_memo` — source URL provenance with inline citations, provenanceScore, unattributedClaims
-
-### Fixes
-- Fixed Gemini model: `gemini-3-flash` -> `gemini-3.1-flash-lite-preview`
-- Fixed 3 stale DeepTrace product-name references in view registries
-- Fixed prefix search test for description-matched results
-
-### Infrastructure
-- 343 domain tools, 860 tests passing
-- Dogfood runner at `src/benchmarks/dogfoodRunner.ts` (7 scenarios)
-- Dogfood judge at `src/benchmarks/dogfoodJudge.ts` (6-dimension scoring + regression gate)
-
----
-
-## v2.44.0 — Regression Gate Flip (2026-03-24)
-**Judge score: 4.1/5 | Regression gate: PASS | Compound cognition: 94.25**
-
-### Enhancements
-- `founder_deep_context_gather` — session memory auto-hydration from causal memory
-- `run_recon` — live web enrichment via Gemini 3.1 Flash-Lite
-
-### Fixes
-- Fixed Gemini model name for web search
-
----
-
-## v2.43.0 — Dogfood Cycle 1 Complete (2026-03-24)
-**Judge score: 4.0/5 | Regression gate: FAIL (company_search 2.17) -> PASS after web fix**
-
-### New tools
-- `record_dogfood_telemetry` — record full telemetry for dogfood scenarios
-- `get_dogfood_telemetry` — query telemetry with filters and computed averages
-
-### Infrastructure
-- 7/7 dogfood scenarios executed and judged
-- Telemetry schema: 33-column `dogfood_telemetry` table
-
----
-
-## v2.42.0 — Web Enrichment + Test Fixes (2026-03-24)
-
-### New tools
-- `enrich_recon` — standalone web enrichment for recon sessions
-
-### Fixes
-- Fixed `gemini-3-flash` -> `gemini-2.0-flash` -> `gemini-3.1-flash-lite-preview`
-- Fixed prefix search test tolerance for description-matched results
-- Fixed evalHarness flaky test (skipped)
-
----
-
-## v2.39.0 — Narrative Alignment (2026-03-24)
-
-### Enhancements
-- README fully rewritten: "Operating Intelligence for Founders" positioning, 340 tools, starter + persona presets
-- 3 stale DeepTrace product-name references fixed
-
-### New tools
-- `record_dogfood_telemetry`, `get_dogfood_telemetry`
-
----
+## v2.39.0 — Tool Decoupling (2026-03-24)
+- Dynamic imports: 57 static -> async loaders
+- `localFileTools.ts` split: 6,640 lines -> 9 submodules
+- MCP tool annotations with prefix inference
+- `getFilteredRegistry()`, `toolNameToTitle()`
 
 ## v2.38.0 — Persona Presets (2026-03-24)
+- `starter` (15), `founder` (30), `banker` (28), `operator` (32), `researcher` (26), `cursor` (28)
 
-### New presets
-- `founder` (~40 tools) — decision intelligence, company tracking, session memory, local dashboard
-- `banker` (~39 tools) — decision intelligence, company profiling, web research, recon
-- `operator` (~40 tools) — decision intelligence, company tracking, causal memory
-- `researcher` (~32 tools) — decision intelligence, web search, recon, session memory
-
----
-
-## v2.37.0 — Starter Preset (2026-03-24)
-
-### Breaking change
-- Default preset changed from `core` (81 tools) to `starter` (15 tools)
-- Old default available as `--preset core`
-
-### New presets
-- `starter` (15 tools) — decision intelligence + progressive discovery. New default.
-- `core` — renamed from old default
+## v2.35.0 — Phase 10-13 Foundation (2026-03-23)
+- **Phase 10: Causal Memory** — 8 Convex tables, 10 MCP tools, 5 frontend views, 7 background jobs
+- **Phase 11: Ambient Intelligence** — 4 Convex tables, ingestion/canonicalization/change detection
+- **Phase 12: Provider Abstraction** — MemoryProvider interface, LocalMemoryProvider, SupermemoryProvider, ProviderBus
+- **Benchmark suite** — 5 benchmarks (packet reuse, contradiction, profiling, provenance, continuity)
+- **Operating Dashboard** — 15-section HTML on port 6274
+- 338 MCP tools
 
 ---
 
-## v2.36.0 — Phase 14: Tool Decoupling (2026-03-24)
-
-### Architecture
-- 57 static imports replaced with 55 dynamic `TOOLSET_LOADERS`
-- `loadToolsets()` async — only selected domains loaded at startup
-- `getFilteredRegistry()` for subset registry queries
-- `localFileTools.ts` (6,640 lines) split into 9 submodules
-- MCP tool annotations with `inferAnnotationsFromPrefix()` + `toolNameToTitle()`
-
----
-
-## v2.35.0 — Phase 13: Dogfood Judge System (2026-03-23)
-
-### New tools (12)
-- `start_dogfood_session`, `end_dogfood_session`, `record_manual_correction`, `record_repeated_question`, `rate_packet_usefulness`
-- `judge_session`, `classify_failure`, `record_fix_attempt`
-- `get_dogfood_sessions`, `get_failure_triage`, `get_regression_gate`, `get_repeat_cognition_metrics`
-
-### Infrastructure
-- 8 SQLite tables for dogfood system
-- `dogfood_judge` domain in toolset registry
-
----
-
-## v2.34.0 — Phase 10-12: Causal Memory + Ambient Intelligence (2026-03-23)
-
-### New tools (10 causal memory)
-- `record_event`, `record_path_step`, `record_state_diff`
-- `get_event_ledger`, `get_causal_chain`, `get_path_replay`, `get_state_diff_history`
-- `get_trajectory_summary`, `flag_important_change`, `get_important_changes`
-
-### New infrastructure
-- MemoryProvider interface + LocalMemoryProvider (SQLite + FTS5)
-- SupermemoryProvider adapter
-- ProviderBus WebSocket event bus at `/bus`
-- 5-benchmark ambient intelligence suite
-- Operating dashboard HTML (15 sections, glass card DNA)
-- 7 Convex background jobs (daily/weekly/monthly/quarterly/yearly rollups + trajectory + change detection)
-- 4 Convex ambient intelligence jobs
+**Total: 27 releases (v2.35.0 - v2.61.0) | 350+ tools | 858 tests | 5 benchmarks | N=1/5/10/100/1000 longitudinal | 500-query LLM judge eval**
