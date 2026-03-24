@@ -33,6 +33,7 @@ import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { type MainView } from "@/lib/registry/viewRegistry";
 import { trackEvent } from "@/lib/analytics";
 import { ResultWorkspace } from "../components/ResultWorkspace";
+import { SearchTrace, type TraceStep } from "../components/SearchTrace";
 import {
   type LensId,
   type ResultPacket,
@@ -101,6 +102,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   const [input, setInput] = useState("");
   const [activeLens, setActiveLens] = useState<LensId>("founder");
   const [activeResult, setActiveResult] = useState<ResultPacket | null>(null);
+  const [activeTrace, setActiveTrace] = useState<{ trace: TraceStep[]; latencyMs: number; classification: string; judge?: any } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -170,6 +172,15 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((data) => {
         if (!data?.success || !data.result) throw new Error("No result");
+        // Capture execution trace for trajectory visualization
+        if (data.trace) {
+          setActiveTrace({
+            trace: data.trace,
+            latencyMs: data.latencyMs ?? 0,
+            classification: data.classification ?? "unknown",
+            judge: data.judge,
+          });
+        }
         const r = data.result;
         // Full packet from founder_local_weekly_reset / founder_local_synthesize
         if (r.canonicalEntity && r.memo) {
@@ -591,6 +602,19 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 // TODO: Connect to watchlist system
               }}
             />
+
+            {/* Execution trace — shows how the answer was produced */}
+            {activeTrace && (
+              <div className="mt-3">
+                <SearchTrace
+                  trace={activeTrace.trace}
+                  latencyMs={activeTrace.latencyMs}
+                  classification={activeTrace.classification}
+                  judgeVerdict={activeTrace.judge}
+                  mode="user"
+                />
+              </div>
+            )}
 
             {/* New search button */}
             <div className="mt-6 flex justify-center">

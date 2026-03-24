@@ -122,24 +122,45 @@ export function createSearchRouter(tools: McpTool[]) {
     const classification = classifyQuery(query.trim());
     const resolvedLens = lens ?? classification.lens;
 
+    // Execution trace — records every step for trajectory visualization
+    const trace: Array<{ step: string; tool?: string; startMs: number; endMs?: number; status: "ok" | "error" | "skip"; detail?: string }> = [];
+    function traceStep(step: string, tool?: string) {
+      const entry = { step, tool, startMs: Date.now(), status: "ok" as const, detail: undefined as string | undefined };
+      trace.push(entry);
+      return {
+        ok(detail?: string) { entry.endMs = Date.now(); entry.status = "ok"; entry.detail = detail; },
+        error(detail?: string) { entry.endMs = Date.now(); entry.status = "error"; entry.detail = detail; },
+        skip(detail?: string) { entry.endMs = Date.now(); entry.status = "skip"; entry.detail = detail; },
+      };
+    }
+
+    const classifyTrace = traceStep("classify_query");
+    classifyTrace.ok(`type=${classification.type}, entity=${classification.entity ?? "none"}`);
+
     // Fix P2 #10: Compute context bundle BEFORE tool dispatch so tools can use it
+    const ctxTrace = traceStep("build_context_bundle");
     const contextBundle = buildContextBundle(query.trim());
+    ctxTrace.ok(`tokens=${contextBundle.totalEstimatedTokens}`);
 
     try {
       let result: any;
 
       switch (classification.type) {
         case "weekly_reset": {
+          const t = traceStep("tool_call", "founder_local_weekly_reset");
           result = await callTool("founder_local_weekly_reset", { daysBack: daysBack ?? 7 });
+          t.ok();
           break;
         }
 
         case "pre_delegation":
         case "important_change": {
+          const t = traceStep("tool_call", "founder_local_synthesize");
           result = await callTool("founder_local_synthesize", {
             packetType: classification.type,
             daysBack: daysBack ?? 7,
           });
+          t.ok();
           break;
         }
 
@@ -148,12 +169,14 @@ export function createSearchRouter(tools: McpTool[]) {
           const entityName = classification.entity ?? query.trim().split(/\s+/).slice(0, 3).join(" ");
 
           // Run recon + local context in parallel
+          const reconTrace = traceStep("tool_call", "run_recon");
+          const gatherTrace = traceStep("tool_call", "founder_local_gather");
           const [reconResult, localCtx] = await Promise.all([
             callTool("run_recon", {
               target: entityName,
               focus: query.trim(),
-            }).catch(() => null),
-            callTool("founder_local_gather", { daysBack: daysBack ?? 7 }).catch(() => null),
+            }).then(r => { reconTrace.ok(); return r; }).catch(() => { reconTrace.error("recon failed"); return null; }),
+            callTool("founder_local_gather", { daysBack: daysBack ?? 7 }).then(r => { gatherTrace.ok(); return r; }).catch(() => { gatherTrace.error("gather failed"); return null; }),
           ]);
 
           // Map to ResultPacket-compatible shape so the frontend can render it
@@ -236,7 +259,9 @@ export function createSearchRouter(tools: McpTool[]) {
 
         default: {
           // General query — gather local context and map to ResultPacket shape
+          const gt = traceStep("tool_call", "founder_local_gather");
           const gather = await callTool("founder_local_gather", { daysBack: daysBack ?? 7 }) as any;
+          gt.ok();
           const g = gather ?? {};
 
           const gChanges = (g.recentActions ?? g.changes ?? []).slice(0, 5).map((a: any) => ({
@@ -296,8 +321,6 @@ export function createSearchRouter(tools: McpTool[]) {
         impact: "moderate",
       }).catch(() => {}); // Non-fatal
 
-      const latencyMs = Date.now() - startMs;
-
       // Auto-judge every search result (non-blocking — runs async, result included if fast enough)
       let judgeVerdict: any = null;
       try {
@@ -323,6 +346,12 @@ export function createSearchRouter(tools: McpTool[]) {
         }
       } catch { /* judge failure is non-fatal */ }
 
+      const latencyMs = Date.now() - startMs;
+
+      // Finalize trace
+      const assembleTrace = traceStep("assemble_response");
+      assembleTrace.ok(`latency=${latencyMs}ms`);
+
       // Use the pre-computed contextBundle (computed before dispatch)
       return res.json({
         success: true,
@@ -332,6 +361,14 @@ export function createSearchRouter(tools: McpTool[]) {
         latencyMs,
         result,
         judge: judgeVerdict,
+        // Execution trace — every step timestamped for trajectory visualization
+        trace: trace.map(t => ({
+          step: t.step,
+          tool: t.tool,
+          durationMs: t.endMs ? t.endMs - t.startMs : 0,
+          status: t.status,
+          detail: t.detail,
+        })),
         context: {
           pinned: {
             mission: contextBundle.pinned.canonicalMission,
@@ -384,6 +421,60 @@ export function createSearchRouter(tools: McpTool[]) {
       return res.json({ success: true, result });
     } catch (err: any) {
       return res.status(500).json({ error: true, message: err?.message ?? "Upload ingestion failed" });
+    }
+  });
+
+  // ── GET /search/eval-history — Eval run results for trajectory visualization ──
+  router.get("/eval-history", (_req, res) => {
+    try {
+      const db = getDb();
+      const runs = db.prepare(
+        `SELECT run_id, timestamp, total_queries, passed, failed, pass_rate, avg_latency_ms, judge_model, structural_pass_rate, gemini_pass_rate, created_at
+         FROM eval_runs ORDER BY created_at DESC LIMIT 20`
+      ).all() as any[];
+
+      // For the latest run, include per-query results
+      let latestResults: any[] = [];
+      if (runs.length > 0) {
+        const latest = db.prepare(
+          `SELECT results_json FROM eval_runs WHERE run_id = ?`
+        ).get(runs[0].run_id) as any;
+        if (latest?.results_json) {
+          latestResults = JSON.parse(latest.results_json);
+        }
+      }
+
+      return res.json({
+        success: true,
+        totalRuns: runs.length,
+        runs: runs.map(r => ({
+          runId: r.run_id,
+          timestamp: r.timestamp,
+          totalQueries: r.total_queries,
+          passed: r.passed,
+          failed: r.failed,
+          passRate: r.pass_rate,
+          avgLatencyMs: r.avg_latency_ms,
+          judgeModel: r.judge_model,
+          structuralPassRate: r.structural_pass_rate,
+          geminiPassRate: r.gemini_pass_rate,
+        })),
+        latestResults: latestResults.map((r: any) => ({
+          queryId: r.queryId,
+          query: r.query,
+          lens: r.lens,
+          expectedType: r.expectedType,
+          actualType: r.actualType,
+          latencyMs: r.latencyMs,
+          structuralPass: r.structuralPass,
+          structuralScore: r.structuralScore,
+          geminiVerdict: r.geminiVerdict,
+          geminiScore: r.geminiScore,
+          combinedPass: r.combinedPass,
+        })),
+      });
+    } catch (err: any) {
+      return res.json({ success: true, totalRuns: 0, runs: [], latestResults: [] });
     }
   });
 
