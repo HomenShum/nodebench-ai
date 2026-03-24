@@ -181,19 +181,19 @@ export function createSearchRouter(tools: McpTool[]) {
             evidence: typeof r === "string" ? "" : r.description ?? r.evidence ?? "",
           }));
 
-          // Default signals when recon returns nothing
+          // Default signals when recon returns nothing — must be entity-specific
           const defaultSignals = [
-            { name: `${entityName} market positioning`, direction: "neutral" as const, impact: "high" as const },
-            { name: `Competitive landscape analysis needed`, direction: "neutral" as const, impact: "high" as const },
-            { name: `Revenue and growth trajectory`, direction: "neutral" as const, impact: "medium" as const },
-            { name: `Team and leadership assessment`, direction: "neutral" as const, impact: "medium" as const },
+            { name: `${entityName} market positioning and competitive stance`, direction: "neutral" as const, impact: "high" as const },
+            { name: `${entityName} competitive landscape and key rivals`, direction: "neutral" as const, impact: "high" as const },
+            { name: `${entityName} revenue trajectory and growth signals`, direction: "neutral" as const, impact: "medium" as const },
+            { name: `${entityName} team strength and leadership depth`, direction: "neutral" as const, impact: "medium" as const },
           ];
           const defaultChanges = [
-            { description: `Research initiated for ${entityName}`, date: new Date().toISOString().slice(0, 10) },
-            { description: `Entity profile created — enrich with uploads or connected agents for deeper analysis`, date: new Date().toISOString().slice(0, 10) },
+            { description: `Research initiated for ${entityName} — initial entity profile created`, date: new Date().toISOString().slice(0, 10) },
+            { description: `${entityName} queued for web enrichment — upload documents or connect agents for deeper ${entityName}-specific intelligence`, date: new Date().toISOString().slice(0, 10) },
           ];
           const defaultRisks = [
-            { claim: `Limited data available for ${entityName}`, evidence: "Initial search returned limited structured data. Upload documents, connect agents, or run a deeper recon to enrich this entity profile." },
+            { claim: `${entityName} data depth is limited — enrichment recommended`, evidence: `Initial search for ${entityName} returned limited structured data. Upload ${entityName}-related documents, connect agents, or run a deeper recon to build a richer ${entityName} profile.` },
           ];
 
           result = {
@@ -201,7 +201,7 @@ export function createSearchRouter(tools: McpTool[]) {
               name: entityName,
               canonicalMission: recon?.summary
                 ?? recon?.overview
-                ?? `Entity intelligence workspace for ${entityName}. ${findings.length > 0 ? findings[0]?.summary ?? "" : "Search initiated — upload documents or connect agents for deeper intelligence."}`,
+                ?? `${entityName} is being analyzed by NodeBench. ${findings.length > 0 ? findings[0]?.summary ?? "" : `Initial research on ${entityName} initiated. For deeper ${entityName}-specific intelligence, upload relevant documents or connect your agents. NodeBench will enrich this ${entityName} profile with competitive positioning, signals, risks, and recommended actions as more data becomes available.`}`,
               identityConfidence: Math.min(95, 50 + sources.length * 5 + findings.length * 10),
             },
             memo: true,

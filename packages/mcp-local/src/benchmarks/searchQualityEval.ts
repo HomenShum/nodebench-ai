@@ -208,7 +208,7 @@ function structuralCheck(queryDef: typeof TEST_CORPUS[0], response: any, latency
 
 /* ─── Gemini Flash Lite Judge ──────────────────────────────────────────────── */
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.0-flash";
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 interface GeminiJudgeResult {
@@ -240,7 +240,7 @@ CATEGORY: ${queryDef.category}
 API RESPONSE (truncated):
 ${resultSnippet}
 
-Evaluate this response against these 7 criteria. For each, return pass (true/false) and brief reasoning:
+Evaluate this response against these 7 criteria. For each, return pass (true/false) and MAX 10-word reasoning:
 
 1. RELEVANT_ENTITY: Does the response identify a relevant entity or workspace for this query?
 2. USEFUL_ANSWER: Is the answer/summary useful and relevant to what was asked?
@@ -276,7 +276,7 @@ Return ONLY valid JSON (no markdown, no code fences):
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.1,
-          maxOutputTokens: 1024,
+          maxOutputTokens: 2048,
           responseMimeType: "application/json",
         },
       }),
@@ -292,8 +292,16 @@ Return ONLY valid JSON (no markdown, no code fences):
     const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) return null;
 
-    // Parse JSON (handle potential markdown fences)
-    const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    // Parse JSON — handle markdown fences, thinking tags, trailing commas
+    let cleaned = text
+      .replace(/```json\n?/g, "").replace(/```\n?/g, "")
+      .replace(/<think>[\s\S]*?<\/think>/g, "")
+      .trim();
+    // Extract JSON object if surrounded by other text
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) cleaned = jsonMatch[0];
+    // Fix trailing commas before } or ]
+    cleaned = cleaned.replace(/,\s*([\]}])/g, "$1");
     const parsed = JSON.parse(cleaned) as GeminiJudgeResult;
 
     // Validate structure
