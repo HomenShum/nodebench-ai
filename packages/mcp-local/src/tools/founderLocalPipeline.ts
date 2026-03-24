@@ -441,6 +441,19 @@ function synthesizePacket(
     publicMismatches.push("README still uses 'Operating intelligence' instead of 'Entity intelligence'");
   }
 
+  // ── Extract entity names from query for memo specificity ─────
+  function extractEntitiesFromQuery(query?: string): string[] {
+    if (!query) return [];
+    const entities: string[] = [];
+    // Match capitalized proper nouns (2+ chars, not common words)
+    const stopWords = new Set(["What", "How", "Why", "When", "Where", "Which", "Show", "Tell", "Give", "Create", "Draft", "Compare", "Analyze", "Flag", "The", "Our", "Any", "All", "Top", "Key", "Main", "Most", "Best"]);
+    const matches = query.match(/\b[A-Z][a-zA-Z]{2,}(?:\s+[A-Z][a-zA-Z]+)*/g) ?? [];
+    for (const m of matches) {
+      if (!stopWords.has(m.split(/\s/)[0])) entities.push(m);
+    }
+    return [...new Set(entities)].slice(0, 5);
+  }
+
   // ── Generate memo (adapted to packetType) ────────────────────
   const memoTitle: Record<string, string> = {
     weekly_reset: "Founder Weekly Reset",
@@ -460,19 +473,24 @@ function synthesizePacket(
   ];
 
   if (packetType === "competitor_brief") {
+    // Extract entity names from query for specificity
+    const entityNames = extractEntitiesFromQuery(originalQuery);
+    const entityLabel = entityNames.length > 0 ? entityNames.join(", ") : "competitors";
+
     memoLines.push(
-      `## Query Context`,
-      originalQuery ? `Analyzing: ${originalQuery}` : `General competitive analysis`,
+      `## Competitor Intelligence Brief: ${entityLabel}`,
+      originalQuery ? `Query: ${originalQuery}` : `General competitive analysis`,
+      `Generated: ${new Date().toISOString().slice(0, 10)}`,
       ``,
-      `## Competitive Position`,
+      `## Our Position`,
       `NodeBench is: ${canonicalMission}`,
       `Wedge: ${wedge}`,
       ``,
-      `## What Changed Competitively`,
+      `## ${entityLabel} — Competitive Landscape Changes`,
       ...whatChanged.slice(0, 5).map((c, i) => `${i + 1}. ${c.description}`),
       ``,
-      `## Competitor Moats and Differentiators`,
-      `When comparing competitors, key dimensions to evaluate:`,
+      `## ${entityLabel} — Moats and Differentiators`,
+      `Key dimensions when evaluating ${entityLabel}:`,
       `- Distribution advantage (plugin ecosystem, MCP-native onboarding)`,
       `- Technical moat (proprietary data, infrastructure lock-in, network effects)`,
       `- Market positioning (category creation vs category capture)`,
@@ -542,24 +560,30 @@ function synthesizePacket(
       ...ctx.recentChanges.modifiedFiles.slice(0, 10).map((f) => `- ${f}`),
     );
   } else if (packetType === "important_change") {
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 86_400_000);
+    const dateRange = `${weekAgo.toISOString().slice(0, 10)} to ${now.toISOString().slice(0, 10)}`;
+
     memoLines.push(
-      `## Important Changes Since Last Session`,
-      `Showing only strategy, positioning, architecture, and competitive changes that matter.`,
+      `## Important Changes: ${dateRange}`,
+      `Generated: ${now.toISOString().slice(0, 19)}`,
+      originalQuery ? `Query: ${originalQuery}` : `Showing only high-signal changes that matter.`,
+      `Period: last 7 days (${dateRange})`,
       ``,
-      `## Changes Detected`,
-      ...whatChanged.slice(0, 8).map((c, i) => `${i + 1}. **${c.description}** (${c.source})`),
+      `## Timeline of Changes (${whatChanged.length} detected)`,
+      ...whatChanged.slice(0, 8).map((c, i) => `${i + 1}. [${now.toISOString().slice(0, 10)}] **${c.description}** (source: ${c.source})`),
       ``,
-      `## Impact Assessment`,
+      `## Impact Assessment (as of ${now.toISOString().slice(0, 10)})`,
       contradictions.length > 0
-        ? `**${contradictions.length} active contradiction(s):**\n` + contradictions.map((c) => `- [${c.severity}] ${c.claim}`).join("\n")
-        : `No active contradictions — positioning is consistent.`,
+        ? `**${contradictions.length} active contradiction(s) detected this period:**\n` + contradictions.map((c) => `- [${c.severity}] ${c.claim} (detected: ${now.toISOString().slice(0, 10)})`).join("\n")
+        : `No active contradictions — positioning is consistent as of ${now.toISOString().slice(0, 10)}.`,
       ``,
       `## Packet Refresh Needed?`,
       whatChanged.length > 3 || contradictions.length > 0
-        ? `Yes — ${whatChanged.length} changes and ${contradictions.length} contradictions warrant a packet refresh.`
-        : `No — changes are incremental. Current packet remains valid.`,
+        ? `Yes — ${whatChanged.length} changes since ${weekAgo.toISOString().slice(0, 10)} and ${contradictions.length} contradictions warrant a packet refresh.`
+        : `No — changes since ${weekAgo.toISOString().slice(0, 10)} are incremental. Current packet remains valid.`,
       ``,
-      `## Signals`,
+      `## Signals (${dateRange})`,
       ...signals.map((s) => `- ${s.direction === "up" ? "+" : s.direction === "down" ? "-" : "="} ${s.name} (${s.impact})`),
     );
   } else {
