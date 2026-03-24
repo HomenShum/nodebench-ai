@@ -141,12 +141,15 @@ USER QUERY: ${req.query}
 
 ${localCtx ? `LOCAL CONTEXT:\n${localCtx}\n` : ""}${webContext}
 
-IMPORTANT:
+CRITICAL INSTRUCTIONS:
 - Use specific facts, numbers, and dates from the web results
-- Name specific entities, people, and companies
+- Name specific entities, people, and companies — never use generic placeholders
 - Include source URLs as citations
 - Be concise but substantive — every section should have real content
-- Write for a ${req.lens} audience — use appropriate terminology and focus`;
+- Write for a ${req.lens} audience — use appropriate terminology and focus
+- DIRECTLY ADDRESS every key term in the user query. If the query mentions "deployments", your output MUST discuss deployments. If it mentions "alerts", discuss specific alerts. If it mentions "risk factors", enumerate risk factors. If it mentions "covenant breaches", discuss covenant compliance.
+- For each topic the user asks about, provide SPECIFIC examples, not generic advice
+- Include remediation steps, escalation paths, or follow-up actions for every finding`;
 
   // Try Gemini synthesis
   if (apiKey) {

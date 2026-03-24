@@ -502,8 +502,8 @@ export const llmJudgeLoopTools: McpTool[] = [
 
       // ── Scenario 1: Founder weekly reset ──
       try {
-        const { founderLocalPipelineTools } = await import("./founderLocalPipeline.js");
-        const resetTool = founderLocalPipelineTools.find(t => t.name === "founder_local_weekly_reset");
+        const { founderTools } = await import("./founderTools.js");
+        const resetTool = founderTools.find(t => t.name === "founder_local_weekly_reset");
         if (resetTool) {
           const start = Date.now();
           const result = await resetTool.handler({ daysBack });
@@ -529,11 +529,11 @@ export const llmJudgeLoopTools: McpTool[] = [
 
       // ── Scenario 3: Important change review ──
       try {
-        const { founderLocalPipelineTools } = await import("./founderLocalPipeline.js");
-        const synthTool = founderLocalPipelineTools.find(t => t.name === "founder_local_synthesize");
+        const { founderTools } = await import("./founderTools.js");
+        const synthTool = founderTools.find(t => t.name === "founder_local_synthesize");
         if (synthTool) {
           const start = Date.now();
-          const result = await synthTool.handler({ packetType: "important_change", daysBack });
+          const result = await synthTool.handler({ query: "Show me important changes since last session", packetType: "important_change" });
           const latencyMs = Date.now() - start;
           const verdict = judgeResult("important_change", "Show me important changes since last session", "founder_local_synthesize", result);
           scenarios.push({ id: "important_change", name: "Important Change Review", tool: "founder_local_synthesize", result, verdict, latencyMs });

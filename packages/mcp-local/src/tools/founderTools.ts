@@ -1888,4 +1888,514 @@ ${metaHtml}
       return { error: true, message: `Unhandled format: ${format}` };
     },
   },
+
+  // ─── 6. founder_local_synthesize ──────────────────────────────────────────
+  {
+    name: "founder_local_synthesize",
+    description:
+      "The MOST IMPORTANT founder tool — takes a user query + local SQLite context " +
+      "and uses Gemini 3.1 Flash Lite to synthesize a real, structured analysis. " +
+      "Gathers: causal_events (last 20), founder_packets (latest for entity), " +
+      "causal_important_changes (unresolved), tracking_actions (last 10), " +
+      "session_summaries (latest). Optionally enriches with web_search. " +
+      "Falls back to heuristic synthesis if no GEMINI_API_KEY.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "The user's question or analysis request",
+        },
+        entityId: {
+          type: "string",
+          description: "Optional entity ID to scope context gathering",
+        },
+        includeWeb: {
+          type: "boolean",
+          description: "If true, call web_search to enrich with fresh data (default: false)",
+        },
+        packetType: {
+          type: "string",
+          enum: ["weekly_reset", "pre_delegation", "important_change", "competitor_brief", "role_switch"],
+          description: "Type of synthesis to produce (default: important_change)",
+        },
+      },
+      required: ["query"],
+    },
+    handler: async (args) => {
+      const query = args.query as string;
+      const entityId = (args.entityId as string) ?? null;
+      const includeWeb = (args.includeWeb as boolean) ?? false;
+      const packetType = (args.packetType as string) ?? "important_change";
+      const start = Date.now();
+
+      const db = getDb();
+
+      // ── 1. Gather local context from SQLite ──────────────────────
+
+      // causal_events (last 20)
+      let causalEvents: Array<Record<string, unknown>> = [];
+      try {
+        causalEvents = db.prepare(
+          `SELECT id, userId, eventType, payload, createdAt
+           FROM causal_events
+           ORDER BY createdAt DESC LIMIT 20`,
+        ).all() as Array<Record<string, unknown>>;
+      } catch { /* table may not exist */ }
+
+      // founder_packets (latest for entity or global)
+      let latestPackets: Array<Record<string, unknown>> = [];
+      try {
+        ensurePacketSchema();
+        if (entityId) {
+          latestPackets = db.prepare(
+            `SELECT packetId, entityId, packetType, packetJson, createdAt
+             FROM founder_packets
+             WHERE entityId = ?
+             ORDER BY createdAt DESC LIMIT 3`,
+          ).all(entityId) as Array<Record<string, unknown>>;
+        } else {
+          latestPackets = db.prepare(
+            `SELECT packetId, entityId, packetType, packetJson, createdAt
+             FROM founder_packets
+             ORDER BY createdAt DESC LIMIT 3`,
+          ).all() as Array<Record<string, unknown>>;
+        }
+      } catch { /* table may not exist */ }
+
+      // causal_important_changes (unresolved)
+      let importantChanges: Array<Record<string, unknown>> = [];
+      try {
+        importantChanges = db.prepare(
+          `SELECT changeId, changeCategory, impactScore, impactReason, affectedEntities, suggestedAction, status, createdAt
+           FROM causal_important_changes
+           WHERE status IN ('detected','acknowledged','investigating')
+           ORDER BY impactScore DESC LIMIT 10`,
+        ).all() as Array<Record<string, unknown>>;
+      } catch { /* table may not exist */ }
+
+      // tracking_actions (last 10)
+      let trackingActions: Array<Record<string, unknown>> = [];
+      try {
+        trackingActions = db.prepare(
+          `SELECT actionId, action, category, reasoning, impactLevel, timestamp
+           FROM tracking_actions
+           ORDER BY timestamp DESC LIMIT 10`,
+        ).all() as Array<Record<string, unknown>>;
+      } catch { /* table may not exist */ }
+
+      // session_summaries (latest)
+      let sessionSummaries: Array<Record<string, unknown>> = [];
+      try {
+        sessionSummaries = db.prepare(
+          `SELECT summaryId, sessionSummary, activeEntities, openIntents, unresolvedItems, keyDecisions, createdAt
+           FROM session_summaries
+           ORDER BY createdAt DESC LIMIT 3`,
+        ).all() as Array<Record<string, unknown>>;
+      } catch { /* table may not exist */ }
+
+      // ── 2. Optional web enrichment ──────────────────────────────
+      let webResults: Array<{ title: string; url: string; snippet: string }> = [];
+      if (includeWeb) {
+        try {
+          const { webTools } = await import("./webTools.js");
+          const webSearchTool = webTools.find((t) => t.name === "web_search");
+          if (webSearchTool) {
+            const webResponse = await webSearchTool.handler({ query, maxResults: 5 });
+            const wr = webResponse as { results?: Array<{ title?: string; url?: string; snippet?: string }> };
+            if (wr.results && Array.isArray(wr.results)) {
+              webResults = wr.results
+                .filter((r) => r.title && r.url)
+                .map((r) => ({ title: r.title ?? "", url: r.url ?? "", snippet: r.snippet ?? "" }));
+            }
+          }
+        } catch { /* web search unavailable — continue without */ }
+      }
+
+      // ── 3. Build context bundle for LLM ─────────────────────────
+      const contextBundle = {
+        query,
+        entityId,
+        packetType,
+        causalEvents: causalEvents.map((e) => ({
+          type: e.eventType,
+          payload: typeof e.payload === "string" ? e.payload?.slice(0, 200) : e.payload,
+          at: e.createdAt,
+        })),
+        latestPackets: latestPackets.map((p) => ({
+          id: p.packetId,
+          entity: p.entityId,
+          type: p.packetType,
+          at: p.createdAt,
+        })),
+        importantChanges: importantChanges.map((c) => ({
+          category: c.changeCategory,
+          impact: c.impactScore,
+          reason: c.impactReason,
+          affected: c.affectedEntities,
+          action: c.suggestedAction,
+          status: c.status,
+        })),
+        trackingActions: trackingActions.map((a) => ({
+          action: a.action,
+          category: a.category,
+          reasoning: a.reasoning,
+          impact: a.impactLevel,
+          at: a.timestamp,
+        })),
+        sessionSummaries: sessionSummaries.map((s) => ({
+          summary: typeof s.sessionSummary === "string" ? s.sessionSummary?.slice(0, 300) : s.sessionSummary,
+          entities: s.activeEntities,
+          unresolved: s.unresolvedItems,
+          decisions: s.keyDecisions,
+        })),
+        webResults: webResults.length > 0
+          ? webResults.map((r) => `[${r.title}](${r.url}): ${r.snippet}`)
+          : undefined,
+      };
+
+      // ── 4. Call Gemini 3.1 Flash Lite ───────────────────────────
+      const apiKey = process.env.GEMINI_API_KEY ?? "";
+
+      if (apiKey) {
+        const geminiPrompt = `You are an expert analyst for a founder operating system called NodeBench.
+
+USER QUERY: ${query}
+
+PACKET TYPE: ${packetType}
+
+LOCAL CONTEXT (from SQLite operating memory):
+
+RECENT EVENTS (${causalEvents.length}):
+${JSON.stringify(contextBundle.causalEvents.slice(0, 10), null, 1)}
+
+IMPORTANT CHANGES (${importantChanges.length} unresolved):
+${JSON.stringify(contextBundle.importantChanges, null, 1)}
+
+RECENT ACTIONS (${trackingActions.length}):
+${JSON.stringify(contextBundle.trackingActions.slice(0, 5), null, 1)}
+
+SESSION CONTEXT:
+${JSON.stringify(contextBundle.sessionSummaries.slice(0, 2), null, 1)}
+
+${contextBundle.webResults ? `WEB RESULTS:\n${contextBundle.webResults.join("\n")}` : ""}
+
+Produce a JSON response with this exact structure:
+{
+  "summary": "2-3 sentence executive summary answering the user's query",
+  "keyFindings": ["finding 1", "finding 2", ...],
+  "entities": ["entity name 1", "entity name 2", ...],
+  "metrics": [{"label": "metric name", "value": "metric value"}, ...],
+  "risks": ["risk 1", "risk 2", ...],
+  "nextSteps": ["step 1", "step 2", ...],
+  "confidence": 0.0 to 1.0
+}
+
+Be specific. Use real data from the context. Do not hallucinate. If data is sparse, say so and lower confidence.`;
+
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 30_000);
+
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`;
+          const resp = await fetch(geminiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: geminiPrompt }] }],
+              generationConfig: { temperature: 0.2, maxOutputTokens: 2048 },
+            }),
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeout);
+
+          if (resp.ok) {
+            const data = await resp.json() as {
+              candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+            };
+            const rawText = data?.candidates?.[0]?.content?.parts
+              ?.map((p) => p.text)
+              .filter(Boolean)
+              .join("") ?? "";
+
+            // Try to parse JSON from the response
+            const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              try {
+                const parsed = JSON.parse(jsonMatch[0]) as {
+                  summary?: string;
+                  keyFindings?: string[];
+                  entities?: string[];
+                  metrics?: Array<{ label: string; value: string }>;
+                  risks?: string[];
+                  nextSteps?: string[];
+                  confidence?: number;
+                };
+
+                return {
+                  synthesized: true,
+                  llmGenerated: true,
+                  model: "gemini-3.1-flash-lite-preview",
+                  query,
+                  entityId,
+                  packetType,
+                  summary: parsed.summary ?? rawText.slice(0, 500),
+                  keyFindings: parsed.keyFindings ?? [],
+                  entities: parsed.entities ?? [],
+                  metrics: parsed.metrics ?? [],
+                  risks: parsed.risks ?? [],
+                  nextSteps: parsed.nextSteps ?? [],
+                  confidence: typeof parsed.confidence === "number" ? Math.min(1, Math.max(0, parsed.confidence)) : 0.5,
+                  contextStats: {
+                    causalEvents: causalEvents.length,
+                    importantChanges: importantChanges.length,
+                    trackingActions: trackingActions.length,
+                    sessionSummaries: sessionSummaries.length,
+                    founderPackets: latestPackets.length,
+                    webResults: webResults.length,
+                  },
+                  webResults: webResults.length > 0 ? webResults : undefined,
+                  latencyMs: Date.now() - start,
+                };
+              } catch { /* JSON parse failed — use raw text */ }
+            }
+
+            // Gemini returned text but not parseable JSON
+            return {
+              synthesized: true,
+              llmGenerated: true,
+              model: "gemini-3.1-flash-lite-preview",
+              query,
+              entityId,
+              packetType,
+              summary: rawText.slice(0, 1000),
+              keyFindings: [],
+              entities: [],
+              metrics: [],
+              risks: [],
+              nextSteps: [],
+              confidence: 0.4,
+              contextStats: {
+                causalEvents: causalEvents.length,
+                importantChanges: importantChanges.length,
+                trackingActions: trackingActions.length,
+                sessionSummaries: sessionSummaries.length,
+                founderPackets: latestPackets.length,
+                webResults: webResults.length,
+              },
+              latencyMs: Date.now() - start,
+              _note: "Gemini returned text but not structured JSON — summary is raw text",
+            };
+          }
+        } catch { /* Gemini call failed — fall through to heuristic */ }
+      }
+
+      // ── 5. Heuristic fallback (no API key or Gemini failed) ─────
+      const heuristicFindings: string[] = [];
+      const heuristicEntities: string[] = [];
+      const heuristicRisks: string[] = [];
+      const heuristicNextSteps: string[] = [];
+      const heuristicMetrics: Array<{ label: string; value: string }> = [];
+
+      // Extract findings from important changes
+      for (const c of importantChanges.slice(0, 5)) {
+        heuristicFindings.push(`[${c.changeCategory}] ${c.impactReason} (impact: ${c.impactScore})`);
+        if (c.suggestedAction) heuristicNextSteps.push(String(c.suggestedAction));
+        try {
+          const affected = JSON.parse(String(c.affectedEntities ?? "[]")) as string[];
+          heuristicEntities.push(...affected);
+        } catch {
+          if (c.affectedEntities) heuristicEntities.push(String(c.affectedEntities));
+        }
+      }
+
+      // Extract from causal events
+      for (const e of causalEvents.slice(0, 5)) {
+        heuristicFindings.push(`Event: ${e.eventType} at ${e.createdAt}`);
+      }
+
+      // Extract from tracking actions
+      for (const a of trackingActions.slice(0, 3)) {
+        heuristicFindings.push(`Action: ${a.action} [${a.category}/${a.impactLevel}]`);
+      }
+
+      // Extract from session summaries
+      for (const s of sessionSummaries.slice(0, 1)) {
+        if (s.unresolvedItems) {
+          try {
+            const items = JSON.parse(String(s.unresolvedItems)) as string[];
+            heuristicRisks.push(...items.slice(0, 3));
+          } catch {
+            heuristicRisks.push(String(s.unresolvedItems).slice(0, 200));
+          }
+        }
+      }
+
+      // Metrics
+      heuristicMetrics.push(
+        { label: "Causal events (total)", value: String(causalEvents.length) },
+        { label: "Unresolved changes", value: String(importantChanges.length) },
+        { label: "Recent actions", value: String(trackingActions.length) },
+        { label: "Founder packets", value: String(latestPackets.length) },
+      );
+
+      // Web results as findings
+      for (const r of webResults.slice(0, 3)) {
+        heuristicFindings.push(`[Web] ${r.title}: ${r.snippet.slice(0, 100)}`);
+      }
+
+      const uniqueEntities = [...new Set(heuristicEntities)].slice(0, 10);
+      const dataRichness = (causalEvents.length + importantChanges.length + trackingActions.length + sessionSummaries.length) / 44; // max 44
+
+      return {
+        synthesized: true,
+        llmGenerated: false,
+        model: "heuristic-fallback",
+        query,
+        entityId,
+        packetType,
+        summary: importantChanges.length > 0
+          ? `${importantChanges.length} unresolved important change(s) detected. Top: ${importantChanges[0]?.impactReason ?? "unknown"}. ${causalEvents.length} recent events and ${trackingActions.length} tracked actions provide context.`
+          : `${causalEvents.length} recent events and ${trackingActions.length} tracked actions found. No unresolved important changes detected.`,
+        keyFindings: heuristicFindings.slice(0, 10),
+        entities: uniqueEntities,
+        metrics: heuristicMetrics,
+        risks: heuristicRisks.slice(0, 5),
+        nextSteps: heuristicNextSteps.length > 0 ? heuristicNextSteps.slice(0, 5) : ["Review unresolved changes", "Run founder_packet_validate"],
+        confidence: Math.min(0.9, Math.max(0.2, dataRichness)),
+        contextStats: {
+          causalEvents: causalEvents.length,
+          importantChanges: importantChanges.length,
+          trackingActions: trackingActions.length,
+          sessionSummaries: sessionSummaries.length,
+          founderPackets: latestPackets.length,
+          webResults: webResults.length,
+        },
+        webResults: webResults.length > 0 ? webResults : undefined,
+        latencyMs: Date.now() - start,
+        _note: apiKey ? "Gemini call failed — using heuristic fallback" : "No GEMINI_API_KEY — using heuristic fallback",
+      };
+    },
+  },
+
+  // ─── 7. founder_local_weekly_reset ─────────────────────────────────────────
+  {
+    name: "founder_local_weekly_reset",
+    description:
+      "One-call weekly reset: calls founder_local_synthesize internally with " +
+      "packetType='weekly_reset', adds weekly-specific context (events from last 7 days, " +
+      "trajectory scores), and returns the synthesis plus a weeklyResetPacket wrapper " +
+      "with weekStarting, weekEnding, topChanges, contradictions, nextMoves.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        entityId: {
+          type: "string",
+          description: "Optional entity ID to scope the weekly reset",
+        },
+        includeWeb: {
+          type: "boolean",
+          description: "If true, enrich with web search results (default: false)",
+        },
+      },
+    },
+    handler: async (args) => {
+      const entityId = (args.entityId as string) ?? null;
+      const includeWeb = (args.includeWeb as boolean) ?? false;
+      const start = Date.now();
+
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 86_400_000);
+      const weekStarting = weekAgo.toISOString().slice(0, 10);
+      const weekEnding = now.toISOString().slice(0, 10);
+
+      // Call founder_local_synthesize internally via its handler
+      const synthesizeTool = founderTools.find((t) => t.name === "founder_local_synthesize");
+      if (!synthesizeTool) {
+        return { error: true, message: "founder_local_synthesize tool not found in founderTools array" };
+      }
+
+      const synthesisResult = await synthesizeTool.handler({
+        query: `Weekly founder reset for ${weekStarting} to ${weekEnding}. Summarize what changed, what matters, and what to do next.`,
+        entityId: entityId ?? undefined,
+        includeWeb,
+        packetType: "weekly_reset",
+      }) as Record<string, unknown>;
+
+      // ── Gather weekly-specific extras ──────────────────────────
+      const db = getDb();
+
+      // Events from last 7 days
+      let weekEvents: Array<Record<string, unknown>> = [];
+      try {
+        weekEvents = db.prepare(
+          `SELECT eventType, COUNT(*) as count
+           FROM causal_events
+           WHERE createdAt >= ?
+           GROUP BY eventType
+           ORDER BY count DESC`,
+        ).all(weekAgo.toISOString()) as Array<Record<string, unknown>>;
+      } catch { /* table may not exist */ }
+
+      // Trajectory scores if available
+      let trajectoryScores: Array<Record<string, unknown>> = [];
+      try {
+        trajectoryScores = db.prepare(
+          `SELECT * FROM tracking_milestones
+           WHERE timestamp >= ?
+           ORDER BY timestamp DESC LIMIT 10`,
+        ).all(weekAgo.toISOString()) as Array<Record<string, unknown>>;
+      } catch { /* table may not exist */ }
+
+      // Extract top changes and contradictions from synthesis
+      const keyFindings = (synthesisResult.keyFindings as string[]) ?? [];
+      const risks = (synthesisResult.risks as string[]) ?? [];
+      const nextSteps = (synthesisResult.nextSteps as string[]) ?? [];
+
+      // Build the weekly reset wrapper
+      const weeklyResetPacket = {
+        weekStarting,
+        weekEnding,
+        topChanges: keyFindings.slice(0, 5),
+        contradictions: risks.slice(0, 5),
+        nextMoves: nextSteps.slice(0, 3),
+        eventBreakdown: weekEvents.map((e) => ({ type: e.eventType, count: e.count })),
+        milestonesThisWeek: trajectoryScores.length,
+      };
+
+      // Track this as a milestone
+      try {
+        const milestoneId = `weekly_reset_${weekEnding}`;
+        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const m = now.getMonth() + 1;
+        const y = now.getFullYear();
+        db.prepare(
+          `INSERT OR IGNORE INTO tracking_milestones
+            (milestoneId, sessionId, timestamp, title, description, category, evidence, metrics, dayOfWeek, weekNumber, month, quarter, year)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ).run(
+          milestoneId,
+          `weekly_reset_${Date.now()}`,
+          now.toISOString(),
+          "Weekly founder reset generated",
+          `${weekStarting} to ${weekEnding}: ${keyFindings.length} findings, ${risks.length} risks, ${nextSteps.length} next steps`,
+          "dogfood",
+          null,
+          JSON.stringify({ findings: keyFindings.length, risks: risks.length, nextSteps: nextSteps.length }),
+          dayNames[now.getDay()],
+          Math.ceil((now.getTime() - new Date(y, 0, 1).getTime()) / 604800000),
+          `${y}-${String(m).padStart(2, "0")}`,
+          `${y}-Q${Math.ceil(m / 3)}`,
+          y,
+        );
+      } catch { /* Non-fatal */ }
+
+      return {
+        ...synthesisResult,
+        weeklyResetPacket,
+        latencyMs: Date.now() - start,
+      };
+    },
+  },
 ];
