@@ -32,6 +32,35 @@ async function getJudge() {
   return _judgeToolOutput;
 }
 
+/** Direct Linkup API call — richer than Gemini grounding, returns answer + sources */
+async function linkupSearch(query: string, maxResults = 5): Promise<{ answer: string; sources: Array<{ name: string; url: string; snippet: string }> } | null> {
+  const apiKey = process.env.LINKUP_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const resp = await fetch("https://api.linkup.so/v1/search", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        q: query,
+        depth: "standard",
+        outputType: "sourcedAnswer",
+        includeInlineCitations: true,
+        includeSources: true,
+        maxResults,
+      }),
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json() as any;
+    const sources = (data.results ?? data.sources ?? []).slice(0, maxResults).map((r: any) => ({
+      name: r.name ?? r.title ?? "",
+      url: r.url ?? "",
+      snippet: r.content ?? r.snippet ?? "",
+    }));
+    return { answer: data.answer ?? "", sources };
+  } catch { return null; }
+}
+
 export function createSearchRouter(tools: McpTool[]) {
   const router = Router();
 
@@ -227,31 +256,40 @@ export function createSearchRouter(tools: McpTool[]) {
           const entities = classification.entities ?? [];
           const entityNames = entities.slice(0, 4); // Cap at 4 entities
 
-          // Run web_search for each entity in parallel
-          const multiWebTrace = traceStep("tool_call", `web_search x${entityNames.length}`);
+          // Run Linkup search for each entity in parallel (primary), web_search as fallback
+          const multiLinkupTrace = traceStep("tool_call", `linkup_search x${entityNames.length}`);
           const entityResults = await Promise.all(
             entityNames.map(async (eName) => {
               try {
+                // Try Linkup first
+                const linkup = await linkupSearch(`${eName} company overview strategy ${new Date().getFullYear()}`, 3);
+                if (linkup && (linkup.answer.length > 20 || linkup.sources.length > 0)) {
+                  return {
+                    name: eName,
+                    answer: linkup.answer,
+                    snippets: linkup.sources.map(s => s.snippet).filter(Boolean),
+                    sources: linkup.sources.map(s => s.url).filter(Boolean),
+                    resultCount: linkup.sources.length,
+                  };
+                }
+                // Fallback to web_search
                 const webRes = await Promise.race([
-                  callTool("web_search", {
-                    query: `${eName} company overview strategy ${new Date().getFullYear()}`,
-                    maxResults: 3,
-                  }),
-                  new Promise(resolve => setTimeout(() => resolve(null), 8_000)),
+                  callTool("web_search", { query: `${eName} company overview strategy ${new Date().getFullYear()}`, maxResults: 3 }),
+                  new Promise(resolve => setTimeout(() => resolve(null), 6_000)),
                 ]) as any;
                 const snippets = (webRes?.results ?? []).map((r: any) => r.snippet ?? r.description ?? "").filter(Boolean);
-                return { name: eName, snippets, sources: (webRes?.results ?? []).map((r: any) => r.url).filter(Boolean), resultCount: webRes?.resultCount ?? 0 };
-              } catch { return { name: eName, snippets: [], sources: [], resultCount: 0 }; }
+                return { name: eName, answer: "", snippets, sources: (webRes?.results ?? []).map((r: any) => r.url).filter(Boolean), resultCount: webRes?.resultCount ?? 0 };
+              } catch { return { name: eName, answer: "", snippets: [], sources: [], resultCount: 0 }; }
             })
           );
-          multiWebTrace.ok(`${entityResults.reduce((s, e) => s + e.resultCount, 0)} total results`);
+          multiLinkupTrace.ok(`${entityResults.reduce((s, e) => s + e.resultCount, 0)} total results`);
 
           // Use Gemini to produce a comparative analysis
           let comparison: any = null;
           if (process.env.GEMINI_API_KEY) {
             const extractTrace = traceStep("llm_extract", "gemini-3.1-flash-lite-preview");
             try {
-              const entityContext = entityResults.map(e => `## ${e.name}\n${e.snippets.slice(0, 2).join("\n")}`).join("\n\n");
+              const entityContext = entityResults.map(e => `## ${e.name}\n${e.answer ? e.answer.slice(0, 400) + "\n" : ""}${e.snippets.slice(0, 2).join("\n")}`).join("\n\n");
               const geminiResp = await fetch(
                 `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${process.env.GEMINI_API_KEY}`,
                 {
@@ -340,17 +378,21 @@ Return ONLY valid JSON:
         case "competitor": {
           const entityName = classification.entity ?? query.trim().split(/\s+/).slice(0, 3).join(" ");
 
-          // Run web_search + recon + local context in parallel
+          // Run Linkup (primary) + web_search (fallback) + recon + local context in parallel
+          const linkupTrace = traceStep("tool_call", "linkup_search");
           const webTrace = traceStep("tool_call", "web_search");
           const reconTrace = traceStep("tool_call", "run_recon");
           const gatherTrace = traceStep("tool_call", "founder_local_gather");
-          const [webResult, reconResult, localCtx] = await Promise.all([
+          const [linkupResult, webResult, reconResult, localCtx] = await Promise.all([
+            linkupSearch(`${entityName} company overview strategy funding competitive position ${new Date().getFullYear()}`, 5)
+              .then(r => { linkupTrace.ok(`${r ? r.sources.length + " sources" : "null"}`); return r; })
+              .catch(() => { linkupTrace.error("linkup failed"); return null; }),
             Promise.race([
               callTool("web_search", {
                 query: `${entityName} company overview strategy funding ${new Date().getFullYear()}`,
                 maxResults: 5,
               }),
-              new Promise(resolve => setTimeout(() => resolve(null), 8_000)), // 8s timeout
+              new Promise(resolve => setTimeout(() => resolve(null), 8_000)),
             ]).then(r => { webTrace.ok(`${(r as any)?.resultCount ?? 0} results`); return r; }).catch(() => { webTrace.error("web_search failed"); return null; }),
             callTool("run_recon", {
               target: entityName,
@@ -363,20 +405,29 @@ Return ONLY valid JSON:
           const recon = reconResult as any;
           const local = localCtx as any;
 
-          // Extract data from web search results
+          // Extract data from Linkup (primary) and web search (fallback)
+          const linkupAnswer = linkupResult?.answer ?? "";
+          const linkupSources = (linkupResult?.sources ?? []).map(s => s.url).filter(Boolean);
+          const linkupSnippets = (linkupResult?.sources ?? []).map(s => s.snippet).filter(Boolean);
+
           const webResults = web?.results ?? [];
           const webSnippets = webResults.map((r: any) => r.snippet ?? r.description ?? "").filter(Boolean);
-          const webSummary = webSnippets.slice(0, 3).join(" ").slice(0, 800);
           const webSources = webResults.map((r: any) => r.url ?? r.link).filter(Boolean);
+
+          // Merge sources: Linkup first (richer), then web_search
+          const allSnippets = [...linkupSnippets, ...webSnippets].slice(0, 8);
+          const allSrcUrls = [...new Set([...linkupSources, ...webSources])].slice(0, 8);
+          const bestSummary = linkupAnswer || allSnippets.slice(0, 3).join(" ").slice(0, 800);
 
           // Extract data from recon
           const reconSources = recon?.plan?.sources ?? recon?.sources ?? [];
           const reconFindings = recon?.findings ?? [];
           const competitors = recon?.competitors ?? recon?.comparables ?? [];
 
-          // Use Gemini to extract structured entity intelligence from web results
+          // Use Gemini to extract structured entity intelligence from Linkup + web results
           let geminiExtracted: any = null;
-          if (webSnippets.length > 0 && process.env.GEMINI_API_KEY) {
+          const hasSearchData = linkupAnswer.length > 20 || allSnippets.length > 0;
+          if (hasSearchData && process.env.GEMINI_API_KEY) {
             const extractTrace = traceStep("llm_extract", "gemini-3.1-flash-lite-preview");
             try {
               const geminiResp = await fetch(
@@ -394,8 +445,9 @@ ${resolvedLens === "investor" ? "Focus on: valuation, funding rounds, revenue, g
   resolvedLens === "student" ? "Focus on: company overview, industry context, key products, career relevance." :
   "Focus on: competitive positioning, market strategy, key metrics, risks."}
 
-WEB RESULTS:
-${webSnippets.slice(0, 5).join("\n\n")}
+RESEARCH CONTEXT:
+${linkupAnswer ? `LINKUP ANSWER:\n${linkupAnswer.slice(0, 1200)}\n\n` : ""}WEB RESULTS:
+${allSnippets.slice(0, 5).join("\n\n")}
 
 RULES:
 - ONLY include facts that appear in the web results above. Do NOT invent numbers, dates, or claims.
@@ -479,9 +531,9 @@ Return ONLY valid JSON:
             : [{ claim: `${entityName} competitive risks need deeper analysis`, evidence: `Web search returned ${webResults.length} results. Run deeper research or upload documents for risk detection.` }];
 
           const entitySummary = ge.summary ?? recon?.summary ?? recon?.overview
-            ?? (webSummary ? `${entityName}: ${webSummary.slice(0, 300)}` : `${entityName} entity profile. ${hasRealData ? "" : "Upload documents or connect agents for deeper intelligence."}`);
+            ?? (bestSummary ? `${entityName}: ${bestSummary.slice(0, 400)}` : `${entityName} entity profile. ${hasRealData ? "" : "Upload documents or connect agents for deeper intelligence."}`);
 
-          const confidence = Math.min(95, 40 + webResults.length * 3 + (geminiExtracted ? 20 : 0) + reconFindings.length * 5);
+          const confidence = Math.min(95, 40 + (linkupAnswer ? 15 : 0) + allSrcUrls.length * 2 + (geminiExtracted ? 20 : 0) + reconFindings.length * 5);
 
           result = {
             canonicalEntity: {
@@ -490,7 +542,7 @@ Return ONLY valid JSON:
               identityConfidence: confidence,
             },
             memo: true,
-            whatChanged: finalChanges.length > 0 ? finalChanges : [{ description: `${entityName} profile created from ${webResults.length} web sources`, date: new Date().toISOString().slice(0, 10) }],
+            whatChanged: finalChanges.length > 0 ? finalChanges : [{ description: `${entityName} profile created from ${allSrcUrls.length} web sources${linkupAnswer ? " (Linkup enriched)" : ""}`, date: new Date().toISOString().slice(0, 10) }],
             signals: finalSignals.length > 0 ? finalSignals : [{ name: `${entityName} analysis in progress`, direction: "neutral", impact: "high" }],
             contradictions: finalRisks,
             comparables: mergedComparables,
@@ -507,7 +559,7 @@ Return ONLY valid JSON:
               `What are the main risks facing ${entityName}?`,
               `What changed for ${entityName} in the last quarter?`,
             ],
-            webSources: webSources.slice(0, 5),
+            webSources: allSrcUrls.slice(0, 8),
             localContext: local,
           };
           break;

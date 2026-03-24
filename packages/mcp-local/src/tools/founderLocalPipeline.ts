@@ -710,4 +710,132 @@ export const founderLocalPipelineTools: McpTool[] = [
       };
     },
   },
+
+  {
+    name: "founder_local_synthesize",
+    description:
+      "Takes gathered local context and synthesizes a complete Founder Artifact Packet. " +
+      "Detects contradictions between CLAUDE.md identity, public surfaces, and dogfood " +
+      "findings. Ranks next actions by dogfood severity. Generates a readable memo. " +
+      "Supports LLM content generation via Gemini when webResults are provided.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        packetType: {
+          type: "string",
+          enum: ["weekly_reset", "pre_delegation", "important_change", "competitor_brief", "role_switch"],
+          description: "Type of artifact packet to produce",
+        },
+        daysBack: {
+          type: "number",
+          description: "How many days of history to include (default: 7)",
+        },
+        query: {
+          type: "string",
+          description: "Original user query — incorporated into the memo for context-specific output",
+        },
+        lens: {
+          type: "string",
+          description: "User role lens (founder, banker, operator, etc.) — shapes LLM content generation",
+        },
+        webResults: {
+          type: "array",
+          description: "Optional web search results for LLM content generation. Each item: {title, url, snippet}",
+          items: { type: "object", properties: { title: { type: "string" }, url: { type: "string" }, snippet: { type: "string" } } },
+        },
+      },
+      required: ["packetType"],
+    },
+    handler: async (args: { packetType: string; daysBack?: number; query?: string; lens?: string; webResults?: Array<{title: string; url: string; snippet: string}> }) => {
+      const packetType = args.packetType as FounderPacket["packetType"];
+      const ctx = gatherLocalContext(args.daysBack ?? 7);
+
+      // If web results provided + query exists, use LLM content generation
+      if (args.webResults && args.webResults.length > 0 && args.query) {
+        try {
+          const { synthesizeContent } = await import("./contentSynthesis.js");
+          const synthesis = await synthesizeContent({
+            query: args.query,
+            scenario: packetType === "pre_delegation" ? "delegation" : packetType as any,
+            lens: args.lens ?? "founder",
+            webResults: args.webResults,
+            localContext: {
+              mission: ctx.identity.claudeMdSnippet || undefined,
+              recentChanges: ctx.recentChanges.gitLogOneline.slice(0, 5),
+              contradictions: [],
+              signals: [],
+            },
+          });
+
+          const packet = synthesizePacket(ctx, packetType, args.query, args.webResults);
+          if (synthesis.content.length > 100) {
+            (packet as any).memo = synthesis.content;
+            (packet as any).llmGenerated = true;
+            (packet as any).entityNames = synthesis.entityNames;
+            (packet as any).keyFacts = synthesis.keyFacts;
+            (packet as any).sources = synthesis.sources;
+            (packet as any).synthesisTokens = synthesis.tokensUsed;
+            (packet as any).synthesisLatencyMs = synthesis.latencyMs;
+          }
+          return packet;
+        } catch {
+          // Fall through to static template
+        }
+      }
+
+      const packet = synthesizePacket(ctx, packetType, args.query, args.webResults);
+      return packet;
+    },
+  },
+
+  {
+    name: "founder_local_weekly_reset",
+    description:
+      "One-call convenience: gathers all local context and produces a complete " +
+      "weekly founder reset packet. No Convex, no external APIs needed.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        daysBack: {
+          type: "number",
+          description: "How many days of history to include (default: 7)",
+        },
+      },
+    },
+    handler: async (args: { daysBack?: number }) => {
+      const ctx = gatherLocalContext(args.daysBack ?? 7);
+      const packet = synthesizePacket(ctx, "weekly_reset");
+
+      try {
+        const db = getDb();
+        const now = new Date();
+        const m = now.getMonth() + 1;
+        const y = now.getFullYear();
+        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        db.prepare(
+          `INSERT OR IGNORE INTO tracking_milestones
+            (milestoneId, sessionId, timestamp, title, description, category, evidence, metrics, dayOfWeek, weekNumber, month, quarter, year)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ).run(
+          packet.packetId,
+          `pipeline_${Date.now()}`,
+          now.toISOString(),
+          "Weekly founder reset generated",
+          `Contradictions: ${packet.contradictions.length}, Next actions: ${packet.nextActions.length}, Signals: ${packet.signals.length}`,
+          "dogfood",
+          null,
+          JSON.stringify({ contradictions: packet.contradictions.length, nextActions: packet.nextActions.length }),
+          dayNames[now.getDay()],
+          Math.ceil((now.getTime() - new Date(y, 0, 1).getTime()) / 604800000),
+          `${y}-${String(m).padStart(2, "0")}`,
+          `${y}-Q${Math.ceil(m / 3)}`,
+          y,
+        );
+      } catch {
+        // Non-fatal
+      }
+
+      return packet;
+    },
+  },
 ];
