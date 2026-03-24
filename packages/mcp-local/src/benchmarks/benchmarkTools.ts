@@ -87,6 +87,19 @@ export const benchmarkTools: McpTool[] = [
         topRootCause: report.topRecurringRootCause,
         topRegressionRisk: report.topRegressionRisk,
         avgLatencyMs: Math.round(report.runs.reduce((s, r) => s + r.totalLatencyMs, 0) / Math.max(report.runs.length, 1)),
+        durability: report.durability ? {
+          completionStability: `${(report.durability.completionStability * 100).toFixed(0)}%`,
+          rerunSavings: `${(report.durability.rerunSavings * 100).toFixed(0)}%`,
+          artifactQuality: `${(report.durability.artifactQuality * 100).toFixed(0)}%`,
+          memoryUsefulness: `${(report.durability.memoryUsefulness * 100).toFixed(0)}%`,
+          driftResistance: `${(report.durability.driftResistance * 100).toFixed(0)}%`,
+          crossSessionContinuity: `${(report.durability.crossSessionContinuity * 100).toFixed(0)}%`,
+          composite: report.durability.composite,
+        } : null,
+        maturity: report.maturityLevel ? `${report.maturityLevel}: ${report.maturityLabel}` : null,
+        perturbations: report.perturbedRunCount > 0
+          ? `${report.perturbedPassCount}/${report.perturbedRunCount} perturbed runs passed`
+          : "no perturbations (N≤5)",
       };
     },
   },

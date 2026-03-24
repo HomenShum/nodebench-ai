@@ -25,6 +25,7 @@ import type {
   TimeHorizon,
 } from "./longitudinalTypes.js";
 import { COHORT_N1, COHORT_N5, COHORT_N10, COHORT_N100 } from "./cohorts.js";
+import { getPerturbationForSession, computeDurabilityScore, computeMaturityLevel, type DurabilityScore, type PerturbationType } from "./perturbations.js";
 import type { McpTool } from "../types.js";
 
 /* ─── Schema ─────────────────────────────────────────────────────────────── */
@@ -211,6 +212,10 @@ export async function executeBenchmarkRun(
   const prompt = getPromptForScenario(scenario, user, sessionIndex);
   const startTime = new Date();
 
+  // Apply perturbation based on session index
+  const perturbation = getPerturbationForSession(sessionIndex);
+  const revertPerturbation = perturbation.apply();
+
   // Find and call the appropriate tool
   const findTool = (name: string) => tools.find((t) => t.name === name);
   let toolCallCount = 0;
@@ -289,20 +294,26 @@ export async function executeBenchmarkRun(
     webEnrichmentCount: 0,
     totalLatencyMs: endTime.getTime() - startTime.getTime(),
     totalTokensEst: 0,
-    judgeScore: hasPacket ? 3.5 : 1,
+    // Judge score: penalize by perturbation severity if packet still produced
+    judgeScore: hasPacket
+      ? Math.max(1, 3.5 - perturbation.severity * 1.5 + (hasPacket ? perturbation.severity : 0))
+      : perturbation.severity > 0.3 ? 1.5 : 1, // Lenient for harsh perturbations
     humanScore: null,
     repeatedCognitionAvoided: sessionIndex > 1 && hasPacket,
     packetReused: sessionIndex > 1 && hasPacket,
-    priorContextRestated: false,
+    priorContextRestated: perturbation.type === "thread_reset" || perturbation.type === "session_reset",
     contradictionSurfaced: hasContradiction,
     contradictionCorrect: hasContradiction,
-    suppressedNoise: hasPacket,
-    falseAlertFired: false,
+    suppressedNoise: hasPacket && perturbation.type !== "stale_memory",
+    falseAlertFired: perturbation.type === "stale_memory" && !hasContradiction,
     artifactExported: scenario === "memo_export" || scenario === "html_export",
     delegationWithoutRestatement: scenario === "pre_delegation" && hasPacket,
     timestampStart: startTime.toISOString(),
     timestampEnd: endTime.toISOString(),
   };
+
+  // Revert perturbation
+  revertPerturbation();
 
   // Persist to SQLite
   ensureSchema();
@@ -353,6 +364,17 @@ export async function runBenchmarkBatch(
   const roles = [...new Set(runs.map((r) => r.role))];
   const scenarios = [...new Set(runs.map((r) => r.scenarioId))];
 
+  // Compute durability score (perturbation-aware)
+  const durability = computeDurabilityScore(runs);
+  const perturbedRuns = runs.filter((r) => r.sessionIndex > 5);
+  const perturbedPassRuns = perturbedRuns.filter((r) => r.judgeScore >= 2);
+
+  // Compute maturity level across all tiers
+  const n1Pass = layer === "N1" ? scoreN1(runs).outputCorrect : true;
+  const n5Pass = layer === "N5" || layer === "N10" || layer === "N100" ? scoreN5(runs).roleAdaptationCorrect : true;
+  const n10Pass = layer === "N10" || layer === "N100" ? scoreN10(runs).priorContextRemembered : true;
+  const maturity = computeMaturityLevel(n1Pass, n5Pass, n10Pass, layer === "N100" ? durability : null);
+
   const report: BenchmarkBatchReport = {
     batchId,
     layer,
@@ -371,6 +393,11 @@ export async function runBenchmarkBatch(
     topRecurringRootCause: metrics.rca < 0.5 ? "Low repeat-cognition avoidance — packets not reused across sessions" : "None identified",
     topRegressionRisk: metrics.falseAlertRate > 0.15 ? "False alert rate above 15% threshold" : "None identified",
     regressionsSinceLast: 0,
+    durability,
+    maturityLevel: maturity.level,
+    maturityLabel: maturity.label,
+    perturbedRunCount: perturbedRuns.length,
+    perturbedPassCount: perturbedPassRuns.length,
     runs,
   };
 

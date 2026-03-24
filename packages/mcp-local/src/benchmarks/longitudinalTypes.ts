@@ -185,6 +185,25 @@ export interface BenchmarkBatchReport {
   topRegressionRisk: string;
   regressionsSinceLast: number;
 
+  /** Durability scoring (perturbation-aware) */
+  durability: {
+    completionStability: number;
+    rerunSavings: number;
+    artifactQuality: number;
+    memoryUsefulness: number;
+    driftResistance: number;
+    crossSessionContinuity: number;
+    composite: number;
+  } | null;
+
+  /** Maturity level: A (smoke) → B (stable) → C (hardened) → D (durable) → E (institutional) */
+  maturityLevel: string | null;
+  maturityLabel: string | null;
+
+  /** Perturbation stats */
+  perturbedRunCount: number;
+  perturbedPassCount: number;
+
   /** Individual run summaries */
   runs: BenchmarkRun[];
 }
