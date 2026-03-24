@@ -105,27 +105,32 @@ export function createSearchRouter(tools: McpTool[]) {
     }
 
     // Multi-entity detection — check BEFORE single-entity competitor/company
+    // Also check competitor-style queries that mention multiple entities
+    const isCompetitorQuery = lq.includes("competitor") || lq.includes("versus") || lq.includes(" vs ")
+        || lq.includes("compare ") || lq.includes("competitive landscape") || lq.includes("compete with")
+        || lq.includes("supermemory");
     const multiEntities = extractMultipleEntities(query);
     if (multiEntities.length >= 2) {
       return { type: "multi_entity", entities: multiEntities, lens: "investor" };
     }
-
-    if (lq.includes("competitor") || lq.includes("supermemory") || lq.includes("versus") || lq.includes(" vs ")
-        || lq.includes("compare ") || lq.includes("competitive landscape") || lq.includes("compete with")) {
-      // Extract entity from competitor queries — try multiple patterns
-      const competitorPatterns = [
-        /(?:compete|competes) with\s+(.+?)(?:\?|$)/i,              // "compete with X and Y?"
-        /(?:competitor|competitive landscape)\s+(?:of|for|to)\s+(.+?)(?:\?|$)/i,
-        /(?:compare|versus|vs\.?)\s+(.+?)(?:\?|$)/i,
-        /(?:analyze|research)\s+(.+?)(?:\s+competitor|\?|$)/i,
-        /(?:how does)\s+(\w+)\s+(?:compete|compare|stack up)/i,    // "How does X compete"
-      ];
-      let compEntity: string | undefined;
-      for (const p of competitorPatterns) {
-        const m = query.match(p);
-        if (m?.[1]) { compEntity = m[1].trim().replace(/[?'"]/g, "").replace(/'s$/g, ""); break; }
+    // For competitor queries with "and" or "vs" that extractMultipleEntities missed,
+    // try extracting from the competitor clause specifically
+    if (isCompetitorQuery) {
+      const compClause = query.match(/(?:compete with|against|vs\.?|versus|compare)\s+(.+?)(?:\?|$)/i)?.[1]
+        ?? query.match(/(?:competitive landscape)[:\s]+(.+?)(?:\?|$)/i)?.[1]
+        ?? query.match(/(?:competitor.*?(?:against|with))\s+(.+?)(?:\?|$)/i)?.[1];
+      if (compClause) {
+        const parts = compClause.split(/\s*(?:,\s*(?:and\s+)?|,?\s+and\s+|\s+vs\.?\s+|\s+versus\s+|\s*&\s*|\s+or\s+)\s*/i)
+          .map(p => p.trim().replace(/[?'"]/g, "").replace(/['\u2019]s$/g, ""))
+          .filter(p => p.length > 1 && /^[a-zA-Z]/.test(p));
+        if (parts.length >= 2) {
+          return { type: "multi_entity", entities: parts, lens: "investor" };
+        }
       }
-      return { type: "competitor", entity: compEntity, lens: "researcher" };
+      // Single competitor — extract the primary entity being compared
+      const singleEntity = query.match(/(?:how does)\s+(\w+)\s+(?:compete|compare|stack up)/i)?.[1]
+        ?? query.match(/(\w+)\s+competitor/i)?.[1];
+      return { type: "competitor", entity: singleEntity, lens: "researcher" };
     }
 
     // Skip company search if the query is about user's own documents/uploads or is a general strategic question

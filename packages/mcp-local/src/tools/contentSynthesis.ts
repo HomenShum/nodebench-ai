@@ -48,21 +48,32 @@ const SCENARIO_PROMPTS: Record<string, string> = {
 5. **Risks** — what could go wrong, red flags, dependencies
 6. **Next Questions** — 3 questions a {lens} would ask next`,
 
-  competitor_brief: `You are a {lens} comparing competitors. Produce a competitive intelligence brief:
-1. **Competitive Landscape** — who the key players are and what they own
-2. **Moats & Differentiators** — what each competitor does uniquely well
-3. **Distribution Advantages** — how each goes to market
-4. **Vulnerabilities** — where each is weak
-5. **What to Absorb** — best practices worth adopting
-6. **What to Avoid** — traps and losing strategies
-7. **Strategic Recommendation** — clear positioning advice`,
+  competitor_brief: `You are a {lens} comparing competitors. Produce a competitive intelligence brief.
 
-  important_change: `You are a {lens} monitoring for important changes. Produce a change digest:
-1. **Timeline** — dated list of significant changes (use actual dates from sources)
-2. **Impact Assessment** — which changes matter and why
-3. **Contradictions** — any inconsistencies between what's said and what's happening
-4. **Trigger Analysis** — what caused these changes
-5. **Action Required** — what should be done in response`,
+CRITICAL: Name every competitor explicitly by company name. Never say "Competitor A" — use real names.
+
+1. **Competitive Landscape** — name each key player, their market category, and what they own
+2. **Moats & Differentiators** — for each named competitor, what they do uniquely well
+3. **Distribution Advantages** — how each named competitor goes to market (plugin ecosystem, enterprise sales, developer community, etc.)
+4. **Vulnerabilities** — where each named competitor is weak. Be specific about technical, market, or strategic gaps.
+5. **What to Absorb** — specific practices from named competitors worth adopting
+6. **What to Avoid** — specific strategies from named competitors that are traps
+7. **Strategic Recommendation** — clear positioning advice relative to the named competitors
+
+For a banker: focus on financial moats, market share, revenue quality, credit implications.
+For an investor: focus on growth trajectory, TAM, competitive dynamics, deal implications.
+For a researcher: focus on methodology differences, benchmark results, technical approaches.`,
+
+  important_change: `You are a {lens} monitoring for important changes. Produce a detailed change digest.
+
+ALWAYS include these sections:
+1. **Timeline of Changes** — dated list with specific dates from sources. Reference deployments, releases, incidents, regulatory updates, or market shifts as relevant.
+2. **Impact Assessment** — which changes matter and why. Include severity ratings. For operators: correlate deployments with incidents, flag rollback candidates. For legal: flag regulatory changes. For investors: flag valuation-affecting changes.
+3. **Contradictions & Alerts** — any inconsistencies, stale alerts, unacknowledged issues. Include age/duration of each alert if applicable. Flag anything unresolved for >24 hours.
+4. **Trigger Analysis** — root causes. What caused these changes? Reference specific commits, PRs, announcements, or filings.
+5. **Action Required** — specific escalation paths, workarounds, remediation steps. Suggest who should be notified and what the next diagnostic step is.
+
+You MUST be specific to the {lens} role. An operator cares about deployments, uptime, incidents, rollbacks. A banker cares about credit events, covenant breaches, risk rating shifts. A legal analyst cares about regulatory changes, compliance gaps, contractual deadlines. A researcher cares about methodology shifts, retractions, consensus changes.`,
 
   delegation: `You are a {lens} creating a delegation brief. Produce a scoped handoff packet:
 1. **Objective** — what the delegate should accomplish
