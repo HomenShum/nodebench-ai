@@ -208,7 +208,7 @@ function structuralCheck(queryDef: typeof TEST_CORPUS[0], response: any, latency
 
 /* ─── Gemini Flash Lite Judge ──────────────────────────────────────────────── */
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.1-flash-lite-preview";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 interface GeminiJudgeResult {
