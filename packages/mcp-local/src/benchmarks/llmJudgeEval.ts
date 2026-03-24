@@ -621,8 +621,20 @@ async function executeQueryTools(
     }
   }
 
-  // 2. Execute each expected tool (simulate the tool chain an agent would follow)
-  for (const toolName of query.expectedTools) {
+  // 2. Build effective tool list — auto-add founder_local_synthesize for scenarios
+  //    that need rich output but only have discover_tools in expectedTools
+  const effectiveTools = [...query.expectedTools];
+  const hasSynthesizer = effectiveTools.includes("founder_local_synthesize");
+  if (!hasSynthesizer) {
+    // Always add synthesizer for scenarios that need structured packets
+    const needsSynthesizer = ["role_switch", "important_change", "competitor_brief", "delegation", "memo_export", "packet_diff"];
+    if (needsSynthesizer.includes(query.scenario)) {
+      effectiveTools.push("founder_local_synthesize");
+    }
+  }
+
+  // 3. Execute each expected tool (simulate the tool chain an agent would follow)
+  for (const toolName of effectiveTools) {
     if (toolName === "discover_tools") continue; // already called
     const tool = findTool(allTools, toolName);
     if (tool) {
