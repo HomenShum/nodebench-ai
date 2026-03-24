@@ -153,22 +153,41 @@ const SEED_PREFIX = "eval_seed_";
 /** Ensure all required tables exist (they're normally created by tool handlers) */
 function ensureToolSchemas(): void {
   const db = getDb();
+  // Match ACTUAL schemas created by tool handlers (not idealized schemas)
+  // causal_events: id, userId, eventType, payload, createdAt
+  // causal_important_changes: id, changeId, changeCategory, impactScore, impactReason, affectedEntities, suggestedAction, status, timestampMs, createdAt
+  // founder_packets: id, entityId, scenarioId, userId, createdAt
+  // causal_state_diffs: id, diffId, entityType, entityId, changeType, beforeState, afterState, changedFields, reason, timestampMs, createdAt
+  // tracking_actions: id, actionId, sessionId, timestamp, action, category, beforeState, afterState, reasoning, filesChanged, impactLevel, dayOfWeek, weekNumber, month, quarter, year
+  // session_summaries: id, summaryId, sessionId, sessionSummary, activeEntities, openIntents, packetState, unresolvedItems, lastAction, sessionDurationMs, toolCallCount, keyDecisions, createdAt, timestampMs
+  // intent_residuals: id, intentId, intent, status, context, createdAt, updatedAt
   db.exec(`
     CREATE TABLE IF NOT EXISTS causal_events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      eventId TEXT UNIQUE NOT NULL,
+      userId TEXT,
       eventType TEXT NOT NULL,
-      actorType TEXT NOT NULL,
-      entityType TEXT NOT NULL,
-      entityId TEXT NOT NULL,
-      summary TEXT NOT NULL,
-      details TEXT,
-      causedByEventId TEXT,
-      correlationId TEXT,
+      payload TEXT,
+      createdAt TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS causal_important_changes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      changeId TEXT UNIQUE NOT NULL,
+      changeCategory TEXT NOT NULL,
+      impactScore REAL NOT NULL,
+      impactReason TEXT NOT NULL,
+      affectedEntities TEXT NOT NULL,
+      suggestedAction TEXT,
+      status TEXT NOT NULL DEFAULT 'detected',
       timestampMs INTEGER NOT NULL,
       createdAt TEXT NOT NULL
     );
-
+    CREATE TABLE IF NOT EXISTS founder_packets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entityId TEXT,
+      scenarioId TEXT,
+      userId TEXT,
+      createdAt TEXT NOT NULL DEFAULT (datetime('now'))
+    );
     CREATE TABLE IF NOT EXISTS causal_state_diffs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       diffId TEXT UNIQUE NOT NULL,
@@ -182,29 +201,6 @@ function ensureToolSchemas(): void {
       timestampMs INTEGER NOT NULL,
       createdAt TEXT NOT NULL
     );
-
-    CREATE TABLE IF NOT EXISTS causal_important_changes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      changeId TEXT UNIQUE NOT NULL,
-      changeCategory TEXT NOT NULL,
-      impactScore REAL NOT NULL,
-      impactReason TEXT NOT NULL,
-      affectedEntities TEXT NOT NULL,
-      suggestedAction TEXT,
-      status TEXT NOT NULL DEFAULT 'detected',
-      timestampMs INTEGER NOT NULL,
-      createdAt TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS founder_packets (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      packetId    TEXT UNIQUE NOT NULL,
-      entityId    TEXT NOT NULL,
-      packetType  TEXT NOT NULL,
-      packetJson  TEXT NOT NULL,
-      createdAt   TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-
     CREATE TABLE IF NOT EXISTS tracking_actions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       actionId TEXT UNIQUE NOT NULL,
@@ -223,7 +219,6 @@ function ensureToolSchemas(): void {
       quarter TEXT NOT NULL,
       year INTEGER NOT NULL
     );
-
     CREATE TABLE IF NOT EXISTS session_summaries (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       summaryId TEXT UNIQUE NOT NULL,
@@ -240,7 +235,6 @@ function ensureToolSchemas(): void {
       createdAt TEXT NOT NULL,
       timestampMs INTEGER NOT NULL
     );
-
     CREATE TABLE IF NOT EXISTS intent_residuals (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       intentId TEXT UNIQUE NOT NULL,
@@ -265,23 +259,23 @@ function seedTestData(): void {
   const monthAgo = now - 30 * 86_400_000;
   const seedCorrelation = "eval_seed_corr_001";
 
-  // ── 10 causal_events ──
-  const events: Array<{ eventId: string; eventType: string; actorType: string; entityType: string; entityId: string; summary: string; details: string; causedByEventId: string | null; correlationId: string | null; timestampMs: number; createdAt: string }> = [
-    { eventId: `${SEED_PREFIX}evt_001`, eventType: "search", actorType: "agent", entityType: "company", entityId: "nodebench", summary: "Researched competitor landscape for Q1 2026 strategy review", details: JSON.stringify({ query: "competitor analysis", results: 12 }), causedByEventId: null, correlationId: seedCorrelation, timestampMs: dayAgo, createdAt: iso },
-    { eventId: `${SEED_PREFIX}evt_002`, eventType: "change", actorType: "agent", entityType: "product", entityId: "nodebench", summary: "Updated product positioning to emphasize local-first architecture", details: JSON.stringify({ field: "positioning", old: "cloud-native", new: "local-first" }), causedByEventId: `${SEED_PREFIX}evt_001`, correlationId: seedCorrelation, timestampMs: dayAgo + 3600_000, createdAt: iso },
-    { eventId: `${SEED_PREFIX}evt_003`, eventType: "contradiction", actorType: "agent", entityType: "strategy", entityId: "nodebench", summary: "Contradiction detected: burn rate increasing while runway target unchanged", details: JSON.stringify({ claim1: "reduce burn by 15%", claim2: "hire 3 more engineers" }), causedByEventId: null, correlationId: seedCorrelation, timestampMs: dayAgo + 7200_000, createdAt: iso },
-    { eventId: `${SEED_PREFIX}evt_004`, eventType: "packet.generated", actorType: "agent", entityType: "packet", entityId: "nodebench", summary: "Generated weekly reset packet covering March 17-24 2026", details: JSON.stringify({ packetType: "weekly_reset", period: "2026-03-17 to 2026-03-24" }), causedByEventId: null, correlationId: seedCorrelation, timestampMs: weekAgo, createdAt: iso },
-    { eventId: `${SEED_PREFIX}evt_005`, eventType: "search", actorType: "user", entityType: "company", entityId: "stripe", summary: "Searched for Stripe payment infrastructure changes and API updates in March 2026", details: JSON.stringify({ target: "Stripe", focus: "API changes" }), causedByEventId: null, correlationId: null, timestampMs: weekAgo + 86_400_000, createdAt: iso },
-    { eventId: `${SEED_PREFIX}evt_006`, eventType: "change", actorType: "agent", entityType: "competitive", entityId: "linear", summary: "Linear released AI-powered backlog grooming feature, directly competing with NodeBench workflow tools", details: JSON.stringify({ competitor: "Linear", feature: "AI backlog grooming" }), causedByEventId: null, correlationId: null, timestampMs: twoWeeksAgo, createdAt: iso },
-    { eventId: `${SEED_PREFIX}evt_007`, eventType: "search", actorType: "agent", entityType: "company", entityId: "anthropic", summary: "Researched Anthropic Series D funding round at $15B valuation with $2B raised", details: JSON.stringify({ funding: "$2B", valuation: "$15B" }), causedByEventId: null, correlationId: null, timestampMs: twoWeeksAgo + 86_400_000, createdAt: iso },
-    { eventId: `${SEED_PREFIX}evt_008`, eventType: "packet.generated", actorType: "agent", entityType: "packet", entityId: "nodebench", summary: "Generated competitor brief comparing NodeBench vs Linear vs Notion for March 2026", details: JSON.stringify({ packetType: "competitor_brief", competitors: ["Linear", "Notion", "Cursor"] }), causedByEventId: `${SEED_PREFIX}evt_006`, correlationId: seedCorrelation, timestampMs: twoWeeksAgo + 2 * 86_400_000, createdAt: iso },
-    { eventId: `${SEED_PREFIX}evt_009`, eventType: "change", actorType: "user", entityType: "delegation", entityId: "nodebench", summary: "Delegated auth refactor to engineering lead with 2-week deadline and clear success criteria", details: JSON.stringify({ task: "auth refactor", delegate: "engineering lead", deadline: "2 weeks" }), causedByEventId: null, correlationId: null, timestampMs: weekAgo + 2 * 86_400_000, createdAt: iso },
-    { eventId: `${SEED_PREFIX}evt_010`, eventType: "search", actorType: "agent", entityType: "market", entityId: "ai-tools", summary: "Market scan of AI developer tools sector showing 340% YoY growth in MCP adoption", details: JSON.stringify({ sector: "AI developer tools", metric: "340% YoY MCP adoption growth" }), causedByEventId: null, correlationId: null, timestampMs: monthAgo, createdAt: iso },
+  // ── 10 causal_events (actual schema: userId, eventType, payload, createdAt) ──
+  const events = [
+    { userId: `${SEED_PREFIX}agent`, eventType: "search", payload: JSON.stringify({ entityId: "nodebench", summary: "Researched competitor landscape for Q1 2026 strategy review", results: 12 }), createdAt: iso },
+    { userId: `${SEED_PREFIX}agent`, eventType: "change", payload: JSON.stringify({ entityId: "nodebench", summary: "Updated product positioning to local-first architecture", field: "positioning" }), createdAt: iso },
+    { userId: `${SEED_PREFIX}agent`, eventType: "contradiction", payload: JSON.stringify({ entityId: "nodebench", summary: "Burn rate increasing while runway target unchanged", claim1: "reduce burn 15%", claim2: "hire 3 engineers" }), createdAt: iso },
+    { userId: `${SEED_PREFIX}agent`, eventType: "packet.generated", payload: JSON.stringify({ entityId: "nodebench", summary: "Weekly reset packet March 17-24 2026", packetType: "weekly_reset" }), createdAt: iso },
+    { userId: `${SEED_PREFIX}user`, eventType: "search", payload: JSON.stringify({ entityId: "stripe", summary: "Stripe payment infrastructure changes March 2026" }), createdAt: iso },
+    { userId: `${SEED_PREFIX}agent`, eventType: "change", payload: JSON.stringify({ entityId: "linear", summary: "Linear AI backlog grooming feature competing with NodeBench" }), createdAt: iso },
+    { userId: `${SEED_PREFIX}agent`, eventType: "search", payload: JSON.stringify({ entityId: "anthropic", summary: "Anthropic Series D $15B valuation $2B raised", funding: "$2B", valuation: "$15B" }), createdAt: iso },
+    { userId: `${SEED_PREFIX}agent`, eventType: "packet.generated", payload: JSON.stringify({ entityId: "nodebench", summary: "Competitor brief NodeBench vs Linear vs Notion March 2026", competitors: ["Linear", "Notion", "Cursor"] }), createdAt: iso },
+    { userId: `${SEED_PREFIX}user`, eventType: "change", payload: JSON.stringify({ entityId: "nodebench", summary: "Delegated auth refactor to engineering lead 2-week deadline" }), createdAt: iso },
+    { userId: `${SEED_PREFIX}agent`, eventType: "search", payload: JSON.stringify({ entityId: "ai-tools", summary: "AI developer tools sector 340% YoY MCP adoption growth" }), createdAt: iso },
   ];
 
-  const insertEvent = db.prepare(`INSERT OR IGNORE INTO causal_events (eventId, eventType, actorType, entityType, entityId, summary, details, causedByEventId, correlationId, timestampMs, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  const insertEvent = db.prepare(`INSERT INTO causal_events (userId, eventType, payload, createdAt) VALUES (?, ?, ?, ?)`);
   for (const e of events) {
-    insertEvent.run(e.eventId, e.eventType, e.actorType, e.entityType, e.entityId, e.summary, e.details, e.causedByEventId, e.correlationId, e.timestampMs, e.createdAt);
+    insertEvent.run(e.userId, e.eventType, e.payload, e.createdAt);
   }
 
   // ── 5 causal_important_changes ──
@@ -298,59 +292,16 @@ function seedTestData(): void {
     insertChange.run(c.changeId, c.changeCategory, c.impactScore, c.impactReason, c.affectedEntities, c.suggestedAction, c.status, c.timestampMs, c.createdAt);
   }
 
-  // ── 3 founder_packets ──
-  const packets: Array<{ packetId: string; entityId: string; packetType: string; packetJson: string; createdAt: string }> = [
-    {
-      packetId: `${SEED_PREFIX}pkt_001`, entityId: "nodebench", packetType: "weekly_reset",
-      packetJson: JSON.stringify({
-        period: "2026-03-17 to 2026-03-24",
-        whatChanged: [
-          { description: "Shipped tiered context injection for message 1000 retention", impact: "high" },
-          { description: "Perturbation-aware longitudinal benchmark added to eval harness", impact: "medium" },
-          { description: "Linear launched competing AI backlog feature", impact: "high" },
-        ],
-        nextActions: [
-          { action: "Patch WebSocket gateway auth vulnerability", priority: "P0" },
-          { action: "Publish MCP developer docs for gateway", priority: "P1" },
-          { action: "Run competitive analysis against Linear AI features", priority: "P1" },
-        ],
-        signals: [{ name: "MCP adoption", value: "50,000 daily active servers", trend: "up" }, { name: "Burn rate", value: "$42K/month", trend: "up" }],
-        contradictions: [{ claim: "Reduce burn by 15% this quarter while hiring 3 engineers" }],
-      }),
-      createdAt: new Date(dayAgo).toISOString(),
-    },
-    {
-      packetId: `${SEED_PREFIX}pkt_002`, entityId: "nodebench", packetType: "competitor_brief",
-      packetJson: JSON.stringify({
-        competitors: [
-          { name: "Linear", moat: "Speed and keyboard-first UX", threat: "AI backlog grooming overlaps with NodeBench workflow tools", marketPosition: "Series B, $50M ARR" },
-          { name: "Notion", moat: "Network effects and content platform", threat: "Notion AI expanding into structured data analysis", marketPosition: "IPO-track, $200M+ ARR" },
-          { name: "Cursor", moat: "IDE-native AI with deep code context", threat: "MCP integration could subsume NodeBench developer tools", marketPosition: "Series A, rapid growth" },
-        ],
-        ourPositioning: "Local-first operating memory for agent-native businesses with 346-tool MCP server",
-        keyDifferentiators: ["Local-first privacy", "346 specialized tools", "Progressive discovery", "Persona presets"],
-        recommendedActions: ["Accelerate tool discovery UX", "Ship decision memo sharing", "Launch enterprise pilot"],
-      }),
-      createdAt: new Date(weekAgo).toISOString(),
-    },
-    {
-      packetId: `${SEED_PREFIX}pkt_003`, entityId: "nodebench", packetType: "pre_delegation",
-      packetJson: JSON.stringify({
-        task: "Auth refactor for WebSocket gateway",
-        delegate: "Engineering Lead",
-        context: "Current auth flow has a bypass vulnerability. Need to implement proper JWT validation, rate limiting per key, and session isolation.",
-        successCriteria: ["Zero auth bypass paths in security audit", "< 5ms auth overhead per request", "100% backward compatibility with existing API keys"],
-        deadline: "2026-04-07",
-        resources: ["server/mcpAuth.ts", "server/mcpGateway.ts", "server/mcpSession.ts"],
-        risks: ["Breaking existing client integrations", "Performance regression under load"],
-      }),
-      createdAt: new Date(weekAgo + 2 * 86_400_000).toISOString(),
-    },
+  // ── 3 founder_packets (actual schema: entityId, scenarioId, userId, createdAt) ──
+  const packets = [
+    { entityId: `${SEED_PREFIX}nodebench`, scenarioId: "weekly_reset", userId: `${SEED_PREFIX}agent`, createdAt: new Date(dayAgo).toISOString() },
+    { entityId: `${SEED_PREFIX}nodebench`, scenarioId: "competitor_brief", userId: `${SEED_PREFIX}agent`, createdAt: new Date(weekAgo).toISOString() },
+    { entityId: `${SEED_PREFIX}nodebench`, scenarioId: "pre_delegation", userId: `${SEED_PREFIX}agent`, createdAt: new Date(weekAgo + 2 * 86_400_000).toISOString() },
   ];
 
-  const insertPacket = db.prepare(`INSERT OR IGNORE INTO founder_packets (packetId, entityId, packetType, packetJson, createdAt) VALUES (?, ?, ?, ?, ?)`);
+  const insertPacket = db.prepare(`INSERT INTO founder_packets (entityId, scenarioId, userId, createdAt) VALUES (?, ?, ?, ?)`);
   for (const p of packets) {
-    insertPacket.run(p.packetId, p.entityId, p.packetType, p.packetJson, p.createdAt);
+    insertPacket.run(p.entityId, p.scenarioId, p.userId, p.createdAt);
   }
 
   // ── 3 causal_state_diffs ──
@@ -409,9 +360,9 @@ function cleanupTestData(): void {
   const db = getDb();
   const prefix = `${SEED_PREFIX}%`;
   try {
-    db.exec(`DELETE FROM causal_events WHERE eventId LIKE '${prefix}'`);
+    db.exec(`DELETE FROM causal_events WHERE userId LIKE '${prefix}'`);
     db.exec(`DELETE FROM causal_important_changes WHERE changeId LIKE '${prefix}'`);
-    db.exec(`DELETE FROM founder_packets WHERE packetId LIKE '${prefix}'`);
+    db.exec(`DELETE FROM founder_packets WHERE entityId LIKE '${prefix}'`);
     db.exec(`DELETE FROM causal_state_diffs WHERE diffId LIKE '${prefix}'`);
     db.exec(`DELETE FROM tracking_actions WHERE actionId LIKE '${prefix}'`);
     db.exec(`DELETE FROM session_summaries WHERE summaryId LIKE '${prefix}'`);
@@ -930,12 +881,46 @@ async function executeQueryTools(
     }
   }
 
-  // 2b. Scenario-specific seeding: seed data before tools that need prior state
+  // 2b. Web enrichment: fetch live web data for scenarios that need entity-specific content
+  let webResults: Array<{title: string; url: string; snippet: string}> = [];
+  const webEnrichScenarios = ["company_search", "competitor_brief", "important_change"];
+  if (webEnrichScenarios.includes(query.scenario)) {
+    const webSearchTool = findTool(allTools, "web_search");
+    if (webSearchTool) {
+      try {
+        const webResult = await callTool(webSearchTool, { query: query.query, maxResults: 5, provider: "gemini" });
+        totalMs += webResult.ms;
+        if (webResult.ok && webResult.result) {
+          // Extract search results from tool output
+          const raw = webResult.result as any;
+          if (Array.isArray(raw?.results)) {
+            webResults = raw.results.slice(0, 5);
+          } else if (Array.isArray(raw)) {
+            webResults = raw.slice(0, 5);
+          } else if (raw?.content) {
+            // MCP content block format
+            try {
+              const text = Array.isArray(raw.content) ? raw.content.map((b: any) => b.text).join("") : String(raw.content);
+              const parsed = JSON.parse(text);
+              if (Array.isArray(parsed?.results)) webResults = parsed.results.slice(0, 5);
+              else if (Array.isArray(parsed)) webResults = parsed.slice(0, 5);
+            } catch { /* not JSON */ }
+          }
+          if (webResults.length > 0) {
+            toolsFired.push("web_search");
+            outputs["web_search"] = webResults.map(r => `${r.title}: ${r.snippet} (${r.url})`).join("\n");
+          }
+        }
+      } catch { /* web search unavailable — continue without */ }
+    }
+  }
+
+  // 2c. Scenario-specific seeding: seed data before tools that need prior state
   if (query.scenario === "competitor_brief") {
-    // Seed with query-specific competitor brief via founder_local_synthesize
+    // Seed with query-specific competitor brief via founder_local_synthesize + web results
     const synthTool = findTool(allTools, "founder_local_synthesize");
     if (synthTool && !toolsFired.includes("founder_local_synthesize")) {
-      const seedResult = await callTool(synthTool, { packetType: "competitor_brief", daysBack: 7, query: query.query });
+      const seedResult = await callTool(synthTool, { packetType: "competitor_brief", daysBack: 7, query: query.query, webResults });
       totalMs += seedResult.ms;
       if (seedResult.ok) {
         toolsFired.push("founder_local_synthesize");
@@ -948,7 +933,7 @@ async function executeQueryTools(
     // Seed with an important_change packet that shows what changed (our best before/after proxy)
     const synthTool = findTool(allTools, "founder_local_synthesize");
     if (synthTool && !toolsFired.includes("founder_local_synthesize")) {
-      const seedResult = await callTool(synthTool, { packetType: "important_change", daysBack: 14, query: query.query });
+      const seedResult = await callTool(synthTool, { packetType: "important_change", daysBack: 14, query: query.query, webResults });
       totalMs += seedResult.ms;
       if (seedResult.ok) {
         toolsFired.push("founder_local_synthesize");
@@ -987,8 +972,11 @@ async function executeQueryTools(
 
     const tool = findTool(allTools, toolName);
     if (tool) {
-      // Build minimal args based on tool name patterns
+      // Build minimal args based on tool name patterns, inject webResults for synthesize
       const args = buildMinimalArgs(toolName, query);
+      if (toolName === "founder_local_synthesize" && webResults.length > 0) {
+        (args as any).webResults = webResults;
+      }
       const result = await callTool(tool, args);
       totalMs += result.ms;
       if (result.ok) {

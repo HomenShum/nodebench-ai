@@ -284,6 +284,7 @@ function synthesizePacket(
   ctx: GatheredContext,
   packetType: "weekly_reset" | "pre_delegation" | "important_change" | "competitor_brief" | "role_switch",
   originalQuery?: string,
+  webResults?: Array<{title: string; url: string; snippet: string}>,
 ): FounderPacket {
   const packetId = genId("pkt");
 
@@ -510,6 +511,14 @@ function synthesizePacket(
       `Own: causal memory, before/after state, packets/artifacts, role overlays, trajectory`,
       `Avoid: competing directly on raw memory API or universal connector layer`,
     );
+    // Inject web enrichment if available
+    if (webResults && webResults.length > 0) {
+      memoLines.push(
+        ``,
+        `## Web Intelligence (${webResults.length} sources)`,
+        ...webResults.slice(0, 8).map((r, i) => `${i + 1}. **${r.title}**\n   ${r.snippet}\n   Source: ${r.url}`),
+      );
+    }
   } else if (packetType === "role_switch") {
     memoLines.push(
       `## Current Identity`,
@@ -615,6 +624,15 @@ function synthesizePacket(
     );
   }
 
+  // Inject web enrichment for ANY packet type if available
+  if (webResults && webResults.length > 0 && packetType !== "competitor_brief") {
+    memoLines.push(
+      ``,
+      `## Web Intelligence (${webResults.length} sources)`,
+      ...webResults.slice(0, 8).map((r, i) => `${i + 1}. **${r.title}**\n   ${r.snippet}\n   Source: ${r.url}`),
+    );
+  }
+
   return {
     packetId,
     packetType,
@@ -717,13 +735,18 @@ export const founderLocalPipelineTools: McpTool[] = [
           type: "string",
           description: "Original user query — incorporated into the memo for context-specific output",
         },
+        webResults: {
+          type: "array",
+          description: "Optional web search results to enrich the packet (from web_search tool). Each item: {title, url, snippet}",
+          items: { type: "object", properties: { title: { type: "string" }, url: { type: "string" }, snippet: { type: "string" } } },
+        },
       },
       required: ["packetType"],
     },
-    handler: async (args: { packetType: string; daysBack?: number; query?: string }) => {
+    handler: async (args: { packetType: string; daysBack?: number; query?: string; webResults?: Array<{title: string; url: string; snippet: string}> }) => {
       const packetType = args.packetType as FounderPacket["packetType"];
       const ctx = gatherLocalContext(args.daysBack ?? 7);
-      const packet = synthesizePacket(ctx, packetType, args.query);
+      const packet = synthesizePacket(ctx, packetType, args.query, args.webResults);
       return packet;
     },
   },

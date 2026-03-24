@@ -168,10 +168,15 @@ export function createSearchRouter(tools: McpTool[]) {
         case "competitor": {
           const entityName = classification.entity ?? query.trim().split(/\s+/).slice(0, 3).join(" ");
 
-          // Run recon + local context in parallel
+          // Run web_search + recon + local context in parallel
+          const webTrace = traceStep("tool_call", "web_search");
           const reconTrace = traceStep("tool_call", "run_recon");
           const gatherTrace = traceStep("tool_call", "founder_local_gather");
-          const [reconResult, localCtx] = await Promise.all([
+          const [webResult, reconResult, localCtx] = await Promise.all([
+            callTool("web_search", {
+              query: `${entityName} company overview strategy funding ${new Date().getFullYear()}`,
+              maxResults: 8,
+            }).then(r => { webTrace.ok(`${(r as any)?.resultCount ?? 0} results`); return r; }).catch(() => { webTrace.error("web_search failed"); return null; }),
             callTool("run_recon", {
               target: entityName,
               focus: query.trim(),
@@ -179,79 +184,141 @@ export function createSearchRouter(tools: McpTool[]) {
             callTool("founder_local_gather", { daysBack: daysBack ?? 7 }).then(r => { gatherTrace.ok(); return r; }).catch(() => { gatherTrace.error("gather failed"); return null; }),
           ]);
 
-          // Map to ResultPacket-compatible shape so the frontend can render it
+          const web = webResult as any;
           const recon = reconResult as any;
           const local = localCtx as any;
 
-          // Extract structured data from recon result
-          const sources = recon?.plan?.sources ?? recon?.sources ?? [];
-          const findings = recon?.findings ?? [];
+          // Extract data from web search results
+          const webResults = web?.results ?? [];
+          const webSnippets = webResults.map((r: any) => r.snippet ?? r.description ?? "").filter(Boolean);
+          const webSummary = webSnippets.slice(0, 3).join(" ").slice(0, 800);
+          const webSources = webResults.map((r: any) => r.url ?? r.link).filter(Boolean);
+
+          // Extract data from recon
+          const reconSources = recon?.plan?.sources ?? recon?.sources ?? [];
+          const reconFindings = recon?.findings ?? [];
           const competitors = recon?.competitors ?? recon?.comparables ?? [];
 
-          // Build canonicalEntity + memo structure the frontend expects
-          // When recon/gather return empty data, generate meaningful defaults
-          const mappedFindings = findings.slice(0, 5).map((f: any) => ({
-            description: typeof f === "string" ? f : f.summary ?? f.title ?? String(f),
-            date: f.date ?? new Date().toISOString().slice(0, 10),
-          }));
-          const mappedSignals = sources.slice(0, 5).map((s: any, i: number) => ({
-            name: typeof s === "string" ? s : s.name ?? s.source ?? String(s),
-            direction: "neutral" as const,
-            impact: (i < 2 ? "high" : "medium") as "high" | "medium",
-          }));
-          const mappedRisks = (recon?.risks ?? recon?.contradictions ?? []).slice(0, 3).map((r: any) => ({
-            claim: typeof r === "string" ? r : r.title ?? r.claim ?? String(r),
-            evidence: typeof r === "string" ? "" : r.description ?? r.evidence ?? "",
+          // Use Gemini to extract structured entity intelligence from web results
+          let geminiExtracted: any = null;
+          if (webSnippets.length > 0 && process.env.GEMINI_API_KEY) {
+            const extractTrace = traceStep("llm_extract", "gemini-3.1-flash-lite-preview");
+            try {
+              const geminiResp = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${process.env.GEMINI_API_KEY}`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    contents: [{ parts: [{ text: `Extract structured entity intelligence from these web search results about "${entityName}" for a ${resolvedLens} user.
+
+WEB RESULTS:
+${webSnippets.slice(0, 5).join("\n\n")}
+
+Return ONLY valid JSON with these fields:
+{
+  "summary": "2-3 sentence description of ${entityName}",
+  "signals": [{"name": "signal name", "direction": "up|down|neutral", "impact": "high|medium|low"}],
+  "changes": [{"description": "what changed", "date": "YYYY-MM-DD or null"}],
+  "risks": [{"title": "risk title", "description": "risk description"}],
+  "comparables": [{"name": "competitor name", "relevance": "high|medium|low", "note": "why relevant"}],
+  "metrics": [{"label": "metric name", "value": "metric value"}]
+}` }] }],
+                    generationConfig: { temperature: 0.1, maxOutputTokens: 1500, responseMimeType: "application/json" },
+                  }),
+                  signal: AbortSignal.timeout(10_000),
+                },
+              );
+              if (geminiResp.ok) {
+                const gJson = await geminiResp.json() as any;
+                const gText = gJson?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (gText) {
+                  const cleaned = gText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+                  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+                  if (jsonMatch) {
+                    geminiExtracted = JSON.parse(jsonMatch[0].replace(/,\s*([\]}])/g, "$1"));
+                  }
+                }
+              }
+              extractTrace.ok(`extracted ${geminiExtracted ? "ok" : "empty"}`);
+            } catch { extractTrace.error("gemini extraction failed"); }
+          }
+
+          // Merge all sources: gemini extracted > recon > web > defaults
+          const ge = geminiExtracted ?? {};
+
+          const mergedSignals = (ge.signals ?? []).slice(0, 5).map((s: any, i: number) => ({
+            name: s.name ?? `${entityName} signal ${i + 1}`,
+            direction: s.direction ?? "neutral",
+            impact: s.impact ?? (i < 2 ? "high" : "medium"),
           }));
 
-          // Default signals when recon returns nothing — must be entity-specific
-          const defaultSignals = [
-            { name: `${entityName} market positioning and competitive stance`, direction: "neutral" as const, impact: "high" as const },
-            { name: `${entityName} competitive landscape and key rivals`, direction: "neutral" as const, impact: "high" as const },
-            { name: `${entityName} revenue trajectory and growth signals`, direction: "neutral" as const, impact: "medium" as const },
-            { name: `${entityName} team strength and leadership depth`, direction: "neutral" as const, impact: "medium" as const },
-          ];
-          const defaultChanges = [
-            { description: `Research initiated for ${entityName} — initial entity profile created`, date: new Date().toISOString().slice(0, 10) },
-            { description: `${entityName} queued for web enrichment — upload documents or connect agents for deeper ${entityName}-specific intelligence`, date: new Date().toISOString().slice(0, 10) },
-          ];
-          const defaultRisks = [
-            { claim: `${entityName} data depth is limited — enrichment recommended`, evidence: `Initial search for ${entityName} returned limited structured data. Upload ${entityName}-related documents, connect agents, or run a deeper recon to build a richer ${entityName} profile.` },
-          ];
+          const mergedChanges = (ge.changes ?? []).slice(0, 5).map((c: any) => ({
+            description: c.description ?? String(c),
+            date: c.date ?? new Date().toISOString().slice(0, 10),
+          }));
+
+          const mergedRisks = (ge.risks ?? []).slice(0, 3).map((r: any) => ({
+            claim: r.title ?? r.claim ?? String(r),
+            evidence: r.description ?? r.evidence ?? "",
+          }));
+
+          const mergedComparables = (ge.comparables ?? competitors).slice(0, 4).map((c: any) => ({
+            name: typeof c === "string" ? c : c.name ?? String(c),
+            relevance: c.relevance ?? "medium",
+            note: typeof c === "string" ? "" : c.note ?? c.description ?? "",
+          }));
+
+          const mergedMetrics = (ge.metrics ?? []).slice(0, 6).map((m: any) => ({
+            label: m.label ?? "Metric",
+            value: String(m.value ?? "N/A"),
+          }));
+
+          // Fallback signals only if gemini + recon both empty
+          const hasRealData = mergedSignals.length > 0 || reconFindings.length > 0;
+          const finalSignals = mergedSignals.length > 0 ? mergedSignals
+            : reconSources.slice(0, 4).map((s: any, i: number) => ({
+                name: typeof s === "string" ? s : s.name ?? String(s),
+                direction: "neutral", impact: i < 2 ? "high" : "medium",
+              }));
+          const finalChanges = mergedChanges.length > 0 ? mergedChanges
+            : reconFindings.slice(0, 5).map((f: any) => ({
+                description: typeof f === "string" ? f : f.summary ?? String(f),
+                date: new Date().toISOString().slice(0, 10),
+              }));
+          const finalRisks = mergedRisks.length > 0 ? mergedRisks
+            : [{ claim: `${entityName} competitive risks need deeper analysis`, evidence: `Web search returned ${webResults.length} results. Run deeper research or upload documents for risk detection.` }];
+
+          const entitySummary = ge.summary ?? recon?.summary ?? recon?.overview
+            ?? (webSummary ? `${entityName}: ${webSummary.slice(0, 300)}` : `${entityName} entity profile. ${hasRealData ? "" : "Upload documents or connect agents for deeper intelligence."}`);
+
+          const confidence = Math.min(95, 40 + webResults.length * 3 + (geminiExtracted ? 20 : 0) + reconFindings.length * 5);
 
           result = {
             canonicalEntity: {
               name: entityName,
-              canonicalMission: recon?.summary
-                ?? recon?.overview
-                ?? `${entityName} is being analyzed by NodeBench. ${findings.length > 0 ? findings[0]?.summary ?? "" : `Initial research on ${entityName} initiated. For deeper ${entityName}-specific intelligence, upload relevant documents or connect your agents. NodeBench will enrich this ${entityName} profile with competitive positioning, signals, risks, and recommended actions as more data becomes available.`}`,
-              identityConfidence: Math.min(95, 50 + sources.length * 5 + findings.length * 10),
+              canonicalMission: entitySummary,
+              identityConfidence: confidence,
             },
             memo: true,
-            whatChanged: mappedFindings.length > 0 ? mappedFindings : defaultChanges,
-            signals: mappedSignals.length > 0 ? mappedSignals : defaultSignals,
-            contradictions: mappedRisks.length > 0 ? mappedRisks : defaultRisks,
-            comparables: competitors.slice(0, 4).map((c: any) => ({
-              name: typeof c === "string" ? c : c.name ?? String(c),
-              relevance: "medium",
-              note: typeof c === "string" ? "" : c.note ?? c.description ?? "",
-            })),
-            nextActions: (recon?.nextSteps ?? []).length > 0
-              ? (recon.nextSteps).slice(0, 4).map((a: any) => ({
-                  action: typeof a === "string" ? a : a.action ?? a.step ?? String(a),
-                }))
-              : [
-                  { action: `Deep-dive ${entityName}'s financials and unit economics` },
-                  { action: `Map ${entityName}'s competitive landscape` },
-                  { action: `Upload relevant documents to enrich this entity profile` },
-                  { action: `Monitor ${entityName} for material changes` },
-                ],
+            whatChanged: finalChanges.length > 0 ? finalChanges : [{ description: `${entityName} profile created from ${webResults.length} web sources`, date: new Date().toISOString().slice(0, 10) }],
+            signals: finalSignals.length > 0 ? finalSignals : [{ name: `${entityName} analysis in progress`, direction: "neutral", impact: "high" }],
+            contradictions: finalRisks,
+            comparables: mergedComparables,
+            keyMetrics: mergedMetrics,
+            nextActions: [
+              { action: `Deep-dive ${entityName}'s financials and unit economics` },
+              { action: `Map ${entityName}'s competitive landscape` },
+              { action: `Monitor ${entityName} for material changes` },
+              { action: `Compare ${entityName} to closest competitors` },
+            ],
             nextQuestions: [
               `What are ${entityName}'s key competitive advantages?`,
               `How does ${entityName} compare to its closest competitors?`,
               `What are the main risks facing ${entityName}?`,
               `What changed for ${entityName} in the last quarter?`,
             ],
+            webSources: webSources.slice(0, 5),
             localContext: local,
           };
           break;
