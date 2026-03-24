@@ -111,9 +111,21 @@ export function createSearchRouter(tools: McpTool[]) {
     }
 
     if (lq.includes("competitor") || lq.includes("supermemory") || lq.includes("versus") || lq.includes(" vs ")
-        || lq.includes("compare ") || lq.includes("competitive landscape")) {
-      const entityMatch = query.match(/(?:competitor|analyze|compare)\s+(\w+)/i);
-      return { type: "competitor", entity: entityMatch?.[1] ?? undefined, lens: "researcher" };
+        || lq.includes("compare ") || lq.includes("competitive landscape") || lq.includes("compete with")) {
+      // Extract entity from competitor queries — try multiple patterns
+      const competitorPatterns = [
+        /(?:compete|competes) with\s+(.+?)(?:\?|$)/i,              // "compete with X and Y?"
+        /(?:competitor|competitive landscape)\s+(?:of|for|to)\s+(.+?)(?:\?|$)/i,
+        /(?:compare|versus|vs\.?)\s+(.+?)(?:\?|$)/i,
+        /(?:analyze|research)\s+(.+?)(?:\s+competitor|\?|$)/i,
+        /(?:how does)\s+(\w+)\s+(?:compete|compare|stack up)/i,    // "How does X compete"
+      ];
+      let compEntity: string | undefined;
+      for (const p of competitorPatterns) {
+        const m = query.match(p);
+        if (m?.[1]) { compEntity = m[1].trim().replace(/[?'"]/g, "").replace(/'s$/g, ""); break; }
+      }
+      return { type: "competitor", entity: compEntity, lens: "researcher" };
     }
 
     // Skip company search if the query is about user's own documents/uploads or is a general strategic question
@@ -133,10 +145,10 @@ export function createSearchRouter(tools: McpTool[]) {
     for (const pattern of companyPatterns) {
       const match = query.match(pattern);
       if (match?.[1]) {
-        // Clean entity name: strip possessives, trailing descriptors, and stop words
+        // Clean entity name: strip possessives FIRST (before removing quotes), then descriptors
         const entity = match[1].trim()
+          .replace(/['\u2018\u2019\u0027]s(\s|$)/g, "$1")  // possessive: "Anthropic's" → "Anthropic" BEFORE quote strip
           .replace(/['"]/g, "")
-          .replace(/'s\b/g, "")                    // "Anthropic's" → "Anthropic"
           .replace(/\s+(competitive|position|strategy|valuation|revenue|risk|overview|market|enterprise|positioning|infrastructure|moat|product|data|lakehouse|developer|platform|payments|AI|search|commerce).*$/i, "")
           .trim();
         if (entity.length > 1 && entity.length < 50) {
