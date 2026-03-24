@@ -19,6 +19,19 @@ import { Router } from "express";
 import type { McpTool } from "../../packages/mcp-local/src/types.js";
 import { buildContextBundle } from "../../packages/mcp-local/src/tools/contextInjection.js";
 
+// Lazy-load judge to avoid circular deps and keep startup fast
+let _judgeToolOutput: ((args: any) => Promise<any>) | null = null;
+async function getJudge() {
+  if (!_judgeToolOutput) {
+    try {
+      const { llmJudgeLoopTools } = await import("../../packages/mcp-local/src/tools/llmJudgeLoop.js");
+      const tool = llmJudgeLoopTools.find(t => t.name === "judge_tool_output");
+      if (tool) _judgeToolOutput = tool.handler;
+    } catch { /* judge not available */ }
+  }
+  return _judgeToolOutput;
+}
+
 export function createSearchRouter(tools: McpTool[]) {
   const router = Router();
 
@@ -162,6 +175,31 @@ export function createSearchRouter(tools: McpTool[]) {
 
       const latencyMs = Date.now() - startMs;
 
+      // Auto-judge every search result (non-blocking — runs async, result included if fast enough)
+      let judgeVerdict: any = null;
+      try {
+        const judge = await getJudge();
+        if (judge) {
+          const toolName = classification.type === "weekly_reset" ? "founder_local_weekly_reset"
+            : classification.type === "pre_delegation" || classification.type === "important_change" ? "founder_local_synthesize"
+            : classification.type === "company_search" || classification.type === "competitor" ? "run_recon"
+            : "founder_local_gather";
+
+          const verdict = await judge({
+            scenarioId: `app_${classification.type}`,
+            prompt: query.trim(),
+            toolName,
+            result,
+          });
+          judgeVerdict = {
+            verdict: verdict.verdict,
+            score: verdict.score,
+            failingCriteria: verdict.criteria?.filter((c: any) => !c.pass).map((c: any) => c.criterion) ?? [],
+            fixSuggestions: verdict.fixSuggestions ?? [],
+          };
+        }
+      } catch { /* judge failure is non-fatal */ }
+
       // Use the pre-computed contextBundle (computed before dispatch)
       return res.json({
         success: true,
@@ -170,6 +208,7 @@ export function createSearchRouter(tools: McpTool[]) {
         entity: classification.entity ?? null,
         latencyMs,
         result,
+        judge: judgeVerdict,
         context: {
           pinned: {
             mission: contextBundle.pinned.canonicalMission,
