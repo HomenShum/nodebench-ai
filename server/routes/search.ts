@@ -96,7 +96,12 @@ export function createSearchRouter(tools: McpTool[]) {
     for (const pattern of companyPatterns) {
       const match = query.match(pattern);
       if (match?.[1]) {
-        const entity = match[1].trim().replace(/['"]/g, "");
+        // Clean entity name: strip possessives, trailing descriptors, and stop words
+        const entity = match[1].trim()
+          .replace(/['"]/g, "")
+          .replace(/'s\b/g, "")                    // "Anthropic's" → "Anthropic"
+          .replace(/\s+(competitive|position|strategy|valuation|revenue|risk|overview|market|enterprise|positioning|infrastructure|moat|product|data|lakehouse|developer|platform|payments|AI|search|commerce).*$/i, "")
+          .trim();
         if (entity.length > 1 && entity.length < 50) {
           return { type: "company_search", entity, lens: "investor" };
         }
@@ -173,10 +178,13 @@ export function createSearchRouter(tools: McpTool[]) {
           const reconTrace = traceStep("tool_call", "run_recon");
           const gatherTrace = traceStep("tool_call", "founder_local_gather");
           const [webResult, reconResult, localCtx] = await Promise.all([
-            callTool("web_search", {
-              query: `${entityName} company overview strategy funding ${new Date().getFullYear()}`,
-              maxResults: 8,
-            }).then(r => { webTrace.ok(`${(r as any)?.resultCount ?? 0} results`); return r; }).catch(() => { webTrace.error("web_search failed"); return null; }),
+            Promise.race([
+              callTool("web_search", {
+                query: `${entityName} company overview strategy funding ${new Date().getFullYear()}`,
+                maxResults: 5,
+              }),
+              new Promise(resolve => setTimeout(() => resolve(null), 8_000)), // 8s timeout
+            ]).then(r => { webTrace.ok(`${(r as any)?.resultCount ?? 0} results`); return r; }).catch(() => { webTrace.error("web_search failed"); return null; }),
             callTool("run_recon", {
               target: entityName,
               focus: query.trim(),

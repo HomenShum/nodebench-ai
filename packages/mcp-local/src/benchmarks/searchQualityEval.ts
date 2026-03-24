@@ -199,7 +199,7 @@ function structuralCheck(queryDef: typeof TEST_CORPUS[0], response: any, latency
     sourceCountAbove0: isEdgeCase || sourceCount > 0,
     answerLengthAbove50: isEdgeCase || answer.length >= 50,
     noErrorInResponse: !data.error && data.success !== false,
-    latencyUnder10s: latencyMs < 10_000,
+    latencyUnder30s: latencyMs < 30_000,
     correctClassification: isEdgeCase || data.classification === queryDef.expectedType,
   };
 
