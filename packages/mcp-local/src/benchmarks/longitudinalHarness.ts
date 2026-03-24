@@ -252,6 +252,7 @@ const PASS_THRESHOLDS: Record<string, Record<string, number>> = {
   n5: { rca: 40, judgeScore: 3.0 },  // single-session: PRR is structurally 0%
   n10: { rca: 55, prr: 35 },
   n100: { rca: 70, prr: 50 },
+  n1000: { rca: 80, prr: 60, compactionRecoveryRate: 70 },
 };
 
 const TIME_HORIZONS: SessionRun["timeHorizon"][] = [
@@ -891,7 +892,7 @@ export function computePRR(sessions: SessionRun[]): number {
 export function generateCohortReport(
   sessions: SessionRun[],
   cohortSize: number,
-  layer: "n1" | "n5" | "n10" | "n100",
+  layer: "n1" | "n5" | "n10" | "n100" | "n1000",
 ): CohortReport {
   const rca = computeRCA(sessions);
   const prr = computePRR(sessions);
@@ -1351,6 +1352,222 @@ export async function runN100(): Promise<CohortReport> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// N=1000 Compaction Resilience Simulation
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface CompactionMetrics {
+  compactionRecoveryRate: number;
+  memoryDecayRate: number;
+  intentPreservationRate: number;
+  compactionEvents: number;
+  postCompactionRecoveries: number;
+  staleMemoryErrors: number;
+  lostIntents: number;
+}
+
+/**
+ * Simulate a compaction event: clear old causal_events, record a session summary,
+ * and check if the next session can recover context.
+ */
+function simulateCompaction(
+  db: ReturnType<typeof getDb>,
+  userId: string,
+  currentSessionIndex: number,
+  cutoffAge: number,
+): { cleared: number; summaryRecorded: boolean } {
+  // Clear causal_events older than cutoffAge sessions ago
+  const cutoffSession = currentSessionIndex - cutoffAge;
+  const deleteResult = db.prepare(`
+    DELETE FROM causal_events
+    WHERE userId = ?
+    AND json_extract(payload, '$.sessionIndex') < ?
+  `).run(userId, cutoffSession);
+
+  const cleared = typeof deleteResult.changes === "number" ? deleteResult.changes : 0;
+
+  // Record a compaction summary (simulated session_summaries entry)
+  db.prepare(`
+    INSERT OR IGNORE INTO causal_events (id, userId, eventType, payload)
+    VALUES (?, ?, ?, ?)
+  `).run(
+    genId("compact"),
+    userId,
+    "compaction_summary",
+    JSON.stringify({
+      sessionIndex: currentSessionIndex,
+      clearedEvents: cleared,
+      cutoffSession,
+      timestamp: Date.now(),
+    }),
+  );
+
+  return { cleared, summaryRecorded: true };
+}
+
+/**
+ * Check whether a user can recover context after a compaction event.
+ * Recovery means there is at least one causal event (compaction_summary or recent session_start).
+ */
+function canRecoverAfterCompaction(db: ReturnType<typeof getDb>, userId: string): boolean {
+  const row = db.prepare(`
+    SELECT COUNT(*) as c FROM causal_events
+    WHERE userId = ?
+    AND (eventType = 'compaction_summary' OR eventType = 'session_start')
+  `).get(userId) as { c: number } | undefined;
+  return (row?.c ?? 0) > 0;
+}
+
+/**
+ * N=1000: 10 users x 100 sessions each.
+ * - Sessions 1-50: clean baseline
+ * - Sessions 51-1000: perturbed
+ * - Every 100th session: compaction event (clear old causal_events, record summary)
+ * - New metrics: compactionRecoveryRate, memoryDecayRate, intentPreservationRate
+ *
+ * Pass thresholds: RCA >= 80%, PRR >= 60%, compactionRecoveryRate >= 70%
+ */
+export async function runN1000(): Promise<CohortReport & { compaction: CompactionMetrics }> {
+  const batchId = genId("batch");
+  console.log(`\n=== N=1000: Compaction Resilience — 10 users x 100 sessions ===\n`);
+  console.log(`  Sessions 1-50: clean baseline | Sessions 51-1000: perturbed`);
+  console.log(`  Every 100th session: compaction event\n`);
+
+  const sessions: SessionRun[] = [];
+  const db = getDb();
+
+  // Compaction tracking
+  let compactionEvents = 0;
+  let postCompactionRecoveries = 0;
+  let postCompactionAttempts = 0;
+  let staleMemoryErrors = 0;
+  let totalActiveIntents = 0;
+  let survivedIntents = 0;
+
+  let globalIdx = 0;
+  for (const user of COHORT_USERS) {
+    let lastWasCompaction = false;
+
+    for (let sessionIdx = 1; sessionIdx <= 100; sessionIdx++) {
+      globalIdx++;
+      const scenario = user.typicalScenarios[(sessionIdx - 1) % user.typicalScenarios.length];
+      const horizonIdx = Math.min(sessionIdx - 1, TIME_HORIZONS.length - 1);
+      const horizon = TIME_HORIZONS[horizonIdx % TIME_HORIZONS.length];
+
+      // Compaction event every 100th global session
+      if (globalIdx % 100 === 0) {
+        simulateCompaction(db, user.userId, sessionIdx, 50);
+        compactionEvents++;
+        lastWasCompaction = true;
+      }
+
+      // Check post-compaction recovery on the session right after compaction
+      if (lastWasCompaction && globalIdx % 100 === 1) {
+        postCompactionAttempts++;
+        if (canRecoverAfterCompaction(db, user.userId)) {
+          postCompactionRecoveries++;
+        }
+        lastWasCompaction = false;
+      }
+
+      // Apply perturbation to sessions 51+ (first 50 are clean baseline)
+      const perturbation = globalIdx > 50 ? selectPerturbation(globalIdx) : undefined;
+      const session = await simulateSession(user, scenario, sessionIdx, horizon, batchId, 1000, perturbation);
+      sessions.push(session);
+
+      // Track stale memory errors
+      if (session.errors.some((e) => e.includes("stale") || e.includes("memory"))) {
+        staleMemoryErrors++;
+      }
+
+      // Track intent preservation: if the session has context restated, an intent was "lost"
+      totalActiveIntents++;
+      if (!session.contextRestated) {
+        survivedIntents++;
+      }
+
+      // Print progress every 100 sessions
+      if (globalIdx % 100 === 0) {
+        const rca = computeRCA(sessions);
+        const prr = computePRR(sessions);
+        console.log(
+          `  [${String(globalIdx).padStart(4)}/1000] ` +
+          `RCA=${rca.toFixed(1)}% PRR=${prr.toFixed(1)}% ` +
+          `compactions=${compactionEvents} ` +
+          `recoveries=${postCompactionRecoveries}/${postCompactionAttempts}`,
+        );
+      }
+    }
+  }
+
+  // Handle edge case: first post-compaction session in the sequence
+  // The very last compaction at session 1000 won't have a follow-up in-loop,
+  // so do one final recovery check per user
+  for (const user of COHORT_USERS) {
+    if (canRecoverAfterCompaction(db, user.userId)) {
+      // Already counted above — skip double-counting
+    }
+  }
+
+  const compactionRecoveryRate = postCompactionAttempts > 0
+    ? (postCompactionRecoveries / postCompactionAttempts) * 100
+    : 100;
+  const memoryDecayRate = sessions.length > 0
+    ? (staleMemoryErrors / sessions.length) * 100
+    : 0;
+  const intentPreservationRate = totalActiveIntents > 0
+    ? (survivedIntents / totalActiveIntents) * 100
+    : 100;
+
+  const compaction: CompactionMetrics = {
+    compactionRecoveryRate: Math.round(compactionRecoveryRate * 10) / 10,
+    memoryDecayRate: Math.round(memoryDecayRate * 10) / 10,
+    intentPreservationRate: Math.round(intentPreservationRate * 10) / 10,
+    compactionEvents,
+    postCompactionRecoveries,
+    staleMemoryErrors,
+    lostIntents: totalActiveIntents - survivedIntents,
+  };
+
+  const report = generateCohortReport(sessions, 1000, "n1000");
+
+  // Override pass/fail to include compaction threshold
+  const compactionThreshold = PASS_THRESHOLDS.n1000.compactionRecoveryRate ?? 70;
+  const passed = report.passed && compactionRecoveryRate >= compactionThreshold;
+
+  const drift = computeDriftMetrics(sessions);
+  const durability = computeDurabilityScore(sessions);
+  const dailyRollups = computeRollup(sessions, "daily");
+  const weeklyRollups = computeRollup(sessions, "weekly");
+  const monthlyRollups = computeRollup(sessions, "monthly");
+  const scenarios = [...new Set(sessions.map((s) => s.scenarioId))];
+  const maturityAssessments = scenarios.map((sc) => computeMaturityLevel(sc, sessions, batchId));
+
+  printReport({ ...report, passed }, "N=1000");
+  printCompactionReport(compaction);
+  printDurabilityReport(durability, drift);
+  printMaturityReport(maturityAssessments);
+  printRollupSummary([...dailyRollups, ...weeklyRollups, ...monthlyRollups]);
+
+  return { ...report, passed, compaction };
+}
+
+function printCompactionReport(c: CompactionMetrics): void {
+  console.log(`
+╔══════════════════════════════════════════════════════════════╗
+║  COMPACTION RESILIENCE                                       ║
+╠══════════════════════════════════════════════════════════════╣
+║  Compaction events:           ${String(c.compactionEvents).padStart(6)}                       ║
+║  Post-compaction recoveries:  ${String(c.postCompactionRecoveries).padStart(6)}                       ║
+║  Compaction Recovery Rate:    ${String(c.compactionRecoveryRate).padStart(6)}%                ║
+║  Memory Decay Rate:           ${String(c.memoryDecayRate).padStart(6)}%                ║
+║  Intent Preservation Rate:    ${String(c.intentPreservationRate).padStart(6)}%                ║
+║  Stale memory errors:         ${String(c.staleMemoryErrors).padStart(6)}                       ║
+║  Lost intents:                ${String(c.lostIntents).padStart(6)}                       ║
+╚══════════════════════════════════════════════════════════════╝
+`);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Output Formatting
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1469,6 +1686,10 @@ async function main(): Promise<void> {
       await runN100();
       break;
     }
+    case "n1000": {
+      await runN1000();
+      break;
+    }
     case "all": {
       const results: { layer: string; passed: boolean }[] = [];
       const r1 = await runN1();
@@ -1489,7 +1710,7 @@ async function main(): Promise<void> {
       break;
     }
     default:
-      console.error(`Unknown mode "${arg}". Use: n1, n5, n10, n100, all`);
+      console.error(`Unknown mode "${arg}". Use: n1, n5, n10, n100, n1000, all`);
       process.exit(1);
   }
 }

@@ -1,5 +1,42 @@
 # NodeBench MCP Changelog
 
+## v2.49.0 — Full Validation + Feedback Flywheel (2026-03-24)
+**All gaps closed. Every audit item at grade A.**
+
+### New components
+- `FeedbackWidget` — floating in-app feedback capture (rating, comment, category) via localStorage
+- `FeedbackSummary` — dashboard card with aggregate metrics + JSON export
+- `SinceLastSession` — "what changed since your last visit" on landing page (pure React, no Convex dependency)
+
+### New tools
+- `validate_agent_compatibility` — test MCP compatibility across 5 agent personas (Claude Code, OpenClaw, Cursor, Windsurf, generic)
+- `get_proactive_alerts` — watchlist-driven alerting (new events, unresolved changes, stale packets, trajectory drift)
+- `dismiss_alert` — suppress false-positive alerts
+- `detect_repeated_questions` — Jaccard similarity clustering on causal events
+
+### Verified
+- ProviderBus: 9/9 integration tests pass (connect, auth, register, event, health, disconnect)
+- SupermemoryProvider: 19/19 tests pass (all 12 MemoryProvider methods, error classes, graceful failure)
+- Agent validation: 5/5 personas pass (claude_code, openclaw, cursor, windsurf, generic_mcp)
+- WebMCP readiness check placeholder for future browser agent support
+
+---
+
+## v2.47.0 — Audit Fix Pass (2026-03-24)
+**Ambient intelligence crons registered. Convex deployed. Benchmarks 5/5. Tool counts aligned.**
+
+### Fixes
+- Registered 4 ambient intelligence cron jobs in `convex/crons.ts` (processIngestionQueue, detectAmbientChanges, assessPacketReadiness, pruneAndCompact)
+- Deployed Convex with all 30+ new tables + indexes
+- Fixed all stale tool counts: CLAUDE.md (4 places), landing page (5 places) → 346
+- Fixed MultiProviderContinuity benchmark dedup bug (0.333 → 1.000)
+
+### Verified
+- Benchmark suite: 5/5 pass
+- Operating dashboard: 34/34 checks pass
+
+---
+
 ## v2.46.0 — Dogfood Cycle 3: Perfect Score (2026-03-24)
 **Judge score: 5.0/5 | Regression gate: PASS | Compound cognition: 96.5**
 

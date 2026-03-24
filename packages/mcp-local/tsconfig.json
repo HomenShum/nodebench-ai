@@ -15,5 +15,5 @@
     "sourceMap": true
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "src/__tests__", "src/benchmarks/testProviderBus.ts"]
+  "exclude": ["node_modules", "dist", "src/__tests__", "src/benchmarks/testProviderBus.ts", "src/hooks"]
 }

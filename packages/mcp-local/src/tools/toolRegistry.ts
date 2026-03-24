@@ -3953,6 +3953,19 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     complexity: "low",
   },
   {
+    name: "validate_agent_compatibility",
+    category: "founder",
+    tags: ["agent", "validation", "compatibility", "cursor", "claude_code", "openclaw", "windsurf", "webmcp", "persona"],
+    quickRef: {
+      nextAction: "Validation complete. Review per-persona scores. Fix any preset that exceeds maxTools limit.",
+      nextTools: ["discover_tools", "load_toolset", "list_available_toolsets", "get_proactive_alerts"],
+      methodology: "founder",
+      tip: "Run before publishing a new version to ensure all agent clients can use it. Cursor has a 40-tool hard limit.",
+    },
+    phase: "verify",
+    complexity: "medium",
+  },
+  {
     name: "detect_repeated_questions",
     category: "dogfood_judge",
     tags: ["dogfood", "repeated", "question", "detection", "similarity", "cluster", "cognition"],

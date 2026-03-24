@@ -145,7 +145,7 @@ const allTools = [...allToolsWithoutDiscovery, ...discoveryTools];
 describe("Static: tool structure", () => {
   it("should have 341 tools total", () => {
     // domain tools + meta tools + progressive discovery tools, including temporal intelligence + mission harness (7) + founder (3) + founder tracking (8) + causal memory (10) + dogfood judge (14) + open_operating_dashboard (1) + enrich_recon (1).
-    expect(allTools.length).toBe(346);
+    expect(allTools.length).toBe(347);
   });
 
   it("every tool has name, description, inputSchema, handler", () => {

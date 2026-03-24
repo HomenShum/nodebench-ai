@@ -120,8 +120,15 @@ export function generateMemoId(): string {
 export function copyMemoUrl(id: string): void {
   const url = `${window.location.origin}/memo/${id}`;
   navigator.clipboard.writeText(url).catch(() => {
-    // fallback: prompt-based copy
-    window.prompt("Copy this link:", url);
+    // fallback: hidden textarea copy (prompt() not supported in all contexts)
+    const ta = document.createElement("textarea");
+    ta.value = url;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
   });
 }
 

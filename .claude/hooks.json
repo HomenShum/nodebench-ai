@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "PostCompaction": [
+      {
+        "type": "command",
+        "command": "npx tsx ./packages/mcp-local/src/hooks/postCompaction.ts"
+      }
+    ]
+  }
+}

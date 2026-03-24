@@ -1,6 +1,6 @@
 /**
  * founderTrackingTools — Temporal action tracking across sessions, days, weeks,
- * months, quarters, and years.
+ * months, quarters, and years. Plus agent compatibility validation.
  *
  * Every significant action records before/after state and reasoning.
  * Aggregation queries run in SQL for efficiency.
@@ -8,6 +8,7 @@
 
 import type { McpTool } from "../types.js";
 import { getDb, genId } from "../db.js";
+import { validateAgentCompatibilityTool } from "../benchmarks/agentValidation.js";
 
 /* ------------------------------------------------------------------ */
 /*  Module-level session ID (unique per process)                       */
@@ -75,6 +76,39 @@ function ensureSchema(): void {
     CREATE INDEX IF NOT EXISTS idx_tracking_milestones_year ON tracking_milestones(year);
     CREATE INDEX IF NOT EXISTS idx_tracking_milestones_month ON tracking_milestones(month);
     CREATE INDEX IF NOT EXISTS idx_tracking_milestones_quarter ON tracking_milestones(quarter);
+
+    CREATE TABLE IF NOT EXISTS session_summaries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      summaryId TEXT UNIQUE NOT NULL,
+      sessionId TEXT NOT NULL,
+      sessionSummary TEXT NOT NULL,
+      activeEntities TEXT NOT NULL,
+      openIntents TEXT NOT NULL,
+      packetState TEXT NOT NULL,
+      unresolvedItems TEXT NOT NULL,
+      lastAction TEXT NOT NULL,
+      sessionDurationMs INTEGER NOT NULL,
+      toolCallCount INTEGER NOT NULL,
+      keyDecisions TEXT NOT NULL,
+      createdAt TEXT NOT NULL,
+      timestampMs INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_session_summaries_sessionId ON session_summaries(sessionId);
+    CREATE INDEX IF NOT EXISTS idx_session_summaries_timestampMs ON session_summaries(timestampMs);
+
+    CREATE TABLE IF NOT EXISTS intent_residuals (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      intentId TEXT UNIQUE NOT NULL,
+      intent TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      context TEXT,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_intent_residuals_status ON intent_residuals(status);
+    CREATE INDEX IF NOT EXISTS idx_intent_residuals_updatedAt ON intent_residuals(updatedAt);
   `);
   _schemaReady = true;
 }
@@ -1235,4 +1269,563 @@ export const founderTrackingTools: McpTool[] = [
       };
     },
   },
+  // ─── 12. summarize_session ────────────────────────────────────────
+  {
+    name: "summarize_session",
+    description:
+      "Summarize the current or specified session's activity from causal memory, tracking actions, packets, and important changes. Stores the summary to session_summaries for post-compaction recovery.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sessionId: {
+          type: "string",
+          description:
+            "Session ID to summarize (defaults to current process session)",
+        },
+        maxTokens: {
+          type: "number",
+          description:
+            "Approximate max tokens for the sessionSummary text (default 500)",
+        },
+      },
+    },
+    handler: async (args: { sessionId?: string; maxTokens?: number }) => {
+      ensureSchema();
+      const db = getDb();
+      const sid = args.sessionId ?? SESSION_ID;
+      const _maxTokens = args.maxTokens ?? 500;
+
+      // --- Gather causal events for this session's time window ---
+      // Find session time bounds from tracking_actions
+      const sessionBounds = db
+        .prepare(
+          `SELECT MIN(timestamp) as earliest, MAX(timestamp) as latest, COUNT(*) as cnt
+           FROM tracking_actions WHERE sessionId = ?`,
+        )
+        .get(sid) as any;
+
+      const actionCount = sessionBounds?.cnt ?? 0;
+      const earliestTs = sessionBounds?.earliest;
+      const latestTs = sessionBounds?.latest;
+      const sessionDurationMs =
+        earliestTs && latestTs
+          ? new Date(latestTs).getTime() - new Date(earliestTs).getTime()
+          : 0;
+
+      // --- Tracking actions ---
+      const actions = db
+        .prepare(
+          `SELECT action, category, impactLevel, timestamp
+           FROM tracking_actions WHERE sessionId = ?
+           ORDER BY timestamp DESC LIMIT 50`,
+        )
+        .all(sid) as any[];
+
+      // --- Causal events in the session window ---
+      let causalEvents: any[] = [];
+      let causalEventCount = 0;
+      if (earliestTs) {
+        const startMs = new Date(earliestTs).getTime() - 60000; // 1 min before
+        const endMs = latestTs
+          ? new Date(latestTs).getTime() + 60000
+          : Date.now();
+        const causalResult = db
+          .prepare(
+            `SELECT eventType, entityType, entityId, summary
+             FROM causal_events WHERE timestampMs BETWEEN ? AND ?
+             ORDER BY timestampMs DESC LIMIT 50`,
+          )
+          .all(startMs, endMs) as any[];
+        causalEvents = causalResult;
+        const countResult = db
+          .prepare(
+            `SELECT COUNT(*) as cnt FROM causal_events WHERE timestampMs BETWEEN ? AND ?`,
+          )
+          .get(startMs, endMs) as any;
+        causalEventCount = countResult?.cnt ?? 0;
+      }
+
+      // --- Active entities (unique from causal events) ---
+      const entitySet = new Set<string>();
+      for (const ev of causalEvents) {
+        entitySet.add(`${ev.entityType}:${ev.entityId}`);
+      }
+      const activeEntities = [...entitySet].slice(0, 20);
+
+      // --- Open intents (inferred from event types) ---
+      const intentSet = new Set<string>();
+      for (const ev of causalEvents) {
+        if (ev.eventType.includes("started") || ev.eventType.includes("created")) {
+          intentSet.add(`${ev.eventType}: ${ev.summary.slice(0, 80)}`);
+        }
+      }
+      for (const a of actions) {
+        if (a.category === "research" || a.category === "build" || a.category === "decision") {
+          intentSet.add(`${a.category}: ${a.action.slice(0, 80)}`);
+        }
+      }
+      const openIntents = [...intentSet].slice(0, 10);
+
+      // --- Packet state ---
+      let packetState = { generated: 0, exported: 0, reused: 0 };
+      try {
+        if (earliestTs) {
+          const startMs = new Date(earliestTs).getTime() - 60000;
+          const endMs = latestTs
+            ? new Date(latestTs).getTime() + 60000
+            : Date.now();
+          const gen = db
+            .prepare(
+              `SELECT COUNT(*) as cnt FROM founder_packets
+               WHERE createdAt >= ? AND createdAt <= ?`,
+            )
+            .get(
+              new Date(startMs).toISOString(),
+              new Date(endMs).toISOString(),
+            ) as any;
+          packetState.generated = gen?.cnt ?? 0;
+          const exp = db
+            .prepare(
+              `SELECT COUNT(*) as cnt FROM founder_packets
+               WHERE exportedAt IS NOT NULL AND createdAt >= ? AND createdAt <= ?`,
+            )
+            .get(
+              new Date(startMs).toISOString(),
+              new Date(endMs).toISOString(),
+            ) as any;
+          packetState.exported = exp?.cnt ?? 0;
+        }
+      } catch {
+        /* founder_packets table may not exist yet */
+      }
+
+      // --- Unresolved important changes ---
+      const unresolvedRows = db
+        .prepare(
+          `SELECT changeCategory, impactReason
+           FROM causal_important_changes
+           WHERE status NOT IN ('resolved', 'dismissed')
+           ORDER BY timestampMs DESC LIMIT 10`,
+        )
+        .all() as any[];
+      const unresolvedItems = unresolvedRows.map(
+        (r) => `[${r.changeCategory}] ${r.impactReason.slice(0, 100)}`,
+      );
+
+      // --- Key decisions ---
+      const decisionEvents = causalEvents.filter(
+        (ev) =>
+          ev.eventType.includes("decision") ||
+          ev.eventType.includes("packet.generated") ||
+          ev.eventType === "artifact_generated",
+      );
+      const keyDecisions = decisionEvents
+        .map((ev) => ev.summary.slice(0, 120))
+        .slice(0, 10);
+
+      // --- Last action ---
+      const lastAction =
+        actions.length > 0
+          ? `[${actions[0].category}] ${actions[0].action}`
+          : "No actions recorded";
+
+      // --- Build natural language summary ---
+      const categoryBreakdown: Record<string, number> = {};
+      for (const a of actions) {
+        categoryBreakdown[a.category] = (categoryBreakdown[a.category] ?? 0) + 1;
+      }
+      const catParts = Object.entries(categoryBreakdown)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 4)
+        .map(([cat, n]) => `${n} ${cat}`)
+        .join(", ");
+
+      const summaryParts: string[] = [];
+      summaryParts.push(
+        `Session ${sid} recorded ${actionCount} actions${catParts ? ` (${catParts})` : ""} and ${causalEventCount} causal events across ${activeEntities.length} entities over ${Math.round(sessionDurationMs / 60000)} minutes.`,
+      );
+      if (keyDecisions.length > 0) {
+        summaryParts.push(
+          `Key decisions: ${keyDecisions.slice(0, 3).join("; ")}.`,
+        );
+      }
+      if (unresolvedItems.length > 0) {
+        summaryParts.push(
+          `${unresolvedItems.length} unresolved important change(s) pending.`,
+        );
+      }
+
+      // Truncate summary to approximate token limit (4 chars ~ 1 token)
+      let sessionSummary = summaryParts.join(" ");
+      const charLimit = _maxTokens * 4;
+      if (sessionSummary.length > charLimit) {
+        sessionSummary = sessionSummary.slice(0, charLimit - 3) + "...";
+      }
+
+      // --- Store to session_summaries ---
+      const now = Date.now();
+      const summaryId = genId("ssm");
+      const summaryPayload = {
+        sessionSummary,
+        activeEntities,
+        openIntents,
+        packetState,
+        unresolvedItems,
+        lastAction,
+        sessionDurationMs,
+        toolCallCount: actionCount + causalEventCount,
+        keyDecisions,
+      };
+
+      db.prepare(
+        `INSERT INTO session_summaries
+          (summaryId, sessionId, sessionSummary, activeEntities, openIntents, packetState, unresolvedItems, lastAction, sessionDurationMs, toolCallCount, keyDecisions, createdAt, timestampMs)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        summaryId,
+        sid,
+        sessionSummary,
+        JSON.stringify(activeEntities),
+        JSON.stringify(openIntents),
+        JSON.stringify(packetState),
+        JSON.stringify(unresolvedItems),
+        lastAction,
+        sessionDurationMs,
+        actionCount + causalEventCount,
+        JSON.stringify(keyDecisions),
+        new Date(now).toISOString(),
+        now,
+      );
+
+      return {
+        summaryId,
+        ...summaryPayload,
+        stored: true,
+      };
+    },
+  },
+
+  // ─── 13. track_intent ──────────────────────────────────────────────
+  {
+    name: "track_intent",
+    description:
+      "Track a user intent that should survive context window compaction. On 'active' status inserts a new intent. On 'completed' or 'blocked' updates the best-matching existing active intent via word overlap.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        intent: {
+          type: "string",
+          description:
+            "Natural language description of the user's intent (e.g. 'Build session memory system for NodeBench MCP')",
+        },
+        status: {
+          type: "string",
+          enum: ["active", "completed", "blocked"],
+          description:
+            "Intent status: 'active' to create, 'completed'/'blocked' to update an existing intent",
+        },
+        context: {
+          type: "string",
+          description:
+            "Optional context about the intent (what was tried, what's blocking, etc.)",
+        },
+      },
+      required: ["intent", "status"],
+    },
+    handler: async (args: {
+      intent: string;
+      status: "active" | "completed" | "blocked";
+      context?: string;
+    }) => {
+      ensureSchema();
+      const db = getDb();
+      const now = new Date().toISOString();
+
+      if (args.status === "active") {
+        // Insert new intent
+        const intentId = genId("int");
+        db.prepare(
+          `INSERT INTO intent_residuals (intentId, intent, status, context, createdAt, updatedAt)
+           VALUES (?, ?, 'active', ?, ?, ?)`,
+        ).run(intentId, args.intent, args.context ?? null, now, now);
+
+        // Return all active intents for context
+        const activeIntents = db
+          .prepare(
+            `SELECT intentId, intent, context, createdAt, updatedAt
+             FROM intent_residuals WHERE status = 'active'
+             ORDER BY updatedAt DESC`,
+          )
+          .all() as any[];
+
+        return {
+          intentId,
+          recorded: true,
+          totalActive: activeIntents.length,
+          activeIntents: activeIntents.map((i) => ({
+            intentId: i.intentId,
+            intent: i.intent,
+            context: i.context,
+            createdAt: i.createdAt,
+          })),
+        };
+      }
+
+      // For completed/blocked: fuzzy match by word overlap against active intents
+      const activeIntents = db
+        .prepare(
+          `SELECT intentId, intent, context FROM intent_residuals WHERE status = 'active'`,
+        )
+        .all() as any[];
+
+      if (activeIntents.length === 0) {
+        return {
+          updated: false,
+          error: "No active intents found to update",
+          totalActive: 0,
+        };
+      }
+
+      // Word overlap scoring
+      const inputWords = new Set(
+        args.intent
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((w) => w.length > 2),
+      );
+      let bestMatch: any = null;
+      let bestScore = 0;
+
+      for (const candidate of activeIntents) {
+        const candidateWords = new Set(
+          candidate.intent
+            .toLowerCase()
+            .split(/\s+/)
+            .filter((w: string) => w.length > 2),
+        );
+        let overlap = 0;
+        for (const w of inputWords) {
+          if (candidateWords.has(w)) overlap++;
+        }
+        const score =
+          inputWords.size > 0 ? overlap / inputWords.size : 0;
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = candidate;
+        }
+      }
+
+      if (!bestMatch || bestScore < 0.2) {
+        // No good match — insert as new intent with the given status
+        const intentId = genId("int");
+        db.prepare(
+          `INSERT INTO intent_residuals (intentId, intent, status, context, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+        ).run(intentId, args.intent, args.status, args.context ?? null, now, now);
+
+        return {
+          intentId,
+          recorded: true,
+          matchScore: bestScore,
+          note: "No close match found among active intents; created new entry",
+          totalActive: activeIntents.length,
+        };
+      }
+
+      // Update matched intent
+      db.prepare(
+        `UPDATE intent_residuals SET status = ?, context = ?, updatedAt = ? WHERE intentId = ?`,
+      ).run(
+        args.status,
+        args.context ?? bestMatch.context,
+        now,
+        bestMatch.intentId,
+      );
+
+      // Return remaining active intents
+      const remaining = db
+        .prepare(
+          `SELECT intentId, intent, context, createdAt, updatedAt
+           FROM intent_residuals WHERE status = 'active'
+           ORDER BY updatedAt DESC`,
+        )
+        .all() as any[];
+
+      return {
+        updated: true,
+        matchedIntentId: bestMatch.intentId,
+        matchedIntent: bestMatch.intent,
+        matchScore: Math.round(bestScore * 100) / 100,
+        newStatus: args.status,
+        totalActive: remaining.length,
+        activeIntents: remaining.map((i) => ({
+          intentId: i.intentId,
+          intent: i.intent,
+          context: i.context,
+          createdAt: i.createdAt,
+        })),
+      };
+    },
+  },
+
+  // ─── 14. get_compaction_recovery ────────────────────────────────────
+  {
+    name: "get_compaction_recovery",
+    description:
+      "Recovery tool for post-context-compaction state restoration. Call this RIGHT AFTER Claude Code compacts context to recover session state, active intents, packet status, unresolved changes, and pending alerts. Returns a ready-to-use injection prompt.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        maxTokens: {
+          type: "number",
+          description:
+            "Approximate max tokens for the injection prompt (default 2000)",
+        },
+      },
+    },
+    annotations: { readOnlyHint: true },
+    handler: async (args: { maxTokens?: number }) => {
+      ensureSchema();
+      const db = getDb();
+      const maxTokens = args.maxTokens ?? 2000;
+
+      // --- Most recent session summary ---
+      let lastSessionSummary = "No session summary available.";
+      try {
+        const latest = db
+          .prepare(
+            `SELECT sessionSummary, activeEntities, openIntents, keyDecisions, sessionDurationMs, toolCallCount
+             FROM session_summaries ORDER BY timestampMs DESC LIMIT 1`,
+          )
+          .get() as any;
+        if (latest) {
+          lastSessionSummary = latest.sessionSummary;
+        }
+      } catch {
+        /* table may be empty */
+      }
+
+      // --- Active intent residuals ---
+      const activeIntentRows = db
+        .prepare(
+          `SELECT intent, context, createdAt FROM intent_residuals
+           WHERE status = 'active' ORDER BY updatedAt DESC LIMIT 20`,
+        )
+        .all() as any[];
+      const activeIntents = activeIntentRows.map((r) => r.intent);
+
+      // --- Most recent founder packet ---
+      let currentPacketState = "No packets generated.";
+      try {
+        const latestPacket = db
+          .prepare(
+            `SELECT entityId, packetType, createdAt, exportedAt
+             FROM founder_packets ORDER BY createdAt DESC LIMIT 1`,
+          )
+          .get() as any;
+        if (latestPacket) {
+          const ageMs = Date.now() - new Date(latestPacket.createdAt).getTime();
+          const ageHours = Math.round(ageMs / 3600000);
+          const ageLabel =
+            ageHours < 1
+              ? "just now"
+              : ageHours === 1
+                ? "1 hour ago"
+                : `${ageHours} hours ago`;
+          const exportStatus = latestPacket.exportedAt
+            ? "exported"
+            : "not yet exported";
+          currentPacketState = `${latestPacket.packetType} packet for ${latestPacket.entityId} generated ${ageLabel}, ${exportStatus}.`;
+        }
+      } catch {
+        /* founder_packets may not exist */
+      }
+
+      // --- Unresolved important changes ---
+      const unresolvedRows = db
+        .prepare(
+          `SELECT changeCategory, impactReason, suggestedAction
+           FROM causal_important_changes
+           WHERE status NOT IN ('resolved', 'dismissed')
+           ORDER BY impactScore DESC, timestampMs DESC LIMIT 10`,
+        )
+        .all() as any[];
+      const unresolvedChanges = unresolvedRows.map(
+        (r) =>
+          `[${r.changeCategory}] ${r.impactReason.slice(0, 100)}${r.suggestedAction ? ` — action: ${r.suggestedAction.slice(0, 60)}` : ""}`,
+      );
+
+      // --- Pending alerts count ---
+      let pendingAlerts = 0;
+      try {
+        const alertCount = db
+          .prepare(
+            `SELECT COUNT(*) as cnt FROM causal_important_changes
+             WHERE status NOT IN ('resolved', 'dismissed')`,
+          )
+          .get() as any;
+        pendingAlerts = alertCount?.cnt ?? 0;
+      } catch {
+        /* ignore */
+      }
+
+      // --- Recommended next action ---
+      let recommendedNextAction = "Review active intents and continue work.";
+      if (unresolvedChanges.length > 0) {
+        const topChange = unresolvedRows[0];
+        recommendedNextAction = topChange.suggestedAction
+          ? topChange.suggestedAction
+          : `Investigate unresolved ${topChange.changeCategory}: ${topChange.impactReason.slice(0, 80)}`;
+      } else if (activeIntents.length > 0) {
+        recommendedNextAction = `Continue working on: ${activeIntents[0]}`;
+      }
+
+      // --- Build injection prompt ---
+      const promptParts: string[] = [];
+      promptParts.push(
+        `[Session Recovery] ${lastSessionSummary}`,
+      );
+      if (activeIntents.length > 0) {
+        promptParts.push(
+          `Active intents (${activeIntents.length}): ${activeIntents.slice(0, 5).join("; ")}.`,
+        );
+      }
+      if (currentPacketState !== "No packets generated.") {
+        promptParts.push(`Packet state: ${currentPacketState}`);
+      }
+      if (unresolvedChanges.length > 0) {
+        promptParts.push(
+          `Unresolved changes (${unresolvedChanges.length}): ${unresolvedChanges.slice(0, 3).join("; ")}.`,
+        );
+      }
+      if (pendingAlerts > 0) {
+        promptParts.push(`${pendingAlerts} pending alert(s) — run get_proactive_alerts for details.`);
+      }
+      promptParts.push(`Recommended next action: ${recommendedNextAction}`);
+
+      let injectionPrompt = promptParts.join(" ");
+      const charLimit = maxTokens * 4;
+      if (injectionPrompt.length > charLimit) {
+        injectionPrompt = injectionPrompt.slice(0, charLimit - 3) + "...";
+      }
+
+      // Estimate tokens (rough: 1 token ~ 4 chars)
+      const tokenEstimate = Math.ceil(injectionPrompt.length / 4);
+
+      return {
+        recoveryContext: {
+          lastSessionSummary,
+          activeIntents,
+          currentPacketState,
+          unresolvedChanges,
+          pendingAlerts,
+          recommendedNextAction,
+        },
+        tokenEstimate,
+        injectionPrompt,
+      };
+    },
+  },
+
+  validateAgentCompatibilityTool,
 ];

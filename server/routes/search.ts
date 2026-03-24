@@ -17,6 +17,7 @@
 
 import { Router } from "express";
 import type { McpTool } from "../../packages/mcp-local/src/types.js";
+import { buildContextBundle } from "../../packages/mcp-local/src/tools/contextInjection.js";
 
 export function createSearchRouter(tools: McpTool[]) {
   const router = Router();
@@ -158,6 +159,9 @@ export function createSearchRouter(tools: McpTool[]) {
 
       const latencyMs = Date.now() - startMs;
 
+      // Inject persistent context bundle — ensures message 1000 retains intent from message 1
+      const contextBundle = buildContextBundle(query.trim());
+
       return res.json({
         success: true,
         classification: classification.type,
@@ -165,6 +169,26 @@ export function createSearchRouter(tools: McpTool[]) {
         entity: classification.entity ?? null,
         latencyMs,
         result,
+        context: {
+          pinned: {
+            mission: contextBundle.pinned.canonicalMission,
+            wedge: contextBundle.pinned.wedge,
+            confidence: contextBundle.pinned.identityConfidence,
+            contradictions: contextBundle.pinned.activeContradictions.length,
+            sessionActions: contextBundle.pinned.sessionActionCount,
+            lastPacket: contextBundle.pinned.lastPacketSummary,
+          },
+          injected: {
+            weeklyReset: contextBundle.injected.weeklyResetSummary,
+            milestones: contextBundle.injected.recentMilestones.length,
+            dogfood: contextBundle.injected.dogfoodVerdict,
+          },
+          archival: {
+            totalActions: contextBundle.archival.totalActions,
+            totalMilestones: contextBundle.archival.totalMilestones,
+          },
+          tokenBudget: contextBundle.totalEstimatedTokens,
+        },
       });
     } catch (err: any) {
       return res.status(500).json({
