@@ -80,7 +80,7 @@ export function CommandPalette({
             {
                 id: 'nav-home',
                 label: 'Go to NodeBench Home',
-                description: 'Open the agent trust control plane',
+                description: 'Open the operating intelligence dashboard',
                 icon: <Home className="w-4 h-4" />,
                 keywords: ['home', 'control plane', 'receipts', 'main', 'deeptrace'],
                 section: 'navigation',

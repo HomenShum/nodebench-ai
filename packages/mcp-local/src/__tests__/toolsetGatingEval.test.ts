@@ -119,6 +119,7 @@ const PRESETS: Record<string, string[]> = {
   meta: [],
   lite: ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate"],
   core: ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "bootstrap", "self_eval", "llm", "security", "platform", "research_writing", "flicker_detection", "figma_flow", "boilerplate", "benchmark", "session_memory", "toon", "pattern", "git_workflow", "seo", "voice_bridge", "critter", "email", "rss", "architect"],
+  cursor: ["deep_sim", "quality_gate", "learning", "session_memory", "web", "toon"],
   full: Object.keys(TOOLSET_MAP),
 };
 

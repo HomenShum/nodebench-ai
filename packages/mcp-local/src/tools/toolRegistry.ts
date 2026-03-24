@@ -356,6 +356,19 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     phase: "research",
   },
   {
+    name: "enrich_recon",
+    category: "reconnaissance",
+    tags: ["recon", "enrich", "web", "search", "live", "data", "company", "competitor"],
+    quickRef: {
+      nextAction: "Web enrichment complete. Review auto-logged findings, then extract_variables or build_claim_graph.",
+      nextTools: ["extract_variables", "build_claim_graph", "get_recon_summary", "log_recon_finding"],
+      methodology: "reconnaissance",
+      tip: "Use after run_recon to add live web data. Requires GEMINI_API_KEY, OPENAI_API_KEY, or PERPLEXITY_API_KEY.",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
     name: "log_recon_finding",
     category: "reconnaissance",
     tags: ["finding", "discovery", "log", "breaking-change", "deprecation", "new-feature", "pattern"],
@@ -3786,6 +3799,33 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     complexity: "low",
   },
 
+  {
+    name: "founder_packet_history_diff",
+    category: "founder",
+    tags: ["founder", "packet", "history", "diff", "drift", "comparison", "before", "after", "lineage"],
+    quickRef: {
+      nextAction: "Diff computed. Review newSinceLastTime and resolvedSinceLastTime. If driftScore > 0.5, investigate what changed.",
+      nextTools: ["founder_deep_context_gather", "founder_packet_validate", "export_artifact_packet"],
+      methodology: "founder",
+      tip: "Use regularly to track how company truth evolves. High drift + low resolution = identity instability.",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "export_artifact_packet",
+    category: "founder",
+    tags: ["founder", "export", "artifact", "memo", "markdown", "html", "json", "audience", "banker", "investor", "developer"],
+    quickRef: {
+      nextAction: "Artifact exported. Share the output or save to file. Track export via record_event.",
+      nextTools: ["record_event", "track_action", "founder_packet_history_diff"],
+      methodology: "founder",
+      tip: "Match audience to format: banker=markdown memo, investor=html with metrics, teammate=plaintext with action items.",
+    },
+    phase: "ship",
+    complexity: "low",
+  },
+
   // ═══ FOUNDER TRACKING ═══
   {
     name: "track_action",
@@ -3884,6 +3924,46 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     },
     phase: "research",
     complexity: "low",
+  },
+
+  {
+    name: "get_proactive_alerts",
+    category: "founder",
+    tags: ["founder", "alerts", "watchlist", "proactive", "unresolved", "stale", "drift", "repeated"],
+    quickRef: {
+      nextAction: "Alerts retrieved. Address critical items first. Dismiss false positives with dismiss_alert.",
+      nextTools: ["dismiss_alert", "flag_important_change", "founder_deep_context_gather", "get_important_changes"],
+      methodology: "founder",
+      tip: "Run before every weekly reset to surface what needs attention. Critical alerts should block packet generation until addressed.",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "dismiss_alert",
+    category: "founder",
+    tags: ["founder", "alert", "dismiss", "resolve", "suppress"],
+    quickRef: {
+      nextAction: "Alert dismissed. Run get_proactive_alerts to see remaining items.",
+      nextTools: ["get_proactive_alerts", "flag_important_change"],
+      methodology: "founder",
+      tip: "Only dismiss alerts that are genuinely not actionable. Dismissing real issues creates blind spots.",
+    },
+    phase: "utility",
+    complexity: "low",
+  },
+  {
+    name: "detect_repeated_questions",
+    category: "dogfood_judge",
+    tags: ["dogfood", "repeated", "question", "detection", "similarity", "cluster", "cognition"],
+    quickRef: {
+      nextAction: "Clusters identified. High repeat rate = memory system failing. Fix by surfacing prior answers proactively.",
+      nextTools: ["get_repeat_cognition_metrics", "get_proactive_alerts", "record_event"],
+      methodology: "dogfood_judge",
+      tip: "A repeat rate > 0.2 means >20% of questions were asked before. The system should have kept them warm.",
+    },
+    phase: "research",
+    complexity: "medium",
   },
 
   // ═══ CAUSAL MEMORY ═══
@@ -4010,6 +4090,47 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
       methodology: "founder",
     },
     phase: "research",
+    complexity: "medium",
+  },
+
+  // ═══ FOUNDER LOCAL PIPELINE (end-to-end without Convex) ═══
+  {
+    name: "founder_local_gather",
+    category: "founder",
+    tags: ["founder", "local", "gather", "context", "git", "sqlite", "filesystem", "intelligence"],
+    quickRef: {
+      nextAction: "Context gathered from local sources. Call founder_local_synthesize to produce a packet, or review the gathered data first.",
+      nextTools: ["founder_local_synthesize", "founder_local_weekly_reset"],
+      methodology: "founder",
+      tip: "No Convex or external APIs needed. Reads git log, CLAUDE.md, session memory, dogfood findings.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "founder_local_synthesize",
+    category: "founder",
+    tags: ["founder", "local", "synthesize", "packet", "contradiction", "signals", "memo", "intelligence"],
+    quickRef: {
+      nextAction: "Packet synthesized. Review contradictions and next actions. Export memo or feed into founder_packet_validate.",
+      nextTools: ["founder_packet_validate", "track_milestone", "track_action"],
+      methodology: "founder",
+      tip: "Detects contradictions between CLAUDE.md, public surfaces, and dogfood findings automatically.",
+    },
+    phase: "ship",
+    complexity: "medium",
+  },
+  {
+    name: "founder_local_weekly_reset",
+    category: "founder",
+    tags: ["founder", "local", "weekly", "reset", "packet", "habit", "intelligence", "memo", "canonical"],
+    quickRef: {
+      nextAction: "Weekly reset packet generated. Share the memo, resolve top contradiction, then execute next 3 moves.",
+      nextTools: ["track_action", "track_milestone", "founder_packet_validate"],
+      methodology: "founder",
+      tip: "One-call convenience: gather + synthesize + memo in one shot. First habit of the dogfood loop.",
+    },
+    phase: "ship",
     complexity: "medium",
   },
 
@@ -4165,6 +4286,32 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     },
     phase: "research",
     complexity: "medium",
+  },
+  {
+    name: "record_dogfood_telemetry",
+    category: "dogfood_judge",
+    tags: ["dogfood", "telemetry", "record", "scenario", "cost", "latency", "tokens", "tool_calls", "artifact", "packet"],
+    quickRef: {
+      nextAction: "Telemetry recorded. Run get_dogfood_telemetry to see aggregate metrics across scenarios.",
+      nextTools: ["get_dogfood_telemetry", "judge_session", "get_repeat_cognition_metrics"],
+      methodology: "dogfood_judge",
+      tip: "Record telemetry after every dogfood scenario. The cost band and tool call count are key efficiency signals.",
+    },
+    phase: "utility",
+    complexity: "low",
+  },
+  {
+    name: "get_dogfood_telemetry",
+    category: "dogfood_judge",
+    tags: ["dogfood", "telemetry", "query", "averages", "cost", "latency", "tokens", "scenario", "role", "surface"],
+    quickRef: {
+      nextAction: "Telemetry retrieved. Compare avg tool calls, latency, and cost across scenarios. Flag outliers.",
+      nextTools: ["record_dogfood_telemetry", "get_regression_gate", "get_repeat_cognition_metrics"],
+      methodology: "dogfood_judge",
+      tip: "Filter by userRole to compare founder vs banker vs researcher efficiency. High tool calls + low judge score = workflow friction.",
+    },
+    phase: "research",
+    complexity: "low",
   },
 ];
 

@@ -165,7 +165,7 @@ Requirements:
   for (const prompt of attemptPrompts) {
     // Use Gemini with Google Search grounding
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash",
+      model: "gemini-3.1-flash-lite-preview",
       contents: [
         {
           role: "user" as const,

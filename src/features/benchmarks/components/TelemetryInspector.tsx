@@ -273,14 +273,25 @@ function FeedbackModal({ run, step }: { run: InspectorRun | null; step: Inspecto
           ? { width: window.innerWidth, height: window.innerHeight, devicePixelRatio: window.devicePixelRatio }
           : null,
       timestamp: new Date().toISOString(),
-      userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "unknown",
+      // SECURITY: Do not send full userAgent to external webhooks — it leaks
+      // OS version, browser version, and system details to third parties.
+      userAgent: "nodebench-client",
       feedback: feedbackDraft.trim(),
     };
 
     setSubmitting(true);
     try {
       const webhookUrl = import.meta.env.VITE_UI_FEEDBACK_WEBHOOK_URL;
-      if (webhookUrl) {
+      // SECURITY: Validate webhook URL before fetching — only allow HTTPS to
+      // prevent SSRF against internal networks, localhost, or non-TLS endpoints.
+      const isValidWebhookUrl = (() => {
+        if (!webhookUrl || typeof webhookUrl !== "string") return false;
+        try {
+          const u = new URL(webhookUrl);
+          return u.protocol === "https:";
+        } catch { return false; }
+      })();
+      if (isValidWebhookUrl) {
         await fetch(webhookUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

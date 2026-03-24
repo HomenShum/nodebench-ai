@@ -133,6 +133,7 @@ const PRESETS: Record<string, string[]> = {
     "toon", "pattern", "git_workflow", "seo", "voice_bridge",
     "critter", "email", "rss", "architect",
   ],
+  cursor: ["deep_sim", "quality_gate", "learning", "session_memory", "web", "toon"],
   full: Object.keys(TOOLSET_MAP),
 };
 

@@ -1,0 +1,17 @@
+node_modules
+dist
+.dev-logs
+.tmp
+.claude
+.cursor
+.windsurf
+*.log
+*.err.log
+python-mcp-servers
+packages/mcp-local/node_modules
+packages/mcp-client/node_modules
+packages/convex-mcp-nodebench/node_modules
+scripts/eval-harness
+tests
+docs/completions
+docs/plans

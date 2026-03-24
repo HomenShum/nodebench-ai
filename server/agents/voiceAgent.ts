@@ -9,13 +9,18 @@ import { z } from 'zod';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../convex/_generated/api';
 
-// Initialize Convex client
-const convexUrl = process.env.CONVEX_URL;
-if (!convexUrl) {
-  throw new Error('CONVEX_URL environment variable is required');
+// Lazy-initialized Convex client (env vars loaded by server/index.ts dotenv before first use)
+let _convex: ConvexHttpClient | null = null;
+function getConvex(): ConvexHttpClient {
+  if (!_convex) {
+    const convexUrl = process.env.CONVEX_URL || process.env.VITE_CONVEX_URL;
+    if (!convexUrl) {
+      throw new Error('CONVEX_URL environment variable is required');
+    }
+    _convex = new ConvexHttpClient(convexUrl);
+  }
+  return _convex;
 }
-
-const convex = new ConvexHttpClient(convexUrl);
 
 /**
  * Create a realtime voice agent with Convex tool integration
@@ -65,7 +70,7 @@ function createSearchDocumentsTool(userId: string) {
       console.log(`[Tool] search_documents: "${query}" (limit: ${limit})`);
       
       try {
-        const results = await convex.query(api.documents.search, {
+        const results = await getConvex().query(api.documents.search, {
           query,
           limit,
         });
@@ -101,7 +106,7 @@ function createGetDocumentTool(userId: string) {
       console.log(`[Tool] get_document: ${documentId}`);
       
       try {
-        const doc = await convex.query(api.documents.getDocument, {
+        const doc = await getConvex().query(api.documents.getDocument, {
           documentId: documentId as any,
         });
 
@@ -138,7 +143,7 @@ function createCreateDocumentTool(userId: string) {
       console.log(`[Tool] create_document: "${title}"`);
 
       try {
-        const documentId = await convex.mutation(api.documents.createDocument, {
+        const documentId = await getConvex().mutation(api.documents.createDocument, {
           title,
           body,
           userId,
@@ -226,7 +231,7 @@ function createListTasksTool(userId: string) {
       console.log(`[Tool] list_tasks: start=${start}, end=${end}`);
 
       try {
-        const tasks = await convex.query(api.documentTasks.listTasks, {
+        const tasks = await getConvex().query(api.documentTasks.listTasks, {
           start,
           end,
         });
@@ -267,7 +272,7 @@ function createCreateTaskTool(userId: string) {
       console.log(`[Tool] create_task: "${title}"`);
 
       try {
-        const taskId = await convex.mutation(api.documentTasks.createTask, {
+        const taskId = await getConvex().mutation(api.documentTasks.createTask, {
           title,
           description,
           dueDate: dueDate ? new Date(dueDate).getTime() : undefined,

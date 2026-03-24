@@ -69,27 +69,46 @@ import { initEmbeddingIndex } from "./tools/embeddingProvider.js";
 
 export { TOOLSET_MAP };
 
-const DEFAULT_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate", "skill_update", "context_sandbox", "observability", "execution_trace", "mission_harness", "deep_sim", "founder"];
+// Starter: ~19 tools. Just decision intelligence + discovery/meta overhead.
+// Users call discover_tools → load_toolset to expand. Under Google's 50-tool IDE limit.
+const STARTER_TOOLSETS = ["deep_sim"];
+
+// Core: the original default. ~81 tools across 15 domains.
+const CORE_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate", "skill_update", "context_sandbox", "observability", "execution_trace", "mission_harness", "deep_sim", "founder"];
 
 const PRESETS: Record<string, string[]> = {
-  default: DEFAULT_TOOLSETS,
-  // Themed presets — bridge between default (81 tools) and full (295 tools)
-  web_dev:      [...DEFAULT_TOOLSETS, "ui_capture", "vision", "web", "seo", "git_workflow", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "qa_orchestration", "visual_qa", "design_governance", "web_scraping"],
-  research:     [...DEFAULT_TOOLSETS, "web", "llm", "rss", "email", "docs", "research_optimizer", "web_scraping", "temporal_intelligence", "deep_sim"],
-  data:         [...DEFAULT_TOOLSETS, "local_file", "llm", "web", "research_optimizer", "web_scraping", "temporal_intelligence"],
-  devops:       [...DEFAULT_TOOLSETS, "git_workflow", "session_memory", "benchmark", "pattern"],
-  mobile:       [...DEFAULT_TOOLSETS, "ui_capture", "vision", "flicker_detection", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "visual_qa"],
-  academic:     [...DEFAULT_TOOLSETS, "research_writing", "llm", "web", "local_file"],
-  multi_agent:  [...DEFAULT_TOOLSETS, "parallel", "self_eval", "session_memory", "pattern", "toon", "qa_orchestration", "agent_traverse", "engine_context", "research_optimizer", "web_scraping", "deep_sim"],
-  content:      [...DEFAULT_TOOLSETS, "llm", "critter", "email", "rss", "platform", "architect", "local_dashboard", "engine_context", "thompson_protocol"],
+  // DEFAULT: starter (~19 tools). Progressive discovery is the gateway to 338.
+  default: STARTER_TOOLSETS,
+  starter: STARTER_TOOLSETS,
+  // Core AI Flywheel — everything from the old default
+  core:         CORE_TOOLSETS,
+  // Themed presets — bridge between starter (19 tools) and full (338 tools)
+  web_dev:      [...CORE_TOOLSETS, "ui_capture", "vision", "web", "seo", "git_workflow", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "qa_orchestration", "visual_qa", "design_governance", "web_scraping"],
+  research:     [...CORE_TOOLSETS, "web", "llm", "rss", "email", "docs", "research_optimizer", "web_scraping", "temporal_intelligence", "deep_sim"],
+  data:         [...CORE_TOOLSETS, "local_file", "llm", "web", "research_optimizer", "web_scraping", "temporal_intelligence"],
+  devops:       [...CORE_TOOLSETS, "git_workflow", "session_memory", "benchmark", "pattern"],
+  mobile:       [...CORE_TOOLSETS, "ui_capture", "vision", "flicker_detection", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "visual_qa"],
+  academic:     [...CORE_TOOLSETS, "research_writing", "llm", "web", "local_file"],
+  multi_agent:  [...CORE_TOOLSETS, "parallel", "self_eval", "session_memory", "pattern", "toon", "qa_orchestration", "agent_traverse", "engine_context", "research_optimizer", "web_scraping", "deep_sim"],
+  content:      [...CORE_TOOLSETS, "llm", "critter", "email", "rss", "platform", "architect", "local_dashboard", "engine_context", "thompson_protocol"],
+  // ── Persona presets (all under 50 tools for IDE compatibility) ──
+  // Founder: decision intelligence + company tracking + session memory + local dashboard (~40 tools)
+  founder:      ["deep_sim", "founder", "learning", "local_dashboard"],
+  // Banker/analyst: decision intelligence + company profiling + web research + recon (~39 tools)
+  banker:       ["deep_sim", "founder", "web", "recon"],
+  // Operator: decision intelligence + company tracking + causal memory + action tracing (~40 tools)
+  operator:     ["deep_sim", "founder", "causal_memory"],
+  // Researcher: decision intelligence + web + recon + session memory (~32 tools)
+  researcher:   ["deep_sim", "web", "recon", "learning"],
   // Cursor IDE has a hard 40-tool limit across ALL MCP servers.
-  // 28 tools = 22 domain + 3 meta + 3 discovery — leaves 12 slots for other servers.
   cursor:       ["deep_sim", "quality_gate", "learning", "session_memory", "web", "toon"],
   full: ALL_DOMAIN_KEYS,
 };
 
 const PRESET_DESCRIPTIONS: Record<string, string> = {
-  default:     "Core AI Flywheel — verification, eval, quality gates, learning, recon, mission harness",
+  default:     "Starter (~19 tools) — decision intelligence + progressive discovery. Use discover_tools → load_toolset to expand.",
+  starter:     "Starter (~19 tools) — decision intelligence + progressive discovery. Use discover_tools → load_toolset to expand.",
+  core:        "Core AI Flywheel (~81 tools) — verification, eval, quality gates, learning, recon, mission harness",
   web_dev:     "Web projects — adds visual QA, SEO audit, git workflow, code architecture",
   research:    "Research workflows — adds web search, LLM calls, RSS feeds, email, docs",
   data:        "Data analysis — adds CSV/XLSX/PDF/JSON parsing, LLM extraction, web fetch",
@@ -98,8 +117,12 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
   academic:    "Academic papers — adds polish, review, translate, logic check, data analysis",
   multi_agent: "Multi-agent teams — adds task locking, messaging, roles, oracle testing, frontend traversal",
   content:     "Content & publishing — adds LLM, accountability, email, RSS, platform queue",
-  cursor:      "Cursor IDE (28 tools) — decision intelligence, research, quality gates, session memory, web, TOON encoding. Leaves 12 slots for other MCP servers.",
-  full:        "Everything — all toolsets for maximum coverage",
+  founder:     "Founder (~40 tools) — decision intelligence, company tracking, session memory, local dashboard",
+  banker:      "Banker/Analyst (~39 tools) — decision intelligence, company profiling, web research, recon",
+  operator:    "Operator (~40 tools) — decision intelligence, company tracking, causal memory, action tracing",
+  researcher:  "Researcher (~32 tools) — decision intelligence, web search, recon, session memory",
+  cursor:      "Cursor IDE (28 tools) — decision intelligence, quality gates, session memory, web, TOON encoding. Leaves 12 slots for other MCP servers.",
+  full:        "Everything — all 338 tools for maximum coverage",
 };
 
    async function parseToolsets(): Promise<McpTool[]> {
@@ -192,7 +215,7 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
     return loadToolsets(domainsToLoad);
   }
 
-   // Default to default preset (50 tools - complete AI Flywheel)
+   // Default to starter preset (~19 tools — decision intelligence + discovery)
    return loadToolsets(PRESETS.default);
 }
 

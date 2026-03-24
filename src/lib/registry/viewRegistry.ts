@@ -60,10 +60,39 @@ export type MainView =
   | "mission-control"
   | "evolution"
   | "deep-sim"
+  | "decision-snapshot"
+  | "variables"
+  | "scenarios"
+  | "interventions"
+  | "evidence"
   | "postmortem"
   | "agent-telemetry"
   | "api-keys"
-  | "developers";
+  | "api-docs"
+  | "developers"
+  | "pricing"
+  | "changelog"
+  | "tracking"
+  | "legal"
+  | "connect-sources"
+  | "founder-dashboard"
+  | "company-setup"
+  | "initiative-workspace"
+  | "agent-oversight"
+  | "command-panel"
+  | "context-intake"
+  | "founder-history"
+  | "agent-brief"
+  | "nearby-entities"
+  | "company-search"
+  | "company-analysis"
+  | "founder-export"
+  | "role-overlays"
+  | "founder-trajectory"
+  | "founder-rollups"
+  | "founder-lineage"
+  | "founder-changes"
+  | "founder-session-delta";
 
 export type ResearchTab = "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
 
@@ -142,6 +171,7 @@ export interface CockpitState {
   workspace: string | null;
   canonicalPath: string;
   isLegacyRedirect: boolean;
+  isUnknownRoute: boolean;
 }
 
 export interface ActiveSurfaceParams {
@@ -286,7 +316,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
   {
     id: "watchlists",
     title: "Watchlists",
-    subtitle: "Persistent monitors for company, sector, geography, and theme-based DeepTrace missions",
+    subtitle: "Persistent monitors for company, sector, geography, and theme-based investigation missions",
     path: "/research/watchlists",
     aliases: ["/watchlists", "/hub/watchlists"],
     component: lazyView(() => import("@/features/research/views/WatchlistsView")),
@@ -738,6 +768,62 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     legacyRedirectTo: "/?surface=memo",
   },
   {
+    id: "decision-snapshot",
+    title: "Decision Snapshot",
+    subtitle: "Answer-first canvas: recommendation, top variables, best next actions, scenarios",
+    path: "/decision-snapshot",
+    aliases: ["/snapshot", "/decision"],
+    component: lazyView(() => import("@/features/deepSim/views/DecisionSnapshotView")),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "memo",
+  },
+  {
+    id: "variables",
+    title: "Variables",
+    subtitle: "Ranked variables that drive the decision — weights, sensitivity, data completeness",
+    path: "/variables",
+    component: lazyView(() => import("@/features/deepSim/views/VariablesView")),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "memo",
+  },
+  {
+    id: "scenarios",
+    title: "Scenarios",
+    subtitle: "Scenario branches with assumptions, risks, and probability distribution",
+    path: "/scenarios",
+    component: lazyView(() => import("@/features/deepSim/views/ScenariosView")),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "memo",
+  },
+  {
+    id: "interventions",
+    title: "Interventions",
+    subtitle: "Ranked intervention ladder with cost, timeframe, and confirmation criteria",
+    path: "/interventions",
+    component: lazyView(() => import("@/features/deepSim/views/InterventionsView")),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "memo",
+  },
+  {
+    id: "evidence",
+    title: "Evidence",
+    subtitle: "Source drawer, provenance, claims, contradictions, and counter-models",
+    path: "/evidence",
+    component: lazyView(() => import("@/features/deepSim/views/EvidenceView")),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "memo",
+  },
+  {
     id: "postmortem",
     title: "Postmortem",
     subtitle: "Compare predictions against reality, score forecasts, update priors",
@@ -766,6 +852,21 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     legacyRedirectTo: "/?surface=telemetry",
   },
 
+  // ── API Docs ────────────────────────────────────────────────────────────
+  {
+    id: "api-docs",
+    title: "API Reference",
+    subtitle: "Interactive MCP tool catalog with search, categories, and schema details",
+    path: "/api-docs",
+    aliases: ["/api-reference", "/tools-catalog"],
+    component: lazyNamed(() => import("@/features/controlPlane/views/ApiDocsPage"), "ApiDocsPage"),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+
   // ── API Key Management ────────────────────────────────────────────────
   {
     id: "api-keys",
@@ -778,6 +879,297 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     parentId: "control-plane",
     surfaceId: "telemetry",
+    commandPaletteVisible: true,
+  },
+
+  // ── Business Pages ──────────────────────────────────────────────────────
+  {
+    id: "pricing",
+    title: "Pricing",
+    subtitle: "Plans for individuals, teams, and enterprises",
+    path: "/pricing",
+    component: lazyNamed(() => import("@/features/controlPlane/views/PricingPage"), "PricingPage"),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "changelog",
+    title: "Changelog",
+    subtitle: "Release history and what shipped",
+    path: "/changelog",
+    component: lazyNamed(() => import("@/features/controlPlane/views/ChangelogPage"), "ChangelogPage"),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  // ── Entity Tracking ──────────────────────────────────────────────────────
+  {
+    id: "tracking",
+    title: "Tracked Entities",
+    subtitle: "Monitor companies, products, and founders with trajectory scores and slope-change detection",
+    path: "/tracking",
+    aliases: ["/entities", "/entity-tracking"],
+    component: lazyView(() => import("@/features/tracking/views/EntityTrackingView")),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "research",
+    commandPaletteVisible: true,
+  },
+
+  {
+    id: "legal",
+    title: "Legal",
+    subtitle: "Terms of service and privacy policy",
+    path: "/legal",
+    component: lazyNamed(() => import("@/features/controlPlane/views/LegalPage"), "LegalPage"),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+
+  // ── Context Ingestion Wizard ────────────────────────────────────────────
+  {
+    id: "connect-sources",
+    title: "Connect Sources",
+    subtitle: "Connect your data sources to NodeBench",
+    path: "/connect",
+    aliases: ["/connect-sources", "/setup-sources"],
+    component: lazyNamed(() => import("@/features/onboarding/views/ConnectSourcesWizard"), "ConnectSourcesWizard"),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+
+  // ── Founder Platform ──────────────────────────────────────────────────────
+  {
+    id: "founder-dashboard",
+    title: "Founder Dashboard",
+    subtitle: "Your company operating view — goals, agents, signals, and next actions",
+    path: "/founder",
+    aliases: ["/founder-dashboard"],
+    component: lazyView(() => import("@/features/founder/views/FounderDashboardView")),
+    group: "core",
+    navVisible: true,
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "company-setup",
+    title: "Company Setup",
+    subtitle: "Clarify your company identity — start new, continue existing, or merge prior work",
+    path: "/founder/setup",
+    component: lazyView(() => import("@/features/founder/views/CompanySetupView")),
+    group: "nested",
+    navVisible: false,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "initiative-workspace",
+    title: "Initiative Workspace",
+    subtitle: "Deep view into a single initiative — signals, agents, and interventions",
+    path: "/founder/initiative",
+    component: lazyView(() => import("@/features/founder/views/InitiativeWorkspaceView")),
+    group: "nested",
+    navVisible: false,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
+    commandPaletteVisible: false,
+  },
+  {
+    id: "agent-oversight",
+    title: "Agent Oversight",
+    subtitle: "Monitor and manage your connected Claude Code and OpenClaw agents",
+    path: "/founder/agents",
+    component: lazyView(() => import("@/features/founder/views/AgentOversightView")),
+    group: "nested",
+    navVisible: true,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "command-panel",
+    title: "Command Center",
+    subtitle: "Message, direct, and coordinate your agents with structured business context",
+    path: "/founder/command",
+    aliases: ["/founder/messages"],
+    component: lazyView(() => import("@/features/founder/views/CommandPanelView")),
+    group: "nested",
+    navVisible: true,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "context-intake",
+    title: "Context Intake",
+    subtitle: "Drop in messy notes, docs, links, screenshots, and agent outputs",
+    path: "/founder/intake",
+    component: lazyView(() => import("@/features/founder/views/ContextIntakeView")),
+    group: "nested",
+    navVisible: true,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "agent-brief",
+    title: "Agent Brief",
+    subtitle: "Hand off the active artifact packet to Claude Code or OpenClaw agents",
+    path: "/founder/brief",
+    component: lazyView(() => import("@/features/founder/components/AgentHandoffPanel")),
+    group: "nested",
+    navVisible: true,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "founder-history",
+    title: "History & Changes",
+    subtitle: "Compare snapshots, review prior memos, track drift over time",
+    path: "/founder/history",
+    component: lazyView(() => import("@/features/founder/views/HistoryView")),
+    group: "nested",
+    navVisible: true,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "nearby-entities",
+    title: "Nearby Entities",
+    subtitle: "Competitive landscape, partners, and entity context for your company",
+    path: "/founder/entities",
+    component: lazyView(() => import("@/features/founder/views/NearbyEntitiesView")),
+    group: "nested",
+    navVisible: true,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+
+  // ── Company Intelligence ───────────────────────────────────────────────────
+  {
+    id: "company-search",
+    title: "Company Intelligence",
+    subtitle: "Search any company — banker, CEO, strategy, or diligence lens",
+    path: "/founder/search",
+    component: lazyView(() => import("@/features/founder/views/CompanySearchView")),
+    group: "nested",
+    navVisible: true,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "company-analysis",
+    title: "Company Analysis",
+    subtitle: "Structured 9-card analysis brief for a searched company",
+    path: "/founder/analysis",
+    component: lazyView(() => import("@/features/founder/views/CompanyAnalysisView")),
+    group: "nested",
+    navVisible: false,
+    parentId: "company-search",
+    surfaceId: "ask",
+    commandPaletteVisible: false,
+  },
+  {
+    id: "founder-export",
+    title: "Export Center",
+    subtitle: "Turn Artifact Packets into presentable deliverables",
+    path: "/founder/export",
+    component: lazyView(() => import("@/features/founder/views/ExportView")),
+    group: "nested",
+    navVisible: true,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "role-overlays",
+    title: "Perspectives",
+    subtitle: "View your company through 5 lenses — founder, investor, operator, advisor, board",
+    path: "/founder/perspectives",
+    component: lazyView(() => import("@/features/founder/views/RoleOverlayView")),
+    group: "nested",
+    navVisible: true,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  // ── Phase 10 — Causal Memory & Trajectory Intelligence ─────────────
+  {
+    id: "founder-trajectory",
+    title: "Trajectory",
+    subtitle: "Event ledger, path replay, and state change timeline",
+    path: "/founder/trajectory",
+    component: lazyView(() => import("@/features/founder/views/TrajectoryTimelineView")),
+    group: "nested",
+    navVisible: true,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "founder-rollups",
+    title: "Time Rollups",
+    subtitle: "Day / week / month / quarter / year metric comparisons",
+    path: "/founder/rollups",
+    component: lazyView(() => import("@/features/founder/views/TimeRollupView")),
+    group: "nested",
+    navVisible: true,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "founder-lineage",
+    title: "Artifact Lineage",
+    subtitle: "Packet and memo version history with diffs and share tracking",
+    path: "/founder/lineage",
+    component: lazyView(() => import("@/features/founder/views/PacketLineageView")),
+    group: "nested",
+    navVisible: true,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "founder-changes",
+    title: "Important Changes",
+    subtitle: "Detected changes requiring attention — resolve, investigate, or dismiss",
+    path: "/founder/changes",
+    component: lazyView(() => import("@/features/founder/views/ChangeDetectorView")),
+    group: "nested",
+    navVisible: true,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  // ── Phase 11 — Ambient Intelligence ────────────────────────────────
+  {
+    id: "founder-session-delta",
+    title: "Since Your Last Session",
+    subtitle: "What changed while you were away — strategy, competitors, contradictions, packets",
+    path: "/founder/delta",
+    component: lazyView(() => import("@/features/founder/views/SessionDeltaView")),
+    group: "nested",
+    navVisible: true,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
     commandPaletteVisible: true,
   },
 ];
@@ -955,6 +1347,7 @@ export function resolvePathToCockpitState(rawPathname: string, rawSearch = ""): 
       workspace: params.get("workspace"),
       canonicalPath,
       isLegacyRedirect: false, // cockpit-style ?surface= URLs are never legacy redirects
+      isUnknownRoute: false,
     };
   }
 
@@ -983,6 +1376,7 @@ export function resolvePathToCockpitState(rawPathname: string, rawSearch = ""): 
     workspace: params.get("workspace"),
     canonicalPath,
     isLegacyRedirect: currentPath !== canonicalPath,
+    isUnknownRoute: resolved.isUnknownRoute,
   };
 }
 
@@ -995,6 +1389,7 @@ export function resolvePathToView(rawPathname: string): {
   entityName: string | null;
   spreadsheetId: string | null;
   researchTab: ResearchTab;
+  isUnknownRoute: boolean;
 } {
   const normalized = (rawPathname || "/")
     .split("?")[0]
@@ -1004,33 +1399,33 @@ export function resolvePathToView(rawPathname: string): {
 
   // Special cases requiring parameter extraction
   if (pathname.startsWith("/onboarding")) {
-    return { view: "research", entityName: null, spreadsheetId: null, researchTab: "overview" };
+    return { view: "research", entityName: null, spreadsheetId: null, researchTab: "overview", isUnknownRoute: false };
   }
 
   if (pathname.startsWith("/entity/") || pathname.startsWith("/entity%2f")) {
     const match = (rawPathname || "").match(/^\/entity[\\/](.+)$/i);
     const name = match ? decodeURIComponent(match[1]) : null;
-    return { view: "entity", entityName: name, spreadsheetId: null, researchTab: "overview" };
+    return { view: "entity", entityName: name, spreadsheetId: null, researchTab: "overview", isUnknownRoute: false };
   }
 
   if (pathname.startsWith("/spreadsheets/")) {
     const match = (rawPathname || "").match(/^\/spreadsheets[\\/](.+)$/i);
     const id = match ? decodeURIComponent(match[1]) : null;
-    return { view: "spreadsheets", entityName: null, spreadsheetId: id, researchTab: "overview" };
+    return { view: "spreadsheets", entityName: null, spreadsheetId: id, researchTab: "overview", isUnknownRoute: false };
   }
 
   if (pathname.startsWith("/research") || pathname.startsWith("/hub")) {
     if (pathname.startsWith("/research/world-monitor") || pathname.startsWith("/hub/world-monitor")) {
-      return { view: "world-monitor", entityName: null, spreadsheetId: null, researchTab: "overview" };
+      return { view: "world-monitor", entityName: null, spreadsheetId: null, researchTab: "overview", isUnknownRoute: false };
     }
     if (pathname.startsWith("/research/watchlists") || pathname.startsWith("/hub/watchlists")) {
-      return { view: "watchlists", entityName: null, spreadsheetId: null, researchTab: "overview" };
+      return { view: "watchlists", entityName: null, spreadsheetId: null, researchTab: "overview", isUnknownRoute: false };
     }
     const tabMatch = pathname.match(
       /^\/(?:research|hub)\/(overview|signals|briefing|deals|changes|changelog)/,
     );
     const tab = (tabMatch?.[1] as ResearchTab | undefined) ?? "overview";
-    return { view: "research", entityName: null, spreadsheetId: null, researchTab: tab };
+    return { view: "research", entityName: null, spreadsheetId: null, researchTab: tab, isUnknownRoute: false };
   }
 
   // General matching: longest path wins. Never let "/" swallow all routes.
@@ -1042,18 +1437,18 @@ export function resolvePathToView(rawPathname: string): {
   for (const candidate of candidates) {
     if (candidate.path === "/") {
       if (pathname === "/") {
-        return { view: candidate.view, entityName: null, spreadsheetId: null, researchTab: "overview" };
+        return { view: candidate.view, entityName: null, spreadsheetId: null, researchTab: "overview", isUnknownRoute: false };
       }
       continue;
     }
 
     if (pathname === candidate.path || pathname.startsWith(candidate.path + "/")) {
-      return { view: candidate.view, entityName: null, spreadsheetId: null, researchTab: "overview" };
+      return { view: candidate.view, entityName: null, spreadsheetId: null, researchTab: "overview", isUnknownRoute: false };
     }
   }
 
-  // Default view — landing page
-  return { view: "control-plane", entityName: null, spreadsheetId: null, researchTab: "overview" };
+  // Default view — unknown route (404)
+  return { view: "control-plane", entityName: null, spreadsheetId: null, researchTab: "overview", isUnknownRoute: true };
 }
 
 /** All view IDs (for type checking and iteration) */

@@ -31,6 +31,7 @@ interface UseCockpitRoutingReturn {
   workspaceParam: string | null;
   canonicalPath: string;
   isLegacyRedirect: boolean;
+  isUnknownRoute: boolean;
 }
 
 export function useCockpitRouting(): UseCockpitRoutingReturn {
@@ -51,6 +52,7 @@ export function useCockpitRouting(): UseCockpitRoutingReturn {
       workspaceParam: resolved.workspace,
       canonicalPath: resolved.canonicalPath,
       isLegacyRedirect: resolved.isLegacyRedirect,
+      isUnknownRoute: resolved.isUnknownRoute,
     };
   };
 
@@ -69,6 +71,7 @@ export function useCockpitRouting(): UseCockpitRoutingReturn {
         workspaceParam: null,
         canonicalPath: "/?surface=ask",
         isLegacyRedirect: false,
+        isUnknownRoute: false,
       };
     }
     return parseLocation(location.pathname || "/", location.search || "");
@@ -88,6 +91,7 @@ export function useCockpitRouting(): UseCockpitRoutingReturn {
   const [workspaceParam, setWorkspaceParam] = useState<string | null>(initialRoute.workspaceParam);
   const [canonicalPath, setCanonicalPath] = useState<string>(initialRoute.canonicalPath);
   const [isLegacyRedirect, setIsLegacyRedirect] = useState<boolean>(initialRoute.isLegacyRedirect);
+  const [isUnknownRoute, setIsUnknownRoute] = useState<boolean>(initialRoute.isUnknownRoute);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
@@ -104,6 +108,7 @@ export function useCockpitRouting(): UseCockpitRoutingReturn {
     setWorkspaceParam(next.workspaceParam);
     setCanonicalPath(next.canonicalPath);
     setIsLegacyRedirect(next.isLegacyRedirect);
+    setIsUnknownRoute(next.isUnknownRoute);
   }, [location.pathname, location.search]);
 
   return {
@@ -127,6 +132,7 @@ export function useCockpitRouting(): UseCockpitRoutingReturn {
     workspaceParam,
     canonicalPath,
     isLegacyRedirect,
+    isUnknownRoute,
   };
 }
 

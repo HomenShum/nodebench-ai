@@ -2,7 +2,7 @@ import { Authenticated, Unauthenticated, useConvexAuth } from "convex/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CockpitLayout } from "./layouts/CockpitLayout";
 import { TutorialPage } from "@/features/onboarding/views/TutorialPage";
-import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense, useRef } from "react";
 import { Id } from "../convex/_generated/dataModel";
 import { ContextPillsProvider } from "./hooks/contextPills";
 import { FastAgentProvider, useFastAgent } from "@/features/agents/context/FastAgentContext";
@@ -17,6 +17,9 @@ import { ViewSkeleton } from "@/components/skeletons/ViewSkeleton";
 import { useWebMcpProvider } from "./hooks/useWebMcpProvider";
 import type { MainView } from "@/lib/registry/viewRegistry";
 import { buildCockpitPathForView } from "@/lib/registry/viewRegistry";
+import { initErrorReporting } from "@/lib/errorReporting";
+
+const ShareableMemoView = lazy(() => import("@/features/founder/views/ShareableMemoView"));
 
 const FastAgentPanel = lazy(() =>
   import("@/features/agents/components/FastAgentPanel/FastAgentPanel").then((mod) => ({
@@ -57,6 +60,15 @@ function GlobalFastAgentPanel() {
 function App() {
   const location = useLocation();
   const [showTutorial, setShowTutorial] = useState(false);
+
+  // Initialize global error tracking once on mount
+  const errorInitRef = useRef(false);
+  useEffect(() => {
+    if (!errorInitRef.current) {
+      errorInitRef.current = true;
+      initErrorReporting();
+    }
+  }, []);
   const [selectedDocumentId, setSelectedDocumentId] = useState<Id<"documents"> | null>(null);
 
   // WebMCP provider — expose NodeBench tools to browser agents via navigator.modelContext
@@ -100,6 +112,20 @@ function App() {
     setSelectedDocumentId(documentId as Id<"documents">);
     setShowTutorial(false);
   };
+
+  // Standalone route: /memo/:id renders without cockpit chrome or auth wrapper
+  const isMemoRoute = location.pathname.startsWith("/memo/");
+  if (isMemoRoute) {
+    return (
+      <ThemeProvider>
+        <ErrorBoundary title="Something went wrong">
+          <Suspense fallback={<ViewSkeleton />}>
+            <ShareableMemoView />
+          </Suspense>
+        </ErrorBoundary>
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider>

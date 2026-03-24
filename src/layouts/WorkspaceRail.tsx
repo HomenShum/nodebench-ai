@@ -3,15 +3,25 @@ import { useNavigate } from "react-router-dom";
 import { useConvexAuth, useQuery } from "convex/react";
 import {
   Bot,
+  Building2,
   ChevronLeft,
   ChevronRight,
+  FileInput,
   FileText,
+  Layers,
+  LogIn,
   MessageSquare,
   Radar,
+  Search,
+  Send,
   User,
   Settings,
   Orbit,
+  Clock,
   FolderKanban,
+  Network,
+  Zap,
+  Eye,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { api } from "../../convex/_generated/api";
@@ -34,12 +44,15 @@ const SURFACE_SHORTCUTS: SurfaceShortcut[] = [
   { id: "telemetry", label: "System", icon: Bot, color: "currentColor" },
 ];
 
+const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);
+
 interface WorkspaceRailProps {
   activeSurface: CockpitSurfaceId;
   onSurfaceChange: (surface: CockpitSurfaceId) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   onOpenSettings?: () => void;
+  onOpenPalette?: () => void;
 }
 
 export const WorkspaceRail = memo(function WorkspaceRail({
@@ -48,6 +61,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
   isCollapsed,
   onToggleCollapse,
   onOpenSettings,
+  onOpenPalette,
 }: WorkspaceRailProps) {
   const navigate = useNavigate();
   const { isAuthenticated } = useConvexAuth();
@@ -71,7 +85,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
   return (
     <nav
       className={cn(
-        "hidden lg:flex shrink-0 flex-col border-r border-white/[0.06] bg-white/[0.02] backdrop-blur-xl transition-[width] duration-200 ease-in-out",
+        "hidden lg:flex shrink-0 flex-col border-r border-white/[0.06] bg-white/[0.04] backdrop-blur-xl transition-[width] duration-200 ease-in-out",
         isCollapsed ? "w-12" : "w-[240px]",
       )}
       id="main-navigation"
@@ -96,10 +110,35 @@ export const WorkspaceRail = memo(function WorkspaceRail({
         {!isCollapsed ? (
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold text-content">NodeBench</div>
-            <div className="truncate text-[11px] uppercase tracking-[0.16em] text-content-muted">Agent control plane</div>
+            <div className="truncate text-[11px] uppercase tracking-[0.16em] text-content-muted">Operating intelligence</div>
           </div>
         ) : null}
       </div>
+
+      {/* ── Command palette trigger — primary action, right after brand ── */}
+      {onOpenPalette && (
+        <div className={cn("px-2 pt-2 pb-1", isCollapsed && "flex justify-center px-1")}>
+          <button
+            type="button"
+            onClick={onOpenPalette}
+            className={cn(
+              "flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] text-content-muted transition-colors hover:bg-white/[0.06] hover:text-content",
+              isCollapsed ? "h-9 w-9 justify-center" : "w-full px-3 py-2 text-xs",
+            )}
+            aria-label="Search or jump (Ctrl+K)"
+          >
+            <Search className="h-3.5 w-3.5 shrink-0 opacity-60" />
+            {!isCollapsed && (
+              <>
+                <span className="flex-1 text-left">Search...</span>
+                <kbd className="rounded border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5 text-[10px] opacity-50">
+                  {isMac ? "⌘K" : "Ctrl+K"}
+                </kbd>
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       <div className={cn("flex flex-col gap-1 px-2 py-2", isCollapsed && "items-center px-0")}>
         {SURFACE_SHORTCUTS.map((shortcut) => {
@@ -125,6 +164,42 @@ export const WorkspaceRail = memo(function WorkspaceRail({
             >
               <Icon className="h-4 w-4 shrink-0" />
               {!isCollapsed ? <span>{shortcut.label}</span> : null}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Founder Platform ──────────────────────────────────── */}
+      <div className={cn("px-2 pt-2", isCollapsed && "px-0")}>
+        <div className={cn(
+          "text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30",
+          isCollapsed ? "text-center" : "px-2.5 pb-1",
+        )}>
+          {isCollapsed ? "F" : "Founder"}
+        </div>
+        {([
+          { path: "/founder", label: "Dashboard", icon: Building2 },
+          { path: "/founder/intake", label: "Intake", icon: FileInput },
+          { path: "/founder/history", label: "History", icon: Clock },
+          { path: "/founder/command", label: "Command Center", icon: Send },
+          { path: "/founder/agents", label: "Agent Oversight", icon: Layers },
+          { path: "/founder/brief", label: "Agent Brief", icon: Zap },
+          { path: "/founder/entities", label: "Entities", icon: Network },
+        ] as const).map((item) => {
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.path}
+              type="button"
+              onClick={() => navigate(item.path)}
+              className={cn(
+                "flex w-full items-center gap-2.5 rounded-md text-[13px] font-medium text-content-muted transition-all duration-150 hover:bg-white/[0.04] hover:text-content",
+                isCollapsed ? "mx-auto h-9 w-9 justify-center" : "px-2.5 py-1.5",
+              )}
+              aria-label={item.label}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              {!isCollapsed ? <span>{item.label}</span> : null}
             </button>
           );
         })}
@@ -176,12 +251,13 @@ export const WorkspaceRail = memo(function WorkspaceRail({
 
       <div
         className={cn(
-          "flex items-center border-t border-white/[0.06] px-2 py-2",
-          isCollapsed ? "flex-col gap-1" : "gap-2",
+          "flex flex-col gap-1 border-t border-white/[0.06] px-2 py-2",
+          isCollapsed && "items-center",
         )}
       >
-        {isAuthenticated && (
-          <>
+        {/* Auth: signed in — profile + settings */}
+        {isAuthenticated ? (
+          <div className={cn("flex items-center", isCollapsed ? "flex-col gap-1" : "gap-2")}>
             <button
               type="button"
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.06] transition-colors hover:bg-white/[0.1]"
@@ -189,36 +265,55 @@ export const WorkspaceRail = memo(function WorkspaceRail({
             >
               <User className="h-4 w-4 text-content-muted" />
             </button>
-
-            {!isCollapsed ? (
+            {!isCollapsed && (
               <span className="flex-1 truncate text-[12px] text-content-secondary">Operator</span>
-            ) : null}
-          </>
+            )}
+            {!isCollapsed && onOpenSettings && (
+              <button
+                type="button"
+                onClick={onOpenSettings}
+                data-testid="open-settings"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-content-muted transition-colors hover:bg-white/[0.06] hover:text-content"
+                aria-label="Settings"
+              >
+                <Settings className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        ) : (
+          /* Auth: guest — sign in CTA */
+          !isCollapsed ? (
+            <button
+              type="button"
+              onClick={() => navigate("/sign-in")}
+              className="flex w-full items-center gap-2 rounded-lg border border-[#d97757]/20 bg-[#d97757]/[0.06] px-3 py-2 text-xs font-medium text-[#d97757] transition-colors hover:bg-[#d97757]/[0.12]"
+            >
+              <LogIn className="h-3.5 w-3.5" />
+              <span>Sign in</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => navigate("/sign-in")}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-[#d97757] transition-colors hover:bg-[#d97757]/[0.12]"
+              aria-label="Sign in"
+            >
+              <LogIn className="h-4 w-4" />
+            </button>
+          )
         )}
 
-        {!isCollapsed && onOpenSettings ? (
+        {/* Collapse toggle — always visible */}
+        <div className={cn("flex", isCollapsed ? "justify-center" : "justify-end")}>
           <button
             type="button"
-            onClick={onOpenSettings}
-            data-testid="open-settings"
+            onClick={onToggleCollapse}
             className="flex h-7 w-7 items-center justify-center rounded-md text-content-muted transition-colors hover:bg-white/[0.06] hover:text-content"
-            aria-label="Settings"
+            aria-label={isCollapsed ? "Expand workspace rail" : "Collapse workspace rail"}
           >
-            <Settings className="h-3.5 w-3.5" />
+            {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
           </button>
-        ) : null}
-
-        <button
-          type="button"
-          onClick={onToggleCollapse}
-          className={cn(
-            "flex h-7 w-7 items-center justify-center rounded-md text-content-muted transition-colors hover:bg-white/[0.06] hover:text-content",
-            isCollapsed && "mx-auto",
-          )}
-          aria-label={isCollapsed ? "Expand workspace rail" : "Collapse workspace rail"}
-        >
-          {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
-        </button>
+        </div>
       </div>
     </nav>
   );

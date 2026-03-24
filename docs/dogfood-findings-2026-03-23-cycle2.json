@@ -1,0 +1,198 @@
+{
+  "cycle": 2,
+  "date": "2026-03-23",
+  "scenarios_executed": 3,
+  "scenarios_total": 13,
+  "surface": "mcp",
+
+  "runs": [
+    {
+      "scenarioId": "app-01-founder-weekly-reset",
+      "title": "Founder Weekly Reset",
+      "surface": "mcp",
+      "userRole": "founder",
+      "toolsInvoked": [
+        "check_mcp_setup",
+        "discover_tools",
+        "founder_deep_context_gather",
+        "get_weekly_summary",
+        "get_session_journal",
+        "extract_variables",
+        "track_action",
+        "track_milestone"
+      ],
+      "toolCallCount": 8,
+      "readOpsCount": 4,
+      "writeOpsCount": 2,
+      "webEnrichmentCount": 0,
+      "totalLatencyMs": 12000,
+      "findings": [
+        {
+          "severity": "P1",
+          "type": "api_mismatch",
+          "tool": "track_action",
+          "description": "track_action requires 'impactLevel' field but dogfood runbook uses 'impact'. Schema mismatch between tool input and expected parameter name.",
+          "fix": "Either rename the DB column from impactLevel to impact, or update the tool's inputSchema to document 'impactLevel' as the required field name."
+        },
+        {
+          "severity": "P1",
+          "type": "api_mismatch",
+          "tool": "track_milestone",
+          "description": "track_milestone requires 'category' field that is NOT NULL in SQLite but the tool description doesn't emphasize this as required.",
+          "fix": "Either add a default category or make the inputSchema clearly mark 'category' as required."
+        },
+        {
+          "severity": "P1",
+          "type": "missing_tool",
+          "tool": "load_toolset",
+          "description": "load_toolset is referenced in all dogfood scenarios and docs but is not found via CLI 'call' command. The tool exists in the MCP protocol handler but not in the CLI subcommand registry.",
+          "fix": "Register load_toolset and unload_toolset in the CLI call dispatcher, or document that CLI uses --preset flag instead."
+        },
+        {
+          "severity": "P2",
+          "type": "cold_state",
+          "tool": "get_weekly_summary",
+          "description": "Weekly summary returns all zeros on first run — no prior actions or milestones exist. Expected behavior for cold start, but the founder weekly reset scenario should detect this and produce a 'baseline packet' instead of empty data.",
+          "fix": "founder_deep_context_gather should check if this is a first-run state and adjust protocol accordingly."
+        },
+        {
+          "severity": "P1",
+          "type": "missing_env",
+          "tool": "extract_variables",
+          "description": "extract_variables requires CONVEX_SITE_URL or VITE_CONVEX_URL to call the Deep Sim backend. Fails silently with error message instead of graceful fallback.",
+          "fix": "Add local fallback for extract_variables that works without Convex when running in MCP-only mode."
+        }
+      ],
+      "judgment": {
+        "removedRepeatedCognition": false,
+        "usablePacketWithoutRestatement": false,
+        "surfacedRightContradiction": false,
+        "suppressedNoise": true,
+        "producedRightArtifact": false,
+        "updatedCausalMemory": true,
+        "userWouldTrustAndReuse": false
+      },
+      "judgeScore": 1.4,
+      "notes": "The protocol (founder_deep_context_gather) returns a well-structured 10-step gather protocol with correct sources and search patterns. But the downstream tools (extract_variables, build_claim_graph) require Convex backend. The session memory tools (track_action, track_milestone) work after fixing param names. This scenario needs a local-only fallback path for the intelligence pipeline."
+    },
+    {
+      "scenarioId": "mcp-06-public-doc-drift",
+      "title": "Public-Doc Drift Detection",
+      "surface": "mcp",
+      "userRole": "founder",
+      "toolsInvoked": [
+        "founder_deep_context_gather"
+      ],
+      "toolCallCount": 1,
+      "readOpsCount": 1,
+      "writeOpsCount": 0,
+      "webEnrichmentCount": 0,
+      "totalLatencyMs": 3000,
+      "findings": [
+        {
+          "severity": "P0",
+          "type": "architectural_gap",
+          "description": "founder_deep_context_gather returns the correct 10-step gather protocol for important_change packet type, but it requires an LLM agent to actually execute each step (reading files, searching sources, comparing states). There is no tool that automatically compares internal positioning against public docs.",
+          "fix": "Build a founder_packet_diff tool that reads index.html, server.json, README.md, and CLAUDE.md and compares against the canonical truth card. This would be the first tool that makes NodeBench catch its own drift."
+        }
+      ],
+      "judgment": {
+        "removedRepeatedCognition": false,
+        "usablePacketWithoutRestatement": false,
+        "surfacedRightContradiction": false,
+        "suppressedNoise": true,
+        "producedRightArtifact": false,
+        "updatedCausalMemory": false,
+        "userWouldTrustAndReuse": false
+      },
+      "judgeScore": 0.7,
+      "notes": "The gather protocol is correct but requires an agent loop to execute. The protocol itself doesn't do the comparison — it tells the agent WHAT to compare. This is by design (protocol-first, not magic), but means the scenario can't run tool-only without an LLM in the loop."
+    },
+    {
+      "scenarioId": "mcp-04-banker-company-search",
+      "title": "Banker Blank-State Anthropic Search",
+      "surface": "mcp",
+      "userRole": "banker",
+      "toolsInvoked": [
+        "run_recon"
+      ],
+      "toolCallCount": 1,
+      "readOpsCount": 0,
+      "writeOpsCount": 0,
+      "webEnrichmentCount": 0,
+      "totalLatencyMs": 2000,
+      "findings": [
+        {
+          "severity": "P1",
+          "type": "protocol_only",
+          "tool": "run_recon",
+          "description": "run_recon returns a well-structured research plan with 8 external sources and 10 local search patterns, but does not execute the research. It creates a recon session and returns instructions. The actual web fetching, log_recon_finding, and assess_risk calls need to happen in a follow-up loop.",
+          "fix": "This is correct protocol-first behavior. But the AI App's demo packet (which shows Anthropic results) suggests users expect immediate results. The gap between the MCP tool behavior (protocol) and the AI App behavior (instant result) needs to be bridged by the agent loop."
+        },
+        {
+          "severity": "P2",
+          "type": "no_live_enrichment",
+          "description": "run_recon doesn't fetch any live data in this run because no web API keys are configured. The research plan is correct but the actual enrichment requires PERPLEXITY_API_KEY or similar.",
+          "fix": "Document which API keys are needed for live enrichment. Consider a free-tier fallback (web scraping)."
+        }
+      ],
+      "judgment": {
+        "removedRepeatedCognition": false,
+        "usablePacketWithoutRestatement": false,
+        "surfacedRightContradiction": false,
+        "suppressedNoise": true,
+        "producedRightArtifact": false,
+        "updatedCausalMemory": false,
+        "userWouldTrustAndReuse": false
+      },
+      "judgeScore": 0.7,
+      "notes": "run_recon produces an excellent research plan with the right sources and patterns. But without an agent loop executing the plan, no actual intelligence is produced. The protocol is right; the execution layer is missing for tool-only runs."
+    }
+  ],
+
+  "global_findings": [
+    {
+      "severity": "P0",
+      "title": "Protocol-first tools need agent loop to produce value",
+      "description": "The MCP tools are designed as protocols (return instructions + plans) rather than autonomous executors. This is architecturally correct but means tool-only dogfood runs can't produce end-to-end results. The AI App bridges this gap with demo packets. The real gap is the agent loop that executes the protocol steps.",
+      "implication": "Priority: build the agent execution layer that takes a protocol (from founder_deep_context_gather or run_recon) and executes each step using the available tools, producing a finished packet.",
+      "related_scenarios": ["app-01", "mcp-02", "mcp-04", "mcp-06"]
+    },
+    {
+      "severity": "P1",
+      "title": "Session memory works but needs warm state",
+      "description": "track_action and track_milestone successfully record to SQLite after param fixes. But on cold start, all summaries return zeros. The weekly reset needs at least 1 week of tracked actions to be meaningful.",
+      "implication": "Seed the session memory during onboarding or first-run, or clearly indicate 'baseline mode' when no prior data exists."
+    },
+    {
+      "severity": "P1",
+      "title": "Deep Sim tools require Convex backend",
+      "description": "extract_variables, build_claim_graph, generate_countermodels, run_deep_sim, rank_interventions, render_decision_memo all require CONVEX_SITE_URL. They don't work in local MCP-only mode.",
+      "implication": "Build local fallbacks for the core intelligence pipeline so the MCP server can produce basic packets without Convex."
+    },
+    {
+      "severity": "P1",
+      "title": "track_action/track_milestone param naming mismatch",
+      "description": "Tool expects 'impactLevel' and 'category' as required fields but the natural param name is 'impact'. Schema should be clarified in the tool description.",
+      "implication": "Fix inputSchema documentation. Consider accepting both 'impact' and 'impactLevel' as aliases."
+    }
+  ],
+
+  "global_metrics": {
+    "repeat_question_rate": "N/A (first cycle)",
+    "packet_reuse_rate": 0,
+    "important_change_precision": "N/A (no prior baseline)",
+    "delegation_without_restatement_rate": 0
+  },
+
+  "batch_telemetry": {
+    "total_tool_calls": 10,
+    "total_reads": 5,
+    "total_writes": 2,
+    "total_web_enrichments": 0,
+    "total_latency_ms": 17000,
+    "est_cost_usd": 0.00
+  },
+
+  "verdict": "FAIL — 3/3 scenarios incomplete. Tools produce correct protocols but can't execute end-to-end without agent loop. Session memory works. Priority: build local intelligence pipeline fallbacks."
+}

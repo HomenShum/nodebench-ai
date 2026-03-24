@@ -35,6 +35,7 @@ function useRehypeKatex(text: string) {
 }
 import { LazySyntaxHighlighter } from './LazySyntaxHighlighter';
 import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Copy, Check, BrainCircuit, Zap, ExternalLink, Globe, Calendar, Eye, ThumbsUp, ThumbsDown, Pencil, Bookmark, Volume2, VolumeX, Pin } from 'lucide-react';
+import { useVoiceOutput } from '@/hooks/useVoiceOutput';
 import { useSmoothText, type UIMessage } from '@convex-dev/agent/react';
 import { cn } from '@/lib/utils';
 import { TokenUsageBadge } from './TokenUsageBadge';
@@ -1544,8 +1545,8 @@ export function FastAgentUIMessageBubble({
   const [editText, setEditText] = useState('');
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Read-aloud TTS state (callback defined after visibleText)
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  // Read-aloud TTS via useVoiceOutput (ElevenLabs → browser SpeechSynthesis fallback)
+  const voiceOutput = useVoiceOutput();
 
   // Message collapse/expand for long messages
   const [isCollapsed, setIsCollapsed] = useState(true);
@@ -1745,22 +1746,17 @@ export function FastAgentUIMessageBubble({
       ? ((message as any).model as string)
       : undefined;
 
-  // Read-aloud TTS callback (must be after visibleText)
+  // Read-aloud TTS callback — uses ElevenLabs with browser fallback (must be after visibleText)
+  const isSpeaking = voiceOutput.isSpeaking;
   const handleReadAloud = useCallback(() => {
     if (isSpeaking) {
-      window.speechSynthesis?.cancel();
-      setIsSpeaking(false);
+      voiceOutput.stop();
       return;
     }
     const text = visibleText || '';
-    if (!text || !window.speechSynthesis) return;
-    const utterance = new SpeechSynthesisUtterance(text.slice(0, 5000));
-    utterance.rate = 1.1;
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    window.speechSynthesis.speak(utterance);
-    setIsSpeaking(true);
-  }, [isSpeaking, visibleText]);
+    if (!text) return;
+    void voiceOutput.speak(text);
+  }, [isSpeaking, visibleText, voiceOutput]);
 
   // Streaming tok/s effect (must be after visibleText)
   useEffect(() => {
@@ -2700,7 +2696,7 @@ export function FastAgentUIMessageBubble({
                     {isCollapsed ? 'Show more ▼' : 'Show less ▲'}
                   </button>
                 )}
-                {!isUser && message.status === 'streaming' && (cleanedText || visibleText) && (
+                {!isUser && (message.status === 'streaming' || message.status === 'typing') && (cleanedText || visibleText) && (
                   <span className="streaming-caret" />
                 )}
               </div>

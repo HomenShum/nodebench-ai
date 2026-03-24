@@ -61,6 +61,8 @@ export interface ResearchHubProps {
   embedded?: boolean;
   /** Optional initial tab when opening the hub */
   initialTab?: ContentTab;
+  /** Called when the user switches tabs — lets the parent sync tab state to the URL */
+  onTabChange?: (tab: string) => void;
   /** Source toggles from parent (MainLayout) - used in embedded mode */
   activeSources?: string[];
   onToggleSource?: (sourceId: string) => void;
@@ -102,6 +104,7 @@ function ResearchHubContent(props: ResearchHubProps) {
     onDocumentSelect: _onDocumentSelect,
     onEnterWorkspace: _onEnterWorkspace,
     initialTab,
+    onTabChange,
     activeSources: _activeSources,
     onToggleSource: _onToggleSource,
     onGoHome,
@@ -705,7 +708,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                     key={tab.id}
                     type="button"
                     role="tab"
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => { setActiveTab(tab.id); onTabChange?.(tab.id); }}
                     aria-selected={isActive}
                     className={cn(
                       'flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors duration-150',

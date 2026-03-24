@@ -62,7 +62,7 @@ export function useStreamingBuffer(
     const now = Date.now();
     const timeSinceLastFlush = now - lastFlushRef.current;
 
-    if (enableLogging) {
+    if (enableLogging && import.meta.env.DEV) {
       console.log(
         `[StreamingBuffer] Flushing ${updates.length} updates (${timeSinceLastFlush}ms since last flush)`
       );
@@ -86,7 +86,7 @@ export function useStreamingBuffer(
   // Start streaming (enable periodic flushing)
   const start = useCallback(() => {
     setIsActive(true);
-    if (enableLogging) console.log('[StreamingBuffer] Started');
+    if (enableLogging && import.meta.env.DEV) console.log('[StreamingBuffer] Started');
 
     const intervalId = setInterval(() => {
       if (bufferRef.current.length > 0) {
@@ -113,7 +113,7 @@ export function useStreamingBuffer(
     if (bufferRef.current.length > 0) {
       flush();
     }
-    if (enableLogging) console.log('[StreamingBuffer] Stopped');
+    if (enableLogging && import.meta.env.DEV) console.log('[StreamingBuffer] Stopped');
   }, [flush, enableLogging]);
 
   // Cleanup on unmount

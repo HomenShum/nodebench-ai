@@ -94,15 +94,18 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
 
         // Initialize mermaid if not already done
         if (!mermaidInitialized && window.mermaid) {
+          // SECURITY: securityLevel MUST be 'strict' — 'loose' allows arbitrary
+          // HTML/JS in diagram labels, enabling XSS from user-provided diagram code.
+          // htmlLabels must also be false under strict mode.
           window.mermaid.initialize({
             startOnLoad: false,
             theme: 'default',
-            securityLevel: 'loose',
+            securityLevel: 'strict',
             fontFamily: 'system-ui, -apple-system, sans-serif',
             fontSize: 14,
             flowchart: {
               useMaxWidth: true,
-              htmlLabels: true,
+              htmlLabels: false,
               curve: 'basis',
             },
           });
@@ -114,7 +117,13 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
 
         // Render the diagram
         const { svg: renderedSvg } = await window.mermaid.render(diagramId, code);
-        setSvg(renderedSvg);
+        // SECURITY: Belt-and-suspenders — strip any <script>, <foreignObject>, and
+        // event handler attributes from SVG even though securityLevel='strict'.
+        const sanitizedSvg = renderedSvg
+          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+          .replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, '')
+          .replace(/\s*on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+        setSvg(sanitizedSvg);
         setError('');
       } catch (err) {
         console.error('[MermaidDiagram] Rendering error:', err);

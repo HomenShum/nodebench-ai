@@ -12,6 +12,7 @@ import {
   BarChart2,
   Key,
   ArrowUpRight,
+  Download,
   CheckCircle,
   Eye,
   EyeOff,
@@ -1129,17 +1130,103 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     <div className="text-sm font-semibold mb-3">Data Management</div>
                     <div className="space-y-3">
                       <button
-                        className="w-full text-left px-3 py-2 rounded border border-edge hover:bg-surface-hover text-sm transition-colors"
+                        className="w-full text-left px-3 py-2 rounded-lg border border-edge/50 bg-surface/60 backdrop-blur-sm hover:bg-surface-hover hover:border-edge text-sm transition-all duration-200 group"
                         onClick={() => {
-                          toast.info("Use the API or MCP tools to export your data in JSON format");
+                          try {
+                            // Collect exportable data from localStorage and app state
+                            const exportPayload: Record<string, unknown> = {
+                              exportedAt: new Date().toISOString(),
+                              version: "1.0.0",
+                              source: "nodebench-ai",
+                            };
+
+                            // Gather localStorage items with nodebench/app prefixes
+                            const appKeys = [
+                              "nodebench-theme",
+                              "nodebench-layout",
+                              "nodebench-recent-searches",
+                              "nodebench-saved-memos",
+                              "nodebench-tracked-entities",
+                              "nodebench-session-notes",
+                              "cockpit-surface-cache",
+                              "agent-conversations",
+                              "research-bookmarks",
+                            ];
+                            const settings: Record<string, unknown> = {};
+                            const savedData: Record<string, unknown> = {};
+
+                            for (const key of appKeys) {
+                              const raw = localStorage.getItem(key);
+                              if (raw) {
+                                try {
+                                  savedData[key] = JSON.parse(raw);
+                                } catch {
+                                  savedData[key] = raw;
+                                }
+                              }
+                            }
+
+                            // Also grab any keys that start with common prefixes
+                            for (let i = 0; i < localStorage.length; i++) {
+                              const key = localStorage.key(i);
+                              if (key && (key.startsWith("nb-") || key.startsWith("nodebench-") || key.startsWith("agent-"))) {
+                                const raw = localStorage.getItem(key);
+                                if (raw && !savedData[key]) {
+                                  try {
+                                    savedData[key] = JSON.parse(raw);
+                                  } catch {
+                                    savedData[key] = raw;
+                                  }
+                                }
+                              }
+                            }
+
+                            exportPayload.settings = settings;
+                            exportPayload.savedData = savedData;
+
+                            // If no meaningful data, include demo sample
+                            if (Object.keys(savedData).length === 0) {
+                              exportPayload.note = "No saved data found. This is a sample export for demo/guest mode.";
+                              exportPayload.sampleData = {
+                                conversations: [
+                                  { id: "demo-1", title: "Research briefing", timestamp: new Date().toISOString() },
+                                ],
+                                memos: [
+                                  { id: "memo-1", title: "Product direction memo", status: "draft" },
+                                ],
+                                trackedEntities: [
+                                  { name: "Anthropic", type: "company", addedAt: new Date().toISOString() },
+                                  { name: "OpenAI", type: "company", addedAt: new Date().toISOString() },
+                                ],
+                              };
+                            }
+
+                            // Trigger download
+                            const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
+                              type: "application/json",
+                            });
+                            const url = URL.createObjectURL(blob);
+                            const date = new Date().toISOString().slice(0, 10);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = `nodebench-export-${date}.json`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+
+                            toast.success("Data exported successfully");
+                          } catch (err) {
+                            toast.error("Export failed. Please try again.");
+                          }
                         }}
                       >
                         <div className="flex items-center gap-2">
-                          <ArrowUpRight className="h-4 w-4" />
-                          Export Account Data
+                          <Download className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" />
+                          <span className="font-medium">Export My Data</span>
                         </div>
                         <div className="text-xs text-content-secondary mt-1">
-                          Download a copy of your data in JSON format
+                          Download a JSON copy of your conversations, memos, and settings
                         </div>
                       </button>
 

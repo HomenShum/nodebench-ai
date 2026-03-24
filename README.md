@@ -193,6 +193,10 @@ Create `.env.local` with:
 CONVEX_DEPLOYMENT=<your-convex-deployment>
 VITE_CONVEX_URL=<your-convex-url>
 OPENAI_API_KEY=<for-voice-and-agent-features>
+
+# Voice output (optional — falls back to browser SpeechSynthesis if not set)
+VITE_ELEVENLABS_API_KEY=<optional-for-voice-output>
+VITE_ELEVENLABS_VOICE_ID=<optional-default-uses-rachel>
 ```
 
 ---

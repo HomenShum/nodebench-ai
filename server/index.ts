@@ -14,13 +14,26 @@
  *   npx tsx server/index.ts [--port 3100] [--preset full]
  */
 
+import { config as dotenvConfig } from "dotenv";
+// Load .env.local so server-side code gets ELEVENLABS_API_KEY, CONVEX_URL, etc.
+dotenvConfig({ path: ".env.local" });
+// Map VITE_CONVEX_URL to CONVEX_URL for server-side modules that expect it
+if (!process.env.CONVEX_URL && process.env.VITE_CONVEX_URL) {
+  process.env.CONVEX_URL = process.env.VITE_CONVEX_URL;
+}
+
 import express from "express";
 import cors from "cors";
 import { createServer } from "node:http";
 import { createMcpGateway, type McpGatewayConfig } from "./mcpGateway.js";
 import { getMemoryStore, generateApiKey, hashPrefix, type ApiKeyRecord } from "./mcpAuth.js";
+import { CommandBridge } from "./commandBridge.js";
+import { mountProviderBus } from "./providerBus.js";
 import type { McpTool } from "../packages/mcp-local/src/types.js";
 import { createSessionRouter } from "./routes/session.js";
+import { createTtsRouter } from "./routes/tts.js";
+import { mountNemoClaw } from "./nemoclaw/index.js";
+import { createSearchRouter } from "./routes/search.js";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────
 
@@ -32,10 +45,19 @@ const PORT = portIdx >= 0 && args[portIdx + 1] ? parseInt(args[portIdx + 1], 10)
 
 async function loadTools(): Promise<McpTool[]> {
   try {
-    // Dynamic import of the toolset registry to get all available tools
-    const { TOOLSET_MAP } = await import("../packages/mcp-local/src/toolsetRegistry.js");
-    const allTools: McpTool[] = Object.values(TOOLSET_MAP).flat() as McpTool[];
-    console.log(`[mcp-gateway] Loaded ${allTools.length} tools from ${Object.keys(TOOLSET_MAP).length} toolsets`);
+    // loadAllToolsets() must be called first — TOOLSET_MAP starts empty with lazy-loading
+    const { TOOLSET_MAP, loadAllToolsets } = await import("../packages/mcp-local/src/toolsetRegistry.js");
+    await loadAllToolsets();
+    const allTools: McpTool[] = [];
+    // TOOLSET_MAP is a Map — use .values() if Map, or Object.values() if plain object
+    const entries = typeof TOOLSET_MAP.values === "function"
+      ? Array.from(TOOLSET_MAP.values())
+      : Object.values(TOOLSET_MAP);
+    for (const tools of entries) {
+      allTools.push(...(tools as McpTool[]));
+    }
+    const domainCount = typeof TOOLSET_MAP.size === "number" ? TOOLSET_MAP.size : Object.keys(TOOLSET_MAP).length;
+    console.log(`[mcp-gateway] Loaded ${allTools.length} tools from ${domainCount} toolsets`);
     return allTools;
   } catch (err) {
     console.error("[mcp-gateway] Failed to load tools:", err);
@@ -99,6 +121,27 @@ async function main(): Promise<void> {
 
   const gateway = createMcpGateway(gatewayConfig);
 
+  // ── Create Command Bridge (outbound agent dispatch) ─────────────────
+
+  const commandBridge = new CommandBridge({
+    maxConnections: 50,
+    taskTimeoutMs: 300_000,
+    heartbeatIntervalMs: 30_000,
+    maxMessageSize: 1_048_576,
+    // In production, wire keyLookup to Convex (same as gateway)
+  });
+
+  // Log bridge events server-side
+  commandBridge.on("agent:connected", (agentId: string, reg: { agentName: string; agentType: string }) => {
+    console.log(`[command-bridge] Agent connected: ${reg.agentName} (${reg.agentType}) — ${agentId}`);
+  });
+  commandBridge.on("agent:disconnected", (agentId: string, code: number, reason: string) => {
+    console.log(`[command-bridge] Agent disconnected: ${agentId} — code=${code}, reason=${reason}`);
+  });
+  commandBridge.on("task:result", (result: { packetId: string; status: string }, agentId: string) => {
+    console.log(`[command-bridge] Task result: ${result.packetId} — status=${result.status}, agent=${agentId}`);
+  });
+
   // ── HTTP routes ─────────────────────────────────────────────────────
 
   // Root health check
@@ -114,6 +157,11 @@ async function main(): Promise<void> {
   // MCP gateway health check
   app.get("/mcp/health", (req, res) => {
     gateway.healthHandler(req, res);
+  });
+
+  // Command Bridge health check
+  app.get("/bridge/health", (_req, res) => {
+    res.json(commandBridge.getHealthSnapshot());
   });
 
   // MCP gateway info
@@ -159,9 +207,50 @@ async function main(): Promise<void> {
 
   app.use("/voice", createSessionRouter());
 
+  // ── TTS proxy (ElevenLabs) ────────────────────────────────────────
+
+  app.use("/tts", createTtsRouter());
+
+  // ── Search API (NodeBench AI App live intelligence dispatch) ─────────
+
+  app.use("/search", createSearchRouter(tools));
+
   // ── Create HTTP server & wire WebSocket upgrade ─────────────────────
 
   const httpServer = createServer(app);
+
+  // ── NemoClaw — local autonomous agent (desktop control from phone) ──
+
+  const workspacePath = process.cwd();
+  // mountNemoClaw adds: GET /nemoclaw (chat UI), /nemoclaw/* API, WS /nemoclaw/ws
+  mountNemoClaw(app, httpServer, workspacePath);
+
+  // Attach command bridge to server (initializes internal WSS)
+  commandBridge.attachToServer(httpServer, "/bridge");
+
+  // ── Create Provider Bus (ambient intelligence event bus) ────────────
+
+  const { bus: providerBus, handleUpgrade: handleBusUpgrade } = mountProviderBus(
+    app,
+    httpServer,
+    {
+      maxConnections: 100,
+      heartbeatIntervalMs: 30_000,
+      idleTimeoutMs: 30 * 60 * 1000,
+      // In production, wire keyLookup to Convex (same as gateway)
+    },
+  );
+
+  // Log bus events server-side
+  providerBus.on("provider:connected", (providerId: string, userId: string) => {
+    console.log(`[provider-bus] Provider connected: ${providerId} (user=${userId})`);
+  });
+  providerBus.on("provider:registered", (providerId: string, reg: { providerName: string; providerType: string }) => {
+    console.log(`[provider-bus] Provider registered: ${reg.providerName} (${reg.providerType}) — ${providerId}`);
+  });
+  providerBus.on("provider:disconnected", (providerId: string, code: number, reason: string) => {
+    console.log(`[provider-bus] Provider disconnected: ${providerId} — code=${code}, reason=${reason}`);
+  });
 
   httpServer.on("upgrade", (req, socket, head) => {
     const pathname = new URL(
@@ -171,8 +260,15 @@ async function main(): Promise<void> {
 
     if (pathname === "/mcp") {
       gateway.handleUpgrade(req, socket, head);
+    } else if (pathname === "/bridge") {
+      commandBridge.handleUpgrade(req, socket, head);
+    } else if (pathname === "/bus") {
+      handleBusUpgrade(req, socket, head);
+    } else if (pathname === "/nemoclaw/ws") {
+      // NemoClaw WebSocket is handled by its own WSS (mounted via mountNemoClaw)
+      // Let it pass through — the WSS attached to httpServer handles it
     } else {
-      // Reject non-MCP upgrade requests
+      // Reject unknown upgrade requests
       socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
       socket.destroy();
     }
@@ -184,7 +280,13 @@ async function main(): Promise<void> {
     console.log(`[nodebench-server] Listening on port ${PORT}`);
     console.log(`[nodebench-server] MCP Gateway WebSocket: ws://localhost:${PORT}/mcp`);
     console.log(`[nodebench-server] Health: http://localhost:${PORT}/mcp/health`);
+    console.log(`[nodebench-server] Command Bridge WebSocket: ws://localhost:${PORT}/bridge`);
+    console.log(`[nodebench-server] Bridge Health: http://localhost:${PORT}/bridge/health`);
     console.log(`[nodebench-server] Voice API: http://localhost:${PORT}/voice/session`);
+    console.log(`[nodebench-server] NemoClaw Chat: http://localhost:${PORT}/nemoclaw`);
+    console.log(`[nodebench-server] NemoClaw WS: ws://localhost:${PORT}/nemoclaw/ws`);
+    console.log(`[nodebench-server] Provider Bus WebSocket: ws://localhost:${PORT}/bus`);
+    console.log(`[nodebench-server] Provider Bus Health: http://localhost:${PORT}/bus/health`);
     console.log(`[nodebench-server] Tools available: ${gateway.getToolCount()}`);
     if (process.env.NODE_ENV !== "production") {
       console.log(`[nodebench-server] Dev key gen: POST http://localhost:${PORT}/mcp/dev/generate-key`);
@@ -195,6 +297,8 @@ async function main(): Promise<void> {
 
   const shutdown = () => {
     console.log("\n[nodebench-server] Shutting down...");
+    providerBus.shutdown();
+    commandBridge.shutdown();
     httpServer.close(() => {
       console.log("[nodebench-server] HTTP server closed");
       process.exit(0);

@@ -361,4 +361,41 @@ export const localDashboardTools: McpTool[] = [
       };
     },
   },
+
+  // ── open_operating_dashboard ──────────────────────────────────────
+  {
+    name: "open_operating_dashboard",
+    description:
+      "Start the Operating Dashboard — shows trajectory scores, event ledger, important changes, path replay, time rollups, packet readiness, and recent actions. The ambient intelligence surface for your business. All from local SQLite.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+    handler: async () => {
+      const { startOperatingDashboardServer, getOperatingDashboardUrl } = await import("../dashboard/operatingServer.js");
+      let url = getOperatingDashboardUrl();
+      if (!url) {
+        try {
+          const port = await startOperatingDashboardServer(getDb(), 6276);
+          url = `http://127.0.0.1:${port}`;
+        } catch (err: any) {
+          return { error: true, message: `Failed to start operating dashboard: ${err.message}` };
+        }
+      }
+      return {
+        url,
+        views: [
+          "Session Delta (what changed since your last session)",
+          "Trajectory (scores + dimensions over time)",
+          "Event Ledger (causal events with actor/entity tracking)",
+          "Important Changes (with resolve/investigate/dismiss)",
+          "Path Replay (session navigation visualization)",
+          "Time Rollups (day/week/month/quarter/year comparisons)",
+          "Packet Readiness (staleness + regeneration triggers)",
+          "Recent Actions (tracked actions with before/after state)",
+        ],
+        tip: "Open the URL in a browser. Data auto-refreshes every 10s. Use record_event, track_action, and flag_important_change to populate data.",
+      };
+    },
+  },
 ];

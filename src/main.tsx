@@ -173,8 +173,8 @@ if (import.meta.env.PROD && convex) {
         stack: args.stack,
         route: args.route,
         section: args.section,
-        url: args.url,
-        userAgent: args.userAgent,
+        // Send path only — no query params (may contain tokens/session ids)
+        url: args.route,
       }).catch(() => {
         // best-effort
       });
@@ -191,8 +191,6 @@ if (import.meta.env.PROD && convex) {
         stack: err?.stack ? String(err.stack) : undefined,
         route: window.location?.pathname,
         section: undefined,
-        url: window.location?.href,
-        userAgent: navigator.userAgent,
       });
     } catch {
       // best-effort
@@ -207,8 +205,6 @@ if (import.meta.env.PROD && convex) {
         stack: reason?.stack ? String(reason.stack) : undefined,
         route: window.location?.pathname,
         section: undefined,
-        url: window.location?.href,
-        userAgent: navigator.userAgent,
       });
     } catch {
       // best-effort

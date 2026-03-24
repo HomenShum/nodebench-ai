@@ -7,6 +7,7 @@
 
 import React, { Component, ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { reportError } from "@/lib/errorReporting";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -42,6 +43,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error(`[ErrorBoundary${this.props.section ? `:${this.props.section}` : ""}] Error caught:`, error, errorInfo);
+    reportError(error, { section: this.props.section });
     this.props.onError?.(error, errorInfo);
 
     if (typeof window !== "undefined" && ErrorBoundary.isRecoverableChunkError(error)) {
@@ -84,6 +86,12 @@ interface ErrorFallbackProps {
 }
 
 export function ErrorFallback({ section, error, onRetry, className = "" }: ErrorFallbackProps) {
+  // Only show raw error messages in development — production users see a generic message
+  const isDev = typeof import.meta !== "undefined" && (import.meta as any).env?.DEV;
+  const userMessage = isDev && error?.message
+    ? error.message
+    : "An unexpected error occurred. Please try again.";
+
   return (
     <div className={`rounded-lg border border-red-200 bg-red-50 p-6 ${className}`}>
       <div className="flex items-start gap-4">
@@ -95,7 +103,7 @@ export function ErrorFallback({ section, error, onRetry, className = "" }: Error
             {section ? `${section} failed to load` : "Something went wrong"}
           </h3>
           <p className="mb-3 text-sm text-red-600">
-            {error?.message || "An unexpected error occurred. Please try again."}
+            {userMessage}
           </p>
           {onRetry ? (
             <button

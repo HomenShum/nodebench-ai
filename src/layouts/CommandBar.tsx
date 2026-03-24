@@ -140,6 +140,25 @@ export const CommandBar = memo(function CommandBar({
             </button>
           );
         })}
+        {/* Agent toggle — always visible on mobile */}
+        {onToggleAgent && (
+          <button
+            type="button"
+            className="hud-mobile-tab"
+            data-active={agentOpen ? "true" : undefined}
+            onClick={onToggleAgent}
+            aria-label={agentOpen ? "Close agent panel" : "Open agent panel"}
+            style={agentOpen ? { color: "#d97757" } : undefined}
+            data-agent-id="cockpit:mobile-tab:agent"
+            data-agent-action="toggle"
+            data-agent-label="Agent"
+          >
+            <span className="w-5 h-5 flex items-center justify-center">
+              <MessageSquare className="w-4 h-4" />
+            </span>
+            <span className="text-[9px] font-mono">Agent</span>
+          </button>
+        )}
       </div>
 
       <div className="hidden lg:flex items-center justify-between h-10 px-4 gap-4">
@@ -167,37 +186,18 @@ export const CommandBar = memo(function CommandBar({
           ))}
         </div>
 
-        {/* Center: command palette trigger — prominent */}
+        {/* Center: subtle palette hint — Cmd+K shortcut is the real trigger */}
+        <div className="flex-1" />
         <button
           type="button"
           onClick={onOpenPalette}
-          className="inline-flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-1.5 text-xs text-[var(--hud-text-dim)] transition-colors hover:bg-white/[0.05] hover:text-[var(--hud-text)]"
+          className="inline-flex items-center gap-1.5 text-[10px] text-content-muted/40 transition-colors hover:text-content-muted"
           aria-label="Open command palette"
           data-agent-id="cockpit:action:palette"
           data-agent-action="search"
         >
-          <Search className="w-3 h-3 opacity-50" />
-          <span>Search or jump...</span>
-          <kbd className="ml-2 rounded border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5 text-[10px] opacity-50">{isMac ? "⌘K" : "Ctrl+K"}</kbd>
+          <kbd className="rounded border border-white/[0.06] bg-white/[0.02] px-1.5 py-0.5">{isMac ? "⌘K" : "Ctrl+K"}</kbd>
         </button>
-
-        {/* Right: agent toggle */}
-        <div className="flex items-center gap-1">
-          {onToggleAgent && (
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-xs text-[var(--hud-text-dim)] transition-colors hover:bg-white/[0.05] hover:text-[var(--hud-text)]"
-              data-active={agentOpen ? "true" : undefined}
-              onClick={onToggleAgent}
-              aria-label={agentOpen ? "Close agent panel" : "Open agent panel"}
-              data-agent-id="cockpit:action:toggle-agent"
-              data-agent-action="toggle"
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span className="hidden xl:inline">Agent</span>
-            </button>
-          )}
-        </div>
       </div>
     </footer>
   );

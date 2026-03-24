@@ -1,0 +1,204 @@
+{
+  "dogfood_report": {
+    "date": "2026-03-23",
+    "target": "https://www.nodebenchai.com",
+    "tester": "Claude Code (Opus 4.6)",
+    "method": "Chrome browser automation — all surfaces, mobile viewport, persona flows",
+    "verdict": "FAIL — 3 P0s, 5 P1s, 4 P2s",
+    "fixes_applied": {
+      "P0_contrast": "FIXED — 365+ text-white/[10-40] raised to /60+, glass cards from bg-white/[0.02] to /[0.12], borders from /[0.06] to /[0.20]",
+      "P0_mobile_layout": "FIXED — added h-full to CockpitLayout.tsx:676 flex container",
+      "P0_stuck_reveal": "FIXED — removed stuck useRevealOnMount motion.div animations from 5 founder views + StaggerCard",
+      "P1_decision_workbench": "FIXED — wired fixture data for guest mode, shows full decision memo with scenarios",
+      "deployed": "2026-03-23T07:31:00Z",
+      "verified": "Founder Dashboard cards visible (CANONICAL COMPANY, BIGGEST CONTRADICTION readable), Decision Workbench shows full demo, all opacity chains at 1.0"
+    }
+  },
+  "findings": [
+    {
+      "id": "F001",
+      "severity": "P0",
+      "surface": "Mobile Landing (375px)",
+      "title": "Mobile landing page completely blank below header",
+      "description": "At 375px viewport, landing page shows only 'Your company's operating intelligence' header. No CTAs, no install commands, no sidebar, no content. Completely unusable.",
+      "expected": "Stacked cards with CTA, install command, demo content visible and tappable",
+      "screenshot_id": "ss_92184wzar",
+      "fix_priority": "Immediate — blocks all mobile users"
+    },
+    {
+      "id": "F002",
+      "severity": "P0",
+      "surface": "Mobile Founder Dashboard (375px)",
+      "title": "Mobile Founder Dashboard shows only welcome banner",
+      "description": "At 375px, only the welcome banner renders. All 8 canonical cards (Company Truth, What Changed, Contradiction, Next Moves, Artifact Packet, Agent Activity, External Signals, History) are invisible. No scroll, no navigation.",
+      "expected": "Stacked card layout with all 8 cards scrollable, bottom action bar",
+      "screenshot_id": "ss_4212n7z1i",
+      "fix_priority": "Immediate — core product surface broken on mobile"
+    },
+    {
+      "id": "F003",
+      "severity": "P0",
+      "surface": "All founder surfaces (desktop)",
+      "title": "Systemic text contrast failure across all founder surfaces",
+      "description": "Text on Founder Dashboard, Intake, History, Entities, Perspectives, Export, and Company Search is rendered at extremely low opacity — barely readable against dark background. Only Command Center and Agent Brief have acceptable contrast. Root cause: likely text color is set to a very low-alpha white (e.g. text-white/20) or inheriting from glass card DNA opacity values meant for borders, not body text.",
+      "expected": "Body text at minimum WCAG AA contrast (4.5:1). Text should use text-white/80 or text-white/90, not text-white/20.",
+      "screenshot_ids": ["ss_4214xucsm", "ss_08496o3lm", "ss_30704f63j", "ss_69435f7r0", "ss_94901bfhp", "ss_5074092ve"],
+      "fix_priority": "Immediate — product appears broken/empty when text is invisible"
+    },
+    {
+      "id": "F004",
+      "severity": "P1",
+      "surface": "Founder Dashboard (desktop)",
+      "title": "Dashboard not using 8-card canonical layout from spec",
+      "description": "Dashboard renders as a linear flow (welcome banner → operating memo → next 3 moves → key evidence) instead of the specified 3-column, 8-card grid: Company Truth | What Changed | Next Moves / Contradiction | Artifact Packet | Agent Activity / External Signals | History.",
+      "expected": "8-card grid layout matching Phase 1 spec: FounderIdentityCard, WhatChangedPanel, RankedInterventionsPanel, ArtifactPacketPanel, AgentActivityPanel, ExternalSignalsPanel, HistoryPacketReusePanel",
+      "screenshot_id": "ss_4214xucsm",
+      "fix_priority": "High — core product layout doesn't match design spec"
+    },
+    {
+      "id": "F005",
+      "severity": "P1",
+      "surface": "Decision Workbench (Memo)",
+      "title": "Decision Workbench is nearly empty",
+      "description": "Surface shows only faint 'Investor Diligence' text and 'Frozen Feb 26, 2026'. Main content area completely blank — no scenarios, interventions, or decision memo visible.",
+      "expected": "Decision Snapshot with scenarios, variables, interventions, evidence tabs",
+      "screenshot_id": "ss_90069f229",
+      "fix_priority": "High — one of 5 core surfaces is non-functional"
+    },
+    {
+      "id": "F006",
+      "severity": "P1",
+      "surface": "Context Intake",
+      "title": "Context Intake surface nearly invisible",
+      "description": "Only a faint 'Generate' button visible. Paste area, file upload zones, competitor input fields all invisible due to contrast issue.",
+      "expected": "Clear paste area, upload buttons, competitor/comparable input fields, 'Generate Founder Clarity Overview' CTA",
+      "screenshot_id": "ss_08496o3lm",
+      "fix_priority": "High — context intake is the Phase 3 entry point for new users"
+    },
+    {
+      "id": "F007",
+      "severity": "P1",
+      "surface": "All surfaces",
+      "title": "100% hardcoded fixture data — no live data anywhere",
+      "description": "Every founder surface uses hardcoded demo data: 'Meridian AI' company, 'carbon credit pricing', 'TradeFlow partnership', 'EU CBAM'. The Shopify analysis also uses pre-baked fixture data (correct Shopify facts but not fetched live). No surface connects to Convex backend for real data. No live web search, no real-time signals.",
+      "expected": "At minimum, the founder dashboard should show NodeBench's own data. Company search should fetch live data. External signals should pull from real news APIs.",
+      "fix_priority": "High — product is a museum, not a tool (per usability scorecard)"
+    },
+    {
+      "id": "F008",
+      "severity": "P1",
+      "surface": "Company Analysis (Shopify)",
+      "title": "Company Analysis center column text contrast too low",
+      "description": "Left column (business quality cards) and center column (financial metrics) have very low text contrast. Right column (news/signals) is readable. Pattern: cards on dark background with low-alpha text.",
+      "expected": "All card text readable at WCAG AA minimum",
+      "screenshot_id": "ss_27866sl94",
+      "fix_priority": "High — this is the banker/CEO demo flow"
+    },
+    {
+      "id": "F009",
+      "severity": "P2",
+      "surface": "Landing page",
+      "title": "Font request returns 503",
+      "description": "One font request (data:font/woff2;base64...) returned HTTP 503. Likely a transient CDN issue but worth monitoring.",
+      "expected": "All font loads succeed (200)",
+      "fix_priority": "Low — likely transient, fonts have fallback"
+    },
+    {
+      "id": "F010",
+      "severity": "P2",
+      "surface": "History & Changes",
+      "title": "History surface is sparse with single entry",
+      "description": "Shows only one 'Weekly reset' entry at 63% confidence. No timeline, no diff view, no prior packets. Minimal useful content.",
+      "expected": "Snapshot timeline, current vs previous comparison, prior packets, prior memos",
+      "screenshot_id": "ss_30704f63j",
+      "fix_priority": "Medium — acceptable for demo if other surfaces are strong"
+    },
+    {
+      "id": "F011",
+      "severity": "P2",
+      "surface": "Export Center",
+      "title": "Export cards barely visible except Memo",
+      "description": "Only the Memo card with Download button is clearly visible. Other format cards (Spreadsheet, Deck, HTML Brief, etc.) are invisible due to contrast.",
+      "expected": "All 7 export format cards visible and clickable",
+      "screenshot_id": "ss_5074092ve",
+      "fix_priority": "Medium — export is Phase 2 functionality"
+    },
+    {
+      "id": "F012",
+      "severity": "P2",
+      "surface": "Mobile Company Search",
+      "title": "Mobile company search input invisible",
+      "description": "At 375px, the search input field, lens labels (CEO, Strategy, Diligence), and output format options are invisible. Only Banker card, Memo card, and Run Analysis CTA are visible.",
+      "expected": "Search input clearly visible and typeable on mobile",
+      "screenshot_id": "ss_7106j479y",
+      "fix_priority": "Medium — CTA still works but UX is degraded"
+    }
+  ],
+  "surfaces_tested": {
+    "landing_ask": { "status": "PASS", "notes": "Loads, CTAs work, install commands visible. Desktop only." },
+    "founder_dashboard": { "status": "PARTIAL", "notes": "Content exists but contrast broken, layout doesn't match spec" },
+    "company_search": { "status": "PARTIAL", "notes": "Loads, search + analysis flow works, contrast issues" },
+    "company_analysis": { "status": "PARTIAL", "notes": "Shopify data correct and comprehensive, contrast broken on 2/3 columns" },
+    "context_intake": { "status": "FAIL", "notes": "Nearly invisible" },
+    "founder_history": { "status": "PARTIAL", "notes": "Loads but sparse" },
+    "agent_brief": { "status": "PASS", "notes": "Best founder surface — clear text, good layout, action buttons" },
+    "nearby_entities": { "status": "FAIL", "notes": "Content invisible due to contrast" },
+    "command_center": { "status": "PASS", "notes": "3-panel layout excellent, clear text, fixture data" },
+    "perspectives": { "status": "FAIL", "notes": "Content invisible, only badges visible" },
+    "export_center": { "status": "PARTIAL", "notes": "Memo card visible, others invisible" },
+    "decision_workbench": { "status": "FAIL", "notes": "Nearly empty — only frozen header" },
+    "mobile_landing": { "status": "FAIL", "notes": "Completely blank below header" },
+    "mobile_dashboard": { "status": "FAIL", "notes": "Only welcome banner visible" },
+    "mobile_search": { "status": "PARTIAL", "notes": "CTA works but labels invisible" }
+  },
+  "root_cause_analysis": {
+    "contrast_issue": {
+      "hypothesis": "Founder surface components inherited glass card DNA opacity values (text-white/[0.06] or similar) that were designed for card borders and backgrounds, not body text. The design system uses extremely low opacity by default to achieve the frosted glass aesthetic, but this was applied to text elements that need high contrast.",
+      "likely_files": [
+        "src/features/founder/views/FounderDashboardView.tsx",
+        "src/features/founder/components/*.tsx",
+        "src/features/founder/views/CompanySearchView.tsx",
+        "src/features/founder/views/CompanyAnalysisView.tsx"
+      ],
+      "fix": "Audit all founder component text colors. Replace text-white/[low-value] with text-white/80 or text-neutral-200 for body text, text-white/60 for secondary text, text-white/40 for tertiary labels."
+    },
+    "mobile_layout": {
+      "hypothesis": "CockpitLayout hides sidebar and right rail on mobile but the main content area doesn't expand or reflow. Founder surfaces may have fixed-width layouts that don't respond to viewport changes.",
+      "likely_files": [
+        "src/layouts/CockpitLayout.tsx",
+        "src/features/controlPlane/views/ControlPlaneLanding.tsx"
+      ],
+      "fix": "Add responsive breakpoints: at <768px, main content should be full-width, stacked cards, bottom action bar."
+    },
+    "fixture_data": {
+      "hypothesis": "All founder surfaces were built with hardcoded fixtures to demonstrate the layout. No Convex queries or live API calls were wired. This was intentional for Phase 1 but makes the product feel like a demo, not a tool.",
+      "likely_files": [
+        "src/features/founder/views/FounderDashboardView.tsx",
+        "src/features/deepSim/fixtures.ts"
+      ],
+      "fix": "Phase 2 priority: wire Convex queries for at minimum the founder's own company data. Phase 3: live web search for company analysis."
+    }
+  },
+  "usability_score": {
+    "time_to_value": 3,
+    "zero_friction_entry": 5,
+    "input_obviousness": 4,
+    "output_quality": 3,
+    "feedback_loop_speed": 4,
+    "mobile_usability": 1,
+    "voice_hands_free": 3,
+    "shareability": 3,
+    "return_hook": 3,
+    "show_someone_factor": 4,
+    "total": 33,
+    "grade": "D",
+    "assessment": "Interesting tech demo with excellent architecture and agent infrastructure, but the actual user experience is broken by invisible text and non-functional mobile. The two surfaces that work well (Command Center, Agent Brief) demonstrate the product's potential but the majority of surfaces fail basic readability."
+  },
+  "priority_fix_order": [
+    "1. Fix systemic contrast issue across all founder surfaces (P0 — affects 10+ surfaces)",
+    "2. Fix mobile layout — content must render at 375px (P0 — blocks all mobile users)",
+    "3. Wire Decision Workbench with fixture or live data (P1 — core surface empty)",
+    "4. Implement 8-card canonical dashboard layout per spec (P1 — doesn't match design)",
+    "5. Wire at least one live data source for external signals (P1 — breaks museum→tool threshold)"
+  ]
+}

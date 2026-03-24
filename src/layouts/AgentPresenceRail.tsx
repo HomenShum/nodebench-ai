@@ -1,9 +1,10 @@
 import { memo, useEffect, useState } from "react";
 import { useConvexAuth, useQuery } from "convex/react";
-import { Activity, CheckCircle2, Clock, Mic, Shield, TrendingUp, FileText, ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
+import { Activity, CheckCircle2, Clock, Mic, Shield, TrendingUp, FileText, ChevronRight, ChevronLeft, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import { cn } from "@/lib/utils";
 import type { CockpitSurfaceId, MainView } from "@/lib/registry/viewRegistry";
+import { useVoiceOutput } from "@/hooks/useVoiceOutput";
 
 interface AgentPresenceRailProps {
   currentSurface: CockpitSurfaceId;
@@ -13,6 +14,7 @@ interface AgentPresenceRailProps {
   onToggleCollapse?: () => void;
   onOpenAgent?: () => void;
   lastVoiceInstruction?: string | null;
+  isVoiceListening?: boolean;
 }
 
 const SURFACE_DESCRIPTIONS: Record<CockpitSurfaceId, string> = {
@@ -35,6 +37,7 @@ export const AgentPresenceRail = memo(function AgentPresenceRail({
   onToggleCollapse,
   onOpenAgent,
   lastVoiceInstruction,
+  isVoiceListening = false,
 }: AgentPresenceRailProps) {
   const { isAuthenticated } = useConvexAuth();
   const agentStats = useQuery(api.domains.agents.agentHubQueries.getAgentStats, isAuthenticated ? {} : "skip");
@@ -53,10 +56,13 @@ export const AgentPresenceRail = memo(function AgentPresenceRail({
   const activeAgentCount = agentStats?.activeNow ?? 0;
   const totalAgentCount = agentStats?.totalAgents ?? 0;
 
+  // Voice output state
+  const voiceOutput = useVoiceOutput();
+
   return (
     <aside
       className={cn(
-        "relative shrink-0 border-l border-white/[0.06] bg-white/[0.02] backdrop-blur-xl transition-[width] duration-200 ease-in-out",
+        "relative shrink-0 border-l border-white/[0.06] bg-white/[0.04] backdrop-blur-xl transition-[width] duration-200 ease-in-out",
         isCollapsed ? "w-0 overflow-visible" : "block w-[292px]",
       )}
       role="complementary"
@@ -167,8 +173,64 @@ export const AgentPresenceRail = memo(function AgentPresenceRail({
 
         <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-3" data-agent-id="cockpit:voice">
           <div className="flex items-center gap-2 text-xs text-content-muted">
-            <Mic className="h-3.5 w-3.5 text-emerald-400" />
-            {lastVoiceInstruction ? <span className="truncate" title={lastVoiceInstruction}>Last: {lastVoiceInstruction}</span> : "Voice available"}
+            {isVoiceListening ? (
+              <>
+                <span className="relative flex h-3.5 w-3.5 items-center justify-center">
+                  <span className="absolute inline-flex h-3 w-3 animate-ping rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                </span>
+                <span className="font-medium text-red-400">Listening...</span>
+              </>
+            ) : (
+              <>
+                <Mic className="h-3.5 w-3.5 text-emerald-400" />
+                {lastVoiceInstruction ? (
+                  <span className="truncate" title={lastVoiceInstruction}>Last: {lastVoiceInstruction}</span>
+                ) : (
+                  "Voice input available"
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Voice output status + toggle */}
+          <div className="mt-2 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 text-content-muted">
+              {voiceOutput.isSpeaking ? (
+                <>
+                  <span className="relative flex h-3.5 w-3.5 items-center justify-center">
+                    <span className="absolute inline-flex h-3 w-3 animate-ping rounded-full bg-violet-400 opacity-75" />
+                    <Volume2 className="relative h-3.5 w-3.5 text-violet-400" />
+                  </span>
+                  <span className="font-medium text-violet-400">Speaking...</span>
+                </>
+              ) : (
+                <>
+                  <Volume2 className="h-3.5 w-3.5" />
+                  <span>Voice output: {voiceOutput.isEnabled ? "on" : "off"}</span>
+                  {voiceOutput.backend === "elevenlabs" && (
+                    <span className="rounded bg-violet-500/20 px-1 py-0.5 text-[10px] text-violet-400">ElevenLabs</span>
+                  )}
+                </>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={voiceOutput.toggleEnabled}
+              className={cn(
+                "flex h-5 w-9 items-center rounded-full px-0.5 transition-colors",
+                voiceOutput.isEnabled ? "bg-violet-500/40" : "bg-white/10",
+              )}
+              aria-label={voiceOutput.isEnabled ? "Disable voice output" : "Enable voice output"}
+              title={voiceOutput.isEnabled ? "Disable voice output" : "Enable voice output"}
+            >
+              <span
+                className={cn(
+                  "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform",
+                  voiceOutput.isEnabled ? "translate-x-3.5" : "translate-x-0",
+                )}
+              />
+            </button>
           </div>
         </section>
       </div>

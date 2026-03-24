@@ -2,7 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- SECURITY: Content Security Policy — defense-in-depth against XSS.
+         - default-src 'self': only load from same origin by default
+         - script-src 'self' 'unsafe-inline': Vite needs inline scripts for HMR; 'unsafe-eval' NOT allowed
+         - style-src 'self' 'unsafe-inline' fonts.googleapis.com: inline styles for CSS-in-JS + Google Fonts
+         - font-src 'self' fonts.gstatic.com: Google Fonts hosted font files
+         - connect-src 'self' *.convex.cloud wss://*.convex.cloud api.elevenlabs.io: API backends
+         - img-src 'self' data: blob:: inline images + generated content
+         - frame-src 'none': no iframes allowed
+         - object-src 'none': no Flash/Java applets
+         - base-uri 'self': prevent base tag hijacking
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.convex.cloud wss://*.convex.cloud https://api.elevenlabs.io; img-src 'self' data: blob:; frame-src 'none'; object-src 'none'; base-uri 'self';" />
 
     <!-- Resource hints for better performance -->
     <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
@@ -120,23 +133,26 @@
     <link rel="stylesheet" href="/src/index.css" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
 
-    <title>NodeBench — Agent Trust Infrastructure</title>
-    <meta name="description" content="Every agent action, explained. NodeBench provides tamper-evident receipts, scoped delegation, and evidence-grounded investigation for AI agents." />
+    <title>NodeBench — Entity Intelligence for Any Company, Market, or Question</title>
+    <meta name="description" content="Search any company, market, or strategic question. Get a tailored, decision-ready intelligence workspace with signals, risks, comparables, and exportable packets. Powered by 338 MCP tools." />
     <link rel="canonical" href="https://nodebench.ai/" />
 
     <!-- Open Graph -->
-    <meta property="og:title" content="NodeBench — Agent Trust Infrastructure" />
-    <meta property="og:description" content="Tamper-evident receipts, scoped delegation, and investigation for AI agents." />
+    <meta property="og:title" content="NodeBench — Entity Intelligence for Any Company, Market, or Question" />
+    <meta property="og:description" content="Type a question, paste meeting notes, or search a company. Get decision-ready intelligence packets shaped for founders, investors, bankers, CEOs, and researchers." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://nodebench.ai/" />
-    <meta property="og:image" content="/og-preview.png" />
-    <meta property="og:site_name" content="NodeBench AI" />
+    <meta property="og:image" content="/og-nodebench.svg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="NodeBench" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="NodeBench — Agent Trust Infrastructure" />
-    <meta name="twitter:description" content="Tamper-evident receipts, scoped delegation, and investigation for AI agents." />
+    <meta name="twitter:title" content="NodeBench — Entity Intelligence for Any Company, Market, or Question" />
+    <meta name="twitter:description" content="Search any company or strategic question. Get tailored intelligence packets with signals, risks, comparables, and exportable memos. 338 MCP tools, 6 role lenses." />
   </head>
   <body>
     <div id="root"></div>

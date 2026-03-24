@@ -95,8 +95,8 @@ describe("Local Dashboard: schema", () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("Local Dashboard: tool structure", () => {
-  it("exports 5 tools", () => {
-    expect(localDashboardTools).toHaveLength(5);
+  it("exports 6 tools", () => {
+    expect(localDashboardTools).toHaveLength(6);
   });
 
   it("each has name/description/inputSchema/handler", () => {

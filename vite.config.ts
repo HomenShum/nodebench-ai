@@ -99,6 +99,15 @@ export default defineConfig(({ mode }) => {
   const enableCriticalCss = mode === "production" && process.env.NODEBENCH_CRITICAL_CSS === "1";
 
   return ({
+    server: {
+      host: true, // Bind to all interfaces so Chrome can reach the dev server
+      proxy: {
+        "/search": {
+          target: "http://localhost:3101",
+          changeOrigin: true,
+        },
+      },
+    },
     plugins: [
     react(),
     // Service Worker + PWA for aggressive caching
@@ -351,10 +360,32 @@ window.addEventListener('message', async (message) => {
             if (id.includes('/node_modules/convex/')) {
               return 'convex-vendor';
             }
-            // Let Vite handle lucide-react and recharts naturally (no manual chunking)
-            // to avoid initialization order issues
-            // Editor ecosystem (heavy, should be separate)
-            if (id.includes('/node_modules/@tiptap/') || id.includes('/node_modules/@blocknote/')) {
+            // Editor ecosystem — ALL related packages MUST land in one chunk.
+            // @blocknote/@tiptap/prosemirror have circular init deps; splitting
+            // them across chunks causes "Cannot access X before initialization".
+            // Including the full transitive set (unified/rehype/remark, yjs,
+            // emoji-mart, floating-ui) prevents Rollup from splitting them.
+            if (
+              id.includes('/node_modules/@tiptap/') ||
+              id.includes('/node_modules/@blocknote/') ||
+              id.includes('/node_modules/prosemirror-') ||
+              id.includes('/node_modules/@prosemirror-adapter/') ||
+              id.includes('/node_modules/@handlewithcare/') ||
+              id.includes('/node_modules/y-prosemirror') ||
+              id.includes('/node_modules/y-protocols') ||
+              id.includes('/node_modules/yjs/') ||
+              id.includes('/node_modules/lib0/') ||
+              id.includes('/node_modules/unified/') ||
+              id.includes('/node_modules/rehype-') ||
+              id.includes('/node_modules/remark-') ||
+              id.includes('/node_modules/hast-') ||
+              id.includes('/node_modules/mdast-') ||
+              id.includes('/node_modules/unist-') ||
+              id.includes('/node_modules/emoji-mart') ||
+              id.includes('/node_modules/@emoji-mart/') ||
+              id.includes('/node_modules/@floating-ui/') ||
+              id.includes('/node_modules/@shikijs/')
+            ) {
               return 'editor-vendor';
             }
             // Spreadsheet engine (very heavy)

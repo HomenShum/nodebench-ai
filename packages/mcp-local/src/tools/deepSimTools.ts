@@ -427,7 +427,7 @@ export const deepSimTools: McpTool[] = [
   {
     name: "render_decision_memo",
     description:
-      "Render a 1-page executive decision memo from a completed Deep Sim analysis. Combines claim graph, variables, scenarios, interventions, and compounding score into a structured memo with counter-models, forecast check date, and whatWouldChangeMyMind.",
+      "Render a 1-page executive decision memo from a completed Deep Sim analysis. Combines claim graph, variables, scenarios, interventions, and compounding score into a structured memo with counter-models, forecast check date, and whatWouldChangeMyMind. Optionally attach source URLs for provenance tracking on claims.",
     inputSchema: {
       type: "object",
       properties: {
@@ -451,6 +451,21 @@ export const deepSimTools: McpTool[] = [
           default: "founder",
           description: "Target audience role for tone and emphasis (default founder)",
         },
+        sources: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              claimId: { type: "string", description: "ID or label of the claim this source supports" },
+              url: { type: "string", description: "Source URL" },
+              title: { type: "string", description: "Source title or description" },
+              retrievedAt: { type: "string", description: "ISO timestamp when retrieved" },
+              confidence: { type: "number", description: "0.0-1.0 confidence in source reliability" },
+            },
+          },
+          description:
+            "Source attributions for claims in the memo. Each claim should trace to at least one source.",
+        },
       },
       required: ["entityKey", "workflow"],
     },
@@ -459,15 +474,150 @@ export const deepSimTools: McpTool[] = [
       workflow: string;
       format?: string;
       audienceRole?: string;
+      sources?: Array<{
+        claimId: string;
+        url: string;
+        title?: string;
+        retrievedAt?: string;
+        confidence?: number;
+      }>;
     }) => {
       const started = Date.now();
-      const result = await callGateway<any>("renderDecisionMemo", {
+      const result = await callGateway<{
+        memo?: string;
+        claims?: Array<{ id?: string; label?: string; text?: string }>;
+        [key: string]: unknown;
+      }>("renderDecisionMemo", {
         entityKey: args.entityKey,
         workflow: args.workflow,
         format: args.format ?? "markdown",
         audienceRole: args.audienceRole ?? "founder",
       });
-      return successOrError(result, Date.now() - started);
+
+      const latencyMs = Date.now() - started;
+
+      if (!result.success) {
+        return { error: true, message: result.error, latencyMs };
+      }
+
+      const data = result.data;
+
+      // --- Source provenance enrichment ---
+      if (!args.sources || args.sources.length === 0) {
+        return {
+          success: true,
+          latencyMs,
+          data,
+          provenance: {
+            provenanceScore: 0,
+            note: "No sources provided. Add sources for verifiable claims.",
+          },
+        };
+      }
+
+      // Build lookup: claimId → source entries (one claim can have multiple sources)
+      const sourcesByClaimId = new Map<string, typeof args.sources>();
+      for (const src of args.sources) {
+        if (!src.claimId) continue;
+        const existing = sourcesByClaimId.get(src.claimId) ?? [];
+        existing.push(src);
+        sourcesByClaimId.set(src.claimId, existing);
+      }
+
+      // Determine all claim IDs present in the memo
+      const claims: Array<{ id: string; label?: string }> = [];
+      if (Array.isArray(data.claims)) {
+        for (const c of data.claims) {
+          const id = c.id ?? c.label ?? "";
+          if (id) claims.push({ id, label: c.label ?? c.text });
+        }
+      }
+      // Also treat every unique claimId in the sources as a known claim
+      // (the caller may reference claims by label even if the gateway doesn't return them)
+      for (const cid of sourcesByClaimId.keys()) {
+        if (!claims.some((c) => c.id === cid)) {
+          claims.push({ id: cid });
+        }
+      }
+
+      const attributedClaimIds = new Set<string>();
+      const numberedRefs: Array<{
+        index: number;
+        claimId: string;
+        url: string;
+        title: string;
+        retrievedAt?: string;
+        confidence?: number;
+      }> = [];
+
+      let refIndex = 1;
+      for (const [claimId, srcs] of sourcesByClaimId.entries()) {
+        for (const s of srcs) {
+          numberedRefs.push({
+            index: refIndex++,
+            claimId,
+            url: s.url,
+            title: s.title ?? s.url,
+            retrievedAt: s.retrievedAt,
+            confidence: s.confidence,
+          });
+          attributedClaimIds.add(claimId);
+        }
+      }
+
+      const unattributedClaims = claims
+        .filter((c) => !attributedClaimIds.has(c.id))
+        .map((c) => c.id);
+
+      const totalClaims = claims.length || 1; // avoid division by zero
+      const provenanceScore = Math.round((attributedClaimIds.size / totalClaims) * 100) / 100;
+
+      // Inject inline citation markers and Sources section into markdown memo
+      let memo: string | undefined;
+      if (typeof data.memo === "string") {
+        memo = data.memo;
+
+        // Add inline citation markers [N] next to referenced claims
+        for (const ref of numberedRefs) {
+          // Attempt to find the claim text or ID in the memo and append the marker
+          const marker = `[${ref.index}]`;
+          const escaped = ref.claimId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const pattern = new RegExp(`(${escaped})(?!\\s*\\[\\d+\\])`, "i");
+          if (pattern.test(memo)) {
+            memo = memo.replace(pattern, `$1 ${marker}`);
+          }
+        }
+
+        // Append Sources section
+        const sourcesSection = [
+          "",
+          "## Sources",
+          "",
+          ...numberedRefs.map((r) => {
+            const conf = r.confidence != null ? ` (confidence: ${r.confidence})` : "";
+            const date = r.retrievedAt ? ` — retrieved ${r.retrievedAt}` : "";
+            return `[${r.index}] ${r.title} — ${r.url}${conf}${date}`;
+          }),
+        ].join("\n");
+
+        memo += sourcesSection;
+      }
+
+      return {
+        success: true,
+        latencyMs,
+        data: {
+          ...data,
+          ...(memo != null ? { memo } : {}),
+        },
+        provenance: {
+          provenanceScore,
+          totalClaims: claims.length,
+          attributedClaims: attributedClaimIds.size,
+          unattributedClaims,
+          references: numberedRefs,
+        },
+      };
     },
   },
 ];

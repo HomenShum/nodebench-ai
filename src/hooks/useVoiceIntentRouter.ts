@@ -103,6 +103,19 @@ const VIEW_ALIASES: Record<string, MainView> = {
   "self healing": "observability",
   slo: "observability",
   monitoring: "observability",
+  // Voice-friendly phrases
+  "denied actions": "receipts",
+  "agent actions": "receipts",
+  diligence: "deep-sim",
+  "run diligence": "deep-sim",
+  "daily brief": "research",
+  "daily briefing": "research",
+  brief: "research",
+  briefing: "research",
+  receipts: "receipts",
+  delegation: "delegation",
+  investigation: "investigation",
+  "deep sim": "deep-sim",
 };
 
 const MODE_ALIASES: Record<string, CockpitMode> = {
@@ -258,7 +271,7 @@ export function parseVoiceIntent(raw: string): ParsedVoiceIntent | null {
     };
   }
 
-  const navMatch = text.match(/^(?:go\s+to|open|show|navigate\s+to|switch\s+to)\s+(.+)$/);
+  const navMatch = text.match(/^(?:go\s+to|open|show|show\s+me|navigate\s+to|switch\s+to|run|what(?:'s|s|\s+is)\s+the)\s+(.+)$/);
   if (navMatch?.[1]) {
     const view = resolveViewAlias(navMatch[1]);
     if (view) {

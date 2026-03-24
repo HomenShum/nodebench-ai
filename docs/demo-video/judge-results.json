@@ -1,0 +1,41 @@
+{
+  "timestamp": "2026-03-23T02:57:29.863Z",
+  "videoPath": "docs\\demo-video\\nodebench-animated-demo.mp4",
+  "videoSizeMB": 0.71,
+  "model": "gemini-2.0-flash",
+  "production": {
+    "smoothTransitions": true,
+    "audioVideoSync": true,
+    "paceFeelsNatural": true,
+    "visualClarity": true,
+    "audioClarity": true,
+    "noDeadAir": true,
+    "consistentBranding": true,
+    "professionalGrade": true
+  },
+  "effectiveness": {
+    "hookIn5Seconds": true,
+    "problemClear": true,
+    "valueImmediate": true,
+    "showDontTell": true,
+    "realNotCanned": true,
+    "actionableCTA": true,
+    "memorableHook": true,
+    "shareWorthy": true,
+    "solvesPainPoint": true,
+    "betterThanAlternatives": true,
+    "trustBuilding": true,
+    "mobileReady": false
+  },
+  "productionScore": 100,
+  "effectivenessScore": 96,
+  "viralPotentialScore": 80,
+  "overallVerdict": "PASS",
+  "topIssues": [],
+  "recommendations": [],
+  "reasoning": {
+    "productionNotes": "Production quality is excellent. The video is well-edited, with smooth transitions and clear visuals. The audio is also clear and professional-sounding.",
+    "effectivenessNotes": "The demo is effective in showcasing the value of NodeBench. The problem being solved is clear, and the demo shows the product working live. The actionable CTA is also a plus.",
+    "viralNotes": "The video has good viral potential. The memorable hook and share-worthy content make it likely that people will share this video with their colleagues."
+  }
+}

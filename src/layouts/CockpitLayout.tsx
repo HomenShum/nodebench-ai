@@ -45,6 +45,8 @@ import {
   type CockpitSurfaceId,
 } from "@/lib/registry/viewRegistry";
 
+import { trackEvent } from "@/lib/analytics";
+import { usePathTracking } from "../hooks/usePathTracking";
 import { useCockpitMode } from "./useCockpitMode";
 import { type CockpitMode, MODES } from "./cockpitModes";
 import type { CommandAction } from "@/layouts/chrome";
@@ -53,9 +55,16 @@ import { CommandBar } from "./CommandBar";
 import { ActiveSurfaceHost } from "./ActiveSurfaceHost";
 import { WorkspaceRail } from "./WorkspaceRail";
 import { AgentPresenceRail } from "./AgentPresenceRail";
+import { FeedbackWidget } from "@/features/founder/components/FeedbackWidget";
 import "./hud.css";
 
 const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);
+
+const OnboardingWizard = lazy(() =>
+  import("@features/onboarding/components/OnboardingWizard").then((mod) => ({
+    default: mod.OnboardingWizard,
+  })),
+);
 
 const FastAgentPanel = lazy(() =>
   import("@features/agents/components/FastAgentPanel/FastAgentPanel").then((mod) => ({
@@ -81,6 +90,9 @@ export function CockpitLayout({
 
   const { setLayout, setMode: setThemeMode, resolvedMode, theme } = useTheme();
 
+  // Path tracking — records navigation steps for founder platform telemetry
+  usePathTracking();
+
   // Cockpit mode routing (wraps useMainLayoutRouting + mode derivation)
   const cockpit = useCockpitMode();
   const {
@@ -105,6 +117,7 @@ export function CockpitLayout({
     workspaceParam,
     canonicalPath,
     isLegacyRedirect,
+    isUnknownRoute,
   } = cockpit;
 
   // ── Surface collapse state ─────────────────────────────────────────────────
@@ -113,9 +126,28 @@ export function CockpitLayout({
 
   const [refreshNonce, setRefreshNonce] = useState(0);
   const [lastVoiceInstruction, setLastVoiceInstruction] = useState<string | null>(null);
+  const [isVoiceListening, setIsVoiceListening] = useState(false);
+
+  // Listen for voice state broadcasts from ControlPlaneLanding
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ isListening: boolean }>).detail;
+      setIsVoiceListening(detail.isListening);
+    };
+    window.addEventListener("nodebench:voice-listening", handler);
+    return () => window.removeEventListener("nodebench:voice-listening", handler);
+  }, []);
 
   const trackIntentEvent = useIntentTelemetry();
   const lastTrackedViewRef = useRef<string | null>(null);
+
+  // Analytics: track surface views
+  useEffect(() => {
+    if (lastTrackedViewRef.current !== currentView) {
+      lastTrackedViewRef.current = currentView;
+      trackEvent("surface_view", { view: currentView, surface: currentSurface });
+    }
+  }, [currentView, currentSurface]);
 
   // Per-view WebMCP tools
   const webmcpViewEnabled = typeof navigator !== "undefined" && !!navigator.modelContext;
@@ -538,6 +570,53 @@ export function CockpitLayout({
     return () => window.removeEventListener("keydown", handler);
   }, [setMode]);
 
+  // ── Onboarding wizard (first visit) ──────────────────────────────────────
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try {
+      return !localStorage.getItem("nodebench-onboarded");
+    } catch {
+      return false;
+    }
+  });
+
+  // ── Offline banner ─────────────────────────────────────────────────────
+  const [isOffline, setIsOffline] = useState(() =>
+    typeof navigator !== "undefined" ? !navigator.onLine : false,
+  );
+  useEffect(() => {
+    const goOffline = () => setIsOffline(true);
+    const goOnline = () => setIsOffline(false);
+    window.addEventListener("offline", goOffline);
+    window.addEventListener("online", goOnline);
+    return () => {
+      window.removeEventListener("offline", goOffline);
+      window.removeEventListener("online", goOnline);
+    };
+  }, []);
+
+  // ── Keyboard shortcuts overlay (? key) ────────────────────────────────────
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target.isContentEditable
+      ) return;
+      if (e.key === "?" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        setShowShortcuts((v) => !v);
+      }
+      if (e.key === "Escape" && showShortcuts) {
+        setShowShortcuts(false);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [showShortcuts]);
+
   // ── Suppress unused var warnings for values kept for downstream compatibility ──
   void refreshNonce;
 
@@ -547,6 +626,23 @@ export function CockpitLayout({
       data-left-collapsed={leftCollapsed ? "" : undefined}
       data-right-collapsed={rightCollapsed || showFastAgent ? "" : undefined}
     >
+      {/* Offline banner */}
+      {isOffline && (
+        <div
+          className="fixed top-0 left-0 right-0 z-[70] bg-amber-600 text-white text-center py-2 text-sm"
+          role="alert"
+        >
+          You're offline. Some features may be unavailable.
+        </div>
+      )}
+
+      {/* Onboarding wizard (first visit) */}
+      {showOnboarding && (
+        <Suspense fallback={null}>
+          <OnboardingWizard onClose={() => setShowOnboarding(false)} />
+        </Suspense>
+      )}
+
       {/* Screen reader: announce mode changes */}
       <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
         {modeAnnouncement}
@@ -571,6 +667,7 @@ export function CockpitLayout({
           isCollapsed={leftCollapsed}
           onToggleCollapse={() => setLeftCollapsed((v) => !v)}
           onOpenSettings={() => openSettings("usage")}
+          onOpenPalette={commandPalette.toggle}
         />
       </div>
 
@@ -582,7 +679,7 @@ export function CockpitLayout({
         aria-label="Main content"
         data-cockpit-area="center"
       >
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 h-full">
           <ActiveSurfaceHost
             currentSurface={currentSurface}
             currentView={currentView}
@@ -609,6 +706,7 @@ export function CockpitLayout({
             onNavigateToView={navigateToView}
             onOpenFastAgent={() => setShowFastAgent(true)}
             onOpenFastAgentWithPrompt={handleOpenFastAgentWithPrompt}
+            isUnknownRoute={isUnknownRoute}
           />
         </div>
 
@@ -624,6 +722,7 @@ export function CockpitLayout({
             onToggleCollapse={() => setRightCollapsed((v) => !v)}
             onOpenAgent={() => setShowFastAgent(true)}
             lastVoiceInstruction={lastVoiceInstruction}
+            isVoiceListening={isVoiceListening}
           />
         </div>
 
@@ -631,11 +730,11 @@ export function CockpitLayout({
         {showFastAgent && (
           <div
             style={{ gridColumn: "2 / 4", gridRow: "2 / 3" }}
-            className="pointer-events-none z-20 hidden xl:flex justify-end p-2 pl-0"
+            className="z-20 hidden lg:flex justify-end"
             role="complementary"
             aria-label="Assistant panel"
           >
-            <div className="pointer-events-auto flex h-full w-[min(400px,34vw)] max-w-[440px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[rgba(10,12,18,0.92)] backdrop-blur-2xl">
+            <div className="flex h-full w-[min(400px,34vw)] max-w-[440px] overflow-hidden border-l border-white/[0.06] bg-white/[0.04] backdrop-blur-2xl">
               <ErrorBoundary title="Agent Panel Error">
                 <Suspense fallback={viewFallback}>
                   <FastAgentPanel
@@ -663,20 +762,20 @@ export function CockpitLayout({
             Ready
           </span>
           <span className="text-content-muted/60">·</span>
-          <span>All actions logged with evidence</span>
+          <span>Agents monitored · decisions tracked</span>
           <span className="ml-auto tabular-nums">{new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
         </div>
 
-        {/* ── Command Bar — mobile only, desktop uses Cmd+K ──────────── */}
+        {/* ── Command Bar — mobile only (desktop mode tabs live in WorkspaceRail) ── */}
         <div className="lg:hidden">
-        <CommandBar
-          mode={mode}
-          currentView={currentView}
-          onViewChange={navigateToView}
-          onOpenPalette={commandPalette.toggle}
-          onToggleAgent={() => setShowFastAgent((v) => !v)}
-          agentOpen={showFastAgent}
-        />
+          <CommandBar
+            mode={mode}
+            currentView={currentView}
+            onViewChange={navigateToView}
+            onOpenPalette={commandPalette.toggle}
+            onToggleAgent={() => setShowFastAgent((v) => !v)}
+            agentOpen={showFastAgent}
+          />
         </div>
 
         {/* Mobile Agent Panel — full-screen takeover (primary interface on < lg) */}
@@ -746,6 +845,9 @@ export function CockpitLayout({
 
         {isAuthenticated && <QuickCaptureWidget />}
 
+        {/* Feedback widget — always visible, localStorage-only */}
+        <FeedbackWidget />
+
         {showSettingsModal && (
           <ErrorBoundary title="Settings failed to load">
             <Suspense fallback={null}>
@@ -759,6 +861,52 @@ export function CockpitLayout({
         )}
 
         {/* Jarvis HUD — disabled, agent panel handles chat */}
+
+        {/* Keyboard shortcuts overlay */}
+        {showShortcuts && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowShortcuts(false)}
+            role="presentation"
+          >
+            <div
+              className="w-full max-w-md rounded-2xl border border-white/[0.08] bg-[rgba(20,22,28,0.96)] p-6 shadow-2xl backdrop-blur-2xl"
+              role="dialog"
+              aria-label="Keyboard shortcuts"
+              aria-modal="true"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="text-base font-semibold text-content">Keyboard Shortcuts</h2>
+                <button
+                  type="button"
+                  onClick={() => setShowShortcuts(false)}
+                  className="rounded-lg p-1.5 text-content-muted transition-colors hover:bg-white/[0.06] hover:text-content"
+                  aria-label="Close shortcuts panel"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+              <div className="space-y-3">
+                {([
+                  [isMac ? "\u2318K" : "Ctrl+K", "Command palette"],
+                  [`${isMac ? "\u2325" : "Alt+"}1\u20135`, "Switch surfaces"],
+                  ["?", "Keyboard shortcuts"],
+                  ["Esc", "Close panel / modal"],
+                ] as const).map(([shortcut, label]) => (
+                  <div key={shortcut} className="flex items-center justify-between">
+                    <span className="text-sm text-content-muted">{label}</span>
+                    <kbd className="inline-flex min-w-[2rem] items-center justify-center rounded-md border border-white/[0.1] bg-white/[0.04] px-2 py-1 text-xs font-medium text-content">
+                      {shortcut}
+                    </kbd>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
   );
 }

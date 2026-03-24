@@ -61,7 +61,7 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     viewId: "control-plane",
     title: "Ask",
     description:
-      "Landing surface for the agent trust control plane. Start from receipts, delegation, investigation, and packaged operator flows.",
+      "Landing surface for the operating intelligence dashboard. Start from analyses, agent oversight, initiatives, and research flows.",
     paths: ["/", "/control-plane", "/home", "/landing"],
     dataEndpoints: [],
     actions: [
@@ -136,7 +136,7 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     viewId: "research",
     title: "Research Hub",
     description:
-      "Research hub with tabbed navigation for overview, signals, briefing, deals, changes, and changelog. The primary intelligence surface after the DeepTrace landing page.",
+      "Research hub with tabbed navigation for overview, signals, briefing, deals, changes, and changelog. The primary intelligence surface after the NodeBench landing page.",
     paths: ["/research", "/hub", "/onboarding", "/research/overview", "/research/signals", "/research/briefing", "/research/deals", "/research/changes", "/research/changelog"],
     dataEndpoints: [
       { name: "forYouFeed", convexQuery: "domains.research.forYouFeed.getPublicForYouFeed", description: "Ranked feed of research signals and content" },
@@ -264,7 +264,7 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     ],
     actions: [
       { name: "reviewWatchlist", description: "Inspect a watchlist's latest matching events and threshold status" },
-      { name: "refreshWatchlistMission", description: "Launch or review the DeepTrace watchlist refresh workflow" },
+      { name: "refreshWatchlistMission", description: "Launch or review the watchlist refresh workflow" },
     ],
     relatedToolCategories: ["research", "verification", "learning"],
     tags: ["watchlists", "monitoring", "alerts", "deeptrace", "missions"],

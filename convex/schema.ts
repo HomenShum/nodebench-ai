@@ -148,6 +148,47 @@ import { agentResponseReviews } from "./domains/agents/schema";
 // MCP Gateway API key & session schema
 import { mcpApiKeys, mcpGatewaySessions } from "./domains/mcp/apiKeysSchema";
 
+// Founder Platform schema imports
+import {
+  founderWorkspaces,
+  founderCompanies,
+  founderImportedAssets,
+  founderProducts,
+  founderInitiatives,
+  founderAgents,
+  founderSignals,
+  founderDecisions,
+  founderInterventions,
+  founderOutcomes,
+  founderContextSnapshots,
+  founderTimelineEvents,
+  founderEvidence,
+  founderPendingActions,
+  founderTaskPackets,
+  founderAgentPresence,
+  founderCommandMessages,
+  founderApprovalQueue,
+  // Phase 10 — Causal Memory & Trajectory Intelligence
+  founderEventLedger,
+  founderPathSteps,
+  founderStateDiffs,
+  founderTimeRollups,
+  founderPacketVersions,
+  founderMemoVersions,
+  founderImportantChanges,
+  founderTrajectoryScores,
+  // Phase 11 — Ambient Intelligence Layer
+  ambientIngestionQueue,
+  ambientCanonicalObjects,
+  ambientChangeDetections,
+  ambientPacketReadiness,
+  // Phase 13 — Dogfood Judge Fix System
+  dogfoodSessions,
+  dogfoodJudgeRuns,
+  dogfoodFailureCases,
+  dogfoodFixAttempts,
+} from "./domains/founder/schema";
+
 /* ------------------------------------------------------------------ */
 /* 1.  DOCUMENTS  â€“  page/board/post level metadata                    */
 /* ------------------------------------------------------------------ */
@@ -12888,4 +12929,45 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   mcpApiKeys,
   mcpGatewaySessions,
+
+  /* ------------------------------------------------------------------ */
+  /* FOUNDER PLATFORM                                                    */
+  /* ------------------------------------------------------------------ */
+  founderWorkspaces,
+  founderCompanies,
+  founderImportedAssets,
+  founderProducts,
+  founderInitiatives,
+  founderAgents,
+  founderSignals,
+  founderDecisions,
+  founderInterventions,
+  founderOutcomes,
+  founderContextSnapshots,
+  founderTimelineEvents,
+  founderEvidence,
+  founderPendingActions,
+  founderTaskPackets,
+  founderAgentPresence,
+  founderCommandMessages,
+  founderApprovalQueue,
+  // Phase 10 — Causal Memory & Trajectory Intelligence
+  founderEventLedger,
+  founderPathSteps,
+  founderStateDiffs,
+  founderTimeRollups,
+  founderPacketVersions,
+  founderMemoVersions,
+  founderImportantChanges,
+  founderTrajectoryScores,
+  // Phase 11 — Ambient Intelligence Layer
+  ambientIngestionQueue,
+  ambientCanonicalObjects,
+  ambientChangeDetections,
+  ambientPacketReadiness,
+  // Phase 13 — Dogfood Judge Fix System
+  dogfoodSessions,
+  dogfoodJudgeRuns,
+  dogfoodFailureCases,
+  dogfoodFixAttempts,
 });

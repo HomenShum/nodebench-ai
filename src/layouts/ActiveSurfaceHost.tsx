@@ -35,6 +35,9 @@ const TimelineRoadmapView = lazy(() =>
 const ControlPlaneLanding = lazy(() =>
   import("@/features/controlPlane/views/ControlPlaneLanding").then((mod) => ({ default: mod.ControlPlaneLanding })),
 );
+const NotFoundPage = lazy(() =>
+  import("@/features/controlPlane/views/NotFoundPage").then((mod) => ({ default: mod.NotFoundPage })),
+);
 const ResearchHub = lazy(() => import("@/features/research/views/ResearchHub"));
 const DecisionMemoView = lazy(() =>
   import("@/features/deepSim/views/DecisionMemoView").then((mod) => ({ default: mod.DecisionMemoView })),
@@ -72,6 +75,18 @@ const ObservabilityView = lazy(() =>
 const CostDashboard = lazy(() =>
   import("@/features/admin/components/CostDashboard").then((mod) => ({ default: mod.CostDashboard })),
 );
+
+const SURFACE_SKELETON_VARIANT: Record<CockpitSurfaceId, "default" | "ask" | "research" | "telemetry" | "memo" | "trace" | "documents"> = {
+  ask: "ask",
+  memo: "memo",
+  research: "research",
+  investigate: "default",
+  compare: "default",
+  editor: "documents",
+  graph: "default",
+  trace: "trace",
+  telemetry: "telemetry",
+};
 
 const MAX_CACHED_SURFACES = 4;
 const DIRECT_ROUTE_COMPONENT_EXCLUSIONS = new Set<MainView>([
@@ -114,6 +129,7 @@ interface ActiveSurfaceHostProps {
   onNavigateToView: (view: MainView) => void;
   onOpenFastAgent: () => void;
   onOpenFastAgentWithPrompt?: (prompt: string) => void;
+  isUnknownRoute?: boolean;
 }
 
 function deriveMounted(prev: CockpitSurfaceId[], active: CockpitSurfaceId) {
@@ -186,14 +202,21 @@ function TelemetryStack({ active = true }: { active?: boolean }) {
   const receipts = useQuery(api.domains.agents.receipts.actionReceipts.list, active ? { limit: 200 } : "skip");
   const isLive = agentStats !== undefined && receipts !== undefined && (receipts?.length ?? 0) > 0;
 
-  const healthPct = isLive ? (agentStats?.successRate ?? 98) : 98;
-  const actionsTraced = isLive ? (receipts?.length ?? 0) : 47;
+  // Day-seeded demo metrics so the dashboard feels alive across visits
+  const daySeed = Math.floor(Date.now() / 86400000) % 5;
+  const DEMO_HEALTH = [96, 97, 98, 99, 98] as const;
+  const DEMO_ACTIONS = [41, 47, 53, 38, 45] as const;
+  const DEMO_DENIED = [1, 2, 3, 1, 2] as const;
+  const DEMO_VERIFIED = [35, 38, 42, 31, 39] as const;
+
+  const healthPct = isLive ? (agentStats?.successRate ?? 98) : DEMO_HEALTH[daySeed];
+  const actionsTraced = isLive ? (receipts?.length ?? 0) : DEMO_ACTIONS[daySeed];
   const deniedCount = isLive
     ? (receipts?.filter((r: any) => r.approval?.state === "denied" || r.result?.success === false).length ?? 0)
-    : 2;
+    : DEMO_DENIED[daySeed];
   const verifiedCount = isLive
     ? (receipts?.filter((r: any) => r.result?.success === true).length ?? 0)
-    : 38;
+    : DEMO_VERIFIED[daySeed];
   const healthLabel = healthPct >= 90 ? "Healthy" : healthPct >= 70 ? "Degraded" : "At Risk";
   const healthColor = healthPct >= 90 ? "bg-emerald-500/15 text-emerald-400" : healthPct >= 70 ? "bg-amber-500/15 text-amber-400" : "bg-rose-500/15 text-rose-400";
 
@@ -296,6 +319,7 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
     onNavigateToView,
     onOpenFastAgent,
     onOpenFastAgentWithPrompt,
+    isUnknownRoute,
   } = props;
   const navigate = useNavigate();
   const mountedRef = useRef<CockpitSurfaceId[]>([currentSurface]);
@@ -319,6 +343,9 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
 
     switch (surfaceId) {
       case "ask":
+        if (isUnknownRoute) {
+          return <NotFoundPage />;
+        }
         return (
           <ControlPlaneLanding
             onNavigate={(view) => onNavigateToView(view)}
@@ -333,6 +360,7 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
           <ResearchHub
             embedded
             initialTab={researchHubInitialTab}
+            onTabChange={(tab) => setResearchHubInitialTab(tab as typeof researchHubInitialTab)}
             onGoHome={() => navigateToSurface("ask")}
             onNavigateToPath={(path) => navigate(path)}
             onDocumentSelect={(id) => onDocumentSelect(id as Id<"documents">)}
@@ -446,7 +474,7 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
           entityName={entityName}
         >
           <ErrorBoundary title={`${SURFACE_TITLES[surfaceId]} failed to load`}>
-            <Suspense fallback={<ViewSkeleton variant="default" />}>{renderSurface(surfaceId)}</Suspense>
+            <Suspense fallback={<ViewSkeleton variant={SURFACE_SKELETON_VARIANT[surfaceId] ?? "default"} />}>{renderSurface(surfaceId)}</Suspense>
           </ErrorBoundary>
         </SurfaceFrame>
       ))}

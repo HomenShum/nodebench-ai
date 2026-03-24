@@ -27,6 +27,7 @@ import type { CitationLibrary } from '../types/citationSchema';
 import type { EntityLibrary } from '../types/entitySchema';
 import type { EntityHoverData } from './EntityHoverPreview';
 import { sanitizeReadableText } from '@/lib/displayText';
+import { getDemoSignalsForDate } from '../lib/demoSignals';
 
 interface DigestSection {
   id: string;
@@ -163,13 +164,29 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     }
   }, [cachedSummary, generatedSummary]);
 
-  // Empty state data - NO fake news. Shows honest empty state.
-  const sampleDigestData = useMemo(() => ({
-    marketMovers: [] as Array<{ title: string; source: string }>,
-    watchlistRelevant: [] as Array<{ title: string; source: string }>,
-    riskAlerts: [] as Array<{ title: string; source: string }>,
-    trackedHashtags: [] as string[],
-  }), []);
+  // Demo state — deterministic date-seeded signals so the digest feels fresh
+  // every visit without requiring a live backend.
+  const sampleDigestData = useMemo(() => {
+    const demo = getDemoSignalsForDate(new Date());
+    // Bucket demo signals into the shape MorningDigest expects
+    const marketMovers = demo.signals
+      .filter((s) => s.category === 'model-release' || s.category === 'enterprise')
+      .map((s) => ({ title: s.title, source: s.source, summary: '', tags: [], url: '' }));
+    const watchlistRelevant = demo.signals
+      .filter((s) => s.category === 'funding' || s.category === 'open-source')
+      .map((s) => ({ title: s.title, source: s.source, summary: '', tags: [], url: '' }));
+    const riskAlerts = demo.signals
+      .filter((s) => s.category === 'regulation')
+      .map((s) => ({ title: s.title, source: s.source, summary: '', tags: [], url: '' }));
+    return {
+      marketMovers,
+      watchlistRelevant,
+      riskAlerts,
+      trackedHashtags: [] as string[],
+      _demo: true as const,
+      lastUpdated: demo.lastUpdated,
+    };
+  }, []);
 
   // Track if using sample data
   const isUsingSampleData = !digestData || (
@@ -1099,8 +1116,13 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                 <Sparkles className="w-4 h-4 text-content-secondary" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-content-secondary">Sample Research Feed</p>
-                <p className="text-xs text-content-secondary mt-0.5">Connect data sources or track hashtags to see real-time signals.</p>
+                <p className="text-sm font-semibold text-content-secondary">
+                  Today&apos;s AI Intelligence Brief
+                  <span className="ml-2 text-[11px] font-normal text-content-muted">
+                    Last updated: {sampleDigestData._demo ? sampleDigestData.lastUpdated : ''}
+                  </span>
+                </p>
+                <p className="text-xs text-content-secondary mt-0.5">Curated signals from across the AI ecosystem. Connect your own sources for personalized tracking.</p>
               </div>
             </div>
           )}
@@ -1121,8 +1143,8 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               <div className="w-14 h-14 rounded-lg bg-indigo-500/10 flex items-center justify-center mb-4">
                 <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <p className="text-base font-semibold text-content mb-1">No signals yet</p>
-              <p className="text-sm text-content-secondary max-w-xs">Connect data sources or track topics to see your personalized daily summary here.</p>
+              <p className="text-base font-semibold text-content mb-1">Preparing your brief</p>
+              <p className="text-sm text-content-secondary max-w-xs">Loading today&apos;s AI intelligence signals. Connect your own data sources for personalized tracking.</p>
             </div>
           )}
 

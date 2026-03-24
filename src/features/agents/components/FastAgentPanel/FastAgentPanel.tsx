@@ -47,6 +47,7 @@ import { DocumentActionGrid, extractDocumentActions, type DocumentAction } from 
 import { extractMediaFromText, type ExtractedMedia } from './utils/mediaExtractor';
 import type { SpawnedAgent } from './types/agent';
 import type { AgentOpenOptions, DossierContext } from '@/features/agents/context/FastAgentContext';
+import { trackEvent } from '@/lib/analytics';
 import { buildDossierContextPrefix } from '@/features/agents/context/FastAgentContext';
 import { findDemoConversation, GUEST_FALLBACK_RESPONSE, type DemoConversation } from './demoConversation';
 import { MinimizedStrip } from './FastAgentPanel.MinimizedStrip';
@@ -147,6 +148,13 @@ export const FastAgentPanel = memo(function FastAgentPanel({
   const navigate = useNavigate();
   const trackIntentEvent = useIntentTelemetry();
 
+  // ========== ANALYTICS: track panel open ==========
+  useEffect(() => {
+    if (isOpen) {
+      trackEvent("agent_panel_open", { variant });
+    }
+  }, [isOpen, variant]);
+
   // ========== ANONYMOUS SESSION (5 free messages/day for unauthenticated users) ==========
   const anonymousSession = useAnonymousSession();
 
@@ -197,13 +205,24 @@ export const FastAgentPanel = memo(function FastAgentPanel({
       };
       setDemoMessages((prev) => [...prev, assistantMsg]);
 
-      // Progressive character reveal over ~2 seconds
-      const totalChars = fullText.length;
-      const revealIntervalMs = Math.max(4, Math.floor(2000 / totalChars));
+      // Progressive character reveal with 3-phase speed:
+      // Phase 1 (0-50 chars): 15ms/char — fast burst to show content immediately
+      // Phase 2 (50-200 chars): 8ms/char — reading speed
+      // Phase 3 (200+ chars): instant dump — total reveal < 2s regardless of length
       let revealed = 0;
+      const totalChars = fullText.length;
 
       const tick = () => {
-        revealed = Math.min(revealed + Math.ceil(totalChars / 80), totalChars);
+        if (revealed < 50) {
+          // Phase 1: reveal 1 char every 15ms (fast burst)
+          revealed = Math.min(revealed + 1, totalChars);
+        } else if (revealed < 200) {
+          // Phase 2: reveal 2 chars every 8ms (reading speed)
+          revealed = Math.min(revealed + 2, totalChars);
+        } else {
+          // Phase 3: dump remaining instantly
+          revealed = totalChars;
+        }
         const partialText = fullText.slice(0, revealed);
         setDemoMessages((prev) =>
           prev.map((m) =>
@@ -213,10 +232,11 @@ export const FastAgentPanel = memo(function FastAgentPanel({
           )
         );
         if (revealed < totalChars) {
-          demoTypingRef.current = setTimeout(tick, revealIntervalMs);
+          const delayMs = revealed <= 50 ? 15 : 8;
+          demoTypingRef.current = setTimeout(tick, delayMs);
         }
       };
-      demoTypingRef.current = setTimeout(tick, 60);
+      demoTypingRef.current = setTimeout(tick, 30);
     }, demo.thinkingDuration);
   }, []);
 
@@ -1600,6 +1620,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     // Guest/demo mode intercept: play scripted or fallback response
     if (!isAuthenticated) {
       const demo = findDemoConversation(text);
+      trackEvent("demo_conversation_start", { prompt: text.slice(0, 100) });
       playDemoConversation(demo ?? GUEST_FALLBACK_RESPONSE, text);
       return;
     }
@@ -3521,4 +3542,12 @@ function ArtifactsTab({ media, documents, hasThread, onDocumentSelect }: Artifac
               <DocumentActionGrid
                 documents={documents}
                 title="Generated Documents"
-                onDocumentSelect={onDocume
+                onDocumentSelect={onDocumentSelect}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

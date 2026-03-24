@@ -881,4 +881,41 @@ crons.monthly(
   {}
 );
 
+// ═══════════════════════════════════════════════════════════════════════════
+// AMBIENT INTELLIGENCE — Phase 11 canonicalization pipeline
+// Ingestion → change detection → packet readiness → pruning
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Process ingestion queue every 30 seconds (canonicalize raw items)
+crons.interval(
+  "ambient ingestion queue processing",
+  { seconds: 30 },
+  internal.domains.founder.ambientIntelligenceJobs.processIngestionQueue,
+  {}
+);
+
+// Detect ambient changes every 5 minutes (scan recent canonical objects)
+crons.interval(
+  "ambient change detection",
+  { minutes: 5 },
+  internal.domains.founder.ambientIntelligenceJobs.detectAmbientChanges,
+  {}
+);
+
+// Assess packet readiness every 15 minutes (staleness scoring per company)
+crons.interval(
+  "ambient packet readiness assessment",
+  { minutes: 15 },
+  internal.domains.founder.ambientIntelligenceJobs.assessPacketReadiness,
+  {}
+);
+
+// Prune and compact daily at 3:30 AM UTC (old ingestions, resolved detections, superseded chains)
+crons.daily(
+  "ambient prune and compact",
+  { hourUTC: 3, minuteUTC: 30 },
+  internal.domains.founder.ambientIntelligenceJobs.pruneAndCompact,
+  {}
+);
+
 export default crons;

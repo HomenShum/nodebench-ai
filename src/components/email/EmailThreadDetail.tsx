@@ -357,10 +357,101 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/**
+ * SECURITY: DOM-based HTML sanitizer using allowlisted tags and attributes.
+ * Regex-based approaches are trivially bypassable (e.g. `<img src=x onerror=alert(1)>`
+ * with varied quoting, `<iframe>`, `javascript:` URIs, `<svg/onload>`, etc.).
+ *
+ * This uses the browser's own DOMParser to parse untrusted HTML, then walks the
+ * tree and only keeps elements/attributes on the allowlist.
+ */
+const SAFE_TAGS = new Set([
+  "p", "br", "b", "i", "u", "em", "strong", "a", "ul", "ol", "li",
+  "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "pre", "code",
+  "table", "thead", "tbody", "tr", "th", "td", "span", "div", "hr",
+  "sub", "sup", "small", "dl", "dt", "dd", "abbr", "cite", "q",
+]);
+const SAFE_ATTRS: Record<string, Set<string>> = {
+  a: new Set(["href", "title"]),
+  img: new Set([]), // images stripped entirely — common XSS vector
+  td: new Set(["colspan", "rowspan"]),
+  th: new Set(["colspan", "rowspan"]),
+  span: new Set(["class"]),
+  div: new Set(["class"]),
+  "*": new Set(["class", "dir", "lang"]),
+};
+
 function sanitizeHtml(html: string): string {
-  // Basic sanitization - in production use a proper library like DOMPurify
-  return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/on\w+="[^"]*"/gi, '')
-    .replace(/on\w+='[^']*'/gi, '');
+  try {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    sanitizeNode(doc.body);
+    return doc.body.innerHTML;
+  } catch {
+    // If parsing fails entirely, return escaped text
+    return html.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+}
+
+function sanitizeNode(node: Node): void {
+  const toRemove: Node[] = [];
+  for (let i = 0; i < node.childNodes.length; i++) {
+    const child = node.childNodes[i];
+
+    if (child.nodeType === Node.TEXT_NODE) continue;
+
+    if (child.nodeType === Node.COMMENT_NODE) {
+      toRemove.push(child);
+      continue;
+    }
+
+    if (child.nodeType !== Node.ELEMENT_NODE) {
+      toRemove.push(child);
+      continue;
+    }
+
+    const el = child as Element;
+    const tag = el.tagName.toLowerCase();
+
+    // Remove disallowed tags entirely (script, iframe, object, embed, form, etc.)
+    if (!SAFE_TAGS.has(tag)) {
+      toRemove.push(child);
+      continue;
+    }
+
+    // Strip disallowed attributes
+    const allowedForTag = SAFE_ATTRS[tag] ?? new Set<string>();
+    const allowedGlobal = SAFE_ATTRS["*"] ?? new Set<string>();
+    const attrsToRemove: string[] = [];
+    for (let a = 0; a < el.attributes.length; a++) {
+      const attr = el.attributes[a];
+      const name = attr.name.toLowerCase();
+      // Block all event handlers (on*)
+      if (name.startsWith("on")) {
+        attrsToRemove.push(attr.name);
+        continue;
+      }
+      if (!allowedForTag.has(name) && !allowedGlobal.has(name)) {
+        attrsToRemove.push(attr.name);
+        continue;
+      }
+      // Block javascript: and data: URIs in href
+      if (name === "href") {
+        const val = attr.value.trim().toLowerCase();
+        if (val.startsWith("javascript:") || val.startsWith("data:") || val.startsWith("vbscript:")) {
+          attrsToRemove.push(attr.name);
+        }
+      }
+    }
+    for (const a of attrsToRemove) el.removeAttribute(a);
+
+    // Force links to open safely
+    if (tag === "a") {
+      el.setAttribute("rel", "noopener noreferrer");
+      el.setAttribute("target", "_blank");
+    }
+
+    // Recurse into children
+    sanitizeNode(el);
+  }
+  for (const n of toRemove) node.removeChild(n);
 }

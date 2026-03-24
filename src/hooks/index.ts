@@ -21,6 +21,7 @@ export { useGlobalEventListeners } from "./useGlobalEventListeners";
 export { useVoiceIntentRouter } from "./useVoiceIntentRouter";
 export { useVoiceRecording } from "./useVoiceRecording";
 export { useVoiceInput } from "./useVoiceInput";
+export { useVoiceOutput } from "./useVoiceOutput";
 
 // UI utilities
 export { useZoom } from "./useZoom";
@@ -34,6 +35,7 @@ export { useInlineCitations } from "./useInlineCitations";
 // Analytics
 export { useEngagementTracking } from "./useEngagementTracking";
 export { useIntentTelemetry } from "./useIntentTelemetry";
+export { usePathTracking } from "./usePathTracking";
 
 // Feedback
 export { FeedbackListener } from "./FeedbackListener";

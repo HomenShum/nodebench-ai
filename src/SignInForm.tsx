@@ -98,21 +98,18 @@ export function SignInForm() {
           disabled={sendingLink || !isValidEmail(email)}
           onClick={() => {
             if (!isValidEmail(email)) {
-              console.warn("Magic link: blocked - invalid email", { email });
               toast.error("Please enter a valid email address");
               return;
             }
             setSendingLink(true);
             const redirectTo =
               typeof window !== "undefined" ? window.location.origin : "/";
-            console.log("Magic link: sending", { email, redirectTo });
             signIn("email", { email, redirectTo })
               .then(() => {
-                console.log("Magic link: success", { email });
                 toast.success("Magic link sent! Check your email.");
               })
               .catch((error) => {
-                console.error("Magic link: error", error);
+                console.error("Magic link: auth flow error");
                 toast.error(
                   error instanceof Error
                     ? error.message
@@ -120,7 +117,6 @@ export function SignInForm() {
                 );
               })
               .finally(() => {
-                console.log("Magic link: finished");
                 setSendingLink(false);
               });
           }}

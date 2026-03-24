@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Allow: /memo/
+Allow: /developers
+Allow: /api-docs
+Allow: /pricing
+Allow: /changelog
+Allow: /legal
+Allow: /founder
+
+Disallow: /admin
+Disallow: /api-keys
+
+Sitemap: https://www.nodebenchai.com/sitemap.xml

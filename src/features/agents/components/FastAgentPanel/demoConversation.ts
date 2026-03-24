@@ -2,6 +2,22 @@
 // Pre-scripted demo conversations for guest/unauthenticated users.
 // When no backend is connected, clicking a suggestion chip plays one of these.
 
+/** Format a relative date label like "today" or "yesterday" for demo sources. */
+function relativeDate(daysAgo: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  if (daysAgo === 0) return "today";
+  if (daysAgo === 1) return "yesterday";
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+/** Format a short date for use in source citations (e.g. "Mar 20, 2026"). */
+function shortDate(daysAgo: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 export interface DemoSource {
   label: string;
   type: 'code' | 'docs' | 'data';
@@ -20,14 +36,23 @@ export const DEMO_CONVERSATIONS: DemoConversation[] = [
     question:
       'Show me the agent actions that were denied or approval-gated today, and explain why.',
     response: [
-      'Here are the agent actions that were **denied or approval-gated** today:',
+      `Here are the agent actions that were **denied or approval-gated** ${relativeDate(0)}:`,
       '',
-      '| Time | Agent | Action | Gate | Reason |',
-      '|------|-------|--------|------|--------|',
-      '| 9:42 AM | **Arbitrage Scanner** | Execute FTT sell order ($2,400) | **Passport scope** | Financial transactions require human approval -- agent holds `research` role, not `trade` |',
-      '| 10:15 AM | **Deep Research** | Expand competitor analysis to 8 new entities | **Budget gate** | Would exceed $0.12 per-mission cap ($0.09 spent, $0.07 requested) |',
-      '| 11:03 AM | **LinkedIn Publisher** | Publish thread mentioning unreleased product | **Safety gate** | Content references confidential internal data flagged by PII screen |',
-      '| 1:28 PM | **Code Reviewer** | Push hotfix directly to main branch | **Scope gate** | Agent authorized for review only, not direct commits to protected branches |',
+      '**1. Arbitrage Scanner** (9:42 AM) — Execute FTT sell order ($2,400)',
+      '- Gate: Passport scope',
+      '- Reason: Financial transactions require human approval. Agent holds research role, not trade.',
+      '',
+      '**2. Deep Research** (10:15 AM) — Expand competitor analysis to 8 new entities',
+      '- Gate: Budget gate',
+      '- Reason: Would exceed $0.12 per-mission cap ($0.09 spent, $0.07 requested).',
+      '',
+      '**3. LinkedIn Publisher** (11:03 AM) — Publish thread mentioning unreleased product',
+      '- Gate: Safety gate',
+      '- Reason: Content references confidential internal data flagged by PII screen.',
+      '',
+      '**4. Code Reviewer** (1:28 PM) — Push hotfix directly to main branch',
+      '- Gate: Scope gate',
+      '- Reason: Agent authorized for review only, not direct commits to protected branches.',
       '',
       '### Why these were blocked',
       '',
@@ -37,10 +62,10 @@ export const DEMO_CONVERSATIONS: DemoConversation[] = [
     ].join('\n'),
     sources: [
       { label: 'convex/domains/missions/preExecutionGate.ts', type: 'code' },
-      { label: 'Action Receipt Feed', type: 'data' },
+      { label: `Action Receipt Feed (${relativeDate(0)})`, type: 'data' },
       { label: 'Agent Passport Registry', type: 'data' },
     ],
-    thinkingDuration: 2000,
+    thinkingDuration: 900,
     keyInsight:
       'All 4 denials used boolean gates (pass/fail), not numerical scores -- agents cannot game soft thresholds to bypass safety checks.',
   },
@@ -71,7 +96,7 @@ export const DEMO_CONVERSATIONS: DemoConversation[] = [
       { label: 'SEC Filings (Nov 2022)', type: 'docs' },
       { label: 'Bankruptcy Examiner Report', type: 'docs' },
     ],
-    thinkingDuration: 2400,
+    thinkingDuration: 1000,
     keyInsight:
       'The deliberate fraud hypothesis scored 87% on evidence weight -- the software backdoor exemption is the strongest signal.',
   },
@@ -106,7 +131,7 @@ export const DEMO_CONVERSATIONS: DemoConversation[] = [
       { label: 'convex/domains/agents/orchestrator/passportEnforcement.ts', type: 'code' },
       { label: 'Delegation Showcase', type: 'data' },
     ],
-    thinkingDuration: 1800,
+    thinkingDuration: 800,
     keyInsight:
       'The passport scope is enforced at the gate layer, not the tool layer -- even valid tool calls get rejected if the scope doesn\'t match.',
   },
@@ -123,7 +148,7 @@ export const DEMO_CONVERSATIONS: DemoConversation[] = [
       { label: 'convex/domains/trajectory/lib.ts', type: 'code' },
       { label: 'Trajectory Intelligence docs', type: 'docs' },
     ],
-    thinkingDuration: 2200,
+    thinkingDuration: 900,
     keyInsight:
       'The trust-adjusted compounding score discounts externally amplified wins, so genuine research quality always outweighs viral luck.',
   },
@@ -146,7 +171,7 @@ export const DEMO_CONVERSATIONS: DemoConversation[] = [
       { label: 'convex/domains/missions/preExecutionGate.ts', type: 'code' },
       { label: 'OpenClaw Architecture', type: 'docs' },
     ],
-    thinkingDuration: 1800,
+    thinkingDuration: 800,
     keyInsight:
       'Gates are boolean (true/false with reason), never numerical scores -- this prevents agents from gaming soft thresholds.',
   },
@@ -167,32 +192,80 @@ export const DEMO_CONVERSATIONS: DemoConversation[] = [
       { label: 'packages/mcp-local/src/toolsetRegistry.ts', type: 'code' },
       { label: 'Tool Registry (304 entries)', type: 'docs' },
     ],
-    thinkingDuration: 2500,
+    thinkingDuration: 1000,
     keyInsight:
       'Use discover_tools with category="research" to find relevant tools -- it supports pagination and auto-expands related neighbors.',
   },
   {
     question: 'Show recent agent activity',
     response: [
-      'Here is a summary of recent agent actions from the demo environment:',
+      `Here is a summary of recent agent actions (${relativeDate(0)}):`,
       '',
       '| Time | Agent | Action | Status |',
       '|------|-------|--------|--------|',
       '| 2 min ago | **Research Sentinel** | Verified 4 claims in FTX investigation brief | Completed |',
       '| 8 min ago | **Daily Digest** | Generated morning research briefing (12 signals) | Completed |',
       '| 15 min ago | **Scope Guardian** | Denied budget overrun on competitor deep-dive | Blocked |',
-      '| 23 min ago | **LinkedIn Publisher** | Published 3-post thread on agentic reliability | Completed |',
+      `| ${relativeDate(1)} | **LinkedIn Publisher** | Published 3-post thread on agentic reliability | Completed |`,
       '| 41 min ago | **Code Reviewer** | Flagged unbounded Map in streaming handler | Alert |',
       '',
       'The FTX investigation traced **4 verified facts** across 3 sources with a **96% severity signal**, triggering an automatic escalation to the review queue. The scope guardian correctly blocked a research expansion that would have exceeded the $0.12 per-mission budget cap.',
     ].join('\n'),
     sources: [
-      { label: 'Action Receipts', type: 'data' },
-      { label: 'Agent Activity Dashboard', type: 'data' },
+      { label: `Action Receipts (${relativeDate(0)})`, type: 'data' },
+      { label: `Agent Activity Dashboard (${shortDate(0)})`, type: 'data' },
     ],
-    thinkingDuration: 1500,
+    thinkingDuration: 800,
     keyInsight:
       'The FTX investigation traced 4 verified facts with 96% severity signals -- scope guardian correctly blocked a budget overrun.',
+  },
+  {
+    question: 'Should we raise a Series A now or wait 6 months?',
+    response: [
+      'I ran a **decision simulation** across 3 scenarios with live market data:',
+      '',
+      '### Scenario A: Raise now (March 2026)',
+      '| Factor | Value | Confidence |',
+      '|--------|-------|------------|',
+      '| Market timing | AI funding up 34% YoY, window open | **92%** |',
+      '| Dilution at $18M pre | ~22% | Verified (3 comparable term sheets) |',
+      '| Runway extension | 14 months at current burn | Calculated |',
+      '| Risk | Window could close if macro shifts in Q3 | Medium |',
+      '',
+      '### Scenario B: Wait 6 months (September 2026)',
+      '| Factor | Value | Confidence |',
+      '|--------|-------|------------|',
+      '| Projected ARR by then | $1.2M (from $680K today) | **74%** — assumes 12% MoM holds |',
+      '| Likely valuation | $28-35M pre (1.8x multiple improvement) | **68%** |',
+      '| Risk | 3 competitors closing rounds now; enterprise pipeline may stall | High |',
+      '',
+      '### Scenario C: Bridge + wait (hybrid)',
+      '| Factor | Value | Confidence |',
+      '|--------|-------|------------|',
+      '| Bridge size | $2M SAFE at $20M cap | Feasible (2 angels confirmed interest) |',
+      '| Buys time to | Hit $1M ARR milestone | 4-5 months |',
+      '| Risk | Cap may anchor future round pricing | Low-Medium |',
+      '',
+      '### Recommendation: **Raise now** (Scenario A)',
+      '',
+      'The evidence tilts toward raising now for 3 reasons:',
+      '1. **Competitive moat risk** — 3 direct competitors are actively fundraising. Waiting 6 months means competing for attention in a crowded market.',
+      '2. **Macro uncertainty** — The 34% YoY funding increase may not persist through Q3-Q4. Fed rate decisions in June could cool late-stage appetite, which cascades to early-stage within 2 quarters.',
+      '3. **ARR growth projection has wide error bars** — The 74% confidence on $1.2M ARR means a 26% chance you arrive at September with $900K and a weaker hand.',
+      '',
+      'The bridge (Scenario C) is a reasonable fallback if your top 2 target leads pass, but I would not start there — it signals uncertainty to the market.',
+      '',
+      '> **Falsification check**: This recommendation flips if (a) you have a signed LOI for a $500K+ enterprise contract closing in 60 days, or (b) your current runway extends past 10 months without the raise. Neither condition is met based on current data.',
+    ].join('\n'),
+    sources: [
+      { label: `Market Analysis — AI Funding Q1 2026 (${shortDate(2)})`, type: 'data' },
+      { label: 'convex/domains/missions/preExecutionGate.ts', type: 'code' },
+      { label: `Comparable Term Sheet Analysis (${relativeDate(1)})`, type: 'data' },
+      { label: 'PitchBook AI Sector Report', type: 'docs' },
+    ],
+    thinkingDuration: 1200,
+    keyInsight:
+      'Raise now — 34% YoY funding increase may not hold through Q3, and 3 competitors are actively closing rounds.',
   },
 ];
 

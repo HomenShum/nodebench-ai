@@ -1,0 +1,463 @@
+/* ------------------------------------------------------------------ */
+/*  Nearby Entities — Phase 6: Narrow entity context for v1           */
+/*  Surfaces company, competitors, partners, and initiatives.         */
+/* ------------------------------------------------------------------ */
+
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { Eye, EyeOff, Network, Plus, X } from "lucide-react";
+import {
+  DEMO_COMPANY,
+  DEMO_INITIATIVES,
+  DEMO_NEARBY_ENTITIES,
+  type NearbyEntity,
+} from "./founderFixtures";
+
+// ─── Types ──────────────────────────────────────────────────────────
+
+type EntityRelationship =
+  | "competitor"
+  | "partner"
+  | "customer"
+  | "product"
+  | "initiative"
+  | "comparable"
+  | "design partner"
+  | "market signal";
+
+interface NearbyEntityRecord {
+  id: string;
+  name: string;
+  relationship: EntityRelationship | string;
+  description: string;
+  watched: boolean;
+}
+
+interface CompanyRecord {
+  name: string;
+  companyState: string;
+  identityConfidence: number;
+  wedge: string;
+}
+
+// ─── localStorage keys ──────────────────────────────────────────────
+
+const LS_COMPANY = "nodebench-company";
+const LS_INTAKE_ENTITIES = "nodebench-intake-entities";
+const LS_NEARBY_ENTITIES = "nodebench-nearby-entities";
+const LS_WATCHED = "nodebench-watched-entities";
+
+// ─── Helpers ────────────────────────────────────────────────────────
+
+function loadJSON<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveJSON(key: string, value: unknown): void {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+const COMPETITOR_TYPES = new Set(["competitor", "comparable"]);
+const PARTNER_TYPES = new Set(["partner", "customer", "design partner"]);
+
+// ─── Default demo competitors/partners ──────────────────────────────
+
+const DEMO_COMPETITORS: NearbyEntityRecord[] = [
+  {
+    id: "demo-comp-1",
+    name: "CarbonPath",
+    relationship: "competitor",
+    description: "VCM pricing platform for voluntary carbon credits",
+    watched: false,
+  },
+  {
+    id: "demo-comp-2",
+    name: "Sylvera",
+    relationship: "competitor",
+    description: "Carbon credit ratings and valuation analytics",
+    watched: false,
+  },
+  {
+    id: "demo-comp-3",
+    name: "Pachama",
+    relationship: "competitor",
+    description: "Forest carbon verification using satellite imagery",
+    watched: false,
+  },
+];
+
+const DEMO_PARTNERS: NearbyEntityRecord[] = [
+  {
+    id: "demo-part-1",
+    name: "TradeFlow Capital",
+    relationship: "partner",
+    description: "Design partner for API integration and pilot",
+    watched: false,
+  },
+];
+
+// ─── Component ──────────────────────────────────────────────────────
+
+function NearbyEntitiesView() {
+  // ── Company ────────────────────────────────────────────────────
+  const company = useMemo<CompanyRecord>(() => {
+    const stored = loadJSON<Partial<CompanyRecord> | null>(LS_COMPANY, null);
+    if (stored?.name) {
+      return {
+        name: stored.name,
+        companyState: stored.companyState ?? DEMO_COMPANY.companyState,
+        identityConfidence:
+          stored.identityConfidence ?? DEMO_COMPANY.identityConfidence,
+        wedge: stored.wedge ?? DEMO_COMPANY.wedge,
+      };
+    }
+    return {
+      name: DEMO_COMPANY.name,
+      companyState: DEMO_COMPANY.companyState,
+      identityConfidence: DEMO_COMPANY.identityConfidence,
+      wedge: DEMO_COMPANY.wedge,
+    };
+  }, []);
+
+  // ── Entities (merged from intake + custom + demo fallback) ────
+  const [entities, setEntities] = useState<NearbyEntityRecord[]>(() => {
+    const custom = loadJSON<NearbyEntityRecord[]>(LS_NEARBY_ENTITIES, []);
+    const intake = loadJSON<NearbyEntity[]>(LS_INTAKE_ENTITIES, []);
+
+    // Convert intake entities
+    const intakeRecords: NearbyEntityRecord[] = intake.map((e) => ({
+      id: e.id,
+      name: e.name,
+      relationship: e.relationship,
+      description: e.whyItMatters,
+      watched: false,
+    }));
+
+    // Convert demo nearby entities
+    const demoRecords: NearbyEntityRecord[] = DEMO_NEARBY_ENTITIES.map((e) => ({
+      id: e.id,
+      name: e.name,
+      relationship: e.relationship,
+      description: e.whyItMatters,
+      watched: false,
+    }));
+
+    // Merge: custom first, then intake, then demo competitors/partners as fallback
+    const merged = new Map<string, NearbyEntityRecord>();
+    for (const e of custom) merged.set(e.id, e);
+    for (const e of intakeRecords) if (!merged.has(e.id)) merged.set(e.id, e);
+
+    // If no competitors/partners exist, inject demo data
+    const vals = [...merged.values()];
+    const hasCompetitors = vals.some((e) => COMPETITOR_TYPES.has(e.relationship));
+    const hasPartners = vals.some((e) => PARTNER_TYPES.has(e.relationship));
+
+    if (!hasCompetitors && intakeRecords.length === 0 && custom.length === 0) {
+      for (const e of DEMO_COMPETITORS) merged.set(e.id, e);
+    }
+    if (!hasPartners && intakeRecords.length === 0 && custom.length === 0) {
+      for (const e of DEMO_PARTNERS) merged.set(e.id, e);
+    }
+
+    // Also add demo nearby entities if nothing else
+    if (merged.size === 0) {
+      for (const e of demoRecords) merged.set(e.id, e);
+    }
+
+    return [...merged.values()];
+  });
+
+  // ── Watched set ────────────────────────────────────────────────
+  const [watchedIds, setWatchedIds] = useState<Set<string>>(
+    () => new Set(loadJSON<string[]>(LS_WATCHED, [])),
+  );
+
+  useEffect(() => {
+    saveJSON(LS_WATCHED, [...watchedIds]);
+  }, [watchedIds]);
+
+  const toggleWatch = useCallback((id: string) => {
+    setWatchedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // ── Add entity form ────────────────────────────────────────────
+  const [showForm, setShowForm] = useState(false);
+  const [formName, setFormName] = useState("");
+  const [formType, setFormType] = useState<string>("competitor");
+  const [formDesc, setFormDesc] = useState("");
+
+  const handleAddEntity = useCallback(() => {
+    if (!formName.trim()) return;
+    const newEntity: NearbyEntityRecord = {
+      id: `custom-${Date.now()}`,
+      name: formName.trim(),
+      relationship: formType,
+      description: formDesc.trim() || `${formType} entity`,
+      watched: false,
+    };
+    setEntities((prev) => {
+      const next = [...prev, newEntity];
+      saveJSON(LS_NEARBY_ENTITIES, next);
+      return next;
+    });
+    setFormName("");
+    setFormType("competitor");
+    setFormDesc("");
+    setShowForm(false);
+  }, [formName, formType, formDesc]);
+
+  // ── Grouped entities ───────────────────────────────────────────
+  const competitors = useMemo(
+    () => entities.filter((e) => COMPETITOR_TYPES.has(e.relationship)),
+    [entities],
+  );
+  const partners = useMemo(
+    () => entities.filter((e) => PARTNER_TYPES.has(e.relationship)),
+    [entities],
+  );
+  const others = useMemo(
+    () =>
+      entities.filter(
+        (e) =>
+          !COMPETITOR_TYPES.has(e.relationship) &&
+          !PARTNER_TYPES.has(e.relationship) &&
+          e.relationship !== "initiative",
+      ),
+    [entities],
+  );
+
+  const confidencePct = Math.round(company.identityConfidence * 100);
+
+  return (
+    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* ── Header ───────────────────────────────────────────────── */}
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <Network className="h-5 w-5 text-[#d97757]" />
+            <h1 className="text-xl font-semibold text-white">
+              Nearby Entities
+            </h1>
+          </div>
+          <p className="mt-1 text-sm text-white/60">
+            Context for your company's competitive and partnership landscape
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowForm((p) => !p)}
+          className="flex items-center gap-1.5 rounded-lg border border-white/[0.20] bg-white/[0.12] px-3 py-1.5 text-sm font-medium text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add Entity
+        </button>
+      </div>
+
+      {/* ── Add Entity Form ──────────────────────────────────────── */}
+      {showForm && (
+        <div className="mb-6 rounded-xl border border-white/[0.20] bg-white/[0.12] p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">
+              New Entity
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="text-white/60 transition-colors hover:text-white/60"
+              aria-label="Close form"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <input
+              type="text"
+              value={formName}
+              onChange={(e) => setFormName(e.target.value)}
+              placeholder="Entity name"
+              className="rounded-lg border border-white/[0.06] bg-white/[0.07] px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#d97757]/40"
+            />
+            <select
+              value={formType}
+              onChange={(e) => setFormType(e.target.value)}
+              className="rounded-lg border border-white/[0.06] bg-white/[0.07] px-3 py-2 text-sm text-white outline-none transition-colors focus:border-[#d97757]/40"
+            >
+              <option value="competitor">Competitor</option>
+              <option value="partner">Partner</option>
+              <option value="customer">Customer</option>
+              <option value="product">Product</option>
+            </select>
+            <input
+              type="text"
+              value={formDesc}
+              onChange={(e) => setFormDesc(e.target.value)}
+              placeholder="Brief description"
+              className="rounded-lg border border-white/[0.06] bg-white/[0.07] px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#d97757]/40"
+            />
+          </div>
+          <div className="mt-3 flex justify-end">
+            <button
+              type="button"
+              onClick={handleAddEntity}
+              disabled={!formName.trim()}
+              className="rounded-lg bg-[#d97757] px-4 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Your Company ─────────────────────────────────────────── */}
+      <section className="mb-6">
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">
+          Your Company
+        </div>
+        <div className="rounded-xl border border-white/[0.20] bg-white/[0.12] p-4">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+            <span className="text-base font-semibold text-white">
+              {company.name}
+            </span>
+            <span className="rounded-full border border-white/[0.08] bg-white/[0.07] px-2 py-0.5 text-[11px] font-medium capitalize text-white/60">
+              {company.companyState}
+            </span>
+            <span className="text-[11px] text-white/60">
+              {confidencePct}% confidence
+            </span>
+          </div>
+          <p className="mt-1.5 text-sm text-white/60">{company.wedge}</p>
+        </div>
+      </section>
+
+      {/* ── Competitors ──────────────────────────────────────────── */}
+      {competitors.length > 0 && (
+        <section className="mb-6">
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">
+            Competitors ({competitors.length})
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {competitors.map((entity) => (
+              <EntityCard
+                key={entity.id}
+                entity={entity}
+                watched={watchedIds.has(entity.id)}
+                onToggleWatch={toggleWatch}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Partners / Customers ─────────────────────────────────── */}
+      {partners.length > 0 && (
+        <section className="mb-6">
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">
+            Partners ({partners.length})
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {partners.map((entity) => (
+              <EntityCard
+                key={entity.id}
+                entity={entity}
+                watched={watchedIds.has(entity.id)}
+                onToggleWatch={toggleWatch}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Other entities (products, market signals, etc.) ──────── */}
+      {others.length > 0 && (
+        <section className="mb-6">
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">
+            Other Entities ({others.length})
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {others.map((entity) => (
+              <EntityCard
+                key={entity.id}
+                entity={entity}
+                watched={watchedIds.has(entity.id)}
+                onToggleWatch={toggleWatch}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Initiatives ──────────────────────────────────────────── */}
+      <section>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">
+          Initiatives ({DEMO_INITIATIVES.length})
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {DEMO_INITIATIVES.map((init) => (
+            <span
+              key={init.id}
+              className="inline-flex items-center rounded-full border border-white/[0.20] bg-white/[0.12] px-3 py-1 text-[12px] font-medium text-white/60 transition-colors hover:bg-white/[0.07] hover:text-white/80"
+            >
+              {init.title}
+            </span>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// ─── Entity Card ──────────────────────────────────────────────────────
+
+const EntityCard = memo(function EntityCard({
+  entity,
+  watched,
+  onToggleWatch,
+}: {
+  entity: NearbyEntityRecord;
+  watched: boolean;
+  onToggleWatch: (id: string) => void;
+}) {
+  const WatchIcon = watched ? Eye : EyeOff;
+
+  return (
+    <div className="flex flex-col justify-between rounded-xl border border-white/[0.20] bg-white/[0.12] p-4 transition-colors hover:bg-white/[0.07]">
+      <div>
+        <div className="flex items-start justify-between gap-2">
+          <span className="text-sm font-semibold text-white">
+            {entity.name}
+          </span>
+          <span className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.07] px-2 py-0.5 text-[10px] font-medium text-white/60">
+            {entity.relationship}
+          </span>
+        </div>
+        <p className="mt-1.5 line-clamp-2 text-[12px] leading-relaxed text-white/60">
+          {entity.description}
+        </p>
+      </div>
+      <div className="mt-3 flex justify-end">
+        <button
+          type="button"
+          onClick={() => onToggleWatch(entity.id)}
+          className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors hover:bg-white/[0.06]"
+          style={{ color: watched ? "#d97757" : "rgba(255,255,255,0.35)" }}
+          aria-label={watched ? `Stop watching ${entity.name}` : `Watch ${entity.name}`}
+        >
+          <WatchIcon className="h-3.5 w-3.5" />
+          {watched ? "Watching" : "Watch"}
+        </button>
+      </div>
+    </div>
+  );
+});
+
+export default memo(NearbyEntitiesView);

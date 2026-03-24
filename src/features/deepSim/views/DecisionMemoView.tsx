@@ -399,11 +399,22 @@ function DecisionMemoViewInner({ memo: overrideMemo }: { memo?: DeepSimMemo }) {
   return (
     <div className="h-full overflow-y-auto">
       <div ref={ref} className="mx-auto max-w-4xl px-6 py-8" data-agent-surface="decision-memo">
-        {/* Top bar — fixture name + frozen date */}
+        {/* Top bar — fixture selector + frozen date */}
         <div style={stagger("0s")} className="flex items-center justify-between border-b border-white/[0.06] pb-4">
           <span className="flex items-center gap-1.5 text-xs font-medium text-content-muted/70">
             <Scale className="h-3.5 w-3.5" aria-hidden="true" />
-            {fixture.name}
+            <select
+              value={fixtureKey}
+              onChange={(e) => handleFixtureChange(e.target.value)}
+              className="appearance-none bg-transparent text-xs font-medium text-content-muted/70 hover:text-content cursor-pointer focus:outline-none"
+              aria-label="Select analysis fixture"
+            >
+              {DEEP_SIM_FIXTURE_OPTIONS.map((opt) => (
+                <option key={opt.key} value={opt.key} className="bg-[#1a1a2e] text-content">
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </span>
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 text-xs text-content-muted/70">

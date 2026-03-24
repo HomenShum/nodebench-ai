@@ -230,13 +230,42 @@
 /* Panel sidebar (thread list) */
 .panel-sidebar {
   width: 0;
-  flex-shrink: 0;
+  max-width: 0;
+  flex: 0 0 0px;
   overflow: hidden;
-  transition: width 0.2s ease;
+  transition: width 0.2s ease, max-width 0.2s ease, flex-basis 0.2s ease;
 }
 
 .panel-sidebar.visible {
   width: 240px;
+  max-width: 240px;
+  flex: 0 0 240px;
+}
+
+/* On narrow viewports, sidebar overlays content instead of stealing inline space */
+@media (max-width: 767px) {
+  .fast-agent-panel:not(.sidebar-mode) .panel-sidebar.visible {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 20;
+    width: 260px;
+    max-width: 260px;
+    flex: 0 0 260px;
+    background: var(--bg-primary, #151413);
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* On medium viewports (tablet), cap sidebar width to prevent content crush */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .fast-agent-panel:not(.sidebar-mode) .panel-sidebar.visible {
+    width: 200px;
+    max-width: 200px;
+    flex: 0 0 200px;
+  }
 }
 
 /* Message bubble animations */
@@ -985,10 +1014,18 @@ button:disabled {
   display: inline-block;
   width: 2px;
   height: 1em;
-  background: var(--text-primary, #000);
+  background: var(--accent-primary, #5E6AD2);
   margin-left: 1px;
   vertical-align: text-bottom;
-  animation: caretBlink 1s step-end infinite;
+  animation: caretBlink 0.8s step-end infinite;
+  opacity: 0.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streaming-caret {
+    animation: none;
+    opacity: 0.6;
+  }
 }
 
 /* Markdown prose refinements for AI responses */

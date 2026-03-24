@@ -7,6 +7,218 @@
 
 import { getDb, genId, isFirstRun } from "../db.js";
 import type { McpTool } from "../types.js";
+import { webTools } from "./webTools.js";
+
+// ─── Entity extraction from search results ─────────────────────────────────
+
+interface StructuredEntities {
+  companies: string[];
+  financials: Array<{ entity: string; metric: string; value: string }>;
+  people: Array<{ name: string; role: string }>;
+  dates: string[];
+  metrics: Array<{ label: string; value: string }>;
+}
+
+/**
+ * Regex-based entity extraction from web search result titles and snippets.
+ * No LLM calls — pure pattern matching for companies, financials, people,
+ * dates, and metrics.
+ */
+function extractEntitiesFromResults(
+  results: Array<{ title: string; url: string; snippet: string; source: string }>,
+): StructuredEntities {
+  const text = results.map((r) => `${r.title} ${r.snippet}`).join(" ");
+
+  // --- Companies: capitalized multi-word sequences (2-4 words) ---
+  const companySet = new Set<string>();
+  // Match sequences of 2-4 capitalized words, optionally followed by common suffixes
+  const companyRe = /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}(?:\s+(?:Inc|Corp|Ltd|LLC|Co|Group|Labs|AI|Technologies|Solutions|Partners|Capital|Ventures|Health|Systems|Networks|Platform)\.?)?)\b/g;
+  let m: RegExpExecArray | null;
+  while ((m = companyRe.exec(text)) !== null) {
+    const candidate = m[1].trim();
+    // Filter out common false positives (month-day combos, generic phrases)
+    const skipPhrases = /^(The [A-Z]|In The|On The|For The|New York|San Francisco|Los Angeles|United States|Wall Street|First Quarter|Second Quarter|Third Quarter|Fourth Quarter)/;
+    if (!skipPhrases.test(candidate) && candidate.length > 3) {
+      companySet.add(candidate);
+    }
+  }
+
+  // --- Financials: revenue, valuation, ARR patterns ---
+  const financials: Array<{ entity: string; metric: string; value: string }> = [];
+  const financialPatterns: Array<{ re: RegExp; metricGroup: number; valueGroup: number; entityGroup?: number }> = [
+    // "$X billion/million" with optional context
+    { re: /(\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})?\s*(?:valued at|raised|revenue of|worth|at)\s+\$([0-9]+(?:\.[0-9]+)?)\s*(billion|million|B|M|bn|mn)/gi, entityGroup: 1, metricGroup: 0, valueGroup: 0 },
+    // "$XB/$XM revenue/ARR/valuation"
+    { re: /\$([0-9]+(?:\.[0-9]+)?)\s*(billion|million|B|M|bn|mn)\s+(revenue|ARR|valuation|funding|raised|round)/gi, metricGroup: 3, valueGroup: 0, entityGroup: undefined },
+    // "revenue of $X"
+    { re: /(revenue|ARR|valuation|funding)\s+(?:of\s+)?\$([0-9]+(?:\.[0-9]+)?)\s*(billion|million|B|M|bn|mn|T|trillion)?/gi, metricGroup: 1, valueGroup: 0, entityGroup: undefined },
+  ];
+  for (const pat of financialPatterns) {
+    let fm: RegExpExecArray | null;
+    while ((fm = pat.re.exec(text)) !== null) {
+      financials.push({
+        entity: (pat.entityGroup !== undefined && fm[pat.entityGroup]) ? fm[pat.entityGroup].trim() : "unknown",
+        metric: fm[0].includes("revenue") || fm[0].includes("Revenue") ? "revenue"
+          : fm[0].includes("ARR") ? "ARR"
+          : fm[0].includes("valuation") || fm[0].includes("valued") ? "valuation"
+          : fm[0].includes("funding") || fm[0].includes("raised") ? "funding"
+          : "financial",
+        value: fm[0].trim(),
+      });
+    }
+  }
+
+  // --- People: names preceded by role keywords ---
+  const people: Array<{ name: string; role: string }> = [];
+  const roleRe = /\b(CEO|CTO|CFO|COO|CPO|founder|co-founder|cofounder|president|chairman|director|VP|chief\s+\w+\s+officer)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})/gi;
+  while ((m = roleRe.exec(text)) !== null) {
+    people.push({ name: m[2].trim(), role: m[1].trim() });
+  }
+  // Also match "Name, CEO/CTO/founder of"
+  const roleAfterRe = /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2}),?\s+(?:the\s+)?(CEO|CTO|CFO|COO|CPO|founder|co-founder|cofounder|president|chairman|director|VP)\b/gi;
+  while ((m = roleAfterRe.exec(text)) !== null) {
+    people.push({ name: m[1].trim(), role: m[2].trim() });
+  }
+
+  // --- Dates: quarters, years, month-year combos ---
+  const dateSet = new Set<string>();
+  const quarterRe = /\b(Q[1-4]\s+20[2-3][0-9])\b/gi;
+  while ((m = quarterRe.exec(text)) !== null) dateSet.add(m[1].toUpperCase());
+  const monthYearRe = /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(20[2-3][0-9])\b/gi;
+  while ((m = monthYearRe.exec(text)) !== null) dateSet.add(`${m[1]} ${m[2]}`);
+  const fullDateRe = /\b((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+20[2-3][0-9])\b/gi;
+  while ((m = fullDateRe.exec(text)) !== null) dateSet.add(m[1]);
+
+  // --- Metrics: percentages, growth rates, user counts ---
+  const metricsList: Array<{ label: string; value: string }> = [];
+  // Percentages with context
+  const pctRe = /(\b\w[\w\s]{0,30}?)\s+(\d+(?:\.\d+)?%)/g;
+  while ((m = pctRe.exec(text)) !== null) {
+    const label = m[1].trim().split(/\s+/).slice(-4).join(" ");
+    metricsList.push({ label, value: m[2] });
+  }
+  // User/customer counts
+  const countRe = /\b(\d+(?:\.\d+)?)\s*(million|billion|M|B|K|k)\s+(users|customers|subscribers|downloads|installs|DAU|MAU)\b/gi;
+  while ((m = countRe.exec(text)) !== null) {
+    metricsList.push({ label: m[3], value: `${m[1]} ${m[2]}` });
+  }
+
+  // Deduplicate people by name
+  const seenPeople = new Set<string>();
+  const uniquePeople = people.filter((p) => {
+    const key = p.name.toLowerCase();
+    if (seenPeople.has(key)) return false;
+    seenPeople.add(key);
+    return true;
+  });
+
+  return {
+    companies: [...companySet],
+    financials,
+    people: uniquePeople,
+    dates: [...dateSet],
+    metrics: metricsList.slice(0, 20), // Cap to avoid noise
+  };
+}
+
+// ─── Web enrichment helper ──────────────────────────────────────────────────
+
+interface WebEnrichmentResult {
+  searchResults: Array<{ title: string; url: string; snippet: string; source: string }>;
+  findingsLogged: number;
+  provider: string;
+  structuredEntities?: StructuredEntities;
+  error?: string;
+}
+
+/**
+ * Runs web_search for a target query, parses results, and logs them as
+ * recon findings in the given session. Best-effort: returns gracefully on
+ * any failure (missing API keys, network errors, etc.).
+ */
+async function runWebEnrichment(
+  sessionId: string,
+  target: string,
+  searchQuery?: string,
+): Promise<WebEnrichmentResult> {
+  const webSearchTool = webTools.find((t) => t.name === "web_search");
+  if (!webSearchTool) {
+    return { searchResults: [], findingsLogged: 0, provider: "none", error: "web_search tool not found" };
+  }
+
+  const query = searchQuery ?? `${target} latest news updates 2026`;
+
+  let searchResponse: any;
+  try {
+    searchResponse = await webSearchTool.handler({ query, maxResults: 5, provider: "auto" });
+  } catch (err: any) {
+    return {
+      searchResults: [],
+      findingsLogged: 0,
+      provider: "none",
+      error: `Web search failed: ${err.message ?? String(err)}`,
+    };
+  }
+
+  // Handle provider-not-configured or error responses
+  if (searchResponse?.error || searchResponse?.provider === "none") {
+    return {
+      searchResults: [],
+      findingsLogged: 0,
+      provider: searchResponse?.provider ?? "none",
+      error: searchResponse?.message ?? searchResponse?.setup?.message ?? "No search provider available",
+    };
+  }
+
+  const results: Array<{ title: string; url: string; snippet: string; source: string }> =
+    Array.isArray(searchResponse?.results) ? searchResponse.results : [];
+
+  if (results.length === 0) {
+    return {
+      searchResults: [],
+      findingsLogged: 0,
+      provider: searchResponse?.provider ?? "unknown",
+      error: "Search returned no results",
+    };
+  }
+
+  // Log each result as a recon finding
+  const db = getDb();
+  const now = new Date().toISOString();
+  let logged = 0;
+
+  const insertStmt = db.prepare(
+    "INSERT INTO recon_findings (id, session_id, source_url, category, summary, relevance, action_items, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+  );
+
+  for (const r of results) {
+    try {
+      const findingId = genId("finding");
+      insertStmt.run(
+        findingId,
+        sessionId,
+        r.url || null,
+        "new_feature",
+        `[Web] ${r.title}: ${r.snippet}`.slice(0, 2000),
+        `Live web result from ${r.source ?? "web"} search for "${target}"`,
+        null,
+        now,
+      );
+      logged++;
+    } catch {
+      // Skip individual insert failures (e.g. constraint violations)
+    }
+  }
+
+  const structuredEntities = extractEntitiesFromResults(results);
+
+  return {
+    searchResults: results,
+    findingsLogged: logged,
+    provider: searchResponse?.provider ?? "unknown",
+    structuredEntities,
+  };
+}
 
 /** Pre-built source checklists for known ecosystems. No API keys needed. */
 const FRAMEWORK_SOURCES: Record<
@@ -170,11 +382,16 @@ export const reconTools: McpTool[] = [
             },
           },
         },
+        webEnrich: {
+          type: "boolean",
+          description:
+            "When true, fetch live web search results for the target and auto-log them as findings. Requires a search provider API key (GEMINI_API_KEY, OPENAI_API_KEY, or PERPLEXITY_API_KEY). Falls back gracefully if unavailable. Default: false.",
+        },
       },
       required: ["target"],
     },
     handler: async (args) => {
-      const { target, description, projectContext } = args;
+      const { target, description, projectContext, webEnrich } = args;
       const db = getDb();
       const sessionId = genId("recon");
       const now = new Date().toISOString();
@@ -255,6 +472,21 @@ export const reconTools: McpTool[] = [
           );
       }
 
+      // Optional live web enrichment
+      let webEnrichmentResult: WebEnrichmentResult | null = null;
+      if (webEnrich) {
+        try {
+          webEnrichmentResult = await runWebEnrichment(sessionId, target);
+        } catch (err: any) {
+          webEnrichmentResult = {
+            searchResults: [],
+            findingsLogged: 0,
+            provider: "none",
+            error: `Web enrichment failed: ${err.message ?? String(err)}`,
+          };
+        }
+      }
+
       return {
         sessionId,
         target,
@@ -273,13 +505,30 @@ export const reconTools: McpTool[] = [
               : ["Project context provided — no additional questions."],
           projectContext: projectContext ?? null,
         },
+        ...(webEnrichmentResult
+          ? {
+              webEnrichment: {
+                provider: webEnrichmentResult.provider,
+                resultsFound: webEnrichmentResult.searchResults.length,
+                findingsAutoLogged: webEnrichmentResult.findingsLogged,
+                results: webEnrichmentResult.searchResults,
+                ...(webEnrichmentResult.structuredEntities ? { structuredEntities: webEnrichmentResult.structuredEntities } : {}),
+                ...(webEnrichmentResult.error ? { note: webEnrichmentResult.error } : {}),
+              },
+            }
+          : {}),
         nextSteps: [
           "1. Answer any contextQuestions (gather project context)",
           "2. Use check_framework_updates for known ecosystems",
           "3. Use search_learnings to check for past findings",
-          "4. Visit each external source",
+          ...(webEnrichmentResult && webEnrichmentResult.findingsLogged > 0
+            ? [`4. Review ${webEnrichmentResult.findingsLogged} auto-logged web findings via get_recon_summary`]
+            : ["4. Visit each external source"]),
           "5. Call log_recon_finding for each discovery",
           "6. Call get_recon_summary when research is complete",
+          ...(webEnrich && !webEnrichmentResult?.findingsLogged
+            ? ["Note: Web enrichment was unavailable. Use enrich_recon later to add live web data."]
+            : []),
         ],
       };
     },
@@ -464,6 +713,77 @@ export const reconTools: McpTool[] = [
           findings.length > 0
             ? "Review by priority: breaking_change > deprecation > existing_implementation > codebase_pattern > new_feature > best_practice > dataset > benchmark"
             : "No findings recorded yet. Continue research or close session.",
+      };
+    },
+  },
+  {
+    name: "enrich_recon",
+    description:
+      "Retroactively enrich an existing recon session with live web search results. Call this after run_recon when you're ready to pull in live data. Searches the web for the session's target and auto-logs findings. Requires a search provider API key (GEMINI_API_KEY, OPENAI_API_KEY, or PERPLEXITY_API_KEY). Falls back gracefully if unavailable.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sessionId: {
+          type: "string",
+          description: "Recon session ID from a previous run_recon call",
+        },
+        searchQuery: {
+          type: "string",
+          description:
+            "Custom search query (optional). If omitted, derives a query from the session's target.",
+        },
+      },
+      required: ["sessionId"],
+    },
+    handler: async (args) => {
+      const { sessionId, searchQuery } = args;
+      const db = getDb();
+
+      const session = db
+        .prepare("SELECT * FROM recon_sessions WHERE id = ?")
+        .get(sessionId) as any;
+      if (!session) throw new Error(`Recon session not found: ${sessionId}`);
+
+      let enrichResult: WebEnrichmentResult;
+      try {
+        enrichResult = await runWebEnrichment(sessionId, session.target, searchQuery);
+      } catch (err: any) {
+        enrichResult = {
+          searchResults: [],
+          findingsLogged: 0,
+          provider: "none",
+          error: `Web enrichment failed: ${err.message ?? String(err)}`,
+        };
+      }
+
+      // Count total findings for the session
+      const totalFindings = (
+        db
+          .prepare(
+            "SELECT COUNT(*) as count FROM recon_findings WHERE session_id = ?"
+          )
+          .get(sessionId) as any
+      ).count;
+
+      return {
+        sessionId,
+        target: session.target,
+        provider: enrichResult.provider,
+        resultsFound: enrichResult.searchResults.length,
+        findingsAutoLogged: enrichResult.findingsLogged,
+        totalSessionFindings: totalFindings,
+        results: enrichResult.searchResults,
+        ...(enrichResult.error ? { note: enrichResult.error } : {}),
+        nextSteps: enrichResult.findingsLogged > 0
+          ? [
+              "Call get_recon_summary to review all findings including web results",
+              "Call log_recon_finding to add manual findings",
+            ]
+          : [
+              "Web enrichment was unavailable or returned no results",
+              "Check that GEMINI_API_KEY, OPENAI_API_KEY, or PERPLEXITY_API_KEY is set",
+              "Try again later or research manually",
+            ],
       };
     },
   },

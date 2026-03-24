@@ -91,7 +91,11 @@ export const listForDocuments = query({
   ),
   handler: async (ctx, { documentIds }) => {
     const userId = await getAuthUserId(ctx);
-    const uniqueDocumentIds = Array.from(new Set(documentIds));
+    const seen = new Set<string>();
+    const uniqueDocumentIds: typeof documentIds = [];
+    for (const id of documentIds) {
+      if (!seen.has(id)) { seen.add(id); uniqueDocumentIds.push(id); }
+    }
     const tagCache = new Map<
       Id<"tags">,
       { _id: Id<"tags">; name: string; kind?: string; importance?: number } | null

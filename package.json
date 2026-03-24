@@ -304,6 +304,7 @@
     "playwright": "^1.57.0",
     "postcss": "~8",
     "prettier": "^3.5.3",
+    "puppeteer": "^24.40.0",
     "rollup-plugin-visualizer": "^6.0.5",
     "sharp": "^0.34.5",
     "storybook": "^9.1.10",

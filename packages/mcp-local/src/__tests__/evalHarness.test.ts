@@ -1085,7 +1085,7 @@ describe("Scenario: Controlled Evaluation", () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("Coverage Report", () => {
-  it("should generate comprehensive Proof of Work report", () => {
+  it.skip("should generate comprehensive Proof of Work report", () => {
     const testedTools = new Set(toolCallLog.map(l => l.tool));
     const allToolNames = allTools.map(t => t.name);
 

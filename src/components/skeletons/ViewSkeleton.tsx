@@ -7,7 +7,7 @@ import React from 'react';
 import { Skeleton, SkeletonText, SkeletonCircle, SkeletonCard, SkeletonBadge } from './Skeleton';
 import { SignatureOrb } from '../../shared/ui/SignatureOrb';
 
-type ViewType = 'default' | 'documents' | 'calendar' | 'agents' | 'settings' | 'dashboard' | 'cost-dashboard' | 'industry-updates';
+type ViewType = 'default' | 'documents' | 'calendar' | 'agents' | 'settings' | 'dashboard' | 'cost-dashboard' | 'industry-updates' | 'ask' | 'research' | 'telemetry' | 'memo' | 'trace';
 
 interface ViewSkeletonProps {
   variant?: ViewType;
@@ -36,6 +36,21 @@ export function ViewSkeleton({ variant = 'default' }: ViewSkeletonProps) {
       break;
     case 'industry-updates':
       content = <IndustryUpdatesViewSkeleton />;
+      break;
+    case 'ask':
+      content = <AskSurfaceSkeleton />;
+      break;
+    case 'research':
+      content = <ResearchSurfaceSkeleton />;
+      break;
+    case 'telemetry':
+      content = <TelemetrySurfaceSkeleton />;
+      break;
+    case 'memo':
+      content = <MemoSurfaceSkeleton />;
+      break;
+    case 'trace':
+      content = <TraceSurfaceSkeleton />;
       break;
     default:
       content = <DefaultViewSkeleton />;
@@ -389,6 +404,131 @@ function IndustryUpdatesViewSkeleton() {
         ))}
       </div>
     </div></div></div>
+  );
+}
+
+/** Ask surface: centered hero shape + 3 card placeholders */
+function AskSurfaceSkeleton() {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-6 px-4 pb-24 pt-8">
+      {/* Hero block */}
+      <div className="w-full max-w-xl space-y-4 text-center">
+        <Skeleton className="mx-auto h-10 w-64" rounded="xl" />
+        <Skeleton className="mx-auto h-4 w-80" />
+      </div>
+      {/* CTA cards */}
+      <div className="grid w-full max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <SkeletonCard key={i} className="space-y-3 p-5">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-2/3" />
+          </SkeletonCard>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Research surface: tab bar shape + 2-column card grid */
+function ResearchSurfaceSkeleton() {
+  return (
+    <div className="flex h-full flex-col gap-4 overflow-hidden px-4 pb-24 pt-4">
+      {/* Tab bar */}
+      <div className="flex gap-1 border-b border-white/[0.06] pb-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-8 w-24" rounded="md" />
+        ))}
+      </div>
+      {/* 2-column cards */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <SkeletonCard key={i} className="space-y-3 p-5">
+            <Skeleton className="h-5 w-2/3" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-4/5" />
+            <Skeleton className="h-3 w-3/5" />
+          </SkeletonCard>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Telemetry surface: hero metric card + tab bar + panel */
+function TelemetrySurfaceSkeleton() {
+  return (
+    <div className="flex h-full flex-col gap-4 overflow-hidden px-4 pb-24 pt-4">
+      {/* Hero metric */}
+      <SkeletonCard className="p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-8">
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-10 w-20" rounded="lg" />
+          </div>
+          <div className="flex gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="space-y-1">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-7 w-10" rounded="lg" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </SkeletonCard>
+      {/* Tab bar */}
+      <div className="flex gap-1 border-b border-white/[0.06] pb-2">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-8 w-24" rounded="md" />
+        ))}
+      </div>
+      {/* Content panel */}
+      <SkeletonCard className="min-h-[200px] p-5">
+        <Skeleton className="h-4 w-32 mb-4" />
+        <Skeleton className="h-40 w-full" rounded="lg" />
+      </SkeletonCard>
+    </div>
+  );
+}
+
+/** Memo (Decision Workbench) surface: header + 3 card rows */
+function MemoSurfaceSkeleton() {
+  return (
+    <div className="nb-page-shell"><div className="nb-page-inner"><div className="nb-page-frame space-y-6">
+      <div className="space-y-2">
+        <Skeleton className="h-7 w-48" rounded="lg" />
+        <Skeleton className="h-4 w-72" />
+      </div>
+      {Array.from({ length: 3 }).map((_, i) => (
+        <SkeletonCard key={i} className="space-y-3 p-5">
+          <div className="flex items-center gap-3">
+            <SkeletonCircle size={32} />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+            <SkeletonBadge width={60} />
+          </div>
+          <SkeletonText lines={2} />
+        </SkeletonCard>
+      ))}
+    </div></div></div>
+  );
+}
+
+/** Trace surface: header + stacked sections */
+function TraceSurfaceSkeleton() {
+  return (
+    <div className="flex h-full flex-col gap-4 overflow-hidden px-4 pb-24 pt-4">
+      {Array.from({ length: 2 }).map((_, i) => (
+        <SkeletonCard key={i} className="space-y-3 p-5">
+          <Skeleton className="h-3 w-28" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-4 w-4/6" />
+        </SkeletonCard>
+      ))}
+    </div>
   );
 }
 

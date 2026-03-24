@@ -95,7 +95,7 @@ export interface McpGatewayConfig {
   keyLookup?: KeyLookupFn;
   /** Optional telemetry emitter (e.g. write to Convex) */
   telemetryEmitter?: TelemetryEmitFn;
-  /** CORS origins for WebSocket upgrade (default: ["*"]) */
+  /** CORS origins for WebSocket upgrade (default: same-origin only — no wildcard) */
   corsOrigins?: string[];
 }
 
@@ -167,7 +167,9 @@ function extractBearerToken(req: IncomingMessage): string | null {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function createMcpGateway(config: McpGatewayConfig) {
-  const { tools, keyLookup, telemetryEmitter, corsOrigins = ["*"] } = config;
+  // SECURITY: Default CORS to empty (same-origin only). Wildcard "*" must be
+  // explicitly opted into by the deployer, never a silent default.
+  const { tools, keyLookup, telemetryEmitter, corsOrigins = [] } = config;
 
   // Build tool lookup map — O(1) dispatch
   const toolMap = new Map<string, McpTool>();
@@ -213,12 +215,15 @@ export function createMcpGateway(config: McpGatewayConfig) {
 
       let request: JsonRpcRequest;
       try {
-        const raw = typeof data === "string" ? data : data.toString("utf-8");
-        // BOUND_READ: reject messages > 1MB
-        if (raw.length > 1_048_576) {
+        // BOUND_READ: reject messages > 1MB by BYTE length BEFORE parsing JSON.
+        // Check raw byte size first to prevent DoS via large payloads that would
+        // consume CPU during JSON.parse before we ever check the size.
+        const rawBytes = typeof data === "string" ? Buffer.byteLength(data, "utf-8") : data.length;
+        if (rawBytes > 1_048_576) {
           sendError(ws, null, -32600, "Message too large (max 1MB)");
           return;
         }
+        const raw = typeof data === "string" ? data : data.toString("utf-8");
         request = JSON.parse(raw) as JsonRpcRequest;
       } catch {
         sendError(ws, null, -32700, "Parse error — invalid JSON");
@@ -257,11 +262,17 @@ export function createMcpGateway(config: McpGatewayConfig) {
             break;
 
           default:
-            sendError(ws, request.id, -32601, `Method not found: ${request.method}`);
+            // Sanitize method name before reflecting — prevent log injection
+            // and limit info disclosure to a safe subset of characters.
+            const safeMethod = String(request.method).slice(0, 100).replace(/[^a-zA-Z0-9_/.-]/g, "");
+            sendError(ws, request.id, -32601, `Method not found: ${safeMethod}`);
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        sendError(ws, request.id, -32603, `Internal error: ${msg}`);
+        // SECURITY: Never leak internal error details (stack traces, file paths)
+        // to remote clients. Log the real error server-side only.
+        const realMsg = err instanceof Error ? err.message : String(err);
+        console.error(`[mcp-gateway] Internal error (session=${session.sessionId}):`, realMsg);
+        sendError(ws, request.id, -32603, "Internal server error");
       }
     });
 
@@ -296,6 +307,13 @@ export function createMcpGateway(config: McpGatewayConfig) {
 
     if (!toolName || typeof toolName !== "string") {
       sendError(ws, request.id, -32602, "Missing required param: name");
+      return;
+    }
+
+    // SECURITY: Validate tool name — prevent path traversal and injection.
+    // Tool names must be alphanumeric with underscores/hyphens only.
+    if (!/^[a-zA-Z0-9_-]{1,128}$/.test(toolName)) {
+      sendError(ws, request.id, -32602, "Invalid tool name format");
       return;
     }
 
@@ -345,8 +363,15 @@ export function createMcpGateway(config: McpGatewayConfig) {
       const errMsg = err instanceof Error ? err.message : String(err);
       const isTimeout = errMsg.includes("timed out");
 
+      // SECURITY: Sanitize error message — strip file paths and stack traces
+      // before sending to the client. Keep timeout messages informative.
+      const safeMsg = isTimeout
+        ? `Tool call timed out after ${TOOL_CALL_TIMEOUT_MS}ms`
+        : "Tool execution failed";
+      console.error(`[mcp-gateway] Tool error (${toolName}, session=${session.sessionId}):`, errMsg);
+
       sendResult(ws, request.id, {
-        content: [{ type: "text", text: `Error executing ${toolName}: ${errMsg}` }],
+        content: [{ type: "text", text: `Error executing ${toolName}: ${safeMsg}` }],
         isError: true,
         _meta: {
           durationMs,

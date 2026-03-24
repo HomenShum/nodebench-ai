@@ -753,7 +753,7 @@ export function FastAgentInputBar({
   return (
     <div
       ref={containerRef}
-      className="relative w-full"
+      className="relative w-full fa-input-bar-wrapper"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
