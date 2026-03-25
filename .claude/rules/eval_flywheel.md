@@ -58,6 +58,43 @@ After reaching 95%+ on current corpus:
 - If 3 consecutive rounds show no improvement: change strategy (different search provider, different extraction prompt, structural refactor)
 - Track cumulative progress in eval-results/ directory
 
+## 4-Layer Grounding Pipeline
+See `grounded_eval.md` for full details. Summary:
+1. **Retrieval confidence threshold** — high/medium/low based on snippet count
+2. **Claim-level grounding filter** — `isGrounded()` rejects fabricated claims
+3. **Grounded judge** — passes grounding metadata to Gemini for context-aware verification
+4. **Citation chain** — `sourceIdx` on each signal/risk/change links to source snippet
+
+**Separation of concerns**: structural checks (deterministic) handle grounding verification. LLM judge (stochastic) handles semantic quality. Never overload the judge with grounding rules.
+
+## Judge Variance Mitigation
+The Gemini judge is stochastic — same query can get different scores across runs.
+- If variance > 10% across runs: use majority vote (3x calls, take consensus)
+- Keep judge prompt SHORT and focused — long prompts increase variance
+- Test judge changes on the full corpus before committing — regressions in previously-passing categories indicate prompt bloat
+
+## Eval Corpus (100+ queries, 18 categories)
+| Category | Count | Tests |
+|----------|-------|-------|
+| weekly_reset | 6 | founder weekly briefing |
+| pre_delegation | 4 | agent handoff packets |
+| important_change | 4 | what changed since last session |
+| company_search | 10 | entity intelligence (Anthropic, Shopify, etc.) |
+| competitor | 4 | multi-entity comparison (vs queries) |
+| own_entity | 6 | "my company" queries |
+| multi_entity | 4 | 3+ entity comparison |
+| role_specific | 6 | one per lens |
+| upload_context | 4 | meeting transcripts, documents |
+| edge_case | 5 | empty, SQL injection, long input |
+| temporal | 6 | time-aware queries |
+| cross_domain | 6 | cross-entity analysis |
+| adversarial | 8 | typos, single-word, ambiguous |
+| diligence | 6 | deep company teardowns |
+| action_oriented | 6 | "build me a...", "generate a..." |
+| niche_entity | 6 | obscure companies |
+| multi_turn | 6 | context-dependent follow-ups |
+| scenario | 6 | what-if, future-facing |
+
 ## Infrastructure blockers — research and fix
 When eval fails due to infrastructure gaps:
 1. **Missing search provider** — Check Convex env for LINKUP_API_KEY, fall back to Gemini grounding
@@ -65,12 +102,14 @@ When eval fails due to infrastructure gaps:
 3. **Tool not found** — Check toolset loading, verify tool names match
 4. **Timeout** — Tune Promise.race timeouts, add AbortController
 5. **Rate limiting** — Add delays between eval queries, batch web_search calls
+6. **Judge variance** — Run 3x majority vote, keep prompt short, test on full corpus
 
-Always do deep research before declaring a blocker permanent. The system should build itself.
+Always do deep research before declaring a blocker permanent. The system should build itself. See `self_building_loop.md`.
 
 ## Key files
-- `packages/mcp-local/src/benchmarks/searchQualityEval.ts` — Eval harness
-- `server/routes/search.ts` — Search route (the thing being evaluated)
+- `packages/mcp-local/src/benchmarks/searchQualityEval.ts` — Eval harness (100+ queries, Gemini judge)
+- `packages/mcp-local/src/benchmarks/llmJudgeEval.ts` — Chained pipeline eval (tool A → tool B)
+- `server/routes/search.ts` — Search route with 4-layer grounding pipeline
 - `packages/mcp-local/src/tools/entityEnrichmentTools.ts` — Entity enrichment MCP tools
 - `packages/mcp-local/src/tools/webTools.ts` — web_search implementation
 - `convex/tools/media/linkupSearch.ts` — Linkup search (Convex-side)
@@ -80,8 +119,12 @@ Always do deep research before declaring a blocker permanent. The system should 
 - Inflating structural checks to mask Gemini judge failures
 - Removing failing queries from the corpus instead of fixing them
 - Hardcoding entity data to pass specific test cases
+- Overloading the LLM judge prompt with grounding rules (causes variance)
+- Weakening the judge to improve scores instead of improving the system
 
 ## Related rules
+- `grounded_eval` — 4-layer anti-hallucination pipeline
+- `self_building_loop` — self-diagnosing infrastructure gaps
 - `flywheel_continuous` — continuous improvement loop
 - `analyst_diagnostic` — root cause before fix
 - `self_direction` — never wait, keep moving

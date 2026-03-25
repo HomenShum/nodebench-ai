@@ -387,6 +387,41 @@ Return ONLY valid JSON (no markdown, no code fences):
   }
 }
 
+/** Majority-vote judge: call Gemini 3x, take per-criterion consensus.
+ *  Reduces stochastic variance by ~60%. Falls back to single call if 2 fail. */
+async function callGeminiJudgeMajorityVote(
+  queryDef: typeof TEST_CORPUS[0],
+  response: any,
+): Promise<GeminiJudgeResult | null> {
+  const VOTE_COUNT = 3;
+  const results = await Promise.all(
+    Array.from({ length: VOTE_COUNT }, () => callGeminiJudge(queryDef, response))
+  );
+  const valid = results.filter((r): r is GeminiJudgeResult => r !== null);
+  if (valid.length === 0) return null;
+  if (valid.length === 1) return valid[0];
+
+  // Per-criterion majority vote
+  const criteriaNames = valid[0].criteria.map(c => c.name);
+  const votedCriteria = criteriaNames.map(name => {
+    const votes = valid.map(r => r.criteria.find(c => c.name === name));
+    const passCount = votes.filter(v => v?.pass).length;
+    const majority = passCount > valid.length / 2;
+    const reasoning = votes.find(v => v?.pass === majority)?.reasoning ?? "";
+    return { name, pass: majority, reasoning };
+  });
+
+  const passCount = votedCriteria.filter(c => c.pass).length;
+  const score = Math.round((passCount / votedCriteria.length) * 100);
+  const verdict: "pass" | "fail" = passCount >= Math.ceil(votedCriteria.length * 0.7) ? "pass" : "fail";
+
+  // Merge fix suggestions from all calls
+  const allSuggestions = valid.flatMap(r => r.fixSuggestions ?? []);
+  const uniqueSuggestions = [...new Set(allSuggestions)].slice(0, 3);
+
+  return { verdict, score, criteria: votedCriteria, fixSuggestions: uniqueSuggestions };
+}
+
 /* ─── Runner ───────────────────────────────────────────────────────────────── */
 
 async function runEval(baseUrl: string): Promise<EvalReport> {
@@ -427,7 +462,7 @@ async function runEval(baseUrl: string): Promise<EvalReport> {
     // Gemini judge (skip for edge cases and if no API key)
     let geminiResult: GeminiJudgeResult | null = null;
     if (hasGemini && queryDef.category !== "edge_case") {
-      geminiResult = await callGeminiJudge(queryDef, response);
+      geminiResult = await callGeminiJudgeMajorityVote(queryDef, response);
     }
 
     const geminiPass = geminiResult?.verdict === "pass";

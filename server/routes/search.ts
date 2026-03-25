@@ -64,6 +64,34 @@ async function linkupSearch(query: string, maxResults = 5): Promise<{ answer: st
 export function createSearchRouter(tools: McpTool[]) {
   const router = Router();
 
+  // ── Multi-turn session state ──
+  // Remembers last entity + result per session so follow-up queries
+  // like "Go deeper on the risks" or "Now compare that to Google" resolve context.
+  // Keyed by sessionId (from request body) or IP as fallback. TTL 30min.
+  const sessionCache = new Map<string, { entity: string; classification: string; result: any; ts: number }>();
+  const SESSION_TTL = 30 * 60 * 1000; // 30 minutes
+  const MAX_SESSIONS = 500;
+
+  function getSessionKey(req: any): string {
+    return req.body?.sessionId ?? req.ip ?? "default";
+  }
+
+  function getSessionContext(key: string): { entity: string; classification: string; result: any } | null {
+    const entry = sessionCache.get(key);
+    if (!entry) return null;
+    if (Date.now() - entry.ts > SESSION_TTL) { sessionCache.delete(key); return null; }
+    return entry;
+  }
+
+  function setSessionContext(key: string, entity: string, classification: string, result: any) {
+    // Evict oldest if at capacity
+    if (sessionCache.size >= MAX_SESSIONS) {
+      const oldest = [...sessionCache.entries()].sort((a, b) => a[1].ts - b[1].ts)[0];
+      if (oldest) sessionCache.delete(oldest[0]);
+    }
+    sessionCache.set(key, { entity, classification, result, ts: Date.now() });
+  }
+
   // Find a tool by name from the loaded tool set
   function findTool(name: string): McpTool | undefined {
     return tools.find((t) => t.name === name);
@@ -212,6 +240,47 @@ export function createSearchRouter(tools: McpTool[]) {
     return { type: "general", lens: "founder" };
   }
 
+  /** Detect follow-up queries that reference prior session context.
+   *  Returns enriched classification with prior entity injected. */
+  function classifyWithSession(
+    query: string,
+    sessionCtx: { entity: string; classification: string; result: any } | null,
+  ): ReturnType<typeof classifyQuery> {
+    const base = classifyQuery(query);
+
+    // If already classified as a specific type, use it
+    if (base.type !== "general") return base;
+
+    // Detect follow-up patterns that need prior context
+    if (!sessionCtx) return base;
+    const lq = query.toLowerCase();
+    const followUpPatterns = [
+      /^(now |okay |ok |also |and |then |next |please )?(compare|contrast|versus)/i,
+      /^(go |dig |dive |get )?(deeper|further|more detail)/i,
+      /^(what about|how about|tell me about) (their|its|the)/i,
+      /^(show me|give me) (the |their |its )?(team|risks|financials|metrics|revenue|funding|competitors|strategy)/i,
+      /^(any |what )?(recent|latest) (news|changes|updates|developments)/i,
+      /^summarize (everything|all of that|it|this|the above)/i,
+      /^(what are|what is) (their|its) /i,
+    ];
+    const isFollowUp = followUpPatterns.some(p => p.test(lq));
+    if (!isFollowUp) return base;
+
+    // Inject prior entity into the classification
+    const priorEntity = sessionCtx.entity;
+    if (!priorEntity) return base;
+
+    // "Now compare that to Google" → multi_entity with prior + new entity
+    const compareMatch = query.match(/compare\s+(?:that\s+)?to\s+(\w+)/i)
+      ?? query.match(/versus\s+(\w+)/i);
+    if (compareMatch) {
+      return { type: "multi_entity", entities: [priorEntity, compareMatch[1]], lens: "investor" };
+    }
+
+    // "Go deeper on the risks" / "Show me the team" → company_search on prior entity
+    return { type: "company_search", entity: priorEntity, lens: "investor" };
+  }
+
   // ── POST /search ──────────────────────────────────────────────────
   router.post("/", async (req, res) => {
     const startMs = Date.now();
@@ -225,7 +294,10 @@ export function createSearchRouter(tools: McpTool[]) {
       return res.status(400).json({ error: true, message: "Query is required" });
     }
 
-    const classification = classifyQuery(query.trim());
+    // Use session-aware classifier for multi-turn follow-ups
+    const sessionKey = getSessionKey(req);
+    const sessionCtx = getSessionContext(sessionKey);
+    const classification = classifyWithSession(query.trim(), sessionCtx);
     const resolvedLens = lens ?? classification.lens;
 
     // Execution trace — records every step for trajectory visualization
@@ -804,6 +876,35 @@ Return ONLY valid JSON:
       // Finalize trace
       const assembleTrace = traceStep("assemble_response");
       assembleTrace.ok(`latency=${latencyMs}ms`);
+
+      // ── Save session context for multi-turn follow-ups ──
+      const entityName = result?.canonicalEntity?.name ?? classification.entity ?? "";
+      if (entityName) {
+        setSessionContext(sessionKey, entityName, classification.type, result);
+      }
+
+      // ── Ambient intelligence feedback loop ──
+      // Feed search results back into local knowledge for compounding.
+      // Non-blocking — fire and forget so it doesn't slow the response.
+      if (entityName && (classification.type === "company_search" || classification.type === "multi_entity" || classification.type === "competitor")) {
+        const enrichTool = findTool("enrich_entity");
+        if (enrichTool) {
+          const signals = (result?.signals ?? []).map((s: any) => s.name).join("; ");
+          const risks = (result?.contradictions ?? []).map((r: any) => r.claim).join("; ");
+          enrichTool.handler({
+            entityName,
+            entityType: "company",
+            data: JSON.stringify({
+              summary: result?.canonicalEntity?.canonicalMission?.slice(0, 500) ?? "",
+              signals: signals.slice(0, 300),
+              risks: risks.slice(0, 300),
+              sourceCount: result?.webSources?.length ?? 0,
+              searchedAt: new Date().toISOString(),
+              lens: resolvedLens,
+            }),
+          }).catch(() => {}); // non-blocking
+        }
+      }
 
       // Use the pre-computed contextBundle (computed before dispatch)
       return res.json({
