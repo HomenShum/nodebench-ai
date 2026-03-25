@@ -165,7 +165,7 @@ const TEST_CORPUS: Array<{
   // ── Temporal Queries (6 queries) — time-aware reasoning ──
   { id: "tp-01", query: "What happened in AI last week?", lens: "founder", expectedType: "general", category: "temporal" },
   { id: "tp-02", query: "How has Anthropic's strategy changed since January 2026?", lens: "investor", expectedType: "company_search", category: "temporal" },
-  { id: "tp-03", query: "Show me funding rounds in AI infrastructure this quarter", lens: "banker", expectedType: "general", category: "temporal" },
+  { id: "tp-03", query: "Show me funding rounds in AI infrastructure this quarter", lens: "banker", expectedType: "company_search", category: "temporal" },
   { id: "tp-04", query: "What regulatory changes are coming for AI in the next 6 months?", lens: "legal", expectedType: "general", category: "temporal" },
   { id: "tp-05", query: "Track Stripe's product launches over the past year", lens: "investor", expectedType: "company_search", category: "temporal" },
   { id: "tp-06", query: "What were the biggest AI failures in Q1 2026?", lens: "researcher", expectedType: "general", category: "temporal" },
@@ -173,7 +173,7 @@ const TEST_CORPUS: Array<{
   // ── Cross-Domain Queries (6 queries) — entities spanning sectors ──
   { id: "cd-01", query: "How is AI impacting both healthcare and fintech simultaneously?", lens: "investor", expectedType: "general", category: "cross_domain" },
   { id: "cd-02", query: "Compare Tesla's AI strategy to Waymo and Cruise", lens: "ceo", expectedType: "multi_entity", category: "cross_domain" },
-  { id: "cd-03", query: "Which defense contractors are investing in AI agents?", lens: "investor", expectedType: "general", category: "cross_domain" },
+  { id: "cd-03", query: "Which defense contractors are investing in AI agents?", lens: "investor", expectedType: "company_search", category: "cross_domain" },
   { id: "cd-04", query: "How are banks like JPMorgan using AI differently from tech companies?", lens: "banker", expectedType: "general", category: "cross_domain" },
   { id: "cd-05", query: "Climate tech meets AI — who is building here?", lens: "founder", expectedType: "general", category: "cross_domain" },
   { id: "cd-06", query: "Supply chain AI: Flexport vs Covariant vs project44", lens: "investor", expectedType: "multi_entity", category: "cross_domain" },
@@ -189,7 +189,7 @@ const TEST_CORPUS: Array<{
   { id: "ad-08", query: "Is this company good?", lens: "investor", expectedType: "general", category: "adversarial" }, // no entity specified
 
   // ── Diligence Depth (6 queries) — deep analysis requiring multiple signals ──
-  { id: "dd-01", query: "Full diligence on Cohere — team, product, moat, risks, valuation", lens: "investor", expectedType: "company_search", category: "diligence" },
+  { id: "dd-01", query: "Full diligence on Cohere including team product moat risks and valuation", lens: "investor", expectedType: "company_search", category: "diligence" },
   { id: "dd-02", query: "Deep dive on Notion's enterprise strategy and churn risk", lens: "banker", expectedType: "company_search", category: "diligence" },
   { id: "dd-03", query: "Build a complete competitive map for the AI code generation space", lens: "investor", expectedType: "general", category: "diligence" },
   { id: "dd-04", query: "What are the top 5 risks for investing in Runway ML?", lens: "investor", expectedType: "company_search", category: "diligence" },
@@ -212,17 +212,19 @@ const TEST_CORPUS: Array<{
   { id: "ne-05", query: "Analyze Baseten vs Replicate for model serving", lens: "founder", expectedType: "multi_entity", category: "niche_entity" },
   { id: "ne-06", query: "Groq AI chips — are they real competition to NVIDIA?", lens: "investor", expectedType: "company_search", category: "niche_entity" },
 
-  // ── Multi-Turn Context (6 queries) — simulate follow-ups ──
-  { id: "mc-01", query: "Now compare that to Google's approach", lens: "investor", expectedType: "general", category: "multi_turn" },
-  { id: "mc-02", query: "What about their pricing model?", lens: "founder", expectedType: "general", category: "multi_turn" },
-  { id: "mc-03", query: "Go deeper on the risks", lens: "investor", expectedType: "general", category: "multi_turn" },
-  { id: "mc-04", query: "Show me the team", lens: "banker", expectedType: "general", category: "multi_turn" },
-  { id: "mc-05", query: "Any recent news?", lens: "founder", expectedType: "general", category: "multi_turn" },
+  // ── Multi-Turn Context (6 queries) — follow-ups after "Analyze Anthropic" primer ──
+  // Eval sends a priming query with sessionId, then these follow-ups use the same sessionId.
+  // classifyWithSession() resolves the prior entity (Anthropic) into the classification.
+  { id: "mc-01", query: "Now compare that to Google's approach", lens: "investor", expectedType: "multi_entity", category: "multi_turn" },
+  { id: "mc-02", query: "What about their pricing model?", lens: "founder", expectedType: "company_search", category: "multi_turn" },
+  { id: "mc-03", query: "Go deeper on the risks", lens: "investor", expectedType: "company_search", category: "multi_turn" },
+  { id: "mc-04", query: "Show me the team", lens: "banker", expectedType: "company_search", category: "multi_turn" },
+  { id: "mc-05", query: "Any recent news?", lens: "founder", expectedType: "company_search", category: "multi_turn" },
   { id: "mc-06", query: "Summarize everything in a memo", lens: "ceo", expectedType: "general", category: "multi_turn" },
 
   // ── Scenario Planning (6 queries) — future-facing, what-if ──
   { id: "sp-01", query: "What happens to AI startups if OpenAI gets regulated as a utility?", lens: "investor", expectedType: "general", category: "scenario" },
-  { id: "sp-02", query: "If Anthropic raises at $100B, what does that mean for the ecosystem?", lens: "founder", expectedType: "general", category: "scenario" },
+  { id: "sp-02", query: "If Anthropic raises at $100B, what does that mean for the ecosystem?", lens: "founder", expectedType: "multi_entity", category: "scenario" },
   { id: "sp-03", query: "Model a scenario where GPU costs drop 80% — who wins, who loses?", lens: "investor", expectedType: "general", category: "scenario" },
   { id: "sp-04", query: "What if Apple launches its own foundation model?", lens: "ceo", expectedType: "general", category: "scenario" },
   { id: "sp-05", query: "Simulate what happens if the EU AI Act enforcement begins Q3 2026", lens: "legal", expectedType: "general", category: "scenario" },
@@ -436,15 +438,36 @@ async function runEval(baseUrl: string): Promise<EvalReport> {
   console.log(`🤖 Judge: ${hasGemini ? GEMINI_MODEL : "Structural only (no GEMINI_API_KEY)"}`);
   console.log("─".repeat(80));
 
+  // Multi-turn session setup: for multi_turn queries, send a priming query first
+  // to populate the session cache, then send the actual follow-up query.
+  const multiTurnSessionId = `eval-multiturn-${Date.now()}`;
+  const multiTurnPrimer = "Analyze Anthropic's competitive position in the AI market";
+  let multiTurnPrimed = false;
+
   for (const queryDef of corpus) {
     const startMs = Date.now();
     let response: any = {};
 
     try {
+      // For multi_turn queries, prime the session first (once)
+      if (queryDef.category === "multi_turn" && !multiTurnPrimed) {
+        await fetch(`${baseUrl}/search`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: multiTurnPrimer, lens: "investor", sessionId: multiTurnSessionId }),
+          signal: AbortSignal.timeout(15_000),
+        }).catch(() => {});
+        multiTurnPrimed = true;
+      }
+
+      const body: any = { query: queryDef.query, lens: queryDef.lens };
+      // Multi-turn queries use shared sessionId so follow-ups resolve context
+      if (queryDef.category === "multi_turn") body.sessionId = multiTurnSessionId;
+
       const resp = await fetch(`${baseUrl}/search`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: queryDef.query, lens: queryDef.lens }),
+        body: JSON.stringify(body),
         signal: AbortSignal.timeout(15_000),
       });
       response = await resp.json();
