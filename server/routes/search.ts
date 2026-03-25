@@ -178,10 +178,15 @@ export function createSearchRouter(tools: McpTool[]) {
     // Company search — detect entity names
     const companyPatterns = [
       /(?:company profile|profile)\s+(?:for|of|on)\s+(.+?)(?:\s+—|$)/i,  // "Company profile for Mistral AI"
+      /(?:full diligence|deep dive|diligence)\s+(?:on|into)\s+(.+?)(?:\s+—|$)/i,  // "Full diligence on Cohere"
+      /(?:evaluate|assess)\s+(.+?)(?:\s+moat|\s+after|\s+for|\s+—|$)/i,  // "Evaluate Figma's moat"
+      /(?:what (?:does|is|are))\s+(.+?)\s+(?:do|doing|building)\b/i,  // "What does Replit do"
+      /(?:what is)\s+(.+?)\s+doing\b/i,  // "What is Modal doing"
       /(?:analyze|search|tell me about|diligence on|research)\s+(.+?)(?:\s+for\b|\s+from\b|\s+—|$)/i,
-      /^(.+?)\s+(?:competitive position|strategy|valuation|revenue|risk|overview)/i,
+      /^(.+?)\s+(?:competitive position|strategy|valuation|revenue|risk|overview|product launches)/i,
       /^search\s+(.+?)(?:\s+—|\s+–|\s+-|$)/i,
-      /(?:top \d+ risks across|risks across|landscape for)\s+(.+?)$/i,
+      /(?:top \d+ risks (?:for|across)|risks across|landscape for|investing in)\s+(.+?)$/i,
+      /^(.+?)\s+(?:AI chips|AI strategy|enterprise strategy)\b/i,  // "Groq AI chips"
     ];
     for (const pattern of companyPatterns) {
       const match = query.match(pattern);
@@ -190,12 +195,18 @@ export function createSearchRouter(tools: McpTool[]) {
         const entity = match[1].trim()
           .replace(/['\u2018\u2019\u0027]s(\s|$)/g, "$1")  // possessive: "Anthropic's" → "Anthropic" BEFORE quote strip
           .replace(/['"]/g, "")
-          .replace(/\s+(competitive|position|strategy|valuation|revenue|risk|overview|market|enterprise|positioning|infrastructure|moat|product|data|lakehouse|developer|platform|payments|AI|search|commerce).*$/i, "")
+          .replace(/\s+(competitive|position|strategy|valuation|revenue|risk|overview|market|enterprise|positioning|infrastructure|moat|product|data|lakehouse|developer|platform|payments|AI|search|commerce|product launches).*$/i, "")
           .trim();
         if (entity.length > 1 && entity.length < 50) {
           return { type: "company_search", entity, lens: "investor" };
         }
       }
+    }
+
+    // Fallback: 1-3 capitalized words (likely a company name like "Apple", "Mercury", "Linear")
+    const capitalizedMatch = query.trim().match(/^([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+){0,2})$/);
+    if (capitalizedMatch && capitalizedMatch[1].length > 2 && capitalizedMatch[1].length < 40) {
+      return { type: "company_search", entity: capitalizedMatch[1], lens: "investor" };
     }
 
     return { type: "general", lens: "founder" };
