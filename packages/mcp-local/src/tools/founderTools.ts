@@ -1358,8 +1358,9 @@ export const founderTools: McpTool[] = [
 
       // ── Extract common fields from content ──────────────────────────
       const entity = (content.canonicalEntity as Record<string, unknown>) ?? {};
+      const entitiesArr = (content.entities as string[]) ?? [];
       const companyName =
-        (entity.name as string) ?? (content.companyName as string) ?? "Unknown Company";
+        (entity.name as string) ?? (content.companyName as string) ?? titleOverride ?? entitiesArr[0] ?? "Unknown Company";
       const mission = (entity.mission as string) ?? (content.mission as string) ?? "";
       const wedge = (entity.wedge as string) ?? (content.wedge as string) ?? "";
       const identityConfidence = (entity.identityConfidence as number) ?? null;

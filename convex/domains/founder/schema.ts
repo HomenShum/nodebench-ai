@@ -533,8 +533,31 @@ export const founderApprovalQueue = defineTable({
   .index("by_workspace", ["workspaceId", "status"])
   .index("by_status", ["status", "createdAt"]);
 
+// ---------------------------------------------------------------------------
+// 19. Related Entities — products, partners, competitors, investors, etc.
+// ---------------------------------------------------------------------------
+
+export const founderRelatedEntities = defineTable({
+  companyId: v.id("founderCompanies"),
+  entityType: v.union(
+    v.literal("product"),
+    v.literal("partner"),
+    v.literal("competitor"),
+    v.literal("comparable"),
+    v.literal("market_signal"),
+    v.literal("design_partner"),
+    v.literal("investor"),
+  ),
+  name: v.string(),
+  relationship: v.string(),
+  whyItMatters: v.string(),
+  externalRef: v.optional(v.string()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+}).index("by_company", ["companyId"]);
+
 // ===========================================================================
-// PHASE 10 — Causal Memory & Trajectory Intelligence (tables 19-26)
+// PHASE 10 — Causal Memory & Trajectory Intelligence (tables 20-27)
 // ===========================================================================
 
 // ---------------------------------------------------------------------------

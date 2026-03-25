@@ -554,6 +554,8 @@ import type * as domains_founder_causalMemoryJobs from "../domains/founder/causa
 import type * as domains_founder_causalMemoryOps from "../domains/founder/causalMemoryOps.js";
 import type * as domains_founder_index from "../domains/founder/index.js";
 import type * as domains_founder_operations from "../domains/founder/operations.js";
+import type * as domains_founder_seed from "../domains/founder/seed.js";
+import type * as domains_founder_seedTrigger from "../domains/founder/seedTrigger.js";
 import type * as domains_governance_provenanceExplainer from "../domains/governance/provenanceExplainer.js";
 import type * as domains_governance_quarantine from "../domains/governance/quarantine.js";
 import type * as domains_governance_trustPolicy from "../domains/governance/trustPolicy.js";
@@ -1887,6 +1889,8 @@ declare const fullApi: ApiFromModules<{
   "domains/founder/causalMemoryOps": typeof domains_founder_causalMemoryOps;
   "domains/founder/index": typeof domains_founder_index;
   "domains/founder/operations": typeof domains_founder_operations;
+  "domains/founder/seed": typeof domains_founder_seed;
+  "domains/founder/seedTrigger": typeof domains_founder_seedTrigger;
   "domains/governance/provenanceExplainer": typeof domains_governance_provenanceExplainer;
   "domains/governance/quarantine": typeof domains_governance_quarantine;
   "domains/governance/trustPolicy": typeof domains_governance_trustPolicy;

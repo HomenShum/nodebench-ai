@@ -51,6 +51,20 @@
   backdrop-filter: blur(16px);
 }
 
+/* Mobile: strip glass blur for GPU performance */
+@media (max-width: 1024px) {
+  .hud-glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(26, 26, 46, 0.95);
+  }
+  .dark .hud-glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(10, 10, 20, 0.95);
+  }
+}
+
 /* ─── Surface ─── */
 .hud-surface { background: var(--hud-surface); }
 
@@ -445,65 +459,55 @@
 }
 
 /* ─── Mobile Bottom Tab Bar (R3) ─── */
-/* Simplified 4-tab thumb-zone navigation: Brief, Search, Entities, Agent */
-
-.mobile-bottom-tabs {
-  min-height: 44px;
-  padding-top: 4px;
-}
+/* Floating Pill Navigation: Brief, Search, Entities, Agent */
 
 .mobile-tab-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
   flex: 1;
   min-height: 44px;
-  padding: 6px 0 2px;
+  padding: 4px 0;
   border: none;
   background: transparent;
-  color: var(--hud-text-dim);
   cursor: pointer;
   position: relative;
-  transition: color 0.15s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   -webkit-tap-highlight-color: transparent;
 }
 
 .mobile-tab-btn:hover {
-  color: var(--hud-text);
+  filter: brightness(1.2);
 }
 
 .mobile-tab-btn[data-active="true"] {
-  color: var(--accent-primary, #d97757);
-}
-
-.mobile-tab-btn:focus-visible {
-  outline: 2px solid var(--accent-primary, #d97757);
-  outline-offset: 2px;
-  border-radius: 8px;
+  /* Color override is handled via Tailwind text- color classes */
+  transform: translateY(-2px);
 }
 
 .mobile-tab-label {
-  font-size: 10px;
-  font-weight: 500;
+  font-size: 9px;
+  font-weight: 600;
   line-height: 1;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
 }
 
-.mobile-tab-badge {
+/* Active indicator background shape */
+.mobile-tab-btn[data-active="true"]::before {
+  content: "";
   position: absolute;
-  top: 4px;
-  right: calc(50% - 16px);
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--accent-primary, #d97757);
-  pointer-events: none;
-  box-shadow: 0 0 0 2px var(--bg-primary, #151413);
+  inset: -2px 6px;
+  top: 0;
+  bottom: 0px;
+  border-radius: 12px;
+  background: currentColor;
+  opacity: 0.12;
+  z-index: 0;
 }
 
 /* Reduce motion: skip swipe transition animations */
 @media (prefers-reduced-motion: reduce) {
   .mobile-tab-btn { transition: none; }
+  .mobile-tab-btn[data-active="true"] { transform: none; }
 }

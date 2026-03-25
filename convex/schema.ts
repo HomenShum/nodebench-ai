@@ -177,6 +177,7 @@ import {
   founderMemoVersions,
   founderImportantChanges,
   founderTrajectoryScores,
+  founderRelatedEntities,
   // Phase 11 — Ambient Intelligence Layer
   ambientIngestionQueue,
   ambientCanonicalObjects,
@@ -12960,6 +12961,7 @@ export default defineSchema({
   founderMemoVersions,
   founderImportantChanges,
   founderTrajectoryScores,
+  founderRelatedEntities,
   // Phase 11 — Ambient Intelligence Layer
   ambientIngestionQueue,
   ambientCanonicalObjects,

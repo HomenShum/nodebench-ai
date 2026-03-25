@@ -199,7 +199,9 @@ export function createSearchRouter(tools: McpTool[]) {
     const isOwnEntity = lq.match(/\b(my company|my startup|my business|my current company|my team|my organization|my firm|our company|our startup|our business|investor update for my|current company state)\b/);
     const isUploadContext = lq.match(/\b(meeting transcript|meeting notes|uploaded|my documents|my files|research files|my research)\b/);
     const isGeneralStrategic = lq.match(/\b(should i track|should i build|should i present|for my thesis|as a legal|as a banker|as an investor|what deals|portfolio companies)\b/);
-    if (isOwnEntity || isUploadContext || isGeneralStrategic) {
+    // Scenario planning: "what if", "what happens if", "simulate", "model a scenario"
+    const isScenario = lq.match(/\b(what happens if|what if|simulate|model a scenario|second.order effects|what would happen)\b/);
+    if (isOwnEntity || isUploadContext || isGeneralStrategic || isScenario) {
       return { type: "general", lens: "founder" };
     }
 
@@ -258,10 +260,14 @@ export function createSearchRouter(tools: McpTool[]) {
       /^(now |okay |ok |also |and |then |next |please )?(compare|contrast|versus)/i,
       /^(go |dig |dive |get )?(deeper|further|more detail)/i,
       /^(what about|how about|tell me about) (their|its|the)/i,
-      /^(show me|give me) (the |their |its )?(team|risks|financials|metrics|revenue|funding|competitors|strategy)/i,
+      /^(show me|give me) (the |their |its )?(team|risks|financials|metrics|revenue|funding|competitors|strategy|pricing|product)/i,
       /^(any |what )?(recent|latest) (news|changes|updates|developments)/i,
-      /^summarize (everything|all of that|it|this|the above)/i,
-      /^(what are|what is) (their|its) /i,
+      /^summarize (everything|all of that|it|this|the above|that)/i,
+      /^(what are|what is) (their|its|the) /i,
+      /^(what about) (pricing|the team|risks|their|the|its)/i,
+      /^(expand|elaborate|explain|clarify) (on |)(that|this|the |their |its )/i,
+      /^(more |tell me more|keep going|continue)/i,
+      /^(and |also |plus |additionally )/i,
     ];
     const isFollowUp = followUpPatterns.some(p => p.test(lq));
     if (!isFollowUp) return base;
@@ -272,12 +278,13 @@ export function createSearchRouter(tools: McpTool[]) {
 
     // "Now compare that to Google" → multi_entity with prior + new entity
     const compareMatch = query.match(/compare\s+(?:that\s+)?to\s+(\w+)/i)
-      ?? query.match(/versus\s+(\w+)/i);
+      ?? query.match(/versus\s+(\w+)/i)
+      ?? query.match(/(?:compare|contrast)\s+(?:that |it |this |)(?:to|with|against)\s+(\w+)/i);
     if (compareMatch) {
       return { type: "multi_entity", entities: [priorEntity, compareMatch[1]], lens: "investor" };
     }
 
-    // "Go deeper on the risks" / "Show me the team" → company_search on prior entity
+    // "Go deeper on the risks" / "Show me the team" / "Any recent news?" → company_search on prior entity
     return { type: "company_search", entity: priorEntity, lens: "investor" };
   }
 
@@ -783,44 +790,112 @@ Return ONLY valid JSON:
         }
 
         default: {
-          // General query — gather local context and map to ResultPacket shape
-          const gt = traceStep("tool_call", "founder_local_gather");
-          const gather = await callTool("founder_local_gather", { daysBack: daysBack ?? 7 }) as any;
-          gt.ok();
-          const g = gather ?? {};
+          // General query — gather local context + optional web enrichment for
+          // scenario/temporal/cross-domain queries that need external data
+          const lqGeneral = query.trim().toLowerCase();
+          const needsWebEnrichment = /\b(what happens|what if|simulate|scenario|regulatory|funding rounds|defense|banks|healthcare|fintech|climate|supply chain|industry|sector|market|last week|this quarter|since january|past year|next \d|Q[1-4]|20\d{2})\b/i.test(lqGeneral);
 
-          const gChanges = (g.recentActions ?? g.changes ?? []).slice(0, 5).map((a: any) => ({
+          const gt = traceStep("tool_call", "founder_local_gather");
+          const [gather, webEnrich] = await Promise.all([
+            callTool("founder_local_gather", { daysBack: daysBack ?? 7 }).then(r => { gt.ok(); return r; }).catch(() => { gt.error(); return null; }),
+            needsWebEnrichment ? (async () => {
+              const wt = traceStep("tool_call", "web_search");
+              try {
+                const r = await Promise.race([
+                  callTool("web_search", { query: query.trim().slice(0, 200), maxResults: 5 }),
+                  new Promise(resolve => setTimeout(() => resolve(null), 8_000)),
+                ]) as any;
+                wt.ok(`${r?.resultCount ?? 0} results`);
+                return r;
+              } catch { wt.error(); return null; }
+            })() : Promise.resolve(null),
+          ]);
+          const g = (gather ?? {}) as any;
+          const webGen = webEnrich as any;
+
+          // Extract web snippets for enrichment
+          const genWebSnippets = (webGen?.results ?? []).map((r: any) => r.snippet ?? "").filter(Boolean);
+          const genWebSources = (webGen?.results ?? []).map((r: any) => r.url ?? "").filter(Boolean);
+
+          // If we have web data, use Gemini to extract structured analysis
+          let genGemini: any = null;
+          if (genWebSnippets.length >= 2 && process.env.GEMINI_API_KEY) {
+            const ext = traceStep("llm_extract", "gemini-3.1-flash-lite-preview");
+            try {
+              const resp = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${process.env.GEMINI_API_KEY}`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    contents: [{ parts: [{ text: `Analyze this query and web data. User is a ${resolvedLens}. Query: "${query.trim()}"
+
+WEB DATA:
+${genWebSnippets.slice(0, 4).join("\n\n")}
+
+Return ONLY valid JSON with:
+{
+  "summary": "2-3 sentence analysis addressing the query directly",
+  "signals": [{"name": "key insight from web data", "direction": "up|down|neutral", "impact": "high|medium|low"}],
+  "changes": [{"description": "relevant recent development", "date": "YYYY-MM-DD or null"}],
+  "risks": [{"title": "risk or concern", "description": "evidence"}],
+  "nextActions": [{"action": "recommended next step"}]
+}
+
+RULES: Only include facts grounded in the web data. If data is thin, return fewer items.` }] }],
+                    generationConfig: { temperature: 0.1, maxOutputTokens: 1200, responseMimeType: "application/json" },
+                  }),
+                  signal: AbortSignal.timeout(10_000),
+                },
+              );
+              if (resp.ok) {
+                const j = await resp.json() as any;
+                const t = j?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (t) {
+                  const c = t.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+                  const m = c.match(/\{[\s\S]*\}/);
+                  if (m) genGemini = JSON.parse(m[0].replace(/,\s*([\]}])/g, "$1"));
+                }
+              }
+              ext.ok(genGemini ? "ok" : "empty");
+            } catch { ext.error("extraction failed"); }
+          }
+
+          // Merge: Gemini web analysis > local context > defaults
+          const gg = genGemini ?? {};
+          const gChanges = (gg.changes ?? g.recentActions ?? g.changes ?? []).slice(0, 5).map((a: any) => ({
             description: typeof a === "string" ? a : a.description ?? a.action ?? String(a),
-            date: a.date ?? a.timestamp,
+            date: a.date ?? a.timestamp ?? new Date().toISOString().slice(0, 10),
           }));
-          const gSignals = (g.signals ?? g.milestones ?? []).slice(0, 5).map((s: any, i: number) => ({
+          const gSignals = (gg.signals ?? g.signals ?? g.milestones ?? []).slice(0, 5).map((s: any, i: number) => ({
             name: typeof s === "string" ? s : s.name ?? s.title ?? String(s),
             direction: s.direction ?? "neutral",
-            impact: i < 2 ? "high" : "medium",
+            impact: s.impact ?? (i < 2 ? "high" : "medium"),
           }));
-          const gContradictions = (g.contradictions ?? []).slice(0, 3).map((c: any) => ({
+          const gContradictions = (gg.risks ?? g.contradictions ?? []).slice(0, 3).map((c: any) => ({
             claim: typeof c === "string" ? c : c.claim ?? c.title ?? String(c),
             evidence: typeof c === "string" ? "" : c.evidence ?? c.description ?? "",
           }));
-          const gActions = (g.nextActions ?? g.pendingActions ?? []).slice(0, 4).map((a: any) => ({
+          const gActions = (gg.nextActions ?? g.nextActions ?? g.pendingActions ?? []).slice(0, 4).map((a: any) => ({
             action: typeof a === "string" ? a : a.action ?? a.title ?? String(a),
           }));
+
+          const genSummary = gg.summary ?? g.company?.canonicalMission ?? g.summary
+            ?? (genWebSnippets.length > 0 ? genWebSnippets.slice(0, 2).join(" ").slice(0, 400) : `Workspace intelligence for: "${query.trim()}". Upload documents, connect agents, or search specific entities for deeper results.`);
 
           result = {
             canonicalEntity: {
               name: g.company?.name ?? "Your Workspace",
-              canonicalMission: g.company?.canonicalMission ?? g.summary ?? `Workspace intelligence for: "${query.trim()}". Upload documents, connect agents, or search specific entities for deeper results.`,
-              identityConfidence: g.company?.identityConfidence ?? 50,
+              canonicalMission: genSummary,
+              identityConfidence: g.company?.identityConfidence ?? (genGemini ? 65 : 50),
             },
             memo: true,
             whatChanged: gChanges.length > 0 ? gChanges : [
               { description: `Query received: "${query.trim().slice(0, 60)}"`, date: new Date().toISOString().slice(0, 10) },
-              { description: "Upload documents or connect agents for richer context", date: new Date().toISOString().slice(0, 10) },
             ],
             signals: gSignals.length > 0 ? gSignals : [
               { name: "Current workspace context", direction: "neutral", impact: "high" },
               { name: "Agent connection status", direction: "neutral", impact: "medium" },
-              { name: "Upload pipeline readiness", direction: "up", impact: "medium" },
             ],
             contradictions: gContradictions.length > 0 ? gContradictions : [
               { claim: "Limited context available", evidence: "General queries work best with local context. Try a founder weekly reset or search a specific entity for richer results." },
@@ -835,6 +910,7 @@ Return ONLY valid JSON:
               "What are the most important changes in the last 7 days?",
               "Build a pre-delegation packet for my agent",
             ],
+            ...(genWebSources.length > 0 ? { webSources: genWebSources.slice(0, 5) } : {}),
           };
         }
       }

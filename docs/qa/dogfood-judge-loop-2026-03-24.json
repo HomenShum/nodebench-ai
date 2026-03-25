@@ -1,0 +1,115 @@
+{
+  "dogfoodDate": "2026-03-24T19:04:00-04:00",
+  "version": "post-P0-fixes",
+  "environment": "local-dev (localhost:5191)",
+  "judge": "Claude Opus 4.6 — preview_snapshot + eval verification",
+
+  "surfaceSweep": {
+    "status": "PASS",
+    "total": 13,
+    "passed": 13,
+    "failed": 0,
+    "routes": [
+      "/founder", "/founder/setup", "/founder/intake", "/founder/history",
+      "/founder/brief", "/founder/entities", "/founder/perspectives",
+      "/founder/export", "/founder/initiative", "/founder/agents",
+      "/founder/command", "/founder/search", "/founder/analysis"
+    ],
+    "consoleErrors": 0,
+    "networkFailures": 0
+  },
+
+  "personaFlows": [
+    {
+      "persona": "Banker",
+      "flow": "Company Search → type Shopify → select Banker lens → Run Analysis → Company Analysis",
+      "status": "PASS",
+      "dataVerified": {
+        "hasShopify": true,
+        "hasRevenue": true,
+        "hasFCF": true,
+        "hasAgenticCommerce": true,
+        "exportButtons": ["Memo", "Copy", "Export Markdown", "Export HTML", "View as Memo", "Download .html", "Copy Markdown"]
+      }
+    },
+    {
+      "persona": "CEO / Founder",
+      "flow": "Founder Dashboard → verify 6 canonical cards → navigate to Agent Brief",
+      "status": "PASS",
+      "dataVerified": {
+        "hasCompanyTruth": true,
+        "hasWhatChanged": true,
+        "hasContradiction": true,
+        "hasNextMoves": true,
+        "hasArtifactPacket": true,
+        "hasAgentActivity": true,
+        "agentBriefButtons": ["Agent Brief", "Hand to Agent", "Pre-Delegation Brief"]
+      }
+    }
+  ],
+
+  "dataSourceAudit": {
+    "status": "FINDING — ALL HARDCODED",
+    "severity": "P1",
+    "summary": "All 13 founder surfaces use hardcoded fixtures or localStorage. Zero live Convex queries.",
+    "hardcodedCompanies": [
+      {
+        "name": "Meridian AI",
+        "type": "demo startup",
+        "usedIn": ["FounderDashboardView", "RoleOverlayView", "AgentOversightView", "InitiativeWorkspaceView", "NearbyEntitiesView", "CommandPanelView"]
+      },
+      {
+        "name": "Shopify",
+        "type": "public company demo",
+        "usedIn": ["CompanyAnalysisView", "ShareableMemoView"]
+      }
+    ],
+    "fixtureFile": "src/features/founder/views/founderFixtures.ts",
+    "fixtureLines": 596,
+    "convexQueriesUsed": 0,
+    "localStorageUsed": true,
+    "liveApiCalls": 0
+  },
+
+  "mobileViewport": {
+    "width": 375,
+    "height": 812,
+    "status": "PASS",
+    "surfaces": [
+      { "route": "/", "horizontalOverflow": false, "contentVisible": true },
+      { "route": "/founder", "horizontalOverflow": false, "contentLength": 8835, "hasContradiction": true },
+      { "route": "/founder/search", "horizontalOverflow": false, "hasSearchInput": true, "hasRunBtn": true }
+    ]
+  },
+
+  "contrastFixes": {
+    "status": "APPLIED",
+    "filesFixed": 11,
+    "totalInstances": 354,
+    "patterns": {
+      "text-white/10-20 → text-white/70": 61,
+      "text-white/25-55 → text-white/60": 293
+    }
+  },
+
+  "mobileLayoutFix": {
+    "status": "APPLIED",
+    "file": "src/layouts/CockpitLayout.tsx",
+    "line": 676,
+    "change": "Added h-full to inner content wrapper to complete height chain"
+  },
+
+  "taStudio": {
+    "status": "NOT_APPLICABLE",
+    "reason": "TA Studio backend requires Playwright installed server-side. Remote Render backend lacks it. Web QA pipeline cannot crawl without Playwright. Designed for mobile emulator QA, not headless web.",
+    "runId": "pw-8909cca8",
+    "error": "Playwright not installed"
+  },
+
+  "verdict": {
+    "overall": "PASS with P1 caveat",
+    "passRate": "100% surfaces render, 100% persona flows complete, 0 console errors",
+    "caveat": "All data is hardcoded fixtures. No live Convex or API data. Product works as a demo, not as a live tool yet.",
+    "nextPriority": "Wire Convex queries to replace fixture data for authenticated users"
+  }
+}

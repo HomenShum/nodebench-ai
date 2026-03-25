@@ -60,6 +60,7 @@ export interface PanelHeaderProps {
 
   // Callbacks
   onClose: () => void;
+  onClearChat?: () => void;
   handleCopyAsMarkdown: () => Promise<void>;
   handleDownloadMarkdown: () => void;
   appendToSignalsLog: (payload: any) => Promise<void>;
@@ -100,6 +101,7 @@ export const PanelHeader = memo(function PanelHeader({
   showOverflowMenu,
   showPersonaPicker,
   onClose,
+  onClearChat,
   handleCopyAsMarkdown,
   handleDownloadMarkdown,
   appendToSignalsLog,
@@ -217,6 +219,7 @@ export const PanelHeader = memo(function PanelHeader({
             setActiveThreadId(null);
             setInput('');
             setAttachedFiles([]);
+            onClearChat?.();
           }}
           className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md hover:bg-surface-secondary text-content-secondary hover:text-content transition-colors"
           title="New chat (\u2318 1)"

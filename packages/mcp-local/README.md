@@ -7,9 +7,11 @@
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io)
 [![Tools](https://img.shields.io/badge/Tools-338-orange.svg)](https://www.npmjs.com/package/nodebench-mcp)
 
-**Entity intelligence for any company, market, or question — turn messy context into decision-ready packets, memos, and delegation briefs.**
+**Operating intelligence for founders, bankers, researchers, and operators. Turn messy context into decision-ready packets, memos, and delegation briefs.**
 
-338 tools across 55 domains. You start with 15 (starter preset). Call `discover_tools` to find what you need, then `load_toolset` to activate it. No context bloat, no IDE crashes.
+350 tools across 57 domains. You start with 15 (starter preset). Call `discover_tools` to find what you need, then `load_toolset` to activate it. No context bloat, no IDE crashes.
+
+> **New here?** Read **[AGENT_LOGIC.md](./AGENT_LOGIC.md)** for the complete plain-English guide to how NodeBench thinks — what happens when you say "What changed this week?" or "Analyze Anthropic", the full decision tree, fallback chain, and cost estimates.
 
 ```bash
 # Starter preset (15 tools) — decision intelligence + progressive discovery

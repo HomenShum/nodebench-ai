@@ -1,0 +1,75 @@
+{
+  "dogfoodDate": "2026-03-24T19:47:00-04:00",
+  "version": "post-P0-revamp",
+  "environment": "local-dev (localhost:5191)",
+  "judge": "Claude Opus 4.6 — preview tools with screenshot evidence",
+
+  "p0Fixes": {
+    "touchTargets": {
+      "status": "DONE",
+      "file": "src/index.css",
+      "detail": "44px min-height on all interactive elements at max-width:1024px",
+      "impact": "All 13 surfaces, every button/input/link"
+    },
+    "contradictionCard": {
+      "status": "DONE",
+      "file": "src/features/founder/views/FounderDashboardView.tsx",
+      "detail": "Terracotta border-l-4 border-l-[#d97757], warm bg-[#d97757]/5, title in terracotta, Investigate + Flag for Review buttons",
+      "impact": "Contradiction is now visually distinct attention magnet"
+    },
+    "bottomSheetAgent": {
+      "status": "IN PROGRESS",
+      "detail": "Agent spawned but not yet completed. Converting FastAgentPanel from full-screen overlay to 3-state bottom sheet on mobile."
+    }
+  },
+
+  "dataWiring": {
+    "status": "SCAFFOLDED",
+    "detail": "FounderDashboardView now uses resolvedCompany/resolvedInitiatives/resolvedAgents variables with DEMO fallback. SyncStatusBadge shows 'Local only'. useFounderPersistence hook exists (740 lines) but can't be called without ConvexProvider — when VITE_CONVEX_URL is set, swap resolvedCompany = DEMO_COMPANY to persistence.loadCompany().",
+    "convexReadiness": "85% — 30 tables, 40+ queries/mutations, persistence hook production-ready, zero views wired to it",
+    "blocker": "founderPersistence.ts imports useConvexAuth at module level — importing it crashes Vite when ConvexProvider is absent. Need to lazy-import or check context before calling."
+  },
+
+  "screenshotEvidence": {
+    "founderDashboardDesktop": {
+      "verified": true,
+      "features": ["Meridian AI company name", "Local only sync badge", "62% identity confidence", "What Changed cards with type badges", "Next 3 Moves", "BIGGEST CONTRADICTION with terracotta accent + Investigate/Flag buttons", "Weekly Reset / Pre-Delegation / Change Review mode switcher"]
+    },
+    "founderDashboardMobile375": {
+      "verified": true,
+      "features": ["No horizontal overflow", "Cards stack vertically", "44px touch targets visible on buttons", "Mode switcher wraps properly", "Sync badge visible"]
+    },
+    "landingPage": {
+      "verified": true,
+      "features": ["Search bar", "6 role lenses", "4 demo suggestion cards", "Since your last session metrics", "TOP CHANGES feed with Competitor/Strategy/Market signals"]
+    },
+    "shopifyBankerAnalysis": {
+      "verified": true,
+      "features": ["Company Snapshot ($11.6B rev, $2.0B FCF, ~$110B mcap)", "5 Business Quality signals (STRONG/IMPROVING/WATCH)", "News & Signals (Agentic Storefronts, AI orders 15x)", "Banker View badge", "95% identity confidence", "Back to Search navigation"]
+    }
+  },
+
+  "mobileUxScore": {
+    "before": 4.4,
+    "after": 5.8,
+    "changes": {
+      "touchTargets": "3 → 6 (+3: 44px enforcement)",
+      "darkModeContrast": "6 → 7.5 (+1.5: 354 text opacity fixes)",
+      "dataDensity": "3 → 5 (+2: 8-card dashboard)",
+      "accessibility": "3 → 5 (+2: touch targets + contrast + layout fix)",
+      "navigation": "5 → 5.5 (+0.5: sync badge, mode switcher)"
+    }
+  },
+
+  "remainingWork": [
+    "P0: Bottom-sheet agent panel (agent still running)",
+    "P1: Wire useFounderPersistence when ConvexProvider is present (lazy import pattern)",
+    "P1: CompanyAnalysisView → real web search + LLM extraction",
+    "P1: ExternalSignalsPanel → live news feeds",
+    "P2: Claim/change visual cards (structured cards instead of text list)",
+    "P2: Swipeable entity adjacency",
+    "P2: Packet history timeline visualization"
+  ],
+
+  "verdict": "PASS — P0 visual fixes verified with screenshot evidence. Mobile UX score improved from 4.4 to 5.8. Convex wiring scaffolded but blocked on lazy-import pattern. Bottom-sheet agent panel in progress."
+}

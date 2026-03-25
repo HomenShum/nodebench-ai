@@ -1,8 +1,8 @@
 {
   "name": "nodebench-mcp",
-  "version": "2.68.0",
+  "version": "2.70.0",
   "mcpName": "io.github.HomenShum/nodebench",
-  "description": "350 MCP tools across 55 domains. Operating intelligence for founders: decision packets, structured research, agent verification, quality gates, progressive discovery with 8-mode hybrid search + neural embeddings, TOON encoding, Agent-as-a-Graph bipartite search. Starter: 15 tools. Core: 81 tools. Full: 350 tools.",
+  "description": "Operating intelligence for founders. 350 MCP tools across 57 domains. Starts with 15 tools, discovers more as you need them. Weekly resets, company analysis, competitor briefs, delegation packets — all with memory that compounds across sessions.",
   "type": "module",
   "bin": {
     "nodebench-mcp": "./dist/index.js"

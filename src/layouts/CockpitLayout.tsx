@@ -54,6 +54,7 @@ import { StatusStrip } from "./StatusStrip";
 import { CommandBar } from "./CommandBar";
 import { ActiveSurfaceHost } from "./ActiveSurfaceHost";
 import { WorkspaceRail } from "./WorkspaceRail";
+import { MobileTabBar } from "./MobileTabBar";
 import { AgentPresenceRail } from "./AgentPresenceRail";
 import { FeedbackWidget } from "@/features/founder/components/FeedbackWidget";
 import { useBottomSheet } from "@/features/agents/components/FastAgentPanel/useBottomSheet";
@@ -709,11 +710,18 @@ export function CockpitLayout({
         />
       </div>
 
+      {/* ── Mobile: MobileTabBar (visible < 1024px, swaps with WorkspaceRail) ── */}
+      <MobileTabBar
+        activeSurface={currentSurface}
+        onSurfaceChange={navigateToSurface}
+        agentActive={showFastAgent}
+      />
+
       {/* ── Center: ActiveSurfaceHost + Agent Panel (resizable) ──────── */}
       <div
         ref={swipeRef}
         style={{ gridArea: "center" }}
-        className="relative min-w-0 min-h-0 overflow-hidden flex"
+        className="relative min-w-0 min-h-0 overflow-hidden flex pb-[calc(56px+env(safe-area-inset-bottom,0px))] lg:pb-0"
         role="main"
         aria-label="Main content"
         data-cockpit-area="center"

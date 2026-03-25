@@ -1634,3 +1634,39 @@ html.dark[data-preset="dark-botanical"] .focus-ring:focus-visible {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE UX: Solid card fallback — glass blur is GPU-heavy on mobile
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  /* Solid card fallback — glass blur is GPU-heavy on mobile */
+  [class*="backdrop-blur"],
+  [class*="backdrop-filter"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Replace transparent white backgrounds with solid dark */
+  [class*="bg-white\\/\\[0.02\\]"],
+  [class*="bg-white\\/\\[0.03\\]"],
+  [class*="bg-white\\/\\[0.04\\]"],
+  [class*="bg-white\\/\\[0.05\\]"] {
+    background-color: rgba(26, 26, 46, 0.95) !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE UX: Simpler animations — FadeIn only, no stagger delays
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  /* Simpler animations on mobile — FadeIn only, no stagger delays */
+  .skeleton-stagger,
+  [style*="animationDelay"] {
+    animation-delay: 0s !important;
+  }
+
+  /* Faster transitions on mobile */
+  * {
+    transition-duration: 150ms !important;
+  }
+}
+

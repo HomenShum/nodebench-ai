@@ -1528,3 +1528,91 @@ export const resolveApproval = mutation({
     return approvalId;
   },
 });
+
+// ---------------------------------------------------------------------------
+// getRelatedEntities — related entities for a company (max 20)
+// ---------------------------------------------------------------------------
+
+export const getRelatedEntities = query({
+  args: { companyId: v.id("founderCompanies") },
+  handler: async (ctx, { companyId }) => {
+    await assertCompanyOwner(ctx, companyId);
+    return ctx.db
+      .query("founderRelatedEntities")
+      .withIndex("by_company", (q) => q.eq("companyId", companyId))
+      .take(20);
+  },
+});
+
+// ---------------------------------------------------------------------------
+// createRelatedEntity
+// ---------------------------------------------------------------------------
+
+export const createRelatedEntity = mutation({
+  args: {
+    companyId: v.id("founderCompanies"),
+    entityType: v.union(
+      v.literal("product"),
+      v.literal("partner"),
+      v.literal("competitor"),
+      v.literal("comparable"),
+      v.literal("market_signal"),
+      v.literal("design_partner"),
+      v.literal("investor"),
+    ),
+    name: v.string(),
+    relationship: v.string(),
+    whyItMatters: v.string(),
+    externalRef: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await assertCompanyOwner(ctx, args.companyId);
+    const now = Date.now();
+    return ctx.db.insert("founderRelatedEntities", {
+      companyId: args.companyId,
+      entityType: args.entityType,
+      name: args.name,
+      relationship: args.relationship,
+      whyItMatters: args.whyItMatters,
+      externalRef: args.externalRef,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
+// ---------------------------------------------------------------------------
+// updateRelatedEntity — partial update
+// ---------------------------------------------------------------------------
+
+export const updateRelatedEntity = mutation({
+  args: {
+    entityId: v.id("founderRelatedEntities"),
+    entityType: v.optional(
+      v.union(
+        v.literal("product"),
+        v.literal("partner"),
+        v.literal("competitor"),
+        v.literal("comparable"),
+        v.literal("market_signal"),
+        v.literal("design_partner"),
+        v.literal("investor"),
+      ),
+    ),
+    name: v.optional(v.string()),
+    relationship: v.optional(v.string()),
+    whyItMatters: v.optional(v.string()),
+    externalRef: v.optional(v.string()),
+  },
+  handler: async (ctx, { entityId, ...fields }) => {
+    const entity = await ctx.db.get(entityId);
+    if (!entity) throw new Error("Access denied");
+    await assertCompanyOwner(ctx, entity.companyId);
+    const patch: Record<string, unknown> = { updatedAt: Date.now() };
+    for (const [key, value] of Object.entries(fields)) {
+      if (value !== undefined) patch[key] = value;
+    }
+    await ctx.db.patch(entityId, patch);
+    return entityId;
+  },
+});

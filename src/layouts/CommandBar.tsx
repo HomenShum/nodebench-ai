@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { memo, useCallback, useMemo } from "react";
 import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { MessageSquare, Search, FileText, Building2, Bot } from "lucide-react";
+import { MessageSquare, Search, FileText, Building2 } from "lucide-react";
 import {
   ICON_MAP,
   MODES,
@@ -72,20 +72,7 @@ export const CommandBar = memo(function CommandBar({
     navigate(buildCockpitPathForView({ view }));
   }, [navigate, onViewChange]);
 
-  /** Simplified 4-tab mobile navigation: Brief, Search, Entities, Agent */
-  const MOBILE_TABS = useMemo(() => [
-    { id: "brief" as const, label: "Brief", icon: FileText, path: "/founder", view: "control-plane" as MainView },
-    { id: "search" as const, label: "Search", icon: Search, path: "/", view: "control-plane" as MainView },
-    { id: "entities" as const, label: "Entities", icon: Building2, path: "/founder/entities", view: "investigation" as MainView },
-  ], []);
 
-  /** Determine which mobile tab is active based on current route */
-  const activeMobileTab = useMemo(() => {
-    const path = window.location.pathname;
-    if (path === "/founder/entities") return "entities";
-    if (path.startsWith("/founder")) return "brief";
-    return "search";
-  }, [currentView]); // eslint-disable-line react-hooks/exhaustive-deps — currentView proxy for route change
 
   return (
     <footer
@@ -179,64 +166,7 @@ export const CommandBar = memo(function CommandBar({
         )}
       </div>
 
-      {/* ── Mobile: simplified 4-tab thumb-zone bar ── */}
-      <nav
-        role="navigation"
-        className="flex lg:hidden items-stretch justify-around mobile-bottom-tabs"
-        aria-label="Primary navigation"
-        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
-      >
-        {MOBILE_TABS.map((tab) => {
-          const isActive = activeMobileTab === tab.id;
-          const TabIcon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              className="mobile-tab-btn"
-              data-active={isActive ? "true" : undefined}
-              aria-current={isActive ? "page" : undefined}
-              onClick={() => {
-                haptic("light");
-                navigate(tab.path);
-                onViewChange(tab.view);
-              }}
-              data-agent-id={`cockpit:mobile-primary:${tab.id}`}
-              data-agent-action="navigate"
-              data-agent-label={tab.label}
-            >
-              <TabIcon className="w-5 h-5" aria-hidden="true" />
-              <span className="mobile-tab-label">{tab.label}</span>
-              {/* Badge dot on Brief tab for unresolved contradictions */}
-              {tab.id === "brief" && !!badgeCounts?.mission && (
-                <span
-                  className="mobile-tab-badge"
-                  aria-label={`${badgeCounts.mission} unresolved`}
-                />
-              )}
-            </button>
-          );
-        })}
-        {/* Agent tab — always last */}
-        {onToggleAgent && (
-          <button
-            type="button"
-            className="mobile-tab-btn"
-            data-active={agentOpen ? "true" : undefined}
-            onClick={() => {
-              haptic("light");
-              onToggleAgent();
-            }}
-            aria-label={agentOpen ? "Close agent panel" : "Open agent panel"}
-            data-agent-id="cockpit:mobile-primary:agent"
-            data-agent-action="toggle"
-            data-agent-label="Agent"
-          >
-            <Bot className="w-5 h-5" aria-hidden="true" />
-            <span className="mobile-tab-label">Agent</span>
-          </button>
-        )}
-      </nav>
+      {/* Mobile surface navigation has been moved to MobileTabBar.tsx */}
 
       <div className="hidden lg:flex items-center justify-between h-10 px-4 gap-4">
         {/* Left: mode tabs */}

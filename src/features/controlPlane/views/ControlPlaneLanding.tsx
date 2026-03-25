@@ -100,7 +100,19 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   onOpenFastAgentWithPrompt,
 }: ControlPlaneLandingProps) {
   const [input, setInput] = useState("");
-  const [activeLens, setActiveLens] = useState<LensId>("founder");
+  const [activeLens, setActiveLens] = useState<LensId>(() => {
+    try {
+      const stored = localStorage.getItem('nodebench-selected-role');
+      const valid: LensId[] = ["founder", "investor", "banker", "ceo", "legal", "student"];
+      if (stored && valid.includes(stored as LensId)) return stored as LensId;
+    } catch { /* ignore */ }
+    return "founder";
+  });
+  // Persist lens selection to localStorage
+  useEffect(() => {
+    localStorage.setItem('nodebench-selected-role', activeLens);
+  }, [activeLens]);
+
   const [activeResult, setActiveResult] = useState<ResultPacket | null>(null);
   const [activeTrace, setActiveTrace] = useState<{ trace: TraceStep[]; latencyMs: number; classification: string; judge?: any } | null>(null);
   const [isSearching, setIsSearching] = useState(false);

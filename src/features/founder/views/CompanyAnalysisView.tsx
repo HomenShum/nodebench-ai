@@ -6,11 +6,11 @@
  */
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, Building2, TrendingUp, Newspaper, Cpu, Shield,
   HelpCircle, GitCompare, Layers, Download, Copy, FileText, FileCode2,
-  Check,
+  Check, RefreshCw, Loader2, Wifi, WifiOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ArtifactPacketPanel } from "../components/ArtifactPacketPanel";
@@ -40,6 +40,7 @@ import {
   type ComparableCompany,
   type NextQuestion,
 } from "./founderFixtures";
+import { useCompanyAnalysis } from "../hooks/useCompanyAnalysis";
 import {
   saveMemoToStorage,
   generateMemoId,
@@ -381,15 +382,73 @@ function ExportCard({
 }
 
 /* ------------------------------------------------------------------ */
+/*  Loading skeleton                                                   */
+/* ------------------------------------------------------------------ */
+
+function AnalysisSkeleton() {
+  return (
+    <div className="flex-1 space-y-4 px-4 pb-24 pt-4 animate-pulse">
+      <div className="grid gap-4 lg:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className={GLASS_CARD}>
+            <div className="h-3 w-32 rounded bg-white/[0.08]" />
+            <div className="mt-4 h-5 w-48 rounded bg-white/[0.06]" />
+            <div className="mt-3 space-y-2">
+              <div className="h-3 w-full rounded bg-white/[0.05]" />
+              <div className="h-3 w-3/4 rounded bg-white/[0.05]" />
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {[0, 1, 2, 3].map((j) => (
+                <div key={j} className="h-14 rounded-lg bg-white/[0.04]" />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className={GLASS_CARD}>
+        <div className="h-3 w-40 rounded bg-white/[0.08]" />
+        <div className="mt-4 space-y-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-10 w-full rounded-lg bg-white/[0.04]" />
+          ))}
+        </div>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className={GLASS_CARD}>
+            <div className="h-3 w-28 rounded bg-white/[0.08]" />
+            <div className="mt-4 space-y-2">
+              {[0, 1].map((j) => (
+                <div key={j} className="h-16 rounded-lg bg-white/[0.04]" />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Main View                                                          */
 /* ------------------------------------------------------------------ */
 
 export default function CompanyAnalysisView() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const company = localStorage.getItem("nodebench-analysis-company") || "shopify";
-  const lens = (localStorage.getItem("nodebench-analysis-lens") || "banker") as SearchLens;
-  const outputTarget = localStorage.getItem("nodebench-analysis-output") || "memo";
+  const company = searchParams.get("company")
+    ?? localStorage.getItem("nodebench-analysis-company")
+    || "shopify";
+  const lens = (searchParams.get("lens")
+    ?? localStorage.getItem("nodebench-analysis-lens")
+    || "banker") as SearchLens;
+  const outputTarget = searchParams.get("output")
+    ?? localStorage.getItem("nodebench-analysis-output")
+    || "memo";
+
+  // Live search hook — falls back to Shopify fixtures
+  const { data: analysisData, isLoading, error: fetchError, refetch } = useCompanyAnalysis(company, lens);
 
   // Packet state
   const [activePacket, setActivePacket] = useState<FounderArtifactPacket | null>(null);

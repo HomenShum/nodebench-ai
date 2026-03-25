@@ -74,7 +74,7 @@ export { TOOLSET_MAP };
 const STARTER_TOOLSETS = ["deep_sim"];
 
 // Core: the original default. ~81 tools across 15 domains.
-const CORE_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate", "skill_update", "context_sandbox", "observability", "execution_trace", "mission_harness", "deep_sim", "founder"];
+const CORE_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate", "skill_update", "context_sandbox", "observability", "execution_trace", "mission_harness", "deep_sim", "founder", "scenario_compiler", "packet_compiler", "entity_temporal"];
 
 const PRESETS: Record<string, string[]> = {
   // DEFAULT: starter (~19 tools). Progressive discovery is the gateway to 338.

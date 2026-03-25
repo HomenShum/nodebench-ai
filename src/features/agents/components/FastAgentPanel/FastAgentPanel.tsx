@@ -198,9 +198,29 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     sources?: DemoConversation['sources'];
     keyInsight?: string;
   }
-  const [demoMessages, setDemoMessages] = useState<DemoMessage[]>([]);
+  const [demoMessages, setDemoMessages] = useState<DemoMessage[]>(() => {
+    try {
+      const raw = localStorage.getItem('nodebench-agent-chat');
+      if (raw) {
+        const parsed = JSON.parse(raw) as DemoMessage[];
+        // Only restore completed messages (skip any that were mid-typing)
+        return parsed.filter((m) => m.status === 'complete');
+      }
+    } catch { /* ignore parse errors */ }
+    return [];
+  });
   const [isDemoThinking, setIsDemoThinking] = useState(false);
   const demoTypingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Persist demo messages to localStorage whenever they change
+  useEffect(() => {
+    const completed = demoMessages.filter((m) => m.status === 'complete');
+    if (completed.length > 0) {
+      localStorage.setItem('nodebench-agent-chat', JSON.stringify(completed));
+    } else {
+      localStorage.removeItem('nodebench-agent-chat');
+    }
+  }, [demoMessages]);
 
   /** Play a pre-scripted demo conversation (guest mode only). */
   const playDemoConversation = useCallback((demo: DemoConversation, questionOverride?: string) => {
@@ -2308,7 +2328,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
           threads={threads}
           activeThreadId={activeThreadId}
           onSelectThread={(id) => { setActiveThreadId(id); setIsMinimized(false); }}
-          onNewChat={() => { setActiveThreadId(null); setIsMinimized(false); }}
+          onNewChat={() => { setActiveThreadId(null); setDemoMessages([]); localStorage.removeItem('nodebench-agent-chat'); setIsMinimized(false); }}
           onExpand={() => setIsMinimized(false)}
           onClose={onClose}
         />
@@ -2383,6 +2403,10 @@ export const FastAgentPanel = memo(function FastAgentPanel({
           showOverflowMenu={showOverflowMenu}
           showPersonaPicker={showPersonaPicker}
           onClose={onClose}
+          onClearChat={() => {
+            setDemoMessages([]);
+            localStorage.removeItem('nodebench-agent-chat');
+          }}
           handleCopyAsMarkdown={handleCopyAsMarkdown}
           handleDownloadMarkdown={handleDownloadMarkdown}
           appendToSignalsLog={appendToSignalsLog}
