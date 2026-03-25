@@ -1,12 +1,23 @@
 # NodeBench AI
 
-The trust layer for autonomous agents. Every permission gets a scope. Every action gets a receipt. Every decision gets evidence.
+NodeBench AI is an autonomous research platform that does the heavy lifting of deep-dive investigations for founders, investors, and analysts. 
 
-NodeBench AI is a full-stack agent trust control plane built on Convex, React, and a 304-tool MCP server. It implements three architectural layers that turn raw agent activity into auditable, self-improving intelligence.
+It acts as a team of AI researchers that can browse the web, analyze documents, and synthesize complex information—while providing absolute transparency into how every decision was made. Fully responsive, designed for desktop cockpit and mobile-first bottom tab navigation.
+
+### The Real-World Scenario
+Imagine you are a startup founder preparing to pitch a top-tier venture capital firm tomorrow morning. 
+
+Normally, you would spend 8 hours manually digging through their recent investments, reading SEC filings, analyzing their portfolio's tech stack, and looking for warm introductions. 
+
+With NodeBench, you simply type: *"Give me a comprehensive briefing on [VC Firm]. What are their latest enterprise SaaS bets, and how do I fit into their thesis?"*
+
+NodeBench automatically deploys AI agents to do the work. They scour the web, read financial documents, and synthesize the findings into a decision-ready Brief. But unlike typical AI chatbots that might hallucinate facts, NodeBench shows its work. Every single claim the agents make is backed by a "receipt" and linked directly to the original source evidence. You get the speed of AI with the trust and auditability of a human researcher.
 
 ---
 
-## Architecture
+## Technical Architecture
+
+Under the hood, NodeBench is a full-stack agent trust control plane built on Convex, React, and a 304-tool MCP server. It implements three architectural layers that turn raw agent activity into auditable, self-improving intelligence.
 
 ### Layer 1: Judgment
 
@@ -107,7 +118,10 @@ convex/domains/
 src/layouts/
   CockpitLayout.tsx      — 5-zone: StatusStrip + WorkspaceRail + ActiveSurfaceHost
                            + AgentPresenceRail + TraceStrip
-  WorkspaceRail.tsx      — Left rail with surface navigation (Ask, Memo, Research, Workspace, System)
+  WorkspaceRail.tsx      — Left rail with surface navigation (hidden on mobile, lg:flex)
+  MobileTabBar.tsx       — Fixed bottom tab bar for mobile (< 1024px), swaps with WorkspaceRail;
+                           5 surface tabs, terracotta active indicator, SitFlow badge logic,
+                           safe-area-inset-bottom support, haptic feedback
   ActiveSurfaceHost.tsx  — Main content viewport hosting the active surface
   AgentPresenceRail.tsx  — Right rail showing agent activity, presence, and telemetry
   CommandBar.tsx         — Bottom control strip with command palette (Cmd/Ctrl+K)
@@ -198,6 +212,25 @@ OPENAI_API_KEY=<for-voice-and-agent-features>
 VITE_ELEVENLABS_API_KEY=<optional-for-voice-output>
 VITE_ELEVENLABS_VOICE_ID=<optional-default-uses-rachel>
 ```
+
+---
+
+## Mobile UX
+
+NodeBench is fully responsive. Below 1024px, the desktop `WorkspaceRail` sidebar is hidden and replaced by `MobileTabBar` — a native-feeling fixed bottom tab bar.
+
+| Feature | Implementation |
+|---------|---------------|
+| **5 surface tabs** | Brief, Memo, Research, Workspace, System — one tap to any surface |
+| **Terracotta active indicator** | `#d97757` text + underline bar matching NodeBench design DNA |
+| **SitFlow badge logic** | Red numeric badge on Brief tab; hides when you're already on that tab |
+| **Agent status dot** | Green dot on System tab when an agent session is active |
+| **Haptic feedback** | `navigator.vibrate(10)` — 10ms tap on every surface switch |
+| **Safe-area support** | `env(safe-area-inset-bottom)` — correct padding on notched iOS/Android devices |
+| **Content padding** | Main area padded `56px + safe-area` on mobile so content never hides behind the bar |
+| **Viewport config** | `viewport-fit=cover` in `index.html` activates safe-area CSS env on all devices |
+
+Desktop and mobile navigation are fully independent — changing one doesn't affect the other.
 
 ---
 
