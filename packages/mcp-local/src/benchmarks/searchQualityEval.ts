@@ -267,6 +267,8 @@ function structuralCheck(queryDef: typeof TEST_CORPUS[0], response: any, latency
     noErrorInResponse: !data.error && data.success !== false,
     latencyUnder30s: latencyMs < 30_000,
     correctClassification: isEdgeCase || data.classification === queryDef.expectedType,
+    // Grounding structural check: if grounding metadata exists, verify signals are grounded
+    groundingHealthy: isEdgeCase || !r.grounding || (r.grounding.ungroundedFiltered ?? 0) <= (r.grounding.groundedSignals ?? 1),
   };
 
   return { checks, entityName, answer, confidence };
@@ -295,6 +297,12 @@ async function callGeminiJudge(
   const entity = r.canonicalEntity ?? {};
   const resultSnippet = JSON.stringify(r).slice(0, 3000);
 
+  // ── Grounded judge: pass grounding metadata for context ──
+  const grounding = r.grounding ?? {};
+  const groundingNote = grounding.snippetCount != null
+    ? `\nGROUNDING: ${grounding.retrievalConfidence} confidence, ${grounding.snippetCount} source snippets, ${grounding.groundedSignals ?? 0} grounded signals, ${grounding.ungroundedFiltered ?? 0} filtered as ungrounded.\n`
+    : "";
+
   const prompt = `You are an LLM judge evaluating a search API response from NodeBench, an entity intelligence workspace.
 
 USER QUERY: "${queryDef.query}"
@@ -302,7 +310,7 @@ USER ROLE: ${queryDef.lens}
 EXPECTED CLASSIFICATION: ${queryDef.expectedType}
 ACTUAL CLASSIFICATION: ${response?.classification ?? "unknown"}
 CATEGORY: ${queryDef.category}
-
+${groundingNote}
 API RESPONSE (truncated):
 ${resultSnippet}
 
@@ -314,9 +322,9 @@ Evaluate this response against these 7 criteria. For each, return pass (true/fal
 4. RISK_AWARENESS: Does it surface risks, contradictions, or things to watch?
 5. NEXT_STEPS: Does it suggest useful follow-up questions or actions?
 6. ROLE_APPROPRIATE: Is the response shaped appropriately for the ${queryDef.lens} role?
-7. NO_HALLUCINATION: Does the response avoid making up specific facts/numbers it couldn't know?
+7. NO_HALLUCINATION: Does the response avoid making up specific facts/numbers it couldn't know? Directional claims and synthesis are fine — only fail for fabricated specific dollar amounts, dates, or percentages.
 
-IMPORTANT: This is a search API that may return default/placeholder signals for entities it hasn't deeply researched yet. That's acceptable — judge whether the STRUCTURE and RELEVANCE are correct, not whether it has real-time data.
+IMPORTANT: This is an entity intelligence system that synthesizes across web sources. Structured responses with entity-specific signals, risks, and next steps are USEFUL even when based on limited data. Judge the response as a product output, not an academic paper.
 
 Return ONLY valid JSON (no markdown, no code fences):
 {

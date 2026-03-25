@@ -578,24 +578,63 @@ Return ONLY valid JSON:
             } catch { extractTrace.error("gemini extraction failed"); }
           }
 
+          // ── Layer 1: Retrieval confidence threshold ──
+          // If we have <3 snippets, the data is too thin for reliable extraction
+          const retrievalConfidence = allSnippets.length >= 3 ? "high" : allSnippets.length >= 1 ? "medium" : "low";
+
           // Merge all sources: gemini extracted > recon > web > defaults
           const ge = geminiExtracted ?? {};
 
-          const mergedSignals = (ge.signals ?? []).slice(0, 5).map((s: any, i: number) => ({
+          // ── Layer 2: Claim-level grounding verification ──
+          // Check each extracted signal/risk against source snippets
+          const sourceText = allSnippets.join(" ").toLowerCase();
+          function isGrounded(claim: string): boolean {
+            if (!claim || sourceText.length < 50) return true; // skip if no sources to check against
+            const words = claim.toLowerCase().split(/\s+/).filter(w => w.length > 4);
+            if (words.length === 0) return true;
+            const matched = words.filter(w => sourceText.includes(w));
+            // Lenient: only reject claims with ZERO word overlap (truly invented)
+            // The Gemini judge handles nuanced verification — this is just a coarse filter
+            return matched.length >= 1;
+          }
+
+          // Filter signals — only keep grounded ones, then fill with source-derived fallbacks
+          const rawSignals = (ge.signals ?? []).slice(0, 8);
+          const groundedSignals = rawSignals.filter((s: any) => isGrounded(s.name ?? ""));
+          const ungroundedCount = rawSignals.length - groundedSignals.length;
+
+          const mergedSignals = groundedSignals.slice(0, 5).map((s: any, i: number) => ({
             name: s.name ?? `${entityName} signal ${i + 1}`,
             direction: s.direction ?? "neutral",
             impact: s.impact ?? (i < 2 ? "high" : "medium"),
+            // ── Layer 4: Citation chain — attach source index ──
+            sourceIdx: allSnippets.findIndex(sn => {
+              const words = (s.name ?? "").toLowerCase().split(/\s+/).filter((w: string) => w.length > 4);
+              return words.some((w: string) => sn.toLowerCase().includes(w));
+            }),
           }));
 
-          const mergedChanges = (ge.changes ?? []).slice(0, 5).map((c: any) => ({
-            description: c.description ?? String(c),
-            date: c.date ?? new Date().toISOString().slice(0, 10),
-          }));
+          const mergedChanges = (ge.changes ?? []).slice(0, 5)
+            .filter((c: any) => isGrounded(c.description ?? String(c)))
+            .map((c: any) => ({
+              description: c.description ?? String(c),
+              date: c.date ?? new Date().toISOString().slice(0, 10),
+              sourceIdx: allSnippets.findIndex(sn => {
+                const words = (c.description ?? "").toLowerCase().split(/\s+/).filter((w: string) => w.length > 4);
+                return words.some((w: string) => sn.toLowerCase().includes(w));
+              }),
+            }));
 
-          const mergedRisks = (ge.risks ?? []).slice(0, 3).map((r: any) => ({
-            claim: r.title ?? r.claim ?? String(r),
-            evidence: r.description ?? r.evidence ?? "",
-          }));
+          const mergedRisks = (ge.risks ?? []).slice(0, 3)
+            .filter((r: any) => isGrounded(r.title ?? r.description ?? String(r)))
+            .map((r: any) => ({
+              claim: r.title ?? r.claim ?? String(r),
+              evidence: r.description ?? r.evidence ?? "",
+              sourceIdx: allSnippets.findIndex(sn => {
+                const words = (r.title ?? r.description ?? "").toLowerCase().split(/\s+/).filter((w: string) => w.length > 4);
+                return words.some((w: string) => sn.toLowerCase().includes(w));
+              }),
+            }));
 
           const mergedComparables = (ge.comparables ?? competitors).slice(0, 4).map((c: any) => ({
             name: typeof c === "string" ? c : c.name ?? String(c),
@@ -603,10 +642,12 @@ Return ONLY valid JSON:
             note: typeof c === "string" ? "" : c.note ?? c.description ?? "",
           }));
 
-          const mergedMetrics = (ge.metrics ?? []).slice(0, 6).map((m: any) => ({
-            label: m.label ?? "Metric",
-            value: String(m.value ?? "N/A"),
-          }));
+          const mergedMetrics = (ge.metrics ?? []).slice(0, 6)
+            .filter((m: any) => isGrounded(`${m.label} ${m.value}`))
+            .map((m: any) => ({
+              label: m.label ?? "Metric",
+              value: String(m.value ?? "N/A"),
+            }));
 
           // Fallback signals only if gemini + recon both empty
           const hasRealData = mergedSignals.length > 0 || reconFindings.length > 0;
@@ -621,12 +662,14 @@ Return ONLY valid JSON:
                 date: new Date().toISOString().slice(0, 10),
               }));
           const finalRisks = mergedRisks.length > 0 ? mergedRisks
-            : [{ claim: `${entityName} competitive risks need deeper analysis`, evidence: `Web search returned ${webResults.length} results. Run deeper research or upload documents for risk detection.` }];
+            : [{ claim: `${entityName} data is limited — ${retrievalConfidence === "low" ? "no web sources found" : "web sources were thin"}`, evidence: `Retrieved ${allSnippets.length} source snippets. Upload ${entityName}-related documents or run deeper research for risk analysis.` }];
 
+          // Use retrieval confidence for summary quality
           const entitySummary = ge.summary ?? recon?.summary ?? recon?.overview
-            ?? (bestSummary ? `${entityName}: ${bestSummary.slice(0, 400)}` : `${entityName} entity profile. ${hasRealData ? "" : "Upload documents or connect agents for deeper intelligence."}`);
+            ?? (bestSummary ? `${entityName}: ${bestSummary.slice(0, 400)}` : `${entityName} entity profile. ${retrievalConfidence === "low" ? "No web sources available — upload documents or connect agents." : ""}`);
 
-          const confidence = Math.min(95, 40 + (linkupAnswer ? 15 : 0) + allSrcUrls.length * 2 + (geminiExtracted ? 20 : 0) + reconFindings.length * 5);
+          const confidence = Math.min(95, 40 + (linkupAnswer ? 15 : 0) + allSrcUrls.length * 2 + (geminiExtracted ? 20 : 0) + reconFindings.length * 5
+            - (ungroundedCount * 3)); // Penalize ungrounded claims
 
           result = {
             canonicalEntity: {
@@ -653,6 +696,15 @@ Return ONLY valid JSON:
               `What changed for ${entityName} in the last quarter?`,
             ],
             webSources: allSrcUrls.slice(0, 8),
+            // ── Grounding metadata for judge + user verification ──
+            grounding: {
+              retrievalConfidence,
+              snippetCount: allSnippets.length,
+              sourceCount: allSrcUrls.length,
+              groundedSignals: mergedSignals.length,
+              ungroundedFiltered: ungroundedCount,
+              sourceSnippets: allSnippets.slice(0, 5).map((s, i) => ({ idx: i, text: s.slice(0, 200), url: allSrcUrls[i] ?? "" })),
+            },
             localContext: local,
           };
           break;
