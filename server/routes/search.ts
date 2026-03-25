@@ -236,19 +236,94 @@ export function createSearchRouter(tools: McpTool[]) {
       switch (classification.type) {
         case "weekly_reset": {
           const t = traceStep("tool_call", "founder_local_weekly_reset");
-          result = await callTool("founder_local_weekly_reset", { daysBack: daysBack ?? 7 });
+          const raw = await callTool("founder_local_weekly_reset", { daysBack: daysBack ?? 7 }) as any;
           t.ok();
+          // Map raw tool output → ResultPacket structure
+          const wr = raw ?? {};
+          result = {
+            canonicalEntity: {
+              name: "Weekly Reset",
+              canonicalMission: wr.summary ?? wr.weeklyResetPacket?.summary ?? "Weekly founder reset",
+              identityConfidence: (wr.confidence ?? 0.75) > 1 ? wr.confidence : Math.round((wr.confidence ?? 0.75) * 100),
+            },
+            signals: (wr.keyFindings ?? wr.metrics ?? []).slice(0, 5).map((f: any, i: number) => ({
+              name: typeof f === "string" ? f : f.finding ?? f.title ?? f.label ?? String(f),
+              direction: "neutral", impact: i < 2 ? "high" : "medium",
+            })),
+            whatChanged: (wr.keyFindings ?? []).slice(0, 5).map((f: any) => ({
+              description: typeof f === "string" ? f : f.finding ?? f.description ?? String(f),
+              date: new Date().toISOString().slice(0, 10),
+            })),
+            contradictions: (wr.risks ?? []).slice(0, 3).map((r: any) => ({
+              claim: typeof r === "string" ? r : r.title ?? r.risk ?? String(r),
+              evidence: typeof r === "string" ? "" : r.description ?? r.mitigation ?? "",
+            })),
+            nextActions: (wr.nextSteps ?? []).slice(0, 4).map((s: any) => ({
+              action: typeof s === "string" ? s : s.step ?? s.action ?? String(s),
+            })),
+            nextQuestions: [
+              "What should I prioritize this week?",
+              "What risks need immediate attention?",
+              "What changed that I should know about?",
+            ],
+            rawPacket: wr,
+          };
           break;
         }
 
         case "pre_delegation":
         case "important_change": {
           const t = traceStep("tool_call", "founder_local_synthesize");
-          result = await callTool("founder_local_synthesize", {
+          const raw = await callTool("founder_local_synthesize", {
+            query: query.trim(),
             packetType: classification.type,
             daysBack: daysBack ?? 7,
-          });
-          t.ok();
+          }) as any;
+          if (raw?.error) t.error(raw.message); else t.ok();
+          const sp = raw?.error ? {} : (raw ?? {});
+          const spLabel = classification.type === "pre_delegation" ? "Delegation Packet" : "Recent Changes";
+          const spMission = sp.summary ?? sp.overview ?? `${spLabel} — ${query.trim().slice(0, 100)}`;
+          // Map all possible field names from the synthesize tool
+          const spFindings = sp.keyFindings ?? sp.signals ?? sp.metrics ?? sp.key_findings ?? [];
+          const spChanges = sp.keyFindings ?? sp.changes ?? sp.whatChanged ?? sp.key_findings ?? [];
+          const spRisks = sp.risks ?? sp.contradictions ?? [];
+          const spNext = sp.nextSteps ?? sp.actions ?? sp.next_steps ?? [];
+
+          result = {
+            canonicalEntity: {
+              name: spLabel,
+              canonicalMission: spMission.length > 20 ? spMission : `${spLabel}: synthesized from local context for the last ${daysBack ?? 7} days. Ask follow-up questions to drill deeper.`,
+              identityConfidence: (sp.confidence ?? 0.70) > 1 ? sp.confidence : Math.round((sp.confidence ?? 0.70) * 100),
+            },
+            signals: spFindings.length > 0
+              ? spFindings.slice(0, 5).map((f: any, i: number) => ({
+                  name: typeof f === "string" ? f : f.finding ?? f.title ?? f.label ?? String(f),
+                  direction: "neutral", impact: i < 2 ? "high" : "medium",
+                }))
+              : [
+                  { name: `${spLabel} generated from local context`, direction: "neutral", impact: "high" },
+                  { name: `${daysBack ?? 7}-day analysis window`, direction: "neutral", impact: "medium" },
+                ],
+            whatChanged: spChanges.length > 0
+              ? spChanges.slice(0, 5).map((f: any) => ({
+                  description: typeof f === "string" ? f : f.finding ?? f.description ?? String(f),
+                  date: new Date().toISOString().slice(0, 10),
+                }))
+              : [{ description: `${spLabel} synthesized for the last ${daysBack ?? 7} days`, date: new Date().toISOString().slice(0, 10) }],
+            contradictions: spRisks.length > 0
+              ? spRisks.slice(0, 3).map((r: any) => ({
+                  claim: typeof r === "string" ? r : r.title ?? r.risk ?? String(r),
+                  evidence: typeof r === "string" ? "" : r.description ?? r.mitigation ?? "",
+                }))
+              : [{ claim: "No contradictions detected in this period", evidence: "Upload more context or extend the analysis window for deeper risk detection." }],
+            nextActions: spNext.length > 0
+              ? spNext.slice(0, 4).map((s: any) => ({ action: typeof s === "string" ? s : s.step ?? s.action ?? String(s) }))
+              : [{ action: "Review the synthesized packet and identify action items" }, { action: "Upload additional context for richer analysis" }],
+            nextQuestions: classification.type === "pre_delegation"
+              ? ["What should the agent prioritize?", "What context does the agent need?", "What are the success criteria?"]
+              : ["What changed that matters most?", "What contradictions surfaced?", "What should I act on first?"],
+            rawPacket: sp,
+          };
           break;
         }
 
