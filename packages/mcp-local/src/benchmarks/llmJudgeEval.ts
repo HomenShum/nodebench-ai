@@ -1150,7 +1150,7 @@ function buildMinimalArgs(toolName: string, query: EvalQuery): Record<string, un
 // ══════════════════════════════════════════════════════════════════════════════
 
 const GEMINI_MODEL_LITE = "gemini-3.1-flash-lite-preview";
-const GEMINI_MODEL_FULL = "gemini-2.5-flash-preview-05-20";
+const GEMINI_MODEL_FULL = "gemini-3.1-flash-preview";
 const HARD_SCENARIOS = new Set(["competitor_brief", "important_change"]);
 
 function getJudgeModel(scenario: string): string {
