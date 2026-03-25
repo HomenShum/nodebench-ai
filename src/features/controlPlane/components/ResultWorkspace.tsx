@@ -38,6 +38,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 import type { LensId, ResultPacket } from "./searchTypes";
+import { TrajectoryPanel } from "@/features/telemetry/TrajectoryPanel";
+import type { TrajectoryData } from "@/features/telemetry/types";
 
 /* ─── Section shell ──────────────────────────────────────────────────────── */
 
@@ -130,12 +132,68 @@ function DirectionArrow({ direction }: { direction: "up" | "down" | "neutral" })
 
 /* ─── Main component ────────────────────────────────────────────────────── */
 
+/* ─── Demo trajectory generator ────────────────────────────────────────── */
+
+function buildDemoTrajectory(packet: ResultPacket): TrajectoryData {
+  const now = Date.now();
+  const toolSteps: Array<{
+    tool: string;
+    domain: string;
+    ms: number;
+    status: "pass" | "fail" | "skipped";
+    input: string;
+    output: string;
+    tokens: number;
+  }> = [
+    { tool: "classify_query", domain: "search", ms: 12, status: "pass", input: `query="${packet.query}"`, output: `type=company_search, lens=${packet.entityName}`, tokens: 85 },
+    { tool: "build_context_bundle", domain: "context", ms: 45, status: "pass", input: `entity="${packet.entityName}"`, output: "pinned=185tok, injected=210tok", tokens: 120 },
+    { tool: "search_entities", domain: "entity", ms: 230, status: "pass", input: `name="${packet.entityName}", fuzzy=true`, output: `matched 1 entity, confidence=92%`, tokens: 340 },
+    { tool: "founder_local_gather", domain: "founder", ms: 180, status: "pass", input: `entityId="${packet.entityName.toLowerCase()}", daysBack=30`, output: `${packet.sourceCount} actions gathered`, tokens: 520 },
+    { tool: "run_recon", domain: "recon", ms: 1200, status: "pass", input: `target="${packet.entityName}", depth=standard`, output: `${packet.variables.length} signals, ${packet.risks?.length ?? 0} risks identified`, tokens: 1850 },
+    { tool: "linkup_search", domain: "search", ms: 890, status: "pass", input: `q="${packet.entityName} competitive position 2025"`, output: `answer=${packet.answer.slice(0, 60)}...`, tokens: 780 },
+    { tool: "judge_tool_output", domain: "eval", ms: 340, status: "pass", input: "structural + semantic criteria", output: `pass_rate=90%, criteria_rate=85%`, tokens: 420 },
+    { tool: "build_result_packet", domain: "synthesis", ms: 95, status: "pass", input: `entity="${packet.entityName}", sections=8`, output: `confidence=${packet.confidence}%, sources=${packet.sourceCount}`, tokens: 290 },
+  ];
+
+  let totalMs = 0;
+  let totalTokens = 0;
+  const steps = toolSteps.map((t, i) => {
+    totalMs += t.ms;
+    totalTokens += t.tokens;
+    return {
+      id: `step-${i}`,
+      toolName: t.tool,
+      domain: t.domain,
+      latencyMs: t.ms,
+      status: t.status as "pass" | "fail" | "pending" | "skipped",
+      inputSummary: t.input,
+      outputPreview: t.output,
+      timestamp: new Date(now - (toolSteps.length - i) * 1000).toISOString(),
+      tokenEstimate: t.tokens,
+    };
+  });
+
+  return {
+    query: packet.query,
+    steps,
+    totalLatencyMs: totalMs,
+    toolCount: new Set(toolSteps.map((t) => t.tool)).size,
+    totalTokenEstimate: totalTokens,
+    startedAt: new Date(now - totalMs).toISOString(),
+    completedAt: new Date(now).toISOString(),
+  };
+}
+
+/* ─── Main component ────────────────────────────────────────────────────── */
+
 interface ResultWorkspaceProps {
   packet: ResultPacket;
   lens: LensId;
   onFollowUp?: (question: string) => void;
   onExport?: (type: "brief" | "sheet" | "deck" | "html") => void;
   onMonitor?: () => void;
+  /** Optional live trajectory data. Falls back to demo trajectory if absent. */
+  trajectory?: TrajectoryData;
 }
 
 export const ResultWorkspace = memo(function ResultWorkspace({
@@ -144,7 +202,9 @@ export const ResultWorkspace = memo(function ResultWorkspace({
   onFollowUp,
   onExport,
   onMonitor,
+  trajectory,
 }: ResultWorkspaceProps) {
+  const trajectoryData = trajectory ?? buildDemoTrajectory(packet);
   const [copiedShare, setCopiedShare] = useState(false);
 
   const handleShare = useCallback(() => {
@@ -365,6 +425,9 @@ export const ResultWorkspace = memo(function ResultWorkspace({
           </p>
         </div>
       </Section>
+
+      {/* ── 9. Agent Trajectory ─────────────────────────────────────────────── */}
+      <TrajectoryPanel data={trajectoryData} defaultCollapsed={true} />
     </div>
   );
 });

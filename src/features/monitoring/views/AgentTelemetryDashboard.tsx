@@ -35,6 +35,8 @@ import {
   SurfaceSection,
   SurfaceStat,
 } from "@/shared/ui/SurfacePrimitives";
+import { ContextInspector, createDemoContextBundle } from "@/features/telemetry/ContextInspector";
+import { EvalScorecard, createDemoEvalData } from "@/features/telemetry/EvalScorecard";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -672,6 +674,25 @@ function AgentTelemetryDashboardInner() {
               </div>
             )}
           </SurfaceCard>
+        </SurfaceSection>
+
+        {/* Context Injection Inspector */}
+        <SurfaceSection
+          title="Context Injection State"
+          data-agent-id="context-inspector"
+        >
+          <ContextInspector
+            data={createDemoContextBundle()}
+            onRefresh={() => {/* TODO: wire to live buildContextBundle() */}}
+          />
+        </SurfaceSection>
+
+        {/* Eval Scorecard */}
+        <SurfaceSection
+          title="Eval Scorecard"
+          data-agent-id="eval-scorecard"
+        >
+          <EvalScorecard data={createDemoEvalData()} />
         </SurfaceSection>
       </div>
     </SurfaceScroll>
