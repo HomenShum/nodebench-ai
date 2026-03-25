@@ -37,6 +37,16 @@ function ensureSchema(): void {
       createdAt TEXT NOT NULL
     );
 
+  `);
+  // Migration: add eventId column if missing (pre-2.58 DBs)
+  try {
+    const cols = db.prepare("PRAGMA table_info(causal_events)").all() as Array<{ name: string }>;
+    if (!cols.some((c) => c.name === "eventId")) {
+      db.exec(`ALTER TABLE causal_events ADD COLUMN eventId TEXT`);
+      db.exec(`UPDATE causal_events SET eventId = 'evt_' || id WHERE eventId IS NULL`);
+    }
+  } catch { /* table fresh — column already exists */ }
+  db.exec(`
     CREATE INDEX IF NOT EXISTS idx_causal_events_eventId ON causal_events(eventId);
     CREATE INDEX IF NOT EXISTS idx_causal_events_entityType ON causal_events(entityType);
     CREATE INDEX IF NOT EXISTS idx_causal_events_entityId ON causal_events(entityId);

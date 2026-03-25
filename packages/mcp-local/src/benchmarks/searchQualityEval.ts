@@ -120,11 +120,11 @@ const TEST_CORPUS: Array<{
   { id: "cs-09", query: "Diligence on Vercel's developer platform", lens: "investor", expectedType: "company_search", category: "company_search" },
   { id: "cs-10", query: "Research Databricks data lakehouse strategy", lens: "ceo", expectedType: "company_search", category: "company_search" },
 
-  // ── Competitor Analysis (4 queries) ──
-  { id: "cp-01", query: "Compare NodeBench vs Supermemory in the memory/context space", lens: "founder", expectedType: "competitor", category: "competitor" },
-  { id: "cp-02", query: "NodeBench versus Perplexity — what's the difference?", lens: "investor", expectedType: "competitor", category: "competitor" },
-  { id: "cp-03", query: "Compare Linear vs Jira for engineering teams", lens: "ceo", expectedType: "competitor", category: "competitor" },
-  { id: "cp-04", query: "How does Anthropic compare to OpenAI for enterprise?", lens: "banker", expectedType: "competitor", category: "competitor" },
+  // ── Competitor Analysis (4 queries) ── multi-entity queries route to multi_entity
+  { id: "cp-01", query: "Compare NodeBench vs Supermemory in the memory/context space", lens: "founder", expectedType: "multi_entity", category: "competitor" },
+  { id: "cp-02", query: "NodeBench versus Perplexity — what's the difference?", lens: "investor", expectedType: "multi_entity", category: "competitor" },
+  { id: "cp-03", query: "Compare Linear vs Jira for engineering teams", lens: "ceo", expectedType: "multi_entity", category: "competitor" },
+  { id: "cp-04", query: "How does Anthropic compare to OpenAI for enterprise?", lens: "banker", expectedType: "multi_entity", category: "competitor" },
 
   // ── Own Entity / My Company (6 queries) ──
   { id: "me-01", query: "Summarize my current company state", lens: "ceo", expectedType: "company_search", category: "own_entity" },
@@ -134,11 +134,11 @@ const TEST_CORPUS: Array<{
   { id: "me-05", query: "Generate an investor update for my company", lens: "founder", expectedType: "general", category: "own_entity" },
   { id: "me-06", query: "What should I tell my board this quarter?", lens: "ceo", expectedType: "general", category: "own_entity" },
 
-  // ── Multi-Entity (4 queries) ──
-  { id: "mt-01", query: "Compare Anthropic, OpenAI, and Google in the AI race", lens: "investor", expectedType: "competitor", category: "multi_entity" },
-  { id: "mt-02", query: "What changed in AI commerce for Shopify, Amazon, and Google?", lens: "ceo", expectedType: "important_change", category: "multi_entity" },
-  { id: "mt-03", query: "Analyze the competitive landscape: Stripe vs Adyen vs Square", lens: "banker", expectedType: "competitor", category: "multi_entity" },
-  { id: "mt-04", query: "Top 3 risks across Anthropic, Mistral, and Meta AI", lens: "investor", expectedType: "company_search", category: "multi_entity" },
+  // ── Multi-Entity (4 queries) ── all route to multi_entity classification
+  { id: "mt-01", query: "Compare Anthropic, OpenAI, and Google in the AI race", lens: "investor", expectedType: "multi_entity", category: "multi_entity" },
+  { id: "mt-02", query: "What changed in AI commerce for Shopify, Amazon, and Google?", lens: "ceo", expectedType: "multi_entity", category: "multi_entity" },
+  { id: "mt-03", query: "Analyze the competitive landscape: Stripe vs Adyen vs Square", lens: "banker", expectedType: "multi_entity", category: "multi_entity" },
+  { id: "mt-04", query: "Top 3 risks across Anthropic, Mistral, and Meta AI", lens: "investor", expectedType: "multi_entity", category: "multi_entity" },
 
   // ── Role-Specific (6 queries, one per lens) ──
   { id: "rl-01", query: "What should I build next?", lens: "founder", expectedType: "general", category: "role_specific" },

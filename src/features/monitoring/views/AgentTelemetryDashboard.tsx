@@ -37,6 +37,8 @@ import {
 } from "@/shared/ui/SurfacePrimitives";
 import { ContextInspector, createDemoContextBundle } from "@/features/telemetry/ContextInspector";
 import { EvalScorecard, createDemoEvalData } from "@/features/telemetry/EvalScorecard";
+import { ToolCoverageProof } from "@/features/telemetry/ToolCoverageProof";
+import { ContextualGraph } from "@/features/telemetry/ContextualGraph";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -685,6 +687,22 @@ function AgentTelemetryDashboardInner() {
             data={createDemoContextBundle()}
             onRefresh={() => {/* TODO: wire to live buildContextBundle() */}}
           />
+        </SurfaceSection>
+
+        {/* Progressive Discovery */}
+        <SurfaceSection
+          title="Progressive Discovery"
+          data-agent-id="progressive-discovery"
+        >
+          <ToolCoverageProof />
+        </SurfaceSection>
+
+        {/* Tool Graph */}
+        <SurfaceSection
+          title="Tool Graph"
+          data-agent-id="tool-graph"
+        >
+          <ContextualGraph />
         </SurfaceSection>
 
         {/* Eval Scorecard */}
