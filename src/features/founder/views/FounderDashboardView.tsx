@@ -88,6 +88,7 @@ import {
   type Intervention,
 } from "./founderFixtures";
 import { SyncStatusBadge } from "../lib/founderPersistenceTypes";
+import { useFounderPersistence } from "../lib/founderPersistence";
 import { useLiveEntitySignals } from "../hooks/useLiveEntitySignals";
 
 /* ------------------------------------------------------------------ */
@@ -153,8 +154,8 @@ function buildFounderChangeFeed(userActions: UserAction[], liveChanges?: ChangeE
   return [...userEntries, ...intakeEntries, ...baseChanges];
 }
 
-function buildPacketInterventions(states: Record<string, InterventionRecord>): Intervention[] {
-  return DEMO_INTERVENTIONS.filter((iv) => states[iv.id]?.state !== "rejected").sort((a, b) => b.priorityScore - a.priorityScore);
+function buildPacketInterventions(states: Record<string, InterventionRecord>, interventions: Intervention[] = DEMO_INTERVENTIONS): Intervention[] {
+  return interventions.filter((iv) => states[iv.id]?.state !== "rejected").sort((a, b) => b.priorityScore - a.priorityScore);
 }
 
 function buildFounderPacketSource(args: {
@@ -165,14 +166,16 @@ function buildFounderPacketSource(args: {
   resolvedCompany?: typeof DEMO_COMPANY;
   resolvedInitiatives?: typeof DEMO_INITIATIVES;
   resolvedAgents?: typeof DEMO_AGENTS;
+  resolvedInterventions?: Intervention[];
 }): FounderPacketSourceInput {
   const company = args.resolvedCompany ?? DEMO_COMPANY;
   const initiatives = args.resolvedInitiatives ?? DEMO_INITIATIVES;
   const agents = args.resolvedAgents ?? DEMO_AGENTS;
+  const interventions = args.resolvedInterventions ?? DEMO_INTERVENTIONS;
   return {
     company: { name: company.name, canonicalMission: company.canonicalMission, wedge: company.wedge, companyState: company.companyState, foundingMode: company.foundingMode, identityConfidence: args.identityConfidence },
     changes: buildFounderChangeFeed(args.userActions),
-    interventions: buildPacketInterventions(args.interventionStates).map((iv) => ({ id: iv.id, title: iv.title, linkedInitiative: iv.linkedInitiative, linkedInitiativeId: iv.linkedInitiativeId, priorityScore: iv.priorityScore, confidence: iv.confidence })),
+    interventions: buildPacketInterventions(args.interventionStates, interventions).map((iv) => ({ id: iv.id, title: iv.title, linkedInitiative: iv.linkedInitiative, linkedInitiativeId: iv.linkedInitiativeId, priorityScore: iv.priorityScore, confidence: iv.confidence })),
     initiatives: initiatives.map((init) => ({ id: init.id, title: init.title, status: init.status, risk: init.risk, priorityScore: init.priorityScore, objective: init.objective })),
     agents: agents.map((agent) => ({ id: agent.id, name: agent.name, status: args.agentStatusOverrides[agent.id] ?? agent.status, currentGoal: agent.currentGoal })),
     dailyMemo: DEMO_DAILY_MEMO,
@@ -291,9 +294,9 @@ function HeaderBar({ streak, founderMode, onModeChange, companyName, syncStatus 
    2. FounderClarityOverview
    ================================================================== */
 
-function FounderClarityOverview({ identityConfidence, userActions, packet, liveChanges }: { identityConfidence: number; userActions: UserAction[]; packet: FounderArtifactPacket | null; liveChanges?: ChangeEntry[] }) {
+function FounderClarityOverview({ identityConfidence, userActions, packet, liveChanges, company, interventions }: { identityConfidence: number; userActions: UserAction[]; packet: FounderArtifactPacket | null; liveChanges?: ChangeEntry[]; company: typeof DEMO_COMPANY; interventions: Intervention[] }) {
   const navigate = useNavigate();
-  const c = DEMO_COMPANY;
+  const c = company;
   const pct = Math.round(identityConfidence * 100);
   const barColor = pct < 40 ? "bg-rose-500" : pct < 70 ? "bg-amber-500" : "bg-emerald-500";
   const barTextColor = pct < 40 ? "text-rose-400" : pct < 70 ? "text-amber-400" : "text-emerald-400";
@@ -307,8 +310,8 @@ function FounderClarityOverview({ identityConfidence, userActions, packet, liveC
   const topChanges = combinedChanges.slice(0, 3);
   const nextActions = useMemo(() => {
     if (packet && packet.nextActions.length > 0) return packet.nextActions.slice(0, 3);
-    return DEMO_INTERVENTIONS.slice(0, 3).map((iv, i) => ({ id: iv.id, label: iv.title, whyNow: iv.linkedInitiative, priority: (i === 0 ? "high" : "medium") as "high" | "medium" | "low", linkedInitiativeId: iv.linkedInitiativeId }));
-  }, [packet]);
+    return interventions.slice(0, 3).map((iv, i) => ({ id: iv.id, label: iv.title, whyNow: iv.linkedInitiative, priority: (i === 0 ? "high" : "medium") as "high" | "medium" | "low", linkedInitiativeId: iv.linkedInitiativeId }));
+  }, [packet, interventions]);
   const priorityLabels: Record<string, string> = { high: "NOW", medium: "This week", low: "Next week" };
 
   return (
@@ -369,11 +372,11 @@ function FounderClarityOverview({ identityConfidence, userActions, packet, liveC
    3. Contradiction Banner
    ================================================================== */
 
-function ContradictionBanner({ packet }: { packet: FounderArtifactPacket | null }) {
+function ContradictionBanner({ packet, initiatives }: { packet: FounderArtifactPacket | null; initiatives: typeof DEMO_INITIATIVES }) {
   const contradiction = packet?.contradictions[0];
-  const affectedCount = useMemo(() => packet ? DEMO_INITIATIVES.filter((i) => i.risk === "high" || i.status === "blocked").length : 0, [packet]);
-  const title = contradiction?.title ?? "Focus debt remains the main risk";
-  const detail = contradiction?.detail ?? "Multiple active initiatives create execution spread. Generate a packet to surface the sharpest contradiction.";
+  const affectedCount = useMemo(() => packet ? initiatives.filter((i) => i.risk === "high" || i.status === "blocked").length : 0, [packet, initiatives]);
+  const title = contradiction?.title ?? "Distribution gap vs product depth tradeoff";
+  const detail = contradiction?.detail ?? "NodeBench has 350 tools and deep progressive discovery, but Cursor marketplace already has 120+ servers with broader reach. Should we prioritize distribution or keep deepening the product?";
   const severity = contradiction?.severity ?? "medium";
   const iconStyles = { high: "text-rose-400", medium: "text-amber-400", low: "text-emerald-400" };
 
@@ -410,7 +413,7 @@ function ContradictionBanner({ packet }: { packet: FounderArtifactPacket | null 
    InterventionShareButton
    ================================================================== */
 
-function InterventionShareButton({ intervention }: { intervention: Intervention }) {
+function InterventionShareButton({ intervention, companyName }: { intervention: Intervention; companyName: string }) {
   const [copied, setCopied] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(timerRef.current), []);
@@ -418,7 +421,7 @@ function InterventionShareButton({ intervention }: { intervention: Intervention 
     e.stopPropagation();
     const id = generateMemoId();
     const memoData: ShareableMemoData = {
-      id, company: DEMO_COMPANY.name, date: new Date().toISOString().slice(0, 10),
+      id, company: companyName, date: new Date().toISOString().slice(0, 10),
       question: `Should we prioritize: ${intervention.title}?`,
       answer: `This action ranks #${intervention.rank} with a priority score of ${intervention.priorityScore}/100 and ${Math.round(intervention.confidence * 100)}% confidence. It is linked to the "${intervention.linkedInitiative}" initiative.`,
       confidence: Math.round(intervention.confidence * 100), sourceCount: 6,
@@ -436,7 +439,7 @@ function InterventionShareButton({ intervention }: { intervention: Intervention 
     };
     saveMemoToStorage(memoData); copyMemoUrl(id); setCopied(true);
     clearTimeout(timerRef.current); timerRef.current = setTimeout(() => setCopied(false), 2000);
-  }, [intervention]);
+  }, [intervention, companyName]);
 
   return (
     <button onClick={handleShare} className={cn("flex h-7 w-7 items-center justify-center rounded-lg transition-colors", copied ? "bg-emerald-500/10 text-emerald-400" : "bg-white/[0.07] text-white/60 hover:bg-white/[0.08] hover:text-white/60")} title={copied ? "Link copied!" : "Share as memo"}>
@@ -449,9 +452,9 @@ function InterventionShareButton({ intervention }: { intervention: Intervention 
    5. RankedInterventionsPanel
    ================================================================== */
 
-function RankedInterventionsPanel({ interventionStates, onAction }: { interventionStates: Record<string, InterventionRecord>; onAction: (intervention: Intervention, action: "accepted" | "deferred" | "rejected") => void }) {
+function RankedInterventionsPanel({ interventionStates, onAction, interventions, companyName }: { interventionStates: Record<string, InterventionRecord>; onAction: (intervention: Intervention, action: "accepted" | "deferred" | "rejected") => void; interventions: Intervention[]; companyName: string }) {
   const acceptedToday = Object.values(interventionStates).filter((r) => r.state === "accepted").length;
-  const reRanked = [...DEMO_INTERVENTIONS].filter((iv) => { const rec = interventionStates[iv.id]; return !rec || rec.state !== "rejected"; }).sort((a, b) => {
+  const reRanked = [...interventions].filter((iv) => { const rec = interventionStates[iv.id]; return !rec || rec.state !== "rejected"; }).sort((a, b) => {
     const sa = interventionStates[a.id]?.state ?? "pending"; const sb = interventionStates[b.id]?.state ?? "pending";
     if (sa === "pending" && sb !== "pending") return -1; if (sa !== "pending" && sb === "pending") return 1;
     if (sa === "deferred" && sb === "accepted") return -1; if (sa === "accepted" && sb === "deferred") return 1;
@@ -485,10 +488,10 @@ function RankedInterventionsPanel({ interventionStates, onAction }: { interventi
                     <button onClick={(e) => { e.stopPropagation(); onAction(iv, "accepted"); }} className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 transition-colors hover:bg-emerald-500/20" title="Accept"><Check className="h-3.5 w-3.5" /></button>
                     <button onClick={(e) => { e.stopPropagation(); onAction(iv, "deferred"); }} className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400 transition-colors hover:bg-amber-500/20" title="Defer"><Clock className="h-3.5 w-3.5" /></button>
                     <button onClick={(e) => { e.stopPropagation(); onAction(iv, "rejected"); }} className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/10 text-rose-400 transition-colors hover:bg-rose-500/20" title="Reject"><X className="h-3.5 w-3.5" /></button>
-                    <InterventionShareButton intervention={iv} />
+                    <InterventionShareButton intervention={iv} companyName={companyName} />
                   </div>
                 ) : (
-                  <div className="flex shrink-0 items-center gap-1"><span className="text-[10px] text-white/70 capitalize">{state}</span><InterventionShareButton intervention={iv} /></div>
+                  <div className="flex shrink-0 items-center gap-1"><span className="text-[10px] text-white/70 capitalize">{state}</span><InterventionShareButton intervention={iv} companyName={companyName} /></div>
                 )}
               </div>
             </motion.div>); })}
@@ -502,9 +505,9 @@ function RankedInterventionsPanel({ interventionStates, onAction }: { interventi
    6. AgentActivityPanel
    ================================================================== */
 
-function AgentActivityPanel({ agentStatusOverrides }: { agentStatusOverrides: Record<string, AgentStatus> }) {
+function AgentActivityPanel({ agentStatusOverrides, agentData }: { agentStatusOverrides: Record<string, AgentStatus>; agentData: typeof DEMO_AGENTS }) {
   const navigate = useNavigate();
-  const agents = DEMO_AGENTS.map((a) => ({ ...a, status: agentStatusOverrides[a.id] ?? a.status }));
+  const agents = agentData.map((a) => ({ ...a, status: agentStatusOverrides[a.id] ?? a.status }));
   if (agents.length === 0) return (<div className={GLASS_CARD}><h2 className={SECTION_HEADER}>Agent Activity</h2><p className="mt-3 text-sm text-white/60">No agents connected.</p></div>);
   return (
     <div>
@@ -658,7 +661,7 @@ function HistoryPacketReusePanel({ packetHistory, activePacketId, onSelectPacket
    10. TimelineMemoStrip
    ================================================================== */
 
-function exportDataAsJSON() { const data = { company: DEMO_COMPANY, interventions: DEMO_INTERVENTIONS, initiatives: DEMO_INITIATIVES, agents: DEMO_AGENTS, dailyMemo: DEMO_DAILY_MEMO, userActions: loadUserActions(), exportedAt: new Date().toISOString() }; const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `nodebench-export-${todayStr()}.json`; a.click(); URL.revokeObjectURL(url); }
+function exportDataAsJSON(overrides?: { company?: typeof DEMO_COMPANY; interventions?: Intervention[]; initiatives?: typeof DEMO_INITIATIVES; agents?: typeof DEMO_AGENTS }) { const data = { company: overrides?.company ?? DEMO_COMPANY, interventions: overrides?.interventions ?? DEMO_INTERVENTIONS, initiatives: overrides?.initiatives ?? DEMO_INITIATIVES, agents: overrides?.agents ?? DEMO_AGENTS, dailyMemo: DEMO_DAILY_MEMO, userActions: loadUserActions(), exportedAt: new Date().toISOString() }; const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `nodebench-export-${todayStr()}.json`; a.click(); URL.revokeObjectURL(url); }
 
 function TimelineMemoStrip() {
   const m = DEMO_DAILY_MEMO;
@@ -685,13 +688,70 @@ function TimelineMemoStrip() {
    ================================================================== */
 
 function FounderDashboardViewInner() {
+  // --- Persistence: Convex (authenticated) → localStorage → demo fixtures ---
+  const persistence = useFounderPersistence();
+  const liveCompany = persistence.loadCompany();
+  const liveInitiatives = persistence.loadInitiatives();
+  const liveInterventions = persistence.loadInterventions();
+  const liveAgentMap = persistence.loadAgentStatuses();
+  // const liveSignals = persistence.loadSignals(); // reserved for future signal feed
+
+  // Merge live data with demo fallback — guests see fixtures, auth users see Convex
+  const resolvedCompany = useMemo(() => {
+    if (!liveCompany) return DEMO_COMPANY;
+    return {
+      name: liveCompany.name,
+      canonicalMission: liveCompany.canonicalMission,
+      wedge: liveCompany.wedge,
+      companyState: (liveCompany.companyState ?? "operating") as typeof DEMO_COMPANY["companyState"],
+      foundingMode: liveCompany.foundingMode as typeof DEMO_COMPANY["foundingMode"],
+      identityConfidence: liveCompany.identityConfidence ?? 0.5,
+    };
+  }, [liveCompany]);
+
+  const resolvedInitiatives = useMemo(() => {
+    if (liveInitiatives.length === 0) return DEMO_INITIATIVES;
+    return liveInitiatives.map((i, idx) => ({
+      id: i.id,
+      title: i.title,
+      objective: i.objective ?? "",
+      status: (i.status || "active") as typeof DEMO_INITIATIVES[0]["status"],
+      risk: (i.risk || "medium") as typeof DEMO_INITIATIVES[0]["risk"],
+      priorityScore: (DEMO_INITIATIVES[idx] ?? DEMO_INITIATIVES[0]).priorityScore,
+      agentCount: 0,
+    }));
+  }, [liveInitiatives]);
+
+  const resolvedAgents = useMemo(() => {
+    const entries = Object.values(liveAgentMap);
+    if (entries.length === 0) return DEMO_AGENTS;
+    return entries.map((a) => ({
+      id: a.id,
+      name: a.name,
+      type: "claude_code" as const,
+      status: (a.status || "healthy") as typeof DEMO_AGENTS[0]["status"],
+      currentGoal: a.currentGoal ?? "",
+      lastHeartbeat: new Date().toISOString(),
+    }));
+  }, [liveAgentMap]);
+
+  const resolvedInterventions: Intervention[] = useMemo(() => {
+    if (liveInterventions.length === 0) return DEMO_INTERVENTIONS;
+    return liveInterventions.map((iv, idx) => ({
+      id: iv.id,
+      rank: idx + 1,
+      title: iv.title,
+      linkedInitiative: iv.linkedInitiative ?? resolvedInitiatives[0]?.title ?? "",
+      linkedInitiativeId: iv.linkedInitiativeId ?? resolvedInitiatives[0]?.id ?? "",
+      priorityScore: iv.priorityScore ?? 80,
+      confidence: iv.confidence ?? 0.7,
+    }));
+  }, [liveInterventions, resolvedInitiatives]);
+
   // --- Data resolution: live fetch → fixture fallback ---
   // Live entity signals are fetched via POST /search for top entities.
   // Falls back to fixture data when server is offline or errors occur.
   const liveEntity = useLiveEntitySignals(5, 5 * 60 * 1000);
-  const resolvedCompany = DEMO_COMPANY;
-  const resolvedInitiatives = DEMO_INITIATIVES;
-  const resolvedAgents = DEMO_AGENTS;
 
   // Merge live changes from all successful entity fetches
   const liveChanges = useMemo(() => {
@@ -751,8 +811,8 @@ function FounderDashboardViewInner() {
 
   const handleGeneratePacket = useCallback((packetType: ArtifactPacketType) => {
     setIsGeneratingPacket(true);
-    setTimeout(() => { const source = buildFounderPacketSource({ identityConfidence, interventionStates, userActions, agentStatusOverrides, resolvedCompany, resolvedInitiatives, resolvedAgents }); const packet = buildFounderArtifactPacket({ packetType, source }); const history = saveFounderArtifactPacket(packet); setActivePacket(packet); setPacketHistory(history); setIsGeneratingPacket(false); addToast(`${getArtifactPacketTypeLabel(packetType)} packet generated`, "emerald"); playSound("success"); }, 400);
-  }, [identityConfidence, interventionStates, userActions, agentStatusOverrides, resolvedCompany, resolvedInitiatives, resolvedAgents, addToast]);
+    setTimeout(() => { const source = buildFounderPacketSource({ identityConfidence, interventionStates, userActions, agentStatusOverrides, resolvedCompany, resolvedInitiatives, resolvedAgents, resolvedInterventions }); const packet = buildFounderArtifactPacket({ packetType, source }); const history = saveFounderArtifactPacket(packet); setActivePacket(packet); setPacketHistory(history); setIsGeneratingPacket(false); addToast(`${getArtifactPacketTypeLabel(packetType)} packet generated`, "emerald"); playSound("success"); }, 400);
+  }, [identityConfidence, interventionStates, userActions, agentStatusOverrides, resolvedCompany, resolvedInitiatives, resolvedAgents, resolvedInterventions, addToast]);
 
   const handleSelectPacket = useCallback((packetId: string) => { const match = setActiveFounderArtifactPacket(packetId); if (match) setActivePacket(match); }, []);
   const handlePacketShared = useCallback(() => { addToast("Packet shared as memo", "emerald"); playSound("success"); }, [addToast]);
@@ -788,15 +848,15 @@ function FounderDashboardViewInner() {
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key === "a" || e.key === "A") { const p = DEMO_INTERVENTIONS.find((iv) => !interventionStates[iv.id] || interventionStates[iv.id].state === "pending"); if (p) { e.preventDefault(); handleInterventionAction(p, "accepted"); } }
-      else if (e.key === "d" || e.key === "D") { const p = DEMO_INTERVENTIONS.find((iv) => !interventionStates[iv.id] || interventionStates[iv.id].state === "pending"); if (p) { e.preventDefault(); handleInterventionAction(p, "deferred"); } }
-      else if (e.key === "x" || e.key === "X") { const p = DEMO_INTERVENTIONS.find((iv) => !interventionStates[iv.id] || interventionStates[iv.id].state === "pending"); if (p) { e.preventDefault(); handleInterventionAction(p, "rejected"); } }
+      if (e.key === "a" || e.key === "A") { const p = resolvedInterventions.find((iv) => !interventionStates[iv.id] || interventionStates[iv.id].state === "pending"); if (p) { e.preventDefault(); handleInterventionAction(p, "accepted"); } }
+      else if (e.key === "d" || e.key === "D") { const p = resolvedInterventions.find((iv) => !interventionStates[iv.id] || interventionStates[iv.id].state === "pending"); if (p) { e.preventDefault(); handleInterventionAction(p, "deferred"); } }
+      else if (e.key === "x" || e.key === "X") { const p = resolvedInterventions.find((iv) => !interventionStates[iv.id] || interventionStates[iv.id].state === "pending"); if (p) { e.preventDefault(); handleInterventionAction(p, "rejected"); } }
       else if (e.key === "z" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); handleUndo(); }
       else if (e.key === "n" || e.key === "N") { e.preventDefault(); setIsAddingSignal(true); }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [interventionStates, handleInterventionAction, handleUndo]);
+  }, [interventionStates, handleInterventionAction, handleUndo, resolvedInterventions]);
 
   useEffect(() => { incrementVisitCount(); }, []);
   const [streak, setStreak] = useState(0);
@@ -838,12 +898,12 @@ function FounderDashboardViewInner() {
           </button>
         )}
       </div>
-      <StaggerCard index={0}><HeaderBar streak={streak} founderMode={founderMode} onModeChange={setFounderMode} companyName={resolvedCompany.name} syncStatus={liveEntity.isLive ? "synced" : "local_only"} /></StaggerCard>
-      <StaggerCard index={1}><FounderClarityOverview identityConfidence={identityConfidence} userActions={userActions} packet={activePacket} liveChanges={liveChanges} /></StaggerCard>
-      <StaggerCard index={2}><ContradictionBanner packet={activePacket} /></StaggerCard>
+      <StaggerCard index={0}><HeaderBar streak={streak} founderMode={founderMode} onModeChange={setFounderMode} companyName={resolvedCompany.name} syncStatus={persistence.syncStatus} /></StaggerCard>
+      <StaggerCard index={1}><FounderClarityOverview identityConfidence={identityConfidence} userActions={userActions} packet={activePacket} liveChanges={liveChanges} company={resolvedCompany} interventions={resolvedInterventions} /></StaggerCard>
+      <StaggerCard index={2}><ContradictionBanner packet={activePacket} initiatives={resolvedInitiatives} /></StaggerCard>
       <StaggerCard index={3}><ArtifactPacketPanel packet={activePacket} packetHistory={packetHistory} onGenerate={handleGeneratePacket} onRefresh={handleRefreshPacket} onExportMarkdown={handleExportMarkdown} onExportHTML={handleExportHTML} onCopyPacket={handleCopyPacket} onHandToAgent={handleHandToAgent} /></StaggerCard>
-      <StaggerCard index={4}><RankedInterventionsPanel interventionStates={interventionStates} onAction={handleInterventionAction} /></StaggerCard>
-      <StaggerCard index={5}><AgentActivityPanel agentStatusOverrides={agentStatusOverrides} /></StaggerCard>
+      <StaggerCard index={4}><RankedInterventionsPanel interventionStates={interventionStates} onAction={handleInterventionAction} interventions={resolvedInterventions} companyName={resolvedCompany.name} /></StaggerCard>
+      <StaggerCard index={5}><AgentActivityPanel agentStatusOverrides={agentStatusOverrides} agentData={resolvedAgents} /></StaggerCard>
       <StaggerCard index={6}><ExternalSignalsPanel signals={liveExternalSignals} /></StaggerCard>
       <StaggerCard index={7}>
         <div className={GLASS_CARD}>
