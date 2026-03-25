@@ -95,8 +95,8 @@ import { useLiveEntitySignals } from "../hooks/useLiveEntitySignals";
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 
-const GLASS_CARD = "rounded-xl border border-white/[0.20] bg-white/[0.12] p-4";
-const GLASS_CARD_INTERACTIVE = "rounded-xl border border-white/[0.20] bg-white/[0.12] p-4 transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.07] cursor-pointer";
+const GLASS_CARD = "rounded-xl border border-[#2c2b28] bg-[#1a1918] p-4";
+const GLASS_CARD_INTERACTIVE = "rounded-xl border border-[#2c2b28] bg-[#1a1918] p-4 transition-all duration-200 hover:border-[#3c3a37] hover:bg-[#222120] cursor-pointer";
 const SECTION_HEADER = "text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60";
 
 const LS_KEY_INTERVENTIONS = "nodebench-interventions";
@@ -294,7 +294,7 @@ function HeaderBar({ streak, founderMode, onModeChange, companyName, syncStatus 
    2. FounderClarityOverview
    ================================================================== */
 
-function FounderClarityOverview({ identityConfidence, userActions, packet, liveChanges, company, interventions }: { identityConfidence: number; userActions: UserAction[]; packet: FounderArtifactPacket | null; liveChanges?: ChangeEntry[]; company: typeof DEMO_COMPANY; interventions: Intervention[] }) {
+function FounderClarityOverview({ identityConfidence, userActions, packet, liveChanges, company = DEMO_COMPANY, interventions = DEMO_INTERVENTIONS }: { identityConfidence: number; userActions: UserAction[]; packet: FounderArtifactPacket | null; liveChanges?: ChangeEntry[]; company?: typeof DEMO_COMPANY; interventions?: Intervention[] }) {
   const navigate = useNavigate();
   const c = company;
   const pct = Math.round(identityConfidence * 100);
@@ -372,9 +372,10 @@ function FounderClarityOverview({ identityConfidence, userActions, packet, liveC
    3. Contradiction Banner
    ================================================================== */
 
-function ContradictionBanner({ packet, initiatives }: { packet: FounderArtifactPacket | null; initiatives: typeof DEMO_INITIATIVES }) {
+function ContradictionBanner({ packet, initiatives }: { packet: FounderArtifactPacket | null; initiatives?: typeof DEMO_INITIATIVES }) {
   const contradiction = packet?.contradictions[0];
-  const affectedCount = useMemo(() => packet ? initiatives.filter((i) => i.risk === "high" || i.status === "blocked").length : 0, [packet, initiatives]);
+  const safeInitiatives = initiatives ?? DEMO_INITIATIVES;
+  const affectedCount = useMemo(() => packet ? safeInitiatives.filter((i) => i.risk === "high" || i.status === "blocked").length : 0, [packet, safeInitiatives]);
   const title = contradiction?.title ?? "Distribution gap vs product depth tradeoff";
   const detail = contradiction?.detail ?? "NodeBench has 350 tools and deep progressive discovery, but Cursor marketplace already has 120+ servers with broader reach. Should we prioritize distribution or keep deepening the product?";
   const severity = contradiction?.severity ?? "medium";
@@ -452,9 +453,10 @@ function InterventionShareButton({ intervention, companyName }: { intervention: 
    5. RankedInterventionsPanel
    ================================================================== */
 
-function RankedInterventionsPanel({ interventionStates, onAction, interventions, companyName }: { interventionStates: Record<string, InterventionRecord>; onAction: (intervention: Intervention, action: "accepted" | "deferred" | "rejected") => void; interventions: Intervention[]; companyName: string }) {
+function RankedInterventionsPanel({ interventionStates, onAction, interventions = DEMO_INTERVENTIONS, companyName = "NodeBench AI" }: { interventionStates: Record<string, InterventionRecord>; onAction: (intervention: Intervention, action: "accepted" | "deferred" | "rejected") => void; interventions?: Intervention[]; companyName?: string }) {
   const acceptedToday = Object.values(interventionStates).filter((r) => r.state === "accepted").length;
-  const reRanked = [...interventions].filter((iv) => { const rec = interventionStates[iv.id]; return !rec || rec.state !== "rejected"; }).sort((a, b) => {
+  const safeInterventions = interventions ?? DEMO_INTERVENTIONS;
+  const reRanked = [...safeInterventions].filter((iv) => { const rec = interventionStates[iv.id]; return !rec || rec.state !== "rejected"; }).sort((a, b) => {
     const sa = interventionStates[a.id]?.state ?? "pending"; const sb = interventionStates[b.id]?.state ?? "pending";
     if (sa === "pending" && sb !== "pending") return -1; if (sa !== "pending" && sb === "pending") return 1;
     if (sa === "deferred" && sb === "accepted") return -1; if (sa === "accepted" && sb === "deferred") return 1;
@@ -505,9 +507,10 @@ function RankedInterventionsPanel({ interventionStates, onAction, interventions,
    6. AgentActivityPanel
    ================================================================== */
 
-function AgentActivityPanel({ agentStatusOverrides, agentData }: { agentStatusOverrides: Record<string, AgentStatus>; agentData: typeof DEMO_AGENTS }) {
+function AgentActivityPanel({ agentStatusOverrides, agentData = DEMO_AGENTS }: { agentStatusOverrides: Record<string, AgentStatus>; agentData?: typeof DEMO_AGENTS }) {
   const navigate = useNavigate();
-  const agents = agentData.map((a) => ({ ...a, status: agentStatusOverrides[a.id] ?? a.status }));
+  const safeAgentData = agentData ?? DEMO_AGENTS;
+  const agents = safeAgentData.map((a) => ({ ...a, status: agentStatusOverrides[a.id] ?? a.status }));
   if (agents.length === 0) return (<div className={GLASS_CARD}><h2 className={SECTION_HEADER}>Agent Activity</h2><p className="mt-3 text-sm text-white/60">No agents connected.</p></div>);
   return (
     <div>
@@ -864,7 +867,7 @@ function FounderDashboardViewInner() {
   useEffect(() => () => { toastTimers.current.forEach((t) => clearTimeout(t)); }, []);
 
   return (
-    <div className="dark flex h-full flex-col gap-4 overflow-auto px-4 pb-24 pt-4 bg-[#151413] text-[#d4d0c8]">
+    <div className="flex h-full flex-col gap-4 overflow-auto px-4 pb-24 pt-4 bg-[#151413] text-[#d4d0c8]">
       {showOnboarding && (
         <div className="relative rounded-xl border border-[#d97757]/30 bg-[#d97757]/10 px-4 py-3">
           <button onClick={dismissOnboardingTooltip} aria-label="Dismiss welcome message" className="absolute right-2 top-2 text-white/60 hover:text-white/60"><X className="h-3.5 w-3.5" /></button>

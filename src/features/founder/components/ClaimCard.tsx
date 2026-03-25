@@ -110,7 +110,7 @@ function ConfidenceBar({ value }: { value: number }) {
   const color = value >= 75 ? "bg-emerald-400" : value >= 50 ? "bg-amber-400" : "bg-rose-400";
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+      <div className="flex-1 h-1.5 rounded-full bg-[#2c2b28] overflow-hidden">
         <div
           className={`h-full rounded-full ${color} transition-all duration-500`}
           style={{ width: `${value}%` }}
@@ -129,7 +129,7 @@ function SourcePills({ sources }: { sources: string[] }) {
       {sources.map((s) => (
         <span
           key={s}
-          className="inline-flex items-center gap-1 rounded bg-white/[0.04] px-1.5 py-0.5 text-[9px] text-white/40"
+          className="inline-flex items-center gap-1 rounded bg-[#222120] px-1.5 py-0.5 text-[9px] text-white/40"
         >
           <Globe className="h-2.5 w-2.5" />
           {s}
@@ -155,9 +155,9 @@ export const ClaimCard = memo(function ClaimCard({
   return (
     <div
       className={`
-        rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden
+        rounded-xl border border-[#2c2b28] bg-[#1a1918] overflow-hidden
         border-l-[3px] ${config.borderClass}
-        ${isContradiction ? "bg-[#d97757]/[0.03] shadow-[0_0_12px_rgba(217,119,87,0.06)]" : ""}
+        ${isContradiction ? "bg-[#2a1f1a] shadow-[0_0_12px_rgba(217,119,87,0.06)]" : ""}
         transition-all
         ${className}
       `}
@@ -166,7 +166,7 @@ export const ClaimCard = memo(function ClaimCard({
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-start gap-3 px-4 py-3 text-left min-h-[44px] hover:bg-white/[0.02] transition-colors"
+        className="w-full flex items-start gap-3 px-4 py-3 text-left min-h-[44px] hover:bg-[#222120] transition-colors"
         aria-expanded={expanded}
       >
         <Icon className={`h-4 w-4 shrink-0 mt-0.5 ${isContradiction ? "text-[#d97757]" : "text-white/40"}`} />
@@ -210,7 +210,7 @@ export const ClaimCard = memo(function ClaimCard({
 
       {/* Expanded detail */}
       {expanded && (
-        <div className="border-t border-white/[0.04] px-4 py-3 space-y-3 animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="border-t border-[#2c2b28] px-4 py-3 space-y-3 animate-in fade-in slide-in-from-top-1 duration-150">
           {/* Detail text */}
           {claim.detail && (
             <p className="text-[12px] text-white/50 leading-relaxed">{claim.detail}</p>
@@ -255,7 +255,7 @@ export const ClaimCard = memo(function ClaimCard({
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onUpdatePacket(claim.id); }}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 min-h-[36px] text-[11px] text-white/50 hover:bg-white/[0.06] transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#2c2b28] bg-[#1f1e1d] px-3 min-h-[36px] text-[11px] text-white/50 hover:bg-[#2c2b28] transition-colors"
               >
                 <FileText className="h-3 w-3" />
                 Update Packet

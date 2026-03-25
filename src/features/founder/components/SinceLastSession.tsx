@@ -15,10 +15,10 @@ import type { ChangeCategory, ImpactLevel } from "../hooks/useSessionDelta";
 
 /* ─── Design tokens (glass card DNA) ────────────────────────────────── */
 
-const GLASS_CARD = "rounded-xl border border-white/[0.20] bg-white/[0.12] backdrop-blur-sm";
+const GLASS_CARD = "rounded-xl border border-[#2c2b28] bg-[#1a1918] backdrop-blur-sm";
 const SECTION_HEADER =
-  "text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40";
-const INNER_CARD = "rounded-lg border border-white/[0.06] bg-black/10 p-3";
+  "text-[11px] font-semibold uppercase tracking-[0.2em] text-[#a8a49a]";
+const INNER_CARD = "rounded-lg border border-[#2c2b28] bg-[#222120] p-3";
 
 /* ─── Category config ────────────────────────────────────────────────── */
 
@@ -140,7 +140,7 @@ function SinceLastSession() {
 
   if (isLoading) {
     return (
-      <div className={cn(GLASS_CARD, "dark animate-pulse p-6 bg-[#151413]")}>
+      <div className={cn(GLASS_CARD, "animate-pulse p-6")}>
         <div className="h-5 w-48 rounded bg-white/10" />
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -157,7 +157,7 @@ function SinceLastSession() {
   }
 
   return (
-    <section className={cn(GLASS_CARD, "dark p-5 sm:p-6 bg-[#151413] text-[#d4d0c8]")}>
+    <section className={cn(GLASS_CARD, "p-5 sm:p-6")}>
       {/* ── Header ──────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-3">
         <div>
