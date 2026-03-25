@@ -140,7 +140,7 @@ function SinceLastSession() {
 
   if (isLoading) {
     return (
-      <div className={cn(GLASS_CARD, "animate-pulse p-6")}>
+      <div className={cn(GLASS_CARD, "dark animate-pulse p-6 bg-[#151413]")}>
         <div className="h-5 w-48 rounded bg-white/10" />
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -157,7 +157,7 @@ function SinceLastSession() {
   }
 
   return (
-    <section className={cn(GLASS_CARD, "p-5 sm:p-6")}>
+    <section className={cn(GLASS_CARD, "dark p-5 sm:p-6 bg-[#151413] text-[#d4d0c8]")}>
       {/* ── Header ──────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-3">
         <div>

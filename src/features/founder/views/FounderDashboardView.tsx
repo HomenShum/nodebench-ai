@@ -804,7 +804,7 @@ function FounderDashboardViewInner() {
   useEffect(() => () => { toastTimers.current.forEach((t) => clearTimeout(t)); }, []);
 
   return (
-    <div className="flex h-full flex-col gap-4 overflow-auto px-4 pb-24 pt-4">
+    <div className="dark flex h-full flex-col gap-4 overflow-auto px-4 pb-24 pt-4 bg-[#151413] text-[#d4d0c8]">
       {showOnboarding && (
         <div className="relative rounded-xl border border-[#d97757]/30 bg-[#d97757]/10 px-4 py-3">
           <button onClick={dismissOnboardingTooltip} aria-label="Dismiss welcome message" className="absolute right-2 top-2 text-white/60 hover:text-white/60"><X className="h-3.5 w-3.5" /></button>
