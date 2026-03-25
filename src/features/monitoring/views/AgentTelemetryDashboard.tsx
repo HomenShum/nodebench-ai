@@ -39,6 +39,15 @@ import { ContextInspector, createDemoContextBundle } from "@/features/telemetry/
 import { EvalScorecard, createDemoEvalData } from "@/features/telemetry/EvalScorecard";
 import { ToolCoverageProof } from "@/features/telemetry/ToolCoverageProof";
 import { ContextualGraph } from "@/features/telemetry/ContextualGraph";
+import { LiveDataBanner } from "@/features/telemetry/LiveDataBanner";
+import { JudgeHeatmap, createDemoJudgeHeatmapData } from "@/features/telemetry/JudgeHeatmap";
+import { CostWaterfall } from "@/features/telemetry/CostWaterfall";
+import { FailureClusters, createDemoFailureClusters } from "@/features/telemetry/FailureClusters";
+import {
+  useLiveEvalScorecard,
+  useLiveTraceAggregates,
+  useLiveContextBundle,
+} from "@/features/telemetry/useLiveTelemetry";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -366,9 +375,23 @@ const ExpandableActionRow = memo(function ExpandableActionRow({ action }: { acti
 function AgentTelemetryDashboardInner() {
   const revealed = useRevealOnMount();
 
-  const tools = useMemo(() => generateToolBreakdowns(), []);
-  const actions = useMemo(() => generateActionFeed(tools), [tools]);
-  const errors = useMemo(() => generateErrorLog(), []);
+  // Live data hooks — fall back to demo data when server unreachable
+  const liveEval = useLiveEvalScorecard();
+  const liveTrace = useLiveTraceAggregates();
+  const liveContext = useLiveContextBundle();
+
+  const isAnyLive = liveEval.isLive || liveTrace.isLive || liveContext.isLive;
+
+  // Use live data if available, otherwise demo
+  const tools = liveTrace.isLive && liveTrace.tools.length > 0
+    ? liveTrace.tools
+    : generateToolBreakdowns();
+  const actions = liveTrace.isLive && liveTrace.actions.length > 0
+    ? liveTrace.actions
+    : generateActionFeed(tools as ToolBreakdown[]);
+  const errors = liveTrace.isLive && liveTrace.errors.length > 0
+    ? liveTrace.errors
+    : generateErrorLog();
   const sparkline = useMemo(() => generateCostSparkline(), []);
 
   const [sortKey, setSortKey] = useState<SortKey>("calls");
@@ -442,19 +465,30 @@ function AgentTelemetryDashboardInner() {
         aria-label="Agent Activity Dashboard"
         className="flex flex-col gap-6"
       >
+        {/* Live/Demo data indicator — the visual proof */}
+        <LiveDataBanner
+          isLive={isAnyLive}
+          isLoading={liveEval.isLoading}
+          lastFetched={liveTrace.lastFetched ?? liveEval.lastFetched}
+          onRefresh={() => {
+            liveEval.refresh();
+          }}
+          label={isAnyLive ? "Live Telemetry" : undefined}
+        />
+
         {/* Header */}
         <SurfacePageHeader
           title="Agent Activity"
           subtitle="Full action log, tool call breakdown, costs, latency, and error tracking"
           badge={
-            <SurfaceBadge tone="positive">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse mr-1" aria-hidden="true" />
-              Session active
+            <SurfaceBadge tone={isAnyLive ? "positive" : "warning"}>
+              <span className={`h-1.5 w-1.5 rounded-full ${isAnyLive ? "bg-emerald-500 animate-pulse" : "bg-amber-500"} mr-1`} aria-hidden="true" />
+              {isAnyLive ? "Live session" : "Demo mode"}
             </SurfaceBadge>
           }
           actions={
             <div className="flex items-center gap-2 text-xs text-content-muted tabular-nums">
-              <span>Duration: 4h 23m</span>
+              <span>Duration: {liveTrace.isLive ? liveTrace.sessionDuration : "4h 23m"}</span>
               <span>|</span>
               <span>{totalErrors} errors</span>
             </div>
@@ -678,15 +712,62 @@ function AgentTelemetryDashboardInner() {
           </SurfaceCard>
         </SurfaceSection>
 
-        {/* Context Injection Inspector */}
+        {/* Context Injection Inspector — LIVE DATA */}
         <SurfaceSection
           title="Context Injection State"
+          action={
+            liveContext.isLive ? (
+              <SurfaceBadge tone="positive">live</SurfaceBadge>
+            ) : (
+              <SurfaceBadge tone="warning">demo</SurfaceBadge>
+            )
+          }
           data-agent-id="context-inspector"
         >
           <ContextInspector
-            data={createDemoContextBundle()}
-            onRefresh={() => {/* TODO: wire to live buildContextBundle() */}}
+            data={liveContext.data ?? createDemoContextBundle()}
+            onRefresh={liveContext.refresh}
+            isRefreshing={liveContext.isRefreshing}
           />
+        </SurfaceSection>
+
+        {/* Eval Scorecard — LIVE DATA */}
+        <SurfaceSection
+          title="Eval Scorecard"
+          action={
+            liveEval.isLive ? (
+              <SurfaceBadge tone="positive">live · {liveEval.data?.history.length ?? 0} runs</SurfaceBadge>
+            ) : (
+              <SurfaceBadge tone="warning">demo</SurfaceBadge>
+            )
+          }
+          data-agent-id="eval-scorecard"
+        >
+          <EvalScorecard data={liveEval.data ?? createDemoEvalData()} />
+        </SurfaceSection>
+
+        {/* Judge Heatmap — NEW: scenario × criteria grid */}
+        <SurfaceSection
+          title="Judge Heatmap"
+          data-agent-id="judge-heatmap"
+        >
+          <JudgeHeatmap data={createDemoJudgeHeatmapData()} />
+        </SurfaceSection>
+
+        {/* Cost Waterfall — NEW: where spend goes */}
+        <SurfaceSection
+          title="Cost Waterfall"
+          data-agent-id="cost-waterfall"
+        >
+          <CostWaterfall tools={tools} totalCost={totalCost} />
+        </SurfaceSection>
+
+        {/* Failure Clusters — NEW: grouped failures with root causes */}
+        <SurfaceSection
+          title="Failure Clusters"
+          data-agent-id="failure-clusters"
+        >
+          <FailureClusters clusters={createDemoFailureClusters()} />
         </SurfaceSection>
 
         {/* Progressive Discovery */}
@@ -703,14 +784,6 @@ function AgentTelemetryDashboardInner() {
           data-agent-id="tool-graph"
         >
           <ContextualGraph />
-        </SurfaceSection>
-
-        {/* Eval Scorecard */}
-        <SurfaceSection
-          title="Eval Scorecard"
-          data-agent-id="eval-scorecard"
-        >
-          <EvalScorecard data={createDemoEvalData()} />
         </SurfaceSection>
       </div>
     </SurfaceScroll>

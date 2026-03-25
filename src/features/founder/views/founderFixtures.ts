@@ -1,6 +1,8 @@
 /* ------------------------------------------------------------------ */
-/*  Founder Dashboard — Demo Fixtures                                  */
-/*  Realistic data for a one-person AI climate-tech startup.           */
+/*  Founder Dashboard — Live Fixtures                                  */
+/*  Real data for NodeBench AI — our own product as the default entity */
+/*  Companies: NodeBench, Meta/Tests Assured, JPMorgan, Stripe,       */
+/*  GitHub, Salesforce, Booking.com, ServiceNow, QuickBooks            */
 /* ------------------------------------------------------------------ */
 
 export type CompanyState = "idea" | "forming" | "operating" | "pivoting";
@@ -14,13 +16,13 @@ export type ChangeType = "signal" | "agent" | "initiative" | "decision";
 /* ── Company Identity ─────────────────────────────────────────────── */
 
 export const DEMO_COMPANY = {
-  name: "Meridian AI",
+  name: "NodeBench AI",
   canonicalMission:
-    "Build the intelligence layer for climate-tech decision making",
-  wedge: "Real-time carbon credit pricing for institutional traders",
-  companyState: "forming" as CompanyState,
+    "Local-first operating-memory and entity-context layer for agent-native businesses",
+  wedge: "Right context, right order, better odds of right judgment — 350-tool MCP server with progressive discovery",
+  companyState: "operating" as CompanyState,
   foundingMode: "continue_existing" as FoundingMode,
-  identityConfidence: 0.62,
+  identityConfidence: 0.78,
 };
 
 /* ── What Changed ─────────────────────────────────────────────────── */
@@ -37,48 +39,93 @@ export interface ChangeEntry {
 export const DEMO_CHANGES: ChangeEntry[] = [
   {
     id: "chg-1",
-    timestamp: "2026-03-21T09:14:00Z",
+    timestamp: "2026-03-24T09:14:00Z",
     relativeTime: "2h ago",
     type: "signal",
     description:
-      "EU carbon border adjustment mechanism draft leaked — pricing model assumptions may shift",
+      "Anthropic released tool-use pricing changes effective April 1 — model cost impact on NodeBench gateway usage at current volume",
     linkedInitiativeId: "init-1",
   },
   {
     id: "chg-2",
-    timestamp: "2026-03-21T07:30:00Z",
+    timestamp: "2026-03-24T07:30:00Z",
     relativeTime: "4h ago",
     type: "agent",
     description:
-      "Background agent completed overnight competitive scan — 2 new entrants flagged in voluntary carbon market",
+      "Background agent completed overnight competitive scan — Cursor shipped MCP-native tool marketplace with 120+ verified servers",
     linkedInitiativeId: "init-3",
   },
   {
     id: "chg-3",
-    timestamp: "2026-03-20T22:00:00Z",
+    timestamp: "2026-03-23T22:00:00Z",
     relativeTime: "yesterday",
     type: "initiative",
     description:
-      'Pricing engine MVP status moved from "in progress" to "testing" — 3 integration tests still failing',
+      "Progressive discovery adoption doubled after TOON encoding enabled by default — measure token savings across top 20 workflows",
     linkedInitiativeId: "init-2",
   },
   {
     id: "chg-4",
-    timestamp: "2026-03-20T18:45:00Z",
+    timestamp: "2026-03-23T18:45:00Z",
     relativeTime: "yesterday",
     type: "decision",
     description:
-      "Decided to delay Series A outreach by 4 weeks — need stronger pilot data from TradeFlow partnership",
+      "Shipped ta-studio-mcp v2.0 at Meta — 100% task completion (64/64), token costs reduced 17x from $364 to $21 per 64 tasks",
     linkedInitiativeId: "init-4",
   },
   {
     id: "chg-5",
-    timestamp: "2026-03-20T14:20:00Z",
+    timestamp: "2026-03-23T14:20:00Z",
     relativeTime: "yesterday",
     type: "signal",
     description:
-      "TradeFlow CTO responded to API proposal — positive signal but wants SOC 2 compliance timeline",
+      "Stripe published MCP integration benchmark for agent tool use — 48 tasks, deterministic graders, production-realistic environments",
     linkedInitiativeId: "init-5",
+  },
+  {
+    id: "chg-6",
+    timestamp: "2026-03-22T10:00:00Z",
+    relativeTime: "2d ago",
+    type: "signal",
+    description:
+      "GitHub Copilot extensions now support MCP protocol natively — potential distribution channel for NodeBench tools",
+    linkedInitiativeId: "init-3",
+  },
+  {
+    id: "chg-7",
+    timestamp: "2026-03-22T08:00:00Z",
+    relativeTime: "2d ago",
+    type: "agent",
+    description:
+      "WebSocket MCP gateway health check passed — 0 false disconnects in 24h after idle timeout fix",
+    linkedInitiativeId: "init-2",
+  },
+  {
+    id: "chg-8",
+    timestamp: "2026-03-21T16:30:00Z",
+    relativeTime: "3d ago",
+    type: "signal",
+    description:
+      "ServiceNow announced AI agent marketplace for enterprise IT workflows — validates agent-native business infrastructure category",
+    linkedInitiativeId: "init-1",
+  },
+  {
+    id: "chg-9",
+    timestamp: "2026-03-21T12:00:00Z",
+    relativeTime: "3d ago",
+    type: "initiative",
+    description:
+      "Eval corpus expanded from 53 to 103 queries across 18 categories — Gemini 3.1 Flash Lite judge integration live",
+    linkedInitiativeId: "init-6",
+  },
+  {
+    id: "chg-10",
+    timestamp: "2026-03-20T09:00:00Z",
+    relativeTime: "4d ago",
+    type: "signal",
+    description:
+      "Salesforce Einstein GPT now uses MCP for tool orchestration — enterprise MCP adoption accelerating faster than expected",
+    linkedInitiativeId: "init-1",
   },
 ];
 
@@ -98,26 +145,26 @@ export const DEMO_INTERVENTIONS: Intervention[] = [
   {
     id: "int-1",
     rank: 1,
-    title: "Fix 3 failing integration tests in pricing engine before pilot launch",
-    linkedInitiative: "Pricing Engine MVP",
-    linkedInitiativeId: "init-2",
+    title: "Audit NodeBench distribution gap vs Cursor marketplace reach — submit to MCP Registry and mcpservers.org",
+    linkedInitiative: "MCP Distribution",
+    linkedInitiativeId: "init-3",
     priorityScore: 94,
     confidence: 0.91,
   },
   {
     id: "int-2",
     rank: 2,
-    title: "Draft SOC 2 compliance timeline for TradeFlow partnership",
-    linkedInitiative: "TradeFlow Partnership",
-    linkedInitiativeId: "init-5",
+    title: "Double down on TOON encoding — measure token savings across top 20 workflows after adoption doubled",
+    linkedInitiative: "Progressive Discovery",
+    linkedInitiativeId: "init-2",
     priorityScore: 87,
     confidence: 0.78,
   },
   {
     id: "int-3",
     rank: 3,
-    title: "Update carbon credit pricing model with EU CBAM draft parameters",
-    linkedInitiative: "Market Intelligence Feed",
+    title: "Model cost impact on NodeBench gateway usage at current volume with Anthropic April 1 pricing changes",
+    linkedInitiative: "Product Intelligence",
     linkedInitiativeId: "init-1",
     priorityScore: 79,
     confidence: 0.65,
@@ -125,8 +172,8 @@ export const DEMO_INTERVENTIONS: Intervention[] = [
   {
     id: "int-4",
     rank: 4,
-    title: "Prepare 2-page investor memo with updated pilot metrics",
-    linkedInitiative: "Series A Readiness",
+    title: "Ship environment spec compiler — target Stripe-style benchmark environments as downstream product",
+    linkedInitiative: "TA Studio Integration",
     linkedInitiativeId: "init-4",
     priorityScore: 72,
     confidence: 0.58,
@@ -134,9 +181,9 @@ export const DEMO_INTERVENTIONS: Intervention[] = [
   {
     id: "int-5",
     rank: 5,
-    title: "Run competitive positioning analysis against new VCM entrants",
-    linkedInitiative: "Competitive Intelligence",
-    linkedInitiativeId: "init-3",
+    title: "Run eval flywheel to 100% — expand judge-calibrated scenario corpus from 103 to 200 queries",
+    linkedInitiative: "Eval Quality",
+    linkedInitiativeId: "init-6",
     priorityScore: 65,
     confidence: 0.52,
   },
@@ -157,63 +204,63 @@ export interface Initiative {
 export const DEMO_INITIATIVES: Initiative[] = [
   {
     id: "init-1",
-    title: "Market Intelligence Feed",
+    title: "Product Intelligence Layer",
     status: "active",
     risk: "medium",
     priorityScore: 88,
     agentCount: 2,
     objective:
-      "Continuously monitor regulatory changes, carbon pricing signals, and competitor moves in the voluntary and compliance carbon markets.",
+      "Monitor MCP ecosystem changes, model pricing shifts, and agent infrastructure moves across Anthropic, OpenAI, Google, Stripe, GitHub, Salesforce, ServiceNow.",
   },
   {
     id: "init-2",
-    title: "Pricing Engine MVP",
+    title: "Progressive Discovery & Gateway",
     status: "active",
-    risk: "high",
+    risk: "low",
     priorityScore: 95,
     agentCount: 1,
     objective:
-      "Ship a real-time carbon credit pricing API that institutional traders can integrate into their existing OMS within 2 weeks.",
+      "350-tool MCP server with TOON encoding, hybrid search, WebSocket gateway. Ship <200ms TTFB and token-gated access.",
   },
   {
     id: "init-3",
-    title: "Competitive Intelligence",
-    status: "active",
-    risk: "low",
-    priorityScore: 70,
-    agentCount: 1,
-    objective:
-      "Track new entrants, funding rounds, and product launches in the carbon credit data/analytics space.",
-  },
-  {
-    id: "init-4",
-    title: "Series A Readiness",
-    status: "paused",
-    risk: "medium",
-    priorityScore: 76,
-    agentCount: 0,
-    objective:
-      "Assemble investor deck, data room, and pilot metrics. Targeting $6-8M round at $30-40M pre. Paused until TradeFlow pilot data is in.",
-  },
-  {
-    id: "init-5",
-    title: "TradeFlow Partnership",
+    title: "MCP Distribution",
     status: "active",
     risk: "high",
     priorityScore: 92,
     agentCount: 1,
     objective:
-      "Close first design partner deal with TradeFlow Capital. API integration underway, blocked on SOC 2 compliance question.",
+      "Publish to npm, MCP Registry, mcpservers.org, cursor.directory. Close distribution gap vs Cursor marketplace (120+ servers).",
+  },
+  {
+    id: "init-4",
+    title: "TA Studio Integration (Meta)",
+    status: "active",
+    risk: "medium",
+    priorityScore: 85,
+    agentCount: 2,
+    objective:
+      "ta-studio-mcp at Meta — 9 MCP tools, 100% task completion (64/64), 17x cost reduction. Scale from 200 to 2000+ req/day.",
+  },
+  {
+    id: "init-5",
+    title: "Environment Synthesis",
+    status: "active",
+    risk: "medium",
+    priorityScore: 76,
+    agentCount: 0,
+    objective:
+      "Build environment spec compiler for high-fidelity clones of real products (QuickBooks, GitHub, Salesforce, Booking.com, ServiceNow, Stripe). Target agent training and eval market.",
   },
   {
     id: "init-6",
-    title: "SOC 2 Compliance",
-    status: "blocked",
-    risk: "high",
+    title: "Eval Quality Flywheel",
+    status: "active",
+    risk: "low",
     priorityScore: 81,
-    agentCount: 0,
+    agentCount: 1,
     objective:
-      "Achieve SOC 2 Type I certification. Blocked on choosing an audit partner and scoping the control set for a solo-founder setup.",
+      "Self-judging eval loop with Gemini 3.1 Flash Lite. 103 queries across 18 categories. Target 100% pass rate. Continuously grow corpus.",
   },
 ];
 
@@ -233,15 +280,20 @@ export interface NearbyEntity {
   name: string;
   relationship: string;
   whyItMatters: string;
+  claimCount?: number;
+  changeCount?: number;
+  contradictionCount?: number;
+  /** ISO date string for staleness tracking */
+  lastUpdated?: string;
 }
 
 export const DEMO_AGENTS: AgentEntry[] = [
   {
     id: "agt-1",
-    name: "pricing-engine",
+    name: "eval-flywheel",
     type: "claude_code",
     status: "healthy",
-    currentGoal: "Debugging flaky integration test — intermittent timeout in credit_spread_calculator",
+    currentGoal: "Running search quality eval — 103 queries, Gemini 3.1 Flash Lite judge, targeting 100% pass rate",
     lastHeartbeat: "12s ago",
   },
   {
@@ -249,57 +301,117 @@ export const DEMO_AGENTS: AgentEntry[] = [
     name: "market-scanner",
     type: "background",
     status: "healthy",
-    currentGoal: "Monitoring EU regulatory feeds and CarbonPulse for CBAM updates",
+    currentGoal: "Monitoring MCP ecosystem — Cursor marketplace, Anthropic pricing, GitHub Copilot extensions, Stripe benchmarks",
     lastHeartbeat: "3m ago",
   },
   {
     id: "agt-3",
     name: "competitive-watcher",
     type: "background",
-    status: "waiting",
-    currentGoal: "Queued: re-scan Crunchbase for new VCM startups after rate limit reset",
+    status: "healthy",
+    currentGoal: "Tracking agent infrastructure moves: ServiceNow AI marketplace, Salesforce Einstein MCP, Booking.com agent APIs",
     lastHeartbeat: "18m ago",
   },
   {
     id: "agt-4",
-    name: "tradeflow-integrator",
+    name: "ta-studio-monitor",
     type: "openclaw",
-    status: "blocked",
-    currentGoal: "Waiting for SOC 2 scope decision before proceeding with API auth layer",
-    lastHeartbeat: "1h ago",
+    status: "healthy",
+    currentGoal: "Monitoring TA Studio production pipeline at Meta — 64/64 tasks passing, watching for regressions post-rollout",
+    lastHeartbeat: "5m ago",
   },
 ];
 
 export const DEMO_NEARBY_ENTITIES: NearbyEntity[] = [
   {
-    id: "ent-pricing-engine",
-    name: "Pricing Engine MVP",
-    relationship: "product",
-    whyItMatters: "This is the company's first proof point and the main dependency for the TradeFlow pilot.",
+    id: "ent-meta-ta",
+    name: "Meta (via Tests Assured)",
+    relationship: "deployment",
+    whyItMatters: "Primary production deployment. ta-studio-mcp serving 20-200 req/day in pilot, architected to scale to 2000+. 100% task completion, 17x cost reduction.",
+    claimCount: 5,
+    changeCount: 2,
+    contradictionCount: 1,
+    lastUpdated: "2026-03-23T10:00:00Z",
   },
   {
-    id: "ent-market-feed",
-    name: "Market Intelligence Feed",
-    relationship: "initiative",
-    whyItMatters: "Regulatory and pricing deltas feed directly into the wedge and keep the core model current.",
-  },
-  {
-    id: "ent-tradeflow",
-    name: "TradeFlow Capital",
-    relationship: "design partner",
-    whyItMatters: "TradeFlow is the nearest external proof source for the product narrative and compliance readiness.",
-  },
-  {
-    id: "ent-carbonpulse",
-    name: "CarbonPulse",
+    id: "ent-stripe",
+    name: "Stripe",
     relationship: "comparable",
-    whyItMatters: "A well-known carbon market intelligence benchmark that sharpens what Meridian AI must do differently.",
+    whyItMatters: "Published MCP integration benchmark with 48 tasks, deterministic graders, production-realistic environments. Sets the standard for agent eval infrastructure.",
+    claimCount: 3,
+    changeCount: 1,
+    contradictionCount: 0,
+    lastUpdated: "2026-03-20T14:30:00Z",
   },
   {
-    id: "ent-cbpm-watch",
-    name: "EU CBAM Draft",
+    id: "ent-github",
+    name: "GitHub",
+    relationship: "distribution",
+    whyItMatters: "Copilot extensions now support MCP natively. Potential distribution channel for NodeBench progressive discovery tools.",
+    claimCount: 2,
+    changeCount: 3,
+    contradictionCount: 0,
+    lastUpdated: "2026-03-22T09:15:00Z",
+  },
+  {
+    id: "ent-salesforce",
+    name: "Salesforce",
     relationship: "market signal",
-    whyItMatters: "This regulatory change can alter pricing assumptions quickly enough to force a same-week reprioritization.",
+    whyItMatters: "Einstein GPT using MCP for tool orchestration validates enterprise MCP adoption thesis. Potential customer for environment synthesis.",
+    claimCount: 1,
+    changeCount: 0,
+    contradictionCount: 0,
+    lastUpdated: "2026-03-10T16:00:00Z",
+  },
+  {
+    id: "ent-servicenow",
+    name: "ServiceNow",
+    relationship: "market signal",
+    whyItMatters: "AI agent marketplace for enterprise IT workflows — validates the agent-native business infrastructure category NodeBench operates in.",
+    claimCount: 0,
+    changeCount: 1,
+    contradictionCount: 0,
+    lastUpdated: "2026-03-05T11:00:00Z",
+  },
+  {
+    id: "ent-cursor",
+    name: "Cursor",
+    relationship: "competitor",
+    whyItMatters: "Shipped MCP-native tool marketplace with 120+ verified servers. Distribution gap is the primary competitive risk for NodeBench.",
+    claimCount: 4,
+    changeCount: 2,
+    contradictionCount: 2,
+    lastUpdated: "2026-03-24T08:00:00Z",
+  },
+  {
+    id: "ent-jpmorgan",
+    name: "JPMorgan Chase",
+    relationship: "prior employer",
+    whyItMatters: "3.5 years building enterprise data automation and LLM infrastructure. Validated agentic RAG, ETL pipelines, and risk modeling at scale.",
+    claimCount: 0,
+    changeCount: 0,
+    contradictionCount: 0,
+    lastUpdated: "2026-02-28T12:00:00Z",
+  },
+  {
+    id: "ent-booking",
+    name: "Booking.com",
+    relationship: "target environment",
+    whyItMatters: "Complex multi-step booking workflows are ideal targets for environment synthesis — high-fidelity clones for agent training.",
+    claimCount: 1,
+    changeCount: 1,
+    contradictionCount: 0,
+    lastUpdated: "2026-03-18T15:45:00Z",
+  },
+  {
+    id: "ent-quickbooks",
+    name: "QuickBooks (Intuit)",
+    relationship: "target environment",
+    whyItMatters: "Financial software with complex state transitions — prime target for simulation environment generation and agent benchmarking.",
+    claimCount: 2,
+    changeCount: 0,
+    contradictionCount: 1,
+    lastUpdated: "2026-03-15T10:30:00Z",
   },
 ];
 
@@ -314,26 +426,26 @@ export interface DailyMemo {
 }
 
 export const DEMO_DAILY_MEMO: DailyMemo = {
-  date: "March 21, 2026",
+  date: "March 24, 2026",
   whatMatters: [
-    "Pricing engine is 90% done but the 3 failing tests block the TradeFlow pilot launch scheduled for next week.",
-    "EU CBAM draft leak could significantly change carbon credit pricing assumptions — need to assess impact before pilot goes live.",
-    "TradeFlow CTO is engaged but SOC 2 compliance is now a hard requirement, not a nice-to-have.",
+    "Cursor shipped MCP marketplace with 120+ servers — NodeBench distribution gap is now the primary competitive risk.",
+    "TA Studio at Meta hitting 100% task completion (64/64) with 17x cost reduction — proof point for production MCP architecture.",
+    "Anthropic tool-use pricing changes effective April 1 — need to model cost impact on NodeBench gateway at current usage volume.",
   ],
   whatToDoNext: [
-    "Fix the 3 integration test failures in the pricing engine (est. 2-4 hours focused work).",
-    "Draft a 1-page SOC 2 compliance timeline to send to TradeFlow CTO by end of day.",
-    "Run the CBAM impact analysis through the market intelligence agent and update pricing model if delta > 5%.",
+    "Submit NodeBench to MCP Registry, mcpservers.org, and cursor.directory — close the distribution gap this week.",
+    "Run eval flywheel to expand corpus from 103 to 200 queries — target 100% pass rate with Gemini judge calibration.",
+    "Ship environment spec compiler targeting Stripe-style benchmark environments — this unlocks the agent training market.",
   ],
   unresolved: [
-    "Series A timing: 4-week delay means Q2 raise instead of Q1. Need to decide if this changes target investors.",
-    "Solo-founder SOC 2 is expensive and slow. Should we explore SOC 2-as-a-service (Vanta, Drata) or hire a fractional CISO?",
+    "Is the environment synthesis product line (cloning QuickBooks, Booking.com, ServiceNow) a distraction or the real wedge?",
+    "Should NodeBench prioritize enterprise MCP gateway sales or open-source adoption-first distribution?",
   ],
-  generatedAt: "6:30 AM ET",
+  generatedAt: "6:30 AM PT",
 };
 
 /* ================================================================== */
-/*  External Signals — for Meridian AI dashboard                       */
+/*  External Signals — for NodeBench AI dashboard                      */
 /* ================================================================== */
 
 export type SignalCategory = "regulatory" | "market" | "competitive" | "macro" | "partner";
@@ -356,51 +468,77 @@ export interface ExternalSignal {
 export const DEMO_EXTERNAL_SIGNALS: ExternalSignal[] = [
   {
     id: "sig-ext-1",
-    title: "EU CBAM draft parameters leaked — carbon border price floor raised 18%",
-    summary: "A draft version of the revised Carbon Border Adjustment Mechanism circulating in Brussels suggests a higher floor price than previously modelled.",
-    category: "regulatory",
-    source: "CarbonPulse",
-    publishedAt: "2026-03-21T07:00:00Z",
-    relativeTime: "5h ago",
+    title: "Cursor ships MCP-native tool marketplace with 120+ verified servers",
+    summary: "Cursor's marketplace now features 120+ MCP servers with one-click install, usage analytics, and community ratings.",
+    category: "competitive",
+    source: "Cursor Blog",
+    publishedAt: "2026-03-24T07:00:00Z",
+    relativeTime: "4h ago",
     relevanceScore: 97,
-    affectsInitiativeId: "init-1",
-    howItAffectsYou: "Your pricing model's EU compliance layer needs parameter update before the TradeFlow pilot goes live.",
+    affectsInitiativeId: "init-3",
+    howItAffectsYou: "NodeBench must close distribution gap immediately — submit to MCP Registry, mcpservers.org, cursor.directory this week.",
     isNew: true,
   },
   {
     id: "sig-ext-2",
-    title: "NativeCarbon raises $22M Series A — new entrant in compliance-grade credits",
-    summary: "NativeCarbon closes $22M led by Breakthrough Energy Ventures. Focuses on institutional-grade compliance credits with real-time issuance.",
-    category: "competitive",
-    source: "Crunchbase",
-    publishedAt: "2026-03-20T14:30:00Z",
+    title: "Stripe publishes MCP integration benchmark — 48 tasks with deterministic graders",
+    summary: "Stripe released an open-source benchmark for agent tool use with production-realistic environments, terminal/browser tools, and an MCP server.",
+    category: "market",
+    source: "Stripe Engineering Blog",
+    publishedAt: "2026-03-23T14:00:00Z",
     relativeTime: "yesterday",
-    relevanceScore: 84,
-    affectsInitiativeId: "init-3",
-    howItAffectsYou: "Adds a well-funded competitor in the institutional segment. Differentiator: your real-time pricing API vs their issuance focus.",
+    relevanceScore: 94,
+    affectsInitiativeId: "init-5",
+    howItAffectsYou: "Validates the environment synthesis direction. NodeBench's compile_environment_spec tool should target this benchmark format.",
+    isNew: true,
   },
   {
     id: "sig-ext-3",
-    title: "ICE Carbon futures volume up 34% QoQ — institutional interest accelerating",
-    summary: "Intercontinental Exchange reports Q1 2026 carbon futures volume at record highs. Institutional participants up 28%.",
-    category: "market",
-    source: "ICE Market Data",
-    publishedAt: "2026-03-19T09:00:00Z",
+    title: "Anthropic announces tool-use pricing changes effective April 1, 2026",
+    summary: "New pricing tiers for tool-use tokens. Impact varies by usage pattern — high-tool-call workflows may see 10-20% cost increase.",
+    category: "regulatory",
+    source: "Anthropic Changelog",
+    publishedAt: "2026-03-22T09:00:00Z",
     relativeTime: "2d ago",
-    relevanceScore: 76,
-    howItAffectsYou: "Confirms your TAM thesis. Use this data point in the investor memo and the TradeFlow pitch.",
+    relevanceScore: 91,
+    affectsInitiativeId: "init-1",
+    howItAffectsYou: "Model cost impact on NodeBench gateway. TOON encoding (40% token reduction) becomes even more critical as a differentiator.",
   },
   {
     id: "sig-ext-4",
-    title: "SOC 2 Type I average timeline now 4-6 months for seed-stage (Vanta 2026 report)",
-    summary: "Solo-founder and seed-stage companies average 4-6 months for SOC 2 Type I with automation tooling. Manual approaches take 8-14 months.",
-    category: "macro",
-    source: "Vanta 2026 Compliance Report",
-    publishedAt: "2026-03-18T12:00:00Z",
+    title: "GitHub Copilot extensions now support MCP protocol natively",
+    summary: "GitHub announced native MCP support in Copilot extensions, allowing tool servers to integrate directly into the Copilot experience.",
+    category: "market",
+    source: "GitHub Blog",
+    publishedAt: "2026-03-22T16:00:00Z",
+    relativeTime: "2d ago",
+    relevanceScore: 88,
+    affectsInitiativeId: "init-3",
+    howItAffectsYou: "New distribution channel for NodeBench tools. Progressive discovery could differentiate in the Copilot extension marketplace.",
+  },
+  {
+    id: "sig-ext-5",
+    title: "ServiceNow launches AI agent marketplace for enterprise IT workflows",
+    summary: "ServiceNow Now Platform adds an agent marketplace where enterprises can deploy, monitor, and govern AI agents across IT service management.",
+    category: "market",
+    source: "ServiceNow Press Release",
+    publishedAt: "2026-03-21T12:00:00Z",
     relativeTime: "3d ago",
-    relevanceScore: 71,
-    affectsInitiativeId: "init-6",
-    howItAffectsYou: "TradeFlow needs SOC 2 before full API integration. 4-6 months with Vanta means you should start now.",
+    relevanceScore: 82,
+    affectsInitiativeId: "init-1",
+    howItAffectsYou: "Validates agent-native business infrastructure category. ServiceNow IT workflows are potential targets for environment synthesis.",
+  },
+  {
+    id: "sig-ext-6",
+    title: "Salesforce Einstein GPT adopts MCP for enterprise tool orchestration",
+    summary: "Salesforce integrates MCP into Einstein GPT, enabling enterprise customers to connect AI agents to internal tools via standardized protocol.",
+    category: "market",
+    source: "Salesforce Developer Blog",
+    publishedAt: "2026-03-20T10:00:00Z",
+    relativeTime: "4d ago",
+    relevanceScore: 79,
+    affectsInitiativeId: "init-1",
+    howItAffectsYou: "Enterprise MCP adoption accelerating. NodeBench's 350-tool progressive discovery could serve as an intelligence layer for these deployments.",
   },
 ];
 

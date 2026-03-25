@@ -34,7 +34,7 @@ function useRehypeKatex(text: string) {
   return needsMath ? plugin : null;
 }
 import { LazySyntaxHighlighter } from './LazySyntaxHighlighter';
-import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Copy, Check, BrainCircuit, Zap, ExternalLink, Globe, Calendar, Eye, ThumbsUp, ThumbsDown, Pencil, Bookmark, Volume2, VolumeX, Pin } from 'lucide-react';
+import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Copy, Check, BrainCircuit, Zap, ExternalLink, Globe, Calendar, Eye, ThumbsUp, ThumbsDown, Pencil, Bookmark, Volume2, VolumeX, Pin, Share2, Search } from 'lucide-react';
 import { useVoiceOutput } from '@/hooks/useVoiceOutput';
 import { useSmoothText, type UIMessage } from '@convex-dev/agent/react';
 import { cn } from '@/lib/utils';
@@ -2776,6 +2776,45 @@ export function FastAgentUIMessageBubble({
           </div>
         )}
 
+        {/* R4: Inline Actionable Response Cards */}
+        {!compact && !isUser && message.status !== 'streaming' && (cleanedText || visibleText) && (
+          <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-white/[0.06]">
+            <button
+              type="button"
+              aria-label="Save this response as a memo"
+              className="rounded-md bg-white/[0.06] px-2.5 py-1.5 text-[11px] font-medium text-white/60 hover:bg-white/[0.10] hover:text-white/80 transition-colors"
+              onClick={() => {
+                contextHandlers.onSaveAsMemo(cleanedText || visibleText || '');
+                toast.success('Saved as memo');
+              }}
+            >
+              Save as Memo
+            </button>
+            <button
+              type="button"
+              aria-label="Share this response"
+              className="rounded-md bg-white/[0.06] px-2.5 py-1.5 text-[11px] font-medium text-white/60 hover:bg-white/[0.10] hover:text-white/80 transition-colors"
+              onClick={() => {
+                contextHandlers.onShareMessage(cleanedText || visibleText || '');
+                toast.success('Share link copied');
+              }}
+            >
+              Share
+            </button>
+            <button
+              type="button"
+              aria-label="Ask for more detail on this response"
+              className="rounded-md bg-white/[0.06] px-2.5 py-1.5 text-[11px] font-medium text-white/60 hover:bg-white/[0.10] hover:text-white/80 transition-colors"
+              onClick={() => {
+                const summary = (cleanedText || visibleText || '').slice(0, 200);
+                contextHandlers.onSendFollowUp(`Go deeper on this: ${summary}...`);
+              }}
+            >
+              Go Deeper
+            </button>
+          </div>
+        )}
+
         {/* Edit Diff View */}
         {editDiff && (
           <div className="mt-2 rounded-lg border border-edge overflow-hidden text-xs font-mono">
@@ -3063,6 +3102,7 @@ export function FastAgentUIMessageBubble({
                   onClick={handleStartEdit}
                   className="action-btn text-xs text-content-muted hover:text-content-secondary flex items-center gap-1"
                   title="Edit message"
+                  aria-label="Edit message"
                 >
                   <Pencil className="h-3 w-3" />
                 </button>
@@ -3074,6 +3114,7 @@ export function FastAgentUIMessageBubble({
                 onClick={() => { void handleCopy(); }}
                 className="action-btn text-xs text-content-muted hover:text-content-secondary flex items-center gap-1"
                 title="Copy response"
+                aria-label={copied ? "Copied to clipboard" : "Copy response"}
               >
                 {copied ? (
                   <Check className="h-3 w-3 text-green-600" />
@@ -3094,6 +3135,7 @@ export function FastAgentUIMessageBubble({
                       : "text-content-muted hover:text-violet-500 dark:hover:text-violet-400"
                   )}
                   title={isSpeaking ? "Stop reading" : "Read aloud"}
+                  aria-label={isSpeaking ? "Stop reading aloud" : "Read message aloud"}
                 >
                   {isSpeaking ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
                 </button>
@@ -3111,6 +3153,7 @@ export function FastAgentUIMessageBubble({
                       : "text-content-muted hover:text-amber-500 dark:hover:text-amber-400"
                   )}
                   title={isBookmarked ? "Remove bookmark" : "Bookmark message"}
+                  aria-label={isBookmarked ? "Remove bookmark" : "Bookmark message"}
                 >
                   <Bookmark className={cn("h-3 w-3", isBookmarked && "fill-current")} />
                 </button>
@@ -3128,6 +3171,7 @@ export function FastAgentUIMessageBubble({
                       : "text-content-muted hover:text-purple-500 dark:hover:text-purple-400"
                   )}
                   title={isMessagePinned ? "Unpin message" : "Pin message"}
+                  aria-label={isMessagePinned ? "Unpin message" : "Pin message"}
                 >
                   <Pin className={cn("h-3 w-3", isMessagePinned && "fill-current")} />
                 </button>
@@ -3141,6 +3185,7 @@ export function FastAgentUIMessageBubble({
                   onClick={() => setShowEmojiPicker(prev => !prev)}
                   className="action-btn text-xs text-content-muted hover:text-content-secondary flex items-center gap-1"
                   title="React with emoji"
+                  aria-label="React with emoji"
                 >
                   <span className="text-sm">😀</span>
                 </button>
@@ -3239,6 +3284,51 @@ export function FastAgentUIMessageBubble({
                   </button>
                 )
               )}
+            </div>
+          )}
+
+          {/* ── Inline Action Cards — mobile-first, one-tap actions on assistant responses ── */}
+          {!isUser && !compact && visibleText.length > 80 && (
+            <div className="flex flex-wrap gap-1.5 mt-2 lg:mt-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    const memos = JSON.parse(localStorage.getItem('nodebench_saved_memos') || '[]');
+                    memos.push({ id: `memo_${Date.now()}`, text: visibleText.slice(0, 2000), savedAt: new Date().toISOString() });
+                    localStorage.setItem('nodebench_saved_memos', JSON.stringify(memos));
+                    toast?.('Saved to Memo');
+                  } catch { /* silent */ }
+                }}
+                className="inline-flex items-center gap-1 rounded-md border border-[#d97757]/25 bg-[#d97757]/8 px-2.5 py-1.5 text-[11px] font-medium text-[#d97757] hover:bg-[#d97757]/15 active:scale-[0.97] transition-all min-h-[32px]"
+              >
+                <Bookmark className="h-3 w-3" />
+                Save Memo
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const shareData = { title: 'NodeBench Analysis', text: visibleText.slice(0, 500) };
+                  if (navigator.share) { void navigator.share(shareData); }
+                  else { void navigator.clipboard.writeText(visibleText.slice(0, 2000)); toast?.('Copied to clipboard'); }
+                }}
+                className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-[11px] font-medium text-white/50 hover:bg-white/[0.06] hover:text-white/70 active:scale-[0.97] transition-all min-h-[32px]"
+              >
+                <Share2 className="h-3 w-3" />
+                Share
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const deeperPrompt = `Go deeper on this analysis. Expand on the key findings and add risk assessment:\n\n${visibleText.slice(0, 500)}`;
+                  const input = document.querySelector<HTMLTextAreaElement>('textarea[placeholder*="Message"]');
+                  if (input) { input.value = deeperPrompt; input.dispatchEvent(new Event('input', { bubbles: true })); input.focus(); }
+                }}
+                className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-[11px] font-medium text-white/50 hover:bg-white/[0.06] hover:text-white/70 active:scale-[0.97] transition-all min-h-[32px]"
+              >
+                <Search className="h-3 w-3" />
+                Go Deeper
+              </button>
             </div>
           )}
         </div>

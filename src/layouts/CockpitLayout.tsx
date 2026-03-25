@@ -56,6 +56,9 @@ import { ActiveSurfaceHost } from "./ActiveSurfaceHost";
 import { WorkspaceRail } from "./WorkspaceRail";
 import { AgentPresenceRail } from "./AgentPresenceRail";
 import { FeedbackWidget } from "@/features/founder/components/FeedbackWidget";
+import { useBottomSheet } from "@/features/agents/components/FastAgentPanel/useBottomSheet";
+import { useSwipeNavigation } from "@/lib/hooks/useSwipeNavigation";
+import { haptic } from "@/lib/haptics";
 import "./hud.css";
 
 const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);
@@ -120,6 +123,20 @@ export function CockpitLayout({
     isUnknownRoute,
   } = cockpit;
 
+  // ── Mobile daily brief redirect ─────────────────────────────────────────────
+  // On mobile, default landing is the Founder Dashboard (daily brief) not Ask.
+  // Only fires once per session, only on exact "/" path.
+  useEffect(() => {
+    if (
+      window.innerWidth <= 1024 &&
+      location.pathname === "/" &&
+      !sessionStorage.getItem("nodebench-mobile-redirected")
+    ) {
+      sessionStorage.setItem("nodebench-mobile-redirected", "1");
+      navigate("/founder", { replace: true });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps — intentionally run once on mount
+
   // ── Surface collapse state ─────────────────────────────────────────────────
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
@@ -158,6 +175,27 @@ export function CockpitLayout({
   const [fastAgentHasMounted, setFastAgentHasMounted] = useState(false);
   const [selectedDocumentIdsForAgent, setSelectedDocumentIdsForAgent] = useState<Id<"documents">[]>([]);
   const [fastAgentThreadId, setFastAgentThreadId] = useState<string | null>(null);
+
+  // Bottom-sheet state for mobile agent panel
+  const bottomSheet = useBottomSheet(showFastAgent, {
+    onClose: () => setShowFastAgent(false),
+    initialState: 'half',
+  });
+
+  // ── R7: Gesture swipe navigation between mobile surfaces ───────────────
+  const swipeRef = useRef<HTMLDivElement>(null);
+  const MOBILE_SURFACE_ORDER = useMemo(() => ["/founder", "/", "/founder/entities"], []);
+  const isMobile = typeof window !== "undefined" && window.innerWidth <= 1024;
+  useSwipeNavigation({
+    ref: swipeRef,
+    surfaces: MOBILE_SURFACE_ORDER,
+    currentPath: location.pathname,
+    onNavigate: (path) => {
+      haptic("light");
+      navigate(path);
+    },
+    enabled: isMobile,
+  });
 
   const {
     registerExternalState,
@@ -673,6 +711,7 @@ export function CockpitLayout({
 
       {/* ── Center: ActiveSurfaceHost + Agent Panel (resizable) ──────── */}
       <div
+        ref={swipeRef}
         style={{ gridArea: "center" }}
         className="relative min-w-0 min-h-0 overflow-hidden flex"
         role="main"
@@ -778,34 +817,64 @@ export function CockpitLayout({
           />
         </div>
 
-        {/* Mobile Agent Panel — full-screen takeover (primary interface on < lg) */}
+        {/* Mobile Agent Panel — bottom sheet with 3 states (peek/half/full) */}
         {showFastAgent && (
-          <div
-            className="fixed inset-0 z-50 bg-[var(--bg-primary)] lg:hidden"
-            role="complementary"
-            aria-label="Assistant panel"
-          >
-            <ErrorBoundary title="Agent Panel Error">
-              <Suspense
-                fallback={
-                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                    Loading assistant...
-                  </div>
-                }
+          <>
+            {/* Backdrop — dims content, tapping collapses to peek */}
+            <div
+              className={`bottom-sheet-backdrop lg:hidden ${
+                bottomSheet.sheetState !== 'peek' && bottomSheet.sheetState !== 'closed'
+                  ? 'backdrop-visible'
+                  : 'backdrop-hidden'
+              }`}
+              onClick={bottomSheet.onBackdropTap}
+              aria-hidden="true"
+            />
+
+            {/* Bottom sheet container */}
+            <div
+              className={`bottom-sheet-container lg:hidden ${bottomSheet.sheetClassName} ${
+                bottomSheet.isDragging ? 'dragging' : ''
+              }`}
+              style={bottomSheet.dragStyle}
+              role="complementary"
+              aria-label="Assistant panel"
+            >
+              {/* Drag handle */}
+              <div
+                className="bottom-sheet-handle"
+                {...bottomSheet.handleProps}
+                onClick={bottomSheet.onHandleTap}
+                role="slider"
+                aria-label="Resize assistant panel"
+                aria-valuetext={bottomSheet.sheetState}
+                tabIndex={0}
               >
-                <FastAgentPanel
-                  isOpen={true}
-                  onClose={() => setShowFastAgent(false)}
-                  selectedDocumentIds={selectedDocumentIdsForAgent}
-                  initialThreadId={fastAgentThreadId}
-                  variant="overlay"
-                  openOptions={fastAgentOpenOptions}
-                  onOptionsConsumed={clearFastAgentOptions}
-                  onVoiceIntent={handleVoiceIntent}
-                />
-              </Suspense>
-            </ErrorBoundary>
-          </div>
+                <div className="bottom-sheet-handle-bar" />
+              </div>
+
+              <ErrorBoundary title="Agent Panel Error">
+                <Suspense
+                  fallback={
+                    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                      Loading assistant...
+                    </div>
+                  }
+                >
+                  <FastAgentPanel
+                    isOpen={true}
+                    onClose={() => setShowFastAgent(false)}
+                    selectedDocumentIds={selectedDocumentIdsForAgent}
+                    initialThreadId={fastAgentThreadId}
+                    variant="overlay"
+                    openOptions={fastAgentOpenOptions}
+                    onOptionsConsumed={clearFastAgentOptions}
+                    onVoiceIntent={handleVoiceIntent}
+                  />
+                </Suspense>
+              </ErrorBoundary>
+            </div>
+          </>
         )}
 
         {/* Command Palette */}

@@ -57,7 +57,8 @@ export function ViewSkeleton({ variant = 'default' }: ViewSkeletonProps) {
   }
 
   // Route navigation can briefly show these skeletons; keep them visually stable (no large-area pulsing).
-  return <div className="no-skeleton-animation">{content}</div>;
+  // skeleton-stagger: 100ms waterfall reveal per child card (see hud.css)
+  return <div className="no-skeleton-animation skeleton-stagger">{content}</div>;
 }
 
 function DefaultViewSkeleton() {

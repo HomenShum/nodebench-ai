@@ -4469,6 +4469,115 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     phase: "research",
     complexity: "low",
   },
+
+  // ═══ SCENARIO COMPILER (MiroFish essence) ═══
+  {
+    name: "compile_scenarios",
+    category: "scenario_compiler",
+    tags: ["scenario", "future", "branching", "prediction", "strategy", "mirofish", "simulation", "decision"],
+    quickRef: {
+      nextAction: "Scenarios compiled. Score individual branches for deeper analysis, or compile a decision packet from the results.",
+      nextTools: ["score_scenario_branch", "compile_tension_model", "compile_decision_packet"],
+      methodology: "scenario_compiler",
+      tip: "Use 5 branches for balanced coverage. Add time_horizon='1_year' for strategic planning, '30_days' for tactical decisions.",
+    },
+    phase: "research",
+    complexity: "high",
+  },
+  {
+    name: "score_scenario_branch",
+    category: "scenario_compiler",
+    tags: ["scenario", "scoring", "branch", "evidence", "probability", "update"],
+    quickRef: {
+      nextAction: "Branch scored with updated probability. Feed new evidence to refine, or compile a decision packet with the scored scenarios.",
+      nextTools: ["compile_scenarios", "compile_decision_packet"],
+      methodology: "scenario_compiler",
+    },
+    phase: "verify",
+    complexity: "medium",
+  },
+  {
+    name: "compile_tension_model",
+    category: "scenario_compiler",
+    tags: ["tension", "forces", "tradeoff", "axis", "conflict", "resolution", "strategy"],
+    quickRef: {
+      nextAction: "Tension model built. Use to inform scenario branches, or feed directly into a decision packet for stakeholder communication.",
+      nextTools: ["compile_scenarios", "compile_decision_packet"],
+      methodology: "scenario_compiler",
+      tip: "Explicit tensions replace swarm simulation — model 5-7 axes for most decisions.",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+
+  // ═══ PACKET COMPILER ═══
+  {
+    name: "compile_decision_packet",
+    category: "packet_compiler",
+    tags: ["packet", "memo", "html", "spreadsheet", "delegation", "slides", "artifact", "export", "brief", "report"],
+    quickRef: {
+      nextAction: "Decision packet compiled. Share via shareable URL, export to slides, or hand off as delegation packet to an agent.",
+      nextTools: ["compile_environment_spec", "compile_scenarios"],
+      methodology: "packet_compiler",
+      tip: "Format options: memo (markdown), html (briefing page), spreadsheet (CSV), delegation (agent handoff), slides (outline).",
+    },
+    phase: "ship",
+    complexity: "medium",
+  },
+  {
+    name: "compile_environment_spec",
+    category: "packet_compiler",
+    tags: ["environment", "simulation", "clone", "benchmark", "spec", "ontology", "workflow", "seed-data", "mcp", "grader"],
+    quickRef: {
+      nextAction: "Environment spec compiled. Use to build realistic agent training environments, benchmark suites, or product clones.",
+      nextTools: ["compile_decision_packet", "compile_scenarios"],
+      methodology: "packet_compiler",
+      tip: "Scope options: 'full' (entire product), 'workflow' (specific flow), 'minimal' (core only).",
+    },
+    phase: "ship",
+    complexity: "high",
+  },
+
+  // ═══ ENTITY TEMPORAL ═══
+  {
+    name: "track_entity_changes",
+    category: "entity_temporal",
+    tags: ["entity", "changes", "diff", "temporal", "tracking", "staleness", "monitoring", "delta"],
+    quickRef: {
+      nextAction: "Changes tracked. Detect contradictions between old and new state, or compile a decision packet incorporating the changes.",
+      nextTools: ["detect_contradictions", "build_temporal_graph", "compile_decision_packet"],
+      methodology: "entity_temporal",
+      tip: "Track specific fields (valuation, team, product, funding, strategy) or use 'all' for comprehensive diff.",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "detect_contradictions",
+    category: "entity_temporal",
+    tags: ["contradiction", "conflict", "trust", "verification", "claims", "sources", "diligence"],
+    quickRef: {
+      nextAction: "Contradictions detected. Investigate high-severity items, build temporal graph for lineage, or compile into a diligence packet.",
+      nextTools: ["track_entity_changes", "build_temporal_graph", "compile_decision_packet"],
+      methodology: "entity_temporal",
+      tip: "High-severity contradictions require verification before any decision. The resolution_hint suggests where to look.",
+    },
+    phase: "verify",
+    complexity: "medium",
+  },
+  {
+    name: "build_temporal_graph",
+    category: "entity_temporal",
+    tags: ["graph", "temporal", "edges", "relationships", "adjacency", "network", "entity", "evolution", "staleness"],
+    quickRef: {
+      nextAction: "Temporal graph built. Check for stale edges needing refresh, detect contradictions across time, or compile entity intelligence into a packet.",
+      nextTools: ["detect_contradictions", "track_entity_changes", "compile_decision_packet"],
+      methodology: "entity_temporal",
+      tip: "Depth 1 = direct relationships. Depth 2 = relationships of relationships. Depth 3 = full neighborhood. Stale edges (>30 days unverified) flagged automatically.",
+    },
+    phase: "research",
+    complexity: "high",
+  },
 ];
 
 // ── Exported lookup structures ───────────────────────────────────────────

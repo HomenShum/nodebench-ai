@@ -2001,9 +2001,135 @@ input[type="range"].font-slider::-webkit-slider-thumb {
   }
 }
 
+/* ── Bottom Sheet (mobile < 1024px) ─────────────────────────────────── */
+
+/* Backdrop behind the bottom sheet */
+.bottom-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  background: rgba(0, 0, 0, 0.4);
+  transition: opacity 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-sheet-backdrop.backdrop-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bottom-sheet-backdrop.backdrop-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* The sheet container — slides up from bottom via translateY */
+.bottom-sheet-container {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary, #151413);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.25);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+  overflow: hidden;
+  /* Height set via inline style; transform controls visible portion */
+  height: 95vh;
+  max-height: 95vh;
+}
+
+/* Disable transition while user is actively dragging */
+.bottom-sheet-container.dragging {
+  transition: none !important;
+}
+
+/* Three states expressed as translateY offsets from the 95vh container */
+
+/* Peek: only bottom 80px visible → translateY(calc(95vh - 80px)) */
+.bottom-sheet-container.sheet-peek {
+  transform: translateY(calc(95vh - 80px));
+}
+
+/* Half: 60% viewport visible → translateY(calc(95vh - 60vh)) = translateY(35vh) */
+.bottom-sheet-container.sheet-half {
+  transform: translateY(35vh);
+}
+
+/* Full: 95% viewport visible → translateY(0) */
+.bottom-sheet-container.sheet-full {
+  transform: translateY(0);
+}
+
+/* Hidden (closed) */
+.bottom-sheet-container.sheet-closed {
+  transform: translateY(100%);
+}
+
+/* Drag handle — the grab bar at top of the sheet */
+.bottom-sheet-handle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0 6px;
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+
+.bottom-sheet-handle:active {
+  cursor: grabbing;
+}
+
+.bottom-sheet-handle-bar {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.25);
+  transition: background 0.15s;
+}
+
+.bottom-sheet-handle:hover .bottom-sheet-handle-bar,
+.bottom-sheet-handle:active .bottom-sheet-handle-bar {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+/* Override panel styles when inside bottom sheet */
+.bottom-sheet-container .fast-agent-panel {
+  position: relative;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  z-index: auto;
+  box-shadow: none;
+  animation: none;
+  border-radius: 0;
+  flex: 1 1 0%;
+  min-height: 0;
+}
+
+/* Reduced motion: skip sheet transitions */
+@media (prefers-reduced-motion: reduce) {
+  .bottom-sheet-container,
+  .bottom-sheet-backdrop {
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Print styles - hide panel */
 @media print {
-  .fast-agent-panel {
+  .fast-agent-panel,
+  .bottom-sheet-container,
+  .bottom-sheet-backdrop {
     display: none !important;
   }
 }

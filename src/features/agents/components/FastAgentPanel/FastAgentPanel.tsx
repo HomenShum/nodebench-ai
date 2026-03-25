@@ -26,6 +26,7 @@ import { useSwarmByThread, useSwarmActions, parseSpawnCommand, isSpawnCommand } 
 import { MemoryStatusHeader, type PlanItem } from './MemoryStatusHeader';
 import { ContextBar, type ContextConstraint } from './ContextBar';
 import { SwarmQuickActions } from './SwarmQuickActions';
+import { QuickCommandChips } from './QuickCommandChips';
 
 // Tab-gated / conditional components — lazy-loaded on first use
 import type { DisclosureEvent } from './FastAgentPanel.DisclosureTrace';
@@ -131,6 +132,32 @@ function DossierFocusSubscription({
  * - Live thinking/tool visualization
  * - Clean, minimal interface
  */
+
+/** R6: Mobile Command Chips — shown above the input bar on mobile (max-width: 1024px). */
+function MobileCommandChips({ onSelect }: { onSelect: (message: string) => void }) {
+  const chips = [
+    { label: "Daily Brief", message: "Generate my daily brief \u2014 what changed, main contradiction, next moves" },
+    { label: "Run Diligence", message: "Run diligence analysis on this company" },
+    { label: "Compare", message: "Compare this company against its top 3 competitors" },
+    { label: "Market Scan", message: "Scan the market for recent changes affecting this company" },
+  ];
+  return (
+    <div className="flex flex-wrap gap-2 px-3 py-2 lg:hidden" role="group" aria-label="Quick command suggestions">
+      {chips.map((c) => (
+        <button
+          key={c.label}
+          type="button"
+          onClick={() => onSelect(c.message)}
+          aria-label={`Send command: ${c.label}`}
+          className="rounded-full border border-white/[0.15] bg-white/[0.06] px-3 py-1.5 text-[11px] font-medium text-white/60 transition-colors hover:bg-white/[0.10] hover:text-white/80"
+        >
+          {c.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export const FastAgentPanel = memo(function FastAgentPanel({
   isOpen,
   onClose,
@@ -2042,6 +2069,23 @@ export const FastAgentPanel = memo(function FastAgentPanel({
   }, []);
 
   // Memoized message handlers for context provider (prevents callback prop drilling)
+  // R4: Inline action button handlers
+  const handleSendFollowUp = useCallback((text: string) => {
+    setInput(text);
+    void stableSendMessage(text);
+  }, [stableSendMessage]);
+
+  const handleSaveAsMemo = useCallback((messageText: string) => {
+    // Navigate to shareable memo with the message content
+    const encoded = encodeURIComponent(messageText.slice(0, 2000));
+    navigate(`/memo/demo?content=${encoded}`);
+  }, [navigate]);
+
+  const handleShareMessage = useCallback((messageText: string) => {
+    const shareUrl = `${window.location.origin}/memo/demo?content=${encodeURIComponent(messageText.slice(0, 2000))}`;
+    navigator.clipboard.writeText(shareUrl);
+  }, []);
+
   const messageHandlers = useMemo(() => ({
     onCompanySelect: handleCompanySelect,
     onPersonSelect: handlePersonSelect,
@@ -2050,7 +2094,10 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     onDocumentSelect: handleDocumentSelect,
     onRegenerateMessage: handleRegenerateMessage,
     onDeleteMessage: handleDeleteMessage,
-  }), [handleCompanySelect, handlePersonSelect, handleEventSelect, handleNewsSelect, handleDocumentSelect, handleRegenerateMessage, handleDeleteMessage]);
+    onSendFollowUp: handleSendFollowUp,
+    onSaveAsMemo: handleSaveAsMemo,
+    onShareMessage: handleShareMessage,
+  }), [handleCompanySelect, handlePersonSelect, handleEventSelect, handleNewsSelect, handleDocumentSelect, handleRegenerateMessage, handleDeleteMessage, handleSendFollowUp, handleSaveAsMemo, handleShareMessage]);
 
   // ========== MEMOIZED VALUES (must be before early return) ==========
 
@@ -2272,7 +2319,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
   return (
     <>
       {focusSubscription}
-      {/* Backdrop for tablet/intermediate — mobile uses full-screen takeover via CockpitLayout */}
+      {/* Backdrop for tablet/intermediate — mobile uses bottom-sheet via CockpitLayout */}
       {isOpen && !isCompactSidebar && (
         <div
           className="fixed inset-0 bg-surface-secondary dark:bg-black/50 backdrop-blur-sm z-[999] hidden sm:block lg:hidden"
@@ -2604,7 +2651,16 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                       <div className="text-3xl mb-3">👋</div>
                       <h3 className="text-sm font-semibold text-content mb-1">How can I help you today?</h3>
                       <p className="text-xs text-content-muted mb-6">Choose a starter or type your own message</p>
-                      <div className="grid grid-cols-2 gap-2 w-full max-w-[360px]">
+
+                      {/* Mobile: QuickCommandChips — surface-aware, one-tap dispatch */}
+                      <div className="w-full max-w-[360px] lg:hidden">
+                        <QuickCommandChips
+                          onSelect={(query) => { setInput(query); void stableSendMessage(query); }}
+                        />
+                      </div>
+
+                      {/* Desktop: Grid starters */}
+                      <div className="hidden lg:grid grid-cols-2 gap-2 w-full max-w-[360px]">
                         {conversationStarters.map((starter, i) => (
                           <button
                             key={i}
@@ -2945,22 +3001,22 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                   {/* Demo thinking indicator (guest mode) */}
                   {isDemoThinking && (
                     <div className="flex items-center gap-2 px-4 mb-4 animate-in fade-in duration-200">
-                      <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-secondary border border-edge">
-                        <div className="flex gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 motion-safe:animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 motion-safe:animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 motion-safe:animate-bounce" style={{ animationDelay: '300ms' }} />
-                        </div>
-                        <span className="text-xs text-content-muted ml-1">Analyzing...</span>
+                      <div className="typing-dots">
+                        <span className="dot" />
+                        <span className="dot" />
+                        <span className="dot" />
                       </div>
                     </div>
                   )}
 
                   {/* Streaming Indicator */}
                   {isBusy && (
-                    <div className="flex items-center gap-2 text-xs text-content-muted px-4 motion-safe:animate-pulse">
-                      <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
-                      <span>Thinking...</span>
+                    <div className="flex items-center gap-2 px-4">
+                      <div className="typing-dots">
+                        <span className="dot" />
+                        <span className="dot" />
+                        <span className="dot" />
+                      </div>
                     </div>
                   )}
 
@@ -3275,6 +3331,10 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                   <span className="text-xs text-content-muted">A</span>
                 </div>
               </div>}
+              {/* R6: Mobile Command Chips — always visible above input on mobile */}
+              <MobileCommandChips
+                onSelect={(msg) => { setInput(msg); void stableSendMessage(msg); }}
+              />
               <FastAgentInputBar
                 id="fa-chat-input"
                 input={input}

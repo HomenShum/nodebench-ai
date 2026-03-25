@@ -22,6 +22,12 @@ export interface MessageHandlers {
   onDocumentSelect: (documentId: string) => void;
   onRegenerateMessage: (messageKey: string) => void;
   onDeleteMessage: (messageId: string) => void;
+  /** R4: Send a follow-up message from inline action buttons */
+  onSendFollowUp: (text: string) => void;
+  /** R4: Save a message as a shareable memo */
+  onSaveAsMemo: (messageText: string) => void;
+  /** R4: Copy a share URL for a message */
+  onShareMessage: (messageText: string) => void;
 }
 
 // Default no-op handlers
@@ -33,6 +39,9 @@ const defaultHandlers: MessageHandlers = {
   onDocumentSelect: () => {},
   onRegenerateMessage: () => {},
   onDeleteMessage: () => {},
+  onSendFollowUp: () => {},
+  onSaveAsMemo: () => {},
+  onShareMessage: () => {},
 };
 
 const MessageHandlersContext = createContext<MessageHandlers>(defaultHandlers);
@@ -51,6 +60,9 @@ interface MessageHandlersProviderProps {
     onDocumentSelect?: (documentId: string) => void;
     onRegenerateMessage?: (messageKey: string) => void;
     onDeleteMessage?: (messageId: string) => void;
+    onSendFollowUp?: (text: string) => void;
+    onSaveAsMemo?: (messageText: string) => void;
+    onShareMessage?: (messageText: string) => void;
   };
 }
 
@@ -85,6 +97,15 @@ export function MessageHandlersProvider({ children, handlers }: MessageHandlersP
     },
     onDeleteMessage: (messageId: string) => {
       handlersRef.current.onDeleteMessage?.(messageId);
+    },
+    onSendFollowUp: (text: string) => {
+      handlersRef.current.onSendFollowUp?.(text);
+    },
+    onSaveAsMemo: (messageText: string) => {
+      handlersRef.current.onSaveAsMemo?.(messageText);
+    },
+    onShareMessage: (messageText: string) => {
+      handlersRef.current.onShareMessage?.(messageText);
     },
   }), []); // Empty deps = stable references
 

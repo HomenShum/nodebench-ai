@@ -66,6 +66,8 @@ import {
   generateMemoId,
   copyMemoUrl,
 } from "./ShareableMemoView";
+import { ClaimChangeCardList } from "../components/ClaimChangeCard";
+import { PacketHistoryTimeline } from "../components/PacketHistoryTimeline";
 import {
   DEMO_COMPANY,
   DEMO_CHANGES,
@@ -85,6 +87,8 @@ import {
   type AgentStatus,
   type Intervention,
 } from "./founderFixtures";
+import { SyncStatusBadge } from "../lib/founderPersistenceTypes";
+import { useLiveEntitySignals } from "../hooks/useLiveEntitySignals";
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -137,27 +141,40 @@ function loadIntakeComparables(): Array<{ id: string; name: string; relationship
   try { const r = localStorage.getItem(LS_KEY_INTAKE_COMPARABLES); return r ? JSON.parse(r) : []; } catch { return []; }
 }
 
-function buildFounderChangeFeed(userActions: UserAction[]): FounderChangeFeedEntry[] {
+function buildFounderChangeFeed(userActions: UserAction[], liveChanges?: ChangeEntry[]): FounderChangeFeedEntry[] {
   const userEntries: FounderChangeFeedEntry[] = userActions.map((ua) => ({ id: ua.id, timestamp: new Date(ua.timestamp).toISOString(), relativeTime: relativeTime(ua.timestamp), type: "decision", description: ua.description, isUser: true, source: "user" }));
   // Include intake entries as change feed items
   const intakeEntries: FounderChangeFeedEntry[] = loadIntakeEntries().slice(0, 5).map((entry) => ({
     id: entry.id, timestamp: entry.addedAt, relativeTime: relativeTimeFromISO(entry.addedAt),
     type: "signal" as ChangeType, description: entry.content.slice(0, 200), isUser: true, source: entry.type,
   }));
-  return [...userEntries, ...intakeEntries, ...DEMO_CHANGES];
+  // Live data takes priority over fixture data; fixtures are fallback
+  const baseChanges = liveChanges && liveChanges.length > 0 ? liveChanges : DEMO_CHANGES;
+  return [...userEntries, ...intakeEntries, ...baseChanges];
 }
 
 function buildPacketInterventions(states: Record<string, InterventionRecord>): Intervention[] {
   return DEMO_INTERVENTIONS.filter((iv) => states[iv.id]?.state !== "rejected").sort((a, b) => b.priorityScore - a.priorityScore);
 }
 
-function buildFounderPacketSource(args: { identityConfidence: number; interventionStates: Record<string, InterventionRecord>; userActions: UserAction[]; agentStatusOverrides: Record<string, AgentStatus> }): FounderPacketSourceInput {
+function buildFounderPacketSource(args: {
+  identityConfidence: number;
+  interventionStates: Record<string, InterventionRecord>;
+  userActions: UserAction[];
+  agentStatusOverrides: Record<string, AgentStatus>;
+  resolvedCompany?: typeof DEMO_COMPANY;
+  resolvedInitiatives?: typeof DEMO_INITIATIVES;
+  resolvedAgents?: typeof DEMO_AGENTS;
+}): FounderPacketSourceInput {
+  const company = args.resolvedCompany ?? DEMO_COMPANY;
+  const initiatives = args.resolvedInitiatives ?? DEMO_INITIATIVES;
+  const agents = args.resolvedAgents ?? DEMO_AGENTS;
   return {
-    company: { name: DEMO_COMPANY.name, canonicalMission: DEMO_COMPANY.canonicalMission, wedge: DEMO_COMPANY.wedge, companyState: DEMO_COMPANY.companyState, foundingMode: DEMO_COMPANY.foundingMode, identityConfidence: args.identityConfidence },
+    company: { name: company.name, canonicalMission: company.canonicalMission, wedge: company.wedge, companyState: company.companyState, foundingMode: company.foundingMode, identityConfidence: args.identityConfidence },
     changes: buildFounderChangeFeed(args.userActions),
     interventions: buildPacketInterventions(args.interventionStates).map((iv) => ({ id: iv.id, title: iv.title, linkedInitiative: iv.linkedInitiative, linkedInitiativeId: iv.linkedInitiativeId, priorityScore: iv.priorityScore, confidence: iv.confidence })),
-    initiatives: DEMO_INITIATIVES.map((init) => ({ id: init.id, title: init.title, status: init.status, risk: init.risk, priorityScore: init.priorityScore, objective: init.objective })),
-    agents: DEMO_AGENTS.map((agent) => ({ id: agent.id, name: agent.name, status: args.agentStatusOverrides[agent.id] ?? agent.status, currentGoal: agent.currentGoal })),
+    initiatives: initiatives.map((init) => ({ id: init.id, title: init.title, status: init.status, risk: init.risk, priorityScore: init.priorityScore, objective: init.objective })),
+    agents: agents.map((agent) => ({ id: agent.id, name: agent.name, status: args.agentStatusOverrides[agent.id] ?? agent.status, currentGoal: agent.currentGoal })),
     dailyMemo: DEMO_DAILY_MEMO,
     nearbyEntities: [
       ...loadIntakeComparables().map((c) => ({ id: c.id, name: c.name, relationship: c.relationship, whyItMatters: `Added via context intake as ${c.relationship}` })),
@@ -209,10 +226,16 @@ function FounderToasts({ toasts, onDismiss }: { toasts: FounderToast[]; onDismis
   );
 }
 
-/* ---- StaggerCard ---- */
-function StaggerCard({ children, className }: { index: number; children: React.ReactNode; className?: string }) {
+/* ---- StaggerCard — 100ms waterfall reveal per card ---- */
+function StaggerCard({ index, children, className }: { index: number; children: React.ReactNode; className?: string }) {
   return (
-    <div className={className}>
+    <div
+      className={className}
+      style={{
+        animation: 'skeleton-fade-in 0.35s ease-out both',
+        animationDelay: `${index * 80}ms`,
+      }}
+    >
       {children}
     </div>
   );
@@ -229,7 +252,7 @@ function getGreeting(): string {
   return "Good evening";
 }
 
-function HeaderBar({ streak, founderMode, onModeChange }: { streak: number; founderMode: FounderMode; onModeChange: (mode: FounderMode) => void }) {
+function HeaderBar({ streak, founderMode, onModeChange, companyName, syncStatus }: { streak: number; founderMode: FounderMode; onModeChange: (mode: FounderMode) => void; companyName: string; syncStatus?: string }) {
   const navigate = useNavigate();
   const modes: FounderMode[] = ["weekly_reset", "pre_delegation", "important_change"];
   const intakeCount = loadIntakeEntries().length;
@@ -239,10 +262,11 @@ function HeaderBar({ streak, founderMode, onModeChange }: { streak: number; foun
       <p className="text-[11px] text-white/60">{greetingText}, welcome back</p>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-lg font-bold text-white/90 sm:text-xl">{DEMO_COMPANY.name}</h1>
+          <h1 className="text-lg font-bold text-white/90 sm:text-xl">{companyName}</h1>
           {streak > 0 && (
             <span className="inline-flex items-center gap-1 rounded-full border border-[#d97757]/20 bg-[#d97757]/10 px-2.5 py-0.5 text-xs font-semibold text-[#d97757] tabular-nums"><Flame className="h-3 w-3" />{streak}</span>
           )}
+          {syncStatus && <SyncStatusBadge status={syncStatus as "synced" | "syncing" | "local_only" | "error"} />}
         </div>
         <div className="flex items-center gap-1 rounded-lg border border-white/[0.20] bg-white/[0.12] p-0.5">
           {modes.map((mode) => (
@@ -267,14 +291,14 @@ function HeaderBar({ streak, founderMode, onModeChange }: { streak: number; foun
    2. FounderClarityOverview
    ================================================================== */
 
-function FounderClarityOverview({ identityConfidence, userActions, packet }: { identityConfidence: number; userActions: UserAction[]; packet: FounderArtifactPacket | null }) {
+function FounderClarityOverview({ identityConfidence, userActions, packet, liveChanges }: { identityConfidence: number; userActions: UserAction[]; packet: FounderArtifactPacket | null; liveChanges?: ChangeEntry[] }) {
   const navigate = useNavigate();
   const c = DEMO_COMPANY;
   const pct = Math.round(identityConfidence * 100);
   const barColor = pct < 40 ? "bg-rose-500" : pct < 70 ? "bg-amber-500" : "bg-emerald-500";
   const barTextColor = pct < 40 ? "text-rose-400" : pct < 70 ? "text-amber-400" : "text-emerald-400";
   const stateLabel: Record<typeof c.companyState, string> = { idea: "Idea", forming: "Forming", operating: "Operating", pivoting: "Pivoting" };
-  const changeFeed = useMemo(() => buildFounderChangeFeed(userActions), [userActions]);
+  const changeFeed = useMemo(() => buildFounderChangeFeed(userActions, liveChanges), [userActions, liveChanges]);
   // Merge user actions into combined changes — source === "user" entries show the founder's own past actions
   const combinedChanges = useMemo(() => {
     const userEntries = userActions.map(ua => ({ ...ua, isUser: true, source: "user" as const, type: "user_action" as const }));
@@ -309,20 +333,16 @@ function FounderClarityOverview({ identityConfidence, userActions, packet }: { i
         )}
       </div>
 
-      {/* Column 2: What Changed */}
+      {/* Column 2: What Changed — ClaimChangeCard visual cards */}
       <div className={GLASS_CARD}>
         <h2 className={SECTION_HEADER}>What Changed</h2>
-        {topChanges.length === 0 ? (<p className="mt-2 text-xs text-white/60">No changes since last review.</p>) : (
-          <ul className="mt-2 space-y-2">
-            {topChanges.map((ch) => { const isUser = "isUser" in ch && ch.isUser; const iconType = isUser ? "user" : ch.type; const Icon = CHANGE_TYPE_ICONS[iconType]; return (
-              <li key={ch.id} className="flex items-start gap-2">
-                <div className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-white/[0.07]", CHANGE_TYPE_COLORS[iconType])}><Icon className="h-3 w-3" /></div>
-                <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 text-xs leading-relaxed text-white/65">{ch.description}</p>
-                  <span className="text-[10px] text-white/60">{isUser ? relativeTime(new Date(ch.timestamp).getTime()) : relativeTimeFromISO(ch.timestamp)}</span>
-                </div>
-              </li>); })}
-          </ul>
+        {changeFeed.length === 0 ? (<p className="mt-2 text-xs text-white/60">No changes since last review.</p>) : (
+          <ClaimChangeCardList
+            className="mt-2"
+            changes={changeFeed}
+            initialCount={5}
+            onCardClick={(id) => navigate(`/founder/analysis?claimId=${id}`)}
+          />
         )}
       </div>
 
@@ -355,19 +375,32 @@ function ContradictionBanner({ packet }: { packet: FounderArtifactPacket | null 
   const title = contradiction?.title ?? "Focus debt remains the main risk";
   const detail = contradiction?.detail ?? "Multiple active initiatives create execution spread. Generate a packet to surface the sharpest contradiction.";
   const severity = contradiction?.severity ?? "medium";
-  const styles = { high: "border-rose-500/20 bg-rose-500/5", medium: "border-amber-500/20 bg-amber-500/5", low: "border-emerald-500/20 bg-emerald-500/5" };
   const iconStyles = { high: "text-rose-400", medium: "text-amber-400", low: "text-emerald-400" };
 
   return (
-    <div className={cn("flex items-start gap-3 rounded-xl border p-4", styles[severity])}>
+    <div className="flex items-start gap-3 rounded-xl border border-[#d97757]/30 border-l-4 border-l-[#d97757] bg-[#d97757]/5 p-4">
       <AlertTriangle className={cn("mt-0.5 h-4 w-4 shrink-0", iconStyles[severity])} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Biggest Contradiction</span>
-          {affectedCount > 0 && <span className="rounded-full bg-white/[0.07] px-2 py-0.5 text-[10px] text-white/60">{affectedCount} initiative{affectedCount !== 1 ? "s" : ""} affected</span>}
+          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#d97757]">Biggest Contradiction</span>
+          {affectedCount > 0 && <span className="rounded-full bg-[#d97757]/10 px-2 py-0.5 text-[10px] font-medium text-[#d97757]">{affectedCount} initiative{affectedCount !== 1 ? "s" : ""} affected</span>}
         </div>
-        <p className="mt-1 text-sm font-medium text-white/75">{title}</p>
+        <p className="mt-1 text-sm font-medium text-[#d97757]">{title}</p>
         <p className="mt-1 text-xs leading-relaxed text-white/60">{detail}</p>
+        <div className="mt-3 flex items-center gap-2">
+          <button
+            onClick={() => console.log("[ContradictionBanner] Investigate clicked:", title)}
+            className="rounded-lg bg-[#d97757] px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-[#c4684a]"
+          >
+            Investigate
+          </button>
+          <button
+            onClick={() => console.log("[ContradictionBanner] Flag for Review clicked:", title)}
+            className="rounded-lg border border-[#d97757]/40 bg-transparent px-3 py-1.5 text-[11px] font-semibold text-[#d97757] transition-colors hover:bg-[#d97757]/10"
+          >
+            Flag for Review
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -548,8 +581,9 @@ const SIGNAL_CAT_COLORS: Record<SignalCategory, string> = {
   partner: "bg-emerald-500/10 text-emerald-400",
 };
 
-function ExternalSignalsPanel() {
-  const newCount = DEMO_EXTERNAL_SIGNALS.filter((s) => s.isNew).length;
+function ExternalSignalsPanel({ signals }: { signals?: typeof DEMO_EXTERNAL_SIGNALS }) {
+  const data = signals ?? DEMO_EXTERNAL_SIGNALS;
+  const newCount = data.filter((s) => s.isNew).length;
   return (
     <div className={GLASS_CARD}>
       <div className="flex items-center gap-3">
@@ -559,7 +593,7 @@ function ExternalSignalsPanel() {
         )}
       </div>
       <div className="mt-3 space-y-2">
-        {DEMO_EXTERNAL_SIGNALS.map((sig) => (
+        {data.map((sig) => (
           <div key={sig.id} className={cn(GLASS_CARD_INTERACTIVE, "p-3", sig.isNew && "border-emerald-500/20")}>
             <div className="flex flex-wrap items-center gap-2">
               <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase", SIGNAL_CAT_COLORS[sig.category])}>{sig.category}</span>
@@ -651,6 +685,35 @@ function TimelineMemoStrip() {
    ================================================================== */
 
 function FounderDashboardViewInner() {
+  // --- Data resolution: live fetch → fixture fallback ---
+  // Live entity signals are fetched via POST /search for top entities.
+  // Falls back to fixture data when server is offline or errors occur.
+  const liveEntity = useLiveEntitySignals(5, 5 * 60 * 1000);
+  const resolvedCompany = DEMO_COMPANY;
+  const resolvedInitiatives = DEMO_INITIATIVES;
+  const resolvedAgents = DEMO_AGENTS;
+
+  // Merge live changes from all successful entity fetches
+  const liveChanges = useMemo(() => {
+    if (!liveEntity.isLive) return undefined;
+    return liveEntity.results
+      .filter((r) => r.status === "success")
+      .flatMap((r) => r.changes)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 15);
+  }, [liveEntity.results, liveEntity.isLive]);
+
+  // Merge live external signals
+  const liveExternalSignals = useMemo(() => {
+    if (!liveEntity.isLive) return DEMO_EXTERNAL_SIGNALS;
+    const live = liveEntity.results
+      .filter((r) => r.status === "success")
+      .flatMap((r) => r.signals)
+      .sort((a, b) => b.relevanceScore - a.relevanceScore)
+      .slice(0, 8);
+    return live.length > 0 ? live : DEMO_EXTERNAL_SIGNALS;
+  }, [liveEntity.results, liveEntity.isLive]);
+
   const [founderMode, setFounderMode] = useState<FounderMode>("weekly_reset");
   const [showOnboarding, setShowOnboarding] = useState(() => {
     const hasSeenOnboarding = localStorage.getItem("nodebench-founder-onboarding-done");
@@ -680,7 +743,7 @@ function FounderDashboardViewInner() {
   const [userActions, setUserActions] = useState<UserAction[]>([]);
   useEffect(() => { setUserActions(loadUserActions()); }, []);
   const [agentStatusOverrides] = useState<Record<string, AgentStatus>>(() => loadAgentStatuses());
-  const [identityConfidence, setIdentityConfidence] = useState(DEMO_COMPANY.identityConfidence);
+  const [identityConfidence, setIdentityConfidence] = useState(resolvedCompany.identityConfidence);
 
   const [activePacket, setActivePacket] = useState<FounderArtifactPacket | null>(() => loadActiveFounderArtifactPacket());
   const [packetHistory, setPacketHistory] = useState<FounderArtifactPacket[]>(() => loadFounderArtifactPackets());
@@ -688,8 +751,8 @@ function FounderDashboardViewInner() {
 
   const handleGeneratePacket = useCallback((packetType: ArtifactPacketType) => {
     setIsGeneratingPacket(true);
-    setTimeout(() => { const source = buildFounderPacketSource({ identityConfidence, interventionStates, userActions, agentStatusOverrides }); const packet = buildFounderArtifactPacket({ packetType, source }); const history = saveFounderArtifactPacket(packet); setActivePacket(packet); setPacketHistory(history); setIsGeneratingPacket(false); addToast(`${getArtifactPacketTypeLabel(packetType)} packet generated`, "emerald"); playSound("success"); }, 400);
-  }, [identityConfidence, interventionStates, userActions, agentStatusOverrides, addToast]);
+    setTimeout(() => { const source = buildFounderPacketSource({ identityConfidence, interventionStates, userActions, agentStatusOverrides, resolvedCompany, resolvedInitiatives, resolvedAgents }); const packet = buildFounderArtifactPacket({ packetType, source }); const history = saveFounderArtifactPacket(packet); setActivePacket(packet); setPacketHistory(history); setIsGeneratingPacket(false); addToast(`${getArtifactPacketTypeLabel(packetType)} packet generated`, "emerald"); playSound("success"); }, 400);
+  }, [identityConfidence, interventionStates, userActions, agentStatusOverrides, resolvedCompany, resolvedInitiatives, resolvedAgents, addToast]);
 
   const handleSelectPacket = useCallback((packetId: string) => { const match = setActiveFounderArtifactPacket(packetId); if (match) setActivePacket(match); }, []);
   const handlePacketShared = useCallback(() => { addToast("Packet shared as memo", "emerald"); playSound("success"); }, [addToast]);
@@ -749,14 +812,52 @@ function FounderDashboardViewInner() {
           <p className="mt-1 text-xs text-white/60">This is your operating clarity pipeline. Start by reviewing what changed, then accept or defer the recommended actions below. Use the mode switch to generate different Artifact Packets.</p>
         </div>
       )}
-      <StaggerCard index={0}><HeaderBar streak={streak} founderMode={founderMode} onModeChange={setFounderMode} /></StaggerCard>
-      <StaggerCard index={1}><FounderClarityOverview identityConfidence={identityConfidence} userActions={userActions} packet={activePacket} /></StaggerCard>
+      {/* Live data status banner */}
+      <div className={cn(
+        "flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] font-medium transition-all",
+        liveEntity.isLive
+          ? "border border-emerald-500/20 bg-emerald-500/5 text-emerald-400"
+          : liveEntity.isLoading
+            ? "border border-amber-500/20 bg-amber-500/5 text-amber-400"
+            : "border border-white/[0.08] bg-white/[0.02] text-white/40"
+      )}>
+        <span className={cn("h-2 w-2 rounded-full", liveEntity.isLive ? "bg-emerald-400 animate-pulse" : liveEntity.isLoading ? "bg-amber-400 animate-pulse" : "bg-white/20")} />
+        {liveEntity.isLive
+          ? `Live data from ${liveEntity.totalFetched} entities · ${liveEntity.results.filter(r => r.status === "success").reduce((s, r) => s + r.changes.length, 0)} signals fetched`
+          : liveEntity.isLoading
+            ? "Fetching live signals..."
+            : `Demo data · server offline (${liveEntity.totalErrors} errors)`}
+        {liveEntity.isLive && liveEntity.lastRefreshAt && (
+          <span className="ml-auto text-[10px] text-white/25">
+            {relativeTimeFromISO(liveEntity.lastRefreshAt)}
+          </span>
+        )}
+        {!liveEntity.isLoading && (
+          <button type="button" onClick={liveEntity.refresh} className="ml-auto text-[10px] underline underline-offset-2 hover:text-white/60 transition-colors" data-density="compact">
+            Refresh
+          </button>
+        )}
+      </div>
+      <StaggerCard index={0}><HeaderBar streak={streak} founderMode={founderMode} onModeChange={setFounderMode} companyName={resolvedCompany.name} syncStatus={liveEntity.isLive ? "synced" : "local_only"} /></StaggerCard>
+      <StaggerCard index={1}><FounderClarityOverview identityConfidence={identityConfidence} userActions={userActions} packet={activePacket} liveChanges={liveChanges} /></StaggerCard>
       <StaggerCard index={2}><ContradictionBanner packet={activePacket} /></StaggerCard>
       <StaggerCard index={3}><ArtifactPacketPanel packet={activePacket} packetHistory={packetHistory} onGenerate={handleGeneratePacket} onRefresh={handleRefreshPacket} onExportMarkdown={handleExportMarkdown} onExportHTML={handleExportHTML} onCopyPacket={handleCopyPacket} onHandToAgent={handleHandToAgent} /></StaggerCard>
       <StaggerCard index={4}><RankedInterventionsPanel interventionStates={interventionStates} onAction={handleInterventionAction} /></StaggerCard>
       <StaggerCard index={5}><AgentActivityPanel agentStatusOverrides={agentStatusOverrides} /></StaggerCard>
-      <StaggerCard index={6}><ExternalSignalsPanel /></StaggerCard>
-      <StaggerCard index={7}><HistoryPacketReusePanel packetHistory={packetHistory} activePacketId={activePacket?.packetId ?? null} onSelectPacket={handleSelectPacket} /></StaggerCard>
+      <StaggerCard index={6}><ExternalSignalsPanel signals={liveExternalSignals} /></StaggerCard>
+      <StaggerCard index={7}>
+        <div className={GLASS_CARD}>
+          <div className="flex items-center justify-between">
+            <h2 className={SECTION_HEADER}>Packet History</h2>
+          </div>
+          <PacketHistoryTimeline
+            className="mt-3"
+            packets={packetHistory}
+            activePacketId={activePacket?.packetId}
+            onSelectPacket={handleSelectPacket}
+          />
+        </div>
+      </StaggerCard>
       <StaggerCard index={8}><NearbyEntitiesPanel /></StaggerCard>
       <StaggerCard index={9}><TimelineMemoStrip /></StaggerCard>
 

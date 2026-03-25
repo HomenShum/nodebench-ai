@@ -5,6 +5,79 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Mobile UX: Touch targets, typography scaling, safe areas ─────────── */
+
+@layer components {
+  /* P0: 44px minimum touch targets on mobile (WCAG 2.5.8) */
+  @media (max-width: 1024px) {
+    button:not([data-density="compact"]),
+    [role="button"]:not([data-density="compact"]),
+    a[href]:not([data-density="compact"]) {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /* Card spacing — thumb clearance */
+    .space-y-2 { gap: 12px; }
+    .space-y-3 { gap: 16px; }
+  }
+
+  /* R5: Typography scaling — fluid type for mobile readability */
+  @media (max-width: 1024px) {
+    body {
+      font-size: clamp(14px, 2.5vw, 16px);
+    }
+    h1 {
+      font-size: clamp(20px, 4vw, 28px);
+    }
+    h2 {
+      font-size: clamp(13px, 2.2vw, 15px);
+    }
+    h3 {
+      font-size: clamp(12px, 2vw, 14px);
+    }
+    .text-xs {
+      font-size: clamp(11px, 1.8vw, 13px);
+    }
+    .text-sm {
+      font-size: clamp(13px, 2.2vw, 15px);
+    }
+    .text-\[11px\] {
+      font-size: clamp(11px, 2vw, 12px);
+    }
+    .text-\[10px\] {
+      font-size: clamp(10px, 1.8vw, 11px);
+    }
+    code, .font-mono {
+      font-size: clamp(12px, 2vw, 14px);
+    }
+
+    /* Section headers — slightly larger on mobile for readability */
+    [class*="uppercase"][class*="tracking"] {
+      font-size: clamp(10px, 1.8vw, 12px);
+      letter-spacing: 0.15em;
+    }
+  }
+
+  /* Safe area insets for notched devices */
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .pb-safe {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .mb-safe {
+      margin-bottom: env(safe-area-inset-bottom, 0px);
+    }
+  }
+
+  /* Haptic-ready tap feedback */
+  @media (max-width: 1024px) {
+    button:active, [role="button"]:active, a[href]:active {
+      transform: scale(0.97);
+      transition: transform 0.08s ease-out;
+    }
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 98%;
@@ -624,6 +697,22 @@ html[data-density='spacious'] {
   .skeleton-pulse {
     animation: none !important;
     opacity: 0.8;
+  }
+}
+
+/* R8: Skeleton stagger fade-in */
+@keyframes skeletonFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.skeleton-stagger {
+  animation: skeletonFadeIn 0.3s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-stagger {
+    animation: none !important;
   }
 }
 
@@ -1488,6 +1577,60 @@ html.dark[data-preset="dark-botanical"] .focus-ring:focus-visible {
   }
   .cockpit-grid[data-left-collapsed][data-right-collapsed] {
     grid-template-columns: 48px 1fr 0px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE TOUCH TARGETS — P0 accessibility (WCAG 2.5.5)
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  button,
+  [role="button"],
+  a,
+  input,
+  select,
+  textarea,
+  summary {
+    min-height: 44px;
+  }
+
+  /* Preserve inline/icon buttons with explicit small sizing */
+  button[aria-label]:not([class*="min-h"]) {
+    min-width: 44px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ACCESSIBILITY: Focus rings — visible focus indicator (WCAG 2.4.7)
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  *:focus-visible {
+    outline: 2px solid #d97757;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+/* Desktop also gets focus rings, but subtler */
+@media (min-width: 1025px) {
+  *:focus-visible {
+    outline: 2px solid #d97757;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ACCESSIBILITY: Reduced motion — skip ALL animations (WCAG 2.3.3)
+   ═══════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

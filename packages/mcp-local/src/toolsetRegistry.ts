@@ -258,6 +258,18 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
     const { entityEnrichmentTools } = await import("./tools/entityEnrichmentTools.js");
     return entityEnrichmentTools;
   },
+  scenario_compiler: async () => {
+    const { scenarioCompilerTools } = await import("./tools/scenarioCompilerTools.js");
+    return scenarioCompilerTools;
+  },
+  packet_compiler: async () => {
+    const { packetCompilerTools } = await import("./tools/packetCompilerTools.js");
+    return packetCompilerTools;
+  },
+  entity_temporal: async () => {
+    const { entityTemporalTools } = await import("./tools/entityTemporalTools.js");
+    return entityTemporalTools;
+  },
 };
 
 // ── All known domain keys (available before any load) ──────────────────────

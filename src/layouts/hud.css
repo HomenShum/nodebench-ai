@@ -212,8 +212,154 @@
   contain: layout style paint;
 }
 
+/* ─── 3-Dot Typing Indicator (iMessage/WhatsApp pattern) ─── */
+.typing-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.typing-dots .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  animation: typing-bounce 1.2s ease-in-out infinite;
+}
+.typing-dots .dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots .dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing-bounce {
+  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+
+/* ─── Skeleton Stagger Loading ─── */
+.skeleton-stagger > * {
+  animation: skeleton-fade-in 0.3s ease-out both;
+}
+.skeleton-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.skeleton-stagger > *:nth-child(2) { animation-delay: 100ms; }
+.skeleton-stagger > *:nth-child(3) { animation-delay: 200ms; }
+.skeleton-stagger > *:nth-child(4) { animation-delay: 300ms; }
+.skeleton-stagger > *:nth-child(5) { animation-delay: 400ms; }
+.skeleton-stagger > *:nth-child(6) { animation-delay: 500ms; }
+
+@keyframes skeleton-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ─── Reduced Motion ─── */
 .reduce-motion .hud-dot-pulse { animation: none; }
+.reduce-motion .typing-dots .dot { animation: none; opacity: 0.5; }
+.reduce-motion .skeleton-stagger > * { animation: none; opacity: 1; }
+
+/* ─── Mobile Bottom Sheet ─── */
+/* 3-state agent panel: peek (80px), half (60vh), full (95vh) */
+
+.bottom-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.4);
+  transition: opacity 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.bottom-sheet-backdrop.backdrop-visible { opacity: 1; pointer-events: auto; }
+.bottom-sheet-backdrop.backdrop-hidden { opacity: 0; pointer-events: none; }
+
+.bottom-sheet-container {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 95vh;
+  z-index: 50;
+  border-radius: 16px 16px 0 0;
+  background: var(--hud-surface, rgba(21, 20, 19, 0.97));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: none;
+  backdrop-filter: blur(24px);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Disable transition during active drag for immediate feedback */
+.bottom-sheet-container.dragging {
+  transition: none;
+}
+
+/* State positions — translateY from top of 95vh container */
+.bottom-sheet-container.sheet-closed {
+  transform: translateY(100%);
+  pointer-events: none;
+}
+.bottom-sheet-container.sheet-peek {
+  /* Show only 80px from the bottom */
+  transform: translateY(calc(95vh - 80px));
+}
+.bottom-sheet-container.sheet-half {
+  /* Show 60vh */
+  transform: translateY(calc(95vh - 60vh));
+}
+.bottom-sheet-container.sheet-full {
+  transform: translateY(0);
+}
+
+/* Handle / drag indicator */
+.bottom-sheet-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0 8px;
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px; /* P0 touch target */
+}
+.bottom-sheet-handle:active { cursor: grabbing; }
+
+.bottom-sheet-handle-bar {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  transition: background 0.15s;
+}
+.bottom-sheet-handle:hover .bottom-sheet-handle-bar,
+.bottom-sheet-handle:active .bottom-sheet-handle-bar {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Content area below handle */
+.bottom-sheet-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Safe area for notched devices */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .bottom-sheet-container {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .bottom-sheet-container { transition-duration: 0.01ms; }
+  .bottom-sheet-backdrop { transition-duration: 0.01ms; }
+}
 
 /* ─── FastAgent Panel Glass Override ─── */
 /* Converts the FastAgent panel's internal tokens to match the cockpit glass DNA.
@@ -296,4 +442,68 @@
 /* Hide the "Docs, codebase answers" subtitle bar above the generic grid */
 .fast-agent-glass [class*="text-muted"]:has(+ [class*="grid-cols-2"]) {
   display: none !important;
+}
+
+/* ─── Mobile Bottom Tab Bar (R3) ─── */
+/* Simplified 4-tab thumb-zone navigation: Brief, Search, Entities, Agent */
+
+.mobile-bottom-tabs {
+  min-height: 44px;
+  padding-top: 4px;
+}
+
+.mobile-tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex: 1;
+  min-height: 44px;
+  padding: 6px 0 2px;
+  border: none;
+  background: transparent;
+  color: var(--hud-text-dim);
+  cursor: pointer;
+  position: relative;
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-tab-btn:hover {
+  color: var(--hud-text);
+}
+
+.mobile-tab-btn[data-active="true"] {
+  color: var(--accent-primary, #d97757);
+}
+
+.mobile-tab-btn:focus-visible {
+  outline: 2px solid var(--accent-primary, #d97757);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.mobile-tab-label {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.mobile-tab-badge {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 16px);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-primary, #d97757);
+  pointer-events: none;
+  box-shadow: 0 0 0 2px var(--bg-primary, #151413);
+}
+
+/* Reduce motion: skip swipe transition animations */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-tab-btn { transition: none; }
 }

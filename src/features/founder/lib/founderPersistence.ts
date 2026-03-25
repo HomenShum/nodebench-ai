@@ -7,151 +7,56 @@
  * localStorage (existing behavior preserved).
  *
  * Views adopt this incrementally — no existing view modifications required.
+ *
+ * NOTE: This file imports Convex hooks (useConvexAuth, useQuery, useMutation).
+ * If you only need types, constants, or the SyncStatusBadge component, import
+ * from './founderPersistenceTypes' instead to avoid pulling in Convex at module
+ * level (which crashes without a ConvexProvider).
  */
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 
-// ---------------------------------------------------------------------------
-// localStorage key constants — mirrored from views for guest fallback
-// ---------------------------------------------------------------------------
+// Re-export everything from the types file for backward compatibility.
+// Consumers that already import from './founderPersistence' keep working.
+export type {
+  SyncStatus,
+  LocalCompanyData,
+  LocalInitiative,
+  LocalSignal,
+  LocalIntervention,
+  LocalAgentStatus,
+  LocalTimelineEvent,
+  LocalSnapshot,
+  LocalPendingAction,
+} from "./founderPersistenceTypes";
 
-const LS_COMPANY = "nodebench-company";
-const LS_INTERVENTIONS = "nodebench-interventions";
-const LS_STREAK = "nodebench-streak";
-const LS_USER_ACTIONS = "nodebench-user-actions";
-const LS_VISIT_COUNT = "nodebench-visit-count";
-const LS_AGENT_STATUS = "nodebench-agent-status";
-const LS_ARTIFACT_PACKETS = "nodebench-founder-artifact-packets";
-const LS_ACTIVE_PACKET = "nodebench-founder-active-artifact-packet-id";
-const LS_MEMOS = "nodebench-memos";
-const LS_INTAKE_NOTES = "nodebench-intake-notes";
-const LS_INTAKE_SOURCES = "nodebench-intake-sources";
-const LS_INTAKE_ENTITIES = "nodebench-intake-entities";
-const LS_NEARBY_ENTITIES = "nodebench-nearby-entities";
-const LS_WATCHED_ENTITIES = "nodebench-watched-entities";
-const LS_COMMAND_MESSAGES = "nodebench-command-messages";
-const LS_COMMAND_APPROVALS = "nodebench-command-approvals";
+export { SyncStatusBadge } from "./founderPersistenceTypes";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+// Import helpers and constants for internal use
+import {
+  lsGet,
+  lsSet,
+  lsGetString,
+  LS_COMPANY,
+  LS_INTERVENTIONS,
+  LS_AGENT_STATUS,
+  LS_ARTIFACT_PACKETS,
+  LS_ACTIVE_PACKET,
+} from "./founderPersistenceTypes";
 
-export type SyncStatus = "synced" | "syncing" | "local_only" | "error";
-
-/** Company data as stored in localStorage (guest mode). */
-export interface LocalCompanyData {
-  name: string;
-  canonicalMission: string;
-  wedge: string;
-  foundingMode: "start_new" | "continue_existing" | "merged";
-  companyState?: "idea" | "forming" | "operating" | "pivoting";
-  identityConfidence?: number;
-  [key: string]: unknown;
-}
-
-export interface LocalInitiative {
-  id: string;
-  title: string;
-  objective: string;
-  status: string;
-  risk: string;
-  ownerType?: string;
-  [key: string]: unknown;
-}
-
-export interface LocalSignal {
-  id: string;
-  sourceType: string;
-  title: string;
-  content: string;
-  importanceScore?: number;
-  [key: string]: unknown;
-}
-
-export interface LocalIntervention {
-  id: string;
-  title: string;
-  description: string;
-  priorityScore: number;
-  confidence: number;
-  expectedImpact: string;
-  status?: string;
-  linkedInitiative?: string;
-  linkedInitiativeId?: string;
-  [key: string]: unknown;
-}
-
-export interface LocalAgentStatus {
-  id: string;
-  name: string;
-  status: string;
-  currentGoal?: string;
-  lastSummary?: string;
-  [key: string]: unknown;
-}
-
-export interface LocalTimelineEvent {
-  id: string;
-  entityType: string;
-  entityId: string;
-  eventType: string;
-  summary: string;
-  createdAt?: string | number;
-  [key: string]: unknown;
-}
-
-export interface LocalSnapshot {
-  id: string;
-  snapshotType: string;
-  summary: string;
-  topPriorities: string[];
-  topRisks: string[];
-  openQuestions: string[];
-  createdAt?: string | number;
-  [key: string]: unknown;
-}
-
-export interface LocalPendingAction {
-  id: string;
-  title: string;
-  description: string;
-  priorityScore: number;
-  ownerType?: string;
-  status?: string;
-  [key: string]: unknown;
-}
-
-// ---------------------------------------------------------------------------
-// Safe localStorage helpers
-// ---------------------------------------------------------------------------
-
-function lsGet<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-function lsSet(key: string, value: unknown): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // localStorage full or unavailable — silently degrade
-  }
-}
-
-function lsGetString(key: string, fallback: string): string {
-  try {
-    return localStorage.getItem(key) ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
+import type {
+  LocalCompanyData,
+  LocalInitiative,
+  LocalSignal,
+  LocalIntervention,
+  LocalAgentStatus,
+  LocalTimelineEvent,
+  LocalSnapshot,
+  LocalPendingAction,
+  SyncStatus,
+} from "./founderPersistenceTypes";
 
 // ---------------------------------------------------------------------------
 // Hook: useFounderPersistence
@@ -736,57 +641,5 @@ export function useFounderPersistence() {
       isAuthenticated, syncStatus, syncError, lastSyncAt,
       workspaceId, companyId,
     ],
-  );
-}
-
-// ---------------------------------------------------------------------------
-// SyncStatusBadge — visual indicator for persistence state
-// ---------------------------------------------------------------------------
-
-const STATUS_CONFIG: Record<SyncStatus, { label: string; dot: string; textClass: string }> = {
-  synced: {
-    label: "Synced",
-    dot: "bg-emerald-400",
-    textClass: "text-emerald-400/80",
-  },
-  syncing: {
-    label: "Syncing...",
-    dot: "bg-amber-400 animate-pulse",
-    textClass: "text-amber-400/80",
-  },
-  local_only: {
-    label: "Local only",
-    dot: "bg-white/40",
-    textClass: "text-white/40",
-  },
-  error: {
-    label: "Sync error",
-    dot: "bg-red-400",
-    textClass: "text-red-400/80",
-  },
-};
-
-export function SyncStatusBadge({
-  status,
-  className = "",
-}: {
-  status: SyncStatus;
-  className?: string;
-}) {
-  const config = STATUS_CONFIG[status];
-  return (
-    <div
-      className={`inline-flex items-center gap-1.5 rounded-full border border-white/[0.20] bg-white/[0.12] px-2.5 py-1 ${className}`}
-      role="status"
-      aria-label={`Sync status: ${config.label}`}
-    >
-      <span
-        className={`inline-block h-1.5 w-1.5 rounded-full ${config.dot}`}
-        aria-hidden="true"
-      />
-      <span className={`text-[11px] font-medium tracking-wide ${config.textClass}`}>
-        {config.label}
-      </span>
-    </div>
   );
 }

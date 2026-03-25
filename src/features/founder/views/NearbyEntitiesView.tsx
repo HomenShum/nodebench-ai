@@ -4,7 +4,7 @@
 /* ------------------------------------------------------------------ */
 
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { Eye, EyeOff, Network, Plus, X } from "lucide-react";
+import { AlertTriangle, Eye, EyeOff, Network, Plus, X } from "lucide-react";
 import {
   DEMO_COMPANY,
   DEMO_INITIATIVES,
@@ -30,6 +30,10 @@ interface NearbyEntityRecord {
   relationship: EntityRelationship | string;
   description: string;
   watched: boolean;
+  claimCount?: number;
+  changeCount?: number;
+  contradictionCount?: number;
+  lastUpdated?: string;
 }
 
 interface CompanyRecord {
@@ -145,6 +149,10 @@ function NearbyEntitiesView() {
       relationship: e.relationship,
       description: e.whyItMatters,
       watched: false,
+      claimCount: e.claimCount,
+      changeCount: e.changeCount,
+      contradictionCount: e.contradictionCount,
+      lastUpdated: e.lastUpdated,
     }));
 
     // Merge: custom first, then intake, then demo competitors/partners as fallback
@@ -418,6 +426,18 @@ function NearbyEntitiesView() {
 
 // ─── Entity Card ──────────────────────────────────────────────────────
 
+/** Compute staleness level from an ISO date string. */
+function getStaleness(
+  lastUpdated: string | undefined,
+): "fresh" | "stale" | "very-stale" {
+  if (!lastUpdated) return "fresh";
+  const diffMs = Date.now() - new Date(lastUpdated).getTime();
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+  if (diffDays > 14) return "very-stale";
+  if (diffDays > 7) return "stale";
+  return "fresh";
+}
+
 const EntityCard = memo(function EntityCard({
   entity,
   watched,
@@ -428,21 +448,69 @@ const EntityCard = memo(function EntityCard({
   onToggleWatch: (id: string) => void;
 }) {
   const WatchIcon = watched ? Eye : EyeOff;
+  const claims = entity.claimCount ?? 0;
+  const changes = entity.changeCount ?? 0;
+  const contradictions = entity.contradictionCount ?? 0;
+  const hasUpdates = claims > 0 || changes > 0 || contradictions > 0;
+  const staleness = getStaleness(entity.lastUpdated);
 
   return (
-    <div className="flex flex-col justify-between rounded-xl border border-white/[0.20] bg-white/[0.12] p-4 transition-colors hover:bg-white/[0.07]">
+    <div className="flex min-h-[44px] flex-col justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 transition-colors hover:bg-white/[0.04]">
       <div>
         <div className="flex items-start justify-between gap-2">
           <span className="text-sm font-semibold text-white">
             {entity.name}
           </span>
-          <span className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.07] px-2 py-0.5 text-[10px] font-medium text-white/60">
-            {entity.relationship}
-          </span>
+          <div className="flex shrink-0 items-center gap-1.5">
+            {staleness !== "fresh" && (
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                  staleness === "very-stale"
+                    ? "border border-rose-500/20 bg-rose-500/10 text-rose-400"
+                    : "border border-amber-500/20 bg-amber-500/10 text-amber-400"
+                }`}
+              >
+                <AlertTriangle className="h-2.5 w-2.5" />
+                Stale
+              </span>
+            )}
+            <span className="rounded-full border border-white/[0.08] bg-white/[0.07] px-2 py-0.5 text-[10px] font-medium text-white/60">
+              {entity.relationship}
+            </span>
+          </div>
         </div>
         <p className="mt-1.5 line-clamp-2 text-[12px] leading-relaxed text-white/60">
           {entity.description}
         </p>
+
+        {/* ── Inline claim / change / contradiction indicators ──── */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px]">
+          {hasUpdates ? (
+            <>
+              {claims > 0 && (
+                <span className="inline-flex items-center gap-1 text-emerald-400">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  {claims} {claims === 1 ? "claim" : "claims"}
+                </span>
+              )}
+              {changes > 0 && (
+                <span className="inline-flex items-center gap-1 text-amber-400">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
+                  {changes} {changes === 1 ? "change" : "changes"}
+                </span>
+              )}
+              {contradictions > 0 && (
+                <span className="inline-flex items-center gap-1 text-[#d97757]">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#d97757]" />
+                  {contradictions}{" "}
+                  {contradictions === 1 ? "contradiction" : "contradictions"}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-white/30">No updates</span>
+          )}
+        </div>
       </div>
       <div className="mt-3 flex justify-end">
         <button
@@ -450,7 +518,9 @@ const EntityCard = memo(function EntityCard({
           onClick={() => onToggleWatch(entity.id)}
           className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors hover:bg-white/[0.06]"
           style={{ color: watched ? "#d97757" : "rgba(255,255,255,0.35)" }}
-          aria-label={watched ? `Stop watching ${entity.name}` : `Watch ${entity.name}`}
+          aria-label={
+            watched ? `Stop watching ${entity.name}` : `Watch ${entity.name}`
+          }
         >
           <WatchIcon className="h-3.5 w-3.5" />
           {watched ? "Watching" : "Watch"}
