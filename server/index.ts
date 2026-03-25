@@ -34,6 +34,7 @@ import { createSessionRouter } from "./routes/session.js";
 import { createTtsRouter } from "./routes/tts.js";
 import { mountNemoClaw } from "./nemoclaw/index.js";
 import { createSearchRouter } from "./routes/search.js";
+import { createToolGraphRouter } from "./routes/toolGraph.js";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────
 
@@ -214,6 +215,7 @@ async function main(): Promise<void> {
   // ── Search API (NodeBench AI App live intelligence dispatch) ─────────
 
   app.use("/search", createSearchRouter(tools));
+  app.use(createToolGraphRouter());
 
   // ── Create HTTP server & wire WebSocket upgrade ─────────────────────
 

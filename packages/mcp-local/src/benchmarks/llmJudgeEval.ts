@@ -1821,6 +1821,8 @@ function printReport(summary: RunSummary, regressions?: RegressionItem[], improv
 // MAIN RUNNER
 // ══════════════════════════════════════════════════════════════════════════════
 
+export type Surface = "mcp" | "app";
+
 export interface RunOptions {
   queryLimit: number;
   persona?: Persona;
@@ -1830,16 +1832,215 @@ export interface RunOptions {
   dryRun?: boolean;
   /** If true, run self-improving flywheel loop: eval → diagnose → grow → re-eval */
   flywheel?: boolean;
+  /** Which surface to test: "mcp" (tool handlers) or "app" (web /search endpoint). Default: "mcp" */
+  surface?: Surface;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// APP SURFACE — /search endpoint validation
+// ══════════════════════════════════════════════════════════════════════════════
+
+const APP_SEARCH_BASE_URL = "http://localhost:5191/search";
+
+/** Map persona → lens name used by the /search endpoint */
+function personaToLens(persona: Persona): string {
+  switch (persona) {
+    case "founder": return "founder";
+    case "banker": return "banker";
+    case "investor": return "investor";
+    case "researcher": return "researcher";
+    case "student": return "student";
+    case "operator": return "operator";
+    case "legal": return "legal";
+    case "ceo": return "ceo";
+    case "pm": return "pm";
+    case "contractor": return "contractor";
+    case "content": return "content";
+    default: return "founder";
+  }
+}
+
+/** App-specific boolean criteria for judging /search responses */
+const APP_CRITERIA: BooleanCriterion[] = [
+  { criterion: "Response contains a substantive answer (not just errors or empty)", weight: 2 },
+  { criterion: "Response includes entity or topic names from the query", weight: 1 },
+  { criterion: "Response includes structured signals or data points", weight: 1 },
+  { criterion: "Response does not contain error messages or stack traces", weight: 2 },
+  { criterion: "Response includes source citations or trace steps", weight: 1 },
+];
+
+/** 20 app-specific queries across personas for /search endpoint testing */
+function generateAppQueryCorpus(): EvalQuery[] {
+  return [
+    // founder (4)
+    { id: "app_founder_valuation", query: "What is Anthropic's current valuation and revenue?", persona: "founder", scenario: "company_search", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    { id: "app_founder_weekly", query: "Weekly reset for my startup", persona: "founder", scenario: "weekly_reset", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    { id: "app_founder_delegation", query: "Prepare a delegation packet for the engineering lead on auth refactor", persona: "founder", scenario: "delegation", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    { id: "app_founder_changes", query: "What changed in the AI developer tools market this week?", persona: "founder", scenario: "important_change", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    // banker (3)
+    { id: "app_banker_diligence", query: "Diligence memo on Series B fintech startup", persona: "banker", scenario: "company_search", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    { id: "app_banker_risk", query: "Top 5 risks for a $50M fintech lending platform", persona: "banker", scenario: "company_search", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    { id: "app_banker_compare", query: "Compare Stripe vs Adyen payment infrastructure for enterprise", persona: "banker", scenario: "competitor_brief", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    // investor (3)
+    { id: "app_investor_landscape", query: "AI infrastructure competitive landscape 2026", persona: "investor", scenario: "competitor_brief", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    { id: "app_investor_shopify", query: "Compare Shopify vs Amazon AI commerce strategy", persona: "investor", scenario: "competitor_brief", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    { id: "app_investor_portfolio", query: "What changed for Databricks, Snowflake, and Confluent this quarter?", persona: "investor", scenario: "important_change", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    // researcher (3)
+    { id: "app_researcher_mcp", query: "MCP protocol adoption trends and ecosystem growth", persona: "researcher", scenario: "company_search", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    { id: "app_researcher_agents", query: "State of autonomous AI agents in enterprise workflows", persona: "researcher", scenario: "company_search", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    { id: "app_researcher_openai", query: "OpenAI's latest model releases and API changes", persona: "researcher", scenario: "company_search", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    // student (2)
+    { id: "app_student_explain", query: "Explain how retrieval augmented generation works for my thesis", persona: "student", scenario: "company_search", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    { id: "app_student_career", query: "What skills should I learn for an AI engineering career in 2026?", persona: "student", scenario: "company_search", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    // operator (2)
+    { id: "app_operator_incident", query: "Generate an incident response checklist for API gateway outage", persona: "operator", scenario: "delegation", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    { id: "app_operator_cost", query: "Cloud cost optimization strategies for GPU compute workloads", persona: "operator", scenario: "company_search", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    // ceo (1)
+    { id: "app_ceo_board", query: "Prepare board meeting talking points on Q1 2026 product milestones", persona: "ceo", scenario: "memo_export", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    // legal (1)
+    { id: "app_legal_compliance", query: "AI regulation compliance requirements for enterprise SaaS in the EU", persona: "legal", scenario: "company_search", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+    // pm (1)
+    { id: "app_pm_roadmap", query: "Competitive feature analysis for developer tools roadmap planning", persona: "pm", scenario: "competitor_brief", expectedTools: [], forbiddenTools: [], booleanCriteria: APP_CRITERIA },
+  ];
+}
+
+/** Check if the /search endpoint is reachable */
+async function checkAppEndpoint(): Promise<boolean> {
+  try {
+    const resp = await fetch(APP_SEARCH_BASE_URL.replace("/search", "/health"), {
+      signal: AbortSignal.timeout(3_000),
+    });
+    return resp.ok;
+  } catch {
+    // Health endpoint may not exist — try a lightweight POST to /search
+    try {
+      const resp = await fetch(APP_SEARCH_BASE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: "ping" }),
+        signal: AbortSignal.timeout(5_000),
+      });
+      return resp.status !== 0; // Any HTTP response means server is up
+    } catch {
+      return false;
+    }
+  }
+}
+
+/** Execute a query against the /search web endpoint, returning outputs for the judge */
+async function executeAppQuery(
+  query: EvalQuery,
+): Promise<ToolExecutionResult> {
+  const startMs = Date.now();
+  const lens = personaToLens(query.persona);
+
+  try {
+    const resp = await fetch(APP_SEARCH_BASE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: query.query, lens }),
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    const totalMs = Date.now() - startMs;
+
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => "");
+      return {
+        toolsFired: ["search_endpoint"],
+        outputs: { search_endpoint: `HTTP ${resp.status}: ${errText.slice(0, 500)}` },
+        totalMs,
+        skipped: [],
+      };
+    }
+
+    const data = await resp.json() as Record<string, unknown>;
+
+    // Extract structured fields from the response
+    const parts: string[] = [];
+
+    // answer / result
+    const result = data.result as Record<string, unknown> | undefined;
+    if (result) {
+      // canonicalEntity
+      const entity = result.canonicalEntity as Record<string, unknown> | undefined;
+      if (entity) {
+        parts.push(`Entity: ${entity.name ?? "unknown"}`);
+        if (entity.canonicalMission) parts.push(`Mission: ${String(entity.canonicalMission).slice(0, 300)}`);
+      }
+      // signals
+      const signals = result.signals as Array<Record<string, unknown>> | undefined;
+      if (Array.isArray(signals) && signals.length > 0) {
+        parts.push(`Signals: ${signals.map(s => s.name ?? s.direction ?? "").join("; ")}`);
+      }
+      // whatChanged
+      const whatChanged = result.whatChanged as Array<Record<string, unknown>> | undefined;
+      if (Array.isArray(whatChanged) && whatChanged.length > 0) {
+        parts.push(`Changes: ${whatChanged.map(w => w.description ?? "").join("; ")}`);
+      }
+      // contradictions
+      const contradictions = result.contradictions as Array<Record<string, unknown>> | undefined;
+      if (Array.isArray(contradictions) && contradictions.length > 0) {
+        parts.push(`Contradictions: ${contradictions.map(c => c.claim ?? "").join("; ")}`);
+      }
+      // nextActions
+      const nextActions = result.nextActions as Array<Record<string, unknown>> | undefined;
+      if (Array.isArray(nextActions) && nextActions.length > 0) {
+        parts.push(`Next actions: ${nextActions.map(a => a.action ?? "").join("; ")}`);
+      }
+      // entityProfile (from web enrichment)
+      const entityProfile = result.entityProfile as Record<string, unknown> | undefined;
+      if (entityProfile) {
+        parts.push(`Profile: ${JSON.stringify(entityProfile).slice(0, 500)}`);
+      }
+    }
+
+    // trace steps
+    const trace = data.trace as Array<Record<string, unknown>> | undefined;
+    if (Array.isArray(trace) && trace.length > 0) {
+      parts.push(`Trace: ${trace.map(t => `${t.step}(${t.tool ?? ""}) ${t.status}`).join(" → ")}`);
+    }
+
+    // classification & lens
+    if (data.classification) parts.push(`Classification: ${data.classification}`);
+    if (data.lens) parts.push(`Lens: ${data.lens}`);
+
+    // judge verdict (if present)
+    const judge = data.judge as Record<string, unknown> | undefined;
+    if (judge) {
+      parts.push(`Judge: ${JSON.stringify(judge).slice(0, 300)}`);
+    }
+
+    const outputText = parts.length > 0 ? parts.join("\n") : JSON.stringify(data).slice(0, 2000);
+
+    return {
+      toolsFired: ["search_endpoint"],
+      outputs: { search_endpoint: outputText },
+      totalMs,
+      skipped: [],
+    };
+  } catch (err: unknown) {
+    const totalMs = Date.now() - startMs;
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      toolsFired: ["search_endpoint"],
+      outputs: { search_endpoint: `Connection error: ${message}` },
+      totalMs,
+      skipped: [],
+    };
+  }
 }
 
 export async function runLlmJudgeEval(options: RunOptions): Promise<RunSummary> {
+  const surface: Surface = options.surface ?? "mcp";
+
   // 1. Wire up DB and seed realistic test data
   _setDbAccessor(getDb);
   ensureSchema();
   seedTestData();
 
   // 2. Generate corpus and filter
-  let corpus = generateQueryCorpus();
+  let corpus = surface === "app" ? generateAppQueryCorpus() : generateQueryCorpus();
 
   if (options.persona) {
     corpus = corpus.filter((q) => q.persona === options.persona);
@@ -1856,6 +2057,32 @@ export async function runLlmJudgeEval(options: RunOptions): Promise<RunSummary> 
       .sort((a, b) => a.sort - b.sort)
       .map((x) => x.q)
       .slice(0, options.queryLimit);
+  }
+
+  // 3b. For app surface, verify the endpoint is reachable before running
+  if (surface === "app") {
+    console.log(`[llmJudgeEval] Checking app endpoint at ${APP_SEARCH_BASE_URL}...`);
+    const reachable = await checkAppEndpoint();
+    if (!reachable) {
+      console.error(`\n[ERROR] App endpoint not reachable at ${APP_SEARCH_BASE_URL}`);
+      console.error(`  Make sure the web app is running: npm run dev (or npx vite --port 5191)`);
+      console.error(`  Then re-run with: npx tsx src/benchmarks/llmJudgeEval.ts --surface app\n`);
+      cleanupTestData();
+      return {
+        runId: "app-unreachable",
+        timestamp: new Date().toISOString(),
+        queryCount: 0,
+        passRate: 0,
+        avgToolPrecision: 0,
+        avgToolRecall: 0,
+        totalForbiddenViolations: 0,
+        avgCriteriaPassRate: 0,
+        byPersona: {},
+        byScenario: {},
+        byCriterion: {},
+      };
+    }
+    console.log(`[llmJudgeEval] App endpoint reachable.\n`);
   }
 
   if (options.dryRun) {
@@ -1883,31 +2110,37 @@ export async function runLlmJudgeEval(options: RunOptions): Promise<RunSummary> 
     };
   }
 
-  // 4. Load all tools
-  console.log("[llmJudgeEval] Loading all toolsets...");
-  const allTools = await loadToolsets(ALL_DOMAIN_KEYS);
-  console.log(`[llmJudgeEval] Loaded ${allTools.length} tools across ${ALL_DOMAIN_KEYS.length} domains`);
+  // 4. Load all tools (skip for app surface — we POST to the endpoint instead)
+  let allTools: McpTool[] = [];
+  if (surface === "mcp") {
+    console.log("[llmJudgeEval] Loading all toolsets...");
+    allTools = await loadToolsets(ALL_DOMAIN_KEYS);
+    console.log(`[llmJudgeEval] Loaded ${allTools.length} tools across ${ALL_DOMAIN_KEYS.length} domains`);
+  }
 
   // 5. Run eval
   const runId = genId("ljeval");
   const results: QueryResult[] = [];
+  const surfaceTag = `[surface:${surface}]`;
 
-  console.log(`[llmJudgeEval] Running ${corpus.length} queries (run: ${runId})...\n`);
+  console.log(`[llmJudgeEval] ${surfaceTag} Running ${corpus.length} queries (run: ${runId})...\n`);
 
   for (let i = 0; i < corpus.length; i++) {
     const query = corpus[i];
     const progress = `[${i + 1}/${corpus.length}]`;
 
-    // Execute tools
-    const execution = await executeQueryTools(query, allTools);
+    // Execute — branch on surface
+    const execution = surface === "app"
+      ? await executeAppQuery(query)
+      : await executeQueryTools(query, allTools);
 
     // Judge
     const { response: judgeResult, judgeType } = await callGeminiJudge(query, execution.outputs);
 
     // Compute metrics
-    const toolPrecision = computeToolPrecision(query.expectedTools, execution.toolsFired);
-    const toolRecall = computeToolRecall(query.expectedTools, execution.toolsFired);
-    const forbiddenViolations = countForbiddenViolations(query.forbiddenTools, execution.toolsFired);
+    const toolPrecision = surface === "app" ? 1 : computeToolPrecision(query.expectedTools, execution.toolsFired);
+    const toolRecall = surface === "app" ? 1 : computeToolRecall(query.expectedTools, execution.toolsFired);
+    const forbiddenViolations = surface === "app" ? 0 : countForbiddenViolations(query.forbiddenTools, execution.toolsFired);
     const criteriaPassRate = computeCriteriaPassRate(judgeResult.criteria, query.booleanCriteria);
     // Pass if weighted criteria pass rate >= 60% AND no forbidden tool violations
     const overallPass = criteriaPassRate >= 0.60 && forbiddenViolations === 0;
@@ -1929,7 +2162,7 @@ export async function runLlmJudgeEval(options: RunOptions): Promise<RunSummary> 
     saveResult(runId, qr);
 
     const status = overallPass ? "PASS" : "FAIL";
-    process.stdout.write(`${progress} [judge:${judgeType}] ${query.id} ${status} (precision=${toolPrecision.toFixed(2)}, criteria=${criteriaPassRate.toFixed(2)}) ${execution.totalMs}ms\n`);
+    process.stdout.write(`${progress} ${surfaceTag} [judge:${judgeType}] ${query.id} ${status} (precision=${toolPrecision.toFixed(2)}, criteria=${criteriaPassRate.toFixed(2)}) ${execution.totalMs}ms\n`);
   }
 
   // 6. Build summary
@@ -2302,6 +2535,9 @@ function parseArgs(argv: string[]): RunOptions {
       case "--flywheel":
         options.flywheel = true;
         break;
+      case "--surface":
+        options.surface = argv[++i] as Surface;
+        break;
       default:
         if (arg.startsWith("--")) {
           console.error(`Unknown flag: ${arg}`);
@@ -2344,6 +2580,7 @@ async function main() {
 
   console.log("NodeBench LLM Judge Eval Harness");
   console.log("================================");
+  console.log(`  Surface:  ${options.surface ?? "mcp"}`);
   console.log(`  Queries:  ${options.queryLimit}`);
   console.log(`  Persona:  ${options.persona ?? "all"}`);
   console.log(`  Scenario: ${options.scenario ?? "all"}`);

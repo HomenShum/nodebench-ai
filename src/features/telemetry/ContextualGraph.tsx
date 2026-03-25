@@ -263,17 +263,64 @@ export interface ContextualGraphProps {
   className?: string;
 }
 
+/** Fetch real graph data from /tool-graph API, fall back to demo */
+async function fetchRealGraphData(): Promise<{ nodes: GraphNode[]; edges: GraphEdge[] } | null> {
+  try {
+    const res = await fetch("/tool-graph");
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.graphNodes?.length) return null;
+
+    const nodes: GraphNode[] = data.graphNodes.map((n: any) => ({
+      id: n.id,
+      domain: n.domain || "unknown",
+      usage: Math.min(1, (n.edgeCount || 0) / 10), // normalize edge count to 0-1
+      description: `${n.domain} tool — ${n.tags?.slice(0, 3).join(", ") || "no tags"}`,
+      x: 0, y: 0, vx: 0, vy: 0,
+    }));
+
+    const nodeIds = new Set(nodes.map(n => n.id));
+    const edges: GraphEdge[] = (data.graphEdges || [])
+      .filter((e: any) => nodeIds.has(e.source) && nodeIds.has(e.target))
+      .map((e: any) => ({
+        source: e.source,
+        target: e.target,
+        type: (e.type || "next") as GraphEdge["type"],
+        strength: 0.7,
+      }));
+
+    return { nodes, edges };
+  } catch {
+    return null;
+  }
+}
+
 export const ContextualGraph = memo(function ContextualGraph({
   className = "",
 }: ContextualGraphProps) {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [liveData, setLiveData] = useState<{ nodes: GraphNode[]; edges: GraphEdge[] } | null>(null);
+  const [dataSource, setDataSource] = useState<"loading" | "live" | "demo">("loading");
   const svgRef = useRef<SVGSVGElement>(null);
 
+  // Try to fetch real data on mount
+  useEffect(() => {
+    fetchRealGraphData().then(data => {
+      if (data && data.nodes.length > 5) {
+        setLiveData(data);
+        setDataSource("live");
+      } else {
+        setDataSource("demo");
+      }
+    });
+  }, []);
+
   const { rawNodes, edges } = useMemo(() => {
+    if (liveData) return { rawNodes: liveData.nodes, edges: liveData.edges };
     const data = generateGraphData();
     return { rawNodes: data.nodes, edges: data.edges };
-  }, []);
+  }, [liveData]);
 
   const nodes = useMemo(
     () => runSpringLayout(rawNodes, edges, 80),
@@ -349,6 +396,15 @@ export const ContextualGraph = memo(function ContextualGraph({
           </span>
         </div>
         <div className="flex items-center gap-4 text-[10px] text-white/30">
+          <span className={cn(
+            "px-1.5 py-0.5 rounded text-[9px] font-mono uppercase tracking-wider",
+            dataSource === "live" ? "bg-emerald-500/20 text-emerald-400" :
+            dataSource === "demo" ? "bg-amber-500/20 text-amber-400" :
+            "bg-white/10 text-white/30"
+          )}>
+            {dataSource === "live" ? `live · ${nodes.length} nodes · ${edges.length} edges` :
+             dataSource === "demo" ? "demo data" : "loading..."}
+          </span>
           <span>
             <span className="font-mono text-white/50">{latestGrowth.nodes}</span> nodes
           </span>
