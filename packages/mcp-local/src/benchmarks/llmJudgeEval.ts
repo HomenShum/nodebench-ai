@@ -1007,7 +1007,14 @@ async function executeQueryTools(
     }
   }
 
-  // 3. Execute each expected tool (simulate the tool chain an agent would follow)
+  // 3. Execute each expected tool as a CHAIN — output from tool N feeds into tool N+1
+  //    This simulates real agent usage where context accumulates across steps.
+  const chainContext: Record<string, unknown> = {};
+  if (webResults.length > 0) {
+    chainContext.webResults = webResults;
+    chainContext.webSnippets = webResults.map(r => `${r.title}: ${r.snippet}`).join("\n");
+  }
+
   for (const toolName of effectiveTools) {
     if (toolName === "discover_tools") continue; // already called
 
@@ -1019,17 +1026,59 @@ async function executeQueryTools(
 
     const tool = findTool(allTools, toolName);
     if (tool) {
-      // Build minimal args based on tool name patterns, inject webResults for synthesize
+      // Build args from BOTH static patterns AND accumulated chain context
       const args = buildMinimalArgs(toolName, query);
+
+      // ── Chain injection: pass prior tool outputs as context ──
+      // founder_local_synthesize consumes gather + web results
       if (toolName === "founder_local_synthesize") {
-        if (webResults.length > 0) (args as any).webResults = webResults;
+        if (chainContext.webResults) (args as any).webResults = chainContext.webResults;
         (args as any).lens = query.persona;
+        // If gather ran before, pass its output as context
+        if (chainContext.gatherOutput) (args as any).priorContext = chainContext.gatherOutput;
+        if (chainContext.reconOutput) (args as any).reconFindings = chainContext.reconOutput;
       }
+      // enrich_recon consumes run_recon output
+      if (toolName === "enrich_recon" && chainContext.reconOutput) {
+        (args as any).findings = chainContext.reconOutput;
+      }
+      // export_artifact_packet consumes synthesize output
+      if (toolName === "export_artifact_packet" && chainContext.synthesizeOutput) {
+        (args as any).packet = chainContext.synthesizeOutput;
+      }
+      // render_decision_memo consumes gather + synthesize
+      if (toolName === "render_decision_memo") {
+        if (chainContext.gatherOutput) (args as any).context = chainContext.gatherOutput;
+        if (chainContext.synthesizeOutput) (args as any).packet = chainContext.synthesizeOutput;
+      }
+      // detect_contradictions consumes web or gather output
+      if (toolName === "detect_contradictions" && chainContext.webSnippets) {
+        (args as any).context = chainContext.webSnippets;
+      }
+
       const result = await callTool(tool, args);
       totalMs += result.ms;
       if (result.ok) {
         toolsFired.push(toolName);
-        outputs[toolName] = extractText(result.result);
+        const extracted = extractText(result.result);
+        outputs[toolName] = extracted;
+
+        // ── Store output in chain context for downstream tools ──
+        if (toolName === "founder_local_gather" || toolName === "founder_deep_context_gather") {
+          chainContext.gatherOutput = result.result;
+        }
+        if (toolName === "run_recon" || toolName === "enrich_recon") {
+          chainContext.reconOutput = result.result;
+        }
+        if (toolName === "founder_local_synthesize") {
+          chainContext.synthesizeOutput = result.result;
+        }
+        if (toolName === "web_search") {
+          chainContext.webResults = (result.result as any)?.results ?? [];
+        }
+        if (toolName === "founder_local_weekly_reset") {
+          chainContext.weeklyOutput = result.result;
+        }
       } else {
         // Check if this is a "needs seed data" error — retry once after seeding
         const errorLower = (result.error ?? "").toLowerCase();
@@ -1043,14 +1092,23 @@ async function executeQueryTools(
             if (seedResult.ok && !toolsFired.includes("founder_deep_context_gather")) {
               toolsFired.push("founder_deep_context_gather");
               outputs["founder_deep_context_gather"] = extractText(seedResult.result);
+              chainContext.gatherOutput = seedResult.result;
             }
           }
-          // Retry the original tool
-          const retry = await callTool(tool, args);
+          // Retry the original tool with chain context
+          const retryArgs = buildMinimalArgs(toolName, query);
+          if (toolName === "founder_local_synthesize" && chainContext.gatherOutput) {
+            (retryArgs as any).priorContext = chainContext.gatherOutput;
+            if (chainContext.webResults) (retryArgs as any).webResults = chainContext.webResults;
+            (retryArgs as any).lens = query.persona;
+          }
+          const retry = await callTool(tool, retryArgs);
           totalMs += retry.ms;
           if (retry.ok) {
             toolsFired.push(toolName);
             outputs[toolName] = extractText(retry.result);
+            // Store in chain context even on retry
+            if (toolName === "founder_local_synthesize") chainContext.synthesizeOutput = retry.result;
           } else {
             toolsFired.push(toolName);
             outputs[toolName] = `ERROR: ${retry.error}`;
@@ -1436,6 +1494,29 @@ function heuristicJudge(
     if (criterion.includes("multiple tools") || criterion.includes("chain produced")) {
       pass = nonEmptyOutputCount >= 2;
       evidence += pass ? `${nonEmptyOutputCount} tools produced output` : `only ${nonEmptyOutputCount} tool(s) produced output`;
+      return { criterion: bc.criterion, pass, evidence };
+    }
+
+    // ── "Chain coherence — downstream output references upstream data" ──
+    if (criterion.includes("chain coherence") || criterion.includes("downstream references upstream") || criterion.includes("output references prior")) {
+      // Check if the LAST tool's output contains entities/keywords from FIRST tool's output
+      const toolKeys = Object.keys(toolOutputs).filter(k => toolOutputs[k] && toolOutputs[k] !== "(null)");
+      if (toolKeys.length >= 2) {
+        const firstOutput = toolOutputs[toolKeys[0]].toLowerCase();
+        const lastOutput = toolOutputs[toolKeys[toolKeys.length - 1]].toLowerCase();
+        // Extract significant words from first output
+        const firstWords = firstOutput.split(/\s+/)
+          .filter((w: string) => w.length > 4 && !STOPWORDS.has(w))
+          .slice(0, 20);
+        const sharedWords = firstWords.filter((w: string) => lastOutput.includes(w));
+        pass = sharedWords.length >= 2; // at least 2 shared significant words
+        evidence += pass
+          ? `${sharedWords.length} shared terms across chain: ${sharedWords.slice(0, 5).join(", ")}`
+          : `only ${sharedWords.length} shared terms — chain may be disconnected`;
+      } else {
+        pass = false;
+        evidence += "fewer than 2 tools produced output";
+      }
       return { criterion: bc.criterion, pass, evidence };
     }
 
@@ -2165,8 +2246,8 @@ export async function runLlmJudgeEval(options: RunOptions): Promise<RunSummary> 
     process.stdout.write(`${progress} ${surfaceTag} [judge:${judgeType}] ${query.id} ${status} (precision=${toolPrecision.toFixed(2)}, criteria=${criteriaPassRate.toFixed(2)}) ${execution.totalMs}ms\n`);
   }
 
-  // 6. Build summary
-  const fullCorpus = generateQueryCorpus();
+  // 6. Build summary — use the correct corpus for the surface
+  const fullCorpus = surface === "app" ? generateAppQueryCorpus() : generateQueryCorpus();
   const summary = buildSummary(runId, results, fullCorpus);
   saveRun(runId, results.length, summary.passRate, options.persona, options.scenario, summary);
 

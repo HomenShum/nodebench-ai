@@ -156,22 +156,29 @@ export function createSearchRouter(tools: McpTool[]) {
           return { type: "multi_entity", entities: parts, lens: "investor" };
         }
       }
+      // Try to extract BOTH entities from "How does X compare to Y" patterns
+      const compareToMatch = query.match(/(?:how does)\s+(\w+)\s+(?:compete|compare|stack up)\s+(?:to|with|against)\s+(\w+)/i);
+      if (compareToMatch && compareToMatch[1] && compareToMatch[2]) {
+        return { type: "multi_entity", entities: [compareToMatch[1], compareToMatch[2]], lens: "investor" };
+      }
       // Single competitor — extract the primary entity being compared
       const singleEntity = query.match(/(?:how does)\s+(\w+)\s+(?:compete|compare|stack up)/i)?.[1]
         ?? query.match(/(\w+)\s+competitor/i)?.[1];
       return { type: "competitor", entity: singleEntity, lens: "researcher" };
     }
 
-    // Skip company search if the query is about user's own documents/uploads or is a general strategic question
+    // Skip company search if the query is about user's own entity, documents/uploads, or general strategic question
+    const isOwnEntity = lq.match(/\b(my company|my startup|my business|my current company|my team|my organization|my firm|our company|our startup|our business|investor update for my|current company state)\b/);
     const isUploadContext = lq.match(/\b(meeting transcript|meeting notes|uploaded|my documents|my files|research files|my research)\b/);
     const isGeneralStrategic = lq.match(/\b(should i track|should i build|should i present|for my thesis|as a legal|as a banker|as an investor|what deals|portfolio companies)\b/);
-    if (isUploadContext || isGeneralStrategic) {
+    if (isOwnEntity || isUploadContext || isGeneralStrategic) {
       return { type: "general", lens: "founder" };
     }
 
     // Company search — detect entity names
     const companyPatterns = [
-      /(?:analyze|search|tell me about|company|profile|diligence on|research)\s+(.+?)(?:\s+for\b|\s+from\b|\s+—|$)/i,
+      /(?:company profile|profile)\s+(?:for|of|on)\s+(.+?)(?:\s+—|$)/i,  // "Company profile for Mistral AI"
+      /(?:analyze|search|tell me about|diligence on|research)\s+(.+?)(?:\s+for\b|\s+from\b|\s+—|$)/i,
       /^(.+?)\s+(?:competitive position|strategy|valuation|revenue|risk|overview)/i,
       /^search\s+(.+?)(?:\s+—|\s+–|\s+-|$)/i,
       /(?:top \d+ risks across|risks across|landscape for)\s+(.+?)$/i,

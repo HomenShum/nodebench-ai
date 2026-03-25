@@ -126,11 +126,11 @@ const TEST_CORPUS: Array<{
   { id: "cp-03", query: "Compare Linear vs Jira for engineering teams", lens: "ceo", expectedType: "multi_entity", category: "competitor" },
   { id: "cp-04", query: "How does Anthropic compare to OpenAI for enterprise?", lens: "banker", expectedType: "multi_entity", category: "competitor" },
 
-  // ── Own Entity / My Company (6 queries) ──
-  { id: "me-01", query: "Summarize my current company state", lens: "ceo", expectedType: "company_search", category: "own_entity" },
+  // ── Own Entity / My Company (6 queries) ── "my company" routes to general (uses founder_local_gather)
+  { id: "me-01", query: "Summarize my current company state", lens: "ceo", expectedType: "general", category: "own_entity" },
   { id: "me-02", query: "What's the status of my startup?", lens: "founder", expectedType: "general", category: "own_entity" },
-  { id: "me-03", query: "Show me my company's key metrics and risks", lens: "investor", expectedType: "company_search", category: "own_entity" },
-  { id: "me-04", query: "What are the biggest contradictions in my business right now?", lens: "founder", expectedType: "important_change", category: "own_entity" },
+  { id: "me-03", query: "Show me my company's key metrics and risks", lens: "investor", expectedType: "general", category: "own_entity" },
+  { id: "me-04", query: "What are the biggest contradictions in my business right now?", lens: "founder", expectedType: "general", category: "own_entity" },
   { id: "me-05", query: "Generate an investor update for my company", lens: "founder", expectedType: "general", category: "own_entity" },
   { id: "me-06", query: "What should I tell my board this quarter?", lens: "ceo", expectedType: "general", category: "own_entity" },
 
@@ -161,6 +161,72 @@ const TEST_CORPUS: Array<{
   { id: "ec-04", query: "!@#$%^&*()", lens: "founder", expectedType: "general", category: "edge_case" },
   { id: "ec-05", query: "SELECT * FROM users WHERE 1=1; DROP TABLE users;--", lens: "founder", expectedType: "general", category: "edge_case" },
   { id: "ec-06", query: "a".repeat(5000), lens: "founder", expectedType: "general", category: "edge_case" },
+
+  // ── Temporal Queries (6 queries) — time-aware reasoning ──
+  { id: "tp-01", query: "What happened in AI last week?", lens: "founder", expectedType: "general", category: "temporal" },
+  { id: "tp-02", query: "How has Anthropic's strategy changed since January 2026?", lens: "investor", expectedType: "company_search", category: "temporal" },
+  { id: "tp-03", query: "Show me funding rounds in AI infrastructure this quarter", lens: "banker", expectedType: "general", category: "temporal" },
+  { id: "tp-04", query: "What regulatory changes are coming for AI in the next 6 months?", lens: "legal", expectedType: "general", category: "temporal" },
+  { id: "tp-05", query: "Track Stripe's product launches over the past year", lens: "investor", expectedType: "company_search", category: "temporal" },
+  { id: "tp-06", query: "What were the biggest AI failures in Q1 2026?", lens: "researcher", expectedType: "general", category: "temporal" },
+
+  // ── Cross-Domain Queries (6 queries) — entities spanning sectors ──
+  { id: "cd-01", query: "How is AI impacting both healthcare and fintech simultaneously?", lens: "investor", expectedType: "general", category: "cross_domain" },
+  { id: "cd-02", query: "Compare Tesla's AI strategy to Waymo and Cruise", lens: "ceo", expectedType: "multi_entity", category: "cross_domain" },
+  { id: "cd-03", query: "Which defense contractors are investing in AI agents?", lens: "investor", expectedType: "general", category: "cross_domain" },
+  { id: "cd-04", query: "How are banks like JPMorgan using AI differently from tech companies?", lens: "banker", expectedType: "general", category: "cross_domain" },
+  { id: "cd-05", query: "Climate tech meets AI — who is building here?", lens: "founder", expectedType: "general", category: "cross_domain" },
+  { id: "cd-06", query: "Supply chain AI: Flexport vs Covariant vs project44", lens: "investor", expectedType: "multi_entity", category: "cross_domain" },
+
+  // ── Adversarial Queries (8 queries) — misspellings, ambiguity, overlapping names ──
+  { id: "ad-01", query: "tell me about antrhopic", lens: "investor", expectedType: "company_search", category: "adversarial" },
+  { id: "ad-02", query: "what is opneai doing with agents", lens: "founder", expectedType: "company_search", category: "adversarial" },
+  { id: "ad-03", query: "perplxity vs chatgpt for research", lens: "researcher", expectedType: "multi_entity", category: "adversarial" },
+  { id: "ad-04", query: "Apple", lens: "investor", expectedType: "company_search", category: "adversarial" }, // ambiguous: tech vs fruit
+  { id: "ad-05", query: "Mercury", lens: "banker", expectedType: "company_search", category: "adversarial" }, // bank vs planet vs element
+  { id: "ad-06", query: "Linear", lens: "founder", expectedType: "company_search", category: "adversarial" }, // product vs math concept
+  { id: "ad-07", query: "What should I do?", lens: "founder", expectedType: "general", category: "adversarial" }, // too vague
+  { id: "ad-08", query: "Is this company good?", lens: "investor", expectedType: "general", category: "adversarial" }, // no entity specified
+
+  // ── Diligence Depth (6 queries) — deep analysis requiring multiple signals ──
+  { id: "dd-01", query: "Full diligence on Cohere — team, product, moat, risks, valuation", lens: "investor", expectedType: "company_search", category: "diligence" },
+  { id: "dd-02", query: "Deep dive on Notion's enterprise strategy and churn risk", lens: "banker", expectedType: "company_search", category: "diligence" },
+  { id: "dd-03", query: "Build a complete competitive map for the AI code generation space", lens: "investor", expectedType: "general", category: "diligence" },
+  { id: "dd-04", query: "What are the top 5 risks for investing in Runway ML?", lens: "investor", expectedType: "company_search", category: "diligence" },
+  { id: "dd-05", query: "Evaluate Figma's moat after the Adobe deal fell through", lens: "banker", expectedType: "company_search", category: "diligence" },
+  { id: "dd-06", query: "Due diligence checklist for an AI infrastructure acquisition", lens: "banker", expectedType: "general", category: "diligence" },
+
+  // ── Action-Oriented Queries (6 queries) — what to DO, not just what to KNOW ──
+  { id: "ao-01", query: "I need to hire a VP Eng — what should I look for in AI companies?", lens: "founder", expectedType: "general", category: "action_oriented" },
+  { id: "ao-02", query: "Draft an investor update email about our pivot to AI agents", lens: "founder", expectedType: "general", category: "action_oriented" },
+  { id: "ao-03", query: "Create a competitive teardown I can share with my board", lens: "ceo", expectedType: "general", category: "action_oriented" },
+  { id: "ao-04", query: "What should I ask in a diligence call with a fintech startup?", lens: "banker", expectedType: "general", category: "action_oriented" },
+  { id: "ao-05", query: "Help me write a cold outreach message to the Anthropic partnerships team", lens: "founder", expectedType: "general", category: "action_oriented" },
+  { id: "ao-06", query: "Build a go-to-market plan for an AI-native compliance tool", lens: "founder", expectedType: "general", category: "action_oriented" },
+
+  // ── Niche Entity Queries (6 queries) — small/obscure companies ──
+  { id: "ne-01", query: "What does Replit do and is it viable for enterprise?", lens: "ceo", expectedType: "company_search", category: "niche_entity" },
+  { id: "ne-02", query: "Tell me about Weights & Biases revenue and positioning", lens: "investor", expectedType: "company_search", category: "niche_entity" },
+  { id: "ne-03", query: "Research Cerebras Systems chip architecture", lens: "researcher", expectedType: "company_search", category: "niche_entity" },
+  { id: "ne-04", query: "What is Modal doing in serverless GPU?", lens: "founder", expectedType: "company_search", category: "niche_entity" },
+  { id: "ne-05", query: "Analyze Baseten vs Replicate for model serving", lens: "founder", expectedType: "multi_entity", category: "niche_entity" },
+  { id: "ne-06", query: "Groq AI chips — are they real competition to NVIDIA?", lens: "investor", expectedType: "company_search", category: "niche_entity" },
+
+  // ── Multi-Turn Context (6 queries) — simulate follow-ups ──
+  { id: "mc-01", query: "Now compare that to Google's approach", lens: "investor", expectedType: "general", category: "multi_turn" },
+  { id: "mc-02", query: "What about their pricing model?", lens: "founder", expectedType: "general", category: "multi_turn" },
+  { id: "mc-03", query: "Go deeper on the risks", lens: "investor", expectedType: "general", category: "multi_turn" },
+  { id: "mc-04", query: "Show me the team", lens: "banker", expectedType: "general", category: "multi_turn" },
+  { id: "mc-05", query: "Any recent news?", lens: "founder", expectedType: "general", category: "multi_turn" },
+  { id: "mc-06", query: "Summarize everything in a memo", lens: "ceo", expectedType: "general", category: "multi_turn" },
+
+  // ── Scenario Planning (6 queries) — future-facing, what-if ──
+  { id: "sp-01", query: "What happens to AI startups if OpenAI gets regulated as a utility?", lens: "investor", expectedType: "general", category: "scenario" },
+  { id: "sp-02", query: "If Anthropic raises at $100B, what does that mean for the ecosystem?", lens: "founder", expectedType: "general", category: "scenario" },
+  { id: "sp-03", query: "Model a scenario where GPU costs drop 80% — who wins, who loses?", lens: "investor", expectedType: "general", category: "scenario" },
+  { id: "sp-04", query: "What if Apple launches its own foundation model?", lens: "ceo", expectedType: "general", category: "scenario" },
+  { id: "sp-05", query: "Simulate what happens if the EU AI Act enforcement begins Q3 2026", lens: "legal", expectedType: "general", category: "scenario" },
+  { id: "sp-06", query: "What are the second-order effects of agents replacing SaaS?", lens: "founder", expectedType: "general", category: "scenario" },
 ];
 
 /* ─── Structural Checks ───────────────────────────────────────────────────── */
