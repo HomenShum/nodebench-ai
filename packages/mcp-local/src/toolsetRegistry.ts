@@ -38,6 +38,18 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
     const { flywheelTools } = await import("./tools/flywheelTools.js");
     return flywheelTools;
   },
+  autonomous_delivery: async () => {
+    const { autonomousDeliveryTools } = await import("./tools/autonomousDeliveryTools.js");
+    return autonomousDeliveryTools;
+  },
+  sync_bridge: async () => {
+    const { syncBridgeTools } = await import("./tools/syncBridgeTools.js");
+    return syncBridgeTools;
+  },
+  shared_context: async () => {
+    const { sharedContextTools } = await import("./tools/sharedContextTools.js");
+    return sharedContextTools;
+  },
   recon: async () => {
     const { reconTools } = await import("./tools/reconTools.js");
     return reconTools;
@@ -265,6 +277,10 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
   packet_compiler: async () => {
     const { packetCompilerTools } = await import("./tools/packetCompilerTools.js");
     return packetCompilerTools;
+  },
+  plan_synthesis: async () => {
+    const { planSynthesisTools } = await import("./tools/planSynthesisTools.js");
+    return planSynthesisTools;
   },
   entity_temporal: async () => {
     const { entityTemporalTools } = await import("./tools/entityTemporalTools.js");

@@ -62,6 +62,35 @@ export interface TemporalTimelineEvent {
   url?: string;
 }
 
+export interface TemporalTimingProfile {
+  startEvent: string;
+  finishEvent: string;
+  framesToFirstEffect: number;
+  framesToMaterialImpact: number;
+  estimatedTimeToFirstEffectHours?: number;
+  estimatedTimeToMaterialImpactDays?: number;
+  smoothness: "jerky" | "mixed" | "smooth" | "unknown";
+  speedClass: "immediate" | "fast" | "moderate" | "slow" | "unknown";
+  decayHalfLifeDays?: number;
+  confidence: number;
+}
+
+export interface TemporalTimingLane {
+  lane: "catalyst" | "compounding";
+  summary: string;
+  frames: number;
+  startSourceId?: string;
+  endSourceId?: string;
+  elapsedDays?: number;
+}
+
+export interface TemporalExecutionTiming {
+  searchMs: number;
+  fetchCount: number;
+  sourcesQueried: string[];
+  timingBySource: Record<string, number>;
+}
+
 export interface TemporalBrief {
   object: "temporal_brief";
   query: string;
@@ -79,6 +108,12 @@ export interface TemporalBrief {
     role: string;
     evidenceCount: number;
   }>;
+  timingProfile: TemporalTimingProfile;
+  timingLanes: {
+    catalyst: TemporalTimingLane;
+    compounding: TemporalTimingLane;
+  };
+  executionTiming: TemporalExecutionTiming;
   progressiveDisclosure: string[];
   sources?: PublicCitation[];
   telemetry: SearchTelemetry;
@@ -238,6 +273,124 @@ function dateValue(value?: string) {
   if (!value) return undefined;
   const timestamp = Date.parse(value);
   return Number.isFinite(timestamp) ? timestamp : undefined;
+}
+
+function roundNumber(value: number, digits = 1) {
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
+}
+
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+
+function durationDaysBetween(first?: TemporalTimelineEvent, last?: TemporalTimelineEvent) {
+  const firstValue = dateValue(first?.when);
+  const lastValue = dateValue(last?.when);
+  if (firstValue === undefined || lastValue === undefined || lastValue < firstValue) {
+    return undefined;
+  }
+  return (lastValue - firstValue) / DAY_MS;
+}
+
+function buildTimingProfile(
+  timeline: TemporalTimelineEvent[],
+  sourceCount: number
+): TemporalTimingProfile {
+  if (timeline.length === 0) {
+    return {
+      startEvent: "No resolved trigger",
+      finishEvent: "No material outcome detected",
+      framesToFirstEffect: 0,
+      framesToMaterialImpact: 0,
+      smoothness: "unknown",
+      speedClass: "unknown",
+      confidence: 0.2,
+    };
+  }
+
+  const first = timeline[0]!;
+  const firstEffect = timeline[Math.min(1, timeline.length - 1)]!;
+  const material = timeline[timeline.length - 1]!;
+  const firstEffectDays = durationDaysBetween(first, firstEffect);
+  const materialDays = durationDaysBetween(first, material);
+  const framesToFirstEffect = timeline.length > 1 ? 2 : 1;
+  const framesToMaterialImpact = timeline.length;
+
+  let speedClass: TemporalTimingProfile["speedClass"] = "unknown";
+  if (materialDays !== undefined) {
+    if (materialDays <= 1) speedClass = "immediate";
+    else if (materialDays <= 7) speedClass = "fast";
+    else if (materialDays <= 30) speedClass = "moderate";
+    else speedClass = "slow";
+  } else if (framesToMaterialImpact <= 2) {
+    speedClass = "fast";
+  } else if (framesToMaterialImpact >= 5) {
+    speedClass = "slow";
+  } else {
+    speedClass = "moderate";
+  }
+
+  let smoothness: TemporalTimingProfile["smoothness"] = "unknown";
+  if (framesToMaterialImpact <= 2) smoothness = "jerky";
+  else if (framesToMaterialImpact >= 5) smoothness = "smooth";
+  else smoothness = "mixed";
+
+  const confidence = Math.min(
+    0.95,
+    roundNumber(0.35 + timeline.length * 0.08 + sourceCount * 0.04, 2)
+  );
+
+  return {
+    startEvent: first.label,
+    finishEvent: material.label,
+    framesToFirstEffect,
+    framesToMaterialImpact,
+    estimatedTimeToFirstEffectHours:
+      firstEffectDays !== undefined ? roundNumber(firstEffectDays * 24) : undefined,
+    estimatedTimeToMaterialImpactDays:
+      materialDays !== undefined ? roundNumber(materialDays) : undefined,
+    smoothness,
+    speedClass,
+    decayHalfLifeDays:
+      materialDays !== undefined && framesToMaterialImpact > 1
+        ? roundNumber(Math.max(materialDays / Math.max(framesToMaterialImpact - 1, 1), 0.5))
+        : undefined,
+    confidence,
+  };
+}
+
+function buildTimingLane(
+  timeline: TemporalTimelineEvent[],
+  lane: "catalyst" | "compounding"
+): TemporalTimingLane {
+  if (timeline.length === 0) {
+    return {
+      lane,
+      summary:
+        lane === "catalyst"
+          ? "No catalyst path detected from the available evidence."
+          : "No compounding path detected from the available evidence.",
+      frames: 0,
+    };
+  }
+
+  const first = timeline[0]!;
+  const last =
+    lane === "catalyst" ? timeline[Math.min(1, timeline.length - 1)]! : timeline[timeline.length - 1]!;
+  const frames = lane === "catalyst" ? Math.min(2, timeline.length) : timeline.length;
+  const elapsedDays = durationDaysBetween(first, last);
+
+  return {
+    lane,
+    summary:
+      lane === "catalyst"
+        ? `Catalyst path compresses the move into ${frames} frame${frames === 1 ? "" : "s"} from "${first.label.slice(0, 80)}" to "${last.label.slice(0, 80)}".`
+        : `Compounding path stretches across ${frames} frame${frames === 1 ? "" : "s"}, ending at "${last.label.slice(0, 80)}".`,
+    frames,
+    startSourceId: first.sourceId,
+    endSourceId: last.sourceId,
+    elapsedDays: elapsedDays !== undefined ? roundNumber(elapsedDays) : undefined,
+  };
 }
 
 export function filterSearchResults(
@@ -413,8 +566,14 @@ export function buildTemporalBrief(args: {
   })).slice(0, 5);
 
   const overview = timeline.length > 0
-    ? `The current evidence forms a ${timeline.length}-step timeline for "${args.query}". The strongest pattern is chronological progression rather than a proven causal chain, so treat the causal signals as hypotheses backed by cited evidence.`
+    ? `The current evidence forms a ${timeline.length}-frame timeline for "${args.query}". Fewer frames imply a faster catalytic jump; more frames imply slower, smoother compounding. The strongest pattern is chronological progression rather than a proven causal chain, so treat the causal signals as hypotheses backed by cited evidence.`
     : `No temporal brief could be assembled for "${args.query}" from the grounded results.`;
+
+  const timingProfile = buildTimingProfile(timeline, args.citations.length);
+  const timingLanes = {
+    catalyst: buildTimingLane(timeline, "catalyst"),
+    compounding: buildTimingLane(timeline, "compounding"),
+  };
 
   return {
     object: "temporal_brief",
@@ -423,8 +582,18 @@ export function buildTemporalBrief(args: {
     timeline,
     causalSignals,
     gameBoard: extractActorNames(args.documents),
+    timingProfile,
+    timingLanes,
+    executionTiming: {
+      searchMs: args.telemetry.totalTimeMs,
+      fetchCount: args.documents.length,
+      sourcesQueried: args.telemetry.sourcesQueried,
+      timingBySource: args.telemetry.timing,
+    },
     progressiveDisclosure: [
       "Confirm the earliest event with a primary source before trusting the full chain.",
+      "Separate execution speed from impact speed: a fast search can still uncover a slow-moving real-world chain.",
+      "Count frames before claiming a catalyst. Two frames usually mean a sharper move; five or more usually mean smoother compounding.",
       "Compare the latest state against the most similar older state so you do not confuse current and stale context.",
       "Investigate the gaps between timeline events instead of assuming causation from sequence alone.",
     ],

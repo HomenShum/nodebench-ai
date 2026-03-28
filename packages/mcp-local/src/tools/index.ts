@@ -99,6 +99,8 @@ export { learningTools } from "./learningTools.js";
 export { reconTools } from "./reconTools.js";
 export { securityTools } from "./securityTools.js";
 export { designGovernanceTools } from "./designGovernanceTools.js";
+export { autonomousDeliveryTools } from "./autonomousDeliveryTools.js";
+export { syncBridgeTools } from "./syncBridgeTools.js";
 
 // ─── Bridge ─────────────────────────────────────────────────────────────────
 export { mcpBridgeTools } from "./mcpBridgeTools.js";
@@ -114,6 +116,9 @@ export { contextTools } from "./contextTools.js";
 
 // ─── Harness ──────────────────────────────────────────────────────────────────
 export { missionHarnessTools } from "./missionHarnessTools.js";
+
+// ─── Plan Synthesis ─────────────────────────────────────────────────────
+export { planSynthesisTools } from "./planSynthesisTools.js";
 
 // ─── Specialized ────────────────────────────────────────────────────────────
 export { uiUxDiveTools } from "./uiUxDiveTools.js";

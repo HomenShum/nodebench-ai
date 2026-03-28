@@ -74,7 +74,7 @@ export { TOOLSET_MAP };
 const STARTER_TOOLSETS = ["deep_sim"];
 
 // Core: the original default. ~81 tools across 15 domains.
-const CORE_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate", "skill_update", "context_sandbox", "observability", "execution_trace", "mission_harness", "deep_sim", "founder", "scenario_compiler", "packet_compiler", "entity_temporal"];
+const CORE_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "autonomous_delivery", "sync_bridge", "shared_context", "recon", "security", "boilerplate", "skill_update", "context_sandbox", "observability", "execution_trace", "mission_harness", "deep_sim", "founder", "scenario_compiler", "packet_compiler", "entity_temporal"];
 
 const PRESETS: Record<string, string[]> = {
   // DEFAULT: starter (~19 tools). Progressive discovery is the gateway to 338.
@@ -93,13 +93,13 @@ const PRESETS: Record<string, string[]> = {
   content:      [...CORE_TOOLSETS, "llm", "critter", "email", "rss", "platform", "architect", "local_dashboard", "engine_context", "thompson_protocol"],
   // ── Persona presets (all under 50 tools for IDE compatibility) ──
   // Founder: decision intelligence + company tracking + session memory + local dashboard (~40 tools)
-  founder:      ["deep_sim", "founder", "learning", "local_dashboard"],
+  founder:      ["deep_sim", "founder", "learning", "local_dashboard", "autonomous_delivery", "sync_bridge", "shared_context"],
   // Banker/analyst: decision intelligence + company profiling + web research + recon (~39 tools)
-  banker:       ["deep_sim", "founder", "web", "recon"],
+  banker:       ["deep_sim", "founder", "web", "recon", "autonomous_delivery", "sync_bridge", "shared_context"],
   // Operator: decision intelligence + company tracking + causal memory + action tracing (~40 tools)
-  operator:     ["deep_sim", "founder", "causal_memory"],
+  operator:     ["deep_sim", "founder", "causal_memory", "autonomous_delivery", "sync_bridge", "shared_context"],
   // Researcher: decision intelligence + web + recon + session memory (~32 tools)
-  researcher:   ["deep_sim", "web", "recon", "learning"],
+  researcher:   ["deep_sim", "web", "recon", "learning", "autonomous_delivery", "sync_bridge", "shared_context"],
   // Cursor IDE has a hard 40-tool limit across ALL MCP servers.
   cursor:       ["deep_sim", "quality_gate", "learning", "session_memory", "web", "toon"],
   full: ALL_DOMAIN_KEYS,

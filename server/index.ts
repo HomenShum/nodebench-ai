@@ -29,12 +29,14 @@ import { createMcpGateway, type McpGatewayConfig } from "./mcpGateway.js";
 import { getMemoryStore, generateApiKey, hashPrefix, type ApiKeyRecord } from "./mcpAuth.js";
 import { CommandBridge } from "./commandBridge.js";
 import { mountProviderBus } from "./providerBus.js";
+import { SyncBridgeServer } from "./syncBridge.js";
 import type { McpTool } from "../packages/mcp-local/src/types.js";
 import { createSessionRouter } from "./routes/session.js";
 import { createTtsRouter } from "./routes/tts.js";
 import { mountNemoClaw } from "./nemoclaw/index.js";
 import { createSearchRouter } from "./routes/search.js";
 import { createToolGraphRouter } from "./routes/toolGraph.js";
+import { createSharedContextRouter } from "./routes/sharedContext.js";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────
 
@@ -132,6 +134,12 @@ async function main(): Promise<void> {
     // In production, wire keyLookup to Convex (same as gateway)
   });
 
+  const syncBridge = new SyncBridgeServer({
+    maxConnections: 100,
+    heartbeatIntervalMs: 30_000,
+    maxBatchSize: 200,
+  });
+
   // Log bridge events server-side
   commandBridge.on("agent:connected", (agentId: string, reg: { agentName: string; agentType: string }) => {
     console.log(`[command-bridge] Agent connected: ${reg.agentName} (${reg.agentType}) — ${agentId}`);
@@ -163,6 +171,20 @@ async function main(): Promise<void> {
   // Command Bridge health check
   app.get("/bridge/health", (_req, res) => {
     res.json(commandBridge.getHealthSnapshot());
+  });
+
+  app.get("/sync-bridge/health", (_req, res) => {
+    res.json(syncBridge.getHealthSnapshot());
+  });
+  app.get("/api/sync-bridge/health", (_req, res) => {
+    res.json(syncBridge.getHealthSnapshot());
+  });
+
+  app.get("/sync-bridge/accounts/:userId", (req, res) => {
+    res.json(syncBridge.getAccountSnapshot(req.params.userId));
+  });
+  app.get("/api/sync-bridge/accounts/:userId", (req, res) => {
+    res.json(syncBridge.getAccountSnapshot(req.params.userId));
   });
 
   // MCP gateway info
@@ -202,6 +224,35 @@ async function main(): Promise<void> {
         usage: `claude mcp add nodebench --transport websocket ws://localhost:${PORT}/mcp --header "Authorization: Bearer ${rawKey}"`,
       });
     });
+
+    app.post("/sync-bridge/dev/pairings", (req, res) => {
+      const body = (req.body as {
+        userId?: string;
+        workspaceId?: string;
+        scopes?: Array<"metadata_only" | "receipts_and_traces" | "memory_and_artifacts" | "full_account_sync">;
+        ttlMs?: number;
+      }) ?? {};
+      res.json(syncBridge.createPairingGrant({
+        userId: body.userId ?? "dev-user",
+        workspaceId: body.workspaceId,
+        scopes: body.scopes ?? ["metadata_only"],
+        ttlMs: body.ttlMs,
+      }));
+    });
+    app.post("/api/sync-bridge/dev/pairings", (req, res) => {
+      const body = (req.body as {
+        userId?: string;
+        workspaceId?: string;
+        scopes?: Array<"metadata_only" | "receipts_and_traces" | "memory_and_artifacts" | "full_account_sync">;
+        ttlMs?: number;
+      }) ?? {};
+      res.json(syncBridge.createPairingGrant({
+        userId: body.userId ?? "dev-user",
+        workspaceId: body.workspaceId,
+        scopes: body.scopes ?? ["metadata_only"],
+        ttlMs: body.ttlMs,
+      }));
+    });
   }
 
   // ── Voice session routes ───────────────────────────────────────────
@@ -215,6 +266,9 @@ async function main(): Promise<void> {
   // ── Search API (NodeBench AI App live intelligence dispatch) ─────────
 
   app.use("/search", createSearchRouter(tools));
+  app.use("/api/search", createSearchRouter(tools));
+  app.use("/shared-context", createSharedContextRouter());
+  app.use("/api/shared-context", createSharedContextRouter());
   app.use(createToolGraphRouter());
 
   // ── Create HTTP server & wire WebSocket upgrade ─────────────────────
@@ -229,6 +283,7 @@ async function main(): Promise<void> {
 
   // Attach command bridge to server (initializes internal WSS)
   commandBridge.attachToServer(httpServer, "/bridge");
+  syncBridge.attachToServer(httpServer, "/sync-bridge");
 
   // ── Create Provider Bus (ambient intelligence event bus) ────────────
 
@@ -264,6 +319,8 @@ async function main(): Promise<void> {
       gateway.handleUpgrade(req, socket, head);
     } else if (pathname === "/bridge") {
       commandBridge.handleUpgrade(req, socket, head);
+    } else if (pathname === "/sync-bridge") {
+      syncBridge.handleUpgrade(req, socket, head);
     } else if (pathname === "/bus") {
       handleBusUpgrade(req, socket, head);
     } else if (pathname === "/nemoclaw/ws") {
@@ -284,6 +341,8 @@ async function main(): Promise<void> {
     console.log(`[nodebench-server] Health: http://localhost:${PORT}/mcp/health`);
     console.log(`[nodebench-server] Command Bridge WebSocket: ws://localhost:${PORT}/bridge`);
     console.log(`[nodebench-server] Bridge Health: http://localhost:${PORT}/bridge/health`);
+    console.log(`[nodebench-server] Sync Bridge WebSocket: ws://localhost:${PORT}/sync-bridge`);
+    console.log(`[nodebench-server] Sync Bridge Health: http://localhost:${PORT}/sync-bridge/health`);
     console.log(`[nodebench-server] Voice API: http://localhost:${PORT}/voice/session`);
     console.log(`[nodebench-server] NemoClaw Chat: http://localhost:${PORT}/nemoclaw`);
     console.log(`[nodebench-server] NemoClaw WS: ws://localhost:${PORT}/nemoclaw/ws`);
@@ -301,6 +360,7 @@ async function main(): Promise<void> {
     console.log("\n[nodebench-server] Shutting down...");
     providerBus.shutdown();
     commandBridge.shutdown();
+    syncBridge.shutdown();
     httpServer.close(() => {
       console.log("[nodebench-server] HTTP server closed");
       process.exit(0);

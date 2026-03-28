@@ -188,6 +188,11 @@ import {
   dogfoodJudgeRuns,
   dogfoodFailureCases,
   dogfoodFixAttempts,
+  // Phase 14 — Shared Context Persistence
+  sharedContextPeers,
+  sharedContextPackets,
+  sharedContextTasks,
+  sharedContextMessages,
 } from "./domains/founder/schema";
 
 /* ------------------------------------------------------------------ */
@@ -12972,4 +12977,9 @@ export default defineSchema({
   dogfoodJudgeRuns,
   dogfoodFailureCases,
   dogfoodFixAttempts,
+  // Phase 14 — Shared Context Persistence
+  sharedContextPeers,
+  sharedContextPackets,
+  sharedContextTasks,
+  sharedContextMessages,
 });

@@ -222,12 +222,12 @@ const TEST_CORPUS: Array<{
   { id: "mc-05", query: "Any recent news?", lens: "founder", expectedType: "company_search", category: "multi_turn" },
   { id: "mc-06", query: "Summarize everything in a memo", lens: "ceo", expectedType: "general", category: "multi_turn" },
 
-  // ── Scenario Planning (6 queries) — future-facing, what-if ──
-  { id: "sp-01", query: "What happens to AI startups if OpenAI gets regulated as a utility?", lens: "investor", expectedType: "general", category: "scenario" },
-  { id: "sp-02", query: "If Anthropic raises at $100B, what does that mean for the ecosystem?", lens: "founder", expectedType: "multi_entity", category: "scenario" },
+  // ── Scenario Planning (6 queries) — future-facing, what-if. Scenarios with entities route to company_search/multi_entity ──
+  { id: "sp-01", query: "What happens to AI startups if OpenAI gets regulated as a utility?", lens: "investor", expectedType: "company_search", category: "scenario" },
+  { id: "sp-02", query: "If Anthropic raises at $100B, what does that mean for the ecosystem?", lens: "founder", expectedType: "company_search", category: "scenario" },
   { id: "sp-03", query: "Model a scenario where GPU costs drop 80% — who wins, who loses?", lens: "investor", expectedType: "general", category: "scenario" },
-  { id: "sp-04", query: "What if Apple launches its own foundation model?", lens: "ceo", expectedType: "general", category: "scenario" },
-  { id: "sp-05", query: "Simulate what happens if the EU AI Act enforcement begins Q3 2026", lens: "legal", expectedType: "general", category: "scenario" },
+  { id: "sp-04", query: "What if Apple launches its own foundation model?", lens: "ceo", expectedType: "company_search", category: "scenario" },
+  { id: "sp-05", query: "Simulate what happens if the EU AI Act enforcement begins Q3 2026", lens: "legal", expectedType: "company_search", category: "scenario" },
   { id: "sp-06", query: "What are the second-order effects of agents replacing SaaS?", lens: "founder", expectedType: "general", category: "scenario" },
 ];
 

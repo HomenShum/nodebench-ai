@@ -168,6 +168,8 @@ describe("grounding routes", () => {
     expect(response.status).toBe(200);
     expect(data.object).toBe("temporal_brief");
     expect(data.timeline).toHaveLength(1);
+    expect(data.timingProfile.framesToMaterialImpact).toBe(1);
+    expect(data.executionTiming.searchMs).toBe(100);
     expect(data.gameBoard[0]?.actor).toBe("Project Atlas");
   });
 

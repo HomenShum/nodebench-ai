@@ -1200,3 +1200,167 @@ export const dogfoodFixAttempts = defineTable({
 })
   .index("by_case", ["caseId"])
   .index("by_status", ["status"]);
+
+// ===========================================================================
+// Phase 14 — Shared Context Persistence (Vercel-durable delegation flow)
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// 35. Shared Context Peers — agents/surfaces participating in delegation
+// ---------------------------------------------------------------------------
+
+export const sharedContextPeers = defineTable({
+  peerId: v.string(),
+  product: v.union(v.literal("nodebench"), v.literal("ta_studio")),
+  tenantId: v.optional(v.string()),
+  workspaceId: v.optional(v.string()),
+  surface: v.union(
+    v.literal("web"),
+    v.literal("browser"),
+    v.literal("runner"),
+    v.literal("evaluator"),
+    v.literal("packet_engine"),
+    v.literal("qa_runner"),
+    v.literal("monitor"),
+    v.literal("local_runtime"),
+    v.literal("api"),
+  ),
+  role: v.union(
+    v.literal("researcher"),
+    v.literal("compiler"),
+    v.literal("judge"),
+    v.literal("explorer"),
+    v.literal("replay"),
+    v.literal("environment_builder"),
+    v.literal("runner"),
+    v.literal("observer"),
+    v.literal("monitor"),
+    v.literal("router"),
+  ),
+  capabilities: v.array(v.string()),
+  contextScopes: v.array(v.string()),
+  status: v.union(v.literal("active"), v.literal("idle"), v.literal("stale")),
+  summary: v.object({
+    currentTask: v.optional(v.string()),
+    focusEntity: v.optional(v.string()),
+    focusWorkflow: v.optional(v.string()),
+    currentState: v.optional(v.string()),
+    confidence: v.optional(v.number()),
+    lastUpdate: v.optional(v.string()),
+    availableArtifacts: v.optional(v.array(v.string())),
+    permissionScope: v.optional(v.array(v.string())),
+  }),
+  lastHeartbeatAt: v.number(),
+  createdAt: v.number(),
+})
+  .index("by_peerId", ["peerId"])
+  .index("by_tenant", ["tenantId", "status"])
+  .index("by_workspace", ["workspaceId", "status"])
+  .index("by_role", ["role", "status"]);
+
+// ---------------------------------------------------------------------------
+// 36. Shared Context Packets — durable context exchange units
+// ---------------------------------------------------------------------------
+
+export const sharedContextPackets = defineTable({
+  contextId: v.string(),
+  contextType: v.union(
+    v.literal("entity_packet"),
+    v.literal("workflow_packet"),
+    v.literal("trace_packet"),
+    v.literal("judge_packet"),
+    v.literal("environment_packet"),
+    v.literal("failure_packet"),
+    v.literal("state_snapshot_packet"),
+    v.literal("verdict_packet"),
+    v.literal("scenario_packet"),
+    v.literal("change_packet"),
+  ),
+  producerPeerId: v.string(),
+  tenantId: v.optional(v.string()),
+  workspaceId: v.optional(v.string()),
+  scope: v.array(v.string()),
+  subject: v.string(),
+  summary: v.string(),
+  claims: v.array(v.string()),
+  evidenceRefs: v.array(v.string()),
+  confidence: v.optional(v.number()),
+  lineage: v.optional(v.object({
+    parentContextIds: v.optional(v.array(v.string())),
+    sourceRunId: v.optional(v.string()),
+    sourceTraceId: v.optional(v.string()),
+    supersedes: v.optional(v.string()),
+  })),
+  version: v.number(),
+  invalidates: v.optional(v.array(v.string())),
+  freshness: v.optional(v.object({
+    status: v.optional(v.union(v.literal("fresh"), v.literal("warming"), v.literal("stale"))),
+    expiresAt: v.optional(v.string()),
+    trustTier: v.optional(v.union(v.literal("internal"), v.literal("verified"), v.literal("directional"))),
+  })),
+  visibility: v.optional(v.union(v.literal("internal"), v.literal("workspace"), v.literal("tenant"))),
+  status: v.union(v.literal("active"), v.literal("superseded"), v.literal("invalidated")),
+  createdAt: v.number(),
+})
+  .index("by_contextId", ["contextId"])
+  .index("by_tenant_workspace", ["tenantId", "workspaceId", "status"])
+  .index("by_producer", ["producerPeerId", "status"])
+  .index("by_type", ["contextType", "status"]);
+
+// ---------------------------------------------------------------------------
+// 37. Shared Context Tasks — delegation handoffs between peers
+// ---------------------------------------------------------------------------
+
+export const sharedContextTasks = defineTable({
+  taskId: v.string(),
+  taskType: v.string(),
+  proposerPeerId: v.string(),
+  assigneePeerId: v.string(),
+  tenantId: v.optional(v.string()),
+  workspaceId: v.optional(v.string()),
+  description: v.optional(v.string()),
+  status: v.union(
+    v.literal("proposed"),
+    v.literal("accepted"),
+    v.literal("rejected"),
+    v.literal("completed"),
+    v.literal("escalated"),
+  ),
+  taskSpec: v.optional(v.any()),
+  inputContextIds: v.array(v.string()),
+  outputContextId: v.optional(v.string()),
+  reason: v.optional(v.string()),
+  createdAt: v.number(),
+  completedAt: v.optional(v.number()),
+})
+  .index("by_taskId", ["taskId"])
+  .index("by_tenant", ["tenantId", "status"])
+  .index("by_assignee", ["assigneePeerId", "status"])
+  .index("by_proposer", ["proposerPeerId", "status"]);
+
+// ---------------------------------------------------------------------------
+// 38. Shared Context Messages — peer-to-peer messaging
+// ---------------------------------------------------------------------------
+
+export const sharedContextMessages = defineTable({
+  fromPeerId: v.string(),
+  toPeerId: v.string(),
+  tenantId: v.optional(v.string()),
+  messageType: v.union(
+    v.literal("request"),
+    v.literal("response"),
+    v.literal("context_offer"),
+    v.literal("context_pull"),
+    v.literal("task_handoff"),
+    v.literal("status_update"),
+    v.literal("verdict"),
+    v.literal("escalation"),
+    v.literal("invalidation"),
+  ),
+  content: v.string(),
+  acknowledged: v.boolean(),
+  createdAt: v.number(),
+})
+  .index("by_to", ["toPeerId", "acknowledged"])
+  .index("by_from", ["fromPeerId", "createdAt"])
+  .index("by_tenant", ["tenantId", "createdAt"]);

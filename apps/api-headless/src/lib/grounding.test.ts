@@ -197,7 +197,10 @@ describe("buildTemporalBrief", () => {
     expect(brief.object).toBe("temporal_brief");
     expect(brief.timeline).toHaveLength(1);
     expect(brief.timeline[0]?.label).toContain("three day delay");
-    expect(brief.progressiveDisclosure).toHaveLength(3);
+    expect(brief.timingProfile.framesToMaterialImpact).toBe(1);
+    expect(brief.timingLanes.catalyst.frames).toBe(1);
+    expect(brief.executionTiming.searchMs).toBe(120);
+    expect(brief.progressiveDisclosure).toHaveLength(5);
     expect(brief.gameBoard[0]?.actor).toBe("Project Atlas");
   });
 });

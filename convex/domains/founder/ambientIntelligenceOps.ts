@@ -32,6 +32,61 @@ async function assertWorkspaceOwner(
   return userId;
 }
 
+async function assertCompanyOwner(
+  ctx: { db: QueryCtx["db"]; auth: QueryCtx["auth"] },
+  companyId: Id<"founderCompanies">,
+) {
+  const userId = await requireAuth(ctx);
+  const company = await ctx.db.get(companyId);
+  if (!company) throw new Error("Access denied");
+  const workspace = await ctx.db.get(company.workspaceId);
+  if (!workspace || workspace.ownerUserId !== userId) {
+    throw new Error("Access denied");
+  }
+  return { userId, company, workspace };
+}
+
+async function assertAmbientScopeOwner(
+  ctx: { db: QueryCtx["db"]; auth: QueryCtx["auth"] },
+  scope: {
+    companyId?: Id<"founderCompanies">;
+    workspaceId?: Id<"founderWorkspaces">;
+  },
+) {
+  if (scope.companyId) {
+    return assertCompanyOwner(ctx, scope.companyId);
+  }
+  if (scope.workspaceId) {
+    await assertWorkspaceOwner(ctx, scope.workspaceId);
+    const workspace = await ctx.db.get(scope.workspaceId);
+    if (!workspace) throw new Error("Access denied");
+    return { userId: workspace.ownerUserId, company: undefined, workspace };
+  }
+  throw new Error("Access denied");
+}
+
+async function assertCanonicalObjectOwner(
+  ctx: { db: QueryCtx["db"]; auth: QueryCtx["auth"] },
+  objectId: Id<"ambientCanonicalObjects">,
+) {
+  const object = await ctx.db.get(objectId);
+  if (!object) throw new Error("Object not found");
+  await assertAmbientScopeOwner(ctx, {
+    companyId: object.companyId ?? undefined,
+    workspaceId: object.workspaceId ?? undefined,
+  });
+  return object;
+}
+
+async function getOwnedWorkspaceId(ctx: { db: QueryCtx["db"]; auth: QueryCtx["auth"] }) {
+  const userId = await requireAuth(ctx);
+  const workspace = await ctx.db
+    .query("founderWorkspaces")
+    .withIndex("by_owner", (q) => q.eq("ownerUserId", userId))
+    .first();
+  return workspace?._id;
+}
+
 // ===========================================================================
 // 27. Ingestion Queue — Write
 // ===========================================================================
@@ -56,6 +111,16 @@ export const enqueueIngestion = mutation({
     workspaceId: v.optional(v.id("founderWorkspaces")),
   },
   handler: async (ctx, args) => {
+    const companyScope = args.companyId ? await assertCompanyOwner(ctx, args.companyId) : undefined;
+    if (args.workspaceId) {
+      await assertWorkspaceOwner(ctx, args.workspaceId);
+    } else {
+      await requireAuth(ctx);
+    }
+    if (companyScope && args.workspaceId && companyScope.company.workspaceId !== args.workspaceId) {
+      throw new Error("Access denied");
+    }
+
     return ctx.db.insert("ambientIngestionQueue", {
       ...args,
       processingStatus: "queued",
@@ -123,6 +188,7 @@ export const getRecentIngestions = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { companyId, limit }) => {
+    await assertCompanyOwner(ctx, companyId);
     const cap = Math.min(limit ?? 30, 100);
     return ctx.db
       .query("ambientIngestionQueue")
@@ -176,8 +242,7 @@ export const updateCanonicalObject = mutation({
     tags: v.optional(v.array(v.string())),
   },
   handler: async (ctx, { objectId, ...updates }) => {
-    const existing = await ctx.db.get(objectId);
-    if (!existing) throw new Error("Object not found");
+    await assertCanonicalObjectOwner(ctx, objectId);
 
     const now = Date.now();
     const patch: Record<string, any> = { updatedAt: now };
@@ -203,6 +268,7 @@ export const getCanonicalObjects = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { companyId, objectType, limit }) => {
+    await assertCompanyOwner(ctx, companyId);
     const cap = Math.min(limit ?? 50, 200);
 
     if (objectType) {
@@ -229,12 +295,18 @@ export const getCanonicalObjects = query({
 export const getObjectHistory = query({
   args: { objectId: v.id("ambientCanonicalObjects") },
   handler: async (ctx, { objectId }) => {
+    const rootObject = await assertCanonicalObjectOwner(ctx, objectId);
     const chain: any[] = [];
     let currentId: Id<"ambientCanonicalObjects"> | undefined = objectId;
+    const allowedCompanyId = rootObject.companyId ?? undefined;
+    const allowedWorkspaceId = rootObject.workspaceId ?? undefined;
 
     for (let i = 0; i < 20 && currentId; i++) {
       const obj = await ctx.db.get(currentId);
       if (!obj) break;
+      if ((obj.companyId ?? undefined) !== allowedCompanyId || (obj.workspaceId ?? undefined) !== allowedWorkspaceId) {
+        break;
+      }
       chain.push(obj);
       currentId = obj.supersedes ?? undefined;
     }
@@ -272,6 +344,18 @@ export const recordChangeDetection = internalMutation({
 export const resolveChangeDetection = mutation({
   args: { detectionId: v.id("ambientChangeDetections") },
   handler: async (ctx, { detectionId }) => {
+    const detection = await ctx.db.get(detectionId);
+    if (!detection) throw new Error("Access denied");
+    if (detection.companyId) {
+      await assertCompanyOwner(ctx, detection.companyId);
+    } else {
+      const object = await ctx.db.get(detection.objectId);
+      if (!object) throw new Error("Access denied");
+      await assertAmbientScopeOwner(ctx, {
+        companyId: object.companyId ?? undefined,
+        workspaceId: object.workspaceId ?? undefined,
+      });
+    }
     await ctx.db.patch(detectionId, { resolvedAt: Date.now(), requiresAttention: false });
   },
 });
@@ -290,6 +374,7 @@ export const getAttentionRequired = query({
     const cap = Math.min(limit ?? 20, 50);
 
     if (companyId) {
+      await assertCompanyOwner(ctx, companyId);
       const all = await ctx.db
         .query("ambientChangeDetections")
         .withIndex("by_company", (q) => q.eq("companyId", companyId))
@@ -298,11 +383,29 @@ export const getAttentionRequired = query({
       return all.filter((d) => d.requiresAttention).slice(0, cap);
     }
 
-    return ctx.db
-      .query("ambientChangeDetections")
-      .withIndex("by_attention", (q) => q.eq("requiresAttention", true))
-      .order("desc")
-      .take(cap);
+    const workspaceId = await getOwnedWorkspaceId(ctx);
+    if (!workspaceId) return [];
+
+    const companies = await ctx.db
+      .query("founderCompanies")
+      .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
+      .take(100);
+
+    const detections = await Promise.all(
+      companies.map((company) =>
+        ctx.db
+          .query("ambientChangeDetections")
+          .withIndex("by_company", (q) => q.eq("companyId", company._id))
+          .order("desc")
+          .take(cap),
+      ),
+    );
+
+    return detections
+      .flat()
+      .filter((d) => d.requiresAttention)
+      .sort((a, b) => b.detectedAt - a.detectedAt)
+      .slice(0, cap);
   },
 });
 
@@ -359,6 +462,7 @@ export const markPacketGenerated = mutation({
     packetType: v.string(),
   },
   handler: async (ctx, { companyId, packetType }) => {
+    await assertCompanyOwner(ctx, companyId);
     const existing = await ctx.db
       .query("ambientPacketReadiness")
       .withIndex("by_company_type", (q) =>
@@ -388,6 +492,7 @@ export const markPacketGenerated = mutation({
 export const getPacketReadiness = query({
   args: { companyId: v.id("founderCompanies") },
   handler: async (ctx, { companyId }) => {
+    await assertCompanyOwner(ctx, companyId);
     return ctx.db
       .query("ambientPacketReadiness")
       .withIndex("by_company_type", (q) => q.eq("companyId", companyId))
@@ -406,6 +511,7 @@ export const getSessionDelta = query({
     lastSessionEnd: v.number(), // epoch ms
   },
   handler: async (ctx, { companyId, lastSessionEnd }) => {
+    await assertCompanyOwner(ctx, companyId);
     // Get new canonical objects since last session
     const newObjects = await ctx.db
       .query("ambientCanonicalObjects")

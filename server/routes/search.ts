@@ -15,9 +15,700 @@
  * This is the bridge between the browser search canvas and the MCP tool layer.
  */
 
-import { Router } from "express";
+import { Request, Response, Router } from "express";
+import { getDb, genId } from "../../packages/mcp-local/src/db.js";
 import type { McpTool } from "../../packages/mcp-local/src/types.js";
+import {
+  getSyncBridgeStatus,
+  linkDurableObjects,
+  recordExecutionReceipt,
+  recordLocalArtifact,
+  recordLocalOutcome,
+  upsertDurableObject,
+} from "../../packages/mcp-local/src/sync/store.js";
 import { buildContextBundle } from "../../packages/mcp-local/src/tools/contextInjection.js";
+
+const SEARCH_SOURCE = "search_api";
+const CONTROL_PLANE_VIEW_ID = "view:control-plane";
+const LENS_PERSONA_MAP: Record<string, string> = {
+  founder: "FOUNDER_STRATEGY",
+  investor: "EARLY_STAGE_VC",
+  banker: "JPM_STARTUP_BANKER",
+  ceo: "CORP_DEV",
+  legal: "LEGAL_COMPLIANCE",
+  student: "SIMPLIFIED_RESEARCH",
+};
+
+type SearchTraceEntry = {
+  step: string;
+  tool?: string;
+  startMs: number;
+  endMs?: number;
+  status: "ok" | "error" | "skip";
+  detail?: string;
+};
+
+type SearchHistoryItem = {
+  runId: string;
+  traceId: string;
+  packetId: string;
+  outcomeId: string;
+  query: string;
+  lens: string;
+  persona: string;
+  classification: string;
+  entityName: string;
+  packet: Record<string, unknown>;
+  trace: Array<Record<string, unknown>>;
+  latencyMs: number;
+  proofStatus: string;
+  sourceCount: number;
+  updatedAt: string;
+};
+
+function parseJsonValue<T>(value: string | null | undefined, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function trimText(value: unknown, max = 220): string {
+  if (typeof value !== "string") return "";
+  return value.length > max ? `${value.slice(0, max - 1).trimEnd()}…` : value;
+}
+
+function toDomain(url?: string): string | undefined {
+  if (!url) return undefined;
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return undefined;
+  }
+}
+
+function dedupeBy<T>(items: T[], keyFn: (item: T) => string): T[] {
+  const seen = new Set<string>();
+  const deduped: T[] = [];
+  for (const item of items) {
+    const key = keyFn(item);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(item);
+  }
+  return deduped;
+}
+
+function normalizeSourceRefs(result: any): any[] {
+  if (Array.isArray(result?.sourceRefs) && result.sourceRefs.length > 0) {
+    return dedupeBy(result.sourceRefs, (source: any) => String(source.id ?? source.href ?? source.label ?? ""));
+  }
+
+  const rawSources = [
+    ...(Array.isArray(result?.sourcesUsed) ? result.sourcesUsed : []),
+    ...(Array.isArray(result?.webSources) ? result.webSources : []),
+  ];
+
+  const mapped = rawSources.map((source: any, index: number) => {
+    const href = source.url ?? source.href ?? undefined;
+    const title = source.title ?? source.label ?? source.name ?? href ?? `Source ${index + 1}`;
+    return {
+      id: source.id ?? `source:${index + 1}`,
+      label: title,
+      href,
+      type: source.type ?? "web",
+      status: source.status ?? "cited",
+      title,
+      domain: source.domain ?? toDomain(href),
+      publishedAt: source.publishedAtIso ?? source.publishedAt ?? null,
+      thumbnailUrl: source.thumbnailUrl,
+      excerpt: trimText(source.excerpt ?? source.snippet ?? source.summary ?? source.content, 260),
+      confidence: typeof source.confidence === "number" ? source.confidence : undefined,
+    };
+  });
+
+  return dedupeBy(mapped, (source) => String(source.href ?? source.label ?? source.id));
+}
+
+function normalizeClaimRefs(result: any, sourceRefs: any[]): any[] {
+  if (Array.isArray(result?.claimRefs) && result.claimRefs.length > 0) {
+    return result.claimRefs;
+  }
+
+  const defaultSourceIds = sourceRefs.slice(0, 3).map((source) => source.id);
+  const claims: any[] = [];
+
+  for (const signal of Array.isArray(result?.signals) ? result.signals : []) {
+    claims.push({
+      id: `claim:signal:${claims.length + 1}`,
+      text: signal.name ?? signal.title ?? String(signal),
+      sourceRefIds: defaultSourceIds,
+      answerBlockIds: ["answer:block:summary"],
+      status: "retained",
+    });
+  }
+
+  for (const change of Array.isArray(result?.whatChanged) ? result.whatChanged : []) {
+    claims.push({
+      id: `claim:change:${claims.length + 1}`,
+      text: change.description ?? String(change),
+      sourceRefIds: defaultSourceIds,
+      answerBlockIds: ["answer:block:changes"],
+      status: "retained",
+    });
+  }
+
+  for (const contradiction of Array.isArray(result?.contradictions) ? result.contradictions : []) {
+    claims.push({
+      id: `claim:risk:${claims.length + 1}`,
+      text: contradiction.claim ?? contradiction.title ?? String(contradiction),
+      sourceRefIds: defaultSourceIds,
+      answerBlockIds: ["answer:block:risks"],
+      status: "contradicted",
+    });
+  }
+
+  return claims.slice(0, 12);
+}
+
+function blockStatus(sourceRefIds: string[], explicitUncertainty?: boolean): "cited" | "uncertain" | "draft" {
+  if (sourceRefIds.length > 0) return "cited";
+  if (explicitUncertainty) return "uncertain";
+  return "draft";
+}
+
+function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[]): any[] {
+  if (Array.isArray(result?.answerBlocks) && result.answerBlocks.length > 0) {
+    return result.answerBlocks;
+  }
+
+  const citedSourceIds = sourceRefs.slice(0, 4).map((source) => source.id);
+  const sourceBacked = citedSourceIds.length > 0;
+  const blocks: any[] = [];
+
+  const summaryText = trimText(result?.canonicalEntity?.canonicalMission ?? result?.summary ?? "", 420);
+  if (summaryText) {
+    blocks.push({
+      id: "answer:block:summary",
+      title: "Bottom line",
+      text: summaryText,
+      sourceRefIds: citedSourceIds,
+      claimIds: claimRefs.filter((claim) => claim.answerBlockIds.includes("answer:block:summary")).map((claim) => claim.id),
+      status: blockStatus(citedSourceIds, !sourceBacked),
+    });
+  }
+
+  const changesText = (Array.isArray(result?.whatChanged) ? result.whatChanged : [])
+    .slice(0, 3)
+    .map((change: any) => `• ${change.description ?? String(change)}`)
+    .join("\n");
+  if (changesText) {
+    blocks.push({
+      id: "answer:block:changes",
+      title: "What changed",
+      text: changesText,
+      sourceRefIds: citedSourceIds,
+      claimIds: claimRefs.filter((claim) => claim.answerBlockIds.includes("answer:block:changes")).map((claim) => claim.id),
+      status: blockStatus(citedSourceIds, !sourceBacked),
+    });
+  }
+
+  const risksText = (Array.isArray(result?.contradictions) ? result.contradictions : [])
+    .slice(0, 3)
+    .map((item: any) => `• ${item.claim ?? item.title ?? String(item)}${item.evidence ? `: ${item.evidence}` : ""}`)
+    .join("\n");
+  if (risksText) {
+    blocks.push({
+      id: "answer:block:risks",
+      title: "Risks and contradictions",
+      text: risksText,
+      sourceRefIds: citedSourceIds,
+      claimIds: claimRefs.filter((claim) => claim.answerBlockIds.includes("answer:block:risks")).map((claim) => claim.id),
+      status: blockStatus(citedSourceIds, true),
+    });
+  }
+
+  const nextAction = (Array.isArray(result?.nextActions) ? result.nextActions : [])[0];
+  if (nextAction) {
+    blocks.push({
+      id: "answer:block:next",
+      title: "Recommended next move",
+      text: nextAction.action ?? String(nextAction),
+      sourceRefIds: citedSourceIds,
+      claimIds: [],
+      status: blockStatus(citedSourceIds, true),
+    });
+  }
+
+  return blocks;
+}
+
+function buildExplorationMemory(result: any, sourceRefs: any[], claimRefs: any[]): Record<string, number> {
+  if (result?.explorationMemory) return result.explorationMemory;
+  const contradictionCount = Array.isArray(result?.contradictions) ? result.contradictions.length : 0;
+  const exploredSourceCount = Math.max(sourceRefs.length, contradictionCount > 0 ? 3 : sourceRefs.length);
+  const citedSourceCount = sourceRefs.filter((source) => source.status !== "discarded").length;
+  return {
+    exploredSourceCount,
+    citedSourceCount,
+    discardedSourceCount: Math.max(0, exploredSourceCount - citedSourceCount),
+    entityCount: result?.canonicalEntity?.name ? 1 : 0,
+    claimCount: claimRefs.length,
+    contradictionCount,
+  };
+}
+
+function buildGraphArtifacts(args: {
+  query: string;
+  lens: string;
+  persona: string;
+  packetId: string;
+  sourceRefs: any[];
+  claimRefs: any[];
+  answerBlocks: any[];
+  recommendedNextAction?: string;
+}): { graphNodes: any[]; graphEdges: any[]; graphSummary: Record<string, unknown> } {
+  const graphNodes: any[] = [
+    { id: "query:current", kind: "query", label: trimText(args.query, 80), status: "verified" },
+    { id: `lens:${args.lens}`, kind: "lens", label: args.lens, status: "verified" },
+    { id: `persona:${args.persona}`, kind: "persona", label: args.persona, status: "verified" },
+    { id: "context:bundle", kind: "context_bundle", label: "Context bundle", status: "verified" },
+  ];
+  const graphEdges: any[] = [
+    { fromId: "query:current", toId: `lens:${args.lens}`, kind: "selected" },
+    { fromId: `lens:${args.lens}`, toId: `persona:${args.persona}`, kind: "selected" },
+    { fromId: `persona:${args.persona}`, toId: "context:bundle", kind: "selected" },
+  ];
+
+  for (const source of args.sourceRefs) {
+    graphNodes.push({
+      id: source.id,
+      kind: "source",
+      label: trimText(source.label ?? source.title ?? "Source", 60),
+      status: source.status === "discarded" ? "incomplete" : "verified",
+      confidence: source.confidence,
+    });
+    graphEdges.push({ fromId: "context:bundle", toId: source.id, kind: "explored" });
+  }
+
+  for (const claim of args.claimRefs) {
+    graphNodes.push({
+      id: claim.id,
+      kind: claim.status === "contradicted" ? "contradiction" : "claim",
+      label: trimText(claim.text, 70),
+      status: claim.status === "retained" ? "verified" : "provisional",
+    });
+    for (const sourceId of claim.sourceRefIds ?? []) {
+      graphEdges.push({
+        fromId: sourceId,
+        toId: claim.id,
+        kind: claim.status === "contradicted" ? "conflicts_with" : "supports",
+      });
+    }
+  }
+
+  for (const block of args.answerBlocks) {
+    graphNodes.push({
+      id: block.id,
+      kind: "answer_block",
+      label: trimText(block.title, 50),
+      status: block.status === "cited" ? "verified" : "provisional",
+    });
+    for (const claimId of block.claimIds ?? []) {
+      graphEdges.push({ fromId: claimId, toId: block.id, kind: "used_in" });
+    }
+    for (const sourceId of block.sourceRefIds ?? []) {
+      graphEdges.push({ fromId: sourceId, toId: block.id, kind: "about" });
+    }
+  }
+
+  graphNodes.push({
+    id: args.packetId,
+    kind: "artifact",
+    label: "Founder packet",
+    status: "verified",
+  });
+  for (const block of args.answerBlocks) {
+    graphEdges.push({ fromId: block.id, toId: args.packetId, kind: "used_in" });
+  }
+
+  if (args.recommendedNextAction) {
+    graphNodes.push({
+      id: "follow_up:next_action",
+      kind: "follow_up",
+      label: trimText(args.recommendedNextAction, 70),
+      status: "provisional",
+    });
+    graphEdges.push({ fromId: args.packetId, toId: "follow_up:next_action", kind: "suggests" });
+  }
+
+  return {
+    graphNodes,
+    graphEdges,
+    graphSummary: {
+      nodeCount: graphNodes.length,
+      edgeCount: graphEdges.length,
+      clusterCount: Math.max(1, Math.min(4, 1 + args.sourceRefs.length)),
+      primaryPath: ["query", "lens", "persona", "source", "claim", "answer_block", "artifact"],
+    },
+  };
+}
+
+function toProofStatus(sourceRefs: any[], answerBlocks: any[], judgeVerdict: any): string {
+  if (sourceRefs.length === 0) return "incomplete";
+  const hasOrphanedCitedBlock = answerBlocks.some(
+    (block) => block.status === "cited" && (!Array.isArray(block.sourceRefIds) || block.sourceRefIds.length === 0),
+  );
+  if (hasOrphanedCitedBlock) return "incomplete";
+  if (judgeVerdict?.verdict === "pass") return "verified";
+  if (judgeVerdict?.verdict === "fail") return "drifting";
+  return "provisional";
+}
+
+function buildResultPacket(args: {
+  query: string;
+  result: any;
+  classification: string;
+  entityFallback?: string | null;
+}): Record<string, unknown> {
+  const result = args.result ?? {};
+  const sourceRefs = Array.isArray(result.sourceRefs) ? result.sourceRefs : [];
+  return {
+    query: args.query,
+    entityName: result.canonicalEntity?.name ?? args.entityFallback ?? "NodeBench",
+    answer: result.canonicalEntity?.canonicalMission ?? "",
+    confidence: result.canonicalEntity?.identityConfidence ?? 70,
+    sourceCount: sourceRefs.length,
+    variables: (result.signals ?? []).slice(0, 5).map((signal: any, index: number) => ({
+      rank: index + 1,
+      name: signal.name ?? String(signal),
+      direction: signal.direction ?? "neutral",
+      impact: signal.impact ?? "medium",
+    })),
+    keyMetrics: [
+      { label: "Confidence", value: `${result.canonicalEntity?.identityConfidence ?? 0}%` },
+      { label: "Sources", value: String(sourceRefs.length) },
+      { label: "Claims", value: String(result.claimRefs?.length ?? 0) },
+      { label: "Next actions", value: String(result.nextActions?.length ?? 0) },
+    ],
+    changes: result.whatChanged?.map((change: any) => ({
+      description: change.description ?? String(change),
+      date: change.date,
+    })),
+    risks: result.contradictions?.map((contradiction: any) => ({
+      title: contradiction.claim ?? contradiction.title ?? "Contradiction",
+      description: contradiction.evidence ?? contradiction.description ?? "",
+      falsification: contradiction.falsification,
+    })),
+    comparables: result.comparables?.map((comparable: any) => ({
+      name: comparable.name ?? String(comparable),
+      relevance: comparable.relevance ?? "medium",
+      note: comparable.note ?? "",
+    })),
+    packetId: result.packetId,
+    packetType: result.packetType ?? `${args.classification}_packet`,
+    canonicalEntity: result.canonicalEntity?.name ?? args.entityFallback ?? "NodeBench",
+    sourceRefs: result.sourceRefs,
+    claimRefs: result.claimRefs,
+    answerBlocks: result.answerBlocks,
+    explorationMemory: result.explorationMemory,
+    graphSummary: result.graphSummary,
+    proofStatus: result.proofStatus,
+    uncertaintyBoundary: result.uncertaintyBoundary,
+    recommendedNextAction: result.recommendedNextAction,
+    graphNodes: result.graphNodes,
+    graphEdges: result.graphEdges,
+    interventions: result.nextActions?.slice(0, 4).map((action: any) => ({
+      action: action.action ?? String(action),
+      impact: action.impact ?? "medium",
+    })),
+    nextQuestions: result.nextQuestions ?? result.nextActions?.map((action: any) => action.action) ?? [],
+  };
+}
+
+function decorateResultWithProof(args: {
+  query: string;
+  lens: string;
+  classification: string;
+  result: any;
+  judgeVerdict: any;
+  packetId: string;
+}): { result: any; packet: Record<string, unknown>; persona: string } {
+  const persona = LENS_PERSONA_MAP[args.lens] ?? "FOUNDER_STRATEGY";
+  const sourceRefs = normalizeSourceRefs(args.result);
+  const claimRefs = normalizeClaimRefs(args.result, sourceRefs);
+  const answerBlocks = normalizeAnswerBlocks(args.result, sourceRefs, claimRefs);
+  const recommendedNextAction =
+    args.result?.recommendedNextAction ??
+    (Array.isArray(args.result?.nextActions) ? args.result.nextActions[0]?.action : undefined);
+  const { graphNodes, graphEdges, graphSummary } = buildGraphArtifacts({
+    query: args.query,
+    lens: args.lens,
+    persona,
+    packetId: args.packetId,
+    sourceRefs,
+    claimRefs,
+    answerBlocks,
+    recommendedNextAction,
+  });
+  const explorationMemory = buildExplorationMemory(args.result, sourceRefs, claimRefs);
+  const proofStatus = toProofStatus(sourceRefs, answerBlocks, args.judgeVerdict);
+  const uncertaintyBoundary =
+    args.result?.uncertaintyBoundary ??
+    (sourceRefs.length > 0
+      ? "Citations reflect the sources explored in this run. Treat the packet as directional until the next live refresh."
+      : "This answer is missing durable citations. Treat it as provisional until more source coverage is available.");
+
+  const decoratedResult = {
+    ...args.result,
+    packetId: args.packetId,
+    packetType: args.result?.packetType ?? `${args.classification}_packet`,
+    sourceRefs,
+    claimRefs,
+    answerBlocks,
+    explorationMemory,
+    graphSummary,
+    proofStatus,
+    uncertaintyBoundary,
+    recommendedNextAction,
+    graphNodes,
+    graphEdges,
+  };
+
+  return {
+    result: decoratedResult,
+    packet: buildResultPacket({
+      query: args.query,
+      result: decoratedResult,
+      classification: args.classification,
+      entityFallback: args.result?.canonicalEntity?.name,
+    }),
+    persona,
+  };
+}
+
+function persistSearchRun(args: {
+  query: string;
+  lens: string;
+  persona: string;
+  classification: string;
+  result: any;
+  packet: Record<string, unknown>;
+  trace: SearchTraceEntry[];
+  judgeVerdict: any;
+  contextBundle: any;
+  latencyMs: number;
+  sessionKey: string;
+}): { runId: string; traceId: string; packetId: string; outcomeId: string } {
+  const runId = genId("run");
+  const traceId = genId("trace");
+  const packetId = String(args.result?.packetId ?? genId("artifact"));
+  const outcomeId = genId("outcome");
+  const now = new Date().toISOString();
+  const entityName = args.result?.canonicalEntity?.name ?? "NodeBench";
+
+  upsertDurableObject({
+    id: CONTROL_PLANE_VIEW_ID,
+    kind: "view",
+    label: "Control plane founder search",
+    source: SEARCH_SOURCE,
+    status: "active",
+    metadata: {
+      path: "/",
+      surface: "public_website",
+      workflow: "founder_first_query",
+    },
+  });
+
+  upsertDurableObject({
+    id: runId,
+    kind: "run",
+    label: `${args.lens} search: ${trimText(args.query, 72)}`,
+    source: SEARCH_SOURCE,
+    status: "completed",
+    metadata: {
+      query: args.query,
+      lens: args.lens,
+      persona: args.persona,
+      classification: args.classification,
+      entityName,
+      sessionKey: args.sessionKey,
+      traceId,
+      packetId,
+      outcomeId,
+      packet: args.packet,
+      result: args.result,
+      trace: args.trace,
+      judge: args.judgeVerdict,
+      proofStatus: args.result?.proofStatus,
+      latencyMs: args.latencyMs,
+      context: {
+        tokenBudget: args.contextBundle?.totalEstimatedTokens,
+        pinned: args.contextBundle?.pinned,
+        injected: args.contextBundle?.injected,
+        archival: args.contextBundle?.archival,
+      },
+      completedAt: now,
+    },
+  });
+
+  upsertDurableObject({
+    id: traceId,
+    kind: "trace",
+    label: `${args.classification} trace`,
+    source: SEARCH_SOURCE,
+    status: args.trace.some((step) => step.status === "error") ? "needs_review" : "completed",
+    metadata: {
+      runId,
+      trace: args.trace,
+    },
+  });
+
+  upsertDurableObject({
+    id: packetId,
+    kind: "artifact",
+    label: `${entityName} founder packet`,
+    source: SEARCH_SOURCE,
+    status: args.result?.proofStatus ?? "provisional",
+    metadata: {
+      runId,
+      packet: args.packet,
+      result: args.result,
+    },
+  });
+
+  upsertDurableObject({
+    id: outcomeId,
+    kind: "outcome",
+    label: `${entityName} recommendation`,
+    source: SEARCH_SOURCE,
+    status: args.judgeVerdict?.verdict === "pass" ? "verified" : "draft",
+    metadata: {
+      runId,
+      packetId,
+      headline: args.result?.recommendedNextAction ?? args.packet.answer ?? entityName,
+      judge: args.judgeVerdict,
+    },
+  });
+
+  linkDurableObjects({ fromId: CONTROL_PLANE_VIEW_ID, toId: runId, edgeType: "opened" });
+  linkDurableObjects({ fromId: runId, toId: traceId, edgeType: "generated_trace" });
+  linkDurableObjects({ fromId: runId, toId: packetId, edgeType: "produced" });
+  linkDurableObjects({ fromId: packetId, toId: outcomeId, edgeType: "resolved_to" });
+
+  recordExecutionReceipt({
+    runId,
+    traceId,
+    objectId: runId,
+    actionType: "query_received",
+    summary: trimText(args.query, 160),
+    input: { query: args.query, lens: args.lens, classification: args.classification },
+    output: { entityName, packetId },
+    status: "recorded",
+    metadata: { persona: args.persona },
+  });
+
+  for (const [index, step] of args.trace.entries()) {
+    recordExecutionReceipt({
+      runId,
+      traceId,
+      stepId: `${traceId}:step:${index + 1}`,
+      objectId: traceId,
+      toolName: step.tool ?? null,
+      actionType: step.step,
+      summary: step.detail ?? step.step,
+      input: { step: step.step, tool: step.tool },
+      output: { status: step.status, durationMs: step.endMs ? step.endMs - step.startMs : 0 },
+      status: step.status,
+      metadata: {
+        startedAt: step.startMs,
+        endedAt: step.endMs,
+      },
+    });
+  }
+
+  recordLocalArtifact({
+    id: packetId,
+    runId,
+    objectId: packetId,
+    kind: "founder_packet",
+    summary: trimText(String(args.packet.answer ?? entityName), 280),
+    verificationStatus: args.result?.proofStatus ?? "provisional",
+    content: JSON.stringify(args.packet),
+    metadata: {
+      query: args.query,
+      lens: args.lens,
+      persona: args.persona,
+      sourceCount: args.result?.sourceRefs?.length ?? 0,
+    },
+  });
+
+  recordLocalOutcome({
+    id: outcomeId,
+    runId,
+    objectId: outcomeId,
+    outcomeType: `${args.classification}_answer`,
+    headline: args.result?.recommendedNextAction ?? trimText(String(args.packet.answer ?? entityName), 120),
+    userValue: `Founder-first answer for ${entityName}`,
+    stakeholderValue: "Durable packet with proof, trace, and sync-ready lineage",
+    status: args.judgeVerdict?.verdict === "pass" ? "verified" : "draft",
+    evidence: (args.result?.sourceRefs ?? []).slice(0, 5),
+    metadata: {
+      packetId,
+      proofStatus: args.result?.proofStatus,
+      latencyMs: args.latencyMs,
+    },
+  });
+
+  return { runId, traceId, packetId, outcomeId };
+}
+
+function listRecentSearchHistory(limit = 8): SearchHistoryItem[] {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT id, metadata_json, updated_at
+    FROM object_nodes
+    WHERE kind = 'run' AND source = ?
+    ORDER BY updated_at DESC
+    LIMIT ?
+  `).all(SEARCH_SOURCE, limit) as Array<{ id: string; metadata_json: string; updated_at: string }>;
+
+  return rows
+    .map((row) => {
+      const metadata = parseJsonValue<Record<string, any>>(row.metadata_json, {});
+      const packet = metadata.packet;
+      if (!packet?.query) return null;
+      return {
+        runId: row.id,
+        traceId: metadata.traceId ?? "",
+        packetId: metadata.packetId ?? "",
+        outcomeId: metadata.outcomeId ?? "",
+        query: String(packet.query),
+        lens: String(metadata.lens ?? "founder"),
+        persona: String(metadata.persona ?? "FOUNDER_STRATEGY"),
+        classification: String(metadata.classification ?? "general"),
+        entityName: String(packet.entityName ?? metadata.entityName ?? "NodeBench"),
+        packet,
+        trace: Array.isArray(metadata.trace)
+          ? metadata.trace.map((step: SearchTraceEntry, index: number) => ({
+              step: step.step,
+              tool: step.tool,
+              durationMs: step.endMs ? step.endMs - step.startMs : 0,
+              status: step.status,
+              detail: step.detail,
+              traceId: `${metadata.traceId ?? row.id}:step:${index + 1}`,
+            }))
+          : [],
+        latencyMs: Number(metadata.latencyMs ?? 0),
+        proofStatus: String(packet.proofStatus ?? metadata.proofStatus ?? "provisional"),
+        sourceCount: Number(packet.sourceCount ?? packet.sourceRefs?.length ?? 0),
+        updatedAt: row.updated_at,
+      } satisfies SearchHistoryItem;
+    })
+    .filter((item): item is SearchHistoryItem => Boolean(item));
+}
 
 // Lazy-load judge to avoid circular deps and keep startup fast
 let _judgeToolOutput: ((args: any) => Promise<any>) | null = null;
@@ -112,6 +803,12 @@ export function createSearchRouter(tools: McpTool[]) {
   /** Split multi-entity queries like "Anthropic, OpenAI, and Google" into individual names.
    *  Only activates when there's clear multi-entity syntax (commas + and, or vs). */
   function extractMultipleEntities(query: string): string[] {
+    const genericPhrasePattern = /^(what|why|how|when|where|who|should|could|would|do|does|did|is|are|was|were|can|will)\b/i;
+    const genericEntityStopwords = new Set([
+      "a", "an", "and", "as", "at", "for", "from", "founder", "general", "i", "in", "last", "matters",
+      "market", "my", "next", "now", "of", "our", "question", "risk", "shift", "should", "strategy",
+      "the", "this", "to", "update", "week", "what", "which", "why", "you", "your",
+    ]);
     const lq = query.toLowerCase();
     // Require explicit multi-entity syntax: comma, "and" with comma, "vs"
     const hasMultiSyntax = /,\s*(?:and\s+)?\w/.test(lq) || /\bvs\.?\s/i.test(lq) || /\bversus\b/i.test(lq);
@@ -127,18 +824,46 @@ export function createSearchRouter(tools: McpTool[]) {
       .trim();
     // Split on comma, "and", "vs", "&"
     const parts = cleaned.split(/\s*(?:,\s*(?:and\s+)?|,?\s+and\s+|\s+vs\.?\s+|\s+versus\s+|\s*&\s*)\s*/i)
-      .map(p => p.trim().replace(/^['"]|['"]$/g, "").replace(/'s$/g, ""))
-      .filter(p => p.length > 1 && p.length < 40 && /^[a-zA-Z]/.test(p));  // Must start with letter
+      .map((part) => part.trim().replace(/^['"]|['"]$/g, "").replace(/'s$/g, "").replace(/[?!.,]+$/g, ""))
+      .filter((part) => {
+        if (!(part.length > 1 && part.length < 40 && /^[a-zA-Z]/.test(part))) return false;
+        if (genericPhrasePattern.test(part)) return false;
+        const words = part.split(/\s+/).filter(Boolean);
+        if (words.length === 0 || words.length > 4) return false;
+        const genericWordCount = words.filter((word) => genericEntityStopwords.has(word.toLowerCase())).length;
+        if (genericWordCount >= Math.max(1, words.length - 1)) return false;
+        if (words.length > 2 && genericWordCount > 0) return false;
+        return true;
+      });  // Must look like entity names, not question fragments
     // Need at least 2 valid entity names
     return parts.length >= 2 ? parts : [];
   }
 
   function classifyQuery(query: string): {
-    type: "weekly_reset" | "pre_delegation" | "important_change" | "company_search" | "competitor" | "multi_entity" | "general";
+    type: "weekly_reset" | "pre_delegation" | "important_change" | "plan_proposal" | "company_search" | "competitor" | "multi_entity" | "general";
     entity?: string;
     entities?: string[];
     lens: string;
   } {
+    function extractPrimaryEntity(queryText: string): string | undefined {
+      const entityPatterns = [
+        /(?:analyze|research|search|evaluate|assess|profile|diligence on)\s+([A-Z][a-zA-Z0-9.&-]+(?:\s+[A-Z][a-zA-Z0-9.&-]+){0,2})/i,
+        /(?:for|about|on)\s+([A-Z][a-zA-Z0-9.&-]+(?:\s+[A-Z][a-zA-Z0-9.&-]+){0,2})/i,
+      ];
+      for (const pattern of entityPatterns) {
+        const match = queryText.match(pattern);
+        if (match?.[1]) {
+          const entity = match[1]
+            .trim()
+            .replace(/\b(for|about|on|into|with|against|versus|vs)\b\s*$/i, "")
+            .replace(/[?.!,]+$/g, "");
+          const normalizedEntity = entity.trim();
+          if (normalizedEntity.length > 1 && normalizedEntity.length < 50) return normalizedEntity;
+        }
+      }
+      return undefined;
+    }
+
     const lq = query.toLowerCase();
 
     if (lq.includes("weekly reset") || lq.includes("founder reset") || lq.includes("founder weekly")
@@ -158,7 +883,13 @@ export function createSearchRouter(tools: McpTool[]) {
       if (changeEntities.length >= 2) {
         return { type: "multi_entity", entities: changeEntities, lens: "investor" };
       }
-      return { type: "important_change", lens: "founder" };
+      return { type: "important_change", lens: "founder", entity: extractPrimaryEntity(query) };
+    }
+
+    // Plan/proposal synthesis — "plan a notification system", "should we build X", "propose integration with Y"
+    if (lq.match(/\b(plan|propose|integrate|extend|should we build|feature plan|implementation plan|integration proposal|extension plan)\b/)
+        && !lq.includes("weekly") && !lq.includes("delegation") && !lq.includes("what changed")) {
+      return { type: "plan_proposal", lens: "founder", entity: extractPrimaryEntity(query) };
     }
 
     // Multi-entity detection — check BEFORE single-entity competitor/company
@@ -200,7 +931,35 @@ export function createSearchRouter(tools: McpTool[]) {
     const isUploadContext = lq.match(/\b(meeting transcript|meeting notes|uploaded|my documents|my files|research files|my research)\b/);
     const isGeneralStrategic = lq.match(/\b(should i track|should i build|should i present|for my thesis|as a legal|as a banker|as an investor|what deals|portfolio companies)\b/);
     // Scenario planning: "what if", "what happens if", "simulate", "model a scenario"
-    const isScenario = lq.match(/\b(what happens if|what if|simulate|model a scenario|second.order effects|what would happen)\b/);
+    // Scenarios with named entities → company_search (gets web enrichment + Gemini extraction)
+    const isScenario = lq.match(/\b(what happens if|what if|simulate|model a scenario|second.order effects|what would happen|how would)\b/);
+    if (isScenario) {
+      // Multi-entity scenarios first: "How would a TikTok ban affect Meta and Snap?"
+      const scenarioEntities = extractMultipleEntities(query);
+      if (scenarioEntities && scenarioEntities.length >= 2) {
+        return { type: "multi_entity", entities: scenarioEntities, lens: "investor" };
+      }
+      // Try standard entity extraction
+      const scenarioEntity = extractPrimaryEntity(query);
+      if (scenarioEntity) {
+        return { type: "company_search", entity: scenarioEntity, lens: "investor" };
+      }
+      // Scenario-specific: extract capitalized proper nouns after "what if" / "what happens if"
+      const scenarioNameMatch = query.match(/(?:what (?:if|happens if)|how would)\s+(?:a\s+)?([A-Z][a-zA-Z0-9]+(?:\s+[A-Z][a-zA-Z0-9]+){0,2})/);
+      if (scenarioNameMatch?.[1]) {
+        const name = scenarioNameMatch[1].replace(/\b(open|merge|raise|ban|regulate|launch|acquire|shut|close)\b.*$/i, "").trim();
+        if (name.length > 1 && name.length < 40) {
+          return { type: "company_search", entity: name, lens: "investor" };
+        }
+      }
+      // Scenarios with "affect X" or "impact X"
+      const affectMatch = query.match(/(?:affect|impact|disrupt)\s+([A-Z][a-zA-Z0-9]+(?:\s+(?:and|&)\s+[A-Z][a-zA-Z0-9]+)*)/);
+      if (affectMatch?.[1]) {
+        const affected = affectMatch[1].split(/\s+(?:and|&)\s+/).map(s => s.trim()).filter(Boolean);
+        if (affected.length >= 2) return { type: "multi_entity", entities: affected, lens: "investor" };
+        if (affected.length === 1) return { type: "company_search", entity: affected[0], lens: "investor" };
+      }
+    }
     if (isOwnEntity || isUploadContext || isGeneralStrategic || isScenario) {
       return { type: "general", lens: "founder" };
     }
@@ -225,7 +984,7 @@ export function createSearchRouter(tools: McpTool[]) {
         const entity = match[1].trim()
           .replace(/['\u2018\u2019\u0027]s(\s|$)/g, "$1")  // possessive: "Anthropic's" → "Anthropic" BEFORE quote strip
           .replace(/['"]/g, "")
-          .replace(/\s+(competitive|position|strategy|valuation|revenue|risk|overview|market|enterprise|positioning|infrastructure|moat|product|data|lakehouse|developer|platform|payments|AI|search|commerce|product launches).*$/i, "")
+          .replace(/\s+(latest|recent|current|today'?s|funding|revenue|valuation|pricing|market cap|stock|risks?|overview|news|analysis|competitive|position|strategy|market|enterprise|positioning|infrastructure|moat|product|data|lakehouse|developer|platform|payments|AI|search|commerce|product launches).*$/i, "")
           .trim();
         if (entity.length > 1 && entity.length < 50) {
           return { type: "company_search", entity, lens: "investor" };
@@ -248,54 +1007,80 @@ export function createSearchRouter(tools: McpTool[]) {
     query: string,
     sessionCtx: { entity: string; classification: string; result: any } | null,
   ): ReturnType<typeof classifyQuery> {
-    const base = classifyQuery(query);
+    // Check follow-up patterns FIRST — session context takes priority over base classification
+    // because "Now compare that to Google" would match competitor patterns in classifyQuery
+    // but "that" refers to the session entity, not a literal entity name.
+    if (sessionCtx) {
+      const lq = query.toLowerCase();
+      const followUpPatterns = [
+        /^(now |okay |ok |also |and |then |next |please )?(compare|contrast|versus)/i,
+        /^(go |dig |dive |get )?(deeper|further|more detail)/i,
+        /^(what about|how about|tell me about) (their|its|the)/i,
+        /^(show me|give me) (the |their |its )?(team|risks|financials|metrics|revenue|funding|competitors|strategy|pricing|product)/i,
+        /^(any |what )?(recent|latest) (news|changes|updates|developments)/i,
+        /^summarize (everything|all of that|it|this|the above|that)/i,
+        /^(what are|what is) (their|its|the) /i,
+        /^(what about) (pricing|the team|risks|their|the|its)/i,
+        /^(expand|elaborate|explain|clarify) (on |)(that|this|the |their |its )/i,
+        /^(more |tell me more|keep going|continue)/i,
+        /^(and |also |plus |additionally )/i,
+        /^(create|write|draft|generate) (a |an |the )?(brief|memo|summary|report|update)/i,
+      ];
+      const isFollowUp = followUpPatterns.some(p => p.test(lq));
 
-    // If already classified as a specific type, use it
-    if (base.type !== "general") return base;
+      if (isFollowUp && sessionCtx.entity) {
+        const priorEntity = sessionCtx.entity;
 
-    // Detect follow-up patterns that need prior context
-    if (!sessionCtx) return base;
-    const lq = query.toLowerCase();
-    const followUpPatterns = [
-      /^(now |okay |ok |also |and |then |next |please )?(compare|contrast|versus)/i,
-      /^(go |dig |dive |get )?(deeper|further|more detail)/i,
-      /^(what about|how about|tell me about) (their|its|the)/i,
-      /^(show me|give me) (the |their |its )?(team|risks|financials|metrics|revenue|funding|competitors|strategy|pricing|product)/i,
-      /^(any |what )?(recent|latest) (news|changes|updates|developments)/i,
-      /^summarize (everything|all of that|it|this|the above|that)/i,
-      /^(what are|what is) (their|its|the) /i,
-      /^(what about) (pricing|the team|risks|their|the|its)/i,
-      /^(expand|elaborate|explain|clarify) (on |)(that|this|the |their |its )/i,
-      /^(more |tell me more|keep going|continue)/i,
-      /^(and |also |plus |additionally )/i,
-    ];
-    const isFollowUp = followUpPatterns.some(p => p.test(lq));
-    if (!isFollowUp) return base;
+        // "Now compare that to Google" → multi_entity with prior + new entity
+        const compareMatch = query.match(/compare\s+(?:that\s+)?(?:to|with|against)\s+(\w+)/i)
+          ?? query.match(/versus\s+(\w+)/i)
+          ?? query.match(/(?:compare|contrast)\s+(?:that |it |this |)(?:to|with|against)\s+(\w+)/i);
+        if (compareMatch) {
+          return { type: "multi_entity", entities: [priorEntity, compareMatch[1]], lens: "investor" };
+        }
 
-    // Inject prior entity into the classification
-    const priorEntity = sessionCtx.entity;
-    if (!priorEntity) return base;
+        // "Summarize everything in a memo" / "Create a brief" → general with session context
+        const isSummary = /^(summarize|create|write|draft|generate)\b/i.test(lq);
+        if (isSummary) {
+          return { type: "general", entity: priorEntity, lens: "ceo" };
+        }
 
-    // "Now compare that to Google" → multi_entity with prior + new entity
-    const compareMatch = query.match(/compare\s+(?:that\s+)?to\s+(\w+)/i)
-      ?? query.match(/versus\s+(\w+)/i)
-      ?? query.match(/(?:compare|contrast)\s+(?:that |it |this |)(?:to|with|against)\s+(\w+)/i);
-    if (compareMatch) {
-      return { type: "multi_entity", entities: [priorEntity, compareMatch[1]], lens: "investor" };
+        // "Go deeper on the risks" / "Show me the team" / "Any recent news?" → company_search on prior entity
+        return { type: "company_search", entity: priorEntity, lens: "investor" };
+      }
     }
 
-    // "Go deeper on the risks" / "Show me the team" / "Any recent news?" → company_search on prior entity
-    return { type: "company_search", entity: priorEntity, lens: "investor" };
+    const base = classifyQuery(query);
+    return base;
   }
 
   // ── POST /search ──────────────────────────────────────────────────
-  router.post("/", async (req, res) => {
-    const startMs = Date.now();
+  const parseSearchInput = (req: Request): { query?: string; lens?: string; daysBack?: number } => {
+    if (req.method === "GET") {
+      const query = typeof req.query.query === "string" ? req.query.query : undefined;
+      const lens = typeof req.query.lens === "string" ? req.query.lens : undefined;
+      const parsedDaysBack =
+        typeof req.query.daysBack === "string" ? Number.parseInt(req.query.daysBack, 10) : undefined;
+
+      return {
+        query,
+        lens,
+        daysBack: Number.isFinite(parsedDaysBack) ? parsedDaysBack : undefined,
+      };
+    }
+
     const { query, lens, daysBack } = req.body as {
       query?: string;
       lens?: string;
       daysBack?: number;
     };
+
+    return { query, lens, daysBack };
+  };
+
+  const handleSearch = async (req: Request, res: Response) => {
+    const startMs = Date.now();
+    const { query, lens, daysBack } = parseSearchInput(req);
 
     if (!query || typeof query !== "string" || query.trim().length === 0) {
       return res.status(400).json({ error: true, message: "Query is required" });
@@ -307,15 +1092,35 @@ export function createSearchRouter(tools: McpTool[]) {
     const classification = classifyWithSession(query.trim(), sessionCtx);
     const resolvedLens = lens ?? classification.lens;
 
+    const isStream = req.query.stream === "true";
+    if (isStream) {
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+      res.flushHeaders();
+    }
+
     // Execution trace — records every step for trajectory visualization
     const trace: Array<{ step: string; tool?: string; startMs: number; endMs?: number; status: "ok" | "error" | "skip"; detail?: string }> = [];
     function traceStep(step: string, tool?: string) {
       const entry = { step, tool, startMs: Date.now(), status: "ok" as const, detail: undefined as string | undefined };
       trace.push(entry);
+      if (isStream) {
+        res.write(`data: ${JSON.stringify({ type: "trace", entry })}\n\n`);
+      }
       return {
-        ok(detail?: string) { entry.endMs = Date.now(); entry.status = "ok"; entry.detail = detail; },
-        error(detail?: string) { entry.endMs = Date.now(); entry.status = "error"; entry.detail = detail; },
-        skip(detail?: string) { entry.endMs = Date.now(); entry.status = "skip"; entry.detail = detail; },
+        ok(detail?: string) { 
+          entry.endMs = Date.now(); entry.status = "ok"; entry.detail = detail; 
+          if (isStream) res.write(`data: ${JSON.stringify({ type: "trace", entry })}\n\n`);
+        },
+        error(detail?: string) { 
+          entry.endMs = Date.now(); entry.status = "error"; entry.detail = detail; 
+          if (isStream) res.write(`data: ${JSON.stringify({ type: "trace", entry })}\n\n`);
+        },
+        skip(detail?: string) { 
+          entry.endMs = Date.now(); entry.status = "skip"; entry.detail = detail; 
+          if (isStream) res.write(`data: ${JSON.stringify({ type: "trace", entry })}\n\n`);
+        },
       };
     }
 
@@ -378,6 +1183,42 @@ export function createSearchRouter(tools: McpTool[]) {
           }) as any;
           if (raw?.error) t.error(raw.message); else t.ok();
           const sp = raw?.error ? {} : (raw ?? {});
+          let liveSources: Array<{ title: string; url: string; snippet: string }> = [];
+          if (classification.entity) {
+            const liveTrace = traceStep("tool_call", "linkup_search");
+            const liveSearch = await linkupSearch(
+              `${classification.entity} company updates last ${daysBack ?? 7} days ${new Date().getFullYear()}`,
+              5,
+            );
+            if (liveSearch && liveSearch.sources.length > 0) {
+              liveSources = liveSearch.sources.map((source) => ({
+                title: source.name || classification.entity || "Source",
+                url: source.url,
+                snippet: source.snippet,
+              }));
+              liveTrace.ok(`${liveSources.length} live sources`);
+            } else {
+              liveTrace.skip("no live sources");
+              const webTrace = traceStep("tool_call", "web_search");
+              const webSearch = await callTool("web_search", {
+                query: `${classification.entity} company updates last ${daysBack ?? 7} days ${new Date().getFullYear()}`,
+                maxResults: 5,
+              }) as any;
+              const webResults = (webSearch?.results ?? [])
+                .map((item: any) => ({
+                  title: item.title ?? item.name ?? classification.entity ?? "Source",
+                  url: item.url ?? "",
+                  snippet: item.snippet ?? item.description ?? "",
+                }))
+                .filter((item: { url: string }) => Boolean(item.url));
+              if (webResults.length > 0) {
+                liveSources = webResults;
+                webTrace.ok(`${webResults.length} fallback sources`);
+              } else {
+                webTrace.skip("no fallback sources");
+              }
+            }
+          }
           const spLabel = classification.type === "pre_delegation" ? "Delegation Packet" : "Recent Changes";
           const spMission = sp.summary ?? sp.overview ?? `${spLabel} — ${query.trim().slice(0, 100)}`;
           // Map all possible field names from the synthesize tool
@@ -388,7 +1229,7 @@ export function createSearchRouter(tools: McpTool[]) {
 
           result = {
             canonicalEntity: {
-              name: spLabel,
+              name: classification.entity ?? spLabel,
               canonicalMission: spMission.length > 20 ? spMission : `${spLabel}: synthesized from local context for the last ${daysBack ?? 7} days. Ask follow-up questions to drill deeper.`,
               identityConfidence: (sp.confidence ?? 0.70) > 1 ? sp.confidence : Math.round((sp.confidence ?? 0.70) * 100),
             },
@@ -419,7 +1260,64 @@ export function createSearchRouter(tools: McpTool[]) {
             nextQuestions: classification.type === "pre_delegation"
               ? ["What should the agent prioritize?", "What context does the agent need?", "What are the success criteria?"]
               : ["What changed that matters most?", "What contradictions surfaced?", "What should I act on first?"],
+            ...(liveSources.length > 0
+              ? {
+                  sourcesUsed: liveSources.map((source, index) => ({
+                    id: `source:${index + 1}`,
+                    title: source.title,
+                    url: source.url,
+                    excerpt: source.snippet,
+                    type: "web",
+                    status: "cited",
+                  })),
+                }
+              : {}),
             rawPacket: sp,
+          };
+          break;
+        }
+
+        case "plan_proposal": {
+          const planTrace = traceStep("tool_call", "synthesize_feature_plan");
+          const planRaw = await callTool("synthesize_feature_plan", {
+            feature: query.trim(),
+            entity: classification.entity,
+          }) as any;
+          if (planRaw?.error) planTrace.error(planRaw.error); else planTrace.ok();
+          const plan = planRaw?.plan ?? planRaw ?? {};
+          result = {
+            canonicalEntity: {
+              name: plan.title ?? "Plan Proposal",
+              canonicalMission: plan.summary ?? `Plan synthesis for: ${query.trim()}`,
+              identityConfidence: Math.round((plan.strategicFit?.wedgeAlignment ?? 0.5) * 100),
+            },
+            signals: (plan.phases ?? []).slice(0, 5).map((p: any, i: number) => ({
+              name: `Phase ${p.id ?? i + 1}: ${p.title ?? "Untitled"}`,
+              direction: "neutral",
+              impact: i === 0 ? "high" : "medium",
+            })),
+            whatChanged: (plan.codebaseReadiness ?? []).slice(0, 5).map((r: any) => ({
+              description: `${r.capability}: ${r.status}${r.notes ? ` — ${r.notes}` : ""}`,
+              date: new Date().toISOString().slice(0, 10),
+            })),
+            contradictions: (plan.risks ?? []).slice(0, 5).map((r: any) => ({
+              claim: r.title ?? "Risk",
+              evidence: r.mitigation ?? "",
+              severity: r.severity ?? "medium",
+            })),
+            nextActions: [
+              { action: "Review strategic fit and phase sequencing" },
+              { action: "Generate a proposal memo for stakeholder review" },
+              { action: "Delegate phase 1 to an agent for implementation" },
+            ],
+            nextQuestions: [
+              "What constraints should the plan respect?",
+              "Which phase should we start with?",
+              "Should we delegate this to an agent?",
+              "What competitors are building something similar?",
+            ],
+            rawPacket: plan,
+            packetType: "plan_proposal",
           };
           break;
         }
@@ -729,7 +1627,6 @@ Return ONLY valid JSON:
             }));
 
           // Fallback signals only if gemini + recon both empty
-          const hasRealData = mergedSignals.length > 0 || reconFindings.length > 0;
           const finalSignals = mergedSignals.length > 0 ? mergedSignals
             : reconSources.slice(0, 4).map((s: any, i: number) => ({
                 name: typeof s === "string" ? s : s.name ?? String(s),
@@ -929,6 +1826,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
         if (judge) {
           const toolName = classification.type === "weekly_reset" ? "founder_local_weekly_reset"
             : classification.type === "pre_delegation" || classification.type === "important_change" ? "founder_local_synthesize"
+            : classification.type === "plan_proposal" ? "synthesize_feature_plan"
             : classification.type === "company_search" || classification.type === "competitor" ? "run_recon"
             : "founder_local_gather";
 
@@ -948,6 +1846,17 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       } catch { /* judge failure is non-fatal */ }
 
       const latencyMs = Date.now() - startMs;
+
+      const packetId = genId("artifact");
+      const proof = decorateResultWithProof({
+        query: query.trim(),
+        lens: resolvedLens,
+        classification: classification.type,
+        result,
+        judgeVerdict,
+        packetId,
+      });
+      result = proof.result;
 
       // Finalize trace
       const assembleTrace = traceStep("assemble_response");
@@ -982,14 +1891,38 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
         }
       }
 
+      let persistedIds: { runId: string; traceId: string; packetId: string; outcomeId: string } | null = null;
+      try {
+        persistedIds = persistSearchRun({
+          query: query.trim(),
+          lens: resolvedLens,
+          persona: proof.persona,
+          classification: classification.type,
+          result,
+          packet: proof.packet,
+          trace,
+          judgeVerdict,
+          contextBundle,
+          latencyMs,
+          sessionKey,
+        });
+      } catch (persistError) {
+        console.error("[search] failed to persist founder-first run", persistError);
+      }
+
       // Use the pre-computed contextBundle (computed before dispatch)
-      return res.json({
+      const payload = {
         success: true,
         classification: classification.type,
         lens: resolvedLens,
         entity: classification.entity ?? null,
         latencyMs,
         result,
+        resultPacket: proof.packet,
+        runId: persistedIds?.runId ?? null,
+        traceId: persistedIds?.traceId ?? null,
+        packetId: persistedIds?.packetId ?? result.packetId ?? null,
+        outcomeId: persistedIds?.outcomeId ?? null,
         judge: judgeVerdict,
         // Execution trace — every step timestamped for trajectory visualization
         trace: trace.map(t => ({
@@ -1019,15 +1952,31 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
           },
           tokenBudget: contextBundle.totalEstimatedTokens,
         },
-      });
+      };
+
+      if (isStream) {
+        res.write(`data: ${JSON.stringify({ type: "result", payload })}\n\n`);
+        return res.end();
+      } else {
+        return res.json(payload);
+      }
     } catch (err: any) {
-      return res.status(500).json({
+      const errorPayload = {
         error: true,
         message: err?.message ?? "Search failed",
         classification: classification.type,
-      });
+      };
+      if (isStream) {
+        res.write(`data: ${JSON.stringify({ type: "error", error: errorPayload })}\n\n`);
+        return res.end();
+      } else {
+        return res.status(500).json(errorPayload);
+      }
     }
-  });
+  };
+
+  router.get("/", handleSearch);
+  router.post("/", handleSearch);
 
   // ── POST /search/upload — Ingest uploaded file content ────────────
   router.post("/upload", async (req, res) => {
@@ -1052,6 +2001,30 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
     } catch (err: any) {
       return res.status(500).json({ error: true, message: err?.message ?? "Upload ingestion failed" });
     }
+  });
+
+  router.get("/history", (req, res) => {
+    try {
+      const limit = Math.max(1, Math.min(20, Number(req.query.limit ?? 8) || 8));
+      return res.json({
+        success: true,
+        sync: getSyncBridgeStatus(),
+        items: listRecentSearchHistory(limit),
+      });
+    } catch (err: any) {
+      return res.status(500).json({
+        success: false,
+        message: err?.message ?? "Failed to load search history",
+        items: [],
+      });
+    }
+  });
+
+  router.get("/sync-status", (_req, res) => {
+    return res.json({
+      success: true,
+      sync: getSyncBridgeStatus(),
+    });
   });
 
   // ── GET /search/eval-history — Eval run results for trajectory visualization ──
@@ -1103,7 +2076,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
           combinedPass: r.combinedPass,
         })),
       });
-    } catch (err: any) {
+    } catch {
       return res.json({ success: true, totalRuns: 0, runs: [], latestResults: [] });
     }
   });
@@ -1115,7 +2088,6 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       "founder_local_synthesize",
       "founder_local_gather",
       "run_recon",
-      "track_action",
       "enrich_entity",
       "detect_contradictions",
       "ingest_upload",

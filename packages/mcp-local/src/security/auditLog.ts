@@ -27,7 +27,11 @@ let _flushTimer: ReturnType<typeof setTimeout> | null = null;
 let _db: any = null;
 let _initialized = false;
 
-const DB_PATH = path.join(os.homedir(), ".nodebench", "security_audit.db");
+function getAuditDbPath(): string {
+  const configured = process.env.NODEBENCH_DATA_DIR?.trim();
+  const baseDir = configured || (process.env.VERCEL ? "/tmp/.nodebench" : path.join(os.homedir(), ".nodebench"));
+  return path.join(baseDir, "security_audit.db");
+}
 
 function genId(): string {
   return `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -39,10 +43,11 @@ function getDb(): any {
   try {
     // Try to use better-sqlite3 if available
     const Database = require("better-sqlite3");
-    const dir = path.dirname(DB_PATH);
+    const dbPath = getAuditDbPath();
+    const dir = path.dirname(dbPath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-    _db = new Database(DB_PATH);
+    _db = new Database(dbPath);
     _db.pragma("journal_mode = WAL");
 
     _db.exec(`
