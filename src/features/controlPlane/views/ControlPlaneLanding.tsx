@@ -155,6 +155,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   const [activeResult, setActiveResult] = useState<ResultPacket | null>(null);
   const [activeTrace, setActiveTrace] = useState<{ trace: TraceStep[]; latencyMs: number; classification: string; judge?: any } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [showFullWorkspace, setShowFullWorkspace] = useState(false);
   const [submittedQuery, setSubmittedQuery] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -165,6 +166,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   const [handoffState, setHandoffState] = useState<HandoffState>({ status: "idle" });
 
   const voice = useVoiceInput({
+    mode: "gemini",
     onTranscript: useCallback((text: string) => {
       setInput(text);
     }, []),
@@ -895,22 +897,106 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 }}
               />
             ) : (
-            <ResultWorkspace
-              packet={activeResult}
-              lens={activeLens}
-              onFollowUp={handleFollowUp}
-              onExport={(type) => {
-                trackEvent("export_packet", { type, entity: activeResult.entityName });
-                // TODO: Connect to artifact generation engine
-              }}
-              onPublishSharedContext={() => void handlePublishSharedContext()}
-              onDelegate={(target) => void handleDelegate(target)}
-              onMonitor={() => {
-                trackEvent("add_watchlist", { entity: activeResult.entityName });
-                // TODO: Connect to watchlist system
-              }}
-              handoffState={handoffState}
-            />
+            <>
+            {/* ── Summary Card (clean first impression) ─────────────────── */}
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6">
+              {/* Entity header */}
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold text-content">{activeResult.entityName || "Result"}</h2>
+                  <p className="mt-1 text-sm text-content-muted line-clamp-2">
+                    {activeResult.answer || activeResult.memo?.whatChanged?.[0]?.description || "Intelligence packet ready"}
+                  </p>
+                </div>
+                {activeResult.confidence != null && (
+                  <div className="shrink-0 text-right">
+                    <div className="text-2xl font-bold text-[#d97757]">{activeResult.confidence}%</div>
+                    <div className="text-[10px] text-content-muted">confidence</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Key signals */}
+              {activeResult.memo?.signals && activeResult.memo.signals.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Key Signals</h3>
+                  <div className="mt-2 space-y-1.5">
+                    {activeResult.memo.signals.slice(0, 4).map((sig: any, i: number) => (
+                      <div key={i} className="flex items-center gap-2 text-sm">
+                        <span className={`h-1.5 w-1.5 rounded-full ${sig.direction === "up" ? "bg-emerald-400" : sig.direction === "down" ? "bg-rose-400" : "bg-amber-400"}`} />
+                        <span className="text-content-secondary">{sig.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Next actions */}
+              {activeResult.memo?.nextActions && activeResult.memo.nextActions.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Recommended Actions</h3>
+                  <ol className="mt-2 space-y-1.5">
+                    {activeResult.memo.nextActions.slice(0, 3).map((action: any, i: number) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-content-secondary">
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#d97757]/10 text-[10px] font-bold text-[#d97757]">{i + 1}</span>
+                        {action.action || action}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+
+              {/* Action bar */}
+              <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = `${activeResult.entityName}: ${activeResult.answer || ""}`;
+                    navigator.clipboard.writeText(text);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs text-content-muted transition-colors hover:bg-white/[0.08]"
+                >
+                  <ClipboardCopy className="h-3.5 w-3.5" />
+                  Copy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleDelegate("claude_code")}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#d97757] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#c86747]"
+                >
+                  Delegate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowFullWorkspace((v) => !v)}
+                  className="ml-auto inline-flex items-center gap-1.5 text-xs text-content-muted transition-colors hover:text-content-secondary"
+                >
+                  {showFullWorkspace ? "Hide" : "Show"} full analysis
+                  <ArrowRight className={`h-3 w-3 transition-transform ${showFullWorkspace ? "rotate-90" : ""}`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Full workspace (progressive disclosure) */}
+            {showFullWorkspace && (
+              <div className="mt-4">
+                <ResultWorkspace
+                  packet={activeResult}
+                  lens={activeLens}
+                  onFollowUp={handleFollowUp}
+                  onExport={(type) => {
+                    trackEvent("export_packet", { type, entity: activeResult.entityName });
+                  }}
+                  onPublishSharedContext={() => void handlePublishSharedContext()}
+                  onDelegate={(target) => void handleDelegate(target)}
+                  onMonitor={() => {
+                    trackEvent("add_watchlist", { entity: activeResult.entityName });
+                  }}
+                  handoffState={handoffState}
+                />
+              </div>
+            )}
+            </>
             )}
 
             {/* Execution trace — shows how the answer was produced */}
