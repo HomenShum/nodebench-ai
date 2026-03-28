@@ -92,7 +92,8 @@ export type MainView =
   | "founder-rollups"
   | "founder-lineage"
   | "founder-changes"
-  | "founder-session-delta";
+  | "founder-session-delta"
+  | "coordination-hub";
 
 export type ResearchTab = "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
 
@@ -1166,6 +1167,19 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     subtitle: "What changed while you were away — strategy, competitors, contradictions, packets",
     path: "/founder/delta",
     component: lazyView(() => import("@/features/founder/views/SessionDeltaView")),
+    group: "nested",
+    navVisible: true,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  // ── Phase 14 — Shared Context Coordination ───────────────────────
+  {
+    id: "coordination-hub",
+    title: "Coordination Hub",
+    subtitle: "Team coordination — peers, tasks, context packets, messaging",
+    path: "/founder/coordination",
+    component: lazyView(() => import("@/features/founder/views/CoordinationHubView")),
     group: "nested",
     navVisible: true,
     parentId: "founder-dashboard",

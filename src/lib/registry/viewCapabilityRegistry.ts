@@ -701,7 +701,8 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
   "mcp-ledger": {
     viewId: "mcp-ledger",
     title: "Tool Activity",
-    description: "MCP tool call ledger — audit trail of all MCP tool invocations with inputs, outputs, and timing.",
+    description:
+      "MCP tool call ledger and local account sync inspector for durable receipts, paired devices, shared history, and outbound bridge activity.",
     paths: ["/internal/mcp-ledger", "/mcp-ledger", "/mcp/ledger", "/activity-log"],
     dataEndpoints: [
       { name: "toolCalls", convexQuery: "domains.mcp.ledger.getToolCalls", description: "MCP tool call audit trail" },
@@ -709,9 +710,12 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     actions: [
       { name: "filterByTool", description: "Filter by tool name" },
       { name: "filterByDate", description: "Filter by date range" },
+      { name: "generatePairingCode", description: "Create a user-consented pairing code for a local NodeBench MCP runtime" },
+      { name: "reviewSharedHistory", description: "Inspect synced receipts, artifacts, outcomes, and approval events across paired devices" },
+      { name: "inspectSharedContextPeers", description: "Review registered peers, packet freshness, and shared task handoffs" },
     ],
     relatedToolCategories: ["flywheel", "verification"],
-    tags: ["mcp", "tools", "audit", "ledger", "activity"],
+    tags: ["mcp", "tools", "audit", "ledger", "activity", "sync-bridge", "devices", "shared-history", "shared-context", "peers", "packets"],
     requiresAuth: true,
   },
 
@@ -896,6 +900,25 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     ],
     relatedToolCategories: ["platform", "verification", "eval", "flywheel"],
     tags: ["telemetry", "agent-actions", "tool-calls", "cost", "latency", "errors", "monitoring"],
+    requiresAuth: false,
+  },
+  "coordination-hub": {
+    viewId: "coordination-hub",
+    title: "Coordination Hub",
+    description: "Team coordination — peer presence, task delegation, context packets, and messaging. Wired to shared context API with SSE live streaming.",
+    paths: ["/founder/coordination", "/founder/hub"],
+    dataEndpoints: [
+      { name: "snapshot", convexQuery: "", description: "GET /api/shared-context/snapshot — peers, packets, tasks, messages" },
+      { name: "events", convexQuery: "", description: "GET /api/shared-context/events — SSE stream for real-time updates" },
+    ],
+    actions: [
+      { name: "publishPacket", description: "Publish a context packet to the shared context layer" },
+      { name: "delegateToAgent", description: "Hand off a task to Claude Code or OpenClaw via /delegate" },
+      { name: "sendMessage", description: "Send a message to a connected peer" },
+      { name: "refreshSnapshot", description: "Force-refresh the shared context snapshot" },
+    ],
+    relatedToolCategories: ["shared_context", "sync_bridge", "founder", "autonomous_delivery"],
+    tags: ["coordination", "shared-context", "peers", "tasks", "messages", "delegation", "sse", "live", "team"],
     requiresAuth: false,
   },
 };

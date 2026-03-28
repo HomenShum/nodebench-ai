@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useConvexAuth, useQuery } from "convex/react";
 import {
   Bot,
@@ -20,6 +20,7 @@ import {
   Clock,
   FolderKanban,
   Network,
+  Radio,
   Zap,
   Eye,
 } from "lucide-react";
@@ -64,6 +65,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
   onOpenPalette,
 }: WorkspaceRailProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated } = useConvexAuth();
   const recentSessions = useQuery(
     api.domains.operations.taskManager.queries.getUserTaskSessions,
@@ -81,6 +83,23 @@ export const WorkspaceRail = memo(function WorkspaceRail({
   const sessionItems = Array.isArray(recentSessions?.sessions) ? recentSessions.sessions.slice(0, 4) : [];
   const documentItems = Array.isArray(recentDocuments) ? recentDocuments.slice(0, 4) : [];
   const watchlists = Array.isArray(watchlistDigest?.watchlists) ? watchlistDigest.watchlists.slice(0, 3) : [];
+  const activeFounderView = new URLSearchParams(location.search).get("view");
+  const founderNavItems = [
+    { path: "/founder", viewId: "founder-dashboard", label: "Dashboard", icon: Building2 },
+    { path: "/founder/intake", viewId: "context-intake", label: "Intake", icon: FileInput },
+    { path: "/founder/history", viewId: "founder-history", label: "History", icon: Clock },
+    { path: "/founder/command", viewId: "command-panel", label: "Command Center", icon: Send },
+    { path: "/founder/agents", viewId: "agent-oversight", label: "Agent Oversight", icon: Layers },
+    { path: "/founder/brief", viewId: "agent-brief", label: "Agent Brief", icon: Zap },
+    { path: "/founder/entities", viewId: "nearby-entities", label: "Entities", icon: Network },
+    { path: "/founder/coordination", viewId: "coordination-hub", label: "Coordination", icon: Radio },
+  ] as const;
+
+  const isFounderItemActive = (item: (typeof founderNavItems)[number]) => {
+    if (activeFounderView) return activeFounderView === item.viewId;
+    if (location.pathname === item.path) return true;
+    return item.path !== "/founder" && location.pathname.startsWith(`${item.path}/`);
+  };
 
   return (
     <nav
@@ -177,26 +196,23 @@ export const WorkspaceRail = memo(function WorkspaceRail({
         )}>
           {isCollapsed ? "F" : "Founder"}
         </div>
-        {([
-          { path: "/founder", label: "Dashboard", icon: Building2 },
-          { path: "/founder/intake", label: "Intake", icon: FileInput },
-          { path: "/founder/history", label: "History", icon: Clock },
-          { path: "/founder/command", label: "Command Center", icon: Send },
-          { path: "/founder/agents", label: "Agent Oversight", icon: Layers },
-          { path: "/founder/brief", label: "Agent Brief", icon: Zap },
-          { path: "/founder/entities", label: "Entities", icon: Network },
-        ] as const).map((item) => {
+        {founderNavItems.map((item) => {
           const Icon = item.icon;
+          const isActive = isFounderItemActive(item);
           return (
             <button
               key={item.path}
               type="button"
               onClick={() => navigate(item.path)}
               className={cn(
-                "flex w-full items-center gap-2.5 rounded-md text-[13px] font-medium text-content-muted transition-all duration-150 hover:bg-white/[0.04] hover:text-content",
+                "flex w-full items-center gap-2.5 rounded-md text-[13px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
                 isCollapsed ? "mx-auto h-9 w-9 justify-center" : "px-2.5 py-1.5",
+                isActive
+                  ? "bg-white/[0.08] text-content shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                  : "text-content-muted hover:bg-white/[0.04] hover:text-content active:bg-white/[0.06]",
               )}
               aria-label={item.label}
+              aria-current={isActive ? "page" : undefined}
             >
               <Icon className="h-4 w-4 shrink-0" />
               {!isCollapsed ? <span>{item.label}</span> : null}
@@ -286,7 +302,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
             <button
               type="button"
               onClick={() => navigate("/sign-in")}
-              className="flex w-full items-center gap-2 rounded-lg border border-[#d97757]/20 bg-[#d97757]/[0.06] px-3 py-2 text-xs font-medium text-[#d97757] transition-colors hover:bg-[#d97757]/[0.12]"
+              className="flex w-full items-center gap-2 rounded-lg border border-[#d97757]/20 bg-[#d97757]/[0.06] px-3 py-2 text-xs font-medium text-[#d97757] transition-all hover:bg-[#d97757]/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/30 active:scale-[0.99]"
             >
               <LogIn className="h-3.5 w-3.5" />
               <span>Sign in</span>
@@ -295,7 +311,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
             <button
               type="button"
               onClick={() => navigate("/sign-in")}
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-[#d97757] transition-colors hover:bg-[#d97757]/[0.12]"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-[#d97757] transition-all hover:bg-[#d97757]/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/30 active:scale-[0.96]"
               aria-label="Sign in"
             >
               <LogIn className="h-4 w-4" />

@@ -1,6 +1,8 @@
 import { memo, useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ClipboardCopy, Download, Package, ArrowRight } from "lucide-react";
+import { ClipboardCopy, Download, Package, ArrowRight, Send } from "lucide-react";
+import { useSharedContextActions } from "../hooks/useSharedContextActions";
+import type { DelegateTarget } from "../hooks/useSharedContextActions";
 import type { FounderArtifactPacket } from "../types/artifactPacket";
 import {
   loadActiveFounderArtifactPacket,
@@ -83,6 +85,8 @@ function AgentHandoffPanelInner() {
   const navigate = useNavigate();
   const [packet, setPacket] = useState<FounderArtifactPacket | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [isDelegating, setIsDelegating] = useState(false);
+  const { delegateToAgent } = useSharedContextActions();
 
   useEffect(() => {
     setPacket(loadActiveFounderArtifactPacket());
@@ -101,6 +105,33 @@ function AgentHandoffPanelInner() {
       });
     },
     [packet],
+  );
+
+  const delegateBrief = useCallback(
+    async (target: DelegateTarget) => {
+      if (!packet || isDelegating) return;
+      setIsDelegating(true);
+      const brief = buildAgentBrief(packet);
+      const result = await delegateToAgent(
+        {
+          contextType: "state_snapshot_packet",
+          producerPeerId: "peer:web:control_plane",
+          subject: `Agent briefing — ${packet.canonicalEntity.name}`,
+          summary: brief.slice(0, 500),
+          claims: packet.nextActions.map((a) => a.label),
+          evidenceRefs: packet.keyEvidence.map((e) => ({ label: e.title, href: e.source })),
+        },
+        target,
+        `Execute agent briefing for ${packet.canonicalEntity.name}: ${packet.agentInstructions.slice(0, 200)}`,
+      );
+      setIsDelegating(false);
+      setToast(
+        result.success
+          ? `Delegated to ${target === "claude_code" ? "Claude Code" : "OpenClaw"}`
+          : `Delegation failed: ${result.error}`,
+      );
+    },
+    [packet, isDelegating, delegateToAgent],
   );
 
   const downloadBriefing = useCallback(() => {
@@ -196,7 +227,7 @@ function AgentHandoffPanelInner() {
         <button
           type="button"
           onClick={() => copyBrief("claude-code")}
-          className="inline-flex items-center gap-1.5 rounded-md bg-[#d97757]/90 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#d97757]"
+          className="inline-flex items-center gap-1.5 rounded-md bg-[#d97757]/90 px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-[#d97757] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/35 active:scale-[0.98]"
         >
           <ClipboardCopy className="h-3.5 w-3.5" />
           Send to Claude Code
@@ -204,7 +235,7 @@ function AgentHandoffPanelInner() {
         <button
           type="button"
           onClick={() => copyBrief("openclaw")}
-          className="inline-flex items-center gap-1.5 rounded-md bg-[#d97757]/90 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#d97757]"
+          className="inline-flex items-center gap-1.5 rounded-md bg-[#d97757]/90 px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-[#d97757] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/35 active:scale-[0.98]"
         >
           <ClipboardCopy className="h-3.5 w-3.5" />
           Send to OpenClaw
@@ -212,10 +243,19 @@ function AgentHandoffPanelInner() {
         <button
           type="button"
           onClick={downloadBriefing}
-          className="inline-flex items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.07] px-3 py-2 text-xs font-medium text-content-secondary transition-colors hover:bg-white/[0.08] hover:text-content"
+          className="inline-flex items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.07] px-3 py-2 text-xs font-medium text-content-secondary transition-all hover:bg-white/[0.08] hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/15 active:scale-[0.98]"
         >
           <Download className="h-3.5 w-3.5" />
           Save Briefing
+        </button>
+        <button
+          type="button"
+          onClick={() => void delegateBrief("claude_code")}
+          disabled={isDelegating}
+          className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 transition-all hover:bg-emerald-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 active:scale-[0.98] disabled:opacity-40"
+        >
+          <Send className="h-3.5 w-3.5" />
+          {isDelegating ? "Delegating..." : "Delegate to Agent"}
         </button>
       </div>
 

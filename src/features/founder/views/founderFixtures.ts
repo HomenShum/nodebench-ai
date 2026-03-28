@@ -568,6 +568,8 @@ export interface BusinessQualitySignal {
   rating: "strong" | "improving" | "watch" | "weak";
   evidence: string;
   source: string;
+  /** Optional URL for inline citation link */
+  sourceUrl?: string;
 }
 
 export interface NewsSignal {
@@ -578,6 +580,8 @@ export interface NewsSignal {
   source: string;
   relevance: number;
   implication: string;
+  /** Optional URL for inline citation link */
+  sourceUrl?: string;
 }
 
 export interface PlatformReadinessSignal {
@@ -594,6 +598,8 @@ export interface RegulatorySignal {
   risk: RiskLevel;
   detail: string;
   timeline: string;
+  /** Optional URL for inline citation link */
+  sourceUrl?: string;
 }
 
 export interface ComparableCompany {
@@ -731,3 +737,199 @@ export function buildShopifyPacketSource(): import("../types/artifactPacket").Fo
     ],
   };
 }
+
+/* ── Shared Context Demo Fixtures ────────────────────────────────── */
+
+import type {
+  SharedContextSnapshot,
+  SharedContextPeer,
+  SharedContextPacket,
+  SharedContextTask,
+  SharedContextMessage,
+} from "../types/sharedContext";
+
+const DEMO_PEERS: SharedContextPeer[] = [
+  {
+    peerId: "peer:founder:homen",
+    product: "nodebench",
+    workspaceId: "ws-nodebench",
+    surface: "web",
+    role: "compiler",
+    capabilities: ["publish", "delegate", "approve"],
+    status: "active",
+    lastHeartbeatAt: new Date(Date.now() - 30_000).toISOString(),
+    summary: { currentTask: "Wiring coordination hub", focusEntity: "NodeBench AI", confidence: 0.85 },
+  },
+  {
+    peerId: "peer:agent:claude_code",
+    product: "nodebench",
+    workspaceId: "ws-nodebench",
+    surface: "local_runtime",
+    role: "runner",
+    capabilities: ["execute", "publish", "research"],
+    status: "active",
+    lastHeartbeatAt: new Date(Date.now() - 12_000).toISOString(),
+    summary: { currentTask: "Context graph wiring", focusEntity: "TA Studio", confidence: 0.92 },
+  },
+  {
+    peerId: "peer:agent:khush_retention",
+    product: "ta_studio",
+    workspaceId: "ws-nodebench",
+    surface: "local_runtime",
+    role: "environment_builder",
+    capabilities: ["execute", "publish", "replay"],
+    status: "active",
+    lastHeartbeatAt: new Date(Date.now() - 45_000).toISOString(),
+    summary: { currentTask: "Building retention proxy RET-1", focusEntity: "Retention Middleware" },
+  },
+  {
+    peerId: "peer:agent:background_scan",
+    product: "nodebench",
+    workspaceId: "ws-nodebench",
+    surface: "runner",
+    role: "observer",
+    capabilities: ["monitor", "publish"],
+    status: "idle",
+    lastHeartbeatAt: new Date(Date.now() - 180_000).toISOString(),
+    summary: { currentTask: "Overnight competitive scan complete" },
+  },
+];
+
+const DEMO_PACKETS: SharedContextPacket[] = [
+  {
+    contextId: "ctx:retention-audit-mar27",
+    contextType: "state_snapshot_packet",
+    producerPeerId: "peer:agent:khush_retention",
+    workspaceId: "ws-nodebench",
+    subject: "Retention layer audit — what works vs conceptual",
+    summary: "Stage-level caching works (skip crawl/workflow/testcase on reruns). Context graph built but read-only. Trajectory logger scaffolded but not wired.",
+    claims: [
+      "Execution agent is deterministic (regex to API), not LLM",
+      "98% savings from skipping stages 1-3, not from smarter nav",
+      "TrajectoryLogger has full save/load API but nothing calls it",
+    ],
+    evidenceRefs: [{ label: "Slack audit", href: "#slack-mar27" }],
+    confidence: 0.88,
+    freshness: { status: "fresh", trustTier: "verified" },
+    status: "active",
+    createdAt: new Date(Date.now() - 3600_000).toISOString(),
+  },
+  {
+    contextId: "ctx:work-split-mar27",
+    contextType: "workflow_packet",
+    producerPeerId: "peer:founder:homen",
+    workspaceId: "ws-nodebench",
+    subject: "Homen/Khush work split — two-track build",
+    summary: "Khush: agnostic retention middleware (proxy-of-proxies). Homen: TA Studio platform + context graph wiring + tool coverage.",
+    claims: [
+      "Khush owns telemetry format, proxy protocol, suggest_next() API",
+      "Homen owns TA Studio tools, context graph, dashboard viz, Convex sync",
+      "Integration: Khush's proxy wraps TA Studio as one upstream among many",
+    ],
+    evidenceRefs: [{ label: "Work split doc", href: "#retention-plan" }],
+    confidence: 0.95,
+    freshness: { status: "fresh", trustTier: "verified" },
+    status: "active",
+    createdAt: new Date(Date.now() - 1800_000).toISOString(),
+  },
+  {
+    contextId: "ctx:coordination-hub-plan",
+    contextType: "workflow_packet",
+    producerPeerId: "peer:agent:claude_code",
+    workspaceId: "ws-nodebench",
+    subject: "Coordination Hub implementation plan",
+    summary: "6-phase plan: types + hooks, reusable components, hub view, wire existing views, navigation, fixtures. 11 new files, 6 modified.",
+    claims: ["Zero new API endpoints", "Zero new Convex tables", "Pure frontend wiring"],
+    evidenceRefs: [],
+    confidence: 0.90,
+    freshness: { status: "fresh", trustTier: "internal" },
+    status: "active",
+    createdAt: new Date(Date.now() - 600_000).toISOString(),
+  },
+];
+
+const DEMO_TASKS: SharedContextTask[] = [
+  {
+    taskId: "task:wire-context-graph",
+    taskType: "agent_handoff",
+    proposerPeerId: "peer:founder:homen",
+    assigneePeerId: "peer:agent:claude_code",
+    status: "accepted",
+    description: "Wire context graph find_precedents() into execution agent for guided navigation",
+    inputContextIds: ["ctx:retention-audit-mar27"],
+    createdAt: new Date(Date.now() - 7200_000).toISOString(),
+  },
+  {
+    taskId: "task:ret-1-proxy",
+    taskType: "implementation",
+    proposerPeerId: "peer:founder:homen",
+    assigneePeerId: "peer:agent:khush_retention",
+    status: "accepted",
+    description: "Build proxy-of-proxies that wraps upstream MCP servers transparently (RET-1)",
+    inputContextIds: ["ctx:work-split-mar27"],
+    createdAt: new Date(Date.now() - 5400_000).toISOString(),
+  },
+  {
+    taskId: "task:coordination-hub",
+    taskType: "implementation",
+    proposerPeerId: "peer:founder:homen",
+    assigneePeerId: "peer:agent:claude_code",
+    status: "proposed",
+    description: "Build Coordination Hub UI surface — wire existing backend to live frontend",
+    inputContextIds: ["ctx:coordination-hub-plan"],
+    createdAt: new Date(Date.now() - 300_000).toISOString(),
+  },
+];
+
+const DEMO_MESSAGES: SharedContextMessage[] = [
+  {
+    messageId: "msg-1",
+    fromPeerId: "peer:agent:khush_retention",
+    toPeerId: "peer:founder:homen",
+    messageType: "status_update",
+    content: "Retention audit complete. Stage-level caching confirmed working. Context graph and trajectory logger need wiring.",
+    acknowledged: true,
+    createdAt: new Date(Date.now() - 3600_000).toISOString(),
+  },
+  {
+    messageId: "msg-2",
+    fromPeerId: "peer:founder:homen",
+    toPeerId: "peer:agent:claude_code",
+    messageType: "task_handoff",
+    content: "Starting coordination hub build. Phase 1: types and hooks. Wire to existing /api/shared-context endpoints.",
+    acknowledged: true,
+    createdAt: new Date(Date.now() - 1200_000).toISOString(),
+  },
+  {
+    messageId: "msg-3",
+    fromPeerId: "peer:agent:claude_code",
+    toPeerId: "peer:founder:homen",
+    messageType: "status_update",
+    content: "Phase 1 complete — 5 files created: types, snapshot hook, stream hook, actions hook, composition hook.",
+    acknowledged: false,
+    createdAt: new Date(Date.now() - 120_000).toISOString(),
+  },
+  {
+    messageId: "msg-4",
+    fromPeerId: "peer:agent:background_scan",
+    toPeerId: "peer:founder:homen",
+    messageType: "context_offer",
+    content: "Overnight competitive scan: Cursor shipped MCP-native tool marketplace with 120+ verified servers. Relevant to distribution strategy.",
+    acknowledged: false,
+    createdAt: new Date(Date.now() - 28800_000).toISOString(),
+  },
+];
+
+export const DEMO_SHARED_CONTEXT_SNAPSHOT: SharedContextSnapshot = {
+  peers: DEMO_PEERS,
+  recentPackets: DEMO_PACKETS,
+  recentTasks: DEMO_TASKS,
+  recentMessages: DEMO_MESSAGES,
+  counts: {
+    activePeers: DEMO_PEERS.filter((p) => p.status === "active").length,
+    activePackets: DEMO_PACKETS.filter((p) => p.status === "active").length,
+    invalidatedPackets: 0,
+    openTasks: DEMO_TASKS.filter((t) => t.status === "proposed" || t.status === "accepted").length,
+    unreadMessages: DEMO_MESSAGES.filter((m) => !m.acknowledged).length,
+  },
+};

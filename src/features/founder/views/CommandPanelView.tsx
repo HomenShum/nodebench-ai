@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/useToast";
+import { useCoordinationHub } from "../hooks/useCoordinationHub";
+import { PeerPresenceCard } from "../components/coordination";
 
 /* ── localStorage helpers ────────────────────────────────────────────────── */
 
@@ -1027,6 +1029,7 @@ export default function CommandPanelView() {
     return loadPersistedMessages() ?? DEMO_MESSAGES;
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { peers, isLive, actions: sharedActions } = useCoordinationHub();
 
   const activeMessages = useMemo(() => localMessages[activeConvId] ?? [], [localMessages, activeConvId]);
   const activeAgent = useMemo(() => DEMO_AGENT_INFO[activeConvId] ?? null, [activeConvId]);
@@ -1059,6 +1062,18 @@ export default function CommandPanelView() {
         ...prev,
         [activeConvId]: [...(prev[activeConvId] ?? []), founderMsg],
       }));
+
+      // 1b. If backend is live, also publish to shared context
+      if (isLive) {
+        void sharedActions.publishPacket({
+          contextType: "state_snapshot_packet",
+          producerPeerId: "peer:founder:homen",
+          subject: `Command: ${text.slice(0, 80)}`,
+          summary: text,
+          claims: [],
+          evidenceRefs: [],
+        });
+      }
 
       // 2. After 1s, add orchestrator response
       setTimeout(() => {
@@ -1095,7 +1110,7 @@ export default function CommandPanelView() {
         }));
       }, 3000);
     },
-    [activeConvId, activeAgent],
+    [activeConvId, activeAgent, isLive, sharedActions],
   );
 
   const handleClear = useCallback(() => {
@@ -1125,14 +1140,26 @@ export default function CommandPanelView() {
     <div className="flex h-full overflow-hidden">
       {/* ── Left: Conversation List (desktop) ─────────────────────── */}
       <aside className="hidden w-[260px] flex-shrink-0 flex-col border-r border-white/[0.06] bg-[#151413] md:flex">
-        <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
-          <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">Conversations</h2>
-          <button
-            aria-label="New conversation"
-            className="flex h-6 w-6 items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/[0.05] hover:text-white/60"
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </button>
+        <div className="border-b border-white/[0.06] px-4 py-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">Conversations</h2>
+            <div className="flex items-center gap-2">
+              <span className={cn("text-[9px] font-medium", isLive ? "text-emerald-400" : "text-amber-400")}>
+                {isLive ? "Live" : "Demo"}
+              </span>
+              <button
+                aria-label="New conversation"
+                className="flex h-6 w-6 items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/[0.05] hover:text-white/60"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+          {peers.length > 0 && (
+            <div className="mt-2">
+              <PeerPresenceCard peers={peers} compact />
+            </div>
+          )}
         </div>
         <nav className="flex-1 space-y-0.5 overflow-auto p-2" aria-label="Conversation list">
           {DEMO_CONVERSATIONS.map((conv) => (
