@@ -267,7 +267,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
 
       <div
         className={cn(
-          "flex flex-col gap-1 border-t border-white/[0.06] px-2 py-2",
+          "flex flex-col gap-2 border-t border-white/[0.06] px-2 py-3",
           isCollapsed && "items-center",
         )}
       >

@@ -724,7 +724,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
               onKeyDown={handleKeyDown}
               placeholder="Search a company, paste a task, upload files, or ask a strategic question..."
               rows={1}
-              className="w-full resize-none bg-transparent px-5 py-4 pr-36 text-[15px] text-content placeholder:text-content-muted/60 focus:outline-none"
+              className="w-full resize-none bg-transparent px-5 py-4 pr-32 text-[15px] text-content placeholder:text-content-muted/60 focus:outline-none"
               aria-label="Search NodeBench"
               data-testid="landing-search-input"
             />
@@ -739,7 +739,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 e.target.value = "";
               }}
             />
-            <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+            <div className="absolute inset-y-0 right-3 flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -840,7 +840,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                         </span>
                       </div>
                     </div>
-                    <ArrowRight className="h-4 w-4 shrink-0 text-content-muted/40 group-hover:text-[#d97757]/60 transition-colors mt-0.5" aria-hidden="true" />
+                    <ArrowRight className="h-4 w-4 shrink-0 self-center text-content-muted/40 group-hover:text-[#d97757]/60 transition-colors" aria-hidden="true" />
                   </button>
                 );
               })}

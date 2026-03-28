@@ -104,7 +104,7 @@ export const AgentPresenceRail = memo(function AgentPresenceRail({
           </button>
         ) : null}
 
-        <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-3">
+        <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5">
           <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-content-muted">
             <Activity className="h-3.5 w-3.5" />
             Agent status
@@ -117,7 +117,7 @@ export const AgentPresenceRail = memo(function AgentPresenceRail({
           </div>
         </section>
 
-        <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-3">
+        <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5">
           <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-content-muted">
             <FileText className="h-3.5 w-3.5" />
             Active plan
@@ -138,7 +138,7 @@ export const AgentPresenceRail = memo(function AgentPresenceRail({
           </ol>
         </section>
 
-        <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-3" data-agent-id="cockpit:runtime-metrics">
+        <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5" data-agent-id="cockpit:runtime-metrics">
           <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-content-muted">
             <TrendingUp className="h-3.5 w-3.5" />
             Runtime metrics

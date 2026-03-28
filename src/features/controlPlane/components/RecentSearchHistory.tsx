@@ -153,15 +153,17 @@ export function RecentSearchHistory({
               className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 text-left transition hover:border-[#d97757]/20 hover:bg-[#d97757]/[0.03]"
             >
               <div className="flex items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-content-muted">
                     {item.lens} • {item.persona}
                   </div>
-                  <div className="mt-2 text-base font-semibold text-content">
+                  <div className="mt-2 truncate text-base font-semibold text-content">
                     {item.entityName}
                   </div>
                 </div>
-                <ProofChip status={item.proofStatus} />
+                <div className="shrink-0">
+                  <ProofChip status={item.proofStatus} />
+                </div>
               </div>
 
               <p className="mt-3 text-sm leading-relaxed text-content-secondary">
