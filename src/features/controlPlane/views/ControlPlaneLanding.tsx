@@ -1059,8 +1059,116 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           </div>
         </div>
 
+        {/* ── Coordination Hub showcase (retention.sh inspired) ────────────── */}
+        <div style={stagger("0.42s")} className="mt-20">
+          {/* Section label */}
+          <div className="mb-2 text-center text-[11px] font-semibold uppercase tracking-[0.25em] text-[#d97757]">
+            Team Coordination
+          </div>
+
+          {/* Big headline */}
+          <h2 className="mx-auto max-w-2xl text-center text-2xl font-bold leading-tight text-content sm:text-3xl">
+            Your agents talked for 2 hours.
+            <br />
+            <span className="text-[#d97757]">NodeBench remembers.</span>
+          </h2>
+          <p className="mx-auto mt-3 max-w-lg text-center text-sm leading-relaxed text-content-muted">
+            Every Slack thread, every commit, every context dump pasted into Claude — captured, structured, and queryable.
+            Stop re-explaining. Start delegating.
+          </p>
+
+          {/* Dual CTAs */}
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => onNavigate("coordination-hub" as MainView, "/founder/coordination")}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#d97757] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#d97757]/20 transition-all hover:bg-[#c86747] active:scale-[0.98]"
+            >
+              See the Hub
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate("command-panel" as MainView, "/founder/command")}
+              className="inline-flex items-center gap-2 rounded-lg border border-white/[0.12] bg-white/[0.04] px-5 py-2.5 text-sm font-medium text-content-secondary transition-all hover:bg-white/[0.08]"
+            >
+              Command Center
+            </button>
+          </div>
+
+          {/* Metrics bar (retention.sh style) */}
+          <div className="mx-auto mt-10 max-w-2xl rounded-2xl border border-white/[0.08] bg-white/[0.02] px-6 py-5">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]" />
+                <span className="text-xs font-medium text-content-secondary">Live coordination session</span>
+              </div>
+              <span className="text-[10px] text-content-muted font-mono">nodebench-mcp v2.32</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {[
+                { value: "4", label: "Active Peers", accent: true },
+                { value: "3", label: "Open Tasks" },
+                { value: "3", label: "Context Packets" },
+                { value: "2", label: "Unread Messages", accent: true },
+              ].map((m) => (
+                <div key={m.label} className="text-center">
+                  <div className={`text-2xl font-bold ${m.accent ? "text-[#d97757]" : "text-content"}`}>
+                    {m.value}
+                  </div>
+                  <div className="mt-0.5 text-[10px] uppercase tracking-wider text-content-muted">{m.label}</div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-center text-[11px] text-content-muted">
+              Homen builds TA Studio platform. Khush builds retention middleware. Both agents share context in real time.
+            </p>
+          </div>
+
+          {/* 3-column feature cards (retention.sh style) */}
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 text-center">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#d97757]/10">
+                <svg className="h-5 w-5 text-[#d97757]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+              </div>
+              <div className="text-sm font-semibold text-content">Peer Presence</div>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-content-muted">
+                See who is working on what, in real time. Agents, humans, and tools — all with heartbeat and role indicators.
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 text-center">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#d97757]/10">
+                <svg className="h-5 w-5 text-[#d97757]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><path d="M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5a2 2 0 002 2h2a2 2 0 002-2"/><path d="M9 14l2 2 4-4"/></svg>
+              </div>
+              <div className="text-sm font-semibold text-content">Task Delegation</div>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-content-muted">
+                Propose, accept, complete. Structured handoff with approval gates and context packets attached.
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 text-center">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#d97757]/10">
+                <svg className="h-5 w-5 text-[#d97757]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+              </div>
+              <div className="text-sm font-semibold text-content">Shared Context</div>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-content-muted">
+                Every context packet versioned with lineage, freshness, and confidence. SSE streaming keeps everyone in sync.
+              </p>
+            </div>
+          </div>
+
+          {/* Positioning card (retention.sh "Missing Middle Layer" style) */}
+          <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 text-center">
+            <div className="text-lg font-bold text-content">The Operating Memory Layer</div>
+            <p className="mt-3 text-sm leading-relaxed text-content-muted">
+              Others help agents run tasks. NodeBench remembers what happened, who decided what, and why —
+              so your next agent session starts where the last one left off.
+              Agent-agnostic. Model-agnostic. Platform-agnostic.
+            </p>
+          </div>
+        </div>
+
         {/* ── Proof section ────────────────────────────────────────────────── */}
-        <div style={stagger("0.44s")} className="mt-12">
+        <div style={stagger("0.48s")} className="mt-12">
           <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted mb-4 text-center">
             Why trust this
           </div>
