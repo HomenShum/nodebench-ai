@@ -16,13 +16,13 @@ export type ChangeType = "signal" | "agent" | "initiative" | "decision";
 /* ── Company Identity ─────────────────────────────────────────────── */
 
 export const DEMO_COMPANY = {
-  name: "NodeBench AI",
+  name: "Your Company",
   canonicalMission:
-    "Local-first operating-memory and entity-context layer for agent-native businesses",
-  wedge: "Right context, right order, better odds of right judgment — 350-tool MCP server with progressive discovery",
-  companyState: "operating" as CompanyState,
-  foundingMode: "continue_existing" as FoundingMode,
-  identityConfidence: 0.78,
+    "Search for a company or describe your own to get started",
+  wedge: "Use the search bar above to analyze any company, competitor, or market",
+  companyState: "idea" as CompanyState,
+  foundingMode: "start_new" as FoundingMode,
+  identityConfidence: 0.0,
 };
 
 /* ── What Changed ─────────────────────────────────────────────────── */
@@ -37,42 +37,6 @@ export interface ChangeEntry {
 }
 
 export const DEMO_CHANGES: ChangeEntry[] = [
-  {
-    id: "chg-1",
-    timestamp: "2026-03-24T09:14:00Z",
-    relativeTime: "2h ago",
-    type: "signal",
-    description:
-      "Anthropic released tool-use pricing changes effective April 1 — model cost impact on NodeBench gateway usage at current volume",
-    linkedInitiativeId: "init-1",
-  },
-  {
-    id: "chg-2",
-    timestamp: "2026-03-24T07:30:00Z",
-    relativeTime: "4h ago",
-    type: "agent",
-    description:
-      "Background agent completed overnight competitive scan — Cursor shipped MCP-native tool marketplace with 120+ verified servers",
-    linkedInitiativeId: "init-3",
-  },
-  {
-    id: "chg-3",
-    timestamp: "2026-03-23T22:00:00Z",
-    relativeTime: "yesterday",
-    type: "initiative",
-    description:
-      "Progressive discovery adoption doubled after TOON encoding enabled by default — measure token savings across top 20 workflows",
-    linkedInitiativeId: "init-2",
-  },
-  {
-    id: "chg-4",
-    timestamp: "2026-03-23T18:45:00Z",
-    relativeTime: "yesterday",
-    type: "decision",
-    description:
-      "Shipped ta-studio-mcp v2.0 at Meta — 100% task completion (64/64), token costs reduced 17x from $364 to $21 per 64 tasks",
-    linkedInitiativeId: "init-4",
-  },
   {
     id: "chg-5",
     timestamp: "2026-03-23T14:20:00Z",
@@ -141,53 +105,7 @@ export interface Intervention {
   confidence: number;
 }
 
-export const DEMO_INTERVENTIONS: Intervention[] = [
-  {
-    id: "int-1",
-    rank: 1,
-    title: "Audit NodeBench distribution gap vs Cursor marketplace reach — submit to MCP Registry and mcpservers.org",
-    linkedInitiative: "MCP Distribution",
-    linkedInitiativeId: "init-3",
-    priorityScore: 94,
-    confidence: 0.91,
-  },
-  {
-    id: "int-2",
-    rank: 2,
-    title: "Double down on TOON encoding — measure token savings across top 20 workflows after adoption doubled",
-    linkedInitiative: "Progressive Discovery",
-    linkedInitiativeId: "init-2",
-    priorityScore: 87,
-    confidence: 0.78,
-  },
-  {
-    id: "int-3",
-    rank: 3,
-    title: "Model cost impact on NodeBench gateway usage at current volume with Anthropic April 1 pricing changes",
-    linkedInitiative: "Product Intelligence",
-    linkedInitiativeId: "init-1",
-    priorityScore: 79,
-    confidence: 0.65,
-  },
-  {
-    id: "int-4",
-    rank: 4,
-    title: "Ship environment spec compiler — target Stripe-style benchmark environments as downstream product",
-    linkedInitiative: "TA Studio Integration",
-    linkedInitiativeId: "init-4",
-    priorityScore: 72,
-    confidence: 0.58,
-  },
-  {
-    id: "int-5",
-    rank: 5,
-    title: "Run eval flywheel to 100% — expand judge-calibrated scenario corpus from 103 to 200 queries",
-    linkedInitiative: "Eval Quality",
-    linkedInitiativeId: "init-6",
-    priorityScore: 65,
-    confidence: 0.52,
-  },
-];
+export const DEMO_INTERVENTIONS: Intervention[] = [];
 
 /* ── Initiatives ──────────────────────────────────────────────────── */
 
@@ -201,68 +119,7 @@ export interface Initiative {
   objective: string;
 }
 
-export const DEMO_INITIATIVES: Initiative[] = [
-  {
-    id: "init-1",
-    title: "Product Intelligence Layer",
-    status: "active",
-    risk: "medium",
-    priorityScore: 88,
-    agentCount: 2,
-    objective:
-      "Monitor MCP ecosystem changes, model pricing shifts, and agent infrastructure moves across Anthropic, OpenAI, Google, Stripe, GitHub, Salesforce, ServiceNow.",
-  },
-  {
-    id: "init-2",
-    title: "Progressive Discovery & Gateway",
-    status: "active",
-    risk: "low",
-    priorityScore: 95,
-    agentCount: 1,
-    objective:
-      "350-tool MCP server with TOON encoding, hybrid search, WebSocket gateway. Ship <200ms TTFB and token-gated access.",
-  },
-  {
-    id: "init-3",
-    title: "MCP Distribution",
-    status: "active",
-    risk: "high",
-    priorityScore: 92,
-    agentCount: 1,
-    objective:
-      "Publish to npm, MCP Registry, mcpservers.org, cursor.directory. Close distribution gap vs Cursor marketplace (120+ servers).",
-  },
-  {
-    id: "init-4",
-    title: "TA Studio Integration (Meta)",
-    status: "active",
-    risk: "medium",
-    priorityScore: 85,
-    agentCount: 2,
-    objective:
-      "ta-studio-mcp at Meta — 9 MCP tools, 100% task completion (64/64), 17x cost reduction. Scale from 200 to 2000+ req/day.",
-  },
-  {
-    id: "init-5",
-    title: "Environment Synthesis",
-    status: "active",
-    risk: "medium",
-    priorityScore: 76,
-    agentCount: 0,
-    objective:
-      "Build environment spec compiler for high-fidelity clones of real products (QuickBooks, GitHub, Salesforce, Booking.com, ServiceNow, Stripe). Target agent training and eval market.",
-  },
-  {
-    id: "init-6",
-    title: "Eval Quality Flywheel",
-    status: "active",
-    risk: "low",
-    priorityScore: 81,
-    agentCount: 1,
-    objective:
-      "Self-judging eval loop with Gemini 3.1 Flash Lite. 103 queries across 18 categories. Target 100% pass rate. Continuously grow corpus.",
-  },
-];
+export const DEMO_INITIATIVES: Initiative[] = [];
 
 /* ── Agent Activity ───────────────────────────────────────────────── */
 
@@ -287,133 +144,9 @@ export interface NearbyEntity {
   lastUpdated?: string;
 }
 
-export const DEMO_AGENTS: AgentEntry[] = [
-  {
-    id: "agt-1",
-    name: "eval-flywheel",
-    type: "claude_code",
-    status: "healthy",
-    currentGoal: "Running search quality eval — 103 queries, Gemini 3.1 Flash Lite judge, targeting 100% pass rate",
-    lastHeartbeat: "12s ago",
-  },
-  {
-    id: "agt-2",
-    name: "market-scanner",
-    type: "background",
-    status: "healthy",
-    currentGoal: "Monitoring MCP ecosystem — Cursor marketplace, Anthropic pricing, GitHub Copilot extensions, Stripe benchmarks",
-    lastHeartbeat: "3m ago",
-  },
-  {
-    id: "agt-3",
-    name: "competitive-watcher",
-    type: "background",
-    status: "healthy",
-    currentGoal: "Tracking agent infrastructure moves: ServiceNow AI marketplace, Salesforce Einstein MCP, Booking.com agent APIs",
-    lastHeartbeat: "18m ago",
-  },
-  {
-    id: "agt-4",
-    name: "ta-studio-monitor",
-    type: "openclaw",
-    status: "healthy",
-    currentGoal: "Monitoring TA Studio production pipeline at Meta — 64/64 tasks passing, watching for regressions post-rollout",
-    lastHeartbeat: "5m ago",
-  },
-];
+export const DEMO_AGENTS: AgentEntry[] = [];
 
-export const DEMO_NEARBY_ENTITIES: NearbyEntity[] = [
-  {
-    id: "ent-meta-ta",
-    name: "Meta (via Tests Assured)",
-    relationship: "deployment",
-    whyItMatters: "Primary production deployment. ta-studio-mcp serving 20-200 req/day in pilot, architected to scale to 2000+. 100% task completion, 17x cost reduction.",
-    claimCount: 5,
-    changeCount: 2,
-    contradictionCount: 1,
-    lastUpdated: "2026-03-23T10:00:00Z",
-  },
-  {
-    id: "ent-stripe",
-    name: "Stripe",
-    relationship: "comparable",
-    whyItMatters: "Published MCP integration benchmark with 48 tasks, deterministic graders, production-realistic environments. Sets the standard for agent eval infrastructure.",
-    claimCount: 3,
-    changeCount: 1,
-    contradictionCount: 0,
-    lastUpdated: "2026-03-20T14:30:00Z",
-  },
-  {
-    id: "ent-github",
-    name: "GitHub",
-    relationship: "distribution",
-    whyItMatters: "Copilot extensions now support MCP natively. Potential distribution channel for NodeBench progressive discovery tools.",
-    claimCount: 2,
-    changeCount: 3,
-    contradictionCount: 0,
-    lastUpdated: "2026-03-22T09:15:00Z",
-  },
-  {
-    id: "ent-salesforce",
-    name: "Salesforce",
-    relationship: "market signal",
-    whyItMatters: "Einstein GPT using MCP for tool orchestration validates enterprise MCP adoption thesis. Potential customer for environment synthesis.",
-    claimCount: 1,
-    changeCount: 0,
-    contradictionCount: 0,
-    lastUpdated: "2026-03-10T16:00:00Z",
-  },
-  {
-    id: "ent-servicenow",
-    name: "ServiceNow",
-    relationship: "market signal",
-    whyItMatters: "AI agent marketplace for enterprise IT workflows — validates the agent-native business infrastructure category NodeBench operates in.",
-    claimCount: 0,
-    changeCount: 1,
-    contradictionCount: 0,
-    lastUpdated: "2026-03-05T11:00:00Z",
-  },
-  {
-    id: "ent-cursor",
-    name: "Cursor",
-    relationship: "competitor",
-    whyItMatters: "Shipped MCP-native tool marketplace with 120+ verified servers. Distribution gap is the primary competitive risk for NodeBench.",
-    claimCount: 4,
-    changeCount: 2,
-    contradictionCount: 2,
-    lastUpdated: "2026-03-24T08:00:00Z",
-  },
-  {
-    id: "ent-jpmorgan",
-    name: "JPMorgan Chase",
-    relationship: "prior employer",
-    whyItMatters: "3.5 years building enterprise data automation and LLM infrastructure. Validated agentic RAG, ETL pipelines, and risk modeling at scale.",
-    claimCount: 0,
-    changeCount: 0,
-    contradictionCount: 0,
-    lastUpdated: "2026-02-28T12:00:00Z",
-  },
-  {
-    id: "ent-booking",
-    name: "Booking.com",
-    relationship: "target environment",
-    whyItMatters: "Complex multi-step booking workflows are ideal targets for environment synthesis — high-fidelity clones for agent training.",
-    claimCount: 1,
-    changeCount: 1,
-    contradictionCount: 0,
-    lastUpdated: "2026-03-18T15:45:00Z",
-  },
-  {
-    id: "ent-quickbooks",
-    name: "QuickBooks (Intuit)",
-    relationship: "target environment",
-    whyItMatters: "Financial software with complex state transitions — prime target for simulation environment generation and agent benchmarking.",
-    claimCount: 2,
-    changeCount: 0,
-    contradictionCount: 1,
-    lastUpdated: "2026-03-15T10:30:00Z",
-  },
-];
+export const DEMO_NEARBY_ENTITIES: NearbyEntity[] = [];
 
 /* ── Daily Memo ───────────────────────────────────────────────────── */
 
@@ -426,22 +159,10 @@ export interface DailyMemo {
 }
 
 export const DEMO_DAILY_MEMO: DailyMemo = {
-  date: "March 24, 2026",
-  whatMatters: [
-    "Cursor shipped MCP marketplace with 120+ servers — NodeBench distribution gap is now the primary competitive risk.",
-    "TA Studio at Meta hitting 100% task completion (64/64) with 17x cost reduction — proof point for production MCP architecture.",
-    "Anthropic tool-use pricing changes effective April 1 — need to model cost impact on NodeBench gateway at current usage volume.",
-  ],
-  whatToDoNext: [
-    "Submit NodeBench to MCP Registry, mcpservers.org, and cursor.directory — close the distribution gap this week.",
-    "Run eval flywheel to expand corpus from 103 to 200 queries — target 100% pass rate with Gemini judge calibration.",
-    "Ship environment spec compiler targeting Stripe-style benchmark environments — this unlocks the agent training market.",
-  ],
-  unresolved: [
-    "Is the environment synthesis product line (cloning QuickBooks, Booking.com, ServiceNow) a distraction or the real wedge?",
-    "Should NodeBench prioritize enterprise MCP gateway sales or open-source adoption-first distribution?",
-  ],
-  generatedAt: "6:30 AM PT",
+  whatMatters: ["Search for a company to populate your daily briefing"],
+  whatToDoNext: ["Type a company name in the search bar above"],
+  unresolved: [],
+  generatedAt: "Not yet generated",
 };
 
 /* ================================================================== */
@@ -465,82 +186,7 @@ export interface ExternalSignal {
   isNew?: boolean;
 }
 
-export const DEMO_EXTERNAL_SIGNALS: ExternalSignal[] = [
-  {
-    id: "sig-ext-1",
-    title: "Cursor ships MCP-native tool marketplace with 120+ verified servers",
-    summary: "Cursor's marketplace now features 120+ MCP servers with one-click install, usage analytics, and community ratings.",
-    category: "competitive",
-    source: "Cursor Blog",
-    publishedAt: "2026-03-24T07:00:00Z",
-    relativeTime: "4h ago",
-    relevanceScore: 97,
-    affectsInitiativeId: "init-3",
-    howItAffectsYou: "NodeBench must close distribution gap immediately — submit to MCP Registry, mcpservers.org, cursor.directory this week.",
-    isNew: true,
-  },
-  {
-    id: "sig-ext-2",
-    title: "Stripe publishes MCP integration benchmark — 48 tasks with deterministic graders",
-    summary: "Stripe released an open-source benchmark for agent tool use with production-realistic environments, terminal/browser tools, and an MCP server.",
-    category: "market",
-    source: "Stripe Engineering Blog",
-    publishedAt: "2026-03-23T14:00:00Z",
-    relativeTime: "yesterday",
-    relevanceScore: 94,
-    affectsInitiativeId: "init-5",
-    howItAffectsYou: "Validates the environment synthesis direction. NodeBench's compile_environment_spec tool should target this benchmark format.",
-    isNew: true,
-  },
-  {
-    id: "sig-ext-3",
-    title: "Anthropic announces tool-use pricing changes effective April 1, 2026",
-    summary: "New pricing tiers for tool-use tokens. Impact varies by usage pattern — high-tool-call workflows may see 10-20% cost increase.",
-    category: "regulatory",
-    source: "Anthropic Changelog",
-    publishedAt: "2026-03-22T09:00:00Z",
-    relativeTime: "2d ago",
-    relevanceScore: 91,
-    affectsInitiativeId: "init-1",
-    howItAffectsYou: "Model cost impact on NodeBench gateway. TOON encoding (40% token reduction) becomes even more critical as a differentiator.",
-  },
-  {
-    id: "sig-ext-4",
-    title: "GitHub Copilot extensions now support MCP protocol natively",
-    summary: "GitHub announced native MCP support in Copilot extensions, allowing tool servers to integrate directly into the Copilot experience.",
-    category: "market",
-    source: "GitHub Blog",
-    publishedAt: "2026-03-22T16:00:00Z",
-    relativeTime: "2d ago",
-    relevanceScore: 88,
-    affectsInitiativeId: "init-3",
-    howItAffectsYou: "New distribution channel for NodeBench tools. Progressive discovery could differentiate in the Copilot extension marketplace.",
-  },
-  {
-    id: "sig-ext-5",
-    title: "ServiceNow launches AI agent marketplace for enterprise IT workflows",
-    summary: "ServiceNow Now Platform adds an agent marketplace where enterprises can deploy, monitor, and govern AI agents across IT service management.",
-    category: "market",
-    source: "ServiceNow Press Release",
-    publishedAt: "2026-03-21T12:00:00Z",
-    relativeTime: "3d ago",
-    relevanceScore: 82,
-    affectsInitiativeId: "init-1",
-    howItAffectsYou: "Validates agent-native business infrastructure category. ServiceNow IT workflows are potential targets for environment synthesis.",
-  },
-  {
-    id: "sig-ext-6",
-    title: "Salesforce Einstein GPT adopts MCP for enterprise tool orchestration",
-    summary: "Salesforce integrates MCP into Einstein GPT, enabling enterprise customers to connect AI agents to internal tools via standardized protocol.",
-    category: "market",
-    source: "Salesforce Developer Blog",
-    publishedAt: "2026-03-20T10:00:00Z",
-    relativeTime: "4d ago",
-    relevanceScore: 79,
-    affectsInitiativeId: "init-1",
-    howItAffectsYou: "Enterprise MCP adoption accelerating. NodeBench's 350-tool progressive discovery could serve as an intelligence layer for these deployments.",
-  },
-];
+export const DEMO_EXTERNAL_SIGNALS: ExternalSignal[] = [];
 
 /* ================================================================== */
 /*  Shopify — Banker / CEO Company Search Demo                         */
