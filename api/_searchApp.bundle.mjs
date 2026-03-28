@@ -7264,6 +7264,19 @@ function getSharedContextPeer(peerId) {
   `).get(peerId);
   return row ? parseSharedContextPeerRow(row) : null;
 }
+function getSharedContextPacket(contextId, requestingPeerId) {
+  const row = getDb().prepare(`
+    SELECT *
+    FROM shared_context_packets
+    WHERE context_id = ?
+    LIMIT 1
+  `).get(contextId);
+  if (!row) return null;
+  const packet = parseSharedContextPacketRow(row);
+  if (!requestingPeerId) return packet;
+  const peer = requireSharedContextPeer(requestingPeerId);
+  return canPeerAccessPacket(peer, packet) ? packet : null;
+}
 function publishSharedContextPacket(input) {
   const db = getDb();
   const now = (/* @__PURE__ */ new Date()).toISOString();
@@ -8366,6 +8379,9 @@ function createSearchRouter(tools2) {
       }
       return { type: "important_change", lens: "founder", entity: extractPrimaryEntity(query) };
     }
+    if (lq.match(/\b(plan|propose|integrate|extend|should we build|feature plan|implementation plan|integration proposal|extension plan)\b/) && !lq.includes("weekly") && !lq.includes("delegation") && !lq.includes("what changed")) {
+      return { type: "plan_proposal", lens: "founder", entity: extractPrimaryEntity(query) };
+    }
     const isCompetitorQuery = lq.includes("competitor") || lq.includes("versus") || lq.includes(" vs ") || lq.includes("compare ") || lq.includes("competitive landscape") || lq.includes("compete with") || lq.includes("supermemory");
     const multiEntities = extractMultipleEntities(query);
     if (multiEntities.length >= 2) {
@@ -8389,7 +8405,30 @@ function createSearchRouter(tools2) {
     const isOwnEntity = lq.match(/\b(my company|my startup|my business|my current company|my team|my organization|my firm|our company|our startup|our business|investor update for my|current company state)\b/);
     const isUploadContext = lq.match(/\b(meeting transcript|meeting notes|uploaded|my documents|my files|research files|my research)\b/);
     const isGeneralStrategic = lq.match(/\b(should i track|should i build|should i present|for my thesis|as a legal|as a banker|as an investor|what deals|portfolio companies)\b/);
-    const isScenario = lq.match(/\b(what happens if|what if|simulate|model a scenario|second.order effects|what would happen)\b/);
+    const isScenario = lq.match(/\b(what happens if|what if|simulate|model a scenario|second.order effects|what would happen|how would)\b/);
+    if (isScenario) {
+      const scenarioEntities = extractMultipleEntities(query);
+      if (scenarioEntities && scenarioEntities.length >= 2) {
+        return { type: "multi_entity", entities: scenarioEntities, lens: "investor" };
+      }
+      const scenarioEntity = extractPrimaryEntity(query);
+      if (scenarioEntity) {
+        return { type: "company_search", entity: scenarioEntity, lens: "investor" };
+      }
+      const scenarioNameMatch = query.match(/(?:what (?:if|happens if)|how would)\s+(?:a\s+)?([A-Z][a-zA-Z0-9]+(?:\s+[A-Z][a-zA-Z0-9]+){0,2})/);
+      if (scenarioNameMatch?.[1]) {
+        const name = scenarioNameMatch[1].replace(/\b(open|merge|raise|ban|regulate|launch|acquire|shut|close)\b.*$/i, "").trim();
+        if (name.length > 1 && name.length < 40) {
+          return { type: "company_search", entity: name, lens: "investor" };
+        }
+      }
+      const affectMatch = query.match(/(?:affect|impact|disrupt)\s+([A-Z][a-zA-Z0-9]+(?:\s+(?:and|&)\s+[A-Z][a-zA-Z0-9]+)*)/);
+      if (affectMatch?.[1]) {
+        const affected = affectMatch[1].split(/\s+(?:and|&)\s+/).map((s) => s.trim()).filter(Boolean);
+        if (affected.length >= 2) return { type: "multi_entity", entities: affected, lens: "investor" };
+        if (affected.length === 1) return { type: "company_search", entity: affected[0], lens: "investor" };
+      }
+    }
     if (isOwnEntity || isUploadContext || isGeneralStrategic || isScenario) {
       return { type: "general", lens: "founder" };
     }
@@ -8427,32 +8466,38 @@ function createSearchRouter(tools2) {
     return { type: "general", lens: "founder" };
   }
   function classifyWithSession(query, sessionCtx) {
-    const base = classifyQuery(query);
-    if (base.type !== "general") return base;
-    if (!sessionCtx) return base;
-    const lq = query.toLowerCase();
-    const followUpPatterns = [
-      /^(now |okay |ok |also |and |then |next |please )?(compare|contrast|versus)/i,
-      /^(go |dig |dive |get )?(deeper|further|more detail)/i,
-      /^(what about|how about|tell me about) (their|its|the)/i,
-      /^(show me|give me) (the |their |its )?(team|risks|financials|metrics|revenue|funding|competitors|strategy|pricing|product)/i,
-      /^(any |what )?(recent|latest) (news|changes|updates|developments)/i,
-      /^summarize (everything|all of that|it|this|the above|that)/i,
-      /^(what are|what is) (their|its|the) /i,
-      /^(what about) (pricing|the team|risks|their|the|its)/i,
-      /^(expand|elaborate|explain|clarify) (on |)(that|this|the |their |its )/i,
-      /^(more |tell me more|keep going|continue)/i,
-      /^(and |also |plus |additionally )/i
-    ];
-    const isFollowUp = followUpPatterns.some((p) => p.test(lq));
-    if (!isFollowUp) return base;
-    const priorEntity = sessionCtx.entity;
-    if (!priorEntity) return base;
-    const compareMatch = query.match(/compare\s+(?:that\s+)?to\s+(\w+)/i) ?? query.match(/versus\s+(\w+)/i) ?? query.match(/(?:compare|contrast)\s+(?:that |it |this |)(?:to|with|against)\s+(\w+)/i);
-    if (compareMatch) {
-      return { type: "multi_entity", entities: [priorEntity, compareMatch[1]], lens: "investor" };
+    if (sessionCtx) {
+      const lq = query.toLowerCase();
+      const followUpPatterns = [
+        /^(now |okay |ok |also |and |then |next |please )?(compare|contrast|versus)/i,
+        /^(go |dig |dive |get )?(deeper|further|more detail)/i,
+        /^(what about|how about|tell me about) (their|its|the)/i,
+        /^(show me|give me) (the |their |its )?(team|risks|financials|metrics|revenue|funding|competitors|strategy|pricing|product)/i,
+        /^(any |what )?(recent|latest) (news|changes|updates|developments)/i,
+        /^summarize (everything|all of that|it|this|the above|that)/i,
+        /^(what are|what is) (their|its|the) /i,
+        /^(what about) (pricing|the team|risks|their|the|its)/i,
+        /^(expand|elaborate|explain|clarify) (on |)(that|this|the |their |its )/i,
+        /^(more |tell me more|keep going|continue)/i,
+        /^(and |also |plus |additionally )/i,
+        /^(create|write|draft|generate) (a |an |the )?(brief|memo|summary|report|update)/i
+      ];
+      const isFollowUp = followUpPatterns.some((p) => p.test(lq));
+      if (isFollowUp && sessionCtx.entity) {
+        const priorEntity = sessionCtx.entity;
+        const compareMatch = query.match(/compare\s+(?:that\s+)?(?:to|with|against)\s+(\w+)/i) ?? query.match(/versus\s+(\w+)/i) ?? query.match(/(?:compare|contrast)\s+(?:that |it |this |)(?:to|with|against)\s+(\w+)/i);
+        if (compareMatch) {
+          return { type: "multi_entity", entities: [priorEntity, compareMatch[1]], lens: "investor" };
+        }
+        const isSummary = /^(summarize|create|write|draft|generate)\b/i.test(lq);
+        if (isSummary) {
+          return { type: "general", entity: priorEntity, lens: "ceo" };
+        }
+        return { type: "company_search", entity: priorEntity, lens: "investor" };
+      }
     }
-    return { type: "company_search", entity: priorEntity, lens: "investor" };
+    const base = classifyQuery(query);
+    return base;
   }
   const parseSearchInput = (req) => {
     if (req.method === "GET") {
@@ -8651,6 +8696,51 @@ function createSearchRouter(tools2) {
               }))
             } : {},
             rawPacket: sp
+          };
+          break;
+        }
+        case "plan_proposal": {
+          const planTrace = traceStep("tool_call", "synthesize_feature_plan");
+          const planRaw = await callTool("synthesize_feature_plan", {
+            feature: query.trim(),
+            entity: classification.entity
+          });
+          if (planRaw?.error) planTrace.error(planRaw.error);
+          else planTrace.ok();
+          const plan = planRaw?.plan ?? planRaw ?? {};
+          result = {
+            canonicalEntity: {
+              name: plan.title ?? "Plan Proposal",
+              canonicalMission: plan.summary ?? `Plan synthesis for: ${query.trim()}`,
+              identityConfidence: Math.round((plan.strategicFit?.wedgeAlignment ?? 0.5) * 100)
+            },
+            signals: (plan.phases ?? []).slice(0, 5).map((p, i) => ({
+              name: `Phase ${p.id ?? i + 1}: ${p.title ?? "Untitled"}`,
+              direction: "neutral",
+              impact: i === 0 ? "high" : "medium"
+            })),
+            whatChanged: (plan.codebaseReadiness ?? []).slice(0, 5).map((r) => ({
+              description: `${r.capability}: ${r.status}${r.notes ? ` \u2014 ${r.notes}` : ""}`,
+              date: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10)
+            })),
+            contradictions: (plan.risks ?? []).slice(0, 5).map((r) => ({
+              claim: r.title ?? "Risk",
+              evidence: r.mitigation ?? "",
+              severity: r.severity ?? "medium"
+            })),
+            nextActions: [
+              { action: "Review strategic fit and phase sequencing" },
+              { action: "Generate a proposal memo for stakeholder review" },
+              { action: "Delegate phase 1 to an agent for implementation" }
+            ],
+            nextQuestions: [
+              "What constraints should the plan respect?",
+              "Which phase should we start with?",
+              "Should we delegate this to an agent?",
+              "What competitors are building something similar?"
+            ],
+            rawPacket: plan,
+            packetType: "plan_proposal"
           };
           break;
         }
@@ -9125,7 +9215,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       try {
         const judge = await getJudge();
         if (judge) {
-          const toolName = classification.type === "weekly_reset" ? "founder_local_weekly_reset" : classification.type === "pre_delegation" || classification.type === "important_change" ? "founder_local_synthesize" : classification.type === "company_search" || classification.type === "competitor" ? "run_recon" : "founder_local_gather";
+          const toolName = classification.type === "weekly_reset" ? "founder_local_weekly_reset" : classification.type === "pre_delegation" || classification.type === "important_change" ? "founder_local_synthesize" : classification.type === "plan_proposal" ? "synthesize_feature_plan" : classification.type === "company_search" || classification.type === "competitor" ? "run_recon" : "founder_local_gather";
           const verdict = await judge({
             scenarioId: `app_${classification.type}`,
             prompt: query.trim(),
@@ -9375,6 +9465,94 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
 
 // server/routes/sharedContext.ts
 import { Router as Router2 } from "express";
+
+// server/routes/sharedContextConvex.ts
+import { ConvexHttpClient } from "convex/browser";
+
+// convex/_generated/api.js
+import { anyApi, componentsGeneric } from "convex/server";
+var api = anyApi;
+var components = componentsGeneric();
+
+// server/routes/sharedContextConvex.ts
+var _client = null;
+function getConvexClient() {
+  if (_client) return _client;
+  const url = process.env.CONVEX_URL ?? process.env.VITE_CONVEX_URL;
+  if (!url) throw new Error("CONVEX_URL not set \u2014 cannot use Convex adapter");
+  _client = new ConvexHttpClient(url);
+  return _client;
+}
+function isConvexAvailable() {
+  return !!(process.env.CONVEX_URL ?? process.env.VITE_CONVEX_URL);
+}
+async function registerPeerConvex(input) {
+  const client = getConvexClient();
+  await client.mutation(api.domains.founder.sharedContextOps.registerPeer, {
+    peerId: input.peerId,
+    product: input.product ?? "nodebench",
+    workspaceId: input.workspaceId,
+    surface: input.surface ?? "web",
+    role: input.role ?? "router",
+    capabilities: input.capabilities,
+    contextScopes: input.contextScopes,
+    summary: input.summary
+  });
+  return { peerId: input.peerId };
+}
+async function publishPacketConvex(input) {
+  const client = getConvexClient();
+  await client.mutation(api.domains.founder.sharedContextOps.publishPacket, {
+    contextId: input.contextId,
+    contextType: input.contextType,
+    producerPeerId: input.producerPeerId,
+    workspaceId: input.workspaceId,
+    scope: input.scope,
+    subject: input.subject,
+    summary: input.summary,
+    claims: input.claims,
+    evidenceRefs: input.evidenceRefs,
+    confidence: input.confidence,
+    lineage: input.lineage,
+    freshness: input.freshness
+  });
+  return { contextId: input.contextId };
+}
+async function getPacketConvex(contextId) {
+  const client = getConvexClient();
+  return client.query(api.domains.founder.sharedContextOps.getPacket, { contextId });
+}
+async function proposeTaskConvex(input) {
+  const client = getConvexClient();
+  await client.mutation(api.domains.founder.sharedContextOps.proposeTask, {
+    taskId: input.taskId,
+    taskType: input.taskType ?? "agent_handoff",
+    proposerPeerId: input.proposerPeerId,
+    assigneePeerId: input.assigneePeerId,
+    taskSpec: input.taskSpec,
+    inputContextIds: input.inputContextIds,
+    description: input.reason
+  });
+  return { taskId: input.taskId };
+}
+async function getSnapshotConvex(limit = 10, _requestingPeerId) {
+  const client = getConvexClient();
+  const [peers, packets, tasks, messages] = await Promise.all([
+    client.query(api.domains.founder.sharedContextOps.listPeers, { limit }),
+    client.query(api.domains.founder.sharedContextOps.listPackets, { limit }),
+    client.query(api.domains.founder.sharedContextOps.listTasks, { limit }),
+    client.query(api.domains.founder.sharedContextOps.listMessages, { limit })
+  ]);
+  return {
+    peers,
+    recentPackets: packets,
+    recentTasks: tasks,
+    recentMessages: messages
+  };
+}
+
+// server/routes/sharedContext.ts
+var useConvex = () => !!(process.env.VERCEL && isConvexAvailable());
 var WEB_PRODUCER_PEER_ID = "peer:web:control_plane";
 var DELEGATE_TARGETS = {
   claude_code: {
@@ -9388,6 +9566,83 @@ var DELEGATE_TARGETS = {
     installCommand: "npx -y nodebench-mcp"
   }
 };
+function firstQueryValue(value) {
+  if (Array.isArray(value)) return typeof value[0] === "string" ? value[0] : void 0;
+  return typeof value === "string" ? value : void 0;
+}
+function parseSnapshotFilters(query) {
+  const peerId = firstQueryValue(query.peerId);
+  const workspaceId = firstQueryValue(query.workspaceId);
+  const contextType = firstQueryValue(query.contextType);
+  const subjectIncludes = firstQueryValue(query.subjectIncludes);
+  const eventTypesRaw = firstQueryValue(query.eventTypes);
+  return {
+    peerId,
+    workspaceId,
+    contextType,
+    subjectIncludes,
+    eventTypes: eventTypesRaw ? eventTypesRaw.split(",").map((value) => value.trim()).filter(Boolean) : void 0
+  };
+}
+function filterSnapshot(snapshot, filters) {
+  const peers = filters.workspaceId ? snapshot.peers.filter((peer) => peer.workspaceId === filters.workspaceId) : snapshot.peers;
+  const recentPackets = snapshot.recentPackets.filter((packet) => {
+    if (filters.workspaceId && packet.workspaceId !== filters.workspaceId) return false;
+    if (filters.contextType && packet.contextType !== filters.contextType) return false;
+    if (filters.subjectIncludes && !packet.subject.toLowerCase().includes(filters.subjectIncludes.toLowerCase())) return false;
+    return true;
+  });
+  const recentTasks = snapshot.recentTasks.filter((task) => {
+    if (!filters.workspaceId) return true;
+    return recentPackets.some((packet) => packet.contextId === task.outputContextId) || snapshot.peers.some((peer) => peer.peerId === task.proposerPeerId && peer.workspaceId === filters.workspaceId) || snapshot.peers.some((peer) => peer.peerId === task.assigneePeerId && peer.workspaceId === filters.workspaceId);
+  });
+  const recentMessages = snapshot.recentMessages.filter((message) => {
+    if (!filters.workspaceId) return true;
+    return peers.some((peer) => peer.peerId === message.fromPeerId || peer.peerId === message.toPeerId);
+  });
+  return {
+    peers,
+    recentPackets,
+    recentTasks,
+    recentMessages,
+    counts: {
+      activePeers: peers.filter((peer) => peer.status === "active").length,
+      activePackets: recentPackets.filter((packet) => packet.status === "active").length,
+      invalidatedPackets: recentPackets.filter((packet) => packet.status === "invalidated").length,
+      openTasks: recentTasks.filter((task) => task.status === "proposed" || task.status === "accepted").length,
+      unreadMessages: recentMessages.filter((message) => message.status === "unread").length
+    }
+  };
+}
+function eventMatchesFilters(event, filters) {
+  const type = typeof event.type === "string" ? event.type : "";
+  if (filters.eventTypes && filters.eventTypes.length > 0 && !filters.eventTypes.includes(type)) {
+    return false;
+  }
+  const payload = typeof event.payload === "object" && event.payload ? event.payload : {};
+  const workspaceId = typeof payload.workspaceId === "string" ? payload.workspaceId : void 0;
+  const contextType = typeof payload.contextType === "string" ? payload.contextType : void 0;
+  const contextId = typeof payload.contextId === "string" ? payload.contextId : void 0;
+  if (filters.workspaceId && workspaceId && workspaceId !== filters.workspaceId) {
+    return false;
+  }
+  if (filters.contextType && contextType && contextType !== filters.contextType) {
+    return false;
+  }
+  if (filters.subjectIncludes && contextId && filters.peerId) {
+    const packet = getSharedContextPacket(contextId, filters.peerId);
+    if (!packet || !packet.subject.toLowerCase().includes(filters.subjectIncludes.toLowerCase())) {
+      return false;
+    }
+  } else if (filters.subjectIncludes && typeof payload.subject === "string") {
+    if (!payload.subject.toLowerCase().includes(filters.subjectIncludes.toLowerCase())) return false;
+  }
+  if (filters.peerId && contextId) {
+    const packet = getSharedContextPacket(contextId, filters.peerId);
+    if (!packet) return false;
+  }
+  return true;
+}
 function slugify(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
 }
@@ -9502,18 +9757,56 @@ function registerDelegatePeer(packet, target) {
 }
 function createSharedContextRouter() {
   const router = Router2();
-  router.get("/snapshot", (req, res) => {
+  router.get("/snapshot", async (req, res) => {
     const rawLimit = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
-    const rawPeerId = Array.isArray(req.query.peerId) ? req.query.peerId[0] : req.query.peerId;
     const limit = typeof rawLimit === "string" ? Number.parseInt(rawLimit, 10) : 10;
-    const peerId = typeof rawPeerId === "string" ? rawPeerId : void 0;
+    const safeLim = Number.isFinite(limit) && limit > 0 ? limit : 10;
+    const filters = parseSnapshotFilters(req.query);
+    if (useConvex()) {
+      try {
+        const snapshot = await getSnapshotConvex(safeLim, filters.peerId);
+        return res.json({ success: true, snapshot, peerId: filters.peerId ?? null, filters });
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          message: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
     res.json({
       success: true,
-      snapshot: getSharedContextSnapshot(Number.isFinite(limit) && limit > 0 ? limit : 10, peerId),
-      peerId: peerId ?? null
+      snapshot: filterSnapshot(
+        getSharedContextSnapshot(safeLim, filters.peerId),
+        filters
+      ),
+      peerId: filters.peerId ?? null,
+      filters
     });
   });
-  router.get("/events", (_req, res) => {
+  router.get("/packets/:contextId", async (req, res) => {
+    const peerId = firstQueryValue(req.query.peerId);
+    try {
+      const packet = useConvex() ? await getPacketConvex(req.params.contextId) : getSharedContextPacket(req.params.contextId, peerId);
+      if (!packet) {
+        return res.status(404).json({
+          success: false,
+          message: "Shared context packet not found or not visible in the requested scope."
+        });
+      }
+      return res.json({
+        success: true,
+        packet,
+        peerId: peerId ?? null
+      });
+    } catch (error) {
+      return res.status(403).json({
+        success: false,
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  router.get("/events", (req, res) => {
+    const filters = parseSnapshotFilters(req.query);
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache, no-transform");
     res.setHeader("Connection", "keep-alive");
@@ -9527,7 +9820,8 @@ function createSharedContextRouter() {
     };
     writeEvent({
       type: "connected",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      filters
     });
     const heartbeat = setInterval(() => {
       writeEvent({
@@ -9537,6 +9831,7 @@ function createSharedContextRouter() {
     }, 15e3);
     const bus = getSharedContextEventBus();
     const handler = (event) => {
+      if (!eventMatchesFilters(event, filters)) return;
       writeEvent(event);
     };
     bus.on("shared_context", handler);
@@ -9546,7 +9841,7 @@ function createSharedContextRouter() {
       res.end();
     });
   });
-  router.post("/publish", (req, res) => {
+  router.post("/publish", async (req, res) => {
     const packet = req.body?.packet;
     if (!packet?.answer || !(packet.canonicalEntity ?? packet.entityName)) {
       return res.status(400).json({
@@ -9554,32 +9849,50 @@ function createSharedContextRouter() {
         message: "A result packet with entityName/canonicalEntity and answer is required."
       });
     }
+    const contextId = getContextId(packet);
+    const workspaceId = getWorkspaceId(packet);
+    const packetPayload = {
+      contextId,
+      contextType: "entity_packet",
+      producerPeerId: WEB_PRODUCER_PEER_ID,
+      workspaceId,
+      scope: [
+        "workspace",
+        `entity:${slugify(packet.canonicalEntity ?? packet.entityName ?? "nodebench")}`,
+        `packet:${packet.packetType ?? "founder_packet"}`
+      ],
+      subject: getSubject(packet),
+      summary: summarizePacket(packet),
+      claims: collectClaims(packet),
+      evidenceRefs: collectEvidenceRefs(packet),
+      confidence: typeof packet.confidence === "number" ? Math.max(0, Math.min(1, packet.confidence / 100)) : void 0,
+      lineage: {
+        sourceRunId: typeof packet.packetId === "string" ? packet.packetId : void 0
+      },
+      freshness: getFreshness(packet)
+    };
     try {
+      if (useConvex()) {
+        await registerPeerConvex({
+          peerId: WEB_PRODUCER_PEER_ID,
+          product: "nodebench",
+          workspaceId,
+          surface: "web",
+          role: "router",
+          capabilities: ["can-publish-packet", "can-propose-task", "can-package-truth"],
+          contextScopes: ["workspace", "entity", "packet"]
+        });
+        await publishPacketConvex(packetPayload);
+        const snapshot = await getSnapshotConvex(6);
+        return res.json({ success: true, contextId, workspaceId, snapshot });
+      }
       registerWebPeer(packet);
-      const contextId = getContextId(packet);
-      const published = publishSharedContextPacket({
-        contextId,
-        contextType: "entity_packet",
-        producerPeerId: WEB_PRODUCER_PEER_ID,
-        workspaceId: getWorkspaceId(packet),
-        scope: [
-          "workspace",
-          `entity:${slugify(packet.canonicalEntity ?? packet.entityName ?? "nodebench")}`,
-          `packet:${packet.packetType ?? "founder_packet"}`
-        ],
-        subject: getSubject(packet),
-        summary: summarizePacket(packet),
-        claims: collectClaims(packet),
-        evidenceRefs: collectEvidenceRefs(packet),
+      publishSharedContextPacket({
+        ...packetPayload,
         stateSnapshot: packet,
-        freshness: getFreshness(packet),
         permissions: {
           visibility: "workspace",
           allowedRoles: ["researcher", "compiler", "judge", "router"]
-        },
-        confidence: typeof packet.confidence === "number" ? Math.max(0, Math.min(1, packet.confidence / 100)) : void 0,
-        lineage: {
-          sourceRunId: typeof packet.packetId === "string" ? packet.packetId : void 0
         },
         nextActions: [
           ...(packet.interventions ?? []).map((item) => item.action ?? "").filter(Boolean),
@@ -9596,8 +9909,8 @@ function createSharedContextRouter() {
       });
       return res.json({
         success: true,
-        contextId: published.contextId,
-        workspaceId: getWorkspaceId(packet),
+        contextId,
+        workspaceId,
         snapshot: getSharedContextSnapshot(6)
       });
     } catch (error) {
@@ -9607,7 +9920,7 @@ function createSharedContextRouter() {
       });
     }
   });
-  router.post("/delegate", (req, res) => {
+  router.post("/delegate", async (req, res) => {
     const body = req.body ?? {};
     const packet = body.packet;
     const target = body.targetAgent ?? "claude_code";
@@ -9623,51 +9936,120 @@ function createSharedContextRouter() {
         message: `Unsupported targetAgent: ${String(target)}`
       });
     }
+    const contextId = getContextId(packet);
+    const workspaceId = getWorkspaceId(packet);
     try {
-      registerWebPeer(packet);
-      registerDelegatePeer(packet, target);
-      const contextId = getContextId(packet);
-      publishSharedContextPacket({
-        contextId,
-        contextType: "entity_packet",
-        producerPeerId: WEB_PRODUCER_PEER_ID,
-        workspaceId: getWorkspaceId(packet),
-        scope: [
-          "workspace",
-          `entity:${slugify(packet.canonicalEntity ?? packet.entityName ?? "nodebench")}`,
-          `packet:${packet.packetType ?? "founder_packet"}`,
-          `delegate:${target}`
-        ],
-        subject: getSubject(packet),
-        summary: summarizePacket(packet),
-        claims: collectClaims(packet),
-        evidenceRefs: collectEvidenceRefs(packet),
-        stateSnapshot: packet,
-        freshness: getFreshness(packet),
-        permissions: {
-          visibility: "workspace",
-          allowedRoles: ["researcher", "compiler", "judge", "router"]
-        },
-        confidence: typeof packet.confidence === "number" ? Math.max(0, Math.min(1, packet.confidence / 100)) : void 0,
-        lineage: {
-          sourceRunId: typeof packet.packetId === "string" ? packet.packetId : void 0
-        },
-        nextActions: [
-          ...(packet.interventions ?? []).map((item) => item.action ?? "").filter(Boolean),
-          ...(packet.nextQuestions ?? []).slice(0, 3)
-        ].slice(0, 6),
-        metadata: {
-          query: packet.query ?? null,
-          packetId: packet.packetId ?? null,
-          packetType: packet.packetType ?? null,
-          proofStatus: packet.proofStatus ?? null,
-          recommendedNextAction: packet.recommendedNextAction ?? null,
-          targetAgent: target
-        },
-        queueForSync: false
-      });
+      if (useConvex()) {
+        await registerPeerConvex({
+          peerId: WEB_PRODUCER_PEER_ID,
+          product: "nodebench",
+          workspaceId,
+          surface: "web",
+          role: "router",
+          capabilities: ["can-publish-packet", "can-propose-task", "can-package-truth"]
+        });
+        await registerPeerConvex({
+          peerId: DELEGATE_TARGETS[target].peerId,
+          product: "nodebench",
+          workspaceId,
+          surface: "api",
+          role: "compiler",
+          capabilities: ["can-build", "can-execute", "can-complete-task"]
+        });
+        await publishPacketConvex({
+          contextId,
+          contextType: "entity_packet",
+          producerPeerId: WEB_PRODUCER_PEER_ID,
+          workspaceId,
+          scope: [
+            "workspace",
+            `entity:${slugify(packet.canonicalEntity ?? packet.entityName ?? "nodebench")}`,
+            `delegate:${target}`
+          ],
+          subject: getSubject(packet),
+          summary: summarizePacket(packet),
+          claims: collectClaims(packet),
+          evidenceRefs: collectEvidenceRefs(packet),
+          confidence: typeof packet.confidence === "number" ? Math.max(0, Math.min(1, packet.confidence / 100)) : void 0,
+          lineage: {
+            sourceRunId: typeof packet.packetId === "string" ? packet.packetId : void 0
+          },
+          freshness: getFreshness(packet)
+        });
+      } else {
+        registerWebPeer(packet);
+        registerDelegatePeer(packet, target);
+        publishSharedContextPacket({
+          contextId,
+          contextType: "entity_packet",
+          producerPeerId: WEB_PRODUCER_PEER_ID,
+          workspaceId,
+          scope: [
+            "workspace",
+            `entity:${slugify(packet.canonicalEntity ?? packet.entityName ?? "nodebench")}`,
+            `packet:${packet.packetType ?? "founder_packet"}`,
+            `delegate:${target}`
+          ],
+          subject: getSubject(packet),
+          summary: summarizePacket(packet),
+          claims: collectClaims(packet),
+          evidenceRefs: collectEvidenceRefs(packet),
+          stateSnapshot: packet,
+          freshness: getFreshness(packet),
+          permissions: {
+            visibility: "workspace",
+            allowedRoles: ["researcher", "compiler", "judge", "router"]
+          },
+          confidence: typeof packet.confidence === "number" ? Math.max(0, Math.min(1, packet.confidence / 100)) : void 0,
+          lineage: {
+            sourceRunId: typeof packet.packetId === "string" ? packet.packetId : void 0
+          },
+          nextActions: [
+            ...(packet.interventions ?? []).map((item) => item.action ?? "").filter(Boolean),
+            ...(packet.nextQuestions ?? []).slice(0, 3)
+          ].slice(0, 6),
+          metadata: {
+            query: packet.query ?? null,
+            packetId: packet.packetId ?? null,
+            packetType: packet.packetType ?? null,
+            proofStatus: packet.proofStatus ?? null,
+            recommendedNextAction: packet.recommendedNextAction ?? null,
+            targetAgent: target
+          },
+          queueForSync: false
+        });
+      }
       const goal = body.goal?.trim() || packet.recommendedNextAction?.trim() || packet.nextQuestions?.[0]?.trim() || "Continue implementation from the published NodeBench packet.";
       const taskId = getTaskId(packet, target);
+      if (useConvex()) {
+        await proposeTaskConvex({
+          taskId,
+          taskType: "agent_handoff",
+          proposerPeerId: WEB_PRODUCER_PEER_ID,
+          assigneePeerId: DELEGATE_TARGETS[target].peerId,
+          taskSpec: {
+            targetAgent: target,
+            targetLabel: DELEGATE_TARGETS[target].label,
+            goal,
+            installCommand: DELEGATE_TARGETS[target].installCommand,
+            proofStatus: packet.proofStatus ?? null
+          },
+          inputContextIds: [contextId],
+          reason: goal
+        });
+        const snapshot = await getSnapshotConvex(6);
+        return res.json({
+          success: true,
+          contextId,
+          taskId,
+          workspaceId,
+          targetAgent: target,
+          targetLabel: DELEGATE_TARGETS[target].label,
+          installCommand: DELEGATE_TARGETS[target].installCommand,
+          handoffPrompt: buildHandoffPrompt({ packet, contextId, taskId, target, goal }),
+          snapshot
+        });
+      }
       const proposed = proposeSharedContextTask({
         taskId,
         taskType: "agent_handoff",
@@ -9692,7 +10074,7 @@ function createSharedContextRouter() {
         success: true,
         contextId,
         taskId: proposed.taskId,
-        workspaceId: getWorkspaceId(packet),
+        workspaceId,
         targetAgent: target,
         targetLabel: DELEGATE_TARGETS[target].label,
         installCommand: DELEGATE_TARGETS[target].installCommand,
