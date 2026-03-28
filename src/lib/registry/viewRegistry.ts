@@ -385,7 +385,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     parentId: "research",
     surfaceId: "research",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "footnotes",
@@ -397,7 +397,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     parentId: "research",
     surfaceId: "research",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "entity",
@@ -621,7 +621,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     parentId: "control-plane",
     surfaceId: "telemetry",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "analytics-components",
@@ -633,7 +633,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     parentId: "control-plane",
     surfaceId: "telemetry",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "analytics-recommendations",
@@ -645,7 +645,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     parentId: "control-plane",
     surfaceId: "telemetry",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "cost-dashboard",
@@ -670,7 +670,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     parentId: "control-plane",
     surfaceId: "telemetry",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "observability",
@@ -695,7 +695,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     parentId: "control-plane",
     surfaceId: "telemetry",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
 
   // ── Oracle ─────────────────────────────────────────────────────────────────
@@ -724,7 +724,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     parentId: "control-plane",
     surfaceId: "telemetry",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
 
   // ── Mission Control ───────────────────────────────────────────────────────
@@ -739,7 +739,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     parentId: "control-plane",
     surfaceId: "telemetry",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
 
   // ── Evolution Dashboard ───────────────────────────────────────────────────
@@ -754,7 +754,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     parentId: "control-plane",
     surfaceId: "telemetry",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "deep-sim",
@@ -866,7 +866,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     parentId: "control-plane",
     surfaceId: "ask",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
 
   // ── API Key Management ────────────────────────────────────────────────
@@ -881,7 +881,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     parentId: "control-plane",
     surfaceId: "telemetry",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
 
   // ── Business Pages ──────────────────────────────────────────────────────
@@ -921,7 +921,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     parentId: "control-plane",
     surfaceId: "research",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
 
   {
@@ -949,7 +949,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     parentId: "control-plane",
     surfaceId: "ask",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
 
   // ── Founder Platform ──────────────────────────────────────────────────────
@@ -975,7 +975,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     parentId: "founder-dashboard",
     surfaceId: "ask",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "initiative-workspace",
@@ -1074,7 +1074,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: true,
     parentId: "founder-dashboard",
     surfaceId: "ask",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "company-analysis",
@@ -1110,7 +1110,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: true,
     parentId: "founder-dashboard",
     surfaceId: "ask",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   // ── Phase 10 — Causal Memory & Trajectory Intelligence ─────────────
   {
@@ -1123,7 +1123,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: true,
     parentId: "founder-dashboard",
     surfaceId: "ask",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "founder-rollups",
@@ -1135,7 +1135,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: true,
     parentId: "founder-dashboard",
     surfaceId: "ask",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "founder-lineage",
@@ -1147,7 +1147,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: true,
     parentId: "founder-dashboard",
     surfaceId: "ask",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "founder-changes",
@@ -1198,7 +1198,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: true,
     parentId: "founder-dashboard",
     surfaceId: "ask",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
 ];
 
