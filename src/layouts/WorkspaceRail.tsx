@@ -6,22 +6,17 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
-  FileInput,
   FileText,
-  Layers,
   LogIn,
   MessageSquare,
   Radar,
   Search,
-  Send,
   User,
   Settings,
   Orbit,
-  Clock,
   FolderKanban,
   Network,
   Radio,
-  Zap,
   Eye,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -86,13 +81,8 @@ export const WorkspaceRail = memo(function WorkspaceRail({
   const activeFounderView = new URLSearchParams(location.search).get("view");
   const founderNavItems = [
     { path: "/founder", viewId: "founder-dashboard", label: "Dashboard", icon: Building2 },
-    { path: "/founder/intake", viewId: "context-intake", label: "Intake", icon: FileInput },
-    { path: "/founder/history", viewId: "founder-history", label: "History", icon: Clock },
-    { path: "/founder/command", viewId: "command-panel", label: "Command Center", icon: Send },
-    { path: "/founder/agents", viewId: "agent-oversight", label: "Agent Oversight", icon: Layers },
-    { path: "/founder/brief", viewId: "agent-brief", label: "Agent Brief", icon: Zap },
-    { path: "/founder/entities", viewId: "nearby-entities", label: "Entities", icon: Network },
     { path: "/founder/coordination", viewId: "coordination-hub", label: "Coordination", icon: Radio },
+    { path: "/founder/entities", viewId: "nearby-entities", label: "Entities", icon: Network },
   ] as const;
 
   const isFounderItemActive = (item: (typeof founderNavItems)[number]) => {

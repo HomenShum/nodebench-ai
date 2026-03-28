@@ -93,7 +93,8 @@ export type MainView =
   | "founder-lineage"
   | "founder-changes"
   | "founder-session-delta"
-  | "coordination-hub";
+  | "coordination-hub"
+  | "claw3d";
 
 export type ResearchTab = "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
 
@@ -958,7 +959,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     subtitle: "Your company operating view — goals, agents, signals, and next actions",
     path: "/founder",
     aliases: ["/founder-dashboard"],
-    component: lazyView(() => import("@/features/founder/views/FounderDashboardView")),
+    component: lazyView(() => import("@/features/founder/views/FounderDashboardTabs")),
     group: "core",
     navVisible: true,
     surfaceId: "ask",
@@ -1180,6 +1181,19 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     subtitle: "Team coordination — peers, tasks, context packets, messaging",
     path: "/founder/coordination",
     component: lazyView(() => import("@/features/founder/views/CoordinationHubView")),
+    group: "nested",
+    navVisible: true,
+    parentId: "founder-dashboard",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  // ── Phase 15 — 3D Agent Office (Claw3D) ──────────────────────────
+  {
+    id: "claw3d",
+    title: "3D Agent Office",
+    subtitle: "Walk through your AI workspace — Claw3D 3D visualization",
+    path: "/founder/3dclaw",
+    component: lazyView(() => import("@/features/founder/views/Claw3DView")),
     group: "nested",
     navVisible: true,
     parentId: "founder-dashboard",
