@@ -13,5 +13,15 @@ packages/mcp-client/node_modules
 packages/convex-mcp-nodebench/node_modules
 scripts/eval-harness
 tests
+test_assets
+test-results.json
 docs/completions
 docs/plans
+
+# Heavy dogfood assets (~40MB savings)
+public/dogfood/videos/
+public/dogfood/walkthrough.mp4
+public/dogfood/coordination-demo.mp4
+public/dogfood/coordination-demo.webm
+public/dogfood/scribe/
+public/dogfood/frames/
