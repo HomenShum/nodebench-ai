@@ -1180,7 +1180,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     title: "Coordination Hub",
     subtitle: "Team coordination — peers, tasks, context packets, messaging",
     path: "/founder/coordination",
-    component: lazyView(() => import("@/features/founder/views/CoordinationHubView")),
+    component: lazyView(() => import("@/features/founder/views/CoordinationTabs")),
     group: "nested",
     navVisible: true,
     parentId: "founder-dashboard",

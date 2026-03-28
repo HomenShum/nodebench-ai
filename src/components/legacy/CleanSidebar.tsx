@@ -522,7 +522,7 @@ export const CleanSidebar = memo(function CleanSidebar({
         {!isCollapsed && isAnonymous && showGuestPreviewFooter && (
           <div className="space-y-2">
             <div className="rounded-lg border border-edge bg-surface-secondary px-3 py-2 text-[11px] leading-relaxed text-content-secondary">
-              Preview includes the Oracle, research, and benchmark proof. Sign in to save work, connect apps, and run personalized flows.
+              Preview includes system health, research, and benchmark proof. Sign in to save work, connect apps, and run personalized flows.
             </div>
             <button
               type="button"

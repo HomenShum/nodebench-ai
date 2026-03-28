@@ -694,7 +694,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
   const conversationStarters = useMemo(() => [
     { icon: '📊', label: 'Trajectory scoring', prompt: 'How does trajectory scoring work in NodeBench?' },
     { icon: '🔒', label: 'Judgment gates', prompt: 'Explain the boolean judgment gates and disqualifiers' },
-    { icon: '🔍', label: 'MCP tools', prompt: 'What MCP tools handle research workflows?' },
+    { icon: '🔍', label: 'Research tools', prompt: 'What tools handle research workflows?' },
     { icon: '📋', label: 'Agent activity', prompt: 'Show me recent agent activity and denied actions' },
   ], []);
 
@@ -2770,7 +2770,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                          {[
                            { label: 'How does trajectory scoring work?', icon: '📊' },
                            { label: 'Explain the judgment layer gates', icon: '⚡' },
-                           { label: 'What MCP tools handle research?', icon: '🔍' },
+                           { label: 'What tools handle research?', icon: '🔍' },
                            { label: 'Show recent agent activity', icon: '📋' },
                          ].map((chip) => (
                            <button

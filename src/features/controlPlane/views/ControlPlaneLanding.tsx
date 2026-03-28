@@ -1022,7 +1022,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             Operational
           </span>
           <span>Built by Homen Shum (Meta, JPMorgan)</span>
-          <span>350 MCP tools</span>
+          <span>350 agent tools</span>
           <span>Open source</span>
           <button
             type="button"
