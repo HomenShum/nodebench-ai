@@ -1,0 +1,25 @@
+{
+  "capturedAtIso": "2026-03-28T05:23:01.104Z",
+  "baseURL": "http://localhost:5191",
+  "serverURL": "http://localhost:3100",
+  "mime": "video/mp4",
+  "chapters": [
+    {
+      "name": "Navigate to Coordination Hub",
+      "startSec": 5.2
+    },
+    {
+      "name": "Initial state — demo mode",
+      "startSec": 5.2
+    },
+    {
+      "name": "Publishing context packets via API",
+      "startSec": 6.2
+    },
+    {
+      "name": "Refreshing UI — live data appears",
+      "startSec": 7.8
+    }
+  ],
+  "videoPath": "/dogfood/coordination-demo.mp4"
+}

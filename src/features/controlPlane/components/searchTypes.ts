@@ -300,6 +300,11 @@ export const EXAMPLE_PROMPTS: ExamplePrompt[] = [
     lens: "student",
     category: "search",
   },
+  {
+    text: "Plan a real-time notification system for our platform",
+    lens: "founder",
+    category: "analyze",
+  },
 ];
 
 /* ─── Demo Result Packets ────────────────────────────────────────────────── */
