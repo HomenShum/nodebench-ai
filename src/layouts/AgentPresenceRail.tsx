@@ -1,6 +1,6 @@
 import { memo, useEffect, useState } from "react";
 import { useConvexAuth, useQuery } from "convex/react";
-import { Activity, CheckCircle2, Clock, Mic, Shield, TrendingUp, FileText, ChevronRight, ChevronLeft, Sparkles, Volume2, VolumeX } from "lucide-react";
+import { Activity, Clock, Mic, Shield, TrendingUp, ChevronRight, ChevronLeft, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import { cn } from "@/lib/utils";
 import type { CockpitSurfaceId, MainView } from "@/lib/registry/viewRegistry";
@@ -105,37 +105,23 @@ export const AgentPresenceRail = memo(function AgentPresenceRail({
         ) : null}
 
         <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5">
-          <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-content-muted">
-            <Activity className="h-3.5 w-3.5" />
-            Agent status
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-content-muted">
+              <Activity className="h-3.5 w-3.5" />
+              Status
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-emerald-400">
+              <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
+              {isAuthenticated ? "Live" : "Guest"}
+            </div>
           </div>
           <div className="mt-2 text-sm font-semibold text-content">{currentObjective}</div>
-          <div className="mt-1 text-xs text-content-muted">{SURFACE_DESCRIPTIONS[currentSurface]}</div>
-          <div className="mt-3 flex items-center gap-2 text-xs text-emerald-400">
-            <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
-            {isAuthenticated ? "Connected runtime" : "Guest runtime"}
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5">
-          <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-content-muted">
-            <FileText className="h-3.5 w-3.5" />
-            Active plan
-          </div>
-          <ol className="mt-3 space-y-2 text-xs text-content-muted">
-            <li className="flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
-              Review agent actions and evidence
-            </li>
-            <li className="flex items-start gap-2">
-              <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cyan-400" />
-              Answer questions with traced evidence
-            </li>
-            <li className="flex items-start gap-2">
-              <Shield className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
-              {approvalCount > 0 ? `${approvalCount} action${approvalCount === 1 ? "" : "s"} waiting for approval` : "No actions waiting for approval"}
-            </li>
-          </ol>
+          {approvalCount > 0 && (
+            <div className="mt-2 flex items-center gap-2 text-xs text-amber-400">
+              <Shield className="h-3.5 w-3.5" />
+              {approvalCount} action{approvalCount === 1 ? "" : "s"} waiting
+            </div>
+          )}
         </section>
 
         <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5" data-agent-id="cockpit:runtime-metrics">
