@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { SEARCH_API_ENDPOINT } from "@/lib/searchApi";
 import type { ChangeEntry, ExternalSignal } from "../views/founderFixtures";
 
 /* ─── Types ────────────────────────────────────────────────────────────────── */
@@ -118,7 +119,7 @@ async function fetchEntitySignals(
 ): Promise<LiveEntityResult> {
   const start = Date.now();
   try {
-    const resp = await fetch("/search", {
+    const resp = await fetch(SEARCH_API_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

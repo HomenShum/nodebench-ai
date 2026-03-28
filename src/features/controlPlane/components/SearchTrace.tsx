@@ -8,7 +8,7 @@
  * User side: simplified "How we got this answer" citation trail
  */
 
-import { memo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import {
   Activity,
   CheckCircle2,
@@ -20,6 +20,7 @@ import {
   XCircle,
   Zap,
 } from "lucide-react";
+import { SyncProvenanceBadge } from "./SyncProvenanceBadge";
 
 /* ─── Types ────────────────────────────────────────────────────────────────── */
 
@@ -29,6 +30,8 @@ export interface TraceStep {
   durationMs: number;
   status: "ok" | "error" | "skip";
   detail?: string;
+  traceId?: string;
+  isRunning?: boolean;
 }
 
 interface SearchTraceProps {
@@ -86,6 +89,24 @@ function DurationBar({ durationMs, maxMs }: { durationMs: number; maxMs: number 
   );
 }
 
+function traceGroupId(step: TraceStep): string {
+  if (step.step === "classify_query") return "query";
+  if (step.step === "build_context_bundle") return "context";
+  if (step.step === "tool_call" || step.step === "llm_extract") return "exploration";
+  if (step.step === "judge") return "verification";
+  if (step.step === "assemble_response") return "answer";
+  return "other";
+}
+
+function traceGroupLabel(groupId: string): string {
+  if (groupId === "query") return "You asked";
+  if (groupId === "context") return "We loaded context";
+  if (groupId === "exploration") return "We explored evidence";
+  if (groupId === "verification") return "We checked the work";
+  if (groupId === "answer") return "We assembled the answer";
+  return "Other steps";
+}
+
 /* ─── Main Component ───────────────────────────────────────────────────────── */
 
 export const SearchTrace = memo(function SearchTrace({
@@ -100,6 +121,21 @@ export const SearchTrace = memo(function SearchTrace({
   const totalSteps = trace.length;
   const okSteps = trace.filter(t => t.status === "ok").length;
   const errorSteps = trace.filter(t => t.status === "error").length;
+  const groupedTrace = useMemo(() => {
+    const groups = new Map<string, TraceStep[]>();
+    trace.forEach((step) => {
+      const groupId = traceGroupId(step);
+      const existing = groups.get(groupId) ?? [];
+      existing.push(step);
+      groups.set(groupId, existing);
+    });
+    return Array.from(groups.entries()).map(([groupId, steps]) => ({
+      groupId,
+      label: traceGroupLabel(groupId),
+      steps,
+      durationMs: steps.reduce((sum, step) => sum + step.durationMs, 0),
+    }));
+  }, [trace]);
 
   return (
     <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
@@ -108,11 +144,12 @@ export const SearchTrace = memo(function SearchTrace({
         type="button"
         onClick={() => setExpanded(v => !v)}
         className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/[0.02]"
-      >
+        >
         <Activity className="h-4 w-4 text-[#d97757]" />
         <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted flex-1">
           {mode === "dev" ? "Execution Trace" : "How we got this answer"}
         </span>
+        {mode === "user" ? <SyncProvenanceBadge compact /> : null}
         <div className="flex items-center gap-2.5 text-[10px] text-content-muted">
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
@@ -149,34 +186,55 @@ export const SearchTrace = memo(function SearchTrace({
       {/* ── Expanded trace ───────────────────────────────────────────── */}
       {expanded && (
         <div className="border-t border-white/[0.06] px-4 py-3">
-          {/* Timeline */}
-          <div className="relative space-y-0">
-            {trace.map((step, i) => (
-              <div key={i} className="relative flex items-start gap-3 py-1.5">
-                {/* Vertical line */}
-                {i < trace.length - 1 && (
-                  <div className="absolute left-[7px] top-[18px] w-px h-[calc(100%-4px)] bg-white/[0.08]" />
-                )}
-                {/* Icon */}
-                <div className="relative z-10 mt-0.5">
-                  <StepIcon step={step.step} status={step.status} />
-                </div>
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-content truncate">
-                      {stepLabel(step, mode)}
-                    </span>
-                    <DurationBar durationMs={step.durationMs} maxMs={maxDuration} />
-                    <span className="text-[10px] tabular-nums text-content-muted shrink-0">
-                      {step.durationMs}ms
-                    </span>
+          <div className="space-y-3">
+            {groupedTrace.map((group) => (
+              <div
+                key={group.groupId}
+                className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3"
+              >
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-content-muted">
+                      {group.label}
+                    </div>
+                    <div className="mt-1 text-xs text-content-muted">
+                      {group.steps.length} step{group.steps.length === 1 ? "" : "s"} · {group.durationMs}ms
+                    </div>
                   </div>
-                  {mode === "dev" && step.detail && (
-                    <p className="mt-0.5 text-[10px] text-content-muted/70 font-mono truncate">
-                      {step.detail}
-                    </p>
-                  )}
+                  {mode === "user" ? (
+                    <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-1 text-[10px] text-content-muted">
+                      {group.groupId}
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="relative space-y-0">
+                  {group.steps.map((step, i) => (
+                    <div key={step.traceId ?? `${group.groupId}-${i}`} className="relative flex items-start gap-3 py-1.5">
+                      {i < group.steps.length - 1 && (
+                        <div className="absolute left-[7px] top-[18px] w-px h-[calc(100%-4px)] bg-white/[0.08]" />
+                      )}
+                      <div className="relative z-10 mt-0.5">
+                        <StepIcon step={step.step} status={step.status} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-content truncate">
+                            {stepLabel(step, mode)}
+                          </span>
+                          <DurationBar durationMs={step.durationMs} maxMs={maxDuration} />
+                          <span className="text-[10px] tabular-nums text-content-muted shrink-0">
+                            {step.durationMs}ms
+                          </span>
+                        </div>
+                        {step.detail && (
+                          <p className={`mt-0.5 text-[10px] ${mode === "dev" ? "font-mono text-content-muted/70 truncate" : "text-content-muted"}`}>
+                            {step.detail}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}

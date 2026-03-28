@@ -31,6 +31,14 @@ function statusColor(status: string) {
   }
 }
 
+/** Claw3D-inspired pulse animation for active peers */
+function statusPulse(status: string) {
+  if (status === "active") {
+    return "animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.5)]";
+  }
+  return "";
+}
+
 function relativeTime(iso?: string): string {
   if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
@@ -97,7 +105,7 @@ export function PeerPresenceCard({ peers, compact = false }: Props) {
             {/* Avatar */}
             <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/60">
               {roleIcon(peer.role)}
-              <span className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ${statusColor(peer.status)} ring-1 ring-black/40`} />
+              <span className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ${statusColor(peer.status)} ${statusPulse(peer.status)} ring-1 ring-black/40`} />
             </div>
 
             {/* Info */}

@@ -63,17 +63,23 @@ export interface ResultVariable {
   name: string;
   direction: "up" | "down" | "neutral";
   impact: "high" | "medium" | "low";
+  /** Index into sourceRefs[] for citation linkage */
+  sourceIdx?: number;
 }
 
 export interface ResultChange {
   description: string;
   date?: string;
+  /** Index into sourceRefs[] for citation linkage */
+  sourceIdx?: number;
 }
 
 export interface ResultRisk {
   title: string;
   description: string;
   falsification?: string;
+  /** Index into sourceRefs[] for citation linkage */
+  sourceIdx?: number;
 }
 
 export interface ResultComparable {
@@ -96,6 +102,97 @@ export interface ResultScenario {
 export interface ResultIntervention {
   action: string;
   impact: "high" | "medium" | "low";
+}
+
+export type ProofStatus =
+  | "loading"
+  | "provisional"
+  | "verified"
+  | "drifting"
+  | "incomplete";
+
+export interface ResultSourceRef {
+  id: string;
+  label: string;
+  href?: string;
+  type?: "web" | "local" | "doc" | "trace";
+  status?: "explored" | "cited" | "discarded";
+  title?: string;
+  domain?: string;
+  publishedAt?: string;
+  thumbnailUrl?: string;
+  excerpt?: string;
+  confidence?: number;
+}
+
+export interface ResultClaimRef {
+  id: string;
+  text: string;
+  sourceRefIds: string[];
+  answerBlockIds: string[];
+  status: "retained" | "contradicted" | "discarded";
+}
+
+export interface ResultAnswerBlock {
+  id: string;
+  title: string;
+  text: string;
+  sourceRefIds: string[];
+  claimIds: string[];
+  status: "cited" | "uncertain" | "draft";
+}
+
+export interface ResultExplorationMemory {
+  exploredSourceCount: number;
+  citedSourceCount: number;
+  discardedSourceCount: number;
+  entityCount: number;
+  claimCount: number;
+  contradictionCount: number;
+}
+
+export interface ResultGraphSummary {
+  nodeCount: number;
+  edgeCount: number;
+  clusterCount: number;
+  primaryPath: string[];
+}
+
+export type ResultGraphNodeKind =
+  | "query"
+  | "lens"
+  | "persona"
+  | "context_bundle"
+  | "source"
+  | "entity"
+  | "claim"
+  | "contradiction"
+  | "answer_block"
+  | "artifact"
+  | "follow_up";
+
+export type ResultGraphEdgeKind =
+  | "selected"
+  | "explored"
+  | "mentions"
+  | "supports"
+  | "conflicts_with"
+  | "used_in"
+  | "about"
+  | "suggests";
+
+export interface ResultGraphNode {
+  id: string;
+  kind: ResultGraphNodeKind;
+  label: string;
+  status?: ProofStatus;
+  confidence?: number;
+}
+
+export interface ResultGraphEdge {
+  fromId: string;
+  toId: string;
+  kind: ResultGraphEdgeKind;
 }
 
 export interface ResultPacket {
@@ -125,7 +222,44 @@ export interface ResultPacket {
   interventions?: ResultIntervention[];
   /** Follow-up questions */
   nextQuestions?: string[];
+  /** Durable result packet id */
+  packetId?: string;
+  /** Packet type for downstream export/use */
+  packetType?: string;
+  /** Canonical entity label for trace + sync */
+  canonicalEntity?: string;
+  /** Source references used or explored */
+  sourceRefs?: ResultSourceRef[];
+  /** Structured claim lineage */
+  claimRefs?: ResultClaimRef[];
+  /** Final answer blocks with source and claim linkage */
+  answerBlocks?: ResultAnswerBlock[];
+  /** Exploration memory counters */
+  explorationMemory?: ResultExplorationMemory;
+  /** Compact graph summary for rendering */
+  graphSummary?: ResultGraphSummary;
+  /** Display-safe proof status */
+  proofStatus?: ProofStatus;
+  /** Explicit uncertainty boundary for the answer */
+  uncertaintyBoundary?: string;
+  /** Most important recommended next action */
+  recommendedNextAction?: string;
+  /** Compact graph nodes for proof rendering */
+  graphNodes?: ResultGraphNode[];
+  /** Compact graph edges for proof rendering */
+  graphEdges?: ResultGraphEdge[];
+  /** Raw packet from backend (plan proposals, artifact packets, etc.) */
+  rawPacket?: unknown;
 }
+
+export const PUBLIC_LENS_PERSONA_MAP: Record<LensId, string> = {
+  founder: "FOUNDER_STRATEGY",
+  investor: "EARLY_STAGE_VC",
+  banker: "JPM_STARTUP_BANKER",
+  ceo: "CORP_DEV",
+  legal: "LEGAL_COMPLIANCE",
+  student: "SIMPLIFIED_RESEARCH",
+};
 
 /* ─── Example Prompts ────────────────────────────────────────────────────── */
 
@@ -156,6 +290,16 @@ export const EXAMPLE_PROMPTS: ExamplePrompt[] = [
     lens: "banker",
     category: "analyze",
   },
+  {
+    text: "What legal and data-governance risks matter most for OpenAI enterprise adoption this quarter?",
+    lens: "legal",
+    category: "monitor",
+  },
+  {
+    text: "Explain Shopify's AI commerce strategy in plain language and give me a study brief.",
+    lens: "student",
+    category: "search",
+  },
 ];
 
 /* ─── Demo Result Packets ────────────────────────────────────────────────── */
@@ -169,11 +313,11 @@ export const DEMO_PACKETS: Record<string, ResultPacket> = {
     confidence: 82,
     sourceCount: 23,
     variables: [
-      { rank: 1, name: "Enterprise distribution via AWS Bedrock", direction: "up", impact: "high" },
-      { rank: 2, name: "Safety research moat depth", direction: "up", impact: "high" },
-      { rank: 3, name: "Developer mindshare vs OpenAI", direction: "up", impact: "medium" },
-      { rank: 4, name: "Inference cost trajectory", direction: "down", impact: "medium" },
-      { rank: 5, name: "Open-source competitive pressure", direction: "down", impact: "low" },
+      { rank: 1, name: "Enterprise distribution via AWS Bedrock", direction: "up", impact: "high", sourceIdx: 0 },
+      { rank: 2, name: "Safety research moat depth", direction: "up", impact: "high", sourceIdx: 1 },
+      { rank: 3, name: "Developer mindshare vs OpenAI", direction: "up", impact: "medium", sourceIdx: 2 },
+      { rank: 4, name: "Inference cost trajectory", direction: "down", impact: "medium", sourceIdx: 0 },
+      { rank: 5, name: "Open-source competitive pressure", direction: "down", impact: "low", sourceIdx: 3 },
     ],
     keyMetrics: [
       { label: "Valuation", value: "$61.5B" },
@@ -182,20 +326,22 @@ export const DEMO_PACKETS: Record<string, ResultPacket> = {
       { label: "Enterprise clients", value: "10K+" },
     ],
     changes: [
-      { description: "Claude 4.5 Sonnet launched with state-of-the-art coding benchmarks", date: "Feb 2025" },
-      { description: "Amazon investment expanded to $8B total, deepening Bedrock integration", date: "Jan 2025" },
-      { description: "MCP protocol gaining ecosystem adoption — 50K+ GitHub stars", date: "Mar 2025" },
+      { description: "Claude 4.5 Sonnet launched with state-of-the-art coding benchmarks", date: "Feb 2025", sourceIdx: 1 },
+      { description: "Amazon investment expanded to $8B total, deepening Bedrock integration", date: "Jan 2025", sourceIdx: 0 },
+      { description: "MCP protocol gaining ecosystem adoption — 50K+ GitHub stars", date: "Mar 2025", sourceIdx: 2 },
     ],
     risks: [
       {
         title: "OpenAI pricing pressure",
         description: "GPT-4o mini at $0.15/1M tokens is 10x cheaper than Claude equivalents. If Anthropic can't match on price, enterprise migration accelerates.",
         falsification: "Track enterprise contract renewals Q2-Q3. If churn > 5%, pricing thesis fails.",
+        sourceIdx: 0,
       },
       {
         title: "Open-source catch-up",
         description: "Meta's Llama 4 and Mistral's latest models are narrowing the capability gap. If open-source reaches 90% parity, the premium model business faces compression.",
         falsification: "Monitor LMSYS leaderboard rankings monthly. If open-source enters top-3 consistently, the moat weakens.",
+        sourceIdx: 3,
       },
     ],
     comparables: [
@@ -319,6 +465,202 @@ export const DEMO_PACKETS: Record<string, ResultPacket> = {
       "Does the public-doc drift detection scenario catch all known mismatches?",
       "What's the repeat-question rate across the first 13 dogfood scenarios?",
       "Is the banker Anthropic search producing live data or falling back to demo?",
+    ],
+  },
+  legal_openai: {
+    query: "What legal and data-governance risks matter most for OpenAI enterprise adoption this quarter?",
+    entityName: "OpenAI Enterprise Risk Review",
+    answer:
+      "The legal lens is now about control and traceability, not just model accuracy. Enterprise buyers want to know where sensitive data flows, what gets retained, when human approval is required, and whether every agent action can be replayed during procurement, audit, or incident review.",
+    confidence: 73,
+    sourceCount: 14,
+    variables: [
+      { rank: 1, name: "Enterprise data retention boundaries", direction: "up", impact: "high" },
+      { rank: 2, name: "Indemnity scope for generated output", direction: "up", impact: "high" },
+      { rank: 3, name: "Auditability of tool-using agents", direction: "up", impact: "high" },
+      { rank: 4, name: "EU/US AI governance convergence", direction: "up", impact: "medium" },
+      { rank: 5, name: "Shadow AI usage outside approved workflows", direction: "up", impact: "medium" },
+    ],
+    keyMetrics: [
+      { label: "Priority", value: "High" },
+      { label: "Risk type", value: "Governance" },
+      { label: "Control gap", value: "Traceability" },
+      { label: "Review mode", value: "Quarterly" },
+    ],
+    changes: [
+      { description: "Enterprise buyers are now asking for agent-action traceability, not just model security whitepapers", date: "This quarter" },
+      { description: "Data-governance review expanded from prompts and outputs to tool calls and downstream writes", date: "This quarter" },
+    ],
+    risks: [
+      {
+        title: "Insufficient action audit trail",
+        description: "If the system cannot explain what an agent did across tools and approvals, legal review shifts from manageable to blocking.",
+        falsification: "Sample five real workflows. If each has a replayable action trail with approvals and evidence, the concern drops.",
+      },
+      {
+        title: "Retention and training ambiguity",
+        description: "Procurement friction rises when customers cannot quickly determine whether data is retained, cached, or repurposed across product surfaces.",
+        falsification: "Contract review yields explicit retention and isolation language for the deployed path.",
+      },
+    ],
+    comparables: [
+      { name: "Anthropic", relevance: "high", note: "Competes on safety posture and enterprise protocol clarity" },
+      { name: "Microsoft Copilot", relevance: "medium", note: "Wins where governance is bundled into incumbent controls" },
+      { name: "Google Gemini", relevance: "medium", note: "Benefits from cloud-native policy integration" },
+    ],
+    nextQuestions: [
+      "Which workflows require human approval before an external write or send?",
+      "Can the customer export a complete execution trace for internal audit?",
+      "Where do retention defaults differ across chat, API, and agent surfaces?",
+    ],
+  },
+  student_shopify: {
+    query: "Explain Shopify's AI commerce strategy in plain language and give me a study brief.",
+    entityName: "Shopify",
+    answer:
+      "Shopify is using AI to make running an online store easier. Instead of only selling software, it is building AI helpers for writing product copy, answering merchant questions, improving search, and helping stores convert more shoppers. That matters because the more daily work Shopify handles, the harder it is for merchants to leave.",
+    confidence: 78,
+    sourceCount: 16,
+    variables: [
+      { rank: 1, name: "Merchant workflow automation", direction: "up", impact: "high" },
+      { rank: 2, name: "Product discovery via AI", direction: "up", impact: "medium" },
+      { rank: 3, name: "Merchant switching costs", direction: "up", impact: "medium" },
+      { rank: 4, name: "AI content trust", direction: "neutral", impact: "medium" },
+      { rank: 5, name: "Platform competition", direction: "up", impact: "low" },
+    ],
+    keyMetrics: [
+      { label: "Summary", value: "Builder-first AI" },
+      { label: "Core benefit", value: "Merchant productivity" },
+      { label: "Main risk", value: "Quality control" },
+      { label: "Study mode", value: "Plain language" },
+    ],
+    changes: [
+      { description: "AI helper features moved closer to daily merchant workflows", date: "Recent" },
+      { description: "Commerce platforms are competing on who owns AI-assisted discovery and operations", date: "Recent" },
+    ],
+    comparables: [
+      { name: "Amazon", relevance: "high", note: "AI in seller tools and marketplace search" },
+      { name: "Google", relevance: "medium", note: "AI-driven product discovery layer" },
+      { name: "BigCommerce", relevance: "medium", note: "Smaller platform alternative" },
+    ],
+    nextQuestions: [
+      "Why does AI make merchants more likely to stay on Shopify?",
+      "How is Shopify different from Amazon in AI commerce?",
+      "What governance risks appear when AI creates product content?",
+    ],
+  },
+  banker_series_b: {
+    query: "Build a diligence memo on this Series B startup from these meeting notes",
+    entityName: "Series B Startup Diligence",
+    answer:
+      "From a banker lens, the first pass is whether the company is financable now, not whether the story is interesting. The memo should reduce uncertainty around quality of revenue, customer concentration, pace of growth, and whether the financing narrative supports a credible next round or strategic process.",
+    confidence: 69,
+    sourceCount: 9,
+    variables: [
+      { rank: 1, name: "Revenue quality", direction: "up", impact: "high" },
+      { rank: 2, name: "Customer concentration", direction: "neutral", impact: "high" },
+      { rank: 3, name: "Growth durability", direction: "up", impact: "high" },
+      { rank: 4, name: "Capital efficiency", direction: "up", impact: "medium" },
+      { rank: 5, name: "Management credibility", direction: "up", impact: "medium" },
+    ],
+    keyMetrics: [
+      { label: "Lens", value: "Banker" },
+      { label: "Primary output", value: "Memo" },
+      { label: "Focus", value: "Deal readiness" },
+      { label: "Stage", value: "Series B" },
+    ],
+    changes: [{ description: "Meeting-note ingestion now converts unstructured context into memo-ready diligence points", date: "Current" }],
+    risks: [
+      {
+        title: "Narrative outruns evidence",
+        description: "If product enthusiasm is not supported by durable growth and clean customer data, the story will not hold in diligence.",
+        falsification: "Revenue retention, expansion, and concentration checks all pass against source data.",
+      },
+    ],
+    nextQuestions: [
+      "What percentage of ARR comes from the top 10 customers?",
+      "Is growth driven by new logos, expansion, or pricing?",
+      "What diligence gaps would block a banker process today?",
+    ],
+  },
+  plan: {
+    query: "Plan a real-time notification system",
+    entityName: "Feature Plan: Real-Time Notification System",
+    answer:
+      "Phased implementation plan for a real-time notification system, conditioned on current founder context. " +
+      "5 phases, 4 identified risks, wedge alignment: 55%.",
+    confidence: 55,
+    sourceCount: 5,
+    packetType: "plan_proposal",
+    variables: [
+      { rank: 1, name: "Phase p1: Research & Design", direction: "neutral", impact: "high" },
+      { rank: 2, name: "Phase p2: Backend Implementation", direction: "neutral", impact: "high" },
+      { rank: 3, name: "Phase p3: Frontend Implementation", direction: "neutral", impact: "medium" },
+      { rank: 4, name: "Phase p4: Testing & QA", direction: "neutral", impact: "medium" },
+      { rank: 5, name: "Phase p5: Deploy & Verify", direction: "neutral", impact: "low" },
+    ],
+    rawPacket: {
+      planId: "plan_demo_notification",
+      planType: "feature_plan",
+      title: "Feature Plan: Real-Time Notification System",
+      summary:
+        "Phased implementation plan for a real-time notification system, conditioned on current founder context. " +
+        "5 phases, 4 identified risks, wedge alignment: 55%.",
+      strategicFit: {
+        wedgeAlignment: 0.55,
+        whyNow: "Expands capability surface. Ensure alignment with current wedge before committing resources.",
+        initiativeLinks: ["init_2"],
+        contradictionRisks: ["Demo data vs live data"],
+      },
+      phases: [
+        { id: "p1", title: "Research & Design", description: "Research approaches for real-time notification system, design data model and API contract", dependencies: [], estimatedEffort: "days", affectedSurfaces: ["docs"], acceptanceCriteria: ["Design doc reviewed", "Data model defined"] },
+        { id: "p2", title: "Backend Implementation", description: "Build server routes, Convex schema, and MCP tools for notification dispatch and preferences", dependencies: ["p1"], estimatedEffort: "days", affectedSurfaces: ["server", "convex", "packages/mcp-local"], acceptanceCriteria: ["API endpoints respond", "Schema deployed"] },
+        { id: "p3", title: "Frontend Implementation", description: "Build React components, hooks, and notification center UI with real-time WebSocket updates", dependencies: ["p2"], estimatedEffort: "days", affectedSurfaces: ["src/features", "src/layouts"], acceptanceCriteria: ["UI renders with live data", "Navigation works"] },
+        { id: "p4", title: "Testing & QA", description: "Write scenario-based tests, run visual dogfood, fix regressions", dependencies: ["p3"], estimatedEffort: "days", affectedSurfaces: ["tests"], acceptanceCriteria: ["Tests pass", "Dogfood screenshots clean"] },
+        { id: "p5", title: "Deploy & Verify", description: "Deploy to production, verify all surfaces, monitor for errors", dependencies: ["p4"], estimatedEffort: "hours", affectedSurfaces: ["vercel", "convex"], acceptanceCriteria: ["Production loads clean", "No console errors"] },
+      ],
+      competitorContext: [],
+      codebaseReadiness: [
+        { capability: "Search route classification", status: "ready", files: ["server/routes/search.ts"], notes: "Extensible switch/case pattern" },
+        { capability: "WebSocket infrastructure", status: "ready", files: ["server/mcpGateway.ts", "server/commandBridge.ts"], notes: "Existing WS server with auth and heartbeat" },
+        { capability: "MCP tool registration", status: "ready", files: ["packages/mcp-local/src/toolsetRegistry.ts"], notes: "Lazy-loading domain registry" },
+        { capability: "Notification preferences UI", status: "missing", files: [], notes: "No existing notification preferences component" },
+      ],
+      risks: [
+        { title: "Demo data vs live data", severity: "high", mitigation: "Resolve this contradiction before or during implementation to avoid compounding technical debt", linkedContradiction: "Demo data vs live data" },
+        { title: "Tool count drift", severity: "medium", mitigation: "Resolve this contradiction before or during implementation to avoid compounding technical debt", linkedContradiction: "Tool count drift" },
+        { title: "Scope creep beyond initial feature", severity: "medium", mitigation: "Define strict phase 1 scope and defer enhancements" },
+        { title: "Missing context from incomplete data", severity: "medium", mitigation: "Use available context, flag gaps explicitly, iterate after launch" },
+      ],
+      delegationPacket: {
+        scope: "Implement real-time notification system end-to-end: backend routes, schema, MCP tools, frontend views",
+        constraints: [
+          "Must pass npx tsc --noEmit with 0 errors",
+          "Must pass npx vite build clean",
+          "Follow existing patterns (glass card DNA, terracotta accent)",
+          "All interactive elements need aria-label and keyboard support",
+        ],
+        affectedFiles: ["docs", "server", "convex", "packages/mcp-local", "src/features", "src/layouts", "tests", "vercel"],
+        desiredBehavior: "User can receive and manage real-time notifications via the cockpit UI with full search integration",
+        acceptanceCriteria: ["Design doc reviewed", "API endpoints respond", "UI renders with live data", "Tests pass", "Production loads clean"],
+        contextNotToLose: [
+          "Founder mission: Operating intelligence for founders",
+          "Wedge: local-first entity-context layer for agent-native businesses",
+          "Active contradictions: Demo data vs live data, Tool count drift",
+        ],
+      },
+      provenance: {
+        generatedAt: new Date().toISOString(),
+        sourceCount: 5,
+        contextSources: ["founder_profile", "active_initiatives", "active_contradictions", "codebase_patterns"],
+        triggerQuery: "Plan a real-time notification system",
+      },
+    },
+    nextQuestions: [
+      "What constraints should the plan respect?",
+      "Which phase should we start with?",
+      "Should we delegate this to an agent?",
+      "What competitors are building something similar?",
     ],
   },
 };

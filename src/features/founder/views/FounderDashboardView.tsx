@@ -76,7 +76,6 @@ import {
   DEMO_AGENTS,
   DEMO_NEARBY_ENTITIES,
   DEMO_DAILY_MEMO,
-  DEMO_EXTERNAL_SIGNALS,
   type NearbyEntity,
   type SignalCategory,
   type ChangeEntry,
@@ -90,6 +89,7 @@ import {
 import { SyncStatusBadge } from "../lib/founderPersistenceTypes";
 import { useFounderPersistence } from "../lib/founderPersistence";
 import { useLiveEntitySignals } from "../hooks/useLiveEntitySignals";
+import { useLiveSignals } from "../hooks/useLiveSignals";
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -587,35 +587,99 @@ const SIGNAL_CAT_COLORS: Record<SignalCategory, string> = {
   partner: "bg-emerald-500/10 text-emerald-400",
 };
 
-function ExternalSignalsPanel({ signals }: { signals?: typeof DEMO_EXTERNAL_SIGNALS }) {
-  const data = signals ?? DEMO_EXTERNAL_SIGNALS;
-  const newCount = data.filter((s) => s.isNew).length;
+function ExternalSignalsPanel() {
+  const { signals, isLoading, isLive, source, refresh, lastFetchedAt } = useLiveSignals();
+  const newCount = signals.filter((s) => s.isNew).length;
+
   return (
     <div className={GLASS_CARD}>
+      {/* Header row: title + badges + refresh */}
       <div className="flex items-center gap-3">
         <h2 className={SECTION_HEADER}>Important External Signals</h2>
+        {/* Live / Demo badge */}
+        {isLive ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Live
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold text-white/40">
+            <span className="h-1.5 w-1.5 rounded-full bg-white/30" />
+            Demo
+          </span>
+        )}
         {newCount > 0 && (
           <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">{newCount} new</span>
         )}
+        {/* Source label + last fetched */}
+        <div className="ml-auto flex items-center gap-2">
+          {lastFetchedAt && (
+            <span className="text-[9px] text-white/30">
+              {source === "hackernews" ? "via HN" : source === "search" ? "via Search" : ""}{" "}
+              {new Date(lastFetchedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={isLoading}
+            className={cn(
+              "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-colors",
+              isLoading
+                ? "bg-white/[0.04] text-white/20 cursor-wait"
+                : "bg-white/[0.06] text-white/50 hover:bg-white/[0.10] hover:text-white/70",
+            )}
+          >
+            <RotateCcw className={cn("h-3 w-3", isLoading && "animate-spin")} />
+            {isLoading ? "Fetching..." : "Refresh"}
+          </button>
+        </div>
       </div>
-      <div className="mt-3 space-y-2">
-        {data.map((sig) => (
-          <div key={sig.id} className={cn(GLASS_CARD_INTERACTIVE, "p-3", sig.isNew && "border-emerald-500/20")}>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase", SIGNAL_CAT_COLORS[sig.category])}>{sig.category}</span>
-              <span className="text-xs text-white/60">{sig.source}</span>
-              <span className="text-xs text-white/70">{sig.relativeTime}</span>
-              {sig.isNew && <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-400">NEW</span>}
-              <span className="ml-auto text-[10px] tabular-nums text-white/60">Relevance: {sig.relevanceScore}</span>
+
+      {/* Loading skeleton */}
+      {isLoading && signals.length === 0 && (
+        <div className="mt-3 space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="animate-pulse rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+              <div className="h-3 w-24 rounded bg-white/[0.06]" />
+              <div className="mt-2 h-4 w-3/4 rounded bg-white/[0.06]" />
+              <div className="mt-1 h-3 w-full rounded bg-white/[0.04]" />
             </div>
-            <p className="mt-2 text-sm font-medium text-white/80">{sig.title}</p>
-            <p className="mt-1 text-xs leading-relaxed text-white/60 line-clamp-2">{sig.summary}</p>
-            <div className="mt-2 border-l-2 border-[#d97757]/30 pl-2">
-              <p className="text-[11px] text-[#d97757]/80">{sig.howItAffectsYou}</p>
+          ))}
+        </div>
+      )}
+
+      {/* Signal cards */}
+      {signals.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {signals.map((sig) => (
+            <div key={sig.id} className={cn(GLASS_CARD_INTERACTIVE, "p-3", sig.isNew && "border-emerald-500/20")}>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase", SIGNAL_CAT_COLORS[sig.category])}>{sig.category}</span>
+                <span className="text-xs text-white/60">{sig.source}</span>
+                <span className="text-xs text-white/70">{sig.relativeTime}</span>
+                {sig.isNew && <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-400">NEW</span>}
+                <span className="ml-auto text-[10px] tabular-nums text-white/60">Relevance: {sig.relevanceScore}</span>
+              </div>
+              <p className="mt-2 text-sm font-medium text-white/80">{sig.title}</p>
+              <p className="mt-1 text-xs leading-relaxed text-white/60 line-clamp-2">{sig.summary}</p>
+              {sig.sourceUrl && (
+                <a
+                  href={sig.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-block text-[10px] text-[#d97757]/70 underline underline-offset-2 hover:text-[#d97757] transition-colors"
+                >
+                  View source
+                </a>
+              )}
+              <div className="mt-2 border-l-2 border-[#d97757]/30 pl-2">
+                <p className="text-[11px] text-[#d97757]/80">{sig.howItAffectsYou}</p>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -766,16 +830,7 @@ function FounderDashboardViewInner() {
       .slice(0, 15);
   }, [liveEntity.results, liveEntity.isLive]);
 
-  // Merge live external signals
-  const liveExternalSignals = useMemo(() => {
-    if (!liveEntity.isLive) return DEMO_EXTERNAL_SIGNALS;
-    const live = liveEntity.results
-      .filter((r) => r.status === "success")
-      .flatMap((r) => r.signals)
-      .sort((a, b) => b.relevanceScore - a.relevanceScore)
-      .slice(0, 8);
-    return live.length > 0 ? live : DEMO_EXTERNAL_SIGNALS;
-  }, [liveEntity.results, liveEntity.isLive]);
+  // External signals now handled by useLiveSignals inside ExternalSignalsPanel
 
   const [founderMode, setFounderMode] = useState<FounderMode>("weekly_reset");
   const [showOnboarding, setShowOnboarding] = useState(() => {
@@ -827,6 +882,39 @@ function FounderDashboardViewInner() {
 
   const { openWithContext } = useFastAgent();
   const handleHandToAgent = useCallback(() => { if (!activePacket) return; const md = artifactPacketToMarkdown(activePacket); openWithContext({ initialMessage: `I'm handing you my latest operating packet. Here's the structured context:\n\n${md}\n\nBased on this packet, what are the highest-leverage actions I should take this week?`, contextTitle: `Founder Packet: ${activePacket.canonicalEntity.name} — ${getArtifactPacketTypeLabel(activePacket.packetType)}`, }); addToast("Packet handed to agent", "emerald"); playSound("success"); }, [activePacket, openWithContext, addToast]);
+
+  const handleShareMemo = useCallback(() => {
+    if (!activePacket) return;
+    const id = generateMemoId();
+    const memoData: ShareableMemoData = {
+      id,
+      company: activePacket.canonicalEntity.name,
+      date: new Date().toISOString().slice(0, 10),
+      question: activePacket.nextActions[0]?.action ?? "Operating clarity review",
+      answer: activePacket.contradictions[0]?.summary ?? activePacket.nextActions.map((a) => a.action).join(". "),
+      confidence: Math.round(activePacket.canonicalEntity.identityConfidence * 100),
+      sourceCount: activePacket.provenance.sourceCount,
+      variables: activePacket.nextActions.slice(0, 5).map((a, i) => ({
+        rank: i + 1,
+        name: a.action,
+        direction: "up" as const,
+        impact: (a.impact ?? "medium") as "high" | "medium" | "low",
+      })),
+      scenarios: [
+        { label: "Base", probability: 55, outcome: "Execute top actions within standard timeline" },
+        { label: "Bull", probability: 25, outcome: "Actions accelerate key initiatives ahead of schedule" },
+        { label: "Bear", probability: 20, outcome: "Delays or dependencies block execution" },
+      ],
+      actions: activePacket.nextActions.slice(0, 3).map((a) => ({
+        action: a.action,
+        impact: (a.impact ?? "medium") as "high" | "medium" | "low",
+      })),
+    };
+    saveMemoToStorage(memoData);
+    copyMemoUrl(id);
+    addToast("Memo link copied — share it anywhere", "emerald");
+    playSound("success");
+  }, [activePacket, addToast]);
 
   const founderModeRef = useRef(founderMode);
   useEffect(() => { if (founderModeRef.current === founderMode) return; founderModeRef.current = founderMode; handleGeneratePacket(founderMode); }, [founderMode, handleGeneratePacket]);
@@ -904,10 +992,10 @@ function FounderDashboardViewInner() {
       <StaggerCard index={0}><HeaderBar streak={streak} founderMode={founderMode} onModeChange={setFounderMode} companyName={resolvedCompany.name} syncStatus={persistence.syncStatus} /></StaggerCard>
       <StaggerCard index={1}><FounderClarityOverview identityConfidence={identityConfidence} userActions={userActions} packet={activePacket} liveChanges={liveChanges} company={resolvedCompany} interventions={resolvedInterventions} /></StaggerCard>
       <StaggerCard index={2}><ContradictionBanner packet={activePacket} initiatives={resolvedInitiatives} /></StaggerCard>
-      <StaggerCard index={3}><ArtifactPacketPanel packet={activePacket} packetHistory={packetHistory} onGenerate={handleGeneratePacket} onRefresh={handleRefreshPacket} onExportMarkdown={handleExportMarkdown} onExportHTML={handleExportHTML} onCopyPacket={handleCopyPacket} onHandToAgent={handleHandToAgent} /></StaggerCard>
+      <StaggerCard index={3}><ArtifactPacketPanel packet={activePacket} packetHistory={packetHistory} onGenerate={handleGeneratePacket} onRefresh={handleRefreshPacket} onExportMarkdown={handleExportMarkdown} onExportHTML={handleExportHTML} onCopyPacket={handleCopyPacket} onHandToAgent={handleHandToAgent} onShareMemo={handleShareMemo} /></StaggerCard>
       <StaggerCard index={4}><RankedInterventionsPanel interventionStates={interventionStates} onAction={handleInterventionAction} interventions={resolvedInterventions} companyName={resolvedCompany.name} /></StaggerCard>
       <StaggerCard index={5}><AgentActivityPanel agentStatusOverrides={agentStatusOverrides} agentData={resolvedAgents} /></StaggerCard>
-      <StaggerCard index={6}><ExternalSignalsPanel signals={liveExternalSignals} /></StaggerCard>
+      <StaggerCard index={6}><ExternalSignalsPanel /></StaggerCard>
       <StaggerCard index={7}>
         <div className={GLASS_CARD}>
           <div className="flex items-center justify-between">

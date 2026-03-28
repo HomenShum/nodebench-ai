@@ -74,7 +74,7 @@ function EnterpriseInvestigationViewContent() {
     <div className="mx-auto max-w-4xl space-y-8 p-6 view-atmosphere-investigation stagger [&>*]:animate-[fade-slide-in_0.5s_var(--ease-out-expo)_both]">
       {/* ── Section 1: Investigation Header ─────────────────────────── */}
       <header className="space-y-3">
-        <div className="flex items-center gap-3 text-xs font-medium uppercase tracking-widest text-content-secondary">
+        <div className="type-label flex items-center gap-3 text-content-secondary">
           <FileSearch className="h-3.5 w-3.5" aria-hidden="true" />
           Investigation Mode: Evidence-Grounded
           <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-400 normal-case tracking-normal">

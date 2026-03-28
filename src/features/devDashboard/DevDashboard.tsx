@@ -497,7 +497,7 @@ export default function DevDashboard() {
           transition={transition({ delay: 0.15 })}
           className="w-52 shrink-0 border-r border-edge overflow-y-auto p-3 space-y-0.5 hidden md:block"
         >
-          <div className="text-[10px] uppercase tracking-widest text-white/50 px-3 py-2">
+          <div className="type-label px-3 py-2 text-white/50">
             Branches
           </div>
           <button
@@ -605,7 +605,7 @@ export default function DevDashboard() {
                 animate={{ opacity: 1 }}
                 className="mb-4 space-y-1.5"
               >
-                <div className="text-[10px] uppercase tracking-widest text-white/50 px-1 py-1">
+                <div className="type-label px-1 py-1 text-white/50">
                   Key milestones ({filteredMilestones.length})
                 </div>
                 <div className="grid gap-1.5 max-h-48 overflow-y-auto">
@@ -617,7 +617,7 @@ export default function DevDashboard() {
             )}
 
             {/* Epoch rows (newest first) */}
-            <div className="text-[10px] uppercase tracking-widest text-white/50 px-1 py-2 sticky top-0 bg-[var(--bg-primary)] z-10">
+            <div className="type-label sticky top-0 z-10 bg-[var(--bg-primary)] px-1 py-2 text-white/50">
               <Calendar size={10} className="inline mr-1.5" />
               Weekly epochs ({filteredEpochs.length} weeks)
             </div>

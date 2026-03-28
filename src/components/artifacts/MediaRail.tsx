@@ -56,13 +56,13 @@ function getKindIcon(kind: ArtifactKind) {
 
 function getProviderColor(provider: ArtifactProvider | undefined): string {
   switch (provider) {
-    case "youtube": return "text-rose-500 dark:text-rose-400";
-    case "sec": return "text-sky-600 dark:text-sky-400";
-    case "twitter": return "text-sky-500";
-    case "linkedin": return "text-sky-700 dark:text-sky-500";
-    case "crunchbase": return "text-orange-500";
+    case "youtube": return "text-content-secondary";
+    case "sec": return "text-content-secondary";
+    case "twitter": return "text-content-secondary";
+    case "linkedin": return "text-content-secondary";
+    case "crunchbase": return "text-content-secondary";
     case "github": return "text-content";
-    case "news": return "text-slate-600 dark:text-slate-400";
+    case "news": return "text-content-secondary";
     default: return "text-content-secondary";
   }
 }

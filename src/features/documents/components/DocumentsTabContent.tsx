@@ -169,7 +169,6 @@ export const DocumentsTabContent = memo(function DocumentsTabContent(
     handleAnalyzeWithAI,
     handleOpenMedia,
     handleCreateDocument,
-    handleCreateTimelineDoc,
     getRootProps,
     getInputProps,
     isDragActive,
@@ -282,14 +281,6 @@ export const DocumentsTabContent = memo(function DocumentsTabContent(
   const handleCreateTextDocument = useCallback(() => {
     void handleCreateDocument("text");
   }, [handleCreateDocument]);
-
-  const handleCreateCalendarDocument = useCallback(() => {
-    void handleCreateDocument("calendar");
-  }, [handleCreateDocument]);
-
-  const handleCreateTimelineDocument = useCallback(() => {
-    void handleCreateTimelineDoc();
-  }, [handleCreateTimelineDoc]);
 
   // -----------------------------------------------------------------------
   // Reorder helpers (flat list / flat cards)
@@ -465,26 +456,6 @@ export const DocumentsTabContent = memo(function DocumentsTabContent(
                       }}
                     >
                       New document
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-ghost-sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCreateCalendarDocument();
-                      }}
-                    >
-                      New calendar
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-ghost-sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCreateTimelineDocument();
-                      }}
-                    >
-                      Create timeline
                     </button>
                   </div>
                 </div>

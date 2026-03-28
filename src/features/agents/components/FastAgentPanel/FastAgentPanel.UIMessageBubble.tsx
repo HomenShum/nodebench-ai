@@ -66,6 +66,7 @@ import { ArbitrageReportCard } from './ArbitrageReportCard';
 import { MemoryPill } from './MemoryPill';
 import { ToolCallTransparency } from './ToolCallTransparency';
 import { FusedSearchResults, type FusedResult, type SourceError, type SearchSource } from './FusedSearchResults';
+import { StreamingStatus } from './FastAgentPanel.StreamingStatus';
 // Phase All: Citation & Entity parsing with adaptive enrichment
 import { InteractiveSpanParser } from '@/features/research/components/InteractiveSpanParser';
 import type { EntityHoverData } from '@/features/research/components/EntityHoverPreview';
@@ -1774,6 +1775,9 @@ export function FastAgentUIMessageBubble({
   const [visibleReasoning] = useSmoothText(reasoningText, {
     startStreaming: message.status === 'streaming',
   });
+  const streamRuntimeSeconds = streamStartRef.current
+    ? (Date.now() - streamStartRef.current) / 1000
+    : undefined;
 
   // Extract tool calls
   const toolParts = message.parts.filter((p): p is ToolUIPart =>
@@ -2268,6 +2272,17 @@ export function FastAgentUIMessageBubble({
             />
           );
         })()}
+
+        {/* Thinking Accordion */}
+        {!isUser && (
+          <StreamingStatus
+            parts={message.parts as Array<Record<string, unknown>>}
+            messageText={visibleText}
+            isStreaming={message.status === 'streaming'}
+            tokensPerSecond={streamTokPerSec}
+            runtimeSeconds={streamRuntimeSeconds}
+          />
+        )}
 
         {/* Thinking Accordion */}
         {!isUser && visibleReasoning && (

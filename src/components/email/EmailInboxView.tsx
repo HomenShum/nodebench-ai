@@ -55,13 +55,13 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
   });
 
   return (
-    <div className="flex flex-col h-full bg-gray-900">
+    <div className="flex flex-col h-full bg-surface/80">
       {/* Header */}
       <div className="p-4 border-b border-edge">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-500/20 rounded-lg">
-              <Inbox className="h-6 w-6 text-blue-400" />
+            <div className="p-2 bg-white/[0.04] rounded-lg">
+              <Inbox className="h-6 w-6 text-[#d97757]" />
             </div>
             <div>
               <h1 className="text-base font-semibold text-content">Email Inbox</h1>
@@ -83,7 +83,7 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
             placeholder="Search emails..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-surface border border-edge rounded-lg text-content placeholder-slate-400 focus:outline-none focus:border-blue-500"
+            className="w-full pl-10 pr-4 py-2 bg-surface border border-edge rounded-lg text-content placeholder-content-muted focus:outline-none focus:border-[#d97757]"
           />
         </div>
 
@@ -100,7 +100,7 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
               onClick={() => setFilter(key as typeof filter)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors ${
                 filter === key
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-[#d97757] text-content-primary'
                   : 'bg-surface text-content-muted hover:text-content'
               }`}
             >
@@ -170,7 +170,7 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="mt-2 text-blue-400 hover:text-blue-300 text-sm"
+                className="mt-2 text-[#d97757] hover:text-[#d97757]/80 text-sm"
               >
                 Clear search
               </button>
@@ -211,10 +211,10 @@ function EmailThreadRow({
 }) {
   const { instant, transition } = useMotionConfig();
   const priorityColors = {
-    urgent: 'bg-red-500',
-    high: 'bg-orange-500',
-    normal: 'bg-blue-500',
-    low: 'bg-gray-500',
+    urgent: 'bg-red-500/80',
+    high: 'bg-orange-500/80',
+    normal: 'bg-white/[0.06]',
+    low: 'bg-white/[0.04]',
   };
 
   return (
@@ -225,7 +225,7 @@ function EmailThreadRow({
       onClick={onClick}
       className={`p-4 border-b border-edge cursor-pointer transition-colors ${
         isSelected
-          ? 'bg-blue-900/30 border-l-2 border-l-blue-500'
+          ? 'bg-white/[0.04] border-l-2 border-l-[#d97757]'
           : thread.isRead
             ? 'hover:bg-surface/50'
             : 'bg-surface/30 hover:bg-surface/50'
@@ -235,7 +235,7 @@ function EmailThreadRow({
         {/* Unread Indicator */}
         <div className="mt-1">
           {!thread.isRead ? (
-            <div className="h-2 w-2 bg-blue-500 rounded-full" />
+            <div className="h-2 w-2 bg-[#d97757] rounded-full" />
           ) : (
             <div className="h-2 w-2" />
           )}
@@ -248,7 +248,7 @@ function EmailThreadRow({
               {thread.latestFrom || 'Unknown'}
             </span>
             <div className="flex items-center gap-2 ml-2">
-              {thread.isStarred && <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />}
+              {thread.isStarred && <Star className="h-4 w-4 text-[#d97757] fill-[#d97757]" />}
               {thread.lastMessageAt && (
                 <span className="text-xs text-content-secondary whitespace-nowrap">
                   {formatDate(thread.lastMessageAt)}
@@ -270,7 +270,7 @@ function EmailThreadRow({
           {/* Tags */}
           <div className="flex items-center gap-2 flex-wrap">
             {thread.aiPriority && thread.aiPriority !== 'normal' && (
-              <span className={`px-2 py-0.5 ${priorityColors[thread.aiPriority]} text-white text-xs rounded`}>
+              <span className={`px-2 py-0.5 ${priorityColors[thread.aiPriority]} text-content-primary text-xs rounded`}>
                 {thread.aiPriority}
               </span>
             )}

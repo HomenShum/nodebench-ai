@@ -553,8 +553,8 @@ function BriefingSectionInner({
         <div className="rounded-lg border border-edge bg-surface p-5 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="text-xs font-bold text-content-muted">Provenance Log</p>
-              <p className="text-base font-bold text-content">Retrieval transparency</p>
+              <p className="text-xs font-bold text-content-muted">Source log</p>
+              <p className="text-base font-bold text-content">How sources were retrieved</p>
             </div>
             {onAskAI && (
               <button

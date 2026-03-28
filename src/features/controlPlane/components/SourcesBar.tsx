@@ -1,0 +1,98 @@
+/**
+ * SourcesBar — Horizontal scrollable row of source pills at the top of results.
+ *
+ * Each pill shows: favicon (via Google favicon service) + domain name + numbered badge.
+ * Click opens the URL in a new tab.
+ *
+ * Usage:
+ *   <SourcesBar sources={packet.sourceRefs} />
+ */
+
+import { memo } from "react";
+import { ExternalLink } from "lucide-react";
+import type { ResultSourceRef } from "./searchTypes";
+
+interface SourcesBarProps {
+  sources: ResultSourceRef[];
+}
+
+export const SourcesBar = memo(function SourcesBar({ sources }: SourcesBarProps) {
+  const citedSources = sources.filter(
+    (s) => s.status !== "discarded" && s.href,
+  );
+
+  if (citedSources.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+          Sources
+        </span>
+        <span className="rounded-full bg-[#d97757]/15 px-1.5 py-0.5 text-[9px] font-bold text-[#d97757]">
+          {citedSources.length}
+        </span>
+      </div>
+      <div
+        className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+        role="list"
+        aria-label="Sources used in this result"
+      >
+        {citedSources.map((source, index) => {
+          const domain = source.domain ?? extractDomain(source.href);
+          const faviconUrl = domain
+            ? `https://www.google.com/s2/favicons?domain=${domain}&sz=32`
+            : undefined;
+
+          return (
+            <a
+              key={source.id}
+              href={source.href}
+              target="_blank"
+              rel="noreferrer"
+              role="listitem"
+              className="group flex shrink-0 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] px-2.5 py-1.5 transition-all hover:border-[#d97757]/25 hover:bg-[#d97757]/[0.04]"
+              aria-label={`Source ${index + 1}: ${source.title ?? source.label}`}
+            >
+              {/* Favicon */}
+              {faviconUrl ? (
+                <img
+                  src={faviconUrl}
+                  alt=""
+                  className="h-3.5 w-3.5 shrink-0 rounded-sm"
+                  loading="lazy"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              ) : (
+                <ExternalLink className="h-3 w-3 shrink-0 text-content-muted" />
+              )}
+
+              {/* Domain name */}
+              <span className="max-w-[140px] truncate text-[11px] text-content-muted group-hover:text-content">
+                {domain ?? source.label}
+              </span>
+
+              {/* Numbered badge */}
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-[#d97757]/15 text-[9px] font-bold text-[#d97757]">
+                {index + 1}
+              </span>
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+});
+
+/* ─── Helper ───────────────────────────────────────────────────────────────── */
+
+function extractDomain(url?: string): string | undefined {
+  if (!url) return undefined;
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return undefined;
+  }
+}

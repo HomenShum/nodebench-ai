@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { SEARCH_API_ENDPOINT } from "@/lib/searchApi";
 import type {
   CompanySnapshot,
   BusinessQualitySignal,
@@ -224,7 +225,7 @@ export function useCompanyAnalysis(
     setError(null);
 
     try {
-      const res = await fetch("/search", {
+      const res = await fetch(SEARCH_API_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

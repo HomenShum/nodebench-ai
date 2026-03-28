@@ -337,7 +337,7 @@ function IndustryMetricsSection({
 
         {toolCalls.topTools.length > 0 && (
           <div className="mt-2 space-y-1">
-            <div className="text-[10px] uppercase tracking-widest text-content-muted">Top tools</div>
+            <div className="type-label">Top tools</div>
             {toolCalls.topTools.slice(0, 5).map((tool) => (
               <div key={tool.name} className="flex items-center gap-2">
                 <span className="text-[11px] text-content-secondary truncate flex-1">{tool.name}</span>

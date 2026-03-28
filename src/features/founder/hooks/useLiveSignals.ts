@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { SEARCH_API_ENDPOINT } from "@/lib/searchApi";
 import {
   DEMO_EXTERNAL_SIGNALS,
   type ExternalSignal,
@@ -20,7 +21,7 @@ import {
 /* ─── Config ──────────────────────────────────────────────────────────────── */
 
 const LS_CACHE_KEY = "nodebench-live-signals-cache";
-const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 const DEFAULT_POLL_MS = 5 * 60 * 1000; // 5 minutes
 
 /** News-focused queries sent to POST /search */
@@ -110,7 +111,7 @@ async function fetchFromSearch(signal: AbortSignal): Promise<ExternalSignal[]> {
 
   // Fire all queries in parallel with a 10s timeout
   const promises = SIGNAL_QUERIES.map(async ({ query, category }, qi) => {
-    const resp = await fetch("/search", {
+    const resp = await fetch(SEARCH_API_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query, lens: "founder", context: {} }),

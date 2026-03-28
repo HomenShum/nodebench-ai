@@ -92,14 +92,14 @@ export function AgentResponseFlywheelPanel({
         <>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             <div className="rounded-lg border border-edge bg-background/40 p-3">
-              <div className="text-[11px] uppercase tracking-widest text-content-muted">Coverage</div>
+              <div className="type-label">Coverage</div>
               <div className="mt-2 text-2xl font-semibold text-content">{snapshot.summary.totalReviews}</div>
               <div className="mt-1 text-xs text-content-secondary">
                 {snapshot.summary.passCount} pass, {snapshot.summary.watchCount} watch, {snapshot.summary.failCount} fail
               </div>
             </div>
             <div className="rounded-lg border border-edge bg-background/40 p-3">
-              <div className="text-[11px] uppercase tracking-widest text-content-muted">Weakest lane</div>
+              <div className="type-label">Weakest lane</div>
               <div className={cn("mt-2 text-sm font-semibold", weakestTone)}>
                 {snapshot.summary.weakestDimension?.label ?? "Not enough data"}
               </div>
@@ -110,7 +110,7 @@ export function AgentResponseFlywheelPanel({
               </div>
             </div>
             <div className="rounded-lg border border-edge bg-background/40 p-3">
-              <div className="text-[11px] uppercase tracking-widest text-content-muted">Hottest question lane</div>
+              <div className="type-label">Hottest question lane</div>
               <div className="mt-2 text-sm font-semibold text-content">
                 {snapshot.summary.hottestQuestionCategory?.label ?? "Not enough data"}
               </div>

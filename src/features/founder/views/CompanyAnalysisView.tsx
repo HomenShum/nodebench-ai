@@ -13,6 +13,7 @@ import {
   Check, RefreshCw, Loader2, Wifi, WifiOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CitationLink } from "@/features/controlPlane/components/CitationLink";
 import { ArtifactPacketPanel } from "../components/ArtifactPacketPanel";
 import {
   buildFounderArtifactPacket,
@@ -24,13 +25,6 @@ import {
 } from "../lib/artifactPacket";
 import type { FounderArtifactPacket } from "../types/artifactPacket";
 import {
-  SHOPIFY_SNAPSHOT,
-  SHOPIFY_BUSINESS_QUALITY,
-  SHOPIFY_NEWS_SIGNALS,
-  SHOPIFY_PLATFORM_READINESS,
-  SHOPIFY_REGULATORY,
-  SHOPIFY_COMPARABLES,
-  SHOPIFY_NEXT_QUESTIONS,
   buildShopifyPacketSource,
   type SearchLens,
   type CompanySnapshot,
@@ -39,6 +33,7 @@ import {
   type RegulatorySignal,
   type ComparableCompany,
   type NextQuestion,
+  type NewsSignal,
 } from "./founderFixtures";
 import { useCompanyAnalysis } from "../hooks/useCompanyAnalysis";
 import {
@@ -145,7 +140,9 @@ function BusinessQualityCard({ signals }: { signals: BusinessQualitySignal[] }) 
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-white/80">{s.dimension}</p>
               <p className="mt-1 text-xs text-white/60">{s.evidence}</p>
-              <p className="mt-1 text-[10px] text-white/60">{s.source}</p>
+              <p className="mt-1 text-[10px] text-white/60">
+                <CitationLink source={s.source} url={s.sourceUrl} />
+              </p>
             </div>
           </div>
         ))}
@@ -154,7 +151,7 @@ function BusinessQualityCard({ signals }: { signals: BusinessQualitySignal[] }) 
   );
 }
 
-function NewsSignalsCard({ signals }: { signals: typeof SHOPIFY_NEWS_SIGNALS }) {
+function NewsSignalsCard({ signals }: { signals: NewsSignal[] }) {
   return (
     <div className={GLASS_CARD}>
       <h2 className={SECTION_HEADER}>News &amp; Signals</h2>
@@ -163,7 +160,7 @@ function NewsSignalsCard({ signals }: { signals: typeof SHOPIFY_NEWS_SIGNALS }) 
           <div key={s.id} className="rounded-lg border border-white/[0.06] bg-black/10 p-3">
             <div className="flex items-center gap-2">
               <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase", SIGNAL_CAT_COLORS[s.category])}>{s.category}</span>
-              <span className="text-[10px] text-white/60">{s.source} &middot; {s.date}</span>
+              <span className="text-[10px] text-white/60"><CitationLink source={s.source} url={s.sourceUrl} className="text-[10px]" /> &middot; {s.date}</span>
               <span className="ml-auto text-[10px] tabular-nums text-white/60">Rel: {s.relevance}</span>
             </div>
             <p className="mt-2 text-sm font-medium text-white/80">{s.headline}</p>
@@ -437,25 +434,41 @@ export default function CompanyAnalysisView() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const company = searchParams.get("company")
+  const company =
+    searchParams.get("company")
     ?? localStorage.getItem("nodebench-analysis-company")
-    || "shopify";
-  const lens = (searchParams.get("lens")
+    ?? "shopify";
+  const lens = (
+    searchParams.get("lens")
     ?? localStorage.getItem("nodebench-analysis-lens")
-    || "banker") as SearchLens;
-  const outputTarget = searchParams.get("output")
+    ?? "banker"
+  ) as SearchLens;
+  const outputTarget =
+    searchParams.get("output")
     ?? localStorage.getItem("nodebench-analysis-output")
-    || "memo";
+    ?? "memo";
 
   // Live search hook — falls back to Shopify fixtures
   const { data: analysisData, isLoading, error: fetchError, refetch } = useCompanyAnalysis(company, lens);
+
+  // Destructure for card rendering
+  const {
+    snapshot: currentSnapshot,
+    businessQuality: currentBusinessQuality,
+    newsSignals: currentNewsSignals,
+    platformReadiness: currentPlatformReadiness,
+    regulatory: currentRegulatory,
+    comparables: currentComparables,
+    nextQuestions: currentNextQuestions,
+    isLive,
+  } = analysisData;
 
   // Packet state
   const [activePacket, setActivePacket] = useState<FounderArtifactPacket | null>(null);
   const [packetHistory, setPacketHistory] = useState<FounderArtifactPacket[]>([]);
   const hasGenerated = useRef(false);
 
-  // Auto-generate Shopify packet on mount
+  // Auto-generate packet on mount or when analysis data changes
   useEffect(() => {
     if (hasGenerated.current || activePacket) return;
     hasGenerated.current = true;
@@ -510,6 +523,25 @@ export default function CompanyAnalysisView() {
 
   if (!company) return null;
 
+  if (isLoading) {
+    return (
+      <div className="flex h-full flex-col overflow-auto">
+        <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-white/[0.04] bg-[#151413]/95 px-4 py-3 backdrop-blur-md">
+          <button onClick={() => navigate("/founder/search")} className="flex items-center gap-1.5 rounded-lg bg-white/[0.07] px-2.5 py-1.5 text-xs text-white/60 transition-colors hover:bg-white/[0.08] hover:text-white/70">
+            <ArrowLeft className="h-3.5 w-3.5" /> Back to Search
+          </button>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-lg font-bold text-white/90">Analyzing {company}...</h1>
+          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-white/50">
+            <Loader2 className="h-3 w-3 animate-spin" /> Loading
+          </span>
+        </div>
+        <AnalysisSkeleton />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full flex-col overflow-auto">
       {/* Header bar */}
@@ -518,28 +550,53 @@ export default function CompanyAnalysisView() {
           <ArrowLeft className="h-3.5 w-3.5" /> Back to Search
         </button>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-bold text-white/90">{SHOPIFY_SNAPSHOT.name}</h1>
+          <h1 className="truncate text-lg font-bold text-white/90">{currentSnapshot.name}</h1>
         </div>
+        {/* Live / Demo indicator */}
+        {isLive ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
+            <Wifi className="h-3 w-3" /> Live
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-400">
+            <WifiOff className="h-3 w-3" /> Demo
+          </span>
+        )}
+        {/* Refresh button */}
+        <button
+          onClick={refetch}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.07] px-2.5 py-1.5 text-xs text-white/60 transition-colors hover:bg-white/[0.08] hover:text-white/70"
+          title="Refresh analysis"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+        </button>
         <span className="rounded-full border border-[#d97757]/20 bg-[#d97757]/10 px-3 py-1 text-xs font-semibold text-[#d97757]">{LENS_LABELS[lens]}</span>
       </div>
+
+      {/* Error banner */}
+      {fetchError && (
+        <div className="mx-4 mt-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-2 text-xs text-amber-300">
+          Search unavailable: {fetchError}. Showing demo data.
+        </div>
+      )}
 
       {/* Cards grid */}
       <div className="flex-1 space-y-4 px-4 pb-24 pt-4">
         {/* Row 1: Snapshot + Business Quality + News (3-col on desktop) */}
         <div className="grid gap-4 lg:grid-cols-3">
-          <SnapshotCard snapshot={SHOPIFY_SNAPSHOT} />
-          <BusinessQualityCard signals={SHOPIFY_BUSINESS_QUALITY} />
-          <NewsSignalsCard signals={SHOPIFY_NEWS_SIGNALS} />
+          <SnapshotCard snapshot={currentSnapshot} />
+          <BusinessQualityCard signals={currentBusinessQuality} />
+          <NewsSignalsCard signals={currentNewsSignals} />
         </div>
 
         {/* Row 2: Platform Readiness (full-width) */}
-        <PlatformReadinessCard signals={SHOPIFY_PLATFORM_READINESS} />
+        <PlatformReadinessCard signals={currentPlatformReadiness} />
 
         {/* Row 3: Regulatory + Next Questions + Comparables (2-col, then 1-col) */}
         <div className="grid gap-4 lg:grid-cols-3">
-          <RegulatoryCard signals={SHOPIFY_REGULATORY} />
-          <NextQuestionsCard questions={SHOPIFY_NEXT_QUESTIONS} lens={lens} />
-          <ComparablesCard comparables={SHOPIFY_COMPARABLES} />
+          <RegulatoryCard signals={currentRegulatory} />
+          <NextQuestionsCard questions={currentNextQuestions} lens={lens} />
+          <ComparablesCard comparables={currentComparables} />
         </div>
 
         {/* Row 4: Artifact Packet (full-width) */}
@@ -555,7 +612,7 @@ export default function CompanyAnalysisView() {
         />
 
         {/* Row 5: Export (full-width) */}
-        <ExportCard outputTarget={outputTarget} packet={activePacket} snapshot={SHOPIFY_SNAPSHOT} />
+        <ExportCard outputTarget={outputTarget} packet={activePacket} snapshot={currentSnapshot} />
       </div>
     </div>
   );

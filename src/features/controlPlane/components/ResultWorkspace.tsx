@@ -14,7 +14,7 @@
  * Adapts section ordering and emphasis based on active lens.
  */
 
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   saveMemoToStorage,
   generateMemoId,
@@ -31,15 +31,24 @@ import {
   ClipboardCopy,
   Download,
   Eye,
+  ExternalLink,
   FileText,
   GitCompare,
   HelpCircle,
+  Layers3,
+  Network,
+  Pin,
   Share2,
   TrendingUp,
+  Waypoints,
 } from "lucide-react";
 import type { LensId, ResultPacket } from "./searchTypes";
 import { TrajectoryPanel } from "@/features/telemetry/TrajectoryPanel";
 import type { TrajectoryData } from "@/features/telemetry/types";
+import { ensureProofPacket } from "./proofModel";
+import { SyncProvenanceBadge } from "./SyncProvenanceBadge";
+import { CitationFootnote } from "./CitationFootnote";
+import { SourcesBar } from "./SourcesBar";
 
 /* ─── Section shell ──────────────────────────────────────────────────────── */
 
@@ -130,6 +139,36 @@ function DirectionArrow({ direction }: { direction: "up" | "down" | "neutral" })
   return <ArrowRight className="h-3.5 w-3.5 text-zinc-500" />;
 }
 
+function ProofStatusBadge({ value }: { value: string }) {
+  const tone =
+    value === "verified"
+      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+      : value === "drifting"
+        ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
+        : value === "provisional" || value === "loading"
+          ? "border-[#d97757]/20 bg-[#d97757]/10 text-[#f2b49f]"
+          : "border-rose-500/20 bg-rose-500/10 text-rose-300";
+  return (
+    <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${tone}`}>
+      {value}
+    </span>
+  );
+}
+
+function SourceStatusBadge({ value }: { value: string }) {
+  const tone =
+    value === "cited"
+      ? "bg-emerald-500/10 text-emerald-300"
+      : value === "discarded"
+        ? "bg-zinc-500/10 text-zinc-400"
+        : "bg-[#d97757]/10 text-[#f2b49f]";
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${tone}`}>
+      {value}
+    </span>
+  );
+}
+
 /* ─── Main component ────────────────────────────────────────────────────── */
 
 /* ─── Demo trajectory generator ────────────────────────────────────────── */
@@ -191,9 +230,20 @@ interface ResultWorkspaceProps {
   lens: LensId;
   onFollowUp?: (question: string) => void;
   onExport?: (type: "brief" | "sheet" | "deck" | "html") => void;
+  onPublishSharedContext?: () => void;
+  onDelegate?: (target: "claude_code" | "openclaw") => void;
   onMonitor?: () => void;
   /** Optional live trajectory data. Falls back to demo trajectory if absent. */
   trajectory?: TrajectoryData;
+  handoffState?: {
+    status: "idle" | "publishing" | "published" | "delegating" | "delegated" | "error";
+    message?: string;
+    contextId?: string;
+    taskId?: string;
+    targetLabel?: string;
+    installCommand?: string;
+    handoffPrompt?: string;
+  };
 }
 
 export const ResultWorkspace = memo(function ResultWorkspace({
@@ -201,37 +251,79 @@ export const ResultWorkspace = memo(function ResultWorkspace({
   lens,
   onFollowUp,
   onExport,
+  onPublishSharedContext,
+  onDelegate,
   onMonitor,
   trajectory,
+  handoffState,
 }: ResultWorkspaceProps) {
-  const trajectoryData = trajectory ?? buildDemoTrajectory(packet);
+  const proofPacket = useMemo(() => ensureProofPacket(packet, lens), [packet, lens]);
+  const trajectoryData = trajectory ?? buildDemoTrajectory(proofPacket);
   const [copiedShare, setCopiedShare] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [hoveredSourceId, setHoveredSourceId] = useState<string | null>(null);
+  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
+  const [selectedAnswerBlockId, setSelectedAnswerBlockId] = useState<string | null>(
+    proofPacket.answerBlocks[0]?.id ?? null,
+  );
+  const handoffBusy =
+    handoffState?.status === "publishing" || handoffState?.status === "delegating";
+
+  const activeAnswerBlock = useMemo(
+    () =>
+      proofPacket.answerBlocks.find((block) => block.id === selectedAnswerBlockId) ??
+      proofPacket.answerBlocks[0] ??
+      null,
+    [proofPacket.answerBlocks, selectedAnswerBlockId],
+  );
+
+  const activeSourceIds = useMemo(() => {
+    const sourceIds = new Set<string>();
+    if (activeAnswerBlock) {
+      activeAnswerBlock.sourceRefIds.forEach((sourceId) => sourceIds.add(sourceId));
+    }
+    if (selectedSourceId) sourceIds.add(selectedSourceId);
+    if (hoveredSourceId) sourceIds.add(hoveredSourceId);
+    return sourceIds;
+  }, [activeAnswerBlock, hoveredSourceId, selectedSourceId]);
+
+  const activeSource = useMemo(() => {
+    const preferredId =
+      selectedSourceId ?? hoveredSourceId ?? activeAnswerBlock?.sourceRefIds[0] ?? null;
+    if (!preferredId) return null;
+    return proofPacket.sourceRefs.find((source) => source.id === preferredId) ?? null;
+  }, [activeAnswerBlock, hoveredSourceId, proofPacket.sourceRefs, selectedSourceId]);
+
+  const activeClaims = useMemo(() => {
+    if (!activeAnswerBlock) return [];
+    return proofPacket.claimRefs.filter((claim) => activeAnswerBlock.claimIds.includes(claim.id));
+  }, [activeAnswerBlock, proofPacket.claimRefs]);
 
   const handleShare = useCallback(() => {
     const id = generateMemoId();
     const memoData: ShareableMemoData = {
       id,
-      company: packet.entityName,
+      company: proofPacket.entityName,
       date: new Date().toISOString().slice(0, 10),
-      question: packet.query,
-      answer: packet.answer,
-      confidence: packet.confidence,
-      sourceCount: packet.sourceCount,
-      variables: packet.variables.map((v) => ({
+      question: proofPacket.query,
+      answer: proofPacket.answer,
+      confidence: proofPacket.confidence,
+      sourceCount: proofPacket.sourceCount,
+      variables: proofPacket.variables.map((v) => ({
         rank: v.rank,
         name: v.name,
         direction: v.direction,
         impact: v.impact,
       })),
-      scenarios: packet.scenarios?.map((s) => ({
+      scenarios: proofPacket.scenarios?.map((s) => ({
         label: s.label,
         probability: s.probability,
         outcome: s.outcome,
       })) ?? [],
-      actions: packet.interventions?.map((a) => ({
+      actions: proofPacket.interventions?.map((a) => ({
         action: a.action,
         impact: a.impact,
-      })) ?? packet.nextQuestions?.slice(0, 3).map((q) => ({
+      })) ?? proofPacket.nextQuestions?.slice(0, 3).map((q) => ({
         action: q,
         impact: "medium" as const,
       })) ?? [],
@@ -240,19 +332,31 @@ export const ResultWorkspace = memo(function ResultWorkspace({
     copyMemoUrl(id);
     setCopiedShare(true);
     setTimeout(() => setCopiedShare(false), 2500);
-  }, [packet]);
+  }, [proofPacket]);
+
+  const handleCopyPrompt = useCallback(async () => {
+    if (!handoffState?.handoffPrompt || !navigator.clipboard?.writeText) return;
+    await navigator.clipboard.writeText(handoffState.handoffPrompt);
+    setCopiedPrompt(true);
+    setTimeout(() => setCopiedPrompt(false), 2500);
+  }, [handoffState?.handoffPrompt]);
 
   return (
     <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* ── Header bar ─────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-semibold text-content truncate">{packet.entityName}</h2>
-          <p className="text-xs text-content-muted mt-0.5 truncate">{packet.query}</p>
+          <h2 className="text-lg font-semibold text-content truncate">{proofPacket.entityName}</h2>
+          <p className="text-xs text-content-muted mt-0.5 truncate">{proofPacket.query}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <ConfidenceBadge value={packet.confidence} />
-          <span className="text-[11px] text-content-muted">{packet.sourceCount} sources</span>
+          <ConfidenceBadge value={proofPacket.confidence} />
+          <ProofStatusBadge value={proofPacket.proofStatus} />
+          <SyncProvenanceBadge compact />
+          <span className="text-[11px] text-content-muted">
+            {proofPacket.explorationMemory.citedSourceCount}/
+            {proofPacket.explorationMemory.exploredSourceCount} cited
+          </span>
           <button
             type="button"
             onClick={handleShare}
@@ -268,12 +372,35 @@ export const ResultWorkspace = memo(function ResultWorkspace({
         </div>
       </div>
 
+      {/* ── Sources bar ───────────────────────────────────────────────────── */}
+      {proofPacket.sourceRefs.length > 0 && (
+        <SourcesBar sources={proofPacket.sourceRefs} />
+      )}
+
       {/* ── 1. Entity Truth ────────────────────────────────────────────────── */}
       <Section id="truth" icon={BookOpen} title="Entity Truth">
-        <p className="text-sm leading-relaxed text-content">{packet.answer}</p>
-        {packet.keyMetrics && packet.keyMetrics.length > 0 && (
+        <p className="text-sm leading-relaxed text-content">{proofPacket.answer}</p>
+        <div className="mt-4 grid gap-3 md:grid-cols-[1.4fr_1fr]">
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-content-muted">
+              Uncertainty Boundary
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-content-muted">
+              {proofPacket.uncertaintyBoundary}
+            </p>
+          </div>
+          <div className="rounded-xl border border-[#d97757]/20 bg-[#d97757]/[0.05] p-3">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-[#f2b49f]">
+              Recommended Next Action
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-content">
+              {proofPacket.recommendedNextAction}
+            </p>
+          </div>
+        </div>
+        {proofPacket.keyMetrics && proofPacket.keyMetrics.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-4">
-            {packet.keyMetrics.map((m) => (
+            {proofPacket.keyMetrics.map((m) => (
               <div key={m.label} className="min-w-[100px]">
                 <div className="text-[10px] uppercase tracking-[0.15em] text-content-muted">{m.label}</div>
                 <div className="mt-0.5 text-lg font-bold tabular-nums text-content">{m.value}</div>
@@ -283,17 +410,267 @@ export const ResultWorkspace = memo(function ResultWorkspace({
         )}
       </Section>
 
+      <Section id="memory" icon={Layers3} title="Exploration Memory">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+          {[
+            ["Sources explored", proofPacket.explorationMemory.exploredSourceCount],
+            ["Sources cited", proofPacket.explorationMemory.citedSourceCount],
+            ["Sources dropped", proofPacket.explorationMemory.discardedSourceCount],
+            ["Entities retained", proofPacket.explorationMemory.entityCount],
+            ["Claims retained", proofPacket.explorationMemory.claimCount],
+            ["Contradictions", proofPacket.explorationMemory.contradictionCount],
+          ].map(([label, value]) => (
+            <div
+              key={label}
+              className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5"
+            >
+              <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                {label}
+              </div>
+              <div className="mt-1 text-lg font-semibold text-content">{value}</div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 space-y-2">
+          {proofPacket.answerBlocks.map((block, index) => {
+            const isActive = activeAnswerBlock?.id === block.id;
+            return (
+              <button
+                key={block.id}
+                type="button"
+                onClick={() => {
+                  setSelectedAnswerBlockId(block.id);
+                  setSelectedSourceId(block.sourceRefIds[0] ?? null);
+                }}
+                className={`w-full rounded-xl border px-3 py-3 text-left transition-colors ${
+                  isActive
+                    ? "border-[#d97757]/30 bg-[#d97757]/[0.06]"
+                    : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12]"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/[0.06] text-[10px] font-semibold text-content-muted">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <div className="text-sm font-medium text-content">{block.title}</div>
+                      <div className="mt-1 text-[11px] text-content-muted">
+                        {block.sourceRefIds.length} linked sources · {block.claimIds.length} linked claims
+                      </div>
+                    </div>
+                  </div>
+                  <SourceStatusBadge value={block.status} />
+                </div>
+                <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-content-muted">
+                  {block.text}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </Section>
+
+      <Section id="sources" icon={Waypoints} title="Source Map">
+        <div className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-2">
+            {proofPacket.sourceRefs.map((source) => {
+              const isPinned = selectedSourceId === source.id;
+              const isHighlighted = activeSourceIds.has(source.id);
+              return (
+                <button
+                  key={source.id}
+                  type="button"
+                  onMouseEnter={() => setHoveredSourceId(source.id)}
+                  onMouseLeave={() =>
+                    setHoveredSourceId((current) => (current === source.id ? null : current))
+                  }
+                  onClick={() =>
+                    setSelectedSourceId((current) => (current === source.id ? null : source.id))
+                  }
+                  className={`w-full rounded-xl border px-3 py-3 text-left transition-colors ${
+                    isPinned
+                      ? "border-[#d97757]/30 bg-[#d97757]/[0.06]"
+                      : isHighlighted
+                        ? "border-emerald-500/20 bg-emerald-500/[0.05]"
+                        : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12]"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <div className="truncate text-sm font-medium text-content">
+                          {source.title ?? source.label}
+                        </div>
+                        <SourceStatusBadge value={source.status ?? "explored"} />
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-content-muted">
+                        <span>{source.domain}</span>
+                        {source.publishedAt ? <span>{source.publishedAt}</span> : null}
+                        <span>{source.confidence ?? proofPacket.confidence}% confidence</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {source.href ? (
+                        <a
+                          href={source.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(event) => event.stopPropagation()}
+                          className="rounded-lg border border-white/[0.06] bg-white/[0.04] p-1.5 text-content-muted transition-colors hover:text-content"
+                          aria-label={`Open ${source.title ?? source.label}`}
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      ) : null}
+                      <span
+                        className={`rounded-lg border p-1.5 ${
+                          isPinned
+                            ? "border-[#d97757]/30 bg-[#d97757]/10 text-[#f2b49f]"
+                            : "border-white/[0.06] bg-white/[0.04] text-content-muted"
+                        }`}
+                        aria-hidden="true"
+                      >
+                        <Pin className="h-3.5 w-3.5" />
+                      </span>
+                    </div>
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-content-muted">
+                    {source.excerpt}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-content-muted">
+              Source Preview
+            </div>
+            {activeSource ? (
+              <div className="mt-3 space-y-3">
+                <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.03]">
+                  {activeSource.thumbnailUrl ? (
+                    <img
+                      src={activeSource.thumbnailUrl}
+                      alt={activeSource.title ?? activeSource.label}
+                      className="h-32 w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-32 items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(217,119,87,0.18),_transparent_55%),linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.01))] px-5 text-center text-xs text-content-muted">
+                      Thumbnail unavailable. Showing structured preview from retained source metadata.
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-content">
+                    {activeSource.title ?? activeSource.label}
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-content-muted">
+                    <span>{activeSource.domain}</span>
+                    <span>{activeSource.type ?? "doc"}</span>
+                    {activeSource.publishedAt ? <span>{activeSource.publishedAt}</span> : null}
+                  </div>
+                </div>
+                <p className="text-xs leading-relaxed text-content-muted">{activeSource.excerpt}</p>
+                <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                    Linked Answer Block
+                  </div>
+                  <div className="mt-2 text-sm text-content">
+                    {activeAnswerBlock?.title ?? "Executive Summary"}
+                  </div>
+                  <div className="mt-1 text-xs text-content-muted">
+                    {activeClaims.length
+                      ? `${activeClaims.length} supporting claims linked`
+                      : "No retained claims linked yet"}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-3 rounded-xl border border-dashed border-white/[0.08] px-4 py-5 text-xs leading-relaxed text-content-muted">
+                Hover or pin a cited source to inspect its preview, linked claims, and original location.
+              </div>
+            )}
+          </div>
+        </div>
+      </Section>
+
+      <Section id="graph" icon={Network} title="Connection Graph">
+        <div className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <div className="flex flex-wrap gap-2">
+              {proofPacket.graphSummary.primaryPath.map((step) => (
+                <span
+                  key={step}
+                  className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[11px] text-content-muted"
+                >
+                  {step}
+                </span>
+              ))}
+            </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Nodes</div>
+                <div className="mt-1 text-lg font-semibold text-content">
+                  {proofPacket.graphSummary.nodeCount}
+                </div>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Edges</div>
+                <div className="mt-1 text-lg font-semibold text-content">
+                  {proofPacket.graphSummary.edgeCount}
+                </div>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Clusters</div>
+                <div className="mt-1 text-lg font-semibold text-content">
+                  {proofPacket.graphSummary.clusterCount}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-content-muted">
+              Hierarchical Trace Path
+            </div>
+            <div className="mt-3 space-y-2">
+              {[
+                `Query -> ${proofPacket.query}`,
+                `Lens -> ${lens}`,
+                `Persona -> ${proofPacket.graphNodes.find((node) => node.kind === "persona")?.label ?? "Unknown"}`,
+                `Answer block -> ${activeAnswerBlock?.title ?? proofPacket.answerBlocks[0]?.title ?? "Summary"}`,
+                `Source -> ${activeSource?.label ?? proofPacket.sourceRefs[0]?.label ?? "Awaiting source"}`,
+              ].map((step) => (
+                <div
+                  key={step}
+                  className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2 text-xs text-content-muted"
+                >
+                  {step}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Section>
+
       {/* ── 2. What Changed / Why Now ──────────────────────────────────────── */}
-      {packet.changes && packet.changes.length > 0 && (
+      {proofPacket.changes && proofPacket.changes.length > 0 && (
         <Section id="changes" icon={TrendingUp} title="What Changed / Why Now">
           <div className="space-y-2.5">
-            {packet.changes.map((c, i) => (
+            {proofPacket.changes.map((c, i) => (
               <div key={i} className="flex items-start gap-3 text-sm">
                 <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[#d97757]/10 text-[10px] font-bold text-[#d97757]">
                   {i + 1}
                 </span>
                 <div className="min-w-0">
                   <span className="text-content">{c.description}</span>
+                  {c.sourceIdx != null && (
+                    <CitationFootnote
+                      index={c.sourceIdx}
+                      source={proofPacket.sourceRefs[c.sourceIdx]}
+                    />
+                  )}
                   {c.date && (
                     <span className="ml-2 text-[10px] text-content-muted">{c.date}</span>
                   )}
@@ -307,11 +684,19 @@ export const ResultWorkspace = memo(function ResultWorkspace({
       {/* ── 3. Key Signals ─────────────────────────────────────────────────── */}
       <Section id="signals" icon={BarChart3} title="Key Signals">
         <div className="space-y-2">
-          {packet.variables.map((v) => (
+          {proofPacket.variables.map((v) => (
             <div key={v.rank} className="flex items-center gap-3 text-sm">
               <span className="w-5 text-right text-[11px] tabular-nums text-content-muted">{v.rank}</span>
               <DirectionArrow direction={v.direction} />
-              <span className="flex-1 text-content">{v.name}</span>
+              <span className="flex-1 text-content">
+                {v.name}
+                {v.sourceIdx != null && (
+                  <CitationFootnote
+                    index={v.sourceIdx}
+                    source={proofPacket.sourceRefs[v.sourceIdx]}
+                  />
+                )}
+              </span>
               <ImpactTag impact={v.impact} />
             </div>
           ))}
@@ -319,12 +704,20 @@ export const ResultWorkspace = memo(function ResultWorkspace({
       </Section>
 
       {/* ── 4. Risks / Contradictions ──────────────────────────────────────── */}
-      {packet.risks && packet.risks.length > 0 && (
+      {proofPacket.risks && proofPacket.risks.length > 0 && (
         <Section id="risks" icon={AlertTriangle} title="Risks / Contradictions">
           <div className="space-y-3">
-            {packet.risks.map((r, i) => (
+            {proofPacket.risks.map((r, i) => (
               <div key={i} className="rounded-lg border border-rose-500/10 bg-rose-500/[0.03] p-3">
-                <div className="text-sm font-medium text-content">{r.title}</div>
+                <div className="text-sm font-medium text-content">
+                  {r.title}
+                  {r.sourceIdx != null && (
+                    <CitationFootnote
+                      index={r.sourceIdx}
+                      source={proofPacket.sourceRefs[r.sourceIdx]}
+                    />
+                  )}
+                </div>
                 <p className="mt-1 text-xs leading-relaxed text-content-muted">{r.description}</p>
                 {r.falsification && (
                   <p className="mt-1.5 text-[10px] text-rose-400/80 italic">
@@ -338,7 +731,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
       )}
 
       {/* ── 5. Comparables ─────────────────────────────────────────────────── */}
-      {packet.comparables && packet.comparables.length > 0 && (
+      {proofPacket.comparables && proofPacket.comparables.length > 0 && (
         <Section id="comparables" icon={GitCompare} title="Comparables / Related Entities">
           <div className="overflow-x-auto -mx-1">
             <table className="w-full text-sm">
@@ -350,7 +743,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
-                {packet.comparables.map((c) => (
+                {proofPacket.comparables.map((c) => (
                   <tr key={c.name} className="hover:bg-white/[0.02]">
                     <td className="px-2 py-2 font-medium text-content">{c.name}</td>
                     <td className="px-2 py-2"><ImpactTag impact={c.relevance} /></td>
@@ -364,10 +757,10 @@ export const ResultWorkspace = memo(function ResultWorkspace({
       )}
 
       {/* ── 6. Recommended Next Questions ──────────────────────────────────── */}
-      {packet.nextQuestions && packet.nextQuestions.length > 0 && (
+      {proofPacket.nextQuestions && proofPacket.nextQuestions.length > 0 && (
         <Section id="next" icon={HelpCircle} title="Recommended Next Questions">
           <div className="space-y-2">
-            {packet.nextQuestions.map((q, i) => (
+            {proofPacket.nextQuestions.map((q, i) => (
               <button
                 key={i}
                 type="button"
@@ -410,6 +803,101 @@ export const ResultWorkspace = memo(function ResultWorkspace({
       </Section>
 
       {/* ── 8. Keep Warm / Monitor ─────────────────────────────────────────── */}
+      {(onPublishSharedContext || onDelegate) && (
+        <Section id="delegate" icon={Share2} title="Publish and Delegate" defaultOpen={false}>
+          <div className="flex flex-wrap gap-2">
+            {onPublishSharedContext ? (
+              <button
+                type="button"
+                onClick={onPublishSharedContext}
+                disabled={handoffBusy}
+                className="inline-flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-sm font-medium text-content transition-all hover:border-[#d97757]/20 hover:bg-[#d97757]/[0.04] hover:text-[#d97757] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Share2 className="h-4 w-4" />
+                Publish to Shared Context
+              </button>
+            ) : null}
+            {onDelegate ? (
+              <button
+                type="button"
+                onClick={() => onDelegate("claude_code")}
+                disabled={handoffBusy}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#d97757] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c96a4d] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <ArrowRight className="h-4 w-4" />
+                Delegate to Claude Code
+              </button>
+            ) : null}
+            {onDelegate ? (
+              <button
+                type="button"
+                onClick={() => onDelegate("openclaw")}
+                disabled={handoffBusy}
+                className="inline-flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-sm font-medium text-content transition-all hover:border-[#d97757]/20 hover:bg-[#d97757]/[0.04] hover:text-[#d97757] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <ArrowRight className="h-4 w-4" />
+                Delegate to OpenClaw
+              </button>
+            ) : null}
+          </div>
+          <p className="mt-3 text-xs leading-relaxed text-content-muted">
+            Publish this result as a versioned shared-context packet, then hand the same packet to a coding agent so the company truth does not have to be restated across separate threads.
+          </p>
+          {handoffState?.status && handoffState.status !== "idle" ? (
+            <div
+              className={`mt-3 rounded-xl border px-3 py-3 text-sm ${
+                handoffState.status === "error"
+                  ? "border-rose-500/20 bg-rose-500/10 text-rose-300"
+                  : "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
+              }`}
+            >
+              <div className="font-medium">{handoffState.message}</div>
+              {(handoffState.contextId || handoffState.taskId) ? (
+                <div className="mt-1 text-xs opacity-90">
+                  {handoffState.contextId ? `Context ${handoffState.contextId}` : ""}
+                  {handoffState.contextId && handoffState.taskId ? " · " : ""}
+                  {handoffState.taskId ? `Task ${handoffState.taskId}` : ""}
+                </div>
+              ) : null}
+              {handoffState.installCommand ? (
+                <div className="mt-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 font-mono text-[11px] text-content-secondary">
+                  {handoffState.installCommand}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {handoffState?.handoffPrompt ? (
+            <div className="mt-3 rounded-xl border border-white/[0.06] bg-black/20 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">
+                  Agent Handoff Prompt
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void handleCopyPrompt()}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-medium text-content-muted transition-colors hover:bg-white/[0.08] hover:text-content"
+                >
+                  {copiedPrompt ? (
+                    <>
+                      <Check className="h-3 w-3 text-emerald-400" />
+                      <span className="text-emerald-400">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <ClipboardCopy className="h-3 w-3" />
+                      Copy prompt
+                    </>
+                  )}
+                </button>
+              </div>
+              <pre className="mt-3 whitespace-pre-wrap text-xs leading-relaxed text-content-secondary">
+                {handoffState.handoffPrompt}
+              </pre>
+            </div>
+          ) : null}
+        </Section>
+      )}
+
       <Section id="monitor" icon={Bell} title="Keep Warm / Monitor" defaultOpen={false}>
         <div className="flex items-center gap-4">
           <button

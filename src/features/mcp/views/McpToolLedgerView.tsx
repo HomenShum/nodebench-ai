@@ -4,6 +4,8 @@ import { PageHeroHeader } from "@/shared/ui/PageHeroHeader";
 import { useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { useStableQuery } from "@/hooks/useStableQuery";
+import { SyncBridgeAccountPanel } from "@/features/mcp/components/SyncBridgeAccountPanel";
+import { SharedContextProtocolPanel } from "@/features/mcp/components/SharedContextProtocolPanel";
 
 type LedgerRow = {
   _id: string;
@@ -71,7 +73,10 @@ export const McpToolLedgerView: React.FC = () => {
 
   const list = useStableQuery(api.domains.mcp.mcpToolLedger.listToolCalls, listArgs);
 
-  const calls = (list?.calls ?? []) as unknown as LedgerRow[];
+  const calls = useMemo(
+    () => ((list?.calls ?? []) as unknown as LedgerRow[]),
+    [list?.calls],
+  );
 
   const selected = useMemo(
     () => calls.find((c) => c._id === selectedId) ?? null,
@@ -131,6 +136,9 @@ export const McpToolLedgerView: React.FC = () => {
             </div>
           )}
         </div>
+
+        <SyncBridgeAccountPanel />
+        <SharedContextProtocolPanel />
 
         <div className="mb-6 nb-surface-card p-4">
           <div className="text-xs text-content-secondary">Filters</div>

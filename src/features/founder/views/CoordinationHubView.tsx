@@ -8,8 +8,10 @@
  * Route: /founder/coordination
  */
 
-import { RefreshCw, Radio, Wifi, WifiOff } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { RefreshCw, Radio, Wifi, WifiOff, Activity, Eye, ChevronDown, ChevronUp } from "lucide-react";
 import { useCoordinationHub } from "../hooks/useCoordinationHub";
+import type { SharedContextEvent } from "../types/sharedContext";
 import {
   PeerPresenceCard,
   TaskDelegationCard,
@@ -27,12 +29,19 @@ export default function CoordinationHubView() {
     isLive,
     isConnected,
     isLoading,
+    lastEvent,
+    eventLog,
     actions,
     refresh,
   } = useCoordinationHub();
 
   const currentPeerId = "peer:founder:homen";
   const peerIds = peers.map((p) => p.peerId);
+
+  // Claw3D-inspired: event feed panel (live activity stream)
+  const [showEventFeed, setShowEventFeed] = useState(false);
+  // Claw3D-inspired: follow packet mode
+  const [followPacketId, setFollowPacketId] = useState<string | null>(null);
 
   return (
     <div className="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
@@ -103,6 +112,68 @@ export default function CoordinationHubView() {
         }}
       />
 
+      {/* Claw3D-Inspired: Live Event Feed */}
+      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02]">
+        <button
+          type="button"
+          onClick={() => setShowEventFeed((v) => !v)}
+          className="flex w-full items-center justify-between px-4 py-3 text-left"
+          aria-expanded={showEventFeed}
+          aria-controls="event-feed-panel"
+        >
+          <div className="flex items-center gap-2">
+            <Activity className="h-3.5 w-3.5 text-[#d97757]" />
+            <span className="text-[11px] uppercase tracking-[0.2em] text-white/40">
+              Live Event Feed
+            </span>
+            {eventLog.length > 0 && (
+              <span className="rounded-full bg-[#d97757]/20 px-2 py-0.5 text-[10px] font-medium text-[#d97757]">
+                {eventLog.length}
+              </span>
+            )}
+          </div>
+          {showEventFeed ? (
+            <ChevronUp className="h-3.5 w-3.5 text-white/20" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5 text-white/20" />
+          )}
+        </button>
+
+        {showEventFeed && (
+          <div id="event-feed-panel" className="max-h-60 overflow-y-auto border-t border-white/[0.04] px-4 pb-3">
+            {eventLog.length === 0 ? (
+              <p className="py-4 text-center text-xs text-white/30">
+                No events yet. Events appear when peers publish, delegate, or message.
+              </p>
+            ) : (
+              <div className="space-y-1 pt-2" role="log" aria-label="Live coordination events">
+                {eventLog.slice().reverse().map((event, i) => (
+                  <EventRow key={`${event.type}-${event.timestamp}-${i}`} event={event} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Claw3D-Inspired: Delegation Target Cards */}
+      {isLive && (
+        <div className="grid gap-3 md:grid-cols-2">
+          <DelegationTargetCard
+            name="Claude Code"
+            peerId="peer:delegate:claude_code"
+            peers={peers}
+            installCommand="claude mcp add nodebench -- npx -y nodebench-mcp"
+          />
+          <DelegationTargetCard
+            name="OpenClaw"
+            peerId="peer:delegate:openclaw"
+            peers={peers}
+            installCommand="npx -y nodebench-mcp"
+          />
+        </div>
+      )}
+
       {/* Empty state guidance when no backend */}
       {!isLive && (
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6 text-center">
@@ -128,6 +199,85 @@ function Stat({ label, value, active }: { label: string; value: number; active?:
         {value}
       </span>
       <span className="text-[10px] text-white/30">{label}</span>
+    </div>
+  );
+}
+
+/** Claw3D-inspired event feed row */
+function EventRow({ event }: { event: SharedContextEvent }) {
+  const typeColors: Record<string, string> = {
+    connected: "text-emerald-400",
+    heartbeat: "text-white/15",
+    peer_registered: "text-blue-400",
+    packet_published: "text-[#d97757]",
+    task_proposed: "text-amber-400",
+    task_accepted: "text-emerald-400",
+    task_completed: "text-emerald-300",
+    message_sent: "text-purple-400",
+  };
+
+  const color = typeColors[event.type] ?? "text-white/30";
+  const ts = event.timestamp ? new Date(event.timestamp).toLocaleTimeString() : "";
+
+  // Hide heartbeat noise
+  if (event.type === "heartbeat") return null;
+
+  return (
+    <div className="flex items-center gap-2 py-0.5">
+      <span className="shrink-0 font-mono text-[9px] text-white/20">{ts}</span>
+      <span className={`shrink-0 text-[10px] font-medium ${color}`}>
+        {event.type.replaceAll("_", " ")}
+      </span>
+      {typeof event.payload === "object" && event.payload && "subject" in (event.payload as Record<string, unknown>) && (
+        <span className="truncate text-[10px] text-white/30">
+          {String((event.payload as Record<string, unknown>).subject)}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** Claw3D-inspired delegation target card */
+function DelegationTargetCard({
+  name,
+  peerId,
+  peers,
+  installCommand,
+}: {
+  name: string;
+  peerId: string;
+  peers: Array<{ peerId: string; status: string; summary?: { currentTask?: string } }>;
+  installCommand: string;
+}) {
+  const peer = peers.find((p) => p.peerId === peerId);
+  const isConnected = peer?.status === "active";
+
+  return (
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Eye className="h-3.5 w-3.5 text-white/30" />
+          <span className="text-sm font-medium text-white/80">{name}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`h-2 w-2 rounded-full ${isConnected ? "bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.5)]" : "bg-white/20"}`}
+          />
+          <span className={`text-[10px] ${isConnected ? "text-emerald-400" : "text-white/30"}`}>
+            {isConnected ? "Connected" : "Awaiting"}
+          </span>
+        </div>
+      </div>
+      {peer?.summary?.currentTask && (
+        <p className="mt-2 truncate text-xs text-white/40">{peer.summary.currentTask}</p>
+      )}
+      {!isConnected && (
+        <div className="mt-2">
+          <code className="block rounded bg-black/30 px-2 py-1 font-mono text-[10px] text-[#d97757]/80">
+            {installCommand}
+          </code>
+        </div>
+      )}
     </div>
   );
 }

@@ -334,7 +334,7 @@ function AgentCard({
         <div className="flex gap-1.5">
           <button
             onClick={() => setInspectOpen(!inspectOpen)}
-            className="inline-flex items-center gap-1 rounded-md bg-white/[0.07] px-2.5 py-1 text-xs text-content-muted transition-colors hover:bg-white/[0.08] hover:text-content-primary"
+            className="inline-flex items-center gap-1 rounded-md bg-white/[0.07] px-2.5 py-1 text-xs text-content-muted transition-all hover:bg-white/[0.08] hover:text-content-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/15 active:scale-[0.98]"
           >
             {inspectOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             Inspect
@@ -345,7 +345,7 @@ function AgentCard({
                 onEscalate(agent);
                 toast(`Escalated: ${agent.name}`, "error");
               }}
-              className="rounded-md bg-rose-500/10 px-2.5 py-1 text-xs font-medium text-rose-400 transition-colors hover:bg-rose-500/20"
+              className="rounded-md bg-rose-500/10 px-2.5 py-1 text-xs font-medium text-rose-400 transition-all hover:bg-rose-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/25 active:scale-[0.98]"
             >
               Escalate
             </button>
@@ -610,7 +610,7 @@ export default function AgentOversightView() {
                       </div>
                       <button
                         onClick={() => handleResolve(agent.id, agent.name)}
-                        className="shrink-0 self-start rounded-md bg-[#d97757]/10 px-3 py-1.5 text-xs font-medium text-[#d97757] transition-colors hover:bg-[#d97757]/20"
+                        className="shrink-0 self-start rounded-md bg-[#d97757]/10 px-3 py-1.5 text-xs font-medium text-[#d97757] transition-all hover:bg-[#d97757]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/25 active:scale-[0.98]"
                       >
                         Resolve
                       </button>

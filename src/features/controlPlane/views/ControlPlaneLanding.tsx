@@ -11,15 +11,17 @@
  * Not: pick a mode, configure agents, browse a dashboard.
  */
 
-import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRevealOnMount } from "@/hooks/useRevealOnMount";
+import { PUBLIC_SEARCH_API_ENDPOINT, PUBLIC_SEARCH_UPLOAD_API_ENDPOINT } from "@/lib/searchApi";
+import { getSharedContextDelegateUrl, getSharedContextPublishUrl } from "@/lib/syncBridgeApi";
+import { LiveAgentProgress } from "../components/LiveAgentProgress";
 import {
   ArrowRight,
   ArrowUp,
   Briefcase,
   Check,
   ClipboardCopy,
-  FileText,
   GraduationCap,
   Landmark,
   Mic,
@@ -33,7 +35,10 @@ import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { type MainView } from "@/lib/registry/viewRegistry";
 import { trackEvent } from "@/lib/analytics";
 import { ResultWorkspace } from "../components/ResultWorkspace";
+import { PlanProposalPanel } from "@/features/founder/components/PlanProposalPanel";
+import type { FeaturePlan } from "@/features/founder/types/planProposal";
 import { SearchTrace, type TraceStep } from "../components/SearchTrace";
+import { RecentSearchHistory, type RecentSearchHistoryItem } from "../components/RecentSearchHistory";
 import {
   type LensId,
   type ResultPacket,
@@ -41,6 +46,7 @@ import {
   EXAMPLE_PROMPTS,
   DEMO_PACKETS,
 } from "../components/searchTypes";
+import { ensureProofPacket } from "../components/proofModel";
 
 const SinceLastSession = lazy(() => import("../../founder/components/SinceLastSession"));
 const FeedbackSummary = lazy(() => import("../../founder/components/FeedbackSummary").then(m => ({ default: m.FeedbackSummary })));
@@ -51,20 +57,38 @@ const DEMO_ALIASES: Record<string, string[]> = {
   anthropic: ["anthropic", "foundation model"],
   shopify: ["shopify", "ai commerce"],
   nodebench: ["weekly reset", "founder reset", "founder weekly"],
+  legal_openai: ["legal risk", "data governance", "regulatory exposure", "openai enterprise"],
+  student_shopify: ["plain language", "study brief", "student lens", "student summary"],
+  banker_series_b: ["series b startup", "diligence memo", "banker lens", "meeting notes"],
+  plan: ["plan a", "feature plan", "implementation plan", "should we build", "propose integration", "extension plan"],
 };
 
 function findDemoPacket(query: string): string | undefined {
   const lq = query.toLowerCase();
-  return Object.keys(DEMO_PACKETS).find((key) => {
-    // Exact query match (highest priority)
-    if (DEMO_PACKETS[key].query.toLowerCase() === lq) return true;
-    // Alias match (specific phrases only — avoids false positives from generic mentions)
+  const exactMatch = Object.keys(DEMO_PACKETS).find((key) => DEMO_PACKETS[key].query.toLowerCase() === lq);
+  if (exactMatch) return exactMatch;
+
+  const aliasMatch = Object.keys(DEMO_PACKETS).find((key) => {
     const aliases = DEMO_ALIASES[key];
-    if (aliases?.some((alias) => lq.includes(alias))) return true;
-    // Key-name match only for unambiguous entity names (not "nodebench" which appears in too many queries)
-    if (key !== "nodebench" && lq.includes(key)) return true;
-    return false;
+    return aliases?.some((alias) => lq.includes(alias));
   });
+  if (aliasMatch) return aliasMatch;
+
+  return Object.keys(DEMO_PACKETS).find((key) => key !== "nodebench" && lq.includes(key));
+}
+
+function shouldPreferDemoPacket(demoKey?: string): boolean {
+  if (!demoKey || typeof window === "undefined") {
+    return false;
+  }
+
+  const { hostname, port } = window.location;
+  const isLocalShell = (hostname === "127.0.0.1" || hostname === "localhost") && port !== "8020";
+  const isAutomatedBrowser =
+    typeof navigator !== "undefined" &&
+    (navigator.webdriver || /Playwright/i.test(navigator.userAgent));
+
+  return isLocalShell || isAutomatedBrowser;
 }
 
 /* ─── Lens icon map ──────────────────────────────────────────────────────── */
@@ -94,11 +118,26 @@ interface ControlPlaneLandingProps {
   onOpenFastAgentWithPrompt?: (prompt: string) => void;
 }
 
+type HandoffState = {
+  status: "idle" | "publishing" | "published" | "delegating" | "delegated" | "error";
+  message?: string;
+  contextId?: string;
+  taskId?: string;
+  targetLabel?: string;
+  installCommand?: string;
+  handoffPrompt?: string;
+};
+
 export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   onNavigate,
-  onOpenFastAgent,
+  onOpenFastAgent: _onOpenFastAgent,
   onOpenFastAgentWithPrompt,
 }: ControlPlaneLandingProps) {
+  const traceEntryId = useCallback(
+    (entry: { step: string; tool?: string; startMs?: number }, fallbackIndex?: number) =>
+      `${entry.step}:${entry.tool ?? "none"}:${entry.startMs ?? fallbackIndex ?? 0}`,
+    [],
+  );
   const [input, setInput] = useState("");
   const [activeLens, setActiveLens] = useState<LensId>(() => {
     try {
@@ -116,12 +155,14 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   const [activeResult, setActiveResult] = useState<ResultPacket | null>(null);
   const [activeTrace, setActiveTrace] = useState<{ trace: TraceStep[]; latencyMs: number; classification: string; judge?: any } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [submittedQuery, setSubmittedQuery] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const { ref: revealRef, isVisible, instant } = useRevealOnMount();
   const pendingVoiceSubmitRef = useRef(false);
   const [copiedInstall, setCopiedInstall] = useState(false);
   const [activeInstallTab, setActiveInstallTab] = useState(0);
+  const [handoffState, setHandoffState] = useState<HandoffState>({ status: "idle" });
 
   const voice = useVoiceInput({
     onTranscript: useCallback((text: string) => {
@@ -161,88 +202,229 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
     el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
   }, [input]);
 
-  const showResult = useCallback((packet: ResultPacket) => {
-    setActiveResult(packet);
+  const showResult = useCallback((packet: ResultPacket, lensOverride?: LensId) => {
+    setActiveResult(ensureProofPacket(packet, lensOverride ?? activeLens));
+    setHandoffState({ status: "idle" });
     setIsSearching(false);
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
-  }, []);
+  }, [activeLens]);
 
   const handleSubmit = useCallback(() => {
     const trimmed = input.trim();
     if (!trimmed) return;
+    const demoKey = findDemoPacket(trimmed);
 
     trackEvent("search_submit", { query: trimmed.slice(0, 80), lens: activeLens });
+    setSubmittedQuery(trimmed);
     setIsSearching(true);
 
-    // 1. Try live API (server calls MCP tools → returns structured packet)
-    fetch("/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: trimmed, lens: activeLens }),
-      signal: AbortSignal.timeout(15_000),
-    })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((data) => {
-        if (!data?.success || !data.result) throw new Error("No result");
-        // Capture execution trace for trajectory visualization
-        if (data.trace) {
-          setActiveTrace({
-            trace: data.trace,
-            latencyMs: data.latencyMs ?? 0,
-            classification: data.classification ?? "unknown",
-            judge: data.judge,
-          });
-        }
-        const r = data.result;
-        // Full packet from founder_local_weekly_reset / founder_local_synthesize
-        if (r.canonicalEntity && r.memo) {
-          const packet: ResultPacket = {
-            query: trimmed,
-            entityName: r.canonicalEntity?.name ?? data.entity ?? "NodeBench",
-            answer: r.canonicalEntity?.canonicalMission ?? "",
-            confidence: r.canonicalEntity?.identityConfidence ?? 70,
-            sourceCount: (r.whatChanged?.length ?? 0) + (r.signals?.length ?? 0),
-            variables: (r.signals ?? []).slice(0, 5).map((s: any, i: number) => ({
-              rank: i + 1, name: s.name ?? String(s), direction: s.direction ?? "neutral", impact: s.impact ?? "medium",
-            })),
-            keyMetrics: [
-              { label: "Confidence", value: `${r.canonicalEntity?.identityConfidence ?? 0}%` },
-              { label: "Changes", value: String(r.whatChanged?.length ?? 0) },
-              { label: "Contradictions", value: String(r.contradictions?.length ?? 0) },
-              { label: "Actions", value: String(r.nextActions?.length ?? 0) },
-            ],
-            changes: r.whatChanged?.map((c: any) => ({ description: c.description ?? String(c), date: c.date })),
-            risks: r.contradictions?.map((c: any) => ({
-              title: c.claim ?? "Contradiction",
-              description: c.evidence ?? "",
-              falsification: c.falsification,
-            })),
-            comparables: r.comparables?.map((c: any) => ({
-              name: c.name ?? String(c),
-              relevance: c.relevance ?? "medium",
-              note: c.note ?? "",
-            })),
-            interventions: r.nextActions?.slice(0, 4).map((a: any) => ({
-              action: a.action ?? String(a),
-              impact: a.impact ?? "medium",
-            })),
-            nextQuestions: r.nextQuestions ?? r.nextActions?.map((a: any) => a.action) ?? [],
-          };
-          showResult(packet);
-          trackEvent("search_live_result", { entity: packet.entityName, type: data.classification });
+    // 1. Try live API with Server-Sent Events (SSE) streaming
+    setActiveTrace({ trace: [], latencyMs: 0, classification: "unknown" });
+
+    if (shouldPreferDemoPacket(demoKey)) {
+      setTimeout(() => showResult(DEMO_PACKETS[demoKey], activeLens), 300);
+      trackEvent("search_demo_result", { query: trimmed.slice(0, 80), lens: activeLens, demoKey });
+      return;
+    }
+
+    (async () => {
+      try {
+        const response = await fetch(`${PUBLIC_SEARCH_API_ENDPOINT}?stream=true`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: trimmed, lens: activeLens }),
+          signal: AbortSignal.timeout(30_000),
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const contentType = response.headers.get("content-type") || "";
+        let didShowResult = false;
+
+        const processResultPayload = (data: any) => {
+          if (!data?.success) throw new Error("No result");
+          
+          if (data.trace) {
+            setActiveTrace({
+              trace: data.trace.map((entry: TraceStep, index: number) => ({
+                ...entry,
+                traceId: entry.traceId ?? traceEntryId(entry, index),
+                isRunning: false,
+              })),
+              latencyMs: data.latencyMs ?? 0,
+              classification: data.classification ?? "unknown",
+              judge: data.judge,
+            });
+          }
+
+          if (data.resultPacket) {
+            showResult(data.resultPacket as ResultPacket, activeLens);
+            trackEvent("search_live_result", {
+              entity: (data.resultPacket as ResultPacket).entityName,
+              type: data.classification,
+            });
+            didShowResult = true;
+            return;
+          }
+          
+          const r = data.result;
+          if (r?.canonicalEntity || r?.packetId || r?.answerBlocks?.length) {
+            const canonicalEntityName =
+              typeof r?.canonicalEntity === "string"
+                ? r.canonicalEntity
+                : r?.canonicalEntity?.name ?? data.entity ?? "NodeBench";
+            const packet: ResultPacket = {
+              query: trimmed,
+              entityName: canonicalEntityName,
+              answer: r?.canonicalEntity?.canonicalMission ?? r?.summary ?? "",
+              confidence: r?.canonicalEntity?.identityConfidence ?? r?.confidence ?? 70,
+              sourceCount: r?.sourceRefs?.length ?? r?.sourcesUsed?.length ?? (r?.whatChanged?.length ?? 0) + (r?.signals?.length ?? 0),
+              variables: (r.signals ?? []).slice(0, 5).map((s: any, i: number) => ({
+                rank: i + 1, name: s.name ?? String(s), direction: s.direction ?? "neutral", impact: s.impact ?? "medium",
+              })),
+              keyMetrics: [
+                { label: "Confidence", value: `${r?.canonicalEntity?.identityConfidence ?? r?.confidence ?? 0}%` },
+                { label: "Changes", value: String(r?.whatChanged?.length ?? 0) },
+                { label: "Contradictions", value: String(r?.contradictions?.length ?? 0) },
+                { label: "Actions", value: String(r?.nextActions?.length ?? 0) },
+              ],
+              changes: r.whatChanged?.map((c: any) => ({ description: c.description ?? String(c), date: c.date })),
+              risks: r.contradictions?.map((c: any) => ({
+                title: c.claim ?? "Contradiction",
+                description: c.evidence ?? "",
+                falsification: c.falsification,
+              })),
+              comparables: r.comparables?.map((c: any) => ({
+                name: c.name ?? String(c),
+                relevance: c.relevance ?? "medium",
+                note: c.note ?? "",
+              })),
+              packetId: r.packetId ?? data.packetId,
+              packetType: r.packetType ?? "founder_packet",
+              canonicalEntity: canonicalEntityName,
+              sourceRefs:
+                r.sourceRefs ??
+                r.sourcesUsed?.map((source: any, index: number) => ({
+                  id: source.id ?? `source:${index}`,
+                  label: source.title ?? source.label ?? source.url ?? `Source ${index + 1}`,
+                  href: source.url,
+                  type: source.type ?? "web",
+                  status: source.status ?? "cited",
+                  title: source.title ?? source.label,
+                  domain: source.domain,
+                  publishedAt: source.publishedAtIso ?? source.publishedAt,
+                  thumbnailUrl: source.thumbnailUrl,
+                  excerpt: source.excerpt ?? source.summary,
+                  confidence: source.confidence,
+                })),
+              claimRefs: r.claimRefs,
+              answerBlocks: r.answerBlocks,
+              explorationMemory: r.explorationMemory,
+              graphSummary: r.graphSummary,
+              proofStatus: r.proofStatus,
+              uncertaintyBoundary: r.uncertaintyBoundary,
+              recommendedNextAction:
+                r.recommendedNextAction ?? r.nextActions?.[0]?.action,
+              graphNodes: r.graphNodes,
+              graphEdges: r.graphEdges,
+              interventions: r.nextActions?.slice(0, 4).map((a: any) => ({
+                action: a.action ?? String(a),
+                impact: a.impact ?? "medium",
+              })),
+              nextQuestions: r.nextQuestions ?? r.nextActions?.map((a: any) => a.action) ?? [],
+              rawPacket: r.rawPacket,
+            };
+            showResult(packet, activeLens);
+            trackEvent("search_live_result", { entity: packet.entityName, type: data.classification });
+            didShowResult = true;
+            return;
+          }
+          throw new Error("Unstructured result");
+        };
+
+        if (contentType.includes("application/json")) {
+          // Graceful fallback if backend hasn't been restarted with SSE support
+          const data = await response.json();
+          processResultPayload(data);
           return;
         }
-        throw new Error("Unstructured result");
-      })
-      .catch(() => {
-        // 2. Fallback: demo packet
-        const demoKey = findDemoPacket(trimmed);
+
+        if (!response.body) throw new Error("No response body");
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const dataStr = line.slice(6);
+              if (!dataStr) continue;
+              
+              try {
+                const event = JSON.parse(dataStr);
+                
+                if (event.type === 'trace') {
+                  const entry = event.entry;
+                  setActiveTrace(prev => {
+                    const trace = [...(prev?.trace || [])];
+                    const traceId = traceEntryId(entry);
+                    const existingIdx = trace.findIndex(t => t.traceId === traceId);
+                    if (existingIdx >= 0) {
+                      trace[existingIdx] = {
+                        step: entry.step,
+                        tool: entry.tool,
+                        durationMs: entry.endMs ? (entry.endMs - entry.startMs) : 0,
+                        status: entry.status,
+                        detail: entry.detail,
+                        traceId,
+                        isRunning: !entry.endMs,
+                      };
+                    } else {
+                      trace.push({
+                        step: entry.step,
+                        tool: entry.tool,
+                        durationMs: entry.endMs ? (entry.endMs - entry.startMs) : 0,
+                        status: entry.status,
+                        detail: entry.detail,
+                        traceId,
+                        isRunning: !entry.endMs,
+                      });
+                    }
+                    return { ...prev, trace, latencyMs: prev?.latencyMs ?? 0, classification: prev?.classification ?? "unknown" };
+                  });
+                } else if (event.type === 'result') {
+                  processResultPayload(event.payload);
+                } else if (event.type === 'error') {
+                  throw new Error(event.error?.message || "Search failed");
+                }
+              } catch (e) {
+                // Ignore JSON parse errors from partial chunks unless it's the intended throw
+                if (e instanceof Error && e.message !== "Unexpected end of JSON input") {
+                  throw e;
+                }
+              }
+            }
+          }
+        }
+        
+        if (!didShowResult) {
+           throw new Error("Stream closed without result");
+        }
+      } catch {
+        // Fallback implementation on error
         if (demoKey) {
-          setTimeout(() => showResult(DEMO_PACKETS[demoKey]), 300);
+          setTimeout(() => showResult(DEMO_PACKETS[demoKey], activeLens), 300);
           return;
         }
         // 3. Final fallback: build an inline acknowledgment packet
-        //    NEVER gate on auth — guests must always get value.
         const fallbackPacket: ResultPacket = {
           query: trimmed,
           entityName: trimmed.split(/\s+/).slice(0, 3).join(" "),
@@ -256,10 +438,11 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             "What changed in AI commerce strategy for Shopify, Amazon, and Google this quarter?",
           ],
         };
-        showResult(fallbackPacket);
+        showResult(fallbackPacket, activeLens);
         trackEvent("search_fallback", { query: trimmed.slice(0, 40), lens: activeLens });
-      });
-  }, [input, activeLens, onOpenFastAgent, onOpenFastAgentWithPrompt, showResult]);
+      }
+    })();
+  }, [activeLens, input, showResult, traceEntryId]);
 
   // Auto-submit when voice transcript finishes
   useEffect(() => {
@@ -290,7 +473,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
 
       if (demoKey) {
         setIsSearching(true);
-        setTimeout(() => showResult(DEMO_PACKETS[demoKey]), 600);
+        setTimeout(() => showResult(DEMO_PACKETS[demoKey], lens), 600);
       } else {
         // Use the same live API path as handleSubmit — never gate on auth
         setInput(prompt);
@@ -317,6 +500,85 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
     setTimeout(() => setCopiedInstall(false), 2000);
   }, [activeInstallTab]);
 
+  const handlePublishSharedContext = useCallback(async () => {
+    if (!activeResult) return;
+    setHandoffState({ status: "publishing", message: "Publishing packet to shared context..." });
+    try {
+      const response = await fetch(getSharedContextPublishUrl(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          packet: ensureProofPacket(activeResult, activeLens),
+        }),
+      });
+      const json = await response.json();
+      if (!response.ok || !json?.success) {
+        throw new Error(json?.message ?? `HTTP ${response.status}`);
+      }
+      trackEvent("publish_shared_context", {
+        entity: activeResult.entityName,
+        contextId: json.contextId,
+      });
+      setHandoffState({
+        status: "published",
+        message: "Shared context packet is live and ready for delegation.",
+        contextId: json.contextId,
+      });
+    } catch (error) {
+      setHandoffState({
+        status: "error",
+        message: error instanceof Error ? error.message : "Failed to publish shared context packet.",
+      });
+    }
+  }, [activeLens, activeResult]);
+
+  const handleDelegate = useCallback(
+    async (target: "claude_code" | "openclaw") => {
+      if (!activeResult) return;
+      const targetLabel = target === "claude_code" ? "Claude Code" : "OpenClaw";
+      setHandoffState({
+        status: "delegating",
+        message: `Preparing ${targetLabel} handoff...`,
+        targetLabel,
+      });
+      try {
+        const response = await fetch(getSharedContextDelegateUrl(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            packet: ensureProofPacket(activeResult, activeLens),
+            targetAgent: target,
+          }),
+        });
+        const json = await response.json();
+        if (!response.ok || !json?.success) {
+          throw new Error(json?.message ?? `HTTP ${response.status}`);
+        }
+        trackEvent("delegate_shared_context", {
+          entity: activeResult.entityName,
+          target,
+          contextId: json.contextId,
+          taskId: json.taskId,
+        });
+        setHandoffState({
+          status: "delegated",
+          message: `${json.targetLabel ?? targetLabel} handoff is ready through NodeBench MCP.`,
+          contextId: json.contextId,
+          taskId: json.taskId,
+          targetLabel: json.targetLabel ?? targetLabel,
+          installCommand: json.installCommand,
+          handoffPrompt: json.handoffPrompt,
+        });
+      } catch (error) {
+        setHandoffState({
+          status: "error",
+          message: error instanceof Error ? error.message : `Failed to prepare ${targetLabel} handoff.`,
+        });
+      }
+    },
+    [activeLens, activeResult],
+  );
+
   // File upload handler — reads text from files and submits to ingestion
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -334,7 +596,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         if (!text.trim()) continue;
 
         // Send to ingestion endpoint
-        const resp = await fetch("/search/upload", {
+        const resp = await fetch(PUBLIC_SEARCH_UPLOAD_API_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -369,9 +631,9 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         "Build a pre-delegation packet from my uploaded context",
       ],
     };
-    showResult(packet);
+    showResult(packet, activeLens);
     trackEvent("upload_complete", { fileCount: fileArray.length });
-  }, [showResult]);
+  }, [activeLens, showResult]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -389,6 +651,21 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   const handleDragLeave = useCallback(() => {
     setIsDragging(false);
   }, []);
+
+  const handleRestoreHistory = useCallback((item: RecentSearchHistoryItem) => {
+    setSubmittedQuery(item.query);
+    setActiveTrace({
+      trace: item.trace,
+      latencyMs: item.latencyMs,
+      classification: item.classification,
+    });
+    showResult(item.packet, item.lens as LensId);
+    trackEvent("search_history_restore", {
+      runId: item.runId,
+      lens: item.lens,
+      entity: item.entityName,
+    });
+  }, [showResult]);
 
   // Focus search on mount
   useEffect(() => {
@@ -408,15 +685,15 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             style={stagger("0s")}
             className="text-3xl font-bold tracking-tight text-content sm:text-4xl"
           >
-            Understand any{" "}
-            <span className="text-[#d97757]">company, market, or question</span>
+            Ask about your company, a competitor,{" "}
+            <span className="text-[#d97757]">or a market shift</span>
           </h1>
           <p
             style={stagger("0.06s")}
             className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-content-secondary"
           >
-            Type a question, paste meeting notes, or search a company.
-            Get a tailored, decision-ready intelligence workspace.
+            Founder-first by default. Search public and private context, see what changed,
+            trace the evidence, and leave with a memo-ready next move.
           </p>
         </div>
 
@@ -449,6 +726,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
               rows={1}
               className="w-full resize-none bg-transparent px-5 py-4 pr-36 text-[15px] text-content placeholder:text-content-muted/60 focus:outline-none"
               aria-label="Search NodeBench"
+              data-testid="landing-search-input"
             />
             <input
               ref={fileInputRef}
@@ -465,7 +743,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-content-muted transition-colors hover:text-[#d97757] hover:bg-[#d97757]/10"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-content-muted transition-all hover:text-[#d97757] hover:bg-[#d97757]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/30 active:scale-[0.96]"
                 aria-label="Upload files"
                 title="Upload files (PDF, DOCX, CSV, JSON, TXT)"
               >
@@ -475,7 +753,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 <button
                   type="button"
                   onClick={() => voice.toggle()}
-                  className="relative flex h-9 w-9 items-center justify-center rounded-full text-content-muted transition-colors hover:text-content"
+                  className="relative flex h-9 w-9 items-center justify-center rounded-full text-content-muted transition-all hover:bg-white/[0.05] hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/30 active:scale-[0.96]"
                   aria-label="Voice input"
                 >
                   <Mic className="h-4 w-4" />
@@ -491,8 +769,9 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 type="button"
                 onClick={handleSubmit}
                 disabled={!input.trim() && !isSearching}
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#d97757] text-white shadow-sm transition-all hover:bg-[#c96a4d] disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#d97757] text-white shadow-sm transition-all hover:bg-[#c96a4d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/35 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-30 disabled:active:scale-100"
                 aria-label="Search"
+                data-testid="landing-search-submit"
               >
                 {isSearching ? (
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -521,10 +800,11 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all ${
                   isActive
                     ? "bg-[#d97757]/15 text-[#d97757] border border-[#d97757]/25"
-                    : "text-content-muted border border-transparent hover:text-content-secondary hover:bg-white/[0.04]"
+                    : "text-content-muted border border-transparent hover:text-content-secondary hover:bg-white/[0.04] active:bg-white/[0.06]"
                 }`}
                 title={lens.description}
                 aria-pressed={isActive}
+                data-testid={`landing-lens-${lens.id}`}
               >
                 <Icon className="h-3 w-3" aria-hidden="true" />
                 {lens.label}
@@ -536,7 +816,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         {/* ── Example prompts ──────────────────────────────────────────────── */}
         {!activeResult && (
           <div style={stagger("0.2s")} className="mt-8">
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" data-testid="landing-example-prompts">
               {EXAMPLE_PROMPTS.map((example, i) => {
                 const LensIcon = LENS_ICONS[example.lens];
                 return (
@@ -544,7 +824,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                     key={i}
                     type="button"
                     onClick={() => handleExampleClick(example.text, example.lens)}
-                    className="group flex items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-left transition-all duration-200 hover:border-[#d97757]/15 hover:bg-[#d97757]/[0.02]"
+                    className="group flex items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-left transition-all duration-200 hover:border-[#d97757]/15 hover:bg-[#d97757]/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/25 active:scale-[0.995]"
                   >
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/[0.05] group-hover:bg-[#d97757]/10 transition-colors">
                       <LensIcon className="h-3.5 w-3.5 text-content-muted group-hover:text-[#d97757] transition-colors" aria-hidden="true" />
@@ -571,6 +851,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         {/* ── Since last session ──────────────────────────────────────────── */}
         {!activeResult && (
           <>
+            <RecentSearchHistory onOpen={handleRestoreHistory} />
             <div style={stagger("0.26s")} className="mt-8">
               <Suspense fallback={null}>
                 <SinceLastSession />
@@ -586,21 +867,35 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
 
         {/* ── Loading state ────────────────────────────────────────────────── */}
         {isSearching && (
-          <div className="mt-8 flex flex-col items-center gap-3 py-12">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-[#d97757]" />
-              <span className="h-2 w-2 animate-pulse rounded-full bg-[#d97757] [animation-delay:0.15s]" />
-              <span className="h-2 w-2 animate-pulse rounded-full bg-[#d97757] [animation-delay:0.3s]" />
-            </div>
-            <p className="text-sm text-content-muted">Analyzing across {350} tools and sources...</p>
-          </div>
+          <LiveAgentProgress query={submittedQuery} lens={activeLens} trace={activeTrace?.trace ?? []} />
         )}
 
         {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             RESULT WORKSPACE — Appears inline after search
             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
         {activeResult && !isSearching && (
-          <div ref={resultRef} className="mt-8">
+          <div ref={resultRef} className="mt-8" data-testid="landing-result-workspace">
+            {activeResult.packetType === "plan_proposal" ? (
+              <PlanProposalPanel
+                plan={(activeResult as any).rawPacket as FeaturePlan | null ?? null}
+                isLive={true}
+                onCopyMarkdown={(plan) => {
+                  const lines = [
+                    `# ${plan.title}`, "", `> ${plan.summary}`, "",
+                    "## Phases",
+                    ...plan.phases.map(p => `- **${p.id}: ${p.title}** (${p.estimatedEffort}) — ${p.description}`),
+                    "", "## Risks",
+                    ...plan.risks.map(r => `- [${r.severity.toUpperCase()}] ${r.title}: ${r.mitigation}`),
+                  ];
+                  navigator.clipboard.writeText(lines.join("\n"));
+                  trackEvent("copy_plan_markdown", { planId: plan.planId });
+                }}
+                onDelegate={(plan) => {
+                  trackEvent("delegate_plan", { planId: plan.planId, planType: plan.planType });
+                  void handleDelegate("claude_code");
+                }}
+              />
+            ) : (
             <ResultWorkspace
               packet={activeResult}
               lens={activeLens}
@@ -609,15 +904,19 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 trackEvent("export_packet", { type, entity: activeResult.entityName });
                 // TODO: Connect to artifact generation engine
               }}
+              onPublishSharedContext={() => void handlePublishSharedContext()}
+              onDelegate={(target) => void handleDelegate(target)}
               onMonitor={() => {
                 trackEvent("add_watchlist", { entity: activeResult.entityName });
                 // TODO: Connect to watchlist system
               }}
+              handoffState={handoffState}
             />
+            )}
 
             {/* Execution trace — shows how the answer was produced */}
             {activeTrace && (
-              <div className="mt-3">
+              <div className="mt-3" data-testid="landing-search-trace">
                 <SearchTrace
                   trace={activeTrace.trace}
                   latencyMs={activeTrace.latencyMs}
@@ -671,7 +970,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             {[
               { step: "1", title: "Search or upload", description: "Type a company name, paste meeting notes, drop a PDF, or ask a strategic question." },
               { step: "2", title: "Get your intelligence packet", description: "NodeBench extracts entities, surfaces signals, detects risks, and shapes a tailored result for your role." },
-              { step: "3", title: "Export and monitor", description: "One-click memo, sheet, or deck. Add to watchlist to track changes over time." },
+              { step: "3", title: "Package and delegate", description: "Publish the packet into shared context, hand it to Claude Code or OpenClaw, and keep every run tied back to the same truth." },
             ].map((item) => (
               <div key={item.step} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#d97757]/10 text-xs font-bold text-[#d97757]">

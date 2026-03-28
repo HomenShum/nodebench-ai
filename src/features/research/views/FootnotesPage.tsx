@@ -2,8 +2,10 @@
 
 import React from "react";
 import { ArrowLeft, FileText, ExternalLink, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { FootnotesSection } from "../components/FootnotesSection";
 import type { CitationLibrary } from "../types/citationSchema";
+import { buildCockpitPath } from "@/lib/registry/viewRegistry";
 
 interface FootnotesPageProps {
   /** Citation library to display */
@@ -30,6 +32,7 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
   briefDate,
   onBack,
 }) => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = React.useState("");
   
   // Filter citations based on search
@@ -139,7 +142,9 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
             {!searchQuery && (
               <button
                 type="button"
-                onClick={() => { window.location.hash = 'research'; }}
+                onClick={() => {
+                  navigate(buildCockpitPath({ surfaceId: "research", tab: "overview" }));
+                }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white rounded-lg text-sm font-medium transition-colors"
               >
                 <FileText className="w-4 h-4" />
