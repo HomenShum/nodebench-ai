@@ -150,8 +150,8 @@ async function main() {
     await page.goto("/founder/coordination", { waitUntil: "domcontentloaded" });
     // Set localStorage to skip onboarding, then reload
     await page.evaluate(() => {
-      localStorage.setItem("nodebench-onboarding-complete", "true");
-      localStorage.setItem("nodebench-onboarding-dismissed", "true");
+      localStorage.setItem("nodebench-onboarded", "true");
+      localStorage.setItem("nodebench-founder-onboarding-done", "true");
     });
     await page.goto("/founder/coordination", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1500);

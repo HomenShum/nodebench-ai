@@ -1,24 +1,44 @@
 {
-  "capturedAtIso": "2026-03-28T05:23:01.104Z",
+  "capturedAtIso": "2026-03-28T05:23:31.735Z",
   "baseURL": "http://localhost:5191",
   "serverURL": "http://localhost:3100",
   "mime": "video/mp4",
   "chapters": [
     {
       "name": "Navigate to Coordination Hub",
-      "startSec": 5.2
+      "startSec": 2.3
     },
     {
       "name": "Initial state — demo mode",
-      "startSec": 5.2
+      "startSec": 2.3
     },
     {
       "name": "Publishing context packets via API",
-      "startSec": 6.2
+      "startSec": 3.3
     },
     {
       "name": "Refreshing UI — live data appears",
-      "startSec": 7.8
+      "startSec": 4.9
+    },
+    {
+      "name": "Delegating to Claude Code",
+      "startSec": 7
+    },
+    {
+      "name": "Delegating to OpenClaw",
+      "startSec": 8
+    },
+    {
+      "name": "Showing delegation results",
+      "startSec": 9
+    },
+    {
+      "name": "Opening live event feed",
+      "startSec": 11
+    },
+    {
+      "name": "Final state — full coordination visible",
+      "startSec": 12.6
     }
   ],
   "videoPath": "/dogfood/coordination-demo.mp4"
