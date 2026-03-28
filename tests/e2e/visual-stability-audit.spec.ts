@@ -17,7 +17,7 @@ const STABILITY_ROUTES = [
   { path: '/research', name: 'research-hub', settleMs: 2000 },
   { path: '/documents', name: 'documents', settleMs: 1500 },
   { path: '/agents', name: 'agents', settleMs: 2000 },
-  { path: '/showcase', name: 'showcase', settleMs: 2000 },
+  { path: '/developers', name: 'developers', settleMs: 2000 },
   // Added: views modified in Feb 2026 dark mode / analytics sweep
   { path: '/funding', name: 'funding-brief', settleMs: 2000 },
   { path: '/analytics-recommendations', name: 'analytics-recommendations', settleMs: 2000 },

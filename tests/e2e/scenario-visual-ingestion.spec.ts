@@ -979,7 +979,7 @@ test.describe('Scenario: Dark mode screenshot regression — dogfood-visual-qa.m
     const expectedRouteLabels = [
       'cinematic-home',
       'research-hub',
-      'showcase',
+      'developers',
       'funding-brief',
       'analytics-recommendations',
       'analytics-components',

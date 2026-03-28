@@ -102,9 +102,35 @@ export default defineConfig(({ mode }) => {
     server: {
       host: true, // Bind to all interfaces so Chrome can reach the dev server
       proxy: {
-        "/search": {
-          target: "http://localhost:3101",
+        "/api/search": {
+          target: "http://localhost:8020",
           changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/search/, "/v1/search"),
+        },
+        "/api/search-upload": {
+          target: "http://localhost:8020",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/search-upload/, "/search/upload"),
+        },
+        "/api/search-health": {
+          target: "http://localhost:8020",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/search-health/, "/health"),
+        },
+        "/api/search-history": {
+          target: "http://localhost:3100",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/search-history/, "/search/history"),
+        },
+        "/api/search-sync-status": {
+          target: "http://localhost:3100",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/search-sync-status/, "/search/sync-status"),
+        },
+        "/api/sync-bridge": {
+          target: "http://localhost:3100",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/sync-bridge/, "/api/sync-bridge"),
         },
       },
     },

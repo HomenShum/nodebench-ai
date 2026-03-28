@@ -5,6 +5,18 @@ import net from "node:net";
 import { spawn, execSync } from "node:child_process";
 import { chromium } from "playwright";
 
+const GEMINI_QA_MODEL_INTENT = "gemini-3.1-flash";
+const GEMINI_QA_MODEL_PREFERENCES = [
+  "gemini-3.1-flash",
+  "gemini-3.1-flash-lite-preview",
+  "gemini-3-flash-preview",
+  "gemini-2.5-flash",
+  "gemini-flash-latest",
+  "gemini-2.0-flash",
+];
+let GEMINI_QA_MODEL = GEMINI_QA_MODEL_PREFERENCES[0];
+let geminiModelResolution = null;
+
 // â”€â”€ Load .env.local for GEMINI_API_KEY (needed by LLM judge) â”€â”€
 try {
   const envPath = path.join(process.cwd(), ".env.local");
@@ -86,6 +98,79 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+function getGeminiApiKey() {
+  return process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
+}
+
+function isGenerateContentModelNotFound(status, errorText) {
+  const text = String(errorText ?? "");
+  return status === 404 && /not found.*generateContent|not supported for generateContent/i.test(text);
+}
+
+async function resolveGeminiQaModel(geminiApiKey) {
+  if (!geminiApiKey) {
+    return {
+      requestedModel: GEMINI_QA_MODEL_INTENT,
+      selectedModel: GEMINI_QA_MODEL,
+      exactMatch: false,
+      fallbackReason: "missing_api_key",
+    };
+  }
+
+  if (geminiModelResolution) {
+    return geminiModelResolution;
+  }
+
+  try {
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models", {
+      headers: { "x-goog-api-key": geminiApiKey },
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      geminiModelResolution = {
+        requestedModel: GEMINI_QA_MODEL_INTENT,
+        selectedModel: GEMINI_QA_MODEL,
+        exactMatch: false,
+        fallbackReason: `model_list_http_${res.status}`,
+        error: errText.slice(0, 200),
+      };
+      return geminiModelResolution;
+    }
+
+    const payload = await res.json();
+    const models = Array.isArray(payload?.models) ? payload.models : [];
+    const supportsGenerateContent = new Set(
+      models
+        .filter((model) => Array.isArray(model?.supportedGenerationMethods) && model.supportedGenerationMethods.includes("generateContent"))
+        .map((model) => String(model.name ?? "").replace(/^models\//, "")),
+    );
+
+    const exactSupported = supportsGenerateContent.has(GEMINI_QA_MODEL_INTENT);
+    const selectedModel = exactSupported
+      ? GEMINI_QA_MODEL_INTENT
+      : GEMINI_QA_MODEL_PREFERENCES.find((model) => supportsGenerateContent.has(model)) ?? GEMINI_QA_MODEL;
+
+    GEMINI_QA_MODEL = selectedModel;
+    geminiModelResolution = {
+      requestedModel: GEMINI_QA_MODEL_INTENT,
+      selectedModel,
+      exactMatch: exactSupported,
+      fallbackReason: exactSupported ? "exact_match" : "fallback_supported_generate_content_model",
+      availableModels: Array.from(supportsGenerateContent).slice(0, 50),
+    };
+    return geminiModelResolution;
+  } catch (error) {
+    geminiModelResolution = {
+      requestedModel: GEMINI_QA_MODEL_INTENT,
+      selectedModel: GEMINI_QA_MODEL,
+      exactMatch: false,
+      fallbackReason: "model_list_fetch_failed",
+      error: error instanceof Error ? error.message : String(error),
+    };
+    return geminiModelResolution;
+  }
+}
+
 async function killProcessTree(proc) {
   if (!proc || typeof proc.pid !== "number") return;
   try {
@@ -148,7 +233,7 @@ async function waitForHttpOk(url, timeoutMs) {
     try {
       // eslint-disable-next-line no-undef
       const res = await fetch(url, { redirect: "follow" });
-      if (res.status >= 200 && res.status < 500) return;
+      if (res.status === 200) return;
     } catch {
       // ignore
     }
@@ -691,7 +776,7 @@ const FALLBACK_ROUTES = [
   { path: "/calendar", name: "calendar" },
   { path: "/roadmap", name: "roadmap" },
   { path: "/timeline", name: "timeline" },
-  { path: "/showcase", name: "showcase" },
+  { path: "/developers", name: "developers" },
   { path: "/footnotes", name: "sources" },
   { path: "/benchmarks", name: "workbench" },
   { path: "/funding", name: "funding" },
@@ -779,6 +864,37 @@ function salvageActionPoints(raw) {
   return points;
 }
 
+function buildHeuristicJudgeResult(issues, reason = "judge unavailable") {
+  const result = new Map();
+  for (let i = 0; i < issues.length; i++) {
+    const text = `${issues[i].header ?? ""} ${issues[i].details ?? ""}`.toLowerCase();
+    const fpPatterns = [
+      /\b(contrast|low.contrast|illegible|hard.to.read)\b/,
+      /\b(skeleton|loading|empty.state|no.data|placeholder)\b/,
+      /\b(dense|compact|cramped|tight|overwhelming)\b/,
+      /\b(overlay|dogfood|jargon|internal)\b/,
+      /\b(flash|transition|white.screen|flicker)\b/,
+      /\b(mock.data|demo|preview)\b/,
+      /\b(sidebar.*clutter|navigation.*overload)\b/,
+      /\b(chart.*label|overlapping.*label|graph.*text)\b/,
+    ];
+    const isLikelyFp = fpPatterns.some((pattern) => pattern.test(text));
+    result.set(i, {
+      verdict: isLikelyFp ? "design_opinion" : "genuine_bug",
+      confidence: 0.35,
+      reasoning: `${reason}${isLikelyFp ? " (heuristic filter)" : " (heuristic keep)"}`,
+    });
+  }
+  return result;
+}
+
+function coerceIssueArrayPayload(parsed) {
+  if (Array.isArray(parsed)) return parsed;
+  if (Array.isArray(parsed?.issues)) return parsed.issues;
+  if (Array.isArray(parsed?.opportunities)) return parsed.opportunities;
+  return [];
+}
+
 async function fallbackExploreRoute(page, baseURL, route, outDir) {
   // NOTE(coworker): Deterministic fallback so a single malformed Gemini response
   // doesn't produce 0 coverage for a route.
@@ -861,7 +977,7 @@ For each element, return:
 Return ONLY a JSON array. If no interactive elements are visible, return [].
 [{"description": "expand signal card", "action": "click", "x": 400, "y": 300}]`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_QA_MODEL}:generateContent?key=${geminiApiKey}`;
     const reqBody = JSON.stringify({
       contents: [{
         parts: [
@@ -980,6 +1096,10 @@ async function runAgenticExploration(baseURL, geminiApiKey, outDir, headless, la
     viewport: { width: 1440, height: 900 },
     reducedMotion: "reduce",
     recordVideo: { dir: agenticVideoDir, size: { width: 1440, height: 900 } },
+  });
+
+  await context.addInitScript(() => {
+    localStorage.setItem("nodebench-onboarded", "1");
   });
 
   // Pre-inject layout mode into localStorage BEFORE any page JS runs
@@ -1262,7 +1382,7 @@ IMPORTANT: Only flag GENUINE defects. Ignore:
 Return a JSON array of issues found (or [] if the UI looks good):
 [{"route": "route-name", "timestamp": "approximate time in video", "header": "P1|P2|P3 [description]", "details": "what you observed", "severity": "P1"|"P2"|"P3"}]`;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_QA_MODEL}:generateContent?key=${geminiApiKey}`;
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -1336,7 +1456,7 @@ Return a JSON array of issues (or [] if none):
 [{"route": "...", "header": "P2 [description]", "details": "...", "severity": "P1"|"P2"|"P3"}]` });
 
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_QA_MODEL}:generateContent?key=${geminiApiKey}`;
       const reqBody = JSON.stringify({
         contents: [{ parts }],
         generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
@@ -1426,10 +1546,9 @@ async function judgeIssuesWithLLM(issues) {
 
   const GEMINI_API_KEY = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
   if (!GEMINI_API_KEY) {
-    // No API key â€” fall back to accepting all issues as genuine (conservative)
     // eslint-disable-next-line no-console
-    console.warn("  âš  No GEMINI_API_KEY â€” skipping LLM judge, treating all issues as genuine");
-    return new Map(issues.map((_, i) => [i, { verdict: "genuine_bug", confidence: 0.5, reasoning: "No API key for judge" }]));
+    console.warn("  âš  No GEMINI_API_KEY â€” skipping LLM judge and using heuristic classification");
+    return buildHeuristicJudgeResult(issues, "No API key");
   }
 
   const issueList = issues.map((issue, i) => {
@@ -1484,7 +1603,7 @@ IMPORTANT: Return ONLY the JSON array, no markdown fences, no commentary.
 Keep reasoning under 15 words per issue to avoid truncation.`;
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_QA_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
     const body = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
@@ -1504,8 +1623,10 @@ Keep reasoning under 15 words per issue to avoid truncation.`;
       const errText = await res.text().catch(() => "");
       // eslint-disable-next-line no-console
       console.warn(`  âš  LLM judge API error ${res.status}: ${errText.slice(0, 200)}`);
-      // Fall back to treating all as genuine
-      return new Map(issues.map((_, i) => [i, { verdict: "genuine_bug", confidence: 0.5, reasoning: `API error ${res.status}` }]));
+      return buildHeuristicJudgeResult(
+        issues,
+        isGenerateContentModelNotFound(res.status, errText) ? `Unsupported model ${GEMINI_QA_MODEL}` : `API error ${res.status}`,
+      );
     }
 
     const data = await res.json();
@@ -1557,32 +1678,15 @@ Keep reasoning under 15 words per issue to avoid truncation.`;
     // blindly treating all as genuine (which inflates false positives when judge truncates).
     for (let i = 0; i < issues.length; i++) {
       if (!result.has(i)) {
-        const text = `${issues[i].header ?? ""} ${issues[i].details ?? ""}`.toLowerCase();
-        // Known false-positive keyword patterns from DESIGN_CONTEXT
-        const fpPatterns = [
-          /\b(contrast|low.contrast|illegible|hard.to.read)\b/,
-          /\b(skeleton|loading|empty.state|no.data|placeholder)\b/,
-          /\b(dense|compact|cramped|tight|overwhelming)\b/,
-          /\b(overlay|dogfood|jargon|internal)\b/,
-          /\b(flash|transition|white.screen|flicker)\b/,
-          /\b(mock.data|demo|preview)\b/,
-          /\b(sidebar.*clutter|navigation.*overload)\b/,
-          /\b(chart.*label|overlapping.*label|graph.*text)\b/,
-        ];
-        const isLikelyFp = fpPatterns.some((p) => p.test(text));
-        result.set(i, {
-          verdict: isLikelyFp ? "design_opinion" : "genuine_bug",
-          confidence: 0.4,
-          reasoning: isLikelyFp ? "Keyword heuristic (judge truncated)" : "Not covered by judge response",
-        });
+        result.set(i, buildHeuristicJudgeResult([issues[i]], "judge truncated").get(0));
       }
     }
 
     return result;
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.warn(`  âš  LLM judge failed: ${err.message} â€” treating all issues as genuine`);
-    return new Map(issues.map((_, i) => [i, { verdict: "genuine_bug", confidence: 0.5, reasoning: `Judge error: ${err.message}` }]));
+    console.warn(`  âš  LLM judge failed: ${err.message} â€” using heuristic classification`);
+    return buildHeuristicJudgeResult(issues, `Judge error: ${err.message}`);
   }
 }
 
@@ -2097,6 +2201,7 @@ async function persistQaScore(repoRoot, videoRuns, screenRuns, deterministicStat
   const entry = {
     timestamp: new Date().toISOString(),
     runType: "gemini-qa-rubric",
+    model: GEMINI_QA_MODEL,
     ...qscore,
     videoIssues: videoRuns?.[0]?.issues?.length ?? 0,
     screenshotIssues: screenRuns?.[0]?.issues?.length ?? 0,
@@ -2456,7 +2561,7 @@ Return ONLY JSON.`,
   // eslint-disable-next-line no-console
   console.log(`    ðŸ“¸ ${imageParts.length} images (${(totalImageBytes * 0.75 / 1024 / 1024).toFixed(1)}MB) + ${textParts.length} text parts`);
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_QA_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
   let res;
   try {
     res = await fetch(url, {
@@ -2583,7 +2688,7 @@ Respond with ONLY a JSON object:
 }`;
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_QA_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
     const body = {
       contents: [{ parts: [{ text: prompt }, ...imageParts] }],
       generationConfig: { temperature: 0.1, maxOutputTokens: 300, responseMimeType: "application/json" },
@@ -2638,11 +2743,21 @@ async function runQaAndCapture({ baseURL, headless, noAgentic = false, design = 
     }
   }
   await fs.writeFile(path.join(outDir, "static-analysis.json"), JSON.stringify(staticAnalysis, null, 2), "utf8");
+  const geminiApiKey = getGeminiApiKey();
+  const modelResolution = await resolveGeminiQaModel(geminiApiKey);
+  console.log(`  🤖 Gemini QA model: ${modelResolution.selectedModel}`);
+  if (!modelResolution.exactMatch) {
+    console.log(`    Requested ${modelResolution.requestedModel} -> using ${modelResolution.selectedModel} (${modelResolution.fallbackReason})`);
+  }
 
   const browser = await chromium.launch({ headless });
   const context = await browser.newContext({
     viewport: { width: 1440, height: 900 },
     reducedMotion: "reduce",
+  });
+
+  await context.addInitScript(() => {
+    localStorage.setItem("nodebench-onboarded", "1");
   });
 
   // Pre-inject layout mode into localStorage BEFORE any page JS runs
@@ -2785,7 +2900,6 @@ async function runQaAndCapture({ baseURL, headless, noAgentic = false, design = 
     // Agentic visual exploration â€” Gemini-guided UI interaction discovery
     // Uses vision model to identify what to click instead of brittle selectors
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    const geminiApiKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
     telemetry.staticAnalysis = staticAnalysis;
     telemetry.agenticIssues = [];
 
@@ -3375,7 +3489,7 @@ ${fileBlobs.join("\n\n")}
 
 Return ONLY the unified diff. No commentary, no markdown fences.`;
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_QA_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -3478,7 +3592,7 @@ ${fileBlobs.join("\n\n")}
 
 Return ONLY the unified diff. No commentary, no markdown fences.`;
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_QA_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -220,7 +220,7 @@ test.describe('Jarvis Demo: Real User Session', () => {
     page.on('pageerror', (err) => errors.push(err.message));
 
     const views = [
-      '/showcase', '/footnotes', '/signals', '/benchmarks', '/funding',
+      '/developers', '/footnotes', '/signals', '/benchmarks', '/funding',
       '/activity', '/github', '/linkedin', '/mcp-ledger', '/recommendations',
       '/for-you', '/industry', '/cost', '/roadmap', '/timeline',
     ];

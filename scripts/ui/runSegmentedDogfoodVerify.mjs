@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { spawn } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 import path from "node:path";
 
 function parseArgs(argv) {
@@ -32,6 +32,23 @@ function readEnvValue(name) {
   }
 
   return "";
+}
+
+function readConvexEnvValue(name) {
+  try {
+    const value = execSync(`npx convex env get ${name}`, {
+      cwd: process.cwd(),
+      encoding: "utf8",
+      timeout: 15_000,
+      windowsHide: true,
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+    if (!value || /not found|error/i.test(value)) return "";
+    process.env[name] = value;
+    return value;
+  } catch {
+    return "";
+  }
 }
 
 function formatDuration(ms) {
@@ -92,7 +109,12 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const geminiMode = String(args.get("gemini") ?? "auto").toLowerCase();
   const routeShards = Math.max(1, Number(args.get("routeShards") ?? process.env.DOGFOOD_ROUTE_SHARDS ?? 3));
-  const hasGeminiKey = Boolean(readEnvValue("GEMINI_API_KEY") || readEnvValue("GOOGLE_AI_API_KEY"));
+  const hasGeminiKey = Boolean(
+    readEnvValue("GEMINI_API_KEY") ||
+    readEnvValue("GOOGLE_AI_API_KEY") ||
+    readConvexEnvValue("GEMINI_API_KEY") ||
+    readConvexEnvValue("GOOGLE_AI_API_KEY"),
+  );
   const shouldRunGemini =
     geminiMode === "require" || geminiMode === "auto" ? hasGeminiKey || geminiMode === "require" : false;
 

@@ -71,6 +71,7 @@ async function setOverlay(page, title, sub) {
 
 async function setDogfoodLocalStorage(page) {
   await page.addInitScript(() => {
+    localStorage.setItem("nodebench-onboarded", "1");
     localStorage.setItem(
       "nodebench-theme",
       JSON.stringify({
@@ -87,13 +88,28 @@ async function setDogfoodLocalStorage(page) {
 }
 
 async function maybeSignIn(page) {
-  const signInButton = page.getByRole("button", { name: /sign in anonymously|sign in/i }).first();
-  if (await signInButton.count()) {
-    await signInButton.click();
+  const anonymousButton = page.getByRole("button", { name: /sign in anonymously/i }).first();
+  if (await anonymousButton.count()) {
+    await anonymousButton.click();
     await page.waitForLoadState("domcontentloaded");
     // Auth can trigger a client-side refresh; wait for the shell to stabilize.
     await page.waitForSelector("#main-content", { state: "visible", timeout: 60_000 });
     await page.waitForTimeout(900);
+    return;
+  }
+
+  const signInButton = page.getByRole("button", { name: /^sign in$/i }).first();
+  if (await signInButton.count()) {
+    await signInButton.click();
+    await page.waitForTimeout(500);
+
+    const modalAnonymousButton = page.getByRole("button", { name: /sign in anonymously/i }).first();
+    if (await modalAnonymousButton.count()) {
+      await modalAnonymousButton.click();
+      await page.waitForLoadState("domcontentloaded");
+      await page.waitForSelector("#main-content", { state: "visible", timeout: 60_000 });
+      await page.waitForTimeout(900);
+    }
   }
 }
 
@@ -169,7 +185,7 @@ async function main() {
     { kind: "route", path: "/agents", name: "Assistants" },
     { kind: "route", path: "/roadmap", name: "Roadmap" },
     { kind: "route", path: "/timeline", name: "Timeline" },
-    { kind: "route", path: "/showcase", name: "Showcase" },
+    { kind: "route", path: "/developers", name: "Developers" },
     { kind: "route", path: "/footnotes", name: "Sources" },
     { kind: "route", path: "/signals", name: "Signals Log" },
     { kind: "route", path: "/benchmarks", name: "Benchmarks" },

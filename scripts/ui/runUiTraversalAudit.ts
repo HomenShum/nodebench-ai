@@ -107,7 +107,7 @@ async function waitForHttpOk(url: string, timeoutMs: number) {
   while (Date.now() < deadline) {
     try {
       const response = await fetch(url, { redirect: "follow" });
-      if (response.status >= 200 && response.status < 500) return;
+      if (response.status === 200) return;
     } catch {
       // ignore
     }

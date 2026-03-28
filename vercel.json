@@ -1,6 +1,42 @@
 {
   "buildCommand": "npm run build",
+  "functions": {
+    "api/search.js": {
+      "maxDuration": 60
+    },
+    "api/search-upload.js": {
+      "maxDuration": 60
+    },
+    "api/search-health.js": {
+      "maxDuration": 10
+    },
+    "api/search-history.js": {
+      "maxDuration": 10
+    },
+    "api/search-sync-status.js": {
+      "maxDuration": 10
+    },
+    "api/shared-context/snapshot.js": {
+      "maxDuration": 10
+    },
+    "api/shared-context/publish.js": {
+      "maxDuration": 10
+    },
+    "api/shared-context/delegate.js": {
+      "maxDuration": 10
+    },
+    "api/sync-bridge/health.js": {
+      "maxDuration": 10
+    },
+    "api/sync-bridge/accounts/[userId].js": {
+      "maxDuration": 10
+    },
+    "api/og/[id].tsx": {
+      "maxDuration": 10
+    }
+  },
   "rewrites": [
+    { "source": "/api/og/:id", "destination": "/api/og/[id]" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

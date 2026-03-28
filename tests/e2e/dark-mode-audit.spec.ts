@@ -22,7 +22,7 @@ const ROUTES = [
   { path: '/agents', name: 'agents' },
   { path: '/roadmap', name: 'roadmap' },
   { path: '/timeline', name: 'timeline' },
-  { path: '/showcase', name: 'showcase' },
+  { path: '/developers', name: 'developers' },
   { path: '/footnotes', name: 'footnotes' },
   { path: '/signals', name: 'signals' },
   { path: '/benchmarks', name: 'benchmarks' },

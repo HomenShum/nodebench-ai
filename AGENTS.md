@@ -465,6 +465,7 @@ Trusted access framing (Reasoning x Access = Capability):
 - In NodeBench, "Access" is safe tool execution across APIs and data under policy, with a deterministic audit trail.
 - Our current primitives are: secret-gated gateway, static allowlist dispatcher, server-side userId injection, risk tiers + budgets, and the MCP Ledger.
 - Next step if capability lift is small: add more deterministic access primitives (e.g., file parsing/search, spreadsheet filters/aggregations) and re-measure on GAIA capability lanes.
+- Founder ambient intelligence ops are owner-scoped only. Public reads and writes for packet readiness, canonical objects, session delta, change detections, and ambient ingestion must resolve through an owned `companyId` or `workspaceId`; do not ship global or cross-tenant variants without explicit server-side owner checks.
 
 ### File vault plane (Obsidian + Git)
 - Init: `npm run vault:init`
@@ -563,6 +564,30 @@ Purpose: make multi-step agent workflows traceable without exposing raw chain-of
   - `domains/operations/taskManager/mutations:*`
 - Live UI surface:
   - `/execution-trace`
+
+### Control-plane shared context delegation plane
+
+Purpose: let the public search-first control plane publish a versioned packet into shared context, then prepare a bounded coding-agent handoff without forcing the founder to restate the same context in a new thread.
+
+Production HTTP surfaces:
+- `GET /api/shared-context/snapshot`
+- `POST /api/shared-context/publish`
+- `POST /api/shared-context/delegate`
+- `GET /api/sync-bridge/health`
+- `GET /api/sync-bridge/accounts/:userId`
+
+Rules:
+- Treat the search result packet as the canonical source when publishing or delegating. Do not rebuild the company story ad hoc in the browser.
+- Always register the web control-plane peer before publishing or proposing a task so the shared-context packet keeps a durable producer identity.
+- Delegation should create both:
+  - a shared-context packet
+  - a shared task handoff tied to that packet
+- The browser flow may prepare a handoff prompt for Claude Code or OpenClaw, but the prompt is a consequence of the shared packet and task id, not a replacement for them.
+- After changes to these routes or the control-plane handoff UI, run:
+  - `npx tsc --noEmit`
+  - `npx vitest run server/searchRoute.test.ts server/sharedContextRoute.test.ts`
+  - `npx vitest run src/features/controlPlane/views/ControlPlaneLanding.test.tsx src/features/controlPlane/components/SyncProvenanceBadge.test.tsx src/features/mcp/components/SharedContextProtocolPanel.test.tsx src/features/mcp/components/SyncBridgeAccountPanel.test.tsx`
+  - `npm run build`
 
 ## Self maintenance (nightly, autonomous)
 

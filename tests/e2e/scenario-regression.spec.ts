@@ -34,6 +34,7 @@ function readDogfoodJson<T>(relPath: string): T {
 
 function forceDark(page: Page) {
   return page.addInitScript(() => {
+    localStorage.setItem('nodebench-onboarded', '1');
     localStorage.setItem('nodebench-theme', JSON.stringify({ mode: 'dark' }));
     localStorage.setItem('theme', 'dark');
   });
@@ -41,18 +42,42 @@ function forceDark(page: Page) {
 
 function forceReducedMotion(page: Page) {
   return page.addInitScript(() => {
+    localStorage.setItem('nodebench-onboarded', '1');
     localStorage.setItem('nodebench-theme', JSON.stringify({ mode: 'dark', reducedMotion: true }));
+    localStorage.setItem('theme', 'dark');
   });
 }
 
 /** Sign in anonymously via the dogfood CTA if visible */
 async function signInIfNeeded(page: Page) {
-  const cta = page.getByTestId('dogfood-sign-in');
-  if (await cta.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await cta.click();
-    await cta.waitFor({ state: 'hidden', timeout: 30_000 });
-    await page.waitForLoadState('networkidle').catch(() => {});
+  const anonymousButton = page.getByRole('button', { name: /sign in anonymously/i }).first();
+  if (await anonymousButton.count()) {
+    await anonymousButton.click();
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForSelector('#main-content', { state: 'visible', timeout: 60_000 });
+    await page.waitForTimeout(1000);
+    return;
   }
+
+  const cta = page.getByTestId('dogfood-sign-in');
+  if (!(await cta.isVisible({ timeout: 3000 }).catch(() => false))) {
+    return;
+  }
+
+  await cta.click();
+  await page.waitForTimeout(500);
+
+  const modalAnonymousButton = page.getByRole('button', { name: /sign in anonymously/i }).first();
+  if (await modalAnonymousButton.count()) {
+    await modalAnonymousButton.click();
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForSelector('#main-content', { state: 'visible', timeout: 60_000 });
+    await page.waitForTimeout(1000);
+    return;
+  }
+
+  await cta.waitFor({ state: 'hidden', timeout: 30_000 });
+  await page.waitForLoadState('networkidle').catch(() => {});
 }
 
 /** Navigate to a route and wait for it to settle, but NOT networkidle — models realistic fast nav */
@@ -97,6 +122,12 @@ async function assertNoBrightFlash(page: Page, label: string) {
   // We log but don't hard-fail — the dark mode audit does that; here we capture evidence
 }
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('nodebench-onboarded', '1');
+  });
+});
+
 // ─── Scenario group 1: Dark Mode Fixes (Feb 2026 sweep) ─────────────────────
 
 test.describe('Scenario: Dark mode sweep — Feb 2026 component fixes', () => {
@@ -120,11 +151,11 @@ test.describe('Scenario: Dark mode sweep — Feb 2026 component fixes', () => {
     await page.emulateMedia({ colorScheme: 'dark' });
 
     const routes = [
-      '/analytics-recommendations',
-      '/analytics-components',
+      '/analytics/recommendations',
+      '/analytics/components',
       '/funding',
-      '/mcp-ledger',
-      '/showcase',
+      '/mcp/ledger',
+      '/developers',
     ];
 
     for (const route of routes) {
@@ -142,7 +173,7 @@ test.describe('Scenario: Dark mode sweep — Feb 2026 component fixes', () => {
    * User:      Power user who explicitly set dark mode in settings
    * Goal:      Verify analytics dashboard dark mode renders correctly
    * Prior state: Saved theme = { mode: 'dark' } in localStorage
-   * Actions:   Navigate to analytics-recommendations, check MetricCards, check RejectionReasonBar
+   * Actions:   Navigate to analytics recommendations, check MetricCards, check RejectionReasonBar
    * Scale:     1 user
    * Duration:  Single route verification
    * Expected:  MetricCard backgrounds are dark tinted, not white
@@ -152,23 +183,37 @@ test.describe('Scenario: Dark mode sweep — Feb 2026 component fixes', () => {
    */
   test('power user with saved dark theme — analytics recommendations renders correctly', async ({ page }) => {
     await forceDark(page);
-    await navigateFast(page, '/analytics-recommendations', 2000);
+    await navigateFast(page, '/analytics/recommendations', 2000);
     await capture(page, 'dark-analytics-recommendations-settled');
 
-    // The MetricCard divs should NOT have white/near-white backgrounds
+    // Scope the check to the intended analytics metric cards so unrelated
+    // rounded controls do not create false positives.
     const violations = await page.evaluate(() => {
-      const cards = Array.from(document.querySelectorAll('[class*="rounded"]'));
-      return cards.filter(el => {
+      const expectedTitles = [
+        'Total Recommendations',
+        'Acceptance Rate',
+        'Rejection Rate',
+        'Ignore Rate',
+        'Engagement Rate',
+        'Average Rating',
+        'Avg Time to Action',
+      ];
+
+      const cards = Array.from(document.querySelectorAll('div.rounded-lg')).filter((el) =>
+        expectedTitles.some((title) => el.textContent?.includes(title)),
+      );
+
+      return cards.filter((el) => {
         const bg = window.getComputedStyle(el).backgroundColor;
         const m = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
         if (!m) return false;
         const alpha = m[4] !== undefined ? parseFloat(m[4]) : 1;
         const lum = 0.299 * parseInt(m[1]) + 0.587 * parseInt(m[2]) + 0.114 * parseInt(m[3]);
         return alpha > 0.35 && lum > 240; // near-white with real opacity = unfixed element
-      }).length;
+      }).map((el) => (el.textContent ?? '').slice(0, 80));
     });
 
-    expect(violations, `${violations} white-background cards found in dark mode analytics`).toBe(0);
+    expect(violations, `white-background analytics cards found in dark mode: ${violations.join(' | ')}`).toEqual([]);
 
     // Page renders content (not empty state)
     await expect(page.getByText('Something went wrong')).not.toBeVisible();
@@ -352,7 +397,7 @@ test.describe('Scenario: Route flash fixes — skeleton stability during fast na
   test('impatient user rapid-fires 5 routes — no white flash between navigations', async ({ page }) => {
     await forceDark(page);
 
-    const routes = ['/', '/research', '/funding', '/analytics-recommendations', '/mcp-ledger'];
+    const routes = ['/', '/research', '/funding', '/analytics/recommendations', '/mcp/ledger'];
 
     await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 15_000 });
     await page.waitForTimeout(500);
@@ -576,7 +621,7 @@ test.describe('Scenario: ThemeContext — reduced-motion init and application', 
       localStorage.setItem('nodebench-theme', JSON.stringify({ mode: 'dark', reducedMotion: true }));
     });
 
-    const routes = ['/', '/research', '/analytics-recommendations'];
+    const routes = ['/', '/research', '/analytics/recommendations'];
 
     for (const route of routes) {
       await page.goto(route, { waitUntil: 'networkidle', timeout: 15_000 });
@@ -610,10 +655,10 @@ test.describe('Scenario: Long-running session — state accumulation and memory'
     await forceDark(page);
 
     const routes = [
-      '/', '/research', '/showcase', '/funding',
-      '/analytics-recommendations', '/analytics-components', '/mcp-ledger',
-      '/dogfood', '/research', '/', '/showcase', '/funding',
-      '/analytics-recommendations', '/analytics-components', '/mcp-ledger',
+      '/', '/research', '/developers', '/funding',
+      '/analytics/recommendations', '/analytics/components', '/mcp/ledger',
+      '/dogfood', '/research', '/', '/developers', '/funding',
+      '/analytics/recommendations', '/analytics/components', '/mcp/ledger',
     ];
 
     const errors: string[] = [];
@@ -660,7 +705,7 @@ test.describe('Scenario: Long-running session — state accumulation and memory'
     await forceDark(page);
     await page.setViewportSize({ width: 560, height: 900 });
 
-    const mobileDarkRoutes = ['/analytics-recommendations', '/funding'];
+    const mobileDarkRoutes = ['/analytics/recommendations', '/funding'];
 
     for (const route of mobileDarkRoutes) {
       await navigateFast(page, route, 1500);
@@ -721,7 +766,7 @@ test.describe('Scenario: Adversarial and edge conditions', () => {
 
   /**
    * User:      User who navigates directly to a URL while already on the app
-   * Goal:      Deep-link to analytics-recommendations works
+   * Goal:      Deep-link to analytics recommendations works
    * Prior state: Dark mode saved
    * Actions:   Direct URL navigation (not SPA nav)
    * Scale:     1 user
@@ -732,17 +777,17 @@ test.describe('Scenario: Adversarial and edge conditions', () => {
     await forceDark(page);
 
     // Navigate directly without going through home first
-    await page.goto('/analytics-recommendations', { waitUntil: 'networkidle', timeout: 20_000 });
+    await page.goto('/analytics/recommendations', { waitUntil: 'networkidle', timeout: 20_000 });
     await page.waitForTimeout(2000);
 
     await capture(page, 'direct-url-analytics-recommendations-dark');
 
     // Dark mode must be applied (root has .dark class)
     const isDark = await page.evaluate(() => document.documentElement.classList.contains('dark'));
-    expect(isDark, 'dark mode not applied on direct URL navigation to analytics-recommendations').toBe(true);
+    expect(isDark, 'dark mode not applied on direct URL navigation to analytics recommendations').toBe(true);
 
     // No bright flash elements
-    await assertNoBrightFlash(page, '/analytics-recommendations direct nav');
+    await assertNoBrightFlash(page, '/analytics/recommendations direct nav');
 
     // No errors
     await expect(page.getByText('Something went wrong')).not.toBeVisible();

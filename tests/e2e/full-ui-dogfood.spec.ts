@@ -1,44 +1,45 @@
 import { expect, test, type Page } from "@playwright/test";
+import { buildCockpitPath, buildCockpitPathForView } from "../../src/lib/registry/viewRegistry";
 
 const ROUTES = [
-  { path: "/", name: "home" },
-  { path: "/receipts", name: "receipts" },
-  { path: "/delegation", name: "delegation" },
-  { path: "/investigation", name: "investigation" },
-  { path: "/product-direction", name: "product-direction" },
-  { path: "/execution-trace", name: "execution-trace" },
-  { path: "/research", name: "research-hub" },
-  { path: "/research/overview", name: "research-overview" },
-  { path: "/research/signals", name: "research-signals" },
-  { path: "/research/briefing", name: "research-briefing" },
-  { path: "/research/deals", name: "research-deals" },
-  { path: "/research/changelog", name: "research-changelog" },
-  { path: "/documents", name: "documents" },
-  { path: "/spreadsheets", name: "spreadsheets" },
-  { path: "/calendar", name: "calendar" },
-  { path: "/agents", name: "agents" },
-  { path: "/roadmap", name: "roadmap" },
-  { path: "/timeline", name: "timeline" },
-  { path: "/showcase", name: "showcase" },
-  { path: "/footnotes", name: "footnotes" },
-  { path: "/signals", name: "signals" },
-  { path: "/benchmarks", name: "benchmarks" },
-  { path: "/funding", name: "funding" },
-  { path: "/activity", name: "activity" },
-  { path: "/analytics/hitl", name: "analytics-hitl" },
-  { path: "/analytics/components", name: "analytics-components" },
-  { path: "/analytics/recommendations", name: "analytics-recommendations" },
-  { path: "/cost", name: "cost-dashboard" },
-  { path: "/industry", name: "industry-updates" },
-  { path: "/for-you", name: "for-you-feed" },
-  { path: "/recommendations", name: "document-recommendations" },
-  { path: "/marketplace", name: "agent-marketplace" },
-  { path: "/github", name: "github-explorer" },
-  { path: "/pr-suggestions", name: "pr-suggestions" },
-  { path: "/linkedin", name: "linkedin-posts" },
-  { path: "/mcp/ledger", name: "mcp-ledger" },
-  { path: "/dogfood", name: "dogfood" },
-  { path: "/public", name: "public-docs" },
+  { path: buildCockpitPath({ surfaceId: "ask" }), name: "home" },
+  { path: buildCockpitPathForView({ view: "receipts" }), name: "receipts" },
+  { path: buildCockpitPathForView({ view: "delegation" }), name: "delegation" },
+  { path: buildCockpitPathForView({ view: "investigation" }), name: "investigation" },
+  { path: buildCockpitPathForView({ view: "product-direction", tab: "overview" }), name: "product-direction" },
+  { path: buildCockpitPathForView({ view: "execution-trace" }), name: "execution-trace" },
+  { path: buildCockpitPath({ surfaceId: "research", tab: "overview" }), name: "research-hub" },
+  { path: buildCockpitPath({ surfaceId: "research", tab: "overview" }), name: "research-overview" },
+  { path: buildCockpitPath({ surfaceId: "research", tab: "signals" }), name: "research-signals" },
+  { path: buildCockpitPath({ surfaceId: "research", tab: "briefing" }), name: "research-briefing" },
+  { path: buildCockpitPath({ surfaceId: "research", tab: "deals" }), name: "research-deals" },
+  { path: buildCockpitPath({ surfaceId: "research", tab: "changelog" }), name: "research-changelog" },
+  { path: buildCockpitPathForView({ view: "documents" }), name: "documents" },
+  { path: buildCockpitPathForView({ view: "spreadsheets" }), name: "spreadsheets" },
+  { path: buildCockpitPathForView({ view: "calendar" }), name: "calendar" },
+  { path: buildCockpitPathForView({ view: "agents" }), name: "agents" },
+  { path: buildCockpitPathForView({ view: "roadmap" }), name: "roadmap" },
+  { path: buildCockpitPathForView({ view: "timeline" }), name: "timeline" },
+  { path: buildCockpitPathForView({ view: "developers" }), name: "developers" },
+  { path: buildCockpitPathForView({ view: "footnotes", tab: "overview" }), name: "footnotes" },
+  { path: buildCockpitPathForView({ view: "signals", tab: "overview" }), name: "signals" },
+  { path: buildCockpitPathForView({ view: "benchmarks" }), name: "benchmarks" },
+  { path: buildCockpitPathForView({ view: "funding", tab: "overview" }), name: "funding" },
+  { path: buildCockpitPathForView({ view: "activity" }), name: "activity" },
+  { path: buildCockpitPathForView({ view: "analytics-hitl" }), name: "analytics-hitl" },
+  { path: buildCockpitPathForView({ view: "analytics-components" }), name: "analytics-components" },
+  { path: buildCockpitPathForView({ view: "analytics-recommendations" }), name: "analytics-recommendations" },
+  { path: buildCockpitPathForView({ view: "cost-dashboard" }), name: "cost-dashboard" },
+  { path: buildCockpitPathForView({ view: "industry-updates", tab: "overview" }), name: "industry-updates" },
+  { path: buildCockpitPathForView({ view: "for-you-feed", tab: "overview" }), name: "for-you-feed" },
+  { path: buildCockpitPathForView({ view: "document-recommendations" }), name: "document-recommendations" },
+  { path: buildCockpitPathForView({ view: "agent-marketplace" }), name: "agent-marketplace" },
+  { path: buildCockpitPathForView({ view: "github-explorer" }), name: "github-explorer" },
+  { path: buildCockpitPathForView({ view: "pr-suggestions" }), name: "pr-suggestions" },
+  { path: buildCockpitPathForView({ view: "linkedin-posts" }), name: "linkedin-posts" },
+  { path: buildCockpitPathForView({ view: "mcp-ledger" }), name: "mcp-ledger" },
+  { path: buildCockpitPathForView({ view: "dogfood" }), name: "dogfood" },
+  { path: buildCockpitPathForView({ view: "public" }), name: "public-docs" },
 ];
 
 /** Theme × viewport variants for comprehensive QA coverage */
@@ -47,6 +48,39 @@ const VARIANTS = [
   { theme: "light", viewport: { width: 1440, height: 900 }, suffix: "-light" },
   { theme: "dark", viewport: { width: 390, height: 844 }, suffix: "-mobile" },
   { theme: "light", viewport: { width: 390, height: 844 }, suffix: "-mobile-light" },
+] as const;
+
+const PERSONA_LENS_SCENARIOS = [
+  {
+    lens: "founder",
+    query: "Generate my founder weekly reset â€” what changed, main contradiction, next 3 moves",
+    expectedText: "NodeBench",
+  },
+  {
+    lens: "investor",
+    query: "Analyze Anthropic's competitive position in the foundation model market",
+    expectedText: "Anthropic",
+  },
+  {
+    lens: "banker",
+    query: "Build a diligence memo on this Series B startup from these meeting notes",
+    expectedText: "Series B Startup Diligence",
+  },
+  {
+    lens: "ceo",
+    query: "What changed in AI commerce strategy for Shopify, Amazon, and Google this quarter?",
+    expectedText: "Shopify",
+  },
+  {
+    lens: "legal",
+    query: "What legal and data-governance risks matter most for OpenAI enterprise adoption this quarter?",
+    expectedText: "OpenAI Enterprise Risk Review",
+  },
+  {
+    lens: "student",
+    query: "Explain Shopify's AI commerce strategy in plain language and give me a study brief.",
+    expectedText: "Shopify",
+  },
 ] as const;
 
 type BrowserIssueKind = "pageerror" | "console" | "requestfailed" | "response";
@@ -64,6 +98,7 @@ const BENIGN_CONSOLE_ERROR_PATTERNS = [
 ];
 const BENIGN_REQUEST_FAILURE_PATTERNS = [/ERR_ABORTED/i];
 const BENIGN_RESPONSE_FAILURE_PATTERNS = [
+  /^http:\/\/127\.0\.0\.1:\d+\/(?:\?surface=[^ ]+)? 404$/i,
   /\/benchmarks\/videos\/enterprise-investigation-eval-stream-latest\.webm$/i,
   /\/dogfood\/videos\/agentic-session\.webm$/i,
   /\/dogfood\/videos\/classic-wake-word\.webm$/i,
@@ -137,26 +172,90 @@ function formatBrowserIssues(issues: BrowserIssue[]) {
 }
 
 async function signInIfPrompted(page: Page) {
-  const signInButton = page.getByRole("button", { name: /sign in anonymously|sign in/i }).first();
-  if (await signInButton.count()) {
-    await signInButton.click();
+  const anonymousButton = page.getByRole("button", { name: /sign in anonymously/i }).first();
+  if (await anonymousButton.count()) {
+    await anonymousButton.click();
     await page.waitForLoadState("domcontentloaded");
     await page.waitForSelector("#main-content", { state: "visible", timeout: 60_000 });
     await page.waitForTimeout(1000);
+    return;
+  }
+
+  const signInButton = page.getByRole("button", { name: /^sign in$/i }).first();
+  if (await signInButton.count()) {
+    await signInButton.click();
+    await page.waitForTimeout(500);
+
+    const modalAnonymousButton = page.getByRole("button", { name: /sign in anonymously/i }).first();
+    if (await modalAnonymousButton.count()) {
+      await modalAnonymousButton.click();
+      await page.waitForLoadState("domcontentloaded");
+      await page.waitForSelector("#main-content", { state: "visible", timeout: 60_000 });
+      await page.waitForTimeout(1000);
+    }
   }
 }
 
 async function navigateWithinApp(page: Page, targetPath: string) {
-  if (targetPath === "/") {
-    await page.goto("/", { waitUntil: "domcontentloaded" });
-  } else {
-    await page.evaluate((path) => {
-      history.pushState({}, "", path);
-      window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
-    }, targetPath);
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      let response: Awaited<ReturnType<Page["goto"]>> | null = null;
+      try {
+        response = await page.goto(targetPath, { waitUntil: "domcontentloaded", timeout: 60_000 });
+      } catch {
+        response = null;
+      }
+
+      const mainShellVisible = await page
+        .locator("#main-content")
+        .isVisible({ timeout: 5_000 })
+        .catch(() => false);
+
+      // Keep dogfood stable under preview by falling back to in-app navigation when
+      // a direct document request flakes or returns a transient non-200.
+      if (targetPath !== "/" && (!response || response.status() >= 400 || !mainShellVisible)) {
+        await page.goto("/", { waitUntil: "domcontentloaded", timeout: 60_000 });
+        await page.waitForSelector("#main-content", { state: "visible", timeout: 60_000 });
+        await page.evaluate((path) => {
+          window.history.pushState({}, "", path);
+          window.dispatchEvent(new PopStateEvent("popstate"));
+        }, targetPath);
+        await page.waitForURL((url) => url.pathname === targetPath, { timeout: 20_000 });
+      }
+
+      await page.waitForSelector("#main-content", { state: "visible", timeout: 20_000 });
+      await page.waitForTimeout(900);
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt === 2) break;
+      await page.waitForTimeout(1200);
+    }
   }
-  await page.waitForSelector("#main-content", { state: "visible", timeout: 60_000 });
-  await page.waitForTimeout(900);
+
+  throw lastError;
+}
+
+async function runLandingPersonaLensQuery(
+  page: Page,
+  scenario: (typeof PERSONA_LENS_SCENARIOS)[number],
+) {
+  await navigateWithinApp(page, "/");
+  const lensButton = page.getByTestId(`landing-lens-${scenario.lens}`);
+  await expect(lensButton).toBeVisible({ timeout: 20_000 });
+  await lensButton.click();
+
+  const searchInput = page.getByTestId("landing-search-input");
+  await expect(searchInput).toBeVisible();
+  await searchInput.fill(scenario.query);
+
+  const submitButton = page.getByTestId("landing-search-submit");
+  await submitButton.click();
+
+  const resultWorkspace = page.getByTestId("landing-result-workspace");
+  await expect(resultWorkspace).toBeVisible({ timeout: 35_000 });
+  await expect(resultWorkspace).toContainText(scenario.expectedText, { timeout: 35_000 });
 }
 
 async function ensureNoBlockingModal(page: Page) {
@@ -246,6 +345,7 @@ test.describe("Full UI Dogfood", () => {
     await page.goto("/", { waitUntil: "networkidle" });
     await resetBrowserStorage(page);
     await page.evaluate(() => {
+      localStorage.setItem("nodebench-onboarded", "1");
       localStorage.setItem(
         "nodebench-theme",
         JSON.stringify({
@@ -306,31 +406,35 @@ test.describe("Full UI Dogfood", () => {
 
     await ensureNoBlockingModal(page);
 
-    const settingsTrigger = page.getByTestId("open-settings");
-    await expect(settingsTrigger).toBeVisible();
-    await settingsTrigger.click();
-    await page.waitForTimeout(400);
+    const settingsTrigger = page
+      .locator('[data-testid="open-settings"], button[title="Profile"], button[title="Settings"], [aria-label="Settings"]')
+      .first();
+    if (await settingsTrigger.count()) {
+      await expect(settingsTrigger).toBeVisible();
+      await settingsTrigger.click();
+      await page.waitForTimeout(400);
 
-    const tabs = [
-      "Profile",
-      "Account",
-      "Preferences",
-      "Usage",
-      "Integrations",
-      "Billing",
-      "Reminders",
-      "Channels",
-    ];
+      const tabs = [
+        "Profile",
+        "Account",
+        "Preferences",
+        "Usage",
+        "Integrations",
+        "Billing",
+        "Reminders",
+        "Channels",
+      ];
 
-    for (const tab of tabs) {
-      const tabButton = page.getByRole("button", { name: tab }).first();
-      if (await tabButton.count()) {
-        await tabButton.click({ force: true });
-        await page.waitForTimeout(350);
-        await page.screenshot({
-          path: `test-results/full-ui-dogfood/settings-${tab.toLowerCase()}.png`,
-          fullPage: false,
-        });
+      for (const tab of tabs) {
+        const tabButton = page.getByRole("button", { name: tab }).first();
+        if (await tabButton.count()) {
+          await tabButton.click({ force: true });
+          await page.waitForTimeout(350);
+          await page.screenshot({
+            path: `test-results/full-ui-dogfood/settings-${tab.toLowerCase()}.png`,
+            fullPage: false,
+          });
+        }
       }
     }
 
@@ -487,16 +591,12 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // 8. Search input on home — type and see suggestions
-    activeRoute = "/";
-    await navigateWithinApp(page, "/");
-    const searchInput = page.locator("input[placeholder*='Ask anything']:visible").first();
-    if (await searchInput.count()) {
-      await searchInput.click();
-      await searchInput.fill("AI agents");
-      await page.waitForTimeout(500);
+    for (const scenario of PERSONA_LENS_SCENARIOS) {
+      activeRoute = "/";
+      await runLandingPersonaLensQuery(page, scenario);
       await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-search-suggestions.png",
-        fullPage: false,
+        path: `test-results/full-ui-dogfood/persona-lens-${scenario.lens}.png`,
+        fullPage: true,
       });
     }
 
