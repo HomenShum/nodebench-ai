@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-03-20T04:14:57.992Z",
+  "capturedAtIso": "2026-03-27T18:58:06.175Z",
   "videoPath": "/dogfood/walkthrough.mp4",
   "items": [
     {
@@ -46,7 +46,7 @@
       "index": 6,
       "name": "Research: Deals",
       "path": "/research/deals",
-      "startSec": 10.5,
+      "startSec": 10.4,
       "file": "06-research-deals.jpg",
       "image": "/dogfood/frames/06-research-deals.jpg"
     },
@@ -108,17 +108,17 @@
     },
     {
       "index": 14,
-      "name": "Showcase",
-      "path": "/showcase",
-      "startSec": 27.4,
-      "file": "14-showcase.jpg",
-      "image": "/dogfood/frames/14-showcase.jpg"
+      "name": "Developers",
+      "path": "/developers",
+      "startSec": 27.3,
+      "file": "14-developers.jpg",
+      "image": "/dogfood/frames/14-developers.jpg"
     },
     {
       "index": 15,
       "name": "Sources",
       "path": "/footnotes",
-      "startSec": 29.5,
+      "startSec": 29.4,
       "file": "15-sources.jpg",
       "image": "/dogfood/frames/15-sources.jpg"
     },
@@ -126,7 +126,7 @@
       "index": 16,
       "name": "Signals Log",
       "path": "/signals",
-      "startSec": 31.6,
+      "startSec": 31.5,
       "file": "16-signals-log.jpg",
       "image": "/dogfood/frames/16-signals-log.jpg"
     },
@@ -134,7 +134,7 @@
       "index": 17,
       "name": "Benchmarks",
       "path": "/benchmarks",
-      "startSec": 33.7,
+      "startSec": 33.6,
       "file": "17-benchmarks.jpg",
       "image": "/dogfood/frames/17-benchmarks.jpg"
     },
@@ -198,7 +198,7 @@
       "index": 25,
       "name": "For You",
       "path": "/for-you",
-      "startSec": 50.6,
+      "startSec": 50.5,
       "file": "25-for-you.jpg",
       "image": "/dogfood/frames/25-for-you.jpg"
     },
@@ -206,7 +206,7 @@
       "index": 26,
       "name": "Recommendations",
       "path": "/recommendations",
-      "startSec": 52.7,
+      "startSec": 52.6,
       "file": "26-recommendations.jpg",
       "image": "/dogfood/frames/26-recommendations.jpg"
     },
@@ -270,7 +270,7 @@
       "index": 34,
       "name": "Interaction: Command Palette",
       "path": "(interaction)",
-      "startSec": 69.5,
+      "startSec": 69.6,
       "file": "34-interaction-command-palette.jpg",
       "image": "/dogfood/frames/34-interaction-command-palette.jpg"
     },
@@ -286,7 +286,7 @@
       "index": 36,
       "name": "End",
       "path": "(end)",
-      "startSec": 72.6,
+      "startSec": 70.9,
       "file": "36-end.jpg",
       "image": "/dogfood/frames/36-end.jpg"
     }

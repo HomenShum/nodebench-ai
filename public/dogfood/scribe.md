@@ -1,6 +1,6 @@
 # NodeBench Dogfood Walkthrough
 
-Captured: 2026-03-20T02:05:23.385Z
+Captured: 2026-03-27T18:55:32.934Z
 
 This is an auto-generated how-to (Scribe-style) artifact: screenshots + editable step text.
 
@@ -69,10 +69,10 @@ Navigate to /timeline to review the Timeline screen.
 
 ![13. Timeline](/dogfood/scribe/13-timeline.png)
 
-## 14. Showcase
-Navigate to /showcase to review the Showcase screen.
+## 14. Developers
+Navigate to /developers to review the Developers screen.
 
-![14. Showcase](/dogfood/scribe/14-showcase.png)
+![14. Developers](/dogfood/scribe/14-developers.png)
 
 ## 15. Sources
 Navigate to /footnotes to review the Sources screen.

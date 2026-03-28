@@ -1,6 +1,6 @@
 {
-  "capturedAtIso": "2026-03-20T02:05:23.385Z",
-  "baseURL": "http://127.0.0.1:4174",
+  "capturedAtIso": "2026-03-27T18:55:32.934Z",
+  "baseURL": "http://127.0.0.1:4317",
   "steps": [
     {
       "index": 1,
@@ -122,11 +122,11 @@
     {
       "index": 14,
       "kind": "route",
-      "name": "Showcase",
-      "path": "/showcase",
-      "title": "14. Showcase",
-      "description": "Navigate to /showcase to review the Showcase screen.",
-      "image": "/dogfood/scribe/14-showcase.png"
+      "name": "Developers",
+      "path": "/developers",
+      "title": "14. Developers",
+      "description": "Navigate to /developers to review the Developers screen.",
+      "image": "/dogfood/scribe/14-developers.png"
     },
     {
       "index": 15,
