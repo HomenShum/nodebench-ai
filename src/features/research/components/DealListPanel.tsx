@@ -203,7 +203,7 @@ export function DealFlyout({
         </div>
 
         <div className="px-4 py-3 space-y-3">
-          <div className="text-sm text-content leading-relaxed">{deal.summary}</div>
+          <div className="text-sm text-content leading-relaxed line-clamp-3">{deal.summary}</div>
 
           {(deal.foundingYear || deal.location || deal.foundersBackground) && (
             <div className="rounded-lg border border-edge bg-surface-secondary p-3 space-y-1">

@@ -111,7 +111,7 @@ export const FeedTimeline: React.FC<FeedTimelineProps> = ({ items, onItemClick, 
                 </div>
               ))}
               {entry.items.length === 0 && (
-                <div className="text-sm text-content-secondary">No items yet.</div>
+                <div className="text-sm text-content-secondary">No items yet. Activity appears as you search and track entities.</div>
               )}
             </div>
             {!last && (

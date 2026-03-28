@@ -339,9 +339,12 @@ function BriefingSectionInner({
       <div className={`${className} p-8 text-center text-content-secondary border border-edge rounded-lg bg-surface`}>
         <Clock className="w-8 h-8 mx-auto mb-3 text-content-secondary" />
         <p className="text-sm font-medium">No briefing available yet</p>
-        <p className="text-xs text-content-secondary mt-1">
-          The morning brief will be generated at 6:00 AM UTC
+        <p className="text-xs text-content-secondary mt-1 mb-3">
+          Search for a company above to generate your first intelligence briefing.
         </p>
+        <code className="inline-block rounded-lg bg-white/[0.04] px-3 py-1.5 text-xs text-content-muted font-mono">
+          Try: &quot;What changed in AI this week?&quot;
+        </code>
       </div>
     );
   }
@@ -727,7 +730,7 @@ function BriefingSectionInner({
                   <div key={`${entry.source}-${idx}`} className="text-xs text-content-secondary">
                     <span className="font-semibold text-content-secondary">{entry.source}</span>
                     {entry.count !== null && <span className="text-content-muted"> ({entry.count})</span>}
-                    <span className="text-content-secondary"> — {entry.summary}</span>
+                    <span className="text-content-secondary line-clamp-1"> — {entry.summary}</span>
                   </div>
                 ))}
               </div>
@@ -780,7 +783,7 @@ function BriefingSectionInner({
                   ) : (
                     <div className="text-sm font-semibold text-content">{item.title}</div>
                   )}
-                  <div className="text-xs text-content-secondary mt-1">{item.summary}</div>
+                  <div className="text-xs text-content-secondary mt-1 line-clamp-2">{item.summary}</div>
                 </div>
               ))}
             </div>

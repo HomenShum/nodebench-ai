@@ -119,7 +119,7 @@ function DashboardSectionInner({
       <div className={`${className} p-4`}>
         <div className="rounded-lg border border-edge bg-surface p-6 text-center">
           <div className="text-sm font-medium text-content mb-1">No dashboard data yet</div>
-          <div className="text-xs text-content-secondary mb-4">Metrics are generated automatically at 6:00 AM UTC.</div>
+          <div className="text-xs text-content-secondary mb-4">Search for a company or run a briefing to populate your dashboard.</div>
           <button
             type="button"
             onClick={handleRefresh}

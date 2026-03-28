@@ -176,9 +176,12 @@ export function SignalList({ signals, onSignalClick, className = "" }: SignalLis
           <Lightbulb className="w-7 h-7 text-content-muted" />
         </div>
         <h3 className="text-base font-semibold text-content mb-1">No signals yet</h3>
-        <p className="text-sm text-content-secondary max-w-xs mx-auto">
-          Signals will appear here as new market insights are detected.
+        <p className="text-sm text-content-secondary max-w-xs mx-auto mb-3">
+          Search for a company or topic to start tracking signals. They refresh automatically.
         </p>
+        <code className="inline-block rounded-lg bg-white/[0.04] px-3 py-1.5 text-xs text-content-muted font-mono">
+          Try: &quot;Anthropic competitive position&quot;
+        </code>
       </div>
     );
   }
