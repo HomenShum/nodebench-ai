@@ -37,7 +37,6 @@ const SURFACE_SHORTCUTS: SurfaceShortcut[] = [
   { id: "memo", label: "Memo", icon: Orbit, color: "currentColor" },
   { id: "research", label: "Research", icon: Radar, color: "currentColor" },
   { id: "editor", label: "Workspace", icon: FileText, color: "currentColor" },
-  { id: "telemetry", label: "System", icon: Bot, color: "currentColor" },
 ];
 
 const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);

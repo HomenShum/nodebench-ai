@@ -23,11 +23,10 @@ const TABS: readonly {
   label: string;
   icon: typeof MessageSquare;
 }[] = [
-  { id: "ask",       label: "Brief",     icon: MessageSquare },
+  { id: "ask",       label: "Ask",       icon: MessageSquare },
   { id: "memo",      label: "Memo",      icon: Orbit },
   { id: "research",  label: "Research",  icon: Radar },
   { id: "editor",    label: "Workspace", icon: FileText },
-  { id: "telemetry", label: "System",    icon: Bot },
 ];
 
 export const MobileTabBar = memo(function MobileTabBar({
