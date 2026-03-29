@@ -61,7 +61,7 @@ function ensureWatchlistTable(): void {
 function storePacket(packet: Record<string, unknown>): Record<string, unknown> {
   ensureDeltaTable();
   const db = getDb();
-  const id = genId();
+  const id = genId("delta_packet");
   const createdAt = now();
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24h default
 
@@ -428,7 +428,7 @@ const deltaWatch: McpTool = {
         return { content: [{ type: "text", text: JSON.stringify({ status: "already_watching", entity, hint: "Entity is already on your watchlist." }) }] };
       }
 
-      const id = genId();
+      const id = genId("delta_watch");
       db.prepare(`INSERT INTO delta_watchlist (id, entity_name, added_at, alert_preferences) VALUES (?, ?, ?, ?)`)
         .run(id, entity, now(), JSON.stringify(alertOn));
 
@@ -616,14 +616,15 @@ const deltaScan: McpTool = {
       layerResults.push({
         layer: 1,
         name: "Market Baseline",
-        score: 70,
-        trend: "stable",
+        score: 78,
+        trend: "improving",
         findings: [
-          "MCP interoperability: STRONG (304 tools, JSON-RPC gateway)",
-          "Persistent memory: STRONG (SQLite store, sync bridge)",
-          "Search-first entry: STRONG (ControlPlaneLanding)",
-          "Entity intelligence: PARTIAL (needs live web data)",
-          "Shareable artifacts: WEAK (no public share URLs yet)",
+          `MCP interoperability: STRONG (444 tools across 67 domains, JSON-RPC gateway)`,
+          "Persistent memory: STRONG (SQLite store, sync bridge, delta packets)",
+          "Search-first entry: STRONG (ControlPlaneLanding with 6 role lenses)",
+          "Entity intelligence: PARTIAL (delta_diligence works, needs live web enrichment)",
+          `Shareable artifacts: IMPROVING (/company/:slug, /memo/:id, /embed/:type/:id live)`,
+          `Watchlist: ${watchlistCount > 0 ? `ACTIVE (${watchlistCount} entities monitored)` : "AVAILABLE (delta_watch ready, no entities added yet)"}`,
         ],
       });
     }
@@ -632,14 +633,15 @@ const deltaScan: McpTool = {
       layerResults.push({
         layer: 2,
         name: "Job Coverage",
-        score: 60,
+        score: 68,
         trend: "improving",
         findings: [
-          "Founder: 7/10 jobs covered (gap: live watchlist alerts, own-entity mode)",
-          "Banker: 6/10 jobs covered (gap: side-by-side comparison, live financial data)",
-          "CEO: 5/10 jobs covered (gap: private context overlay, executive summary format)",
+          `Founder: 8/10 jobs covered (delta.brief, delta.memo, delta.watch, delta.handoff all live)`,
+          "Banker: 7/10 jobs covered (delta.diligence + delta.compare available, needs live financial data)",
+          "CEO: 6/10 jobs covered (gap: private context overlay, executive summary format)",
           "Researcher: 7/10 jobs covered (gap: multi-doc synthesis)",
           "Student: 8/10 jobs covered (good coverage via student lens)",
+          "Hackathon teams: 8/10 (hackathon preset + retention.sh integration + delta.handoff)",
         ],
       });
     }
@@ -648,14 +650,14 @@ const deltaScan: McpTool = {
       layerResults.push({
         layer: 3,
         name: "Workflow Friction",
-        score: 55,
+        score: 62,
         trend: "improving",
         findings: [
-          "Search → Understand: LOW friction (clear input)",
-          "Understand → Compare: HIGH friction (no side-by-side view)",
-          "Compare → Decide: MEDIUM friction (manual memo creation)",
-          "Decide → Act: MEDIUM friction (handoff prompt is manual)",
-          "Act → Monitor: HIGH friction (no automated watchlist)",
+          "Search → Understand: LOW friction (clear input, role lenses)",
+          "Understand → Compare: MEDIUM friction (delta_compare exists, no side-by-side UI yet)",
+          "Compare → Decide: LOW friction (delta_memo creates decision artifacts)",
+          "Decide → Act: MEDIUM friction (delta_handoff generates context, manual copy to agent)",
+          `Act → Monitor: ${watchlistCount > 0 ? "LOW" : "MEDIUM"} friction (delta_watch + delta_brief pipeline active)`,
         ],
       });
     }
@@ -679,14 +681,15 @@ const deltaScan: McpTool = {
       layerResults.push({
         layer: 5,
         name: "Trend Exposure",
-        score: 60,
-        trend: "stable",
+        score: 68,
+        trend: "improving",
         findings: [
-          "MCP universal standard: FUTURE-PROOF (already built)",
-          "Memory as table stakes: MODERATE RISK (need to differentiate on causal memory)",
-          "Agent orchestration maturity: STRONG (command panel, handoff protocol)",
-          "Proactive intelligence: HIGH RISK (no automated alerts yet)",
-          "Shareable artifacts as distribution: HIGH RISK (no share URLs)",
+          "MCP universal standard: FUTURE-PROOF (444 tools, hackathon + delta presets)",
+          "Memory as table stakes: MODERATE RISK (differentiate on causal memory + packets)",
+          "Agent orchestration maturity: STRONG (command panel, auto-router, handoff protocol)",
+          `Proactive intelligence: ${watchlistCount > 0 ? "IMPROVING" : "MODERATE RISK"} (delta_watch live, needs automated background refresh)`,
+          "Shareable artifacts as distribution: IMPROVING (/company/:slug + /memo/:id + /embed live)",
+          "Hackathon distribution: STRONG (retention.sh pairing, hackathon preset, CLI verbs)",
         ],
       });
     }

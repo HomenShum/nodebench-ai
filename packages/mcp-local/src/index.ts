@@ -1145,19 +1145,26 @@ if (subCmd && (DELTA_VERBS as readonly string[]).includes(subCmd)) {
     try {
       toolArgs = JSON.parse(argStr);
     } catch {
-      // Try key=value parsing: e.g., entity=Anthropic depth=deep
+      // Check for key=value pairs first, collect remaining as positional
+      const kvParts: string[] = [];
+      const positionalParts: string[] = [];
       for (const part of argStr.split(/\s+/)) {
         const eqIdx = part.indexOf("=");
         if (eqIdx > 0) {
           toolArgs[part.slice(0, eqIdx)] = part.slice(eqIdx + 1);
+          kvParts.push(part);
         } else {
-          // Positional: first positional is the primary arg
-          if (subCmd === "diligence" || subCmd === "compare") toolArgs.entity = toolArgs.entity || part;
-          else if (subCmd === "watch") toolArgs.entity = toolArgs.entity || part;
-          else if (subCmd === "memo") toolArgs.decision = toolArgs.decision || part;
-          else if (subCmd === "handoff") toolArgs.task = toolArgs.task || part;
-          else if (subCmd === "retain") toolArgs.content = toolArgs.content || part;
+          positionalParts.push(part);
         }
+      }
+      // Join ALL positional words as the primary arg (handles multi-word strings)
+      if (positionalParts.length > 0) {
+        const fullPositional = positionalParts.join(" ");
+        if (subCmd === "diligence" || subCmd === "compare") toolArgs.entity = toolArgs.entity || fullPositional;
+        else if (subCmd === "watch") toolArgs.entity = toolArgs.entity || fullPositional;
+        else if (subCmd === "memo") toolArgs.decision = toolArgs.decision || fullPositional;
+        else if (subCmd === "handoff") toolArgs.task = toolArgs.task || fullPositional;
+        else if (subCmd === "retain") toolArgs.content = toolArgs.content || fullPositional;
       }
       // Default action for watch
       if (subCmd === "watch" && !toolArgs.action) toolArgs.action = toolArgs.entity ? "add" : "list";
