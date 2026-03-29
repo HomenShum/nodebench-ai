@@ -105,9 +105,10 @@ const LENS_ICONS: Record<LensId, React.ElementType> = {
 /* ─── Install commands (collapsed below fold) ────────────────────────────── */
 
 const INSTALL_COMMANDS = [
-  { tab: "Claude Code", code: "claude mcp add nodebench -- npx -y nodebench-mcp" },
-  { tab: "Cursor", code: "npx -y nodebench-mcp", note: "Add to .cursor/mcp.json" },
-  { tab: "Windsurf", code: "npx -y nodebench-mcp", note: "Add to .windsurf/mcp.json" },
+  { tab: "Claude Code", code: "claude mcp add nodebench -- npx -y nodebench-mcp --preset=hackathon" },
+  { tab: "Cursor", code: "npx -y nodebench-mcp --preset=hackathon", note: "Add to .cursor/mcp.json" },
+  { tab: "Windsurf", code: "npx -y nodebench-mcp --preset=hackathon", note: "Add to .windsurf/mcp.json" },
+  { tab: "Hackathon + QA", code: "RETENTION_TEAM=<CODE> curl -sL retention.sh/install.sh | bash && claude mcp add nodebench -- npx -y nodebench-mcp --preset=hackathon", note: "Full stack: intelligence + QA" },
 ] as const;
 
 /* ─── Component ──────────────────────────────────────────────────────────── */

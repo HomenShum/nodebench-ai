@@ -286,6 +286,18 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
     const { entityTemporalTools } = await import("./tools/entityTemporalTools.js");
     return entityTemporalTools;
   },
+  site_map: async () => {
+    const { sitemapTools } = await import("./tools/sitemapTools.js");
+    return sitemapTools;
+  },
+  savings: async () => {
+    const { savingsTools } = await import("./tools/savingsTools.js");
+    return savingsTools;
+  },
+  delta: async () => {
+    const { createDeltaTools } = await import("./tools/deltaTools.js");
+    return createDeltaTools();
+  },
 };
 
 // ── All known domain keys (available before any load) ──────────────────────

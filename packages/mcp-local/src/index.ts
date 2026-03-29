@@ -83,7 +83,7 @@ const PRESETS: Record<string, string[]> = {
   // Core AI Flywheel — everything from the old default
   core:         CORE_TOOLSETS,
   // Themed presets — bridge between starter (19 tools) and full (338 tools)
-  web_dev:      [...CORE_TOOLSETS, "ui_capture", "vision", "web", "seo", "git_workflow", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "qa_orchestration", "visual_qa", "design_governance", "web_scraping"],
+  web_dev:      [...CORE_TOOLSETS, "ui_capture", "vision", "web", "seo", "git_workflow", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "qa_orchestration", "visual_qa", "design_governance", "web_scraping", "site_map", "savings"],
   research:     [...CORE_TOOLSETS, "web", "llm", "rss", "email", "docs", "research_optimizer", "web_scraping", "temporal_intelligence", "deep_sim"],
   data:         [...CORE_TOOLSETS, "local_file", "llm", "web", "research_optimizer", "web_scraping", "temporal_intelligence"],
   devops:       [...CORE_TOOLSETS, "git_workflow", "session_memory", "benchmark", "pattern"],
@@ -93,7 +93,7 @@ const PRESETS: Record<string, string[]> = {
   content:      [...CORE_TOOLSETS, "llm", "critter", "email", "rss", "platform", "architect", "local_dashboard", "engine_context", "thompson_protocol"],
   // ── Persona presets (all under 50 tools for IDE compatibility) ──
   // Founder: decision intelligence + company tracking + session memory + local dashboard (~40 tools)
-  founder:      ["deep_sim", "founder", "learning", "local_dashboard", "autonomous_delivery", "sync_bridge", "shared_context"],
+  founder:      ["deep_sim", "founder", "learning", "local_dashboard", "autonomous_delivery", "sync_bridge", "shared_context", "site_map", "savings"],
   // Banker/analyst: decision intelligence + company profiling + web research + recon (~39 tools)
   banker:       ["deep_sim", "founder", "web", "recon", "autonomous_delivery", "sync_bridge", "shared_context"],
   // Operator: decision intelligence + company tracking + causal memory + action tracing (~40 tools)
@@ -102,6 +102,11 @@ const PRESETS: Record<string, string[]> = {
   researcher:   ["deep_sim", "web", "recon", "learning", "autonomous_delivery", "sync_bridge", "shared_context"],
   // Cursor IDE has a hard 40-tool limit across ALL MCP servers.
   cursor:       ["deep_sim", "quality_gate", "learning", "session_memory", "web", "toon"],
+  // Hackathon: founder + web intelligence + entity enrichment + shared context (~55 tools)
+  // Pairs with retention.sh for QA. Install: claude mcp add nodebench -- npx -y nodebench-mcp --preset=hackathon
+  hackathon:    ["deep_sim", "founder", "learning", "web", "entity_enrichment", "autonomous_delivery", "sync_bridge", "shared_context", "recon", "local_dashboard", "delta"],
+  // Delta: full operating-intelligence preset — all delta.* packet tools + watchlist + entity intel
+  delta:        ["deep_sim", "founder", "learning", "web", "entity_enrichment", "autonomous_delivery", "sync_bridge", "shared_context", "recon", "local_dashboard", "quality_gate", "execution_trace", "delta"],
   full: ALL_DOMAIN_KEYS,
 };
 
@@ -122,13 +127,15 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
   operator:    "Operator (~40 tools) — decision intelligence, company tracking, causal memory, action tracing",
   researcher:  "Researcher (~32 tools) — decision intelligence, web search, recon, session memory",
   cursor:      "Cursor IDE (28 tools) — decision intelligence, quality gates, session memory, web, TOON encoding. Leaves 12 slots for other MCP servers.",
+  hackathon:   "Hackathon (~55 tools) — decision intelligence + entity intel + web research + team coordination. Pairs with retention.sh for QA.",
+  delta:       "Delta (~65 tools) — full operating-intelligence preset. Entity intel, decision memos, watchlists, agent handoff, execution traces.",
   full:        "Everything — all 338 tools for maximum coverage",
 };
 
    async function parseToolsets(): Promise<McpTool[]> {
     if (cliArgs.includes("--help")) {
       const lines = [
-        "nodebench-mcp v2.30.0 — Development Methodology MCP Server",
+        "nodebench-mcp v2.70.0 — Development Methodology MCP Server",
         "",
         "Usage: nodebench-mcp [options]",
         "",
@@ -612,6 +619,42 @@ if (healthFlag) {
     lines.push(`  ${reachable ? ok : `${Y}--${X}`}  ${name.padEnd(22)} :${port}${reachable ? "" : " (not running)"}`);
   }
 
+  // 9. Version check (npm registry)
+  lines.push("");
+  lines.push(`${B}Version${X}`);
+  const { createRequire: cr2 } = await import("node:module");
+  const _req2 = cr2(import.meta.url);
+  let currentVersion = "2.70.0";
+  try {
+    const pkgPath = _req2.resolve("../package.json");
+    const pkgJson = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+    currentVersion = pkgJson.version || currentVersion;
+  } catch { /* fallback to hardcoded */ }
+
+  let latestVersion = "";
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch("https://registry.npmjs.org/nodebench-mcp/latest", {
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const data = await res.json() as Record<string, unknown>;
+      latestVersion = (data.version as string) || "";
+    }
+  } catch { /* offline or timeout */ }
+
+  if (latestVersion && latestVersion !== currentVersion) {
+    lines.push(`  ${Y}UPDATE${X}  ${currentVersion} → ${G}${latestVersion}${X}`);
+    lines.push(`          Run: ${C}npm install -g nodebench-mcp@latest${X}`);
+  } else if (latestVersion) {
+    lines.push(`  ${ok}  v${currentVersion} (up to date)`);
+  } else {
+    lines.push(`  ${ok}  v${currentVersion} (registry check skipped — offline?)`);
+  }
+
   // Summary
   lines.push("");
   const allEnvSet = envChecks.filter(([k]) => !!process.env[k]).length;
@@ -980,9 +1023,52 @@ if (syncConfigsFlag) {
     lines.push(`  env:     ${Y}(none set)${X}`);
   }
 
+  // ── Copy rules to ~/.claude/rules/ ──────────────────────────────────
+  lines.push("");
+  lines.push(`${B}Rules${X}`);
+  const claudeRulesDir = path.join(os.homedir(), ".claude", "rules");
+  if (!fs.existsSync(claudeRulesDir)) {
+    fs.mkdirSync(claudeRulesDir, { recursive: true });
+  }
+
+  // Find rules directory relative to this file
+  const thisDir = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1"));
+  const rulesSearchPaths = [
+    path.resolve(thisDir, "..", "rules"),         // dist/../rules (installed package)
+    path.resolve(thisDir, "..", "..", "rules"),    // src/../../rules (dev mode)
+  ];
+
+  let rulesDir = "";
+  for (const p of rulesSearchPaths) {
+    if (fs.existsSync(p)) { rulesDir = p; break; }
+  }
+
+  let rulesInstalled = 0;
+  if (rulesDir) {
+    const ruleFiles = fs.readdirSync(rulesDir).filter((f: string) => f.startsWith("nodebench-") && f.endsWith(".md"));
+    for (const file of ruleFiles) {
+      const src = path.join(rulesDir, file);
+      const dest = path.join(claudeRulesDir, file);
+      // Don't overwrite if user's version is newer
+      if (fs.existsSync(dest)) {
+        const srcStat = fs.statSync(src);
+        const destStat = fs.statSync(dest);
+        if (destStat.mtimeMs > srcStat.mtimeMs) {
+          lines.push(`  ${Y}SKIP${X} ${file} (user version is newer)`);
+          continue;
+        }
+      }
+      fs.copyFileSync(src, dest);
+      rulesInstalled++;
+    }
+    lines.push(`  ${G}OK${X}   Installed ${rulesInstalled} rules to ${claudeRulesDir}`);
+  } else {
+    lines.push(`  ${Y}WARN${X} Rules directory not found — rules not copied`);
+  }
+
   lines.push("");
   const successCount = results.filter(r => r.action !== "failed").length;
-  lines.push(`${B}Written to ${successCount}/${results.length} locations${X}`);
+  lines.push(`${B}Written to ${successCount}/${results.length} IDE configs | ${rulesInstalled} rules installed${X}`);
 
   console.log(lines.join("\n"));
   process.exit(0);
@@ -1035,6 +1121,64 @@ if (cliArgs.length === 0 || (subCmd === undefined && !cliArgs.includes("--stdio"
     "",
   ];
   console.log(welcome.join("\n"));
+  process.exit(0);
+}
+
+// ── Delta subcommands (run-and-exit, banking-convention verbs) ────────
+const DELTA_VERBS = ["brief", "diligence", "handoff", "watch", "memo", "scan", "compare", "retain", "packets"] as const;
+if (subCmd && (DELTA_VERBS as readonly string[]).includes(subCmd)) {
+  const { createDeltaTools } = await import("./tools/deltaTools.js");
+  const deltaTools = createDeltaTools();
+  const toolName = subCmd === "packets" ? "delta_packets"
+    : subCmd === "watch" ? "delta_watch"
+    : `delta_${subCmd}`;
+  const tool = deltaTools.find((t) => t.name === toolName);
+  if (!tool) {
+    console.error(`Unknown delta command: ${subCmd}`);
+    process.exit(1);
+  }
+
+  // Parse remaining args as JSON or key=value pairs
+  const argStr = cliArgs.filter((a) => a !== subCmd && !a.startsWith("--")).join(" ");
+  let toolArgs: Record<string, unknown> = {};
+  if (argStr) {
+    try {
+      toolArgs = JSON.parse(argStr);
+    } catch {
+      // Try key=value parsing: e.g., entity=Anthropic depth=deep
+      for (const part of argStr.split(/\s+/)) {
+        const eqIdx = part.indexOf("=");
+        if (eqIdx > 0) {
+          toolArgs[part.slice(0, eqIdx)] = part.slice(eqIdx + 1);
+        } else {
+          // Positional: first positional is the primary arg
+          if (subCmd === "diligence" || subCmd === "compare") toolArgs.entity = toolArgs.entity || part;
+          else if (subCmd === "watch") toolArgs.entity = toolArgs.entity || part;
+          else if (subCmd === "memo") toolArgs.decision = toolArgs.decision || part;
+          else if (subCmd === "handoff") toolArgs.task = toolArgs.task || part;
+          else if (subCmd === "retain") toolArgs.content = toolArgs.content || part;
+        }
+      }
+      // Default action for watch
+      if (subCmd === "watch" && !toolArgs.action) toolArgs.action = toolArgs.entity ? "add" : "list";
+    }
+  } else if (subCmd === "watch") {
+    toolArgs.action = "list";
+  }
+
+  try {
+    const result = await tool.handler(toolArgs);
+    const text = result.content?.[0]?.text || JSON.stringify(result);
+    try {
+      const parsed = JSON.parse(text);
+      console.log(JSON.stringify(parsed, null, 2));
+    } catch {
+      console.log(text);
+    }
+  } catch (err) {
+    console.error(`Error running delta_${subCmd}:`, err);
+    process.exit(1);
+  }
   process.exit(0);
 }
 

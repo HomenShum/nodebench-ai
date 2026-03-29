@@ -37,6 +37,9 @@ import { mountNemoClaw } from "./nemoclaw/index.js";
 import { createSearchRouter } from "./routes/search.js";
 import { createToolGraphRouter } from "./routes/toolGraph.js";
 import { createSharedContextRouter } from "./routes/sharedContext.js";
+import { createShareRouter } from "./routes/share.js";
+import { createWatchlistRouter } from "./routes/watchlist.js";
+import { createRetentionBridgeRouter } from "./routes/retentionBridge.js";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────
 
@@ -270,6 +273,14 @@ async function main(): Promise<void> {
   app.use("/shared-context", createSharedContextRouter());
   app.use("/api/shared-context", createSharedContextRouter());
   app.use(createToolGraphRouter());
+
+  // ── Delta routes (share, watchlist, retention bridge) ──────────────
+  app.use("/share", createShareRouter());
+  app.use("/api/share", createShareRouter());
+  app.use("/watchlist", createWatchlistRouter());
+  app.use("/api/watchlist", createWatchlistRouter());
+  app.use("/retention", createRetentionBridgeRouter());
+  app.use("/api/retention", createRetentionBridgeRouter());
 
   // ── Create HTTP server & wire WebSocket upgrade ─────────────────────
 
