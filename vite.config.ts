@@ -132,6 +132,10 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api\/sync-bridge/, "/api/sync-bridge"),
         },
+        "/voice": {
+          target: "http://localhost:3100",
+          changeOrigin: true,
+        },
       },
     },
     plugins: [
@@ -372,6 +376,20 @@ window.addEventListener('message', async (message) => {
           // is preserved: agent-fast-panel -> (dynamic) -> katex-lazy -> (static) -> katex-vendor.
           if (id.includes('lazyRehypeKatex')) {
             return 'katex-lazy';
+          }
+          // Convex generated API — MUST be in its own chunk.
+          // convex/_generated/api.ts creates 513 circular dependency chains
+          // with convex/ action/tool files. When Rollup inlines it into the
+          // main bundle, ESM execution order causes TDZ crash in headless
+          // Chrome: "Cannot access 'o' before initialization".
+          // Isolating it breaks the circular init chain.
+          if (id.includes('convex/_generated/')) {
+            return 'convex-api';
+          }
+          // Convex domain files (actions, tools, operations) — keep together
+          // to avoid splitting circular deps across chunks.
+          if (id.match(/convex\/(actions|domains|tools|crons|workflows)\//)) {
+            return 'convex-domains';
           }
           // Vendor chunks - only split large/important libraries
           if (id.includes('/node_modules/')) {
