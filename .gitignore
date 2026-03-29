@@ -95,6 +95,13 @@ public/dogfood/scribe/userdata/
 .overstory/checkpoints/
 .overstory/agents/
 
+# Dogfood screenshots (generated, 25MB+ — regenerate with npm run dogfood:publish)
+public/dogfood/screenshots/
+public/dogfood/videos/
+public/dogfood/scribe/
+public/dogfood/frames/
+.tmp/dogfood-gemini-qa/
+
 # Secrets
 .mcpregistry_github_token
 packages/mcp-local/.mcpregistry_github_token

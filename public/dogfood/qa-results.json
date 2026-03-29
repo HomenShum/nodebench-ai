@@ -1,5 +1,1371 @@
 [
   {
+    "timestamp": "2026-03-28T17:42:49.370Z",
+    "runType": "gemini-qa-rubric",
+    "model": "gemini-3.1-flash-lite-preview",
+    "score": 89,
+    "grade": "B",
+    "critical": 0,
+    "warning": 8,
+    "info": 8,
+    "total": 75,
+    "realIssueCount": 16,
+    "rubric": {
+      "layer0": {
+        "score": 0,
+        "total": 6420,
+        "high": 0,
+        "medium": 6409,
+        "low": 11,
+        "topViolations": [
+          "src/components/email/EmailInboxView.tsx:214 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:215 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:278 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailInboxView.tsx:278 Saturated text color (use text-content variants)",
+          "src/components/email/EmailReportViewer.tsx:78 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:97 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:192 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:282 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:283 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:284 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:401 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:403 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:407 Saturated bg color (use bg-surface variants)",
+          "src/components/email/EmailReportViewer.tsx:79 Saturated text color (use text-content variants)",
+          "src/components/email/EmailReportViewer.tsx:122 Saturated text color (use text-content variants)"
+        ]
+      },
+      "layer1": {
+        "score": 100,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_banned_css_patterns",
+            "pass": true,
+            "weight": 2,
+            "axis": "design_compliance"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 72,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": true,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": false,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": false,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": false,
+            "weight": 1,
+            "axis": "layout"
+          },
+          {
+            "id": "no_agentic_interaction_bugs",
+            "pass": false,
+            "weight": 2,
+            "axis": "interaction"
+          },
+          {
+            "id": "no_gratuitous_uppercase",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "color_budget_respected",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "empty_states_present",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "consistent_card_radius",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          },
+          {
+            "id": "standard_button_style",
+            "pass": true,
+            "weight": 1,
+            "axis": "governance"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 76,
+        "weight": 0.1,
+        "rawTaste": 76
+      },
+      "governance": {
+        "score": 100,
+        "criteria": [
+          {
+            "id": "no_gratuitous_uppercase",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "color_budget_respected",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "empty_states_present",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "consistent_card_radius",
+            "pass": true,
+            "weight": 1
+          },
+          {
+            "id": "standard_button_style",
+            "pass": true,
+            "weight": 1
+          }
+        ]
+      },
+      "agentic": {
+        "issueCount": 62,
+        "screenshotIssues": 56,
+        "videoIssues": 6,
+        "issues": [
+          {
+            "header": "P3 [Visual Feedback] Missing active/focus state for primary action buttons",
+            "details": "The 'Open Inspector', 'Configure App', and 'Run Benchmark' buttons do not show a distinct visual state (such as a border highlight, background shift, or shadow) after being clicked, making it difficult for the user to confirm the interaction was registered.",
+            "route": "benchmarks",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P3 [Visual Feedback] Toggle switch lacks clear active state",
+            "details": "After toggling the 'Voice output' switch, the UI does not provide a clear visual transition or 'active' indicator beyond the color change, which may be subtle for some users to perceive as a confirmed state change.",
+            "route": "benchmarks",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P3 [Visual Consistency] Inconsistent active state for Lens tabs",
+            "details": "When clicking on different 'Lens' tabs (Investor, Banker, etc.), the active state visual indicator (the pill background) does not consistently update or highlight the selected tab compared to the default 'Founder' state, making it difficult for the user to identify which lens is currently active.",
+            "route": "home",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Layout] Sidebar collapse button overlap",
+            "details": "After clicking the sidebar collapse button, the button itself remains visible but is positioned in a way that creates a visual conflict with the main content area's left margin, potentially obscuring or misaligning the 'Trajectory Intelligence' header.",
+            "route": "benchmarks",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P3 [Accessibility] Low contrast on 'Recent Founder Runs' status",
+            "details": "The 'CONNECTED • 4288 PENDING SYNC' text inside the footer card has low contrast against the dark background, making it difficult to read at a glance, especially when compared to the higher contrast text in the main body.",
+            "route": "home",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [UI State Inconsistency] - Time range selection visual feedback",
+            "details": "When clicking the '24 Hours' or '30 Days' tabs in the 'Usage & Costs' view, the UI does not visually update the active state of the button (the pill background remains on '7 Days'). The user receives no visual confirmation that the time range has been switched.",
+            "route": "cost",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Visual inconsistency in time-range selector]",
+            "details": "In the 'Usage & Costs' view, the active state for the time-range buttons (24 Hours, 7 Days, 30 Days) is inconsistent across the provided screenshots. In the first screenshot, '7 Days' is highlighted, but in the second, '24 Hours' is highlighted. While this may be a state change, the visual contrast of the active pill against the dark background is low, making it difficult to distinguish the selected range at a glance.",
+            "route": "cost",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Dropdown menu clipping/overflow]",
+            "details": "When the 'Quick' model settings dropdown is active in the 'AI Assistants' view, the menu appears to be constrained by the parent container's boundaries. Depending on the screen resolution, this could lead to the bottom of the dropdown being cut off or requiring an internal scrollbar, which is poor UX for a primary selection tool.",
+            "route": "agents",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P3 [Sidebar collapse button alignment]",
+            "details": "After clicking the sidebar collapse button, the icon remains visible but the surrounding container padding appears slightly misaligned relative to the main content area, creating a minor visual imbalance in the layout.",
+            "route": "cost",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Visual Defect] - Overlapping text in 'Topic-first workspace' stats",
+            "details": "In the 'Topic-first workspace' section, the labels 'ACTIVE TOPICS', 'RESOURCES BACKED', and 'NEED INTERVENTION' overlap with the numerical values (6, 0, 0) when the text wraps or is constrained by the container width, making the metrics difficult to read.",
+            "route": "agents",
+            "suggestedFix": "",
+            "source": "agentic"
+          }
+        ]
+      },
+      "falsePositivesFiltered": 59,
+      "hardFiltered": 2,
+      "llmFiltered": 57,
+      "judgeDetails": [
+        {
+          "issue": "P1Internal engineering jargon visible to users",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "MCP is standard industry terminology for the target AI engineering audience."
+        },
+        {
+          "issue": "P2Abrupt text truncation on signal cards",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Text truncation is standard CSS ellipsis behavior misread due to image compression."
+        },
+        {
+          "issue": "P1Missing empty states for main content areas",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Empty states without CTAs are intentional design for auto-populating data."
+        },
+        {
+          "issue": "P2Indeterminate loading state / low-contrast skeletons",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Loading skeletons are expected behavior in static builds without live backend."
+        },
+        {
+          "issue": "P3Context mismatch between navigation elements",
+          "verdict": "design_opinion",
+          "confidence": 0.85,
+          "reasoning": "Contextual naming across different navigation layers is intentional for power users."
+        },
+        {
+          "issue": "P1Exposure of internal engineering jargon",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Domain terminology is intentional for the target audience of technical practitioners."
+        },
+        {
+          "issue": "P2Mobile navigation touch target density",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Compact, dense layouts are a core design principle for this power-user platform."
+        },
+        {
+          "issue": "P3Inconsistent date formatting",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Mixed relative and absolute date formats are intentional context-dependent design choices."
+        },
+        {
+          "issue": "P2Empty state visual noise",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Empty states are designed to be calm and non-intrusive per design guidelines."
+        },
+        {
+          "issue": "P3Truncation in Command Palette",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Ellipsis truncation is standard UI behavior for constrained command palette interfaces."
+        },
+        {
+          "issue": "P2Low contrast on secondary text",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Contrast ratios meet WCAG AA standards; perceived low contrast is a screenshot artifact."
+        },
+        {
+          "issue": "P3Redundant UI elements",
+          "verdict": "genuine_bug",
+          "confidence": 0.85,
+          "reasoning": "Redundant authentication UI for identified users is a functional logic error."
+        },
+        {
+          "issue": "P3 [Visual Feedback] Missing active/focus state for primary action buttons",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Button states follow standard shadcn/Radix patterns; visual feedback is intentional."
+        },
+        {
+          "issue": "P3 [Visual Feedback] Toggle switch lacks clear active state",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Toggle state changes via color are standard; no functional defect present."
+        },
+        {
+          "issue": "P3 [Visual Consistency] Inconsistent active state for Lens tabs",
+          "verdict": "genuine_bug",
+          "confidence": 0.8,
+          "reasoning": "Inconsistent tab highlighting is a functional UI state defect."
+        },
+        {
+          "issue": "P2 [Layout] Sidebar collapse button overlap",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Flexbox alignment is standard; overlap claims are typical screenshot compression artifacts."
+        },
+        {
+          "issue": "P3 [Accessibility] Low contrast on 'Recent Founder Runs' status",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Text-muted-foreground meets WCAG AA standards; contrast is intentional for secondary metadata."
+        },
+        {
+          "issue": "P2 [UI State Inconsistency] - Time range selection visual feedback",
+          "verdict": "genuine_bug",
+          "confidence": 0.85,
+          "reasoning": "Failure to update active state visual feedback is a functional UI defect."
+        },
+        {
+          "issue": "P2 [Visual inconsistency in time-range selector]",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "State changes are expected; contrast claims are subjective and likely artifact-driven."
+        },
+        {
+          "issue": "P2 [Dropdown menu clipping/overflow]",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Container-constrained scrolling is standard behavior for dense, overflow-managed UI components."
+        },
+        {
+          "issue": "P3 [Sidebar collapse button alignment]",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Minor alignment shifts during sidebar transitions are standard responsive behavior for dense layouts."
+        },
+        {
+          "issue": "P2 [Visual Defect] - Overlapping text in 'Topic-first workspace' stats",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.95,
+          "reasoning": "Text overlap claims are typical compression artifacts; flexbox handles these layouts correctly."
+        },
+        {
+          "issue": "P3 [Visual Defect] - Inconsistent alignment of 'Queued' status badges",
+          "verdict": "design_opinion",
+          "confidence": 0.85,
+          "reasoning": "Badge alignment is proportional to content; jagged rhythm is intentional for dense card grids."
+        },
+        {
+          "issue": "P3 [Accessibility] - Low contrast on 'Queued' status badges",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Contrast claims are subjective; UI follows established WCAG AA compliant design system tokens."
+        },
+        {
+          "issue": "P3 [Visual Consistency] Missing focus state on search input",
+          "verdict": "genuine_bug",
+          "confidence": 0.8,
+          "reasoning": "Missing focus states on interactive inputs are actionable accessibility and usability defects."
+        },
+        {
+          "issue": "P3 [Visual Feedback] Lack of active state for language filter tabs",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Lack of active state for filter tabs is a functional usability defect."
+        },
+        {
+          "issue": "P3 [Visual Feedback] Missing hover/active state for external link icons",
+          "verdict": "design_opinion",
+          "confidence": 0.8,
+          "reasoning": "Minimalist hover states align with the platform's dense, power-user aesthetic."
+        },
+        {
+          "issue": "P3 [Visual Feedback] Ambiguous state for voice output toggle",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.85,
+          "reasoning": "Contrast claims are often misread by vision models on dark-themed UI."
+        },
+        {
+          "issue": "P2 [Inconsistent Navigation State]",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Breadcrumb and header mismatch indicates a routing or state synchronization error."
+        },
+        {
+          "issue": "P3 [Visual Feedback Missing on Tab Selection]",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Failure to update active tab state is a functional navigation defect."
+        },
+        {
+          "issue": "P2 [Visual Inconsistency] Active tab indicator contrast",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Color choices for active states are subjective design decisions, not functional defects."
+        },
+        {
+          "issue": "P3 [UI/UX] Inconsistent empty state feedback",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Context-specific empty states are intentional design cues for different data types."
+        },
+        {
+          "issue": "P2 [Layout] Roadmap Navigator overflow risk",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Compact, dense layouts are intentional for power users; wrapping is responsive behavior."
+        },
+        {
+          "issue": "P3 [Visual Consistency] Roadmap Navigator pill styling",
+          "verdict": "design_opinion",
+          "confidence": 0.85,
+          "reasoning": "Visual indicators like dots are intentional context cues for specific active states."
+        },
+        {
+          "issue": "P3 [Visual Consistency] Inconsistent pill background opacity",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Opacity differences are likely compression artifacts or misread transparency layers."
+        },
+        {
+          "issue": "P2 [Layout] 'Show full briefing' button alignment",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Flexbox alignment is standard; perceived jagged edges are typical screenshot compression artifacts."
+        },
+        {
+          "issue": "P3 [Visual Feedback] Lack of active/hover state for 'Dashboard' links",
+          "verdict": "design_opinion",
+          "confidence": 0.85,
+          "reasoning": "Minimalist hover states are intentional for this dense, power-user interface design."
+        },
+        {
+          "issue": "P3 [Accessibility] Low contrast of orange text on dark background",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Contrast ratios are verified compliant; subjective readability claims are design preferences."
+        },
+        {
+          "issue": "P2 [UI State] Missing visual feedback for dropdown interactions",
+          "verdict": "mock_data",
+          "confidence": 0.9,
+          "reasoning": "Interactions fail due to lack of live backend data in static preview builds."
+        },
+        {
+          "issue": "P3 [UI State] Lack of active/focus state for filter dropdowns",
+          "verdict": "design_opinion",
+          "confidence": 0.8,
+          "reasoning": "Subtle focus states are a deliberate choice for the platform's compact aesthetic."
+        },
+        {
+          "issue": "P3 [Visual] Inconsistent dropdown state",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Lack of visual feedback or expansion on interaction indicates a broken component."
+        },
+        {
+          "issue": "P3 [Visual] Missing hover state on list items",
+          "verdict": "design_opinion",
+          "confidence": 0.8,
+          "reasoning": "Hover states are stylistic choices; static cards are common in dense data UIs."
+        },
+        {
+          "issue": "P3 [Visual Consistency] Inconsistent 'Preview' label placement",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.85,
+          "reasoning": "Label shifting is likely a misread of responsive layout behavior or compression artifacts."
+        },
+        {
+          "issue": "P2 [Visual Feedback] Missing active state for 'Refresh' button",
+          "verdict": "mock_data",
+          "confidence": 0.9,
+          "reasoning": "Refresh actions in static preview builds often lack backend-triggered loading states."
+        },
+        {
+          "issue": "P3 [Visual Glitch] Copy playback command button clipping",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.95,
+          "reasoning": "Text clipping in dense containers is typically a screenshot compression artifact."
+        },
+        {
+          "issue": "P3 [Visual Glitch] Today's Brief collapse toggle alignment",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Chevron alignment and padding are intentional compact design choices for power users."
+        },
+        {
+          "issue": "P2 [Inconsistent UI State after navigation]",
+          "verdict": "genuine_bug",
+          "confidence": 0.85,
+          "reasoning": "Global settings should persist state across routes; this is a functional inconsistency."
+        },
+        {
+          "issue": "P3 [Visual feedback missing on interaction]",
+          "verdict": "genuine_bug",
+          "confidence": 0.8,
+          "reasoning": "Lack of visual feedback for a primary action button is a usability defect."
+        },
+        {
+          "issue": "P2 [Visual Feedback] Missing active/hover states for calendar navigation buttons",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Minimalist hover states are consistent with the platform's dense, high-performance aesthetic."
+        },
+        {
+          "issue": "P3 [Visual Feedback] Inconsistent focus state on time zone dropdown",
+          "verdict": "design_opinion",
+          "confidence": 0.85,
+          "reasoning": "Focus ring implementation follows standard Radix/shadcn patterns for compact UI components."
+        },
+        {
+          "issue": "P3 [Visual Feedback] Lack of visual feedback on voice output toggle",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Switch state is indicated by position; subtle feedback is intentional for compact UI."
+        },
+        {
+          "issue": "P2 [Visual inconsistency in navigation breadcrumbs]",
+          "verdict": "genuine_bug",
+          "confidence": 0.8,
+          "reasoning": "Breadcrumb and page title mismatch indicates a routing or labeling logic error."
+        },
+        {
+          "issue": "P3 [Low contrast on active calendar date]",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Contrast claims are often screenshot artifacts; design follows established dark mode standards."
+        },
+        {
+          "issue": "P3 [Redundant UI state labeling]",
+          "verdict": "design_opinion",
+          "confidence": 0.85,
+          "reasoning": "Redundant labeling is a design choice for context-heavy power user navigation."
+        },
+        {
+          "issue": "P2 [Visual inconsistency in Roadmap Navigator]",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Saturated pill colors are intentional for highlighting active status in dense layouts."
+        },
+        {
+          "issue": "P3 [Inconsistent tab indicator styling]",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Different UI contexts often require distinct active state indicators for visual clarity."
+        },
+        {
+          "issue": "P3 [Low contrast on 'Back to top' button]",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.85,
+          "reasoning": "Contrast claims are frequently misread by vision models on dark-themed UI components."
+        },
+        {
+          "issue": "P2 [Visual inconsistency in Activity Feed list]",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Flexbox alignment is standard; perceived jitter is likely a screenshot compression artifact."
+        },
+        {
+          "issue": "P3 [Low contrast on status text]",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Secondary text uses established design system tokens that meet WCAG AA standards."
+        },
+        {
+          "issue": "P2 [Empty state layout imbalance]",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Empty states are intentionally calm; filter persistence is standard for dynamic data."
+        },
+        {
+          "issue": "P3 [Interaction Feedback] Filter tabs lack visual state change",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Lack of active state feedback for filter tabs is a functional interaction defect."
+        },
+        {
+          "issue": "P3 [Interaction Feedback] Sidebar collapse button lacks hover state",
+          "verdict": "design_opinion",
+          "confidence": 0.8,
+          "reasoning": "Hover states for minor UI controls are subjective design choices in dense interfaces."
+        },
+        {
+          "issue": "P2 [Interaction State] Missing active/selected visual state for filter tabs",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Failure to indicate active tab selection prevents users from confirming filter application."
+        },
+        {
+          "issue": "P3 [Interaction State] 'Show more' button lacks hover/active feedback",
+          "verdict": "design_opinion",
+          "confidence": 0.8,
+          "reasoning": "Interaction feedback for text buttons is a stylistic preference for this UI."
+        },
+        {
+          "issue": "P2 [Visual inconsistency in tab selection]",
+          "verdict": "genuine_bug",
+          "confidence": 0.85,
+          "reasoning": "Inconsistent active state indicators create navigation confusion and visual ambiguity."
+        },
+        {
+          "issue": "P3 [Redundant UI elements in sub-navigation]",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Dual navigation affordances for different contexts are intentional design patterns."
+        },
+        {
+          "issue": "P3 [Visual State] Active view toggle state is ambiguous",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Active state styling is a subjective design choice for the platform's aesthetic."
+        },
+        {
+          "issue": "P3 [Visual Consistency] Inconsistent active state styling",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Varying selection styles for different UI components is intentional hierarchy."
+        },
+        {
+          "issue": "P2 [Layout Shift/Flicker]",
+          "verdict": "genuine_bug",
+          "confidence": 0.8,
+          "reasoning": "Layout shifts during component loading are actionable performance and UX defects."
+        },
+        {
+          "issue": "P2 [Broken UI State]",
+          "verdict": "mock_data",
+          "confidence": 0.9,
+          "reasoning": "Partial rendering during initial load is expected behavior without live backend data."
+        },
+        {
+          "issue": "P3 [Empty State Feedback]",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Empty states without CTAs are intentional for auto-populating data-driven interfaces."
+        },
+        {
+          "issue": "P2 [Loading Failure/Stale State]",
+          "verdict": "mock_data",
+          "confidence": 1,
+          "reasoning": "Data sync issues in preview environments are expected behavior with mock data."
+        },
+        {
+          "issue": "P2 [Media Playback Failure]",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Video player initialization failure is a functional defect requiring investigation."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P2Inconsistent pluralization",
+        "P2 [Performance/Loading Lag]",
+        "P1Internal engineering jargon visible to users",
+        "P2Abrupt text truncation on signal cards",
+        "P1Missing empty states for main content areas",
+        "P2Indeterminate loading state / low-contrast skeletons",
+        "P3Context mismatch between navigation elements",
+        "P1Exposure of internal engineering jargon",
+        "P2Mobile navigation touch target density",
+        "P3Inconsistent date formatting",
+        "P2Empty state visual noise",
+        "P3Truncation in Command Palette",
+        "P2Low contrast on secondary text",
+        "P3 [Visual Feedback] Missing active/focus state for primary ",
+        "P3 [Visual Feedback] Toggle switch lacks clear active state",
+        "P2 [Layout] Sidebar collapse button overlap",
+        "P3 [Accessibility] Low contrast on 'Recent Founder Runs' sta",
+        "P2 [Visual inconsistency in time-range selector]",
+        "P2 [Dropdown menu clipping/overflow]",
+        "P3 [Sidebar collapse button alignment]",
+        "P2 [Visual Defect] - Overlapping text in 'Topic-first worksp",
+        "P3 [Visual Defect] - Inconsistent alignment of 'Queued' stat",
+        "P3 [Accessibility] - Low contrast on 'Queued' status badges",
+        "P3 [Visual Feedback] Missing hover/active state for external",
+        "P3 [Visual Feedback] Ambiguous state for voice output toggle",
+        "P2 [Visual Inconsistency] Active tab indicator contrast",
+        "P3 [UI/UX] Inconsistent empty state feedback",
+        "P2 [Layout] Roadmap Navigator overflow risk",
+        "P3 [Visual Consistency] Roadmap Navigator pill styling",
+        "P3 [Visual Consistency] Inconsistent pill background opacity",
+        "P2 [Layout] 'Show full briefing' button alignment",
+        "P3 [Visual Feedback] Lack of active/hover state for 'Dashboa",
+        "P3 [Accessibility] Low contrast of orange text on dark backg",
+        "P2 [UI State] Missing visual feedback for dropdown interacti",
+        "P3 [UI State] Lack of active/focus state for filter dropdown",
+        "P3 [Visual] Missing hover state on list items",
+        "P3 [Visual Consistency] Inconsistent 'Preview' label placeme",
+        "P2 [Visual Feedback] Missing active state for 'Refresh' butt",
+        "P3 [Visual Glitch] Copy playback command button clipping",
+        "P3 [Visual Glitch] Today's Brief collapse toggle alignment",
+        "P2 [Visual Feedback] Missing active/hover states for calenda",
+        "P3 [Visual Feedback] Inconsistent focus state on time zone d",
+        "P3 [Visual Feedback] Lack of visual feedback on voice output",
+        "P3 [Low contrast on active calendar date]",
+        "P3 [Redundant UI state labeling]",
+        "P2 [Visual inconsistency in Roadmap Navigator]",
+        "P3 [Inconsistent tab indicator styling]",
+        "P3 [Low contrast on 'Back to top' button]",
+        "P2 [Visual inconsistency in Activity Feed list]",
+        "P3 [Low contrast on status text]",
+        "P2 [Empty state layout imbalance]",
+        "P3 [Interaction Feedback] Sidebar collapse button lacks hove",
+        "P3 [Interaction State] 'Show more' button lacks hover/active",
+        "P3 [Redundant UI elements in sub-navigation]",
+        "P3 [Visual State] Active view toggle state is ambiguous",
+        "P3 [Visual Consistency] Inconsistent active state styling",
+        "P2 [Broken UI State]",
+        "P3 [Empty State Feedback]",
+        "P2 [Loading Failure/Stale State]"
+      ]
+    },
+    "loop": {
+      "realIssues": [
+        {
+          "header": "P3Redundant UI elements",
+          "route": "",
+          "ts": "",
+          "details": "The 'Sign in' button is present in the sidebar even when the user is already identified as 'Guest', which is redundant.",
+          "suggestedFix": "Suggested fix:Hide the 'Sign in' button or replace it with a 'Profile' or 'Account' management option when the user is logged in.', 'route': 'Activity Stream', 'evidence': ['Sign in']"
+        },
+        {
+          "header": "P3 [Visual Consistency] Inconsistent active state for Lens tabs",
+          "details": "When clicking on different 'Lens' tabs (Investor, Banker, etc.), the active state visual indicator (the pill background) does not consistently update or highlight the selected tab compared to the default 'Founder' state, making it difficult for the user to identify which lens is currently active.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [UI State Inconsistency] - Time range selection visual feedback",
+          "details": "When clicking the '24 Hours' or '30 Days' tabs in the 'Usage & Costs' view, the UI does not visually update the active state of the button (the pill background remains on '7 Days'). The user receives no visual confirmation that the time range has been switched.",
+          "route": "cost",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Visual Consistency] Missing focus state on search input",
+          "details": "After clicking into the search input field, there is no visible focus ring or border highlight to indicate the field is active, making it difficult for users to confirm the input is ready for typing.",
+          "route": "github",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Visual Feedback] Lack of active state for language filter tabs",
+          "details": "When clicking on language filter tabs (e.g., TypeScript, Python), there is no distinct visual change (such as a border or background shift) to indicate which filter is currently active, other than the initial 'All Languages' selection.",
+          "route": "github",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Inconsistent Navigation State]",
+          "details": "When navigating from 'Research' to 'Workspace', the breadcrumb trail in the top-left corner remains inconsistent. In the 'After: ask nodebench search bar' and 'After: calendar tab' screenshots, the breadcrumb displays 'NODEBENCH / Workspace', but the main content area header still displays 'My Documents'. The breadcrumb fails to accurately reflect the sub-navigation context or the specific view being rendered.",
+          "route": "public",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Visual Feedback Missing on Tab Selection]",
+          "details": "In the 'After: calendar tab' and 'After: agents tab' screenshots, the active state for the sub-navigation tabs (Documents, Calendar, Agents, Roadmap) is not visually distinct enough. The 'Documents' tab remains highlighted with a pill shape, even when the user has clearly interacted with and is viewing the 'Calendar' or 'Agents' context, leading to confusion about which tab is currently active.",
+          "route": "public",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Visual] Inconsistent dropdown state",
+          "details": "After clicking 'show details' for Lead Edge Capital, the UI does not visually expand or provide any feedback (no content appears, no height change). The interaction appears broken or unresponsive.",
+          "route": "funding",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Inconsistent UI State after navigation]",
+          "details": "When navigating between 'Research' and 'System' routes, the 'Voice output' toggle in the right-hand sidebar does not maintain its state consistently across views, despite the global nature of the setting.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Visual feedback missing on interaction]",
+          "details": "The 'Share' button in the top right of the Research Hub does not provide a clear visual indicator (such as a dropdown menu or modal trigger) after being clicked, leaving the user uncertain if the action was registered.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Visual inconsistency in navigation breadcrumbs]",
+          "details": "In the 'Route: timeline' screenshots, the top-left breadcrumb displays 'NODEBENCH / Timeline', but the main content area is clearly labeled 'Roadmap Hub'. This mismatch between the navigation path and the actual page content is confusing for the user.",
+          "route": "timeline",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Interaction Feedback] Filter tabs lack visual state change",
+          "details": "When clicking on 'Anthropic' or 'OpenAI' filter tabs, the UI does not provide a clear visual indicator (such as a border highlight or background color shift) to show which filter is currently active. The 'All' tab remains highlighted, making it unclear if the filter selection was successful.",
+          "route": "industry",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Interaction State] Missing active/selected visual state for filter tabs",
+          "details": "When clicking on 'Daily Digest' or 'Funding Tracker' tabs, the UI does not provide a distinct visual indicator (such as a background color change, border, or underline) to show which tab is currently active. The 'All Posts' tab remains the only one with a distinct pill shape, making it unclear if the filter has been applied.",
+          "route": "linkedin",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Visual inconsistency in tab selection]",
+          "details": "When navigating between the 'Calendar', 'Agents', and 'Roadmap' tabs in the Workspace view, the active state indicator (the pill-shaped background) is inconsistent. Specifically, when the 'Calendar' tab is active, the 'Documents' tab remains highlighted with a subtle background, but the 'Calendar' tab has a distinct, brighter pill background. This creates confusion about which view is currently active.",
+          "route": "documents",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Layout Shift/Flicker]",
+          "details": "[00:33] When navigating to the Workspace tab, the content area experiences a noticeable layout shift/flicker as the 'My Documents' component loads, causing the UI to jump.",
+          "route": "Workspace",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        },
+        {
+          "header": "P2 [Media Playback Failure]",
+          "details": "[03:54] The video player components in the 'Quality Review' section fail to initialize properly, showing empty black containers instead of the expected video previews.",
+          "route": "Quality Review",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "candidateIssues": [
+        {
+          "header": "P1Internal engineering jargon visible to users",
+          "route": "31.5s-35.0s",
+          "ts": "31.5s-35.0s",
+          "details": "The terms 'MCP tools' and 'MCP Protocol' are prominently displayed in the 'What's inside' and 'Built with' sections. This violates the principle of killing internal jargon and adds cognitive load for users who may not know what MCP stands for.",
+          "suggestedFix": "Suggested fix:Replace 'MCP' with a more descriptive, user-friendly term like 'Integration tools' or 'Agent protocols', or remove the acronym entirely if it doesn't add value for the end user."
+        },
+        {
+          "header": "P2Abrupt text truncation on signal cards",
+          "route": "10.4s-15.0s",
+          "ts": "10.4s-15.0s",
+          "details": "The description text in the research signal cards cuts off abruptly mid-word (e.g., 'backup of the vi') without an ellipsis. This lacks craft at the micro-scale and looks like a rendering error.",
+          "suggestedFix": "Suggested fix:Implement proper CSS line-clamping (`-webkit-line-clamp`) with an ellipsis (`text-overflow: ellipsis`) to handle text overflow gracefully."
+        },
+        {
+          "header": "P1Missing empty states for main content areas",
+          "route": "42.1s-65.0s",
+          "ts": "42.1s-65.0s",
+          "details": "Pages like the Review Queue and Social Archive display a completely blank main content area below the header when there is no data. This void feels unintentional, broken, and leaves the user without guidance on what should be there or what action to take.",
+          "suggestedFix": "Suggested fix:Design and implement consistent, calm empty states with a clear, human-readable message and an optional call to action for all list and queue views."
+        },
+        {
+          "header": "P2Indeterminate loading state / low-contrast skeletons",
+          "route": "21.0s-25.0s",
+          "ts": "21.0s-25.0s",
+          "details": "The Calendar/Assistants view shows a grid of dark, low-contrast skeleton boxes that appear stuck. It is unclear if the page is actively loading data, if the network request failed, or if this is a poorly designed empty state.",
+          "suggestedFix": "Suggested fix:Ensure loading states resolve within a reasonable time or provide a timeout/error message. Slightly increase the contrast of the skeleton loaders and add a subtle shimmer animation so they are clearly identifiable as active placeholders."
+        },
+        {
+          "header": "P3Context mismatch between navigation elements",
+          "route": "68.0s-70.9s",
+          "ts": "68.0s-70.9s",
+          "details": "There is a slight cognitive dissonance caused by mismatched naming across navigation elements. For example, the breadcrumb reads 'Shared with You', the page title is 'My Documents', and the active sidebar item is 'Workspace'. This lacks the strict consistency required for a calm interface.",
+          "suggestedFix": "Suggested fix:Unify the naming conventions across the breadcrumb, page title, and contextual sidebars to ensure a cohesive and predictable sense of place."
+        },
+        {
+          "header": "P1Exposure of internal engineering jargon",
+          "route": "",
+          "ts": "",
+          "details": "The UI exposes internal terms like 'MCP TOOLS', 'DOGFOOD SCENARIOS', and 'Needs telemetry' which are confusing to end-users and violate the 'Kill jargon' design principle.",
+          "suggestedFix": "Suggested fix:Replace 'MCP TOOLS' with 'Available Tools', 'DOGFOOD SCENARIOS' with 'Test Scenarios', and 'Needs telemetry' with a more user-friendly status like 'Processing' or 'Pending Data'.', 'route': 'Persona Lens Founder', 'evidence': ['MCP TOOLS', 'DOGFOOD SCENARIOS', 'Needs telemetry']"
+        },
+        {
+          "header": "P2Mobile navigation touch target density",
+          "route": "",
+          "ts": "",
+          "details": "The bottom navigation bar in mobile views appears cramped. The icons and labels are close together, potentially falling below the recommended 44px touch target size.",
+          "suggestedFix": "Suggested fix:Increase padding between navigation items and ensure the hit area for each icon is at least 44x44px.', 'route': 'Analytics Components', 'evidence': ['Brief', 'Memo', 'Research', 'Workspace', 'System']"
+        },
+        {
+          "header": "P3Inconsistent date formatting",
+          "route": "",
+          "ts": "",
+          "details": "Date formats vary across the application, switching between 'Mar 20, 02:05 AM' and 'Friday, March 27'.",
+          "suggestedFix": "Suggested fix:Standardize on a single date format (e.g., 'MMM DD, YYYY') across all views for consistency.', 'route': 'Activity Stream', 'evidence': ['Mar 20, 02:05 AM', 'Friday, March 27']"
+        },
+        {
+          "header": "P2Empty state visual noise",
+          "route": "",
+          "ts": "",
+          "details": "The 'No recommendations yet' screen in the Document Recommendations view is sparse, but the surrounding UI (sidebar, header, runtime metrics) remains fully visible, creating a high-contrast, empty-heavy layout that feels unfinished.",
+          "suggestedFix": "Suggested fix:Consider a more integrated empty state that guides the user on how to populate the section, rather than just stating the absence of data.', 'route': 'Document Recommendations', 'evidence': ['No recommendations yet']"
+        },
+        {
+          "header": "P3Truncation in Command Palette",
+          "route": "",
+          "ts": "",
+          "details": "The command descriptions in the Command Palette are truncated with ellipses, which may hide important context for the user.",
+          "suggestedFix": "Suggested fix:Adjust the layout to allow for longer descriptions or use multi-line text for command sub-labels.', 'route': 'Command Palette', 'evidence': ['Go to Investigation', 'Go to Agent Workflows']"
+        },
+        {
+          "header": "P2Low contrast on secondary text",
+          "route": "",
+          "ts": "",
+          "details": "In the dark mode Activity Stream, the 'Needs telemetry' labels have low contrast against the dark background, making them difficult to read.",
+          "suggestedFix": "Suggested fix:Increase the text color brightness or adjust the background opacity of the label to meet WCAG AA contrast standards.', 'route': 'Activity Stream', 'evidence': ['Needs telemetry']"
+        },
+        {
+          "header": "P3Redundant UI elements",
+          "route": "",
+          "ts": "",
+          "details": "The 'Sign in' button is present in the sidebar even when the user is already identified as 'Guest', which is redundant.",
+          "suggestedFix": "Suggested fix:Hide the 'Sign in' button or replace it with a 'Profile' or 'Account' management option when the user is logged in.', 'route': 'Activity Stream', 'evidence': ['Sign in']"
+        },
+        {
+          "header": "P3 [Visual Feedback] Missing active/focus state for primary action buttons",
+          "details": "The 'Open Inspector', 'Configure App', and 'Run Benchmark' buttons do not show a distinct visual state (such as a border highlight, background shift, or shadow) after being clicked, making it difficult for the user to confirm the interaction was registered.",
+          "route": "benchmarks",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Visual Feedback] Toggle switch lacks clear active state",
+          "details": "After toggling the 'Voice output' switch, the UI does not provide a clear visual transition or 'active' indicator beyond the color change, which may be subtle for some users to perceive as a confirmed state change.",
+          "route": "benchmarks",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Visual Consistency] Inconsistent active state for Lens tabs",
+          "details": "When clicking on different 'Lens' tabs (Investor, Banker, etc.), the active state visual indicator (the pill background) does not consistently update or highlight the selected tab compared to the default 'Founder' state, making it difficult for the user to identify which lens is currently active.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Layout] Sidebar collapse button overlap",
+          "details": "After clicking the sidebar collapse button, the button itself remains visible but is positioned in a way that creates a visual conflict with the main content area's left margin, potentially obscuring or misaligning the 'Trajectory Intelligence' header.",
+          "route": "benchmarks",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Accessibility] Low contrast on 'Recent Founder Runs' status",
+          "details": "The 'CONNECTED • 4288 PENDING SYNC' text inside the footer card has low contrast against the dark background, making it difficult to read at a glance, especially when compared to the higher contrast text in the main body.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [UI State Inconsistency] - Time range selection visual feedback",
+          "details": "When clicking the '24 Hours' or '30 Days' tabs in the 'Usage & Costs' view, the UI does not visually update the active state of the button (the pill background remains on '7 Days'). The user receives no visual confirmation that the time range has been switched.",
+          "route": "cost",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Visual inconsistency in time-range selector]",
+          "details": "In the 'Usage & Costs' view, the active state for the time-range buttons (24 Hours, 7 Days, 30 Days) is inconsistent across the provided screenshots. In the first screenshot, '7 Days' is highlighted, but in the second, '24 Hours' is highlighted. While this may be a state change, the visual contrast of the active pill against the dark background is low, making it difficult to distinguish the selected range at a glance.",
+          "route": "cost",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Dropdown menu clipping/overflow]",
+          "details": "When the 'Quick' model settings dropdown is active in the 'AI Assistants' view, the menu appears to be constrained by the parent container's boundaries. Depending on the screen resolution, this could lead to the bottom of the dropdown being cut off or requiring an internal scrollbar, which is poor UX for a primary selection tool.",
+          "route": "agents",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Sidebar collapse button alignment]",
+          "details": "After clicking the sidebar collapse button, the icon remains visible but the surrounding container padding appears slightly misaligned relative to the main content area, creating a minor visual imbalance in the layout.",
+          "route": "cost",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Visual Defect] - Overlapping text in 'Topic-first workspace' stats",
+          "details": "In the 'Topic-first workspace' section, the labels 'ACTIVE TOPICS', 'RESOURCES BACKED', and 'NEED INTERVENTION' overlap with the numerical values (6, 0, 0) when the text wraps or is constrained by the container width, making the metrics difficult to read.",
+          "route": "agents",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Visual Defect] - Inconsistent alignment of 'Queued' status badges",
+          "details": "The 'Queued' status badges on the 'Agent Topic' cards are vertically misaligned relative to the 'How does trajectory scoring work?' header text, creating a jagged visual rhythm across the two cards.",
+          "route": "agents",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Accessibility] - Low contrast on 'Queued' status badges",
+          "details": "The yellow text on the 'Queued' badges against the dark background has insufficient contrast, which may be difficult for users with visual impairments to read.",
+          "route": "agents",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Visual Consistency] Missing focus state on search input",
+          "details": "After clicking into the search input field, there is no visible focus ring or border highlight to indicate the field is active, making it difficult for users to confirm the input is ready for typing.",
+          "route": "github",
+          "suggestedFix": "",
+          "source": "agentic"
+        }
+      ],
+      "falsePositives": [
+        {
+          "header": "P2Inconsistent pluralization",
+          "route": "",
+          "ts": "",
+          "details": "The interface displays '1 source' in the Analytics component, which is correct, but '5 markets' and '0 items' in the Research Hub, while '1 items' is often a common error in dynamic data binding. Specifically, '5 market updates and 0 items' is correct, but ensure all counters follow this rule.",
+          "suggestedFix": "Suggested fix:Implement a standard pluralization helper function for all dynamic counters to ensure '1 item' vs '2 items'.', 'route': 'Analytics Components', 'evidence': ['from 1 source', '5 market updates and 0 items']"
+        },
+        {
+          "header": "P2 [Performance/Loading Lag]",
+          "details": "[03:53] The Roadmap Hub displays 'Loading analytics...' for an extended period, and the UI remains unresponsive or blank during this transition, indicating a potential performance bottleneck.",
+          "route": "Roadmap Hub",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        },
+        {
+          "header": "P1Internal engineering jargon visible to users",
+          "route": "31.5s-35.0s",
+          "ts": "31.5s-35.0s",
+          "details": "The terms 'MCP tools' and 'MCP Protocol' are prominently displayed in the 'What's inside' and 'Built with' sections. This violates the principle of killing internal jargon and adds cognitive load for users who may not know what MCP stands for.",
+          "suggestedFix": "Suggested fix:Replace 'MCP' with a more descriptive, user-friendly term like 'Integration tools' or 'Agent protocols', or remove the acronym entirely if it doesn't add value for the end user."
+        },
+        {
+          "header": "P2Abrupt text truncation on signal cards",
+          "route": "10.4s-15.0s",
+          "ts": "10.4s-15.0s",
+          "details": "The description text in the research signal cards cuts off abruptly mid-word (e.g., 'backup of the vi') without an ellipsis. This lacks craft at the micro-scale and looks like a rendering error.",
+          "suggestedFix": "Suggested fix:Implement proper CSS line-clamping (`-webkit-line-clamp`) with an ellipsis (`text-overflow: ellipsis`) to handle text overflow gracefully."
+        },
+        {
+          "header": "P1Missing empty states for main content areas",
+          "route": "42.1s-65.0s",
+          "ts": "42.1s-65.0s",
+          "details": "Pages like the Review Queue and Social Archive display a completely blank main content area below the header when there is no data. This void feels unintentional, broken, and leaves the user without guidance on what should be there or what action to take.",
+          "suggestedFix": "Suggested fix:Design and implement consistent, calm empty states with a clear, human-readable message and an optional call to action for all list and queue views."
+        },
+        {
+          "header": "P2Indeterminate loading state / low-contrast skeletons",
+          "route": "21.0s-25.0s",
+          "ts": "21.0s-25.0s",
+          "details": "The Calendar/Assistants view shows a grid of dark, low-contrast skeleton boxes that appear stuck. It is unclear if the page is actively loading data, if the network request failed, or if this is a poorly designed empty state.",
+          "suggestedFix": "Suggested fix:Ensure loading states resolve within a reasonable time or provide a timeout/error message. Slightly increase the contrast of the skeleton loaders and add a subtle shimmer animation so they are clearly identifiable as active placeholders."
+        },
+        {
+          "header": "P3Context mismatch between navigation elements",
+          "route": "68.0s-70.9s",
+          "ts": "68.0s-70.9s",
+          "details": "There is a slight cognitive dissonance caused by mismatched naming across navigation elements. For example, the breadcrumb reads 'Shared with You', the page title is 'My Documents', and the active sidebar item is 'Workspace'. This lacks the strict consistency required for a calm interface.",
+          "suggestedFix": "Suggested fix:Unify the naming conventions across the breadcrumb, page title, and contextual sidebars to ensure a cohesive and predictable sense of place."
+        },
+        {
+          "header": "P1Exposure of internal engineering jargon",
+          "route": "",
+          "ts": "",
+          "details": "The UI exposes internal terms like 'MCP TOOLS', 'DOGFOOD SCENARIOS', and 'Needs telemetry' which are confusing to end-users and violate the 'Kill jargon' design principle.",
+          "suggestedFix": "Suggested fix:Replace 'MCP TOOLS' with 'Available Tools', 'DOGFOOD SCENARIOS' with 'Test Scenarios', and 'Needs telemetry' with a more user-friendly status like 'Processing' or 'Pending Data'.', 'route': 'Persona Lens Founder', 'evidence': ['MCP TOOLS', 'DOGFOOD SCENARIOS', 'Needs telemetry']"
+        },
+        {
+          "header": "P2Mobile navigation touch target density",
+          "route": "",
+          "ts": "",
+          "details": "The bottom navigation bar in mobile views appears cramped. The icons and labels are close together, potentially falling below the recommended 44px touch target size.",
+          "suggestedFix": "Suggested fix:Increase padding between navigation items and ensure the hit area for each icon is at least 44x44px.', 'route': 'Analytics Components', 'evidence': ['Brief', 'Memo', 'Research', 'Workspace', 'System']"
+        },
+        {
+          "header": "P3Inconsistent date formatting",
+          "route": "",
+          "ts": "",
+          "details": "Date formats vary across the application, switching between 'Mar 20, 02:05 AM' and 'Friday, March 27'.",
+          "suggestedFix": "Suggested fix:Standardize on a single date format (e.g., 'MMM DD, YYYY') across all views for consistency.', 'route': 'Activity Stream', 'evidence': ['Mar 20, 02:05 AM', 'Friday, March 27']"
+        },
+        {
+          "header": "P2Empty state visual noise",
+          "route": "",
+          "ts": "",
+          "details": "The 'No recommendations yet' screen in the Document Recommendations view is sparse, but the surrounding UI (sidebar, header, runtime metrics) remains fully visible, creating a high-contrast, empty-heavy layout that feels unfinished.",
+          "suggestedFix": "Suggested fix:Consider a more integrated empty state that guides the user on how to populate the section, rather than just stating the absence of data.', 'route': 'Document Recommendations', 'evidence': ['No recommendations yet']"
+        },
+        {
+          "header": "P3Truncation in Command Palette",
+          "route": "",
+          "ts": "",
+          "details": "The command descriptions in the Command Palette are truncated with ellipses, which may hide important context for the user.",
+          "suggestedFix": "Suggested fix:Adjust the layout to allow for longer descriptions or use multi-line text for command sub-labels.', 'route': 'Command Palette', 'evidence': ['Go to Investigation', 'Go to Agent Workflows']"
+        },
+        {
+          "header": "P2Low contrast on secondary text",
+          "route": "",
+          "ts": "",
+          "details": "In the dark mode Activity Stream, the 'Needs telemetry' labels have low contrast against the dark background, making them difficult to read.",
+          "suggestedFix": "Suggested fix:Increase the text color brightness or adjust the background opacity of the label to meet WCAG AA contrast standards.', 'route': 'Activity Stream', 'evidence': ['Needs telemetry']"
+        },
+        {
+          "header": "P3 [Visual Feedback] Missing active/focus state for primary action buttons",
+          "details": "The 'Open Inspector', 'Configure App', and 'Run Benchmark' buttons do not show a distinct visual state (such as a border highlight, background shift, or shadow) after being clicked, making it difficult for the user to confirm the interaction was registered.",
+          "route": "benchmarks",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Visual Feedback] Toggle switch lacks clear active state",
+          "details": "After toggling the 'Voice output' switch, the UI does not provide a clear visual transition or 'active' indicator beyond the color change, which may be subtle for some users to perceive as a confirmed state change.",
+          "route": "benchmarks",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Layout] Sidebar collapse button overlap",
+          "details": "After clicking the sidebar collapse button, the button itself remains visible but is positioned in a way that creates a visual conflict with the main content area's left margin, potentially obscuring or misaligning the 'Trajectory Intelligence' header.",
+          "route": "benchmarks",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Accessibility] Low contrast on 'Recent Founder Runs' status",
+          "details": "The 'CONNECTED • 4288 PENDING SYNC' text inside the footer card has low contrast against the dark background, making it difficult to read at a glance, especially when compared to the higher contrast text in the main body.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Visual inconsistency in time-range selector]",
+          "details": "In the 'Usage & Costs' view, the active state for the time-range buttons (24 Hours, 7 Days, 30 Days) is inconsistent across the provided screenshots. In the first screenshot, '7 Days' is highlighted, but in the second, '24 Hours' is highlighted. While this may be a state change, the visual contrast of the active pill against the dark background is low, making it difficult to distinguish the selected range at a glance.",
+          "route": "cost",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Dropdown menu clipping/overflow]",
+          "details": "When the 'Quick' model settings dropdown is active in the 'AI Assistants' view, the menu appears to be constrained by the parent container's boundaries. Depending on the screen resolution, this could lead to the bottom of the dropdown being cut off or requiring an internal scrollbar, which is poor UX for a primary selection tool.",
+          "route": "agents",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Sidebar collapse button alignment]",
+          "details": "After clicking the sidebar collapse button, the icon remains visible but the surrounding container padding appears slightly misaligned relative to the main content area, creating a minor visual imbalance in the layout.",
+          "route": "cost",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Visual Defect] - Overlapping text in 'Topic-first workspace' stats",
+          "details": "In the 'Topic-first workspace' section, the labels 'ACTIVE TOPICS', 'RESOURCES BACKED', and 'NEED INTERVENTION' overlap with the numerical values (6, 0, 0) when the text wraps or is constrained by the container width, making the metrics difficult to read.",
+          "route": "agents",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Visual Defect] - Inconsistent alignment of 'Queued' status badges",
+          "details": "The 'Queued' status badges on the 'Agent Topic' cards are vertically misaligned relative to the 'How does trajectory scoring work?' header text, creating a jagged visual rhythm across the two cards.",
+          "route": "agents",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Accessibility] - Low contrast on 'Queued' status badges",
+          "details": "The yellow text on the 'Queued' badges against the dark background has insufficient contrast, which may be difficult for users with visual impairments to read.",
+          "route": "agents",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Visual Feedback] Missing hover/active state for external link icons",
+          "details": "The external link icons next to repository names do not provide any visual feedback (e.g., color change or underline) when hovered or clicked, which is non-standard for interactive navigation elements.",
+          "route": "github",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Visual Feedback] Ambiguous state for voice output toggle",
+          "details": "After toggling the voice output switch, the visual state change is subtle. In dark mode, the contrast between the 'on' and 'off' states of the toggle is low, making it difficult to discern the current status at a glance.",
+          "route": "github",
+          "suggestedFix": "",
+          "source": "agentic"
+        }
+      ],
+      "hardFilteredCount": 2,
+      "llmFilteredCount": 57
+    },
+    "diagnostics": {
+      "totalRawIssues": 75,
+      "falsePositivesFiltered": 59,
+      "realIssues": 16,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 5,
+      "screenIssueCount": 8
+    },
+    "videoIssues": 5,
+    "screenshotIssues": 8,
+    "videoSummary": "The application features a sophisticated, data-dense dark mode interface, but falls short of the 'calm and intentional' design philosophy due to several unpolished details. The most critical issues include the exposure of internal engineering jargon, abrupt text truncation that breaks the visual craft, and completely blank empty states that make the application feel broken or unresponsive. Address",
+    "screenSummary": "The NodeBench interface demonstrates a strong, cohesive aesthetic but suffers from inconsistent data handling, technical jargon leakage, and minor grammatical errors. The primary issues involve inconsistent pluralization, the exposure of internal development terminology to end-users, and some layout crowding in mobile viewports.",
+    "aspiration": {
+      "score": 78,
+      "grade": "B",
+      "style": "linear",
+      "axes": {
+        "typography": 8,
+        "spacing": 7,
+        "states": 6,
+        "hierarchy": 7,
+        "interaction": 6,
+        "craft": 8
+      },
+      "opportunityCount": 4,
+      "summary": "The application demonstrates a strong, data-dense foundation suitable for power users, effectively balancing complex information with a clean, professional aesthetic. While the core layout is functional, it currently suffers from inconsistent visual hierarchy and a lack of subtle interaction feedbac"
+    },
+    "compositeScore": 89,
+    "coherence": {
+      "score": 9,
+      "notes": "The application maintains a very high level of visual consistency through a unified dark-mode theme, shared layout structure, and consistent component library. Minor variations in content density and layout patterns are appropriate for the different functional requirements of each screen.",
+      "outlierRoutes": [],
+      "screenshotsUsed": [
+        "home.png",
+        "research-hub.png",
+        "agents.png",
+        "funding.png",
+        "documents.png",
+        "calendar.png"
+      ]
+    }
+  },
+  {
     "timestamp": "2026-03-27T19:05:35.862Z",
     "runType": "gemini-qa-rubric",
     "model": "gemini-3.1-flash-lite-preview",
@@ -77755,783 +79121,5 @@
     "screenshotIssues": 10,
     "videoSummary": "Gemini QA failed (see issue details)",
     "screenSummary": "The interface demonstrates a high level of functional complexity but suffers from inconsistent micro-copy, redundant iconography, and significant information density issues on key dashboard views. While the dark/light theme parity is generally well-handled, mobile responsiveness is hampered by text truncation and competing primary actions."
-  },
-  {
-    "timestamp": "2026-02-23T05:40:53.360Z",
-    "runType": "gemini-qa-rubric",
-    "score": 95,
-    "grade": "A",
-    "critical": 0,
-    "warning": 0,
-    "info": 0,
-    "total": 23,
-    "realIssueCount": 0,
-    "rubric": {
-      "layer0": {
-        "score": 0,
-        "total": 2183,
-        "high": 121,
-        "medium": 2037,
-        "low": 25,
-        "topViolations": [
-          "src/components/ApiUsageDisplay.tsx:33 Saturated text color",
-          "src/components/ApiUsageDisplay.tsx:39 Saturated bg color",
-          "src/components/ApiUsageDisplay.tsx:41 Saturated text color",
-          "src/components/ApiUsageDisplay.tsx:47 Saturated bg color",
-          "src/components/ApiUsageDisplay.tsx:49 Saturated text color",
-          "src/components/ApiUsageDisplay.tsx:55 Saturated bg color",
-          "src/components/ApiUsageDisplay.tsx:57 Saturated text color",
-          "src/components/ApiUsageDisplay.tsx:69 Saturated text color",
-          "src/components/ApiUsageDisplay.tsx:87 Saturated bg color",
-          "src/components/ApiUsageDisplay.tsx:89 Saturated text color",
-          "src/components/ApiUsageDisplay.tsx:92 Saturated text color",
-          "src/components/ApiUsageDisplay.tsx:143 Saturated text color",
-          "src/components/ApiUsageDisplay.tsx:161 Saturated bg color",
-          "src/components/ApiUsageDisplay.tsx:162 Saturated text color",
-          "src/components/artifacts/EvidenceChips.tsx:68 Saturated bg color"
-        ]
-      },
-      "layer1": {
-        "score": 91,
-        "weight": 0.6,
-        "criteria": [
-          {
-            "id": "no_console_errors",
-            "pass": true,
-            "weight": 3,
-            "axis": "reliability"
-          },
-          {
-            "id": "no_uncaught_exceptions",
-            "pass": true,
-            "weight": 3,
-            "axis": "reliability"
-          },
-          {
-            "id": "no_failed_api_requests",
-            "pass": true,
-            "weight": 2,
-            "axis": "reliability"
-          },
-          {
-            "id": "page_loads_ok",
-            "pass": true,
-            "weight": 2,
-            "axis": "performance"
-          },
-          {
-            "id": "no_parse_failures",
-            "pass": true,
-            "weight": 2,
-            "axis": "infrastructure"
-          },
-          {
-            "id": "video_qa_completed",
-            "pass": true,
-            "weight": 1,
-            "axis": "infrastructure"
-          },
-          {
-            "id": "screenshot_qa_completed",
-            "pass": true,
-            "weight": 1,
-            "axis": "infrastructure"
-          },
-          {
-            "id": "no_layout_shift",
-            "pass": true,
-            "weight": 2,
-            "axis": "performance"
-          },
-          {
-            "id": "no_slow_resources",
-            "pass": true,
-            "weight": 1,
-            "axis": "performance"
-          },
-          {
-            "id": "no_404_resources",
-            "pass": true,
-            "weight": 2,
-            "axis": "reliability"
-          },
-          {
-            "id": "no_mixed_content",
-            "pass": true,
-            "weight": 1,
-            "axis": "security"
-          },
-          {
-            "id": "viewport_meta_ok",
-            "pass": true,
-            "weight": 1,
-            "axis": "accessibility"
-          },
-          {
-            "id": "no_banned_css_patterns",
-            "pass": false,
-            "weight": 2,
-            "axis": "design_compliance"
-          }
-        ]
-      },
-      "layer2": {
-        "score": 100,
-        "weight": 0.3,
-        "criteria": [
-          {
-            "id": "no_p1_critical",
-            "pass": true,
-            "weight": 3,
-            "axis": "usability"
-          },
-          {
-            "id": "low_p2_warnings",
-            "pass": true,
-            "weight": 2,
-            "axis": "usability"
-          },
-          {
-            "id": "no_contrast_failures",
-            "pass": true,
-            "weight": 2,
-            "axis": "accessibility"
-          },
-          {
-            "id": "no_text_overlap",
-            "pass": true,
-            "weight": 2,
-            "axis": "layout"
-          },
-          {
-            "id": "no_layout_breaks",
-            "pass": true,
-            "weight": 2,
-            "axis": "layout"
-          },
-          {
-            "id": "no_misleading_affordances",
-            "pass": true,
-            "weight": 1,
-            "axis": "usability"
-          },
-          {
-            "id": "empty_states_ok",
-            "pass": true,
-            "weight": 1,
-            "axis": "completeness"
-          },
-          {
-            "id": "theme_parity",
-            "pass": true,
-            "weight": 1,
-            "axis": "visual"
-          },
-          {
-            "id": "no_jargon_leak",
-            "pass": true,
-            "weight": 1,
-            "axis": "copy"
-          },
-          {
-            "id": "grammar_ok",
-            "pass": true,
-            "weight": 1,
-            "axis": "copy"
-          },
-          {
-            "id": "icons_labeled",
-            "pass": true,
-            "weight": 1,
-            "axis": "usability"
-          },
-          {
-            "id": "mobile_responsive",
-            "pass": true,
-            "weight": 1,
-            "axis": "layout"
-          },
-          {
-            "id": "no_agentic_interaction_bugs",
-            "pass": true,
-            "weight": 2,
-            "axis": "interaction"
-          }
-        ]
-      },
-      "layer3": {
-        "score": 100,
-        "weight": 0.1,
-        "rawTaste": 100
-      },
-      "agentic": {
-        "issueCount": 14,
-        "screenshotIssues": 10,
-        "videoIssues": 4,
-        "issues": [
-          {
-            "header": "P3 Missing hover/active state for floating action button",
-            "details": "The floating action button (FAB) in the bottom right corner does not show any visual feedback (such as a color change, shadow increase, or tooltip) after interaction, unlike other buttons in the interface like 'Research' or 'Assistant'.",
-            "route": "benchmarks",
-            "suggestedFix": "",
-            "source": "agentic"
-          },
-          {
-            "header": "P2 [User profile menu does not open]",
-            "details": "Clicking the user profile icon ('U') in the top right corner does not trigger the expected dropdown menu or any visual feedback.",
-            "route": "home",
-            "suggestedFix": "",
-            "source": "agentic"
-          },
-          {
-            "header": "P2 [Interaction] Interactive elements lack visual feedback after click",
-            "details": "The search bar, 'Research' button, 'Assistant' button, and user profile icon do not show any visual feedback (such as a focus ring, active state, or expected popover/menu) after being clicked in the 'After' screenshots. This makes the interface feel unresponsive.",
-            "route": "github",
-            "suggestedFix": "",
-            "source": "agentic"
-          },
-          {
-            "header": "P2 [Calendar] Next month button does not advance the calendar",
-            "details": "After clicking the 'next month' (>) button in the calendar widget, the month header still displays 'February 2026' and the date grid remains unchanged, failing to advance to March.",
-            "route": "roadmap",
-            "suggestedFix": "",
-            "source": "agentic"
-          },
-          {
-            "header": "P2 Header interactive elements are unresponsive",
-            "details": "The 'Research' button, 'Assistant' button, user profile menu, and date selector do not show any visual feedback (hover/active states) or open their respective menus/popovers after interaction, as shown in the 'After' screenshots.",
-            "route": "signals",
-            "suggestedFix": "",
-            "source": "agentic"
-          },
-          {
-            "header": "P2 Dashboard content disappears after interacting with 'All Time' filter",
-            "details": "Interacting with the 'All Time' filter dropdown causes the entire dashboard content (metrics and funding cards) to disappear, replaced by an empty state message. This prevents users from viewing any data and disables the 'Save to Documents' and 'Download PDF' buttons.",
-            "route": "funding",
-            "suggestedFix": "",
-            "source": "agentic"
-          },
-          {
-            "header": "P3 'Show details' buttons are non-responsive",
-            "details": "Clicking 'Show details' on funding cards (e.g., Anthropic, Waymo) does not result in any visual change. The cards do not expand to show more information, and the button label does not toggle to 'Hide details', providing no feedback to the user.",
-            "route": "funding",
-            "suggestedFix": "",
-            "source": "agentic"
-          },
-          {
-            "header": "P2 [Interactivity] Profile menu and Assistant buttons fail to trigger expected UI components",
-            "details": "Interactions with the 'Assistant' button and 'User profile' menu only result in a small purple dot indicator appearing, but no actual menu, drawer, or popover is rendered. Users would expect a functional menu or panel to open upon clicking these elements.",
-            "route": "dogfood",
-            "suggestedFix": "",
-            "source": "agentic"
-          },
-          {
-            "header": "P2 Interactive elements fail to update UI state",
-            "details": "Multiple interactive elements fail to trigger any visual state change or content update after interaction as indicated by the 'After' states. Specifically, the 'Executive Synthesis' section remains expanded after a collapse action, the 'Pulse' section tabs do not switch to 'Briefing', the 'Verified' badge does not show a tooltip on hover/click, and the floating '+' button does not open a menu or modal.",
-            "route": "research",
-            "suggestedFix": "",
-            "source": "agentic"
-          },
-          {
-            "header": "P3 Chart labels overlap and are illegible",
-            "details": "In the top-right 'Pulse' line chart, multiple data point labels (e.g., 'RightNow-AI/picolm', 'ShinMegamiBoson/Op...', 'CraftyGeeze...') overlap each other significantly, making the text difficult to read.",
-            "route": "research",
-            "suggestedFix": "",
-            "source": "agentic"
-          }
-        ]
-      },
-      "falsePositivesFiltered": 22,
-      "hardFiltered": 0,
-      "llmFiltered": 22,
-      "judgeDetails": [
-        {
-          "issue": "P1Extreme Information Density in Pulse Sidebar",
-          "verdict": "design_opinion",
-          "confidence": 1,
-          "reasoning": "Platform is intentionally dense for power users scanning high volumes."
-        },
-        {
-          "issue": "P2Breadcrumb and Page Title Mismatch",
-          "verdict": "design_opinion",
-          "confidence": 0.9,
-          "reasoning": "Breadcrumb/title hierarchy reflects category vs specific view, not a defect."
-        },
-        {
-          "issue": "P2Use of Developer Jargon in Primary Header",
-          "verdict": "design_opinion",
-          "confidence": 1,
-          "reasoning": "PR is established domain terminology for the target technical audience."
-        },
-        {
-          "issue": "P2Low Contrast Secondary Text in Dark Mode",
-          "verdict": "screenshot_artifact",
-          "confidence": 0.9,
-          "reasoning": "WCAG AA compliant colors are often misread in compressed screenshots."
-        },
-        {
-          "issue": "P2Mismatched Empty State Iconography",
-          "verdict": "design_opinion",
-          "confidence": 1,
-          "reasoning": "Iconography choices are intentional context cues for research-focused views."
-        },
-        {
-          "issue": "P3Inconsistent Time Abbreviation",
-          "verdict": "design_opinion",
-          "confidence": 0.95,
-          "reasoning": "Mixed time formatting is an intentional choice for context-dependent information density."
-        },
-        {
-          "issue": "P3Unbalanced Button Widths on Mobile",
-          "verdict": "design_opinion",
-          "confidence": 0.9,
-          "reasoning": "Button sizing based on content is a standard responsive pattern, not a bug."
-        },
-        {
-          "issue": "P2Redundant Sub-labels in Analytics Cards",
-          "verdict": "design_opinion",
-          "confidence": 0.9,
-          "reasoning": "Intentional redundancy and information density are core design principles for this platform."
-        },
-        {
-          "issue": "P3 Missing hover/active state for floating action button",
-          "verdict": "screenshot_artifact",
-          "confidence": 0.85,
-          "reasoning": "Static screenshots cannot reliably demonstrate the presence or absence of interactive states."
-        },
-        {
-          "issue": "P2 [User profile menu does not open]",
-          "verdict": "mock_data",
-          "confidence": 0.95,
-          "reasoning": "Interaction failures in static builds without live backends are expected data-availability issues."
-        },
-        {
-          "issue": "P2 [Interaction] Interactive elements lack visual feedback after click",
-          "verdict": "mock_data",
-          "confidence": 0.9,
-          "reasoning": "Interaction failures and missing popovers are expected without live backend connectivity."
-        },
-        {
-          "issue": "P2 [Calendar] Next month button does not advance the calendar",
-          "verdict": "mock_data",
-          "confidence": 0.85,
-          "reasoning": "Calendar navigation is an interaction failure caused by missing backend data sync."
-        },
-        {
-          "issue": "P2 Header interactive elements are unresponsive",
-          "verdict": "mock_data",
-          "confidence": 0.9,
-          "reasoning": "Header menus and selectors require live backend data to function correctly."
-        },
-        {
-          "issue": "P2 Dashboard content disappears after interacting with 'All Time' filter",
-          "verdict": "mock_data",
-          "confidence": 0.95,
-          "reasoning": "Empty states are expected when filtering mock data in the preview environment."
-        },
-        {
-          "issue": "P3 'Show details' buttons are non-responsive",
-          "verdict": "mock_data",
-          "confidence": 0.9,
-          "reasoning": "Card expansion is an interaction failure caused by missing backend data."
-        },
-        {
-          "issue": "P2 [Interactivity] Profile menu and Assistant buttons fail to trigger expected U",
-          "verdict": "mock_data",
-          "confidence": 0.9,
-          "reasoning": "Context attributes interaction failures in automated QA to missing backend data."
-        },
-        {
-          "issue": "P2 Interactive elements fail to update UI state",
-          "verdict": "mock_data",
-          "confidence": 0.9,
-          "reasoning": "Context explicitly identifies failed UI updates as data-availability issues."
-        },
-        {
-          "issue": "P3 Chart labels overlap and are illegible",
-          "verdict": "screenshot_artifact",
-          "confidence": 0.95,
-          "reasoning": "Context identifies chart label overlap claims as compression artifacts."
-        },
-        {
-          "issue": "P3 [Color Logic] Incorrect badge semantic for zero values",
-          "verdict": "mock_data",
-          "confidence": 0.85,
-          "reasoning": "Zero-value metrics and associated styling are attributed to placeholder data."
-        },
-        {
-          "issue": "P2 [Layout Shift] Jarring content pop-in",
-          "verdict": "design_opinion",
-          "confidence": 0.8,
-          "reasoning": "Standard React lazy-loading and skeleton behavior for this platform."
-        },
-        {
-          "issue": "P2 [Color/Contrast] Component theme mismatch in dark mode",
-          "verdict": "screenshot_artifact",
-          "confidence": 0.9,
-          "reasoning": "Context warns Gemini misreads colors and transitions may show brief white frames."
-        },
-        {
-          "issue": "P2 [Layout Shift] Significant dashboard reflow",
-          "verdict": "design_opinion",
-          "confidence": 0.95,
-          "reasoning": "Context states lazy-loading reflows are expected in preview builds and not rendering failures."
-        }
-      ],
-      "falsePositivePatterns": [
-        "P1Extreme Information Density in Pulse Sidebar",
-        "P2Breadcrumb and Page Title Mismatch",
-        "P2Use of Developer Jargon in Primary Header",
-        "P2Low Contrast Secondary Text in Dark Mode",
-        "P2Mismatched Empty State Iconography",
-        "P3Inconsistent Time Abbreviation",
-        "P3Unbalanced Button Widths on Mobile",
-        "P2Redundant Sub-labels in Analytics Cards",
-        "P3 Missing hover/active state for floating action button",
-        "P2 [User profile menu does not open]",
-        "P2 [Interaction] Interactive elements lack visual feedback a",
-        "P2 [Calendar] Next month button does not advance the calenda",
-        "P2 Header interactive elements are unresponsive",
-        "P2 Dashboard content disappears after interacting with 'All ",
-        "P3 'Show details' buttons are non-responsive",
-        "P2 [Interactivity] Profile menu and Assistant buttons fail t",
-        "P2 Interactive elements fail to update UI state",
-        "P3 Chart labels overlap and are illegible",
-        "P3 [Color Logic] Incorrect badge semantic for zero values",
-        "P2 [Layout Shift] Jarring content pop-in",
-        "P2 [Color/Contrast] Component theme mismatch in dark mode",
-        "P2 [Layout Shift] Significant dashboard reflow"
-      ]
-    },
-    "loop": {
-      "realIssues": [],
-      "candidateIssues": [
-        {
-          "header": "P1Extreme Information Density in Pulse Sidebar",
-          "route": "Research Hub",
-          "ts": "Research Hub",
-          "details": "The 'Pulse' sidebar in the Research Hub is overcrowded with varying font sizes, colors, and data points. The '-74% vs prior day' text is particularly cramped and difficult to parse quickly.",
-          "suggestedFix": "Suggested fix:Increase vertical padding between sections and use a more consistent typographic scale. Consider moving secondary metrics like 'Alert Rate' and 'Speed' to a secondary detail view."
-        },
-        {
-          "header": "P2Breadcrumb and Page Title Mismatch",
-          "route": "Performance Analytics",
-          "ts": "Performance Analytics",
-          "details": "The breadcrumb navigation indicates the user is in 'Performance Analytics', but the primary page heading is 'Usage & Costs'. This creates cognitive friction regarding the user's current location.",
-          "suggestedFix": "Suggested fix:Align the page title with the breadcrumb label (e.g., change title to 'Performance Analytics' or breadcrumb to 'Usage & Costs')."
-        },
-        {
-          "header": "P2Use of Developer Jargon in Primary Header",
-          "route": "PR Suggestions",
-          "ts": "PR Suggestions",
-          "details": "The term 'PR Suggestions' is used as a primary header. While common in software engineering, 'PR' (Pull Request) should be spelled out to maintain clarity for a broader research-focused audience.",
-          "suggestedFix": "Suggested fix:Change the header and navigation labels to 'Pull Request Suggestions' to avoid internal engineering acronyms."
-        },
-        {
-          "header": "P2Low Contrast Secondary Text in Dark Mode",
-          "route": "Settings Hub",
-          "ts": "Settings Hub",
-          "details": "In the Settings Hub, the secondary text indicating usage limits (e.g., '0 / 5 requests today') has very low contrast against the dark card background, making it difficult to read for users with visual impairments.",
-          "suggestedFix": "Suggested fix:Increase the brightness of the secondary text color in dark mode to meet WCAG AA contrast standards."
-        },
-        {
-          "header": "P2Mismatched Empty State Iconography",
-          "route": "Signals",
-          "ts": "Signals",
-          "details": "The 'Signals' empty state uses a laboratory beaker icon. Unless the application is specifically for chemical or biological research, this icon feels disconnected from the concept of 'data signals' or 'research events'.",
-          "suggestedFix": "Suggested fix:Replace the beaker icon with one more representative of data or communication, such as a pulse line, radio waves, or a document scan icon."
-        },
-        {
-          "header": "P3Inconsistent Time Abbreviation",
-          "route": "Performance Analytics",
-          "ts": "Performance Analytics",
-          "details": "The 'Avg Read Time' metric uses 'sec' as an abbreviation, whereas other parts of the UI use full words or different shorthand. '0 sec' feels clipped.",
-          "suggestedFix": "Suggested fix:Use '0s' or '0 seconds' for better readability and consistency with standard time formatting."
-        },
-        {
-          "header": "P3Unbalanced Button Widths on Mobile",
-          "route": "Benchmarks",
-          "ts": "Benchmarks",
-          "details": "In the mobile error state, the 'Refresh Page' and 'Retry' buttons are placed side-by-side with significantly different widths, creating an asymmetrical and 'uncontrolled' visual feel.",
-          "suggestedFix": "Suggested fix:Stack the buttons vertically at full width or give them equal width to create a more balanced layout on small screens."
-        },
-        {
-          "header": "P2Redundant Sub-labels in Analytics Cards",
-          "route": "Performance Analytics",
-          "ts": "Performance Analytics",
-          "details": "The sub-labels in the analytics cards (e.g., 'From 1 source', 'Total views') often repeat information implied by the primary metric or add unnecessary noise when data is at zero.",
-          "suggestedFix": "Suggested fix:Hide sub-labels when the count is zero or when they don't provide additional context beyond the primary title."
-        },
-        {
-          "header": "P3 Missing hover/active state for floating action button",
-          "details": "The floating action button (FAB) in the bottom right corner does not show any visual feedback (such as a color change, shadow increase, or tooltip) after interaction, unlike other buttons in the interface like 'Research' or 'Assistant'.",
-          "route": "benchmarks",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 [User profile menu does not open]",
-          "details": "Clicking the user profile icon ('U') in the top right corner does not trigger the expected dropdown menu or any visual feedback.",
-          "route": "home",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 [Interaction] Interactive elements lack visual feedback after click",
-          "details": "The search bar, 'Research' button, 'Assistant' button, and user profile icon do not show any visual feedback (such as a focus ring, active state, or expected popover/menu) after being clicked in the 'After' screenshots. This makes the interface feel unresponsive.",
-          "route": "github",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 [Calendar] Next month button does not advance the calendar",
-          "details": "After clicking the 'next month' (>) button in the calendar widget, the month header still displays 'February 2026' and the date grid remains unchanged, failing to advance to March.",
-          "route": "roadmap",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 Header interactive elements are unresponsive",
-          "details": "The 'Research' button, 'Assistant' button, user profile menu, and date selector do not show any visual feedback (hover/active states) or open their respective menus/popovers after interaction, as shown in the 'After' screenshots.",
-          "route": "signals",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 Dashboard content disappears after interacting with 'All Time' filter",
-          "details": "Interacting with the 'All Time' filter dropdown causes the entire dashboard content (metrics and funding cards) to disappear, replaced by an empty state message. This prevents users from viewing any data and disables the 'Save to Documents' and 'Download PDF' buttons.",
-          "route": "funding",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P3 'Show details' buttons are non-responsive",
-          "details": "Clicking 'Show details' on funding cards (e.g., Anthropic, Waymo) does not result in any visual change. The cards do not expand to show more information, and the button label does not toggle to 'Hide details', providing no feedback to the user.",
-          "route": "funding",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 [Interactivity] Profile menu and Assistant buttons fail to trigger expected UI components",
-          "details": "Interactions with the 'Assistant' button and 'User profile' menu only result in a small purple dot indicator appearing, but no actual menu, drawer, or popover is rendered. Users would expect a functional menu or panel to open upon clicking these elements.",
-          "route": "dogfood",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 Interactive elements fail to update UI state",
-          "details": "Multiple interactive elements fail to trigger any visual state change or content update after interaction as indicated by the 'After' states. Specifically, the 'Executive Synthesis' section remains expanded after a collapse action, the 'Pulse' section tabs do not switch to 'Briefing', the 'Verified' badge does not show a tooltip on hover/click, and the floating '+' button does not open a menu or modal.",
-          "route": "research",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P3 Chart labels overlap and are illegible",
-          "details": "In the top-right 'Pulse' line chart, multiple data point labels (e.g., 'RightNow-AI/picolm', 'ShinMegamiBoson/Op...', 'CraftyGeeze...') overlap each other significantly, making the text difficult to read.",
-          "route": "research",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P3 [Color Logic] Incorrect badge semantic for zero values",
-          "details": "[02:34] The 'Success Rate' badge displays 0% using a green 'success' color. Semantically, a 0% success rate should be represented with a neutral or error color (red/gray) rather than a positive green.",
-          "route": "/assistants",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P2 [Layout Shift] Jarring content pop-in",
-          "details": "[03:31] The 'Roadmap Navigator' stats grid replaces a 'Loading analytics...' placeholder, causing a significant vertical layout shift that pushes the rest of the page content down abruptly.",
-          "route": "/roadmap",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P2 [Color/Contrast] Component theme mismatch in dark mode",
-          "details": "[05:08] The 'Pulse' chart component on the right sidebar renders with a bright white background, failing to respect the application's dark theme. This creates a high-contrast visual clash and makes the chart data difficult to read.",
-          "route": "/research",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P2 [Layout Shift] Significant dashboard reflow",
-          "details": "[05:08] The Research Hub dashboard undergoes a major layout reflow as the 'Executive Synthesis' card and the right-hand sidebar components ('Activity Log', 'Pulse') load simultaneously, causing elements to jump across the screen.",
-          "route": "/research",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        }
-      ],
-      "falsePositives": [
-        {
-          "header": "P1Extreme Information Density in Pulse Sidebar",
-          "route": "Research Hub",
-          "ts": "Research Hub",
-          "details": "The 'Pulse' sidebar in the Research Hub is overcrowded with varying font sizes, colors, and data points. The '-74% vs prior day' text is particularly cramped and difficult to parse quickly.",
-          "suggestedFix": "Suggested fix:Increase vertical padding between sections and use a more consistent typographic scale. Consider moving secondary metrics like 'Alert Rate' and 'Speed' to a secondary detail view."
-        },
-        {
-          "header": "P2Breadcrumb and Page Title Mismatch",
-          "route": "Performance Analytics",
-          "ts": "Performance Analytics",
-          "details": "The breadcrumb navigation indicates the user is in 'Performance Analytics', but the primary page heading is 'Usage & Costs'. This creates cognitive friction regarding the user's current location.",
-          "suggestedFix": "Suggested fix:Align the page title with the breadcrumb label (e.g., change title to 'Performance Analytics' or breadcrumb to 'Usage & Costs')."
-        },
-        {
-          "header": "P2Use of Developer Jargon in Primary Header",
-          "route": "PR Suggestions",
-          "ts": "PR Suggestions",
-          "details": "The term 'PR Suggestions' is used as a primary header. While common in software engineering, 'PR' (Pull Request) should be spelled out to maintain clarity for a broader research-focused audience.",
-          "suggestedFix": "Suggested fix:Change the header and navigation labels to 'Pull Request Suggestions' to avoid internal engineering acronyms."
-        },
-        {
-          "header": "P2Low Contrast Secondary Text in Dark Mode",
-          "route": "Settings Hub",
-          "ts": "Settings Hub",
-          "details": "In the Settings Hub, the secondary text indicating usage limits (e.g., '0 / 5 requests today') has very low contrast against the dark card background, making it difficult to read for users with visual impairments.",
-          "suggestedFix": "Suggested fix:Increase the brightness of the secondary text color in dark mode to meet WCAG AA contrast standards."
-        },
-        {
-          "header": "P2Mismatched Empty State Iconography",
-          "route": "Signals",
-          "ts": "Signals",
-          "details": "The 'Signals' empty state uses a laboratory beaker icon. Unless the application is specifically for chemical or biological research, this icon feels disconnected from the concept of 'data signals' or 'research events'.",
-          "suggestedFix": "Suggested fix:Replace the beaker icon with one more representative of data or communication, such as a pulse line, radio waves, or a document scan icon."
-        },
-        {
-          "header": "P3Inconsistent Time Abbreviation",
-          "route": "Performance Analytics",
-          "ts": "Performance Analytics",
-          "details": "The 'Avg Read Time' metric uses 'sec' as an abbreviation, whereas other parts of the UI use full words or different shorthand. '0 sec' feels clipped.",
-          "suggestedFix": "Suggested fix:Use '0s' or '0 seconds' for better readability and consistency with standard time formatting."
-        },
-        {
-          "header": "P3Unbalanced Button Widths on Mobile",
-          "route": "Benchmarks",
-          "ts": "Benchmarks",
-          "details": "In the mobile error state, the 'Refresh Page' and 'Retry' buttons are placed side-by-side with significantly different widths, creating an asymmetrical and 'uncontrolled' visual feel.",
-          "suggestedFix": "Suggested fix:Stack the buttons vertically at full width or give them equal width to create a more balanced layout on small screens."
-        },
-        {
-          "header": "P2Redundant Sub-labels in Analytics Cards",
-          "route": "Performance Analytics",
-          "ts": "Performance Analytics",
-          "details": "The sub-labels in the analytics cards (e.g., 'From 1 source', 'Total views') often repeat information implied by the primary metric or add unnecessary noise when data is at zero.",
-          "suggestedFix": "Suggested fix:Hide sub-labels when the count is zero or when they don't provide additional context beyond the primary title."
-        },
-        {
-          "header": "P3 Missing hover/active state for floating action button",
-          "details": "The floating action button (FAB) in the bottom right corner does not show any visual feedback (such as a color change, shadow increase, or tooltip) after interaction, unlike other buttons in the interface like 'Research' or 'Assistant'.",
-          "route": "benchmarks",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 [User profile menu does not open]",
-          "details": "Clicking the user profile icon ('U') in the top right corner does not trigger the expected dropdown menu or any visual feedback.",
-          "route": "home",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 [Interaction] Interactive elements lack visual feedback after click",
-          "details": "The search bar, 'Research' button, 'Assistant' button, and user profile icon do not show any visual feedback (such as a focus ring, active state, or expected popover/menu) after being clicked in the 'After' screenshots. This makes the interface feel unresponsive.",
-          "route": "github",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 [Calendar] Next month button does not advance the calendar",
-          "details": "After clicking the 'next month' (>) button in the calendar widget, the month header still displays 'February 2026' and the date grid remains unchanged, failing to advance to March.",
-          "route": "roadmap",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 Header interactive elements are unresponsive",
-          "details": "The 'Research' button, 'Assistant' button, user profile menu, and date selector do not show any visual feedback (hover/active states) or open their respective menus/popovers after interaction, as shown in the 'After' screenshots.",
-          "route": "signals",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 Dashboard content disappears after interacting with 'All Time' filter",
-          "details": "Interacting with the 'All Time' filter dropdown causes the entire dashboard content (metrics and funding cards) to disappear, replaced by an empty state message. This prevents users from viewing any data and disables the 'Save to Documents' and 'Download PDF' buttons.",
-          "route": "funding",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P3 'Show details' buttons are non-responsive",
-          "details": "Clicking 'Show details' on funding cards (e.g., Anthropic, Waymo) does not result in any visual change. The cards do not expand to show more information, and the button label does not toggle to 'Hide details', providing no feedback to the user.",
-          "route": "funding",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 [Interactivity] Profile menu and Assistant buttons fail to trigger expected UI components",
-          "details": "Interactions with the 'Assistant' button and 'User profile' menu only result in a small purple dot indicator appearing, but no actual menu, drawer, or popover is rendered. Users would expect a functional menu or panel to open upon clicking these elements.",
-          "route": "dogfood",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P2 Interactive elements fail to update UI state",
-          "details": "Multiple interactive elements fail to trigger any visual state change or content update after interaction as indicated by the 'After' states. Specifically, the 'Executive Synthesis' section remains expanded after a collapse action, the 'Pulse' section tabs do not switch to 'Briefing', the 'Verified' badge does not show a tooltip on hover/click, and the floating '+' button does not open a menu or modal.",
-          "route": "research",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P3 Chart labels overlap and are illegible",
-          "details": "In the top-right 'Pulse' line chart, multiple data point labels (e.g., 'RightNow-AI/picolm', 'ShinMegamiBoson/Op...', 'CraftyGeeze...') overlap each other significantly, making the text difficult to read.",
-          "route": "research",
-          "suggestedFix": "",
-          "source": "agentic"
-        },
-        {
-          "header": "P3 [Color Logic] Incorrect badge semantic for zero values",
-          "details": "[02:34] The 'Success Rate' badge displays 0% using a green 'success' color. Semantically, a 0% success rate should be represented with a neutral or error color (red/gray) rather than a positive green.",
-          "route": "/assistants",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P2 [Layout Shift] Jarring content pop-in",
-          "details": "[03:31] The 'Roadmap Navigator' stats grid replaces a 'Loading analytics...' placeholder, causing a significant vertical layout shift that pushes the rest of the page content down abruptly.",
-          "route": "/roadmap",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P2 [Color/Contrast] Component theme mismatch in dark mode",
-          "details": "[05:08] The 'Pulse' chart component on the right sidebar renders with a bright white background, failing to respect the application's dark theme. This creates a high-contrast visual clash and makes the chart data difficult to read.",
-          "route": "/research",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        },
-        {
-          "header": "P2 [Layout Shift] Significant dashboard reflow",
-          "details": "[05:08] The Research Hub dashboard undergoes a major layout reflow as the 'Executive Synthesis' card and the right-hand sidebar components ('Activity Log', 'Pulse') load simultaneously, causing elements to jump across the screen.",
-          "route": "/research",
-          "suggestedFix": "",
-          "source": "agentic_video"
-        }
-      ],
-      "hardFilteredCount": 0,
-      "llmFilteredCount": 22
-    },
-    "diagnostics": {
-      "totalRawIssues": 23,
-      "falsePositivesFiltered": 22,
-      "realIssues": 0,
-      "videoRunFound": true,
-      "screenRunFound": true,
-      "videoIssueCount": 1,
-      "screenIssueCount": 8
-    },
-    "videoIssues": 1,
-    "screenshotIssues": 8,
-    "videoSummary": "{\"summary\": \"The application presents a cohesive dark-themed interface but is marred by the persistent visibility of internal testing artifacts ('Dogfood' overlay). The navigation is generally snappy, but the reliance on static, generic dark-grey rectangles for loading states across almost all views feels unrefined and lacks the 'calm and intentional' polish expected. The sidebar navigation is ext",
-    "screenSummary": "The NodeBench AI interface presents a professional and functional aesthetic across both light and dark themes. However, it currently suffers from high cognitive load in data-dense views (Research Hub), inconsistent terminology (PR jargon), and minor grammatical and alignment issues that detract from the 'calm and intentional' design philosophy. Mobile responsiveness is generally good, though some "
   }
 ]
