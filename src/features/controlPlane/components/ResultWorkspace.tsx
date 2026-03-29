@@ -610,9 +610,15 @@ export const ResultWorkspace = memo(function ResultWorkspace({
                   onMouseLeave={() =>
                     setHoveredSourceId((current) => (current === source.id ? null : current))
                   }
+                  onFocus={() => setHoveredSourceId(source.id)}
+                  onBlur={() =>
+                    setHoveredSourceId((current) => (current === source.id ? null : current))
+                  }
                   onClick={() =>
                     setSelectedSourceId((current) => (current === source.id ? null : source.id))
                   }
+                  aria-pressed={isPinned}
+                  aria-label={`Source: ${source.title ?? source.label}${isPinned ? " (pinned)" : ""}`}
                   className={`w-full rounded-xl border px-3 py-3 text-left transition-colors ${
                     isPinned
                       ? "border-[#d97757]/30 bg-[#d97757]/[0.06]"

@@ -1,3 +1,8 @@
+# Tax scanner credentials (sensitive)
+scripts/tax-2025/credentials.json
+scripts/tax-2025/token.json
+docs/career/2025-Tax-Bundle/
+
 # Logs
 logs
 *.log
@@ -46,6 +51,9 @@ playwright-report/
 
 # Temporary files
 temp_*.txt
+tmp-*.png
+tmp-*.jpg
+out/
 temp_*.md
 .tmp-tools/
 .tmp/
