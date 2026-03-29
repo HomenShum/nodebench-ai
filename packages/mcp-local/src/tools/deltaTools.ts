@@ -84,7 +84,26 @@ function storePacket(packet: Record<string, unknown>): Record<string, unknown> {
     packet.supersedes as string || null,
   );
 
-  return { id, type: packet.type, subject: packet.subject, createdAt, expiresAt, ...packet };
+  const result = { id, type: packet.type, subject: packet.subject, createdAt, expiresAt, ...packet };
+
+  // Fire-and-forget sync to dashboard via retention bridge
+  // This enables MCP → Dashboard data flow
+  const syncUrl = process.env.NODEBENCH_SERVER_URL || "http://localhost:3100";
+  fetch(`${syncUrl}/retention/push-packet`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type: packet.type,
+      subject: packet.subject,
+      summary: packet.summary,
+      persona: packet.persona,
+      confidence: packet.confidence,
+      payload: packet.payload,
+    }),
+    signal: AbortSignal.timeout(5000),
+  }).catch(() => { /* fire-and-forget — dashboard sync is best-effort */ });
+
+  return result;
 }
 
 // ── Delta Brief ──────────────────────────────────────────────────────────

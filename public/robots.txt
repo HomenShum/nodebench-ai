@@ -7,6 +7,8 @@ Allow: /pricing
 Allow: /changelog
 Allow: /legal
 Allow: /founder
+Allow: /company/
+Allow: /share/
 
 Disallow: /admin
 Disallow: /api-keys

@@ -158,5 +158,63 @@ export function createRetentionBridgeRouter(): Router {
     }
   });
 
+  // Ingest delta packets from MCP tools into the shared context layer
+  // This is the MCP → Dashboard sync bridge
+  router.post("/push-packet", (req, res) => {
+    try {
+      const packet = req.body as {
+        type?: string;
+        subject?: string;
+        summary?: string;
+        persona?: string;
+        confidence?: number;
+        payload?: unknown;
+      };
+
+      if (!packet.type || !packet.subject) {
+        res.status(400).json({ error: "type and subject are required" });
+        return;
+      }
+
+      logEvent("packet_ingested", {
+        type: packet.type,
+        subject: packet.subject,
+        confidence: packet.confidence,
+      });
+
+      // Update retention connection stats if present
+      if (retentionConnection) {
+        retentionConnection.lastSync = new Date().toISOString();
+      }
+
+      // The packet is now logged in the event stream.
+      // When Convex is wired, this will also:
+      // - delta.brief → ambientIntelligenceOps.enqueueIngestion
+      // - delta.diligence → founder.ingestSignal
+      // - delta.memo → sharedContextOps.publishPacket
+      // - delta.handoff → founder.createTaskPacket
+      // - delta.watch → founder.createRelatedEntity
+
+      res.status(201).json({
+        status: "ingested",
+        type: packet.type,
+        subject: packet.subject,
+        hint: "Packet stored in event stream. Dashboard will reflect changes on next refresh.",
+      });
+    } catch (err) {
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Packet ingestion failed", detail: String(err) });
+      }
+    }
+  });
+
+  // Get recent ingested packets (for dashboard polling)
+  router.get("/packets", (_req, res) => {
+    const packetEvents = eventLog
+      .filter((e) => e.type === "packet_ingested")
+      .slice(-20);
+    res.json({ packets: packetEvents, count: packetEvents.length });
+  });
+
   return router;
 }

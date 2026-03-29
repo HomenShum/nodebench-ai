@@ -20,6 +20,8 @@ import { buildCockpitPathForView } from "@/lib/registry/viewRegistry";
 import { initErrorReporting } from "@/lib/errorReporting";
 
 const ShareableMemoView = lazy(() => import("@/features/founder/views/ShareableMemoView"));
+const PublicCompanyProfileView = lazy(() => import("@/features/founder/views/PublicCompanyProfileView"));
+const EmbedView = lazy(() => import("@/features/founder/views/EmbedView"));
 
 const FastAgentPanel = lazy(() =>
   import("@/features/agents/components/FastAgentPanel/FastAgentPanel").then((mod) => ({
@@ -121,6 +123,34 @@ function App() {
         <ErrorBoundary title="Something went wrong">
           <Suspense fallback={<ViewSkeleton />}>
             <ShareableMemoView />
+          </Suspense>
+        </ErrorBoundary>
+      </ThemeProvider>
+    );
+  }
+
+  // Standalone route: /company/:slug renders public company intelligence profile
+  const isCompanyRoute = location.pathname.startsWith("/company/");
+  if (isCompanyRoute) {
+    return (
+      <ThemeProvider>
+        <ErrorBoundary title="Something went wrong">
+          <Suspense fallback={<ViewSkeleton />}>
+            <PublicCompanyProfileView />
+          </Suspense>
+        </ErrorBoundary>
+      </ThemeProvider>
+    );
+  }
+
+  // Standalone route: /embed/:type/:id renders minimal iframe-friendly widget
+  const isEmbedRoute = location.pathname.startsWith("/embed/");
+  if (isEmbedRoute) {
+    return (
+      <ThemeProvider>
+        <ErrorBoundary title="Something went wrong">
+          <Suspense fallback={<ViewSkeleton />}>
+            <EmbedView />
           </Suspense>
         </ErrorBoundary>
       </ThemeProvider>

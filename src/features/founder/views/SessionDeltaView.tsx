@@ -15,6 +15,9 @@
  */
 
 import { memo, useState, useMemo } from "react";
+import { useQuery } from "convex/react";
+import { useConvexAuth } from "convex/react";
+import { useConvexApi } from "@/lib/convexApi";
 import {
   AlertTriangle,
   ArrowRight,
@@ -26,6 +29,7 @@ import {
   Flame,
   Globe,
   Lightbulb,
+  Loader2,
   Package,
   Shield,
   Sparkles,
@@ -253,11 +257,84 @@ function PacketReadinessSection({ packets }: { packets: typeof DEMO_SESSION_DELT
 // ── Main View ──────────────────────────────────────────────────────────
 
 function SessionDeltaViewInner() {
-  const delta = DEMO_SESSION_DELTA;
+  const { isAuthenticated } = useConvexAuth();
+  const api = useConvexApi();
+
+  // Try Convex query if authenticated, fall back to demo data
+  const liveSignals = useQuery(
+    api?.domains?.founder?.operations?.getSignalsByCompany ?? "skip",
+    isAuthenticated && api ? { limit: 20 } : "skip",
+  );
+  const liveTimeline = useQuery(
+    api?.domains?.founder?.operations?.getTimelineEvents ?? "skip",
+    isAuthenticated && api ? { limit: 20 } : "skip",
+  );
+
+  const isLive = isAuthenticated && api && (liveSignals !== undefined || liveTimeline !== undefined);
+  const isLoading = isAuthenticated && api && liveSignals === undefined && liveTimeline === undefined;
+
+  // Build delta from live data or fall back to demo
+  const delta = useMemo(() => {
+    if (!isLive || (!liveSignals?.length && !liveTimeline?.length)) {
+      return DEMO_SESSION_DELTA;
+    }
+
+    // Map live signals into delta sections
+    const signals = liveSignals ?? [];
+    const timeline = liveTimeline ?? [];
+
+    return {
+      ...DEMO_SESSION_DELTA,
+      totalChanges: signals.length + timeline.length,
+      strategyShifts: signals
+        .filter((s: Record<string, unknown>) => s.sourceType === "founder_note" || s.sourceType === "memo")
+        .slice(0, 5)
+        .map((s: Record<string, unknown>) => ({
+          title: (s.title as string) || "Signal",
+          content: (s.content as string) || "",
+          confidence: (s.importanceScore as number) ?? 0.5,
+          type: (s.sourceType as string) || "signal",
+        })),
+      competitorSignals: signals
+        .filter((s: Record<string, unknown>) => s.sourceType === "market" || s.sourceType === "customer")
+        .slice(0, 5)
+        .map((s: Record<string, unknown>) => ({
+          title: (s.title as string) || "Market Signal",
+          content: (s.content as string) || "",
+          confidence: (s.importanceScore as number) ?? 0.5,
+        })),
+      buildItems: timeline
+        .filter((t: Record<string, unknown>) => t.eventType === "initiative_completed" || t.eventType === "decision_made")
+        .slice(0, 5)
+        .map((t: Record<string, unknown>) => ({
+          title: (t.summary as string) || "Event",
+          content: (t.entityType as string) || "",
+          type: (t.eventType as string) || "build",
+        })),
+      eventsSinceLastSession: timeline.length,
+      attentionRequired: signals.filter((s: Record<string, unknown>) => (s.importanceScore as number) >= 0.8).length,
+    };
+  }, [isLive, liveSignals, liveTimeline]);
 
   return (
     <div className="h-full overflow-y-auto px-6 py-6">
       <div className="mx-auto max-w-3xl space-y-4">
+        {/* Live/Demo indicator */}
+        <div className="flex items-center justify-end gap-2">
+          {isLoading ? (
+            <span className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-2.5 py-1 text-[9px] text-white/30">
+              <Loader2 className="h-3 w-3 animate-spin" /> Loading live data...
+            </span>
+          ) : (
+            <span className={cn(
+              "rounded-full px-2.5 py-1 text-[9px] font-medium",
+              isLive ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400",
+            )}>
+              {isLive ? "Live" : "Demo"}
+            </span>
+          )}
+        </div>
+
         <DeltaHeader delta={delta} />
 
         <DeltaSection
