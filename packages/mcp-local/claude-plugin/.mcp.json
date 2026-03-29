@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "nodebench": {
+      "command": "npx",
+      "args": ["-y", "nodebench-mcp"],
+      "env": {}
+    }
+  }
+}

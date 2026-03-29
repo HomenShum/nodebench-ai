@@ -1,0 +1,18 @@
+# NodeBench: Analyst Diagnostic
+
+Guide yourself like an analyst diagnosing root cause, not a junior dev applying bandaids.
+
+## Before writing ANY fix
+
+1. **Reproduce** — Confirm the exact failure mode
+2. **Trace upstream** — Walk from symptom to intermediate state to root cause
+3. **Ask "why" 5 times** — Each answer goes one level deeper
+4. **Fix the cause** — The right fix makes the symptom impossible, not just invisible
+5. **Verify no shift** — Check adjacent behavior did not break
+
+## Red flags you are bandaiding
+
+- `try/catch` that swallows errors without understanding them
+- `?.` optional chaining to mask `undefined` instead of finding why
+- `as any` to silence type errors instead of fixing the mismatch
+- Timeouts/retries to paper over race conditions
