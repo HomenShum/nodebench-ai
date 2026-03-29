@@ -1,0 +1,46 @@
+{
+  "capturedAtIso": "2026-03-28T22:57:29.794Z",
+  "claw3dURL": "http://localhost:3000",
+  "nodebenchURL": "http://localhost:5191",
+  "serverURL": "http://localhost:3100",
+  "mime": "video/mp4",
+  "chapters": [
+    {
+      "name": "Claw3D 3D Office — standalone",
+      "startSec": 3.3
+    },
+    {
+      "name": "3D Office — exploring workspace",
+      "startSec": 8.5
+    },
+    {
+      "name": "3D Office — zooming in",
+      "startSec": 13.3
+    },
+    {
+      "name": "NodeBench — 3D Agent Office (iframe)",
+      "startSec": 16.3
+    },
+    {
+      "name": "NodeBench — 3DClaw header with Open Standalone button",
+      "startSec": 20.7
+    },
+    {
+      "name": "NodeBench — Coordination Hub (2D view)",
+      "startSec": 22.7
+    },
+    {
+      "name": "Firing real API calls — publish + delegate",
+      "startSec": 25.1
+    },
+    {
+      "name": "Back to 3D Agent Office",
+      "startSec": 27.2
+    },
+    {
+      "name": "Final panoramic view of AI workspace",
+      "startSec": 31.3
+    }
+  ],
+  "videoPath": "/dogfood/claw3d-office-demo.mp4"
+}
