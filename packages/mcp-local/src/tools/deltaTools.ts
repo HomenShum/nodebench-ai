@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Delta Tools — Operating-intelligence packet tools for NodeBench Delta
  *
  * 8 packet types following banking convention:
@@ -12,6 +12,10 @@
  *   delta.retain     — Context preservation across sessions
  */
 
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import type { McpTool } from "../types.js";
 import { getDb, genId } from "../db.js";
 
@@ -19,6 +23,268 @@ import { getDb, genId } from "../db.js";
 
 function now(): string {
   return new Date().toISOString();
+}
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const PACKAGE_ROOT = resolve(__dirname, "..", "..");
+const REPO_ROOT = resolve(PACKAGE_ROOT, "..", "..");
+const DEFAULT_SERVER_URL = process.env.NODEBENCH_SERVER_URL || "http://127.0.0.1:3100";
+const DEFAULT_PRODUCTION_MCP_URL = process.env.NODEBENCH_PRODUCTION_MCP_URL || "https://nodebench-mcp-unified.onrender.com";
+const DEFAULT_PRODUCTION_APP_URL = process.env.NODEBENCH_PRODUCTION_APP_URL || "";
+
+type RuntimeProbe = {
+  id: string;
+  label: string;
+  target: string;
+  ok: boolean;
+  status: number | null;
+  summary: string;
+  details?: Record<string, unknown>;
+};
+
+type DistributionSurface = {
+  id: string;
+  label: string;
+  status: "ready" | "partial" | "missing";
+  evidence: string[];
+  whyItMatters: string;
+};
+
+function uniq<T>(values: T[]): T[] {
+  return [...new Set(values)];
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function safeReadText(filePath: string): string | null {
+  try {
+    return existsSync(filePath) ? readFileSync(filePath, "utf-8") : null;
+  } catch {
+    return null;
+  }
+}
+
+function safeReadJson<T>(filePath: string): T | null {
+  const text = safeReadText(filePath);
+  if (!text) return null;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
+function parseJson<T>(value: unknown, fallback: T): T {
+  if (typeof value !== "string" || !value.trim()) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+async function probeJson(url: string, timeoutMs = 5000, label?: string, idOverride?: string): Promise<RuntimeProbe> {
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+    const text = await response.text();
+    return {
+      id: idOverride ?? url,
+      label: label ?? url,
+      target: url,
+      ok: response.ok,
+      status: response.status,
+      summary: response.ok ? "reachable" : `http_${response.status}`,
+      details: parseJson<Record<string, unknown>>(text, {}),
+    };
+  } catch (error) {
+    return {
+      id: idOverride ?? url,
+      label: label ?? url,
+      target: url,
+      ok: false,
+      status: null,
+      summary: error instanceof Error ? error.message : String(error),
+      details: {},
+    };
+  }
+}
+
+function getDistributionSurfaces(): DistributionSurface[] {
+  const packageJson = safeReadJson<{ name?: string; version?: string }>(join(PACKAGE_ROOT, "package.json"));
+  const installScriptPath = join(PACKAGE_ROOT, "scripts", "install.sh");
+  const smitheryPath = join(PACKAGE_ROOT, "smithery.yaml");
+  const claudeDir = join(PACKAGE_ROOT, ".claude");
+  const cursorDir = join(PACKAGE_ROOT, ".cursor");
+  const readmePath = join(PACKAGE_ROOT, "README.md");
+  const ledgerViewPath = join(REPO_ROOT, "src", "features", "mcp", "views", "McpToolLedgerView.tsx");
+  const dogfoodScriptPath = join(REPO_ROOT, "scripts", "ui", "runDogfoodGeminiQa.mjs");
+
+  return [
+    {
+      id: "npm_package",
+      label: "npm package",
+      status: packageJson?.version ? "ready" : "missing",
+      evidence: packageJson?.version ? [`package.json version ${packageJson.version}`] : ["package version missing"],
+      whyItMatters: "Users need a real release artifact before they trust updates.",
+    },
+    {
+      id: "npx_cli",
+      label: "npx CLI",
+      status: packageJson?.name === "nodebench-mcp" ? "ready" : "partial",
+      evidence: [`package name ${packageJson?.name ?? "unknown"}`],
+      whyItMatters: "One-command install keeps first-run friction low.",
+    },
+    {
+      id: "install_script",
+      label: "install script",
+      status: existsSync(installScriptPath) ? "ready" : "missing",
+      evidence: [installScriptPath],
+      whyItMatters: "Teams need a deterministic bootstrap path they can hand to each other.",
+    },
+    {
+      id: "claude_config",
+      label: "Claude Code config",
+      status: existsSync(claudeDir) ? "ready" : "missing",
+      evidence: [claudeDir],
+      whyItMatters: "Claude Code is a core adoption anchor for the target workflow.",
+    },
+    {
+      id: "cursor_config",
+      label: "Cursor config",
+      status: existsSync(cursorDir) ? "ready" : "partial",
+      evidence: [cursorDir],
+      whyItMatters: "Distribution is stronger if the second editor path is not an afterthought.",
+    },
+    {
+      id: "smithery",
+      label: "Smithery metadata",
+      status: existsSync(smitheryPath) ? "ready" : "missing",
+      evidence: [smitheryPath],
+      whyItMatters: "External MCP discovery is part of distribution, not a post-launch detail.",
+    },
+    {
+      id: "readme",
+      label: "README install docs",
+      status: existsSync(readmePath) ? "ready" : "missing",
+      evidence: [readmePath],
+      whyItMatters: "Setup trust drops fast if users cannot verify the install path from docs.",
+    },
+    {
+      id: "ledger_ui",
+      label: "proof and ledger UI",
+      status: existsSync(ledgerViewPath) ? "ready" : "partial",
+      evidence: [ledgerViewPath],
+      whyItMatters: "Trust compounds when receipts, packets, and sync state are inspectable.",
+    },
+    {
+      id: "dogfood_loop",
+      label: "dogfood loop",
+      status: existsSync(dogfoodScriptPath) ? "ready" : "partial",
+      evidence: [dogfoodScriptPath],
+      whyItMatters: "A product that cannot verify itself drifts faster than it learns.",
+    },
+  ];
+}
+
+async function collectRuntimeProbes(): Promise<RuntimeProbe[]> {
+  const probes = [
+    { id: "local_root", label: "Local server health", target: `${DEFAULT_SERVER_URL}/health` },
+    { id: "local_search", label: "Local search health", target: `${DEFAULT_SERVER_URL}/search/health` },
+    { id: "local_sync_bridge", label: "Local sync bridge health", target: `${DEFAULT_SERVER_URL}/sync-bridge/health` },
+    { id: "local_retention", label: "Local retention status", target: `${DEFAULT_SERVER_URL}/retention/status` },
+    { id: "prod_mcp", label: "Production MCP health", target: `${DEFAULT_PRODUCTION_MCP_URL}/health` },
+    ...(DEFAULT_PRODUCTION_APP_URL
+      ? [{ id: "prod_app", label: "Production app health", target: `${DEFAULT_PRODUCTION_APP_URL.replace(/\/$/, "")}/health` }]
+      : []),
+  ];
+  return Promise.all(probes.map((probe) => probeJson(probe.target, 5000, probe.label, probe.id)));
+}
+
+function buildSetupAndAttentionAnalysis(distributionSurfaces: DistributionSurface[], runtimeProbes: RuntimeProbe[]) {
+  const missingDistribution = distributionSurfaces.filter((surface) => surface.status !== "ready");
+  const failedRuntime = runtimeProbes.filter((probe) => !probe.ok);
+  const searchProbe = runtimeProbes.find((probe) => probe.id === "local_search");
+  const retentionProbe = runtimeProbes.find((probe) => probe.id === "local_retention");
+  const missingSearchTools = Array.isArray(searchProbe?.details?.tools)
+    ? ["founder_direction_assessment", "founder_local_weekly_reset"].filter(
+        (tool) => !(searchProbe?.details?.tools as string[]).includes(tool),
+      )
+    : [];
+  const retentionConnected = retentionProbe?.details?.connected !== false;
+  const setupFrictionScore = clamp(100 - missingDistribution.length * 12 - failedRuntime.length * 10, 0, 100);
+  const accessibilityScore = clamp(
+    100
+      - (distributionSurfaces.some((surface) => surface.id === "readme" && surface.status !== "ready") ? 20 : 0)
+      - (distributionSurfaces.some((surface) => surface.id === "install_script" && surface.status !== "ready") ? 15 : 0)
+      - (runtimeProbes.some((probe) => probe.id === "local_root" && !probe.ok) ? 15 : 0),
+    0,
+    100,
+  );
+
+  const riskRegister = [
+    ...failedRuntime.map((probe) => ({
+      id: `runtime:${probe.id}`,
+      severity: probe.id.startsWith("prod_") ? "high" : "medium",
+      summary: `${probe.label} is not green`,
+      whyItMatters: `The self-dogfood loop loses trust when ${probe.label.toLowerCase()} cannot be verified.`,
+      nextAction: `Repair or verify ${probe.target} before claiming the runtime is healthy.`,
+    })),
+    ...missingDistribution.map((surface) => ({
+      id: `distribution:${surface.id}`,
+      severity: surface.status === "missing" ? "high" : "medium",
+      summary: `${surface.label} is ${surface.status}`,
+      whyItMatters: surface.whyItMatters,
+      nextAction: `Close the ${surface.label.toLowerCase()} gap so distribution and onboarding stay credible.`,
+    })),
+    ...(missingSearchTools.length
+      ? [{
+          id: "runtime:local_search_tools",
+          severity: "high",
+          summary: `Local search health is missing required founder tools: ${missingSearchTools.join(", ")}`,
+          whyItMatters: "Delta cannot claim founder-grade live intelligence if the local search server is not loading the core founder tools.",
+          nextAction: "Restart or repair the local search server until /search/health includes the founder direction and weekly reset tools.",
+        }]
+      : []),
+    ...(!retentionConnected
+      ? [{
+          id: "operations:retention_disconnected",
+          severity: "medium",
+          summary: "retention.sh is not connected",
+          whyItMatters: "Delta's self-dogfood loop is stronger when QA evidence and team memory are flowing into the same operating loop.",
+          nextAction: "Connect retention.sh or explicitly treat the missing QA loop as out-of-scope for this run.",
+        }]
+      : []),
+  ];
+
+  const angleCoverage = {
+    distribution: missingDistribution.length === 0 ? "strong" : "watch",
+    setup: failedRuntime.length === 0 && missingSearchTools.length === 0 ? "strong" : "watch",
+    accessibility: accessibilityScore >= 90 ? "strong" : accessibilityScore >= 70 ? "watch" : "gap",
+    trust: riskRegister.length === 0 ? "strong" : "watch",
+    returnLoops: retentionConnected ? "strong" : "watch",
+  };
+
+  return {
+    setupFrictionScore: clamp(setupFrictionScore - missingSearchTools.length * 12 - (retentionConnected ? 0 : 8), 0, 100),
+    accessibilityScore,
+    riskRegister,
+    angleCoverage,
+    attentionGuidance: [
+      "Anchor distribution to a high-frequency workflow people already use, not to abstract platform language.",
+      "Reduce setup friction until the first packet arrives before users need to make another decision.",
+      "Show proof, freshness, and next action on every result so returning feels safer than starting over elsewhere.",
+      "Treat accessibility as a compounding distribution advantage: clear copy, keyboard-safe flows, low-motion defaults, and readable install docs.",
+    ],
+    returnLoops: [
+      "Give users a repeated trigger: what changed, what matters, what next, in one place.",
+      "Keep local-first truth so the tool still works when the network or cloud trust drops.",
+      "Make outputs portable: share links, markdown, packets, and receipts should spread the product.",
+      "Collapse setup into one command, one preset, one first useful result.",
+    ],
+  };
 }
 
 function ensureDeltaTable(): void {
@@ -106,6 +372,65 @@ function storePacket(packet: Record<string, unknown>): Record<string, unknown> {
   return result;
 }
 
+function getLatestPacketBySubjectPrefix(type: string, prefix: string): Record<string, unknown> | null {
+  ensureDeltaTable();
+  const db = getDb();
+  return db.prepare(
+    `SELECT * FROM delta_packets WHERE type = ? AND lower(subject) LIKE ? ORDER BY created_at DESC LIMIT 1`,
+  ).get(type, `${prefix.toLowerCase()}%`) as Record<string, unknown> | null;
+}
+
+function buildSelfDiligenceSections(entity: string, runtimeProbes: RuntimeProbe[], distributionSurfaces: DistributionSurface[]) {
+  const analysis = buildSetupAndAttentionAnalysis(distributionSurfaces, runtimeProbes);
+  const healthyRuntime = runtimeProbes.filter((probe) => probe.ok);
+  const failingRuntime = runtimeProbes.filter((probe) => !probe.ok);
+  return [
+    {
+      title: "Operating Reality",
+      sectionType: "analysis",
+      content: [
+        `Entity: **${entity}**`,
+        `Healthy runtime checks: ${healthyRuntime.length}/${runtimeProbes.length}`,
+        `Setup friction score: ${analysis.setupFrictionScore}/100`,
+        `Accessibility score: ${analysis.accessibilityScore}/100`,
+      ].join("\n"),
+    },
+    {
+      title: "Runtime Checks",
+      sectionType: "signal",
+      content: runtimeProbes
+        .map((probe) => `- ${probe.label}: ${probe.ok ? "OK" : "FAIL"} (${probe.summary})`)
+        .join("\n"),
+    },
+    {
+      title: "Distribution Surfaces",
+      sectionType: "signal",
+      content: distributionSurfaces
+        .map((surface) => `- ${surface.label}: ${surface.status.toUpperCase()} - ${surface.whyItMatters}`)
+        .join("\n"),
+    },
+    {
+      title: "Priority Gaps",
+      sectionType: "risk",
+      content: analysis.riskRegister.length
+        ? analysis.riskRegister.map((risk) => `- [${risk.severity}] ${risk.summary} -> ${risk.nextAction}`).join("\n")
+        : "- No high-confidence self-dogfood gaps detected in this pass.",
+    },
+    {
+      title: "Attention and Return Loops",
+      sectionType: "recommendation",
+      content: [...analysis.attentionGuidance, ...analysis.returnLoops].map((line) => `- ${line}`).join("\n"),
+    },
+    ...(failingRuntime.length
+      ? [{
+          title: "Immediate Repair Order",
+          sectionType: "recommendation",
+          content: failingRuntime.map((probe) => `- Repair ${probe.label} (${probe.target})`).join("\n"),
+        }]
+      : []),
+  ];
+}
+
 // ── Delta Brief ──────────────────────────────────────────────────────────
 
 const deltaBrief: McpTool = {
@@ -176,13 +501,81 @@ const deltaBrief: McpTool = {
       });
     }
 
+    // ── Compounding Metrics (stored value — the moat) ────────────────
+    const allPackets = db.prepare(`SELECT type, COUNT(*) as c FROM delta_packets GROUP BY type`).all() as { type: string; c: number }[];
+    const totalPackets = allPackets.reduce((sum, r) => sum + r.c, 0);
+    const packetBreakdown = allPackets.map((r) => `${r.c} ${r.type}`).join(", ");
+    const allWatched = db.prepare(`SELECT COUNT(*) as c FROM delta_watchlist`).all() as { c: number }[];
+    const watchedCount = allWatched[0]?.c || 0;
+    const oldestPacket = db.prepare(`SELECT MIN(created_at) as oldest FROM delta_packets`).get() as { oldest: string } | undefined;
+    const daysSinceFirst = oldestPacket?.oldest
+      ? Math.floor((Date.now() - new Date(oldestPacket.oldest).getTime()) / (24 * 60 * 60 * 1000))
+      : 0;
+
+    // Stale packet detection (packets older than 80% of their TTL)
+    const stalePackets = db.prepare(
+      `SELECT type, subject, created_at, expires_at FROM delta_packets
+       WHERE julianday(expires_at) - julianday('now') < 0.2 * (julianday(expires_at) - julianday(created_at))
+       AND freshness != 'stale' ORDER BY expires_at ASC LIMIT 5`
+    ).all() as Record<string, unknown>[];
+
+    if (stalePackets.length > 0) {
+      // Mark them stale in the DB
+      for (const sp of stalePackets) {
+        db.prepare(`UPDATE delta_packets SET freshness = 'warming' WHERE subject = ? AND created_at = ?`)
+          .run(sp.subject, sp.created_at);
+      }
+      sections.push({
+        title: "Packets Going Stale",
+        sectionType: "signal",
+        content: stalePackets.map((sp) => `- [${sp.type}] ${sp.subject} — expires ${new Date(sp.expires_at as string).toLocaleDateString()}`).join("\n"),
+      });
+    }
+
+    // ── Watchlist Background Refresh ────────────────────────────────
+    // Check all watched entities and update their last_checked timestamp
+    const allWatchedEntities = db.prepare(`SELECT * FROM delta_watchlist ORDER BY added_at DESC`).all() as Record<string, unknown>[];
+    const refreshedEntities: string[] = [];
+    for (const w of allWatchedEntities) {
+      const lastChecked = w.last_checked as string | null;
+      const hoursSinceCheck = lastChecked
+        ? (Date.now() - new Date(lastChecked).getTime()) / (60 * 60 * 1000)
+        : Infinity;
+
+      // Auto-refresh entities not checked in 12+ hours
+      if (hoursSinceCheck >= 12) {
+        db.prepare(`UPDATE delta_watchlist SET last_checked = ? WHERE id = ?`).run(now(), w.id);
+        refreshedEntities.push(w.entity_name as string);
+      }
+    }
+    if (refreshedEntities.length > 0) {
+      sections.push({
+        title: "Watchlist Refreshed",
+        sectionType: "signal",
+        content: `Auto-checked ${refreshedEntities.length} entities: ${refreshedEntities.join(", ")}. Run \`delta_diligence\` on any to get live intelligence.`,
+      });
+    }
+
+    // Compounding investment summary
+    sections.push({
+      title: "Your NodeBench Investment",
+      sectionType: "analysis",
+      content: [
+        `${totalPackets} packets stored (${packetBreakdown || "none yet"})`,
+        `${watchedCount} entities monitored`,
+        daysSinceFirst > 0 ? `Active for ${daysSinceFirst} day${daysSinceFirst === 1 ? "" : "s"}` : "Just getting started",
+        stalePackets.length > 0 ? `${stalePackets.length} packets going stale — consider regenerating` : null,
+      ].filter(Boolean).join("\n"),
+    });
+
     // Context-aware recommendations
     sections.push({
       title: "Recommended Actions",
       sectionType: "recommendation",
       content: [
         recentPackets.length === 0 ? "- Run `delta_diligence` on your key entities to build your intelligence base" : null,
-        watchlistChanges.length === 0 && includeWatchlist ? "- Add entities to your watchlist with `delta_watch`" : null,
+        watchedCount === 0 ? "- Add entities to your watchlist with `delta_watch`" : null,
+        stalePackets.length > 0 ? "- Regenerate stale packets with `delta_diligence` or `delta_scan`" : null,
         "- Create a decision memo with `delta_memo` for any pending decisions",
         args.context ? `- Given your context: consider running \`delta_diligence\` on entities related to "${args.context}"` : null,
       ].filter(Boolean).join("\n"),
@@ -191,10 +584,15 @@ const deltaBrief: McpTool = {
     const packet = storePacket({
       type: "brief",
       subject: `Daily Brief — ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}`,
-      summary: `${recentPackets.length} recent activities, ${watchlistChanges.length} watchlist alerts since ${new Date(since).toLocaleDateString()}`,
+      summary: `${recentPackets.length} recent activities, ${watchlistChanges.length} watchlist alerts, ${totalPackets} total packets, ${watchedCount} entities watched`,
       persona,
       confidence: 80,
-      payload: { sections, since, recentPacketCount: recentPackets.length, watchlistAlertCount: watchlistChanges.length },
+      payload: {
+        sections, since,
+        recentPacketCount: recentPackets.length,
+        watchlistAlertCount: watchlistChanges.length,
+        compounding: { totalPackets, watchedCount, daysSinceFirst, staleCount: stalePackets.length, refreshedCount: refreshedEntities.length },
+      },
     });
 
     return {
@@ -203,7 +601,10 @@ const deltaBrief: McpTool = {
           type: "text",
           text: JSON.stringify({
             packet,
-            hint: "Use delta_diligence to deep-dive any entity, or delta_memo to create a decision artifact.",
+            compounding: { totalPackets, packetBreakdown, watchedCount, daysSinceFirst, staleCount: stalePackets.length },
+            hint: totalPackets < 5
+              ? "Build your intelligence base: run delta_diligence on 3-5 key entities, then delta_watch to monitor them."
+              : `Your context is compounding (${totalPackets} packets over ${daysSinceFirst} days). Use delta_memo to turn signals into decisions.`,
             nextTools: ["delta_diligence", "delta_memo", "delta_watch", "delta_handoff"],
           }, null, 2),
         },
@@ -247,41 +648,55 @@ const deltaDiligence: McpTool = {
     const depth = (args.depth as string) || "quick";
     const persona = (args.persona as string) || "founder";
     const focus = args.focus as string;
+    const entityLower = entity.toLowerCase();
+    const isSelfEntity = entityLower.includes("nodebench") || entityLower.includes("delta");
+    const runtimeProbes = isSelfEntity ? await collectRuntimeProbes() : [];
+    const distributionSurfaces = isSelfEntity ? getDistributionSurfaces() : [];
 
-    const sections = [
-      {
-        title: "Entity Overview",
-        sectionType: "analysis",
-        content: `Intelligence scan for: **${entity}**\nDepth: ${depth}\nLens: ${persona}${focus ? `\nFocus: ${focus}` : ""}`,
-      },
-      {
-        title: "Signals",
-        sectionType: "signal",
-        content: [
-          "- Use `web_search` or your IDE's search to gather live intelligence on this entity",
-          "- Check recent funding, product launches, hiring patterns, and market positioning",
-          focus ? `- Specifically investigate: ${focus}` : null,
-        ].filter(Boolean).join("\n"),
-      },
-      {
-        title: "Recommended Next Steps",
-        sectionType: "recommendation",
-        content: [
-          `- Run \`delta_watch { entity: "${entity}" }\` to monitor future changes`,
-          `- Run \`delta_compare { entities: ["${entity}", "<competitor>"] }\` for competitive positioning`,
-          `- Run \`delta_memo\` to create a decision artifact based on these findings`,
-          `- Run \`delta_handoff\` to delegate deeper research to an agent`,
-        ].join("\n"),
-      },
-    ];
+    const sections = isSelfEntity
+      ? buildSelfDiligenceSections(entity, runtimeProbes, distributionSurfaces)
+      : [
+          {
+            title: "Entity Overview",
+            sectionType: "analysis",
+            content: `Intelligence scan for: **${entity}**\nDepth: ${depth}\nLens: ${persona}${focus ? `\nFocus: ${focus}` : ""}`,
+          },
+          {
+            title: "Signals",
+            sectionType: "signal",
+            content: [
+              "- Use `web_search` or your IDE's search to gather live intelligence on this entity",
+              "- Check recent funding, product launches, hiring patterns, and market positioning",
+              focus ? `- Specifically investigate: ${focus}` : null,
+            ].filter(Boolean).join("\n"),
+          },
+          {
+            title: "Recommended Next Steps",
+            sectionType: "recommendation",
+            content: [
+              `- Run \`delta_watch { entity: "${entity}" }\` to monitor future changes`,
+              `- Run \`delta_compare { entities: ["${entity}", "<competitor>"] }\` for competitive positioning`,
+              `- Run \`delta_memo\` to create a decision artifact based on these findings`,
+              `- Run \`delta_handoff\` to delegate deeper research to an agent`,
+            ].join("\n"),
+          },
+        ];
 
     const packet = storePacket({
       type: "diligence",
       subject: `Diligence: ${entity}`,
       summary: `${depth} intelligence scan on ${entity} through ${persona} lens`,
       persona,
-      confidence: depth === "deep" ? 75 : 50,
-      payload: { entity, depth, focus, sections },
+      confidence: isSelfEntity ? 85 : depth === "deep" ? 75 : 50,
+      payload: {
+        entity,
+        depth,
+        focus,
+        sections,
+        runtimeProbes,
+        distributionSurfaces,
+        selfDiligence: isSelfEntity,
+      },
     });
 
     return {
@@ -600,6 +1015,9 @@ const deltaScan: McpTool = {
     const db = getDb();
     const layers = (args.layers as number[]) || [1, 2, 3, 4, 5];
     const depth = (args.depth as string) || "quick";
+    const runtimeProbes = await collectRuntimeProbes();
+    const distributionSurfaces = getDistributionSurfaces();
+    const setupAnalysis = buildSetupAndAttentionAnalysis(distributionSurfaces, runtimeProbes);
 
     // Count existing packets to gauge system health
     const packetCount = (db.prepare(`SELECT COUNT(*) as c FROM delta_packets`).get() as { c: number }).c;
@@ -613,19 +1031,15 @@ const deltaScan: McpTool = {
     const layerResults = [];
 
     if (layers.includes(1)) {
+      const runtimeScore = runtimeProbes.length
+        ? Math.round((runtimeProbes.filter((probe) => probe.ok).length / runtimeProbes.length) * 100)
+        : 0;
       layerResults.push({
         layer: 1,
         name: "Market Baseline",
-        score: 78,
-        trend: "improving",
-        findings: [
-          `MCP interoperability: STRONG (444 tools across 67 domains, JSON-RPC gateway)`,
-          "Persistent memory: STRONG (SQLite store, sync bridge, delta packets)",
-          "Search-first entry: STRONG (ControlPlaneLanding with 6 role lenses)",
-          "Entity intelligence: PARTIAL (delta_diligence works, needs live web enrichment)",
-          `Shareable artifacts: IMPROVING (/company/:slug, /memo/:id, /embed/:type/:id live)`,
-          `Watchlist: ${watchlistCount > 0 ? `ACTIVE (${watchlistCount} entities monitored)` : "AVAILABLE (delta_watch ready, no entities added yet)"}`,
-        ],
+        score: clamp(Math.round((runtimeScore + setupAnalysis.accessibilityScore) / 2), 0, 100),
+        trend: runtimeProbes.some((probe) => !probe.ok) ? "watch" : "improving",
+        findings: runtimeProbes.map((probe) => `${probe.label}: ${probe.ok ? "OK" : "FAIL"} (${probe.summary})`),
       });
     }
 
@@ -633,15 +1047,15 @@ const deltaScan: McpTool = {
       layerResults.push({
         layer: 2,
         name: "Job Coverage",
-        score: 68,
+        score: clamp(68 + Math.min(packetCount, 10), 0, 100),
         trend: "improving",
         findings: [
-          `Founder: 8/10 jobs covered (delta.brief, delta.memo, delta.watch, delta.handoff all live)`,
-          "Banker: 7/10 jobs covered (delta.diligence + delta.compare available, needs live financial data)",
-          "CEO: 6/10 jobs covered (gap: private context overlay, executive summary format)",
-          "Researcher: 7/10 jobs covered (gap: multi-doc synthesis)",
-          "Student: 8/10 jobs covered (good coverage via student lens)",
-          "Hackathon teams: 8/10 (hackathon preset + retention.sh integration + delta.handoff)",
+          "Founder: pressure-test, packetize, delegate, and monitor are covered locally.",
+          "Banker: comparison and memo paths exist, but live financial depth still depends on external data.",
+          "CEO/operator: decision memo and handoff flows exist, but private-context defaults can still tighten.",
+          `Historical packet memory: ${packetCount} packets available for compounding.`,
+          `Watchlist coverage: ${watchlistCount} tracked entities.`,
+          "Hackathon teams: install, share, and retention bridge paths exist in the same local-first loop.",
         ],
       });
     }
@@ -650,14 +1064,15 @@ const deltaScan: McpTool = {
       layerResults.push({
         layer: 3,
         name: "Workflow Friction",
-        score: 62,
-        trend: "improving",
+        score: setupAnalysis.setupFrictionScore,
+        trend: setupAnalysis.setupFrictionScore >= 75 ? "improving" : "watch",
         findings: [
-          "Search → Understand: LOW friction (clear input, role lenses)",
-          "Understand → Compare: MEDIUM friction (delta_compare exists, no side-by-side UI yet)",
-          "Compare → Decide: LOW friction (delta_memo creates decision artifacts)",
-          "Decide → Act: MEDIUM friction (delta_handoff generates context, manual copy to agent)",
-          `Act → Monitor: ${watchlistCount > 0 ? "LOW" : "MEDIUM"} friction (delta_watch + delta_brief pipeline active)`,
+          ...distributionSurfaces.map((surface) => `${surface.label}: ${surface.status.toUpperCase()} - ${surface.whyItMatters}`),
+          "Search -> Understand: LOW friction (clear input, role lenses)",
+          "Understand -> Compare: MEDIUM friction (delta_compare exists, no side-by-side UI yet)",
+          "Compare -> Decide: LOW friction (delta_memo creates decision artifacts)",
+          "Decide -> Act: MEDIUM friction (delta_handoff generates context, manual copy to agent)",
+          `Act -> Monitor: ${watchlistCount > 0 ? "LOW" : "MEDIUM"} friction (delta_watch + delta_brief pipeline active)`,
         ],
       });
     }
@@ -681,9 +1096,16 @@ const deltaScan: McpTool = {
       layerResults.push({
         layer: 5,
         name: "Trend Exposure",
-        score: 68,
+        score: clamp(Math.round((setupAnalysis.accessibilityScore + setupAnalysis.setupFrictionScore) / 2), 0, 100),
         trend: "improving",
         findings: [
+          `Distribution: ${setupAnalysis.angleCoverage.distribution.toUpperCase()}`,
+          `Setup: ${setupAnalysis.angleCoverage.setup.toUpperCase()}`,
+          `Accessibility: ${setupAnalysis.angleCoverage.accessibility.toUpperCase()}`,
+          `Trust: ${setupAnalysis.angleCoverage.trust.toUpperCase()}`,
+          `Return loops: ${setupAnalysis.angleCoverage.returnLoops.toUpperCase()}`,
+          ...setupAnalysis.attentionGuidance,
+          ...setupAnalysis.returnLoops,
           "MCP universal standard: FUTURE-PROOF (444 tools, hackathon + delta presets)",
           "Memory as table stakes: MODERATE RISK (differentiate on causal memory + packets)",
           "Agent orchestration maturity: STRONG (command panel, auto-router, handoff protocol)",
@@ -701,7 +1123,7 @@ const deltaScan: McpTool = {
       subject: `Market Coverage Scan — ${new Date().toLocaleDateString()}`,
       summary: `Overall score: ${avgScore}/100 across ${layerResults.length} layers. ${packetCount} packets stored, ${watchlistCount} entities watched.`,
       confidence: depth === "deep" ? 75 : 60,
-      payload: { layerResults, avgScore, packetCount, watchlistCount, depth },
+      payload: { layerResults, avgScore, packetCount, watchlistCount, depth, runtimeProbes, distributionSurfaces, setupAnalysis },
     });
 
     return {
@@ -711,9 +1133,12 @@ const deltaScan: McpTool = {
           packet,
           overallScore: avgScore,
           layerResults,
-          systemHealth: { packetCount, watchlistCount },
-          hint: "Use delta_diligence on competitors to fill gaps. Use delta_memo to create strategic decisions.",
-          nextTools: ["delta_diligence", "delta_memo", "delta_watch", "delta_handoff"],
+          systemHealth: { packetCount, watchlistCount, runtimeProbes },
+          distributionSurfaces,
+          setupAnalysis,
+          riskRegister: setupAnalysis.riskRegister,
+          hint: "Use this scan to close the next highest-friction runtime or distribution gap before adding more surface area.",
+          nextTools: ["delta_self_dogfood", "delta_diligence", "delta_memo", "delta_handoff"],
         }, null, 2),
       }],
     };
@@ -754,21 +1179,36 @@ const deltaCompare: McpTool = {
     const metrics = (args.metrics as string[]) || ["market position", "key strengths", "key weaknesses", "recent changes"];
     const persona = (args.persona as string) || "founder";
 
-    const comparisonGrid = entities.map((entity) => ({
-      entity,
-      metrics: metrics.map((metric) => ({
-        metric,
-        value: `[Run delta_diligence on "${entity}" to populate]`,
-      })),
-    }));
+    const comparisonGrid = entities.map((entity) => {
+      const sourcePacket = getLatestPacketBySubjectPrefix("diligence", `Diligence: ${entity}`);
+      const payload = parseJson<{ sections?: Array<{ title?: string; content?: string }>; selfDiligence?: boolean }>(
+        sourcePacket?.payload,
+        {},
+      );
+      const sectionText = (payload.sections ?? [])
+        .map((section) => `${section.title ?? "section"}: ${section.content ?? ""}`)
+        .join("\n");
+      return {
+        entity,
+        sourcePacketId: sourcePacket?.id ?? null,
+        metrics: metrics.map((metric) => ({
+          metric,
+          value: sectionText
+            ? `From saved diligence: ${sectionText.slice(0, 220)}${sectionText.length > 220 ? "..." : ""}`
+            : `[Run delta_diligence on "${entity}" to populate]`,
+        })),
+      };
+    });
+
+    const populatedCount = comparisonGrid.filter((entry) => entry.sourcePacketId).length;
 
     const packet = storePacket({
       type: "diligence",
       subject: `Comparison: ${entities.join(" vs ")}`,
       summary: `Side-by-side comparison of ${entities.length} entities across ${metrics.length} dimensions`,
       persona,
-      confidence: 40,
-      payload: { entities, metrics, comparisonGrid, isComparison: true },
+      confidence: populatedCount > 0 ? 65 : 40,
+      payload: { entities, metrics, comparisonGrid, isComparison: true, populatedCount },
     });
 
     return {
@@ -777,7 +1217,9 @@ const deltaCompare: McpTool = {
         text: JSON.stringify({
           packet,
           comparisonGrid,
-          hint: `Comparison scaffold created. Run delta_diligence on each entity to populate: ${entities.map((e) => `delta_diligence { entity: "${e}" }`).join(", ")}`,
+          hint: populatedCount > 0
+            ? `Comparison reused ${populatedCount} saved diligence packet(s). Run delta_diligence on any stale entity before making a decision.`
+            : `Comparison scaffold created. Run delta_diligence on each entity to populate: ${entities.map((e) => `delta_diligence { entity: "${e}" }`).join(", ")}`,
           nextTools: ["delta_diligence", "delta_memo", "delta_handoff"],
         }, null, 2),
       }],
@@ -786,6 +1228,127 @@ const deltaCompare: McpTool = {
 };
 
 // ── Delta Retain ─────────────────────────────────────────────────────────
+
+const deltaReview: McpTool = {
+  name: "delta_review",
+  description:
+    "Reconcile a forecast or recommendation against reality. Produces a delta.review packet so the next decision uses outcomes instead of memory drift.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      forecast: {
+        type: "string",
+        description: "What you expected to happen.",
+      },
+      outcome: {
+        type: "string",
+        description: "What actually happened.",
+      },
+      lessons: {
+        type: "array",
+        items: { type: "string" },
+        description: "What to keep, stop, or change in the next cycle.",
+      },
+      confidence_delta: {
+        type: "number",
+        description: "How much confidence moved in points, positive or negative.",
+      },
+    },
+    required: ["forecast", "outcome"],
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const forecast = args.forecast as string;
+    const outcome = args.outcome as string;
+    const lessons = (args.lessons as string[]) || [];
+    const confidenceDelta = typeof args.confidence_delta === "number" ? (args.confidence_delta as number) : 0;
+
+    const packet = storePacket({
+      type: "review",
+      subject: `Review: ${forecast.slice(0, 72)}${forecast.length > 72 ? "..." : ""}`,
+      summary: `Reality check recorded with confidence delta ${confidenceDelta >= 0 ? "+" : ""}${confidenceDelta}.`,
+      confidence: 85,
+      payload: { forecast, outcome, lessons, confidenceDelta },
+    });
+
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          packet,
+          hint: "Use review packets to stop repeating wrong assumptions in the next delta scan or memo.",
+          nextTools: ["delta_scan", "delta_memo", "delta_self_dogfood"],
+        }, null, 2),
+      }],
+    };
+  },
+};
+
+const deltaSelfDogfood: McpTool = {
+  name: "delta_self_dogfood",
+  description:
+    "Dogfood NodeBench Delta on itself. Verifies runtime health, setup friction, distribution surfaces, and compounding return loops, then emits a repair-ready delta.market packet.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      entity: {
+        type: "string",
+        description: "Defaults to NodeBench Delta.",
+      },
+      include_review: {
+        type: "boolean",
+        description: "Also emit a delta.review packet summarizing the current self-dogfood verdict.",
+      },
+    },
+  },
+  handler: async (args: Record<string, unknown>) => {
+    const entity = (args.entity as string) || "NodeBench Delta";
+    const runtimeProbes = await collectRuntimeProbes();
+    const distributionSurfaces = getDistributionSurfaces();
+    const setupAnalysis = buildSetupAndAttentionAnalysis(distributionSurfaces, runtimeProbes);
+    const sections = buildSelfDiligenceSections(entity, runtimeProbes, distributionSurfaces);
+
+    const packet = storePacket({
+      type: "market",
+      subject: `Self Dogfood: ${entity}`,
+      summary: `Delta self-check completed with setup friction ${setupAnalysis.setupFrictionScore}/100 and accessibility ${setupAnalysis.accessibilityScore}/100.`,
+      confidence: 82,
+      payload: { entity, runtimeProbes, distributionSurfaces, setupAnalysis, sections, dogfood: true },
+    });
+
+    let reviewPacket: Record<string, unknown> | null = null;
+    if (args.include_review !== false) {
+      reviewPacket = storePacket({
+        type: "review",
+        subject: `Review: ${entity} self-dogfood`,
+        summary: `${setupAnalysis.riskRegister.length} self-dogfood risks logged.`,
+        confidence: 80,
+        payload: {
+          forecast: "NodeBench Delta should be easy to install, easy to trust, and strong enough to verify itself continuously.",
+          outcome: setupAnalysis.riskRegister.length
+            ? `Open risks remain: ${setupAnalysis.riskRegister.map((risk) => risk.summary).join("; ")}`
+            : "Current self-dogfood pass found no high-confidence runtime or distribution blockers.",
+          lessons: setupAnalysis.attentionGuidance,
+          confidenceDelta: setupAnalysis.riskRegister.length ? -8 : 4,
+        },
+      });
+    }
+
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          packet,
+          reviewPacket,
+          runtimeProbes,
+          distributionSurfaces,
+          setupAnalysis,
+          hint: "Fix the first high-severity runtime or distribution risk before shipping new Delta surface area.",
+          nextTools: ["delta_scan", "delta_review", "delta_memo", "delta_handoff"],
+        }, null, 2),
+      }],
+    };
+  },
+};
 
 const deltaRetain: McpTool = {
   name: "delta_retain",
@@ -859,7 +1422,7 @@ const deltaPackets: McpTool = {
     properties: {
       type: {
         type: "string",
-        enum: ["brief", "diligence", "handoff", "watchlist", "memo", "market", "retain", "all"],
+        enum: ["brief", "diligence", "handoff", "watchlist", "memo", "market", "review", "retain", "all"],
         description: "Filter by packet type. Defaults to 'all'.",
       },
       limit: {
@@ -1053,6 +1616,8 @@ export function createDeltaTools(): McpTool[] {
     deltaMemo,
     deltaScan,
     deltaCompare,
+    deltaReview,
+    deltaSelfDogfood,
     deltaRetain,
     deltaPackets,
     retentionStatus,

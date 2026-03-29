@@ -1125,12 +1125,13 @@ if (cliArgs.length === 0 || (subCmd === undefined && !cliArgs.includes("--stdio"
 }
 
 // ── Delta subcommands (run-and-exit, banking-convention verbs) ────────
-const DELTA_VERBS = ["brief", "diligence", "handoff", "watch", "memo", "scan", "compare", "retain", "packets"] as const;
+const DELTA_VERBS = ["brief", "diligence", "handoff", "watch", "memo", "scan", "compare", "review", "retain", "packets", "dogfood"] as const;
 if (subCmd && (DELTA_VERBS as readonly string[]).includes(subCmd)) {
   const { createDeltaTools } = await import("./tools/deltaTools.js");
   const deltaTools = createDeltaTools();
   const toolName = subCmd === "packets" ? "delta_packets"
     : subCmd === "watch" ? "delta_watch"
+    : subCmd === "dogfood" ? "delta_self_dogfood"
     : `delta_${subCmd}`;
   const tool = deltaTools.find((t) => t.name === toolName);
   if (!tool) {
@@ -1139,19 +1140,40 @@ if (subCmd && (DELTA_VERBS as readonly string[]).includes(subCmd)) {
   }
 
   // Parse remaining args as JSON or key=value pairs
-  const argStr = cliArgs.filter((a) => a !== subCmd && !a.startsWith("--")).join(" ");
+  const rawToolArgs = cliArgs.filter((a) => a !== subCmd && !a.startsWith("--"));
+  const argStr = rawToolArgs.join(" ");
+  const parseCliScalar = (value: string): unknown => {
+    if (value === "true") return true;
+    if (value === "false") return false;
+    if (/^-?\d+(\.\d+)?$/.test(value)) return Number(value);
+    if ((value.startsWith("{") && value.endsWith("}")) || (value.startsWith("[") && value.endsWith("]"))) {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  };
   let toolArgs: Record<string, unknown> = {};
   if (argStr) {
     try {
       toolArgs = JSON.parse(argStr);
     } catch {
+      if (rawToolArgs.length === 1) {
+        try {
+          toolArgs = JSON.parse(rawToolArgs[0]!);
+        } catch {
+          toolArgs = {};
+        }
+      }
       // Check for key=value pairs first, collect remaining as positional
       const kvParts: string[] = [];
       const positionalParts: string[] = [];
-      for (const part of argStr.split(/\s+/)) {
+      for (const part of rawToolArgs) {
         const eqIdx = part.indexOf("=");
         if (eqIdx > 0) {
-          toolArgs[part.slice(0, eqIdx)] = part.slice(eqIdx + 1);
+          toolArgs[part.slice(0, eqIdx)] = parseCliScalar(part.slice(eqIdx + 1));
           kvParts.push(part);
         } else {
           positionalParts.push(part);
@@ -1165,6 +1187,7 @@ if (subCmd && (DELTA_VERBS as readonly string[]).includes(subCmd)) {
         else if (subCmd === "memo") toolArgs.decision = toolArgs.decision || fullPositional;
         else if (subCmd === "handoff") toolArgs.task = toolArgs.task || fullPositional;
         else if (subCmd === "retain") toolArgs.content = toolArgs.content || fullPositional;
+        else if (subCmd === "review") toolArgs.forecast = toolArgs.forecast || fullPositional;
       }
       // Default action for watch
       if (subCmd === "watch" && !toolArgs.action) toolArgs.action = toolArgs.entity ? "add" : "list";
@@ -3481,3 +3504,27 @@ const dashInfo = operatingDashboardPort ? ` dashboard at http://127.0.0.1:${oper
 const uiDiveInfo = dashboardPort ? ` ui-dive at http://127.0.0.1:${dashboardPort}` : "";
 const engineInfo = enginePort ? ` engine at http://127.0.0.1:${enginePort}` : "";
 console.error(`nodebench-mcp ready (${allTools.length} tools, ${PROMPTS.length} prompts${toolsetInfo}, SQLite at ~/.nodebench/${dashInfo}${uiDiveInfo}${engineInfo})`);
+
+// ── Auto-brief on first start (delta/hackathon presets) ──────────────
+// When using delta or hackathon preset, auto-run delta_brief on first session
+// to give users immediate value before they even ask.
+const presetIdx2 = cliArgs.indexOf("--preset");
+const activePreset = presetIdx2 >= 0 ? cliArgs[presetIdx2 + 1] : "";
+if (activePreset === "hackathon" || activePreset === "delta" || cliArgs.includes("--auto-brief")) {
+  (async () => {
+    try {
+      const { createDeltaTools } = await import("./tools/deltaTools.js");
+      const dTools = createDeltaTools();
+      const briefTool = dTools.find((t) => t.name === "delta_brief");
+      if (briefTool) {
+        const result = await briefTool.handler({ persona: "founder" });
+        const text = (result as { content?: Array<{ text?: string }> }).content?.[0]?.text;
+        if (text) {
+          const parsed = JSON.parse(text);
+          const comp = parsed.compounding;
+          console.error(`[delta] Auto-brief: ${comp?.totalPackets ?? 0} packets, ${comp?.watchedCount ?? 0} watched, ${comp?.daysSinceFirst ?? 0} days active`);
+        }
+      }
+    } catch { /* auto-brief is best-effort */ }
+  })();
+}
