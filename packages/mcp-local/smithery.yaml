@@ -1,0 +1,44 @@
+# Smithery.ai MCP Server Configuration
+# https://smithery.ai/docs/config
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      preset:
+        type: string
+        default: starter
+        description: "Tool preset to load (starter, founder, web_dev, research, full)"
+        enum:
+          - starter
+          - founder
+          - banker
+          - operator
+          - researcher
+          - web_dev
+          - research
+          - data
+          - devops
+          - academic
+          - full
+      geminiApiKey:
+        type: string
+        description: "Gemini API key for web search and entity enrichment"
+      openaiApiKey:
+        type: string
+        description: "OpenAI API key for embeddings and LLM tools"
+      githubToken:
+        type: string
+        description: "GitHub token for repository tools"
+    required: []
+  commandFunction: |-
+    (config) => ({
+      command: 'npx',
+      args: ['-y', 'nodebench-mcp', '--preset', config.preset || 'starter'],
+      env: {
+        ...(config.geminiApiKey ? { GEMINI_API_KEY: config.geminiApiKey } : {}),
+        ...(config.openaiApiKey ? { OPENAI_API_KEY: config.openaiApiKey } : {}),
+        ...(config.githubToken ? { GITHUB_TOKEN: config.githubToken } : {}),
+      }
+    })

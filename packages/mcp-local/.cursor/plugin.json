@@ -1,0 +1,39 @@
+{
+  "name": "nodebench",
+  "displayName": "NodeBench — Operating Intelligence for Founders",
+  "description": "350 MCP tools across 57 domains. Decision intelligence, entity research, QA automation, and session memory that compounds across sessions. Starts with 15 tools, discovers more as you need them.",
+  "version": "2.70.0",
+  "author": "HomenShum",
+  "repository": "https://github.com/HomenShum/nodebench-ai",
+  "homepage": "https://nodebenchai.com",
+  "license": "MIT",
+  "categories": ["AI", "Developer Tools", "Testing", "Research"],
+  "tags": ["mcp", "ai-agents", "decision-intelligence", "qa-automation", "entity-research", "developer-tools"],
+  "mcp": {
+    "command": "npx",
+    "args": ["-y", "nodebench-mcp", "--preset", "cursor"],
+    "env": {}
+  },
+  "skills": [
+    {
+      "name": "nodebench-qa",
+      "description": "Full QA loop: crawl → findings → fix → re-crawl → savings",
+      "command": "/nodebench-qa"
+    },
+    {
+      "name": "agentic-reliability-audit",
+      "description": "8-point reliability checklist for agent-facing infrastructure",
+      "command": "/agentic-reliability-audit"
+    },
+    {
+      "name": "scenario-testing",
+      "description": "Scenario-based testing review — ensure tests model real behavior",
+      "command": "/scenario-testing"
+    }
+  ],
+  "rules": [
+    "rules/nodebench-auto-qa.md",
+    "rules/nodebench-analyst-diagnostic.md",
+    "rules/nodebench-agentic-reliability.md"
+  ]
+}

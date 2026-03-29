@@ -1,0 +1,21 @@
+{
+  "name": "create-nodebench-app",
+  "version": "1.0.0",
+  "description": "Create a NodeBench-powered app with entity search, QA dashboard, and decision memos",
+  "type": "module",
+  "bin": {
+    "create-nodebench-app": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "template"
+  ],
+  "keywords": ["nodebench", "mcp", "ai-agents", "hackathon", "starter"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HomenShum/nodebench-ai.git",
+    "directory": "packages/create-nodebench-app"
+  },
+  "license": "MIT",
+  "author": "HomenShum"
+}

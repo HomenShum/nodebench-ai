@@ -1,0 +1,13 @@
+{
+  "name": "nodebench",
+  "displayName": "NodeBench",
+  "version": "2.70.0",
+  "description": "Operating intelligence for founders. 350 MCP tools — decision intelligence, entity research, QA automation, session memory. Starts with 15 tools, discovers more as needed.",
+  "author": {
+    "name": "HomenShum",
+    "email": "homenshum@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": ["mcp", "ai-agents", "decision-intelligence", "qa-automation", "entity-research", "founder-tools"],
+  "logo": "assets/logo.svg"
+}

@@ -7277,6 +7277,137 @@ function getSharedContextPacket(contextId, requestingPeerId) {
   const peer = requireSharedContextPeer(requestingPeerId);
   return canPeerAccessPacket(peer, packet) ? packet : null;
 }
+function getPrimaryPacketScope(packet) {
+  return packet.scope.find((scope) => scope !== "workspace");
+}
+function buildSharedContextPacketResource(packet, requestingPeerId) {
+  const primaryScope = getPrimaryPacketScope(packet);
+  return {
+    packet,
+    resourceUri: `shared-context://packet/${encodeURIComponent(packet.contextId)}`,
+    pullQuery: {
+      contextType: packet.contextType,
+      producerPeerId: packet.producerPeerId,
+      workspaceId: packet.workspaceId ?? void 0,
+      tenantId: packet.tenantId ?? void 0,
+      scopeIncludes: primaryScope,
+      subjectIncludes: packet.subject
+    },
+    subscriptionQuery: {
+      peerId: requestingPeerId ?? void 0,
+      workspaceId: packet.workspaceId ?? void 0,
+      contextType: packet.contextType,
+      producerPeerId: packet.producerPeerId,
+      scopeIncludes: primaryScope,
+      subjectIncludes: packet.subject,
+      eventTypes: [
+        "packet_published",
+        "packet_invalidated",
+        "packet_acknowledged",
+        "task_proposed",
+        "task_status_changed"
+      ]
+    }
+  };
+}
+function getSharedContextPacketResource(contextId, requestingPeerId) {
+  const packet = getSharedContextPacket(contextId, requestingPeerId);
+  if (!packet) return null;
+  return buildSharedContextPacketResource(packet, requestingPeerId);
+}
+function normalizeSubscriptionEventTypes(eventTypes) {
+  return eventTypes && eventTypes.length > 0 ? Array.from(new Set(eventTypes)) : [
+    "packet_published",
+    "packet_invalidated",
+    "packet_acknowledged",
+    "task_proposed",
+    "task_status_changed",
+    "message_sent"
+  ];
+}
+function taskMatchesSubscription(task, packets, filters) {
+  if (filters.taskType && task.taskType !== filters.taskType) return false;
+  if (filters.peerId && task.proposerPeerId !== filters.peerId && task.assigneePeerId !== filters.peerId) {
+    const relatedPacket = task.outputContextId ? packets.some((packet) => packet.contextId === task.outputContextId) : false;
+    if (!relatedPacket) return false;
+  }
+  if (!filters.workspaceId) return true;
+  const packetWorkspaceMatch = packets.some(
+    (packet) => packet.contextId === task.outputContextId || task.inputContextIds.includes(packet.contextId)
+  );
+  if (packetWorkspaceMatch) return true;
+  return false;
+}
+function messageMatchesSubscription(message, peers, filters) {
+  if (filters.messageClass && message.messageClass !== filters.messageClass) return false;
+  if (filters.peerId && message.fromPeerId !== filters.peerId && message.toPeerId !== filters.peerId) {
+    return false;
+  }
+  if (!filters.workspaceId) return true;
+  return peers.some(
+    (peer) => peer.workspaceId === filters.workspaceId && (peer.peerId === message.fromPeerId || peer.peerId === message.toPeerId)
+  );
+}
+function buildSharedContextSubscriptionManifest(query = {}) {
+  const limit = query.limit ?? 10;
+  const packets = pullSharedContextPackets({
+    contextType: query.contextType,
+    producerPeerId: query.producerPeerId,
+    requestingPeerId: query.peerId ?? query.requestingPeerId,
+    tenantId: query.tenantId,
+    workspaceId: query.workspaceId,
+    status: query.status,
+    scopeIncludes: query.scopeIncludes,
+    subjectIncludes: query.subjectIncludes,
+    limit
+  });
+  const packetResources = packets.slice(0, limit).map((packet) => {
+    const resource = buildSharedContextPacketResource(packet, query.peerId ?? query.requestingPeerId);
+    return {
+      contextId: packet.contextId,
+      contextType: packet.contextType,
+      subject: packet.subject,
+      resourceUri: resource.resourceUri
+    };
+  });
+  return {
+    peerId: query.peerId ?? query.requestingPeerId,
+    snapshotQuery: {
+      limit,
+      peerId: query.peerId ?? query.requestingPeerId,
+      workspaceId: query.workspaceId ?? void 0,
+      contextType: query.contextType,
+      producerPeerId: query.producerPeerId,
+      scopeIncludes: query.scopeIncludes,
+      subjectIncludes: query.subjectIncludes,
+      taskType: query.taskType,
+      messageClass: query.messageClass
+    },
+    pullQuery: {
+      contextType: query.contextType,
+      producerPeerId: query.producerPeerId,
+      requestingPeerId: query.peerId ?? query.requestingPeerId,
+      tenantId: query.tenantId,
+      workspaceId: query.workspaceId,
+      status: query.status,
+      scopeIncludes: query.scopeIncludes,
+      subjectIncludes: query.subjectIncludes,
+      limit
+    },
+    subscriptionQuery: {
+      peerId: query.peerId ?? query.requestingPeerId,
+      workspaceId: query.workspaceId ?? void 0,
+      contextType: query.contextType,
+      producerPeerId: query.producerPeerId,
+      scopeIncludes: query.scopeIncludes,
+      subjectIncludes: query.subjectIncludes,
+      taskType: query.taskType,
+      messageClass: query.messageClass,
+      eventTypes: normalizeSubscriptionEventTypes(query.eventTypes)
+    },
+    packetResources
+  };
+}
 function publishSharedContextPacket(input) {
   const db = getDb();
   const now = (/* @__PURE__ */ new Date()).toISOString();
@@ -7658,6 +7789,39 @@ function getSharedContextSnapshot(limit = 10, requestingPeerId) {
     }
   };
 }
+function getSharedContextScopedSnapshot(filters = {}) {
+  const snapshot = getSharedContextSnapshot(filters.limit ?? 10, filters.peerId ?? filters.requestingPeerId);
+  const peers = filters.workspaceId ? snapshot.peers.filter((peer) => peer.workspaceId === filters.workspaceId) : snapshot.peers;
+  const recentPackets = snapshot.recentPackets.filter((packet) => {
+    if (filters.workspaceId && packet.workspaceId !== filters.workspaceId) return false;
+    if (filters.contextType && packet.contextType !== filters.contextType) return false;
+    if (filters.producerPeerId && packet.producerPeerId !== filters.producerPeerId) return false;
+    if (filters.scopeIncludes && !packet.scope.includes(filters.scopeIncludes)) return false;
+    if (filters.subjectIncludes && !packet.subject.toLowerCase().includes(filters.subjectIncludes.toLowerCase())) {
+      return false;
+    }
+    return true;
+  });
+  const recentTasks = snapshot.recentTasks.filter(
+    (task) => taskMatchesSubscription(task, recentPackets, filters)
+  );
+  const recentMessages = snapshot.recentMessages.filter(
+    (message) => messageMatchesSubscription(message, peers, filters)
+  );
+  return {
+    peers,
+    recentPackets,
+    recentTasks,
+    recentMessages,
+    counts: {
+      activePeers: peers.filter((peer) => peer.status === "active").length,
+      activePackets: recentPackets.filter((packet) => packet.status === "active").length,
+      invalidatedPackets: recentPackets.filter((packet) => packet.status === "invalidated").length,
+      openTasks: recentTasks.filter((task) => task.status === "proposed" || task.status === "accepted").length,
+      unreadMessages: recentMessages.filter((message) => message.status === "unread").length
+    }
+  };
+}
 
 // server/routes/search.ts
 init_contextInjection();
@@ -7836,6 +8000,104 @@ function buildExplorationMemory(result, sourceRefs, claimRefs) {
     contradictionCount
   };
 }
+function includesAny(value, terms) {
+  const normalized = value.toLowerCase();
+  return terms.some((term) => normalized.includes(term));
+}
+function buildStrategicAngles(args) {
+  if (Array.isArray(args.result?.strategicAngles) && args.result.strategicAngles.length > 0) {
+    return args.result.strategicAngles;
+  }
+  const queryText = `${args.query} ${args.result?.canonicalEntity?.canonicalMission ?? ""}`.toLowerCase();
+  const signalText = (args.result?.signals ?? []).map((signal) => signal.name ?? signal.title ?? String(signal)).join(" ").toLowerCase();
+  const evidenceRefIds = args.sourceRefs.slice(0, 2).map((source) => source.id);
+  const sourceRich = args.sourceRefs.filter((source) => source.status !== "discarded").length >= 2;
+  const confidence = Number(args.result?.canonicalEntity?.identityConfidence ?? 0);
+  const integrationHeavy = includesAny(queryText, ["mcp", "api", "plugin", "integration", "claude code", "cursor", "workflow", "agent"]);
+  const installFriendly = includesAny(queryText, ["install", "local", "cli", "dashboard", "subscription", "service", "retention.sh"]);
+  const maintenanceHeavy = includesAny(queryText, ["maintenance", "maintain", "update", "support", "ops", "dashboard service", "subscription service"]);
+  const regulated = includesAny(queryText, ["legal", "regulatory", "healthcare", "fda", "bank", "compliance"]);
+  const aiSkeptic = includesAny(queryText, ["no ai", "without ai", "anti ai", "environment", "peace", "altruistic"]);
+  const marketAligned = includesAny(queryText, ["claude code", "developer", "team", "workflow", "founder", "agent", "dashboard"]) || includesAny(signalText, ["distribution", "workflow", "developer", "adoption"]);
+  const evidenceStrong = sourceRich && confidence >= 80;
+  const angles = [
+    {
+      id: "founder-fit",
+      title: "Founder-skill and credibility fit",
+      status: evidenceStrong ? "watch" : "unknown",
+      summary: evidenceStrong ? "The opportunity is legible, but the packet still needs explicit proof that the team background makes this wedge believable to users and investors." : "The current run does not yet establish why this team is the credible builder for the idea.",
+      whyItMatters: "A strong direction still fails if the founder narrative and real execution edge do not match the promise.",
+      evidenceRefIds,
+      nextQuestion: "What founder background, customer access, or technical edge makes us the believable team for this direction?"
+    },
+    {
+      id: "build-speed",
+      title: "Build speed and maintenance burden",
+      status: regulated ? "watch" : integrationHeavy || installFriendly ? "strong" : "watch",
+      summary: regulated ? "The opportunity touches regulated or high-trust surfaces, so build speed may be slower and more operationally expensive than it first appears." : integrationHeavy || installFriendly ? "The direction appears to fit existing install surfaces and workflows, which improves time-to-value and maintenance leverage." : "The packet still needs proof that this can be shipped and maintained quickly with the current team and stack.",
+      whyItMatters: "Founders need a wedge that ships fast, installs cleanly, and does not immediately create support debt.",
+      evidenceRefIds,
+      nextQuestion: "What is the smallest installable wedge we can ship in 2-4 weeks without creating long-term maintenance drag?"
+    },
+    {
+      id: "installability",
+      title: "Installability and update path",
+      status: installFriendly ? "strong" : "watch",
+      summary: installFriendly ? "The direction appears to fit real install surfaces such as local CLI, MCP, or a hosted dashboard, which improves onboarding and update reliability." : "The packet still needs proof that users can install, maintain, and update this without high-touch support.",
+      whyItMatters: "Products that are easy to install and keep current spread faster and generate less early support drag.",
+      evidenceRefIds,
+      nextQuestion: "Is the first wedge easiest to adopt as a local MCP tool, a browser workflow, or a hosted team dashboard?"
+    },
+    {
+      id: "maintainability",
+      title: "Maintainability and service burden",
+      status: maintenanceHeavy || regulated ? "watch" : installFriendly ? "strong" : "watch",
+      summary: maintenanceHeavy || regulated ? "The direction likely creates ongoing update, support, or compliance work, so the team needs a clearer owner model and service boundary." : "The current architecture suggests the product can stay relatively lean to operate if the first wedge remains narrow.",
+      whyItMatters: "Founders lose momentum when the first product creates more support and maintenance load than compounding leverage.",
+      evidenceRefIds,
+      nextQuestion: "What parts of this should be productized, automated, or intentionally left out so maintenance load stays bounded?"
+    },
+    {
+      id: "adoption",
+      title: "Workflow adoption and distribution fit",
+      status: marketAligned ? "strong" : "watch",
+      summary: marketAligned ? "The packet points to a workflow users already run today, including current developer loops like Claude Code and adjacent agent tooling." : "The product story still needs proof that it rides a current user workflow instead of requiring a new habit.",
+      whyItMatters: "The fastest product adoption comes from plugging into high-frequency workflows people already trust.",
+      evidenceRefIds,
+      nextQuestion: "Which current workflow does this replace, accelerate, or become unavoidable inside?"
+    },
+    {
+      id: "commercial",
+      title: "Commercialization and saleability",
+      status: installFriendly ? "strong" : "watch",
+      summary: installFriendly ? "The direction can plausibly expand from a tool into a dashboard, team workflow, or subscription service." : "The packet does not yet prove how the tool becomes a repeatable product, subscription, or saleable operating layer.",
+      whyItMatters: "A useful prototype is not enough. The business has to be easy to buy, maintain, and grow.",
+      evidenceRefIds,
+      nextQuestion: "Does this become a paid dashboard, an agent workflow subscription, or a service layer teams will renew every month?"
+    },
+    {
+      id: "conviction",
+      title: "User and investor conviction",
+      status: evidenceStrong ? "strong" : "watch",
+      summary: evidenceStrong ? "The run has enough proof to start a conviction story, but the timing and upside narrative can still be tighter." : "The idea needs sharper proof, comparables, and timing signals before it will survive diligence.",
+      whyItMatters: "Conviction compounds when users and investors can repeat the story without you in the room.",
+      evidenceRefIds,
+      nextQuestion: "What proof points, comparables, or traction signals would make this direction legible to users and investors?"
+    }
+  ];
+  if (args.lens === "founder" || aiSkeptic) {
+    angles.push({
+      id: "ai-tradeoffs",
+      title: "AI stance and mission tradeoffs",
+      status: aiSkeptic ? "watch" : "unknown",
+      summary: aiSkeptic ? "The query raises discomfort with AI usage, so the product needs a clearer point of view on where AI helps and where it should stay optional." : "The packet does not yet resolve whether AI is essential to the product or simply a convenience layer that could alienate some users or teammates.",
+      whyItMatters: "Founders need a deliberate answer for people who resist AI on ethical, environmental, or mission grounds.",
+      evidenceRefIds,
+      nextQuestion: "Where is AI actually necessary here, and where should we offer a non-AI or low-AI path so the product stays aligned with the mission?"
+    });
+  }
+  return angles;
+}
 function buildGraphArtifacts(args) {
   const graphNodes = [
     { id: "query:current", kind: "query", label: trimText(args.query, 80), status: "verified" },
@@ -7974,6 +8236,7 @@ function buildResultPacket(args) {
     recommendedNextAction: result.recommendedNextAction,
     graphNodes: result.graphNodes,
     graphEdges: result.graphEdges,
+    strategicAngles: result.strategicAngles,
     interventions: result.nextActions?.slice(0, 4).map((action) => ({
       action: action.action ?? String(action),
       impact: action.impact ?? "medium"
@@ -7999,6 +8262,13 @@ function decorateResultWithProof(args) {
   });
   const explorationMemory = buildExplorationMemory(args.result, sourceRefs, claimRefs);
   const proofStatus = toProofStatus(sourceRefs, answerBlocks, args.judgeVerdict);
+  const strategicAngles = buildStrategicAngles({
+    query: args.query,
+    lens: args.lens,
+    result: args.result,
+    sourceRefs
+  });
+  const strategicQuestions = strategicAngles.map((angle) => typeof angle.nextQuestion === "string" ? angle.nextQuestion : "").filter(Boolean);
   const uncertaintyBoundary = args.result?.uncertaintyBoundary ?? (sourceRefs.length > 0 ? "Citations reflect the sources explored in this run. Treat the packet as directional until the next live refresh." : "This answer is missing durable citations. Treat it as provisional until more source coverage is available.");
   const decoratedResult = {
     ...args.result,
@@ -8012,8 +8282,12 @@ function decorateResultWithProof(args) {
     proofStatus,
     uncertaintyBoundary,
     recommendedNextAction,
+    nextQuestions: Array.from(
+      /* @__PURE__ */ new Set([...Array.isArray(args.result?.nextQuestions) ? args.result.nextQuestions : [], ...strategicQuestions])
+    ).slice(0, 8),
     graphNodes,
-    graphEdges
+    graphEdges,
+    strategicAngles
   };
   return {
     result: decoratedResult,
@@ -9574,13 +9848,21 @@ function parseSnapshotFilters(query) {
   const peerId = firstQueryValue(query.peerId);
   const workspaceId = firstQueryValue(query.workspaceId);
   const contextType = firstQueryValue(query.contextType);
+  const producerPeerId = firstQueryValue(query.producerPeerId);
+  const scopeIncludes = firstQueryValue(query.scopeIncludes);
   const subjectIncludes = firstQueryValue(query.subjectIncludes);
+  const taskType = firstQueryValue(query.taskType);
+  const messageClass = firstQueryValue(query.messageClass);
   const eventTypesRaw = firstQueryValue(query.eventTypes);
   return {
     peerId,
     workspaceId,
     contextType,
+    producerPeerId,
+    scopeIncludes,
     subjectIncludes,
+    taskType,
+    messageClass,
     eventTypes: eventTypesRaw ? eventTypesRaw.split(",").map((value) => value.trim()).filter(Boolean) : void 0
   };
 }
@@ -9589,14 +9871,18 @@ function filterSnapshot(snapshot, filters) {
   const recentPackets = snapshot.recentPackets.filter((packet) => {
     if (filters.workspaceId && packet.workspaceId !== filters.workspaceId) return false;
     if (filters.contextType && packet.contextType !== filters.contextType) return false;
+    if (filters.producerPeerId && packet.producerPeerId !== filters.producerPeerId) return false;
+    if (filters.scopeIncludes && !packet.scope.includes(filters.scopeIncludes)) return false;
     if (filters.subjectIncludes && !packet.subject.toLowerCase().includes(filters.subjectIncludes.toLowerCase())) return false;
     return true;
   });
   const recentTasks = snapshot.recentTasks.filter((task) => {
+    if (filters.taskType && task.taskType !== filters.taskType) return false;
     if (!filters.workspaceId) return true;
     return recentPackets.some((packet) => packet.contextId === task.outputContextId) || snapshot.peers.some((peer) => peer.peerId === task.proposerPeerId && peer.workspaceId === filters.workspaceId) || snapshot.peers.some((peer) => peer.peerId === task.assigneePeerId && peer.workspaceId === filters.workspaceId);
   });
   const recentMessages = snapshot.recentMessages.filter((message) => {
+    if (filters.messageClass && message.messageClass !== filters.messageClass) return false;
     if (!filters.workspaceId) return true;
     return peers.some((peer) => peer.peerId === message.fromPeerId || peer.peerId === message.toPeerId);
   });
@@ -9623,14 +9909,31 @@ function eventMatchesFilters(event, filters) {
   const workspaceId = typeof payload.workspaceId === "string" ? payload.workspaceId : void 0;
   const contextType = typeof payload.contextType === "string" ? payload.contextType : void 0;
   const contextId = typeof payload.contextId === "string" ? payload.contextId : void 0;
+  const producerPeerId = typeof payload.producerPeerId === "string" ? payload.producerPeerId : void 0;
+  const taskType = typeof payload.taskType === "string" ? payload.taskType : void 0;
+  const messageClass = typeof payload.messageClass === "string" ? payload.messageClass : void 0;
   if (filters.workspaceId && workspaceId && workspaceId !== filters.workspaceId) {
     return false;
   }
   if (filters.contextType && contextType && contextType !== filters.contextType) {
     return false;
   }
+  if (filters.producerPeerId && producerPeerId && producerPeerId !== filters.producerPeerId) {
+    return false;
+  }
+  if (filters.taskType && taskType && taskType !== filters.taskType) {
+    return false;
+  }
+  if (filters.messageClass && messageClass && messageClass !== filters.messageClass) {
+    return false;
+  }
   if (filters.subjectIncludes && contextId && filters.peerId) {
-    const packet = getSharedContextPacket(contextId, filters.peerId);
+    let packet = null;
+    try {
+      packet = getSharedContextPacket(contextId, filters.peerId);
+    } catch {
+      return false;
+    }
     if (!packet || !packet.subject.toLowerCase().includes(filters.subjectIncludes.toLowerCase())) {
       return false;
     }
@@ -9638,8 +9941,16 @@ function eventMatchesFilters(event, filters) {
     if (!payload.subject.toLowerCase().includes(filters.subjectIncludes.toLowerCase())) return false;
   }
   if (filters.peerId && contextId) {
-    const packet = getSharedContextPacket(contextId, filters.peerId);
+    let packet = null;
+    try {
+      packet = getSharedContextPacket(contextId, filters.peerId);
+    } catch {
+      return false;
+    }
     if (!packet) return false;
+    if (filters.scopeIncludes && !packet.scope.includes(filters.scopeIncludes)) {
+      return false;
+    }
   }
   return true;
 }
@@ -9675,9 +9986,26 @@ function getContextId(packet) {
 function getTaskId(packet, target) {
   return `task:${target}:${packet.packetId ?? slugify(`${packet.canonicalEntity ?? packet.entityName ?? "nodebench"}-${packet.query ?? "query"}`)}`;
 }
+function getStrategicTaskId(packet, target, angle) {
+  return `${getTaskId(packet, target)}:${slugify(angle.id ?? angle.title ?? "issue")}`;
+}
 function getSubject(packet) {
   const entity = packet.canonicalEntity ?? packet.entityName ?? "NodeBench";
   return `${entity} shared context packet`;
+}
+function normalizeStrategicAngles(packet) {
+  return Array.isArray(packet.strategicAngles) ? packet.strategicAngles.filter(Boolean) : [];
+}
+function findStrategicAngle(packet, strategicAngleId) {
+  if (!strategicAngleId) return null;
+  return normalizeStrategicAngles(packet).find((angle) => angle.id === strategicAngleId) ?? null;
+}
+function getStrategicContextId(packet, angle) {
+  return `${getContextId(packet)}:issue:${slugify(angle.id ?? angle.title ?? "issue")}`;
+}
+function getStrategicSubject(packet, angle) {
+  const entity = packet.canonicalEntity ?? packet.entityName ?? "NodeBench";
+  return `${entity} \xB7 ${angle.title ?? "Strategic issue"}`;
 }
 function getFreshness(packet) {
   const proofStatus = packet.proofStatus ?? "provisional";
@@ -9692,13 +10020,14 @@ function buildHandoffPrompt(args) {
   const target = DELEGATE_TARGETS[args.target];
   const entity = args.packet.canonicalEntity ?? args.packet.entityName ?? "the company";
   const workspaceId = getWorkspaceId(args.packet);
-  const subject = getSubject(args.packet);
+  const subject = args.subject ?? getSubject(args.packet);
   return [
     `Use NodeBench MCP as the truth layer for this task. You are the ${target.label} worker.`,
     "",
     `Goal: ${args.goal}`,
     `Workspace: ${workspaceId}`,
     `Shared context packet: ${args.contextId}`,
+    ...args.parentContextId ? [`Parent packet: ${args.parentContextId}`] : [],
     `Shared task: ${args.taskId}`,
     "",
     "Workflow:",
@@ -9755,6 +10084,111 @@ function registerDelegatePeer(packet, target) {
     queueForSync: false
   });
 }
+function buildPacketResourceHints(contextId, packet, peerId) {
+  const resource = getSharedContextPacketResource(contextId, peerId);
+  if (resource) {
+    return {
+      resourceUri: resource.resourceUri,
+      pullQuery: resource.pullQuery,
+      subscriptionQuery: resource.subscriptionQuery
+    };
+  }
+  return {
+    resourceUri: `shared-context://packet/${encodeURIComponent(contextId)}`,
+    pullQuery: {
+      contextType: "entity_packet",
+      producerPeerId: WEB_PRODUCER_PEER_ID,
+      workspaceId: getWorkspaceId(packet),
+      subjectIncludes: getSubject(packet)
+    },
+    subscriptionQuery: {
+      peerId: peerId ?? void 0,
+      workspaceId: getWorkspaceId(packet),
+      contextType: "entity_packet",
+      producerPeerId: WEB_PRODUCER_PEER_ID,
+      subjectIncludes: getSubject(packet),
+      eventTypes: ["packet_published", "packet_invalidated", "task_proposed", "task_status_changed"]
+    }
+  };
+}
+function buildSubscriptionManifestUrls(req, filters) {
+  const params = new URLSearchParams();
+  if (filters.peerId) params.set("peerId", filters.peerId);
+  if (filters.workspaceId) params.set("workspaceId", filters.workspaceId);
+  if (filters.contextType) params.set("contextType", filters.contextType);
+  if (filters.producerPeerId) params.set("producerPeerId", filters.producerPeerId);
+  if (filters.scopeIncludes) params.set("scopeIncludes", filters.scopeIncludes);
+  if (filters.subjectIncludes) params.set("subjectIncludes", filters.subjectIncludes);
+  if (filters.taskType) params.set("taskType", filters.taskType);
+  if (filters.messageClass) params.set("messageClass", filters.messageClass);
+  if (filters.eventTypes?.length) params.set("eventTypes", filters.eventTypes.join(","));
+  params.set("limit", "10");
+  const query = params.toString();
+  const base = `${req.protocol}://${req.get("host")}/api/shared-context`;
+  return {
+    snapshotUrl: `${base}/snapshot?${query}`,
+    eventsUrl: `${base}/events?${query}`
+  };
+}
+function buildStrategicIssuePayload(args) {
+  const { packet, angle, target } = args;
+  const entitySlug = slugify(packet.canonicalEntity ?? packet.entityName ?? "nodebench");
+  const workspaceId = getWorkspaceId(packet);
+  const parentContextId = getContextId(packet);
+  const matchedSourceRefs = (packet.sourceRefs ?? []).filter((source) => (angle.evidenceRefIds ?? []).includes(String(source.id ?? ""))).map((source) => source.href ?? source.label ?? source.title ?? source.id ?? "").filter(Boolean);
+  return {
+    contextId: getStrategicContextId(packet, angle),
+    contextType: "issue_packet",
+    producerPeerId: WEB_PRODUCER_PEER_ID,
+    workspaceId,
+    scope: [
+      "workspace",
+      `entity:${entitySlug}`,
+      "pressure_test",
+      `issue:${slugify(angle.id ?? angle.title ?? "issue")}`,
+      ...target ? [`delegate:${target}`] : []
+    ],
+    subject: getStrategicSubject(packet, angle),
+    summary: angle.summary ?? packet.recommendedNextAction ?? summarizePacket(packet),
+    claims: [
+      angle.summary ?? "",
+      angle.whyItMatters ?? "",
+      angle.nextQuestion ?? ""
+    ].filter(Boolean),
+    evidenceRefs: matchedSourceRefs.length > 0 ? matchedSourceRefs : collectEvidenceRefs(packet),
+    stateSnapshot: {
+      angle,
+      parentPacketId: packet.packetId ?? null,
+      parentContextId,
+      packet
+    },
+    freshness: getFreshness(packet),
+    permissions: {
+      visibility: "workspace",
+      allowedRoles: ["researcher", "compiler", "judge", "router", "monitor"]
+    },
+    confidence: typeof packet.confidence === "number" ? Math.max(0, Math.min(1, packet.confidence / 100)) : void 0,
+    lineage: {
+      parentContextIds: [parentContextId],
+      sourceRunId: typeof packet.packetId === "string" ? packet.packetId : void 0
+    },
+    nextActions: [
+      angle.nextQuestion ?? "",
+      packet.recommendedNextAction ?? "",
+      ...(packet.nextQuestions ?? []).slice(0, 2)
+    ].filter(Boolean).slice(0, 4),
+    metadata: {
+      packetId: packet.packetId ?? null,
+      packetType: packet.packetType ?? null,
+      proofStatus: packet.proofStatus ?? null,
+      strategicAngleId: angle.id ?? null,
+      strategicAngleStatus: angle.status ?? null,
+      strategicAngleTitle: angle.title ?? null,
+      targetAgent: target ?? null
+    },
+    queueForSync: false
+  };
+}
 function createSharedContextRouter() {
   const router = Router2();
   router.get("/snapshot", async (req, res) => {
@@ -9773,15 +10207,158 @@ function createSharedContextRouter() {
         });
       }
     }
-    res.json({
-      success: true,
-      snapshot: filterSnapshot(
-        getSharedContextSnapshot(safeLim, filters.peerId),
+    try {
+      return res.json({
+        success: true,
+        snapshot: getSharedContextScopedSnapshot({
+          peerId: filters.peerId,
+          workspaceId: filters.workspaceId,
+          contextType: filters.contextType,
+          producerPeerId: filters.producerPeerId,
+          scopeIncludes: filters.scopeIncludes,
+          subjectIncludes: filters.subjectIncludes,
+          taskType: filters.taskType,
+          messageClass: filters.messageClass,
+          limit: safeLim
+        }),
+        peerId: filters.peerId ?? null,
         filters
-      ),
-      peerId: filters.peerId ?? null,
-      filters
-    });
+      });
+    } catch (error) {
+      return res.status(403).json({
+        success: false,
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  router.get("/peers/:peerId/snapshot", async (req, res) => {
+    const rawLimit = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
+    const limit = typeof rawLimit === "string" ? Number.parseInt(rawLimit, 10) : 10;
+    const safeLim = Number.isFinite(limit) && limit > 0 ? limit : 10;
+    const filters = parseSnapshotFilters(req.query);
+    const peerId = req.params.peerId;
+    try {
+      if (useConvex()) {
+        const snapshot = await getSnapshotConvex(safeLim, peerId);
+        return res.json({
+          success: true,
+          snapshot: filterSnapshot(snapshot, {
+            ...filters,
+            peerId
+          }),
+          peerId,
+          filters: { ...filters, peerId }
+        });
+      }
+      return res.json({
+        success: true,
+        snapshot: getSharedContextScopedSnapshot({
+          peerId,
+          workspaceId: filters.workspaceId,
+          contextType: filters.contextType,
+          producerPeerId: filters.producerPeerId,
+          scopeIncludes: filters.scopeIncludes,
+          subjectIncludes: filters.subjectIncludes,
+          taskType: filters.taskType,
+          messageClass: filters.messageClass,
+          limit: safeLim
+        }),
+        peerId,
+        filters: { ...filters, peerId }
+      });
+    } catch (error) {
+      return res.status(403).json({
+        success: false,
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  router.get("/subscriptions/manifest", async (req, res) => {
+    const rawLimit = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
+    const limit = typeof rawLimit === "string" ? Number.parseInt(rawLimit, 10) : 10;
+    const safeLim = Number.isFinite(limit) && limit > 0 ? limit : 10;
+    const filters = parseSnapshotFilters(req.query);
+    try {
+      if (useConvex()) {
+        const snapshot = filterSnapshot(
+          await getSnapshotConvex(safeLim, filters.peerId),
+          filters
+        );
+        return res.json({
+          success: true,
+          manifest: {
+            peerId: filters.peerId ?? null,
+            snapshotQuery: {
+              limit: safeLim,
+              peerId: filters.peerId,
+              workspaceId: filters.workspaceId,
+              contextType: filters.contextType,
+              producerPeerId: filters.producerPeerId,
+              scopeIncludes: filters.scopeIncludes,
+              subjectIncludes: filters.subjectIncludes,
+              taskType: filters.taskType,
+              messageClass: filters.messageClass
+            },
+            pullQuery: {
+              contextType: filters.contextType,
+              producerPeerId: filters.producerPeerId,
+              requestingPeerId: filters.peerId,
+              workspaceId: filters.workspaceId,
+              scopeIncludes: filters.scopeIncludes,
+              subjectIncludes: filters.subjectIncludes,
+              limit: safeLim
+            },
+            subscriptionQuery: {
+              peerId: filters.peerId,
+              workspaceId: filters.workspaceId,
+              contextType: filters.contextType,
+              producerPeerId: filters.producerPeerId,
+              scopeIncludes: filters.scopeIncludes,
+              subjectIncludes: filters.subjectIncludes,
+              taskType: filters.taskType,
+              messageClass: filters.messageClass,
+              eventTypes: filters.eventTypes ?? [
+                "packet_published",
+                "packet_invalidated",
+                "packet_acknowledged",
+                "task_proposed",
+                "task_status_changed",
+                "message_sent"
+              ]
+            },
+            packetResources: snapshot.recentPackets.map((packet) => ({
+              contextId: String(packet.contextId),
+              contextType: String(packet.contextType),
+              subject: String(packet.subject),
+              resourceUri: `shared-context://packet/${encodeURIComponent(String(packet.contextId))}`
+            }))
+          },
+          urls: buildSubscriptionManifestUrls(req, filters)
+        });
+      }
+      const manifest = buildSharedContextSubscriptionManifest({
+        peerId: filters.peerId,
+        workspaceId: filters.workspaceId,
+        contextType: filters.contextType,
+        producerPeerId: filters.producerPeerId,
+        scopeIncludes: filters.scopeIncludes,
+        subjectIncludes: filters.subjectIncludes,
+        taskType: filters.taskType,
+        messageClass: filters.messageClass,
+        eventTypes: filters.eventTypes,
+        limit: safeLim
+      });
+      return res.json({
+        success: true,
+        manifest,
+        urls: buildSubscriptionManifestUrls(req, filters)
+      });
+    } catch (error) {
+      return res.status(403).json({
+        success: false,
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
   });
   router.get("/packets/:contextId", async (req, res) => {
     const peerId = firstQueryValue(req.query.peerId);
@@ -9796,6 +10373,24 @@ function createSharedContextRouter() {
       return res.json({
         success: true,
         packet,
+        resourceUri: `shared-context://packet/${encodeURIComponent(packet.contextId)}`,
+        pullQuery: {
+          contextType: packet.contextType,
+          producerPeerId: packet.producerPeerId,
+          workspaceId: packet.workspaceId ?? void 0,
+          tenantId: packet.tenantId ?? void 0,
+          scopeIncludes: packet.scope.find((scope) => scope !== "workspace"),
+          subjectIncludes: packet.subject
+        },
+        subscriptionQuery: {
+          peerId: peerId ?? void 0,
+          workspaceId: packet.workspaceId ?? void 0,
+          contextType: packet.contextType,
+          producerPeerId: packet.producerPeerId,
+          scopeIncludes: packet.scope.find((scope) => scope !== "workspace"),
+          subjectIncludes: packet.subject,
+          eventTypes: ["packet_published", "packet_invalidated", "packet_acknowledged", "task_proposed", "task_status_changed"]
+        },
         peerId: peerId ?? null
       });
     } catch (error) {
@@ -9842,7 +10437,8 @@ function createSharedContextRouter() {
     });
   });
   router.post("/publish", async (req, res) => {
-    const packet = req.body?.packet;
+    const body = req.body ?? {};
+    const packet = body.packet;
     if (!packet?.answer || !(packet.canonicalEntity ?? packet.entityName)) {
       return res.status(400).json({
         success: false,
@@ -9851,6 +10447,7 @@ function createSharedContextRouter() {
     }
     const contextId = getContextId(packet);
     const workspaceId = getWorkspaceId(packet);
+    const strategicAngle = findStrategicAngle(packet, body.strategicAngleId);
     const packetPayload = {
       contextId,
       contextType: "entity_packet",
@@ -9883,8 +10480,22 @@ function createSharedContextRouter() {
           contextScopes: ["workspace", "entity", "packet"]
         });
         await publishPacketConvex(packetPayload);
+        let issueContextId = null;
+        if (strategicAngle) {
+          const issuePayload = buildStrategicIssuePayload({ packet, angle: strategicAngle });
+          issueContextId = issuePayload.contextId ?? null;
+          await publishPacketConvex(issuePayload);
+        }
         const snapshot = await getSnapshotConvex(6);
-        return res.json({ success: true, contextId, workspaceId, snapshot });
+        return res.json({
+          success: true,
+          contextId: strategicAngle ? issueContextId ?? contextId : contextId,
+          parentContextId: strategicAngle ? contextId : null,
+          workspaceId,
+          strategicAngleId: strategicAngle?.id ?? null,
+          resource: buildPacketResourceHints(strategicAngle ? issueContextId ?? contextId : contextId, packet),
+          snapshot
+        });
       }
       registerWebPeer(packet);
       publishSharedContextPacket({
@@ -9907,10 +10518,19 @@ function createSharedContextRouter() {
         },
         queueForSync: false
       });
+      let responseContextId = contextId;
+      if (strategicAngle) {
+        const issuePayload = buildStrategicIssuePayload({ packet, angle: strategicAngle });
+        publishSharedContextPacket(issuePayload);
+        responseContextId = issuePayload.contextId ?? contextId;
+      }
       return res.json({
         success: true,
-        contextId,
+        contextId: responseContextId,
+        parentContextId: strategicAngle ? contextId : null,
         workspaceId,
+        strategicAngleId: strategicAngle?.id ?? null,
+        resource: buildPacketResourceHints(responseContextId, packet),
         snapshot: getSharedContextSnapshot(6)
       });
     } catch (error) {
@@ -9938,6 +10558,8 @@ function createSharedContextRouter() {
     }
     const contextId = getContextId(packet);
     const workspaceId = getWorkspaceId(packet);
+    const strategicAngle = findStrategicAngle(packet, body.strategicAngleId);
+    const delegateContextId = strategicAngle ? getStrategicContextId(packet, strategicAngle) : contextId;
     try {
       if (useConvex()) {
         await registerPeerConvex({
@@ -9976,6 +10598,9 @@ function createSharedContextRouter() {
           },
           freshness: getFreshness(packet)
         });
+        if (strategicAngle) {
+          await publishPacketConvex(buildStrategicIssuePayload({ packet, angle: strategicAngle, target }));
+        }
       } else {
         registerWebPeer(packet);
         registerDelegatePeer(packet, target);
@@ -10018,13 +10643,16 @@ function createSharedContextRouter() {
           },
           queueForSync: false
         });
+        if (strategicAngle) {
+          publishSharedContextPacket(buildStrategicIssuePayload({ packet, angle: strategicAngle, target }));
+        }
       }
-      const goal = body.goal?.trim() || packet.recommendedNextAction?.trim() || packet.nextQuestions?.[0]?.trim() || "Continue implementation from the published NodeBench packet.";
-      const taskId = getTaskId(packet, target);
+      const goal = body.goal?.trim() || strategicAngle?.nextQuestion?.trim() || strategicAngle?.summary?.trim() || packet.recommendedNextAction?.trim() || packet.nextQuestions?.[0]?.trim() || "Continue implementation from the published NodeBench packet.";
+      const taskId = strategicAngle ? getStrategicTaskId(packet, target, strategicAngle) : getTaskId(packet, target);
       if (useConvex()) {
         await proposeTaskConvex({
           taskId,
-          taskType: "agent_handoff",
+          taskType: strategicAngle ? "strategic_angle_handoff" : "agent_handoff",
           proposerPeerId: WEB_PRODUCER_PEER_ID,
           assigneePeerId: DELEGATE_TARGETS[target].peerId,
           taskSpec: {
@@ -10032,27 +10660,40 @@ function createSharedContextRouter() {
             targetLabel: DELEGATE_TARGETS[target].label,
             goal,
             installCommand: DELEGATE_TARGETS[target].installCommand,
-            proofStatus: packet.proofStatus ?? null
+            proofStatus: packet.proofStatus ?? null,
+            strategicAngleId: strategicAngle?.id ?? null,
+            strategicAngleTitle: strategicAngle?.title ?? null
           },
-          inputContextIds: [contextId],
+          inputContextIds: strategicAngle ? [contextId, delegateContextId] : [contextId],
           reason: goal
         });
         const snapshot = await getSnapshotConvex(6);
         return res.json({
           success: true,
-          contextId,
+          contextId: delegateContextId,
+          parentContextId: strategicAngle ? contextId : null,
           taskId,
           workspaceId,
+          strategicAngleId: strategicAngle?.id ?? null,
           targetAgent: target,
           targetLabel: DELEGATE_TARGETS[target].label,
           installCommand: DELEGATE_TARGETS[target].installCommand,
-          handoffPrompt: buildHandoffPrompt({ packet, contextId, taskId, target, goal }),
+          handoffPrompt: buildHandoffPrompt({
+            packet,
+            contextId: delegateContextId,
+            parentContextId: strategicAngle ? contextId : null,
+            taskId,
+            target,
+            goal,
+            subject: strategicAngle ? getStrategicSubject(packet, strategicAngle) : getSubject(packet)
+          }),
+          resource: buildPacketResourceHints(delegateContextId, packet),
           snapshot
         });
       }
       const proposed = proposeSharedContextTask({
         taskId,
-        taskType: "agent_handoff",
+        taskType: strategicAngle ? "strategic_angle_handoff" : "agent_handoff",
         proposerPeerId: WEB_PRODUCER_PEER_ID,
         assigneePeerId: DELEGATE_TARGETS[target].peerId,
         taskSpec: {
@@ -10060,31 +10701,40 @@ function createSharedContextRouter() {
           targetLabel: DELEGATE_TARGETS[target].label,
           goal,
           installCommand: DELEGATE_TARGETS[target].installCommand,
-          proofStatus: packet.proofStatus ?? null
+          proofStatus: packet.proofStatus ?? null,
+          strategicAngleId: strategicAngle?.id ?? null,
+          strategicAngleTitle: strategicAngle?.title ?? null
         },
-        inputContextIds: [contextId],
+        inputContextIds: strategicAngle ? [contextId, delegateContextId] : [contextId],
         reason: goal,
         metadata: {
           entityName: packet.canonicalEntity ?? packet.entityName ?? "NodeBench",
-          query: packet.query ?? null
+          query: packet.query ?? null,
+          strategicAngleId: strategicAngle?.id ?? null,
+          strategicAngleTitle: strategicAngle?.title ?? null
         },
         queueForSync: false
       });
       return res.json({
         success: true,
-        contextId,
+        contextId: delegateContextId,
+        parentContextId: strategicAngle ? contextId : null,
         taskId: proposed.taskId,
         workspaceId,
+        strategicAngleId: strategicAngle?.id ?? null,
         targetAgent: target,
         targetLabel: DELEGATE_TARGETS[target].label,
         installCommand: DELEGATE_TARGETS[target].installCommand,
         handoffPrompt: buildHandoffPrompt({
           packet,
-          contextId,
+          contextId: delegateContextId,
+          parentContextId: strategicAngle ? contextId : null,
           taskId: proposed.taskId,
           target,
-          goal
+          goal,
+          subject: strategicAngle ? getStrategicSubject(packet, strategicAngle) : getSubject(packet)
         }),
+        resource: buildPacketResourceHints(delegateContextId, packet),
         snapshot: getSharedContextSnapshot(6)
       });
     } catch (error) {

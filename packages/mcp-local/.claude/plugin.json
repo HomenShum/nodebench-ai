@@ -1,0 +1,32 @@
+{
+  "name": "nodebench",
+  "displayName": "NodeBench — Operating Intelligence for Founders",
+  "description": "350 MCP tools across 57 domains. Decision intelligence, entity research, QA automation, and session memory. Starts with 15 tools, discovers more as needed. Weekly resets, company analysis, competitor briefs, delegation packets.",
+  "version": "2.70.0",
+  "author": {
+    "name": "HomenShum",
+    "url": "https://github.com/HomenShum"
+  },
+  "repository": "https://github.com/HomenShum/nodebench-ai",
+  "homepage": "https://nodebenchai.com",
+  "license": "MIT",
+  "categories": ["developer-tools", "ai-agents", "research", "testing"],
+  "mcp": {
+    "name": "nodebench",
+    "command": "npx",
+    "args": ["-y", "nodebench-mcp"],
+    "env": {}
+  },
+  "skills": [
+    "commands/nodebench-qa.md",
+    "commands/agentic-reliability-audit.md",
+    "commands/scenario-testing.md"
+  ],
+  "rules": [
+    "rules/nodebench-auto-qa.md",
+    "rules/nodebench-analyst-diagnostic.md",
+    "rules/nodebench-agentic-reliability.md",
+    "rules/nodebench-scenario-testing.md",
+    "rules/nodebench-self-direction.md"
+  ]
+}
