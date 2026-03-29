@@ -2,7 +2,8 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexReactClient } from "convex/react";
-import { api } from "../convex/_generated/api";
+// NOTE: api is imported dynamically below to avoid pulling 513 circular
+// Convex deps into the initial bundle (causes TDZ crash in headless Chrome).
 import "./index.css";
 import App from "./App";
 import { ToastProvider } from "./components/ui";
@@ -168,15 +169,18 @@ if (import.meta.env.PROD && convex) {
       if (now - last < 30_000) return;
       lastSentBySig.set(signature, now);
 
-      convex.mutation(api.domains.operations.bugLoop.reportClientError, {
-        message: args.message,
-        stack: args.stack,
-        route: args.route,
-        section: args.section,
-        // Send path only — no query params (may contain tokens/session ids)
-        url: args.route,
+      import("../convex/_generated/api").then(({ api }) => {
+        convex.mutation(api.domains.operations.bugLoop.reportClientError, {
+          message: args.message,
+          stack: args.stack,
+          route: args.route,
+          section: args.section,
+          url: args.route,
+        }).catch(() => {
+          // best-effort
+        });
       }).catch(() => {
-        // best-effort
+        // api import failed — skip error reporting
       });
     } catch {
       // best-effort
