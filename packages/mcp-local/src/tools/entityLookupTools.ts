@@ -13,6 +13,23 @@
 
 import type { McpTool } from "../types.js";
 
+// ─── Rate limiting (BOUND: max 30 calls/min, evicts oldest) ───────────────────
+
+const RATE_WINDOW_MS = 60_000;
+const RATE_MAX = 30;
+const _callTimestamps: number[] = [];
+
+function checkRateLimit(): boolean {
+  const now = Date.now();
+  // Evict old entries
+  while (_callTimestamps.length > 0 && now - _callTimestamps[0] > RATE_WINDOW_MS) {
+    _callTimestamps.shift();
+  }
+  if (_callTimestamps.length >= RATE_MAX) return false;
+  _callTimestamps.push(now);
+  return true;
+}
+
 // ─── Lightweight web fetch ────────────────────────────────────────────────────
 
 async function quickWebSearch(query: string): Promise<string[]> {
@@ -111,6 +128,7 @@ export const entityLookupTools: McpTool[] = [
     handler: async (args: { name: string; depth?: string }) => {
       const entityName = args.name.trim();
       if (!entityName) return { error: "Please provide an entity name to research." };
+      if (!checkRateLimit()) return { error: "Rate limited — max 30 lookups per minute. Wait a moment and try again." };
 
       const depth = args.depth || "standard";
 

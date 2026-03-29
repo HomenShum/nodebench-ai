@@ -114,3 +114,6 @@ public/dogfood/frames/
 .mcpregistry_github_token
 packages/mcp-local/.mcpregistry_github_token
 vendor/claw3d/
+
+# Competitive intelligence (private)
+docs/architecture/COMPETITIVE_INTEL_*
