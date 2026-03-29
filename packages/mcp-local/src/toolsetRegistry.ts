@@ -257,14 +257,22 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
     return [...dj.dogfoodJudgeTools, ...lj.llmJudgeLoopTools];
   },
   founder: async () => {
-    const [f, ft, cm, lp, ci] = await Promise.all([
+    const [f, ft, cm, lp, ci, so] = await Promise.all([
       import("./tools/founderTools.js"),
       import("./tools/founderTrackingTools.js"),
       import("./tools/causalMemoryTools.js"),
       import("./tools/founderLocalPipeline.js"),
       import("./tools/contextInjection.js"),
+      import("./tools/founderStrategicOpsTools.js"),
     ]);
-    return [...f.founderTools, ...ft.founderTrackingTools, ...cm.causalMemoryTools, ...lp.founderLocalPipelineTools, ...ci.contextInjectionTools];
+    return [
+      ...f.founderTools,
+      ...ft.founderTrackingTools,
+      ...cm.causalMemoryTools,
+      ...lp.founderLocalPipelineTools,
+      ...so.founderStrategicOpsTools,
+      ...ci.contextInjectionTools,
+    ];
   },
   entity_enrichment: async () => {
     const { entityEnrichmentTools } = await import("./tools/entityEnrichmentTools.js");

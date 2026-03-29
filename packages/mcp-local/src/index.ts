@@ -1168,7 +1168,8 @@ if (subCmd && (DELTA_VERBS as readonly string[]).includes(subCmd)) {
 
   try {
     const result = await tool.handler(toolArgs);
-    const text = result.content?.[0]?.text || JSON.stringify(result);
+    const structuredResult = result as { content?: Array<{ text?: string }> };
+    const text = structuredResult.content?.[0]?.text || JSON.stringify(result);
     try {
       const parsed = JSON.parse(text);
       console.log(JSON.stringify(parsed, null, 2));

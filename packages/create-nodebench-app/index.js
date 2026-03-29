@@ -6,7 +6,7 @@
  */
 
 import { existsSync, mkdirSync, cpSync, readFileSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, resolve, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
 
@@ -22,9 +22,19 @@ if (existsSync(targetDir)) {
 
 console.log(`\n\x1b[1mNodeBench App\x1b[0m — Creating ${projectName}...\n`);
 
-// Copy template
+// Copy template — skip node_modules and dist if they exist locally
+const SKIP_DIRS = new Set(["node_modules", "dist"]);
 const templateDir = join(__dirname, "template");
-cpSync(templateDir, targetDir, { recursive: true });
+cpSync(templateDir, targetDir, {
+  recursive: true,
+  filter: (src) => !SKIP_DIRS.has(basename(src)),
+});
+
+// npm strips .gitignore from published packages — write it if missing
+const gitignoreDest = join(targetDir, ".gitignore");
+if (!existsSync(gitignoreDest)) {
+  writeFileSync(gitignoreDest, "node_modules\ndist\n.env\n.env.local\n*.log\n");
+}
 
 // Update package.json with project name
 const pkgPath = join(targetDir, "package.json");
