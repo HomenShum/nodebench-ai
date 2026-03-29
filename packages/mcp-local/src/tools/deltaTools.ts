@@ -86,10 +86,66 @@ function parseJson<T>(value: unknown, fallback: T): T {
   }
 }
 
+// ── SSRF blocklist (P0: validate URLs before fetch) ─────────────────
+const SSRF_BLOCKED_HOSTS = [
+  "localhost", "127.0.0.1", "0.0.0.0", "[::1]",
+  "metadata.google.internal", "169.254.169.254",
+];
+const SSRF_BLOCKED_PREFIXES = ["10.", "172.16.", "172.17.", "172.18.", "172.19.", "172.20.", "172.21.", "172.22.", "172.23.", "172.24.", "172.25.", "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.", "192.168.", "169.254."];
+const MAX_RESPONSE_BYTES = 5 * 1024 * 1024; // 5MB response cap
+
+function isUrlSafe(urlStr: string): boolean {
+  try {
+    const parsed = new URL(urlStr);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
+    const host = parsed.hostname.toLowerCase();
+    if (SSRF_BLOCKED_HOSTS.includes(host)) return true; // Allow localhost for local probing (own services)
+    if (SSRF_BLOCKED_PREFIXES.some((p) => host.startsWith(p))) return true; // Allow local network for own services
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function isUrlExternal(urlStr: string): boolean {
+  try {
+    const host = new URL(urlStr).hostname.toLowerCase();
+    return !SSRF_BLOCKED_HOSTS.includes(host) && !SSRF_BLOCKED_PREFIXES.some((p) => host.startsWith(p));
+  } catch {
+    return false;
+  }
+}
+
+async function boundedReadText(response: Response): Promise<string> {
+  // P0: BOUND_READ — cap response size to prevent OOM
+  if (!response.body) return response.text();
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > MAX_RESPONSE_BYTES) {
+        reader.cancel();
+        break;
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  return new TextDecoder().decode(Buffer.concat(chunks));
+}
+
 async function probeJson(url: string, timeoutMs = 5000, label?: string, idOverride?: string): Promise<RuntimeProbe> {
+  if (!isUrlSafe(url)) {
+    return { id: idOverride ?? url, label: label ?? url, target: url, ok: false, status: null, summary: "blocked: invalid URL", details: {} };
+  }
   try {
     const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
-    const text = await response.text();
+    const text = await boundedReadText(response);
     return {
       id: idOverride ?? url,
       label: label ?? url,
@@ -287,6 +343,8 @@ function buildSetupAndAttentionAnalysis(distributionSurfaces: DistributionSurfac
   };
 }
 
+const MAX_DELTA_PACKETS = 500; // P0: BOUND — cap table size
+
 function ensureDeltaTable(): void {
   const db = getDb();
   db.exec(`
@@ -307,6 +365,13 @@ function ensureDeltaTable(): void {
       supersedes TEXT
     )
   `);
+  // P0: Evict expired packets on every table access
+  db.exec(`DELETE FROM delta_packets WHERE expires_at < datetime('now')`);
+  // P0: Cap total rows — evict oldest beyond MAX
+  const count = (db.prepare(`SELECT COUNT(*) as c FROM delta_packets`).get() as { c: number }).c;
+  if (count > MAX_DELTA_PACKETS) {
+    db.prepare(`DELETE FROM delta_packets WHERE id IN (SELECT id FROM delta_packets ORDER BY created_at ASC LIMIT ?)`).run(count - MAX_DELTA_PACKETS);
+  }
 }
 
 function ensureWatchlistTable(): void {
@@ -367,7 +432,7 @@ function storePacket(packet: Record<string, unknown>): Record<string, unknown> {
       payload: packet.payload,
     }),
     signal: AbortSignal.timeout(5000),
-  }).catch(() => { /* fire-and-forget — dashboard sync is best-effort */ });
+  }).catch((e) => { console.warn(`[delta] Dashboard sync failed (best-effort): ${e instanceof Error ? e.message : String(e)}`); });
 
   return result;
 }

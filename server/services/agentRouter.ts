@@ -80,35 +80,43 @@ function scoreAgent(agent: AgentProfile, task: TaskSpec): number {
  * Returns null if no suitable agent is available.
  */
 export function routeTask(agents: AgentProfile[], task: TaskSpec): RoutingResult | null {
-  const now = Date.now();
+  // P1: ERROR_BOUNDARY — validate inputs
+  if (!Array.isArray(agents) || !task) return null;
 
-  // Filter out stale and overloaded agents
-  const eligible = agents.filter((a) => {
-    if (a.status === "blocked") return false;
-    if (a.currentTaskCount >= MAX_TASKS_PER_AGENT) return false;
-    if (now - a.lastHeartbeatAt > STALE_THRESHOLD_MS) return false;
-    return true;
-  });
+  try {
+    const now = Date.now();
 
-  if (eligible.length === 0) return null;
+    // Filter out stale and overloaded agents
+    const eligible = agents.filter((a) => {
+      if (!a || typeof a.status !== "string") return false;
+      if (a.status === "blocked") return false;
+      if (typeof a.currentTaskCount !== "number" || a.currentTaskCount >= MAX_TASKS_PER_AGENT) return false;
+      if (typeof a.lastHeartbeatAt !== "number" || now - a.lastHeartbeatAt > STALE_THRESHOLD_MS) return false;
+      return true;
+    });
 
-  // Score and sort
-  const scored = eligible.map((a) => ({
-    agent: a,
-    score: scoreAgent(a, task),
-  })).sort((a, b) => b.score - a.score);
+    if (eligible.length === 0) return null;
 
-  const best = scored[0];
+    // Score and sort
+    const scored = eligible.map((a) => ({
+      agent: a,
+      score: scoreAgent(a, task),
+    })).sort((a, b) => b.score - a.score);
 
-  // Minimum score threshold — don't route to a terrible match
-  if (best.score < 20) return null;
+    const best = scored[0];
 
-  return {
-    agentId: best.agent.agentId,
-    agentName: best.agent.name,
-    score: best.score,
-    reason: `Best match: ${best.agent.name} (score=${best.score}, capabilities=${best.agent.capabilities.length}, load=${best.agent.currentTaskCount})`,
-  };
+    // Minimum score threshold — don't route to a terrible match
+    if (best.score < 20) return null;
+
+    return {
+      agentId: best.agent.agentId,
+      agentName: best.agent.name,
+      score: best.score,
+      reason: `Best match: ${best.agent.name} (score=${best.score}, capabilities=${best.agent.capabilities.length}, load=${best.agent.currentTaskCount})`,
+    };
+  } catch {
+    return null; // Graceful degradation — no routing is safer than bad routing
+  }
 }
 
 /**
@@ -116,8 +124,13 @@ export function routeTask(agents: AgentProfile[], task: TaskSpec): RoutingResult
  * Returns list of agent IDs that should be marked stale.
  */
 export function detectStaleAgents(agents: AgentProfile[]): string[] {
-  const now = Date.now();
-  return agents
-    .filter((a) => a.status === "healthy" && now - a.lastHeartbeatAt > STALE_THRESHOLD_MS)
-    .map((a) => a.agentId);
+  if (!Array.isArray(agents)) return [];
+  try {
+    const now = Date.now();
+    return agents
+      .filter((a) => a && a.status === "healthy" && typeof a.lastHeartbeatAt === "number" && now - a.lastHeartbeatAt > STALE_THRESHOLD_MS)
+      .map((a) => a.agentId);
+  } catch {
+    return [];
+  }
 }
