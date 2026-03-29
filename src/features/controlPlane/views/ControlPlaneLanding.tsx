@@ -167,7 +167,6 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   const [handoffState, setHandoffState] = useState<HandoffState>({ status: "idle" });
 
   const voice = useVoiceInput({
-    mode: "gemini",
     onTranscript: useCallback((text: string) => {
       setInput(text);
     }, []),
@@ -330,6 +329,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 r.recommendedNextAction ?? r.nextActions?.[0]?.action,
               graphNodes: r.graphNodes,
               graphEdges: r.graphEdges,
+              strategicAngles: r.strategicAngles,
               interventions: r.nextActions?.slice(0, 4).map((a: any) => ({
                 action: a.action ?? String(a),
                 impact: a.impact ?? "medium",
@@ -535,6 +535,46 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
     }
   }, [activeLens, activeResult]);
 
+  const handlePublishStrategicAngle = useCallback(
+    async (strategicAngleId: string) => {
+      if (!activeResult) return;
+      setHandoffState({
+        status: "publishing",
+        message: "Publishing pressure-test issue packet to shared context...",
+      });
+      try {
+        const response = await fetch(getSharedContextPublishUrl(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            packet: ensureProofPacket(activeResult, activeLens),
+            strategicAngleId,
+          }),
+        });
+        const json = await response.json();
+        if (!response.ok || !json?.success) {
+          throw new Error(json?.message ?? `HTTP ${response.status}`);
+        }
+        trackEvent("publish_strategic_issue", {
+          entity: activeResult.entityName,
+          strategicAngleId,
+          contextId: json.contextId,
+        });
+        setHandoffState({
+          status: "published",
+          message: "Strategic issue packet is live and ready for a worker.",
+          contextId: json.contextId,
+        });
+      } catch (error) {
+        setHandoffState({
+          status: "error",
+          message: error instanceof Error ? error.message : "Failed to publish strategic issue packet.",
+        });
+      }
+    },
+    [activeLens, activeResult],
+  );
+
   const handleDelegate = useCallback(
     async (target: "claude_code" | "openclaw") => {
       if (!activeResult) return;
@@ -576,6 +616,55 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         setHandoffState({
           status: "error",
           message: error instanceof Error ? error.message : `Failed to prepare ${targetLabel} handoff.`,
+        });
+      }
+    },
+    [activeLens, activeResult],
+  );
+
+  const handleDelegateStrategicAngle = useCallback(
+    async (strategicAngleId: string, target: "claude_code" | "openclaw") => {
+      if (!activeResult) return;
+      const targetLabel = target === "claude_code" ? "Claude Code" : "OpenClaw";
+      setHandoffState({
+        status: "delegating",
+        message: `Preparing ${targetLabel} issue handoff...`,
+        targetLabel,
+      });
+      try {
+        const response = await fetch(getSharedContextDelegateUrl(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            packet: ensureProofPacket(activeResult, activeLens),
+            targetAgent: target,
+            strategicAngleId,
+          }),
+        });
+        const json = await response.json();
+        if (!response.ok || !json?.success) {
+          throw new Error(json?.message ?? `HTTP ${response.status}`);
+        }
+        trackEvent("delegate_strategic_issue", {
+          entity: activeResult.entityName,
+          target,
+          strategicAngleId,
+          contextId: json.contextId,
+          taskId: json.taskId,
+        });
+        setHandoffState({
+          status: "delegated",
+          message: `${json.targetLabel ?? targetLabel} issue handoff is ready through NodeBench MCP.`,
+          contextId: json.contextId,
+          taskId: json.taskId,
+          targetLabel: json.targetLabel ?? targetLabel,
+          installCommand: json.installCommand,
+          handoffPrompt: json.handoffPrompt,
+        });
+      } catch (error) {
+        setHandoffState({
+          status: "error",
+          message: error instanceof Error ? error.message : `Failed to prepare ${targetLabel} issue handoff.`,
         });
       }
     },
@@ -695,7 +784,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             style={stagger("0.06s")}
             className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-content-secondary"
           >
-            Research any company in seconds. Get signals, risks, and next actions — shaped for your role.
+            Founder-first by default. Research any company or direction in seconds, then pressure-test build speed, adoption, credibility, and next actions with evidence you can inspect.
           </p>
         </div>
 
@@ -990,6 +1079,8 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                   }}
                   onPublishSharedContext={() => void handlePublishSharedContext()}
                   onDelegate={(target) => void handleDelegate(target)}
+                  onPublishStrategicAngle={(angleId) => void handlePublishStrategicAngle(angleId)}
+                  onDelegateStrategicAngle={(angleId, target) => void handleDelegateStrategicAngle(angleId, target)}
                   onMonitor={() => {
                     trackEvent("add_watchlist", { entity: activeResult.entityName });
                   }}

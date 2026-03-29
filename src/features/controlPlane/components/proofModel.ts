@@ -9,6 +9,7 @@ import type {
   ResultGraphNode,
   ResultGraphSummary,
   ResultPacket,
+  ResultStrategicAngle,
   ResultSourceRef,
 } from "./searchTypes";
 import { PUBLIC_LENS_PERSONA_MAP } from "./searchTypes";
@@ -27,6 +28,7 @@ export interface ProofReadyResultPacket extends ResultPacket {
   recommendedNextAction: string;
   graphNodes: ResultGraphNode[];
   graphEdges: ResultGraphEdge[];
+  strategicAngles: ResultStrategicAngle[];
 }
 
 export interface ProgressStage {
@@ -446,6 +448,133 @@ function buildGraphSummary(
   );
 }
 
+function includesAny(value: string, terms: string[]): boolean {
+  const normalized = value.toLowerCase();
+  return terms.some((term) => normalized.includes(term));
+}
+
+function buildStrategicAngles(
+  packet: ResultPacket,
+  sources: ResultSourceRef[],
+  lens: LensId,
+): ResultStrategicAngle[] {
+  const existing = packet.strategicAngles;
+  if (existing?.length) {
+    return existing;
+  }
+
+  const queryText = `${packet.query} ${packet.answer}`.toLowerCase();
+  const signalText = packet.variables.map((item) => item.name).join(" ").toLowerCase();
+  const sourceIds = sources.slice(0, 2).map((source) => source.id);
+  const highConfidence = packet.confidence >= 80;
+  const sourceRich = sources.filter((source) => source.status === "cited").length >= 2;
+  const integrationHeavy = includesAny(queryText, ["mcp", "api", "plugin", "integration", "claude code", "cursor", "workflow"]);
+  const installFriendly = includesAny(queryText, ["install", "local", "cli", "dashboard", "subscription", "mcp", "retention.sh"]);
+  const maintenanceHeavy = includesAny(queryText, ["maintenance", "maintain", "update", "support", "ops", "dashboard service", "subscription service"]);
+  const regulated = includesAny(queryText, ["legal", "regulatory", "healthcare", "fda", "bank", "compliance"]);
+  const aiSkeptic = includesAny(queryText, ["no ai", "without ai", "anti ai", "environment", "peace", "altruistic"]);
+  const evidenceStrong = highConfidence && sourceRich;
+  const marketAligned = includesAny(queryText, ["claude code", "developer", "team", "workflow", "founder", "agent", "dashboard"]) || includesAny(signalText, ["distribution", "workflow", "developer", "adoption"]);
+
+  const angles: ResultStrategicAngle[] = [
+    {
+      id: "founder-fit",
+      title: "Founder-skill and credibility fit",
+      status: evidenceStrong ? "watch" : "unknown",
+      summary: evidenceStrong
+        ? "The opportunity is legible, but the packet still needs explicit proof that your team background makes this wedge believable to users and investors."
+        : "The current run does not yet establish why this team is the credible builder for the idea.",
+      whyItMatters: "Founding direction breaks when the team's real edge, speed, and narrative do not match the product promise.",
+      evidenceRefIds: sourceIds,
+      nextQuestion: "What founder background, customer access, or technical edge makes us the believable team for this direction?",
+    },
+    {
+      id: "build-speed",
+      title: "Build speed and maintenance burden",
+      status: regulated ? "watch" : integrationHeavy || installFriendly ? "strong" : "watch",
+      summary: regulated
+        ? "The opportunity touches regulated or high-trust surfaces, so build speed may look better on paper than it will in practice."
+        : integrationHeavy || installFriendly
+          ? "The idea appears to fit existing workflows and install surfaces, which improves time-to-value and reduces maintenance drag."
+          : "The product story is still missing evidence that it can be built and maintained quickly with the current stack and team.",
+      whyItMatters: "Fast founder loops depend on shipping something installable, supportable, and updateable before the market moves again.",
+      evidenceRefIds: sourceIds,
+      nextQuestion: "What is the smallest installable wedge we can ship in 2-4 weeks without creating long-term maintenance debt?",
+    },
+    {
+      id: "installability",
+      title: "Installability and update path",
+      status: installFriendly ? "strong" : "watch",
+      summary: installFriendly
+        ? "The direction appears to fit real install surfaces such as local CLI, MCP, or a hosted dashboard, which improves onboarding and update reliability."
+        : "The packet still needs proof that users can install, maintain, and update this without high-touch support.",
+      whyItMatters: "Products that are easy to install and keep current spread faster and generate less early support drag.",
+      evidenceRefIds: sourceIds,
+      nextQuestion: "Is the first wedge easiest to adopt as a local MCP tool, a browser workflow, or a hosted team dashboard?",
+    },
+    {
+      id: "maintainability",
+      title: "Maintainability and service burden",
+      status: maintenanceHeavy || regulated ? "watch" : installFriendly ? "strong" : "watch",
+      summary: maintenanceHeavy || regulated
+        ? "The direction likely creates ongoing update, support, or compliance work, so the team needs a clearer owner model and service boundary."
+        : "The current architecture suggests the product can stay relatively lean to operate if the first wedge remains narrow.",
+      whyItMatters: "Founders lose momentum when the first product creates more support and maintenance load than compounding leverage.",
+      evidenceRefIds: sourceIds,
+      nextQuestion: "What parts of this should be productized, automated, or intentionally left out so maintenance load stays bounded?",
+    },
+    {
+      id: "adoption",
+      title: "Workflow adoption and distribution fit",
+      status: marketAligned ? "strong" : "watch",
+      summary: marketAligned
+        ? "The packet points toward a workflow users already run today, including current developer loops like Claude Code and adjacent agent tooling."
+        : "The opportunity still needs proof that it rides a workflow people already use at high frequency rather than requiring behavior change.",
+      whyItMatters: "Founders win faster when the product plugs into where the user already works instead of demanding a new ritual.",
+      evidenceRefIds: sourceIds,
+      nextQuestion: "Which current user workflow does this replace, accelerate, or become unavoidable inside?",
+    },
+    {
+      id: "commercial",
+      title: "Commercialization and saleability",
+      status: installFriendly ? "strong" : "watch",
+      summary: installFriendly
+        ? "The direction can plausibly expand from tool to managed dashboard or team subscription, which supports a credible monetization path."
+        : "The packet does not yet prove how the tool becomes a repeatable paid product, service, or team subscription.",
+      whyItMatters: "A good prototype is not enough; the business has to be easy to buy, maintain, and eventually scale or sell.",
+      evidenceRefIds: sourceIds,
+      nextQuestion: "Does this become a paid dashboard, agent workflow subscription, or a service layer teams can justify recurring spend on?",
+    },
+    {
+      id: "conviction",
+      title: "User and investor conviction",
+      status: evidenceStrong ? "strong" : "watch",
+      summary: evidenceStrong
+        ? "There is enough cited evidence to start a conviction story, but it still needs sharper proof on why now and why this team."
+        : "The idea needs stronger proof and comparables before it will convincingly survive user or investor diligence.",
+      whyItMatters: "Conviction compounds when the packet can explain timing, proof, and upside in a way others can repeat.",
+      evidenceRefIds: sourceIds,
+      nextQuestion: "What proof points, comparables, and traction signals would make this direction legible to both users and investors?",
+    },
+  ];
+
+  if (lens === "founder" || aiSkeptic) {
+    angles.push({
+      id: "ai-tradeoffs",
+      title: "AI stance and mission tradeoffs",
+      status: aiSkeptic ? "watch" : "unknown",
+      summary: aiSkeptic
+        ? "The query itself raises discomfort with AI or model usage, so the product needs a clearer position on where AI helps and where it should be minimized."
+        : "The current packet does not yet resolve whether AI is essential to the product or simply a convenience layer that may alienate some users.",
+      whyItMatters: "Founders need a deliberate answer for users or teammates who resist AI on ethical, environmental, or mission grounds.",
+      evidenceRefIds: sourceIds,
+      nextQuestion: "Where is AI actually necessary here, and where should we offer a non-AI or low-AI path so the product stays aligned with the mission?",
+    });
+  }
+
+  return angles;
+}
+
 export function ensureProofPacket(
   packet: ResultPacket,
   lens: LensId = "founder",
@@ -467,6 +596,7 @@ export function ensureProofPacket(
       Boolean(packet.recommendedNextAction || packet.nextQuestions?.length),
     );
   const graphSummary = buildGraphSummary(packet, memory, graphNodes.length, graphEdges.length);
+  const strategicAngles = buildStrategicAngles(packet, sources, lens);
 
   const enriched: ProofReadyResultPacket = {
     ...packet,
@@ -489,6 +619,7 @@ export function ensureProofPacket(
       "Review the strongest contradiction and decide what to verify next.",
     graphNodes,
     graphEdges,
+    strategicAngles,
   };
 
   const answerBlockIds = new Set(enriched.answerBlocks.map((block) => block.id));

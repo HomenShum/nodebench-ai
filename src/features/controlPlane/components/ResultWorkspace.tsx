@@ -169,6 +169,20 @@ function SourceStatusBadge({ value }: { value: string }) {
   );
 }
 
+function StrategicAngleStatusBadge({ value }: { value: "strong" | "watch" | "unknown" }) {
+  const tone =
+    value === "strong"
+      ? "bg-emerald-500/10 text-emerald-300"
+      : value === "watch"
+        ? "bg-amber-500/10 text-amber-300"
+        : "bg-white/[0.06] text-content-muted";
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${tone}`}>
+      {value}
+    </span>
+  );
+}
+
 /* ─── Main component ────────────────────────────────────────────────────── */
 
 /* ─── Demo trajectory generator ────────────────────────────────────────── */
@@ -232,6 +246,8 @@ interface ResultWorkspaceProps {
   onExport?: (type: "brief" | "sheet" | "deck" | "html") => void;
   onPublishSharedContext?: () => void;
   onDelegate?: (target: "claude_code" | "openclaw") => void;
+  onPublishStrategicAngle?: (angleId: string) => void;
+  onDelegateStrategicAngle?: (angleId: string, target: "claude_code" | "openclaw") => void;
   onMonitor?: () => void;
   /** Optional live trajectory data. Falls back to demo trajectory if absent. */
   trajectory?: TrajectoryData;
@@ -253,6 +269,8 @@ export const ResultWorkspace = memo(function ResultWorkspace({
   onExport,
   onPublishSharedContext,
   onDelegate,
+  onPublishStrategicAngle,
+  onDelegateStrategicAngle,
   onMonitor,
   trajectory,
   handoffState,
@@ -470,6 +488,113 @@ export const ResultWorkspace = memo(function ResultWorkspace({
           })}
         </div>
       </Section>
+
+      {proofPacket.strategicAngles.length > 0 && (
+        <Section
+          id="pressure-test"
+          icon={GitCompare}
+          title={lens === "founder" ? "Founder Pressure Test" : "Strategic Pressure Test"}
+        >
+          <div className="grid gap-3 lg:grid-cols-2">
+            {proofPacket.strategicAngles.map((angle) => (
+              <div
+                key={angle.id}
+                className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium text-content">{angle.title}</div>
+                    <div className="mt-1 text-xs leading-relaxed text-content-muted">
+                      {angle.summary}
+                    </div>
+                  </div>
+                  <StrategicAngleStatusBadge value={angle.status} />
+                </div>
+                <div className="mt-3 rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                    Why this matters
+                  </div>
+                  <div className="mt-1 text-xs leading-relaxed text-content-muted">
+                    {angle.whyItMatters}
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {angle.evidenceRefIds.slice(0, 2).map((sourceId) => {
+                    const source = proofPacket.sourceRefs.find((item) => item.id === sourceId);
+                    if (!source) return null;
+                    return (
+                      <button
+                        key={sourceId}
+                        type="button"
+                        onClick={() => setSelectedSourceId(sourceId)}
+                        className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[11px] text-content-muted transition-colors hover:border-[#d97757]/30 hover:text-content"
+                      >
+                        {source.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {angle.nextQuestion && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onFollowUp?.(angle.nextQuestion!)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#d97757]/20 bg-[#d97757]/10 px-3 py-2 text-xs font-medium text-[#f2b49f] transition hover:bg-[#d97757]/15"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5" />
+                      {angle.nextQuestion}
+                    </button>
+                    {onPublishStrategicAngle ? (
+                      <button
+                        type="button"
+                        onClick={() => onPublishStrategicAngle(angle.id)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content"
+                      >
+                        <Network className="h-3.5 w-3.5" />
+                        Publish issue packet
+                      </button>
+                    ) : null}
+                    {onDelegateStrategicAngle && angle.status !== "strong" ? (
+                      <button
+                        type="button"
+                        onClick={() => onDelegateStrategicAngle(angle.id, "claude_code")}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20"
+                      >
+                        <ArrowRight className="h-3.5 w-3.5" />
+                        Delegate issue
+                      </button>
+                    ) : null}
+                  </div>
+                )}
+                {!angle.nextQuestion && (onPublishStrategicAngle || onDelegateStrategicAngle) ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {onPublishStrategicAngle ? (
+                      <button
+                        type="button"
+                        onClick={() => onPublishStrategicAngle(angle.id)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content"
+                      >
+                        <Network className="h-3.5 w-3.5" />
+                        Publish issue packet
+                      </button>
+                    ) : null}
+                    {onDelegateStrategicAngle && angle.status !== "strong" ? (
+                      <button
+                        type="button"
+                        onClick={() => onDelegateStrategicAngle(angle.id, "claude_code")}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20"
+                      >
+                        <ArrowRight className="h-3.5 w-3.5" />
+                        Delegate issue
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
 
       <Section id="sources" icon={Waypoints} title="Source Map">
         <div className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">

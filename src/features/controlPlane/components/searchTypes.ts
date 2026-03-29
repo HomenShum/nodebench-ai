@@ -195,6 +195,18 @@ export interface ResultGraphEdge {
   kind: ResultGraphEdgeKind;
 }
 
+export type ResultStrategicAngleStatus = "strong" | "watch" | "unknown";
+
+export interface ResultStrategicAngle {
+  id: string;
+  title: string;
+  status: ResultStrategicAngleStatus;
+  summary: string;
+  whyItMatters: string;
+  evidenceRefIds: string[];
+  nextQuestion?: string;
+}
+
 export interface ResultPacket {
   /** The user's original query */
   query: string;
@@ -248,6 +260,8 @@ export interface ResultPacket {
   graphNodes?: ResultGraphNode[];
   /** Compact graph edges for proof rendering */
   graphEdges?: ResultGraphEdge[];
+  /** Proactive founder/operator pressure-test angles */
+  strategicAngles?: ResultStrategicAngle[];
   /** Raw packet from backend (plan proposals, artifact packets, etc.) */
   rawPacket?: unknown;
 }
@@ -302,6 +316,16 @@ export const EXAMPLE_PROMPTS: ExamplePrompt[] = [
   },
   {
     text: "Plan a real-time notification system for our platform",
+    lens: "founder",
+    category: "analyze",
+  },
+  {
+    text: "Pressure-test this startup direction for founder fit, build speed, adoption, investor credibility, and sellability",
+    lens: "founder",
+    category: "analyze",
+  },
+  {
+    text: "Pressure-test this idea for team fit, AI tradeoffs, installability, maintainability, Claude Code adoption, and subscription potential",
     lens: "founder",
     category: "analyze",
   },

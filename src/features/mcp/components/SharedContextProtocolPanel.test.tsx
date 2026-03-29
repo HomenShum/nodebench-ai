@@ -9,9 +9,34 @@ vi.mock("@/lib/syncBridgeApi", () => ({
     if (options?.workspaceId) params.set("workspaceId", options.workspaceId);
     if (options?.contextType) params.set("contextType", options.contextType);
     if (options?.subjectIncludes) params.set("subjectIncludes", options.subjectIncludes);
+    if (options?.taskType) params.set("taskType", options.taskType);
+    if (options?.messageClass) params.set("messageClass", options.messageClass);
     return `/api/shared-context/snapshot?${params.toString()}`;
   },
+  getSharedContextPeerSnapshotUrl: (peerId: string, options?: any) => {
+    const params = new URLSearchParams();
+    params.set("limit", String(options?.limit ?? 8));
+    if (options?.workspaceId) params.set("workspaceId", options.workspaceId);
+    if (options?.contextType) params.set("contextType", options.contextType);
+    if (options?.subjectIncludes) params.set("subjectIncludes", options.subjectIncludes);
+    if (options?.taskType) params.set("taskType", options.taskType);
+    if (options?.messageClass) params.set("messageClass", options.messageClass);
+    return `/api/shared-context/peers/${encodeURIComponent(peerId)}/snapshot?${params.toString()}`;
+  },
+  getSharedContextSubscriptionManifestUrl: (options?: any) => {
+    const params = new URLSearchParams();
+    params.set("limit", String(options?.limit ?? 8));
+    if (options?.peerId) params.set("peerId", options.peerId);
+    if (options?.workspaceId) params.set("workspaceId", options.workspaceId);
+    if (options?.contextType) params.set("contextType", options.contextType);
+    if (options?.subjectIncludes) params.set("subjectIncludes", options.subjectIncludes);
+    if (options?.taskType) params.set("taskType", options.taskType);
+    if (options?.messageClass) params.set("messageClass", options.messageClass);
+    return `/api/shared-context/subscriptions/manifest?${params.toString()}`;
+  },
   getSharedContextEventsUrl: () => "/api/shared-context/events?limit=8",
+  getSharedContextPacketUrl: (contextId: string, peerId?: string) =>
+    `/api/shared-context/packets/${encodeURIComponent(contextId)}${peerId ? `?peerId=${encodeURIComponent(peerId)}` : ""}`,
 }));
 
 import { SharedContextProtocolPanel } from "./SharedContextProtocolPanel";
@@ -33,13 +58,41 @@ const EMPTY_SNAPSHOT = {
   },
 };
 
+const EMPTY_MANIFEST = {
+  success: true,
+  manifest: {
+    snapshotQuery: { limit: 8 },
+    pullQuery: { limit: 8 },
+    subscriptionQuery: { eventTypes: ["packet_published"] },
+    packetResources: [],
+  },
+};
+
 function mockFetchWith(body: unknown = EMPTY_SNAPSHOT) {
-  return vi.spyOn(globalThis, "fetch").mockResolvedValue(
-    new Response(JSON.stringify(body), {
+  return vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+    const url = String(input);
+    const responseBody = url.includes("/subscriptions/manifest") ? EMPTY_MANIFEST : body;
+    return new Response(JSON.stringify(responseBody), {
       status: 200,
       headers: { "Content-Type": "application/json" },
-    }),
-  );
+    });
+  });
+}
+
+function mockFetchRoutes(routes: Record<string, unknown>) {
+  return vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+    const url = String(input);
+    const match = Object.entries(routes).find(([pattern]) => url.includes(pattern));
+    const body = match
+      ? match[1]
+      : url.includes("/subscriptions/manifest")
+        ? EMPTY_MANIFEST
+        : EMPTY_SNAPSHOT;
+    return new Response(JSON.stringify(body), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  });
 }
 
 describe("SharedContextProtocolPanel", () => {
@@ -72,63 +125,127 @@ describe("SharedContextProtocolPanel", () => {
   });
 
   it("renders peers, packets, tasks, and messages from the snapshot", async () => {
-    mockFetchWith({
-      success: true,
-      snapshot: {
-        peers: [
-          {
-            peerId: "peer:researcher:1",
-            product: "nodebench",
-            workspaceId: "workspace_alpha",
-            surface: "local_runtime",
-            role: "researcher",
-            capabilities: ["can-search", "can-publish-packet"],
-            contextScopes: ["workspace"],
-            status: "active",
-            summary: {
-              currentTask: "Compile founder packet for Stripe",
+    mockFetchRoutes({
+      "/api/shared-context/snapshot": {
+        success: true,
+        snapshot: {
+          peers: [
+            {
+              peerId: "peer:researcher:1",
+              product: "nodebench",
+              workspaceId: "workspace_alpha",
+              surface: "local_runtime",
+              role: "researcher",
+              capabilities: ["can-search", "can-publish-packet"],
+              contextScopes: ["workspace"],
+              status: "active",
+              summary: {
+                currentTask: "Compile founder packet for Stripe",
+              },
+              lastHeartbeatAt: "2026-03-27T12:00:00.000Z",
             },
-            lastHeartbeatAt: "2026-03-27T12:00:00.000Z",
+          ],
+          recentPackets: [
+            {
+              contextId: "context:1",
+              contextType: "entity_packet",
+              producerPeerId: "peer:researcher:1",
+              subject: "Stripe entity packet",
+              summary: "Canonical packet for Stripe with fresh billing evidence.",
+              status: "active",
+              confidence: 0.93,
+              scope: ["workspace", "entity:stripe"],
+              nextActions: [],
+            },
+          ],
+          recentTasks: [
+            {
+              taskId: "task:1",
+              taskType: "judge_packet",
+              proposerPeerId: "peer:researcher:1",
+              assigneePeerId: "peer:judge:1",
+              status: "accepted",
+              outputContextId: null,
+            },
+          ],
+          recentMessages: [
+            {
+              messageId: "message:1",
+              fromPeerId: "peer:researcher:1",
+              toPeerId: "peer:judge:1",
+              messageClass: "context_offer",
+              status: "unread",
+            },
+          ],
+          counts: {
+            activePeers: 1,
+            activePackets: 1,
+            invalidatedPackets: 0,
+            openTasks: 1,
+            unreadMessages: 1,
           },
-        ],
-        recentPackets: [
-          {
-            contextId: "context:1",
+        },
+      },
+      "/api/shared-context/subscriptions/manifest": {
+        success: true,
+        manifest: {
+          snapshotQuery: {
+            peerId: "peer:researcher:1",
+            workspaceId: "workspace_alpha",
             contextType: "entity_packet",
-            producerPeerId: "peer:researcher:1",
-            subject: "Stripe entity packet",
-            summary: "Canonical packet for Stripe with fresh billing evidence.",
-            status: "active",
-            confidence: 0.93,
-            scope: ["workspace", "entity:stripe"],
-            nextActions: [],
           },
-        ],
-        recentTasks: [
-          {
-            taskId: "task:1",
-            taskType: "judge_packet",
-            proposerPeerId: "peer:researcher:1",
-            assigneePeerId: "peer:judge:1",
-            status: "accepted",
-            outputContextId: null,
+          pullQuery: {
+            requestingPeerId: "peer:researcher:1",
+            workspaceId: "workspace_alpha",
+            contextType: "entity_packet",
+            subjectIncludes: "Stripe entity packet",
           },
-        ],
-        recentMessages: [
-          {
-            messageId: "message:1",
-            fromPeerId: "peer:researcher:1",
-            toPeerId: "peer:judge:1",
-            messageClass: "context_offer",
-            status: "unread",
+          subscriptionQuery: {
+            peerId: "peer:researcher:1",
+            workspaceId: "workspace_alpha",
+            contextType: "entity_packet",
+            subjectIncludes: "Stripe entity packet",
+            eventTypes: ["packet_published", "task_status_changed"],
           },
-        ],
-        counts: {
-          activePeers: 1,
-          activePackets: 1,
-          invalidatedPackets: 0,
-          openTasks: 1,
-          unreadMessages: 1,
+          packetResources: [
+            {
+              contextId: "context:1",
+              contextType: "entity_packet",
+              subject: "Stripe entity packet",
+              resourceUri: "shared-context://packet/context%3A1",
+            },
+          ],
+        },
+      },
+      "/api/shared-context/packets/": {
+        success: true,
+        packet: {
+          contextId: "context:1",
+          contextType: "entity_packet",
+          producerPeerId: "peer:researcher:1",
+          subject: "Stripe entity packet",
+          summary: "Canonical packet for Stripe with fresh billing evidence.",
+          status: "active",
+          claims: ["Stripe expanded billing automation."],
+          evidenceRefs: ["https://stripe.com"],
+          nextActions: ["Judge the packet."],
+          scope: ["workspace", "entity:stripe"],
+        },
+        resourceUri: "shared-context://packet/context%3A1",
+        pullQuery: {
+          contextType: "entity_packet",
+          producerPeerId: "peer:researcher:1",
+          workspaceId: "workspace_alpha",
+          scopeIncludes: "entity:stripe",
+          subjectIncludes: "Stripe entity packet",
+        },
+        subscriptionQuery: {
+          contextType: "entity_packet",
+          producerPeerId: "peer:researcher:1",
+          workspaceId: "workspace_alpha",
+          scopeIncludes: "entity:stripe",
+          subjectIncludes: "Stripe entity packet",
+          eventTypes: ["packet_published", "task_status_changed"],
         },
       },
     });
@@ -140,21 +257,32 @@ describe("SharedContextProtocolPanel", () => {
     );
     expect(screen.getByText("Stripe entity packet")).toBeInTheDocument();
     expect(screen.getAllByText("judge_packet").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("context_offer")).toBeInTheDocument();
+    expect(screen.getAllByText("context_offer").length).toBeGreaterThanOrEqual(1);
+    await waitFor(() => {
+      expect(screen.getByText("Stripe expanded billing automation.")).toBeInTheDocument();
+    });
+    expect(screen.getByText("shared-context://packet/context%3A1")).toBeInTheDocument();
+    expect(screen.getByText("Subscription Manifest")).toBeInTheDocument();
   });
 
-  it("re-queries with the selected workspace and packet filters", async () => {
+  it("re-queries with the selected workspace, peer, packet, and task filters", async () => {
     const fetchMock = mockFetchWith();
 
     render(<SharedContextProtocolPanel />);
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2));
 
     fireEvent.change(screen.getByPlaceholderText("workspace:nodebench..."), {
       target: { value: "workspace_alpha" },
     });
+    fireEvent.change(screen.getByPlaceholderText("peer:web:control_plane"), {
+      target: { value: "peer:researcher:1" },
+    });
     fireEvent.change(screen.getByDisplayValue("All packet types"), {
       target: { value: "judge_packet" },
+    });
+    fireEvent.change(screen.getByDisplayValue("All tasks"), {
+      target: { value: "agent_handoff" },
     });
 
     await waitFor(() => {
@@ -162,7 +290,13 @@ describe("SharedContextProtocolPanel", () => {
         expect.stringContaining("workspaceId=workspace_alpha"),
       );
       expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining("/api/shared-context/peers/peer%3Aresearcher%3A1/snapshot"),
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
         expect.stringContaining("contextType=judge_packet"),
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining("taskType=agent_handoff"),
       );
     });
   });
@@ -171,7 +305,7 @@ describe("SharedContextProtocolPanel", () => {
     const fetchMock = mockFetchWith();
 
     render(<SharedContextProtocolPanel />);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2));
 
     fireEvent.change(screen.getByPlaceholderText("Search by keyword..."), {
       target: { value: "Stripe" },
@@ -184,11 +318,112 @@ describe("SharedContextProtocolPanel", () => {
     });
   });
 
+  it("loads a scoped packet resource when a packet is selected", async () => {
+    const fetchMock = mockFetchRoutes({
+      "/api/shared-context/snapshot": {
+        success: true,
+        snapshot: {
+          peers: [],
+          recentPackets: [
+            {
+              contextId: "context:stripe",
+              contextType: "entity_packet",
+              producerPeerId: "peer:researcher:1",
+              subject: "Stripe entity packet",
+              summary: "Canonical packet for Stripe.",
+              status: "active",
+              confidence: 0.91,
+              scope: ["workspace"],
+              nextActions: [],
+            },
+          ],
+          recentTasks: [],
+          recentMessages: [],
+          counts: {
+            activePeers: 0,
+            activePackets: 1,
+            invalidatedPackets: 0,
+            openTasks: 0,
+            unreadMessages: 0,
+          },
+        },
+      },
+      "/api/shared-context/subscriptions/manifest": {
+        success: true,
+        manifest: {
+          snapshotQuery: {
+            contextType: "entity_packet",
+            subjectIncludes: "Stripe entity packet",
+          },
+          pullQuery: {
+            contextType: "entity_packet",
+            subjectIncludes: "Stripe entity packet",
+          },
+          subscriptionQuery: {
+            contextType: "entity_packet",
+            subjectIncludes: "Stripe entity packet",
+            eventTypes: ["packet_published"],
+          },
+          packetResources: [
+            {
+              contextId: "context:stripe",
+              contextType: "entity_packet",
+              subject: "Stripe entity packet",
+              resourceUri: "shared-context://packet/context%3Astripe",
+            },
+          ],
+        },
+      },
+      "/api/shared-context/packets/": {
+        success: true,
+        packet: {
+          contextId: "context:stripe",
+          contextType: "entity_packet",
+          producerPeerId: "peer:researcher:1",
+          subject: "Stripe entity packet",
+          summary: "Canonical packet for Stripe.",
+          status: "active",
+          claims: ["Stripe is pushing deeper into billing automation."],
+          evidenceRefs: ["https://stripe.com"],
+          nextActions: ["Compare against Adyen."],
+          scope: ["workspace"],
+        },
+        resourceUri: "shared-context://packet/context%3Astripe",
+        pullQuery: {
+          contextType: "entity_packet",
+          producerPeerId: "peer:researcher:1",
+          workspaceId: "workspace",
+          subjectIncludes: "Stripe entity packet",
+        },
+        subscriptionQuery: {
+          contextType: "entity_packet",
+          producerPeerId: "peer:researcher:1",
+          workspaceId: "workspace",
+          subjectIncludes: "Stripe entity packet",
+          eventTypes: ["packet_published"],
+        },
+      },
+    });
+
+    render(<SharedContextProtocolPanel />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Stripe entity packet")).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(screen.getByText("Stripe is pushing deeper into billing automation.")).toBeInTheDocument();
+    });
+    expect(screen.getAllByText(/"subjectIncludes": "Stripe entity packet"/).length).toBeGreaterThanOrEqual(2);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/api/shared-context/packets/context%3Astripe"),
+    );
+  });
+
   it("clears all filters when the Reset filters button is clicked", async () => {
     const fetchMock = mockFetchWith();
 
     render(<SharedContextProtocolPanel />);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2));
 
     // Set some filters first
     fireEvent.change(screen.getByPlaceholderText("workspace:nodebench..."), {
@@ -218,7 +453,7 @@ describe("SharedContextProtocolPanel", () => {
     const fetchMock = mockFetchWith();
 
     const { unmount } = render(<SharedContextProtocolPanel />);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2));
 
     fireEvent.change(screen.getByPlaceholderText("workspace:nodebench..."), {
       target: { value: "saved_ws" },

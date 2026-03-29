@@ -77,7 +77,7 @@ describe("ControlPlaneLanding", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/founder-first by default\. search public and private context/i),
+      screen.getByText(/founder-first by default\..*pressure-test build speed, adoption, credibility/i),
     ).toBeInTheDocument();
     expect(screen.getByTestId("landing-lens-founder")).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByTestId("landing-example-prompts")).toBeInTheDocument();
@@ -197,8 +197,12 @@ describe("ControlPlaneLanding", () => {
     await waitFor(() => {
       expect(screen.getByText("Cohere")).toBeInTheDocument();
     });
+    fireEvent.click(screen.getByRole("button", { name: /show full analysis/i }));
     expect(screen.getAllByText(/enterprise retrieval and agent orchestration/i).length).toBeGreaterThan(0);
     expect(screen.getByText("Source Map")).toBeInTheDocument();
+    expect(screen.getByText("Founder Pressure Test")).toBeInTheDocument();
+    expect(screen.getAllByText("Publish issue packet").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Delegate issue").length).toBeGreaterThan(0);
     expect(screen.getByText("How we got this answer")).toBeInTheDocument();
   });
 });

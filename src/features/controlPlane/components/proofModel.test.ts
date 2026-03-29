@@ -37,6 +37,10 @@ describe("proofModel", () => {
     expect(enriched.graphSummary.primaryPath.length).toBeGreaterThan(0);
     expect(enriched.proofStatus).toBe("drifting");
     expect(enriched.answerBlocks.every((block) => block.sourceRefIds.length > 0)).toBe(true);
+    expect(enriched.strategicAngles.length).toBeGreaterThan(0);
+    expect(enriched.strategicAngles.some((angle) => angle.id === "founder-fit")).toBe(true);
+    expect(enriched.strategicAngles.some((angle) => angle.id === "installability")).toBe(true);
+    expect(enriched.strategicAngles.some((angle) => angle.id === "maintainability")).toBe(true);
   });
 
   it("uses the selected lens when building live progress and proof graph state", () => {
