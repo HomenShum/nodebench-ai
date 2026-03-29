@@ -6,7 +6,7 @@
  */
 
 import { memo, useMemo, useEffect } from "react";
-import { useParams } from "react-router-dom";
+// type/id parsed from window.location.pathname (rendered outside React Router)
 import { Building2, FileText, Gauge, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -149,7 +149,11 @@ function ConfidenceEmbed({ id }: { id: string }) {
 // ── Main View ────────────────────────────────────────────────────────────
 
 function EmbedViewInner() {
-  const { type, id } = useParams<{ type: string; id: string }>();
+  // Parse type and id from pathname directly since we're outside React Router's <Route>
+  const { type, id } = useMemo(() => {
+    const parts = window.location.pathname.replace(/^\/embed\//, "").split("/");
+    return { type: parts[0] || undefined, id: parts[1] || undefined };
+  }, []);
 
   useEffect(() => {
     document.title = `NodeBench Embed — ${type}`;

@@ -9,7 +9,7 @@
  */
 
 import { memo, useEffect, useMemo, useState, useCallback } from "react";
-import { useParams } from "react-router-dom";
+// slug parsed from window.location.pathname (rendered outside React Router)
 import {
   Building2,
   Copy,
@@ -146,7 +146,8 @@ function ShareBar({ company }: { company: CompanyProfileData }) {
     <div className="company-profile-no-print flex items-center gap-2">
       <button
         onClick={handleCopy}
-        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:bg-white/[0.08]"
+        aria-label="Copy link to clipboard"
+        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#d97757]"
       >
         {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
         {copied ? "Copied!" : "Copy link"}
@@ -155,7 +156,8 @@ function ShareBar({ company }: { company: CompanyProfileData }) {
         href={twitterUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:bg-white/[0.08]"
+        aria-label="Share on Twitter"
+        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#d97757]"
       >
         <ExternalLink className="h-3.5 w-3.5" />
         Twitter
@@ -164,14 +166,16 @@ function ShareBar({ company }: { company: CompanyProfileData }) {
         href={linkedinUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:bg-white/[0.08]"
+        aria-label="Share on LinkedIn"
+        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#d97757]"
       >
         <Linkedin className="h-3.5 w-3.5" />
         LinkedIn
       </a>
       <button
         onClick={() => window.print()}
-        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:bg-white/[0.08]"
+        aria-label="Print company profile"
+        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#d97757]"
       >
         <Printer className="h-3.5 w-3.5" />
         Print
@@ -198,7 +202,11 @@ function ConfidenceBadge({ value }: { value: number }) {
 // ── Main View ────────────────────────────────────────────────────────────
 
 function PublicCompanyProfileViewInner() {
-  const { slug } = useParams<{ slug: string }>();
+  // Parse slug from pathname directly since we're outside React Router's <Route>
+  const slug = useMemo(() => {
+    const path = window.location.pathname.replace(/^\/company\//, "").replace(/\/$/, "");
+    return path || "demo";
+  }, []);
 
   // Load company from localStorage or use demo
   const company = useMemo(() => {
@@ -247,6 +255,9 @@ function PublicCompanyProfileViewInner() {
 
   return (
     <div className="min-h-screen bg-[#151413] text-white">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-[#d97757] focus:px-4 focus:py-2 focus:text-white">
+        Skip to content
+      </a>
       <CompanyMetaTags company={company} />
 
       {/* Header */}
@@ -285,7 +296,7 @@ function PublicCompanyProfileViewInner() {
       </header>
 
       {/* Content */}
-      <main className="px-6 py-6">
+      <main id="main-content" className="px-6 py-6" tabIndex={-1}>
         <div className="mx-auto max-w-3xl space-y-6">
 
           {/* Signals */}
