@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useConvexAuth, useQuery} from "convex/react";
 import {
   Bot,
   Building2,
@@ -20,7 +20,7 @@ import {
   Eye,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { api } from "../../convex/_generated/api";
+import { useConvexApi } from "@/lib/convexApi";
 import type { CockpitSurfaceId } from "@/lib/registry/viewRegistry";
 import { buildCockpitPath } from "@/lib/registry/viewRegistry";
 import { cn } from "@/lib/utils";
@@ -61,17 +61,13 @@ export const WorkspaceRail = memo(function WorkspaceRail({
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated } = useConvexAuth();
-  const recentSessions = useQuery(
-    api.domains.operations.taskManager.queries.getUserTaskSessions,
-    isAuthenticated ? { limit: 5 } : "skip",
+  const api = useConvexApi();
+
+  const recentSessions = useQuery(api?.domains.operations.taskManager.queries.getUserTaskSessions ??isAuthenticated ? { limit: 5 } : "skip",
   );
-  const recentDocuments = useQuery(
-    api.domains.documents.documents.getSidebar,
-    isAuthenticated ? {} : "skip",
+  const recentDocuments = useQuery(api?.domains.documents.documents.getSidebar ??isAuthenticated ? {} : "skip",
   );
-  const watchlistDigest = useQuery(
-    api.domains.monitoring.worldMonitor.getWatchlistDigest,
-    {},
+  const watchlistDigest = useQuery(api?.domains.monitoring.worldMonitor.getWatchlistDigest ??{},
   );
 
   const sessionItems = Array.isArray(recentSessions?.sessions) ? recentSessions.sessions.slice(0, 4) : [];

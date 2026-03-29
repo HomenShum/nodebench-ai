@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useRef } from "react";
 import ReactDOM from "react-dom";
 import { Id } from "../../../convex/_generated/dataModel";
 import { X, ExternalLink } from "lucide-react";
-import { useQuery, useMutation, useAction } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { useQuery, useMutation, useAction} from "convex/react";
+import { useConvexApi } from "@/lib/convexApi";
 import { toast } from "sonner";
 
 interface HashtagQuickNotePopoverProps {
@@ -140,12 +140,14 @@ function HashtagContent({
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       toast.error(`Re-index failed: ${msg}`);
+  const api = useConvexApi();
+
     } finally {
       setIsReindexing(false);
     }
   };
 
-  const document = useQuery(api.domains.documents.documents.getById, { documentId: dossierId });
+  const document = useQuery(api?.domains.documents.documents.getById ??{ documentId: dossierId });
 
   const handleOpenFullDossier = () => {
     window.dispatchEvent(

@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useMutation } from 'convex/react';
+import { useMutation} from 'convex/react';
 import { useMotionConfig } from '@/lib/motion';
-import { api } from '../../../convex/_generated/api';
+import { useConvexApi } from "@/lib/convexApi";
 import { toast } from 'sonner';
 import {
   Plus,
@@ -23,14 +23,16 @@ interface QuickCaptureWidgetProps {
 }
 
 export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) {
+  const api = useConvexApi();
+
   const { instant, transition } = useMotionConfig();
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<CaptureMode>('note');
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  const saveCapture = useMutation(api.domains.quickCapture.quickCapture.saveCapture);
-  const generateUploadUrl = useMutation(api.domains.quickCapture.quickCapture.generateUploadUrl);
+  const saveCapture = useMutation(api?.domains.quickCapture.quickCapture.saveCapture);
+  const generateUploadUrl = useMutation(api?.domains.quickCapture.quickCapture.generateUploadUrl);
 
   const { isRecording, audioBlob, duration, startRecording, stopRecording, clearRecording } =
     useVoiceRecording();

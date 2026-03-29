@@ -1,7 +1,7 @@
 import { memo, useEffect, useState } from "react";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useConvexAuth, useQuery} from "convex/react";
 import { Activity, Clock, Mic, Shield, TrendingUp, ChevronRight, ChevronLeft, Sparkles, Volume2, VolumeX } from "lucide-react";
-import { api } from "../../convex/_generated/api";
+import { useConvexApi } from "@/lib/convexApi";
 import { cn } from "@/lib/utils";
 import type { CockpitSurfaceId, MainView } from "@/lib/registry/viewRegistry";
 import { useVoiceOutput } from "@/hooks/useVoiceOutput";
@@ -40,14 +40,12 @@ export const AgentPresenceRail = memo(function AgentPresenceRail({
   isVoiceListening = false,
 }: AgentPresenceRailProps) {
   const { isAuthenticated } = useConvexAuth();
-  const agentStats = useQuery(api.domains.agents.agentHubQueries.getAgentStats, isAuthenticated ? {} : "skip");
-  const pendingApprovals = useQuery(
-    api.domains.agents.receipts.actionReceipts.listPendingApprovals,
-    isAuthenticated ? { limit: 5 } : "skip",
+  const agentStats = useQuery(api?.domains.agents.agentHubQueries.getAgentStats ??isAuthenticated ? {} : "skip");
+  const api = useConvexApi();
+
+  const pendingApprovals = useQuery(api?.domains.agents.receipts.actionReceipts.listPendingApprovals ??isAuthenticated ? { limit: 5 } : "skip",
   );
-  const latestReceipts = useQuery(
-    api.domains.agents.receipts.actionReceipts.list,
-    isAuthenticated ? { limit: 12 } : "skip",
+  const latestReceipts = useQuery(api?.domains.agents.receipts.actionReceipts.list ??isAuthenticated ? { limit: 12 } : "skip",
   );
 
   const approvalCount = Array.isArray(pendingApprovals) ? pendingApprovals.length : 0;

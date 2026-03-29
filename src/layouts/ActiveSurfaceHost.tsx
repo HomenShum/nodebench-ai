@@ -1,8 +1,8 @@
 import { lazy, Suspense, useCallback, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "convex/react";
+import { useQuery} from "convex/react";
 import { Id } from "../../convex/_generated/dataModel";
-import { api } from "../../convex/_generated/api";
+import { useConvexApi } from "@/lib/convexApi";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { ViewSkeleton } from "@/components/skeletons";
 import { AgentScreen } from "@/shared/agent-ui/AgentScreen";
@@ -198,8 +198,10 @@ function TelemetryStack({ active = true }: { active?: boolean }) {
   );
 
   // Live metrics with demo fallback — skip subscriptions when surface is cached (not visible)
-  const agentStats = useQuery(api.domains.agents.agentHubQueries.getAgentStats, active ? {} : "skip");
-  const receipts = useQuery(api.domains.agents.receipts.actionReceipts.list, active ? { limit: 200 } : "skip");
+  const agentStats = useQuery(api?.domains.agents.agentHubQueries.getAgentStats ??active ? {} : "skip");
+  const api = useConvexApi();
+
+  const receipts = useQuery(api?.domains.agents.receipts.actionReceipts.list ??active ? { limit: 200 } : "skip");
   const isLive = agentStats !== undefined && receipts !== undefined && (receipts?.length ?? 0) > 0;
 
   // Day-seeded demo metrics so the dashboard feels alive across visits

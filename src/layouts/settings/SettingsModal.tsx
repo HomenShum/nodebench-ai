@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useThemeSafe } from "../../contexts/ThemeContext";
-import { useQuery, useMutation, useAction } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { useQuery, useMutation, useAction} from "convex/react";
+import { useConvexApi } from "@/lib/convexApi";
 import { toast } from "sonner";
 import { WebMcpSettingsPanel } from "./WebMcpSettingsPanel";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -71,8 +71,10 @@ function LayoutModeToggle() {
 
 // SMS Usage Stats Component
 function SmsUsageStats() {
-  const smsUsage = useQuery(api.domains.integrations.sms.getSmsUsageStats, { days: 30 });
-  const costBreakdown = useQuery(api.domains.integrations.sms.getSmsCostBreakdown);
+  const api = useConvexApi();
+
+  const smsUsage = useQuery(api?.domains.integrations.sms.getSmsUsageStats ??{ days: 30 });
+  const costBreakdown = useQuery(api?.domains.integrations.sms.getSmsCostBreakdown);
 
   if (!smsUsage && !costBreakdown) {
     return null;
@@ -223,36 +225,36 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isOpen, onClose]);
 
-  const keyStatuses = useQuery(api.domains.auth.apiKeys.listApiKeyStatuses, {
+  const keyStatuses = useQuery(api?.domains.auth.apiKeys.listApiKeyStatuses ??{
     providers: PROVIDERS,
   });
 
   // Auth state to gate saving/deleting keys and show hints
-  const user = useQuery(api.domains.auth.auth.loggedInUser);
+  const user = useQuery(api?.domains.auth.auth.loggedInUser);
 
   // Usage (daily + 14-day series) per provider
-  const dailyOpenAI = useQuery(api.domains.auth.usage.getDailyUsagePublic, { provider: "openai" });
-  const dailyGemini = useQuery(api.domains.auth.usage.getDailyUsagePublic, { provider: "gemini" });
-  const seriesOpenAI = useQuery(api.domains.auth.usage.getUsageSeries, { provider: "openai", days: 14 });
-  const seriesGemini = useQuery(api.domains.auth.usage.getUsageSeries, { provider: "gemini", days: 14 });
+  const dailyOpenAI = useQuery(api?.domains.auth.usage.getDailyUsagePublic ??{ provider: "openai" });
+  const dailyGemini = useQuery(api?.domains.auth.usage.getDailyUsagePublic ??{ provider: "gemini" });
+  const seriesOpenAI = useQuery(api?.domains.auth.usage.getUsageSeries ??{ provider: "openai", days: 14 });
+  const seriesGemini = useQuery(api?.domains.auth.usage.getUsageSeries ??{ provider: "gemini", days: 14 });
 
   // Billing
-  const subscription = useQuery(api.domains.billing.billing.getSubscription);
+  const subscription = useQuery(api?.domains.billing.billing.getSubscription);
 
-  const saveEncryptedApiKey = useMutation(api.domains.auth.apiKeys.saveEncryptedApiKeyPublic);
-  const deleteApiKey = useMutation(api.domains.auth.apiKeys.deleteApiKey);
+  const saveEncryptedApiKey = useMutation(api?.domains.auth.apiKeys.saveEncryptedApiKeyPublic);
+  const deleteApiKey = useMutation(api?.domains.auth.apiKeys.deleteApiKey);
   const createPolarCheckout = useAction(api.domains.billing.billing.createPolarCheckout);
   const runGmailIngest = useAction(api.domains.integrations.gmail.ingestMessages);
   const runGcalSync = useAction(api.domains.integrations.gcal.syncPrimaryCalendar);
 
   // Gmail connection status and OAuth
-  const gmailConnection = useQuery(api.domains.integrations.gmail.getConnection, {});
+  const gmailConnection = useQuery(api?.domains.integrations.gmail.getConnection ??{});
   const getGmailOAuthUrl = useAction(api.domains.integrations.gmail.getOAuthUrl);
   const [connectingGmail, setConnectingGmail] = useState(false);
 
   // Calendar UI prefs (timezone)
-  const calendarPrefs = useQuery(api.domains.auth.userPreferences.getCalendarUiPrefs, {});
-  const _saveTimeZone = useMutation(api.domains.auth.userPreferences.setTimeZonePreference);
+  const calendarPrefs = useQuery(api?.domains.auth.userPreferences.getCalendarUiPrefs ??{});
+  const _saveTimeZone = useMutation(api?.domains.auth.userPreferences.setTimeZonePreference);
   const browserTz = useMemo(() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone as string | undefined;
@@ -306,17 +308,17 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   }, [calendarPrefs, browserTz, selectedTz]);
 
   // User preferences (for reminders)
-  const userPreferences = useQuery(api.domains.auth.userPreferences.getUserPreferences);
-  const updateUserPreferences = useMutation(api.domains.auth.userPreferences.updateUserPreferences);
-  const updateUngroupedSectionName = useMutation(api.domains.auth.userPreferences.updateUngroupedSectionName);
-  const updateUngroupedExpandedState = useMutation(api.domains.auth.userPreferences.updateUngroupedExpandedState);
-  const setPlannerViewPrefs = useMutation(api.domains.auth.userPreferences.setPlannerViewPrefs);
-  const setPlannerMode = useMutation(api.domains.auth.userPreferences.setPlannerMode);
-  const upsertCalendarHubSizePct = useMutation(api.domains.auth.userPreferences.upsertCalendarHubSizePct);
+  const userPreferences = useQuery(api?.domains.auth.userPreferences.getUserPreferences);
+  const updateUserPreferences = useMutation(api?.domains.auth.userPreferences.updateUserPreferences);
+  const updateUngroupedSectionName = useMutation(api?.domains.auth.userPreferences.updateUngroupedSectionName);
+  const updateUngroupedExpandedState = useMutation(api?.domains.auth.userPreferences.updateUngroupedExpandedState);
+  const setPlannerViewPrefs = useMutation(api?.domains.auth.userPreferences.setPlannerViewPrefs);
+  const setPlannerMode = useMutation(api?.domains.auth.userPreferences.setPlannerMode);
+  const upsertCalendarHubSizePct = useMutation(api?.domains.auth.userPreferences.upsertCalendarHubSizePct);
 
   // SMS notification preferences
-  const smsPreferences = useQuery(api.domains.auth.userPreferences.getSmsPreferences);
-  const updateSmsPreferences = useMutation(api.domains.auth.userPreferences.updateSmsPreferences);
+  const smsPreferences = useQuery(api?.domains.auth.userPreferences.getSmsPreferences);
+  const updateSmsPreferences = useMutation(api?.domains.auth.userPreferences.updateSmsPreferences);
   const [smsPhoneInput, setSmsPhoneInput] = useState("");
   const [savingSmsPrefs, setSavingSmsPrefs] = useState(false);
 
@@ -327,11 +329,11 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
     }
   }, [smsPreferences?.phoneNumber, smsPhoneInput]);
   // OSS Stats integration
-  const githubOwner = useQuery(api.domains.analytics.ossStats.getGithubOwner, { owner: "get-convex" });
-  const npmOrg = useQuery(api.domains.analytics.ossStats.getNpmOrg, { name: "convex-dev" });
+  const githubOwner = useQuery(api?.domains.analytics.ossStats.getGithubOwner ??{ owner: "get-convex" });
+  const npmOrg = useQuery(api?.domains.analytics.ossStats.getNpmOrg ??{ name: "convex-dev" });
   const syncOssStats = useAction(api.domains.analytics.ossStats.syncDefault);
   const syncOssStatsWithUserToken = useAction(api.domains.analytics.ossStats.syncPreferUserToken);
-  const ghEncryptedKey = useQuery(api.domains.auth.apiKeys.getEncryptedApiKeyPublic, { provider: "github_access_token" });
+  const ghEncryptedKey = useQuery(api?.domains.auth.apiKeys.getEncryptedApiKeyPublic ??{ provider: "github_access_token" });
   const [syncingStats, setSyncingStats] = useState(false);
   const [savingReminder, setSavingReminder] = useState(false);
   const [savingSectionName, setSavingSectionName] = useState(false);
@@ -342,10 +344,10 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   const [showGithubConfig, setShowGithubConfig] = useState(false);
 
   // Account & Security
-  const sessions = useQuery(api.domains.auth.account.listSessions);
-  const linkedAccounts = useQuery(api.domains.auth.account.listLinkedAccounts);
+  const sessions = useQuery(api?.domains.auth.account.listSessions);
+  const linkedAccounts = useQuery(api?.domains.auth.account.listLinkedAccounts);
   const signOutOtherSessions = useAction(api.domains.auth.account.signOutOtherSessions);
-  const signOutSession = useMutation(api.domains.auth.account.signOutSession);
+  const signOutSession = useMutation(api?.domains.auth.account.signOutSession);
   const [signingOutOthers, setSigningOutOthers] = useState(false);
   const [signingOutSessionId, setSigningOutSessionId] = useState<string | null>(null);
 

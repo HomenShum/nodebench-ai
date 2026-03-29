@@ -1,7 +1,7 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { DialogOverlay } from "@/shared/components/DialogOverlay";
-import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { useQuery} from "convex/react";
+import { useConvexApi } from "@/lib/convexApi";
 import {
     Search,
     FileText,
@@ -64,13 +64,14 @@ export function CommandPalette({
     onCommandExecuted,
     additionalActions,
 }: CommandPaletteProps) {
+    const api = useConvexApi();
     const [query, setQuery] = useState('');
     const deferredQuery = useDeferredValue(query);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
 
-    const recentDocs = useQuery(api.domains.documents.documents.getSidebar);
+    const recentDocs = useQuery(api?.domains.documents.documents.getSidebar);
     const recentTasks = null;
 
     // Define all available commands
