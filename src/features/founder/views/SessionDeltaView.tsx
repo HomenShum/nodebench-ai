@@ -374,6 +374,133 @@ function SessionDeltaViewInner() {
         />
 
         <PacketReadinessSection packets={delta.stalePackets} />
+
+        {/* Compounding Investment Card — the moat visualization */}
+        <CompoundingInvestmentCard />
+
+        {/* Watchlist Card */}
+        <WatchlistCard />
+      </div>
+    </div>
+  );
+}
+
+// ── Compounding Investment Card ──────────────────────────────────────
+
+function CompoundingInvestmentCard() {
+  // Read from localStorage (packets stored by delta tools via MCP)
+  const stats = useMemo(() => {
+    try {
+      // Check for delta packets synced from CLI
+      const retentionData = localStorage.getItem("nodebench-delta-compounding");
+      if (retentionData) return JSON.parse(retentionData);
+    } catch { /* fallback */ }
+
+    // Demo compounding data
+    return {
+      totalPackets: 44,
+      breakdown: "1 brief, 10 diligence, 16 market, 2 memo, 1 retain, 12 review, 1 handoff",
+      watchedCount: 1,
+      daysSinceFirst: 1,
+      staleCount: 0,
+    };
+  }, []);
+
+  return (
+    <div className="rounded-xl border border-[#d97757]/20 bg-[#d97757]/[0.03] p-5">
+      <div className="flex items-center gap-2">
+        <TrendingUp className="h-4 w-4 text-[#d97757]" />
+        <h2 className="text-[11px] uppercase tracking-[0.2em] text-white/40">Your NodeBench Investment</h2>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="rounded-lg border border-white/[0.08] bg-white/[0.04] p-3 text-center">
+          <div className="text-xl font-light tabular-nums text-[#d97757]">{stats.totalPackets}</div>
+          <div className="text-[8px] uppercase tracking-wider text-white/25">Packets</div>
+        </div>
+        <div className="rounded-lg border border-white/[0.08] bg-white/[0.04] p-3 text-center">
+          <div className="text-xl font-light tabular-nums text-blue-400">{stats.watchedCount}</div>
+          <div className="text-[8px] uppercase tracking-wider text-white/25">Watched</div>
+        </div>
+        <div className="rounded-lg border border-white/[0.08] bg-white/[0.04] p-3 text-center">
+          <div className="text-xl font-light tabular-nums text-emerald-400">{stats.daysSinceFirst}</div>
+          <div className="text-[8px] uppercase tracking-wider text-white/25">Days Active</div>
+        </div>
+        <div className="rounded-lg border border-white/[0.08] bg-white/[0.04] p-3 text-center">
+          <div className={cn("text-xl font-light tabular-nums", stats.staleCount > 0 ? "text-amber-400" : "text-emerald-400")}>
+            {stats.staleCount}
+          </div>
+          <div className="text-[8px] uppercase tracking-wider text-white/25">Going Stale</div>
+        </div>
+      </div>
+
+      <p className="mt-3 text-[10px] leading-relaxed text-white/30">
+        {stats.breakdown}
+      </p>
+      <p className="mt-1 text-[10px] text-[#d97757]/60">
+        {stats.totalPackets < 10
+          ? "Build your intelligence base: run delta_diligence on key entities via CLI."
+          : `Your context is compounding. ${stats.staleCount > 0 ? "Regenerate stale packets to keep intelligence fresh." : "Every session makes the next one more valuable."}`}
+      </p>
+    </div>
+  );
+}
+
+// ── Watchlist Card ───────────────────────────────────────────────────
+
+function WatchlistCard() {
+  const watchlist = useMemo(() => {
+    try {
+      const data = localStorage.getItem("nodebench-delta-watchlist");
+      if (data) return JSON.parse(data) as Array<{ entity: string; addedAt: string; changeCount: number; lastChecked: string | null }>;
+    } catch { /* fallback */ }
+
+    // Demo watchlist
+    return [
+      { entity: "Anthropic", addedAt: "2026-03-29", changeCount: 0, lastChecked: "2026-03-29" },
+    ];
+  }, []);
+
+  if (watchlist.length === 0) {
+    return (
+      <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-5">
+        <div className="flex items-center gap-2">
+          <Eye className="h-4 w-4 text-blue-400" />
+          <h2 className="text-[11px] uppercase tracking-[0.2em] text-white/40">Watchlist</h2>
+        </div>
+        <p className="mt-3 text-[10px] text-white/25">
+          No entities monitored. Run <code className="rounded bg-white/[0.06] px-1 py-0.5 text-[9px] font-mono">delta_watch Anthropic</code> via CLI to start monitoring.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-blue-500/20 bg-blue-500/[0.03] p-5">
+      <div className="flex items-center gap-2">
+        <Eye className="h-4 w-4 text-blue-400" />
+        <h2 className="text-[11px] uppercase tracking-[0.2em] text-white/40">Watchlist</h2>
+        <span className="rounded-full bg-blue-500/10 px-1.5 py-0.5 text-[9px] tabular-nums font-medium text-blue-400">
+          {watchlist.length}
+        </span>
+      </div>
+
+      <div className="mt-3 space-y-2">
+        {watchlist.map((w, i) => (
+          <div key={i} className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.03] p-3">
+            <div>
+              <span className="text-xs font-medium text-white/70">{w.entity}</span>
+              {w.changeCount > 0 && (
+                <span className="ml-2 rounded bg-[#d97757]/10 px-1.5 py-0.5 text-[9px] text-[#d97757]">
+                  {w.changeCount} changes
+                </span>
+              )}
+            </div>
+            <div className="text-[9px] text-white/25">
+              {w.lastChecked ? `Checked ${new Date(w.lastChecked).toLocaleDateString()}` : "Not yet checked"}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
