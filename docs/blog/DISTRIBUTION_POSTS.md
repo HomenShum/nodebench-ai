@@ -5,7 +5,7 @@
 ## 1. TWITTER/X (Thread — 5 tweets)
 
 **Tweet 1 (Hook):**
-What if your AI agent had 350 tools and knew which ones to use?
+What if your AI agent had 450 tools and knew which ones to use?
 
 We just shipped NodeBench MCP -- one command to install, 10 rules auto-applied, interactive site mapping, before/after diffs, test generation, and ROI tracking.
 
@@ -33,14 +33,14 @@ The site_map tool:
 Agents crawl once, explore interactively. No browser.
 
 **Tweet 4 (Progressive Discovery):**
-350 tools, but you start with 15.
+450 tools, but you start with 15.
 
 Progressive discovery: 14-strategy hybrid search. Type what you need, get ranked results with "what to do next" guidance.
 
 load_toolset('founder') activates 40 tools. 'web_dev' gives 150. 'full' unlocks all 350.
 
 **Tweet 5 (CTA):**
-Now on Claude Code Plugin Directory and Cursor Marketplace (in review).
+Submitted to Claude Code Plugin Directory and Cursor Marketplace (in review).
 
 MIT licensed. Local-first. No cloud dependency.
 
@@ -76,7 +76,7 @@ The thesis behind NodeBench: right context, right order, better odds of right ju
 
 Now submitted to Claude Code Plugin Directory and Cursor Marketplace.
 
-MIT licensed. 350 tools. 57 domains. Progressive discovery.
+MIT licensed. 450 tools. 68 domains. Progressive discovery.
 
 github.com/HomenShum/nodebench-ai
 
@@ -84,14 +84,14 @@ github.com/HomenShum/nodebench-ai
 
 ## 3. HACKER NEWS (Show HN)
 
-**Title:** Show HN: NodeBench MCP -- 350-tool MCP server with progressive discovery and one-command install
+**Title:** Show HN: NodeBench MCP -- 450-tool MCP server with progressive discovery and one-command install
 
 **Text:**
 Hi HN, I built NodeBench -- an MCP server that gives AI coding agents decision intelligence, entity research, QA automation, and session memory.
 
 The problem: MCP servers give you 5-10 tools each. To get coverage, you install 6+ servers that don't share context. Your agent can't remember what it learned yesterday.
 
-NodeBench is one server with 350 tools across 57 domains, but you start with 15. Progressive discovery [1] uses a 14-strategy hybrid search engine -- agents find tools by describing what they need, not by browsing a catalog.
+NodeBench is one server with 450 tools across 68 domains, but you start with 15. Progressive discovery [1] uses a 14-strategy hybrid search engine -- agents find tools by describing what they need, not by browsing a catalog.
 
 What's new today:
 - One-command install: `curl -sL nodebenchai.com/install.sh | bash`
@@ -118,12 +118,12 @@ npm: npmjs.com/package/nodebench-mcp
 
 ## 4. REDDIT r/ClaudeAI and r/cursor
 
-**Title:** I built a 350-tool MCP server that installs in one command -- progressive discovery means your agent finds tools by searching, not scrolling
+**Title:** I built a 450-tool MCP server that installs in one command -- progressive discovery means your agent finds tools by searching, not scrolling
 
 **Body:**
-Been building NodeBench for the past few months. It's a single MCP server with 350 tools across 57 domains -- decision intelligence, entity research, QA automation, session memory.
+Been building NodeBench for the past few months. It's a single MCP server with 450 tools across 68 domains -- decision intelligence, entity research, QA automation, session memory.
 
-The key idea: you don't get 350 tools dumped on you. You start with 15 [starter preset]. Your agent calls `discover_tools('investigate a company')` and gets ranked results with "what to do next" guidance. It can `load_toolset('founder')` to activate 40 tools mid-session.
+The key idea: you don't get 450 tools dumped on you. You start with 15 [starter preset]. Your agent calls `discover_tools('investigate a company')` and gets ranked results with "what to do next" guidance. It can `load_toolset('founder')` to activate 40 tools mid-session.
 
 Just shipped:
 - `curl -sL nodebenchai.com/install.sh | bash` -- one-liner install
@@ -157,7 +157,7 @@ Use the full blog post from `NODEBENCH_DX_LAUNCH_POST.md` with these additions:
 **Tagline:** 350 MCP tools that install in one command -- progressive discovery for AI agents
 
 **Description:**
-NodeBench is a single MCP server with 350 tools across 57 domains. Your AI agent starts with 15 tools and discovers more as it needs them -- through search, not scrolling.
+NodeBench is a single MCP server with 450 tools across 68 domains. Your AI agent starts with 15 tools and discovers more as it needs them -- through search, not scrolling.
 
 **Key features:**
 - One-command install [curl or npx]

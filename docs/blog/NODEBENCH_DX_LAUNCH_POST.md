@@ -1,6 +1,6 @@
 # NodeBench MCP: 350 Tools That Install in One Command
 
-**TL;DR:** NodeBench is a 350-tool MCP server that gives AI agents decision intelligence, entity research, QA automation, and session memory. Today we shipped one-liner install, 10 auto-installed rules, interactive site mapping, before/after diff crawling, test generation from crawl findings, and token savings tracking. Available now on Claude Code and Cursor Marketplace.
+**TL;DR:** NodeBench is a 450-tool MCP server that gives AI agents decision intelligence, entity research, QA automation, and session memory. Today we shipped one-liner install, 10 auto-installed rules, interactive site mapping, before/after diff crawling, test generation from crawl findings, and token savings tracking. Submitted to Claude Code Plugin Directory and Cursor Marketplace (in review).
 
 ---
 
@@ -10,7 +10,7 @@ Every developer using Claude Code or Cursor has the same experience: you install
 
 ## What We Built
 
-NodeBench is a single MCP server with 350 tools across 57 domains. But you don't get 350 tools dumped on you. You start with 15 -- just decision intelligence and progressive discovery. As your agent works, it discovers more tools on demand.
+NodeBench is a single MCP server with 450 tools across 68 domains. But you don't get 450 tools dumped on you. You start with 15 -- just decision intelligence and progressive discovery. As your agent works, it discovers more tools on demand.
 
 The key insight: **agents should discover tools the same way developers discover APIs -- through search, not through scrolling.**
 

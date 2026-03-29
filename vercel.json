@@ -37,6 +37,7 @@
   },
   "rewrites": [
     { "source": "/api/og/:id", "destination": "/api/og/[id]" },
+    { "source": "/install.sh", "destination": "https://raw.githubusercontent.com/HomenShum/nodebench-ai/main/packages/mcp-local/scripts/install.sh" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

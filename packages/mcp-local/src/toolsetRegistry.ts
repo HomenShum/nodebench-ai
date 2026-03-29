@@ -294,6 +294,10 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
     const { entityTemporalTools } = await import("./tools/entityTemporalTools.js");
     return entityTemporalTools;
   },
+  entity_lookup: async () => {
+    const { entityLookupTools } = await import("./tools/entityLookupTools.js");
+    return entityLookupTools;
+  },
   site_map: async () => {
     const { sitemapTools } = await import("./tools/sitemapTools.js");
     return sitemapTools;
