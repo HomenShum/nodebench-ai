@@ -16,6 +16,9 @@ describe("sharedContextTools", () => {
 
     const registerPeer = getTool("register_shared_context_peer");
     const publishContext = getTool("publish_shared_context");
+    const getPacketTool = getTool("get_shared_context_packet");
+    const buildSubscriptionTool = getTool("build_shared_context_subscription");
+    const buildManifestTool = getTool("build_shared_context_subscription_manifest");
     const ackContext = getTool("ack_shared_context");
     const sendMessage = getTool("send_peer_message");
     const checkMessages = getTool("check_peer_messages");
@@ -51,7 +54,7 @@ describe("sharedContextTools", () => {
     });
 
     const published = await publishContext.handler({
-      contextType: "change_packet",
+      contextType: "issue_packet",
       producerPeerId: peerA,
       workspaceId: `workspace:${suffix}`,
       scope: ["workspace", "entity:stripe"],
@@ -61,6 +64,49 @@ describe("sharedContextTools", () => {
       evidenceRefs: ["https://stripe.com/pricing"],
       confidence: 0.88,
     }) as { contextId: string };
+
+    const packetResource = await getPacketTool.handler({
+      contextId: published.contextId,
+      peerId: peerB,
+    }) as {
+      found: boolean;
+      resourceUri: string;
+      pullQuery: { contextType: string; subjectIncludes: string };
+      subscriptionQuery: { eventTypes: string[] };
+    };
+    expect(packetResource.found).toBe(true);
+    expect(packetResource.resourceUri).toContain(encodeURIComponent(published.contextId));
+    expect(packetResource.pullQuery.contextType).toBe("issue_packet");
+    expect(packetResource.subscriptionQuery.eventTypes).toContain("task_status_changed");
+
+    const subscriptionManifest = await buildSubscriptionTool.handler({
+      contextId: published.contextId,
+      peerId: peerB,
+    }) as {
+      found: boolean;
+      pullQuery: { subjectIncludes: string };
+    };
+    expect(subscriptionManifest.found).toBe(true);
+    expect(subscriptionManifest.pullQuery.subjectIncludes).toContain("Stripe");
+
+    const manifest = await buildManifestTool.handler({
+      peerId: peerB,
+      workspaceId: `workspace:${suffix}`,
+      contextType: "issue_packet",
+      taskType: "judge_packet",
+      subjectIncludes: "Stripe",
+      eventTypes: ["packet_published", "task_status_changed"],
+      limit: 5,
+    }) as {
+      snapshotQuery: { peerId?: string; taskType?: string };
+      subscriptionQuery: { eventTypes: string[]; subjectIncludes?: string };
+      packetResources: Array<{ contextId: string }>;
+    };
+    expect(manifest.snapshotQuery.peerId).toBe(peerB);
+    expect(manifest.snapshotQuery.taskType).toBe("judge_packet");
+    expect(manifest.subscriptionQuery.subjectIncludes).toContain("Stripe");
+    expect(manifest.subscriptionQuery.eventTypes).toEqual(["packet_published", "task_status_changed"]);
+    expect(manifest.packetResources.some((resource) => resource.contextId === published.contextId)).toBe(true);
 
     await ackContext.handler({
       contextId: published.contextId,
@@ -124,6 +170,18 @@ describe("sharedContextTools", () => {
     expect(snapshot.counts.activePeers).toBeGreaterThanOrEqual(2);
     expect(snapshot.recentPackets.some((packet: { contextId: string }) => packet.contextId === published.contextId)).toBe(true);
     expect(snapshot.recentTasks.some((task: { taskId: string; outputContextId?: string | null }) => task.taskId === proposedTask.taskId && task.outputContextId === verdictPacket.contextId)).toBe(true);
+
+    const scopedSnapshot = await snapshotTool.handler({
+      peerId: peerB,
+      workspaceId: `workspace:${suffix}`,
+      contextType: "judge_packet",
+      taskType: "judge_packet",
+      messageClass: "context_offer",
+      limit: 10,
+    }) as any;
+    expect(scopedSnapshot.recentPackets.every((packet: { contextType: string }) => packet.contextType === "judge_packet")).toBe(true);
+    expect(scopedSnapshot.recentTasks.every((task: { taskType: string }) => task.taskType === "judge_packet")).toBe(true);
+    expect(scopedSnapshot.recentMessages.every((message: { messageClass: string }) => message.messageClass === "context_offer")).toBe(true);
   });
 
   it("blocks cross-workspace packet access and task handoffs", async () => {

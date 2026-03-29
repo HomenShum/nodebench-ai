@@ -65,6 +65,7 @@ export type SharedContextRole =
 
 export type SharedContextPacketType =
   | "entity_packet"
+  | "issue_packet"
   | "workflow_packet"
   | "trace_packet"
   | "judge_packet"

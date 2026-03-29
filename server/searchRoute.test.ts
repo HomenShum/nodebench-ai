@@ -98,8 +98,10 @@ describe("createSearchRouter", () => {
     expect(getText).toContain('"type":"trace"');
     expect(getText).toContain('"type":"result"');
     expect(getText).toContain('"classification":"weekly_reset"');
+    expect(getText).toContain('"strategicAngles"');
     expect(postText).toContain('"type":"trace"');
     expect(postText).toContain('"type":"result"');
     expect(postText).toContain('"classification":"weekly_reset"');
+    expect(postText).toContain('"strategicAngles"');
   });
 });

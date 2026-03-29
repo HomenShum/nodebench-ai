@@ -2,9 +2,13 @@ import type { McpTool } from "../types.js";
 import {
   acceptSharedContextTask,
   acknowledgeSharedContextPacket,
+  buildSharedContextPacketResource,
+  buildSharedContextSubscriptionManifest,
   completeSharedContextTask,
+  getSharedContextPacket,
   escalateSharedContextTask,
   getSharedContextPeer,
+  getSharedContextScopedSnapshot,
   getSharedContextSnapshot,
   heartbeatSharedContextPeer,
   invalidateSharedContextPacket,
@@ -161,6 +165,43 @@ export const sharedContextTools: McpTool[] = [
     },
   },
   {
+    name: "get_shared_context_packet",
+    description: "Fetch one shared-context packet directly and include the suggested resource URI plus pull/subscription filters for agent clients.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        contextId: { type: "string" },
+        peerId: { type: "string" },
+      },
+      required: ["contextId"],
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      openWorldHint: false,
+    },
+    handler: async (args: { contextId: string; peerId?: string }) => {
+      const packet = getSharedContextPacket(args.contextId, args.peerId);
+      if (!packet) {
+        return {
+          found: false,
+          packet: null,
+          resourceUri: null,
+          pullQuery: null,
+          subscriptionQuery: null,
+        };
+      }
+      const resource = buildSharedContextPacketResource(packet, args.peerId);
+      return {
+        found: true,
+        packet,
+        resourceUri: resource.resourceUri,
+        pullQuery: resource.pullQuery,
+        subscriptionQuery: resource.subscriptionQuery,
+      };
+    },
+  },
+  {
     name: "ack_shared_context",
     description: "Acknowledge that a peer received and accepted a context packet.",
     inputSchema: {
@@ -190,6 +231,68 @@ export const sharedContextTools: McpTool[] = [
     },
     handler: async (args: { contextId: string; producerPeerId: string; reason: string; invalidates?: string[] }) =>
       invalidateSharedContextPacket(args.contextId, args.producerPeerId, args.reason, args.invalidates ?? []),
+  },
+  {
+    name: "build_shared_context_subscription",
+    description: "Build the exact pull/subscription manifest an agent client should use to watch a packet or packet scope.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        contextId: { type: "string" },
+        peerId: { type: "string" },
+      },
+      required: ["contextId"],
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      openWorldHint: false,
+    },
+    handler: async (args: { contextId: string; peerId?: string }) => {
+      const packet = getSharedContextPacket(args.contextId, args.peerId);
+      if (!packet) {
+        return {
+          found: false,
+          resourceUri: null,
+          pullQuery: null,
+          subscriptionQuery: null,
+        };
+      }
+      const resource = buildSharedContextPacketResource(packet, args.peerId);
+      return {
+        found: true,
+        resourceUri: resource.resourceUri,
+        pullQuery: resource.pullQuery,
+        subscriptionQuery: resource.subscriptionQuery,
+      };
+    },
+  },
+  {
+    name: "build_shared_context_subscription_manifest",
+    description: "Build a filtered snapshot/events/pull manifest for one peer, packet class, producer, scope, or subject so clients can subscribe to only relevant shared-context updates.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        peerId: { type: "string" },
+        contextType: { type: "string" },
+        producerPeerId: { type: "string" },
+        tenantId: { type: "string" },
+        workspaceId: { type: "string" },
+        status: { type: "string" },
+        scopeIncludes: { type: "string" },
+        subjectIncludes: { type: "string" },
+        taskType: { type: "string" },
+        messageClass: { type: "string" },
+        eventTypes: { type: "array", items: { type: "string" } },
+        limit: { type: "number" },
+      },
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      openWorldHint: false,
+    },
+    handler: async (args) => buildSharedContextSubscriptionManifest(args as any),
   },
   {
     name: "send_peer_message",
@@ -321,6 +424,14 @@ export const sharedContextTools: McpTool[] = [
     inputSchema: {
       type: "object",
       properties: {
+        peerId: { type: "string" },
+        workspaceId: { type: "string" },
+        contextType: { type: "string" },
+        producerPeerId: { type: "string" },
+        scopeIncludes: { type: "string" },
+        subjectIncludes: { type: "string" },
+        taskType: { type: "string" },
+        messageClass: { type: "string" },
         limit: { type: "number" },
       },
     },
@@ -329,6 +440,30 @@ export const sharedContextTools: McpTool[] = [
       destructiveHint: false,
       openWorldHint: false,
     },
-    handler: async (args: { limit?: number }) => getSharedContextSnapshot(args.limit ?? 10),
+    handler: async (args: {
+      peerId?: string;
+      workspaceId?: string;
+      contextType?: string;
+      producerPeerId?: string;
+      scopeIncludes?: string;
+      subjectIncludes?: string;
+      taskType?: string;
+      messageClass?: string;
+      limit?: number;
+    }) => {
+      if (
+        args.peerId ||
+        args.workspaceId ||
+        args.contextType ||
+        args.producerPeerId ||
+        args.scopeIncludes ||
+        args.subjectIncludes ||
+        args.taskType ||
+        args.messageClass
+      ) {
+        return getSharedContextScopedSnapshot(args as any);
+      }
+      return getSharedContextSnapshot(args.limit ?? 10);
+    },
   },
 ];

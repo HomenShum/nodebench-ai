@@ -167,6 +167,68 @@ export interface SharedContextPacketQuery {
   limit?: number;
 }
 
+export interface SharedContextPacketResource {
+  packet: SharedContextPacket;
+  resourceUri: string;
+  pullQuery: {
+    contextType: SharedContextPacket["contextType"];
+    producerPeerId: string;
+    workspaceId?: string;
+    tenantId?: string;
+    scopeIncludes?: string;
+    subjectIncludes: string;
+  };
+  subscriptionQuery: {
+    peerId?: string;
+    workspaceId?: string;
+    contextType: SharedContextPacket["contextType"];
+    producerPeerId: string;
+    scopeIncludes?: string;
+    subjectIncludes: string;
+    eventTypes: string[];
+  };
+}
+
+export interface SharedContextSubscriptionQuery extends SharedContextPacketQuery {
+  peerId?: string;
+  eventTypes?: string[];
+  taskType?: string;
+  messageClass?: SharedContextMessageClass;
+}
+
+export interface SharedContextSubscriptionManifest {
+  peerId?: string;
+  snapshotQuery: {
+    limit: number;
+    peerId?: string;
+    workspaceId?: string;
+    contextType?: SharedContextPacket["contextType"];
+    producerPeerId?: string;
+    scopeIncludes?: string;
+    subjectIncludes?: string;
+    taskType?: string;
+    messageClass?: SharedContextMessageClass;
+  };
+  pullQuery: SharedContextPacketQuery;
+  subscriptionQuery: {
+    peerId?: string;
+    workspaceId?: string;
+    contextType?: SharedContextPacket["contextType"];
+    producerPeerId?: string;
+    scopeIncludes?: string;
+    subjectIncludes?: string;
+    taskType?: string;
+    messageClass?: SharedContextMessageClass;
+    eventTypes: string[];
+  };
+  packetResources: Array<{
+    contextId: string;
+    contextType: SharedContextPacket["contextType"];
+    subject: string;
+    resourceUri: string;
+  }>;
+}
+
 export interface SharedContextTaskInput {
   taskId?: string;
   taskType: string;
@@ -179,6 +241,10 @@ export interface SharedContextTaskInput {
   reason?: string | null;
   metadata?: Record<string, unknown>;
   queueForSync?: boolean;
+}
+
+export interface SharedContextScopedSnapshotFilters extends SharedContextSubscriptionQuery {
+  limit?: number;
 }
 
 function json(value: unknown, fallback: unknown = {}): string {
@@ -1056,6 +1122,174 @@ export function getSharedContextPacket(contextId: string, requestingPeerId?: str
   return canPeerAccessPacket(peer, packet) ? packet : null;
 }
 
+function getPrimaryPacketScope(packet: SharedContextPacket): string | undefined {
+  return packet.scope.find((scope) => scope !== "workspace");
+}
+
+export function buildSharedContextPacketResource(
+  packet: SharedContextPacket,
+  requestingPeerId?: string,
+): SharedContextPacketResource {
+  const primaryScope = getPrimaryPacketScope(packet);
+  return {
+    packet,
+    resourceUri: `shared-context://packet/${encodeURIComponent(packet.contextId)}`,
+    pullQuery: {
+      contextType: packet.contextType,
+      producerPeerId: packet.producerPeerId,
+      workspaceId: packet.workspaceId ?? undefined,
+      tenantId: packet.tenantId ?? undefined,
+      scopeIncludes: primaryScope,
+      subjectIncludes: packet.subject,
+    },
+    subscriptionQuery: {
+      peerId: requestingPeerId ?? undefined,
+      workspaceId: packet.workspaceId ?? undefined,
+      contextType: packet.contextType,
+      producerPeerId: packet.producerPeerId,
+      scopeIncludes: primaryScope,
+      subjectIncludes: packet.subject,
+      eventTypes: [
+        "packet_published",
+        "packet_invalidated",
+        "packet_acknowledged",
+        "task_proposed",
+        "task_status_changed",
+      ],
+    },
+  };
+}
+
+export function getSharedContextPacketResource(
+  contextId: string,
+  requestingPeerId?: string,
+): SharedContextPacketResource | null {
+  const packet = getSharedContextPacket(contextId, requestingPeerId);
+  if (!packet) return null;
+  return buildSharedContextPacketResource(packet, requestingPeerId);
+}
+
+function normalizeSubscriptionEventTypes(eventTypes?: string[]): string[] {
+  return eventTypes && eventTypes.length > 0
+    ? Array.from(new Set(eventTypes))
+    : [
+        "packet_published",
+        "packet_invalidated",
+        "packet_acknowledged",
+        "task_proposed",
+        "task_status_changed",
+        "message_sent",
+      ];
+}
+
+function taskMatchesSubscription(
+  task: SharedContextTask,
+  packets: SharedContextPacket[],
+  filters: SharedContextScopedSnapshotFilters,
+): boolean {
+  if (filters.taskType && task.taskType !== filters.taskType) return false;
+  if (filters.peerId && task.proposerPeerId !== filters.peerId && task.assigneePeerId !== filters.peerId) {
+    const relatedPacket = task.outputContextId
+      ? packets.some((packet) => packet.contextId === task.outputContextId)
+      : false;
+    if (!relatedPacket) return false;
+  }
+  if (!filters.workspaceId) return true;
+  const packetWorkspaceMatch = packets.some((packet) =>
+    packet.contextId === task.outputContextId || task.inputContextIds.includes(packet.contextId),
+  );
+  if (packetWorkspaceMatch) return true;
+  return false;
+}
+
+function messageMatchesSubscription(
+  message: {
+    messageId: string;
+    fromPeerId: string;
+    toPeerId: string;
+    messageClass: SharedContextMessageClass;
+    payload: Record<string, unknown>;
+    status: string;
+    createdAt: string;
+  },
+  peers: SharedContextPeer[],
+  filters: SharedContextScopedSnapshotFilters,
+): boolean {
+  if (filters.messageClass && message.messageClass !== filters.messageClass) return false;
+  if (filters.peerId && message.fromPeerId !== filters.peerId && message.toPeerId !== filters.peerId) {
+    return false;
+  }
+  if (!filters.workspaceId) return true;
+  return peers.some((peer) =>
+    peer.workspaceId === filters.workspaceId &&
+    (peer.peerId === message.fromPeerId || peer.peerId === message.toPeerId),
+  );
+}
+
+export function buildSharedContextSubscriptionManifest(
+  query: SharedContextSubscriptionQuery = {},
+): SharedContextSubscriptionManifest {
+  const limit = query.limit ?? 10;
+  const packets = pullSharedContextPackets({
+    contextType: query.contextType,
+    producerPeerId: query.producerPeerId,
+    requestingPeerId: query.peerId ?? query.requestingPeerId,
+    tenantId: query.tenantId,
+    workspaceId: query.workspaceId,
+    status: query.status,
+    scopeIncludes: query.scopeIncludes,
+    subjectIncludes: query.subjectIncludes,
+    limit,
+  });
+  const packetResources = packets.slice(0, limit).map((packet) => {
+    const resource = buildSharedContextPacketResource(packet, query.peerId ?? query.requestingPeerId);
+    return {
+      contextId: packet.contextId,
+      contextType: packet.contextType,
+      subject: packet.subject,
+      resourceUri: resource.resourceUri,
+    };
+  });
+
+  return {
+    peerId: query.peerId ?? query.requestingPeerId,
+    snapshotQuery: {
+      limit,
+      peerId: query.peerId ?? query.requestingPeerId,
+      workspaceId: query.workspaceId ?? undefined,
+      contextType: query.contextType,
+      producerPeerId: query.producerPeerId,
+      scopeIncludes: query.scopeIncludes,
+      subjectIncludes: query.subjectIncludes,
+      taskType: query.taskType,
+      messageClass: query.messageClass,
+    },
+    pullQuery: {
+      contextType: query.contextType,
+      producerPeerId: query.producerPeerId,
+      requestingPeerId: query.peerId ?? query.requestingPeerId,
+      tenantId: query.tenantId,
+      workspaceId: query.workspaceId,
+      status: query.status,
+      scopeIncludes: query.scopeIncludes,
+      subjectIncludes: query.subjectIncludes,
+      limit,
+    },
+    subscriptionQuery: {
+      peerId: query.peerId ?? query.requestingPeerId,
+      workspaceId: query.workspaceId ?? undefined,
+      contextType: query.contextType,
+      producerPeerId: query.producerPeerId,
+      scopeIncludes: query.scopeIncludes,
+      subjectIncludes: query.subjectIncludes,
+      taskType: query.taskType,
+      messageClass: query.messageClass,
+      eventTypes: normalizeSubscriptionEventTypes(query.eventTypes),
+    },
+    packetResources,
+  };
+}
+
 export function publishSharedContextPacket(input: SharedContextPacketInput): { contextId: string; queuedSyncId?: string } {
   const db = getDb();
   const now = new Date().toISOString();
@@ -1817,6 +2051,51 @@ export function getSharedContextSnapshot(limit = 10, requestingPeerId?: string):
       invalidatedPackets: filteredPackets.filter((packet) => packet.status === "invalidated").length,
       openTasks: filteredTasks.filter((task) => task.status === "proposed" || task.status === "accepted").length,
       unreadMessages: filteredMessages.filter((message) => message.status === "unread").length,
+    },
+  };
+}
+
+export function getSharedContextScopedSnapshot(
+  filters: SharedContextScopedSnapshotFilters = {},
+): ReturnType<typeof getSharedContextSnapshot> {
+  const snapshot = getSharedContextSnapshot(filters.limit ?? 10, filters.peerId ?? filters.requestingPeerId);
+
+  const peers = filters.workspaceId
+    ? snapshot.peers.filter((peer) => peer.workspaceId === filters.workspaceId)
+    : snapshot.peers;
+
+  const recentPackets = snapshot.recentPackets.filter((packet) => {
+    if (filters.workspaceId && packet.workspaceId !== filters.workspaceId) return false;
+    if (filters.contextType && packet.contextType !== filters.contextType) return false;
+    if (filters.producerPeerId && packet.producerPeerId !== filters.producerPeerId) return false;
+    if (filters.scopeIncludes && !packet.scope.includes(filters.scopeIncludes)) return false;
+    if (
+      filters.subjectIncludes &&
+      !packet.subject.toLowerCase().includes(filters.subjectIncludes.toLowerCase())
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const recentTasks = snapshot.recentTasks.filter((task) =>
+    taskMatchesSubscription(task, recentPackets, filters),
+  );
+  const recentMessages = snapshot.recentMessages.filter((message) =>
+    messageMatchesSubscription(message, peers, filters),
+  );
+
+  return {
+    peers,
+    recentPackets,
+    recentTasks,
+    recentMessages,
+    counts: {
+      activePeers: peers.filter((peer) => peer.status === "active").length,
+      activePackets: recentPackets.filter((packet) => packet.status === "active").length,
+      invalidatedPackets: recentPackets.filter((packet) => packet.status === "invalidated").length,
+      openTasks: recentTasks.filter((task) => task.status === "proposed" || task.status === "accepted").length,
+      unreadMessages: recentMessages.filter((message) => message.status === "unread").length,
     },
   };
 }

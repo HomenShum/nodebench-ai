@@ -1,7 +1,7 @@
 {
   "name": "nodebench-mcp",
   "version": "2.70.0",
-  "mcpName": "io.github.HomenShum/nodebench",
+  "mcpName": "io.github.homenshum/nodebench",
   "description": "Operating intelligence for founders. 350 MCP tools across 57 domains. Starts with 15 tools, discovers more as you need them. Weekly resets, company analysis, competitor briefs, delegation packets — all with memory that compounds across sessions.",
   "type": "module",
   "bin": {
