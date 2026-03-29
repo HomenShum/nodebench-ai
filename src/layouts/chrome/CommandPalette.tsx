@@ -71,7 +71,12 @@ export function CommandPalette({
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
 
-    const recentDocs = useQuery(api?.domains.documents.documents.getSidebar);
+    const recentDocs = useQuery(
+        api?.domains.documents.documents.getSidebar
+            ? api.domains.documents.documents.getSidebar
+            : "skip",
+        api?.domains.documents.documents.getSidebar ? {} : "skip",
+    );
     const recentTasks = null;
 
     // Define all available commands

@@ -1,6 +1,6 @@
 import { memo, useEffect, useState } from "react";
 import { useConvexAuth, useQuery} from "convex/react";
-import { Activity, Clock, Mic, Shield, TrendingUp, ChevronRight, ChevronLeft, Sparkles, Volume2, VolumeX } from "lucide-react";
+import { Activity, Clock, Mic, Shield, TrendingUp, ChevronRight, ChevronLeft, Sparkles, Volume2 } from "lucide-react";
 import { useConvexApi } from "@/lib/convexApi";
 import { cn } from "@/lib/utils";
 import type { CockpitSurfaceId, MainView } from "@/lib/registry/viewRegistry";
@@ -17,21 +17,9 @@ interface AgentPresenceRailProps {
   isVoiceListening?: boolean;
 }
 
-const SURFACE_DESCRIPTIONS: Record<CockpitSurfaceId, string> = {
-  ask: "Prompt-first workbench for starting or redirecting a run.",
-  memo: "Decision-grade artifact surface with scenarios and interventions.",
-  research: "Evidence gathering, signals, and source review.",
-  investigate: "Adversarial analysis, provenance review, and counter-arguments.",
-  compare: "Score predictions against reality and update priors.",
-  editor: "Document, spreadsheet, and planning workspace.",
-  graph: "Entity, trust, and relationship context.",
-  trace: "Receipts, approvals, and execution audit trail.",
-  telemetry: "System health, benchmarks, spend, and quality reviews.",
-};
-
 export const AgentPresenceRail = memo(function AgentPresenceRail({
-  currentSurface,
-  currentView,
+  currentSurface: _currentSurface,
+  currentView: _currentView,
   currentObjective,
   isCollapsed = false,
   onToggleCollapse,
@@ -40,12 +28,25 @@ export const AgentPresenceRail = memo(function AgentPresenceRail({
   isVoiceListening = false,
 }: AgentPresenceRailProps) {
   const { isAuthenticated } = useConvexAuth();
-  const agentStats = useQuery(api?.domains.agents.agentHubQueries.getAgentStats ??isAuthenticated ? {} : "skip");
   const api = useConvexApi();
-
-  const pendingApprovals = useQuery(api?.domains.agents.receipts.actionReceipts.listPendingApprovals ??isAuthenticated ? { limit: 5 } : "skip",
+  const agentStats = useQuery(
+    isAuthenticated && api?.domains.agents.agentHubQueries.getAgentStats
+      ? api.domains.agents.agentHubQueries.getAgentStats
+      : "skip",
+    isAuthenticated ? {} : "skip",
   );
-  const latestReceipts = useQuery(api?.domains.agents.receipts.actionReceipts.list ??isAuthenticated ? { limit: 12 } : "skip",
+
+  const pendingApprovals = useQuery(
+    isAuthenticated && api?.domains.agents.receipts.actionReceipts.listPendingApprovals
+      ? api.domains.agents.receipts.actionReceipts.listPendingApprovals
+      : "skip",
+    isAuthenticated ? { limit: 5 } : "skip",
+  );
+  const latestReceipts = useQuery(
+    isAuthenticated && api?.domains.agents.receipts.actionReceipts.list
+      ? api.domains.agents.receipts.actionReceipts.list
+      : "skip",
+    isAuthenticated ? { limit: 12 } : "skip",
   );
 
   const approvalCount = Array.isArray(pendingApprovals) ? pendingApprovals.length : 0;

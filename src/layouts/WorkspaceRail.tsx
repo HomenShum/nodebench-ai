@@ -17,7 +17,6 @@ import {
   FolderKanban,
   Network,
   Radio,
-  Eye,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useConvexApi } from "@/lib/convexApi";
@@ -63,11 +62,23 @@ export const WorkspaceRail = memo(function WorkspaceRail({
   const { isAuthenticated } = useConvexAuth();
   const api = useConvexApi();
 
-  const recentSessions = useQuery(api?.domains.operations.taskManager.queries.getUserTaskSessions ??isAuthenticated ? { limit: 5 } : "skip",
+  const recentSessions = useQuery(
+    isAuthenticated && api?.domains.operations.taskManager.queries.getUserTaskSessions
+      ? api.domains.operations.taskManager.queries.getUserTaskSessions
+      : "skip",
+    isAuthenticated ? { limit: 5 } : "skip",
   );
-  const recentDocuments = useQuery(api?.domains.documents.documents.getSidebar ??isAuthenticated ? {} : "skip",
+  const recentDocuments = useQuery(
+    isAuthenticated && api?.domains.documents.documents.getSidebar
+      ? api.domains.documents.documents.getSidebar
+      : "skip",
+    isAuthenticated ? {} : "skip",
   );
-  const watchlistDigest = useQuery(api?.domains.monitoring.worldMonitor.getWatchlistDigest ??{},
+  const watchlistDigest = useQuery(
+    api?.domains.monitoring.worldMonitor.getWatchlistDigest
+      ? api.domains.monitoring.worldMonitor.getWatchlistDigest
+      : "skip",
+    api?.domains.monitoring.worldMonitor.getWatchlistDigest ? {} : "skip",
   );
 
   const sessionItems = Array.isArray(recentSessions?.sessions) ? recentSessions.sessions.slice(0, 4) : [];

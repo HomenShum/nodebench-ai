@@ -65,7 +65,11 @@ type SharedContextQueryOptions = {
   peerId?: string;
   workspaceId?: string;
   contextType?: string;
+  producerPeerId?: string;
+  scopeIncludes?: string;
   subjectIncludes?: string;
+  taskType?: string;
+  messageClass?: string;
   eventTypes?: string[];
 };
 
@@ -75,7 +79,11 @@ function buildSharedContextQuery(options: SharedContextQueryOptions = {}): strin
   if (options.peerId) params.set("peerId", options.peerId);
   if (options.workspaceId) params.set("workspaceId", options.workspaceId);
   if (options.contextType) params.set("contextType", options.contextType);
+  if (options.producerPeerId) params.set("producerPeerId", options.producerPeerId);
+  if (options.scopeIncludes) params.set("scopeIncludes", options.scopeIncludes);
   if (options.subjectIncludes) params.set("subjectIncludes", options.subjectIncludes);
+  if (options.taskType) params.set("taskType", options.taskType);
+  if (options.messageClass) params.set("messageClass", options.messageClass);
   if (options.eventTypes && options.eventTypes.length > 0) {
     params.set("eventTypes", options.eventTypes.join(","));
   }
@@ -96,6 +104,14 @@ export function getSharedContextPacketUrl(contextId: string, peerId?: string): s
   if (peerId) params.set("peerId", peerId);
   const suffix = params.toString();
   return `${SHARED_CONTEXT_API_BASE}/packets/${encodeURIComponent(contextId)}${suffix ? `?${suffix}` : ""}`;
+}
+
+export function getSharedContextPeerSnapshotUrl(peerId: string, options: SharedContextQueryOptions = {}): string {
+  return `${SHARED_CONTEXT_API_BASE}/peers/${encodeURIComponent(peerId)}/snapshot?${buildSharedContextQuery(options)}`;
+}
+
+export function getSharedContextSubscriptionManifestUrl(options: SharedContextQueryOptions = {}): string {
+  return `${SHARED_CONTEXT_API_BASE}/subscriptions/manifest?${buildSharedContextQuery(options)}`;
 }
 
 export function getSharedContextPublishUrl(): string {

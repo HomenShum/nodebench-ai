@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { memo, useCallback, useMemo } from "react";
 import { useConvexAuth, useQuery} from "convex/react";
 import { useConvexApi } from "@/lib/convexApi";
-import { MessageSquare, Search, FileText, Building2 } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import {
   ICON_MAP,
   MODES,
@@ -37,9 +37,17 @@ function useBadgeCounts(): Partial<Record<CockpitMode, number>> {
   const api = useConvexApi();
 
   const { isAuthenticated } = useConvexAuth();
-  const agentStats = useQuery(api?.domains.agents.agentHubQueries.getAgentStats ??isAuthenticated ? {} : "skip",
+  const agentStats = useQuery(
+    isAuthenticated && api?.domains.agents.agentHubQueries.getAgentStats
+      ? api.domains.agents.agentHubQueries.getAgentStats
+      : "skip",
+    isAuthenticated ? {} : "skip",
   );
-  const pendingHITL = useQuery(api?.domains.hitl.adjudicationWorkflow.getPendingAdjudicationRequests ??isAuthenticated ? {} : "skip",
+  const pendingHITL = useQuery(
+    isAuthenticated && api?.domains.hitl.adjudicationWorkflow.getPendingAdjudicationRequests
+      ? api.domains.hitl.adjudicationWorkflow.getPendingAdjudicationRequests
+      : "skip",
+    isAuthenticated ? {} : "skip",
   );
   return useMemo(() => {
     const counts: Partial<Record<CockpitMode, number>> = {};

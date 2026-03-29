@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery} from "convex/react";
 import { Id } from "../../convex/_generated/dataModel";
@@ -198,10 +198,20 @@ function TelemetryStack({ active = true }: { active?: boolean }) {
   );
 
   // Live metrics with demo fallback — skip subscriptions when surface is cached (not visible)
-  const agentStats = useQuery(api?.domains.agents.agentHubQueries.getAgentStats ??active ? {} : "skip");
   const api = useConvexApi();
+  const agentStats = useQuery(
+    active && api?.domains.agents.agentHubQueries.getAgentStats
+      ? api.domains.agents.agentHubQueries.getAgentStats
+      : "skip",
+    active ? {} : "skip",
+  );
 
-  const receipts = useQuery(api?.domains.agents.receipts.actionReceipts.list ??active ? { limit: 200 } : "skip");
+  const receipts = useQuery(
+    active && api?.domains.agents.receipts.actionReceipts.list
+      ? api.domains.agents.receipts.actionReceipts.list
+      : "skip",
+    active ? { limit: 200 } : "skip",
+  );
   const isLive = agentStats !== undefined && receipts !== undefined && (receipts?.length ?? 0) > 0;
 
   // Day-seeded demo metrics so the dashboard feels alive across visits
