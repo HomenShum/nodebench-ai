@@ -1,173 +1,227 @@
 /**
- * Voice session routes
- * 
- * Handles WebRTC session creation and management for OpenAI Realtime API
+ * Voice session routes — Gemini 3.1 Flash Live API
+ *
+ * Generates ephemeral tokens for client-side WebSocket connections
+ * to Gemini Live API. The browser connects directly to Gemini —
+ * no server-side WebRTC proxy needed.
+ *
+ * Flow:
+ *   1. Client calls POST /voice/session
+ *   2. Server generates ephemeral token using GEMINI_API_KEY
+ *   3. Client opens WebSocket to Gemini with ephemeral token
+ *   4. All audio streams directly between browser and Gemini
  */
 
-import { Router } from 'express';
-import { RealtimeSession } from '@openai/agents/realtime';
-import { createRealtimeAgent } from '../agents/voiceAgent';
-import { SessionManager } from '../services/sessionManager';
+import { Router } from "express";
+import { getGeminiVoiceTools, executeVoiceTool } from "../agents/voiceAgent.js";
 
-const sessionManager = new SessionManager();
+// ── Constants ──────────────────────────────────────────────────────────────
 
-export function createSessionRouter() {
+const GEMINI_MODEL = "gemini-3.1-flash-live-preview";
+const GEMINI_API_BASE = "https://generativelanguage.googleapis.com";
+
+// Ephemeral token endpoint
+const EPHEMERAL_TOKEN_URL = `${GEMINI_API_BASE}/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+// WebSocket endpoints
+const WS_BASE = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage";
+const WS_URL_DIRECT = `${WS_BASE}.v1beta.GenerativeService.BidiGenerateContent`;
+const WS_URL_EPHEMERAL = `${WS_BASE}.v1alpha.GenerativeService.BidiGenerateContentConstrained`;
+
+// Session tracking (in-memory, bounded)
+const MAX_SESSIONS = 100;
+const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const sessions = new Map<string, { userId: string; createdAt: number; model: string }>();
+
+function evictStaleSessions(): void {
+  const now = Date.now();
+  for (const [id, session] of sessions) {
+    if (now - session.createdAt > SESSION_TTL_MS) sessions.delete(id);
+  }
+  // Hard cap
+  if (sessions.size > MAX_SESSIONS) {
+    const oldest = Array.from(sessions.entries()).sort((a, b) => a[1].createdAt - b[1].createdAt);
+    for (let i = 0; i < oldest.length - MAX_SESSIONS; i++) {
+      sessions.delete(oldest[i][0]);
+    }
+  }
+}
+
+// ── Router ─────────────────────────────────────────────────────────────────
+
+export function createSessionRouter(): Router {
   const router = Router();
 
   /**
    * POST /voice/session
-   * Create a new realtime voice session
-   * 
-   * Request body:
-   * {
-   *   userId: string,
-   *   model?: string,
-   *   config?: RealtimeSessionConfig
-   * }
-   * 
-   * Response:
-   * {
-   *   sessionId: string,
-   *   ephemeralKey: string,  // Client API key for WebRTC
-   *   config: object
-   * }
+   *
+   * Creates a Gemini Live session config for the client.
+   * Returns either:
+   *   - ephemeral token + WebSocket URL (secure, production)
+   *   - direct API key + WebSocket URL (dev mode fallback)
+   *
+   * Request: { userId: string, model?: string, systemInstruction?: string }
+   * Response: { sessionId, wsUrl, token?, apiKey?, config, tools }
    */
-  router.post('/session', async (req, res) => {
+  router.post("/session", async (req, res) => {
     try {
-      const { userId, model = 'gpt-4o-realtime-preview', config } = req.body;
+      const {
+        userId,
+        model = GEMINI_MODEL,
+        systemInstruction,
+      } = req.body as {
+        userId?: string;
+        model?: string;
+        systemInstruction?: string;
+      };
 
       if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
+        return res.status(400).json({ error: "userId is required" });
       }
 
-      // Create agent with Convex tools
-      const agent = createRealtimeAgent(userId, model);
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.status(503).json({
+          error: "GEMINI_API_KEY not configured",
+          fallback: "browser",
+        });
+      }
 
-      // Create session
-      const session = new RealtimeSession(agent, {
-        model,
-        config: {
-          inputAudioFormat: 'pcm16',
-          outputAudioFormat: 'pcm16',
-          inputAudioTranscription: {
-            model: 'whisper-1',
+      evictStaleSessions();
+
+      const sessionId = `gemini-live-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+      // Try to get ephemeral token
+      let token: string | null = null;
+      let wsUrl: string;
+
+      try {
+        const tokenRes = await fetch(
+          `${GEMINI_API_BASE}/v1beta/models/${model}:generateEphemeralToken?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+            signal: AbortSignal.timeout(5000),
           },
-          turnDetection: {
-            type: 'server_vad',
-            threshold: 0.5,
-            prefixPaddingMs: 300,
-            silenceDurationMs: 500,
+        );
+
+        if (tokenRes.ok) {
+          const tokenData = (await tokenRes.json()) as { token?: string };
+          token = tokenData.token ?? null;
+        }
+      } catch {
+        // Ephemeral token API may not be available — fall back to direct key
+      }
+
+      if (token) {
+        wsUrl = `${WS_URL_EPHEMERAL}?access_token=${token}`;
+      } else {
+        // Dev fallback: pass API key directly (not for production)
+        wsUrl = `${WS_URL_DIRECT}?key=${apiKey}`;
+      }
+
+      // Build Gemini Live config
+      const tools = getGeminiVoiceTools();
+
+      const config = {
+        model: `models/${model}`,
+        responseModalities: ["AUDIO"],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: {
+              voiceName: "Aoede", // Natural, clear voice
+            },
           },
-          ...config,
         },
-      });
+        systemInstruction: {
+          parts: [
+            {
+              text:
+                systemInstruction ??
+                [
+                  "You are NodeBench, an AI research assistant for founders and operators.",
+                  "Help users investigate companies, analyze markets, and make decisions.",
+                  "Be concise and direct. Lead with the answer, not the reasoning.",
+                  "When users ask about a company or market, use your tools to search for information.",
+                  "Speak naturally and conversationally.",
+                ].join(" "),
+            },
+          ],
+        },
+        tools,
+      };
 
-      // Generate ephemeral API key for client
-      const ephemeralKey = await generateEphemeralKey(userId);
-
-      // Store session
-      const sessionId = sessionManager.addSession(userId, session);
-
-      // Set up session event handlers
-      setupSessionHandlers(session, sessionId, userId);
+      // Track session
+      sessions.set(sessionId, { userId, createdAt: Date.now(), model });
 
       res.json({
         sessionId,
-        ephemeralKey,
-        config: session.config,
+        wsUrl,
+        token: token ?? undefined,
+        apiKey: token ? undefined : apiKey, // Only send raw key if no ephemeral token
+        model,
+        config,
       });
     } catch (error) {
-      console.error('[POST /voice/session] Error:', error);
+      console.error("[POST /voice/session] Error:", error);
       res.status(500).json({
-        error: 'Failed to create session',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        error: "Failed to create session",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
 
   /**
    * DELETE /voice/session/:sessionId
-   * Close a realtime voice session
+   * Remove session tracking (client closes WebSocket directly)
    */
-  router.delete('/session/:sessionId', async (req, res) => {
+  router.delete("/session/:sessionId", (_req, res) => {
+    const { sessionId } = _req.params;
+    sessions.delete(sessionId);
+    res.json({ status: "removed" });
+  });
+
+  /**
+   * POST /voice/tool
+   * Execute a tool call from the Gemini Live session.
+   * Client sends tool calls here when Gemini requests function execution.
+   */
+  router.post("/tool", async (req, res) => {
     try {
-      const { sessionId } = req.params;
-      
-      const session = sessionManager.getSession(sessionId);
-      if (!session) {
-        return res.status(404).json({ error: 'Session not found' });
+      const { name, args, userId } = req.body as {
+        name?: string;
+        args?: Record<string, unknown>;
+        userId?: string;
+      };
+      if (!name) {
+        return res.status(400).json({ error: "Tool name is required" });
       }
-
-      // Disconnect session
-      await session.disconnect();
-      sessionManager.removeSession(sessionId);
-
-      res.json({ status: 'disconnected' });
+      const result = await executeVoiceTool(name, args ?? {}, userId ?? "web-user");
+      res.json(result);
     } catch (error) {
-      console.error('[DELETE /voice/session] Error:', error);
+      console.error("[POST /voice/tool] Error:", error);
       res.status(500).json({
-        error: 'Failed to close session',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        error: "Tool execution failed",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
 
   /**
-   * POST /voice/session/:sessionId/interrupt
-   * Manually interrupt the agent
+   * GET /voice/health
+   * Voice subsystem health check
    */
-  router.post('/session/:sessionId/interrupt', async (req, res) => {
-    try {
-      const { sessionId } = req.params;
-      
-      const session = sessionManager.getSession(sessionId);
-      if (!session) {
-        return res.status(404).json({ error: 'Session not found' });
-      }
-
-      session.interrupt();
-      res.json({ status: 'interrupted' });
-    } catch (error) {
-      console.error('[POST /voice/session/interrupt] Error:', error);
-      res.status(500).json({ error: 'Failed to interrupt session' });
-    }
+  router.get("/health", (_req, res) => {
+    const hasKey = !!process.env.GEMINI_API_KEY;
+    res.json({
+      status: hasKey ? "ok" : "unconfigured",
+      provider: "gemini-live",
+      model: GEMINI_MODEL,
+      activeSessions: sessions.size,
+      maxSessions: MAX_SESSIONS,
+    });
   });
 
   return router;
 }
-
-/**
- * Set up event handlers for a realtime session
- */
-function setupSessionHandlers(session: RealtimeSession, sessionId: string, userId: string) {
-  session.on('audio_interrupted', () => {
-    console.log(`[Session ${sessionId}] Audio interrupted`);
-  });
-
-  session.on('history_updated', (history) => {
-    console.log(`[Session ${sessionId}] History updated: ${history.length} items`);
-  });
-
-  session.on('guardrail_tripped', (details) => {
-    console.warn(`[Session ${sessionId}] Guardrail tripped:`, details);
-  });
-
-  session.on('error', (error) => {
-    console.error(`[Session ${sessionId}] Error:`, error);
-  });
-}
-
-/**
- * Generate ephemeral API key for client-side WebRTC connection
- * This should call OpenAI's API to create a temporary key
- */
-async function generateEphemeralKey(userId: string): Promise<string> {
-  // TODO: Implement OpenAI ephemeral key generation
-  // For now, return the server's API key (NOT SECURE - for development only)
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error('OPENAI_API_KEY not configured');
-  }
-  return apiKey;
-}
-

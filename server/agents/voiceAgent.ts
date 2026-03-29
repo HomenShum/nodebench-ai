@@ -1,295 +1,210 @@
 /**
- * OpenAI Realtime Voice Agent
- * 
- * Creates a RealtimeAgent with tools that call Convex backend
+ * Voice Agent — Gemini Live API Function Declarations
+ *
+ * Defines tools that Gemini can call during a live voice session.
+ * Tools are sent in the WebSocket config message and executed client-side
+ * when Gemini returns a toolCall event.
+ *
+ * Also exports server-side tool executors for when tool calls
+ * need to hit the Convex backend.
  */
 
-import { RealtimeAgent, tool } from '@openai/agents/realtime';
-import { z } from 'zod';
-import { ConvexHttpClient } from 'convex/browser';
-import { api } from '../../convex/_generated/api';
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../convex/_generated/api";
 
-// Lazy-initialized Convex client (env vars loaded by server/index.ts dotenv before first use)
+// ── Convex client ──────────────────────────────────────────────────────────
+
 let _convex: ConvexHttpClient | null = null;
 function getConvex(): ConvexHttpClient {
   if (!_convex) {
     const convexUrl = process.env.CONVEX_URL || process.env.VITE_CONVEX_URL;
     if (!convexUrl) {
-      throw new Error('CONVEX_URL environment variable is required');
+      throw new Error("CONVEX_URL environment variable is required");
     }
     _convex = new ConvexHttpClient(convexUrl);
   }
   return _convex;
 }
 
+// ── Gemini Function Declarations ───────────────────────────────────────────
+
 /**
- * Create a realtime voice agent with Convex tool integration
+ * Returns Gemini-format tool declarations for the Live API config message.
+ * These are sent when the WebSocket session is established.
  */
-export function createRealtimeAgent(userId: string, model: string = 'gpt-4o-realtime-preview') {
-  return new RealtimeAgent({
-    name: 'Voice Assistant',
-    instructions: `You are a helpful voice assistant with access to the user's documents, tasks, events, and more.
-
-Key guidelines:
-- Keep responses concise and conversational for voice
-- Use tools to access user data when needed
-- Announce when you're about to use a tool (e.g., "Let me search your documents...")
-- Provide clear, actionable responses
-- If a task will take time, let the user know upfront
-
-Available capabilities:
-- Search and analyze documents
-- Create and manage tasks
-- Search the web
-- Access calendar events
-- Manage media files`,
-    
-    tools: [
-      createSearchDocumentsTool(userId),
-      createGetDocumentTool(userId),
-      createCreateDocumentTool(userId),
-      createSearchWebTool(),
-      createListTasksTool(userId),
-      createCreateTaskTool(userId),
-    ],
-  });
+export function getGeminiVoiceTools() {
+  return [
+    {
+      functionDeclarations: [
+        {
+          name: "search_documents",
+          description: "Search through the user's documents by content or title",
+          parameters: {
+            type: "object" as const,
+            properties: {
+              query: { type: "string" as const, description: "Search query" },
+              limit: { type: "number" as const, description: "Max results (default 5)" },
+            },
+            required: ["query"],
+          },
+        },
+        {
+          name: "get_document",
+          description: "Get the full content of a specific document by ID",
+          parameters: {
+            type: "object" as const,
+            properties: {
+              documentId: { type: "string" as const, description: "Document ID" },
+            },
+            required: ["documentId"],
+          },
+        },
+        {
+          name: "create_document",
+          description: "Create a new document with title and content",
+          parameters: {
+            type: "object" as const,
+            properties: {
+              title: { type: "string" as const, description: "Document title" },
+              body: { type: "string" as const, description: "Document content" },
+            },
+            required: ["title", "body"],
+          },
+        },
+        {
+          name: "search_web",
+          description: "Search the web for current information",
+          parameters: {
+            type: "object" as const,
+            properties: {
+              query: { type: "string" as const, description: "Search query" },
+            },
+            required: ["query"],
+          },
+        },
+        {
+          name: "list_tasks",
+          description: "List the user's tasks",
+          parameters: {
+            type: "object" as const,
+            properties: {
+              start: { type: "number" as const, description: "Start timestamp (ms)" },
+              end: { type: "number" as const, description: "End timestamp (ms)" },
+            },
+          },
+        },
+        {
+          name: "create_task",
+          description: "Create a new task for the user",
+          parameters: {
+            type: "object" as const,
+            properties: {
+              title: { type: "string" as const, description: "Task title" },
+              description: { type: "string" as const, description: "Task description" },
+              dueDate: { type: "string" as const, description: "Due date (ISO format)" },
+              priority: { type: "string" as const, description: "Priority level" },
+            },
+            required: ["title"],
+          },
+        },
+      ],
+    },
+  ];
 }
 
-/**
- * Tool: Search user documents
- */
-function createSearchDocumentsTool(userId: string) {
-  return tool({
-    name: 'search_documents',
-    description: 'Search through the user\'s documents by content or title',
-    parameters: z.object({
-      query: z.string().describe('Search query'),
-      limit: z.number().optional().describe('Maximum number of results (default: 5)'),
-    }),
-    async execute({ query, limit = 5 }) {
-      console.log(`[Tool] search_documents: "${query}" (limit: ${limit})`);
-      
-      try {
-        const results = await getConvex().query(api.documents.search, {
-          query,
-          limit,
-        });
+// ── Server-side tool executors ─────────────────────────────────────────────
 
-        return JSON.stringify({
+type ToolResult = Record<string, unknown>;
+
+/**
+ * Execute a tool call from Gemini and return the result.
+ * Called by the server when it proxies tool calls, or by the client
+ * via a POST endpoint.
+ */
+export async function executeVoiceTool(
+  name: string,
+  args: Record<string, unknown>,
+  userId: string,
+): Promise<ToolResult> {
+  try {
+    switch (name) {
+      case "search_documents": {
+        const results = await getConvex().query(api.documents.search, {
+          query: String(args.query ?? ""),
+          limit: typeof args.limit === "number" ? args.limit : 5,
+        });
+        return {
           count: results.length,
-          documents: results.map((doc: any) => ({
+          documents: results.map((doc: Record<string, unknown>) => ({
             id: doc._id,
             title: doc.title,
-            snippet: doc.body?.slice(0, 200),
-            createdAt: doc._creationTime,
+            snippet: typeof doc.body === "string" ? doc.body.slice(0, 200) : "",
           })),
-        });
-      } catch (error) {
-        console.error('[Tool] search_documents error:', error);
-        return JSON.stringify({ error: 'Failed to search documents' });
+        };
       }
-    },
-  });
-}
 
-/**
- * Tool: Get document content
- */
-function createGetDocumentTool(userId: string) {
-  return tool({
-    name: 'get_document',
-    description: 'Get the full content of a specific document',
-    parameters: z.object({
-      documentId: z.string().describe('Document ID'),
-    }),
-    async execute({ documentId }) {
-      console.log(`[Tool] get_document: ${documentId}`);
-      
-      try {
+      case "get_document": {
         const doc = await getConvex().query(api.documents.getDocument, {
-          documentId: documentId as any,
+          documentId: String(args.documentId) as never,
         });
-
-        if (!doc) {
-          return JSON.stringify({ error: 'Document not found' });
-        }
-
-        return JSON.stringify({
-          id: doc._id,
-          title: doc.title,
-          body: doc.body,
-          createdAt: doc._creationTime,
-        });
-      } catch (error) {
-        console.error('[Tool] get_document error:', error);
-        return JSON.stringify({ error: 'Failed to get document' });
+        if (!doc) return { error: "Document not found" };
+        return { id: doc._id, title: doc.title, body: doc.body };
       }
-    },
-  });
-}
 
-/**
- * Tool: Create a new document
- */
-function createCreateDocumentTool(userId: string) {
-  return tool({
-    name: 'create_document',
-    description: 'Create a new document with title and content',
-    parameters: z.object({
-      title: z.string().describe('Document title'),
-      body: z.string().describe('Document content'),
-    }),
-    async execute({ title, body }) {
-      console.log(`[Tool] create_document: "${title}"`);
-
-      try {
-        const documentId = await getConvex().mutation(api.documents.createDocument, {
-          title,
-          body,
+      case "create_document": {
+        const docId = await getConvex().mutation(api.documents.createDocument, {
+          title: String(args.title ?? "Untitled"),
+          body: String(args.body ?? ""),
           userId,
         });
-
-        return JSON.stringify({
-          success: true,
-          documentId,
-          message: `Created document "${title}"`,
-        });
-      } catch (error) {
-        console.error('[Tool] create_document error:', error);
-        return JSON.stringify({ error: 'Failed to create document' });
+        return { success: true, documentId: docId, message: `Created "${args.title}"` };
       }
-    },
-  });
-}
 
-/**
- * Tool: Search the web using Linkup
- */
-function createSearchWebTool() {
-  return tool({
-    name: 'search_web',
-    description: 'Search the web for current information using Linkup AI search',
-    parameters: z.object({
-      query: z.string().describe('Search query'),
-    }),
-    async execute({ query }) {
-      console.log(`[Tool] search_web: "${query}"`);
-
-      try {
+      case "search_web": {
         const apiKey = process.env.LINKUP_API_KEY;
-        if (!apiKey) {
-          return JSON.stringify({ error: 'Linkup API key not configured' });
-        }
-
-        const response = await fetch('https://api.linkup.so/v1/search', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            q: query,
-            depth: 'standard',
-            outputType: 'sourcedAnswer',
-          }),
+        if (!apiKey) return { error: "Linkup API key not configured" };
+        const response = await fetch("https://api.linkup.so/v1/search", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ q: String(args.query), depth: "standard", outputType: "sourcedAnswer" }),
+          signal: AbortSignal.timeout(10000),
         });
-
-        if (!response.ok) {
-          throw new Error(`Linkup API error: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        return JSON.stringify({
+        if (!response.ok) return { error: `Search failed: ${response.status}` };
+        const data = (await response.json()) as { answer?: string; sources?: Array<{ name?: string; url?: string; snippet?: string }> };
+        return {
           answer: data.answer,
-          sources: data.sources?.slice(0, 3).map((s: any) => ({
-            name: s.name,
-            url: s.url,
-            snippet: s.snippet?.slice(0, 150),
-          })),
-        });
-      } catch (error) {
-        console.error('[Tool] search_web error:', error);
-        return JSON.stringify({ error: 'Failed to search web' });
+          sources: data.sources?.slice(0, 3).map((s) => ({ name: s.name, url: s.url, snippet: s.snippet?.slice(0, 150) })),
+        };
       }
-    },
-  });
-}
 
-/**
- * Tool: List user tasks
- */
-function createListTasksTool(userId: string) {
-  return tool({
-    name: 'list_tasks',
-    description: 'List the user\'s tasks, optionally filtered by date range',
-    parameters: z.object({
-      start: z.number().optional().describe('Start timestamp (ms)'),
-      end: z.number().optional().describe('End timestamp (ms)'),
-    }),
-    async execute({ start, end }) {
-      console.log(`[Tool] list_tasks: start=${start}, end=${end}`);
-
-      try {
+      case "list_tasks": {
         const tasks = await getConvex().query(api.documentTasks.listTasks, {
-          start,
-          end,
+          start: typeof args.start === "number" ? args.start : undefined,
+          end: typeof args.end === "number" ? args.end : undefined,
         });
-
-        return JSON.stringify({
+        return {
           count: tasks.length,
-          tasks: tasks.map((task: any) => ({
-            id: task._id,
-            title: task.title,
-            status: task.status,
-            dueDate: task.dueDate,
-            priority: task.priority,
+          tasks: tasks.map((t: Record<string, unknown>) => ({
+            id: t._id, title: t.title, status: t.status, priority: t.priority,
           })),
-        });
-      } catch (error) {
-        console.error('[Tool] list_tasks error:', error);
-        return JSON.stringify({ error: 'Failed to list tasks' });
+        };
       }
-    },
-  });
-}
 
-/**
- * Tool: Create a new task
- */
-function createCreateTaskTool(userId: string) {
-  return tool({
-    name: 'create_task',
-    description: 'Create a new task for the user',
-    parameters: z.object({
-      title: z.string().describe('Task title'),
-      description: z.string().optional().describe('Task description'),
-      dueDate: z.string().optional().describe('Due date (ISO format)'),
-      status: z.string().optional().describe('Task status'),
-      priority: z.string().optional().describe('Task priority'),
-    }),
-    async execute({ title, description, dueDate, status, priority }) {
-      console.log(`[Tool] create_task: "${title}"`);
-
-      try {
+      case "create_task": {
         const taskId = await getConvex().mutation(api.documentTasks.createTask, {
-          title,
-          description,
-          dueDate: dueDate ? new Date(dueDate).getTime() : undefined,
-          status,
-          priority,
+          title: String(args.title ?? "Untitled"),
+          description: typeof args.description === "string" ? args.description : undefined,
+          dueDate: typeof args.dueDate === "string" ? new Date(args.dueDate).getTime() : undefined,
+          priority: typeof args.priority === "string" ? args.priority : undefined,
         });
-
-        return JSON.stringify({
-          success: true,
-          taskId,
-          message: `Created task "${title}"`,
-        });
-      } catch (error) {
-        console.error('[Tool] create_task error:', error);
-        return JSON.stringify({ error: 'Failed to create task' });
+        return { success: true, taskId, message: `Created task "${args.title}"` };
       }
-    },
-  });
-}
 
+      default:
+        return { error: `Unknown tool: ${name}` };
+    }
+  } catch (error) {
+    console.error(`[voice-tool] ${name} error:`, error);
+    return { error: `Tool execution failed: ${error instanceof Error ? error.message : "Unknown"}` };
+  }
+}

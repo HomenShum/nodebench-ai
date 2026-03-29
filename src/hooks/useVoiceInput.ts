@@ -11,8 +11,9 @@ import { useState, useRef, useCallback } from 'react';
 import { useAction } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useStreamingTranscription } from './useStreamingTranscription';
+import { useGeminiLiveSession } from './useGeminiLiveSession';
 
-export type VoiceMode = 'browser' | 'whisper' | 'streaming';
+export type VoiceMode = 'browser' | 'whisper' | 'streaming' | 'gemini';
 
 interface UseVoiceInputOptions {
     onTranscript: (text: string) => void;
@@ -68,8 +69,16 @@ export function useVoiceInput({
 
     const whisperTranscribe = useAction(api.domains.ai.whisperTranscribe.transcribe);
 
-    // Streaming transcription (OpenAI Realtime via WebRTC)
+    // Streaming transcription (OpenAI Realtime via WebRTC — legacy)
     const streaming = useStreamingTranscription({
+        onTranscript,
+        onUtterance: onEnd,
+        onEnd,
+        lang: lang.split('-')[0],
+    });
+
+    // Gemini 3.1 Flash Live (primary voice mode)
+    const gemini = useGeminiLiveSession({
         onTranscript,
         onUtterance: onEnd,
         onEnd,
@@ -79,7 +88,9 @@ export function useVoiceInput({
     const hasSpeechApi = typeof window !== 'undefined' &&
         !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
     const hasMediaRecorder = typeof window !== 'undefined' && !!window.MediaRecorder;
-    const isSupported = mode === 'streaming'
+    const isSupported = mode === 'gemini'
+        ? true // WebSocket + getUserMedia — universally supported
+        : mode === 'streaming'
         ? streaming.isSupported
         : mode === 'browser' ? hasSpeechApi : hasMediaRecorder;
 
@@ -341,10 +352,14 @@ export function useVoiceInput({
         }
     }, [isListening, lang, onEnd, onTranscript, startAudioMeter, stopAudioMeter, stopMediaStream, stopWhisper, whisperTranscribe]);
 
-    const toggle = mode === 'streaming' ? streaming.toggle : mode === 'browser' ? toggleBrowser : toggleWhisper;
+    const toggle = mode === 'gemini' ? gemini.toggle : mode === 'streaming' ? streaming.toggle : mode === 'browser' ? toggleBrowser : toggleWhisper;
 
     const start = useCallback(() => {
         if (isListening || isTranscribing) return;
+        if (mode === 'gemini') {
+            gemini.start();
+            return;
+        }
         if (mode === 'streaming') {
             streaming.start();
             return;
@@ -354,9 +369,13 @@ export function useVoiceInput({
             return;
         }
         void toggleWhisper();
-    }, [isListening, isTranscribing, mode, streaming, toggleBrowser, toggleWhisper]);
+    }, [isListening, isTranscribing, mode, gemini, streaming, toggleBrowser, toggleWhisper]);
 
     const stop = useCallback(() => {
+        if (mode === 'gemini') {
+            gemini.stop();
+            return;
+        }
         if (mode === 'streaming') {
             streaming.stop();
             return;
@@ -366,13 +385,15 @@ export function useVoiceInput({
             return;
         }
         void stopWhisper();
-    }, [mode, streaming, stopBrowser, stopWhisper]);
+    }, [mode, gemini, streaming, stopBrowser, stopWhisper]);
 
-    // In streaming mode, delegate state to the streaming hook
-    const effectiveListening = mode === 'streaming' ? streaming.isListening : isListening;
-    const effectiveAudioLevel = mode === 'streaming' ? streaming.audioLevel : audioLevel;
-    const effectiveError = mode === 'streaming' ? streaming.error : error;
-    const effectiveLatency = mode === 'streaming' ? streaming.latencyMs : latencyMs;
+    // Delegate state based on active mode
+    const isGemini = mode === 'gemini';
+    const isStreaming = mode === 'streaming';
+    const effectiveListening = isGemini ? gemini.isActive : isStreaming ? streaming.isListening : isListening;
+    const effectiveAudioLevel = isGemini ? gemini.audioLevel : isStreaming ? streaming.audioLevel : audioLevel;
+    const effectiveError = isGemini ? gemini.error : isStreaming ? streaming.error : error;
+    const effectiveLatency = isGemini ? gemini.latencyMs : isStreaming ? streaming.latencyMs : latencyMs;
 
     return {
         isListening: effectiveListening,
@@ -381,14 +402,16 @@ export function useVoiceInput({
         toggle,
         stop,
         mode,
-        isTranscribing: mode === 'streaming' ? streaming.speechState === 'connecting' : isTranscribing,
+        isTranscribing: isGemini
+            ? gemini.speechState === 'connecting'
+            : isStreaming ? streaming.speechState === 'connecting' : isTranscribing,
         error: effectiveError,
         latencyMs: effectiveLatency,
         audioLevel: effectiveAudioLevel,
-        // Streaming-only fields (empty strings for other modes)
-        interimText: mode === 'streaming' ? streaming.interimText : '',
-        stableText: mode === 'streaming' ? streaming.stableText : '',
-        speechState: mode === 'streaming' ? streaming.speechState : 'idle',
-        confidence: mode === 'streaming' ? streaming.confidence : 0,
+        // Streaming fields (Gemini or OpenAI)
+        interimText: isGemini ? gemini.interimText : isStreaming ? streaming.interimText : '',
+        stableText: isGemini ? gemini.stableText : isStreaming ? streaming.stableText : '',
+        speechState: isGemini ? gemini.speechState : isStreaming ? streaming.speechState : 'idle',
+        confidence: isGemini ? gemini.confidence : isStreaming ? streaming.confidence : 0,
     };
 }

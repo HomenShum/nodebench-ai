@@ -331,7 +331,7 @@ window.addEventListener('message', async (message) => {
           'route-analytics', 'route-spreadsheets',
           'editor-vendor', 'syntax-vendor', 'katex-vendor', 'katex-lazy', 'recharts-vendor',
           'spreadsheet-vendor',
-          'bench-telemetry', 'bench-leaderboard', 'bench-scenarios', 'bench-runs',
+          'Workbench', 'Benchmark',
           'doc-', 'editor-',
           'trajectory', 'DevDashboard', 'SettingsModal',
         ];
@@ -470,14 +470,10 @@ window.addEventListener('message', async (message) => {
           if (id.includes('/features/analytics/')) {
             return 'route-analytics';
           }
-          // Benchmarks: lazy-loaded sub-panels get their own chunks
-          if (id.includes('/features/benchmarks/')) {
-            if (id.includes('/TelemetryInspector')) return 'bench-telemetry';
-            if (id.includes('/ModelLeaderboard')) return 'bench-leaderboard';
-            if (id.includes('/ScenarioCatalog')) return 'bench-scenarios';
-            if (id.includes('/WorkbenchRunsTable')) return 'bench-runs';
-            // WorkbenchView and remaining components stay together
-          }
+          // Benchmarks: let Rollup decide chunking. Manual splitting caused TDZ
+          // crashes in headless Chrome — bench-* chunks had circular init deps
+          // with agent-fast-panel and convex-api that Rollup couldn't resolve
+          // when forced into separate chunks.
           // Trajectory: lazy-loaded from WorkbenchView and other views
           if (id.includes('/features/trajectory/')) {
             return 'trajectory';

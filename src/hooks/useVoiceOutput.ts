@@ -39,8 +39,10 @@ export interface UseVoiceOutputReturn {
   isEnabled: boolean;
   /** Toggle voice output on/off (persists to localStorage). */
   toggleEnabled(): void;
-  /** "elevenlabs" | "browser" | "none" — which backend is active. */
-  backend: "elevenlabs" | "browser" | "none";
+  /** "gemini-live" | "elevenlabs" | "browser" | "none" — which backend is active. */
+  backend: "gemini-live" | "elevenlabs" | "browser" | "none";
+  /** Set the active backend (e.g., when Gemini Live session handles audio output directly). */
+  setBackendOverride(backend: "gemini-live" | null): void;
 }
 
 // ---------------------------------------------------------------------------
@@ -64,6 +66,7 @@ export function useVoiceOutput(): UseVoiceOutputReturn {
   });
 
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [backendOverride, setBackendOverride] = useState<"gemini-live" | null>(null);
   const playerRef = useRef<AudioPlayer | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const configRef = useRef<ElevenLabsConfig | null>(null);
@@ -76,7 +79,11 @@ export function useVoiceOutput(): UseVoiceOutputReturn {
   const hasBrowserTTS =
     typeof window !== "undefined" && "speechSynthesis" in window;
 
-  const backend: "elevenlabs" | "browser" | "none" = configRef.current
+  // When Gemini Live is active, it handles audio output natively —
+  // no need for separate TTS. The override is set by useGeminiLiveSession.
+  const backend: "gemini-live" | "elevenlabs" | "browser" | "none" = backendOverride
+    ? backendOverride
+    : configRef.current
     ? "elevenlabs"
     : hasBrowserTTS
       ? "browser"
@@ -184,6 +191,9 @@ export function useVoiceOutput(): UseVoiceOutputReturn {
     isEnabled,
     toggleEnabled,
     backend,
+    setBackendOverride: useCallback((override: "gemini-live" | null) => {
+      setBackendOverride(override);
+    }, []),
   };
 }
 
