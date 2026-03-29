@@ -1,6 +1,6 @@
 import { Clock, Settings, Play } from "lucide-react";
 import { SignatureOrb } from "@/shared/ui/SignatureOrb";
-import { WORKBENCH_SCENARIOS } from "./ScenarioCatalog";
+import { WORKBENCH_SCENARIOS } from "./workbenchScenarios";
 
 export interface WorkbenchRunRow {
   _id: string;

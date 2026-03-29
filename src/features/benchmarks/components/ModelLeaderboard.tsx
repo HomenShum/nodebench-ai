@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { LATEST_EVAL_DATA } from "@/features/research/components/modelEvalData";
 import type { ModelEvalResult } from "@/features/research/components/modelEvalData";
-import { WORKBENCH_SCENARIOS } from "./ScenarioCatalog";
+import { WORKBENCH_SCENARIOS } from "./workbenchScenarios";
 
 export const BENCHMARK_MODELS: Array<{
   id: string;
