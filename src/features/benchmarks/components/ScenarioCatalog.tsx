@@ -5,8 +5,7 @@
 import type { ReactNode } from "react";
 import { Play } from "lucide-react";
 import { WORKBENCH_SCENARIOS } from "./workbenchScenarios";
-export type { WorkbenchScenario } from "./workbenchScenarios";
-export { WORKBENCH_SCENARIOS } from "./workbenchScenarios";
+import type { WorkbenchScenario } from "./workbenchScenarios";
 
 function formatEstimatedDuration(estimatedMin: number) {
   if (estimatedMin < 60) return `~${estimatedMin}m`;
