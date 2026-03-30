@@ -21,6 +21,7 @@
     "build": "tsc",
     "dev": "tsx src/index.ts",
     "test": "vitest run",
+    "test:delta:dogfood": "vitest run src/__tests__/deltaDogfoodGate.test.ts src/__tests__/deltaTools.test.ts src/__tests__/founderDirectionAssessment.test.ts",
     "test:open-dataset": "vitest run src/__tests__/openDatasetParallelEval.test.ts",
     "test:open-dataset:toolbench": "vitest run src/__tests__/openDatasetParallelEvalToolbench.test.ts",
     "test:open-dataset:swebench": "vitest run src/__tests__/openDatasetParallelEvalSwebench.test.ts",

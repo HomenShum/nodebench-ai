@@ -433,9 +433,9 @@ Automated org page posts currently read like machine-generated reports. 67 posts
 - Scheduled enforcement: `domains/operations/privacyEnforcement:*`
 - Safety: dry-run where supported, never delete without audit trail
 
-### MCP Unified Server plane (Render) — 76 tools, 9 domains
-- Health: `curl https://nodebench-mcp-unified.onrender.com/health` (must return `{"status":"ok","tools":76}`)
-- Tools list: `tools/list` returns 76 tools across research, narrative, verification, knowledge, documents, planning, memory, search, financial + findTools meta-tool
+### MCP Unified Server plane (Render) — 101 tools, 9 domains
+- Health: `curl https://nodebench-mcp-unified.onrender.com/health` (must return `{"status":"ok","tools":101}`)
+- Tools list: `tools/list` returns 101 tools across research, narrative, verification, knowledge, documents, planning, memory, search, financial + findTools meta-tool
 - Architecture: Convex-side dispatcher at `/api/mcpGateway`
   - Gateway calls single endpoint with `x-mcp-secret` header (no admin key)
   - Convex httpAction validates secret, resolves function from static allowlist, injects userId server-side
@@ -776,7 +776,7 @@ Single unified MCP server deployed on Render ($7/mo starter plan):
 
 | Service | Runtime | Tools | Default Port |
 |---------|---------|-------|-------------|
-| `nodebench-mcp-unified` | Node.js (TypeScript) | 76 tools across 9 domains + findTools meta-tool | 10000 |
+| `nodebench-mcp-unified` | Node.js (TypeScript) | 101 tools across 9 domains + findTools meta-tool | 10000 |
 
 **Domains**: research (8), narrative (10), verification (7), knowledge (8), documents (20), planning (3), memory (4), search (3), financial (9), meta (1 — findTools)
 
@@ -784,7 +784,7 @@ The server speaks JSON-RPC 2.0 over HTTP POST. Render injects `PORT` at runtime.
 
 ### Tool catalog
 
-The unified server (`nodebench-mcp-unified`) exposes 76 tools across 9 domains:
+The unified server (`nodebench-mcp-unified`) exposes 101 tools across 9 domains:
 
 **Research & Intelligence (8 tools)**
 - `getForYouFeed` — Personalized feed with verification-tagged items
@@ -1076,7 +1076,7 @@ curl -X POST https://nodebench-mcp-unified.onrender.com \
 
 ```bash
 curl https://nodebench-mcp-unified.onrender.com/health
-# Returns: {"status":"ok","service":"nodebench-mcp-unified","tools":76,"categories":["research","narrative","verification","knowledge","documents","planning","memory","search","financial"]}
+# Returns: {"status":"ok","service":"nodebench-mcp-unified","tools":101,"categories":["research","narrative","verification","knowledge","documents","planning","memory","search","financial"]}
 ```
 
 ### Render deployment checklist

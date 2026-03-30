@@ -1,0 +1,38 @@
+name: Delta Dogfood Gate
+
+on:
+  pull_request:
+    paths:
+      - "packages/mcp-local/**"
+      - "server/routes/search.ts"
+      - "server/searchRoute.test.ts"
+      - ".github/workflows/delta-dogfood-gate.yml"
+  workflow_dispatch:
+
+jobs:
+  delta-dogfood-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install MCP local dependencies
+        working-directory: packages/mcp-local
+        run: npm ci
+
+      - name: Typecheck MCP local
+        working-directory: packages/mcp-local
+        run: npx tsc --noEmit
+
+      - name: Run Delta self-dogfood gate
+        working-directory: packages/mcp-local
+        run: npx vitest run src/__tests__/deltaDogfoodGate.test.ts src/__tests__/deltaTools.test.ts src/__tests__/founderDirectionAssessment.test.ts

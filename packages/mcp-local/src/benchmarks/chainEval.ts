@@ -241,6 +241,101 @@ const CHAINS: ChainDefinition[] = [
     },
   },
 
+  {
+    id: "founder_direction_ops",
+    name: "Founder Direction Ops",
+    scenario: "delegation",
+    lens: "founder",
+    steps: [
+      {
+        tool: "register_shared_context_peer",
+        buildArgs: () => ({
+          peerId: "chain:founder:compiler",
+          product: "nodebench",
+          workspaceId: "chain:founder",
+          surface: "local_runtime",
+          role: "compiler",
+          capabilities: ["founder-direction-assessment", "shared-context-publish"],
+          contextScopes: ["workspace", "packet"],
+        }),
+        validate: (r) => ({ pass: hasField(r, "peerId"), reason: "Producer peer registered" }),
+      },
+      {
+        tool: "register_shared_context_peer",
+        buildArgs: () => ({
+          peerId: "chain:founder:judge",
+          product: "nodebench",
+          workspaceId: "chain:founder",
+          surface: "runner",
+          role: "judge",
+          capabilities: ["can-judge"],
+          contextScopes: ["workspace", "packet"],
+        }),
+        validate: (r) => ({ pass: hasField(r, "peerId"), reason: "Assignee peer registered" }),
+      },
+      {
+        tool: "founder_direction_assessment",
+        buildArgs: () => ({
+          query: "Should NodeBench lead with a Claude Code + MCP wedge for founders before building a broader dashboard subscription?",
+          lens: "founder",
+          marketWorkflow: ["Claude Code", "MCP"],
+          constraints: ["solo founder", "specific skillset"],
+        }),
+        validate: (r) => ({
+          pass: hasField(r, "strategicAngles", "recommendedNextAction"),
+          reason: hasField(r, "strategicAngles") ? "Direction assessed" : "Assessment missing strategic angles",
+        }),
+      },
+      {
+        tool: "publish_founder_issue_packet",
+        buildArgs: (prior) => ({
+          producerPeerId: "chain:founder:compiler",
+          workspaceId: "chain:founder",
+          assessment: prior[2],
+        }),
+        validate: (r) => ({
+          pass: hasField(r, "contextId", "resourceUri"),
+          reason: hasField(r, "contextId") ? "Founder issue packet published" : "Issue packet missing",
+        }),
+      },
+      {
+        tool: "workflow_adoption_scan",
+        buildArgs: () => ({
+          query: "Lead with Claude Code + MCP for developer founders, then expand to team dashboard later.",
+          marketWorkflow: ["Claude Code", "MCP"],
+          installSurface: ["local", "dashboard"],
+        }),
+        validate: (r) => ({
+          pass: hasField(r, "fitScore", "recommendedSurface"),
+          reason: hasField(r, "fitScore") ? "Workflow adoption scanned" : "Missing fit score",
+        }),
+      },
+      {
+        tool: "delegate_founder_issue",
+        buildArgs: (prior) => ({
+          contextId: prior[3]?.contextId,
+          proposerPeerId: "chain:founder:compiler",
+          assigneePeerId: "chain:founder:judge",
+          instructions: "Return a bounded follow-up packet on adoption and installability risk.",
+        }),
+        validate: (r) => ({
+          pass: hasField(r, "taskId"),
+          reason: hasField(r, "taskId") ? "Founder issue delegated" : "Delegation failed",
+        }),
+      },
+    ],
+    finalValidation: (all) => {
+      const reasons: string[] = [];
+      let pass = true;
+      if (!all[2]?.strategicAngles) { reasons.push("FAIL: Missing direction assessment"); pass = false; }
+      if (!all[3]?.contextId) { reasons.push("FAIL: Missing founder issue packet"); pass = false; }
+      if (!all[4]?.fitScore) { reasons.push("FAIL: Missing adoption scan"); pass = false; }
+      if (!all[5]?.taskId) { reasons.push("FAIL: Missing delegated task"); pass = false; }
+      if (reasons.length === 0) reasons.push("PASS: Complete founder direction ops chain");
+      return { pass, reasons };
+    },
+  },
+
   // Chain 3: Important-Change Review
   {
     id: "important_change",

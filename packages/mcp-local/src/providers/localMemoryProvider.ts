@@ -154,8 +154,9 @@ export class LocalMemoryProvider implements MemoryProvider {
 
   async connect(config: ProviderConfig): Promise<void> {
     this.config = config;
-    this.db = getDb();
-    this.db.exec(MEMORY_SCHEMA_SQL);
+    const db = getDb();
+    db.exec(MEMORY_SCHEMA_SQL);
+    this.db = db;
     this.connected = true;
   }
 

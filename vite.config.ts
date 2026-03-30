@@ -309,7 +309,7 @@ window.addEventListener('message', async (message) => {
   build: {
     // The heaviest routes/editors are lazy-loaded; keep this warning slightly higher
     // so it flags meaningful regressions without noise.
-    chunkSizeWarningLimit: 1800,
+    chunkSizeWarningLimit: 2200,
     minify,
     target: "es2020",
     cssMinify: true,

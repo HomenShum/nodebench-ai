@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolvePathToView } from "./viewRegistry";
+import { resolvePathToCockpitState, resolvePathToView } from "./viewRegistry";
 
 describe("resolvePathToView", () => {
   it("resolves the world monitor research route as its own view", () => {
@@ -21,6 +21,22 @@ describe("resolvePathToView", () => {
     expect(resolvePathToView("/research/signals")).toMatchObject({
       view: "research",
       researchTab: "signals",
+    });
+  });
+
+  it("resolves the MCP ledger direct route instead of falling back to ask", () => {
+    expect(resolvePathToView("/mcp/ledger")).toMatchObject({
+      view: "mcp-ledger",
+      researchTab: "overview",
+      isUnknownRoute: false,
+    });
+  });
+
+  it("maps the MCP ledger direct route to the trace surface", () => {
+    expect(resolvePathToCockpitState("/mcp/ledger")).toMatchObject({
+      surfaceId: "trace",
+      view: "mcp-ledger",
+      isUnknownRoute: false,
     });
   });
 });

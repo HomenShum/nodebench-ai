@@ -919,6 +919,12 @@ async function executeQueryTools(
   // 2. Build effective tool list — auto-add founder_local_synthesize for scenarios
   //    that need rich output but only have discover_tools in expectedTools
   const effectiveTools = [...query.expectedTools];
+  const inferredFounderTools = inferFounderStrategicTools(query.query, query.scenario);
+  for (const toolName of inferredFounderTools) {
+    if (!effectiveTools.includes(toolName)) {
+      effectiveTools.push(toolName);
+    }
+  }
   const hasSynthesizer = effectiveTools.includes("founder_local_synthesize");
   if (!hasSynthesizer) {
     // Always add synthesizer for scenarios that need structured packets
@@ -1038,6 +1044,11 @@ async function executeQueryTools(
         if (chainContext.gatherOutput) (args as any).priorContext = chainContext.gatherOutput;
         if (chainContext.reconOutput) (args as any).reconFindings = chainContext.reconOutput;
       }
+      if (toolName === "publish_founder_issue_packet") {
+        (args as any).producerPeerId = `eval:peer:${query.persona}`;
+        (args as any).workspaceId = `eval:workspace:${query.persona}`;
+        if (chainContext.directionAssessment) (args as any).assessment = chainContext.directionAssessment;
+      }
       // enrich_recon consumes run_recon output
       if (toolName === "enrich_recon" && chainContext.reconOutput) {
         (args as any).findings = chainContext.reconOutput;
@@ -1073,6 +1084,12 @@ async function executeQueryTools(
         if (toolName === "founder_local_synthesize") {
           chainContext.synthesizeOutput = result.result;
         }
+        if (toolName === "founder_direction_assessment") {
+          chainContext.directionAssessment = result.result;
+        }
+        if (toolName === "publish_founder_issue_packet") {
+          chainContext.founderIssuePacket = result.result;
+        }
         if (toolName === "web_search") {
           chainContext.webResults = (result.result as any)?.results ?? [];
         }
@@ -1102,6 +1119,11 @@ async function executeQueryTools(
             if (chainContext.webResults) (retryArgs as any).webResults = chainContext.webResults;
             (retryArgs as any).lens = query.persona;
           }
+          if (toolName === "publish_founder_issue_packet" && chainContext.directionAssessment) {
+            (retryArgs as any).assessment = chainContext.directionAssessment;
+            (retryArgs as any).producerPeerId = `eval:peer:${query.persona}`;
+            (retryArgs as any).workspaceId = `eval:workspace:${query.persona}`;
+          }
           const retry = await callTool(tool, retryArgs);
           totalMs += retry.ms;
           if (retry.ok) {
@@ -1109,6 +1131,8 @@ async function executeQueryTools(
             outputs[toolName] = extractText(retry.result);
             // Store in chain context even on retry
             if (toolName === "founder_local_synthesize") chainContext.synthesizeOutput = retry.result;
+            if (toolName === "founder_direction_assessment") chainContext.directionAssessment = retry.result;
+            if (toolName === "publish_founder_issue_packet") chainContext.founderIssuePacket = retry.result;
           } else {
             toolsFired.push(toolName);
             outputs[toolName] = `ERROR: ${retry.error}`;
@@ -1123,6 +1147,40 @@ async function executeQueryTools(
   }
 
   return { toolsFired, outputs, totalMs, skipped };
+}
+
+function inferFounderStrategicTools(queryText: string, scenario: Scenario): string[] {
+  const lower = queryText.toLowerCase();
+  const inferred: string[] = [];
+  const strategic = includesTerm(lower, [
+    "idea",
+    "direction",
+    "wedge",
+    "skillset",
+    "investor",
+    "credibility",
+    "adopt",
+    "workflow",
+    "install",
+    "subscription",
+    "dashboard",
+    "sell",
+  ]);
+  if (strategic) inferred.push("founder_direction_assessment");
+  if (includesTerm(lower, ["claude code", "mcp", "workflow", "adopt", "install"])) {
+    inferred.push("workflow_adoption_scan");
+  }
+  if (includesTerm(lower, ["service", "dashboard", "subscription", "sell", "retention.sh"])) {
+    inferred.push("service_to_dashboard_path");
+  }
+  if (scenario === "delegation" && strategic) {
+    inferred.push("publish_founder_issue_packet");
+  }
+  return inferred;
+}
+
+function includesTerm(value: string, terms: string[]): boolean {
+  return terms.some((term) => value.includes(term));
 }
 
 /** Build minimal arguments for a tool call based on the query context */
@@ -1157,6 +1215,31 @@ function buildMinimalArgs(toolName: string, query: EvalQuery): Record<string, un
       };
       return { packetType: ptMap[query.scenario] ?? "weekly_reset", daysBack: 7, query: query.query };
     }
+    case "founder_direction_assessment":
+      return {
+        query: query.query,
+        lens: query.persona,
+        marketWorkflow: ["Claude Code", "MCP"],
+      };
+    case "workflow_adoption_scan":
+      return {
+        query: query.query,
+        marketWorkflow: ["Claude Code", "MCP"],
+        installSurface: ["local", "dashboard"],
+      };
+    case "service_to_dashboard_path":
+      return {
+        concept: query.query,
+        workflowAnchor: ["Claude Code", "MCP"],
+        seatCount: 3,
+      };
+    case "publish_founder_issue_packet":
+      return {
+        producerPeerId: `eval:peer:${query.persona}`,
+        workspaceId: `eval:workspace:${query.persona}`,
+        query: query.query,
+        lens: query.persona,
+      };
     case "founder_local_synthesize":
       return {};
     case "founder_local_synthesize":

@@ -20,6 +20,7 @@ export type MainView =
   | "control-plane"
   | "receipts"
   | "delegation"
+  | "mcp-ledger"
   | "developers"
   | "research"
   | "entity"
@@ -203,6 +204,19 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     parentId: "control-plane",
     surfaceId: "trace",
     legacyRedirectTo: "/?surface=trace&panel=permissions",
+  },
+  {
+    id: "mcp-ledger",
+    title: "Tool Activity",
+    subtitle: "MCP ledger, shared context, sync bridge health, and shared history review",
+    path: "/mcp/ledger",
+    aliases: ["/internal/mcp-ledger", "/mcp-ledger", "/activity-log"],
+    component: lazyNamed(() => import("@/features/mcp/views/McpToolLedgerView"), "McpToolLedgerView"),
+    group: "internal",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "trace",
+    commandPaletteVisible: true,
   },
 
   // ── Developers ──────────────────────────────────────────────────────────────

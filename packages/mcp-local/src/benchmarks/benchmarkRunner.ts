@@ -245,6 +245,13 @@ export async function executeBenchmarkRun(
       result = await callTool("founder_local_weekly_reset", { daysBack: 7 });
       break;
     case "pre_delegation":
+      await callTool("founder_direction_assessment", {
+        query: prompt,
+        lens: user.role,
+        marketWorkflow: ["Claude Code", "MCP"],
+      });
+      result = await callTool("founder_local_synthesize", { packetType: scenario, daysBack: 7, query: prompt });
+      break;
     case "important_change":
       result = await callTool("founder_local_synthesize", { packetType: scenario, daysBack: 7 });
       break;
@@ -253,6 +260,13 @@ export async function executeBenchmarkRun(
       result = await callTool("founder_local_gather", { daysBack: 14 });
       if (findTool("run_recon")) {
         await callTool("run_recon", { target: user.primaryEntity, focus: prompt });
+      }
+      if (scenario === "company_search" && user.role === "founder") {
+        await callTool("workflow_adoption_scan", {
+          query: prompt,
+          marketWorkflow: ["Claude Code", "MCP"],
+          installSurface: ["local", "dashboard"],
+        });
       }
       break;
     default:
