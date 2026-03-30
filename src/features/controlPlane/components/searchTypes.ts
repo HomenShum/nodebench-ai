@@ -569,49 +569,24 @@ export interface ExamplePrompt {
 
 export const EXAMPLE_PROMPTS: ExamplePrompt[] = [
   {
-    text: "Generate my founder weekly reset — what changed, main contradiction, next 3 moves",
+    text: "What changed this week? Give me my founder reset.",
     lens: "founder",
     category: "analyze",
   },
   {
-    text: "Analyze Anthropic's competitive position in the foundation model market",
+    text: "Analyze Anthropic's competitive position",
     lens: "investor",
     category: "search",
   },
   {
-    text: "What changed in AI commerce strategy for Shopify, Amazon, and Google this quarter?",
-    lens: "ceo",
-    category: "monitor",
-  },
-  {
-    text: "Build a diligence memo on this Series B startup from these meeting notes",
+    text: "Build a diligence memo from these meeting notes",
     lens: "banker",
     category: "analyze",
   },
   {
-    text: "What legal and data-governance risks matter most for OpenAI enterprise adoption this quarter?",
-    lens: "legal",
+    text: "Compare AI commerce strategy across Shopify, Amazon, and Google",
+    lens: "ceo",
     category: "monitor",
-  },
-  {
-    text: "Explain Shopify's AI commerce strategy in plain language and give me a study brief.",
-    lens: "student",
-    category: "search",
-  },
-  {
-    text: "Plan a real-time notification system for our platform",
-    lens: "founder",
-    category: "analyze",
-  },
-  {
-    text: "Pressure-test this startup direction for founder fit, build speed, adoption, investor credibility, and sellability",
-    lens: "founder",
-    category: "analyze",
-  },
-  {
-    text: "Pressure-test this idea for team fit, AI tradeoffs, installability, maintainability, Claude Code adoption, and subscription potential",
-    lens: "founder",
-    category: "analyze",
   },
 ];
 

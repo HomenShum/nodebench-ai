@@ -799,7 +799,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             style={stagger("0.06s")}
             className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-content-secondary"
           >
-            Founder-first by default. Research any company or direction in seconds, then pressure-test build speed, adoption, credibility, and next actions with evidence you can inspect.
+            Research any company or direction. Get a structured intelligence packet you can share or delegate.
           </p>
         </div>
 
@@ -921,35 +921,19 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
 
         {/* ── Example prompts ──────────────────────────────────────────────── */}
         {!activeResult && (
-          <div style={stagger("0.2s")} className="mt-8">
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" data-testid="landing-example-prompts">
-              {EXAMPLE_PROMPTS.map((example, i) => {
-                const LensIcon = LENS_ICONS[example.lens];
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => handleExampleClick(example.text, example.lens)}
-                    className="group flex items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-left transition-all duration-200 hover:border-[#d97757]/15 hover:bg-[#d97757]/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/25 active:scale-[0.995]"
-                  >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/[0.05] group-hover:bg-[#d97757]/10 transition-colors">
-                      <LensIcon className="h-3.5 w-3.5 text-content-muted group-hover:text-[#d97757] transition-colors" aria-hidden="true" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm leading-snug text-content">{example.text}</div>
-                      <div className="mt-1 flex items-center gap-2">
-                        <span className="rounded-full bg-white/[0.05] px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.1em] text-content-muted">
-                          {example.lens}
-                        </span>
-                        <span className="rounded-full bg-white/[0.05] px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.1em] text-content-muted">
-                          {example.category}
-                        </span>
-                      </div>
-                    </div>
-                    <ArrowRight className="h-4 w-4 shrink-0 self-center text-content-muted/40 group-hover:text-[#d97757]/60 transition-colors" aria-hidden="true" />
-                  </button>
-                );
-              })}
+          <div style={stagger("0.2s")} className="mt-6">
+            <div className="flex flex-wrap justify-center gap-2" data-testid="landing-example-prompts">
+              {EXAMPLE_PROMPTS.map((example, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => handleExampleClick(example.text, example.lens)}
+                  className="group inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-left text-sm text-content-secondary transition-all duration-150 hover:border-[#d97757]/20 hover:bg-[#d97757]/[0.04] hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/25"
+                >
+                  <span className="line-clamp-1">{example.text}</span>
+                  <ArrowRight className="h-3 w-3 shrink-0 text-content-muted/30 group-hover:text-[#d97757]/50 transition-colors" aria-hidden="true" />
+                </button>
+              ))}
             </div>
           </div>
         )}
