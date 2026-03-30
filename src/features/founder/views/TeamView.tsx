@@ -68,46 +68,51 @@ export default function TeamView() {
   const [delegateTask, setDelegateTask] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Room code — Kahoot-style scoping so only people with the code can join
+  // Identity is per-TAB (sessionStorage) so two tabs can be different people.
+  // localStorage seeds the default for returning users but doesn't lock identity.
+  // Invite links (?join=true) always show the join modal for fresh identity entry.
   const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
   const isJoinMode = params.get("join") === "true";
   const urlRoomCode = params.get("room") ?? "";
 
   const [roomCode, setRoomCode] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("nodebench-team-room") ?? "";
+      return sessionStorage.getItem("nodebench-tab-room") ?? localStorage.getItem("nodebench-team-room") ?? "";
     }
     return "";
   });
   const [roomCodeInput, setRoomCodeInput] = useState(urlRoomCode);
 
-  // Generate a new room code (founder creates)
   const generateRoomCode = useCallback(() => {
     const code = Math.random().toString(36).slice(2, 8).toUpperCase();
     setRoomCode(code);
     if (typeof window !== "undefined") {
+      sessionStorage.setItem("nodebench-tab-room", code);
       localStorage.setItem("nodebench-team-room", code);
     }
     return code;
   }, []);
 
-  // Join existing room
   const joinRoom = useCallback((code: string) => {
     setRoomCode(code.toUpperCase());
     if (typeof window !== "undefined") {
+      sessionStorage.setItem("nodebench-tab-room", code.toUpperCase());
       localStorage.setItem("nodebench-team-room", code.toUpperCase());
     }
   }, []);
 
   const [userName, setUserName] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("nodebench-team-name") ?? "";
+      // sessionStorage is per-tab — each tab gets its own identity
+      return sessionStorage.getItem("nodebench-tab-name") ?? (isJoinMode ? "" : localStorage.getItem("nodebench-team-name") ?? "");
     }
     return "";
   });
   const [hasJoined, setHasJoined] = useState(() => {
     if (typeof window !== "undefined") {
-      return !!localStorage.getItem("nodebench-team-name") && !!localStorage.getItem("nodebench-team-room");
+      // Invite links always show join modal (fresh identity per tab)
+      if (isJoinMode && !sessionStorage.getItem("nodebench-tab-name")) return false;
+      return !!sessionStorage.getItem("nodebench-tab-name") || (!!localStorage.getItem("nodebench-team-name") && !!localStorage.getItem("nodebench-team-room"));
     }
     return false;
   });
@@ -117,6 +122,9 @@ export default function TeamView() {
     if (!roomCode && !roomCodeInput.trim()) return;
     const name = userName.trim().toLowerCase().replaceAll(" ", "_");
     const code = roomCode || roomCodeInput.trim().toUpperCase();
+    // Write to sessionStorage (this tab's identity) AND localStorage (default for new tabs)
+    sessionStorage.setItem("nodebench-tab-name", name);
+    sessionStorage.setItem("nodebench-tab-room", code);
     localStorage.setItem("nodebench-team-name", name);
     localStorage.setItem("nodebench-team-room", code);
     setRoomCode(code);
@@ -141,8 +149,11 @@ export default function TeamView() {
     refresh();
   }, [userName, refresh]);
 
-  const currentPeerId = hasJoined && userName
-    ? `peer:teammate:${userName.trim().toLowerCase().replaceAll(" ", "_")}`
+  const resolvedName = typeof window !== "undefined"
+    ? (sessionStorage.getItem("nodebench-tab-name") ?? userName.trim().toLowerCase().replaceAll(" ", "_"))
+    : userName.trim().toLowerCase().replaceAll(" ", "_");
+  const currentPeerId = hasJoined && resolvedName
+    ? `peer:teammate:${resolvedName}`
     : "peer:founder:local";
 
   const inviteLink = typeof window !== "undefined"
