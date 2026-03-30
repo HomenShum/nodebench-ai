@@ -25,9 +25,9 @@ const TABS: readonly {
   icon: typeof MessageSquare;
 }[] = [
   { id: "ask",       label: "Ask",       icon: MessageSquare },
-  { id: "memo",      label: "Memo",      icon: Orbit },
+  { id: "memo",      label: "Packets",   icon: Orbit },
   { id: "research",  label: "Research",  icon: Radar },
-  { id: "editor",    label: "Workspace", icon: FileText },
+  { id: "editor",    label: "Docs",      icon: FileText },
 ];
 
 const FOUNDER_ITEMS = [

@@ -792,14 +792,14 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             style={stagger("0s")}
             className="text-2xl font-bold tracking-tight text-content sm:text-3xl lg:text-4xl text-balance"
           >
-            Ask about your company, a competitor,{" "}
-            <span className="text-[#d97757]">or a market shift</span>
+            Know what you're building, where you stand,{" "}
+            <span className="text-[#d97757]">and what to do next</span>
           </h1>
           <p
             style={stagger("0.06s")}
             className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-content-secondary"
           >
-            Research any company or direction. Get a structured intelligence packet you can share or delegate.
+            Search any company, upload your context, or connect NodeBench-MCP. Get the hidden requirements, gaps, and next steps that investors, banks, and partners will judge you on.
           </p>
         </div>
 
@@ -1177,8 +1177,38 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           </div>
         </div>
 
+        {/* ── MCP Bridge — connect your context ────────────────────────────── */}
+        <div style={stagger("0.32s")} className="mt-12">
+          <div className="mx-auto max-w-2xl rounded-2xl border border-[#d97757]/15 bg-[#d97757]/[0.03] p-6">
+            <h2 className="text-center text-base font-semibold text-content">
+              Connect NodeBench-MCP to build your company dashboard
+            </h2>
+            <p className="mx-auto mt-2 max-w-lg text-center text-xs leading-relaxed text-content-muted">
+              Index your codebase, docs, and agent context. NodeBench automatically builds
+              a live founder dashboard with readiness gaps, competitor signals, and shared
+              context for Claude Code and other agents.
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-4">
+              {[
+                { step: "1", label: "Install", detail: "One command" },
+                { step: "2", label: "Init", detail: "Choose sources" },
+                { step: "3", label: "Index", detail: "Auto-explore" },
+                { step: "4", label: "Dashboard", detail: "Live and ready" },
+              ].map((s) => (
+                <div key={s.step} className="flex flex-col items-center gap-1 text-center">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#d97757]/15 text-xs font-bold text-[#d97757]">
+                    {s.step}
+                  </div>
+                  <div className="text-xs font-medium text-content">{s.label}</div>
+                  <div className="text-[10px] text-content-muted">{s.detail}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {/* ── Install ──────────────────────────────────────────────────────── */}
-        <div style={stagger("0.36s")} className="mt-12">
+        <div style={stagger("0.36s")} className="mt-8">
           <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted text-center">
             Install in 10 seconds
           </div>
