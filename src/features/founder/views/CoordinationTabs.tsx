@@ -12,11 +12,13 @@ import { cn } from "@/lib/utils";
 const CoordinationHubView = lazy(() => import("./CoordinationHubView"));
 const CommandPanelView = lazy(() => import("./CommandPanelView"));
 const AgentOversightView = lazy(() => import("./AgentOversightView"));
+const TeamView = lazy(() => import("./TeamView"));
 
-type CoordTab = "hub" | "command" | "agents";
+type CoordTab = "hub" | "team" | "command" | "agents";
 
 const TABS: { id: CoordTab; label: string }[] = [
   { id: "hub", label: "Hub" },
+  { id: "team", label: "Team" },
   { id: "command", label: "Command" },
   { id: "agents", label: "Agents" },
 ];
@@ -76,6 +78,7 @@ export default function CoordinationTabs() {
       <div className="min-h-0 flex-1 overflow-auto">
         <Suspense fallback={<TabSkeleton />}>
           {activeTab === "hub" && <CoordinationHubView />}
+          {activeTab === "team" && <TeamView />}
           {activeTab === "command" && <CommandPanelView />}
           {activeTab === "agents" && <AgentOversightView />}
         </Suspense>
