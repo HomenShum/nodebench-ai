@@ -790,7 +790,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         <div className="text-center">
           <h1
             style={stagger("0s")}
-            className="text-3xl font-bold tracking-tight text-content sm:text-4xl"
+            className="text-2xl font-bold tracking-tight text-content sm:text-3xl lg:text-4xl text-balance"
           >
             Ask about your company, a competitor,{" "}
             <span className="text-[#d97757]">or a market shift</span>

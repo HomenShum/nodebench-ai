@@ -292,9 +292,12 @@ export const ResultWorkspace = memo(function ResultWorkspace({
 }: ResultWorkspaceProps) {
   const proofPacket = useMemo(() => ensureProofPacket(packet, lens), [packet, lens]);
   const trajectoryData = trajectory ?? buildDemoTrajectory(proofPacket);
+  const isOwnCompanyPacket = proofPacket.operatingModel.packetRouter.companyMode === "own_company";
+  const hasSlackOnePager = proofPacket.shareableArtifacts.some((item) => item.type === "slack_onepage");
   const [copiedShare, setCopiedShare] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [copiedSlackReport, setCopiedSlackReport] = useState(false);
+  const [showAllFollowUps, setShowAllFollowUps] = useState(false);
   const [hoveredSourceId, setHoveredSourceId] = useState<string | null>(null);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
   const [selectedAnswerBlockId, setSelectedAnswerBlockId] = useState<string | null>(
@@ -332,6 +335,72 @@ export const ResultWorkspace = memo(function ResultWorkspace({
     if (!activeAnswerBlock) return [];
     return proofPacket.claimRefs.filter((claim) => activeAnswerBlock.claimIds.includes(claim.id));
   }, [activeAnswerBlock, proofPacket.claimRefs]);
+
+  const followUpChain = useMemo(() => {
+    const normalizePrompt = (value: string) => value.trim().replace(/\s+/g, " ").toLowerCase();
+    const seen = new Set<string>();
+    const unresolvedAngles = proofPacket.strategicAngles.filter(
+      (angle) => angle.status !== "strong" && angle.nextQuestion,
+    );
+    const unresolvedAnglePrompts = new Set(
+      unresolvedAngles
+        .map((angle) => angle.nextQuestion)
+        .filter((value): value is string => Boolean(value))
+        .map(normalizePrompt),
+    );
+    const chain: Array<{
+      id: string;
+      label: string;
+      prompt: string;
+      accent: "action" | "question";
+    }> = [];
+
+    const pushItem = (
+      label: string,
+      prompt: string | undefined,
+      accent: "action" | "question",
+      options?: { allowIfUnresolvedAngle?: boolean },
+    ) => {
+      if (!prompt) return;
+      const normalized = normalizePrompt(prompt);
+      if (!normalized || seen.has(normalized)) return;
+      if (!options?.allowIfUnresolvedAngle && unresolvedAnglePrompts.has(normalized)) return;
+      seen.add(normalized);
+      chain.push({
+        id: `${accent}:${chain.length + 1}`,
+        label,
+        prompt,
+        accent,
+      });
+    };
+
+    pushItem("Start here", proofPacket.recommendedNextAction, "action");
+    pushItem("Then gather proof", proofPacket.nextQuestions?.[0], "question");
+    pushItem("Then prepare delegation", proofPacket.nextQuestions?.[2], "question");
+
+    for (const prompt of proofPacket.nextQuestions ?? []) {
+      pushItem("Next prompt", prompt, "question");
+    }
+
+    return {
+      visible: chain.slice(0, 3),
+      overflow: chain.slice(3),
+    };
+  }, [proofPacket.nextQuestions, proofPacket.recommendedNextAction, proofPacket.strategicAngles]);
+
+  const primaryIssueAngle = useMemo(
+    () => proofPacket.strategicAngles.find((angle) => angle.status !== "strong") ?? null,
+    [proofPacket.strategicAngles],
+  );
+  const primaryRisk = proofPacket.risks?.[0] ?? null;
+  const shareTimingAngle = useMemo(
+    () => proofPacket.strategicAngles.find((angle) => angle.id === "stealth-moat") ?? null,
+    [proofPacket.strategicAngles],
+  );
+  const primaryIssueAngleId = primaryIssueAngle?.id ?? null;
+  const shareReadinessAngleId = shareTimingAngle?.id ?? primaryIssueAngleId;
+  const shareReadinessPrompt = shareTimingAngle?.nextQuestion ?? primaryIssueAngle?.nextQuestion ?? null;
+  const shouldShowShareReadiness = hasSlackOnePager && proofPacket.visibility !== "public" && Boolean(shareReadinessPrompt);
 
   const handleShare = useCallback(() => {
     const id = generateMemoId();
@@ -392,12 +461,12 @@ export const ResultWorkspace = memo(function ResultWorkspace({
           <h2 className="text-lg font-semibold text-content truncate">{proofPacket.entityName}</h2>
           <p className="text-xs text-content-muted mt-0.5 truncate">{proofPacket.query}</p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
           <ConfidenceBadge value={proofPacket.confidence} />
           <ProofStatusBadge value={proofPacket.proofStatus} />
           <VisibilityBadge value={proofPacket.visibility} />
-          <SyncProvenanceBadge compact />
-          <span className="text-[11px] text-content-muted">
+          <span className="hidden lg:inline-flex"><SyncProvenanceBadge compact /></span>
+          <span className="hidden lg:inline-flex text-[11px] text-content-muted">
             {proofPacket.explorationMemory.citedSourceCount}/
             {proofPacket.explorationMemory.exploredSourceCount} cited
           </span>
@@ -413,10 +482,130 @@ export const ResultWorkspace = memo(function ResultWorkspace({
               <><Share2 className="h-3 w-3" />Share</>
             )}
           </button>
+          {hasSlackOnePager ? (
+            <button
+              type="button"
+              onClick={() => { void handleCopySlackReport(); }}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#d97757]/20 bg-[#d97757]/10 px-2.5 py-1.5 text-[11px] font-medium text-[#f2b49f] transition-colors hover:bg-[#d97757]/16"
+              aria-label={copiedSlackReport ? "Slack report copied" : "Report for Slack"}
+            >
+              {copiedSlackReport ? (
+                <><Check className="h-3 w-3" /><span>Slack report copied</span></>
+              ) : (
+                <><FileText className="h-3 w-3" />Slack report</>
+              )}
+            </button>
+          ) : null}
         </div>
       </div>
 
       {/* ── Sources bar ───────────────────────────────────────────────────── */}
+      {(primaryRisk || primaryIssueAngle || shouldShowShareReadiness) && (
+        <div className="grid gap-3 lg:grid-cols-2">
+          {primaryRisk || primaryIssueAngle ? (
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.05] px-4 py-3">
+              <div className="text-[10px] uppercase tracking-[0.16em] text-amber-300">
+                Main Contradiction To Resolve
+              </div>
+              <div className="mt-2 text-sm font-medium text-content">
+                {primaryRisk?.title ?? primaryIssueAngle?.title}
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-content-muted">
+                {primaryRisk?.description ?? primaryIssueAngle?.summary}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {primaryIssueAngle?.nextQuestion ? (
+                  <button
+                    type="button"
+                    onClick={() => onFollowUp?.(primaryIssueAngle.nextQuestion)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-200 transition hover:bg-amber-500/15"
+                  >
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    Resolve now
+                  </button>
+                ) : null}
+                {onPublishStrategicAngle && primaryIssueAngleId ? (
+                  <button
+                    type="button"
+                    onClick={() => onPublishStrategicAngle(primaryIssueAngleId)}
+                    disabled={handoffBusy}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Network className="h-3.5 w-3.5" />
+                    Publish issue packet
+                  </button>
+                ) : null}
+                {onDelegateStrategicAngle && primaryIssueAngleId ? (
+                  <button
+                    type="button"
+                    onClick={() => onDelegateStrategicAngle(primaryIssueAngleId, "claude_code")}
+                    disabled={handoffBusy}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <ArrowRight className="h-3.5 w-3.5" />
+                    Delegate issue
+                  </button>
+                ) : null}
+                {primaryRisk?.falsification ? (
+                  <span className="inline-flex items-center rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-content-muted">
+                    Falsify: {primaryRisk.falsification}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
+          {shouldShowShareReadiness ? (
+            <div className="rounded-xl border border-[#d97757]/20 bg-[#d97757]/[0.05] px-4 py-3">
+              <div className="text-[10px] uppercase tracking-[0.16em] text-[#f2b49f]">
+                Share Readiness
+              </div>
+              <div className="mt-2 text-sm font-medium text-content">
+                Keep this founder packet workspace-only until the moat and evidence story are clearer.
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-content-muted">
+                The Slack report is ready to copy, but this packet still flags stealth and proof questions that should be pressure-tested before broader sharing.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => onFollowUp?.(shareReadinessPrompt!)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#d97757]/20 bg-[#d97757]/10 px-3 py-2 text-xs font-medium text-[#f2b49f] transition hover:bg-[#d97757]/15"
+                >
+                  <HelpCircle className="h-3.5 w-3.5" />
+                  Pressure-test share timing
+                </button>
+                {onPublishStrategicAngle && shareReadinessAngleId ? (
+                  <button
+                    type="button"
+                    onClick={() => onPublishStrategicAngle(shareReadinessAngleId)}
+                    disabled={handoffBusy}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Network className="h-3.5 w-3.5" />
+                    Publish issue packet
+                  </button>
+                ) : null}
+                {onDelegateStrategicAngle && shareReadinessAngleId ? (
+                  <button
+                    type="button"
+                    onClick={() => onDelegateStrategicAngle(shareReadinessAngleId, "claude_code")}
+                    disabled={handoffBusy}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <ArrowRight className="h-3.5 w-3.5" />
+                    Delegate issue
+                  </button>
+                ) : null}
+                <span className="inline-flex items-center rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-content-muted">
+                  Current visibility: {proofPacket.visibility}
+                </span>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
+
       {proofPacket.sourceRefs.length > 0 && (
         <SourcesBar sources={proofPacket.sourceRefs} />
       )}
@@ -528,9 +717,9 @@ export const ResultWorkspace = memo(function ResultWorkspace({
                 className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-medium text-content">{angle.title}</div>
-                    <div className="mt-1 text-xs leading-relaxed text-content-muted">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-content line-clamp-2">{angle.title}</div>
+                    <div className="mt-1 text-xs leading-relaxed text-content-muted line-clamp-2">
                       {angle.summary}
                     </div>
                   </div>
@@ -540,7 +729,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
                   <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
                     Why this matters
                   </div>
-                  <div className="mt-1 text-xs leading-relaxed text-content-muted">
+                  <div className="mt-1 text-xs leading-relaxed text-content-muted line-clamp-3">
                     {angle.whyItMatters}
                   </div>
                 </div>
@@ -691,7 +880,9 @@ export const ResultWorkspace = memo(function ResultWorkspace({
                 <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Starter Company Profile</div>
+                      <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                        {isOwnCompanyPacket ? "Company Profile Snapshot" : "Starter Company Profile"}
+                      </div>
                       <div className="mt-1 text-sm font-medium text-content">
                         {proofPacket.companyNamingPack.recommendedName}
                       </div>
@@ -701,16 +892,22 @@ export const ResultWorkspace = memo(function ResultWorkspace({
                   <div className="mt-2 text-xs leading-relaxed text-content-muted">
                     {proofPacket.companyNamingPack.starterProfile.oneLineDescription}
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {proofPacket.companyNamingPack.suggestedNames.slice(0, 5).map((name) => (
-                      <span
-                        key={name}
-                        className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[11px] text-content-muted"
-                      >
-                        {name}
-                      </span>
-                    ))}
-                  </div>
+                  {isOwnCompanyPacket ? (
+                    <div className="mt-3 rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2 text-[11px] leading-relaxed text-content-muted">
+                      Using the current workspace identity for founder guidance. Alternate company names are hidden on own-company runs to avoid mixing real brand context with idea-generation suggestions.
+                    </div>
+                  ) : (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {proofPacket.companyNamingPack.suggestedNames.slice(0, 5).map((name) => (
+                        <span
+                          key={name}
+                          className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[11px] text-content-muted"
+                        >
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : null}
 
@@ -1325,24 +1522,73 @@ export const ResultWorkspace = memo(function ResultWorkspace({
       )}
 
       {/* ── 6. Recommended Next Questions ──────────────────────────────────── */}
-      {proofPacket.nextQuestions && proofPacket.nextQuestions.length > 0 && (
-        <Section id="next" icon={HelpCircle} title="Recommended Next Questions">
-          <div className="space-y-2">
-            {proofPacket.nextQuestions.map((q, i) => (
+      {(followUpChain.visible.length > 0 || followUpChain.overflow.length > 0) && (
+        <Section id="next" icon={Waypoints} title="Guided Follow-Up Chain">
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3 text-xs leading-relaxed text-content-muted">
+            Start with the current packet action, then deepen the evidence only where the packet is still weak. Extra prompts stay hidden until you need them.
+          </div>
+          <div className="mt-3 space-y-2">
+            {followUpChain.visible.map((item, index) => (
               <button
-                key={i}
+                key={item.id}
                 type="button"
-                onClick={() => onFollowUp?.(q)}
-                className="group flex w-full items-center gap-3 rounded-lg border border-white/[0.04] bg-white/[0.01] px-3 py-2.5 text-left text-sm text-content transition-all hover:border-[#d97757]/20 hover:bg-[#d97757]/[0.03]"
+                onClick={() => onFollowUp?.(item.prompt)}
+                className={`group flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm text-content transition-all ${
+                  item.accent === "action"
+                    ? "border-[#d97757]/20 bg-[#d97757]/[0.05] hover:bg-[#d97757]/[0.08]"
+                    : "border-white/[0.04] bg-white/[0.01] hover:border-[#d97757]/20 hover:bg-[#d97757]/[0.03]"
+                }`}
               >
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/[0.05] text-[10px] font-bold text-content-muted group-hover:bg-[#d97757]/10 group-hover:text-[#d97757]">
-                  {i + 1}
+                  {index + 1}
                 </span>
-                <span className="flex-1">{q}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                    {item.label}
+                  </div>
+                  <div className="mt-1 leading-relaxed">{item.prompt}</div>
+                </div>
                 <ArrowRight className="h-3.5 w-3.5 text-content-muted opacity-0 transition-opacity group-hover:opacity-100" />
               </button>
             ))}
           </div>
+          {followUpChain.overflow.length > 0 ? (
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => setShowAllFollowUps((value) => !value)}
+                className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content"
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+                {showAllFollowUps
+                  ? "Hide extra prompts"
+                  : `Show ${followUpChain.overflow.length} more prompts`}
+              </button>
+              {showAllFollowUps ? (
+                <div className="mt-3 space-y-2">
+                  {followUpChain.overflow.map((item, index) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => onFollowUp?.(item.prompt)}
+                      className="group flex w-full items-center gap-3 rounded-lg border border-white/[0.04] bg-white/[0.01] px-3 py-2.5 text-left text-sm text-content transition-all hover:border-[#d97757]/20 hover:bg-[#d97757]/[0.03]"
+                    >
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/[0.05] text-[10px] font-bold text-content-muted group-hover:bg-[#d97757]/10 group-hover:text-[#d97757]">
+                        {followUpChain.visible.length + index + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                          {item.label}
+                        </div>
+                        <div className="mt-1 leading-relaxed">{item.prompt}</div>
+                      </div>
+                      <ArrowRight className="h-3.5 w-3.5 text-content-muted opacity-0 transition-opacity group-hover:opacity-100" />
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </Section>
       )}
 

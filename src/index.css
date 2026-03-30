@@ -1567,10 +1567,10 @@ html.dark[data-preset="dark-botanical"] .focus-ring:focus-visible {
 }
 @media (min-width: 1024px) {
   .cockpit-grid {
-    grid-template-columns: 240px 1fr 292px;
+    grid-template-columns: 240px 1fr 260px;
   }
   .cockpit-grid[data-left-collapsed] {
-    grid-template-columns: 48px 1fr 292px;
+    grid-template-columns: 48px 1fr 260px;
   }
   .cockpit-grid[data-right-collapsed] {
     grid-template-columns: 240px 1fr 0px;
