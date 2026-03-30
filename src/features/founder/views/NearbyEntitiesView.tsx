@@ -71,39 +71,9 @@ const PARTNER_TYPES = new Set(["partner", "customer", "design partner"]);
 
 // ─── Default demo competitors/partners ──────────────────────────────
 
-const DEMO_COMPETITORS: NearbyEntityRecord[] = [
-  {
-    id: "demo-comp-1",
-    name: "CarbonPath",
-    relationship: "competitor",
-    description: "VCM pricing platform for voluntary carbon credits",
-    watched: false,
-  },
-  {
-    id: "demo-comp-2",
-    name: "Sylvera",
-    relationship: "competitor",
-    description: "Carbon credit ratings and valuation analytics",
-    watched: false,
-  },
-  {
-    id: "demo-comp-3",
-    name: "Pachama",
-    relationship: "competitor",
-    description: "Forest carbon verification using satellite imagery",
-    watched: false,
-  },
-];
+const DEMO_COMPETITORS: NearbyEntityRecord[] = [];
 
-const DEMO_PARTNERS: NearbyEntityRecord[] = [
-  {
-    id: "demo-part-1",
-    name: "TradeFlow Capital",
-    relationship: "partner",
-    description: "Design partner for API integration and pilot",
-    watched: false,
-  },
-];
+const DEMO_PARTNERS: NearbyEntityRecord[] = [];
 
 // ─── Component ──────────────────────────────────────────────────────
 

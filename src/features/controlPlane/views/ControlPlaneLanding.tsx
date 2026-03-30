@@ -938,21 +938,50 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           </div>
         )}
 
-        {/* ── Since last session ──────────────────────────────────────────── */}
+        {/* ── Founder value prop (replaces internal dev data) ────────────── */}
         {!activeResult && (
-          <>
-            <RecentSearchHistory onOpen={handleRestoreHistory} />
-            <div style={stagger("0.26s")} className="mt-8">
-              <Suspense fallback={null}>
-                <SinceLastSession />
-              </Suspense>
+          <div style={stagger("0.24s")} className="mt-12">
+            <h2 className="text-center text-lg font-semibold text-content sm:text-xl">
+              The requirements nobody tells you about
+            </h2>
+            <p className="mx-auto mt-2 max-w-lg text-center text-sm text-content-muted">
+              Investors, banks, and partners judge startups on hidden criteria.
+              NodeBench surfaces what you need before they ask.
+            </p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                {
+                  title: "What qualifies you",
+                  description: "Every investor tier, banking program, and accelerator has invisible requirements. See exactly what you're missing.",
+                },
+                {
+                  title: "What changed this week",
+                  description: "Competitor moves, market shifts, regulatory changes — surfaced automatically so you never walk into a meeting blind.",
+                },
+                {
+                  title: "What contradicts your story",
+                  description: "Your pitch says one thing, your data says another. Find contradictions before investors do.",
+                },
+                {
+                  title: "What to do next",
+                  description: "Ranked actions based on your stage, readiness, and the specific requirements of your target audience.",
+                },
+                {
+                  title: "What to delegate",
+                  description: "Package your research into a structured packet and hand it to Claude Code or your team — context stays intact.",
+                },
+                {
+                  title: "What to share",
+                  description: "Export a memo, brief, or one-pager ready for investors, bankers, partners, or your board.",
+                },
+              ].map((item) => (
+                <div key={item.title} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                  <div className="text-sm font-medium text-content">{item.title}</div>
+                  <p className="mt-1.5 text-xs leading-relaxed text-content-muted">{item.description}</p>
+                </div>
+              ))}
             </div>
-            <div style={stagger("0.32s")} className="mt-6">
-              <Suspense fallback={null}>
-                <FeedbackSummary />
-              </Suspense>
-            </div>
-          </>
+          </div>
         )}
 
         {/* ── Loading state ────────────────────────────────────────────────── */}
@@ -1133,9 +1162,9 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {[
-              { step: "1", title: "Ask anything", description: "Type a company name, paste meeting notes, or ask a strategic question. NodeBench extracts entities and finds signals." },
-              { step: "2", title: "Get your answer", description: "A structured intelligence packet shaped for your role — risks, next actions, and evidence you can verify." },
-              { step: "3", title: "Share and delegate", description: "Copy a shareable link, hand off to Claude Code, or delegate to your team. Every result stays traceable." },
+              { step: "1", title: "Describe your company or idea", description: "Type what you're building, paste meeting notes, or name a competitor. NodeBench figures out your stage, market, and gaps." },
+              { step: "2", title: "See what you're missing", description: "Get a structured packet: hidden requirements, contradictions, qualification gaps, and ranked next actions — shaped for your role." },
+              { step: "3", title: "Act on it", description: "Export a memo for investors, delegate to Claude Code, or share a one-pager on Slack. Context stays intact across every handoff." },
             ].map((item) => (
               <div key={item.step} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#d97757]/10 text-xs font-bold text-[#d97757]">
