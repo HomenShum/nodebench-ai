@@ -18,13 +18,15 @@ const HistoryView = lazy(() => import("./HistoryView"));
 const SessionDeltaView = lazy(() => import("./SessionDeltaView"));
 const ExportView = lazy(() => import("./ExportView"));
 const ChangeDetectorView = lazy(() => import("./ChangeDetectorView"));
+const FounderStrategyView = lazy(() => import("./FounderStrategyView"));
 
 /* ── Tab definitions ──────────────────────────────────────────────── */
 
-type DashboardTab = "overview" | "intake" | "history" | "changes" | "delta" | "export";
+type DashboardTab = "overview" | "strategy" | "intake" | "history" | "changes" | "delta" | "export";
 
 const TABS: { id: DashboardTab; label: string }[] = [
   { id: "overview", label: "Overview" },
+  { id: "strategy", label: "Strategy" },
   { id: "intake", label: "Intake" },
   { id: "history", label: "History" },
   { id: "changes", label: "Changes" },
@@ -93,6 +95,7 @@ export default function FounderDashboardTabs() {
       <div className="min-h-0 flex-1 overflow-auto">
         <Suspense fallback={<TabSkeleton />}>
           {activeTab === "overview" && <FounderDashboardView />}
+          {activeTab === "strategy" && <FounderStrategyView />}
           {activeTab === "intake" && <ContextIntakeView />}
           {activeTab === "history" && <HistoryView />}
           {activeTab === "changes" && <ChangeDetectorView />}
