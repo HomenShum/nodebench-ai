@@ -1043,6 +1043,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                   onClick={() => {
                     const text = `${activeResult.entityName}: ${activeResult.answer || ""}`;
                     navigator.clipboard.writeText(text);
+                    trackEvent("activation_result_copied", { entity: activeResult.entityName });
                   }}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs text-content-muted transition-colors hover:bg-white/[0.08]"
                 >

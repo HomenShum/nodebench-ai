@@ -5117,6 +5117,191 @@ function findProjectRoot() {
   }
   return process.cwd();
 }
+function includesAny(value, terms) {
+  const normalized = value.toLowerCase();
+  return terms.some((term) => normalized.includes(term.toLowerCase()));
+}
+function dedupeStrings(values) {
+  return [...new Set(values.filter(Boolean).map((value) => value.trim()).filter(Boolean))];
+}
+function buildFounderDirectionAssessment(args) {
+  const ctx = gatherLocalContext(args.daysBack ?? 14);
+  const lens = args.lens ?? "founder";
+  const combinedText = [
+    args.query,
+    args.extraContext ?? "",
+    ...args.userSkillset ?? [],
+    ...args.interests ?? [],
+    ...args.constraints ?? [],
+    ...args.marketWorkflow ?? [],
+    ...ctx.recentChanges.modifiedFiles ?? []
+  ].join(" ").toLowerCase();
+  const assessmentId = genId("assess");
+  const packetId = genId("packet");
+  const evidenceRefIds = ["source:claude", "source:readme", "source:dogfood"];
+  const sourceRefs = [
+    {
+      id: "source:claude",
+      label: "CLAUDE.md",
+      title: "Product and workflow identity",
+      type: "local",
+      status: "cited",
+      href: join2(ctx.identity.projectRoot, "CLAUDE.md"),
+      excerpt: ctx.identity.claudeMdSnippet ?? "Internal product identity and operating rules."
+    },
+    {
+      id: "source:readme",
+      label: "packages/mcp-local/README.md",
+      title: "Local MCP distribution surface",
+      type: "local",
+      status: "cited",
+      href: join2(ctx.identity.projectRoot, "packages", "mcp-local", "README.md"),
+      excerpt: ctx.publicSurfaces.readmeTagline ?? ctx.publicSurfaces.serverJsonDescription ?? "Local MCP packaging and positioning."
+    },
+    {
+      id: "source:dogfood",
+      label: "Latest dogfood findings",
+      title: "Dogfood and proof pressure",
+      type: "local",
+      status: ctx.dogfoodFindings.verdict ? "cited" : "explored",
+      href: ctx.dogfoodFindings.latestFile ?? void 0,
+      excerpt: ctx.dogfoodFindings.findings.slice(0, 2).join(" ") || "No recent dogfood findings available."
+    }
+  ];
+  const teamSpecific = (args.userSkillset ?? []).length > 0;
+  const aiSkeptic = includesAny(combinedText, ["no ai", "without ai", "anti ai", "environment", "peace", "altruistic"]);
+  const workflowAligned = includesAny(combinedText, ["claude code", "mcp", "cursor", "developer workflow", "agent workflow", "teams"]);
+  const installFocused = includesAny(combinedText, ["install", "local", "dashboard", "service", "subscription", "hosted", "self-host", "maintenance", "update"]);
+  const distributionFocused = includesAny(combinedText, ["investor", "credibility", "convince", "adopt", "workflow", "sell", "subscription"]);
+  const constrainedByScope = includesAny(combinedText, ["solo", "single founder", "limited", "specific skillset", "narrow skillset"]);
+  const publicExposureRisk = lens === "founder" || includesAny(combinedText, [
+    "stealth",
+    "moat",
+    "launch",
+    "posting",
+    "post publicly",
+    "announce",
+    "go public",
+    "marketing",
+    "reveal"
+  ]);
+  const hasRecentProof = ctx.dogfoodFindings.verdict?.toLowerCase().includes("pass") || ctx.sessionMemory.totalActions7d >= 5;
+  const strategicAngles = [
+    {
+      id: "stealth-moat",
+      title: "Stealth, moat, and public exposure timing",
+      status: publicExposureRisk ? "watch" : "unknown",
+      summary: publicExposureRisk ? "Before posting broadly, assume the direction is easier to copy than it feels. Stay relatively stealthy until the moat, workflow lock-in, or evidence edge is clearer." : "The run has not yet established whether public exposure helps more than it harms before the moat is proven.",
+      whyItMatters: "Premature posting can teach the market what you are doing before the wedge is hard to duplicate. Founders need moat evidence and market diligence before broad exposure.",
+      evidenceRefIds,
+      nextQuestion: "What have competitors already shipped, how easily can they copy this, and what moat would justify posting now instead of staying quieter longer?"
+    },
+    {
+      id: "team-shape",
+      title: "Team shape and complementary skill gaps",
+      status: teamSpecific || constrainedByScope ? "watch" : "unknown",
+      summary: teamSpecific || constrainedByScope ? "The current direction depends heavily on a narrow skill profile. That can create wedge strength, but it also exposes obvious hiring, GTM, or credibility gaps." : "The run does not yet spell out whether the team shape is a real edge or an unaddressed constraint.",
+      whyItMatters: "Specific skillsets help when they map cleanly to the wedge, but they slow a company down when core build, sell, or support functions are missing.",
+      evidenceRefIds,
+      nextQuestion: "Which missing capability would most reduce risk for this direction: technical depth, customer access, distribution, or investor credibility?"
+    },
+    {
+      id: "founder-fit",
+      title: "Founder and experience fit",
+      status: hasRecentProof ? "watch" : "unknown",
+      summary: hasRecentProof ? "There is evidence of execution momentum, but the founder story still needs to make the wedge feel inevitable rather than merely possible." : "This direction still needs stronger evidence that the builders and the problem are tightly matched.",
+      whyItMatters: "Investors and early users look for evidence that the founding team has unusual right-to-win on the exact problem they chose.",
+      evidenceRefIds,
+      nextQuestion: "What founder-specific experience, access, or technical edge makes this direction believable now?"
+    },
+    {
+      id: "build-speed",
+      title: "Build speed and time-to-first-proof",
+      status: installFocused || workflowAligned ? "strong" : "watch",
+      summary: installFocused || workflowAligned ? "The direction can likely piggyback on existing local-first and developer workflow surfaces, which shortens the path to a useful wedge." : "The idea still needs a more explicit plan for what can be built and proven in the next 2 to 4 weeks.",
+      whyItMatters: "The first version has to ship fast enough to create proof before the team burns time on secondary surfaces.",
+      evidenceRefIds,
+      nextQuestion: "What is the smallest founder-grade wedge we can build in 2 to 4 weeks that creates proof instead of debt?"
+    },
+    {
+      id: "installability",
+      title: "Installability and update path",
+      status: installFocused ? "strong" : "watch",
+      summary: installFocused ? "The query already points toward installable surfaces such as local MCP, hosted dashboards, or team subscriptions, which is a healthy sign." : "The current idea still needs a clear answer for how people install, maintain, and update it without high-touch onboarding.",
+      whyItMatters: "Installation friction and update pain destroy adoption even when the core product insight is strong.",
+      evidenceRefIds,
+      nextQuestion: "Should the first wedge land as a local MCP tool, a hosted dashboard, or a hybrid with local truth and web review?"
+    },
+    {
+      id: "maintainability",
+      title: "Maintainability and support burden",
+      status: includesAny(combinedText, ["maintain", "maintenance", "support", "ops", "update"]) ? "watch" : "strong",
+      summary: includesAny(combinedText, ["maintain", "maintenance", "support", "ops", "update"]) ? "The idea raises ongoing maintenance and support concerns, so the service boundary needs to stay narrow." : "The current direction can stay relatively lean if the team avoids adding too many surfaces before the wedge is proven.",
+      whyItMatters: "A promising tool loses momentum fast if maintenance and support grow faster than product leverage.",
+      evidenceRefIds,
+      nextQuestion: "What should stay manual, local, or intentionally out-of-scope so maintenance does not outrun product value?"
+    },
+    {
+      id: "adoption",
+      title: "Workflow adoption and current market fit",
+      status: workflowAligned ? "strong" : "watch",
+      summary: workflowAligned ? "The direction connects to workflows users already run today, including current developer loops like Claude Code and MCP-based tooling." : "The current direction still needs proof that it plugs into a high-frequency workflow instead of asking users to learn a new behavior from scratch.",
+      whyItMatters: "The fastest adoption comes from landing inside an existing habit rather than trying to invent one.",
+      evidenceRefIds,
+      nextQuestion: "Which current high-frequency workflow does this naturally attach to, and how do we make that attachment unavoidable?"
+    },
+    {
+      id: "commercial",
+      title: "Commercialization and sellability",
+      status: installFocused || distributionFocused ? "strong" : "watch",
+      summary: installFocused || distributionFocused ? "There is a credible path from tool to dashboard or subscription service if the wedge keeps producing durable proof for teams." : "The idea still needs a sharper answer for how it becomes a repeatable product instead of bespoke help or one-off consulting.",
+      whyItMatters: "A good internal tool is not enough. The company needs a product that can be packaged, renewed, and expanded.",
+      evidenceRefIds,
+      nextQuestion: "What is the clearest route from useful tool to team dashboard, recurring subscription, or sellable operating layer?"
+    },
+    {
+      id: "conviction",
+      title: "User and investor conviction",
+      status: hasRecentProof ? "watch" : "unknown",
+      summary: hasRecentProof ? "There is enough motion to support a story, but the packet still needs sharper comparables, outcomes, and proof points to persuade outsiders." : "The current direction needs more evidence before it becomes a convincing story for users or investors.",
+      whyItMatters: "Conviction builds when outsiders can repeat the story and believe the timing, not only the ambition.",
+      evidenceRefIds,
+      nextQuestion: "What proof points, traction signals, or comparables would make this direction legible to a skeptical user or investor?"
+    }
+  ];
+  if (aiSkeptic || lens === "founder") {
+    strategicAngles.push({
+      id: "ai-tradeoffs",
+      title: "AI stance and mission tradeoffs",
+      status: aiSkeptic ? "watch" : "unknown",
+      summary: aiSkeptic ? "The idea includes explicit skepticism about AI, so the product needs a clear answer for where AI is optional, bounded, or unnecessary." : "The direction still needs a deliberate answer for when AI is essential versus when deterministic, local, or non-AI paths should stay available.",
+      whyItMatters: "Some teammates and users will reject products that feel casually dependent on AI. A deliberate stance reduces internal friction and market confusion.",
+      evidenceRefIds,
+      nextQuestion: "Where is AI genuinely necessary here, and where should the product stay local-first, deterministic, or optional?"
+    });
+  }
+  const issueAngles = strategicAngles.filter((angle) => angle.status !== "strong").map((angle) => angle.id);
+  const topIssue = strategicAngles.find((angle) => angle.status !== "strong") ?? strategicAngles[0];
+  const summary = issueAngles.length > 0 ? `Pressure test completed. The highest-risk angles right now are ${issueAngles.slice(0, 3).join(", ")}, and the next pass should turn those into a tighter founder wedge.` : "Pressure test completed. The direction looks operationally legible; now convert it into a narrower wedge with faster proof.";
+  const nextQuestions = dedupeStrings(strategicAngles.map((angle) => angle.nextQuestion)).slice(0, 8);
+  const confidence = Math.max(55, Math.min(92, 70 + (hasRecentProof ? 8 : 0) + (workflowAligned ? 6 : 0) - issueAngles.length * 2));
+  return {
+    assessmentId,
+    packetId,
+    packetType: "founder_direction_assessment",
+    generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    generatedBy: "founder_local_pipeline",
+    query: args.query,
+    lens,
+    summary,
+    confidence,
+    sourceRefs,
+    strategicAngles,
+    recommendedNextAction: topIssue ? `Resolve ${topIssue.title.toLowerCase()} before broadening the roadmap.` : "Turn the validated wedge into a single installable workflow and get real founder feedback this week.",
+    nextQuestions,
+    issueAngles
+  };
+}
 function gatherLocalContext(daysBack = 7) {
   const root = findProjectRoot();
   const claudeMd = safeRead(join2(root, "CLAUDE.md"));
@@ -5722,6 +5907,56 @@ var founderLocalPipelineTools = [
       } catch {
       }
       return packet;
+    }
+  },
+  {
+    name: "founder_direction_assessment",
+    description: "Pressure-test a founder direction against team shape, AI stance, build speed, installability, maintainability, workflow adoption, investor credibility, and commercialization. Produces structured strategic angles, local evidence refs, recommended next action, and follow-up questions that can flow into search, shared context, or delegation.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "Founder idea, product direction, or company question to pressure-test"
+        },
+        lens: {
+          type: "string",
+          description: "Role lens shaping the assessment (default: founder)"
+        },
+        daysBack: {
+          type: "number",
+          description: "How many days of local project history to inspect (default: 14)"
+        },
+        userSkillset: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional list of explicit team or founder skills to pressure-test against the idea"
+        },
+        interests: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional founder interests or motivations that shape direction fit"
+        },
+        constraints: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional constraints such as anti-AI preference, solo-founder limits, or regulatory concerns"
+        },
+        marketWorkflow: {
+          type: "array",
+          items: { type: "string" },
+          description: "Known workflows or tools the target users already use, such as Claude Code"
+        },
+        extraContext: {
+          type: "string",
+          description: "Extra freeform context for the pressure test"
+        }
+      },
+      required: ["query"]
+    },
+    annotations: { readOnlyHint: true },
+    handler: async (args) => {
+      return buildFounderDirectionAssessment(args);
     }
   }
 ];
@@ -8000,7 +8235,7 @@ function buildExplorationMemory(result, sourceRefs, claimRefs) {
     contradictionCount
   };
 }
-function includesAny(value, terms) {
+function includesAny2(value, terms) {
   const normalized = value.toLowerCase();
   return terms.some((term) => normalized.includes(term));
 }
@@ -8013,14 +8248,34 @@ function buildStrategicAngles(args) {
   const evidenceRefIds = args.sourceRefs.slice(0, 2).map((source) => source.id);
   const sourceRich = args.sourceRefs.filter((source) => source.status !== "discarded").length >= 2;
   const confidence = Number(args.result?.canonicalEntity?.identityConfidence ?? 0);
-  const integrationHeavy = includesAny(queryText, ["mcp", "api", "plugin", "integration", "claude code", "cursor", "workflow", "agent"]);
-  const installFriendly = includesAny(queryText, ["install", "local", "cli", "dashboard", "subscription", "service", "retention.sh"]);
-  const maintenanceHeavy = includesAny(queryText, ["maintenance", "maintain", "update", "support", "ops", "dashboard service", "subscription service"]);
-  const regulated = includesAny(queryText, ["legal", "regulatory", "healthcare", "fda", "bank", "compliance"]);
-  const aiSkeptic = includesAny(queryText, ["no ai", "without ai", "anti ai", "environment", "peace", "altruistic"]);
-  const marketAligned = includesAny(queryText, ["claude code", "developer", "team", "workflow", "founder", "agent", "dashboard"]) || includesAny(signalText, ["distribution", "workflow", "developer", "adoption"]);
+  const integrationHeavy = includesAny2(queryText, ["mcp", "api", "plugin", "integration", "claude code", "cursor", "workflow", "agent"]);
+  const installFriendly = includesAny2(queryText, ["install", "local", "cli", "dashboard", "subscription", "service", "retention.sh"]);
+  const maintenanceHeavy = includesAny2(queryText, ["maintenance", "maintain", "update", "support", "ops", "dashboard service", "subscription service"]);
+  const regulated = includesAny2(queryText, ["legal", "regulatory", "healthcare", "fda", "bank", "compliance"]);
+  const aiSkeptic = includesAny2(queryText, ["no ai", "without ai", "anti ai", "environment", "peace", "altruistic"]);
+  const constrainedTeam = includesAny2(queryText, ["specific skillset", "narrow skillset", "solo founder", "limited team", "small team"]);
+  const exposureRisk = args.lens === "founder" || includesAny2(queryText, ["stealth", "moat", "launch", "posting", "post publicly", "announce", "go public", "marketing", "reveal"]);
+  const marketAligned = includesAny2(queryText, ["claude code", "developer", "team", "workflow", "founder", "agent", "dashboard"]) || includesAny2(signalText, ["distribution", "workflow", "developer", "adoption"]);
   const evidenceStrong = sourceRich && confidence >= 80;
   const angles = [
+    {
+      id: "stealth-moat",
+      title: "Stealth, moat, and public exposure timing",
+      status: exposureRisk ? "watch" : "unknown",
+      summary: exposureRisk ? "Before posting broadly, assume the idea is easier to copy than it feels. Stay relatively stealthy until the moat and market diligence are clearer." : "The packet does not yet establish whether public exposure helps more than it harms before the moat is proven.",
+      whyItMatters: "Premature public posting can hand the market your playbook before you have a hard-to-duplicate advantage.",
+      evidenceRefIds,
+      nextQuestion: "What are competitors actually doing today, how copyable is this, and what moat would justify posting now instead of staying quieter longer?"
+    },
+    {
+      id: "team-shape",
+      title: "Team shape and complementary gaps",
+      status: constrainedTeam ? "watch" : "unknown",
+      summary: constrainedTeam ? "The direction appears to lean on a narrow or founder-heavy skillset, which can sharpen the wedge but also exposes obvious complementary gaps." : "The packet does not yet explain whether the team shape is a true edge or an unaddressed bottleneck.",
+      whyItMatters: "Specific skillsets help when they map directly to the wedge, but they slow progress when GTM, support, or adjacent execution gaps remain implicit.",
+      evidenceRefIds,
+      nextQuestion: "Which complementary capability would most reduce risk for this direction right now?"
+    },
     {
       id: "founder-fit",
       title: "Founder-skill and credibility fit",
@@ -8097,6 +8352,56 @@ function buildStrategicAngles(args) {
     });
   }
   return angles;
+}
+function shouldRunFounderDirectionAssessment(args) {
+  if (args.lens === "founder") return true;
+  if (["weekly_reset", "important_change", "pre_delegation", "general"].includes(args.classification)) {
+    return true;
+  }
+  return includesAny2(args.query, [
+    "pressure-test",
+    "team fit",
+    "founder fit",
+    "claude code",
+    "install",
+    "maintain",
+    "subscription",
+    "dashboard",
+    "investor",
+    "credibility",
+    "adoption",
+    "ai",
+    "environment",
+    "stealth",
+    "moat",
+    "post publicly",
+    "announce",
+    "sell"
+  ]);
+}
+function mergeFounderDirectionAssessment(result, assessment) {
+  if (!assessment || typeof assessment !== "object") return result;
+  const mergedSourceRefs = dedupeBy(
+    [
+      ...Array.isArray(result?.sourceRefs) ? result.sourceRefs : [],
+      ...Array.isArray(assessment.sourceRefs) ? assessment.sourceRefs : []
+    ],
+    (source) => String(source.id ?? source.href ?? source.label ?? "")
+  );
+  return {
+    ...result,
+    sourceRefs: mergedSourceRefs.length > 0 ? mergedSourceRefs : result?.sourceRefs,
+    strategicAngles: Array.isArray(assessment.strategicAngles) && assessment.strategicAngles.length > 0 ? assessment.strategicAngles : result?.strategicAngles,
+    recommendedNextAction: assessment.recommendedNextAction ?? result?.recommendedNextAction,
+    nextQuestions: Array.from(
+      /* @__PURE__ */ new Set([
+        ...Array.isArray(result?.nextQuestions) ? result.nextQuestions : [],
+        ...Array.isArray(assessment.nextQuestions) ? assessment.nextQuestions : []
+      ])
+    ).slice(0, 10),
+    uncertaintyBoundary: result?.uncertaintyBoundary ?? "The strategic pressure test mixes live search output with local project evidence. Treat it as directional until the next live refresh.",
+    founderDirectionAssessment: assessment
+  };
 }
 function buildGraphArtifacts(args) {
   const graphNodes = [
@@ -9485,6 +9790,26 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
         impact: "moderate"
       }).catch(() => {
       });
+      const founderDirectionTool = findTool("founder_direction_assessment");
+      if (founderDirectionTool && shouldRunFounderDirectionAssessment({
+        query: query.trim(),
+        lens: resolvedLens,
+        classification: classification.type
+      })) {
+        const directionTrace = traceStep("tool_call", "founder_direction_assessment");
+        try {
+          const directionAssessment = await callTool("founder_direction_assessment", {
+            query: query.trim(),
+            lens: resolvedLens,
+            daysBack: daysBack ?? 14,
+            marketWorkflow: ["Claude Code", "NodeBench MCP", "team dashboard"]
+          });
+          result = mergeFounderDirectionAssessment(result, directionAssessment);
+          directionTrace.ok(`angles=${directionAssessment?.strategicAngles?.length ?? 0}`);
+        } catch (error) {
+          directionTrace.error(error?.message ?? "direction assessment failed");
+        }
+      }
       let judgeVerdict = null;
       try {
         const judge = await getJudge();
@@ -9721,6 +10046,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       "founder_local_weekly_reset",
       "founder_local_synthesize",
       "founder_local_gather",
+      "founder_direction_assessment",
       "run_recon",
       "enrich_entity",
       "detect_contradictions",
