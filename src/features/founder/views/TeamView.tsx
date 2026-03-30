@@ -69,6 +69,22 @@ export default function TeamView() {
 
   const currentPeerId = "peer:founder:local";
 
+  // Ensure current user always appears in the peer list
+  const selfPeer = {
+    peerId: currentPeerId,
+    product: "nodebench",
+    workspaceId: "local",
+    surface: "web" as const,
+    role: "compiler" as const,
+    capabilities: ["publish", "delegate", "approve"],
+    status: "active" as const,
+    lastHeartbeatAt: new Date().toISOString(),
+    summary: { currentTask: "Team coordination" },
+  };
+  const allPeers = peers.some((p) => p.peerId === currentPeerId)
+    ? peers
+    : [selfPeer, ...peers];
+
   // Role assignments (would be persisted in real impl)
   const [peerRoles, setPeerRoles] = useState<Record<string, TeamRole[]>>({
     "peer:founder:local": ["founder"],
@@ -159,7 +175,7 @@ export default function TeamView() {
 
         {/* Peer list */}
         <div className="overflow-y-auto" style={{ height: "calc(100% - 120px)" }}>
-          {peers.length === 0 ? (
+          {allPeers.length === 0 ? (
             <div className="p-4 text-center">
               <UserPlus className="mx-auto h-8 w-8 text-white/10" />
               <p className="mt-2 text-xs text-white/30">No peers connected</p>
@@ -169,7 +185,7 @@ export default function TeamView() {
             </div>
           ) : (
             <div className="space-y-0.5 p-1">
-              {peers.map((peer) => (
+              {allPeers.map((peer) => (
                 <button
                   key={peer.peerId}
                   type="button"
