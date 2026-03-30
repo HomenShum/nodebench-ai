@@ -19,6 +19,10 @@ import { Request, Response, Router } from "express";
 import { getDb, genId } from "../../packages/mcp-local/src/db.js";
 import type { McpTool } from "../../packages/mcp-local/src/types.js";
 import {
+  detectFounderCompanyMode,
+  getFounderRolePacketDefault,
+} from "../../packages/mcp-local/src/tools/founderOperatingModel.js";
+import {
   getSyncBridgeStatus,
   linkDurableObjects,
   recordExecutionReceipt,
@@ -38,6 +42,171 @@ const LENS_PERSONA_MAP: Record<string, string> = {
   legal: "LEGAL_COMPLIANCE",
   student: "SIMPLIFIED_RESEARCH",
 };
+
+const GENERIC_WORKSPACE_LABELS = new Set(["your workspace", "workspace"]);
+
+function extractBrandPrefix(value?: string): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim().replace(/^#\s*/, "");
+  if (!trimmed) return undefined;
+  return trimmed.split(/\s+[—–-]\s+/)[0]?.trim() || undefined;
+}
+
+function normalizeDisplayName(value?: string): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const lower = trimmed.toLowerCase();
+  if (GENERIC_WORKSPACE_LABELS.has(lower)) return undefined;
+  if (["nodebench", "nodebench ai", "nodebench-ai", "nodebench mcp", "nodebench-mcp", "nodebench_mcp"].includes(lower)) {
+    return "NodeBench";
+  }
+  return trimmed;
+}
+
+function toFounderRole(lens: string): "founder" | "banker" | "ceo" | "investor" | "student" | "legal" {
+  if (lens === "banker" || lens === "ceo" || lens === "investor" || lens === "student" || lens === "legal") {
+    return lens;
+  }
+  return "founder";
+}
+
+function normalizeWorkspaceName(value?: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  return normalizeDisplayName(value);
+}
+
+function inferOwnCompanyName(result: any): string | undefined {
+  return normalizeWorkspaceName(result?.identity?.projectName)
+    ?? normalizeWorkspaceName(result?.publicSurfaces?.indexHtmlSiteName)
+    ?? normalizeWorkspaceName(extractBrandPrefix(result?.publicSurfaces?.indexHtmlTitle))
+    ?? normalizeWorkspaceName(result?.canonicalEntity?.name)
+    ?? normalizeWorkspaceName(result?.companyReadinessPacket?.identity?.companyName)
+    ?? normalizeWorkspaceName(result?.companyNamingPack?.recommendedName)
+    ?? normalizeWorkspaceName(result?.rawPacket?.company?.name)
+    ?? normalizeWorkspaceName(result?.localContext?.company?.name)
+    ?? normalizeWorkspaceName(result?.identity?.packageName);
+}
+
+function resolveCompanyMode(args: {
+  query: string;
+  lens: string;
+  classification: string;
+  result: any;
+}): "own_company" | "external_company" | "mixed_comparison" {
+  const hasPrivateContext = args.lens === "founder"
+    && ["weekly_reset", "pre_delegation", "important_change", "founder_progression", "general"].includes(args.classification);
+  return detectFounderCompanyMode({
+    query: args.query,
+    canonicalEntity: inferOwnCompanyName(args.result) ?? args.result?.canonicalEntity?.name,
+    hasPrivateContext,
+  });
+}
+
+function resolveEffectiveClassification(args: {
+  query: string;
+  lens: string;
+  classification: string;
+  result: any;
+}): string {
+  if (args.classification !== "general") return args.classification;
+  const companyMode = resolveCompanyMode(args);
+  if (args.lens === "founder" && args.classification === "general") {
+    if (companyMode === "own_company") return "founder_progression";
+    if (companyMode === "mixed_comparison") return "mixed_comparison";
+  }
+  return args.classification;
+}
+
+function resolveEffectivePacketType(args: {
+  lens: string;
+  classification: string;
+  result: any;
+}): string {
+  const explicitPacketType = typeof args.result?.packetType === "string" ? args.result.packetType : "";
+  if (explicitPacketType && explicitPacketType !== "general_packet") return explicitPacketType;
+  if (args.classification !== "general") return `${args.classification}_packet`;
+  const routedPacketType = args.result?.operatingModel?.packetRouter?.packetType;
+  if (typeof routedPacketType === "string" && routedPacketType.length > 0) return routedPacketType;
+  return getFounderRolePacketDefault(toFounderRole(args.lens)).defaultPacketType;
+}
+
+function normalizeFounderIdentity(args: {
+  query: string;
+  lens: string;
+  classification: string;
+  result: any;
+}): { classification: string; packetType: string; entityName?: string } {
+  const classification = resolveEffectiveClassification(args);
+  const packetType = resolveEffectivePacketType({
+    lens: args.lens,
+    classification,
+    result: args.result,
+  });
+  const companyMode = resolveCompanyMode({ ...args, classification });
+  const entityName = companyMode === "own_company"
+    ? inferOwnCompanyName(args.result) ?? "Your Company"
+    : inferOwnCompanyName(args.result);
+  return { classification, packetType, entityName };
+}
+
+function normalizeOwnCompanyFounderPayload(args: {
+  query: string;
+  lens: string;
+  classification: string;
+  result: any;
+}): any {
+  const normalizedIdentity = normalizeFounderIdentity(args);
+  const companyMode = resolveCompanyMode({
+    query: args.query,
+    lens: args.lens,
+    classification: normalizedIdentity.classification,
+    result: args.result,
+  });
+  const entityName = normalizedIdentity.entityName;
+  if (companyMode !== "own_company" || !entityName) return args.result;
+
+  const namingPack = typeof args.result?.companyNamingPack === "object" ? args.result.companyNamingPack : undefined;
+  const companyReadinessPacket = typeof args.result?.companyReadinessPacket === "object" ? args.result.companyReadinessPacket : undefined;
+  const shareableArtifacts = Array.isArray(args.result?.shareableArtifacts)
+    ? args.result.shareableArtifacts.map((artifact: any) => ({
+        ...artifact,
+        payload:
+          artifact?.payload && typeof artifact.payload === "object"
+            ? { ...artifact.payload, company: entityName }
+            : artifact?.payload,
+      }))
+    : args.result?.shareableArtifacts;
+
+  return {
+    ...args.result,
+    canonicalEntity: {
+      ...(typeof args.result?.canonicalEntity === "object" ? args.result.canonicalEntity : {}),
+      name: entityName,
+    },
+    companyNamingPack: namingPack
+      ? {
+          ...namingPack,
+          recommendedName: entityName,
+          suggestedNames: Array.from(new Set([entityName, ...(Array.isArray(namingPack.suggestedNames) ? namingPack.suggestedNames : [])])),
+          starterProfile:
+            namingPack.starterProfile && typeof namingPack.starterProfile === "object"
+              ? { ...namingPack.starterProfile, companyName: entityName }
+              : namingPack.starterProfile,
+        }
+      : namingPack,
+    companyReadinessPacket: companyReadinessPacket
+      ? {
+          ...companyReadinessPacket,
+          identity:
+            companyReadinessPacket.identity && typeof companyReadinessPacket.identity === "object"
+              ? { ...companyReadinessPacket.identity, companyName: entityName }
+              : companyReadinessPacket.identity,
+        }
+      : companyReadinessPacket,
+    shareableArtifacts,
+  };
+}
 
 type SearchTraceEntry = {
   step: string;
@@ -455,10 +624,26 @@ function mergeFounderDirectionAssessment(result: any, assessment: any): any {
 
   return {
     ...result,
+    canonicalEntity: {
+      ...result?.canonicalEntity,
+      ...assessment?.canonicalEntity,
+      name: inferOwnCompanyName({
+        ...result,
+        ...assessment,
+        canonicalEntity: {
+          ...result?.canonicalEntity,
+          ...assessment?.canonicalEntity,
+        },
+      }) ?? result?.canonicalEntity?.name ?? assessment?.canonicalEntity?.name,
+    },
     sourceRefs: mergedSourceRefs.length > 0 ? mergedSourceRefs : result?.sourceRefs,
     strategicAngles: Array.isArray(assessment.strategicAngles) && assessment.strategicAngles.length > 0
       ? assessment.strategicAngles
       : result?.strategicAngles,
+    packetType:
+      assessment?.operatingModel?.packetRouter?.packetType
+      ?? result?.operatingModel?.packetRouter?.packetType
+      ?? result?.packetType,
     recommendedNextAction: assessment.recommendedNextAction ?? result?.recommendedNextAction,
     nextQuestions: Array.from(
       new Set([
@@ -597,15 +782,32 @@ function toProofStatus(sourceRefs: any[], answerBlocks: any[], judgeVerdict: any
 
 function buildResultPacket(args: {
   query: string;
+  lens: string;
   result: any;
   classification: string;
   entityFallback?: string | null;
 }): Record<string, unknown> {
-  const result = args.result ?? {};
+  const result = normalizeOwnCompanyFounderPayload({
+    query: args.query,
+    lens: args.lens,
+    classification: args.classification,
+    result: args.result ?? {},
+  });
   const sourceRefs = Array.isArray(result.sourceRefs) ? result.sourceRefs : [];
+  const normalizedIdentity = normalizeFounderIdentity({
+    query: args.query,
+    lens: args.lens,
+    classification: args.classification,
+    result,
+  });
+  const entityName =
+    normalizedIdentity.entityName
+    ?? result.canonicalEntity?.name
+    ?? args.entityFallback
+    ?? "NodeBench";
   return {
     query: args.query,
-    entityName: result.canonicalEntity?.name ?? args.entityFallback ?? "NodeBench",
+    entityName,
     answer: result.canonicalEntity?.canonicalMission ?? "",
     confidence: result.canonicalEntity?.identityConfidence ?? 70,
     sourceCount: sourceRefs.length,
@@ -636,8 +838,8 @@ function buildResultPacket(args: {
       note: comparable.note ?? "",
     })),
     packetId: result.packetId,
-    packetType: result.packetType ?? `${args.classification}_packet`,
-    canonicalEntity: result.canonicalEntity?.name ?? args.entityFallback ?? "NodeBench",
+    packetType: normalizedIdentity.packetType,
+    canonicalEntity: entityName,
     sourceRefs: result.sourceRefs,
     claimRefs: result.claimRefs,
     answerBlocks: result.answerBlocks,
@@ -681,12 +883,18 @@ function decorateResultWithProof(args: {
   packetId: string;
 }): { result: any; packet: Record<string, unknown>; persona: string } {
   const persona = LENS_PERSONA_MAP[args.lens] ?? "FOUNDER_STRATEGY";
-  const sourceRefs = normalizeSourceRefs(args.result);
-  const claimRefs = normalizeClaimRefs(args.result, sourceRefs);
-  const answerBlocks = normalizeAnswerBlocks(args.result, sourceRefs, claimRefs);
+  const baseResult = normalizeOwnCompanyFounderPayload({
+    query: args.query,
+    lens: args.lens,
+    classification: args.classification,
+    result: args.result,
+  });
+  const sourceRefs = normalizeSourceRefs(baseResult);
+  const claimRefs = normalizeClaimRefs(baseResult, sourceRefs);
+  const answerBlocks = normalizeAnswerBlocks(baseResult, sourceRefs, claimRefs);
   const recommendedNextAction =
-    args.result?.recommendedNextAction ??
-    (Array.isArray(args.result?.nextActions) ? args.result.nextActions[0]?.action : undefined);
+    baseResult?.recommendedNextAction ??
+    (Array.isArray(baseResult?.nextActions) ? baseResult.nextActions[0]?.action : undefined);
   const { graphNodes, graphEdges, graphSummary } = buildGraphArtifacts({
     query: args.query,
     lens: args.lens,
@@ -702,22 +910,36 @@ function decorateResultWithProof(args: {
   const strategicAngles = buildStrategicAngles({
     query: args.query,
     lens: args.lens,
-    result: args.result,
+    result: baseResult,
     sourceRefs,
   });
   const strategicQuestions = strategicAngles
     .map((angle) => (typeof angle.nextQuestion === "string" ? angle.nextQuestion : ""))
     .filter(Boolean);
   const uncertaintyBoundary =
-    args.result?.uncertaintyBoundary ??
+    baseResult?.uncertaintyBoundary ??
     (sourceRefs.length > 0
       ? "Citations reflect the sources explored in this run. Treat the packet as directional until the next live refresh."
       : "This answer is missing durable citations. Treat it as provisional until more source coverage is available.");
+  const normalizedIdentity = normalizeFounderIdentity({
+    query: args.query,
+    lens: args.lens,
+    classification: args.classification,
+    result: baseResult,
+  });
+  const canonicalEntityName =
+    normalizedIdentity.entityName
+    ?? baseResult?.canonicalEntity?.name
+    ?? baseResult?.companyReadinessPacket?.identity?.companyName;
 
   const decoratedResult = {
-    ...args.result,
+    ...baseResult,
     packetId: args.packetId,
-    packetType: args.result?.packetType ?? `${args.classification}_packet`,
+    packetType: normalizedIdentity.packetType,
+    canonicalEntity: {
+      ...(typeof baseResult?.canonicalEntity === "object" ? baseResult.canonicalEntity : {}),
+      name: canonicalEntityName ?? baseResult?.canonicalEntity?.name,
+    },
     sourceRefs,
     claimRefs,
     answerBlocks,
@@ -727,7 +949,7 @@ function decorateResultWithProof(args: {
     uncertaintyBoundary,
     recommendedNextAction,
     nextQuestions: Array.from(
-      new Set([...(Array.isArray(args.result?.nextQuestions) ? args.result.nextQuestions : []), ...strategicQuestions]),
+      new Set([...(Array.isArray(baseResult?.nextQuestions) ? baseResult.nextQuestions : []), ...strategicQuestions]),
     ).slice(0, 8),
     graphNodes,
     graphEdges,
@@ -738,9 +960,10 @@ function decorateResultWithProof(args: {
     result: decoratedResult,
     packet: buildResultPacket({
       query: args.query,
+      lens: args.lens,
       result: decoratedResult,
-      classification: args.classification,
-      entityFallback: args.result?.canonicalEntity?.name,
+      classification: normalizedIdentity.classification,
+      entityFallback: canonicalEntityName ?? baseResult?.canonicalEntity?.name,
     }),
     persona,
   };
@@ -1947,6 +2170,10 @@ Return ONLY valid JSON:
           // General query — gather local context + optional web enrichment for
           // scenario/temporal/cross-domain queries that need external data
           const lqGeneral = query.trim().toLowerCase();
+          const companyMode = detectFounderCompanyMode({
+            query: query.trim(),
+            hasPrivateContext: resolvedLens === "founder",
+          });
           const needsWebEnrichment = /\b(what happens|what if|simulate|scenario|regulatory|funding rounds|defense|banks|healthcare|fintech|climate|supply chain|industry|sector|market|last week|this quarter|since january|past year|next \d|Q[1-4]|20\d{2})\b/i.test(lqGeneral);
 
           const gt = traceStep("tool_call", "founder_local_gather");
@@ -2036,11 +2263,25 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
 
           const genSummary = gg.summary ?? g.company?.canonicalMission ?? g.summary
             ?? (genWebSnippets.length > 0 ? genWebSnippets.slice(0, 2).join(" ").slice(0, 400) : `Workspace intelligence for: "${query.trim()}". Upload documents, connect agents, or search specific entities for deeper results.`);
+          const companyName =
+            normalizeWorkspaceName(g.company?.name)
+            ?? normalizeWorkspaceName(g.companyReadinessPacket?.identity?.companyName)
+            ?? normalizeWorkspaceName(g.identity?.projectName)
+            ?? normalizeWorkspaceName(g.publicSurfaces?.indexHtmlSiteName)
+            ?? normalizeWorkspaceName(extractBrandPrefix(g.publicSurfaces?.indexHtmlTitle))
+            ?? normalizeWorkspaceName(g.identity?.packageName)
+            ?? (companyMode === "own_company" ? "Your Company" : "Your Workspace");
+          const founderSummary = companyMode === "own_company"
+            ? (gg.summary
+              ?? g.company?.canonicalMission
+              ?? g.summary
+              ?? `Founder operating view for ${companyName}. This run should end in the next three moves, the main contradiction, and what still needs evidence before wider sharing.`)
+            : genSummary;
 
           result = {
             canonicalEntity: {
-              name: g.company?.name ?? "Your Workspace",
-              canonicalMission: genSummary,
+              name: companyName,
+              canonicalMission: founderSummary,
               identityConfidence: g.company?.identityConfidence ?? (genGemini ? 65 : 50),
             },
             memo: true,
@@ -2048,16 +2289,29 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
               { description: `Query received: "${query.trim().slice(0, 60)}"`, date: new Date().toISOString().slice(0, 10) },
             ],
             signals: gSignals.length > 0 ? gSignals : [
-              { name: "Current workspace context", direction: "neutral", impact: "high" },
+              { name: companyMode === "own_company" ? "Current founder/company context" : "Current workspace context", direction: "neutral", impact: "high" },
               { name: "Agent connection status", direction: "neutral", impact: "medium" },
             ],
             contradictions: gContradictions.length > 0 ? gContradictions : [
-              { claim: "Limited context available", evidence: "General queries work best with local context. Try a founder weekly reset or search a specific entity for richer results." },
+              {
+                claim: companyMode === "own_company" ? "Founder packet still needs more private evidence" : "Limited context available",
+                evidence: companyMode === "own_company"
+                  ? "This own-company run should gather stronger local context, current contradictions, and one reusable packet before broad sharing."
+                  : "General queries work best with local context. Try a founder weekly reset or search a specific entity for richer results.",
+              },
             ],
             nextActions: gActions.length > 0 ? gActions : [
-              { action: "Generate a founder weekly reset for structured insights" },
-              { action: "Search a specific company for entity intelligence" },
-              { action: "Upload documents to build your knowledge base" },
+              ...(companyMode === "own_company"
+                ? [
+                    { action: "Generate one founder progression packet and use it in a real decision this week" },
+                    { action: "Resolve the main contradiction before widening sharing or delegation" },
+                    { action: "Export the Slack one-page report only after the moat and evidence story are clearer" },
+                  ]
+                : [
+                    { action: "Generate a founder weekly reset for structured insights" },
+                    { action: "Search a specific company for entity intelligence" },
+                    { action: "Upload documents to build your knowledge base" },
+                  ]),
             ],
             nextQuestions: [
               "Generate my founder weekly reset — what changed, main contradiction, next 3 moves",
@@ -2136,15 +2390,32 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
         packetId,
       });
       result = proof.result;
+      const normalizedIdentity = normalizeFounderIdentity({
+        query: query.trim(),
+        lens: resolvedLens,
+        classification: classification.type,
+        result,
+      });
+      const effectiveClassification = normalizedIdentity.classification;
+      if (normalizedIdentity.entityName) {
+        result = {
+          ...result,
+          canonicalEntity: {
+            ...(typeof result?.canonicalEntity === "object" ? result.canonicalEntity : {}),
+            name: normalizedIdentity.entityName,
+          },
+        };
+      }
+      result.packetType = normalizedIdentity.packetType;
 
       // Finalize trace
       const assembleTrace = traceStep("assemble_response");
       assembleTrace.ok(`latency=${latencyMs}ms`);
 
       // ── Save session context for multi-turn follow-ups ──
-      const entityName = result?.canonicalEntity?.name ?? classification.entity ?? "";
+      const entityName = result?.canonicalEntity?.name ?? normalizedIdentity.entityName ?? classification.entity ?? "";
       if (entityName) {
-        setSessionContext(sessionKey, entityName, classification.type, result);
+        setSessionContext(sessionKey, entityName, effectiveClassification, result);
       }
 
       // ── Ambient intelligence feedback loop ──
@@ -2176,7 +2447,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
           query: query.trim(),
           lens: resolvedLens,
           persona: proof.persona,
-          classification: classification.type,
+          classification: effectiveClassification,
           result,
           packet: proof.packet,
           trace,
@@ -2192,7 +2463,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       // Use the pre-computed contextBundle (computed before dispatch)
       const payload = {
         success: true,
-        classification: classification.type,
+        classification: effectiveClassification,
         lens: resolvedLens,
         entity: classification.entity ?? null,
         latencyMs,

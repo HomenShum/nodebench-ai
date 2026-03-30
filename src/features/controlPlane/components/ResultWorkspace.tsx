@@ -14,7 +14,7 @@
  * Adapts section ordering and emphasis based on active lens.
  */
 
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
   saveMemoToStorage,
   generateMemoId,
@@ -59,14 +59,21 @@ function Section({
   title,
   children,
   defaultOpen = true,
+  openSignal,
 }: {
   id: string;
   icon: React.ElementType;
   title: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
+  openSignal?: string | number | null;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  useEffect(() => {
+    if (openSignal !== undefined && openSignal !== null) {
+      setOpen(true);
+    }
+  }, [openSignal]);
   return (
     <section
       id={`result-${id}`}
@@ -305,6 +312,16 @@ export const ResultWorkspace = memo(function ResultWorkspace({
   );
   const handoffBusy =
     handoffState?.status === "publishing" || handoffState?.status === "delegating";
+  const handoffSignal =
+    handoffState?.status && handoffState.status !== "idle"
+      ? [handoffState.status, handoffState.contextId, handoffState.taskId, handoffState.message]
+          .filter(Boolean)
+          .join(":")
+      : null;
+  const handoffTone =
+    handoffState?.status === "error"
+      ? "border-rose-500/20 bg-rose-500/10 text-rose-300"
+      : "border-emerald-500/20 bg-emerald-500/10 text-emerald-200";
 
   const activeAnswerBlock = useMemo(
     () =>
@@ -498,6 +515,31 @@ export const ResultWorkspace = memo(function ResultWorkspace({
           ) : null}
         </div>
       </div>
+
+      {handoffState?.status && handoffState.status !== "idle" ? (
+        <div className={`rounded-xl border px-4 py-3 ${handoffTone}`}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.16em] opacity-80">
+                Shared Context Status
+              </div>
+              <div className="mt-1 text-sm font-medium">{handoffState.message}</div>
+              {(handoffState.contextId || handoffState.taskId) ? (
+                <div className="mt-1 text-xs opacity-90">
+                  {handoffState.contextId ? `Context ${handoffState.contextId}` : ""}
+                  {handoffState.contextId && handoffState.taskId ? " · " : ""}
+                  {handoffState.taskId ? `Task ${handoffState.taskId}` : ""}
+                </div>
+              ) : null}
+            </div>
+            {handoffState.targetLabel ? (
+              <span className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]">
+                {handoffState.targetLabel}
+              </span>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       {/* ── Sources bar ───────────────────────────────────────────────────── */}
       {(primaryRisk || primaryIssueAngle || shouldShowShareReadiness) && (
@@ -1628,7 +1670,13 @@ export const ResultWorkspace = memo(function ResultWorkspace({
 
       {/* ── 8. Keep Warm / Monitor ─────────────────────────────────────────── */}
       {(onPublishSharedContext || onDelegate) && (
-        <Section id="delegate" icon={Share2} title="Publish and Delegate" defaultOpen={false}>
+        <Section
+          id="delegate"
+          icon={Share2}
+          title="Publish and Delegate"
+          defaultOpen={false}
+          openSignal={handoffSignal}
+        >
           <div className="flex flex-wrap gap-2">
             {onPublishSharedContext ? (
               <button
@@ -1669,11 +1717,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
           </p>
           {handoffState?.status && handoffState.status !== "idle" ? (
             <div
-              className={`mt-3 rounded-xl border px-3 py-3 text-sm ${
-                handoffState.status === "error"
-                  ? "border-rose-500/20 bg-rose-500/10 text-rose-300"
-                  : "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
-              }`}
+              className={`mt-3 rounded-xl border px-3 py-3 text-sm ${handoffTone}`}
             >
               <div className="font-medium">{handoffState.message}</div>
               {(handoffState.contextId || handoffState.taskId) ? (

@@ -83,6 +83,12 @@ const founderPacket: ResultPacket = {
   proofStatus: "verified",
   uncertaintyBoundary: "Requires refreshed live data for public claims.",
   recommendedNextAction: "Ship the founder packet and benchmark proof.",
+  nextQuestions: [
+    "Generate my founder weekly reset — what changed, main contradiction, next 3 moves",
+    "What moat justifies going public now?",
+    "Build a pre-delegation packet for my agent",
+    "Should the first wedge land as a local MCP tool, a hosted dashboard, or a hybrid with local truth and web review?",
+  ],
   strategicAngles: [
     {
       id: "stealth-moat",
@@ -203,6 +209,13 @@ const founderPacket: ResultPacket = {
     estimatedSavings: { timePercent: 38, costPercent: 24 },
     verdict: "valid",
   },
+  risks: [
+    {
+      title: "Routing still drifts into generic workspace mode",
+      description: "Own-company prompts should not look generic.",
+      falsification: "If deeper founder prompts keep resolving to NodeBench and founder progression packets, the drift is resolved.",
+    },
+  ],
   operatingModel: {
     executionOrder: [
       { id: "ingest", label: "Ingest", description: "Collect founder inputs." },
@@ -344,26 +357,98 @@ describe("ResultWorkspace", () => {
     render(<ResultWorkspace packet={founderPacket} lens="founder" />);
 
     expect(screen.getByText("Founder Progression Layer")).toBeInTheDocument();
+    expect(screen.getByText("Company Profile Snapshot")).toBeInTheDocument();
     expect(screen.getByText("Pricing and Unlock Progress")).toBeInTheDocument();
     expect(screen.getByText("Vertical Diligence Pack")).toBeInTheDocument();
     expect(screen.getByText("Operating Model and Packet Router")).toBeInTheDocument();
     expect(screen.getByText("Canonical Execution Order")).toBeInTheDocument();
     expect(screen.getByText("Workflow Compare")).toBeInTheDocument();
+    expect(screen.getByText("Guided Follow-Up Chain")).toBeInTheDocument();
+    expect(screen.getByText("Main Contradiction To Resolve")).toBeInTheDocument();
+    expect(screen.getByText("Share Readiness")).toBeInTheDocument();
     expect(screen.getByText("Benchmark Proof and Distribution")).toBeInTheDocument();
     expect(screen.getByText("Source Trust Policy")).toBeInTheDocument();
     expect(screen.getByText("Benchmark Oracles")).toBeInTheDocument();
     expect(screen.getByText("AI / Software Diligence Pack")).toBeInTheDocument();
+    expect(screen.queryByText("Signal Forge")).not.toBeInTheDocument();
+    expect(screen.getByText("Generate my founder weekly reset — what changed, main contradiction, next 3 moves")).toBeInTheDocument();
+    expect(screen.queryAllByText("What moat justifies going public now?")).toHaveLength(1);
   });
 
   it("renders the Slack export action and supports source focus interaction", () => {
     render(<ResultWorkspace packet={founderPacket} lens="founder" />);
 
-    fireEvent.click(screen.getByRole("button", { name: /export packet/i }));
     expect(screen.getByRole("button", { name: /report for slack/i })).toBeInTheDocument();
 
     const secondSource = screen.getByRole("button", { name: /Source: Benchmark note/i });
     fireEvent.focus(secondSource);
 
     expect(screen.getAllByText("Secondary benchmark excerpt for keyboard focus.").length).toBeGreaterThan(0);
+  });
+
+  it("keeps extra follow-up prompts collapsed until requested", () => {
+    render(<ResultWorkspace packet={founderPacket} lens="founder" />);
+
+    expect(screen.queryByText("Should the first wedge land as a local MCP tool, a hosted dashboard, or a hybrid with local truth and web review?")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /show 1 more prompts/i }));
+
+    expect(screen.getByText("Should the first wedge land as a local MCP tool, a hosted dashboard, or a hybrid with local truth and web review?")).toBeInTheDocument();
+  });
+
+  it("routes contradiction and share-readiness callouts into follow-up actions", () => {
+    const onFollowUp = vi.fn();
+    render(<ResultWorkspace packet={founderPacket} lens="founder" onFollowUp={onFollowUp} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /resolve now/i }));
+    expect(onFollowUp).toHaveBeenCalledWith("What moat justifies going public now?");
+
+    fireEvent.click(screen.getByRole("button", { name: /pressure-test share timing/i }));
+    expect(onFollowUp).toHaveBeenCalledWith("What moat justifies going public now?");
+  });
+
+  it("publishes and delegates direct issue actions from the top founder callouts", () => {
+    const onPublishStrategicAngle = vi.fn();
+    const onDelegateStrategicAngle = vi.fn();
+    render(
+      <ResultWorkspace
+        packet={founderPacket}
+        lens="founder"
+        onPublishStrategicAngle={onPublishStrategicAngle}
+        onDelegateStrategicAngle={onDelegateStrategicAngle}
+      />,
+    );
+
+    const publishButtons = screen.getAllByRole("button", { name: /publish issue packet/i });
+    const delegateButtons = screen.getAllByRole("button", { name: /delegate issue/i });
+
+    fireEvent.click(publishButtons[0]);
+    expect(onPublishStrategicAngle).toHaveBeenCalledWith("stealth-moat");
+
+    fireEvent.click(delegateButtons[0]);
+    expect(onDelegateStrategicAngle).toHaveBeenCalledWith("stealth-moat", "claude_code");
+  });
+
+  it("surfaces shared-context status above the fold and auto-opens handoff details", () => {
+    render(
+      <ResultWorkspace
+        packet={founderPacket}
+        lens="founder"
+        onPublishSharedContext={vi.fn()}
+        onDelegate={vi.fn()}
+        handoffState={{
+          status: "published",
+          message: "Strategic issue packet is live and ready for a worker.",
+          contextId: "context:issue:stealth-moat",
+          targetLabel: "Claude Code",
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Shared Context Status")).toBeInTheDocument();
+    expect(screen.getAllByText("Strategic issue packet is live and ready for a worker.").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Context context:issue:stealth-moat").length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: /publish to shared context/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /delegate to claude code/i })).toBeInTheDocument();
   });
 });

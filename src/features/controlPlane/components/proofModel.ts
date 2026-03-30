@@ -106,6 +106,39 @@ function buildPacketId(packet: ResultPacket): string {
   );
 }
 
+function isGenericWorkspaceLabel(value?: string): boolean {
+  if (!value) return true;
+  const normalized = value.trim().toLowerCase();
+  return ["your workspace", "workspace", "nodebench-mcp", "nodebench mcp"].includes(normalized);
+}
+
+function resolveDisplayEntityName(packet: ResultPacket): string {
+  if (!isGenericWorkspaceLabel(packet.entityName)) return packet.entityName;
+  const companyName = packet.companyReadinessPacket?.identity?.companyName;
+  if (companyName) return companyName;
+  const recommendedName = packet.companyNamingPack?.recommendedName;
+  if (recommendedName) return recommendedName;
+  const canonicalEntity =
+    typeof packet.canonicalEntity === "string"
+      ? packet.canonicalEntity
+      : undefined;
+  if (canonicalEntity && !isGenericWorkspaceLabel(canonicalEntity)) return canonicalEntity;
+  if (packet.operatingModel?.packetRouter.companyMode === "own_company") return "Your Company";
+  return packet.entityName || "NodeBench";
+}
+
+function resolvePacketType(packet: ResultPacket, lens: LensId): string {
+  if (packet.packetType && packet.packetType !== "general_packet") return packet.packetType;
+  const routed = packet.operatingModel?.packetRouter.packetType;
+  if (routed) return routed;
+  if (lens === "founder") return "founder_progression_packet";
+  if (lens === "banker") return "banking_readiness_packet";
+  if (lens === "ceo" || lens === "investor") return "operating_brief";
+  if (lens === "legal") return "diligence_packet";
+  if (lens === "student") return "study_brief";
+  return packet.packetType ?? "founder_packet";
+}
+
 function inferDomain(href?: string): string | undefined {
   if (!href) return undefined;
   try {
@@ -715,49 +748,60 @@ export function ensureProofPacket(
   packet: ResultPacket,
   lens: LensId = "founder",
 ): ProofReadyResultPacket {
-  const sources = normalizeSources(packet);
-  const claims = buildClaimRefs(packet, sources);
-  const answerBlocks = buildAnswerBlocks(packet, sources, claims);
-  const memory = buildExplorationMemory(packet, sources, claims, answerBlocks);
-  const proofStatus = packet.proofStatus ?? inferProofStatus(packet, sources, answerBlocks);
+  const normalizedEntityName = resolveDisplayEntityName(packet);
+  const normalizedPacketType = resolvePacketType(packet, lens);
+  const identityPacket: ResultPacket = {
+    ...packet,
+    entityName: normalizedEntityName,
+    canonicalEntity:
+      typeof packet.canonicalEntity === "string" && !isGenericWorkspaceLabel(packet.canonicalEntity)
+        ? packet.canonicalEntity
+        : normalizedEntityName,
+    packetType: normalizedPacketType,
+  };
+  const sources = normalizeSources(identityPacket);
+  const claims = buildClaimRefs(identityPacket, sources);
+  const answerBlocks = buildAnswerBlocks(identityPacket, sources, claims);
+  const memory = buildExplorationMemory(identityPacket, sources, claims, answerBlocks);
+  const proofStatus = identityPacket.proofStatus ?? inferProofStatus(identityPacket, sources, answerBlocks);
   const graphNodes =
-    packet.graphNodes ??
-    buildGraphNodes(packet, lens, sources, claims, answerBlocks, proofStatus);
+    identityPacket.graphNodes ??
+    buildGraphNodes(identityPacket, lens, sources, claims, answerBlocks, proofStatus);
   const graphEdges =
-    packet.graphEdges ??
+    identityPacket.graphEdges ??
     buildGraphEdges(
       sources,
       claims,
       answerBlocks,
-      Boolean(packet.recommendedNextAction || packet.nextQuestions?.length),
+      Boolean(identityPacket.recommendedNextAction || identityPacket.nextQuestions?.length),
     );
-  const graphSummary = buildGraphSummary(packet, memory, graphNodes.length, graphEdges.length);
-  const strategicAngles = buildStrategicAngles(packet, sources, lens);
-  const diligencePack = packet.diligencePack ?? buildFallbackDiligencePack(packet);
-  const materialsChecklist = packet.materialsChecklist ?? diligencePack.materials.map((label, index) => ({
+  const graphSummary = buildGraphSummary(identityPacket, memory, graphNodes.length, graphEdges.length);
+  const strategicAngles = buildStrategicAngles(identityPacket, sources, lens);
+  const diligencePack = identityPacket.diligencePack ?? buildFallbackDiligencePack(identityPacket);
+  const materialsChecklist = identityPacket.materialsChecklist ?? diligencePack.materials.map((label, index) => ({
     id: `material:${index + 1}`,
     label,
     status: index === 0 ? "watch" : "missing",
     audience: index < 2 ? "internal" : "external",
     whyItMatters: `External evaluators will later ask for ${label.toLowerCase()}.`,
   }));
-  const progressionProfile = packet.progressionProfile ?? buildFallbackProgressionProfile({ ...packet, materialsChecklist }, strategicAngles);
-  const visibility = packet.visibility ?? "workspace";
-  const distributionSurfaceStatus = packet.distributionSurfaceStatus ?? [
+  const progressionProfile = identityPacket.progressionProfile ?? buildFallbackProgressionProfile({ ...identityPacket, materialsChecklist }, strategicAngles);
+  const visibility = identityPacket.visibility ?? "workspace";
+  const distributionSurfaceStatus = identityPacket.distributionSurfaceStatus ?? [
     {
       surfaceId: "mcp_cli",
       label: "MCP / CLI",
-      status: /mcp|claude code|cli|local/i.test(`${packet.query} ${packet.answer}`) ? "ready" : "partial",
+      status: /mcp|claude code|cli|local/i.test(`${identityPacket.query} ${identityPacket.answer}`) ? "ready" : "partial",
       whyItMatters: "Open-core install surface with the lowest setup friction.",
     },
     {
       surfaceId: "dashboard",
       label: "Hosted dashboard",
-      status: /dashboard|subscription|team|service/i.test(`${packet.query} ${packet.answer}`) ? "partial" : "missing",
+      status: /dashboard|subscription|team|service/i.test(`${identityPacket.query} ${identityPacket.answer}`) ? "partial" : "missing",
       whyItMatters: "Retained value and collaboration surface for paid stages.",
     },
   ];
-  const scorecards = packet.scorecards ?? [
+  const scorecards = identityPacket.scorecards ?? [
     {
       id: "two_week",
       label: "2-week scorecard",
@@ -783,7 +827,7 @@ export function ensureProofPacket(
       ],
     },
   ];
-  const shareableArtifacts = packet.shareableArtifacts ?? [
+  const shareableArtifacts = identityPacket.shareableArtifacts ?? [
     {
       id: "artifact:slack_onepage",
       type: "slack_onepage",
@@ -800,9 +844,9 @@ export function ensureProofPacket(
       },
     },
   ];
-  const benchmarkEvidence = packet.benchmarkEvidence ?? [];
-  const workflowComparison = packet.workflowComparison ?? {
-    objective: packet.query,
+  const benchmarkEvidence = identityPacket.benchmarkEvidence ?? [];
+  const workflowComparison = identityPacket.workflowComparison ?? {
+    objective: identityPacket.query,
     currentPath: [
       "Restate the founder context manually",
       "Search for comparables from scratch",
@@ -828,7 +872,7 @@ export function ensureProofPacket(
     },
     verdict: "valid",
   };
-  const operatingModel = packet.operatingModel ?? {
+  const operatingModel = identityPacket.operatingModel ?? {
     executionOrder: [
       { id: "ingest", label: "Ingest", description: "Collect the query, uploads, and allowed source context." },
       { id: "classify", label: "Classify", description: "Resolve role, company mode, and vertical before routing." },
@@ -868,8 +912,8 @@ export function ensureProofPacket(
     },
     packetRouter: {
       role: lens,
-      companyMode: packet.query.toLowerCase().includes("my company") ? "own_company" : "external_company",
-      packetType: packet.packetType ?? "founder_packet",
+      companyMode: identityPacket.query.toLowerCase().includes("my company") ? "own_company" : "external_company",
+      packetType: identityPacket.packetType ?? "founder_packet",
       artifactType: shareableArtifacts[0]?.type ?? "slack_onepage",
       shouldMonitor: true,
       shouldExport: shareableArtifacts.length > 0,
@@ -907,20 +951,20 @@ export function ensureProofPacket(
       },
     ],
   };
-  const companyNamingPack = packet.companyNamingPack ?? {
-    suggestedNames: [packet.entityName || "Northstar Labs", "Signal Forge", "Atlas Foundry"],
-    recommendedName: packet.entityName || "Northstar Labs",
+  const companyNamingPack = identityPacket.companyNamingPack ?? {
+    suggestedNames: [identityPacket.entityName || "Northstar Labs", "Signal Forge", "Atlas Foundry"],
+    recommendedName: identityPacket.entityName || "Northstar Labs",
     starterProfile: {
-      companyName: packet.entityName || "Northstar Labs",
-      oneLineDescription: packet.answer || "Founder operating system with reusable packets and workflow proof.",
+      companyName: identityPacket.entityName || "Northstar Labs",
+      oneLineDescription: identityPacket.answer || "Founder operating system with reusable packets and workflow proof.",
       categories: [diligencePack.label],
       stage: progressionProfile.currentStageLabel,
       initialCustomers: ["Founders", "Operators"],
       wedge: progressionProfile.recommendedNextAction,
     },
   };
-  const companyReadinessPacket = packet.companyReadinessPacket ?? {
-    packetId: packet.packetId ?? buildPacketId(packet),
+  const companyReadinessPacket = identityPacket.companyReadinessPacket ?? {
+    packetId: identityPacket.packetId ?? buildPacketId(identityPacket),
     visibility,
     identity: {
       companyName: companyNamingPack.recommendedName,
@@ -946,7 +990,7 @@ export function ensureProofPacket(
     distributionSurfaceStatus,
     provenance: {
       sourceRefIds: sources.map((source) => source.id),
-      confidence: packet.confidence,
+      confidence: identityPacket.confidence,
       freshness: new Date().toISOString(),
     },
     allowedDestinations: ["slack_onepage", "investor_memo", "banker_readiness", "pitchbook_like", "crunchbase_like", "yc_context"],
@@ -954,10 +998,10 @@ export function ensureProofPacket(
   };
 
   const enriched: ProofReadyResultPacket = {
-    ...packet,
-    packetId: buildPacketId(packet),
-    packetType: packet.packetType ?? "founder_packet",
-    canonicalEntity: packet.canonicalEntity ?? packet.entityName,
+    ...identityPacket,
+    packetId: buildPacketId(identityPacket),
+    packetType: identityPacket.packetType ?? "founder_packet",
+    canonicalEntity: identityPacket.canonicalEntity ?? identityPacket.entityName,
     sourceRefs: sources,
     claimRefs: claims,
     answerBlocks,

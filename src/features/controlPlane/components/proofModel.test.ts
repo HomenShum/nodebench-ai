@@ -27,7 +27,7 @@ describe("proofModel", () => {
     const enriched = ensureProofPacket(basePacket, "founder");
 
     expect(enriched.packetId).toMatch(/^pkt-/);
-    expect(enriched.packetType).toBe("founder_packet");
+    expect(enriched.packetType).toBe("founder_progression_packet");
     expect(enriched.canonicalEntity).toBe("NodeBench");
     expect(enriched.sourceRefs.length).toBeGreaterThan(0);
     expect(enriched.claimRefs.length).toBeGreaterThan(0);
@@ -54,6 +54,88 @@ describe("proofModel", () => {
     expect(enriched.operatingModel.queueTopology.length).toBeGreaterThan(0);
     expect(enriched.operatingModel.benchmarkOracles.length).toBeGreaterThan(0);
     expect(enriched.companyReadinessPacket.identity.companyName.length).toBeGreaterThan(0);
+  });
+
+  it("prefers the readiness/company identity over generic workspace labels for own-company packets", () => {
+    const enriched = ensureProofPacket(
+      {
+        ...basePacket,
+        entityName: "nodebench-mcp",
+        packetType: "general_packet",
+        operatingModel: {
+          executionOrder: [],
+          queueTopology: [],
+          sourcePolicies: [],
+          roleDefault: {
+            role: "founder",
+            defaultPacketType: "founder_progression_packet",
+            defaultArtifactType: "slack_onepage",
+            shouldMonitorByDefault: true,
+            shouldDelegateByDefault: true,
+          },
+          packetRouter: {
+            role: "founder",
+            companyMode: "own_company",
+            packetType: "founder_progression_packet",
+            artifactType: "slack_onepage",
+            shouldMonitor: true,
+            shouldExport: true,
+            shouldDelegate: true,
+            needsMoreEvidence: false,
+            requiredEvidence: [],
+            visibility: "workspace",
+            rationale: "Own-company founder packet.",
+          },
+          progressionRubric: {
+            currentStage: "foundation",
+            onTrack: false,
+            mandatorySatisfied: [],
+            mandatoryMissing: [],
+            optionalStrengths: [],
+            rationale: "Needs stronger proof.",
+          },
+          benchmarkOracles: [],
+        },
+        companyReadinessPacket: {
+          packetId: "packet:test",
+          visibility: "workspace",
+          identity: {
+            companyName: "NodeBench",
+            vertical: "AI/software",
+            subvertical: "developer and agent tooling",
+            stage: "Stage 1: Foundation",
+            mission: "Founder operating system",
+            wedge: "Founder packet workflow",
+          },
+          founderTeamCredibility: [],
+          productAndWedge: [],
+          marketAndGtm: [],
+          financialReadiness: [],
+          operatingReadiness: [],
+          diligenceEvidence: [],
+          contradictionsAndHiddenRisks: [],
+          nextUnlocks: [],
+          pricingStage: {
+            stageId: "foundation",
+            label: "Stage 1: Foundation",
+            priceLabel: "$1",
+          },
+          distributionSurfaceStatus: [],
+          provenance: {
+            sourceRefIds: [],
+            confidence: 84,
+            freshness: new Date().toISOString(),
+          },
+          allowedDestinations: ["slack_onepage"],
+          sensitivity: "workspace",
+        },
+      },
+      "founder",
+    );
+
+    expect(enriched.entityName).toBe("NodeBench");
+    expect(enriched.canonicalEntity).toBe("NodeBench");
+    expect(enriched.packetType).toBe("founder_progression_packet");
   });
 
   it("uses the selected lens when building live progress and proof graph state", () => {

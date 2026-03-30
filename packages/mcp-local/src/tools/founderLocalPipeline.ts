@@ -19,6 +19,7 @@ import type { McpTool } from "../types.js";
 import { getDb, genId } from "../db.js";
 import {
   buildFounderOperatingModel,
+  detectFounderCompanyMode,
   type FounderOperatingModel,
 } from "./founderOperatingModel.js";
 
@@ -44,6 +45,62 @@ function safeExec(cmd: string, cwd?: string): string {
   }
 }
 
+function extractBrandPrefix(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim().replace(/^#\s*/, "");
+  if (!trimmed) return null;
+  const prefix = trimmed.split(/\s+[—–-]\s+/)[0]?.trim() ?? "";
+  return prefix || null;
+}
+
+function normalizeWorkspaceBrand(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const lower = trimmed.toLowerCase();
+  if (["nodebench", "nodebench ai", "nodebench-ai", "nodebench mcp", "nodebench-mcp", "nodebench_mcp"].includes(lower)) {
+    return "NodeBench";
+  }
+  if (lower.endsWith("-mcp") || lower.endsWith(" mcp")) {
+    return null;
+  }
+  return trimmed;
+}
+
+function inferWorkspaceProjectName(args: {
+  siteName?: string | null;
+  title?: string | null;
+  claudeHeading?: string | null;
+  rootPackageName?: string | null;
+  packageName?: string | null;
+  projectRoot?: string | null;
+}): string | null {
+  const candidates = [
+    normalizeWorkspaceBrand(args.siteName),
+    normalizeWorkspaceBrand(extractBrandPrefix(args.title)),
+    normalizeWorkspaceBrand(extractBrandPrefix(args.claudeHeading)),
+    normalizeWorkspaceBrand(args.rootPackageName),
+    normalizeWorkspaceBrand(args.packageName),
+    normalizeWorkspaceBrand(args.projectRoot?.split(/[\\/]/).filter(Boolean).pop() ?? null),
+  ];
+  return candidates.find((candidate): candidate is string => Boolean(candidate)) ?? null;
+}
+
+function resolveWorkspaceCompanyName(ctx: GatheredContext): string | null {
+  const directCandidates = [
+    ctx.identity.projectName,
+    ctx.publicSurfaces.indexHtmlSiteName,
+    extractBrandPrefix(ctx.publicSurfaces.indexHtmlTitle),
+    ctx.identity.packageName,
+  ];
+  const normalized = directCandidates
+    .map((candidate) => normalizeWorkspaceBrand(candidate))
+    .find((candidate): candidate is string => Boolean(candidate));
+  if (normalized) return normalized;
+  if (ctx.identity.projectRoot.toLowerCase().includes("nodebench")) return "NodeBench";
+  return null;
+}
+
 function findProjectRoot(): string {
   // Walk up from packages/mcp-local to find the monorepo root (has CLAUDE.md)
   let dir = resolve(__dirname, "..", "..");
@@ -60,6 +117,7 @@ interface GatheredContext {
   identity: {
     projectRoot: string;
     claudeMdSnippet: string | null;
+    projectName: string | null;
     packageName: string | null;
     packageVersion: string | null;
   };
@@ -71,6 +129,7 @@ interface GatheredContext {
   };
   publicSurfaces: {
     indexHtmlTitle: string | null;
+    indexHtmlSiteName: string | null;
     indexHtmlOgDescription: string | null;
     serverJsonDescription: string | null;
     readmeTagline: string | null;
@@ -593,8 +652,12 @@ function buildCompanyNamingPack(args: {
   subvertical: string;
   wedge: string;
   companyState: string;
+  existingCompanyName?: string;
 }): FounderCompanyNamingPack {
-  const suggestedNames = inferCompanyNameCandidates(args.query, args.vertical);
+  const suggestedNames = dedupeStrings([
+    args.existingCompanyName?.trim() ?? "",
+    ...inferCompanyNameCandidates(args.query, args.vertical),
+  ]).filter(Boolean);
   const recommendedName = suggestedNames[0];
   return {
     suggestedNames,
@@ -1068,6 +1131,18 @@ export function buildFounderDirectionAssessment(args: {
   const confidence = Math.max(55, Math.min(92, 70 + (hasRecentProof ? 8 : 0) + (workflowAligned ? 6 : 0) - issueAngles.length * 2));
   const { vertical, subvertical } = detectVerticalLabel(combinedText);
   const readinessScore = Math.max(35, Math.min(95, confidence - issueAngles.length * 3 + (installFocused ? 4 : 0)));
+  const workspaceCompanyName = resolveWorkspaceCompanyName(ctx);
+  const companyMode = detectFounderCompanyMode({
+    query: args.query,
+    canonicalEntity: workspaceCompanyName ?? undefined,
+    hasPrivateContext: Boolean(args.extraContext),
+  });
+  const queryReferencesWorkspace = Boolean(
+    workspaceCompanyName && args.query.toLowerCase().includes(workspaceCompanyName.toLowerCase()),
+  );
+  const shouldUseWorkspaceIdentity =
+    Boolean(workspaceCompanyName) &&
+    (companyMode === "own_company" || companyMode === "mixed_comparison" || queryReferencesWorkspace);
   const diligencePack = buildDiligencePack(vertical, evidenceRefIds, strategicAngles);
   const materialsChecklist = buildFounderMaterialsChecklist({ diligencePack, strategicAngles });
   const progressionProfile = buildFounderProgressionProfile({
@@ -1085,6 +1160,7 @@ export function buildFounderDirectionAssessment(args: {
       ? `resolve ${topIssue.title.toLowerCase()} for ${subvertical}`
       : `founder operating workflow for ${subvertical}`,
     companyState: progressionProfile.currentStageLabel,
+    existingCompanyName: shouldUseWorkspaceIdentity ? workspaceCompanyName ?? undefined : undefined,
   });
   const distributionSurfaceStatus = buildDistributionSurfaceStatus(combinedText);
   const companyReadinessPacket = buildCompanyReadinessPacket({
@@ -1146,7 +1222,10 @@ export function buildFounderDirectionAssessment(args: {
                 ? "legal"
                 : "founder",
     query: args.query,
-    canonicalEntity: namingPack.recommendedName,
+    canonicalEntity:
+      shouldUseWorkspaceIdentity
+        ? workspaceCompanyName ?? namingPack.recommendedName
+        : namingPack.recommendedName,
     hasPrivateContext: Boolean(args.extraContext),
     readinessScore,
     hiddenRiskCount: progressionProfile.hiddenRisks.length,
@@ -1207,8 +1286,16 @@ function gatherLocalContext(daysBack: number = 7): GatheredContext {
     : null;
 
   const pkgJson = safeRead(join(root, "packages", "mcp-local", "package.json"));
+  const rootPkgJson = safeRead(join(root, "package.json"));
   let packageName: string | null = null;
   let packageVersion: string | null = null;
+  let rootPackageName: string | null = null;
+  if (rootPkgJson) {
+    try {
+      const pkg = JSON.parse(rootPkgJson);
+      rootPackageName = pkg.name ?? null;
+    } catch { /* ignore */ }
+  }
   if (pkgJson) {
     try {
       const pkg = JSON.parse(pkgJson);
@@ -1230,13 +1317,25 @@ function gatherLocalContext(daysBack: number = 7): GatheredContext {
   // ── Public surfaces ───────────────────────────────────────────
   const indexHtml = safeRead(join(root, "index.html"));
   let indexHtmlTitle: string | null = null;
+  let indexHtmlSiteName: string | null = null;
   let indexHtmlOgDescription: string | null = null;
   if (indexHtml) {
     const titleMatch = indexHtml.match(/<title>([^<]+)<\/title>/);
     indexHtmlTitle = titleMatch?.[1] ?? null;
+    const siteNameMatch = indexHtml.match(/og:site_name[^>]+content="([^"]+)"/);
+    indexHtmlSiteName = siteNameMatch?.[1] ?? null;
     const ogDescMatch = indexHtml.match(/og:description[^>]+content="([^"]+)"/);
     indexHtmlOgDescription = ogDescMatch?.[1] ?? null;
   }
+  const claudeHeading = claudeMd?.match(/^#\s+(.+)$/m)?.[1] ?? null;
+  const projectName = inferWorkspaceProjectName({
+    siteName: indexHtmlSiteName,
+    title: indexHtmlTitle,
+    claudeHeading,
+    rootPackageName,
+    packageName,
+    projectRoot: root,
+  });
 
   const serverJson = safeRead(join(root, "packages", "mcp-local", "server.json"));
   let serverJsonDescription: string | null = null;
@@ -1345,9 +1444,9 @@ function gatherLocalContext(daysBack: number = 7): GatheredContext {
   const dogfoodRunbookSnippet = runbook ? runbook.split("\n").slice(0, 12).join("\n") : null;
 
   return {
-    identity: { projectRoot: root, claudeMdSnippet, packageName, packageVersion },
+    identity: { projectRoot: root, claudeMdSnippet, projectName, packageName, packageVersion },
     recentChanges: { gitLogOneline: gitLog.split("\n").filter(Boolean), gitDiffStat, modifiedFiles, daysBack },
-    publicSurfaces: { indexHtmlTitle, indexHtmlOgDescription, serverJsonDescription, readmeTagline },
+    publicSurfaces: { indexHtmlTitle, indexHtmlSiteName, indexHtmlOgDescription, serverJsonDescription, readmeTagline },
     sessionMemory: { recentActions, recentMilestones, totalActions7d, totalMilestones7d },
     dogfoodFindings: { latestFile: latestDogfoodFile, verdict: dogfoodVerdict, p0Count, p1Count, findings: dogfoodFindings },
     docs: { prdSnippet, dogfoodRunbookSnippet, architectureDocs },

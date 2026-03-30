@@ -431,9 +431,32 @@ export function detectFounderCompanyMode(args: {
   hasPrivateContext?: boolean;
 }): FounderCompanyMode {
   const query = args.query.toLowerCase();
-  const ownSignals = ["my company", "our company", "our startup", "our product", "what should we do", "what should i do next", "given everything about my company"];
+  const canonicalEntity = args.canonicalEntity?.toLowerCase().trim();
+  const ownSignals = [
+    "my company",
+    "our company",
+    "our startup",
+    "our product",
+    "our tool",
+    "our tools",
+    "our app",
+    "our dashboard",
+    "our workflow",
+    "our mcp",
+    "what should we do",
+    "what should i do next",
+    "given everything about my company",
+    "we are building",
+    "we need",
+    "current founder",
+    "own-company",
+    "own company",
+  ];
   const compareSignals = ["compare", "versus", "vs", "against"];
-  const hasOwnSignals = ownSignals.some((signal) => query.includes(signal)) || Boolean(args.hasPrivateContext);
+  const hasOwnSignals =
+    ownSignals.some((signal) => query.includes(signal)) ||
+    Boolean(args.hasPrivateContext) ||
+    Boolean(canonicalEntity && query.includes(canonicalEntity));
   const hasCompareSignals = compareSignals.some((signal) => query.includes(signal));
   if (hasOwnSignals && hasCompareSignals) return "mixed_comparison";
   if (hasOwnSignals) return "own_company";

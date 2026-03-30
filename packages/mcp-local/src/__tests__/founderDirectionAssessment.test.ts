@@ -13,7 +13,7 @@ describe("founder_direction_assessment", () => {
     const tool = getTool("founder_direction_assessment");
 
     const result = await tool.handler({
-      query: "Pressure-test whether NodeBench should stay local-first, optional AI, and evolve into a Claude Code-native dashboard subscription for teams before we post publicly.",
+      query: "Given the current founder own-company result UX, pressure-test whether we should stay local-first, optional AI, and evolve into a Claude Code-native dashboard subscription for teams before we post publicly.",
       lens: "founder",
       userSkillset: ["product engineering", "MCP tooling"],
       constraints: ["specific skillset", "environmental concern about AI"],
@@ -49,7 +49,8 @@ describe("founder_direction_assessment", () => {
     expect(result.operatingModel.executionOrder.length).toBeGreaterThan(0);
     expect(result.operatingModel.progressionRubric.currentStage).toBe(result.progressionProfile.currentStage);
     expect(result.operatingModel.benchmarkOracles.length).toBeGreaterThan(0);
-    expect(result.companyReadinessPacket.identity.companyName.length).toBeGreaterThan(0);
+    expect(result.companyReadinessPacket.identity.companyName).toBe("NodeBench");
+    expect(result.companyNamingPack.recommendedName).toBe("NodeBench");
     expect(result.companyNamingPack.suggestedNames.length).toBeGreaterThan(0);
   });
 });

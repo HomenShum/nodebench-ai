@@ -5387,9 +5387,29 @@ var BENCHMARK_ORACLES = [
 ];
 function detectFounderCompanyMode(args) {
   const query = args.query.toLowerCase();
-  const ownSignals = ["my company", "our company", "our startup", "our product", "what should we do", "what should i do next", "given everything about my company"];
+  const canonicalEntity = args.canonicalEntity?.toLowerCase().trim();
+  const ownSignals = [
+    "my company",
+    "our company",
+    "our startup",
+    "our product",
+    "our tool",
+    "our tools",
+    "our app",
+    "our dashboard",
+    "our workflow",
+    "our mcp",
+    "what should we do",
+    "what should i do next",
+    "given everything about my company",
+    "we are building",
+    "we need",
+    "current founder",
+    "own-company",
+    "own company"
+  ];
   const compareSignals = ["compare", "versus", "vs", "against"];
-  const hasOwnSignals = ownSignals.some((signal) => query.includes(signal)) || Boolean(args.hasPrivateContext);
+  const hasOwnSignals = ownSignals.some((signal) => query.includes(signal)) || Boolean(args.hasPrivateContext) || Boolean(canonicalEntity && query.includes(canonicalEntity));
   const hasCompareSignals = compareSignals.some((signal) => query.includes(signal));
   if (hasOwnSignals && hasCompareSignals) return "mixed_comparison";
   if (hasOwnSignals) return "own_company";
@@ -5519,6 +5539,49 @@ function safeExec(cmd, cwd) {
   } catch {
     return "";
   }
+}
+function extractBrandPrefix(value) {
+  if (!value) return null;
+  const trimmed = value.trim().replace(/^#\s*/, "");
+  if (!trimmed) return null;
+  const prefix = trimmed.split(/\s+[—–-]\s+/)[0]?.trim() ?? "";
+  return prefix || null;
+}
+function normalizeWorkspaceBrand(value) {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const lower = trimmed.toLowerCase();
+  if (["nodebench", "nodebench ai", "nodebench-ai", "nodebench mcp", "nodebench-mcp", "nodebench_mcp"].includes(lower)) {
+    return "NodeBench";
+  }
+  if (lower.endsWith("-mcp") || lower.endsWith(" mcp")) {
+    return null;
+  }
+  return trimmed;
+}
+function inferWorkspaceProjectName(args) {
+  const candidates = [
+    normalizeWorkspaceBrand(args.siteName),
+    normalizeWorkspaceBrand(extractBrandPrefix(args.title)),
+    normalizeWorkspaceBrand(extractBrandPrefix(args.claudeHeading)),
+    normalizeWorkspaceBrand(args.rootPackageName),
+    normalizeWorkspaceBrand(args.packageName),
+    normalizeWorkspaceBrand(args.projectRoot?.split(/[\\/]/).filter(Boolean).pop() ?? null)
+  ];
+  return candidates.find((candidate) => Boolean(candidate)) ?? null;
+}
+function resolveWorkspaceCompanyName(ctx) {
+  const directCandidates = [
+    ctx.identity.projectName,
+    ctx.publicSurfaces.indexHtmlSiteName,
+    extractBrandPrefix(ctx.publicSurfaces.indexHtmlTitle),
+    ctx.identity.packageName
+  ];
+  const normalized = directCandidates.map((candidate) => normalizeWorkspaceBrand(candidate)).find((candidate) => Boolean(candidate));
+  if (normalized) return normalized;
+  if (ctx.identity.projectRoot.toLowerCase().includes("nodebench")) return "NodeBench";
+  return null;
 }
 function findProjectRoot() {
   let dir = resolve(__dirname, "..", "..");
@@ -5739,7 +5802,10 @@ function inferCompanyNameCandidates(query, vertical) {
   return ["Northstar Labs", "Signal Forge", "Operator Stack", "Clarity Loop", "Atlas Foundry"];
 }
 function buildCompanyNamingPack(args) {
-  const suggestedNames = inferCompanyNameCandidates(args.query, args.vertical);
+  const suggestedNames = dedupeStrings([
+    args.existingCompanyName?.trim() ?? "",
+    ...inferCompanyNameCandidates(args.query, args.vertical)
+  ]).filter(Boolean);
   const recommendedName = suggestedNames[0];
   return {
     suggestedNames,
@@ -6121,6 +6187,16 @@ function buildFounderDirectionAssessment(args) {
   const confidence = Math.max(55, Math.min(92, 70 + (hasRecentProof ? 8 : 0) + (workflowAligned ? 6 : 0) - issueAngles.length * 2));
   const { vertical, subvertical } = detectVerticalLabel(combinedText);
   const readinessScore = Math.max(35, Math.min(95, confidence - issueAngles.length * 3 + (installFocused ? 4 : 0)));
+  const workspaceCompanyName = resolveWorkspaceCompanyName(ctx);
+  const companyMode = detectFounderCompanyMode({
+    query: args.query,
+    canonicalEntity: workspaceCompanyName ?? void 0,
+    hasPrivateContext: Boolean(args.extraContext)
+  });
+  const queryReferencesWorkspace = Boolean(
+    workspaceCompanyName && args.query.toLowerCase().includes(workspaceCompanyName.toLowerCase())
+  );
+  const shouldUseWorkspaceIdentity = Boolean(workspaceCompanyName) && (companyMode === "own_company" || companyMode === "mixed_comparison" || queryReferencesWorkspace);
   const diligencePack = buildDiligencePack(vertical, evidenceRefIds, strategicAngles);
   const materialsChecklist = buildFounderMaterialsChecklist({ diligencePack, strategicAngles });
   const progressionProfile = buildFounderProgressionProfile({
@@ -6135,7 +6211,8 @@ function buildFounderDirectionAssessment(args) {
     vertical,
     subvertical,
     wedge: topIssue ? `resolve ${topIssue.title.toLowerCase()} for ${subvertical}` : `founder operating workflow for ${subvertical}`,
-    companyState: progressionProfile.currentStageLabel
+    companyState: progressionProfile.currentStageLabel,
+    existingCompanyName: shouldUseWorkspaceIdentity ? workspaceCompanyName ?? void 0 : void 0
   });
   const distributionSurfaceStatus = buildDistributionSurfaceStatus(combinedText);
   const companyReadinessPacket = buildCompanyReadinessPacket({
@@ -6186,7 +6263,7 @@ function buildFounderDirectionAssessment(args) {
   const operatingModel = buildFounderOperatingModel({
     role: lens === "banker" ? "banker" : lens === "ceo" ? "ceo" : lens === "investor" ? "investor" : lens === "student" ? "student" : lens === "legal" ? "legal" : "founder",
     query: args.query,
-    canonicalEntity: namingPack.recommendedName,
+    canonicalEntity: shouldUseWorkspaceIdentity ? workspaceCompanyName ?? namingPack.recommendedName : namingPack.recommendedName,
     hasPrivateContext: Boolean(args.extraContext),
     readinessScore,
     hiddenRiskCount: progressionProfile.hiddenRisks.length,
@@ -6236,8 +6313,17 @@ function gatherLocalContext(daysBack = 7) {
   const claudeMd = safeRead(join2(root, "CLAUDE.md"));
   const claudeMdSnippet = claudeMd ? claudeMd.split("\n").slice(0, 8).join("\n") : null;
   const pkgJson = safeRead(join2(root, "packages", "mcp-local", "package.json"));
+  const rootPkgJson = safeRead(join2(root, "package.json"));
   let packageName = null;
   let packageVersion = null;
+  let rootPackageName = null;
+  if (rootPkgJson) {
+    try {
+      const pkg = JSON.parse(rootPkgJson);
+      rootPackageName = pkg.name ?? null;
+    } catch {
+    }
+  }
   if (pkgJson) {
     try {
       const pkg = JSON.parse(pkgJson);
@@ -6252,13 +6338,25 @@ function gatherLocalContext(daysBack = 7) {
   const modifiedFiles = safeExec(`git diff --name-only HEAD~10 HEAD 2>/dev/null || echo ""`, root).split("\n").filter(Boolean).slice(0, 30);
   const indexHtml = safeRead(join2(root, "index.html"));
   let indexHtmlTitle = null;
+  let indexHtmlSiteName = null;
   let indexHtmlOgDescription = null;
   if (indexHtml) {
     const titleMatch = indexHtml.match(/<title>([^<]+)<\/title>/);
     indexHtmlTitle = titleMatch?.[1] ?? null;
+    const siteNameMatch = indexHtml.match(/og:site_name[^>]+content="([^"]+)"/);
+    indexHtmlSiteName = siteNameMatch?.[1] ?? null;
     const ogDescMatch = indexHtml.match(/og:description[^>]+content="([^"]+)"/);
     indexHtmlOgDescription = ogDescMatch?.[1] ?? null;
   }
+  const claudeHeading = claudeMd?.match(/^#\s+(.+)$/m)?.[1] ?? null;
+  const projectName = inferWorkspaceProjectName({
+    siteName: indexHtmlSiteName,
+    title: indexHtmlTitle,
+    claudeHeading,
+    rootPackageName,
+    packageName,
+    projectRoot: root
+  });
   const serverJson = safeRead(join2(root, "packages", "mcp-local", "server.json"));
   let serverJsonDescription = null;
   if (serverJson) {
@@ -6342,9 +6440,9 @@ function gatherLocalContext(daysBack = 7) {
   const runbook = safeRead(join2(archDir, "DOGFOOD_RUNBOOK_V1.md"));
   const dogfoodRunbookSnippet = runbook ? runbook.split("\n").slice(0, 12).join("\n") : null;
   return {
-    identity: { projectRoot: root, claudeMdSnippet, packageName, packageVersion },
+    identity: { projectRoot: root, claudeMdSnippet, projectName, packageName, packageVersion },
     recentChanges: { gitLogOneline: gitLog.split("\n").filter(Boolean), gitDiffStat, modifiedFiles, daysBack },
-    publicSurfaces: { indexHtmlTitle, indexHtmlOgDescription, serverJsonDescription, readmeTagline },
+    publicSurfaces: { indexHtmlTitle, indexHtmlSiteName, indexHtmlOgDescription, serverJsonDescription, readmeTagline },
     sessionMemory: { recentActions, recentMilestones, totalActions7d, totalMilestones7d },
     dogfoodFindings: { latestFile: latestDogfoodFile, verdict: dogfoodVerdict, p0Count, p1Count, findings: dogfoodFindings },
     docs: { prdSnippet, dogfoodRunbookSnippet, architectureDocs }
@@ -9601,6 +9699,108 @@ var LENS_PERSONA_MAP = {
   legal: "LEGAL_COMPLIANCE",
   student: "SIMPLIFIED_RESEARCH"
 };
+var GENERIC_WORKSPACE_LABELS = /* @__PURE__ */ new Set(["your workspace", "workspace"]);
+function extractBrandPrefix2(value) {
+  if (!value) return void 0;
+  const trimmed = value.trim().replace(/^#\s*/, "");
+  if (!trimmed) return void 0;
+  return trimmed.split(/\s+[—–-]\s+/)[0]?.trim() || void 0;
+}
+function normalizeDisplayName(value) {
+  if (!value) return void 0;
+  const trimmed = value.trim();
+  if (!trimmed) return void 0;
+  const lower = trimmed.toLowerCase();
+  if (GENERIC_WORKSPACE_LABELS.has(lower)) return void 0;
+  if (["nodebench", "nodebench ai", "nodebench-ai", "nodebench mcp", "nodebench-mcp", "nodebench_mcp"].includes(lower)) {
+    return "NodeBench";
+  }
+  return trimmed;
+}
+function toFounderRole(lens) {
+  if (lens === "banker" || lens === "ceo" || lens === "investor" || lens === "student" || lens === "legal") {
+    return lens;
+  }
+  return "founder";
+}
+function normalizeWorkspaceName(value) {
+  if (typeof value !== "string") return void 0;
+  return normalizeDisplayName(value);
+}
+function inferOwnCompanyName(result) {
+  return normalizeWorkspaceName(result?.identity?.projectName) ?? normalizeWorkspaceName(result?.publicSurfaces?.indexHtmlSiteName) ?? normalizeWorkspaceName(extractBrandPrefix2(result?.publicSurfaces?.indexHtmlTitle)) ?? normalizeWorkspaceName(result?.canonicalEntity?.name) ?? normalizeWorkspaceName(result?.companyReadinessPacket?.identity?.companyName) ?? normalizeWorkspaceName(result?.companyNamingPack?.recommendedName) ?? normalizeWorkspaceName(result?.rawPacket?.company?.name) ?? normalizeWorkspaceName(result?.localContext?.company?.name) ?? normalizeWorkspaceName(result?.identity?.packageName);
+}
+function resolveCompanyMode(args) {
+  const hasPrivateContext = args.lens === "founder" && ["weekly_reset", "pre_delegation", "important_change", "founder_progression", "general"].includes(args.classification);
+  return detectFounderCompanyMode({
+    query: args.query,
+    canonicalEntity: inferOwnCompanyName(args.result) ?? args.result?.canonicalEntity?.name,
+    hasPrivateContext
+  });
+}
+function resolveEffectiveClassification(args) {
+  if (args.classification !== "general") return args.classification;
+  const companyMode = resolveCompanyMode(args);
+  if (args.lens === "founder" && args.classification === "general") {
+    if (companyMode === "own_company") return "founder_progression";
+    if (companyMode === "mixed_comparison") return "mixed_comparison";
+  }
+  return args.classification;
+}
+function resolveEffectivePacketType(args) {
+  const explicitPacketType = typeof args.result?.packetType === "string" ? args.result.packetType : "";
+  if (explicitPacketType && explicitPacketType !== "general_packet") return explicitPacketType;
+  if (args.classification !== "general") return `${args.classification}_packet`;
+  const routedPacketType = args.result?.operatingModel?.packetRouter?.packetType;
+  if (typeof routedPacketType === "string" && routedPacketType.length > 0) return routedPacketType;
+  return getFounderRolePacketDefault(toFounderRole(args.lens)).defaultPacketType;
+}
+function normalizeFounderIdentity(args) {
+  const classification = resolveEffectiveClassification(args);
+  const packetType = resolveEffectivePacketType({
+    lens: args.lens,
+    classification,
+    result: args.result
+  });
+  const companyMode = resolveCompanyMode({ ...args, classification });
+  const entityName = companyMode === "own_company" ? inferOwnCompanyName(args.result) ?? "Your Company" : inferOwnCompanyName(args.result);
+  return { classification, packetType, entityName };
+}
+function normalizeOwnCompanyFounderPayload(args) {
+  const normalizedIdentity = normalizeFounderIdentity(args);
+  const companyMode = resolveCompanyMode({
+    query: args.query,
+    lens: args.lens,
+    classification: normalizedIdentity.classification,
+    result: args.result
+  });
+  const entityName = normalizedIdentity.entityName;
+  if (companyMode !== "own_company" || !entityName) return args.result;
+  const namingPack = typeof args.result?.companyNamingPack === "object" ? args.result.companyNamingPack : void 0;
+  const companyReadinessPacket = typeof args.result?.companyReadinessPacket === "object" ? args.result.companyReadinessPacket : void 0;
+  const shareableArtifacts = Array.isArray(args.result?.shareableArtifacts) ? args.result.shareableArtifacts.map((artifact) => ({
+    ...artifact,
+    payload: artifact?.payload && typeof artifact.payload === "object" ? { ...artifact.payload, company: entityName } : artifact?.payload
+  })) : args.result?.shareableArtifacts;
+  return {
+    ...args.result,
+    canonicalEntity: {
+      ...typeof args.result?.canonicalEntity === "object" ? args.result.canonicalEntity : {},
+      name: entityName
+    },
+    companyNamingPack: namingPack ? {
+      ...namingPack,
+      recommendedName: entityName,
+      suggestedNames: Array.from(/* @__PURE__ */ new Set([entityName, ...Array.isArray(namingPack.suggestedNames) ? namingPack.suggestedNames : []])),
+      starterProfile: namingPack.starterProfile && typeof namingPack.starterProfile === "object" ? { ...namingPack.starterProfile, companyName: entityName } : namingPack.starterProfile
+    } : namingPack,
+    companyReadinessPacket: companyReadinessPacket ? {
+      ...companyReadinessPacket,
+      identity: companyReadinessPacket.identity && typeof companyReadinessPacket.identity === "object" ? { ...companyReadinessPacket.identity, companyName: entityName } : companyReadinessPacket.identity
+    } : companyReadinessPacket,
+    shareableArtifacts
+  };
+}
 function parseJsonValue(value, fallback) {
   if (!value) return fallback;
   try {
@@ -9921,8 +10121,21 @@ function mergeFounderDirectionAssessment(result, assessment) {
   );
   return {
     ...result,
+    canonicalEntity: {
+      ...result?.canonicalEntity,
+      ...assessment?.canonicalEntity,
+      name: inferOwnCompanyName({
+        ...result,
+        ...assessment,
+        canonicalEntity: {
+          ...result?.canonicalEntity,
+          ...assessment?.canonicalEntity
+        }
+      }) ?? result?.canonicalEntity?.name ?? assessment?.canonicalEntity?.name
+    },
     sourceRefs: mergedSourceRefs.length > 0 ? mergedSourceRefs : result?.sourceRefs,
     strategicAngles: Array.isArray(assessment.strategicAngles) && assessment.strategicAngles.length > 0 ? assessment.strategicAngles : result?.strategicAngles,
+    packetType: assessment?.operatingModel?.packetRouter?.packetType ?? result?.operatingModel?.packetRouter?.packetType ?? result?.packetType,
     recommendedNextAction: assessment.recommendedNextAction ?? result?.recommendedNextAction,
     nextQuestions: Array.from(
       /* @__PURE__ */ new Set([
@@ -10040,11 +10253,23 @@ function toProofStatus(sourceRefs, answerBlocks, judgeVerdict) {
   return "provisional";
 }
 function buildResultPacket(args) {
-  const result = args.result ?? {};
+  const result = normalizeOwnCompanyFounderPayload({
+    query: args.query,
+    lens: args.lens,
+    classification: args.classification,
+    result: args.result ?? {}
+  });
   const sourceRefs = Array.isArray(result.sourceRefs) ? result.sourceRefs : [];
+  const normalizedIdentity = normalizeFounderIdentity({
+    query: args.query,
+    lens: args.lens,
+    classification: args.classification,
+    result
+  });
+  const entityName = normalizedIdentity.entityName ?? result.canonicalEntity?.name ?? args.entityFallback ?? "NodeBench";
   return {
     query: args.query,
-    entityName: result.canonicalEntity?.name ?? args.entityFallback ?? "NodeBench",
+    entityName,
     answer: result.canonicalEntity?.canonicalMission ?? "",
     confidence: result.canonicalEntity?.identityConfidence ?? 70,
     sourceCount: sourceRefs.length,
@@ -10075,8 +10300,8 @@ function buildResultPacket(args) {
       note: comparable.note ?? ""
     })),
     packetId: result.packetId,
-    packetType: result.packetType ?? `${args.classification}_packet`,
-    canonicalEntity: result.canonicalEntity?.name ?? args.entityFallback ?? "NodeBench",
+    packetType: normalizedIdentity.packetType,
+    canonicalEntity: entityName,
     sourceRefs: result.sourceRefs,
     claimRefs: result.claimRefs,
     answerBlocks: result.answerBlocks,
@@ -10112,10 +10337,16 @@ function buildResultPacket(args) {
 }
 function decorateResultWithProof(args) {
   const persona = LENS_PERSONA_MAP[args.lens] ?? "FOUNDER_STRATEGY";
-  const sourceRefs = normalizeSourceRefs(args.result);
-  const claimRefs = normalizeClaimRefs(args.result, sourceRefs);
-  const answerBlocks = normalizeAnswerBlocks(args.result, sourceRefs, claimRefs);
-  const recommendedNextAction = args.result?.recommendedNextAction ?? (Array.isArray(args.result?.nextActions) ? args.result.nextActions[0]?.action : void 0);
+  const baseResult = normalizeOwnCompanyFounderPayload({
+    query: args.query,
+    lens: args.lens,
+    classification: args.classification,
+    result: args.result
+  });
+  const sourceRefs = normalizeSourceRefs(baseResult);
+  const claimRefs = normalizeClaimRefs(baseResult, sourceRefs);
+  const answerBlocks = normalizeAnswerBlocks(baseResult, sourceRefs, claimRefs);
+  const recommendedNextAction = baseResult?.recommendedNextAction ?? (Array.isArray(baseResult?.nextActions) ? baseResult.nextActions[0]?.action : void 0);
   const { graphNodes, graphEdges, graphSummary } = buildGraphArtifacts({
     query: args.query,
     lens: args.lens,
@@ -10131,15 +10362,26 @@ function decorateResultWithProof(args) {
   const strategicAngles = buildStrategicAngles({
     query: args.query,
     lens: args.lens,
-    result: args.result,
+    result: baseResult,
     sourceRefs
   });
   const strategicQuestions = strategicAngles.map((angle) => typeof angle.nextQuestion === "string" ? angle.nextQuestion : "").filter(Boolean);
-  const uncertaintyBoundary = args.result?.uncertaintyBoundary ?? (sourceRefs.length > 0 ? "Citations reflect the sources explored in this run. Treat the packet as directional until the next live refresh." : "This answer is missing durable citations. Treat it as provisional until more source coverage is available.");
+  const uncertaintyBoundary = baseResult?.uncertaintyBoundary ?? (sourceRefs.length > 0 ? "Citations reflect the sources explored in this run. Treat the packet as directional until the next live refresh." : "This answer is missing durable citations. Treat it as provisional until more source coverage is available.");
+  const normalizedIdentity = normalizeFounderIdentity({
+    query: args.query,
+    lens: args.lens,
+    classification: args.classification,
+    result: baseResult
+  });
+  const canonicalEntityName = normalizedIdentity.entityName ?? baseResult?.canonicalEntity?.name ?? baseResult?.companyReadinessPacket?.identity?.companyName;
   const decoratedResult = {
-    ...args.result,
+    ...baseResult,
     packetId: args.packetId,
-    packetType: args.result?.packetType ?? `${args.classification}_packet`,
+    packetType: normalizedIdentity.packetType,
+    canonicalEntity: {
+      ...typeof baseResult?.canonicalEntity === "object" ? baseResult.canonicalEntity : {},
+      name: canonicalEntityName ?? baseResult?.canonicalEntity?.name
+    },
     sourceRefs,
     claimRefs,
     answerBlocks,
@@ -10149,7 +10391,7 @@ function decorateResultWithProof(args) {
     uncertaintyBoundary,
     recommendedNextAction,
     nextQuestions: Array.from(
-      /* @__PURE__ */ new Set([...Array.isArray(args.result?.nextQuestions) ? args.result.nextQuestions : [], ...strategicQuestions])
+      /* @__PURE__ */ new Set([...Array.isArray(baseResult?.nextQuestions) ? baseResult.nextQuestions : [], ...strategicQuestions])
     ).slice(0, 8),
     graphNodes,
     graphEdges,
@@ -10159,9 +10401,10 @@ function decorateResultWithProof(args) {
     result: decoratedResult,
     packet: buildResultPacket({
       query: args.query,
+      lens: args.lens,
       result: decoratedResult,
-      classification: args.classification,
-      entityFallback: args.result?.canonicalEntity?.name
+      classification: normalizedIdentity.classification,
+      entityFallback: canonicalEntityName ?? baseResult?.canonicalEntity?.name
     }),
     persona
   };
@@ -11223,6 +11466,10 @@ Return ONLY valid JSON:
         }
         default: {
           const lqGeneral = query.trim().toLowerCase();
+          const companyMode = detectFounderCompanyMode({
+            query: query.trim(),
+            hasPrivateContext: resolvedLens === "founder"
+          });
           const needsWebEnrichment = /\b(what happens|what if|simulate|scenario|regulatory|funding rounds|defense|banks|healthcare|fintech|climate|supply chain|industry|sector|market|last week|this quarter|since january|past year|next \d|Q[1-4]|20\d{2})\b/i.test(lqGeneral);
           const gt = traceStep("tool_call", "founder_local_gather");
           const [gather, webEnrich] = await Promise.all([
@@ -11314,10 +11561,12 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
             action: typeof a === "string" ? a : a.action ?? a.title ?? String(a)
           }));
           const genSummary = gg.summary ?? g.company?.canonicalMission ?? g.summary ?? (genWebSnippets.length > 0 ? genWebSnippets.slice(0, 2).join(" ").slice(0, 400) : `Workspace intelligence for: "${query.trim()}". Upload documents, connect agents, or search specific entities for deeper results.`);
+          const companyName = normalizeWorkspaceName(g.company?.name) ?? normalizeWorkspaceName(g.companyReadinessPacket?.identity?.companyName) ?? normalizeWorkspaceName(g.identity?.projectName) ?? normalizeWorkspaceName(g.publicSurfaces?.indexHtmlSiteName) ?? normalizeWorkspaceName(extractBrandPrefix2(g.publicSurfaces?.indexHtmlTitle)) ?? normalizeWorkspaceName(g.identity?.packageName) ?? (companyMode === "own_company" ? "Your Company" : "Your Workspace");
+          const founderSummary = companyMode === "own_company" ? gg.summary ?? g.company?.canonicalMission ?? g.summary ?? `Founder operating view for ${companyName}. This run should end in the next three moves, the main contradiction, and what still needs evidence before wider sharing.` : genSummary;
           result = {
             canonicalEntity: {
-              name: g.company?.name ?? "Your Workspace",
-              canonicalMission: genSummary,
+              name: companyName,
+              canonicalMission: founderSummary,
               identityConfidence: g.company?.identityConfidence ?? (genGemini ? 65 : 50)
             },
             memo: true,
@@ -11325,16 +11574,25 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
               { description: `Query received: "${query.trim().slice(0, 60)}"`, date: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10) }
             ],
             signals: gSignals.length > 0 ? gSignals : [
-              { name: "Current workspace context", direction: "neutral", impact: "high" },
+              { name: companyMode === "own_company" ? "Current founder/company context" : "Current workspace context", direction: "neutral", impact: "high" },
               { name: "Agent connection status", direction: "neutral", impact: "medium" }
             ],
             contradictions: gContradictions.length > 0 ? gContradictions : [
-              { claim: "Limited context available", evidence: "General queries work best with local context. Try a founder weekly reset or search a specific entity for richer results." }
+              {
+                claim: companyMode === "own_company" ? "Founder packet still needs more private evidence" : "Limited context available",
+                evidence: companyMode === "own_company" ? "This own-company run should gather stronger local context, current contradictions, and one reusable packet before broad sharing." : "General queries work best with local context. Try a founder weekly reset or search a specific entity for richer results."
+              }
             ],
             nextActions: gActions.length > 0 ? gActions : [
-              { action: "Generate a founder weekly reset for structured insights" },
-              { action: "Search a specific company for entity intelligence" },
-              { action: "Upload documents to build your knowledge base" }
+              ...companyMode === "own_company" ? [
+                { action: "Generate one founder progression packet and use it in a real decision this week" },
+                { action: "Resolve the main contradiction before widening sharing or delegation" },
+                { action: "Export the Slack one-page report only after the moat and evidence story are clearer" }
+              ] : [
+                { action: "Generate a founder weekly reset for structured insights" },
+                { action: "Search a specific company for entity intelligence" },
+                { action: "Upload documents to build your knowledge base" }
+              ]
             ],
             nextQuestions: [
               "Generate my founder weekly reset \u2014 what changed, main contradiction, next 3 moves",
@@ -11402,11 +11660,28 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
         packetId
       });
       result = proof.result;
+      const normalizedIdentity = normalizeFounderIdentity({
+        query: query.trim(),
+        lens: resolvedLens,
+        classification: classification.type,
+        result
+      });
+      const effectiveClassification = normalizedIdentity.classification;
+      if (normalizedIdentity.entityName) {
+        result = {
+          ...result,
+          canonicalEntity: {
+            ...typeof result?.canonicalEntity === "object" ? result.canonicalEntity : {},
+            name: normalizedIdentity.entityName
+          }
+        };
+      }
+      result.packetType = normalizedIdentity.packetType;
       const assembleTrace = traceStep("assemble_response");
       assembleTrace.ok(`latency=${latencyMs}ms`);
-      const entityName = result?.canonicalEntity?.name ?? classification.entity ?? "";
+      const entityName = result?.canonicalEntity?.name ?? normalizedIdentity.entityName ?? classification.entity ?? "";
       if (entityName) {
-        setSessionContext(sessionKey, entityName, classification.type, result);
+        setSessionContext(sessionKey, entityName, effectiveClassification, result);
       }
       if (entityName && (classification.type === "company_search" || classification.type === "multi_entity" || classification.type === "competitor")) {
         const enrichTool = findTool("enrich_entity");
@@ -11434,7 +11709,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
           query: query.trim(),
           lens: resolvedLens,
           persona: proof.persona,
-          classification: classification.type,
+          classification: effectiveClassification,
           result,
           packet: proof.packet,
           trace,
@@ -11448,7 +11723,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       }
       const payload = {
         success: true,
-        classification: classification.type,
+        classification: effectiveClassification,
         lens: resolvedLens,
         entity: classification.entity ?? null,
         latencyMs,

@@ -297,6 +297,40 @@ const founderDirectionTool: McpTool = {
   }),
 };
 
+const founderGatherTool: McpTool = {
+  name: "founder_local_gather",
+  description: "Returns deterministic local founder context for tests.",
+  inputSchema: {},
+  handler: async () => ({
+    identity: {
+      projectName: "NodeBench",
+      packageName: "NodeBench",
+    },
+    publicSurfaces: {
+      indexHtmlSiteName: "NodeBench",
+      indexHtmlTitle: "NodeBench — Entity Intelligence for Any Company, Market, or Question",
+    },
+    company: {
+      name: "Your Workspace",
+      canonicalMission: "NodeBench is a founder operating system with reusable packets.",
+      identityConfidence: 72,
+    },
+    summary: "Founder context gathered from the local workspace.",
+    recentActions: [
+      { description: "Founder packet loop shipped", date: "2026-03-30" },
+    ],
+    signals: [
+      { name: "Founder packet workflow active", direction: "up", impact: "high" },
+    ],
+    contradictions: [
+      { claim: "Routing still drifts into generic workspace mode", evidence: "Own-company prompts should not look generic." },
+    ],
+    nextActions: [
+      { action: "Route own-company founder queries into the founder progression packet." },
+    ],
+  }),
+};
+
 describe("createSearchRouter", () => {
   let server: ReturnType<express.Express["listen"]>;
   let baseUrl = "";
@@ -319,7 +353,7 @@ describe("createSearchRouter", () => {
 
     const app = express();
     app.use(express.json());
-    app.use(createSearchRouter([weeklyResetTool, founderDirectionTool]));
+    app.use(createSearchRouter([weeklyResetTool, founderDirectionTool, founderGatherTool]));
 
     server = await new Promise<ReturnType<express.Express["listen"]>>((resolve) => {
       const instance = app.listen(0, "127.0.0.1", () => resolve(instance));
@@ -387,5 +421,31 @@ describe("createSearchRouter", () => {
       expect(postText).toContain('"workflowComparison"');
       expect(postText).toContain('"operatingModel"');
       expect(postText).toContain('"companyNamingPack"');
+  });
+
+  it("routes own-company founder queries into founder progression packets instead of generic workspace packets", async () => {
+    const response = await fetch(`${baseUrl}/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: "Given everything about my company, what should I do next? We are building founder-first MCP and dashboard tooling.",
+        lens: "founder",
+      }),
+    });
+
+    const payload = await response.json() as any;
+
+    expect(response.status).toBe(200);
+    expect(payload.classification).toBe("founder_progression");
+    expect(payload.result?.packetType).toBe("founder_progression_packet");
+    expect(payload.resultPacket?.packetType).toBe("founder_progression_packet");
+    expect(payload.result?.canonicalEntity?.name).toBe("NodeBench");
+    expect(payload.resultPacket?.entityName).toBe("NodeBench");
+    expect(payload.result?.companyReadinessPacket?.identity?.companyName).toBe("NodeBench");
+    expect(payload.result?.companyNamingPack?.recommendedName).toBe("NodeBench");
+    expect(payload.result?.companyNamingPack?.starterProfile?.companyName).toBe("NodeBench");
+    expect(payload.result?.operatingModel?.packetRouter?.companyMode).toBe("own_company");
   });
 });
