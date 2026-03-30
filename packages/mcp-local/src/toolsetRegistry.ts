@@ -257,13 +257,14 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
     return [...dj.dogfoodJudgeTools, ...lj.llmJudgeLoopTools];
   },
   founder: async () => {
-    const [f, ft, cm, lp, ci, so] = await Promise.all([
+    const [f, ft, cm, lp, ci, so, om] = await Promise.all([
       import("./tools/founderTools.js"),
       import("./tools/founderTrackingTools.js"),
       import("./tools/causalMemoryTools.js"),
       import("./tools/founderLocalPipeline.js"),
       import("./tools/contextInjection.js"),
       import("./tools/founderStrategicOpsTools.js"),
+      import("./tools/founderOperatingModelTools.js"),
     ]);
     return [
       ...f.founderTools,
@@ -271,6 +272,7 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
       ...cm.causalMemoryTools,
       ...lp.founderLocalPipelineTools,
       ...so.founderStrategicOpsTools,
+      ...om.founderOperatingModelTools,
       ...ci.contextInjectionTools,
     ];
   },
