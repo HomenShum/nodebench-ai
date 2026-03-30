@@ -63,11 +63,65 @@ export default function TeamView() {
   const [selectedPeer, setSelectedPeer] = useState<string | null>(null);
   const [composeText, setComposeText] = useState("");
   const [copiedJoin, setCopiedJoin] = useState(false);
+  const [copiedInviteLink, setCopiedInviteLink] = useState(false);
   const [showDelegatePanel, setShowDelegatePanel] = useState(false);
   const [delegateTask, setDelegateTask] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const currentPeerId = "peer:founder:local";
+  // Join flow — name input for new users arriving via invite link
+  const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+  const isJoinMode = params.get("join") === "true";
+  const [userName, setUserName] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("nodebench-team-name") ?? "";
+    }
+    return "";
+  });
+  const [hasJoined, setHasJoined] = useState(() => {
+    if (typeof window !== "undefined") {
+      return !!localStorage.getItem("nodebench-team-name");
+    }
+    return false;
+  });
+
+  const handleJoin = useCallback(async () => {
+    if (!userName.trim()) return;
+    const name = userName.trim().toLowerCase().replaceAll(" ", "_");
+    localStorage.setItem("nodebench-team-name", name);
+    setHasJoined(true);
+
+    // Register with the API
+    try {
+      const { SHARED_CONTEXT_API_BASE } = await import("@/lib/syncBridgeApi");
+      await fetch(`${SHARED_CONTEXT_API_BASE}/message`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fromPeerId: `peer:teammate:${name}`,
+          toPeerId: "peer:founder:local",
+          content: `${userName.trim()} just joined the team via invite link.`,
+          messageType: "request",
+        }),
+      });
+    } catch {
+      // offline — still joined locally
+    }
+    refresh();
+  }, [userName, refresh]);
+
+  const currentPeerId = hasJoined && userName
+    ? `peer:teammate:${userName.trim().toLowerCase().replaceAll(" ", "_")}`
+    : "peer:founder:local";
+
+  const inviteLink = typeof window !== "undefined"
+    ? `${window.location.origin}/founder/coordination?tab=team&join=true`
+    : "https://www.nodebenchai.com/founder/coordination?tab=team&join=true";
+
+  const handleCopyInviteLink = useCallback(() => {
+    navigator.clipboard.writeText(inviteLink);
+    setCopiedInviteLink(true);
+    setTimeout(() => setCopiedInviteLink(false), 2000);
+  }, [inviteLink]);
 
   // Ensure current user + demo teammate always appear
   const selfPeer = {
@@ -246,6 +300,41 @@ export default function TeamView() {
     setTimeout(() => setCopiedJoin(false), 2000);
   }, []);
 
+  // Join modal for invite link arrivals
+  if ((isJoinMode && !hasJoined) || (!hasJoined && !currentPeerId.includes("founder"))) {
+    return (
+      <div className="flex h-full items-center justify-center bg-[#151413]">
+        <div className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-white/[0.02] p-8 text-center">
+          <Users className="mx-auto h-10 w-10 text-[#d97757]" />
+          <h2 className="mt-4 text-lg font-semibold text-white/90">Join the team</h2>
+          <p className="mt-2 text-sm text-white/40">
+            Enter your name to connect. Your Claude Code agent will be
+            visible to teammates for messaging and delegation.
+          </p>
+          <input
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") void handleJoin(); }}
+            placeholder="Your name (e.g. Sarah)"
+            className="mt-4 w-full rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 text-sm text-white/80 placeholder:text-white/25 focus:border-[#d97757]/40 focus:outline-none"
+            autoFocus
+          />
+          <button
+            type="button"
+            onClick={() => void handleJoin()}
+            disabled={!userName.trim()}
+            className="mt-3 w-full rounded-lg bg-[#d97757] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#c86747] disabled:opacity-30"
+          >
+            Join & Connect
+          </button>
+          <p className="mt-3 text-[10px] text-white/20">
+            Your name is stored locally. No account required.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full">
       {/* ── Left: Peer List ──────────────────────────────────────── */}
@@ -319,25 +408,39 @@ export default function TeamView() {
           )}
         </div>
 
-        {/* Join command */}
-        <div className="border-t border-white/[0.06] p-3">
+        {/* Invite link + CLI command */}
+        <div className="border-t border-white/[0.06] p-3 space-y-2">
+          <button
+            type="button"
+            onClick={handleCopyInviteLink}
+            className="flex w-full items-center gap-2 rounded-lg bg-[#d97757]/15 border border-[#d97757]/20 px-3 py-2 text-left transition-colors hover:bg-[#d97757]/25"
+          >
+            {copiedInviteLink ? (
+              <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+            ) : (
+              <UserPlus className="h-3.5 w-3.5 shrink-0 text-[#d97757]" />
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-medium text-[#d97757]">
+                {copiedInviteLink ? "Link copied!" : "Copy invite link"}
+              </div>
+              <div className="truncate text-[9px] text-[#d97757]/50">
+                Share this link — they join instantly
+              </div>
+            </div>
+          </button>
           <button
             type="button"
             onClick={handleCopyJoinCommand}
-            className="flex w-full items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-left transition-colors hover:bg-white/[0.06]"
+            className="flex w-full items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-left transition-colors hover:bg-white/[0.06]"
           >
             {copiedJoin ? (
-              <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+              <Check className="h-3 w-3 shrink-0 text-emerald-400" />
             ) : (
-              <Copy className="h-3.5 w-3.5 shrink-0 text-white/30" />
+              <Copy className="h-3 w-3 shrink-0 text-white/20" />
             )}
-            <div className="min-w-0 flex-1">
-              <div className="text-[10px] text-white/40">
-                {copiedJoin ? "Copied!" : "Invite teammate"}
-              </div>
-              <div className="truncate font-mono text-[9px] text-white/20">
-                claude mcp add nodebench ...
-              </div>
+            <div className="truncate text-[9px] text-white/25 font-mono">
+              {copiedJoin ? "Copied!" : "claude mcp add nodebench ..."}
             </div>
           </button>
         </div>
