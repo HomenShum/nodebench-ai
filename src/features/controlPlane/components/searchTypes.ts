@@ -207,6 +207,274 @@ export interface ResultStrategicAngle {
   nextQuestion?: string;
 }
 
+export type FounderPacketVisibility = "internal" | "workspace" | "public";
+
+export interface ResultUnlockCriteria {
+  id: string;
+  title: string;
+  status: "ready" | "watch" | "missing";
+  requiredSignals: string[];
+}
+
+export interface ResultProgressionTierDefinition {
+  id: "clarity" | "foundation" | "readiness" | "leverage" | "scale";
+  label: string;
+  priceLabel: string;
+  unlocks: string[];
+  services: string[];
+}
+
+export interface ResultFounderScorecard {
+  id: "two_week" | "three_month";
+  label: string;
+  status: "on_track" | "watch" | "off_track";
+  summary: string;
+  mustHappen: string[];
+}
+
+export interface ResultFounderProgressionProfile {
+  currentStage: "clarity" | "foundation" | "readiness" | "leverage" | "scale";
+  currentStageLabel: string;
+  readinessScore: number;
+  missingFoundations: string[];
+  hiddenRisks: string[];
+  nextUnlocks: ResultUnlockCriteria[];
+  delegableWork: string[];
+  founderOnlyWork: string[];
+  onTrackStatus: "on_track" | "watch" | "off_track";
+  recommendedNextAction: string;
+}
+
+export interface ResultEvidenceClass {
+  id: string;
+  label: string;
+  description: string;
+  required: boolean;
+}
+
+export interface ResultReadinessRequirement {
+  id: string;
+  title: string;
+  status: "ready" | "watch" | "missing";
+  whyItMatters: string;
+  evidenceClassIds: string[];
+}
+
+export interface ResultDiligencePackDefinition {
+  id: string;
+  label: string;
+  summary: string;
+  externalEvaluators: string[];
+  evidenceClasses: ResultEvidenceClass[];
+  requirements: ResultReadinessRequirement[];
+  highRiskClaims: string[];
+  materials: string[];
+  readyDefinition: string;
+}
+
+export interface ResultMaterialsChecklistItem {
+  id: string;
+  label: string;
+  status: "ready" | "watch" | "missing";
+  audience: string;
+  whyItMatters: string;
+}
+
+export interface ResultDistributionSurfaceStatus {
+  surfaceId: string;
+  label: string;
+  status: "ready" | "partial" | "missing";
+  whyItMatters: string;
+}
+
+export interface ResultAutonomyBenchmarkRun {
+  benchmarkId: string;
+  lane:
+    | "weekly_founder_reset"
+    | "competitor_signal_response"
+    | "packet_to_implementation"
+    | "cheapest_valid_workflow"
+    | "browserstack_lane";
+  objective: string;
+  packetRef: string;
+  agentsInvolved: string[];
+  actionsTaken: string[];
+  beforeState: string;
+  afterState: string;
+  artifactsProduced: string[];
+  validationPasses: string[];
+  validationFailures: string[];
+  timeMs: number;
+  estimatedCostUsd: number;
+  humanInterventions: string[];
+  reuseScore: number;
+  summary: string;
+}
+
+export interface ResultShareableArtifact {
+  id: string;
+  type:
+    | "slack_onepage"
+    | "investor_memo"
+    | "banker_readiness"
+    | "pitchbook_like"
+    | "crunchbase_like"
+    | "yc_context"
+    | "generic_json";
+  title: string;
+  visibility: FounderPacketVisibility;
+  summary: string;
+  payload: Record<string, unknown>;
+  href?: string;
+}
+
+export interface ResultCompanyStarterProfile {
+  companyName: string;
+  oneLineDescription: string;
+  categories: string[];
+  stage: string;
+  initialCustomers: string[];
+  wedge: string;
+}
+
+export interface ResultCompanyNamingPack {
+  suggestedNames: string[];
+  recommendedName: string;
+  starterProfile: ResultCompanyStarterProfile;
+}
+
+export interface ResultCompanyReadinessPacket {
+  packetId: string;
+  visibility: FounderPacketVisibility;
+  identity: {
+    companyName: string;
+    vertical: string;
+    subvertical: string;
+    stage: string;
+    mission: string;
+    wedge: string;
+  };
+  founderTeamCredibility: string[];
+  productAndWedge: string[];
+  marketAndGtm: string[];
+  financialReadiness: string[];
+  operatingReadiness: string[];
+  diligenceEvidence: string[];
+  contradictionsAndHiddenRisks: string[];
+  nextUnlocks: string[];
+  pricingStage: {
+    stageId: "clarity" | "foundation" | "readiness" | "leverage" | "scale";
+    label: string;
+    priceLabel: string;
+  };
+  distributionSurfaceStatus: ResultDistributionSurfaceStatus[];
+  provenance: {
+    sourceRefIds: string[];
+    confidence: number;
+    freshness: string;
+  };
+  allowedDestinations: string[];
+  sensitivity: "internal" | "workspace";
+}
+
+export interface ResultWorkflowPathComparison {
+  objective: string;
+  currentPath: string[];
+  optimizedPath: string[];
+  rationale: string;
+  validationChecks: string[];
+  estimatedSavings: {
+    timePercent: number;
+    costPercent: number;
+  };
+  verdict: "valid" | "invalid" | "needs_review";
+}
+
+export interface ResultFounderExecutionStep {
+  id: string;
+  label: string;
+  description: string;
+}
+
+export interface ResultFounderQueueDefinition {
+  id: string;
+  label: string;
+  purpose: string;
+  upstream: string[];
+  outputs: string[];
+}
+
+export interface ResultFounderSourcePolicy {
+  sourceType:
+    | "slack"
+    | "codebase"
+    | "local_files"
+    | "uploads"
+    | "docs"
+    | "web_research"
+    | "agent_outputs"
+    | "third_party";
+  canRead: boolean;
+  canStore: boolean;
+  canSummarize: boolean;
+  exportPolicy: "allow" | "redact" | "reference_only";
+  notes: string;
+}
+
+export interface ResultFounderRolePacketDefault {
+  role: LensId | "generic";
+  defaultPacketType: string;
+  defaultArtifactType: string;
+  shouldMonitorByDefault: boolean;
+  shouldDelegateByDefault: boolean;
+}
+
+export interface ResultFounderPacketRouterDecision {
+  role: LensId | "generic";
+  companyMode: "own_company" | "external_company" | "mixed_comparison";
+  packetType: string;
+  artifactType: string;
+  shouldMonitor: boolean;
+  shouldExport: boolean;
+  shouldDelegate: boolean;
+  needsMoreEvidence: boolean;
+  requiredEvidence: string[];
+  visibility: FounderPacketVisibility;
+  rationale: string;
+}
+
+export interface ResultFounderProgressionRubricEvaluation {
+  currentStage: "clarity" | "foundation" | "readiness" | "leverage" | "scale";
+  onTrack: boolean;
+  mandatorySatisfied: string[];
+  mandatoryMissing: string[];
+  optionalStrengths: string[];
+  rationale: string;
+}
+
+export interface ResultBenchmarkOracleDefinition {
+  lane:
+    | "weekly_founder_reset"
+    | "competitor_signal_response"
+    | "packet_to_implementation"
+    | "cheapest_valid_workflow"
+    | "browserstack_lane";
+  deterministicChecks: string[];
+  probabilisticJudges: string[];
+  baseline: string;
+  heldOutScenarios: string[];
+}
+
+export interface ResultFounderOperatingModel {
+  executionOrder: ResultFounderExecutionStep[];
+  queueTopology: ResultFounderQueueDefinition[];
+  sourcePolicies: ResultFounderSourcePolicy[];
+  roleDefault: ResultFounderRolePacketDefault;
+  packetRouter: ResultFounderPacketRouterDecision;
+  progressionRubric: ResultFounderProgressionRubricEvaluation;
+  benchmarkOracles: ResultBenchmarkOracleDefinition[];
+}
+
 export interface ResultPacket {
   /** The user's original query */
   query: string;
@@ -262,6 +530,22 @@ export interface ResultPacket {
   graphEdges?: ResultGraphEdge[];
   /** Proactive founder/operator pressure-test angles */
   strategicAngles?: ResultStrategicAngle[];
+  /** Founder progression layer */
+  progressionProfile?: ResultFounderProgressionProfile;
+  progressionTiers?: ResultProgressionTierDefinition[];
+  diligencePack?: ResultDiligencePackDefinition;
+  readinessScore?: number;
+  unlocks?: ResultUnlockCriteria[];
+  materialsChecklist?: ResultMaterialsChecklistItem[];
+  scorecards?: ResultFounderScorecard[];
+  shareableArtifacts?: ResultShareableArtifact[];
+  visibility?: FounderPacketVisibility;
+  benchmarkEvidence?: ResultAutonomyBenchmarkRun[];
+  workflowComparison?: ResultWorkflowPathComparison;
+  operatingModel?: ResultFounderOperatingModel;
+  distributionSurfaceStatus?: ResultDistributionSurfaceStatus[];
+  companyReadinessPacket?: ResultCompanyReadinessPacket;
+  companyNamingPack?: ResultCompanyNamingPack;
   /** Raw packet from backend (plan proposals, artifact packets, etc.) */
   rawPacket?: unknown;
 }

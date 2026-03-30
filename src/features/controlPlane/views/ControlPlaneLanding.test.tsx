@@ -60,6 +60,10 @@ vi.mock("../components/RecentSearchHistory", () => ({
   RecentSearchHistory: () => null,
 }));
 
+vi.mock("../components/SyncProvenanceBadge", () => ({
+  SyncProvenanceBadge: () => null,
+}));
+
 import { ControlPlaneLanding } from "./ControlPlaneLanding";
 
 describe("ControlPlaneLanding", () => {
@@ -175,6 +179,136 @@ describe("ControlPlaneLanding", () => {
           proofStatus: "provisional",
           uncertaintyBoundary: "Directional until refreshed.",
           recommendedNextAction: "Benchmark Cohere.",
+          progressionProfile: {
+            currentStage: "foundation",
+            currentStageLabel: "Stage 1: Foundation",
+            readinessScore: 61,
+            missingFoundations: ["Investor-ready memo"],
+            hiddenRisks: ["Distribution still needs proof"],
+            nextUnlocks: [
+              {
+                id: "useful-packet",
+                title: "Generate one useful founder packet and use it in a real decision",
+                status: "ready",
+                requiredSignals: ["Founder packet exported"],
+              },
+            ],
+            delegableWork: ["Prepare the Slack report"],
+            founderOnlyWork: ["Choose the wedge"],
+            onTrackStatus: "watch",
+            recommendedNextAction: "Benchmark Cohere.",
+          },
+          materialsChecklist: [
+            {
+              id: "material:1",
+              label: "Slack one-page report",
+              status: "watch",
+              audience: "external",
+              whyItMatters: "Makes the founder packet easy to share.",
+            },
+          ],
+          scorecards: [
+            {
+              id: "two_week",
+              label: "2-week scorecard",
+              status: "watch",
+              summary: "Ship one packet and one exported artifact.",
+              mustHappen: ["Produce one useful founder packet"],
+            },
+          ],
+          shareableArtifacts: [
+            {
+              id: "artifact:slack_onepage",
+              type: "slack_onepage",
+              title: "Founder one-page Slack report",
+              visibility: "workspace",
+              summary: "Slack report",
+              payload: { text: "*NodeBench Founder Report*" },
+            },
+          ],
+          workflowComparison: {
+            objective: "Analyze Cohere for a founder.",
+            currentPath: ["Restate the founder context manually", "Draft a memo from scratch"],
+            optimizedPath: ["Reuse the founder packet", "Copy the Slack report"],
+            rationale: "Reusable packets remove repeated restatement.",
+            validationChecks: ["The same artifact still exists"],
+            estimatedSavings: { timePercent: 35, costPercent: 20 },
+            verdict: "valid",
+          },
+          operatingModel: {
+            executionOrder: [
+              { id: "ingest", label: "Ingest", description: "Collect founder context." },
+              { id: "route", label: "Route", description: "Choose packet and artifact types." },
+            ],
+            queueTopology: [
+              {
+                id: "packet_refresh",
+                label: "Refresh",
+                purpose: "Refresh sweeps and packet state.",
+                upstream: ["sweeps"],
+                outputs: ["packet refresh"],
+              },
+            ],
+            sourcePolicies: [
+              {
+                sourceType: "uploads",
+                canRead: true,
+                canStore: true,
+                canSummarize: true,
+                exportPolicy: "redact",
+                notes: "Founder uploads stay private by default.",
+              },
+            ],
+            roleDefault: {
+              role: "founder",
+              defaultPacketType: "founder_progression_packet",
+              defaultArtifactType: "slack_onepage",
+              shouldMonitorByDefault: true,
+              shouldDelegateByDefault: true,
+            },
+            packetRouter: {
+              role: "founder",
+              companyMode: "external_company",
+              packetType: "founder_progression_packet",
+              artifactType: "slack_onepage",
+              shouldMonitor: true,
+              shouldExport: true,
+              shouldDelegate: false,
+              needsMoreEvidence: false,
+              requiredEvidence: [],
+              visibility: "workspace",
+              rationale: "Use the founder packet as the canonical route.",
+            },
+            progressionRubric: {
+              currentStage: "foundation",
+              onTrack: false,
+              mandatorySatisfied: ["Founder packet exported"],
+              mandatoryMissing: ["External proof story"],
+              optionalStrengths: ["shareable_artifact"],
+              rationale: "External proof story is still missing.",
+            },
+            benchmarkOracles: [
+              {
+                lane: "weekly_founder_reset",
+                deterministicChecks: ["packet present"],
+                probabilisticJudges: ["usefulness"],
+                baseline: "manual founder recap",
+                heldOutScenarios: ["messy founder context"],
+              },
+            ],
+          },
+          companyNamingPack: {
+            suggestedNames: ["Cohere Forge", "Cohere Loop"],
+            recommendedName: "Cohere Forge",
+            starterProfile: {
+              companyName: "Cohere Forge",
+              oneLineDescription: "Founder operating system for enterprise retrieval decisions.",
+              categories: ["AI/software"],
+              stage: "Stage 1: Foundation",
+              initialCustomers: ["Founders"],
+              wedge: "Founder packet workflow",
+            },
+          },
           graphNodes: [],
           graphEdges: [],
           nextQuestions: ["What changed that matters most?"],
@@ -201,6 +335,11 @@ describe("ControlPlaneLanding", () => {
     expect(screen.getAllByText(/enterprise retrieval and agent orchestration/i).length).toBeGreaterThan(0);
     expect(screen.getByText("Source Map")).toBeInTheDocument();
     expect(screen.getByText("Founder Pressure Test")).toBeInTheDocument();
+    expect(screen.getByText("Founder Progression Layer")).toBeInTheDocument();
+    expect(screen.getByText("Operating Model and Packet Router")).toBeInTheDocument();
+    expect(screen.getByText("Starter Company Profile")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /export packet/i }));
+    expect(screen.getByRole("button", { name: /report for slack/i })).toBeInTheDocument();
     expect(screen.getAllByText("Publish issue packet").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Delegate issue").length).toBeGreaterThan(0);
     expect(screen.getByText("How we got this answer")).toBeInTheDocument();

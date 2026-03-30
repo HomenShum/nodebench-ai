@@ -26,6 +26,7 @@ import {
   ArrowRight,
   BarChart3,
   Bell,
+  Briefcase,
   BookOpen,
   Check,
   ClipboardCopy,
@@ -183,6 +184,20 @@ function StrategicAngleStatusBadge({ value }: { value: "strong" | "watch" | "unk
   );
 }
 
+function VisibilityBadge({ value }: { value: "internal" | "workspace" | "public" }) {
+  const tone =
+    value === "public"
+      ? "bg-emerald-500/10 text-emerald-300"
+      : value === "workspace"
+        ? "bg-[#d97757]/10 text-[#f2b49f]"
+        : "bg-white/[0.06] text-content-muted";
+  return (
+    <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${tone}`}>
+      {value}
+    </span>
+  );
+}
+
 /* ─── Main component ────────────────────────────────────────────────────── */
 
 /* ─── Demo trajectory generator ────────────────────────────────────────── */
@@ -279,6 +294,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
   const trajectoryData = trajectory ?? buildDemoTrajectory(proofPacket);
   const [copiedShare, setCopiedShare] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [copiedSlackReport, setCopiedSlackReport] = useState(false);
   const [hoveredSourceId, setHoveredSourceId] = useState<string | null>(null);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
   const [selectedAnswerBlockId, setSelectedAnswerBlockId] = useState<string | null>(
@@ -359,6 +375,15 @@ export const ResultWorkspace = memo(function ResultWorkspace({
     setTimeout(() => setCopiedPrompt(false), 2500);
   }, [handoffState?.handoffPrompt]);
 
+  const handleCopySlackReport = useCallback(async () => {
+    const artifact = proofPacket.shareableArtifacts.find((item) => item.type === "slack_onepage");
+    const text = typeof artifact?.payload?.text === "string" ? artifact.payload.text : null;
+    if (!text || !navigator.clipboard?.writeText) return;
+    await navigator.clipboard.writeText(text);
+    setCopiedSlackReport(true);
+    setTimeout(() => setCopiedSlackReport(false), 2500);
+  }, [proofPacket.shareableArtifacts]);
+
   return (
     <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* ── Header bar ─────────────────────────────────────────────────────── */}
@@ -370,6 +395,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
         <div className="flex items-center gap-2 shrink-0">
           <ConfidenceBadge value={proofPacket.confidence} />
           <ProofStatusBadge value={proofPacket.proofStatus} />
+          <VisibilityBadge value={proofPacket.visibility} />
           <SyncProvenanceBadge compact />
           <span className="text-[11px] text-content-muted">
             {proofPacket.explorationMemory.citedSourceCount}/
@@ -595,6 +621,417 @@ export const ResultWorkspace = memo(function ResultWorkspace({
           </div>
         </Section>
       )}
+
+      {lens === "founder" && proofPacket.progressionProfile ? (
+        <Section id="progression" icon={Briefcase} title="Founder Progression Layer">
+          <div className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Current Stage</div>
+                  <div className="mt-1 text-sm font-medium text-content">{proofPacket.progressionProfile.currentStageLabel}</div>
+                </div>
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Readiness</div>
+                  <div className="mt-1 text-sm font-medium text-content">{proofPacket.progressionProfile.readinessScore}/100</div>
+                </div>
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Status</div>
+                  <div className="mt-1 text-sm font-medium text-content">
+                    {proofPacket.progressionProfile.onTrackStatus.replace("_", " ")}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Missing Foundations</div>
+                  <div className="mt-2 space-y-2 text-xs leading-relaxed text-content-muted">
+                    {(proofPacket.progressionProfile.missingFoundations.length > 0
+                      ? proofPacket.progressionProfile.missingFoundations
+                      : ["No obvious missing foundations flagged in this packet."]
+                    ).map((item) => (
+                      <div key={item}>• {item}</div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Hidden Risks</div>
+                  <div className="mt-2 space-y-2 text-xs leading-relaxed text-content-muted">
+                    {(proofPacket.progressionProfile.hiddenRisks.length > 0
+                      ? proofPacket.progressionProfile.hiddenRisks.slice(0, 4)
+                      : ["No hidden risks surfaced yet."]
+                    ).map((item) => (
+                      <div key={item}>• {item}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Delegable Work</div>
+                  <div className="mt-2 space-y-2 text-xs leading-relaxed text-content-muted">
+                    {proofPacket.progressionProfile.delegableWork.map((item) => (
+                      <div key={item}>• {item}</div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Founder-only Work</div>
+                  <div className="mt-2 space-y-2 text-xs leading-relaxed text-content-muted">
+                    {proofPacket.progressionProfile.founderOnlyWork.map((item) => (
+                      <div key={item}>• {item}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {proofPacket.companyNamingPack ? (
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Starter Company Profile</div>
+                      <div className="mt-1 text-sm font-medium text-content">
+                        {proofPacket.companyNamingPack.recommendedName}
+                      </div>
+                    </div>
+                    <VisibilityBadge value={proofPacket.visibility} />
+                  </div>
+                  <div className="mt-2 text-xs leading-relaxed text-content-muted">
+                    {proofPacket.companyNamingPack.starterProfile.oneLineDescription}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {proofPacket.companyNamingPack.suggestedNames.slice(0, 5).map((name) => (
+                      <span
+                        key={name}
+                        className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[11px] text-content-muted"
+                      >
+                        {name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                  Pricing and Unlock Progress
+                </div>
+                <div className="mt-2 space-y-2">
+                  {proofPacket.progressionTiers.map((tier) => {
+                    const isCurrent = tier.id === proofPacket.progressionProfile.currentStage;
+                    return (
+                      <div
+                        key={tier.id}
+                        className={`rounded-lg border px-3 py-2 ${
+                          isCurrent
+                            ? "border-[#d97757]/30 bg-[#d97757]/[0.06]"
+                            : "border-white/[0.06] bg-black/20"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <div className="text-sm font-medium text-content">{tier.label}</div>
+                            <div className="mt-1 text-[11px] text-content-muted">{tier.priceLabel}</div>
+                          </div>
+                          <StrategicAngleStatusBadge value={isCurrent ? "strong" : "unknown"} />
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {tier.unlocks.slice(0, 3).map((unlock) => (
+                            <span
+                              key={unlock}
+                              className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[10px] text-content-muted"
+                            >
+                              {unlock}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Recommended Next Unlocks</div>
+                <div className="mt-2 space-y-2">
+                  {proofPacket.unlocks.map((unlock) => (
+                    <div key={unlock.id} className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-sm text-content">{unlock.title}</div>
+                        <StrategicAngleStatusBadge value={unlock.status === "ready" ? "strong" : unlock.status === "watch" ? "watch" : "unknown"} />
+                      </div>
+                      <div className="mt-1 text-[11px] text-content-muted">
+                        {unlock.requiredSignals.join(" · ")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Qualification Gaps and Materials</div>
+                <div className="mt-2 space-y-2 text-xs leading-relaxed text-content-muted">
+                  {proofPacket.materialsChecklist.slice(0, 5).map((item) => (
+                    <div key={item.id} className="flex items-start justify-between gap-3 rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
+                      <div>
+                        <div className="text-sm text-content">{item.label}</div>
+                        <div className="mt-1 text-[11px] text-content-muted">{item.whyItMatters}</div>
+                      </div>
+                      <StrategicAngleStatusBadge value={item.status === "ready" ? "strong" : item.status === "watch" ? "watch" : "unknown"} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                    Operating Model and Packet Router
+                  </div>
+                  <VisibilityBadge value={proofPacket.operatingModel.packetRouter.visibility} />
+                </div>
+                <div className="mt-2 text-sm font-medium text-content">
+                  {proofPacket.operatingModel.packetRouter.packetType}
+                </div>
+                <div className="mt-1 text-[11px] leading-relaxed text-content-muted">
+                  {proofPacket.operatingModel.packetRouter.rationale}
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <div className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
+                    <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                      Company Mode
+                    </div>
+                    <div className="mt-1 text-sm text-content">
+                      {proofPacket.operatingModel.packetRouter.companyMode.replaceAll("_", " ")}
+                    </div>
+                    <div className="mt-1 text-[11px] text-content-muted">
+                      Action {proofPacket.operatingModel.packetRouter.shouldDelegate ? "delegate" : proofPacket.operatingModel.packetRouter.shouldExport ? "export" : proofPacket.operatingModel.packetRouter.shouldMonitor ? "monitor" : "investigate"}
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
+                    <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                      Role Default
+                    </div>
+                    <div className="mt-1 text-sm text-content">
+                      {proofPacket.operatingModel.roleDefault.defaultPacketType}
+                    </div>
+                    <div className="mt-1 text-[11px] text-content-muted">
+                      Artifact {proofPacket.operatingModel.roleDefault.defaultArtifactType}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                    Canonical Execution Order
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {proofPacket.operatingModel.executionOrder.map((step) => (
+                      <span
+                        key={step.id}
+                        className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[10px] text-content-muted"
+                      >
+                        {step.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">2-week / 3-month Plan</div>
+                <div className="mt-2 space-y-2">
+                  {proofPacket.scorecards.map((scorecard) => (
+                    <div key={scorecard.id} className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-sm text-content">{scorecard.label}</div>
+                        <StrategicAngleStatusBadge value={scorecard.status === "on_track" ? "strong" : scorecard.status === "watch" ? "watch" : "unknown"} />
+                      </div>
+                      <div className="mt-1 text-[11px] text-content-muted">{scorecard.summary}</div>
+                      <div className="mt-2 space-y-1 text-[11px] text-content-muted">
+                        {scorecard.mustHappen.map((item) => (
+                          <div key={item}>• {item}</div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                  Vertical Diligence Pack
+                </div>
+                <div className="mt-1 text-sm font-medium text-content">{proofPacket.diligencePack.label}</div>
+                <div className="mt-1 text-[11px] leading-relaxed text-content-muted">
+                  {proofPacket.diligencePack.summary}
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <div className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
+                    <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                      External Evaluators
+                    </div>
+                    <div className="mt-2 space-y-1 text-[11px] text-content-muted">
+                      {proofPacket.diligencePack.externalEvaluators.slice(0, 3).map((item) => (
+                        <div key={item}>• {item}</div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
+                    <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                      Ready Means
+                    </div>
+                    <div className="mt-2 text-[11px] leading-relaxed text-content-muted">
+                      {proofPacket.diligencePack.readyDefinition}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                  Workflow Compare
+                </div>
+                <div className="mt-2 text-sm font-medium text-content">
+                  {proofPacket.workflowComparison.objective}
+                </div>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
+                    <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                      Current Path
+                    </div>
+                    <div className="mt-2 space-y-1 text-[11px] text-content-muted">
+                      {proofPacket.workflowComparison.currentPath.map((step) => (
+                        <div key={step}>• {step}</div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2">
+                    <div className="text-[10px] uppercase tracking-[0.14em] text-emerald-300">
+                      Optimized Path
+                    </div>
+                    <div className="mt-2 space-y-1 text-[11px] text-emerald-100/85">
+                      {proofPacket.workflowComparison.optimizedPath.map((step) => (
+                        <div key={step}>• {step}</div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-content-muted">
+                  <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1">
+                    Time saved {proofPacket.workflowComparison.estimatedSavings.timePercent}%
+                  </span>
+                  <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1">
+                    Cost saved {proofPacket.workflowComparison.estimatedSavings.costPercent}%
+                  </span>
+                  <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-emerald-300">
+                    Verdict {proofPacket.workflowComparison.verdict}
+                  </span>
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {proofPacket.operatingModel.queueTopology.map((queue) => (
+                    <div key={queue.id} className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
+                      <div className="text-sm text-content">{queue.label}</div>
+                      <div className="mt-1 text-[11px] text-content-muted">{queue.purpose}</div>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {queue.outputs.slice(0, 3).map((job) => (
+                          <span
+                            key={job}
+                            className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 text-[10px] text-content-muted"
+                          >
+                            {job}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                  Benchmark Proof and Distribution
+                </div>
+                <div className="mt-3 space-y-2">
+                  {proofPacket.benchmarkEvidence.slice(0, 2).map((benchmark) => (
+                    <div key={benchmark.benchmarkId} className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-sm text-content">{benchmark.lane}</div>
+                        <span className="text-[11px] text-content-muted">
+                          reuse {benchmark.reuseScore}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[11px] leading-relaxed text-content-muted">
+                        {benchmark.summary}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {proofPacket.companyReadinessPacket.distributionSurfaceStatus.slice(0, 4).map((surface) => (
+                    <div key={surface.surfaceId} className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-sm text-content">{surface.label}</div>
+                        <StrategicAngleStatusBadge
+                          value={surface.status === "ready" ? "strong" : surface.status === "partial" ? "watch" : "unknown"}
+                        />
+                      </div>
+                      <div className="mt-1 text-[11px] text-content-muted">{surface.whyItMatters}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                      Sharing Sensitivity
+                    </div>
+                    <VisibilityBadge value={proofPacket.companyReadinessPacket.sensitivity} />
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {proofPacket.companyReadinessPacket.allowedDestinations.map((destination) => (
+                      <span
+                        key={destination}
+                        className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[10px] text-content-muted"
+                      >
+                        {destination}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <div className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
+                    <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                      Source Trust Policy
+                    </div>
+                    <div className="mt-2 space-y-1 text-[11px] text-content-muted">
+                      {proofPacket.operatingModel.sourcePolicies.slice(0, 4).map((policy) => (
+                        <div key={policy.sourceType}>
+                          • {policy.sourceType.replaceAll("_", " ")}: {policy.exportPolicy.replaceAll("_", " ")}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
+                    <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                      Benchmark Oracles
+                    </div>
+                    <div className="mt-2 space-y-1 text-[11px] text-content-muted">
+                      {proofPacket.operatingModel.benchmarkOracles.slice(0, 2).map((oracle) => (
+                        <div key={oracle.lane}>
+                          • {oracle.lane.replaceAll("_", " ")}: {oracle.deterministicChecks[0]}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Section>
+      ) : null}
 
       <Section id="sources" icon={Waypoints} title="Source Map">
         <div className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
@@ -930,6 +1367,16 @@ export const ResultWorkspace = memo(function ResultWorkspace({
               {label}
             </button>
           ))}
+          {proofPacket.shareableArtifacts.some((item) => item.type === "slack_onepage") ? (
+            <button
+              type="button"
+              onClick={handleCopySlackReport}
+              className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-300 transition hover:bg-emerald-500/20"
+            >
+              {copiedSlackReport ? <Check className="h-4 w-4" /> : <ClipboardCopy className="h-4 w-4" />}
+              {copiedSlackReport ? "Slack report copied" : "Report for Slack"}
+            </button>
+          ) : null}
         </div>
       </Section>
 

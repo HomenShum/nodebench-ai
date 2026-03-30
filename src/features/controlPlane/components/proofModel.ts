@@ -1,16 +1,29 @@
 import type { TraceStep } from "./SearchTrace";
 import type {
+  FounderPacketVisibility,
   LensId,
   ProofStatus,
   ResultAnswerBlock,
+  ResultAutonomyBenchmarkRun,
   ResultClaimRef,
+  ResultCompanyNamingPack,
+  ResultCompanyReadinessPacket,
+  ResultDiligencePackDefinition,
+  ResultDistributionSurfaceStatus,
   ResultExplorationMemory,
+  ResultFounderOperatingModel,
+  ResultFounderProgressionProfile,
+  ResultFounderScorecard,
   ResultGraphEdge,
   ResultGraphNode,
   ResultGraphSummary,
+  ResultMaterialsChecklistItem,
   ResultPacket,
+  ResultProgressionTierDefinition,
   ResultStrategicAngle,
   ResultSourceRef,
+  ResultUnlockCriteria,
+  ResultWorkflowPathComparison,
 } from "./searchTypes";
 import { PUBLIC_LENS_PERSONA_MAP } from "./searchTypes";
 
@@ -29,6 +42,21 @@ export interface ProofReadyResultPacket extends ResultPacket {
   graphNodes: ResultGraphNode[];
   graphEdges: ResultGraphEdge[];
   strategicAngles: ResultStrategicAngle[];
+  progressionProfile: ResultFounderProgressionProfile;
+  progressionTiers: ResultProgressionTierDefinition[];
+  diligencePack: ResultDiligencePackDefinition;
+  readinessScore: number;
+  unlocks: ResultUnlockCriteria[];
+  materialsChecklist: ResultMaterialsChecklistItem[];
+  scorecards: ResultFounderScorecard[];
+  shareableArtifacts: NonNullable<ResultPacket["shareableArtifacts"]>;
+  visibility: FounderPacketVisibility;
+  benchmarkEvidence: ResultAutonomyBenchmarkRun[];
+  workflowComparison: ResultWorkflowPathComparison;
+  operatingModel: ResultFounderOperatingModel;
+  distributionSurfaceStatus: ResultDistributionSurfaceStatus[];
+  companyReadinessPacket: ResultCompanyReadinessPacket;
+  companyNamingPack: ResultCompanyNamingPack;
 }
 
 export interface ProgressStage {
@@ -473,10 +501,22 @@ function buildStrategicAngles(
   const maintenanceHeavy = includesAny(queryText, ["maintenance", "maintain", "update", "support", "ops", "dashboard service", "subscription service"]);
   const regulated = includesAny(queryText, ["legal", "regulatory", "healthcare", "fda", "bank", "compliance"]);
   const aiSkeptic = includesAny(queryText, ["no ai", "without ai", "anti ai", "environment", "peace", "altruistic"]);
+  const constrainedTeam = includesAny(queryText, ["specific skillset", "narrow skillset", "solo founder", "limited team", "small team"]);
   const evidenceStrong = highConfidence && sourceRich;
   const marketAligned = includesAny(queryText, ["claude code", "developer", "team", "workflow", "founder", "agent", "dashboard"]) || includesAny(signalText, ["distribution", "workflow", "developer", "adoption"]);
 
   const angles: ResultStrategicAngle[] = [
+    {
+      id: "team-shape",
+      title: "Team shape and complementary gaps",
+      status: constrainedTeam ? "watch" : "unknown",
+      summary: constrainedTeam
+        ? "The direction appears to lean on a narrow or founder-heavy skillset, which can sharpen the wedge but also expose obvious complementary gaps."
+        : "The packet does not yet explain whether the team shape is a real edge or an unaddressed bottleneck.",
+      whyItMatters: "Specific skillsets help when they map directly to the wedge, but they slow progress when GTM, support, or adjacent execution gaps remain implicit.",
+      evidenceRefIds: sourceIds,
+      nextQuestion: "Which complementary capability would most reduce risk for this direction right now?",
+    },
     {
       id: "founder-fit",
       title: "Founder-skill and credibility fit",
@@ -575,6 +615,102 @@ function buildStrategicAngles(
   return angles;
 }
 
+const DEFAULT_PROGRESSION_TIERS: ResultProgressionTierDefinition[] = [
+  { id: "clarity", label: "Stage 0: Clarity", priceLabel: "Free", unlocks: ["Idea pressure test", "Starter packet"], services: ["Search/upload/ask", "Weekly reset"] },
+  { id: "foundation", label: "Stage 1: Foundation", priceLabel: "$1", unlocks: ["Missing foundations", "Delegation packet"], services: ["Readiness checklist", "Decision memo export"] },
+  { id: "readiness", label: "Stage 2: Readiness", priceLabel: "$5", unlocks: ["Investor and banker packets", "Diligence pack"], services: ["Qualification scoring", "Artifact history"] },
+  { id: "leverage", label: "Stage 3: Leverage", priceLabel: "$20", unlocks: ["Ambient monitoring", "Benchmark proof"], services: ["Shared context ops", "Workflow optimization"] },
+  { id: "scale", label: "Stage 4: Scale", priceLabel: "Custom", unlocks: ["Hosted monitoring", "Workspace collaboration"], services: ["Premium scoring", "Enterprise support"] },
+];
+
+function buildFallbackProgressionProfile(
+  packet: ResultPacket,
+  strategicAngles: ResultStrategicAngle[],
+): ResultFounderProgressionProfile {
+  const hiddenRisks = strategicAngles
+    .filter((angle) => angle.status !== "strong")
+    .map((angle) => `${angle.title}: ${angle.summary}`);
+  const readinessScore = packet.readinessScore ?? Math.max(40, packet.confidence - hiddenRisks.length * 4);
+  const currentStage =
+    readinessScore >= 82 ? "scale" :
+    readinessScore >= 70 ? "leverage" :
+    readinessScore >= 58 ? "readiness" :
+    readinessScore >= 45 ? "foundation" :
+    "clarity";
+  const currentStageLabel = DEFAULT_PROGRESSION_TIERS.find((tier) => tier.id === currentStage)?.label ?? "Stage 0: Clarity";
+  const nextUnlocks: ResultUnlockCriteria[] = packet.unlocks ?? [
+    {
+      id: "useful-packet",
+      title: "Generate one useful founder packet and use it in a real decision",
+      status: readinessScore >= 55 ? "ready" : "watch",
+      requiredSignals: ["Founder packet exported", "Decision memo reused"],
+    },
+    {
+      id: "delegation",
+      title: "Delegate one bounded task from the packet",
+      status: readinessScore >= 60 ? "ready" : "watch",
+      requiredSignals: ["Shared task exists", "Handoff reused"],
+    },
+  ];
+  return {
+    currentStage,
+    currentStageLabel,
+    readinessScore,
+    missingFoundations: packet.materialsChecklist?.filter((item) => item.status === "missing").map((item) => item.label) ?? [],
+    hiddenRisks,
+    nextUnlocks,
+    delegableWork: ["Collect diligence evidence", "Prepare the Slack report", "Refresh the packet"],
+    founderOnlyWork: ["Choose the wedge", "Decide what stays stealthy", "Own the investor narrative"],
+    onTrackStatus: readinessScore >= 60 ? "on_track" : readinessScore >= 48 ? "watch" : "off_track",
+    recommendedNextAction:
+      packet.recommendedNextAction ??
+      nextUnlocks.find((unlock) => unlock.status !== "ready")?.title ??
+      "Turn the packet into the main founder workflow this week.",
+  };
+}
+
+function buildFallbackDiligencePack(packet: ResultPacket): ResultDiligencePackDefinition {
+  const healthcare = /healthcare|life science|biotech|medtech|clinical|trial|fda/i.test(`${packet.query} ${packet.answer}`);
+  if (healthcare) {
+    return {
+      id: "healthcare_life_sciences",
+      label: "Healthcare / Life Sciences Diligence Pack",
+      summary: "Evidence, regulatory path, and institutional credibility that later diligence will ask for.",
+      externalEvaluators: ["Healthcare investors", "Banks", "Strategic partners"],
+      evidenceClasses: [
+        { id: "patents", label: "Patents and IP", description: "Patents, filings, or IP chain of title.", required: true },
+        { id: "publications", label: "Publications", description: "Peer-reviewed work and research outputs.", required: true },
+        { id: "regulatory", label: "Regulatory path", description: "Regulatory submission path and diligence notes.", required: true },
+      ],
+      requirements: [
+        { id: "ip-proof", title: "Patent and claim verifiability", status: "watch", whyItMatters: "Healthcare claims get challenged quickly without IP and source-backed evidence.", evidenceClassIds: ["patents", "publications"] },
+        { id: "regulatory-path", title: "Regulatory and submission clarity", status: "missing", whyItMatters: "Serious diligence expects a credible regulatory path.", evidenceClassIds: ["regulatory"] },
+      ],
+      highRiskClaims: ["patent defensibility", "clinical efficacy", "regulatory readiness"],
+      materials: ["Patent summary", "Publication list", "Regulatory path memo"],
+      readyDefinition: "Ready means the core claims can be backed by verifiable evidence and a credible path through diligence.",
+    };
+  }
+  return {
+    id: "ai_software",
+    label: "AI / Software Diligence Pack",
+    summary: "Workflow adoption, installability, benchmark proof, and distribution surfaces for software wedges.",
+    externalEvaluators: ["Developers", "Founders", "Early-stage investors"],
+    evidenceClasses: [
+      { id: "workflow", label: "Workflow adoption", description: "Proof that the product fits existing habits.", required: true },
+      { id: "installation", label: "Installability", description: "One-command install and clear update path.", required: true },
+      { id: "benchmarks", label: "Benchmark proof", description: "Visible before/after or workflow-optimization evidence.", required: true },
+    ],
+    requirements: [
+      { id: "workflow-fit", title: "Workflow-native adoption", status: "watch", whyItMatters: "Products win faster when they land in current habits like Claude Code and MCP.", evidenceClassIds: ["workflow"] },
+      { id: "install-surface", title: "Installability and maintenance boundary", status: "watch", whyItMatters: "Setup and support friction blocks distribution.", evidenceClassIds: ["installation"] },
+    ],
+    highRiskClaims: ["workflow lock-in", "maintainability", "distribution moat"],
+    materials: ["Founder packet", "Install plan", "Benchmark memo", "Slack one-page report"],
+    readyDefinition: "Ready means the wedge is installable, benchmarked, and attached to a workflow users already repeat.",
+  };
+}
+
 export function ensureProofPacket(
   packet: ResultPacket,
   lens: LensId = "founder",
@@ -597,6 +733,225 @@ export function ensureProofPacket(
     );
   const graphSummary = buildGraphSummary(packet, memory, graphNodes.length, graphEdges.length);
   const strategicAngles = buildStrategicAngles(packet, sources, lens);
+  const diligencePack = packet.diligencePack ?? buildFallbackDiligencePack(packet);
+  const materialsChecklist = packet.materialsChecklist ?? diligencePack.materials.map((label, index) => ({
+    id: `material:${index + 1}`,
+    label,
+    status: index === 0 ? "watch" : "missing",
+    audience: index < 2 ? "internal" : "external",
+    whyItMatters: `External evaluators will later ask for ${label.toLowerCase()}.`,
+  }));
+  const progressionProfile = packet.progressionProfile ?? buildFallbackProgressionProfile({ ...packet, materialsChecklist }, strategicAngles);
+  const visibility = packet.visibility ?? "workspace";
+  const distributionSurfaceStatus = packet.distributionSurfaceStatus ?? [
+    {
+      surfaceId: "mcp_cli",
+      label: "MCP / CLI",
+      status: /mcp|claude code|cli|local/i.test(`${packet.query} ${packet.answer}`) ? "ready" : "partial",
+      whyItMatters: "Open-core install surface with the lowest setup friction.",
+    },
+    {
+      surfaceId: "dashboard",
+      label: "Hosted dashboard",
+      status: /dashboard|subscription|team|service/i.test(`${packet.query} ${packet.answer}`) ? "partial" : "missing",
+      whyItMatters: "Retained value and collaboration surface for paid stages.",
+    },
+  ];
+  const scorecards = packet.scorecards ?? [
+    {
+      id: "two_week",
+      label: "2-week scorecard",
+      status: progressionProfile.readinessScore >= 58 ? "on_track" : progressionProfile.readinessScore >= 45 ? "watch" : "off_track",
+      summary: "Ship one useful packet, one delegated task, and one shareable artifact.",
+      mustHappen: [
+        "Produce one useful founder packet",
+        "Generate a progression diagnosis",
+        "Delegate one bounded task",
+        "Export one shareable artifact",
+      ],
+    },
+    {
+      id: "three_month",
+      label: "3-month scorecard",
+      status: progressionProfile.currentStage === "leverage" || progressionProfile.currentStage === "scale" ? "on_track" : "watch",
+      summary: "Prove repeated use, packet reuse, and one benchmark-backed proof story.",
+      mustHappen: [
+        "Show repeated packet reuse",
+        "Demonstrate ambient intervention value",
+        "Retain at least one paid-stage workflow",
+        "Publish one benchmark-backed proof story",
+      ],
+    },
+  ];
+  const shareableArtifacts = packet.shareableArtifacts ?? [
+    {
+      id: "artifact:slack_onepage",
+      type: "slack_onepage",
+      title: "Founder one-page Slack report",
+      visibility,
+      summary: "One-page founder report for Slack with stage, risks, and next moves.",
+      payload: {
+        text: [
+          "*NodeBench Founder Report*",
+          `Stage: ${progressionProfile.currentStageLabel}`,
+          `Readiness: ${progressionProfile.readinessScore}/100`,
+          `Next move: ${progressionProfile.recommendedNextAction}`,
+        ].join("\n"),
+      },
+    },
+  ];
+  const benchmarkEvidence = packet.benchmarkEvidence ?? [];
+  const workflowComparison = packet.workflowComparison ?? {
+    objective: packet.query,
+    currentPath: [
+      "Restate the founder context manually",
+      "Search for comparables from scratch",
+      "Draft a memo without a canonical packet",
+      "Hand off work without durable lineage",
+    ],
+    optimizedPath: [
+      "Reuse the founder packet",
+      "Refresh only missing diligence",
+      "Export the Slack one-page report",
+      "Delegate from shared context with packet lineage",
+    ],
+    rationale:
+      "The optimized path removes repeated restatement and keeps the work tied to a durable packet, export adapter, and shared delegation spine.",
+    validationChecks: [
+      "The same decision artifact still exists at the end",
+      "Required diligence fields remain present",
+      "Contradictory evidence stays visible instead of being overwritten",
+    ],
+    estimatedSavings: {
+      timePercent: 38,
+      costPercent: 24,
+    },
+    verdict: "valid",
+  };
+  const operatingModel = packet.operatingModel ?? {
+    executionOrder: [
+      { id: "ingest", label: "Ingest", description: "Collect the query, uploads, and allowed source context." },
+      { id: "classify", label: "Classify", description: "Resolve role, company mode, and vertical before routing." },
+      { id: "canonicalize", label: "Canonicalize", description: "Stabilize the company or entity into a canonical packet identity." },
+      { id: "score", label: "Score", description: "Score readiness, contradictions, and missing evidence." },
+      { id: "packet", label: "Choose Packet", description: "Pick the packet and artifact type from policy, not ad hoc UI logic." },
+      { id: "act", label: "Act", description: "Decide whether to monitor, export, delegate, or keep gathering evidence." },
+      { id: "replay", label: "Replay", description: "Store before and after state so the run can be audited and replayed." },
+    ],
+    queueTopology: [
+      { id: "ingestion", label: "Ingestion", purpose: "Normalize incoming context into canonical inputs.", upstream: ["query", "upload"], outputs: ["structured claims", "source receipts"] },
+      { id: "packet_refresh", label: "Packet Refresh", purpose: "Run sweeps, delta computation, and packet refreshes.", upstream: ["sweeps", "delta"], outputs: ["updated packets", "staleness receipts"] },
+      { id: "artifact_render", label: "Artifacts", purpose: "Render exports, delivery payloads, and reminders.", upstream: ["packet_refresh"], outputs: ["rendered artifacts", "delivery receipts"] },
+      { id: "benchmark_runs", label: "Autonomy", purpose: "Dispatch delegation and benchmark runs with replay.", upstream: ["manual benchmark", "packet_refresh"], outputs: ["benchmark runs", "oracle verdicts"] },
+    ],
+    sourcePolicies: [
+      { sourceType: "uploads", canRead: true, canStore: true, canSummarize: true, exportPolicy: "redact", notes: "Founder uploads can drive packets, but external export stays private by default." },
+      { sourceType: "web_research", canRead: true, canStore: false, canSummarize: true, exportPolicy: "allow", notes: "Public web evidence can be summarized and exported with provenance." },
+      { sourceType: "agent_outputs", canRead: true, canStore: true, canSummarize: true, exportPolicy: "redact", notes: "Generated agent outputs must be validated before broad sharing." },
+      { sourceType: "slack", canRead: true, canStore: true, canSummarize: true, exportPolicy: "redact", notes: "Slack context remains owner-scoped and redacted in exports." },
+    ],
+    roleDefault: {
+      role: lens,
+      defaultPacketType:
+        lens === "banker"
+          ? "banking_readiness_packet"
+          : lens === "ceo"
+            ? "operating_brief"
+            : lens === "legal"
+              ? "diligence_verification_packet"
+              : lens === "student"
+                ? "study_brief"
+                : "founder_progression_packet",
+      defaultArtifactType: lens === "student" ? "study_brief" : "slack_onepage",
+      shouldMonitorByDefault: lens !== "student",
+      shouldDelegateByDefault: lens === "founder",
+    },
+    packetRouter: {
+      role: lens,
+      companyMode: packet.query.toLowerCase().includes("my company") ? "own_company" : "external_company",
+      packetType: packet.packetType ?? "founder_packet",
+      artifactType: shareableArtifacts[0]?.type ?? "slack_onepage",
+      shouldMonitor: true,
+      shouldExport: shareableArtifacts.length > 0,
+      shouldDelegate: progressionProfile.delegableWork.length > 0,
+      needsMoreEvidence: materialsChecklist.some((item) => item.status === "missing"),
+      requiredEvidence: materialsChecklist.filter((item) => item.status !== "ready").map((item) => item.label),
+      visibility,
+      rationale: "Route from role, company mode, evidence completeness, and founder sensitivity defaults.",
+    },
+    progressionRubric: {
+      currentStage: progressionProfile.currentStage,
+      onTrack: progressionProfile.onTrackStatus === "on_track",
+      mandatorySatisfied: materialsChecklist.filter((item) => item.status === "ready").map((item) => item.label),
+      mandatoryMissing: materialsChecklist.filter((item) => item.status !== "ready").map((item) => item.label),
+      optionalStrengths: [
+        ...(shareableArtifacts.length > 0 ? ["shareable_artifact"] : []),
+        ...(benchmarkEvidence.length > 0 ? ["benchmark_proof"] : []),
+      ],
+      rationale: progressionProfile.recommendedNextAction,
+    },
+    benchmarkOracles: [
+      {
+        lane: "weekly_founder_reset",
+        deterministicChecks: ["stage present", "next action present", "packet reusable"],
+        probabilisticJudges: ["advice usefulness", "clarity"],
+        baseline: "manual founder weekly recap",
+        heldOutScenarios: ["messy early-stage context", "contradictory signals"],
+      },
+      {
+        lane: "cheapest_valid_workflow",
+        deterministicChecks: workflowComparison.validationChecks,
+        probabilisticJudges: ["shortcut quality preservation"],
+        baseline: workflowComparison.currentPath.join(" -> "),
+        heldOutScenarios: ["high-uncertainty founder query", "shared-context delegation"],
+      },
+    ],
+  };
+  const companyNamingPack = packet.companyNamingPack ?? {
+    suggestedNames: [packet.entityName || "Northstar Labs", "Signal Forge", "Atlas Foundry"],
+    recommendedName: packet.entityName || "Northstar Labs",
+    starterProfile: {
+      companyName: packet.entityName || "Northstar Labs",
+      oneLineDescription: packet.answer || "Founder operating system with reusable packets and workflow proof.",
+      categories: [diligencePack.label],
+      stage: progressionProfile.currentStageLabel,
+      initialCustomers: ["Founders", "Operators"],
+      wedge: progressionProfile.recommendedNextAction,
+    },
+  };
+  const companyReadinessPacket = packet.companyReadinessPacket ?? {
+    packetId: packet.packetId ?? buildPacketId(packet),
+    visibility,
+    identity: {
+      companyName: companyNamingPack.recommendedName,
+      vertical: diligencePack.label.includes("Healthcare") ? "healthcare/life sciences" : "AI/software",
+      subvertical: diligencePack.label.includes("Healthcare") ? "biotech and clinical" : "developer and agent tooling",
+      stage: progressionProfile.currentStageLabel,
+      mission: companyNamingPack.starterProfile.oneLineDescription,
+      wedge: companyNamingPack.starterProfile.wedge,
+    },
+    founderTeamCredibility: ["Make the right-to-win explicit", "Map founder background to the wedge"],
+    productAndWedge: [companyNamingPack.starterProfile.oneLineDescription],
+    marketAndGtm: ["Meet users in an existing workflow", "Use open-core for trust and the app for retained value"],
+    financialReadiness: ["Track runway and burn clearly"],
+    operatingReadiness: [...progressionProfile.delegableWork, ...progressionProfile.founderOnlyWork],
+    diligenceEvidence: diligencePack.materials,
+    contradictionsAndHiddenRisks: progressionProfile.hiddenRisks,
+    nextUnlocks: progressionProfile.nextUnlocks.map((unlock) => unlock.title),
+    pricingStage: {
+      stageId: progressionProfile.currentStage,
+      label: progressionProfile.currentStageLabel,
+      priceLabel: DEFAULT_PROGRESSION_TIERS.find((tier) => tier.id === progressionProfile.currentStage)?.priceLabel ?? "Free",
+    },
+    distributionSurfaceStatus,
+    provenance: {
+      sourceRefIds: sources.map((source) => source.id),
+      confidence: packet.confidence,
+      freshness: new Date().toISOString(),
+    },
+    allowedDestinations: ["slack_onepage", "investor_memo", "banker_readiness", "pitchbook_like", "crunchbase_like", "yc_context"],
+    sensitivity: visibility === "public" ? "workspace" : visibility,
+  };
 
   const enriched: ProofReadyResultPacket = {
     ...packet,
@@ -620,6 +975,21 @@ export function ensureProofPacket(
     graphNodes,
     graphEdges,
     strategicAngles,
+    progressionProfile,
+    progressionTiers: packet.progressionTiers ?? DEFAULT_PROGRESSION_TIERS,
+    diligencePack,
+    readinessScore: packet.readinessScore ?? progressionProfile.readinessScore,
+    unlocks: packet.unlocks ?? progressionProfile.nextUnlocks,
+    materialsChecklist,
+    scorecards,
+    shareableArtifacts,
+    visibility,
+    benchmarkEvidence,
+    workflowComparison,
+    operatingModel,
+    distributionSurfaceStatus,
+    companyReadinessPacket,
+    companyNamingPack,
   };
 
   const answerBlockIds = new Set(enriched.answerBlocks.map((block) => block.id));

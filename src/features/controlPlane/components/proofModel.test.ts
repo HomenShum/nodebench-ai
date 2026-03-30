@@ -38,9 +38,22 @@ describe("proofModel", () => {
     expect(enriched.proofStatus).toBe("drifting");
     expect(enriched.answerBlocks.every((block) => block.sourceRefIds.length > 0)).toBe(true);
     expect(enriched.strategicAngles.length).toBeGreaterThan(0);
+    expect(enriched.strategicAngles.some((angle) => angle.id === "team-shape")).toBe(true);
     expect(enriched.strategicAngles.some((angle) => angle.id === "founder-fit")).toBe(true);
     expect(enriched.strategicAngles.some((angle) => angle.id === "installability")).toBe(true);
     expect(enriched.strategicAngles.some((angle) => angle.id === "maintainability")).toBe(true);
+    expect(enriched.progressionProfile.currentStageLabel).toMatch(/Stage/);
+    expect(enriched.diligencePack.label.length).toBeGreaterThan(0);
+    expect(enriched.materialsChecklist.length).toBeGreaterThan(0);
+    expect(enriched.scorecards.length).toBeGreaterThan(0);
+    expect(enriched.shareableArtifacts.some((artifact) => artifact.type === "slack_onepage")).toBe(true);
+    expect(enriched.workflowComparison.verdict).toBe("valid");
+    expect(enriched.workflowComparison.optimizedPath.length).toBeGreaterThan(0);
+    expect(enriched.operatingModel.packetRouter.companyMode).toBe("external_company");
+    expect(enriched.operatingModel.executionOrder.length).toBeGreaterThan(0);
+    expect(enriched.operatingModel.queueTopology.length).toBeGreaterThan(0);
+    expect(enriched.operatingModel.benchmarkOracles.length).toBeGreaterThan(0);
+    expect(enriched.companyReadinessPacket.identity.companyName.length).toBeGreaterThan(0);
   });
 
   it("uses the selected lens when building live progress and proof graph state", () => {

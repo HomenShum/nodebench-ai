@@ -12,79 +12,75 @@ import { useRevealOnMount } from "@/hooks/useRevealOnMount";
 
 const TIERS = [
   {
-    name: "Free",
-    subtitle: "Personal",
+    name: "Stage 0",
+    subtitle: "Clarity",
     price: "$0",
-    period: "/mo",
-    description: "Explore the Decision Workbench on your own terms",
+    period: "",
+    description: "Pressure-test the idea, get a founder packet, and see what is missing",
     cta: "Start free",
     href: "#",
     highlighted: false,
     features: [
-      "1 workspace",
-      "3 analysis runs/month",
-      "Basic variable extraction",
-      "Limited source ingestion (5 sources)",
-      "Community support",
+      "Search, upload, and ask",
+      "Founder pressure test",
+      "Starter company profile",
+      "Weekly reset and next-step packet",
+      "Private-by-default founder packet",
     ],
   },
   {
-    name: "Pro",
-    subtitle: "$49/month",
-    price: "$49",
-    period: "/mo",
-    description: "For analysts and operators who need depth",
-    cta: "Start Pro trial",
+    name: "Stage 1",
+    subtitle: "Foundation",
+    price: "$1",
+    period: "",
+    description: "Expose missing foundations and make the first founder workflow repeatable",
+    cta: "Unlock foundation",
     href: "#",
     highlighted: true,
-    badge: "Most popular",
+    badge: "Best first paid step",
     features: [
-      "5 workspaces",
-      "50 analysis runs/month",
-      "10 Deep Sim credits/month",
-      "25 tracked entities",
-      "Persistent memory (90 days)",
-      "Priority support",
-      "Export to PDF/markdown",
+      "Readiness checklist",
+      "Materials and qualification gaps",
+      "Delegable work vs founder-only work",
+      "Decision memo export",
+      "Team install plan",
+      "Workflow adoption scan",
     ],
   },
   {
-    name: "Team",
-    subtitle: "$149/month",
-    price: "$149",
-    period: "/mo",
-    description: "Collaborate on decisions with your team",
-    cta: "Start Team trial",
+    name: "Stage 2",
+    subtitle: "Readiness",
+    price: "$5",
+    period: "",
+    description: "Prepare investor, banker, and diligence-facing artifacts before outsiders ask",
+    cta: "Unlock readiness",
     href: "#",
     highlighted: false,
     features: [
-      "Unlimited workspaces",
-      "200 analysis runs/month",
-      "50 Deep Sim credits/month",
-      "100 tracked entities",
-      "Persistent memory (1 year)",
-      "Team collaboration (5 seats)",
-      "Shared views & alerts",
-      "Executive report templates",
+      "Investor and banker packets",
+      "Vertical diligence pack",
+      "Runway and burn workflows",
+      "Crunchbase and PitchBook-style exports",
+      "Slack one-page report",
+      "Submission-readiness score",
     ],
   },
   {
-    name: "Enterprise",
-    subtitle: "Custom",
-    price: "Custom",
+    name: "Stage 3+",
+    subtitle: "Leverage / Scale",
+    price: "$20+",
     period: "",
-    description: "For organizations with compliance and scale needs",
-    cta: "Contact sales",
+    description: "Turn the workflow into ambient leverage, benchmark proof, and hosted collaboration",
+    cta: "Talk to us",
     href: "mailto:hello@nodebench.ai",
     highlighted: false,
     features: [
-      "Everything in Team",
-      "SSO / SAML",
-      "Private deployment",
-      "Custom MCP integrations",
-      "Unlimited retention",
-      "Dedicated onboarding",
-      "SLA",
+      "Ambient monitoring and alerts",
+      "Autonomy benchmark lanes",
+      "Shared context and sync review",
+      "Hosted dashboard collaboration",
+      "Premium scoring and monitoring",
+      "Custom enterprise rollout",
     ],
   },
 ] as const;
@@ -104,19 +100,19 @@ interface ComparisonRow {
 }
 
 const COMPARISON: ComparisonRow[] = [
-  { label: "Analysis runs", free: "3/mo", pro: "50/mo", team: "200/mo", enterprise: "Unlimited" },
-  { label: "Deep Sim credits", free: false, pro: "10/mo", team: "50/mo", enterprise: "Unlimited" },
-  { label: "Tracked entities", free: false, pro: "25", team: "100", enterprise: "Unlimited" },
-  { label: "Memory retention", free: false, pro: "90 days", team: "1 year", enterprise: "Unlimited" },
-  { label: "Workspaces", free: "1", pro: "5", team: "Unlimited", enterprise: "Unlimited" },
-  { label: "Seats", free: "1", pro: "1", team: "5", enterprise: "Custom" },
-  { label: "Export formats", free: false, pro: "PDF, Markdown", team: "PDF, Markdown", enterprise: "PDF, Markdown, Custom" },
-  { label: "Support level", free: "Community", pro: "Priority", team: "Priority", enterprise: "Dedicated + SLA" },
-  { label: "Custom connectors", free: false, pro: false, team: false, enterprise: true },
+  { label: "Primary outcome", free: "Clarity", pro: "Foundation", team: "Readiness", enterprise: "Leverage / Scale" },
+  { label: "Founder packet", free: true, pro: true, team: true, enterprise: true },
+  { label: "Progression diagnosis", free: "Basic", pro: "Full", team: "Full", enterprise: "Full + team" },
+  { label: "Qualification gaps", free: false, pro: true, team: true, enterprise: true },
+  { label: "Investor / banker packets", free: false, pro: false, team: true, enterprise: true },
+  { label: "Slack one-page report", free: false, pro: false, team: true, enterprise: true },
+  { label: "Workflow optimization", free: false, pro: "Basic", team: "Advanced", enterprise: "Advanced" },
+  { label: "Ambient monitoring", free: false, pro: false, team: false, enterprise: true },
+  { label: "Hosted collaboration", free: false, pro: false, team: false, enterprise: true },
 ];
 
 const TIER_KEYS = ["free", "pro", "team", "enterprise"] as const;
-const TIER_LABELS = ["Free", "Pro", "Team", "Enterprise"] as const;
+const TIER_LABELS = ["Clarity", "Foundation", "Readiness", "Leverage / Scale"] as const;
 
 /* ------------------------------------------------------------------ */
 /*  FAQ                                                                */
@@ -124,24 +120,24 @@ const TIER_LABELS = ["Free", "Pro", "Team", "Enterprise"] as const;
 
 const FAQ = [
   {
-    q: "What do I get from an analysis?",
-    a: "Each analysis produces a structured brief with ranked variables, scenario cards, recommended actions, and an evidence drawer \u2014 everything you need to act on a decision with confidence.",
+    q: "Why stage-based pricing instead of feature gating?",
+    a: "Founders do not buy random toggles. They buy clarity, readiness, leverage, and faster proof. Each stage unlocks the services and artifacts that match that maturity level.",
   },
   {
-    q: "What is a Deep Sim credit?",
-    a: "One Deep Sim credit runs a single multi-agent scenario simulation with 2\u20134 branches. Each branch explores a different future state so you can compare outcomes before committing.",
+    q: "What does the $1 tier actually unlock?",
+    a: "Stage 1 turns the first founder packet into a repeatable workflow: missing foundations, readiness gaps, delegation boundaries, and install planning.",
   },
   {
-    q: "What is a tracked entity?",
-    a: "A tracked entity is a company, product, founder, or project you monitor over time. NodeBench watches for changes, surfaces new signals, and updates your decision context automatically.",
+    q: "What becomes paid later?",
+    a: "The closed app layer: hosted monitoring, collaboration, premium scoring, and high-value workflow surfaces. The MCP and schema adoption layer stays open-core.",
   },
   {
-    q: "Can I connect my own agent?",
-    a: "Yes. NodeBench exposes a standard MCP interface. Connect it to Claude Code, Cursor, OpenClaw, or any MCP-compatible client. Your tools, your workflow.",
+    q: "Why keep founder packets private by default?",
+    a: "Because early-stage founders often need to stay relatively stealthy until the moat is harder to copy and the diligence story is more defensible.",
   },
   {
-    q: "What happens when I hit my limit?",
-    a: "Analysis runs pause until your next billing cycle. All existing data, memos, and tracked entities are preserved \u2014 nothing is deleted. You can upgrade at any time to resume.",
+    q: "What makes the paid stages worth it?",
+    a: "The paid stages should help founders see what outsiders will later ask for before those outsiders ask, then package the answer into reusable artifacts.",
   },
 ] as const;
 
@@ -184,7 +180,7 @@ export const PricingPage = memo(function PricingPage() {
         <div style={stagger("0s")} className="text-center">
           <h1 className="text-4xl font-bold tracking-tight text-content">Pricing</h1>
           <p className="mt-3 text-base text-content-secondary">
-            Start free. Scale when your decisions demand it.
+            Start with clarity. Unlock the next stage only when the founder workflow is ready for it.
           </p>
         </div>
 

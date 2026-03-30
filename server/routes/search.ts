@@ -285,11 +285,35 @@ function buildStrategicAngles(args: {
   const maintenanceHeavy = includesAny(queryText, ["maintenance", "maintain", "update", "support", "ops", "dashboard service", "subscription service"]);
   const regulated = includesAny(queryText, ["legal", "regulatory", "healthcare", "fda", "bank", "compliance"]);
   const aiSkeptic = includesAny(queryText, ["no ai", "without ai", "anti ai", "environment", "peace", "altruistic"]);
+  const constrainedTeam = includesAny(queryText, ["specific skillset", "narrow skillset", "solo founder", "limited team", "small team"]);
+  const exposureRisk = args.lens === "founder" || includesAny(queryText, ["stealth", "moat", "launch", "posting", "post publicly", "announce", "go public", "marketing", "reveal"]);
   const marketAligned = includesAny(queryText, ["claude code", "developer", "team", "workflow", "founder", "agent", "dashboard"])
     || includesAny(signalText, ["distribution", "workflow", "developer", "adoption"]);
   const evidenceStrong = sourceRich && confidence >= 80;
 
   const angles: Array<Record<string, unknown>> = [
+    {
+      id: "stealth-moat",
+      title: "Stealth, moat, and public exposure timing",
+      status: exposureRisk ? "watch" : "unknown",
+      summary: exposureRisk
+        ? "Before posting broadly, assume the idea is easier to copy than it feels. Stay relatively stealthy until the moat and market diligence are clearer."
+        : "The packet does not yet establish whether public exposure helps more than it harms before the moat is proven.",
+      whyItMatters: "Premature public posting can hand the market your playbook before you have a hard-to-duplicate advantage.",
+      evidenceRefIds,
+      nextQuestion: "What are competitors actually doing today, how copyable is this, and what moat would justify posting now instead of staying quieter longer?",
+    },
+    {
+      id: "team-shape",
+      title: "Team shape and complementary gaps",
+      status: constrainedTeam ? "watch" : "unknown",
+      summary: constrainedTeam
+        ? "The direction appears to lean on a narrow or founder-heavy skillset, which can sharpen the wedge but also exposes obvious complementary gaps."
+        : "The packet does not yet explain whether the team shape is a true edge or an unaddressed bottleneck.",
+      whyItMatters: "Specific skillsets help when they map directly to the wedge, but they slow progress when GTM, support, or adjacent execution gaps remain implicit.",
+      evidenceRefIds,
+      nextQuestion: "Which complementary capability would most reduce risk for this direction right now?",
+    },
     {
       id: "founder-fit",
       title: "Founder-skill and credibility fit",
@@ -386,6 +410,82 @@ function buildStrategicAngles(args: {
   }
 
   return angles;
+}
+
+function shouldRunFounderDirectionAssessment(args: {
+  query: string;
+  lens: string;
+  classification: string;
+}): boolean {
+  if (args.lens === "founder") return true;
+  if (["weekly_reset", "important_change", "pre_delegation", "general"].includes(args.classification)) {
+    return true;
+  }
+  return includesAny(args.query, [
+    "pressure-test",
+    "team fit",
+    "founder fit",
+    "claude code",
+    "install",
+    "maintain",
+    "subscription",
+    "dashboard",
+    "investor",
+    "credibility",
+    "adoption",
+    "ai",
+    "environment",
+    "stealth",
+    "moat",
+    "post publicly",
+    "announce",
+    "sell",
+  ]);
+}
+
+function mergeFounderDirectionAssessment(result: any, assessment: any): any {
+  if (!assessment || typeof assessment !== "object") return result;
+  const mergedSourceRefs = dedupeBy(
+    [
+      ...(Array.isArray(result?.sourceRefs) ? result.sourceRefs : []),
+      ...(Array.isArray(assessment.sourceRefs) ? assessment.sourceRefs : []),
+    ],
+    (source: any) => String(source.id ?? source.href ?? source.label ?? ""),
+  );
+
+  return {
+    ...result,
+    sourceRefs: mergedSourceRefs.length > 0 ? mergedSourceRefs : result?.sourceRefs,
+    strategicAngles: Array.isArray(assessment.strategicAngles) && assessment.strategicAngles.length > 0
+      ? assessment.strategicAngles
+      : result?.strategicAngles,
+    recommendedNextAction: assessment.recommendedNextAction ?? result?.recommendedNextAction,
+    nextQuestions: Array.from(
+      new Set([
+        ...(Array.isArray(result?.nextQuestions) ? result.nextQuestions : []),
+        ...(Array.isArray(assessment.nextQuestions) ? assessment.nextQuestions : []),
+      ]),
+    ).slice(0, 10),
+    uncertaintyBoundary:
+      result?.uncertaintyBoundary ??
+      "The strategic pressure test mixes live search output with local project evidence. Treat it as directional until the next live refresh.",
+    progressionProfile: assessment.progressionProfile ?? result?.progressionProfile,
+    progressionTiers: assessment.progressionTiers ?? result?.progressionTiers,
+    diligencePack: assessment.diligencePack ?? result?.diligencePack,
+    readinessScore: assessment.readinessScore ?? result?.readinessScore,
+    unlocks: assessment.unlocks ?? result?.unlocks,
+    materialsChecklist: assessment.materialsChecklist ?? result?.materialsChecklist,
+    scorecards: assessment.scorecards ?? result?.scorecards,
+    shareableArtifacts: assessment.shareableArtifacts ?? result?.shareableArtifacts,
+    visibility: assessment.visibility ?? result?.visibility,
+    benchmarkEvidence: assessment.benchmarkEvidence ?? result?.benchmarkEvidence,
+    workflowComparison: assessment.workflowComparison ?? result?.workflowComparison,
+    operatingModel: assessment.operatingModel ?? result?.operatingModel,
+    distributionSurfaceStatus: assessment.distributionSurfaceStatus ?? result?.distributionSurfaceStatus,
+    companyReadinessPacket: assessment.companyReadinessPacket ?? result?.companyReadinessPacket,
+    companyNamingPack: assessment.companyNamingPack ?? result?.companyNamingPack,
+    founderDirectionAssessment: assessment,
+  };
 }
 
 function buildGraphArtifacts(args: {
@@ -549,6 +649,21 @@ function buildResultPacket(args: {
     graphNodes: result.graphNodes,
     graphEdges: result.graphEdges,
     strategicAngles: result.strategicAngles,
+    progressionProfile: result.progressionProfile,
+    progressionTiers: result.progressionTiers,
+    diligencePack: result.diligencePack,
+    readinessScore: result.readinessScore,
+    unlocks: result.unlocks,
+    materialsChecklist: result.materialsChecklist,
+    scorecards: result.scorecards,
+    shareableArtifacts: result.shareableArtifacts,
+    visibility: result.visibility,
+    benchmarkEvidence: result.benchmarkEvidence,
+    workflowComparison: result.workflowComparison,
+    operatingModel: result.operatingModel,
+    distributionSurfaceStatus: result.distributionSurfaceStatus,
+    companyReadinessPacket: result.companyReadinessPacket,
+    companyNamingPack: result.companyNamingPack,
     interventions: result.nextActions?.slice(0, 4).map((action: any) => ({
       action: action.action ?? String(action),
       impact: action.impact ?? "medium",
@@ -1962,6 +2077,28 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       }).catch(() => {}); // Non-fatal
 
       // Auto-judge every search result (non-blocking — runs async, result included if fast enough)
+      const founderDirectionTool = findTool("founder_direction_assessment");
+      if (founderDirectionTool && shouldRunFounderDirectionAssessment({
+        query: query.trim(),
+        lens: resolvedLens,
+        classification: classification.type,
+      })) {
+        const directionTrace = traceStep("tool_call", "founder_direction_assessment");
+        try {
+          const directionAssessment = await callTool("founder_direction_assessment", {
+            query: query.trim(),
+            lens: resolvedLens,
+            daysBack: daysBack ?? 14,
+            marketWorkflow: ["Claude Code", "NodeBench MCP", "team dashboard"],
+          }) as any;
+          result = mergeFounderDirectionAssessment(result, directionAssessment);
+          directionTrace.ok(`angles=${directionAssessment?.strategicAngles?.length ?? 0}`);
+        } catch (error: any) {
+          directionTrace.error(error?.message ?? "direction assessment failed");
+        }
+      }
+
+      // Auto-judge every search result (non-blocking — runs async, result included if fast enough)
       let judgeVerdict: any = null;
       try {
         const judge = await getJudge();
@@ -2229,6 +2366,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       "founder_local_weekly_reset",
       "founder_local_synthesize",
       "founder_local_gather",
+      "founder_direction_assessment",
       "run_recon",
       "enrich_entity",
       "detect_contradictions",
