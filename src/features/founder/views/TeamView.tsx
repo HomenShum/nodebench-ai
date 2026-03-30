@@ -68,9 +68,37 @@ export default function TeamView() {
   const [delegateTask, setDelegateTask] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Join flow — name input for new users arriving via invite link
+  // Room code — Kahoot-style scoping so only people with the code can join
   const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
   const isJoinMode = params.get("join") === "true";
+  const urlRoomCode = params.get("room") ?? "";
+
+  const [roomCode, setRoomCode] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("nodebench-team-room") ?? "";
+    }
+    return "";
+  });
+  const [roomCodeInput, setRoomCodeInput] = useState(urlRoomCode);
+
+  // Generate a new room code (founder creates)
+  const generateRoomCode = useCallback(() => {
+    const code = Math.random().toString(36).slice(2, 8).toUpperCase();
+    setRoomCode(code);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("nodebench-team-room", code);
+    }
+    return code;
+  }, []);
+
+  // Join existing room
+  const joinRoom = useCallback((code: string) => {
+    setRoomCode(code.toUpperCase());
+    if (typeof window !== "undefined") {
+      localStorage.setItem("nodebench-team-room", code.toUpperCase());
+    }
+  }, []);
+
   const [userName, setUserName] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("nodebench-team-name") ?? "";
@@ -79,15 +107,19 @@ export default function TeamView() {
   });
   const [hasJoined, setHasJoined] = useState(() => {
     if (typeof window !== "undefined") {
-      return !!localStorage.getItem("nodebench-team-name");
+      return !!localStorage.getItem("nodebench-team-name") && !!localStorage.getItem("nodebench-team-room");
     }
     return false;
   });
 
   const handleJoin = useCallback(async () => {
     if (!userName.trim()) return;
+    if (!roomCode && !roomCodeInput.trim()) return;
     const name = userName.trim().toLowerCase().replaceAll(" ", "_");
+    const code = roomCode || roomCodeInput.trim().toUpperCase();
     localStorage.setItem("nodebench-team-name", name);
+    localStorage.setItem("nodebench-team-room", code);
+    setRoomCode(code);
     setHasJoined(true);
 
     // Register with the API
@@ -114,8 +146,8 @@ export default function TeamView() {
     : "peer:founder:local";
 
   const inviteLink = typeof window !== "undefined"
-    ? `${window.location.origin}/founder/coordination?tab=team&join=true`
-    : "https://www.nodebenchai.com/founder/coordination?tab=team&join=true";
+    ? `${window.location.origin}/founder/coordination?tab=team&join=true&room=${roomCode}`
+    : `https://www.nodebenchai.com/founder/coordination?tab=team&join=true&room=${roomCode}`;
 
   const handleCopyInviteLink = useCallback(() => {
     navigator.clipboard.writeText(inviteLink);
@@ -304,31 +336,65 @@ export default function TeamView() {
   if ((isJoinMode && !hasJoined) || (!hasJoined && !currentPeerId.includes("founder"))) {
     return (
       <div className="flex h-full items-center justify-center bg-[#151413]">
-        <div className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-white/[0.02] p-8 text-center">
+        <div className="w-full max-w-md rounded-2xl border border-white/[0.08] bg-white/[0.02] p-8 text-center">
           <Users className="mx-auto h-10 w-10 text-[#d97757]" />
-          <h2 className="mt-4 text-lg font-semibold text-white/90">Join the team</h2>
+          <h2 className="mt-4 text-xl font-bold text-white/90">Join a Team Room</h2>
           <p className="mt-2 text-sm text-white/40">
-            Enter your name to connect. Your Claude Code agent will be
-            visible to teammates for messaging and delegation.
+            Enter the room code from your team lead, or create a new room.
           </p>
+
+          {/* Room code input — big, centered, Kahoot-style */}
+          <div className="mt-6">
+            <label className="text-[10px] uppercase tracking-widest text-white/30">Room Code</label>
+            <input
+              value={urlRoomCode || roomCodeInput}
+              onChange={(e) => setRoomCodeInput(e.target.value.toUpperCase().slice(0, 6))}
+              placeholder="e.g. X7K2M9"
+              maxLength={6}
+              className="mt-1 w-full rounded-xl border-2 border-white/[0.12] bg-black/30 px-4 py-4 text-center font-mono text-2xl font-bold tracking-[0.3em] text-[#d97757] placeholder:text-white/15 focus:border-[#d97757]/50 focus:outline-none"
+              autoFocus={!urlRoomCode}
+              readOnly={!!urlRoomCode}
+            />
+          </div>
+
+          {/* Name input */}
           <input
             value={userName}
             onChange={(e) => setUserName(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") void handleJoin(); }}
             placeholder="Your name (e.g. Sarah)"
             className="mt-4 w-full rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 text-sm text-white/80 placeholder:text-white/25 focus:border-[#d97757]/40 focus:outline-none"
-            autoFocus
+            autoFocus={!!urlRoomCode}
           />
+
           <button
             type="button"
             onClick={() => void handleJoin()}
-            disabled={!userName.trim()}
-            className="mt-3 w-full rounded-lg bg-[#d97757] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#c86747] disabled:opacity-30"
+            disabled={!userName.trim() || (!roomCode && !roomCodeInput.trim())}
+            className="mt-4 w-full rounded-lg bg-[#d97757] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#c86747] disabled:opacity-30"
           >
-            Join & Connect
+            Join Room
           </button>
-          <p className="mt-3 text-[10px] text-white/20">
-            Your name is stored locally. No account required.
+
+          <div className="mt-4 flex items-center gap-3">
+            <div className="h-px flex-1 bg-white/[0.06]" />
+            <span className="text-[10px] text-white/20">or</span>
+            <div className="h-px flex-1 bg-white/[0.06]" />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              const code = generateRoomCode();
+              setRoomCodeInput(code);
+            }}
+            className="mt-4 w-full rounded-lg border border-white/[0.1] bg-white/[0.04] py-2.5 text-sm font-medium text-white/60 transition-colors hover:bg-white/[0.08]"
+          >
+            Create New Room
+          </button>
+
+          <p className="mt-4 text-[10px] text-white/20">
+            Room codes scope your team. Only people with the same code see each other.
           </p>
         </div>
       </div>
@@ -340,21 +406,31 @@ export default function TeamView() {
       {/* ── Left: Peer List ──────────────────────────────────────── */}
       <aside className="w-72 shrink-0 border-r border-white/[0.06] bg-[#151413]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-[#d97757]" />
-            <h2 className="text-sm font-semibold text-white/80">Team</h2>
-            <span className={cn("h-2 w-2 rounded-full", isConnected ? "bg-emerald-400" : "bg-white/20")} />
+        <div className="border-b border-white/[0.06] px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-[#d97757]" />
+              <h2 className="text-sm font-semibold text-white/80">Team</h2>
+              <span className={cn("h-2 w-2 rounded-full", isConnected ? "bg-emerald-400" : "bg-white/20")} />
+            </div>
+            <button
+              onClick={refresh}
+              disabled={isLoading}
+              className="rounded-md p-1 text-white/30 hover:bg-white/5 hover:text-white/50"
+              type="button"
+              aria-label="Refresh"
+            >
+              <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "animate-spin")} />
+            </button>
           </div>
-          <button
-            onClick={refresh}
-            disabled={isLoading}
-            className="rounded-md p-1 text-white/30 hover:bg-white/5 hover:text-white/50"
-            type="button"
-            aria-label="Refresh"
-          >
-            <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "animate-spin")} />
-          </button>
+          {roomCode && (
+            <div className="mt-1.5 flex items-center gap-2">
+              <span className="rounded bg-[#d97757]/10 px-2 py-0.5 font-mono text-[11px] font-bold tracking-widest text-[#d97757]">
+                {roomCode}
+              </span>
+              <span className="text-[9px] text-white/20">Room code</span>
+            </div>
+          )}
         </div>
 
         {/* Peer list */}
@@ -522,6 +598,19 @@ export default function TeamView() {
                         if (!delegateTask.trim()) return;
                         const roles = getPeerRoles(selectedPeer);
                         const shaped = shapeDelegationForRole(roles, delegateTask, "Team coordination via NodeBench");
+                        const fullContent = shaped.formattedTask + (shaped.onboardingSteps ? "\n\nOnboarding steps:\n" + shaped.onboardingSteps.map((s, i) => `${i + 1}. ${s}`).join("\n") : "");
+                        // Add to local chat immediately
+                        setLocalMessages((prev) => [
+                          ...prev,
+                          {
+                            id: `delegate-${Date.now()}`,
+                            fromPeerId: currentPeerId,
+                            toPeerId: selectedPeer,
+                            content: fullContent,
+                            timestamp: new Date().toISOString(),
+                            roles: getPeerRoles(currentPeerId),
+                          },
+                        ]);
                         try {
                           const { SHARED_CONTEXT_API_BASE } = await import("@/lib/syncBridgeApi");
                           await fetch(`${SHARED_CONTEXT_API_BASE}/message`, {
@@ -530,16 +619,15 @@ export default function TeamView() {
                             body: JSON.stringify({
                               fromPeerId: currentPeerId,
                               toPeerId: selectedPeer,
-                              content: shaped.formattedTask + (shaped.onboardingSteps ? "\n\nOnboarding steps:\n" + shaped.onboardingSteps.map((s, i) => `${i + 1}. ${s}`).join("\n") : ""),
+                              content: fullContent,
                               messageType: "request",
                             }),
                           });
                         } catch {
-                          // silent
+                          // silent — already in local state
                         }
                         setDelegateTask("");
                         setShowDelegatePanel(false);
-                        refresh();
                       }}
                       disabled={!delegateTask.trim()}
                       className="rounded-md bg-[#d97757] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#c86747] disabled:opacity-30"
