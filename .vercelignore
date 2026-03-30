@@ -25,3 +25,7 @@ public/dogfood/coordination-demo.mp4
 public/dogfood/coordination-demo.webm
 public/dogfood/scribe/
 public/dogfood/frames/
+
+# Scripts with browser profiles (locks files)
+scripts/tax-2025/
+scripts/career/
