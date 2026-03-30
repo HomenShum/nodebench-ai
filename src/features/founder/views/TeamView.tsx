@@ -81,14 +81,29 @@ export default function TeamView() {
 
   const handleSend = useCallback(async () => {
     if (!selectedPeer || !composeText.trim()) return;
-    await actions.publishPacket({
-      contextType: "state_snapshot_packet",
-      producerPeerId: currentPeerId,
-      subject: `Message to ${peerLabel(selectedPeer)}`,
-      summary: composeText.trim(),
-      claims: [],
-      evidenceRefs: [],
-    });
+    try {
+      const { SHARED_CONTEXT_API_BASE } = await import("@/lib/syncBridgeApi");
+      await fetch(`${SHARED_CONTEXT_API_BASE}/message`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fromPeerId: currentPeerId,
+          toPeerId: selectedPeer,
+          content: composeText.trim(),
+          messageType: "request",
+        }),
+      });
+    } catch {
+      // Fallback to publish if /message not available
+      await actions.publishPacket({
+        contextType: "state_snapshot_packet",
+        producerPeerId: currentPeerId,
+        subject: `Message to ${peerLabel(selectedPeer)}`,
+        summary: composeText.trim(),
+        claims: [],
+        evidenceRefs: [],
+      });
+    }
     setComposeText("");
     refresh();
   }, [selectedPeer, composeText, actions, refresh]);

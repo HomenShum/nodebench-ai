@@ -1122,5 +1122,56 @@ export function createSharedContextRouter(): Router {
     }
   });
 
+  // ── POST /message — lightweight peer-to-peer messaging ────────────
+  // Unlike /publish (which requires a search result packet), this endpoint
+  // accepts raw messages between Claude Code instances for the Team page.
+  router.post("/message", async (req, res) => {
+    try {
+      const { fromPeerId, toPeerId, content, messageType } = req.body ?? {};
+      if (!fromPeerId || !toPeerId || !content) {
+        return res.status(400).json({
+          success: false,
+          message: "fromPeerId, toPeerId, and content are required.",
+        });
+      }
+
+      const messageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const now = new Date().toISOString();
+
+      // Register sender peer if not already registered
+      registerSharedContextPeer({
+        peerId: fromPeerId,
+        product: "nodebench",
+        surface: "local_runtime",
+        role: "runner",
+        capabilities: ["send-message"],
+        summary: {},
+      });
+
+      // Emit SSE event for real-time delivery
+      const bus = getSharedContextEventBus();
+      bus.emit("shared_context", {
+        type: "message_sent",
+        timestamp: now,
+        payload: { messageId, fromPeerId, toPeerId, subject: content.slice(0, 80) },
+      });
+
+      return res.json({
+        success: true,
+        messageId,
+        fromPeerId,
+        toPeerId,
+        timestamp: now,
+      });
+    } catch (error) {
+      if (!res.headersSent) {
+        return res.status(500).json({
+          success: false,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+  });
+
   return router;
 }
