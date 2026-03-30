@@ -658,6 +658,7 @@ export function buildCockpitPath({
   workspace,
   panel,
   tab,
+  extra,
 }: {
   surfaceId: CockpitSurfaceId;
   view?: MainView | null;
@@ -667,6 +668,7 @@ export function buildCockpitPath({
   workspace?: string | null;
   panel?: string | null;
   tab?: string | null;
+  extra?: Record<string, string | null>;
 }): string {
   const params = new URLSearchParams();
   params.set("surface", surfaceId);
@@ -677,6 +679,12 @@ export function buildCockpitPath({
   if (workspace) params.set("workspace", workspace);
   if (panel) params.set("panel", panel);
   if (tab) params.set("tab", tab);
+  // Pass through extra params (join, room, etc.) without dropping them
+  if (extra) {
+    for (const [k, v] of Object.entries(extra)) {
+      if (v) params.set(k, v);
+    }
+  }
   return `/?${params.toString()}`;
 }
 
@@ -688,6 +696,7 @@ export function buildCockpitPathForView({
   workspace,
   panel,
   tab,
+  extra,
 }: {
   view: MainView;
   entity?: string | null;
@@ -696,6 +705,7 @@ export function buildCockpitPathForView({
   workspace?: string | null;
   panel?: string | null;
   tab?: string | null;
+  extra?: Record<string, string | null>;
 }): string {
   const surfaceId = getSurfaceForView(view);
   return buildCockpitPath({
@@ -706,7 +716,8 @@ export function buildCockpitPathForView({
     doc,
     workspace,
     panel: panel ?? (view === "delegation" ? "permissions" : null),
-    tab: surfaceId === "research" ? tab ?? null : null,
+    tab,
+    extra,
   });
 }
 
@@ -753,7 +764,8 @@ export function resolvePathToCockpitState(rawPathname: string, rawSearch = ""): 
       doc: params.get("doc"),
       workspace: params.get("workspace"),
       panel: params.get("panel"),
-      tab: activeSurface === "research" ? researchTab : null,
+      tab: params.get("tab"),
+      extra: { join: params.get("join"), room: params.get("room") },
     });
 
     return {
@@ -782,7 +794,8 @@ export function resolvePathToCockpitState(rawPathname: string, rawSearch = ""): 
     doc: params.get("doc"),
     workspace: params.get("workspace"),
     panel: resolved.view === "delegation" ? "permissions" : null,
-    tab: surfaceId === "research" ? resolved.researchTab : null,
+    tab: params.get("tab") ?? (surfaceId === "research" ? resolved.researchTab : null),
+    extra: { join: params.get("join"), room: params.get("room") },
   });
 
   return {
