@@ -275,10 +275,11 @@ export const CompanyProfile = memo(function CompanyProfile({
         </div>
         <button
           type="button"
-          onClick={onClose}
-          className="rounded-lg p-1.5 text-content-muted hover:text-content hover:bg-white/[0.06] transition-colors"
+          onClick={(e) => { e.stopPropagation(); onClose(); }}
+          className="rounded-lg p-2.5 text-content-muted hover:text-content hover:bg-white/[0.10] transition-colors"
+          aria-label="Close profile"
         >
-          <X className="h-4 w-4" />
+          <X className="h-5 w-5" />
         </button>
       </div>
 
