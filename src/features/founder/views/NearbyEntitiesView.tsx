@@ -275,7 +275,7 @@ function NearbyEntitiesView() {
               onClick={() => setViewMode("list")}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
                 viewMode === "list"
-                  ? "bg-[#d97757]/15 text-[#d97757]"
+                  ? "bg-white/[0.08] text-white"
                   : "text-white/50 hover:text-white/70"
               }`}
             >
@@ -287,7 +287,7 @@ function NearbyEntitiesView() {
               onClick={() => setViewMode("graph")}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
                 viewMode === "graph"
-                  ? "bg-[#d97757]/15 text-[#d97757]"
+                  ? "bg-white/[0.08] text-white"
                   : "text-white/50 hover:text-white/70"
               }`}
             >

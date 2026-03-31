@@ -690,12 +690,12 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     });
   }, []);
 
-  // Conversation starters — docs-relevant for Ask NodeBench
+  // Conversation starters — founder-relevant for Ask NodeBench
   const conversationStarters = useMemo(() => [
-    { icon: '📊', label: 'Trajectory scoring', prompt: 'How does trajectory scoring work in NodeBench?' },
-    { icon: '🔒', label: 'Judgment gates', prompt: 'Explain the boolean judgment gates and disqualifiers' },
-    { icon: '🔍', label: 'Research tools', prompt: 'What tools handle research workflows?' },
-    { icon: '📋', label: 'Agent activity', prompt: 'Show me recent agent activity and denied actions' },
+    { icon: '🎯', label: 'Pitch readiness', prompt: 'What gaps do I have before pitching investors?' },
+    { icon: '🏗️', label: 'Build vs buy', prompt: 'Should I build this feature or find a partner?' },
+    { icon: '📋', label: 'Weekly reset', prompt: 'Give me my founder weekly reset — what changed, contradictions, next 3 moves' },
+    { icon: '🔍', label: 'Competitor check', prompt: 'What have my competitors shipped recently?' },
   ], []);
 
   // Image paste preview
@@ -2762,16 +2762,16 @@ export const FastAgentPanel = memo(function FastAgentPanel({
 
                        {/* Marketing Tagline */}
                        <p className="text-[13px] text-content-muted text-center max-w-[320px] leading-relaxed">
-                         Product docs, architecture, codebase behavior, workflows, and live system context.
+                         Your startup intelligence assistant. Ask about competitors, gaps, readiness, and next moves.
                        </p>
 
                        {/* Suggestion Chips (ChatGPT pattern) */}
                        <div className="flex flex-wrap justify-center gap-2 mt-5 max-w-[380px]">
                          {[
-                           { label: 'How does trajectory scoring work?', icon: '📊' },
-                           { label: 'Explain the judgment layer gates', icon: '⚡' },
-                           { label: 'What tools handle research?', icon: '🔍' },
-                           { label: 'Show recent agent activity', icon: '📋' },
+                           { label: 'What gaps do I have before pitching?', icon: '🎯' },
+                           { label: 'Should I build or find a partner?', icon: '🏗️' },
+                           { label: 'Give me my weekly founder reset', icon: '📋' },
+                           { label: 'What have competitors shipped?', icon: '🔍' },
                          ].map((chip) => (
                            <button
                              key={chip.label}
