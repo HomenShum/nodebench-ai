@@ -37,7 +37,9 @@ export function useCockpitMode() {
     localStorage.setItem(COCKPIT_MODE_KEY, mode);
   }, [mode]);
 
-  // On first mount, restore the last active mode if it differs from the current view's mode
+  // On first mount, restore the last active mode — BUT only if the URL
+  // doesn't already have an explicit ?surface= param. If the user (or code)
+  // navigated to /?surface=memo, respect that instead of overriding.
   const initRef = useRef(false);
   useEffect(() => {
     if (initRef.current) return;
@@ -48,6 +50,9 @@ export function useCockpitMode() {
       location.pathname === "/home" ||
       location.pathname === "/landing";
     if (!isHomeLikePath) return;
+    // If URL already has an explicit surface param, respect it — don't override
+    const urlParams = new URLSearchParams(location.search);
+    if (urlParams.has("surface")) return;
     const saved = localStorage.getItem(COCKPIT_MODE_KEY) as CockpitMode | null;
     if (saved && saved !== mode) {
       const config = MODES.find((m) => m.id === saved);
