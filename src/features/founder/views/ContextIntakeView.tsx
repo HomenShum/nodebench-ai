@@ -382,7 +382,7 @@ function ContextIntakeView() {
           type="button"
           onClick={handleGenerate}
           disabled={!hasNotes || isAnalyzing}
-          className="flex shrink-0 items-center gap-2 rounded-lg bg-[#d97757]/15 px-4 py-2 text-sm font-semibold text-[#d97757] transition-colors hover:bg-[#d97757]/25 disabled:cursor-not-allowed disabled:opacity-30"
+          className="flex shrink-0 items-center gap-2 rounded-lg bg-accent-primary/15 px-4 py-2 text-sm font-semibold text-accent-primary transition-colors hover:bg-accent-primary/25 disabled:cursor-not-allowed disabled:opacity-30"
         >
           {isAnalyzing ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -404,7 +404,7 @@ function ContextIntakeView() {
             onChange={(e) => handleNotesChange(e.target.value)}
             placeholder="Paste anything — meeting notes, pitch fragments, product ideas, strategy docs, competitor observations..."
             rows={6}
-            className="mt-3 w-full resize-none rounded-lg border border-white/[0.20] bg-white/[0.12] px-4 py-3 text-sm leading-relaxed text-white/80 placeholder-white/20 outline-none transition-colors focus:border-[#d97757]/30 focus:bg-white/[0.06]"
+            className="mt-3 w-full resize-none rounded-lg border border-white/[0.20] bg-white/[0.12] px-4 py-3 text-sm leading-relaxed text-white/80 placeholder-white/20 outline-none transition-colors focus:border-accent-primary/30 focus:bg-white/[0.06]"
             style={{ minHeight: 160 }}
           />
           <div className="mt-1.5 text-right text-[10px] text-white/70">
@@ -431,7 +431,7 @@ function ContextIntakeView() {
                   className={cn(
                     "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors",
                     addingSource === btn.type
-                      ? "bg-[#d97757]/15 text-[#d97757]"
+                      ? "bg-accent-primary/15 text-accent-primary"
                       : "bg-white/[0.07] text-white/60 hover:text-white/60",
                   )}
                 >
@@ -464,13 +464,13 @@ function ContextIntakeView() {
                       SOURCE_BUTTONS.find((b) => b.type === addingSource)
                         ?.placeholder ?? "Enter value..."
                     }
-                    className="flex-1 rounded-md border border-white/[0.20] bg-white/[0.12] px-3 py-2 text-xs text-white/70 placeholder-white/20 outline-none focus:border-[#d97757]/30"
+                    className="flex-1 rounded-md border border-white/[0.20] bg-white/[0.12] px-3 py-2 text-xs text-white/70 placeholder-white/20 outline-none focus:border-accent-primary/30"
                   />
                   <button
                     type="button"
                     onClick={handleAddSource}
                     disabled={!sourceInput.trim()}
-                    className="rounded-md bg-[#d97757]/10 px-3 py-2 text-xs font-medium text-[#d97757] transition-colors hover:bg-[#d97757]/20 disabled:opacity-30"
+                    className="rounded-md bg-accent-primary/10 px-3 py-2 text-xs font-medium text-accent-primary transition-colors hover:bg-accent-primary/20 disabled:opacity-30"
                   >
                     Add
                   </button>
@@ -530,7 +530,7 @@ function ContextIntakeView() {
                   value={val}
                   onChange={(e) => updateCompetitor(i, e.target.value)}
                   placeholder={`Competitor ${i + 1}`}
-                  className="w-36 rounded-md border border-white/[0.20] bg-white/[0.12] px-2.5 py-1.5 text-xs text-white/60 placeholder-white/15 outline-none focus:border-[#d97757]/30"
+                  className="w-36 rounded-md border border-white/[0.20] bg-white/[0.12] px-2.5 py-1.5 text-xs text-white/60 placeholder-white/15 outline-none focus:border-accent-primary/30"
                 />
               ))}
               {entities.competitors.length < 5 && (
@@ -556,7 +556,7 @@ function ContextIntakeView() {
                   value={val}
                   onChange={(e) => updatePartner(i, e.target.value)}
                   placeholder={i === 0 ? "Partner" : "Customer"}
-                  className="w-36 rounded-md border border-white/[0.20] bg-white/[0.12] px-2.5 py-1.5 text-xs text-white/60 placeholder-white/15 outline-none focus:border-[#d97757]/30"
+                  className="w-36 rounded-md border border-white/[0.20] bg-white/[0.12] px-2.5 py-1.5 text-xs text-white/60 placeholder-white/15 outline-none focus:border-accent-primary/30"
                 />
               ))}
               {entities.partners.length < 2 && (
@@ -586,7 +586,7 @@ function ContextIntakeView() {
                 {[0, 1, 2].map((i) => (
                   <div
                     key={i}
-                    className="h-2 w-2 rounded-full bg-[#d97757]"
+                    className="h-2 w-2 rounded-full bg-accent-primary"
                     animate={{ opacity: [0.3, 1, 0.3] }}
                     transition={{
                       duration: 1,
@@ -611,7 +611,7 @@ function ContextIntakeView() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 16 }}
               transition={transition({ duration: 0.3 })}
-              className={cn(GLASS_CARD, "border-[#d97757]/10")}
+              className={cn(GLASS_CARD, "border-accent-primary/10")}
             >
               <div className="flex items-center justify-between">
                 <h2 className={SECTION_HEADER}>Preview</h2>
@@ -619,7 +619,7 @@ function ContextIntakeView() {
                   <span className="rounded-full bg-white/[0.07] px-2 py-0.5 text-[10px] text-white/60">
                     Forming
                   </span>
-                  <span className="rounded-full bg-[#d97757]/10 px-2 py-0.5 text-[10px] font-medium text-[#d97757]">
+                  <span className="rounded-full bg-accent-primary/10 px-2 py-0.5 text-[10px] font-medium text-accent-primary">
                     Confidence: {extracted.confidence}%
                   </span>
                 </div>
@@ -668,7 +668,7 @@ function ContextIntakeView() {
                         key={i}
                         className="flex items-start gap-2 text-[12px] text-white/60"
                       >
-                        <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-[#d97757]/50" />
+                        <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-accent-primary/50" />
                         <span className="line-clamp-2">{change}</span>
                       </li>
                     ))}
@@ -697,7 +697,7 @@ function ContextIntakeView() {
                       key={i}
                       className="flex items-start gap-2 text-[12px] text-white/60"
                     >
-                      <span className="mt-0.5 shrink-0 text-[10px] font-bold text-[#d97757]/60">
+                      <span className="mt-0.5 shrink-0 text-[10px] font-bold text-accent-primary/60">
                         {i + 1}.
                       </span>
                       {move}
@@ -739,7 +739,7 @@ function ContextIntakeView() {
                     <button
                       type="button"
                       onClick={handleAccept}
-                      className="flex items-center gap-1.5 rounded-lg bg-[#d97757]/15 px-5 py-2 text-sm font-semibold text-[#d97757] transition-colors hover:bg-[#d97757]/25"
+                      className="flex items-center gap-1.5 rounded-lg bg-accent-primary/15 px-5 py-2 text-sm font-semibold text-accent-primary transition-colors hover:bg-accent-primary/25"
                     >
                       Accept &amp; Go to Dashboard
                       <ChevronRight className="h-4 w-4" />
@@ -781,13 +781,13 @@ function PreviewField({
             value={editValue}
             onChange={(e) => onEditChange(e.target.value)}
             rows={2}
-            className="mt-1 w-full resize-none rounded-md border border-[#d97757]/20 bg-white/[0.02] px-3 py-1.5 text-sm text-white/70 outline-none focus:border-[#d97757]/40"
+            className="mt-1 w-full resize-none rounded-md border border-accent-primary/20 bg-white/[0.02] px-3 py-1.5 text-sm text-white/70 outline-none focus:border-accent-primary/40"
           />
         ) : (
           <input
             value={editValue}
             onChange={(e) => onEditChange(e.target.value)}
-            className="mt-1 w-full rounded-md border border-[#d97757]/20 bg-white/[0.02] px-3 py-1.5 text-sm text-white/70 outline-none focus:border-[#d97757]/40"
+            className="mt-1 w-full rounded-md border border-accent-primary/20 bg-white/[0.02] px-3 py-1.5 text-sm text-white/70 outline-none focus:border-accent-primary/40"
           />
         )
       ) : (

@@ -68,7 +68,7 @@ export const InterventionsView = memo(function InterventionsView() {
               >
                 {/* Main row */}
                 <div className="flex items-start gap-4 px-6 py-5">
-                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#d97757]/10 text-sm font-bold text-[#d97757]">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-accent-primary/10 text-sm font-bold text-accent-primary">
                     {item.rank}
                   </span>
                   <div className="flex-1 min-w-0">

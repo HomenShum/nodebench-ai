@@ -148,7 +148,7 @@ export default function FounderStrategyView() {
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <GitCompare className="h-5 w-5 text-[#d97757]" />
+        <GitCompare className="h-5 w-5 text-accent-primary" />
         <h1 className="text-lg font-semibold text-white/90">Strategy Comparison</h1>
       </div>
 
@@ -162,7 +162,7 @@ export default function FounderStrategyView() {
             className={cn(
               "rounded-xl border p-5 text-left transition-all",
               selectedDir === dir.id
-                ? "border-[#d97757]/30 bg-[#d97757]/[0.04]"
+                ? "border-accent-primary/30 bg-accent-primary/[0.04]"
                 : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12]",
             )}
           >
@@ -172,7 +172,7 @@ export default function FounderStrategyView() {
                 <p className="mt-1 text-xs text-white/40">{dir.wedge}</p>
               </div>
               <div className="text-right">
-                <div className="text-xl font-bold text-[#d97757]">{Math.round(dir.confidence * 100)}%</div>
+                <div className="text-xl font-bold text-accent-primary">{Math.round(dir.confidence * 100)}%</div>
                 <div className="text-[10px] text-white/30">confidence</div>
               </div>
             </div>
@@ -184,7 +184,7 @@ export default function FounderStrategyView() {
                   <span className="w-24 text-[11px] text-white/40">{angle.name}</span>
                   <div className="h-1.5 flex-1 rounded-full bg-white/5">
                     <div
-                      className="h-full rounded-full bg-[#d97757]/60"
+                      className="h-full rounded-full bg-accent-primary/60"
                       style={{ width: `${angle.score * 10}%` }}
                     />
                   </div>
@@ -248,7 +248,7 @@ export default function FounderStrategyView() {
                     <button
                       type="button"
                       onClick={() => handleDelegate(issue.id)}
-                      className="rounded-md bg-[#d97757]/20 px-2.5 py-1 text-[10px] font-medium text-[#d97757] transition-colors hover:bg-[#d97757]/30"
+                      className="rounded-md bg-accent-primary/20 px-2.5 py-1 text-[10px] font-medium text-accent-primary transition-colors hover:bg-accent-primary/30"
                     >
                       Delegate
                     </button>

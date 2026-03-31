@@ -92,7 +92,7 @@ export default function CompanySearchView() {
 
         {/* Search input */}
         <div className="mt-8" role="search">
-          <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.06] px-4 py-3 focus-within:border-[#d97757]/30 transition-colors">
+          <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.06] px-4 py-3 focus-within:border-accent-primary/30 transition-colors">
             <Search className="h-5 w-5 shrink-0 text-white/60" />
             <input
               type="text"
@@ -120,7 +120,7 @@ export default function CompanySearchView() {
                   className={cn(
                     "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-left text-xs font-medium transition-colors",
                     isActive
-                      ? "border-[#d97757]/30 bg-[#d97757]/10 text-[#d97757]"
+                      ? "border-accent-primary/30 bg-accent-primary/10 text-accent-primary"
                       : "border-white/[0.20] bg-white/[0.12] text-white/60 hover:bg-white/[0.07] hover:text-white/75",
                   )}
                   role="radio"
@@ -150,7 +150,7 @@ export default function CompanySearchView() {
                   className={cn(
                     "rounded-lg border px-3 py-2 text-xs font-medium transition-colors",
                     isActive
-                      ? "border-[#d97757]/30 bg-[#d97757]/10 text-[#d97757]"
+                      ? "border-accent-primary/30 bg-accent-primary/10 text-accent-primary"
                       : "border-white/[0.20] bg-white/[0.12] text-white/60 hover:bg-white/[0.07] hover:text-white/75",
                   )}
                   role="radio"
@@ -167,7 +167,7 @@ export default function CompanySearchView() {
         <div className="mt-6">
           <button
             onClick={handleSubmit}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#d97757] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#c4684a]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#c4684a]"
           >
             Run Analysis
             <ArrowRight className="h-4 w-4" />
@@ -187,7 +187,7 @@ export default function CompanySearchView() {
               "Artifact packet for export as memo, sheet, deck, or HTML",
             ].map((item, i) => (
               <li key={i} className="flex items-start gap-2">
-                <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d97757]/50" />
+                <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-accent-primary/50" />
                 <span className="text-xs leading-relaxed text-white/60">{item}</span>
               </li>
             ))}

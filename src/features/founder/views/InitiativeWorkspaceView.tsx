@@ -262,7 +262,7 @@ const riskConfig: Record<RiskLevel, { color: string; label: string }> = {
 };
 
 const ownerConfig: Record<OwnerType, { color: string; label: string }> = {
-  founder: { color: "bg-[#d97757]/10 text-[#d97757]", label: "Founder" },
+  founder: { color: "bg-accent-primary/10 text-accent-primary", label: "Founder" },
   agent: { color: "bg-violet-500/10 text-violet-400", label: "Agent" },
   shared: { color: "bg-cyan-500/10 text-cyan-400", label: "Shared" },
 };
@@ -304,7 +304,7 @@ function importanceColor(n: number): string {
 const timelineTypeColor: Record<string, string> = {
   created: "bg-cyan-500",
   status_change: "bg-amber-500",
-  signal: "bg-[#d97757]",
+  signal: "bg-accent-primary",
   agent: "bg-violet-500",
   decision: "bg-emerald-500",
 };
@@ -573,7 +573,7 @@ export default function InitiativeWorkspaceView() {
                 </div>
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
                   <div
-                    className="h-full rounded-full bg-[#d97757] transition-all duration-500"
+                    className="h-full rounded-full bg-accent-primary transition-all duration-500"
                     style={{ width: `${data.priorityScore}%` }}
                   />
                 </div>
@@ -639,7 +639,7 @@ export default function InitiativeWorkspaceView() {
                   className="rounded-lg border border-white/[0.20] bg-white/[0.12] p-3"
                 >
                   <div className="mb-2 flex items-start gap-2">
-                    <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#d97757]" />
+                    <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-primary" />
                     <p className="text-sm text-content-primary">{a.title}</p>
                   </div>
                   <div className="flex items-center justify-between">
@@ -649,7 +649,7 @@ export default function InitiativeWorkspaceView() {
                     <div className="flex gap-1.5">
                       <button
                         onClick={() => handleAcceptAction(a.id, a.title)}
-                        className="rounded-md bg-[#d97757]/10 px-2.5 py-1 text-xs font-medium text-[#d97757] transition-colors hover:bg-[#d97757]/20"
+                        className="rounded-md bg-accent-primary/10 px-2.5 py-1 text-xs font-medium text-accent-primary transition-colors hover:bg-accent-primary/20"
                       >
                         Accept
                       </button>

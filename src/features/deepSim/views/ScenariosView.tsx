@@ -77,7 +77,7 @@ export const ScenariosView = memo(function ScenariosView() {
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#d97757]/10 text-sm font-bold text-[#d97757]">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-primary/10 text-sm font-bold text-accent-primary">
                       {i === 0 ? "B" : i === 1 ? "+" : "-"}
                     </span>
                     <div>
@@ -129,7 +129,7 @@ export const ScenariosView = memo(function ScenariosView() {
                       <ul className="space-y-1.5">
                         {s.interventionsNeeded.map((iv, j) => (
                           <li key={j} className="flex items-start gap-2 text-xs text-content-secondary">
-                            <span className="mt-0.5 flex h-3 w-3 shrink-0 items-center justify-center rounded text-[8px] font-bold text-[#d97757] bg-[#d97757]/10">
+                            <span className="mt-0.5 flex h-3 w-3 shrink-0 items-center justify-center rounded text-[8px] font-bold text-accent-primary bg-accent-primary/10">
                               {j + 1}
                             </span>
                             {iv}

@@ -107,7 +107,7 @@ const DEMO_SESSION_DELTA = {
 // ── Styling ────────────────────────────────────────────────────────────
 
 const SECTION_ICONS: Record<string, { icon: typeof Sparkles; color: string }> = {
-  strategy: { icon: Target, color: "text-[#d97757]" },
+  strategy: { icon: Target, color: "text-accent-primary" },
   competitors: { icon: Globe, color: "text-blue-400" },
   contradictions: { icon: AlertTriangle, color: "text-amber-400" },
   build: { icon: Zap, color: "text-emerald-400" },
@@ -129,10 +129,10 @@ function DeltaHeader({ delta }: { delta: typeof DEMO_SESSION_DELTA }) {
   const timeSince = Date.now() - delta.sinceTimestamp;
 
   return (
-    <div className="rounded-xl border border-[#d97757]/20 bg-[#d97757]/[0.05] p-5">
+    <div className="rounded-xl border border-accent-primary/20 bg-accent-primary/[0.05] p-5">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#d97757]/10">
-          <Sparkles className="h-5 w-5 text-[#d97757]" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-primary/10">
+          <Sparkles className="h-5 w-5 text-accent-primary" />
         </div>
         <div>
           <h1 className="text-sm font-medium text-white/80">Since your last session</h1>
@@ -141,7 +141,7 @@ function DeltaHeader({ delta }: { delta: typeof DEMO_SESSION_DELTA }) {
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <MiniStat label="Strategy" count={delta.strategyShifts.length} color="text-[#d97757]" />
+        <MiniStat label="Strategy" count={delta.strategyShifts.length} color="text-accent-primary" />
         <MiniStat label="Competitors" count={delta.competitorSignals.length} color="text-blue-400" />
         <MiniStat label="Contradictions" count={delta.contradictions.length} color="text-amber-400" />
         <MiniStat label="Attention" count={delta.attentionRequired} color="text-red-400" />
@@ -407,15 +407,15 @@ function CompoundingInvestmentCard() {
   }, []);
 
   return (
-    <div className="rounded-xl border border-[#d97757]/20 bg-[#d97757]/[0.03] p-5">
+    <div className="rounded-xl border border-accent-primary/20 bg-accent-primary/[0.03] p-5">
       <div className="flex items-center gap-2">
-        <TrendingUp className="h-4 w-4 text-[#d97757]" />
+        <TrendingUp className="h-4 w-4 text-accent-primary" />
         <h2 className="text-[11px] uppercase tracking-[0.2em] text-white/40">Your NodeBench Investment</h2>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-lg border border-white/[0.08] bg-white/[0.04] p-3 text-center">
-          <div className="text-xl font-light tabular-nums text-[#d97757]">{stats.totalPackets}</div>
+          <div className="text-xl font-light tabular-nums text-accent-primary">{stats.totalPackets}</div>
           <div className="text-[8px] uppercase tracking-wider text-white/25">Packets</div>
         </div>
         <div className="rounded-lg border border-white/[0.08] bg-white/[0.04] p-3 text-center">
@@ -437,7 +437,7 @@ function CompoundingInvestmentCard() {
       <p className="mt-3 text-[10px] leading-relaxed text-white/30">
         {stats.breakdown}
       </p>
-      <p className="mt-1 text-[10px] text-[#d97757]/60">
+      <p className="mt-1 text-[10px] text-accent-primary/60">
         {stats.totalPackets < 10
           ? "Build your intelligence base: run delta_diligence on key entities via CLI."
           : `Your context is compounding. ${stats.staleCount > 0 ? "Regenerate stale packets to keep intelligence fresh." : "Every session makes the next one more valuable."}`}
@@ -491,7 +491,7 @@ function WatchlistCard() {
             <div>
               <span className="text-xs font-medium text-white/70">{w.entity}</span>
               {w.changeCount > 0 && (
-                <span className="ml-2 rounded bg-[#d97757]/10 px-1.5 py-0.5 text-[9px] text-[#d97757]">
+                <span className="ml-2 rounded bg-accent-primary/10 px-1.5 py-0.5 text-[9px] text-accent-primary">
                   {w.changeCount} changes
                 </span>
               )}

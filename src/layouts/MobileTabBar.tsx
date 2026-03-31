@@ -62,7 +62,7 @@ export const MobileTabBar = memo(function MobileTabBar({
                 onClick={() => { navigate(item.path); setMoreOpen(false); }}
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/60 transition-colors hover:bg-white/[0.05] hover:text-white/80"
               >
-                <item.icon className="h-4 w-4 text-[#d97757]" />
+                <item.icon className="h-4 w-4 text-accent-primary" />
                 {item.label}
               </button>
             ))}
@@ -100,7 +100,7 @@ export const MobileTabBar = memo(function MobileTabBar({
               className={cn(
                 "flex flex-col items-center gap-1 px-3 py-1.5",
                 "transition-colors duration-150",
-                isActive ? "text-[#d97757]" : "text-white/40",
+                isActive ? "text-accent-primary" : "text-white/40",
               )}
               aria-current={isActive ? "page" : undefined}
               aria-label={tab.label}
@@ -123,7 +123,7 @@ export const MobileTabBar = memo(function MobileTabBar({
               </span>
               <span className="text-[10px] font-semibold">{tab.label}</span>
               {isActive && (
-                <span className="h-0.5 w-4 rounded-full bg-[#d97757]" />
+                <span className="h-0.5 w-4 rounded-full bg-accent-primary" />
               )}
             </button>
           );
@@ -135,14 +135,14 @@ export const MobileTabBar = memo(function MobileTabBar({
           className={cn(
             "flex flex-col items-center gap-1 px-3 py-1.5",
             "transition-colors duration-150",
-            moreOpen ? "text-[#d97757]" : "text-white/40",
+            moreOpen ? "text-accent-primary" : "text-white/40",
           )}
           aria-label="More options"
           aria-expanded={moreOpen}
         >
           <MoreHorizontal className="h-6 w-6" />
           <span className="text-[10px] font-semibold">More</span>
-          {moreOpen && <span className="h-0.5 w-4 rounded-full bg-[#d97757]" />}
+          {moreOpen && <span className="h-0.5 w-4 rounded-full bg-accent-primary" />}
         </button>
       </div>
     </nav>

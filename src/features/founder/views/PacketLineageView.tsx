@@ -70,8 +70,8 @@ function PacketVersionCard({ version, expanded, onToggle }: { version: PacketVer
     <button onClick={onToggle} className="w-full rounded-lg border border-white/[0.10] p-3.5 text-left transition-colors hover:bg-white/[0.02]">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#d97757]/10">
-            <GitCommit className="h-3.5 w-3.5 text-[#d97757]" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-primary/10">
+            <GitCommit className="h-3.5 w-3.5 text-accent-primary" />
           </div>
           <div>
             <span className="text-xs font-medium text-white/70">Packet v{version.versionNumber}</span>
@@ -183,7 +183,7 @@ function PacketLineageViewInner() {
           <div className="flex gap-1 rounded-lg border border-white/[0.08] bg-white/[0.04] p-0.5">
             <button
               onClick={() => setTab("packets")}
-              className={cn("rounded-md px-3 py-1 text-[10px] font-medium transition-colors", tab === "packets" ? "bg-[#d97757]/20 text-[#d97757]" : "text-white/40 hover:text-white/60")}
+              className={cn("rounded-md px-3 py-1 text-[10px] font-medium transition-colors", tab === "packets" ? "bg-accent-primary/20 text-accent-primary" : "text-white/40 hover:text-white/60")}
             >
               Packets ({packetVersions.length})
             </button>
@@ -203,7 +203,7 @@ function PacketLineageViewInner() {
             .reverse()
             .map((v, i, arr) => (
               <div key={v.id} className="flex shrink-0 items-center gap-1">
-                <div className={cn("flex h-8 w-8 items-center justify-center rounded-full border text-[10px] font-medium", i === arr.length - 1 ? "border-[#d97757]/40 bg-[#d97757]/10 text-[#d97757]" : "border-white/[0.10] bg-white/[0.04] text-white/40")}>
+                <div className={cn("flex h-8 w-8 items-center justify-center rounded-full border text-[10px] font-medium", i === arr.length - 1 ? "border-accent-primary/40 bg-accent-primary/10 text-accent-primary" : "border-white/[0.10] bg-white/[0.04] text-white/40")}>
                   v{v.versionNumber}
                 </div>
                 {i < arr.length - 1 && <ArrowRight className="h-3 w-3 text-white/15" />}

@@ -67,7 +67,7 @@ function StrategicFitCard({ plan }: { plan: FeaturePlan }) {
         <div className="flex-1">
           <div className="mb-1 h-2 rounded-full bg-white/10">
             <div
-              className="h-2 rounded-full bg-[#d97757] transition-all"
+              className="h-2 rounded-full bg-accent-primary transition-all"
               style={{ width: `${alignment}%` }}
             />
           </div>
@@ -358,9 +358,9 @@ function PlanProposalPanelInner({
       {/* Header */}
       <div>
         <div className="mb-1 flex items-center gap-2">
-          <FileText className="h-4 w-4 text-[#d97757]" />
+          <FileText className="h-4 w-4 text-accent-primary" />
           <h2 className="text-base font-semibold text-white">{plan.title}</h2>
-          <span className="rounded-full border border-[#d97757]/30 bg-[#d97757]/10 px-2 py-0.5 text-[10px] font-medium text-[#d97757]">
+          <span className="rounded-full border border-accent-primary/30 bg-accent-primary/10 px-2 py-0.5 text-[10px] font-medium text-accent-primary">
             {planTypeLabel}
           </span>
           {isLive && (
@@ -396,7 +396,7 @@ function PlanProposalPanelInner({
       <div className="flex flex-wrap gap-2 pt-2">
         <button
           type="button"
-          className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/70 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]"
+          className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/70 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
           onClick={handleCopy}
           aria-label="Copy plan as markdown"
         >
@@ -405,7 +405,7 @@ function PlanProposalPanelInner({
         </button>
         <button
           type="button"
-          className="flex items-center gap-1.5 rounded-lg border border-[#d97757]/30 bg-[#d97757]/10 px-3 py-1.5 text-xs text-[#d97757] transition-colors hover:bg-[#d97757]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]"
+          className="flex items-center gap-1.5 rounded-lg border border-accent-primary/30 bg-accent-primary/10 px-3 py-1.5 text-xs text-accent-primary transition-colors hover:bg-accent-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
           onClick={handleDelegate}
           aria-label="Delegate plan to agent"
         >

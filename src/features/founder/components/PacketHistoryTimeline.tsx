@@ -45,7 +45,7 @@ const TYPE_LABELS: Record<ArtifactPacketType, string> = {
 };
 
 const TYPE_BADGE: Record<ArtifactPacketType, { bg: string; text: string }> = {
-  weekly_reset: { bg: "bg-[#d97757]/15", text: "text-[#d97757]" },
+  weekly_reset: { bg: "bg-accent-primary/15", text: "text-accent-primary" },
   pre_delegation: { bg: "bg-violet-500/15", text: "text-violet-400" },
   important_change: { bg: "bg-amber-500/15", text: "text-amber-400" },
 };
@@ -244,7 +244,7 @@ function ExpandedSummary({ packet }: { packet: FounderArtifactPacket }) {
                 <span
                   className={`mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full ${
                     a.priority === "high"
-                      ? "bg-[#d97757]"
+                      ? "bg-accent-primary"
                       : a.priority === "medium"
                         ? "bg-amber-400/60"
                         : "bg-white/20"
@@ -323,7 +323,7 @@ const TimelineEntry = memo(function TimelineEntry({
         <div
           className={`flex h-3 w-3 shrink-0 items-center justify-center rounded-full ${
             isLatest
-              ? "bg-[#d97757] shadow-[0_0_8px_rgba(217,119,87,0.3)]"
+              ? "bg-accent-primary shadow-[0_0_8px_rgba(217,119,87,0.3)]"
               : "bg-white/[0.20]"
           }`}
         />
@@ -337,9 +337,9 @@ const TimelineEntry = memo(function TimelineEntry({
           onClick={() => onSelect(packet.packetId)}
           className={`w-full rounded-xl border p-3 text-left transition-all duration-150 ${
             isActive
-              ? "border-[#d97757]/40 bg-[#d97757]/5"
+              ? "border-accent-primary/40 bg-accent-primary/5"
               : isLatest
-                ? "border-[#d97757]/20 bg-white/[0.04] hover:border-[#d97757]/30 hover:bg-white/[0.06]"
+                ? "border-accent-primary/20 bg-white/[0.04] hover:border-accent-primary/30 hover:bg-white/[0.06]"
                 : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
           }`}
         >

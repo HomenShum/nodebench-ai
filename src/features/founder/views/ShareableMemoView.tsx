@@ -343,7 +343,7 @@ function MemoNotFound() {
       </p>
       <Link
         to="/"
-        className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#d97757] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#c96a4d]"
+        className="mt-6 inline-flex items-center gap-2 rounded-xl bg-accent-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-primary/80"
       >
         Go to NodeBench
       </Link>
@@ -425,8 +425,8 @@ export default function ShareableMemoView() {
           </div>
 
           {/* ── Recommendation ─────────────────────────────────────── */}
-          <div className="shareable-memo-card mt-4 rounded-xl border border-[#d97757]/20 bg-[#d97757]/[0.04] p-5 sm:p-6">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#d97757]/60 mb-3 shareable-memo-accent" style={{ fontFamily: "Manrope, sans-serif" }}>
+          <div className="shareable-memo-card mt-4 rounded-xl border border-accent-primary/20 bg-accent-primary/[0.04] p-5 sm:p-6">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent-primary/60 mb-3 shareable-memo-accent" style={{ fontFamily: "Manrope, sans-serif" }}>
               Recommendation
             </div>
             <p className="text-sm leading-relaxed text-white/80 sm:text-base" style={{ fontFamily: "Manrope, sans-serif" }}>
@@ -482,7 +482,7 @@ export default function ShareableMemoView() {
             <div className="shareable-memo-card rounded-xl border border-white/[0.08] bg-white/[0.02] divide-y divide-white/[0.06]">
               {memo.actions.map((item, i) => (
                 <div key={i} className="flex items-start gap-3 px-5 py-3.5">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[#d97757]/10 text-[10px] font-bold text-[#d97757] shareable-memo-accent">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-accent-primary/10 text-[10px] font-bold text-accent-primary shareable-memo-accent">
                     {i + 1}
                   </span>
                   <span className="flex-1 text-sm text-white/80" style={{ fontFamily: "Manrope, sans-serif" }}>{item.action}</span>
@@ -498,7 +498,7 @@ export default function ShareableMemoView() {
           <div className="shareable-memo-footer mt-10 border-t border-white/[0.06] pt-5 flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-[#d97757]">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-accent-primary">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />
                   <circle cx="12" cy="12" r="4" fill="currentColor" />
                 </svg>

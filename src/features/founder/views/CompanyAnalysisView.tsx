@@ -102,7 +102,7 @@ function SnapshotCard({ snapshot }: { snapshot: CompanySnapshot }) {
         <span className="rounded-full bg-white/[0.06] px-3 py-1 text-xs font-medium text-white/60">{snapshot.sector}</span>
       </div>
       <p className="mt-2 text-sm leading-relaxed text-white/60">{snapshot.description}</p>
-      <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#d97757]/20 bg-[#d97757]/10 px-3 py-1 text-xs font-medium text-[#d97757]">
+      <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-accent-primary/20 bg-accent-primary/10 px-3 py-1 text-xs font-medium text-accent-primary">
         {snapshot.wedge}
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -164,8 +164,8 @@ function NewsSignalsCard({ signals }: { signals: NewsSignal[] }) {
               <span className="ml-auto text-[10px] tabular-nums text-white/60">Rel: {s.relevance}</span>
             </div>
             <p className="mt-2 text-sm font-medium text-white/80">{s.headline}</p>
-            <div className="mt-1.5 border-l-2 border-[#d97757]/30 pl-2">
-              <p className="text-[11px] text-[#d97757]/80">{s.implication}</p>
+            <div className="mt-1.5 border-l-2 border-accent-primary/30 pl-2">
+              <p className="text-[11px] text-accent-primary/80">{s.implication}</p>
             </div>
           </div>
         ))}
@@ -228,8 +228,8 @@ function NextQuestionsCard({ questions, lens }: { questions: NextQuestion[]; len
       <h2 className={SECTION_HEADER}>Next Questions — {LENS_LABELS[lens]}</h2>
       <div className="mt-3 space-y-2">
         {filtered.map((q) => (
-          <div key={q.id} className="flex items-start gap-2 rounded-lg border border-[#d97757]/20 bg-[#d97757]/5 p-3">
-            <HelpCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#d97757]" />
+          <div key={q.id} className="flex items-start gap-2 rounded-lg border border-accent-primary/20 bg-accent-primary/5 p-3">
+            <HelpCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-primary" />
             <div>
               <p className="text-sm font-medium text-white/80">{q.question}</p>
               <span className="mt-1 text-[10px] uppercase text-white/60">{q.priority} priority</span>
@@ -272,8 +272,8 @@ function ComparablesCard({ comparables }: { comparables: ComparableCompany[] }) 
               <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase", relColors[c.relationship] ?? "bg-white/[0.06] text-white/60")}>{c.relationship}</span>
             </div>
             <p className="mt-1 text-xs text-white/60">{c.metric}</p>
-            <div className="mt-1.5 border-l-2 border-[#d97757]/30 pl-2">
-              <p className="text-[11px] text-[#d97757]/80">{c.implication}</p>
+            <div className="mt-1.5 border-l-2 border-accent-primary/30 pl-2">
+              <p className="text-[11px] text-accent-primary/80">{c.implication}</p>
             </div>
           </div>
         ))}
@@ -570,7 +570,7 @@ export default function CompanyAnalysisView() {
         >
           <RefreshCw className="h-3.5 w-3.5" />
         </button>
-        <span className="rounded-full border border-[#d97757]/20 bg-[#d97757]/10 px-3 py-1 text-xs font-semibold text-[#d97757]">{LENS_LABELS[lens]}</span>
+        <span className="rounded-full border border-accent-primary/20 bg-accent-primary/10 px-3 py-1 text-xs font-semibold text-accent-primary">{LENS_LABELS[lens]}</span>
       </div>
 
       {/* Error banner */}

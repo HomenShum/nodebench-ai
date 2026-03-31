@@ -34,7 +34,7 @@ function StarRating({
             role="radio"
             aria-checked={star === value}
             aria-label={`${star} star${star > 1 ? "s" : ""}`}
-            className="p-0.5 transition-transform hover:scale-110 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#d97757] rounded"
+            className="p-0.5 transition-transform hover:scale-110 focus:outline-none focus-visible:ring-1 focus-visible:ring-accent-primary rounded"
             onClick={() => onChange(star)}
             onMouseEnter={() => setHover(star)}
             onMouseLeave={() => setHover(0)}
@@ -141,9 +141,9 @@ export const FeedbackWidget = memo(function FeedbackWidget() {
           w-10 h-10 rounded-full
           border border-white/[0.08] bg-white/[0.04] backdrop-blur-xl
           shadow-lg transition-all duration-200
-          hover:bg-[#d97757]/20 hover:border-[#d97757]/30 hover:scale-105
-          focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]
-          ${isOpen ? "bg-[#d97757]/20 border-[#d97757]/30" : ""}
+          hover:bg-accent-primary/20 hover:border-accent-primary/30 hover:scale-105
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary
+          ${isOpen ? "bg-accent-primary/20 border-accent-primary/30" : ""}
         `}
         aria-label={isOpen ? "Close feedback form" : "Send feedback"}
         aria-expanded={isOpen}
@@ -163,7 +163,7 @@ export const FeedbackWidget = memo(function FeedbackWidget() {
       {/* Thanks toast */}
       {showThanks && (
         <div
-          className="fixed bottom-24 right-4 z-40 px-3 py-1.5 rounded-lg border border-[#d97757]/20 bg-[#d97757]/10 backdrop-blur-xl text-[12px] text-[#d97757] font-medium animate-in fade-in slide-in-from-bottom-2 duration-200"
+          className="fixed bottom-24 right-4 z-40 px-3 py-1.5 rounded-lg border border-accent-primary/20 bg-accent-primary/10 backdrop-blur-xl text-[12px] text-accent-primary font-medium animate-in fade-in slide-in-from-bottom-2 duration-200"
           role="status"
           aria-live="polite"
         >
@@ -189,7 +189,7 @@ export const FeedbackWidget = memo(function FeedbackWidget() {
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="rounded p-1 text-content-muted hover:bg-white/[0.06] hover:text-content transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[#d97757]"
+                className="rounded p-1 text-content-muted hover:bg-white/[0.06] hover:text-content transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-accent-primary"
                 aria-label="Close"
               >
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -222,7 +222,7 @@ export const FeedbackWidget = memo(function FeedbackWidget() {
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Quick thought..."
                 maxLength={500}
-                className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px] text-content placeholder:text-content-muted/40 focus:outline-none focus:border-[#d97757]/40 focus:ring-1 focus:ring-[#d97757]/20 transition-colors"
+                className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px] text-content placeholder:text-content-muted/40 focus:outline-none focus:border-accent-primary/40 focus:ring-1 focus:ring-[#d97757]/20 transition-colors"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && rating > 0) {
                     handleSubmit();
@@ -245,7 +245,7 @@ export const FeedbackWidget = memo(function FeedbackWidget() {
                 onChange={(e) =>
                   setCategory(e.target.value as FeedbackCategory)
                 }
-                className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px] text-content focus:outline-none focus:border-[#d97757]/40 focus:ring-1 focus:ring-[#d97757]/20 transition-colors appearance-none cursor-pointer"
+                className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px] text-content focus:outline-none focus:border-accent-primary/40 focus:ring-1 focus:ring-[#d97757]/20 transition-colors appearance-none cursor-pointer"
               >
                 {FEEDBACK_CATEGORIES.map((cat) => (
                   <option key={cat} value={cat} className="bg-[#14161c] text-content">
@@ -260,7 +260,7 @@ export const FeedbackWidget = memo(function FeedbackWidget() {
               type="button"
               onClick={handleSubmit}
               disabled={rating === 0}
-              className="w-full rounded-lg bg-[#d97757] px-3 py-2 text-[13px] font-medium text-white transition-all hover:bg-[#d97757]/90 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757] focus-visible:ring-offset-2 focus-visible:ring-offset-[#14161c]"
+              className="w-full rounded-lg bg-accent-primary px-3 py-2 text-[13px] font-medium text-white transition-all hover:bg-accent-primary/90 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#14161c]"
             >
               Submit
             </button>

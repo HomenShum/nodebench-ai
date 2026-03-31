@@ -12,7 +12,7 @@ function statusBadge(status: TaskStatus) {
     accepted: { label: "In Progress", cls: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
     completed: { label: "Done", cls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" },
     rejected: { label: "Rejected", cls: "bg-white/5 text-white/30 border-white/10" },
-    escalated: { label: "Escalated", cls: "bg-[#d97757]/20 text-[#d97757] border-[#d97757]/30" },
+    escalated: { label: "Escalated", cls: "bg-accent-primary/20 text-accent-primary border-accent-primary/30" },
   };
   const s = map[status];
   return (
@@ -28,7 +28,7 @@ function statusIcon(status: TaskStatus) {
     case "accepted": return <Send className="h-3.5 w-3.5 text-blue-400" />;
     case "completed": return <Check className="h-3.5 w-3.5 text-emerald-400" />;
     case "rejected": return <X className="h-3.5 w-3.5 text-white/30" />;
-    case "escalated": return <AlertTriangle className="h-3.5 w-3.5 text-[#d97757]" />;
+    case "escalated": return <AlertTriangle className="h-3.5 w-3.5 text-accent-primary" />;
   }
 }
 
@@ -70,7 +70,7 @@ export function TaskDelegationCard({ tasks, onAccept, onReject, onComplete }: Pr
           Tasks
         </h3>
         {openCount > 0 && (
-          <span className="text-xs font-medium text-[#d97757]">{openCount} open</span>
+          <span className="text-xs font-medium text-accent-primary">{openCount} open</span>
         )}
       </div>
 

@@ -158,7 +158,7 @@ function AgentHandoffPanelInner() {
         <button
           type="button"
           onClick={() => navigate("/founder")}
-          className="inline-flex items-center gap-1.5 rounded-md bg-[#d97757]/90 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#d97757]"
+          className="inline-flex items-center gap-1.5 rounded-md bg-accent-primary/90 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-accent-primary"
         >
           Go to Dashboard <ArrowRight className="h-3.5 w-3.5" />
         </button>
@@ -185,7 +185,7 @@ function AgentHandoffPanelInner() {
         </div>
         <div className="text-sm text-content">
           Active packet:{" "}
-          <span className="font-semibold text-[#d97757]">
+          <span className="font-semibold text-accent-primary">
             {getArtifactPacketTypeLabel(packet.packetType)}
           </span>{" "}
           <span className="text-content-muted">
@@ -205,7 +205,7 @@ function AgentHandoffPanelInner() {
               key={item.label}
               className="flex items-start gap-2 text-[13px] text-content-secondary"
             >
-              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#d97757]" />
+              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent-primary" />
               {item.label}
             </li>
           ))}
@@ -227,7 +227,7 @@ function AgentHandoffPanelInner() {
         <button
           type="button"
           onClick={() => copyBrief("claude-code")}
-          className="inline-flex items-center gap-1.5 rounded-md bg-[#d97757]/90 px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-[#d97757] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/35 active:scale-[0.98]"
+          className="inline-flex items-center gap-1.5 rounded-md bg-accent-primary/90 px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/35 active:scale-[0.98]"
         >
           <ClipboardCopy className="h-3.5 w-3.5" />
           Send to Claude Code
@@ -235,7 +235,7 @@ function AgentHandoffPanelInner() {
         <button
           type="button"
           onClick={() => copyBrief("openclaw")}
-          className="inline-flex items-center gap-1.5 rounded-md bg-[#d97757]/90 px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-[#d97757] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/35 active:scale-[0.98]"
+          className="inline-flex items-center gap-1.5 rounded-md bg-accent-primary/90 px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/35 active:scale-[0.98]"
         >
           <ClipboardCopy className="h-3.5 w-3.5" />
           Send to OpenClaw

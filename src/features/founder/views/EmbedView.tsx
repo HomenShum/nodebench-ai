@@ -44,7 +44,7 @@ function MemoEmbed({ id }: { id: string }) {
   return (
     <div className="rounded-xl border border-white/[0.08] bg-[#1a1918] p-4">
       <div className="flex items-center gap-2">
-        <FileText className="h-4 w-4 text-[#d97757]" />
+        <FileText className="h-4 w-4 text-accent-primary" />
         <span className="text-[10px] uppercase tracking-[0.15em] text-white/30">Decision Memo</span>
       </div>
       <h3 className="mt-2 text-sm font-medium text-white/80">{data.question}</h3>
@@ -60,7 +60,7 @@ function MemoEmbed({ id }: { id: string }) {
           href={`https://nodebenchai.com/memo/${id}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[10px] text-[#d97757] hover:underline"
+          className="text-[10px] text-accent-primary hover:underline"
         >
           View full memo
         </a>
@@ -84,7 +84,7 @@ function CompanyEmbed({ id }: { id: string }) {
   return (
     <div className="rounded-xl border border-white/[0.08] bg-[#1a1918] p-4">
       <div className="flex items-center gap-2">
-        <Building2 className="h-4 w-4 text-[#d97757]" />
+        <Building2 className="h-4 w-4 text-accent-primary" />
         <span className="text-[10px] uppercase tracking-[0.15em] text-white/30">Company Intelligence</span>
       </div>
       <h3 className="mt-2 text-sm font-medium text-white/80">{data.name}</h3>
@@ -105,7 +105,7 @@ function CompanyEmbed({ id }: { id: string }) {
         href={`https://nodebenchai.com/company/${id}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-2 inline-block text-[10px] text-[#d97757] hover:underline"
+        className="mt-2 inline-block text-[10px] text-accent-primary hover:underline"
       >
         View full profile
       </a>
@@ -138,7 +138,7 @@ function ConfidenceEmbed({ id }: { id: string }) {
         href={`https://nodebenchai.com/memo/${id}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="ml-auto text-[10px] text-[#d97757] hover:underline"
+        className="ml-auto text-[10px] text-accent-primary hover:underline"
       >
         Details
       </a>
@@ -178,7 +178,7 @@ function EmbedViewInner() {
         </div>
       )}
       <div className="mt-1 flex items-center justify-center gap-1 opacity-40">
-        <Sparkles className="h-2.5 w-2.5 text-[#d97757]" />
+        <Sparkles className="h-2.5 w-2.5 text-accent-primary" />
         <span className="text-[8px] text-white/20">NodeBench Delta</span>
       </div>
     </div>

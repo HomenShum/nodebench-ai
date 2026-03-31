@@ -119,7 +119,7 @@ function ChangeCard({ change }: { change: ImportantChange }) {
 
           {/* Triggers */}
           <div className="flex gap-3 text-[10px]">
-            {change.shouldTriggerPacket && <span className="text-[#d97757]">Triggers packet regen</span>}
+            {change.shouldTriggerPacket && <span className="text-accent-primary">Triggers packet regen</span>}
             {change.shouldTriggerBrief && <span className="text-cyan-400">Triggers agent brief</span>}
             {change.shouldTriggerAlert && <span className="text-red-400">Triggers alert</span>}
           </div>
@@ -188,7 +188,7 @@ function ChangeDetectorViewInner() {
                 onClick={() => setFilter(f)}
                 className={cn(
                   "rounded-md px-2.5 py-1 text-[10px] font-medium capitalize transition-colors",
-                  filter === f ? "bg-[#d97757]/20 text-[#d97757]" : "text-white/40 hover:text-white/60",
+                  filter === f ? "bg-accent-primary/20 text-accent-primary" : "text-white/40 hover:text-white/60",
                 )}
               >
                 {f}

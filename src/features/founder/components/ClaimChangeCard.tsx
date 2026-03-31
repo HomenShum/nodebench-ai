@@ -70,9 +70,9 @@ const TYPE_CONFIG: Record<
   },
   contradiction: {
     label: "CONTRADICTION",
-    badgeBg: "bg-[#d97757]/15",
-    badgeText: "text-[#d97757]",
-    accentColor: "bg-[#d97757]",
+    badgeBg: "bg-accent-primary/15",
+    badgeText: "text-accent-primary",
+    accentColor: "bg-accent-primary",
     icon: AlertTriangle,
   },
   signal: {
@@ -192,7 +192,7 @@ export const ClaimChangeCard = memo(function ClaimChangeCard({
         rounded-xl border border-white/[0.20] bg-white/[0.12] p-3
         text-left transition-all duration-200
         hover:border-white/[0.15] hover:bg-white/[0.08]
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/40
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/40
         min-h-[44px]
         motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1
         ${className}

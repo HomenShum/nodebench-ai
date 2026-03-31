@@ -74,7 +74,7 @@ const TYPE_CONFIG: Record<ClaimType, {
   },
   contradiction: {
     label: "CONTRADICTION",
-    badgeClass: "bg-[#d97757]/20 text-[#d97757] border-[#d97757]/30",
+    badgeClass: "bg-accent-primary/20 text-accent-primary border-accent-primary/30",
     borderClass: "border-l-[#d97757]",
     icon: AlertTriangle,
   },
@@ -169,7 +169,7 @@ export const ClaimCard = memo(function ClaimCard({
         className="w-full flex items-start gap-3 px-4 py-3 text-left min-h-[44px] hover:bg-[#222120] transition-colors"
         aria-expanded={expanded}
       >
-        <Icon className={`h-4 w-4 shrink-0 mt-0.5 ${isContradiction ? "text-[#d97757]" : "text-white/40"}`} />
+        <Icon className={`h-4 w-4 shrink-0 mt-0.5 ${isContradiction ? "text-accent-primary" : "text-white/40"}`} />
 
         <div className="flex-1 min-w-0 space-y-1">
           {/* Type badge + severity + time */}
@@ -235,7 +235,7 @@ export const ClaimCard = memo(function ClaimCard({
           {/* Entity link */}
           {claim.entityName && (
             <div className="text-[11px] text-white/30">
-              Entity: <span className="text-[#d97757]/80">{claim.entityName}</span>
+              Entity: <span className="text-accent-primary/80">{claim.entityName}</span>
             </div>
           )}
 
@@ -245,7 +245,7 @@ export const ClaimCard = memo(function ClaimCard({
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onInvestigate(claim.id); }}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[#d97757]/30 bg-[#d97757]/10 px-3 min-h-[36px] text-[11px] font-medium text-[#d97757] hover:bg-[#d97757]/20 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-accent-primary/30 bg-accent-primary/10 px-3 min-h-[36px] text-[11px] font-medium text-accent-primary hover:bg-accent-primary/20 transition-colors"
               >
                 <Eye className="h-3 w-3" />
                 Investigate

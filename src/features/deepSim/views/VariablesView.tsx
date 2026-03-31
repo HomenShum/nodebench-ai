@@ -95,7 +95,7 @@ export const VariablesView = memo(function VariablesView() {
                 className={`${CARD} w-full p-4 text-left transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.04]`}
               >
                 <div className="flex items-center gap-4">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#d97757]/10 text-xs font-bold text-[#d97757]">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent-primary/10 text-xs font-bold text-accent-primary">
                     {i + 1}
                   </span>
                   <div className="flex-1 min-w-0">

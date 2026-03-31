@@ -121,7 +121,7 @@ const ChangeRow = memo(function ChangeRow({
 
       {/* Suggested action */}
       <div className="flex items-start gap-1.5 text-[12px] text-white/45">
-        <ArrowRight className="mt-0.5 h-3 w-3 shrink-0 text-[#d97757]/70" />
+        <ArrowRight className="mt-0.5 h-3 w-3 shrink-0 text-accent-primary/70" />
         <span>{suggestedAction}</span>
       </div>
     </div>
@@ -172,9 +172,9 @@ function SinceLastSession() {
           onClick={handleRefresh}
           className={cn(
             "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5",
-            "bg-[#d97757]/15 text-[13px] font-medium text-[#d97757]",
-            "border border-[#d97757]/25 transition-colors",
-            "hover:bg-[#d97757]/25 active:bg-[#d97757]/30",
+            "bg-accent-primary/15 text-[13px] font-medium text-accent-primary",
+            "border border-accent-primary/25 transition-colors",
+            "hover:bg-accent-primary/25 active:bg-accent-primary/30",
           )}
         >
           <RefreshCw className="h-3.5 w-3.5" />

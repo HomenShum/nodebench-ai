@@ -113,7 +113,7 @@ function TimeRollupViewInner() {
                 onClick={() => setPeriod(pt)}
                 className={cn(
                   "rounded-md px-2.5 py-1 text-[10px] font-medium transition-colors",
-                  period === pt ? "bg-[#d97757]/20 text-[#d97757]" : "text-white/40 hover:text-white/60",
+                  period === pt ? "bg-accent-primary/20 text-accent-primary" : "text-white/40 hover:text-white/60",
                 )}
               >
                 {PERIOD_LABELS[pt]}

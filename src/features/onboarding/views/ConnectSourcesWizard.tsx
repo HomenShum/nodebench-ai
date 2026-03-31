@@ -186,16 +186,16 @@ const StepIndicator = memo(function StepIndicator({ current }: { current: number
             {i > 0 && (
               <div
                 className={`h-px w-6 transition-colors duration-300 ${
-                  isDone ? "bg-[#d97757]" : "bg-white/[0.08]"
+                  isDone ? "bg-accent-primary" : "bg-white/[0.08]"
                 }`}
               />
             )}
             <div
               className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-all duration-300 ${
                 isActive
-                  ? "bg-[#d97757] text-white shadow-lg shadow-[#d97757]/20"
+                  ? "bg-accent-primary text-white shadow-lg shadow-accent-primary/20"
                   : isDone
-                    ? "bg-[#d97757]/20 text-[#d97757]"
+                    ? "bg-accent-primary/20 text-accent-primary"
                     : "border border-white/[0.1] text-content-muted"
               }`}
               aria-current={isActive ? "step" : undefined}
@@ -270,7 +270,7 @@ const Step1Entity = memo(function Step1Entity({
           value={entityName}
           onChange={(e) => setEntityName(e.target.value)}
           placeholder="e.g. Acme AI, Cursor, Jane Smith"
-          className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm text-content placeholder:text-content-muted/60 focus:border-[#d97757]/50 focus:outline-none focus:ring-1 focus:ring-[#d97757]/30"
+          className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm text-content placeholder:text-content-muted/60 focus:border-accent-primary/50 focus:outline-none focus:ring-1 focus:ring-[#d97757]/30"
           data-agent-input="entity-name"
           autoFocus
         />
@@ -291,7 +291,7 @@ const Step1Entity = memo(function Step1Entity({
                 onClick={() => setEntityType(value)}
                 className={`flex flex-col items-center gap-1.5 rounded-xl border px-3 py-3 text-xs transition-all duration-200 ${
                   isSelected
-                    ? "border-[#d97757]/50 bg-[#d97757]/10 text-[#d97757]"
+                    ? "border-accent-primary/50 bg-accent-primary/10 text-accent-primary"
                     : "border-white/[0.06] bg-white/[0.02] text-content-muted hover:border-white/[0.12] hover:bg-white/[0.04]"
                 }`}
                 data-agent-action={`select-type-${value}`}
@@ -319,7 +319,7 @@ const Step1Entity = memo(function Step1Entity({
           value={entityUrl}
           onChange={(e) => setEntityUrl(e.target.value)}
           placeholder="https://acme.ai or a short description"
-          className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm text-content placeholder:text-content-muted/60 focus:border-[#d97757]/50 focus:outline-none focus:ring-1 focus:ring-[#d97757]/30"
+          className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm text-content placeholder:text-content-muted/60 focus:border-accent-primary/50 focus:outline-none focus:ring-1 focus:ring-[#d97757]/30"
           data-agent-input="entity-url"
         />
       </div>
@@ -365,7 +365,7 @@ const Step2Sources = memo(function Step2Sources({ connectedSources, toggleSource
               onClick={() => toggleSource(id)}
               className={`group relative flex flex-col items-start gap-3 rounded-xl border p-4 text-left transition-all duration-200 ${
                 isConnected
-                  ? "border-[#d97757]/40 bg-[#d97757]/[0.06]"
+                  ? "border-accent-primary/40 bg-accent-primary/[0.06]"
                   : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
               }`}
               style={{
@@ -378,7 +378,7 @@ const Step2Sources = memo(function Step2Sources({ connectedSources, toggleSource
             >
               {/* Connected badge */}
               {isConnected && (
-                <div className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-[#d97757] text-white">
+                <div className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-accent-primary text-white">
                   <Check size={10} strokeWidth={3} />
                 </div>
               )}
@@ -386,7 +386,7 @@ const Step2Sources = memo(function Step2Sources({ connectedSources, toggleSource
               <div
                 className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
                   isConnected
-                    ? "bg-[#d97757]/20 text-[#d97757]"
+                    ? "bg-accent-primary/20 text-accent-primary"
                     : "bg-white/[0.04] text-content-muted group-hover:text-content"
                 }`}
               >
@@ -406,7 +406,7 @@ const Step2Sources = memo(function Step2Sources({ connectedSources, toggleSource
 
               {/* MCP card shows command instead of placeholder */}
               {id === "mcp" && (
-                <code className="mt-auto w-full rounded-md bg-white/[0.04] px-2.5 py-1.5 text-[11px] text-[#d97757]/80">
+                <code className="mt-auto w-full rounded-md bg-white/[0.04] px-2.5 py-1.5 text-[11px] text-accent-primary/80">
                   claude mcp add nodebench
                 </code>
               )}
@@ -423,7 +423,7 @@ const Step2Sources = memo(function Step2Sources({ connectedSources, toggleSource
 
       {connectedSources.size > 0 && (
         <p className="text-center text-xs text-content-muted">
-          <span className="font-medium text-[#d97757]">{connectedSources.size}</span> source
+          <span className="font-medium text-accent-primary">{connectedSources.size}</span> source
           {connectedSources.size !== 1 && "s"} selected
         </p>
       )}
@@ -481,7 +481,7 @@ const Step3Analysis = memo(function Step3Analysis({
               onClick={() => setSelectedWorkflow(id)}
               className={`flex items-start gap-3 rounded-xl border p-3.5 text-left transition-all duration-200 ${
                 isSelected
-                  ? "border-[#d97757]/40 bg-[#d97757]/[0.06]"
+                  ? "border-accent-primary/40 bg-accent-primary/[0.06]"
                   : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
               }`}
               style={{
@@ -494,7 +494,7 @@ const Step3Analysis = memo(function Step3Analysis({
             >
               <div
                 className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
-                  isSelected ? "bg-[#d97757]/20 text-[#d97757]" : "bg-white/[0.04] text-content-muted"
+                  isSelected ? "bg-accent-primary/20 text-accent-primary" : "bg-white/[0.04] text-content-muted"
                 }`}
               >
                 <WfIcon size={16} />
@@ -525,8 +525,8 @@ const Step3Analysis = memo(function Step3Analysis({
             <p className="text-sm font-medium leading-snug text-content">
               {DEMO_PREVIEW.question}
             </p>
-            <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#d97757]/30 bg-[#d97757]/10 px-2.5 py-1">
-              <span className="text-xs font-semibold text-[#d97757]">{DEMO_PREVIEW.confidence}%</span>
+            <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-accent-primary/30 bg-accent-primary/10 px-2.5 py-1">
+              <span className="text-xs font-semibold text-accent-primary">{DEMO_PREVIEW.confidence}%</span>
             </div>
           </div>
 
@@ -680,9 +680,9 @@ export function ConnectSourcesWizard() {
           type="button"
           onClick={next}
           disabled={!canAdvance}
-          className={`inline-flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)] ${
+          className={`inline-flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)] ${
             canAdvance
-              ? "bg-[#d97757] text-white shadow-lg shadow-[#d97757]/20 hover:bg-[#c4684a]"
+              ? "bg-accent-primary text-white shadow-lg shadow-accent-primary/20 hover:bg-[#c4684a]"
               : "cursor-not-allowed bg-white/[0.06] text-content-muted"
           }`}
           data-agent-action={step === 2 ? "run-analysis" : "connect-next"}

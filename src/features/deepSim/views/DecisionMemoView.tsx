@@ -436,7 +436,7 @@ function DecisionMemoViewInner({ memo: overrideMemo }: { memo?: DeepSimMemo }) {
           <div className="mt-4 flex justify-center gap-3">
             <button
               type="button"
-              className="rounded-xl bg-[#d97757] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#d97757]/20 hover:bg-[#c96a4d] transition-colors"
+              className="rounded-xl bg-accent-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent-primary/20 hover:bg-accent-primary/80 transition-colors"
               data-agent-action="start-analysis"
             >
               Start new analysis

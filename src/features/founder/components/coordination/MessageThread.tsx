@@ -70,7 +70,7 @@ export function MessageThread({ messages, currentPeerId, peerIds = [], onSend }:
           Messages
         </h3>
         {messages.filter((m) => !m.acknowledged).length > 0 && (
-          <span className="text-xs font-medium text-[#d97757]">
+          <span className="text-xs font-medium text-accent-primary">
             {messages.filter((m) => !m.acknowledged).length} unread
           </span>
         )}
@@ -90,11 +90,11 @@ export function MessageThread({ messages, currentPeerId, peerIds = [], onSend }:
             <div
               key={msg.messageId}
               className={`rounded-lg border-l-2 bg-white/[0.01] px-3 py-2 ${typeColor(msg.messageType)} ${
-                !msg.acknowledged ? "border border-[#d97757]/20" : "border border-transparent"
+                !msg.acknowledged ? "border border-accent-primary/20" : "border border-transparent"
               }`}
             >
               <div className="flex items-center gap-2">
-                <span className={`text-[10px] font-medium ${isOwn ? "text-[#d97757]" : "text-white/50"}`}>
+                <span className={`text-[10px] font-medium ${isOwn ? "text-accent-primary" : "text-white/50"}`}>
                   {peerLabel(msg.fromPeerId)}
                 </span>
                 <span className="text-[10px] text-white/15">→</span>
@@ -150,7 +150,7 @@ export function MessageThread({ messages, currentPeerId, peerIds = [], onSend }:
           <button
             onClick={handleSend}
             disabled={!composeTo || !composeBody.trim()}
-            className="flex h-8 w-8 items-center justify-center rounded-md bg-[#d97757]/20 text-[#d97757] transition-colors hover:bg-[#d97757]/30 disabled:opacity-30"
+            className="flex h-8 w-8 items-center justify-center rounded-md bg-accent-primary/20 text-accent-primary transition-colors hover:bg-accent-primary/30 disabled:opacity-30"
             type="button"
             aria-label="Send message"
           >

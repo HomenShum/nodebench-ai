@@ -410,7 +410,7 @@ function HistoryView() {
           <button
             type="button"
             onClick={() => navigate("/founder")}
-            className="flex items-center gap-1.5 rounded-lg bg-[#d97757]/10 px-4 py-2 text-sm font-medium text-[#d97757] transition-colors hover:bg-[#d97757]/20"
+            className="flex items-center gap-1.5 rounded-lg bg-accent-primary/10 px-4 py-2 text-sm font-medium text-accent-primary transition-colors hover:bg-accent-primary/20"
           >
             <Sparkles className="h-3.5 w-3.5" />
             Go to Dashboard
@@ -462,7 +462,7 @@ function HistoryView() {
           <button
             type="button"
             onClick={handleRefreshPacket}
-            className="flex items-center gap-1.5 rounded-lg bg-[#d97757]/10 px-3 py-1.5 text-[10px] font-medium text-[#d97757] transition-colors hover:bg-[#d97757]/20"
+            className="flex items-center gap-1.5 rounded-lg bg-accent-primary/10 px-3 py-1.5 text-[10px] font-medium text-accent-primary transition-colors hover:bg-accent-primary/20"
           >
             <RefreshCw className="h-3 w-3" />
             Refresh Packet
@@ -488,7 +488,7 @@ function HistoryView() {
                   className={cn(
                     "flex cursor-pointer items-center justify-between rounded-md border px-3 py-2 text-xs transition-colors",
                     isSelected
-                      ? "border-[#d97757]/20 bg-[#d97757]/10 text-[#d97757]"
+                      ? "border-accent-primary/20 bg-accent-primary/10 text-accent-primary"
                       : isCompare
                         ? "border-sky-500/10 bg-sky-500/5 text-sky-400"
                         : "border-transparent bg-white/[0.02] text-white/60 hover:bg-white/[0.07]",
@@ -502,7 +502,7 @@ function HistoryView() {
                       className={cn(
                         "flex h-2 w-2 shrink-0 rounded-full",
                         isSelected
-                          ? "bg-[#d97757]"
+                          ? "bg-accent-primary"
                           : isCompare
                             ? "bg-sky-400/60"
                             : "bg-white/10",
@@ -650,7 +650,7 @@ function HistoryView() {
                 className={cn(
                   "flex w-[180px] shrink-0 flex-col gap-1.5 rounded-lg border p-3 text-left transition-colors",
                   isExpanded
-                    ? "border-[#d97757]/20 bg-[#d97757]/5"
+                    ? "border-accent-primary/20 bg-accent-primary/5"
                     : "border-white/[0.20] bg-white/[0.12] hover:bg-white/[0.07]",
                 )}
               >
@@ -738,7 +738,7 @@ function HistoryView() {
                       <button
                         type="button"
                         onClick={() => handleRestore(pkt.packetId)}
-                        className="flex items-center gap-1 rounded-md bg-[#d97757]/10 px-2.5 py-1 text-[10px] font-medium text-[#d97757]/70 transition-colors hover:bg-[#d97757]/20 hover:text-[#d97757]"
+                        className="flex items-center gap-1 rounded-md bg-accent-primary/10 px-2.5 py-1 text-[10px] font-medium text-accent-primary/70 transition-colors hover:bg-accent-primary/20 hover:text-accent-primary"
                       >
                         <RotateCcw className="h-2.5 w-2.5" />
                         Reopen
@@ -824,7 +824,7 @@ function HistoryView() {
                       // Reopen = navigate to dashboard (memo data is in localStorage)
                       navigate("/founder");
                     }}
-                    className="flex items-center gap-1 rounded-md bg-[#d97757]/10 px-2 py-1 text-[10px] font-medium text-[#d97757]/70 transition-colors hover:bg-[#d97757]/20 hover:text-[#d97757]"
+                    className="flex items-center gap-1 rounded-md bg-accent-primary/10 px-2 py-1 text-[10px] font-medium text-accent-primary/70 transition-colors hover:bg-accent-primary/20 hover:text-accent-primary"
                   >
                     <RotateCcw className="h-2.5 w-2.5" />
                     Reopen

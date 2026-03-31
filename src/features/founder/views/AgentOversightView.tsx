@@ -316,7 +316,7 @@ function AgentCard({
               <h4 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
                 Suggested Action
               </h4>
-              <p className="flex items-start gap-1.5 text-sm text-[#d97757]">
+              <p className="flex items-start gap-1.5 text-sm text-accent-primary">
                 <Zap className="mt-0.5 h-3 w-3 shrink-0" />
                 {agent.suggestedAction}
               </p>
@@ -387,8 +387,8 @@ function ConnectAgentModal({ onClose }: { onClose: () => void }) {
         </button>
 
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#d97757]/10">
-            <Terminal size={20} className="text-[#d97757]" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-primary/10">
+            <Terminal size={20} className="text-accent-primary" />
           </div>
           <div>
             <h2 className="text-lg font-semibold text-content-primary">Connect an Agent</h2>
@@ -398,7 +398,7 @@ function ConnectAgentModal({ onClose }: { onClose: () => void }) {
 
         <div className="space-y-4">
           <div className="flex items-start gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#d97757]/10 text-xs font-semibold text-[#d97757]">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-primary/10 text-xs font-semibold text-accent-primary">
               1
             </span>
             <div className="flex-1">
@@ -421,7 +421,7 @@ function ConnectAgentModal({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="flex items-start gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#d97757]/10 text-xs font-semibold text-[#d97757]">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-primary/10 text-xs font-semibold text-accent-primary">
               2
             </span>
             <p className="text-sm font-medium text-content-primary">
@@ -430,7 +430,7 @@ function ConnectAgentModal({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="flex items-start gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#d97757]/10 text-xs font-semibold text-[#d97757]">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-primary/10 text-xs font-semibold text-accent-primary">
               3
             </span>
             <p className="text-sm font-medium text-content-primary">
@@ -452,7 +452,7 @@ function ConnectAgentModal({ onClose }: { onClose: () => void }) {
 
         <button
           onClick={onClose}
-          className="mt-4 w-full rounded-xl bg-[#d97757] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#c4684a]"
+          className="mt-4 w-full rounded-xl bg-accent-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#c4684a]"
         >
           Done
         </button>
@@ -532,7 +532,7 @@ export default function AgentOversightView() {
         </div>
         <button
           onClick={() => setShowConnectModal(true)}
-          className="flex w-fit items-center gap-2 rounded-lg bg-[#d97757] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#c4684a]"
+          className="flex w-fit items-center gap-2 rounded-lg bg-accent-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#c4684a]"
         >
           <Plus className="h-4 w-4" />
           Connect Agent
@@ -602,7 +602,7 @@ export default function AgentOversightView() {
                           </p>
                         )}
                         {agent.suggestedAction && (
-                          <p className="flex items-start gap-1.5 text-sm text-[#d97757]">
+                          <p className="flex items-start gap-1.5 text-sm text-accent-primary">
                             <Zap className="mt-0.5 h-3 w-3 shrink-0" />
                             {agent.suggestedAction}
                           </p>
@@ -610,7 +610,7 @@ export default function AgentOversightView() {
                       </div>
                       <button
                         onClick={() => handleResolve(agent.id, agent.name)}
-                        className="shrink-0 self-start rounded-md bg-[#d97757]/10 px-3 py-1.5 text-xs font-medium text-[#d97757] transition-all hover:bg-[#d97757]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/25 active:scale-[0.98]"
+                        className="shrink-0 self-start rounded-md bg-accent-primary/10 px-3 py-1.5 text-xs font-medium text-accent-primary transition-all hover:bg-accent-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/25 active:scale-[0.98]"
                       >
                         Resolve
                       </button>
@@ -644,7 +644,7 @@ export default function AgentOversightView() {
             </p>
             <button
               onClick={() => setShowConnectModal(true)}
-              className="w-full rounded-lg bg-[#d97757] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#c4684a]"
+              className="w-full rounded-lg bg-accent-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#c4684a]"
             >
               Connect Now
             </button>

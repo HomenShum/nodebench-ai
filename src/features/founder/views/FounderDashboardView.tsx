@@ -209,7 +209,7 @@ function triggerConfetti() {
 const AGENT_STATUS_DOT: Record<AgentStatus, string> = { healthy: "bg-emerald-500", blocked: "bg-rose-500", waiting: "bg-amber-500", drifting: "bg-violet-500", ambiguous: "bg-white/30" };
 const AGENT_TYPE_COLORS: Record<AgentType, string> = { claude_code: "bg-sky-500/10 text-sky-400", openclaw: "bg-violet-500/10 text-violet-400", background: "bg-white/[0.06] text-white/60" };
 const CHANGE_TYPE_ICONS: Record<ChangeType | "user", typeof Radio> = { signal: Radio, agent: Bot, initiative: Target, decision: Lightbulb, user: User };
-const CHANGE_TYPE_COLORS: Record<ChangeType | "user", string> = { signal: "text-sky-400", agent: "text-violet-400", initiative: "text-emerald-400", decision: "text-amber-400", user: "text-[#d97757]" };
+const CHANGE_TYPE_COLORS: Record<ChangeType | "user", string> = { signal: "text-sky-400", agent: "text-violet-400", initiative: "text-emerald-400", decision: "text-amber-400", user: "text-accent-primary" };
 
 /* ---- Toast system ---- */
 const TOAST_ACCENT: Record<FounderToast["color"], string> = { emerald: "border-l-emerald-500", amber: "border-l-amber-500", rose: "border-l-rose-500" };
@@ -267,13 +267,13 @@ function HeaderBar({ streak, founderMode, onModeChange, companyName, syncStatus 
         <div className="flex items-center gap-3">
           <h1 className="text-lg font-bold text-white/90 sm:text-xl">{companyName}</h1>
           {streak > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-[#d97757]/20 bg-[#d97757]/10 px-2.5 py-0.5 text-xs font-semibold text-[#d97757] tabular-nums"><Flame className="h-3 w-3" />{streak}</span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent-primary/20 bg-accent-primary/10 px-2.5 py-0.5 text-xs font-semibold text-accent-primary tabular-nums"><Flame className="h-3 w-3" />{streak}</span>
           )}
           {syncStatus && <SyncStatusBadge status={syncStatus as "synced" | "syncing" | "local_only" | "error"} />}
         </div>
         <div className="flex items-center gap-1 rounded-lg border border-white/[0.20] bg-white/[0.12] p-0.5">
           {modes.map((mode) => (
-            <button key={mode} type="button" onClick={() => onModeChange(mode)} className={cn("rounded-md px-3 py-1.5 text-[11px] font-medium transition-all duration-150", founderMode === mode ? "bg-[#d97757]/15 text-[#d97757] shadow-sm" : "text-white/60 hover:text-white/60")}>{FOUNDER_MODE_LABELS[mode]}</button>
+            <button key={mode} type="button" onClick={() => onModeChange(mode)} className={cn("rounded-md px-3 py-1.5 text-[11px] font-medium transition-all duration-150", founderMode === mode ? "bg-accent-primary/15 text-accent-primary shadow-sm" : "text-white/60 hover:text-white/60")}>{FOUNDER_MODE_LABELS[mode]}</button>
           ))}
         </div>
       </div>
@@ -329,10 +329,10 @@ function FounderClarityOverview({ identityConfidence, userActions, packet, liveC
         </div>
         <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-white/60">{c.canonicalMission}</p>
         <div className="mt-2">
-          <span className="inline-flex items-center gap-1 rounded-full border border-[#d97757]/20 bg-[#d97757]/10 px-2 py-0.5 text-[10px] font-medium text-[#d97757]"><Zap className="h-2.5 w-2.5" />{c.wedge}</span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-accent-primary/20 bg-accent-primary/10 px-2 py-0.5 text-[10px] font-medium text-accent-primary"><Zap className="h-2.5 w-2.5" />{c.wedge}</span>
         </div>
         {pct < 70 && (
-          <button onClick={() => navigate("/founder/setup")} className="mt-3 inline-flex items-center gap-1 rounded-lg border border-[#d97757]/30 bg-[#d97757]/10 px-2.5 py-1 text-[10px] font-medium text-[#d97757] transition-colors hover:bg-[#d97757]/20"><Sparkles className="h-2.5 w-2.5" />Clarify Identity</button>
+          <button onClick={() => navigate("/founder/setup")} className="mt-3 inline-flex items-center gap-1 rounded-lg border border-accent-primary/30 bg-accent-primary/10 px-2.5 py-1 text-[10px] font-medium text-accent-primary transition-colors hover:bg-accent-primary/20"><Sparkles className="h-2.5 w-2.5" />Clarify Identity</button>
         )}
       </div>
 
@@ -355,7 +355,7 @@ function FounderClarityOverview({ identityConfidence, userActions, packet, liveC
         <ol className="mt-2 space-y-2">
           {nextActions.map((action, i) => (
             <li key={action.id} className="flex items-start gap-2">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[#d97757]/10 text-[10px] font-bold text-[#d97757]">{i + 1}</span>
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-accent-primary/10 text-[10px] font-bold text-accent-primary">{i + 1}</span>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium leading-snug text-white/75">{action.label}</p>
                 <span className="text-[10px] text-white/60">{priorityLabels[action.priority] ?? action.priority}</span>
@@ -382,25 +382,25 @@ function ContradictionBanner({ packet, initiatives }: { packet: FounderArtifactP
   const iconStyles = { high: "text-rose-400", medium: "text-amber-400", low: "text-emerald-400" };
 
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-[#d97757]/30 border-l-4 border-l-[#d97757] bg-[#d97757]/5 p-4">
+    <div className="flex items-start gap-3 rounded-xl border border-accent-primary/30 border-l-4 border-l-[#d97757] bg-accent-primary/5 p-4">
       <AlertTriangle className={cn("mt-0.5 h-4 w-4 shrink-0", iconStyles[severity])} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#d97757]">Biggest Contradiction</span>
-          {affectedCount > 0 && <span className="rounded-full bg-[#d97757]/10 px-2 py-0.5 text-[10px] font-medium text-[#d97757]">{affectedCount} initiative{affectedCount !== 1 ? "s" : ""} affected</span>}
+          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent-primary">Biggest Contradiction</span>
+          {affectedCount > 0 && <span className="rounded-full bg-accent-primary/10 px-2 py-0.5 text-[10px] font-medium text-accent-primary">{affectedCount} initiative{affectedCount !== 1 ? "s" : ""} affected</span>}
         </div>
-        <p className="mt-1 text-sm font-medium text-[#d97757]">{title}</p>
+        <p className="mt-1 text-sm font-medium text-accent-primary">{title}</p>
         <p className="mt-1 text-xs leading-relaxed text-white/60">{detail}</p>
         <div className="mt-3 flex items-center gap-2">
           <button
             onClick={() => console.log("[ContradictionBanner] Investigate clicked:", title)}
-            className="rounded-lg bg-[#d97757] px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-[#c4684a]"
+            className="rounded-lg bg-accent-primary px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-[#c4684a]"
           >
             Investigate
           </button>
           <button
             onClick={() => console.log("[ContradictionBanner] Flag for Review clicked:", title)}
-            className="rounded-lg border border-[#d97757]/40 bg-transparent px-3 py-1.5 text-[11px] font-semibold text-[#d97757] transition-colors hover:bg-[#d97757]/10"
+            className="rounded-lg border border-accent-primary/40 bg-transparent px-3 py-1.5 text-[11px] font-semibold text-accent-primary transition-colors hover:bg-accent-primary/10"
           >
             Flag for Review
           </button>
@@ -474,14 +474,14 @@ function RankedInterventionsPanel({ interventionStates, onAction, interventions 
           {reRanked.map((iv) => { const state = interventionStates[iv.id]?.state ?? "pending"; return (
             <motion.div key={iv.id} layout draggable={state === "pending"} onDragStart={(e) => { (e as unknown as DragEvent).dataTransfer?.setData?.("text/plain", iv.id); }} onDragEnd={() => {}} initial={{ opacity: 1 }} exit={{ opacity: 0, x: -40, height: 0, marginBottom: 0 }} transition={{ duration: 0.25 }} className={cn(GLASS_CARD_INTERACTIVE, state === "accepted" && "border-emerald-500/20", state === "deferred" && "border-amber-500/20 opacity-60", state === "pending" && "cursor-grab active:cursor-grabbing")}>
               <div className="flex items-start gap-3">
-                <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums", state === "accepted" ? "bg-emerald-500/15 text-emerald-400" : state === "deferred" ? "bg-amber-500/15 text-amber-400" : "bg-[#d97757]/15 text-[#d97757]")}>
+                <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums", state === "accepted" ? "bg-emerald-500/15 text-emerald-400" : state === "deferred" ? "bg-amber-500/15 text-amber-400" : "bg-accent-primary/15 text-accent-primary")}>
                   {state === "accepted" ? <Check className="h-3.5 w-3.5" /> : state === "deferred" ? <Clock className="h-3.5 w-3.5" /> : iv.rank}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className={cn("text-sm font-medium leading-snug", state === "accepted" ? "text-emerald-300/80 line-through decoration-emerald-500/30" : state === "deferred" ? "text-white/60" : "text-white/80")}>{iv.title}</p>
                   <p className="mt-1 text-xs text-white/60">{iv.linkedInitiative}</p>
                   <div className="mt-2.5 flex items-center gap-4">
-                    <div className="flex items-center gap-2"><span className="text-[10px] font-medium text-white/60">Priority</span><div className="h-1 w-16 overflow-hidden rounded-full bg-white/[0.06]"><div className="h-full rounded-full bg-[#d97757]/60" style={{ width: `${iv.priorityScore}%` }} /></div><span className="text-[10px] tabular-nums text-white/60">{iv.priorityScore}</span></div>
+                    <div className="flex items-center gap-2"><span className="text-[10px] font-medium text-white/60">Priority</span><div className="h-1 w-16 overflow-hidden rounded-full bg-white/[0.06]"><div className="h-full rounded-full bg-accent-primary/60" style={{ width: `${iv.priorityScore}%` }} /></div><span className="text-[10px] tabular-nums text-white/60">{iv.priorityScore}</span></div>
                     <span className="text-[10px] tabular-nums text-white/60">{Math.round(iv.confidence * 100)}% conf</span>
                   </div>
                 </div>
@@ -539,7 +539,7 @@ function AgentActivityPanel({ agentStatusOverrides, agentData = DEMO_AGENTS }: {
    ================================================================== */
 
 const RELATIONSHIP_ICON: Record<string, typeof Building2> = { product: Target, initiative: Zap, comparable: Globe, "design partner": User, "market signal": Radio };
-const RELATIONSHIP_COLOR: Record<string, string> = { product: "border-[#d97757]/25 bg-[#d97757]/8 text-[#d97757]", initiative: "border-emerald-500/25 bg-emerald-500/8 text-emerald-400", comparable: "border-sky-500/25 bg-sky-500/8 text-sky-400", "design partner": "border-violet-500/25 bg-violet-500/8 text-violet-400", "market signal": "border-amber-500/25 bg-amber-500/8 text-amber-400" };
+const RELATIONSHIP_COLOR: Record<string, string> = { product: "border-accent-primary/25 bg-accent-primary/8 text-accent-primary", initiative: "border-emerald-500/25 bg-emerald-500/8 text-emerald-400", comparable: "border-sky-500/25 bg-sky-500/8 text-sky-400", "design partner": "border-violet-500/25 bg-violet-500/8 text-violet-400", "market signal": "border-amber-500/25 bg-amber-500/8 text-amber-400" };
 
 function NearbyEntitiesPanel() {
   const navigate = useNavigate();
@@ -668,13 +668,13 @@ function ExternalSignalsPanel() {
                   href={sig.sourceUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1 inline-block text-[10px] text-[#d97757]/70 underline underline-offset-2 hover:text-[#d97757] transition-colors"
+                  className="mt-1 inline-block text-[10px] text-accent-primary/70 underline underline-offset-2 hover:text-accent-primary transition-colors"
                 >
                   View source
                 </a>
               )}
-              <div className="mt-2 border-l-2 border-[#d97757]/30 pl-2">
-                <p className="text-[11px] text-[#d97757]/80">{sig.howItAffectsYou}</p>
+              <div className="mt-2 border-l-2 border-accent-primary/30 pl-2">
+                <p className="text-[11px] text-accent-primary/80">{sig.howItAffectsYou}</p>
               </div>
             </div>
           ))}
@@ -703,7 +703,7 @@ function HistoryPacketReusePanel({ packetHistory, activePacketId, onSelectPacket
           const isActive = pkt.packetId === activePacketId;
           const pct = Math.round(pkt.canonicalEntity.identityConfidence * 100);
           return (
-            <div key={pkt.packetId} className={cn("flex items-center gap-3 rounded-lg border p-3 transition-colors", isActive ? "border-[#d97757]/25 bg-[#d97757]/5" : "border-white/[0.20] bg-white/[0.12] hover:bg-white/[0.07] cursor-pointer")} onClick={() => !isActive && onSelectPacket(pkt.packetId)}>
+            <div key={pkt.packetId} className={cn("flex items-center gap-3 rounded-lg border p-3 transition-colors", isActive ? "border-accent-primary/25 bg-accent-primary/5" : "border-white/[0.20] bg-white/[0.12] hover:bg-white/[0.07] cursor-pointer")} onClick={() => !isActive && onSelectPacket(pkt.packetId)}>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase text-white/60">{getArtifactPacketTypeLabel(pkt.packetType)}</span>
@@ -712,7 +712,7 @@ function HistoryPacketReusePanel({ packetHistory, activePacketId, onSelectPacket
                 <p className="mt-1 text-xs text-white/60">{pkt.canonicalEntity.name} &middot; Confidence: {pct}%</p>
               </div>
               {isActive ? (
-                <span className="shrink-0 rounded-full bg-[#d97757]/10 px-2 py-0.5 text-[10px] font-semibold text-[#d97757]">Active</span>
+                <span className="shrink-0 rounded-full bg-accent-primary/10 px-2 py-0.5 text-[10px] font-semibold text-accent-primary">Active</span>
               ) : (
                 <button className="shrink-0 rounded-lg bg-white/[0.07] px-2.5 py-1 text-[10px] font-medium text-white/60 transition-colors hover:bg-white/[0.08] hover:text-white/60">Use this</button>
               )}
@@ -738,7 +738,7 @@ function TimelineMemoStrip() {
     <div className={GLASS_CARD}>
       <div className="flex items-center justify-between"><h2 className={SECTION_HEADER}>Today's Briefing</h2><span className="text-xs text-white/60">{todayFormatted}</span></div>
       <div className="mt-3 grid gap-4 md:grid-cols-3">
-        <div><h3 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">What matters</h3><ul className="mt-2 space-y-1.5">{m.whatMatters.map((item, i) => (<li key={i} className="flex items-start gap-2"><div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d97757]/60" /><span className="text-xs leading-relaxed text-white/60">{item}</span></li>))}</ul></div>
+        <div><h3 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">What matters</h3><ul className="mt-2 space-y-1.5">{m.whatMatters.map((item, i) => (<li key={i} className="flex items-start gap-2"><div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-accent-primary/60" /><span className="text-xs leading-relaxed text-white/60">{item}</span></li>))}</ul></div>
         <div><h3 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">What to do next</h3><ul className="mt-2 space-y-1.5">{m.whatToDoNext.map((item, i) => (<li key={i} className="flex items-start gap-2"><div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500/60" /><span className="text-xs leading-relaxed text-white/60">{item}</span></li>))}</ul></div>
         <div><h3 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Unresolved</h3><ul className="mt-2 space-y-1.5">{m.unresolved.map((item, i) => (<li key={i} className="flex items-start gap-2"><div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500/60" /><span className="text-xs leading-relaxed text-white/60">{item}</span></li>))}</ul></div>
       </div>
@@ -958,9 +958,9 @@ function FounderDashboardViewInner() {
   return (
     <div className="flex h-full flex-col gap-4 overflow-auto px-4 pb-24 pt-4 bg-[#151413] text-[#d4d0c8]">
       {showOnboarding && (
-        <div className="relative rounded-xl border border-[#d97757]/30 bg-[#d97757]/10 px-4 py-3">
+        <div className="relative rounded-xl border border-accent-primary/30 bg-accent-primary/10 px-4 py-3">
           <button onClick={dismissOnboardingTooltip} aria-label="Dismiss welcome message" className="absolute right-2 top-2 text-white/60 hover:text-white/60"><X className="h-3.5 w-3.5" /></button>
-          <p className="text-sm font-medium text-[#d97757]">Welcome to your Founder Dashboard</p>
+          <p className="text-sm font-medium text-accent-primary">Welcome to your Founder Dashboard</p>
           <p className="mt-1 text-xs text-white/60">This is your operating clarity pipeline. Start by reviewing what changed, then accept or defer the recommended actions below. Use the mode switch to generate different Artifact Packets.</p>
         </div>
       )}
@@ -1018,7 +1018,7 @@ function FounderDashboardViewInner() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="fixed bottom-20 left-1/2 z-50 w-full max-w-md -translate-x-1/2">
             <div className="mx-4 flex items-center gap-2 rounded-xl border border-white/[0.08] bg-[#1a1918] p-3 shadow-2xl backdrop-blur-md">
               <input autoFocus value={quickSignalText} onChange={(e) => setQuickSignalText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleQuickAddSignal(); if (e.key === "Escape") setIsAddingSignal(false); }} placeholder="Add a quick signal or note..." className="flex-1 bg-transparent text-sm text-white/80 placeholder-white/20 outline-none" />
-              <button onClick={handleQuickAddSignal} className="shrink-0 rounded-lg bg-[#d97757]/10 px-3 py-1.5 text-xs font-medium text-[#d97757] transition-colors hover:bg-[#d97757]/20">Add</button>
+              <button onClick={handleQuickAddSignal} className="shrink-0 rounded-lg bg-accent-primary/10 px-3 py-1.5 text-xs font-medium text-accent-primary transition-colors hover:bg-accent-primary/20">Add</button>
               <button onClick={() => setIsAddingSignal(false)} className="shrink-0 text-white/70 hover:text-white/60"><X className="h-4 w-4" /></button>
             </div>
           </motion.div>
@@ -1026,7 +1026,7 @@ function FounderDashboardViewInner() {
       </AnimatePresence>
 
       <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2">
-        <button onClick={toggleSound} className={cn("flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.06] transition-colors", soundEnabled ? "bg-[#d97757]/10 text-[#d97757]" : "bg-white/[0.02] text-white/70 hover:text-white/60")} title={soundEnabled ? "Sound on" : "Sound off"}><Volume2 className="h-3.5 w-3.5" /></button>
+        <button onClick={toggleSound} className={cn("flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.06] transition-colors", soundEnabled ? "bg-accent-primary/10 text-accent-primary" : "bg-white/[0.02] text-white/70 hover:text-white/60")} title={soundEnabled ? "Sound on" : "Sound off"}><Volume2 className="h-3.5 w-3.5" /></button>
         {undoStack.length > 0 && <button onClick={handleUndo} className="flex h-8 items-center gap-1.5 rounded-lg border border-white/[0.20] bg-white/[0.12] px-2.5 text-xs text-white/60 transition-colors hover:bg-white/[0.07] hover:text-white/60" title="Undo last action (Ctrl+Z)"><RotateCcw className="h-3 w-3" />Undo</button>}
       </div>
 

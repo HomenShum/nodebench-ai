@@ -147,7 +147,7 @@ function ShareBar({ company }: { company: CompanyProfileData }) {
       <button
         onClick={handleCopy}
         aria-label="Copy link to clipboard"
-        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#d97757]"
+        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-accent-primary"
       >
         {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
         {copied ? "Copied!" : "Copy link"}
@@ -157,7 +157,7 @@ function ShareBar({ company }: { company: CompanyProfileData }) {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Share on Twitter"
-        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#d97757]"
+        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-accent-primary"
       >
         <ExternalLink className="h-3.5 w-3.5" />
         Twitter
@@ -167,7 +167,7 @@ function ShareBar({ company }: { company: CompanyProfileData }) {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Share on LinkedIn"
-        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#d97757]"
+        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-accent-primary"
       >
         <Linkedin className="h-3.5 w-3.5" />
         LinkedIn
@@ -175,7 +175,7 @@ function ShareBar({ company }: { company: CompanyProfileData }) {
       <button
         onClick={() => window.print()}
         aria-label="Print company profile"
-        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#d97757]"
+        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] text-white/50 transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-accent-primary"
       >
         <Printer className="h-3.5 w-3.5" />
         Print
@@ -247,7 +247,7 @@ function PublicCompanyProfileViewInner() {
         <div className="text-center">
           <Building2 className="mx-auto h-12 w-12 text-white/20" />
           <h1 className="mt-4 text-lg font-medium">Company not found</h1>
-          <a href="/" className="mt-2 inline-block text-[#d97757] hover:underline">Go to NodeBench</a>
+          <a href="/" className="mt-2 inline-block text-accent-primary hover:underline">Go to NodeBench</a>
         </div>
       </div>
     );
@@ -255,7 +255,7 @@ function PublicCompanyProfileViewInner() {
 
   return (
     <div className="min-h-screen bg-[#151413] text-white">
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-[#d97757] focus:px-4 focus:py-2 focus:text-white">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-accent-primary focus:px-4 focus:py-2 focus:text-white">
         Skip to content
       </a>
       <CompanyMetaTags company={company} />
@@ -266,8 +266,8 @@ function PublicCompanyProfileViewInner() {
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#d97757]/10">
-                  <Building2 className="h-5 w-5 text-[#d97757]" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-primary/10">
+                  <Building2 className="h-5 w-5 text-accent-primary" />
                 </div>
                 <div>
                   <h1 className="text-xl font-semibold">{company.name}</h1>
@@ -285,10 +285,10 @@ function PublicCompanyProfileViewInner() {
           </div>
 
           {/* Wedge */}
-          <div className="mt-4 rounded-lg border border-[#d97757]/20 bg-[#d97757]/[0.04] p-4">
+          <div className="mt-4 rounded-lg border border-accent-primary/20 bg-accent-primary/[0.04] p-4">
             <div className="flex items-center gap-2">
-              <Target className="h-4 w-4 text-[#d97757]" />
-              <span className="text-[11px] uppercase tracking-[0.2em] text-[#d97757]/60">Wedge</span>
+              <Target className="h-4 w-4 text-accent-primary" />
+              <span className="text-[11px] uppercase tracking-[0.2em] text-accent-primary/60">Wedge</span>
             </div>
             <p className="mt-2 text-sm text-white/60">{company.wedge}</p>
           </div>
@@ -302,9 +302,9 @@ function PublicCompanyProfileViewInner() {
           {/* Signals */}
           <section>
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-[#d97757]" />
+              <Sparkles className="h-4 w-4 text-accent-primary" />
               <h2 className="text-[11px] uppercase tracking-[0.2em] text-white/40">Key Signals</h2>
-              <span className="rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[9px] tabular-nums text-[#d97757]">
+              <span className="rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[9px] tabular-nums text-accent-primary">
                 {company.signals.length}
               </span>
             </div>
@@ -399,13 +399,13 @@ function PublicCompanyProfileViewInner() {
       <footer className="company-profile-no-print border-t border-white/[0.08] px-6 py-6">
         <div className="mx-auto max-w-3xl flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-[#d97757]" />
-            <span className="text-[11px] text-white/30">Powered by <a href="https://nodebenchai.com" className="text-[#d97757] hover:underline">NodeBench Delta</a></span>
+            <Sparkles className="h-4 w-4 text-accent-primary" />
+            <span className="text-[11px] text-white/30">Powered by <a href="https://nodebenchai.com" className="text-accent-primary hover:underline">NodeBench Delta</a></span>
           </div>
           <div className="flex items-center gap-3">
             <a
               href="https://nodebenchai.com"
-              className="flex items-center gap-1.5 rounded-lg bg-[#d97757]/10 px-3 py-1.5 text-[11px] text-[#d97757] transition-colors hover:bg-[#d97757]/20"
+              className="flex items-center gap-1.5 rounded-lg bg-accent-primary/10 px-3 py-1.5 text-[11px] text-accent-primary transition-colors hover:bg-accent-primary/20"
             >
               Try NodeBench <ArrowRight className="h-3 w-3" />
             </a>

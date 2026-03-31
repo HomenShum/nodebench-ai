@@ -446,7 +446,7 @@ export const ExportView = memo(function ExportView() {
           <button
             type="button"
             onClick={() => navigate("/founder")}
-            className="mt-2 rounded-lg bg-[#d97757] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#c56a4a]"
+            className="mt-2 rounded-lg bg-accent-primary px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#c56a4a]"
           >
             Go to Dashboard
           </button>
@@ -545,13 +545,13 @@ export const ExportView = memo(function ExportView() {
                     flex flex-col rounded-xl border p-4 transition-all duration-150 cursor-pointer
                     ${
                       isSelected
-                        ? "border-[#d97757]/40 bg-[#d97757]/[0.06] shadow-[0_0_0_1px_rgba(217,119,87,0.15)]"
+                        ? "border-accent-primary/40 bg-accent-primary/[0.06] shadow-[0_0_0_1px_rgba(217,119,87,0.15)]"
                         : "border-white/[0.20] bg-white/[0.12] hover:bg-white/[0.07] hover:border-white/[0.1]"
                     }
                   `}
                 >
                   <Icon
-                    className={`h-5 w-5 mb-2 ${isSelected ? "text-[#d97757]" : "text-white/60"}`}
+                    className={`h-5 w-5 mb-2 ${isSelected ? "text-accent-primary" : "text-white/60"}`}
                   />
                   <span
                     className={`text-[13px] font-medium mb-0.5 ${isSelected ? "text-white/90" : "text-white/70"}`}
@@ -571,7 +571,7 @@ export const ExportView = memo(function ExportView() {
                       mt-auto rounded-lg px-3 py-1.5 text-[12px] font-medium transition-colors
                       ${
                         isSelected
-                          ? "bg-[#d97757] text-white hover:bg-[#c56a4a]"
+                          ? "bg-accent-primary text-white hover:bg-[#c56a4a]"
                           : "bg-white/[0.06] text-white/60 hover:bg-white/[0.1] hover:text-white/70"
                       }
                     `}

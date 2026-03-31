@@ -18,7 +18,7 @@ export type { TrajectoryStep };
 
 const STATUS_DOT: Record<TrajectoryStep["status"], string> = {
   pending: "bg-white/30",
-  running: "bg-[#d97757] animate-pulse",
+  running: "bg-accent-primary animate-pulse",
   success: "bg-emerald-500",
   error: "bg-red-500",
   skipped: "bg-amber-400",
@@ -34,7 +34,7 @@ const STATUS_LABEL: Record<TrajectoryStep["status"], string> = {
 
 const STATUS_BAR_COLOR: Record<TrajectoryStep["status"], string> = {
   pending: "bg-white/20",
-  running: "bg-[#d97757]",
+  running: "bg-accent-primary",
   success: "bg-emerald-500",
   error: "bg-red-500",
   skipped: "bg-amber-400",
@@ -255,7 +255,7 @@ function JsonViewer({ raw }: { raw: string }) {
 
   // Simple syntax coloring via spans
   const colored = formatted
-    .replace(/"([^"\\]*(\\.[^"\\]*)*)"(?=\s*:)/g, '<span class="text-[#d97757]">"$1"</span>')
+    .replace(/"([^"\\]*(\\.[^"\\]*)*)"(?=\s*:)/g, '<span class="text-accent-primary">"$1"</span>')
     .replace(/:\s*"([^"\\]*(\\.[^"\\]*)*)"/g, ': <span class="text-emerald-400">"$1"</span>')
     .replace(/:\s*(\d+(\.\d+)?)/g, ': <span class="text-sky-400">$1</span>')
     .replace(/:\s*(true|false)/g, ': <span class="text-amber-400">$1</span>')
@@ -360,7 +360,7 @@ function StepCard({
         onClick={onToggle}
         className={`w-full text-left rounded-xl p-4 transition-all duration-200 border ${
           isRunning
-            ? "bg-white/[0.12] border-[#d97757]/40 shadow-[0_0_16px_rgba(217,119,87,0.12)]"
+            ? "bg-white/[0.12] border-accent-primary/40 shadow-[0_0_16px_rgba(217,119,87,0.12)]"
             : "bg-white/[0.06] border-white/[0.10] hover:bg-white/[0.10] hover:border-white/[0.16]"
         }`}
       >
@@ -399,7 +399,7 @@ function StepCard({
                   : step.status === "skipped"
                     ? "bg-amber-400/20 text-amber-400"
                     : step.status === "running"
-                      ? "bg-[#d97757]/20 text-[#d97757]"
+                      ? "bg-accent-primary/20 text-accent-primary"
                       : "bg-white/10 text-white/40"
             }`}
           >
@@ -650,7 +650,7 @@ function SearchBar({
       placeholder="Search step outputs..."
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-white/70 placeholder:text-white/20 focus:outline-none focus:border-[#d97757]/40 focus:ring-1 focus:ring-[#d97757]/20 font-mono"
+      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-white/70 placeholder:text-white/20 focus:outline-none focus:border-accent-primary/40 focus:ring-1 focus:ring-[#d97757]/20 font-mono"
     />
   );
 }
@@ -756,7 +756,7 @@ function TrajectoryDebuggerInner({
         <h2 className="text-[11px] uppercase tracking-[0.2em] text-white/40">
           Trajectory Debugger
           {mode === "dev" && (
-            <span className="ml-2 text-[9px] px-1.5 py-0.5 rounded bg-[#d97757]/20 text-[#d97757] normal-case tracking-normal">
+            <span className="ml-2 text-[9px] px-1.5 py-0.5 rounded bg-accent-primary/20 text-accent-primary normal-case tracking-normal">
               DEV
             </span>
           )}

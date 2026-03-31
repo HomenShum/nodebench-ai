@@ -244,7 +244,7 @@ function StepIndicator({
               <div
                 className={cn(
                   "flex h-3 w-3 items-center justify-center rounded-full transition-all duration-300",
-                  isActive && "bg-[#d97757] ring-4 ring-[#d97757]/20",
+                  isActive && "bg-accent-primary ring-4 ring-[#d97757]/20",
                   isCompleted && "bg-emerald-500",
                   !isActive && !isCompleted && "border border-white/20 bg-transparent",
                 )}
@@ -253,7 +253,7 @@ function StepIndicator({
                 {isCompleted && <Check size={8} className="text-white" />}
               </div>
               {isActive && (
-                <span className="absolute top-5 whitespace-nowrap text-[10px] font-medium text-[#d97757]">
+                <span className="absolute top-5 whitespace-nowrap text-[10px] font-medium text-accent-primary">
                   {STEP_LABELS[i]}
                 </span>
               )}
@@ -295,9 +295,9 @@ function StepFoundingMode({
               aria-pressed={isSelected}
               className={cn(
                 "group relative flex items-start gap-4 rounded-2xl border p-5 text-left transition-all duration-200",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#151413]",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#151413]",
                 isSelected
-                  ? "border-[#d97757]/40 bg-[#d97757]/5"
+                  ? "border-accent-primary/40 bg-accent-primary/5"
                   : "border-white/[0.20] bg-white/[0.12] hover:border-white/[0.12] hover:bg-white/[0.07]",
               )}
               style={{
@@ -308,7 +308,7 @@ function StepFoundingMode({
                 className={cn(
                   "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors",
                   isSelected
-                    ? "bg-[#d97757]/15 text-[#d97757]"
+                    ? "bg-accent-primary/15 text-accent-primary"
                     : "bg-white/[0.07] text-content-muted group-hover:text-content-secondary",
                 )}
               >
@@ -320,7 +320,7 @@ function StepFoundingMode({
               </div>
               {isSelected && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#d97757]">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-accent-primary">
                     <Check size={14} className="text-white" />
                   </div>
                 </div>
@@ -336,7 +336,7 @@ function StepFoundingMode({
 /* ── Step 2: Business Details ─────────────────────────────────────────────── */
 
 const inputClasses =
-  "w-full bg-transparent border border-white/[0.08] rounded-xl px-4 py-3 text-content placeholder:text-content-muted/60 focus:border-[#d97757]/30 focus:outline-none focus:ring-1 focus:ring-[#d97757]/20 transition-colors text-sm";
+  "w-full bg-transparent border border-white/[0.08] rounded-xl px-4 py-3 text-content placeholder:text-content-muted/60 focus:border-accent-primary/30 focus:outline-none focus:ring-1 focus:ring-[#d97757]/20 transition-colors text-sm";
 
 const labelClasses =
   "text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted mb-2 block";
@@ -528,7 +528,7 @@ function StepBusinessDetails({
         <button
           type="button"
           onClick={addProject}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/[0.1] py-3 text-sm text-content-muted transition-colors hover:border-[#d97757]/30 hover:text-[#d97757]"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/[0.1] py-3 text-sm text-content-muted transition-colors hover:border-accent-primary/30 hover:text-accent-primary"
           aria-label="Add another project"
         >
           <Plus size={16} />
@@ -567,7 +567,7 @@ function StepCompanyProfile({
             <button
               type="button"
               onClick={() => setEditingField(editingField === "name" ? null : "name")}
-              className="rounded-lg p-1 text-content-muted hover:text-[#d97757] transition-colors"
+              className="rounded-lg p-1 text-content-muted hover:text-accent-primary transition-colors"
               aria-label="Edit company name"
             >
               <Pencil size={12} />
@@ -595,7 +595,7 @@ function StepCompanyProfile({
             <button
               type="button"
               onClick={() => setEditingField(editingField === "mission" ? null : "mission")}
-              className="rounded-lg p-1 text-content-muted hover:text-[#d97757] transition-colors"
+              className="rounded-lg p-1 text-content-muted hover:text-accent-primary transition-colors"
               aria-label="Edit mission statement"
             >
               <Pencil size={12} />
@@ -622,7 +622,7 @@ function StepCompanyProfile({
             <button
               type="button"
               onClick={() => setEditingField(editingField === "wedge" ? null : "wedge")}
-              className="rounded-lg p-1 text-content-muted hover:text-[#d97757] transition-colors"
+              className="rounded-lg p-1 text-content-muted hover:text-accent-primary transition-colors"
               aria-label="Edit wedge"
             >
               <Pencil size={12} />
@@ -649,7 +649,7 @@ function StepCompanyProfile({
             {profile.state}
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.20] bg-white/[0.12] px-3 py-1.5 text-xs font-medium text-content-secondary">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#d97757]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-accent-primary" />
             {profile.foundingMode}
           </span>
         </div>
@@ -664,7 +664,7 @@ function StepCompanyProfile({
                 style={{ width: `${profile.confidence}%` }}
               />
             </div>
-            <span className="text-sm font-semibold tabular-nums text-[#d97757]">
+            <span className="text-sm font-semibold tabular-nums text-accent-primary">
               {profile.confidence}%
             </span>
           </div>
@@ -682,7 +682,7 @@ function StepCompanyProfile({
                 key={i}
                 className="flex items-start gap-2 text-sm text-content-secondary"
               >
-                <ChevronRight size={14} className="mt-0.5 shrink-0 text-[#d97757]/60" />
+                <ChevronRight size={14} className="mt-0.5 shrink-0 text-accent-primary/60" />
                 {q}
               </li>
             ))}
@@ -720,7 +720,7 @@ function StepWorkspaceReady({ profile }: { profile: CompanyProfile }) {
       <h1 className="mb-2 text-2xl font-semibold text-content">
         Your workspace is ready
       </h1>
-      <p className="mb-1 text-lg font-medium text-[#d97757]">{profile.name}</p>
+      <p className="mb-1 text-lg font-medium text-accent-primary">{profile.name}</p>
       <p className="mx-auto mb-8 max-w-md text-sm leading-relaxed text-content-muted">
         {profile.mission}
       </p>
@@ -879,7 +879,7 @@ export default function CompanySetupView() {
               <h1 className="mb-1 text-2xl font-semibold text-content">
                 Welcome back
               </h1>
-              <p className="mb-1 text-lg font-medium text-[#d97757]">
+              <p className="mb-1 text-lg font-medium text-accent-primary">
                 {savedCompany.name}
               </p>
               <p className="mx-auto mb-6 max-w-md text-sm leading-relaxed text-content-muted">
@@ -889,7 +889,7 @@ export default function CompanySetupView() {
               {/* Details */}
               <div className="mb-6 flex flex-wrap justify-center gap-3">
                 <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.20] bg-white/[0.12] px-3 py-1.5 text-xs font-medium text-content-secondary">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#d97757]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent-primary" />
                   {savedCompany.mode.replace(/_/g, " ")}
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.20] bg-white/[0.12] px-3 py-1.5 text-xs font-medium text-content-secondary">
@@ -902,7 +902,7 @@ export default function CompanySetupView() {
                 <button
                   type="button"
                   onClick={handleEditCompany}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/[0.20] bg-white/[0.12] px-5 py-3 text-sm font-medium text-content-secondary transition-colors hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/40"
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/[0.20] bg-white/[0.12] px-5 py-3 text-sm font-medium text-content-secondary transition-colors hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/40"
                   aria-label="Edit company profile"
                 >
                   <RotateCcw size={16} />
@@ -911,7 +911,7 @@ export default function CompanySetupView() {
                 <button
                   type="button"
                   onClick={handleGoToDashboard}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#d97757] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#c96a4d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#151413]"
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-accent-primary px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#151413]"
                   aria-label="Go to your dashboard"
                 >
                   <Rocket size={16} />
@@ -971,7 +971,7 @@ export default function CompanySetupView() {
             <button
               type="button"
               onClick={handleBack}
-              className="inline-flex items-center gap-2 rounded-xl border border-white/[0.20] bg-white/[0.12] px-5 py-3 text-sm font-medium text-content-secondary transition-colors hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/40"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/[0.20] bg-white/[0.12] px-5 py-3 text-sm font-medium text-content-secondary transition-colors hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/40"
               aria-label="Go to previous step"
             >
               <ArrowLeft size={16} />
@@ -988,9 +988,9 @@ export default function CompanySetupView() {
               disabled={!canProceed()}
               className={cn(
                 "inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-medium transition-all",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#151413]",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#151413]",
                 canProceed()
-                  ? "bg-[#d97757] text-white hover:bg-[#c96a4d]"
+                  ? "bg-accent-primary text-white hover:bg-accent-primary/80"
                   : "cursor-not-allowed bg-white/[0.07] text-content-muted",
               )}
               aria-label={
@@ -1006,7 +1006,7 @@ export default function CompanySetupView() {
               <button
                 type="button"
                 onClick={handleAddInitiative}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/[0.20] bg-white/[0.12] px-5 py-3 text-sm font-medium text-content-secondary transition-colors hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/40"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/[0.20] bg-white/[0.12] px-5 py-3 text-sm font-medium text-content-secondary transition-colors hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/40"
                 aria-label="Add your first initiative"
               >
                 <Zap size={16} />
@@ -1015,7 +1015,7 @@ export default function CompanySetupView() {
               <button
                 type="button"
                 onClick={handleGoToDashboard}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#d97757] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#c96a4d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#151413]"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-accent-primary px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#151413]"
                 aria-label="Go to your dashboard"
               >
                 <Rocket size={16} />

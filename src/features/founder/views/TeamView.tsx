@@ -338,7 +338,7 @@ export default function TeamView() {
     return (
       <div className="flex h-full items-center justify-center bg-[#151413]">
         <div className="w-full max-w-md rounded-2xl border border-white/[0.08] bg-white/[0.02] p-8 text-center">
-          <Users className="mx-auto h-10 w-10 text-[#d97757]" />
+          <Users className="mx-auto h-10 w-10 text-accent-primary" />
           <h2 className="mt-4 text-xl font-bold text-white/90">Join a Team Room</h2>
           <p className="mt-2 text-sm text-white/40">
             Enter the room code from your team lead, or create a new room.
@@ -352,7 +352,7 @@ export default function TeamView() {
               onChange={(e) => setRoomCodeInput(e.target.value.toUpperCase().slice(0, 6))}
               placeholder="e.g. X7K2M9"
               maxLength={6}
-              className="mt-1 w-full rounded-xl border-2 border-white/[0.12] bg-black/30 px-4 py-4 text-center font-mono text-2xl font-bold tracking-[0.3em] text-[#d97757] placeholder:text-white/15 focus:border-[#d97757]/50 focus:outline-none"
+              className="mt-1 w-full rounded-xl border-2 border-white/[0.12] bg-black/30 px-4 py-4 text-center font-mono text-2xl font-bold tracking-[0.3em] text-accent-primary placeholder:text-white/15 focus:border-accent-primary/50 focus:outline-none"
               autoFocus={!urlRoomCode}
               readOnly={!!urlRoomCode}
             />
@@ -364,7 +364,7 @@ export default function TeamView() {
             onChange={(e) => setUserName(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") void handleJoin(); }}
             placeholder="Your name (e.g. Sarah)"
-            className="mt-4 w-full rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 text-sm text-white/80 placeholder:text-white/25 focus:border-[#d97757]/40 focus:outline-none"
+            className="mt-4 w-full rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 text-sm text-white/80 placeholder:text-white/25 focus:border-accent-primary/40 focus:outline-none"
             autoFocus={!!urlRoomCode}
           />
 
@@ -372,7 +372,7 @@ export default function TeamView() {
             type="button"
             onClick={() => void handleJoin()}
             disabled={!userName.trim() || (!roomCode && !roomCodeInput.trim())}
-            className="mt-4 w-full rounded-lg bg-[#d97757] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#c86747] disabled:opacity-30"
+            className="mt-4 w-full rounded-lg bg-accent-primary py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-primary/80 disabled:opacity-30"
           >
             Join Room
           </button>
@@ -410,7 +410,7 @@ export default function TeamView() {
         <div className="border-b border-white/[0.06] px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-[#d97757]" />
+              <Users className="h-4 w-4 text-accent-primary" />
               <h2 className="text-sm font-semibold text-white/80">Team</h2>
               <span className={cn("h-2 w-2 rounded-full", isConnected ? "bg-emerald-400" : "bg-white/20")} />
             </div>
@@ -426,7 +426,7 @@ export default function TeamView() {
           </div>
           {roomCode && (
             <div className="mt-1.5 flex items-center gap-2">
-              <span className="rounded bg-[#d97757]/10 px-2 py-0.5 font-mono text-[11px] font-bold tracking-widest text-[#d97757]">
+              <span className="rounded bg-accent-primary/10 px-2 py-0.5 font-mono text-[11px] font-bold tracking-widest text-accent-primary">
                 {roomCode}
               </span>
               <span className="text-[9px] text-white/20">Room code</span>
@@ -454,7 +454,7 @@ export default function TeamView() {
                   className={cn(
                     "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
                     selectedPeer === peer.peerId
-                      ? "bg-[#d97757]/10 border border-[#d97757]/20"
+                      ? "bg-accent-primary/10 border border-accent-primary/20"
                       : "hover:bg-white/[0.03] border border-transparent",
                   )}
                 >
@@ -490,18 +490,18 @@ export default function TeamView() {
           <button
             type="button"
             onClick={handleCopyInviteLink}
-            className="flex w-full items-center gap-2 rounded-lg bg-[#d97757]/15 border border-[#d97757]/20 px-3 py-2 text-left transition-colors hover:bg-[#d97757]/25"
+            className="flex w-full items-center gap-2 rounded-lg bg-accent-primary/15 border border-accent-primary/20 px-3 py-2 text-left transition-colors hover:bg-accent-primary/25"
           >
             {copiedInviteLink ? (
               <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
             ) : (
-              <UserPlus className="h-3.5 w-3.5 shrink-0 text-[#d97757]" />
+              <UserPlus className="h-3.5 w-3.5 shrink-0 text-accent-primary" />
             )}
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-medium text-[#d97757]">
+              <div className="text-[10px] font-medium text-accent-primary">
                 {copiedInviteLink ? "Link copied!" : "Copy invite link"}
               </div>
-              <div className="truncate text-[9px] text-[#d97757]/50">
+              <div className="truncate text-[9px] text-accent-primary/50">
                 Share this link — they join instantly
               </div>
             </div>
@@ -549,7 +549,7 @@ export default function TeamView() {
                     onClick={() => setShowDelegatePanel(!showDelegatePanel)}
                     className={cn(
                       "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-colors",
-                      showDelegatePanel ? "bg-[#d97757]/20 text-[#d97757]" : "bg-white/5 text-white/40 hover:bg-white/10",
+                      showDelegatePanel ? "bg-accent-primary/20 text-accent-primary" : "bg-white/5 text-white/40 hover:bg-white/10",
                     )}
                   >
                     <GitBranch className="h-3 w-3" />
@@ -579,8 +579,8 @@ export default function TeamView() {
 
               {/* Delegate panel */}
               {showDelegatePanel && (
-                <div className="mt-3 rounded-lg border border-[#d97757]/15 bg-[#d97757]/[0.03] p-3">
-                  <div className="text-[10px] uppercase tracking-wider text-[#d97757]/60">
+                <div className="mt-3 rounded-lg border border-accent-primary/15 bg-accent-primary/[0.03] p-3">
+                  <div className="text-[10px] uppercase tracking-wider text-accent-primary/60">
                     Delegate to {peerLabel(selectedPeer)}&apos;s Claude Code
                   </div>
                   <div className="mt-1 text-[10px] text-white/30">
@@ -591,7 +591,7 @@ export default function TeamView() {
                       value={delegateTask}
                       onChange={(e) => setDelegateTask(e.target.value)}
                       placeholder="e.g. Set up git, create new branch, install deps..."
-                      className="flex-1 rounded-md border border-white/[0.08] bg-white/[0.03] px-2 py-1.5 text-xs text-white/70 placeholder:text-white/20 focus:border-[#d97757]/30 focus:outline-none"
+                      className="flex-1 rounded-md border border-white/[0.08] bg-white/[0.03] px-2 py-1.5 text-xs text-white/70 placeholder:text-white/20 focus:border-accent-primary/30 focus:outline-none"
                     />
                     <button
                       type="button"
@@ -634,7 +634,7 @@ export default function TeamView() {
                         setShowDelegatePanel(false);
                       }}
                       disabled={!delegateTask.trim()}
-                      className="rounded-md bg-[#d97757] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#c86747] disabled:opacity-30"
+                      className="rounded-md bg-accent-primary px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-primary/80 disabled:opacity-30"
                     >
                       Send
                     </button>
@@ -689,12 +689,12 @@ export default function TeamView() {
                               {/* Avatar */}
                               <div className={cn(
                                 "flex h-7 w-7 shrink-0 items-center justify-center rounded text-[10px] font-bold",
-                                isOwn ? "bg-[#d97757]/20 text-[#d97757]" : isAgent ? "bg-blue-500/20 text-blue-400" : "bg-white/10 text-white/50",
+                                isOwn ? "bg-accent-primary/20 text-accent-primary" : isAgent ? "bg-blue-500/20 text-blue-400" : "bg-white/10 text-white/50",
                               )}>
                                 {isAgent ? "AI" : senderName.charAt(0).toUpperCase()}
                               </div>
                               {/* Name + roles + time */}
-                              <span className={cn("text-sm font-semibold", isOwn ? "text-[#d97757]" : isAgent ? "text-blue-400" : "text-white/70")}>
+                              <span className={cn("text-sm font-semibold", isOwn ? "text-accent-primary" : isAgent ? "text-blue-400" : "text-white/70")}>
                                 {isAgent ? `${senderName} (Agent)` : senderName}
                               </span>
                               {senderRoles.map((role) => (
@@ -736,14 +736,14 @@ export default function TeamView() {
                     }
                   }}
                   placeholder={`Message ${peerLabel(selectedPeer)}'s Claude Code...`}
-                  className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white/70 placeholder:text-white/20 focus:border-[#d97757]/30 focus:outline-none"
+                  className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white/70 placeholder:text-white/20 focus:border-accent-primary/30 focus:outline-none"
                   aria-label="Message input"
                 />
                 <button
                   type="button"
                   onClick={() => void handleSend()}
                   disabled={!composeText.trim()}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#d97757]/20 text-[#d97757] transition-colors hover:bg-[#d97757]/30 disabled:opacity-30"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-primary/20 text-accent-primary transition-colors hover:bg-accent-primary/30 disabled:opacity-30"
                   aria-label="Send message"
                 >
                   <Send className="h-4 w-4" />
@@ -773,7 +773,7 @@ export default function TeamView() {
               <button
                 type="button"
                 onClick={handleCopyJoinCommand}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#d97757] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#c86747]"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-accent-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-primary/80"
               >
                 {copiedJoin ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                 {copiedJoin ? "Copied!" : "Copy invite link"}

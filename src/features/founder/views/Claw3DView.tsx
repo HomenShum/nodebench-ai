@@ -46,7 +46,7 @@ export default function Claw3DView() {
       {/* Header bar */}
       <div className="flex items-center justify-between border-b border-white/[0.06] bg-white/[0.02] px-4 py-2">
         <div className="flex items-center gap-3">
-          <Box className="h-5 w-5 text-[#d97757]" />
+          <Box className="h-5 w-5 text-accent-primary" />
           <h1
             className="text-lg font-semibold text-white/90"
             style={{ fontFamily: "Manrope, sans-serif" }}
@@ -94,7 +94,7 @@ export default function Claw3DView() {
             </p>
             <div className="space-y-2 rounded-xl border border-white/[0.06] bg-black/40 p-4">
               <p className="text-[11px] uppercase tracking-[0.2em] text-white/30">Quick start</p>
-              <code className="block rounded bg-black/60 px-3 py-2 font-mono text-xs text-[#d97757]">
+              <code className="block rounded bg-black/60 px-3 py-2 font-mono text-xs text-accent-primary">
                 node scripts/launch-claw3d.mjs
               </code>
               <p className="text-[10px] text-white/20">
@@ -108,7 +108,7 @@ export default function Claw3DView() {
                   href={`${CLAW3D_URL}${OFFICE_PATH}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#d97757]/70 underline"
+                  className="text-accent-primary/70 underline"
                 >
                   localhost:3000/office
                 </a>

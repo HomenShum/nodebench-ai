@@ -75,7 +75,7 @@ export const DecisionSnapshotView = memo(function DecisionSnapshotView() {
             <button
               type="button"
               onClick={() => navigate(`/variables?fixture=${fixtureKey}`)}
-              className="flex items-center gap-1 text-[11px] font-medium text-[#d97757] hover:underline"
+              className="flex items-center gap-1 text-[11px] font-medium text-accent-primary hover:underline"
             >
               View all <ArrowRight className="h-3 w-3" />
             </button>
@@ -96,7 +96,7 @@ export const DecisionSnapshotView = memo(function DecisionSnapshotView() {
                 <div className="w-16">
                   <div className="h-1.5 rounded-full bg-white/[0.06]">
                     <div
-                      className="h-1.5 rounded-full bg-[#d97757]/60"
+                      className="h-1.5 rounded-full bg-accent-primary/60"
                       style={{ width: `${v.weight * 100 * 5}%` }}
                     />
                   </div>
@@ -113,7 +113,7 @@ export const DecisionSnapshotView = memo(function DecisionSnapshotView() {
             <button
               type="button"
               onClick={() => navigate(`/interventions?fixture=${fixtureKey}`)}
-              className="flex items-center gap-1 text-[11px] font-medium text-[#d97757] hover:underline"
+              className="flex items-center gap-1 text-[11px] font-medium text-accent-primary hover:underline"
             >
               View all <ArrowRight className="h-3 w-3" />
             </button>
@@ -121,7 +121,7 @@ export const DecisionSnapshotView = memo(function DecisionSnapshotView() {
           <div className="space-y-2.5">
             {memo_.interventions.slice(0, 3).map((item) => (
               <div key={item.rank} className={`${CARD} flex items-start gap-3 px-4 py-3`}>
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[#d97757]/10 text-[10px] font-bold text-[#d97757]">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-accent-primary/10 text-[10px] font-bold text-accent-primary">
                   {item.rank}
                 </span>
                 <div className="flex-1 min-w-0">
@@ -147,7 +147,7 @@ export const DecisionSnapshotView = memo(function DecisionSnapshotView() {
             <button
               type="button"
               onClick={() => navigate(`/scenarios?fixture=${fixtureKey}`)}
-              className="flex items-center gap-1 text-[11px] font-medium text-[#d97757] hover:underline"
+              className="flex items-center gap-1 text-[11px] font-medium text-accent-primary hover:underline"
             >
               View all <ArrowRight className="h-3 w-3" />
             </button>
@@ -199,7 +199,7 @@ export const DecisionSnapshotView = memo(function DecisionSnapshotView() {
               onClick={() => navigate(`/${nav.view}?fixture=${fixtureKey}`)}
               className={`${CARD} group flex flex-col items-center gap-2 p-4 transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.04]`}
             >
-              <nav.icon className="h-4 w-4 text-content-muted group-hover:text-[#d97757]" />
+              <nav.icon className="h-4 w-4 text-content-muted group-hover:text-accent-primary" />
               <span className="text-xs font-medium text-content">{nav.label}</span>
             </button>
           ))}

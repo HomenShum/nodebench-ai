@@ -78,7 +78,7 @@ export function PeerPresenceCard({ peers, compact = false }: Props) {
           ))}
         </div>
         {activeCount > 0 && (
-          <span className="text-xs font-medium text-[#d97757]">{activeCount} active</span>
+          <span className="text-xs font-medium text-accent-primary">{activeCount} active</span>
         )}
       </div>
     );

@@ -52,7 +52,7 @@ function CategoryBar({
       <span className="w-24 shrink-0 truncate text-content-muted">{label}</span>
       <div className="flex-1 h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
         <div
-          className="h-full rounded-full bg-[#d97757]/70 transition-all duration-300"
+          className="h-full rounded-full bg-accent-primary/70 transition-all duration-300"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -113,7 +113,7 @@ export const FeedbackSummary = memo(function FeedbackSummary() {
         <button
           type="button"
           onClick={handleExport}
-          className="text-[11px] text-[#d97757]/80 hover:text-[#d97757] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[#d97757] rounded px-1"
+          className="text-[11px] text-accent-primary/80 hover:text-accent-primary transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-accent-primary rounded px-1"
           aria-label="Export feedback as JSON"
         >
           Export JSON
@@ -159,7 +159,7 @@ export const FeedbackSummary = memo(function FeedbackSummary() {
               key={item.id}
               className="flex items-start gap-2 text-[12px] text-content-muted"
             >
-              <span className="shrink-0 text-[#d97757]/70">
+              <span className="shrink-0 text-accent-primary/70">
                 {"*".repeat(item.rating)}
               </span>
               <span className="line-clamp-2">{item.comment}</span>

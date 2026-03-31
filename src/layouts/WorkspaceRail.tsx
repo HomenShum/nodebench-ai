@@ -298,7 +298,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
             <button
               type="button"
               onClick={() => navigate("/sign-in")}
-              className="flex w-full items-center gap-2 rounded-lg border border-[#d97757]/20 bg-[#d97757]/[0.06] px-3 py-2 text-xs font-medium text-[#d97757] transition-all hover:bg-[#d97757]/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/30 active:scale-[0.99]"
+              className="flex w-full items-center gap-2 rounded-lg border border-accent-primary/20 bg-accent-primary/[0.06] px-3 py-2 text-xs font-medium text-accent-primary transition-all hover:bg-accent-primary/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/30 active:scale-[0.99]"
             >
               <LogIn className="h-3.5 w-3.5" />
               <span>Sign in</span>
@@ -307,7 +307,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
             <button
               type="button"
               onClick={() => navigate("/sign-in")}
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-[#d97757] transition-all hover:bg-[#d97757]/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/30 active:scale-[0.96]"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-accent-primary transition-all hover:bg-accent-primary/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/30 active:scale-[0.96]"
               aria-label="Sign in"
             >
               <LogIn className="h-4 w-4" />

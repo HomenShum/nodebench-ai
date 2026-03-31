@@ -48,7 +48,7 @@ export default function CoordinationHubView() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Radio className="h-5 w-5 text-[#d97757]" />
+          <Radio className="h-5 w-5 text-accent-primary" />
           <h1 className="text-lg font-semibold text-white/90" style={{ fontFamily: "Manrope, sans-serif" }}>
             Coordination Hub
           </h1>
@@ -122,12 +122,12 @@ export default function CoordinationHubView() {
           aria-controls="event-feed-panel"
         >
           <div className="flex items-center gap-2">
-            <Activity className="h-3.5 w-3.5 text-[#d97757]" />
+            <Activity className="h-3.5 w-3.5 text-accent-primary" />
             <span className="text-[11px] uppercase tracking-[0.2em] text-white/40">
               Live Event Feed
             </span>
             {eventLog.length > 0 && (
-              <span className="rounded-full bg-[#d97757]/20 px-2 py-0.5 text-[10px] font-medium text-[#d97757]">
+              <span className="rounded-full bg-accent-primary/20 px-2 py-0.5 text-[10px] font-medium text-accent-primary">
                 {eventLog.length}
               </span>
             )}
@@ -180,7 +180,7 @@ export default function CoordinationHubView() {
           <p className="text-sm text-white/40 mb-3">
             Showing demo data. Start the backend to see live coordination:
           </p>
-          <code className="inline-block rounded-lg bg-black/40 px-4 py-2 font-mono text-xs text-[#d97757]">
+          <code className="inline-block rounded-lg bg-black/40 px-4 py-2 font-mono text-xs text-accent-primary">
             npx tsx server/index.ts
           </code>
           <p className="mt-2 text-[10px] text-white/20">
@@ -195,7 +195,7 @@ export default function CoordinationHubView() {
 function Stat({ label, value, active }: { label: string; value: number; active?: boolean }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className={`font-mono text-sm font-semibold ${active ? "text-[#d97757]" : "text-white/50"}`}>
+      <span className={`font-mono text-sm font-semibold ${active ? "text-accent-primary" : "text-white/50"}`}>
         {value}
       </span>
       <span className="text-[10px] text-white/30">{label}</span>
@@ -209,7 +209,7 @@ function EventRow({ event }: { event: SharedContextEvent }) {
     connected: "text-emerald-400",
     heartbeat: "text-white/15",
     peer_registered: "text-blue-400",
-    packet_published: "text-[#d97757]",
+    packet_published: "text-accent-primary",
     task_proposed: "text-amber-400",
     task_accepted: "text-emerald-400",
     task_completed: "text-emerald-300",
@@ -273,7 +273,7 @@ function DelegationTargetCard({
       )}
       {!isConnected && (
         <div className="mt-2">
-          <code className="block rounded bg-black/30 px-2 py-1 font-mono text-[10px] text-[#d97757]/80">
+          <code className="block rounded bg-black/30 px-2 py-1 font-mono text-[10px] text-accent-primary/80">
             {installCommand}
           </code>
         </div>

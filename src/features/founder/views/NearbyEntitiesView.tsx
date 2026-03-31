@@ -258,7 +258,7 @@ function NearbyEntitiesView() {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2.5">
-            <Network className="h-5 w-5 text-[#d97757]" />
+            <Network className="h-5 w-5 text-accent-primary" />
             <h1 className="text-xl font-semibold text-white">
               Nearby Entities
             </h1>
@@ -346,12 +346,12 @@ function NearbyEntitiesView() {
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
               placeholder="Entity name"
-              className="rounded-lg border border-white/[0.06] bg-white/[0.07] px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#d97757]/40"
+              className="rounded-lg border border-white/[0.06] bg-white/[0.07] px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-accent-primary/40"
             />
             <select
               value={formType}
               onChange={(e) => setFormType(e.target.value)}
-              className="rounded-lg border border-white/[0.06] bg-white/[0.07] px-3 py-2 text-sm text-white outline-none transition-colors focus:border-[#d97757]/40"
+              className="rounded-lg border border-white/[0.06] bg-white/[0.07] px-3 py-2 text-sm text-white outline-none transition-colors focus:border-accent-primary/40"
             >
               <option value="competitor">Competitor</option>
               <option value="partner">Partner</option>
@@ -363,7 +363,7 @@ function NearbyEntitiesView() {
               value={formDesc}
               onChange={(e) => setFormDesc(e.target.value)}
               placeholder="Brief description"
-              className="rounded-lg border border-white/[0.06] bg-white/[0.07] px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#d97757]/40"
+              className="rounded-lg border border-white/[0.06] bg-white/[0.07] px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-accent-primary/40"
             />
           </div>
           <div className="mt-3 flex justify-end">
@@ -371,7 +371,7 @@ function NearbyEntitiesView() {
               type="button"
               onClick={handleAddEntity}
               disabled={!formName.trim()}
-              className="rounded-lg bg-[#d97757] px-4 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+              className="rounded-lg bg-accent-primary px-4 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               Add
             </button>
@@ -554,8 +554,8 @@ const EntityCard = memo(function EntityCard({
                 </span>
               )}
               {contradictions > 0 && (
-                <span className="inline-flex items-center gap-1 text-[#d97757]">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#d97757]" />
+                <span className="inline-flex items-center gap-1 text-accent-primary">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent-primary" />
                   {contradictions}{" "}
                   {contradictions === 1 ? "contradiction" : "contradictions"}
                 </span>

@@ -465,7 +465,7 @@ const ConversationItem = memo(function ConversationItem({
       className={cn(
         "group flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
         isActive
-          ? "border border-[#d97757]/20 bg-[#d97757]/5"
+          ? "border border-accent-primary/20 bg-accent-primary/5"
           : "border border-transparent hover:bg-white/[0.06]",
       )}
     >
@@ -495,7 +495,7 @@ const ConversationItem = memo(function ConversationItem({
             </span>
           )}
           {conv.unread > 0 && (
-            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#d97757] px-1 text-[10px] font-semibold text-white">
+            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-primary px-1 text-[10px] font-semibold text-white">
               {conv.unread}
             </span>
           )}
@@ -511,7 +511,7 @@ const FounderBubble = memo(function FounderBubble({ msg }: { msg: DemoMessage })
   return (
     <div className="flex justify-end animate-in fade-in slide-in-from-right-2 duration-200">
       <div className="max-w-[90%]">
-        <div className="rounded-xl rounded-br-sm border border-[#d97757]/20 bg-[#d97757]/10 px-4 py-2.5">
+        <div className="rounded-xl rounded-br-sm border border-accent-primary/20 bg-accent-primary/10 px-4 py-2.5">
           <p className="text-sm leading-relaxed text-white/90">{msg.content}</p>
         </div>
         <p className="mt-1 text-right text-[10px] text-white/60">
@@ -764,7 +764,7 @@ const EvidenceCard = memo(function EvidenceCard({ msg }: { msg: DemoMessage }) {
           <button
             onClick={() => setExpanded(!expanded)}
             aria-label={expanded ? "Collapse evidence" : "Expand evidence"}
-            className="mt-2 flex items-center gap-1 text-[10px] text-[#d97757] transition-colors hover:text-[#d97757]/80"
+            className="mt-2 flex items-center gap-1 text-[10px] text-accent-primary transition-colors hover:text-accent-primary/80"
           >
             <ChevronRight className={cn("h-3 w-3 transition-transform", expanded && "rotate-90")} />
             {expanded ? "Collapse" : "Preview"}
@@ -987,7 +987,7 @@ const InputBar = memo(function InputBar({ onSend, onClear }: { onSend: (text: st
 
       {/* Input row */}
       <div className="flex items-end gap-2">
-        <div className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-2 transition-colors focus-within:border-[#d97757]/30">
+        <div className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-2 transition-colors focus-within:border-accent-primary/30">
           <textarea
             ref={textareaRef}
             value={text}
@@ -1006,7 +1006,7 @@ const InputBar = memo(function InputBar({ onSend, onClear }: { onSend: (text: st
           aria-label="Send message"
           className={cn(
             "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition-colors",
-            text.trim() ? "bg-[#d97757] text-white hover:bg-[#d97757]/80" : "bg-white/5 text-white/70",
+            text.trim() ? "bg-accent-primary text-white hover:bg-accent-primary/80" : "bg-white/5 text-white/70",
           )}
         >
           <Send className="h-4 w-4" />

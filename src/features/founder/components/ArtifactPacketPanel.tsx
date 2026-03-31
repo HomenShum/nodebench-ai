@@ -143,7 +143,7 @@ function VersionIndicator({
             key={v}
             className={cn(
               "font-mono",
-              isCurrent ? "text-[#d97757]" : "text-white/60",
+              isCurrent ? "text-accent-primary" : "text-white/60",
             )}
           >
             v{v}
@@ -196,7 +196,7 @@ function ArtifactPacketPanelInner({
           </div>
           {packet && (
             <>
-              <span className="inline-flex items-center rounded-full border border-[#d97757]/25 bg-[#d97757]/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#d97757]">
+              <span className="inline-flex items-center rounded-full border border-accent-primary/25 bg-accent-primary/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-primary">
                 {getArtifactPacketTypeLabel(packet.packetType)}
               </span>
               <VersionIndicator
@@ -271,7 +271,7 @@ function ArtifactPacketPanelInner({
                 </span>
                 {packet.canonicalEntity.mission}
               </p>
-              <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#d97757]/20 bg-[#d97757]/8 px-2.5 py-1 text-[11px] text-[#d97757]">
+              <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-accent-primary/20 bg-accent-primary/8 px-2.5 py-1 text-[11px] text-accent-primary">
                 <Target className="h-3 w-3 shrink-0" />
                 <span className="leading-tight">
                   {packet.canonicalEntity.wedge}
@@ -337,7 +337,7 @@ function ArtifactPacketPanelInner({
                   key={action.id}
                   className="flex items-start gap-3 rounded-lg border border-white/[0.04] bg-white/[0.015] px-3 py-2.5"
                 >
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[#d97757]/10 font-mono text-[10px] font-bold text-[#d97757]">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-accent-primary/10 font-mono text-[10px] font-bold text-accent-primary">
                     {index + 1}
                   </span>
                   <div className="min-w-0 flex-1">
@@ -521,7 +521,7 @@ function ArtifactPacketPanelInner({
               <button
                 type="button"
                 onClick={onHandToAgent}
-                className="inline-flex items-center gap-2 rounded-lg border border-[#d97757]/25 bg-[#d97757]/10 px-3.5 py-2 text-xs font-medium text-[#d97757] transition-colors hover:bg-[#d97757]/20"
+                className="inline-flex items-center gap-2 rounded-lg border border-accent-primary/25 bg-accent-primary/10 px-3.5 py-2 text-xs font-medium text-accent-primary transition-colors hover:bg-accent-primary/20"
               >
                 <Bot className="h-3.5 w-3.5" />
                 Hand to Agent
@@ -543,7 +543,7 @@ function ArtifactPacketPanelInner({
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[11px] font-medium transition-colors",
                     isActive
-                      ? "border-[#d97757]/30 bg-[#d97757]/10 text-[#d97757]"
+                      ? "border-accent-primary/30 bg-accent-primary/10 text-accent-primary"
                       : "border-white/[0.20] bg-white/[0.12] text-white/60 hover:bg-white/[0.07] hover:text-white/60",
                   )}
                 >

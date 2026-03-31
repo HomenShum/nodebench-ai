@@ -90,12 +90,12 @@ export const AgentPresenceRail = memo(function AgentPresenceRail({
           <button
             type="button"
             onClick={onOpenAgent}
-            className="flex w-full items-center gap-3 rounded-2xl border border-[#d97757]/30 bg-[#d97757]/10 px-4 py-3 text-left transition-colors hover:bg-[#d97757]/20"
+            className="flex w-full items-center gap-3 rounded-2xl border border-accent-primary/30 bg-accent-primary/10 px-4 py-3 text-left transition-colors hover:bg-accent-primary/20"
             aria-label="Open Ask NodeBench agent panel"
             data-agent-id="cockpit:open-agent"
             data-agent-action="open-panel"
           >
-            <Sparkles className="h-4 w-4 shrink-0 text-[#d97757]" />
+            <Sparkles className="h-4 w-4 shrink-0 text-accent-primary" />
             <div className="min-w-0">
               <div className="text-sm font-semibold text-content">Ask NodeBench</div>
               <div className="truncate text-xs text-content-muted">Docs, architecture, codebase</div>
