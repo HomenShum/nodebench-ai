@@ -142,6 +142,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
     [],
   );
   const [input, setInput] = useState("");
+  const inputRef = useRef("");
   const [activeLens, setActiveLens] = useState<LensId>(() => {
     try {
       const stored = localStorage.getItem('nodebench-selected-role');
@@ -199,6 +200,9 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
     [isVisible, instant],
   );
 
+  // Keep ref in sync so handleSubmit always reads latest input
+  useEffect(() => { inputRef.current = input; }, [input]);
+
   // Auto-resize textarea
   useEffect(() => {
     const el = textareaRef.current;
@@ -225,7 +229,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   }, [activeLens]);
 
   const handleSubmit = useCallback((queryOverride?: string) => {
-    const trimmed = (queryOverride ?? input).trim();
+    const trimmed = (queryOverride ?? inputRef.current).trim();
     if (!trimmed) return;
     const demoKey = findDemoPacket(trimmed);
 
@@ -479,7 +483,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         trackEvent("search_fallback", { query: trimmed.slice(0, 40), lens: activeLens });
       }
     })();
-  }, [activeLens, input, showResult, traceEntryId]);
+  }, [activeLens, showResult, traceEntryId]);
 
   // Auto-submit when voice transcript finishes
   useEffect(() => {
