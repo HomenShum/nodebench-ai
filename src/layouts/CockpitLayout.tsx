@@ -345,11 +345,14 @@ export function CockpitLayout({
   }, [documentParam, entityName, navigate, panel, researchHubInitialTab, selectedDocumentId, setCurrentView, workspaceParam]);
 
   const navigateToSurface = useCallback((surfaceId: CockpitSurfaceId) => {
-    // NOTE: runId intentionally omitted — same stale-closure fix as navigateToView.
+    // NOTE: Always reset to default view when switching surfaces via sidebar.
+    // Previously carried over currentView when surface matched, but founder
+    // views (entities, coordination) share the "ask" surface and leaked their
+    // view into the URL when switching back to Ask.
     navigate(
       buildCockpitPath({
         surfaceId,
-        view: currentSurface === surfaceId ? currentView : null,
+        view: null,
         entity: surfaceId === "graph" ? entityName : null,
         run: null,
         doc:
