@@ -142,15 +142,7 @@ export const AgentPresenceRail = memo(function AgentPresenceRail({
             </div>
           ) : (
             <div className="mt-3 space-y-1.5 text-xs text-content-muted">
-              {isAuthenticated ? (
-                <span>No activity yet — metrics appear as agents run</span>
-              ) : (
-                <>
-                  <div className="flex justify-between"><span>Actions traced</span><span className="text-content">6</span></div>
-                  <div className="flex justify-between"><span>Denied by policy</span><span className="text-[#c47060]">1</span></div>
-                  <div className="flex justify-between"><span>Facts verified</span><span className="text-emerald-400">4</span></div>
-                </>
-              )}
+              <span className="text-content-muted">Metrics appear as you search and delegate</span>
               <LatencyBadge />
             </div>
           )}

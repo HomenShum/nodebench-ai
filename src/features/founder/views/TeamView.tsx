@@ -776,7 +776,7 @@ export default function TeamView() {
                 className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#d97757] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#c86747]"
               >
                 {copiedJoin ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                {copiedJoin ? "Copied!" : "Copy invite command"}
+                {copiedJoin ? "Copied!" : "Copy invite link"}
               </button>
             </div>
           </div>

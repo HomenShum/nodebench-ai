@@ -809,7 +809,7 @@ export function CockpitLayout({
             Ready
           </span>
           <span className="text-content-muted/60">·</span>
-          <span>Agents monitored · Decisions tracked</span>
+          <span>NodeBench</span>
           <span className="ml-auto tabular-nums">{new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
         </div>
 
