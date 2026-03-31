@@ -122,21 +122,19 @@ export const StatusStrip = memo(function StatusStrip({
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Right: connection label + dot */}
-      <div className="flex items-center gap-2 shrink-0 text-[11px] text-content-muted/70">
-        <span>{connectionLabel}</span>
-        <span
-          className={`inline-block w-1.5 h-1.5 rounded-full ${
-            isLoading
-              ? "bg-amber-400"
-              : isAuthenticated
-                ? "bg-emerald-500"
-                : "bg-[var(--accent-primary)]"
-          }`}
-          title={connectionLabel}
-          aria-label={connectionLabel}
-        />
-      </div>
+      {/* Right: connection label + dot — hide for guests (no value in showing "Guest") */}
+      {(isAuthenticated || isLoading) && (
+        <div className="flex items-center gap-2 shrink-0 text-[11px] text-content-muted/70">
+          <span>{connectionLabel}</span>
+          <span
+            className={`inline-block w-1.5 h-1.5 rounded-full ${
+              isLoading ? "bg-amber-400" : "bg-emerald-500"
+            }`}
+            title={connectionLabel}
+            aria-label={connectionLabel}
+          />
+        </div>
+      )}
     </header>
   );
 });
