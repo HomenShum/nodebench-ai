@@ -4,13 +4,14 @@
 /* ------------------------------------------------------------------ */
 
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Eye, EyeOff, Network, Plus, X } from "lucide-react";
+import { AlertTriangle, Eye, EyeOff, GitBranch, List, Network, Plus, X } from "lucide-react";
 import {
   DEMO_COMPANY,
   DEMO_INITIATIVES,
   DEMO_NEARBY_ENTITIES,
   type NearbyEntity,
 } from "./founderFixtures";
+import { EntityGraph, type GraphNode, type GraphEdge } from "../components/EntityGraph";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -216,10 +217,45 @@ function NearbyEntitiesView() {
 
   const confidencePct = Math.round(company.identityConfidence * 100);
 
+  // ── Graph data derivation ─────────────────────────────────────
+  const [viewMode, setViewMode] = useState<"list" | "graph">("list");
+
+  const graphData = useMemo(() => {
+    const gNodes: GraphNode[] = [];
+    const gEdges: GraphEdge[] = [];
+
+    // Center node: user's company
+    gNodes.push({
+      id: "self",
+      label: company.name,
+      type: "company",
+      description: company.wedge || "Your company",
+      isPrimary: true,
+    });
+
+    // Add all entities as graph nodes with edges to center
+    for (const entity of merged) {
+      const nodeId = `entity-${entity.id}`;
+      gNodes.push({
+        id: nodeId,
+        label: entity.name,
+        type: entity.relationship as GraphNode["type"],
+        description: entity.description,
+      });
+      gEdges.push({
+        source: "self",
+        target: nodeId,
+        relationship: entity.relationship,
+      });
+    }
+
+    return { nodes: gNodes, edges: gEdges };
+  }, [company, merged]);
+
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
       {/* ── Header ───────────────────────────────────────────────── */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2.5">
             <Network className="h-5 w-5 text-[#d97757]" />
@@ -231,15 +267,62 @@ function NearbyEntitiesView() {
             Context for your company's competitive and partnership landscape
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowForm((p) => !p)}
-          className="flex items-center gap-1.5 rounded-lg border border-white/[0.20] bg-white/[0.12] px-3 py-1.5 text-sm font-medium text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Add Entity
-        </button>
+        <div className="flex items-center gap-2">
+          {/* View toggle */}
+          <div className="flex rounded-lg border border-white/[0.10] overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                viewMode === "list"
+                  ? "bg-[#d97757]/15 text-[#d97757]"
+                  : "text-white/50 hover:text-white/70"
+              }`}
+            >
+              <List className="h-3.5 w-3.5" />
+              List
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("graph")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                viewMode === "graph"
+                  ? "bg-[#d97757]/15 text-[#d97757]"
+                  : "text-white/50 hover:text-white/70"
+              }`}
+            >
+              <GitBranch className="h-3.5 w-3.5" />
+              Graph
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowForm((p) => !p)}
+            className="flex items-center gap-1.5 rounded-lg border border-white/[0.20] bg-white/[0.12] px-3 py-1.5 text-sm font-medium text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add Entity
+          </button>
+        </div>
       </div>
+
+      {/* ── Graph View ──────────────────────────────────────────── */}
+      {viewMode === "graph" && (
+        <div className="mb-8">
+          <EntityGraph
+            nodes={graphData.nodes}
+            edges={graphData.edges}
+            onNodeClick={(_id, label) => {
+              // Could navigate to search for this entity
+              window.dispatchEvent(new CustomEvent("nodebench:search", { detail: { query: label } }));
+            }}
+          />
+        </div>
+      )}
+
+      {/* ── List View ───────────────────────────────────────────── */}
+      {viewMode === "list" && (<>
+
 
       {/* ── Add Entity Form ──────────────────────────────────────── */}
       {showForm && (
@@ -390,6 +473,7 @@ function NearbyEntitiesView() {
           ))}
         </div>
       </section>
+      </>)}
     </div>
   );
 }

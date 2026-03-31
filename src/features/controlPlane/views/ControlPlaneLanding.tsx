@@ -47,6 +47,8 @@ import {
   DEMO_PACKETS,
 } from "../components/searchTypes";
 import { ensureProofPacket } from "../components/proofModel";
+import { ChatThread } from "../components/ChatThread";
+import type { ChatEntry } from "../components/ChatMessage";
 
 const SinceLastSession = lazy(() => import("../../founder/components/SinceLastSession"));
 const FeedbackSummary = lazy(() => import("../../founder/components/FeedbackSummary").then(m => ({ default: m.FeedbackSummary })));
@@ -158,6 +160,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   const [isSearching, setIsSearching] = useState(false);
   const [showFullWorkspace, setShowFullWorkspace] = useState(false);
   const [submittedQuery, setSubmittedQuery] = useState("");
+  const [conversation, setConversation] = useState<ChatEntry[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const { ref: revealRef, isVisible, instant } = useRevealOnMount();
@@ -205,9 +208,19 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   }, [input]);
 
   const showResult = useCallback((packet: ResultPacket, lensOverride?: LensId) => {
-    setActiveResult(ensureProofPacket(packet, lensOverride ?? activeLens));
+    const enriched = ensureProofPacket(packet, lensOverride ?? activeLens);
+    setActiveResult(enriched);
     setHandoffState({ status: "idle" });
     setIsSearching(false);
+    // Append to conversation thread
+    setConversation((prev) => {
+      const lastEntry = prev[prev.length - 1];
+      if (lastEntry && lastEntry.packet === null) {
+        // Fill in the pending entry
+        return prev.map((e) => (e.id === lastEntry.id ? { ...e, packet: enriched } : e));
+      }
+      return prev;
+    });
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
   }, [activeLens]);
 
@@ -219,6 +232,12 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
     trackEvent("search_submit", { query: trimmed.slice(0, 80), lens: activeLens });
     setSubmittedQuery(trimmed);
     setIsSearching(true);
+    // Add pending entry to conversation
+    setConversation((prev) => [
+      ...prev,
+      { id: `chat-${Date.now()}`, query: trimmed, lens: activeLens, packet: null, timestamp: new Date() },
+    ]);
+    setInput("");
 
     // 1. Try live API with Server-Sent Events (SSE) streaming
     setActiveTrace({ trace: [], latencyMs: 0, classification: "unknown" });
@@ -920,7 +939,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         </div>
 
         {/* ── Example prompts ──────────────────────────────────────────────── */}
-        {!activeResult && (
+        {conversation.length === 0 && (
           <div style={stagger("0.2s")} className="mt-6">
             <div className="flex flex-wrap justify-center gap-2" data-testid="landing-example-prompts">
               {EXAMPLE_PROMPTS.map((example, i) => (
@@ -939,7 +958,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         )}
 
         {/* ── Founder value prop (replaces internal dev data) ────────────── */}
-        {!activeResult && (
+        {conversation.length === 0 && (
           <div style={stagger("0.24s")} className="mt-12">
             <h2 className="text-center text-lg font-semibold text-content sm:text-xl">
               The invisible checklist VCs use to filter you out
@@ -985,169 +1004,41 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         )}
 
         {/* ── Loading state ────────────────────────────────────────────────── */}
-        {isSearching && (
+        {isSearching && conversation.length > 0 && conversation[conversation.length - 1]?.packet === null && (
           <LiveAgentProgress query={submittedQuery} lens={activeLens} trace={activeTrace?.trace ?? []} />
         )}
 
         {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            RESULT WORKSPACE — Appears inline after search
+            CHAT THREAD — Conversational results
             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        {activeResult && !isSearching && (
-          <div ref={resultRef} className="mt-8" data-testid="landing-result-workspace">
-            {activeResult.packetType === "plan_proposal" ? (
-              <PlanProposalPanel
-                plan={(activeResult as any).rawPacket as FeaturePlan | null ?? null}
-                isLive={true}
-                onCopyMarkdown={(plan) => {
-                  const lines = [
-                    `# ${plan.title}`, "", `> ${plan.summary}`, "",
-                    "## Phases",
-                    ...plan.phases.map(p => `- **${p.id}: ${p.title}** (${p.estimatedEffort}) — ${p.description}`),
-                    "", "## Risks",
-                    ...plan.risks.map(r => `- [${r.severity.toUpperCase()}] ${r.title}: ${r.mitigation}`),
-                  ];
-                  navigator.clipboard.writeText(lines.join("\n"));
-                  trackEvent("copy_plan_markdown", { planId: plan.planId });
-                }}
-                onDelegate={(plan) => {
-                  trackEvent("delegate_plan", { planId: plan.planId, planType: plan.planType });
-                  void handleDelegate("claude_code");
-                }}
-              />
-            ) : (
-            <>
-            {/* ── Summary Card (clean first impression) ─────────────────── */}
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6">
-              {/* Entity header */}
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-bold text-content">{activeResult.entityName || "Result"}</h2>
-                  <p className="mt-1 text-sm text-content-muted line-clamp-2">
-                    {activeResult.answer || activeResult.memo?.whatChanged?.[0]?.description || "Intelligence packet ready"}
-                  </p>
-                </div>
-                {activeResult.confidence != null && (
-                  <div className="shrink-0 text-right">
-                    <div className="text-2xl font-bold text-[#d97757]">{activeResult.confidence}%</div>
-                    <div className="text-[10px] text-content-muted">confidence</div>
-                  </div>
-                )}
-              </div>
+        <div ref={resultRef}>
+          <ChatThread
+            entries={conversation}
+            onFollowUp={(query) => {
+              setInput(query);
+              setTimeout(() => handleSubmit(), 50);
+            }}
+            onNewConversation={() => {
+              setConversation([]);
+              setActiveResult(null);
+              setActiveTrace(null);
+              setInput("");
+              setShowFullWorkspace(false);
+              textareaRef.current?.focus();
+            }}
+          />
+        </div>
 
-              {/* Key signals */}
-              {activeResult.memo?.signals && activeResult.memo.signals.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Key Signals</h3>
-                  <div className="mt-2 space-y-1.5">
-                    {activeResult.memo.signals.slice(0, 4).map((sig: any, i: number) => (
-                      <div key={i} className="flex items-center gap-2 text-sm">
-                        <span className={`h-1.5 w-1.5 rounded-full ${sig.direction === "up" ? "bg-emerald-400" : sig.direction === "down" ? "bg-rose-400" : "bg-amber-400"}`} />
-                        <span className="text-content-secondary">{sig.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Next actions */}
-              {activeResult.memo?.nextActions && activeResult.memo.nextActions.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Recommended Actions</h3>
-                  <ol className="mt-2 space-y-1.5">
-                    {activeResult.memo.nextActions.slice(0, 3).map((action: any, i: number) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-content-secondary">
-                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#d97757]/10 text-[10px] font-bold text-[#d97757]">{i + 1}</span>
-                        {action.action || action}
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-
-              {/* Action bar */}
-              <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const text = `${activeResult.entityName}: ${activeResult.answer || ""}`;
-                    navigator.clipboard.writeText(text);
-                    trackEvent("activation_result_copied", { entity: activeResult.entityName });
-                  }}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs text-content-muted transition-colors hover:bg-white/[0.08]"
-                >
-                  <ClipboardCopy className="h-3.5 w-3.5" />
-                  Copy
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleDelegate("claude_code")}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#d97757] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#c86747]"
-                >
-                  Delegate
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowFullWorkspace((v) => !v)}
-                  className="ml-auto inline-flex items-center gap-1.5 text-xs text-content-muted transition-colors hover:text-content-secondary"
-                >
-                  {showFullWorkspace ? "Hide" : "Show"} full analysis
-                  <ArrowRight className={`h-3 w-3 transition-transform ${showFullWorkspace ? "rotate-90" : ""}`} />
-                </button>
-              </div>
-            </div>
-
-            {/* Full workspace (progressive disclosure) */}
-            {showFullWorkspace && (
-              <div className="mt-4">
-                <ResultWorkspace
-                  packet={activeResult}
-                  lens={activeLens}
-                  onFollowUp={handleFollowUp}
-                  onExport={(type) => {
-                    trackEvent("export_packet", { type, entity: activeResult.entityName });
-                  }}
-                  onPublishSharedContext={() => void handlePublishSharedContext()}
-                  onDelegate={(target) => void handleDelegate(target)}
-                  onPublishStrategicAngle={(angleId) => void handlePublishStrategicAngle(angleId)}
-                  onDelegateStrategicAngle={(angleId, target) => void handleDelegateStrategicAngle(angleId, target)}
-                  onMonitor={() => {
-                    trackEvent("add_watchlist", { entity: activeResult.entityName });
-                  }}
-                  handoffState={handoffState}
-                />
-              </div>
-            )}
-            </>
-            )}
-
-            {/* Execution trace — shows how the answer was produced */}
-            {activeTrace && (
-              <div className="mt-3" data-testid="landing-search-trace">
-                <SearchTrace
-                  trace={activeTrace.trace}
-                  latencyMs={activeTrace.latencyMs}
-                  classification={activeTrace.classification}
-                  judgeVerdict={activeTrace.judge}
-                  mode="user"
-                />
-              </div>
-            )}
-
-            {/* New search button */}
-            <div className="mt-6 flex justify-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveResult(null);
-                  setInput("");
-                  textareaRef.current?.focus();
-                }}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-2.5 text-sm font-medium text-content-muted transition-colors hover:bg-white/[0.06] hover:text-content"
-              >
-                <Search className="h-4 w-4" />
-                New Search
-              </button>
-            </div>
+        {/* Execution trace — shows how the latest answer was produced */}
+        {activeTrace && conversation.length > 0 && (
+          <div className="mt-3" data-testid="landing-search-trace">
+            <SearchTrace
+              trace={activeTrace.trace}
+              latencyMs={activeTrace.latencyMs}
+              classification={activeTrace.classification}
+              judgeVerdict={activeTrace.judge}
+              mode="user"
+            />
           </div>
         )}
 

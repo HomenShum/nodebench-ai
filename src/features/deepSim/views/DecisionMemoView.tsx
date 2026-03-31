@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   AlertTriangle,
@@ -14,7 +14,6 @@ import {
   Variable,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useRevealOnMount } from "@/hooks/useRevealOnMount";
 import type {
   DeepSimClaim,
   DeepSimCounterModel,
@@ -372,7 +371,10 @@ function ShareButton() {
 }
 
 function DecisionMemoViewInner({ memo: overrideMemo }: { memo?: DeepSimMemo }) {
-  const { ref, isVisible, instant } = useRevealOnMount();
+  // NOTE: useRevealOnMount relies on IntersectionObserver which doesn't fire
+  // when this view is mounted inside a hidden cockpit surface. We render
+  // immediately visible instead — the cockpit surface transition handles animation.
+  const ref = useRef<HTMLDivElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const fixtureKey = coerceDeepSimFixtureKey(searchParams.get("fixture"));
   const fixture = getDeepSimFixture(fixtureKey);
@@ -386,14 +388,10 @@ function DecisionMemoViewInner({ memo: overrideMemo }: { memo?: DeepSimMemo }) {
     setSearchParams(next, { replace: true });
   };
 
+  // Render immediately visible — no stagger gating on IntersectionObserver
   const stagger = useCallback(
-    (delay: string): React.CSSProperties => ({
-      opacity: isVisible ? 1 : 0,
-      transform: isVisible ? "none" : "translateY(16px)",
-      transition: instant ? "none" : "opacity 0.6s ease, transform 0.6s ease",
-      transitionDelay: instant ? "0s" : delay,
-    }),
-    [isVisible, instant],
+    (_delay: string): React.CSSProperties => ({}),
+    [],
   );
 
   return (
