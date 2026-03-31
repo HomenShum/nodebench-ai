@@ -10719,7 +10719,7 @@ function createSearchRouter(tools2) {
     const hasMultiSyntax = /,\s*(?:and\s+)?\w/.test(lq) || /\bvs\.?\s/i.test(lq) || /\bversus\b/i.test(lq);
     if (!hasMultiSyntax) return [];
     if (/\b(my |uploaded|transcript|meeting|document|file|research file)/i.test(lq)) return [];
-    const cleaned = query.replace(/(?:compare|analyze|research|tell me about|search|profile|diligence on)\s+/gi, "").replace(/(?:in the|the|an?)\s+(?:AI|tech|fintech|payments?|commerce|market|race|landscape|space|industry)\b.*/gi, "").replace(/(?:top \d+ risks across|risks across|what changed.*?for)\s*/gi, "").replace(/(?:competitive landscape|competitive position|strategy|overview).*$/gi, "").trim();
+    const cleaned = query.replace(/(?:compare|analyze|research|tell me about|search|profile|diligence on)\s+/gi, "").replace(/(?:in\s+(?:the\s+)?|the\s+|an?\s+)(?:AI|tech|fintech|payments?|commerce|market|race|landscape|space|industry|sector|category|segment|vertical)\b.*/gi, "").replace(/(?:top \d+ risks across|risks across|what changed.*?for)\s*/gi, "").replace(/(?:competitive landscape|competitive position|strategy|overview).*$/gi, "").trim();
     const parts = cleaned.split(/\s*(?:,\s*(?:and\s+)?|,?\s+and\s+|\s+vs\.?\s+|\s+versus\s+|\s*&\s*)\s*/i).map((part) => part.trim().replace(/^['"]|['"]$/g, "").replace(/'s$/g, "").replace(/[?!.,]+$/g, "")).filter((part) => {
       if (!(part.length > 1 && part.length < 40 && /^[a-zA-Z]/.test(part))) return false;
       if (genericPhrasePattern.test(part)) return false;

@@ -1298,7 +1298,7 @@ export function createSearchRouter(tools: McpTool[]) {
 
     const cleaned = query
       .replace(/(?:compare|analyze|research|tell me about|search|profile|diligence on)\s+/gi, "")
-      .replace(/(?:in the|the|an?)\s+(?:AI|tech|fintech|payments?|commerce|market|race|landscape|space|industry)\b.*/gi, "")
+      .replace(/(?:in\s+(?:the\s+)?|the\s+|an?\s+)(?:AI|tech|fintech|payments?|commerce|market|race|landscape|space|industry|sector|category|segment|vertical)\b.*/gi, "")
       .replace(/(?:top \d+ risks across|risks across|what changed.*?for)\s*/gi, "")
       .replace(/(?:competitive landscape|competitive position|strategy|overview).*$/gi, "")
       .trim();
