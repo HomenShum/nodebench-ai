@@ -663,7 +663,7 @@ export function CockpitLayout({
     <div
       className="h-[100dvh] overflow-hidden bg-surface cockpit-grid"
       data-left-collapsed={leftCollapsed ? "" : undefined}
-      data-right-collapsed={rightCollapsed || showFastAgent ? "" : undefined}
+      data-right-collapsed=""
     >
       {/* Offline banner */}
       {isOffline && (
@@ -759,19 +759,20 @@ export function CockpitLayout({
 
       </div>
 
-        {/* ── Right: AgentPresenceRail — hidden when FastAgent panel is open */}
-        <div style={{ gridArea: "right" }} className={showFastAgent ? "hidden" : "hidden lg:block"}>
-          <AgentPresenceRail
-            currentSurface={currentSurface}
-            currentView={currentView}
-            currentObjective={currentObjective}
-            isCollapsed={rightCollapsed}
-            onToggleCollapse={() => setRightCollapsed((v) => !v)}
-            onOpenAgent={() => setShowFastAgent(true)}
-            lastVoiceInstruction={lastVoiceInstruction}
-            isVoiceListening={isVoiceListening}
-          />
-        </div>
+        {/* ── Floating Ask NodeBench button (replaces right rail) ── */}
+        {!showFastAgent && (
+          <button
+            type="button"
+            onClick={() => setShowFastAgent(true)}
+            className="fixed bottom-6 right-6 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-[#d97757] text-white shadow-lg shadow-[#d97757]/25 transition-all hover:bg-[#c86747] hover:scale-105 active:scale-95 lg:bottom-8 lg:right-8"
+            aria-label="Ask NodeBench"
+            title="Ask NodeBench"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+          </button>
+        )}
 
         {/* ── Bottom: Trace bar — live status (Datadog pattern) ──────── */}
         {showFastAgent && (
