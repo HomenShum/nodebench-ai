@@ -1273,15 +1273,44 @@ export function createSearchRouter(tools: McpTool[]) {
   }
 
   // Execute a tool and return its result
+  // Active session ID for profiling — set per-request in handleSearch
+  let activeProfileSessionId: string | undefined;
+
   async function callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
     const tool = findTool(name);
     if (!tool) return { error: true, message: `Tool not found: ${name}` };
+    const startMs = Date.now();
+    let success = true;
     try {
-      return await tool.handler(args);
+      const result = await tool.handler(args);
+      return result;
     } catch (err: any) {
+      success = false;
       return { error: true, message: err?.message ?? String(err) };
+    } finally {
+      // Auto-profile every tool call
+      if (activeProfileSessionId) {
+        try {
+          logToolCall({
+            sessionId: activeProfileSessionId,
+            toolName: name,
+            inputSummary: JSON.stringify(args).slice(0, 200),
+            latencyMs: Date.now() - startMs,
+            costEstimateUsd: TOOL_COST[name] ?? 0.003,
+            success,
+          });
+        } catch { /* profiling is non-blocking */ }
+      }
     }
   }
+
+  // Cost lookup for profiling (matches eventCollector rates)
+  const TOOL_COST: Record<string, number> = {
+    web_search: 0.008, fetch_url: 0.002, enrich_entity: 0.015,
+    run_deep_sim: 0.05, build_claim_graph: 0.03, render_decision_memo: 0.01,
+    founder_local_weekly_reset: 0.005, founder_local_synthesize: 0.01,
+    founder_local_gather: 0.003, run_recon: 0.02, synthesize_feature_plan: 0.03,
+  };
 
   // Classify query intent
   /** Split multi-entity queries like "Anthropic, OpenAI, and Google" into individual names.
@@ -1665,6 +1694,7 @@ Entity extraction rules:
         roleInferred: resolvedLens,
         mainObjective: classification.type,
       });
+      activeProfileSessionId = behaviorSessionId;
       const priorQuery = findSimilarPriorQuery(query.trim(), behaviorSessionId);
       behaviorQueryId = logQuery({
         sessionId: behaviorSessionId,

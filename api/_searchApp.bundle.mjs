@@ -10986,15 +10986,47 @@ function createSearchRouter(tools2) {
   function findTool(name) {
     return tools2.find((t) => t.name === name);
   }
+  let activeProfileSessionId;
   async function callTool(name, args) {
     const tool = findTool(name);
     if (!tool) return { error: true, message: `Tool not found: ${name}` };
+    const startMs = Date.now();
+    let success = true;
     try {
-      return await tool.handler(args);
+      const result = await tool.handler(args);
+      return result;
     } catch (err) {
+      success = false;
       return { error: true, message: err?.message ?? String(err) };
+    } finally {
+      if (activeProfileSessionId) {
+        try {
+          logToolCall({
+            sessionId: activeProfileSessionId,
+            toolName: name,
+            inputSummary: JSON.stringify(args).slice(0, 200),
+            latencyMs: Date.now() - startMs,
+            costEstimateUsd: TOOL_COST[name] ?? 3e-3,
+            success
+          });
+        } catch {
+        }
+      }
     }
   }
+  const TOOL_COST = {
+    web_search: 8e-3,
+    fetch_url: 2e-3,
+    enrich_entity: 0.015,
+    run_deep_sim: 0.05,
+    build_claim_graph: 0.03,
+    render_decision_memo: 0.01,
+    founder_local_weekly_reset: 5e-3,
+    founder_local_synthesize: 0.01,
+    founder_local_gather: 3e-3,
+    run_recon: 0.02,
+    synthesize_feature_plan: 0.03
+  };
   function extractMultipleEntities(query) {
     const genericPhrasePattern = /^(what|why|how|when|where|who|should|could|would|do|does|did|is|are|was|were|can|will)\b/i;
     const genericEntityStopwords = /* @__PURE__ */ new Set([
@@ -11313,6 +11345,7 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
         roleInferred: resolvedLens,
         mainObjective: classification.type
       });
+      activeProfileSessionId = behaviorSessionId;
       const priorQuery = findSimilarPriorQuery(query.trim(), behaviorSessionId);
       behaviorQueryId = logQuery({
         sessionId: behaviorSessionId,
