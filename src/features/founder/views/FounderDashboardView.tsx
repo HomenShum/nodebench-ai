@@ -816,9 +816,10 @@ function FounderDashboardViewInner() {
   }, [liveInterventions, resolvedInitiatives]);
 
   // --- Data resolution: live fetch → fixture fallback ---
-  // Live entity signals are fetched via POST /search for top entities.
-  // Falls back to fixture data when server is offline or errors occur.
-  const liveEntity = useLiveEntitySignals(5, 5 * 60 * 1000);
+  // Live entity signals: only fetch when user has set up a real company.
+  // "Your Company" = default placeholder, no point fetching market signals.
+  const hasRealCompany = resolvedCompany.name !== "Your Company" && resolvedCompany.identityConfidence > 0;
+  const liveEntity = useLiveEntitySignals(hasRealCompany ? 5 : 0, 5 * 60 * 1000);
 
   // Merge live changes from all successful entity fetches
   const liveChanges = useMemo(() => {

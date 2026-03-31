@@ -109,10 +109,12 @@ export const AgentPresenceRail = memo(function AgentPresenceRail({
               <Activity className="h-3.5 w-3.5" />
               Status
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-400">
-              <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
-              {isAuthenticated ? "Live" : "Guest"}
-            </div>
+            {isAuthenticated ? (
+              <div className="flex items-center gap-1.5 text-xs text-emerald-400">
+                <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
+                Live
+              </div>
+            ) : null}
           </div>
           <div className="mt-2 text-sm font-semibold text-content">{currentObjective}</div>
           {approvalCount > 0 && (

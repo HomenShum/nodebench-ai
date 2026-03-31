@@ -108,7 +108,7 @@ export function OnboardingWizard({ onClose }: { onClose: () => void }) {
                 key={i}
                 className={`h-2 w-2 rounded-full transition-colors ${
                   i === step
-                    ? "bg-emerald-500"
+                    ? "bg-[#d97757]"
                     : "border border-white/20 bg-transparent"
                 }`}
                 aria-current={i === step ? "step" : undefined}
@@ -120,7 +120,7 @@ export function OnboardingWizard({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={next}
-            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)]"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#d97757] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#d97757] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)]"
           >
             {step === 0 && "Get started"}
             {step === 1 && "Next"}
@@ -139,16 +139,16 @@ function StepWelcome() {
   return (
     <div className="text-center">
       {/* N logo */}
-      <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-600/10 text-emerald-500">
+      <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#d97757]/10 text-[#d97757]">
         <span className="text-3xl font-bold tracking-tight">N</span>
       </div>
 
       <h2 className="text-2xl font-semibold text-content">Welcome to NodeBench</h2>
-      <p className="mt-2 text-base font-medium text-emerald-400">
-        Your company&apos;s operating intelligence
+      <p className="mt-2 text-base font-medium text-[#d97757]">
+        Founder clarity for what matters next
       </p>
       <p className="mt-4 text-sm leading-relaxed text-content-muted">
-        Monitor your agents, interpret what changed, and decide what to do next.
+        Search any company, see hidden requirements, and get a structured packet you can share or delegate.
       </p>
     </div>
   );
@@ -166,7 +166,7 @@ function StepHowItWorks() {
             key={label}
             className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-center"
           >
-            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600/10 text-emerald-500">
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-[#d97757]/10 text-[#d97757]">
               <Icon size={20} />
             </div>
             <h3 className="text-sm font-semibold text-content">{label}</h3>
@@ -186,7 +186,7 @@ function StepTryIt() {
       <h2 className="mb-6 text-xl font-semibold text-content">Try it now</h2>
       <ul className="space-y-3 text-left text-sm text-content-muted">
         <li className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600/10 text-[10px] font-bold text-emerald-500">
+          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#d97757]/10 text-[10px] font-bold text-[#d97757]">
             1
           </span>
           <span>
@@ -195,18 +195,18 @@ function StepTryIt() {
           </span>
         </li>
         <li className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600/10 text-[10px] font-bold text-emerald-500">
+          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#d97757]/10 text-[10px] font-bold text-[#d97757]">
             2
           </span>
           <span>Or type a question in the search bar</span>
         </li>
         <li className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600/10 text-[10px] font-bold text-emerald-500">
+          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#d97757]/10 text-[10px] font-bold text-[#d97757]">
             3
           </span>
           <span>
             Or connect via MCP:{" "}
-            <code className="rounded bg-white/[0.06] px-1.5 py-0.5 text-xs text-emerald-400">
+            <code className="rounded bg-white/[0.06] px-1.5 py-0.5 text-xs text-[#d97757]">
               npx nodebench-mcp demo
             </code>
           </span>
