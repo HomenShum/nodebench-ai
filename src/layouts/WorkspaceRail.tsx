@@ -33,7 +33,7 @@ interface SurfaceShortcut {
 
 const SURFACE_SHORTCUTS: SurfaceShortcut[] = [
   { id: "ask", label: "Ask", icon: MessageSquare, color: "currentColor" },
-  { id: "memo", label: "Packets", icon: Orbit, color: "currentColor" },
+  { id: "memo", label: "Decisions", icon: Orbit, color: "currentColor" },
   { id: "research", label: "Research", icon: Radar, color: "currentColor" },
   { id: "editor", label: "Docs", icon: FileText, color: "currentColor" },
 ];

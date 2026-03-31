@@ -25,7 +25,7 @@ const TABS: readonly {
   icon: typeof MessageSquare;
 }[] = [
   { id: "ask",       label: "Ask",       icon: MessageSquare },
-  { id: "memo",      label: "Packets",   icon: Orbit },
+  { id: "memo",      label: "Decisions", icon: Orbit },
   { id: "research",  label: "Research",  icon: Radar },
   { id: "editor",    label: "Docs",      icon: FileText },
 ];

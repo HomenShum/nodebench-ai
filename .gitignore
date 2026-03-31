@@ -1,6 +1,7 @@
 # Tax scanner credentials (sensitive)
 scripts/tax-2025/credentials.json
 scripts/tax-2025/token.json
+scripts/tax-2025/.browser-profile/
 docs/career/2025-Tax-Bundle/
 
 # Logs

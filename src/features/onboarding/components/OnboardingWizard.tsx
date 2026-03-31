@@ -23,17 +23,17 @@ interface HowItWorksCard {
 const HOW_IT_WORKS_CARDS: HowItWorksCard[] = [
   {
     label: "Ask",
-    description: "Ask questions, run investigations, trace agent actions",
+    description: "Search any company, upload context, get a structured intelligence packet",
     Icon: MessageSquare,
   },
   {
     label: "Analyze",
-    description: "Decision memos, variable tracking, scenario simulation",
+    description: "See hidden requirements, contradictions, and ranked next actions",
     Icon: BarChart3,
   },
   {
-    label: "Monitor",
-    description: "Trajectory scores, drift detection, system health",
+    label: "Delegate",
+    description: "Share packets, hand off to your team or Claude Code, track what changed",
     Icon: Activity,
   },
 ];
@@ -190,24 +190,23 @@ function StepTryIt() {
             1
           </span>
           <span>
-            Click <strong className="text-content">Run Live Demo</strong> to see
-            NodeBench investigate an agent action
+            <strong className="text-content">Type a company name</strong> or paste your idea in the search bar
           </span>
         </li>
         <li className="flex items-start gap-3">
           <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#d97757]/10 text-[10px] font-bold text-[#d97757]">
             2
           </span>
-          <span>Or type a question in the search bar</span>
+          <span>Get a structured packet with gaps, next steps, and evidence</span>
         </li>
         <li className="flex items-start gap-3">
           <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#d97757]/10 text-[10px] font-bold text-[#d97757]">
             3
           </span>
           <span>
-            Or connect via MCP:{" "}
+            Share it, delegate to your team, or connect your agent:{" "}
             <code className="rounded bg-white/[0.06] px-1.5 py-0.5 text-xs text-[#d97757]">
-              npx nodebench-mcp demo
+              npx nodebench-mcp
             </code>
           </span>
         </li>
