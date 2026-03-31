@@ -224,8 +224,8 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
   }, [activeLens]);
 
-  const handleSubmit = useCallback(() => {
-    const trimmed = input.trim();
+  const handleSubmit = useCallback((queryOverride?: string) => {
+    const trimmed = (queryOverride ?? input).trim();
     if (!trimmed) return;
     const demoKey = findDemoPacket(trimmed);
 
@@ -512,9 +512,9 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         setIsSearching(true);
         setTimeout(() => showResult(DEMO_PACKETS[demoKey], lens), 600);
       } else {
-        // Use the same live API path as handleSubmit — never gate on auth
+        // Use the same live API path as handleSubmit — pass query directly to avoid stale closure
         setInput(prompt);
-        setTimeout(() => handleSubmit(), 100);
+        handleSubmit(prompt);
       }
     },
     [showResult, handleSubmit],
@@ -804,9 +804,9 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
       <div ref={revealRef} className="mx-auto flex min-h-full max-w-4xl flex-col px-6 py-8 lg:py-12">
 
         {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            SEARCH CANVAS — The hero. The whole point. Type what you need.
+            SEARCH CANVAS — The hero. Hidden when conversation active.
             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <div className="text-center">
+        {conversation.length === 0 && <div className="text-center">
           <h1
             style={stagger("0s")}
             className="text-2xl font-bold tracking-tight text-content sm:text-3xl lg:text-4xl text-balance"
@@ -820,7 +820,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           >
             VCs, accelerators, and banks judge your startup on hidden criteria they never share. Describe your idea and NodeBench shows you exactly what's missing — before your first pitch.
           </p>
-        </div>
+        </div>}
 
         {/* ── Search input with upload dropzone ─────────────────────────── */}
         <div style={stagger("0.12s")} className="mt-8">
@@ -1016,7 +1016,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             entries={conversation}
             onFollowUp={(query) => {
               setInput(query);
-              setTimeout(() => handleSubmit(), 50);
+              handleSubmit(query);
             }}
             onNewConversation={() => {
               setConversation([]);
@@ -1044,7 +1044,10 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
 
         {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             BELOW THE FOLD — Trust, Install, Proof
+            Hidden when conversation is active (chat takes over the page)
             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        {conversation.length === 0 && (<>
+
 
         {/* ── How it works ─────────────────────────────────────────────────── */}
         <div style={stagger("0.28s")} className="mt-12">
@@ -1185,6 +1188,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             ))}
           </nav>
         </div>
+        </>)}
       </div>
     </div>
   );
