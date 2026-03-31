@@ -166,45 +166,71 @@ export default function TeamView() {
     setTimeout(() => setCopiedInviteLink(false), 2000);
   }, [inviteLink]);
 
-  // Ensure current user + demo teammate always appear
-  const selfPeer = {
-    peerId: currentPeerId,
-    product: "nodebench",
-    workspaceId: "local",
-    surface: "web" as const,
-    role: "compiler" as const,
-    capabilities: ["publish", "delegate", "approve"],
-    status: "active" as const,
-    lastHeartbeatAt: new Date().toISOString(),
-    summary: { currentTask: "Team coordination" },
+  // ── Live room data: poll server for peers + messages ──────────────
+  type RoomPeer = { peerId: string; name: string; roles: string[]; lastSeen: string };
+  type RoomMsg = { id: string; fromPeerId: string; toPeerId: string; content: string; timestamp: string; messageType: string };
+  const [roomPeers, setRoomPeers] = useState<RoomPeer[]>([]);
+  const [roomMessages, setRoomMessages] = useState<RoomMsg[]>([]);
+
+  // Poll room data every 3 seconds
+  useEffect(() => {
+    if (!roomCode || !hasJoined) return;
+    let active = true;
+    async function poll() {
+      try {
+        const { SHARED_CONTEXT_API_BASE } = await import("@/lib/syncBridgeApi");
+        const resp = await fetch(`${SHARED_CONTEXT_API_BASE}/room/${roomCode}`);
+        if (!resp.ok || !active) return;
+        const data = await resp.json();
+        if (!active) return;
+        if (data.peers) setRoomPeers(data.peers);
+        if (data.messages) setRoomMessages(data.messages);
+      } catch { /* offline */ }
+    }
+    void poll();
+    const interval = setInterval(() => void poll(), 3000);
+    return () => { active = false; clearInterval(interval); };
+  }, [roomCode, hasJoined]);
+
+  // Register self on join so other tabs see us
+  useEffect(() => {
+    if (!roomCode || !hasJoined || !resolvedName) return;
+    (async () => {
+      try {
+        const { SHARED_CONTEXT_API_BASE } = await import("@/lib/syncBridgeApi");
+        await fetch(`${SHARED_CONTEXT_API_BASE}/message`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fromPeerId: currentPeerId,
+            toPeerId: "room",
+            content: `${resolvedName} is online`,
+            messageType: "status_update",
+            room: roomCode,
+            fromName: resolvedName,
+            fromRoles: ["builder"],
+          }),
+        });
+      } catch { /* offline */ }
+    })();
+  }, [roomCode, hasJoined, resolvedName, currentPeerId]);
+
+  // Build peer list from server data + ensure self is included
+  const selfPeer: RoomPeer = { peerId: currentPeerId, name: resolvedName || "you", roles: ["builder"], lastSeen: new Date().toISOString() };
+  const allPeers = roomPeers.length > 0
+    ? (roomPeers.some((p) => p.peerId === currentPeerId) ? roomPeers : [selfPeer, ...roomPeers])
+    : [selfPeer];
+
+  // Role assignments from server data + local overrides
+  const [peerRoles, setPeerRoles] = useState<Record<string, TeamRole[]>>({});
+
+  const getPeerRoles = (peerId: string): TeamRole[] => {
+    // Check local overrides first, then server-provided roles, then default
+    if (peerRoles[peerId]?.length) return peerRoles[peerId];
+    const serverPeer = roomPeers.find((p) => p.peerId === peerId);
+    if (serverPeer?.roles?.length) return serverPeer.roles as TeamRole[];
+    return peerId.includes("founder") ? ["founder"] : ["builder"];
   };
-  const demoPeers = [
-    selfPeer,
-    {
-      peerId: "peer:teammate:sarah",
-      product: "nodebench",
-      workspaceId: "local",
-      surface: "local_runtime" as const,
-      role: "runner" as const,
-      capabilities: ["execute", "publish"],
-      status: "active" as const,
-      lastHeartbeatAt: new Date(Date.now() - 60_000).toISOString(),
-      summary: { currentTask: "Setting up dev environment" },
-    },
-  ];
-  const allPeers = peers.length > 0
-    ? (peers.some((p) => p.peerId === currentPeerId) ? peers : [selfPeer, ...peers])
-    : demoPeers;
-
-  // Role assignments (would be persisted in real impl)
-  const [peerRoles, setPeerRoles] = useState<Record<string, TeamRole[]>>({
-    "peer:founder:local": ["founder"],
-    "peer:teammate:sarah": ["builder"],
-    "peer:agent:sarah_claude": ["builder"],
-  });
-
-  const getPeerRoles = (peerId: string): TeamRole[] =>
-    peerRoles[peerId] ?? (peerId.includes("founder") ? ["founder"] : ["builder"]);
 
   const toggleRole = (peerId: string, role: TeamRole) => {
     setPeerRoles((prev) => {
@@ -216,7 +242,7 @@ export default function TeamView() {
     });
   };
 
-  // Local chat log — messages appear immediately, then sync with API
+  // Local chat log — optimistic messages appear immediately, then server catches up
   const [localMessages, setLocalMessages] = useState<Array<{
     id: string;
     fromPeerId: string;
@@ -224,59 +250,20 @@ export default function TeamView() {
     content: string;
     timestamp: string;
     roles: TeamRole[];
-  }>>([
-    // Demo conversation seed — shows what the experience looks like
-    {
-      id: "demo-1",
-      fromPeerId: "peer:founder:local",
-      toPeerId: "peer:teammate:sarah",
-      content: "Hey Sarah, I just set up NodeBench-MCP for our project. Can you install it on your end? Run: claude mcp add nodebench -- npx -y nodebench-mcp --preset founder",
-      timestamp: new Date(Date.now() - 3600_000).toISOString(),
-      roles: ["founder"],
-    },
-    {
-      id: "demo-2",
-      fromPeerId: "peer:teammate:sarah",
-      toPeerId: "peer:founder:local",
-      content: "Got it! Installing now... it found 81 tools. What should I do first?",
-      timestamp: new Date(Date.now() - 3500_000).toISOString(),
-      roles: ["builder"],
-    },
-    {
-      id: "demo-3",
-      fromPeerId: "peer:founder:local",
-      toPeerId: "peer:teammate:sarah",
-      content: "Great! Your Claude Code agent now has the full founder toolkit. First, clone the repo and create a new branch. I'm delegating the setup task to your agent now.",
-      timestamp: new Date(Date.now() - 3400_000).toISOString(),
-      roles: ["founder"],
-    },
-    {
-      id: "demo-4",
-      fromPeerId: "peer:agent:sarah_claude",
-      toPeerId: "peer:founder:local",
-      content: "[AGENT] Branch `feat/sarah-onboarding` created. Dependencies installed (node_modules: 1,247 packages). Dev server running on port 5191. Ready for next task.",
-      timestamp: new Date(Date.now() - 3300_000).toISOString(),
-      roles: ["builder"],
-    },
-    {
-      id: "demo-5",
-      fromPeerId: "peer:founder:local",
-      toPeerId: "peer:teammate:sarah",
-      content: "Perfect — your agent handled the setup. Now check the Dashboard tab to see our company profile and what's changed this week.",
-      timestamp: new Date(Date.now() - 3200_000).toISOString(),
-      roles: ["founder"],
-    },
-  ]);
+  }>>([]);
 
-  // Merge API messages + local messages, deduplicate by id
-  const allMessages = [...localMessages, ...messages.map((m) => ({
-    id: m.messageId ?? `api-${m.createdAt}`,
-    fromPeerId: m.fromPeerId,
-    toPeerId: m.toPeerId,
-    content: m.content,
-    timestamp: m.createdAt ?? new Date().toISOString(),
-    roles: getPeerRoles(m.fromPeerId),
-  }))];
+  // Merge: local optimistic messages + server room messages, deduplicate
+  const serverMsgs = roomMessages
+    .filter((m) => m.messageType !== "status_update") // hide join notifications from chat
+    .map((m) => ({
+      id: m.id,
+      fromPeerId: m.fromPeerId,
+      toPeerId: m.toPeerId,
+      content: m.content,
+      timestamp: m.timestamp,
+      roles: getPeerRoles(m.fromPeerId),
+    }));
+  const allMessages = [...serverMsgs, ...localMessages];
   const seenIds = new Set<string>();
   const dedupedMessages = allMessages.filter((m) => {
     if (seenIds.has(m.id)) return false;
@@ -330,6 +317,9 @@ export default function TeamView() {
           toPeerId: selectedPeer,
           content,
           messageType: "request",
+          room: roomCode,
+          fromName: resolvedName,
+          fromRoles: getPeerRoles(currentPeerId).length > 0 ? getPeerRoles(currentPeerId) : ["builder"],
         }),
       });
     } catch {
@@ -632,6 +622,9 @@ export default function TeamView() {
                               toPeerId: selectedPeer,
                               content: fullContent,
                               messageType: "request",
+                              room: roomCode,
+                              fromName: resolvedName,
+                              fromRoles: getPeerRoles(currentPeerId),
                             }),
                           });
                         } catch {

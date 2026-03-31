@@ -1122,12 +1122,73 @@ export function createSharedContextRouter(): Router {
     }
   });
 
-  // ── POST /message — lightweight peer-to-peer messaging ────────────
-  // Unlike /publish (which requires a search result packet), this endpoint
-  // accepts raw messages between Claude Code instances for the Team page.
+  // ── Room-scoped peer + message registry (in-memory, bounded) ──────
+  // Peers and messages are stored per room code. Max 50 peers, 200 messages per room.
+  // Rooms auto-expire after 24 hours of inactivity.
+  const MAX_PEERS_PER_ROOM = 50;
+  const MAX_MESSAGES_PER_ROOM = 200;
+  const MAX_ROOMS = 100;
+  const ROOM_TTL_MS = 24 * 60 * 60 * 1000;
+
+  type RoomPeer = { peerId: string; name: string; roles: string[]; lastSeen: string; room: string };
+  type RoomMessage = { id: string; fromPeerId: string; toPeerId: string; content: string; timestamp: string; messageType: string; room: string };
+  type Room = { code: string; peers: Map<string, RoomPeer>; messages: RoomMessage[]; lastActivity: number };
+
+  const rooms = new Map<string, Room>();
+
+  function getOrCreateRoom(code: string): Room {
+    // Evict oldest room if at capacity
+    if (!rooms.has(code) && rooms.size >= MAX_ROOMS) {
+      let oldest: string | null = null;
+      let oldestTime = Infinity;
+      for (const [k, r] of rooms) {
+        if (r.lastActivity < oldestTime) { oldest = k; oldestTime = r.lastActivity; }
+      }
+      if (oldest) rooms.delete(oldest);
+    }
+    if (!rooms.has(code)) {
+      rooms.set(code, { code, peers: new Map(), messages: [], lastActivity: Date.now() });
+    }
+    const room = rooms.get(code)!;
+    room.lastActivity = Date.now();
+    return room;
+  }
+
+  // Clean expired rooms periodically
+  setInterval(() => {
+    const now = Date.now();
+    for (const [code, room] of rooms) {
+      if (now - room.lastActivity > ROOM_TTL_MS) rooms.delete(code);
+    }
+  }, 60_000);
+
+  // ── GET /room/:code — get peers + messages for a room ────────────
+  router.get("/room/:code", (req, res) => {
+    const code = (req.params.code ?? "").toUpperCase();
+    if (!code) return res.status(400).json({ success: false, message: "Room code required." });
+
+    const room = rooms.get(code);
+    if (!room) {
+      return res.json({
+        success: true,
+        room: code,
+        peers: [],
+        messages: [],
+      });
+    }
+
+    return res.json({
+      success: true,
+      room: code,
+      peers: Array.from(room.peers.values()),
+      messages: room.messages.slice(-100), // Last 100 messages
+    });
+  });
+
+  // ── POST /message — peer-to-peer messaging with room registration ──
   router.post("/message", async (req, res) => {
     try {
-      const { fromPeerId, toPeerId, content, messageType } = req.body ?? {};
+      const { fromPeerId, toPeerId, content, messageType, room: roomCode, fromName, fromRoles } = req.body ?? {};
       if (!fromPeerId || !toPeerId || !content) {
         return res.status(400).json({
           success: false,
@@ -1138,7 +1199,37 @@ export function createSharedContextRouter(): Router {
       const messageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const now = new Date().toISOString();
 
-      // Register sender peer if not already registered
+      // Register sender peer in room (if room code provided)
+      if (roomCode) {
+        const room = getOrCreateRoom(String(roomCode).toUpperCase());
+
+        // Register/update sender peer
+        if (room.peers.size < MAX_PEERS_PER_ROOM || room.peers.has(fromPeerId)) {
+          room.peers.set(fromPeerId, {
+            peerId: fromPeerId,
+            name: fromName ?? fromPeerId.split(":").pop()?.replaceAll("_", " ") ?? fromPeerId,
+            roles: fromRoles ?? ["builder"],
+            lastSeen: now,
+            room: room.code,
+          });
+        }
+
+        // Store message in room (bounded)
+        room.messages.push({
+          id: messageId,
+          fromPeerId,
+          toPeerId,
+          content,
+          timestamp: now,
+          messageType: messageType ?? "request",
+          room: room.code,
+        });
+        if (room.messages.length > MAX_MESSAGES_PER_ROOM) {
+          room.messages.splice(0, room.messages.length - MAX_MESSAGES_PER_ROOM);
+        }
+      }
+
+      // Also register in shared context store
       registerSharedContextPeer({
         peerId: fromPeerId,
         product: "nodebench",
@@ -1148,12 +1239,12 @@ export function createSharedContextRouter(): Router {
         summary: {},
       });
 
-      // Emit SSE event for real-time delivery
+      // Emit SSE event
       const bus = getSharedContextEventBus();
       bus.emit("shared_context", {
         type: "message_sent",
         timestamp: now,
-        payload: { messageId, fromPeerId, toPeerId, subject: content.slice(0, 80) },
+        payload: { messageId, fromPeerId, toPeerId, room: roomCode, subject: content.slice(0, 80) },
       });
 
       return res.json({
