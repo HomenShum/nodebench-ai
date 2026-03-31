@@ -792,14 +792,14 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             style={stagger("0s")}
             className="text-2xl font-bold tracking-tight text-content sm:text-3xl lg:text-4xl text-balance"
           >
-            Know what you're building, where you stand,{" "}
-            <span className="text-[#d97757]">and what to do next</span>
+            Every investor has a checklist.{" "}
+            <span className="text-[#d97757]">You've never seen it.</span>
           </h1>
           <p
             style={stagger("0.06s")}
             className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-content-secondary"
           >
-            Search any company, upload your context, or connect NodeBench-MCP. Get the hidden requirements, gaps, and next steps that investors, banks, and partners will judge you on.
+            VCs, accelerators, and banks judge your startup on hidden criteria they never share. Describe your idea and NodeBench shows you exactly what's missing — before your first pitch.
           </p>
         </div>
 
@@ -828,7 +828,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Search a company, paste a task, upload files, or ask a strategic question..."
+              placeholder="Describe your startup idea, name a company, or paste your pitch..."
               rows={1}
               className="w-full resize-none bg-transparent px-5 py-4 pr-32 text-[15px] text-content placeholder:text-content-muted/60 focus:outline-none"
               aria-label="Search NodeBench"
@@ -942,37 +942,37 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         {!activeResult && (
           <div style={stagger("0.24s")} className="mt-12">
             <h2 className="text-center text-lg font-semibold text-content sm:text-xl">
-              The requirements nobody tells you about
+              The invisible checklist VCs use to filter you out
             </h2>
             <p className="mx-auto mt-2 max-w-lg text-center text-sm text-content-muted">
-              Investors, banks, and partners judge startups on hidden criteria.
-              NodeBench surfaces what you need before they ask.
+              Before you write a single line of code, investors are scoring you on criteria they never share.
+              NodeBench makes those criteria visible — starting from just an idea.
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {[
                 {
-                  title: "What qualifies you",
-                  description: "Every investor tier, banking program, and accelerator has invisible requirements. See exactly what you're missing.",
+                  title: "Is this a real market?",
+                  description: "VCs check TAM, existing players, and timing before reading your deck. See exactly how they'd size your opportunity.",
                 },
                 {
-                  title: "What changed this week",
-                  description: "Competitor moves, market shifts, regulatory changes — surfaced automatically so you never walk into a meeting blind.",
+                  title: "Why you, why now?",
+                  description: "The #1 question every investor asks. NodeBench shows your founder-market fit gaps and what evidence you need.",
                 },
                 {
-                  title: "What contradicts your story",
-                  description: "Your pitch says one thing, your data says another. Find contradictions before investors do.",
+                  title: "What's your unfair advantage?",
+                  description: "Distribution moat, technical defensibility, regulatory capture — which one do you have? Which one do they expect?",
                 },
                 {
-                  title: "What to do next",
-                  description: "Ranked actions based on your stage, readiness, and the specific requirements of your target audience.",
+                  title: "Who's already funded here?",
+                  description: "See who raised, at what stage, from whom. Know the landscape before investors tell you about it.",
                 },
                 {
-                  title: "What to delegate",
-                  description: "Package your research into a structured packet and hand it to Claude Code or your team — context stays intact.",
+                  title: "What kills this idea?",
+                  description: "Every VC looks for reasons to say no. Find the objections before your pitch and have answers ready.",
                 },
                 {
-                  title: "What to share",
-                  description: "Export a memo, brief, or one-pager ready for investors, bankers, partners, or your board.",
+                  title: "What should you do first?",
+                  description: "Ranked next steps based on your stage: validate the wedge, talk to users, build a prototype, or go straight to pitch.",
                 },
               ].map((item) => (
                 <div key={item.title} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
@@ -1162,9 +1162,9 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {[
-              { step: "1", title: "Describe your company or idea", description: "Type what you're building, paste meeting notes, or name a competitor. NodeBench figures out your stage, market, and gaps." },
-              { step: "2", title: "See what you're missing", description: "Get a structured packet: hidden requirements, contradictions, qualification gaps, and ranked next actions — shaped for your role." },
-              { step: "3", title: "Act on it", description: "Export a memo for investors, delegate to Claude Code, or share a one-pager on Slack. Context stays intact across every handoff." },
+              { step: "1", title: "Type your idea in one sentence", description: "\"AI tutoring for college students\" is enough. NodeBench identifies your market, stage, and the investor criteria that apply to you." },
+              { step: "2", title: "See the invisible scorecard", description: "Get the exact checklist VCs, accelerators, and banks use to evaluate startups like yours — with your gaps highlighted." },
+              { step: "3", title: "Know your next move", description: "Ranked actions: validate your wedge, find comparable raises, build the missing evidence, or generate a pitch-ready memo." },
             ].map((item) => (
               <div key={item.step} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#d97757]/10 text-xs font-bold text-[#d97757]">
@@ -1181,12 +1181,11 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         <div style={stagger("0.32s")} className="mt-12">
           <div className="mx-auto max-w-2xl rounded-2xl border border-[#d97757]/15 bg-[#d97757]/[0.03] p-6">
             <h2 className="text-center text-base font-semibold text-content">
-              Connect NodeBench-MCP to build your company dashboard
+              Already building? Connect your context.
             </h2>
             <p className="mx-auto mt-2 max-w-lg text-center text-xs leading-relaxed text-content-muted">
-              Index your codebase, docs, and agent context. NodeBench automatically builds
-              a live founder dashboard with readiness gaps, competitor signals, and shared
-              context for Claude Code and other agents.
+              If you have a codebase, docs, or pitch deck — connect NodeBench-MCP.
+              It indexes everything and keeps your investor readiness scorecard live as you build.
             </p>
             <div className="mt-5 grid gap-3 sm:grid-cols-4">
               {[

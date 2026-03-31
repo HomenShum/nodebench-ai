@@ -569,24 +569,24 @@ export interface ExamplePrompt {
 
 export const EXAMPLE_PROMPTS: ExamplePrompt[] = [
   {
-    text: "What changed this week? Give me my founder reset.",
+    text: "I'm building an AI tutoring app for college students",
     lens: "founder",
     category: "analyze",
   },
   {
-    text: "Analyze Anthropic's competitive position",
+    text: "What would Y Combinator look for in a fintech startup?",
     lens: "investor",
     category: "search",
   },
   {
-    text: "Build a diligence memo from these meeting notes",
-    lens: "banker",
+    text: "Am I ready to pitch Sequoia? Show me the gaps.",
+    lens: "founder",
     category: "analyze",
   },
   {
-    text: "Compare AI commerce strategy across Shopify, Amazon, and Google",
+    text: "Compare my idea against existing players in AI recruiting",
     lens: "ceo",
-    category: "monitor",
+    category: "search",
   },
 ];
 

@@ -22,18 +22,18 @@ interface HowItWorksCard {
 
 const HOW_IT_WORKS_CARDS: HowItWorksCard[] = [
   {
-    label: "Ask",
-    description: "Search any company, upload context, get a structured intelligence packet",
+    label: "Describe",
+    description: "Type your startup idea in one sentence — NodeBench figures out your market, stage, and the criteria that apply",
     Icon: MessageSquare,
   },
   {
-    label: "Analyze",
-    description: "See hidden requirements, contradictions, and ranked next actions",
+    label: "See gaps",
+    description: "Get the invisible scorecard: what VCs check, what you're missing, and what could kill the deal",
     Icon: BarChart3,
   },
   {
-    label: "Delegate",
-    description: "Share packets, hand off to your team or Claude Code, track what changed",
+    label: "Act",
+    description: "Ranked next steps, pitch-ready memos, and evidence packets you can share with investors or your team",
     Icon: Activity,
   },
 ];
@@ -145,10 +145,10 @@ function StepWelcome() {
 
       <h2 className="text-2xl font-semibold text-content">Welcome to NodeBench</h2>
       <p className="mt-2 text-base font-medium text-[#d97757]">
-        Founder clarity for what matters next
+        See the invisible checklist investors use to judge you
       </p>
       <p className="mt-4 text-sm leading-relaxed text-content-muted">
-        Search any company, see hidden requirements, and get a structured packet you can share or delegate.
+        Describe your idea in one sentence. NodeBench shows you the hidden criteria VCs, accelerators, and banks use — so you know exactly what's missing before you pitch.
       </p>
     </div>
   );
@@ -190,21 +190,21 @@ function StepTryIt() {
             1
           </span>
           <span>
-            <strong className="text-content">Type a company name</strong> or paste your idea in the search bar
+            <strong className="text-content">Describe your idea</strong> in one sentence — even "AI tutoring for students" works
           </span>
         </li>
         <li className="flex items-start gap-3">
           <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#d97757]/10 text-[10px] font-bold text-[#d97757]">
             2
           </span>
-          <span>Get a structured packet with gaps, next steps, and evidence</span>
+          <span>See the investor checklist: gaps, objections, and what to build first</span>
         </li>
         <li className="flex items-start gap-3">
           <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#d97757]/10 text-[10px] font-bold text-[#d97757]">
             3
           </span>
           <span>
-            Share it, delegate to your team, or connect your agent:{" "}
+            Export a pitch-ready memo, share with co-founders, or connect:{" "}
             <code className="rounded bg-white/[0.06] px-1.5 py-0.5 text-xs text-[#d97757]">
               npx nodebench-mcp
             </code>
