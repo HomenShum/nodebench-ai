@@ -1481,12 +1481,94 @@ export function createSearchRouter(tools: McpTool[]) {
     return { type: "general", lens: "founder" };
   }
 
+  // ── LLM-based classifier (Gemini Flash Lite) ─────────────────────────
+  // Replaces regex heuristics with a single LLM call for intent + entity extraction.
+  // Falls back to regex classifyQuery if GEMINI_API_KEY is missing or call fails.
+  type ClassifyResult = {
+    type: "weekly_reset" | "pre_delegation" | "important_change" | "plan_proposal" | "company_search" | "competitor" | "multi_entity" | "general";
+    entity?: string;
+    entities?: string[];
+    lens: string;
+  };
+
+  async function classifyQueryWithLLM(query: string): Promise<ClassifyResult> {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return classifyQuery(query); // Fallback to regex
+
+    try {
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `Classify this user query for a startup intelligence platform. Return ONLY valid JSON, no markdown.
+
+Query: "${query}"
+
+Return this exact JSON shape:
+{
+  "type": one of ["weekly_reset", "pre_delegation", "important_change", "plan_proposal", "company_search", "competitor", "multi_entity", "general"],
+  "entity": the primary company/entity name mentioned (null if none or if about the user's own company),
+  "entities": array of all company names if comparing multiple (null if single or none),
+  "lens": best audience lens: "founder" | "investor" | "banker" | "ceo" | "legal" | "student"
+}
+
+Classification rules:
+- "weekly_reset": user wants a weekly summary, founder reset, or "what changed this week"
+- "pre_delegation": user wants to hand off work to an agent or prepare a delegation packet
+- "important_change": user asks what changed recently, what's different, biggest contradictions
+- "plan_proposal": user wants to plan a feature, integration, or asks "should we build X"
+- "company_search": user asks about ONE specific company or wants intelligence on one entity
+- "competitor": user asks about competitors, competitive landscape, or "who competes with X"
+- "multi_entity": user compares 2+ companies ("X vs Y", "compare X and Y", "X, Y, and Z")
+- "general": anything else — general questions, idea validation, pitch readiness, strategic questions
+
+Entity extraction rules:
+- Extract ONLY proper company/product names, not generic words
+- "Compare Stripe vs Square" → entities: ["Stripe", "Square"]
+- "What would Y Combinator look for" → entity: "Y Combinator"
+- "I'm building an AI tutoring app" → entity: null (user's own idea, not a named company)
+- "Am I ready to pitch Sequoia?" → entity: "Sequoia"` }] }],
+            generationConfig: { temperature: 0, maxOutputTokens: 200 },
+          }),
+          signal: AbortSignal.timeout(3000), // 3s budget — classification must be fast
+        }
+      );
+
+      if (!resp.ok) return classifyQuery(query);
+
+      const data = await resp.json() as any;
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      // Extract JSON from response (may be wrapped in ```json...```)
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) return classifyQuery(query);
+
+      const parsed = JSON.parse(jsonMatch[0]);
+      const validTypes = ["weekly_reset", "pre_delegation", "important_change", "plan_proposal", "company_search", "competitor", "multi_entity", "general"];
+      const type = validTypes.includes(parsed.type) ? parsed.type : "general";
+      const validLenses = ["founder", "investor", "banker", "ceo", "legal", "student"];
+      const lens = validLenses.includes(parsed.lens) ? parsed.lens : "founder";
+
+      return {
+        type,
+        entity: typeof parsed.entity === "string" && parsed.entity.length > 0 ? parsed.entity : undefined,
+        entities: Array.isArray(parsed.entities) && parsed.entities.length >= 2
+          ? parsed.entities.filter((e: any) => typeof e === "string" && e.length > 0)
+          : undefined,
+        lens,
+      };
+    } catch {
+      return classifyQuery(query); // Fallback to regex on any failure
+    }
+  }
+
   /** Detect follow-up queries that reference prior session context.
    *  Returns enriched classification with prior entity injected. */
-  function classifyWithSession(
+  async function classifyWithSession(
     query: string,
     sessionCtx: { entity: string; classification: string; result: any } | null,
-  ): ReturnType<typeof classifyQuery> {
+  ): Promise<ClassifyResult> {
     // Check follow-up patterns FIRST — session context takes priority over base classification
     // because "Now compare that to Google" would match competitor patterns in classifyQuery
     // but "that" refers to the session entity, not a literal entity name.
@@ -1530,7 +1612,7 @@ export function createSearchRouter(tools: McpTool[]) {
       }
     }
 
-    const base = classifyQuery(query);
+    const base = await classifyQueryWithLLM(query);
     return base;
   }
 
@@ -1569,7 +1651,7 @@ export function createSearchRouter(tools: McpTool[]) {
     // Use session-aware classifier for multi-turn follow-ups
     const sessionKey = getSessionKey(req);
     const sessionCtx = getSessionContext(sessionKey);
-    const classification = classifyWithSession(query.trim(), sessionCtx);
+    const classification = await classifyWithSession(query.trim(), sessionCtx);
     const resolvedLens = lens ?? classification.lens;
 
     const isStream = req.query.stream === "true";

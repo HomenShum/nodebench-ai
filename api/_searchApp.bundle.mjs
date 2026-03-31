@@ -10848,7 +10848,71 @@ function createSearchRouter(tools2) {
     }
     return { type: "general", lens: "founder" };
   }
-  function classifyWithSession(query, sessionCtx) {
+  async function classifyQueryWithLLM(query) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return classifyQuery(query);
+    try {
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `Classify this user query for a startup intelligence platform. Return ONLY valid JSON, no markdown.
+
+Query: "${query}"
+
+Return this exact JSON shape:
+{
+  "type": one of ["weekly_reset", "pre_delegation", "important_change", "plan_proposal", "company_search", "competitor", "multi_entity", "general"],
+  "entity": the primary company/entity name mentioned (null if none or if about the user's own company),
+  "entities": array of all company names if comparing multiple (null if single or none),
+  "lens": best audience lens: "founder" | "investor" | "banker" | "ceo" | "legal" | "student"
+}
+
+Classification rules:
+- "weekly_reset": user wants a weekly summary, founder reset, or "what changed this week"
+- "pre_delegation": user wants to hand off work to an agent or prepare a delegation packet
+- "important_change": user asks what changed recently, what's different, biggest contradictions
+- "plan_proposal": user wants to plan a feature, integration, or asks "should we build X"
+- "company_search": user asks about ONE specific company or wants intelligence on one entity
+- "competitor": user asks about competitors, competitive landscape, or "who competes with X"
+- "multi_entity": user compares 2+ companies ("X vs Y", "compare X and Y", "X, Y, and Z")
+- "general": anything else \u2014 general questions, idea validation, pitch readiness, strategic questions
+
+Entity extraction rules:
+- Extract ONLY proper company/product names, not generic words
+- "Compare Stripe vs Square" \u2192 entities: ["Stripe", "Square"]
+- "What would Y Combinator look for" \u2192 entity: "Y Combinator"
+- "I'm building an AI tutoring app" \u2192 entity: null (user's own idea, not a named company)
+- "Am I ready to pitch Sequoia?" \u2192 entity: "Sequoia"` }] }],
+            generationConfig: { temperature: 0, maxOutputTokens: 200 }
+          }),
+          signal: AbortSignal.timeout(3e3)
+          // 3s budget — classification must be fast
+        }
+      );
+      if (!resp.ok) return classifyQuery(query);
+      const data = await resp.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) return classifyQuery(query);
+      const parsed = JSON.parse(jsonMatch[0]);
+      const validTypes = ["weekly_reset", "pre_delegation", "important_change", "plan_proposal", "company_search", "competitor", "multi_entity", "general"];
+      const type = validTypes.includes(parsed.type) ? parsed.type : "general";
+      const validLenses = ["founder", "investor", "banker", "ceo", "legal", "student"];
+      const lens = validLenses.includes(parsed.lens) ? parsed.lens : "founder";
+      return {
+        type,
+        entity: typeof parsed.entity === "string" && parsed.entity.length > 0 ? parsed.entity : void 0,
+        entities: Array.isArray(parsed.entities) && parsed.entities.length >= 2 ? parsed.entities.filter((e) => typeof e === "string" && e.length > 0) : void 0,
+        lens
+      };
+    } catch {
+      return classifyQuery(query);
+    }
+  }
+  async function classifyWithSession(query, sessionCtx) {
     if (sessionCtx) {
       const lq = query.toLowerCase();
       const followUpPatterns = [
@@ -10879,7 +10943,7 @@ function createSearchRouter(tools2) {
         return { type: "company_search", entity: priorEntity, lens: "investor" };
       }
     }
-    const base = classifyQuery(query);
+    const base = await classifyQueryWithLLM(query);
     return base;
   }
   const parseSearchInput = (req) => {
@@ -10904,7 +10968,7 @@ function createSearchRouter(tools2) {
     }
     const sessionKey = getSessionKey(req);
     const sessionCtx = getSessionContext(sessionKey);
-    const classification = classifyWithSession(query.trim(), sessionCtx);
+    const classification = await classifyWithSession(query.trim(), sessionCtx);
     const resolvedLens = lens ?? classification.lens;
     const isStream = req.query.stream === "true";
     if (isStream) {
