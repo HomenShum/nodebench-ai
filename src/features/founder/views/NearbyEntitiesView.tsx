@@ -234,7 +234,7 @@ function NearbyEntitiesView() {
     });
 
     // Add all entities as graph nodes with edges to center
-    for (const entity of merged) {
+    for (const entity of entities) {
       const nodeId = `entity-${entity.id}`;
       gNodes.push({
         id: nodeId,
@@ -250,7 +250,7 @@ function NearbyEntitiesView() {
     }
 
     return { nodes: gNodes, edges: gEdges };
-  }, [company, merged]);
+  }, [company, entities]);
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
