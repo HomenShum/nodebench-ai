@@ -1,5 +1,7 @@
 var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __esm = (fn, res) => function __init() {
   return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
 };
@@ -7,6 +9,15 @@ var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // packages/mcp-local/src/db.ts
 import { createRequire } from "node:module";
@@ -1959,6 +1970,308 @@ var init_webTools = __esm({
         }
       }
     ];
+  }
+});
+
+// packages/mcp-local/src/profiler/behaviorStore.ts
+var behaviorStore_exports = {};
+__export(behaviorStore_exports, {
+  findSimilarPriorQuery: () => findSimilarPriorQuery,
+  getAggregateInsights: () => getAggregateInsights,
+  getSessionInsights: () => getSessionInsights,
+  initBehaviorTables: () => initBehaviorTables,
+  logContextReuse: () => logContextReuse,
+  logQuery: () => logQuery,
+  logSession: () => logSession,
+  logToolCall: () => logToolCall
+});
+function initBehaviorTables() {
+  const db = getDb();
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS behavior_sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      company_id TEXT,
+      interface_surface TEXT DEFAULT 'ai_app',
+      role_inferred TEXT DEFAULT 'founder',
+      start_time TEXT NOT NULL,
+      end_time TEXT,
+      main_objective TEXT,
+      packet_types_used TEXT DEFAULT '[]',
+      artifacts_produced TEXT DEFAULT '[]',
+      total_tool_calls INTEGER DEFAULT 0,
+      total_model_calls INTEGER DEFAULT 0,
+      estimated_tokens_in INTEGER DEFAULT 0,
+      estimated_tokens_out INTEGER DEFAULT 0,
+      estimated_cost_usd REAL DEFAULT 0,
+      latency_total_ms INTEGER DEFAULT 0,
+      redundant_calls INTEGER DEFAULT 0,
+      reused_context_count INTEGER DEFAULT 0,
+      optimization_score INTEGER DEFAULT 100
+    );
+
+    CREATE TABLE IF NOT EXISTS behavior_queries (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL,
+      raw_query TEXT NOT NULL,
+      normalized_intent TEXT,
+      classification TEXT,
+      entity_targets TEXT DEFAULT '[]',
+      own_company_mode INTEGER DEFAULT 0,
+      followup_to_query_id TEXT,
+      resulting_packet_type TEXT,
+      resulting_artifact_type TEXT,
+      confidence_score REAL,
+      latency_ms INTEGER,
+      timestamp TEXT NOT NULL,
+      FOREIGN KEY (session_id) REFERENCES behavior_sessions(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS behavior_tool_calls (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL,
+      query_id TEXT,
+      tool_name TEXT NOT NULL,
+      input_summary TEXT,
+      output_summary TEXT,
+      latency_ms INTEGER DEFAULT 0,
+      cost_estimate_usd REAL DEFAULT 0,
+      cache_hit INTEGER DEFAULT 0,
+      success INTEGER DEFAULT 1,
+      model_used TEXT,
+      token_estimate INTEGER,
+      packet_id TEXT,
+      entity_ids TEXT DEFAULT '[]',
+      is_redundant INTEGER DEFAULT 0,
+      timestamp TEXT NOT NULL,
+      FOREIGN KEY (session_id) REFERENCES behavior_sessions(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS context_reuse_events (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL,
+      reuse_type TEXT NOT NULL,
+      source_packet_id TEXT,
+      source_memo_id TEXT,
+      source_query_id TEXT,
+      fields_reused TEXT DEFAULT '[]',
+      tokens_saved_estimate INTEGER DEFAULT 0,
+      timestamp TEXT NOT NULL,
+      FOREIGN KEY (session_id) REFERENCES behavior_sessions(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS workflow_paths (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL,
+      objective TEXT,
+      steps TEXT NOT NULL DEFAULT '[]',
+      total_steps INTEGER DEFAULT 0,
+      decision_points INTEGER DEFAULT 0,
+      branches_taken TEXT DEFAULT '[]',
+      terminal_output_type TEXT,
+      success INTEGER DEFAULT 1,
+      total_latency_ms INTEGER DEFAULT 0,
+      total_cost_usd REAL DEFAULT 0,
+      timestamp TEXT NOT NULL,
+      FOREIGN KEY (session_id) REFERENCES behavior_sessions(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS optimization_suggestions (
+      id TEXT PRIMARY KEY,
+      session_id TEXT,
+      target_workflow_id TEXT,
+      suggestion_type TEXT NOT NULL,
+      current_path_summary TEXT,
+      proposed_path_summary TEXT,
+      expected_cost_delta_pct REAL,
+      expected_latency_delta_pct REAL,
+      expected_quality_delta_pct REAL,
+      confidence_score REAL DEFAULT 0,
+      validation_required INTEGER DEFAULT 1,
+      status TEXT DEFAULT 'suggested',
+      actionable_text TEXT,
+      timestamp TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS behavior_profiles (
+      id TEXT PRIMARY KEY,
+      user_id TEXT UNIQUE,
+      preferred_artifacts TEXT DEFAULT '[]',
+      common_roles TEXT DEFAULT '[]',
+      common_workflow_families TEXT DEFAULT '[]',
+      cost_sensitivity TEXT DEFAULT 'medium',
+      latency_sensitivity TEXT DEFAULT 'medium',
+      favorite_model_paths TEXT DEFAULT '[]',
+      recurring_entity_clusters TEXT DEFAULT '[]',
+      common_delegation_targets TEXT DEFAULT '[]',
+      typical_followup_style TEXT DEFAULT 'iterative',
+      total_sessions INTEGER DEFAULT 0,
+      total_queries INTEGER DEFAULT 0,
+      total_tool_calls INTEGER DEFAULT 0,
+      lifetime_cost_usd REAL DEFAULT 0,
+      last_updated TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_bq_session ON behavior_queries(session_id);
+    CREATE INDEX IF NOT EXISTS idx_btc_session ON behavior_tool_calls(session_id);
+    CREATE INDEX IF NOT EXISTS idx_btc_tool ON behavior_tool_calls(tool_name);
+    CREATE INDEX IF NOT EXISTS idx_cre_session ON context_reuse_events(session_id);
+    CREATE INDEX IF NOT EXISTS idx_wp_session ON workflow_paths(session_id);
+    CREATE INDEX IF NOT EXISTS idx_os_status ON optimization_suggestions(status);
+    CREATE INDEX IF NOT EXISTS idx_bp_user ON behavior_profiles(user_id);
+  `);
+}
+function logSession(data) {
+  const db = getDb();
+  const id = genId("bsess");
+  db.prepare(`
+    INSERT INTO behavior_sessions (id, user_id, company_id, interface_surface, role_inferred, start_time, main_objective)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(id, data.userId ?? null, data.companyId ?? null, data.interfaceSurface ?? "ai_app", data.roleInferred ?? "founder", (/* @__PURE__ */ new Date()).toISOString(), data.mainObjective ?? null);
+  return id;
+}
+function logQuery(data) {
+  const db = getDb();
+  const id = genId("bqry");
+  db.prepare(`
+    INSERT INTO behavior_queries (id, session_id, raw_query, normalized_intent, classification, entity_targets, own_company_mode, followup_to_query_id, confidence_score, latency_ms, timestamp)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id,
+    data.sessionId,
+    data.rawQuery,
+    data.normalizedIntent ?? null,
+    data.classification ?? null,
+    JSON.stringify(data.entityTargets ?? []),
+    data.ownCompanyMode ? 1 : 0,
+    data.followupToQueryId ?? null,
+    data.confidenceScore ?? null,
+    data.latencyMs ?? null,
+    (/* @__PURE__ */ new Date()).toISOString()
+  );
+  return id;
+}
+function logToolCall(data) {
+  const db = getDb();
+  const id = genId("btc");
+  db.prepare(`
+    INSERT INTO behavior_tool_calls (id, session_id, query_id, tool_name, input_summary, output_summary, latency_ms, cost_estimate_usd, cache_hit, success, model_used, token_estimate, is_redundant, timestamp)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id,
+    data.sessionId,
+    data.queryId ?? null,
+    data.toolName,
+    data.inputSummary ?? null,
+    data.outputSummary ?? null,
+    data.latencyMs,
+    data.costEstimateUsd,
+    data.cacheHit ? 1 : 0,
+    data.success ? 1 : 0,
+    data.modelUsed ?? null,
+    data.tokenEstimate ?? null,
+    data.isRedundant ? 1 : 0,
+    (/* @__PURE__ */ new Date()).toISOString()
+  );
+  db.prepare(`
+    UPDATE behavior_sessions SET
+      total_tool_calls = total_tool_calls + 1,
+      estimated_cost_usd = estimated_cost_usd + ?,
+      latency_total_ms = latency_total_ms + ?,
+      redundant_calls = redundant_calls + ?
+    WHERE id = ?
+  `).run(data.costEstimateUsd, data.latencyMs, data.isRedundant ? 1 : 0, data.sessionId);
+  return id;
+}
+function logContextReuse(data) {
+  const db = getDb();
+  const id = genId("bcre");
+  db.prepare(`
+    INSERT INTO context_reuse_events (id, session_id, reuse_type, source_packet_id, source_memo_id, source_query_id, fields_reused, tokens_saved_estimate, timestamp)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id,
+    data.sessionId,
+    data.reuseType,
+    data.sourcePacketId ?? null,
+    data.sourceMemoId ?? null,
+    data.sourceQueryId ?? null,
+    JSON.stringify(data.fieldsReused ?? []),
+    data.tokensSavedEstimate ?? 0,
+    (/* @__PURE__ */ new Date()).toISOString()
+  );
+  db.prepare(`UPDATE behavior_sessions SET reused_context_count = reused_context_count + 1 WHERE id = ?`).run(data.sessionId);
+  return id;
+}
+function getSessionInsights(sessionId) {
+  const db = getDb();
+  const session = db.prepare(`SELECT * FROM behavior_sessions WHERE id = ?`).get(sessionId);
+  const queries = db.prepare(`SELECT * FROM behavior_queries WHERE session_id = ? ORDER BY timestamp`).all(sessionId);
+  const toolCalls = db.prepare(`SELECT * FROM behavior_tool_calls WHERE session_id = ? ORDER BY timestamp`).all(sessionId);
+  const reuseEvents = db.prepare(`SELECT * FROM context_reuse_events WHERE session_id = ? ORDER BY timestamp`).all(sessionId);
+  const toolStats = db.prepare(`
+    SELECT tool_name as tool, COUNT(*) as count,
+      CAST(AVG(latency_ms) AS INTEGER) as avgLatencyMs,
+      ROUND(SUM(cost_estimate_usd), 4) as totalCost
+    FROM behavior_tool_calls WHERE session_id = ?
+    GROUP BY tool_name ORDER BY count DESC LIMIT 10
+  `).all(sessionId);
+  return { session, queries, toolCalls, reuseEvents, topTools: toolStats };
+}
+function getAggregateInsights(daysBack = 7) {
+  const db = getDb();
+  const since = new Date(Date.now() - daysBack * 864e5).toISOString();
+  const stats = db.prepare(`
+    SELECT COUNT(*) as totalSessions,
+      COALESCE(SUM(total_tool_calls), 0) as totalToolCalls,
+      COALESCE(SUM(estimated_cost_usd), 0) as totalCost,
+      COALESCE(SUM(redundant_calls), 0) as redundantCalls,
+      COALESCE(SUM(reused_context_count), 0) as reusedCount
+    FROM behavior_sessions WHERE start_time >= ?
+  `).get(since);
+  const totalQueries = db.prepare(`SELECT COUNT(*) as c FROM behavior_queries WHERE timestamp >= ?`).get(since)?.c ?? 0;
+  const topTools = db.prepare(`
+    SELECT tool_name as tool, COUNT(*) as count,
+      CAST(AVG(latency_ms) AS INTEGER) as avgLatencyMs,
+      ROUND(SUM(cost_estimate_usd), 4) as totalCost
+    FROM behavior_tool_calls WHERE timestamp >= ?
+    GROUP BY tool_name ORDER BY count DESC LIMIT 15
+  `).all(since);
+  const repeatedQueries = db.prepare(`
+    SELECT raw_query as query, COUNT(*) as count
+    FROM behavior_queries WHERE timestamp >= ?
+    GROUP BY LOWER(TRIM(raw_query)) HAVING count > 1
+    ORDER BY count DESC LIMIT 10
+  `).all(since);
+  return {
+    totalSessions: stats?.totalSessions ?? 0,
+    totalQueries,
+    totalToolCalls: stats?.totalToolCalls ?? 0,
+    totalCostUsd: Math.round((stats?.totalCost ?? 0) * 1e3) / 1e3,
+    redundantCallRate: stats?.totalToolCalls > 0 ? Math.round(stats?.redundantCalls / stats?.totalToolCalls * 100) : 0,
+    topTools,
+    repeatedQueries,
+    reuseRate: stats?.totalSessions > 0 ? Math.round(stats?.reusedCount / stats?.totalSessions * 100) : 0
+  };
+}
+function findSimilarPriorQuery(query, sessionId) {
+  const db = getDb();
+  const normalized = query.toLowerCase().trim().replace(/[?!.,]+$/g, "");
+  const prior = db.prepare(`
+    SELECT id, raw_query, resulting_packet_type, classification
+    FROM behavior_queries
+    WHERE LOWER(TRIM(raw_query)) = ? AND (session_id != ? OR ? IS NULL)
+    ORDER BY timestamp DESC LIMIT 1
+  `).get(normalized, sessionId ?? null, sessionId ?? null);
+  if (prior) {
+    return { found: true, priorQueryId: prior.id, similarity: "exact" };
+  }
+  return { found: false };
+}
+var init_behaviorStore = __esm({
+  "packages/mcp-local/src/profiler/behaviorStore.ts"() {
+    "use strict";
+    init_db();
   }
 });
 
@@ -8590,6 +8903,7 @@ init_webTools();
 
 // server/routes/search.ts
 init_db();
+init_behaviorStore();
 import { Router } from "express";
 
 // packages/mcp-local/src/sync/store.ts
@@ -10643,6 +10957,10 @@ async function linkupSearch(query, maxResults = 5) {
 }
 function createSearchRouter(tools2) {
   const router = Router();
+  try {
+    initBehaviorTables();
+  } catch {
+  }
   const sessionCache = /* @__PURE__ */ new Map();
   const SESSION_TTL = 30 * 60 * 1e3;
   const MAX_SESSIONS = 500;
@@ -10987,6 +11305,42 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
     }
     const classifyTrace = traceStep("classify_query");
     classifyTrace.ok(`type=${classification.type}, entity=${classification.entity ?? "none"}`);
+    let behaviorSessionId;
+    let behaviorQueryId;
+    try {
+      behaviorSessionId = logSession({
+        interfaceSurface: "ai_app",
+        roleInferred: resolvedLens,
+        mainObjective: classification.type
+      });
+      const priorQuery = findSimilarPriorQuery(query.trim(), behaviorSessionId);
+      behaviorQueryId = logQuery({
+        sessionId: behaviorSessionId,
+        rawQuery: query.trim(),
+        classification: classification.type,
+        normalizedIntent: classification.type,
+        entityTargets: classification.entities ?? (classification.entity ? [classification.entity] : []),
+        ownCompanyMode: classification.type === "weekly_reset" || classification.type === "founder_progression",
+        confidenceScore: priorQuery.found ? 0.95 : void 0,
+        latencyMs: Date.now() - startMs
+      });
+    } catch {
+    }
+    const profileToolCall = (toolName, latencyMs, success, costUsd, modelUsed) => {
+      if (!behaviorSessionId) return;
+      try {
+        logToolCall({
+          sessionId: behaviorSessionId,
+          queryId: behaviorQueryId,
+          toolName,
+          latencyMs,
+          costEstimateUsd: costUsd,
+          success,
+          modelUsed
+        });
+      } catch {
+      }
+    };
     const ctxTrace = traceStep("build_context_bundle");
     const contextBundle = buildContextBundle(query.trim());
     ctxTrace.ok(`tokens=${contextBundle.totalEstimatedTokens}`);
@@ -11931,6 +12285,26 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       toolsExpected: availableTools.length,
       tools: found
     });
+  });
+  router.get("/insights", (_req, res) => {
+    try {
+      const { getAggregateInsights: getAggregateInsights2 } = (init_behaviorStore(), __toCommonJS(behaviorStore_exports));
+      const insights = getAggregateInsights2(7);
+      res.json({ success: true, ...insights });
+    } catch (err) {
+      res.json({
+        success: true,
+        totalSessions: 0,
+        totalQueries: 0,
+        totalToolCalls: 0,
+        totalCostUsd: 0,
+        redundantCallRate: 0,
+        topTools: [],
+        repeatedQueries: [],
+        reuseRate: 0,
+        message: "Profiling data will appear after your first few searches."
+      });
+    }
   });
   return router;
 }

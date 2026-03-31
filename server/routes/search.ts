@@ -17,6 +17,7 @@
 
 import { Request, Response, Router } from "express";
 import { getDb, genId } from "../../packages/mcp-local/src/db.js";
+import { initBehaviorTables, logSession, logQuery, logToolCall, findSimilarPriorQuery } from "../../packages/mcp-local/src/profiler/behaviorStore.js";
 import type { McpTool } from "../../packages/mcp-local/src/types.js";
 import {
   detectFounderCompanyMode,
@@ -1235,6 +1236,9 @@ async function linkupSearch(query: string, maxResults = 5): Promise<{ answer: st
 export function createSearchRouter(tools: McpTool[]) {
   const router = Router();
 
+  // ── Initialize behavioral profiling tables ──
+  try { initBehaviorTables(); } catch { /* tables may already exist */ }
+
   // ── Multi-turn session state ──
   // Remembers last entity + result per session so follow-up queries
   // like "Go deeper on the risks" or "Now compare that to Google" resolve context.
@@ -1651,6 +1655,44 @@ Entity extraction rules:
 
     const classifyTrace = traceStep("classify_query");
     classifyTrace.ok(`type=${classification.type}, entity=${classification.entity ?? "none"}`);
+
+    // ── Behavioral profiling: log session + query ──
+    let behaviorSessionId: string | undefined;
+    let behaviorQueryId: string | undefined;
+    try {
+      behaviorSessionId = logSession({
+        interfaceSurface: "ai_app",
+        roleInferred: resolvedLens,
+        mainObjective: classification.type,
+      });
+      const priorQuery = findSimilarPriorQuery(query.trim(), behaviorSessionId);
+      behaviorQueryId = logQuery({
+        sessionId: behaviorSessionId,
+        rawQuery: query.trim(),
+        classification: classification.type,
+        normalizedIntent: classification.type,
+        entityTargets: classification.entities ?? (classification.entity ? [classification.entity] : []),
+        ownCompanyMode: classification.type === "weekly_reset" || classification.type === "founder_progression",
+        confidenceScore: priorQuery.found ? 0.95 : undefined,
+        latencyMs: Date.now() - startMs,
+      });
+    } catch { /* profiling is non-blocking */ }
+
+    // Helper to log tool calls to behavioral store
+    const profileToolCall = (toolName: string, latencyMs: number, success: boolean, costUsd: number, modelUsed?: string) => {
+      if (!behaviorSessionId) return;
+      try {
+        logToolCall({
+          sessionId: behaviorSessionId,
+          queryId: behaviorQueryId,
+          toolName,
+          latencyMs,
+          costEstimateUsd: costUsd,
+          success,
+          modelUsed,
+        });
+      } catch { /* non-blocking */ }
+    };
 
     // Fix P2 #10: Compute context bundle BEFORE tool dispatch so tools can use it
     const ctxTrace = traceStep("build_context_bundle");
@@ -2695,6 +2737,23 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       toolsExpected: availableTools.length,
       tools: found,
     });
+  });
+
+  // ── Behavioral profiling insights API ──────────────────────────────
+  router.get("/insights", (_req, res) => {
+    try {
+      const { getAggregateInsights } = require("../../packages/mcp-local/src/profiler/behaviorStore.js");
+      const insights = getAggregateInsights(7);
+      res.json({ success: true, ...insights });
+    } catch (err: any) {
+      res.json({
+        success: true,
+        totalSessions: 0, totalQueries: 0, totalToolCalls: 0,
+        totalCostUsd: 0, redundantCallRate: 0, topTools: [],
+        repeatedQueries: [], reuseRate: 0,
+        message: "Profiling data will appear after your first few searches.",
+      });
+    }
   });
 
   return router;
