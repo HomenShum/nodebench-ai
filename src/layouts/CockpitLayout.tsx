@@ -55,9 +55,9 @@ import { CommandBar } from "./CommandBar";
 import { ActiveSurfaceHost } from "./ActiveSurfaceHost";
 import { WorkspaceRail } from "./WorkspaceRail";
 import { MobileTabBar } from "./MobileTabBar";
-import { AgentPresenceRail } from "./AgentPresenceRail";
+// AgentPresenceRail removed — replaced by floating FAB + slide-over panel
 import { FeedbackWidget } from "@/features/founder/components/FeedbackWidget";
-import { useBottomSheet } from "@/features/agents/components/FastAgentPanel/useBottomSheet";
+// useBottomSheet removed — unified panel uses fixed position overlay
 import { useSwipeNavigation } from "@/lib/hooks/useSwipeNavigation";
 import { haptic } from "@/lib/haptics";
 import "./hud.css";
@@ -177,11 +177,7 @@ export function CockpitLayout({
   const [selectedDocumentIdsForAgent, setSelectedDocumentIdsForAgent] = useState<Id<"documents">[]>([]);
   const [fastAgentThreadId, setFastAgentThreadId] = useState<string | null>(null);
 
-  // Bottom-sheet state for mobile agent panel
-  const bottomSheet = useBottomSheet(showFastAgent, {
-    onClose: () => setShowFastAgent(false),
-    initialState: 'half',
-  });
+  // Bottom-sheet removed — unified slide-over panel for all breakpoints
 
   // ── R7: Gesture swipe navigation between mobile surfaces ───────────────
   const swipeRef = useRef<HTMLDivElement>(null);
@@ -775,31 +771,7 @@ export function CockpitLayout({
         )}
 
         {/* ── Bottom: Trace bar — live status (Datadog pattern) ──────── */}
-        {showFastAgent && (
-          <div
-            style={{ gridColumn: "2 / 4", gridRow: "2 / 3" }}
-            className="z-20 hidden lg:flex justify-end"
-            role="complementary"
-            aria-label="Assistant panel"
-          >
-            <div className="flex h-full w-[min(400px,34vw)] max-w-[440px] overflow-hidden border-l border-white/[0.06] bg-white/[0.04] backdrop-blur-2xl">
-              <ErrorBoundary title="Agent Panel Error">
-                <Suspense fallback={viewFallback}>
-                  <FastAgentPanel
-                    isOpen={true}
-                    onClose={() => setShowFastAgent(false)}
-                    selectedDocumentIds={selectedDocumentIdsForAgent}
-                    initialThreadId={fastAgentThreadId}
-                    variant="sidebar"
-                    openOptions={fastAgentOpenOptions}
-                    onOptionsConsumed={clearFastAgentOptions}
-                    onVoiceIntent={handleVoiceIntent}
-                  />
-                </Suspense>
-              </ErrorBoundary>
-            </div>
-          </div>
-        )}
+        {/* ── Agent panel — single slide-over for all breakpoints ─── */}
 
         <div
           style={{ gridArea: "trace" }}
@@ -814,7 +786,7 @@ export function CockpitLayout({
           <span className="ml-auto tabular-nums">{new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
         </div>
 
-        {/* ── Command Bar — mobile only (desktop mode tabs live in WorkspaceRail) ── */}
+        {/* ── Command Bar — mobile only ── */}
         <div className="lg:hidden">
           <CommandBar
             mode={mode}
@@ -826,56 +798,29 @@ export function CockpitLayout({
           />
         </div>
 
-        {/* Mobile Agent Panel — bottom sheet with 3 states (peek/half/full) */}
-        {showFastAgent && (
+        {/* ── Unified Agent Panel — single slide-over for all breakpoints ── */}
+        {showFastAgent && fastAgentHasMounted && (
           <>
-            {/* Backdrop — dims content, tapping collapses to peek */}
+            {/* Backdrop */}
             <div
-              className={`bottom-sheet-backdrop lg:hidden ${
-                bottomSheet.sheetState !== 'peek' && bottomSheet.sheetState !== 'closed'
-                  ? 'backdrop-visible'
-                  : 'backdrop-hidden'
-              }`}
-              onClick={bottomSheet.onBackdropTap}
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+              onClick={() => setShowFastAgent(false)}
               aria-hidden="true"
             />
-
-            {/* Bottom sheet container */}
+            {/* Panel */}
             <div
-              className={`bottom-sheet-container lg:hidden ${bottomSheet.sheetClassName} ${
-                bottomSheet.isDragging ? 'dragging' : ''
-              }`}
-              style={bottomSheet.dragStyle}
+              className="fixed top-0 right-0 z-50 flex h-full w-full max-w-[420px] flex-col border-l border-white/[0.06] bg-surface shadow-2xl"
               role="complementary"
-              aria-label="Assistant panel"
+              aria-label="Ask NodeBench assistant"
             >
-              {/* Drag handle */}
-              <div
-                className="bottom-sheet-handle"
-                {...bottomSheet.handleProps}
-                onClick={bottomSheet.onHandleTap}
-                role="slider"
-                aria-label="Resize assistant panel"
-                aria-valuetext={bottomSheet.sheetState}
-                tabIndex={0}
-              >
-                <div className="bottom-sheet-handle-bar" />
-              </div>
-
               <ErrorBoundary title="Agent Panel Error">
-                <Suspense
-                  fallback={
-                    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                      Loading assistant...
-                    </div>
-                  }
-                >
+                <Suspense fallback={viewFallback}>
                   <FastAgentPanel
                     isOpen={true}
                     onClose={() => setShowFastAgent(false)}
                     selectedDocumentIds={selectedDocumentIdsForAgent}
                     initialThreadId={fastAgentThreadId}
-                    variant="overlay"
+                    variant="sidebar"
                     openOptions={fastAgentOpenOptions}
                     onOptionsConsumed={clearFastAgentOptions}
                     onVoiceIntent={handleVoiceIntent}
