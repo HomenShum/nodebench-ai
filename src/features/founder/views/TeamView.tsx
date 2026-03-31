@@ -179,7 +179,7 @@ export default function TeamView() {
     async function poll() {
       try {
         const { SHARED_CONTEXT_API_BASE } = await import("@/lib/syncBridgeApi");
-        const resp = await fetch(`${SHARED_CONTEXT_API_BASE}/room/${roomCode}`);
+        const resp = await fetch(`${SHARED_CONTEXT_API_BASE}/message?room=${encodeURIComponent(roomCode)}`);
         if (!resp.ok || !active) return;
         const data = await resp.json();
         if (!active) return;
