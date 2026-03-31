@@ -8905,6 +8905,7 @@ init_webTools();
 init_db();
 init_behaviorStore();
 import { Router } from "express";
+import { ConvexHttpClient } from "convex/browser";
 
 // packages/mcp-local/src/sync/store.ts
 init_db();
@@ -10961,6 +10962,22 @@ function createSearchRouter(tools2) {
     initBehaviorTables();
   } catch {
   }
+  const convexUrl = process.env.CONVEX_URL || process.env.VITE_CONVEX_URL;
+  let convex = null;
+  try {
+    if (convexUrl) convex = new ConvexHttpClient(convexUrl);
+  } catch {
+  }
+  function forwardToConvex(data) {
+    if (!convex) return;
+    convex.mutation("domains/profiler/mutations:logProfilerEvent", data).catch(() => {
+    });
+  }
+  function forwardSessionToConvex(data) {
+    if (!convex) return;
+    convex.mutation("domains/profiler/mutations:logSessionSummary", data).catch(() => {
+    });
+  }
   const sessionCache = /* @__PURE__ */ new Map();
   const SESSION_TTL = 30 * 60 * 1e3;
   const MAX_SESSIONS = 500;
@@ -10999,18 +11016,31 @@ function createSearchRouter(tools2) {
       success = false;
       return { error: true, message: err?.message ?? String(err) };
     } finally {
+      const durationMs = Date.now() - startMs;
+      const cost = TOOL_COST[name] ?? 3e-3;
       if (activeProfileSessionId) {
         try {
           logToolCall({
             sessionId: activeProfileSessionId,
             toolName: name,
             inputSummary: JSON.stringify(args).slice(0, 200),
-            latencyMs: Date.now() - startMs,
-            costEstimateUsd: TOOL_COST[name] ?? 3e-3,
+            latencyMs: durationMs,
+            costEstimateUsd: cost,
             success
           });
         } catch {
         }
+        forwardToConvex({
+          sessionId: activeProfileSessionId,
+          surface: "ai_app",
+          integrationPath: "direct",
+          toolName: name,
+          toolInputSummary: JSON.stringify(args).slice(0, 200),
+          latencyMs: durationMs,
+          estimatedCostUsd: cost,
+          success,
+          isDuplicate: false
+        });
       }
     }
   }
@@ -12186,6 +12216,20 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
           tokenBudget: contextBundle.totalEstimatedTokens
         }
       };
+      if (behaviorSessionId) {
+        forwardSessionToConvex({
+          sessionId: behaviorSessionId,
+          surface: "ai_app",
+          roleInferred: resolvedLens,
+          totalCalls: trace.length,
+          totalCostUsd: Math.round(trace.reduce((s, t) => s + (TOOL_COST[t.tool ?? ""] ?? 3e-3), 0) * 1e3) / 1e3,
+          totalLatencyMs: latencyMs,
+          redundantCalls: 0,
+          uniqueTools: [...new Set(trace.map((t) => t.tool).filter(Boolean))],
+          classification: classification.type,
+          query: query.trim().slice(0, 200)
+        });
+      }
       if (isStream) {
         res.write(`data: ${JSON.stringify({ type: "result", payload })}
 
@@ -12319,25 +12363,37 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       tools: found
     });
   });
-  router.get("/insights", (_req, res) => {
+  router.get("/insights", async (_req, res) => {
     try {
       const { getAggregateInsights: getAggregateInsights2 } = (init_behaviorStore(), __toCommonJS(behaviorStore_exports));
       const insights = getAggregateInsights2(7);
-      res.json({ success: true, ...insights });
-    } catch (err) {
-      res.json({
-        success: true,
-        totalSessions: 0,
-        totalQueries: 0,
-        totalToolCalls: 0,
-        totalCostUsd: 0,
-        redundantCallRate: 0,
-        topTools: [],
-        repeatedQueries: [],
-        reuseRate: 0,
-        message: "Profiling data will appear after your first few searches."
-      });
+      if (insights && insights.totalToolCalls > 0) {
+        return res.json({ success: true, source: "local", ...insights });
+      }
+    } catch {
     }
+    if (convex) {
+      try {
+        const insights = await convex.query("domains/profiler/queries:getInsights", { daysBack: 7 });
+        if (insights) {
+          return res.json({ ...insights, source: "convex" });
+        }
+      } catch {
+      }
+    }
+    res.json({
+      success: true,
+      source: "none",
+      totalSessions: 0,
+      totalQueries: 0,
+      totalToolCalls: 0,
+      totalCostUsd: 0,
+      redundantCallRate: 0,
+      topTools: [],
+      repeatedQueries: [],
+      reuseRate: 0,
+      message: "Profiling data will appear after your first few searches."
+    });
   });
   return router;
 }
@@ -12346,7 +12402,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
 import { Router as Router2 } from "express";
 
 // server/routes/sharedContextConvex.ts
-import { ConvexHttpClient } from "convex/browser";
+import { ConvexHttpClient as ConvexHttpClient2 } from "convex/browser";
 
 // convex/_generated/api.js
 import { anyApi, componentsGeneric } from "convex/server";
@@ -12359,7 +12415,7 @@ function getConvexClient() {
   if (_client) return _client;
   const url = process.env.CONVEX_URL ?? process.env.VITE_CONVEX_URL;
   if (!url) throw new Error("CONVEX_URL not set \u2014 cannot use Convex adapter");
-  _client = new ConvexHttpClient(url);
+  _client = new ConvexHttpClient2(url);
   return _client;
 }
 function isConvexAvailable() {

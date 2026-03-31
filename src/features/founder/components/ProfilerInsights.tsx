@@ -11,7 +11,8 @@
  * Falls back to demo data when profiler hasn't collected enough real data.
  */
 
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
+import { useQuery } from "convex/react";
 import {
   Activity,
   BarChart3,
@@ -187,12 +188,32 @@ export const ProfilerInsights = memo(function ProfilerInsights() {
   const [data, setData] = useState<InsightsData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Primary path: Convex query (durable, real-time)
+  let convexInsights: any = undefined;
+  try {
+    // Dynamic import to avoid crash when Convex isn't configured
+    const api = (globalThis as any).__CONVEX_API__;
+    if (api?.domains?.profiler?.queries?.getInsights) {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      convexInsights = useQuery(api.domains.profiler.queries.getInsights, { daysBack: 7 });
+    }
+  } catch { /* Convex may not be available */ }
+
+  // If Convex returns data, use it directly
   useEffect(() => {
+    if (convexInsights && convexInsights.totalToolCalls > 0) {
+      setData(convexInsights as InsightsData);
+      setLoading(false);
+    }
+  }, [convexInsights]);
+
+  useEffect(() => {
+    if (data) return; // Already have Convex data
     let cancelled = false;
 
     async function fetchInsights() {
       try {
-        // Try local server first (persists data), fall back to Vercel serverless
+        // Fallback: try local server, then Vercel serverless (which reads from Convex)
         const urls = [
           "http://127.0.0.1:3100/search/insights",
           "/api/search/insights",

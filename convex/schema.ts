@@ -12982,4 +12982,41 @@ export default defineSchema({
   sharedContextPackets,
   sharedContextTasks,
   sharedContextMessages,
+  // Phase 15 — Founder Operating Profiler
+  profilerEvents: defineTable({
+    sessionId: v.string(),
+    surface: v.string(),
+    integrationPath: v.string(),
+    toolName: v.string(),
+    toolInputSummary: v.optional(v.string()),
+    latencyMs: v.number(),
+    estimatedCostUsd: v.number(),
+    success: v.boolean(),
+    isDuplicate: v.boolean(),
+    modelUsed: v.optional(v.string()),
+    tokenIn: v.optional(v.number()),
+    tokenOut: v.optional(v.number()),
+    classification: v.optional(v.string()),
+    query: v.optional(v.string()),
+    fingerprint: v.optional(v.string()),
+    timestamp: v.number(),
+  })
+    .index("by_session", ["sessionId", "timestamp"])
+    .index("by_tool", ["toolName", "timestamp"])
+    .index("by_fingerprint", ["fingerprint"]),
+  profilerSessionSummaries: defineTable({
+    sessionId: v.string(),
+    surface: v.string(),
+    roleInferred: v.string(),
+    totalCalls: v.number(),
+    totalCostUsd: v.number(),
+    totalLatencyMs: v.number(),
+    redundantCalls: v.number(),
+    uniqueTools: v.array(v.string()),
+    topToolChain: v.optional(v.string()),
+    classification: v.optional(v.string()),
+    query: v.optional(v.string()),
+    timestamp: v.number(),
+  })
+    .index("by_timestamp", ["timestamp"]),
 });

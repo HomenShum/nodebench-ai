@@ -18,6 +18,7 @@
 import { Request, Response, Router } from "express";
 import { getDb, genId } from "../../packages/mcp-local/src/db.js";
 import { initBehaviorTables, logSession, logQuery, logToolCall, findSimilarPriorQuery } from "../../packages/mcp-local/src/profiler/behaviorStore.js";
+import { ConvexHttpClient } from "convex/browser";
 import type { McpTool } from "../../packages/mcp-local/src/types.js";
 import {
   detectFounderCompanyMode,
@@ -1239,6 +1240,36 @@ export function createSearchRouter(tools: McpTool[]) {
   // ── Initialize behavioral profiling tables ──
   try { initBehaviorTables(); } catch { /* tables may already exist */ }
 
+  // ── Convex client for durable profiler persistence ──
+  const convexUrl = process.env.CONVEX_URL || process.env.VITE_CONVEX_URL;
+  let convex: ConvexHttpClient | null = null;
+  try {
+    if (convexUrl) convex = new ConvexHttpClient(convexUrl);
+  } catch { /* Convex optional — profiler degrades gracefully */ }
+
+  /** Fire-and-forget: forward profiler event to Convex for durable storage */
+  function forwardToConvex(data: {
+    sessionId: string; surface: string; integrationPath: string;
+    toolName: string; toolInputSummary?: string; latencyMs: number;
+    estimatedCostUsd: number; success: boolean; isDuplicate: boolean;
+    modelUsed?: string; classification?: string; query?: string;
+    fingerprint?: string;
+  }) {
+    if (!convex) return;
+    convex.mutation("domains/profiler/mutations:logProfilerEvent" as any, data).catch(() => {});
+  }
+
+  /** Fire-and-forget: forward session summary to Convex */
+  function forwardSessionToConvex(data: {
+    sessionId: string; surface: string; roleInferred: string;
+    totalCalls: number; totalCostUsd: number; totalLatencyMs: number;
+    redundantCalls: number; uniqueTools: string[];
+    classification?: string; query?: string;
+  }) {
+    if (!convex) return;
+    convex.mutation("domains/profiler/mutations:logSessionSummary" as any, data).catch(() => {});
+  }
+
   // ── Multi-turn session state ──
   // Remembers last entity + result per session so follow-up queries
   // like "Go deeper on the risks" or "Now compare that to Google" resolve context.
@@ -1288,18 +1319,32 @@ export function createSearchRouter(tools: McpTool[]) {
       success = false;
       return { error: true, message: err?.message ?? String(err) };
     } finally {
-      // Auto-profile every tool call
+      // Auto-profile every tool call — dual write: local SQLite + Convex
+      const durationMs = Date.now() - startMs;
+      const cost = TOOL_COST[name] ?? 0.003;
       if (activeProfileSessionId) {
         try {
           logToolCall({
             sessionId: activeProfileSessionId,
             toolName: name,
             inputSummary: JSON.stringify(args).slice(0, 200),
-            latencyMs: Date.now() - startMs,
-            costEstimateUsd: TOOL_COST[name] ?? 0.003,
+            latencyMs: durationMs,
+            costEstimateUsd: cost,
             success,
           });
         } catch { /* profiling is non-blocking */ }
+        // Forward to Convex for durable persistence
+        forwardToConvex({
+          sessionId: activeProfileSessionId,
+          surface: "ai_app",
+          integrationPath: "direct",
+          toolName: name,
+          toolInputSummary: JSON.stringify(args).slice(0, 200),
+          latencyMs: durationMs,
+          estimatedCostUsd: cost,
+          success,
+          isDuplicate: false,
+        });
       }
     }
   }
@@ -2621,6 +2666,22 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
         },
       };
 
+      // Forward session summary to Convex for durable persistence
+      if (behaviorSessionId) {
+        forwardSessionToConvex({
+          sessionId: behaviorSessionId,
+          surface: "ai_app",
+          roleInferred: resolvedLens,
+          totalCalls: trace.length,
+          totalCostUsd: Math.round(trace.reduce((s, t) => s + (TOOL_COST[t.tool ?? ""] ?? 0.003), 0) * 1000) / 1000,
+          totalLatencyMs: latencyMs,
+          redundantCalls: 0,
+          uniqueTools: [...new Set(trace.map(t => t.tool).filter(Boolean) as string[])],
+          classification: classification.type,
+          query: query.trim().slice(0, 200),
+        });
+      }
+
       if (isStream) {
         res.write(`data: ${JSON.stringify({ type: "result", payload })}\n\n`);
         return res.end();
@@ -2770,20 +2831,35 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
   });
 
   // ── Behavioral profiling insights API ──────────────────────────────
-  router.get("/insights", (_req, res) => {
+  // Dual read: try local SQLite first, fall back to Convex for durable data
+  router.get("/insights", async (_req, res) => {
+    // Try local SQLite first (has current-session data)
     try {
       const { getAggregateInsights } = require("../../packages/mcp-local/src/profiler/behaviorStore.js");
       const insights = getAggregateInsights(7);
-      res.json({ success: true, ...insights });
-    } catch (err: any) {
-      res.json({
-        success: true,
-        totalSessions: 0, totalQueries: 0, totalToolCalls: 0,
-        totalCostUsd: 0, redundantCallRate: 0, topTools: [],
-        repeatedQueries: [], reuseRate: 0,
-        message: "Profiling data will appear after your first few searches.",
-      });
+      if (insights && insights.totalToolCalls > 0) {
+        return res.json({ success: true, source: "local", ...insights });
+      }
+    } catch { /* local may be empty on serverless */ }
+
+    // Fall back to Convex (durable across cold starts)
+    if (convex) {
+      try {
+        const insights = await convex.query("domains/profiler/queries:getInsights" as any, { daysBack: 7 });
+        if (insights) {
+          return res.json({ ...insights, source: "convex" });
+        }
+      } catch { /* Convex may not be deployed yet */ }
     }
+
+    // No data from either source
+    res.json({
+      success: true, source: "none",
+      totalSessions: 0, totalQueries: 0, totalToolCalls: 0,
+      totalCostUsd: 0, redundantCallRate: 0, topTools: [],
+      repeatedQueries: [], reuseRate: 0,
+      message: "Profiling data will appear after your first few searches.",
+    });
   });
 
   return router;
