@@ -828,11 +828,11 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
-            className={`group relative rounded-2xl border transition-all duration-300 ${
+            className={`group relative rounded-2xl border transition-all duration-200 ${
               isDragging
-                ? "border-[#d97757]/50 bg-[#d97757]/[0.05] shadow-[0_0_0_2px_rgba(217,119,87,0.2),0_0_32px_rgba(217,119,87,0.1)]"
-                : "border-white/[0.08] bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_2px_12px_rgba(0,0,0,0.3)]"
-            } focus-within:border-[#d97757]/30 focus-within:shadow-[0_0_0_1px_rgba(217,119,87,0.15),0_0_24px_rgba(217,119,87,0.08)]`}
+                ? "border-white/[0.15] bg-white/[0.04] shadow-lg"
+                : "border-white/[0.06] bg-white/[0.02] shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+            } focus-within:border-white/[0.12] focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_4px_16px_rgba(0,0,0,0.25)]`}
           >
             {isDragging && (
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-[#d97757]/[0.08] backdrop-blur-sm">
@@ -868,7 +868,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-content-muted transition-all hover:text-[#d97757] hover:bg-[#d97757]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/30 active:scale-[0.96]"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-content-muted transition-all hover:text-content-secondary hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 active:scale-[0.96]"
                 aria-label="Upload files"
                 title="Upload files (PDF, DOCX, CSV, JSON, TXT)"
               >
@@ -878,7 +878,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 <button
                   type="button"
                   onClick={() => voice.toggle()}
-                  className="relative flex h-9 w-9 items-center justify-center rounded-full text-content-muted transition-all hover:bg-white/[0.05] hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/30 active:scale-[0.96]"
+                  className="relative flex h-9 w-9 items-center justify-center rounded-full text-content-muted transition-all hover:bg-white/[0.06] hover:text-content-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 active:scale-[0.96]"
                   aria-label="Voice input"
                 >
                   <Mic className="h-4 w-4" />
@@ -894,7 +894,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 type="button"
                 onClick={handleSubmit}
                 disabled={!input.trim() && !isSearching}
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#d97757] text-white shadow-sm transition-all hover:bg-[#c96a4d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/35 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-30 disabled:active:scale-100"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#d97757] text-white shadow-sm transition-all hover:bg-[#c4603f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-1 focus-visible:ring-offset-surface active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-30 disabled:active:scale-100"
                 aria-label="Search"
                 data-testid="landing-search-submit"
               >
@@ -909,8 +909,8 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         </div>
 
         {/* ── Lens selector ────────────────────────────────────────────────── */}
-        <div style={stagger("0.16s")} className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
-          <span className="text-[10px] uppercase tracking-[0.15em] text-content-muted mr-1">Lens:</span>
+        <div style={stagger("0.16s")} className="mt-4 flex flex-wrap items-center justify-center gap-1">
+
           {LENSES.map((lens) => {
             const Icon = LENS_ICONS[lens.id];
             const isActive = activeLens === lens.id;
@@ -924,8 +924,8 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 }}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all ${
                   isActive
-                    ? "bg-[#d97757]/15 text-[#d97757] border border-[#d97757]/25"
-                    : "text-content-muted border border-transparent hover:text-content-secondary hover:bg-white/[0.04] active:bg-white/[0.06]"
+                    ? "bg-white/[0.08] text-content border border-white/[0.12]"
+                    : "text-content-muted border border-transparent hover:text-content-secondary hover:bg-white/[0.04]"
                 }`}
                 title={lens.description}
                 aria-pressed={isActive}
@@ -947,10 +947,10 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                   key={i}
                   type="button"
                   onClick={() => handleExampleClick(example.text, example.lens)}
-                  className="group inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-left text-sm text-content-secondary transition-all duration-150 hover:border-[#d97757]/20 hover:bg-[#d97757]/[0.04] hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d97757]/25"
+                  className="group inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-left text-[13px] text-content-muted transition-all duration-150 hover:border-white/[0.12] hover:bg-white/[0.05] hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
                 >
                   <span className="line-clamp-1">{example.text}</span>
-                  <ArrowRight className="h-3 w-3 shrink-0 text-content-muted/30 group-hover:text-[#d97757]/50 transition-colors" aria-hidden="true" />
+                  <ArrowRight className="h-3 w-3 shrink-0 text-content-muted/20 group-hover:text-content-muted/50 transition-colors" aria-hidden="true" />
                 </button>
               ))}
             </div>
@@ -994,9 +994,9 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                   description: "Ranked next steps based on your stage: validate the wedge, talk to users, build a prototype, or go straight to pitch.",
                 },
               ].map((item) => (
-                <div key={item.title} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-                  <div className="text-sm font-medium text-content">{item.title}</div>
-                  <p className="mt-1.5 text-xs leading-relaxed text-content-muted">{item.description}</p>
+                <div key={item.title} className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-5 transition-colors hover:bg-white/[0.04] hover:border-white/[0.08]">
+                  <div className="text-[13px] font-medium text-content">{item.title}</div>
+                  <p className="mt-2 text-xs leading-relaxed text-content-muted/80">{item.description}</p>
                 </div>
               ))}
             </div>
@@ -1061,11 +1061,11 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
               { step: "3", title: "Know your next move", description: "Ranked actions: validate your wedge, find comparable raises, build the missing evidence, or generate a pitch-ready memo." },
             ].map((item) => (
               <div key={item.step} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#d97757]/10 text-xs font-bold text-[#d97757]">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-white/[0.06] text-[10px] font-semibold text-content-muted">
                   {item.step}
                 </div>
-                <div className="mt-3 text-sm font-medium text-content">{item.title}</div>
-                <p className="mt-1.5 text-[11px] leading-relaxed text-content-muted">{item.description}</p>
+                <div className="mt-3 text-[13px] font-medium text-content">{item.title}</div>
+                <p className="mt-1.5 text-xs leading-relaxed text-content-muted/80">{item.description}</p>
               </div>
             ))}
           </div>
@@ -1073,7 +1073,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
 
         {/* ── MCP Bridge — connect your context ────────────────────────────── */}
         <div style={stagger("0.32s")} className="mt-12">
-          <div className="mx-auto max-w-2xl rounded-2xl border border-[#d97757]/15 bg-[#d97757]/[0.03] p-6">
+          <div className="mx-auto max-w-2xl rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6">
             <h2 className="text-center text-base font-semibold text-content">
               Already building? Connect your context.
             </h2>
@@ -1089,7 +1089,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 { step: "4", label: "Dashboard", detail: "Live and ready" },
               ].map((s) => (
                 <div key={s.step} className="flex flex-col items-center gap-1 text-center">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#d97757]/15 text-xs font-bold text-[#d97757]">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/[0.06] text-[10px] font-semibold text-content-muted">
                     {s.step}
                   </div>
                   <div className="text-xs font-medium text-content">{s.label}</div>
@@ -1114,7 +1114,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                   onClick={() => { setActiveInstallTab(i); setCopiedInstall(false); }}
                   className={`flex-1 px-4 py-2.5 text-[12px] font-medium transition-colors ${
                     i === activeInstallTab
-                      ? "text-[#d97757] border-b-2 border-[#d97757] bg-white/[0.02]"
+                      ? "text-content border-b-2 border-content bg-white/[0.03]"
                       : "text-content-muted hover:text-content-secondary"
                   }`}
                 >
