@@ -19,6 +19,7 @@ import { Request, Response, Router } from "express";
 import { getDb, genId } from "../../packages/mcp-local/src/db.js";
 import { initBehaviorTables, logSession, logQuery, logToolCall, findSimilarPriorQuery } from "../../packages/mcp-local/src/profiler/behaviorStore.js";
 import { ConvexHttpClient } from "convex/browser";
+import { generatePlan, executeHarness, synthesizeResults } from "../agentHarness.js";
 import type { McpTool } from "../../packages/mcp-local/src/types.js";
 import {
   detectFounderCompanyMode,
@@ -1776,8 +1777,84 @@ Entity extraction rules:
 
     try {
       let result: any;
+      let usedHarness = false;
 
-      switch (classification.type) {
+      // ── Agent Harness: LLM-orchestrated tool chain ──────────────
+      // The harness replaces the flat switch with an LLM-planned execution.
+      // Falls through to the legacy switch if harness fails or no API key.
+      const geminiKey = process.env.GEMINI_API_KEY;
+      if (geminiKey) {
+        try {
+          const planTrace = traceStep("agent_plan", "gemini-3.1-flash-lite");
+          const plan = await generatePlan(
+            query.trim(),
+            classification.type,
+            classification.entities ?? (classification.entity ? [classification.entity] : []),
+            resolvedLens,
+            geminiKey,
+          );
+          planTrace.ok(`${plan.steps.length} steps planned`);
+
+          const execTrace = traceStep("agent_execute");
+          const execution = await executeHarness(plan, callTool, (step) => {
+            // Stream each harness step to the frontend trace
+            const entry = { step: step.step, tool: step.tool, startMs: Date.now(), status: step.status as "ok", detail: step.detail };
+            trace.push(entry);
+            if (isStream) {
+              res.write(`data: ${JSON.stringify({ type: "trace", entry: { ...entry, endMs: Date.now(), durationMs: 0 } })}\n\n`);
+            }
+          });
+          execTrace.ok(`${execution.stepResults.length} steps, ${execution.totalDurationMs}ms`);
+
+          // Synthesize results into a structured packet
+          const synthTrace = traceStep("agent_synthesize", "gemini-3.1-flash-lite");
+          const synthesized = await synthesizeResults(execution, query.trim(), resolvedLens, geminiKey);
+          synthTrace.ok(`${synthesized.confidence}% confidence`);
+
+          // Build result in the format the rest of the route expects
+          result = {
+            canonicalEntity: {
+              name: synthesized.entityName,
+              canonicalMission: synthesized.answer,
+              identityConfidence: synthesized.confidence,
+            },
+            signals: synthesized.signals.map((s, i) => ({
+              name: s.name, direction: s.direction, impact: s.impact,
+            })),
+            whatChanged: synthesized.changes,
+            contradictions: synthesized.risks.map(r => ({
+              claim: r.title, evidence: r.description,
+            })),
+            comparables: synthesized.comparables,
+            nextActions: synthesized.nextActions,
+            nextQuestions: synthesized.nextQuestions,
+            sourceRefs: synthesized.sources.map((s, i) => ({
+              id: `src:${i}`, label: s.label, href: s.href, type: s.type, status: "cited",
+            })),
+            keyMetrics: [
+              { label: "Confidence", value: `${synthesized.confidence}%` },
+              { label: "Steps", value: String(execution.stepResults.length) },
+              { label: "Sources", value: String(synthesized.sources.length) },
+              { label: "Actions", value: String(synthesized.nextActions.length) },
+            ],
+            harnessExecution: {
+              objective: plan.objective,
+              stepsPlanned: plan.steps.length,
+              stepsCompleted: execution.stepResults.filter(r => r.success).length,
+              totalDurationMs: execution.totalDurationMs,
+              adaptations: execution.adaptations,
+            },
+          };
+          usedHarness = true;
+        } catch (harnessErr: any) {
+          // Harness failed — fall through to legacy switch
+          const fallbackTrace = traceStep("agent_fallback");
+          fallbackTrace.ok(`harness failed: ${harnessErr?.message ?? "unknown"}, using legacy dispatch`);
+        }
+      }
+
+      // ── Legacy switch (fallback if harness didn't produce a result) ──
+      if (!usedHarness) switch (classification.type) {
         case "weekly_reset": {
           const t = traceStep("tool_call", "founder_local_weekly_reset");
           const raw = await callTool("founder_local_weekly_reset", { daysBack: daysBack ?? 7 }) as any;

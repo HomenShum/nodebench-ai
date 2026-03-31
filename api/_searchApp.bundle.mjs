@@ -8907,6 +8907,320 @@ init_behaviorStore();
 import { Router } from "express";
 import { ConvexHttpClient } from "convex/browser";
 
+// server/agentHarness.ts
+var PLAN_PROMPT = `You are NodeBench's agent orchestrator. Given a user query, plan which tools to call and in what order.
+
+Available tools:
+- web_search: Search the web for company/market intelligence. Args: {query, maxResults}
+- run_recon: Deep reconnaissance on a company. Args: {target, focus}
+- founder_local_gather: Get local founder context (company state, changes, contradictions). Args: {daysBack}
+- founder_local_synthesize: Synthesize a founder packet (weekly_reset, important_change, pre_delegation). Args: {query, packetType, daysBack}
+- founder_local_weekly_reset: Generate weekly founder reset. Args: {daysBack}
+- founder_direction_assessment: Assess company direction and readiness. Args: {query}
+- enrich_entity: Enrich entity with structured intelligence. Args: {query, entityName, lens}
+- build_claim_graph: Extract claims from sources. Args: {sources}
+- extract_variables: Identify key variables. Args: {context}
+- generate_countermodels: Generate alternative explanations. Args: {thesis, evidence}
+- rank_interventions: Rank next actions by impact. Args: {context, variables}
+- render_decision_memo: Render a decision memo. Args: {title, recommendation, variables}
+
+Return ONLY valid JSON:
+{
+  "objective": "what this plan accomplishes",
+  "steps": [
+    {"id": "s1", "toolName": "tool_name", "args": {...}, "purpose": "why this step", "parallel": false},
+    {"id": "s2", "toolName": "tool_name", "args": {...}, "purpose": "why this step", "parallel": true, "dependsOn": "s1"}
+  ],
+  "synthesisPrompt": "how to combine results into a final answer"
+}
+
+Rules:
+- Use 2-5 steps. Don't over-plan.
+- Mark steps as parallel:true when they don't depend on each other.
+- For company searches: web_search + run_recon in parallel, then synthesize.
+- For founder questions: founder_local_gather first, then direction_assessment or synthesize.
+- For comparisons: web_search per entity in parallel, then compare.
+- Always include at least one intelligence-gathering step.`;
+async function generatePlan(query, classification, entityTargets, lens, apiKey) {
+  try {
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `${PLAN_PROMPT}
+
+Query: "${query}"
+Classification: ${classification}
+Entities: ${entityTargets.join(", ") || "none"}
+Lens: ${lens}` }] }],
+          generationConfig: { temperature: 0, maxOutputTokens: 500 }
+        }),
+        signal: AbortSignal.timeout(5e3)
+      }
+    );
+    if (!resp.ok) throw new Error(`Gemini ${resp.status}`);
+    const data = await resp.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON in response");
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
+      objective: parsed.objective ?? query,
+      classification,
+      entityTargets,
+      steps: (parsed.steps ?? []).map((s, i) => ({
+        id: s.id ?? `step_${i}`,
+        toolName: s.toolName ?? "web_search",
+        args: s.args ?? {},
+        purpose: s.purpose ?? "",
+        parallel: s.parallel ?? false,
+        dependsOn: s.dependsOn
+      })),
+      synthesisPrompt: parsed.synthesisPrompt ?? "Synthesize results into a structured intelligence packet."
+    };
+  } catch {
+    return buildFallbackPlan(query, classification, entityTargets, lens);
+  }
+}
+function buildFallbackPlan(query, classification, entityTargets, lens) {
+  const entity = entityTargets[0] ?? query.split(/\s+/).slice(0, 3).join(" ");
+  const year = (/* @__PURE__ */ new Date()).getFullYear();
+  switch (classification) {
+    case "weekly_reset":
+      return {
+        objective: "Generate founder weekly reset",
+        classification,
+        entityTargets,
+        steps: [
+          { id: "s1", toolName: "founder_local_weekly_reset", args: { daysBack: 7 }, purpose: "Get weekly reset packet", parallel: false }
+        ],
+        synthesisPrompt: "Format as a weekly founder reset with what changed, contradictions, and next 3 moves."
+      };
+    case "important_change":
+    case "pre_delegation":
+      return {
+        objective: `Synthesize ${classification} packet`,
+        classification,
+        entityTargets,
+        steps: [
+          { id: "s1", toolName: "founder_local_synthesize", args: { query, packetType: classification, daysBack: 7 }, purpose: "Synthesize packet", parallel: false }
+        ],
+        synthesisPrompt: "Format as a structured founder packet."
+      };
+    case "multi_entity": {
+      const steps = entityTargets.slice(0, 4).map((e, i) => ({
+        id: `s${i + 1}`,
+        toolName: "web_search",
+        args: { query: `${e} company overview strategy ${year}`, maxResults: 3 },
+        purpose: `Research ${e}`,
+        parallel: true
+      }));
+      steps.push({
+        id: `s${steps.length + 1}`,
+        toolName: "founder_local_gather",
+        args: { daysBack: 7 },
+        purpose: "Get local context",
+        parallel: true
+      });
+      return {
+        objective: `Compare ${entityTargets.join(" vs ")}`,
+        classification,
+        entityTargets,
+        steps,
+        synthesisPrompt: `Compare ${entityTargets.join(", ")} across key dimensions for a ${lens} audience.`
+      };
+    }
+    case "company_search":
+    case "competitor":
+      return {
+        objective: `Analyze ${entity}`,
+        classification,
+        entityTargets,
+        steps: [
+          { id: "s1", toolName: "web_search", args: { query: `${entity} company overview strategy funding ${year}`, maxResults: 5 }, purpose: "Web intelligence", parallel: true },
+          { id: "s2", toolName: "run_recon", args: { target: entity, focus: query }, purpose: "Deep recon", parallel: true },
+          { id: "s3", toolName: "founder_local_gather", args: { daysBack: 7 }, purpose: "Local context", parallel: true }
+        ],
+        synthesisPrompt: `Synthesize intelligence about ${entity} for a ${lens} audience. Include signals, risks, comparables, and next actions.`
+      };
+    case "plan_proposal":
+      return {
+        objective: `Plan: ${query}`,
+        classification,
+        entityTargets,
+        steps: [
+          { id: "s1", toolName: "founder_local_gather", args: { daysBack: 7 }, purpose: "Understand current context", parallel: false },
+          { id: "s2", toolName: "web_search", args: { query: `${query} best practices ${year}`, maxResults: 3 }, purpose: "Research approaches", parallel: false }
+        ],
+        synthesisPrompt: "Generate a structured feature plan with phases, risks, and next steps."
+      };
+    default:
+      return {
+        objective: query,
+        classification,
+        entityTargets,
+        steps: [
+          { id: "s1", toolName: "founder_local_gather", args: { daysBack: 7 }, purpose: "Gather context", parallel: true },
+          { id: "s2", toolName: "web_search", args: { query: `${query} ${year}`, maxResults: 3 }, purpose: "Web research", parallel: true }
+        ],
+        synthesisPrompt: `Answer the query "${query}" using gathered intelligence. Format as a structured founder packet.`
+      };
+  }
+}
+async function executeHarness(plan, callTool, onTrace) {
+  const startMs = Date.now();
+  const stepResults = [];
+  const completedSteps = /* @__PURE__ */ new Set();
+  const readySteps = plan.steps.filter((s) => !s.dependsOn);
+  const dependentSteps = plan.steps.filter((s) => s.dependsOn);
+  const parallelBatch = readySteps.filter((s) => s.parallel);
+  const serialSteps = readySteps.filter((s) => !s.parallel);
+  if (parallelBatch.length > 0) {
+    onTrace?.({ step: "parallel_dispatch", tool: parallelBatch.map((s) => s.toolName).join(", "), status: "ok", detail: `${parallelBatch.length} parallel steps` });
+    const parallelResults = await Promise.all(
+      parallelBatch.map(async (step) => {
+        const stepStart = Date.now();
+        onTrace?.({ step: "tool_call", tool: step.toolName, status: "ok", detail: step.purpose });
+        try {
+          const result = await Promise.race([
+            callTool(step.toolName, step.args),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 15e3))
+          ]);
+          const duration = Date.now() - stepStart;
+          completedSteps.add(step.id);
+          return { stepId: step.id, toolName: step.toolName, result, success: true, durationMs: duration };
+        } catch (err) {
+          return { stepId: step.id, toolName: step.toolName, result: null, success: false, durationMs: Date.now() - stepStart, error: err?.message };
+        }
+      })
+    );
+    stepResults.push(...parallelResults);
+  }
+  for (const step of serialSteps) {
+    const stepStart = Date.now();
+    onTrace?.({ step: "tool_call", tool: step.toolName, status: "ok", detail: step.purpose });
+    try {
+      const result = await Promise.race([
+        callTool(step.toolName, step.args),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 15e3))
+      ]);
+      completedSteps.add(step.id);
+      stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: Date.now() - stepStart });
+    } catch (err) {
+      stepResults.push({ stepId: step.id, toolName: step.toolName, result: null, success: false, durationMs: Date.now() - stepStart, error: err?.message });
+    }
+  }
+  for (const step of dependentSteps) {
+    if (step.dependsOn && !completedSteps.has(step.dependsOn)) continue;
+    const stepStart = Date.now();
+    onTrace?.({ step: "tool_call", tool: step.toolName, status: "ok", detail: step.purpose });
+    try {
+      const result = await Promise.race([
+        callTool(step.toolName, step.args),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 15e3))
+      ]);
+      completedSteps.add(step.id);
+      stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: Date.now() - stepStart });
+    } catch (err) {
+      stepResults.push({ stepId: step.id, toolName: step.toolName, result: null, success: false, durationMs: Date.now() - stepStart, error: err?.message });
+    }
+  }
+  onTrace?.({ step: "assemble_response", status: "ok", detail: `${stepResults.length} steps completed` });
+  return {
+    plan,
+    stepResults,
+    totalDurationMs: Date.now() - startMs,
+    totalCostUsd: stepResults.reduce((s, r) => s + (r.success ? 5e-3 : 0), 0),
+    adaptations: 0
+  };
+}
+async function synthesizeResults(execution, query, lens, apiKey) {
+  const resultData = execution.stepResults.filter((r) => r.success && r.result).map((r) => {
+    const res = r.result;
+    return {
+      tool: r.toolName,
+      data: typeof res === "string" ? res.slice(0, 1e3) : JSON.stringify(res).slice(0, 1e3)
+    };
+  });
+  const entityName = execution.plan.entityTargets[0] ?? query.split(/\s+/).slice(0, 3).join(" ");
+  if (apiKey && resultData.length > 0) {
+    try {
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `Synthesize these tool results into a structured intelligence packet.
+
+Query: "${query}"
+Lens: ${lens}
+Objective: ${execution.plan.objective}
+
+Tool Results:
+${resultData.map((r) => `[${r.tool}]: ${r.data}`).join("\n\n")}
+
+Return ONLY valid JSON:
+{
+  "entityName": "primary entity name",
+  "answer": "2-3 sentence executive summary",
+  "confidence": 0-100,
+  "signals": [{"name": "signal", "direction": "up|down|neutral", "impact": "high|medium|low"}],
+  "changes": [{"description": "what changed", "date": null}],
+  "risks": [{"title": "risk title", "description": "details"}],
+  "comparables": [{"name": "company", "relevance": "high|medium|low", "note": "why relevant"}],
+  "nextActions": [{"action": "what to do", "impact": "high|medium|low"}],
+  "nextQuestions": ["follow-up question 1", "follow-up question 2"],
+  "sources": [{"label": "source name", "href": null, "type": "web|local|doc"}]
+}` }] }],
+            generationConfig: { temperature: 0, maxOutputTokens: 1e3 }
+          }),
+          signal: AbortSignal.timeout(8e3)
+        }
+      );
+      if (resp.ok) {
+        const data = await resp.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          return {
+            entityName: parsed.entityName ?? entityName,
+            answer: parsed.answer ?? "",
+            confidence: typeof parsed.confidence === "number" ? parsed.confidence : 50,
+            signals: parsed.signals ?? [],
+            changes: parsed.changes ?? [],
+            risks: parsed.risks ?? [],
+            comparables: parsed.comparables ?? [],
+            nextActions: parsed.nextActions ?? [],
+            nextQuestions: parsed.nextQuestions ?? [],
+            sources: parsed.sources ?? []
+          };
+        }
+      }
+    } catch {
+    }
+  }
+  return {
+    entityName,
+    answer: `Analysis of "${query}" completed using ${execution.stepResults.length} tools in ${execution.totalDurationMs}ms.`,
+    confidence: execution.stepResults.filter((r) => r.success).length > 0 ? 50 : 20,
+    signals: [],
+    changes: [],
+    risks: [],
+    comparables: [],
+    nextActions: [{ action: "Run a deeper analysis with more context", impact: "medium" }],
+    nextQuestions: [
+      `What are the key risks for ${entityName}?`,
+      `Who are ${entityName}'s main competitors?`,
+      `What changed for ${entityName} recently?`
+    ],
+    sources: resultData.map((r) => ({ label: r.tool, type: "local" }))
+  };
+}
+
 // packages/mcp-local/src/sync/store.ts
 init_db();
 import { createHash } from "node:crypto";
@@ -11409,7 +11723,80 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
     ctxTrace.ok(`tokens=${contextBundle.totalEstimatedTokens}`);
     try {
       let result;
-      switch (classification.type) {
+      let usedHarness = false;
+      const geminiKey = process.env.GEMINI_API_KEY;
+      if (geminiKey) {
+        try {
+          const planTrace = traceStep("agent_plan", "gemini-3.1-flash-lite");
+          const plan = await generatePlan(
+            query.trim(),
+            classification.type,
+            classification.entities ?? (classification.entity ? [classification.entity] : []),
+            resolvedLens,
+            geminiKey
+          );
+          planTrace.ok(`${plan.steps.length} steps planned`);
+          const execTrace = traceStep("agent_execute");
+          const execution = await executeHarness(plan, callTool, (step) => {
+            const entry = { step: step.step, tool: step.tool, startMs: Date.now(), status: step.status, detail: step.detail };
+            trace.push(entry);
+            if (isStream) {
+              res.write(`data: ${JSON.stringify({ type: "trace", entry: { ...entry, endMs: Date.now(), durationMs: 0 } })}
+
+`);
+            }
+          });
+          execTrace.ok(`${execution.stepResults.length} steps, ${execution.totalDurationMs}ms`);
+          const synthTrace = traceStep("agent_synthesize", "gemini-3.1-flash-lite");
+          const synthesized = await synthesizeResults(execution, query.trim(), resolvedLens, geminiKey);
+          synthTrace.ok(`${synthesized.confidence}% confidence`);
+          result = {
+            canonicalEntity: {
+              name: synthesized.entityName,
+              canonicalMission: synthesized.answer,
+              identityConfidence: synthesized.confidence
+            },
+            signals: synthesized.signals.map((s, i) => ({
+              name: s.name,
+              direction: s.direction,
+              impact: s.impact
+            })),
+            whatChanged: synthesized.changes,
+            contradictions: synthesized.risks.map((r) => ({
+              claim: r.title,
+              evidence: r.description
+            })),
+            comparables: synthesized.comparables,
+            nextActions: synthesized.nextActions,
+            nextQuestions: synthesized.nextQuestions,
+            sourceRefs: synthesized.sources.map((s, i) => ({
+              id: `src:${i}`,
+              label: s.label,
+              href: s.href,
+              type: s.type,
+              status: "cited"
+            })),
+            keyMetrics: [
+              { label: "Confidence", value: `${synthesized.confidence}%` },
+              { label: "Steps", value: String(execution.stepResults.length) },
+              { label: "Sources", value: String(synthesized.sources.length) },
+              { label: "Actions", value: String(synthesized.nextActions.length) }
+            ],
+            harnessExecution: {
+              objective: plan.objective,
+              stepsPlanned: plan.steps.length,
+              stepsCompleted: execution.stepResults.filter((r) => r.success).length,
+              totalDurationMs: execution.totalDurationMs,
+              adaptations: execution.adaptations
+            }
+          };
+          usedHarness = true;
+        } catch (harnessErr) {
+          const fallbackTrace = traceStep("agent_fallback");
+          fallbackTrace.ok(`harness failed: ${harnessErr?.message ?? "unknown"}, using legacy dispatch`);
+        }
+      }
+      if (!usedHarness) switch (classification.type) {
         case "weekly_reset": {
           const t = traceStep("tool_call", "founder_local_weekly_reset");
           const raw = await callTool("founder_local_weekly_reset", { daysBack: daysBack ?? 7 });
