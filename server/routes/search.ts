@@ -1569,51 +1569,14 @@ Entity extraction rules:
     query: string,
     sessionCtx: { entity: string; classification: string; result: any } | null,
   ): Promise<ClassifyResult> {
-    // Check follow-up patterns FIRST — session context takes priority over base classification
-    // because "Now compare that to Google" would match competitor patterns in classifyQuery
-    // but "that" refers to the session entity, not a literal entity name.
-    if (sessionCtx) {
-      const lq = query.toLowerCase();
-      const followUpPatterns = [
-        /^(now |okay |ok |also |and |then |next |please )?(compare|contrast|versus)/i,
-        /^(go |dig |dive |get )?(deeper|further|more detail)/i,
-        /^(what about|how about|tell me about) (their|its|the)/i,
-        /^(show me|give me) (the |their |its )?(team|risks|financials|metrics|revenue|funding|competitors|strategy|pricing|product)/i,
-        /^(any |what )?(recent|latest) (news|changes|updates|developments)/i,
-        /^summarize (everything|all of that|it|this|the above|that)/i,
-        /^(what are|what is) (their|its|the) /i,
-        /^(what about) (pricing|the team|risks|their|the|its)/i,
-        /^(expand|elaborate|explain|clarify) (on |)(that|this|the |their |its )/i,
-        /^(more |tell me more|keep going|continue)/i,
-        /^(and |also |plus |additionally )/i,
-        /^(create|write|draft|generate) (a |an |the )?(brief|memo|summary|report|update)/i,
-      ];
-      const isFollowUp = followUpPatterns.some(p => p.test(lq));
+    // LLM-only classification — no regex patterns.
+    // Session context is injected into the prompt so the LLM understands
+    // follow-ups like "go deeper", "compare that to Google", "summarize it".
+    const sessionHint = sessionCtx
+      ? `\n\nSession context: The user was previously discussing "${sessionCtx.entity}" (classification: ${sessionCtx.classification}). If this query is a follow-up referencing that entity (e.g. "go deeper", "compare that to X", "what about their risks"), include "${sessionCtx.entity}" as the entity or in entities array.`
+      : "";
 
-      if (isFollowUp && sessionCtx.entity) {
-        const priorEntity = sessionCtx.entity;
-
-        // "Now compare that to Google" → multi_entity with prior + new entity
-        const compareMatch = query.match(/compare\s+(?:that\s+)?(?:to|with|against)\s+(\w+)/i)
-          ?? query.match(/versus\s+(\w+)/i)
-          ?? query.match(/(?:compare|contrast)\s+(?:that |it |this |)(?:to|with|against)\s+(\w+)/i);
-        if (compareMatch) {
-          return { type: "multi_entity", entities: [priorEntity, compareMatch[1]], lens: "investor" };
-        }
-
-        // "Summarize everything in a memo" / "Create a brief" → general with session context
-        const isSummary = /^(summarize|create|write|draft|generate)\b/i.test(lq);
-        if (isSummary) {
-          return { type: "general", entity: priorEntity, lens: "ceo" };
-        }
-
-        // "Go deeper on the risks" / "Show me the team" / "Any recent news?" → company_search on prior entity
-        return { type: "company_search", entity: priorEntity, lens: "investor" };
-      }
-    }
-
-    const base = await classifyQueryWithLLM(query);
-    return base;
+    return classifyQueryWithLLM(query + sessionHint);
   }
 
   // ── POST /search ──────────────────────────────────────────────────
