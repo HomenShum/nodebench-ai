@@ -230,6 +230,10 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
     const { observabilityTools } = await import("./tools/observabilityTools.js");
     return observabilityTools;
   },
+  profiler: async () => {
+    const { profilerTools } = await import("./tools/profilerTools.js");
+    return profilerTools;
+  },
   temporal_intelligence: async () => {
     const { temporalIntelligenceTools } = await import("./tools/temporalIntelligenceTools.js");
     return temporalIntelligenceTools;
