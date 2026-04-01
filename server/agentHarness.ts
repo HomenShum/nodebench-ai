@@ -504,17 +504,20 @@ Return ONLY valid JSON:
     if (!sr.success || !sr.result) continue;
     const raw = sr.result as any;
 
+    // Skip results that report their own errors (HONEST_STATUS: tool returned 200 but error inside)
+    if (raw?.error === true) continue;
+
     // ── web_search results ──
     if (sr.toolName === "web_search") {
+      // web_search returns { results: [...] } or { webResults: [...] } or { content: "..." }
       const results = raw?.results ?? raw?.webResults ?? (Array.isArray(raw) ? raw : []);
-      for (const r of results.slice(0, 5)) {
+      for (const r of (Array.isArray(results) ? results : []).slice(0, 5)) {
         const title = r?.title ?? r?.name ?? "";
         const snippet = r?.snippet ?? r?.description ?? r?.content ?? "";
         const url = r?.url ?? r?.link ?? r?.href ?? "";
         if (title) sources.push({ label: title.slice(0, 80), href: url || undefined, type: "web" });
         if (snippet) {
           answerParts.push(snippet.slice(0, 200));
-          // Extract signal-like phrases from snippets
           if (/\b(growth|revenue|raised|funding|launch|expand|partner|acquir)/i.test(snippet)) {
             signals.push({ name: title.slice(0, 60), direction: "up", impact: "medium" });
           }
@@ -523,32 +526,65 @@ Return ONLY valid JSON:
           }
         }
       }
+      // web_search may also return content as a single string (grounded search)
+      if (typeof raw?.content === "string" && raw.content.length > 20) {
+        answerParts.push(raw.content.slice(0, 500));
+        sources.push({ label: raw?.query ?? "web search", type: "web" });
+      }
     }
 
     // ── run_recon results ──
     if (sr.toolName === "run_recon") {
-      const findings = raw?.findings ?? raw?.signals ?? [];
-      for (const f of (Array.isArray(findings) ? findings : []).slice(0, 5)) {
-        const name = typeof f === "string" ? f : (f?.name ?? f?.title ?? f?.finding ?? "");
-        if (name) signals.push({ name: name.slice(0, 80), direction: f?.direction ?? "neutral", impact: f?.impact ?? "medium" });
+      // run_recon returns { status: "active", researchPlan: {...}, nextSteps: [...] }
+      // or completed recon: { findings: [...], summary: "..." }
+      if (raw?.researchPlan) {
+        // Async recon — extract planned sources as signals
+        const plan = raw.researchPlan;
+        const external = plan?.externalSources ?? [];
+        const internal = plan?.internalChecks ?? [];
+        if (external.length > 0 || internal.length > 0) {
+          signals.push({ name: `Recon plan: ${external.length} external + ${internal.length} internal sources`, direction: "neutral", impact: "medium" });
+        }
+        sources.push({ label: `run_recon (${raw.target})`, type: "local" });
+      }
+      if (raw?.findings) {
+        for (const f of (Array.isArray(raw.findings) ? raw.findings : []).slice(0, 5)) {
+          const name = typeof f === "string" ? f : (f?.name ?? f?.title ?? f?.finding ?? "");
+          if (name) signals.push({ name: name.slice(0, 80), direction: f?.direction ?? "neutral", impact: f?.impact ?? "medium" });
+        }
+      }
+      if (raw?.nextSteps) {
+        for (const s of (Array.isArray(raw.nextSteps) ? raw.nextSteps : []).slice(0, 3)) {
+          const action = typeof s === "string" ? s : (s?.action ?? "");
+          if (action) nextActions.push({ action: action.slice(0, 100), impact: "medium" });
+        }
       }
       if (raw?.summary) answerParts.push(String(raw.summary).slice(0, 300));
-      if (raw?.competitors) {
-        for (const c of (Array.isArray(raw.competitors) ? raw.competitors : []).slice(0, 3)) {
-          const cName = typeof c === "string" ? c : (c?.name ?? "");
-          if (cName) comparables.push({ name: cName, relevance: "medium", note: c?.note ?? "Identified via recon" });
-        }
-      }
-      if (raw?.risks) {
-        for (const r of (Array.isArray(raw.risks) ? raw.risks : []).slice(0, 3)) {
-          const rTitle = typeof r === "string" ? r : (r?.title ?? r?.name ?? "");
-          if (rTitle) risks.push({ title: rTitle.slice(0, 60), description: (r?.description ?? r?.detail ?? rTitle).slice(0, 150) });
-        }
-      }
     }
 
-    // ── founder_local_* results ──
-    if (sr.toolName.startsWith("founder_local")) {
+    // ── founder_local_gather results ──
+    if (sr.toolName === "founder_local_gather") {
+      // Returns { gathered, identity, recentChanges, publicSurfaces, sessionMemory, dogfoodFindings, architectureDocs }
+      if (raw?.identity?.projectName) {
+        signals.push({ name: `Project: ${raw.identity.projectName}`, direction: "neutral", impact: "low" });
+      }
+      if (raw?.recentChanges?.commitCount > 0) {
+        signals.push({ name: `${raw.recentChanges.commitCount} commits in last ${raw.recentChanges.daysBack}d`, direction: "up", impact: "medium" });
+        for (const c of (raw.recentChanges.topCommits ?? []).slice(0, 3)) {
+          changes.push({ description: (c?.message ?? c?.subject ?? String(c)).slice(0, 120), date: c?.date });
+        }
+      }
+      if (raw?.sessionMemory?.actions7d > 0) {
+        signals.push({ name: `${raw.sessionMemory.actions7d} actions in last 7d`, direction: "up", impact: "medium" });
+      }
+      if (raw?.dogfoodFindings?.p0 > 0) {
+        risks.push({ title: `${raw.dogfoodFindings.p0} P0 issues`, description: "Critical issues found in dogfood" });
+      }
+      sources.push({ label: "founder_local_gather", type: "local" });
+    }
+
+    // ── founder_local_synthesize / weekly_reset ──
+    if (sr.toolName.startsWith("founder_local") && sr.toolName !== "founder_local_gather") {
       if (raw?.changes) {
         for (const c of (Array.isArray(raw.changes) ? raw.changes : []).slice(0, 5)) {
           const desc = typeof c === "string" ? c : (c?.description ?? c?.change ?? "");
@@ -581,10 +617,13 @@ Return ONLY valid JSON:
       if (raw?.description) answerParts.push(String(raw.description).slice(0, 300));
     }
 
-    // ── Generic: extract any stringifiable summary ──
-    if (answerParts.length === 0 && typeof raw === "object") {
-      const summary = raw?.summary ?? raw?.answer ?? raw?.result ?? raw?.output;
-      if (typeof summary === "string") answerParts.push(summary.slice(0, 300));
+    // ── Generic fallback: extract any summary from unknown tools ──
+    if (!["web_search", "run_recon", "founder_local_gather", "enrich_entity"].includes(sr.toolName) && !sr.toolName.startsWith("founder_local")) {
+      const summary = raw?.summary ?? raw?.answer ?? raw?.result ?? raw?.output ?? raw?.briefing;
+      if (typeof summary === "string" && summary.length > 10) {
+        answerParts.push(summary.slice(0, 300));
+        sources.push({ label: sr.toolName, type: "local" });
+      }
     }
   }
 

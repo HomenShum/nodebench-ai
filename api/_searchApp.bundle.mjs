@@ -9564,9 +9564,10 @@ Return ONLY valid JSON:
   for (const sr of execution.stepResults) {
     if (!sr.success || !sr.result) continue;
     const raw = sr.result;
+    if (raw?.error === true) continue;
     if (sr.toolName === "web_search") {
       const results = raw?.results ?? raw?.webResults ?? (Array.isArray(raw) ? raw : []);
-      for (const r of results.slice(0, 5)) {
+      for (const r of (Array.isArray(results) ? results : []).slice(0, 5)) {
         const title = r?.title ?? r?.name ?? "";
         const snippet = r?.snippet ?? r?.description ?? r?.content ?? "";
         const url = r?.url ?? r?.link ?? r?.href ?? "";
@@ -9581,28 +9582,54 @@ Return ONLY valid JSON:
           }
         }
       }
+      if (typeof raw?.content === "string" && raw.content.length > 20) {
+        answerParts.push(raw.content.slice(0, 500));
+        sources.push({ label: raw?.query ?? "web search", type: "web" });
+      }
     }
     if (sr.toolName === "run_recon") {
-      const findings = raw?.findings ?? raw?.signals ?? [];
-      for (const f of (Array.isArray(findings) ? findings : []).slice(0, 5)) {
-        const name = typeof f === "string" ? f : f?.name ?? f?.title ?? f?.finding ?? "";
-        if (name) signals.push({ name: name.slice(0, 80), direction: f?.direction ?? "neutral", impact: f?.impact ?? "medium" });
+      if (raw?.researchPlan) {
+        const plan = raw.researchPlan;
+        const external = plan?.externalSources ?? [];
+        const internal = plan?.internalChecks ?? [];
+        if (external.length > 0 || internal.length > 0) {
+          signals.push({ name: `Recon plan: ${external.length} external + ${internal.length} internal sources`, direction: "neutral", impact: "medium" });
+        }
+        sources.push({ label: `run_recon (${raw.target})`, type: "local" });
+      }
+      if (raw?.findings) {
+        for (const f of (Array.isArray(raw.findings) ? raw.findings : []).slice(0, 5)) {
+          const name = typeof f === "string" ? f : f?.name ?? f?.title ?? f?.finding ?? "";
+          if (name) signals.push({ name: name.slice(0, 80), direction: f?.direction ?? "neutral", impact: f?.impact ?? "medium" });
+        }
+      }
+      if (raw?.nextSteps) {
+        for (const s of (Array.isArray(raw.nextSteps) ? raw.nextSteps : []).slice(0, 3)) {
+          const action = typeof s === "string" ? s : s?.action ?? "";
+          if (action) nextActions.push({ action: action.slice(0, 100), impact: "medium" });
+        }
       }
       if (raw?.summary) answerParts.push(String(raw.summary).slice(0, 300));
-      if (raw?.competitors) {
-        for (const c of (Array.isArray(raw.competitors) ? raw.competitors : []).slice(0, 3)) {
-          const cName = typeof c === "string" ? c : c?.name ?? "";
-          if (cName) comparables.push({ name: cName, relevance: "medium", note: c?.note ?? "Identified via recon" });
-        }
-      }
-      if (raw?.risks) {
-        for (const r of (Array.isArray(raw.risks) ? raw.risks : []).slice(0, 3)) {
-          const rTitle = typeof r === "string" ? r : r?.title ?? r?.name ?? "";
-          if (rTitle) risks.push({ title: rTitle.slice(0, 60), description: (r?.description ?? r?.detail ?? rTitle).slice(0, 150) });
-        }
-      }
     }
-    if (sr.toolName.startsWith("founder_local")) {
+    if (sr.toolName === "founder_local_gather") {
+      if (raw?.identity?.projectName) {
+        signals.push({ name: `Project: ${raw.identity.projectName}`, direction: "neutral", impact: "low" });
+      }
+      if (raw?.recentChanges?.commitCount > 0) {
+        signals.push({ name: `${raw.recentChanges.commitCount} commits in last ${raw.recentChanges.daysBack}d`, direction: "up", impact: "medium" });
+        for (const c of (raw.recentChanges.topCommits ?? []).slice(0, 3)) {
+          changes.push({ description: (c?.message ?? c?.subject ?? String(c)).slice(0, 120), date: c?.date });
+        }
+      }
+      if (raw?.sessionMemory?.actions7d > 0) {
+        signals.push({ name: `${raw.sessionMemory.actions7d} actions in last 7d`, direction: "up", impact: "medium" });
+      }
+      if (raw?.dogfoodFindings?.p0 > 0) {
+        risks.push({ title: `${raw.dogfoodFindings.p0} P0 issues`, description: "Critical issues found in dogfood" });
+      }
+      sources.push({ label: "founder_local_gather", type: "local" });
+    }
+    if (sr.toolName.startsWith("founder_local") && sr.toolName !== "founder_local_gather") {
       if (raw?.changes) {
         for (const c of (Array.isArray(raw.changes) ? raw.changes : []).slice(0, 5)) {
           const desc = typeof c === "string" ? c : c?.description ?? c?.change ?? "";
@@ -9632,9 +9659,12 @@ Return ONLY valid JSON:
       }
       if (raw?.description) answerParts.push(String(raw.description).slice(0, 300));
     }
-    if (answerParts.length === 0 && typeof raw === "object") {
-      const summary = raw?.summary ?? raw?.answer ?? raw?.result ?? raw?.output;
-      if (typeof summary === "string") answerParts.push(summary.slice(0, 300));
+    if (!["web_search", "run_recon", "founder_local_gather", "enrich_entity"].includes(sr.toolName) && !sr.toolName.startsWith("founder_local")) {
+      const summary = raw?.summary ?? raw?.answer ?? raw?.result ?? raw?.output ?? raw?.briefing;
+      if (typeof summary === "string" && summary.length > 10) {
+        answerParts.push(summary.slice(0, 300));
+        sources.push({ label: sr.toolName, type: "local" });
+      }
     }
   }
   const answer = answerParts.length > 0 ? answerParts.slice(0, 3).join(" ").slice(0, 500) : `Analysis of "${query}" using ${execution.stepResults.filter((r) => r.success).length} tools.`;
@@ -11983,10 +12013,14 @@ function createSearchRouter(tools2) {
     }
     return { type: "general", lens: "founder" };
   }
-  async function classifyQueryWithLLM(query) {
+  async function classifyQueryWithLLM(query, sessionContext) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return classifyQuery(query);
     try {
+      const fullPrompt = sessionContext ? `${sessionContext}
+
+Now classify this query:
+${query}` : query;
       const resp = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`,
         {
@@ -11994,7 +12028,8 @@ function createSearchRouter(tools2) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{ parts: [{ text: `Classify this user query for a startup intelligence platform. Return ONLY valid JSON, no markdown.
-
+${sessionContext ? `
+Context: ${sessionContext}` : ""}
 Query: "${query}"
 
 Return this exact JSON shape:
@@ -12048,10 +12083,8 @@ Entity extraction rules:
     }
   }
   async function classifyWithSession(query, sessionCtx) {
-    const sessionHint = sessionCtx ? `
-
-Session context: The user was previously discussing "${sessionCtx.entity}" (classification: ${sessionCtx.classification}). If this query is a follow-up referencing that entity (e.g. "go deeper", "compare that to X", "what about their risks"), include "${sessionCtx.entity}" as the entity or in entities array.` : "";
-    return classifyQueryWithLLM(query + sessionHint);
+    const sessionSystem = sessionCtx ? `Prior session context: user was discussing "${sessionCtx.entity}". If this query references that entity, include it.` : void 0;
+    return classifyQueryWithLLM(query, sessionSystem);
   }
   const parseSearchInput = (req) => {
     if (req.method === "GET") {
@@ -15064,6 +15097,28 @@ data: ${JSON.stringify(data)}
       send("error", { error: err.message });
     }
     res.end();
+  });
+  router.get("/sessions/:id/debug", (req, res) => {
+    const session = runtime.getSession(req.params.id);
+    if (!session) return res.status(404).json({ ok: false, error: "Session not found" });
+    const lastTurn = session.turns[session.turns.length - 1];
+    if (!lastTurn) return res.json({ ok: true, message: "No turns yet" });
+    res.json({
+      ok: true,
+      turnIndex: lastTurn.index,
+      classification: lastTurn.classification,
+      entities: lastTurn.entities,
+      planSteps: lastTurn.plan?.steps.map((s) => ({ id: s.id, tool: s.toolName, purpose: s.purpose })),
+      stepResults: lastTurn.stepResults.map((sr) => ({
+        tool: sr.toolName,
+        success: sr.success,
+        durationMs: sr.durationMs,
+        error: sr.error,
+        resultType: typeof sr.result,
+        resultKeys: sr.result && typeof sr.result === "object" ? Object.keys(sr.result).slice(0, 20) : void 0,
+        resultPreview: JSON.stringify(sr.result).slice(0, 500)
+      }))
+    });
   });
   router.get("/sessions/:id/trace", (req, res) => {
     const trace = runtime.getSessionTrace(req.params.id);

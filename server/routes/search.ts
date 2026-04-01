@@ -1571,11 +1571,14 @@ export function createSearchRouter(tools: McpTool[]) {
     lens: string;
   };
 
-  async function classifyQueryWithLLM(query: string): Promise<ClassifyResult> {
+  async function classifyQueryWithLLM(query: string, sessionContext?: string): Promise<ClassifyResult> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return classifyQuery(query); // Fallback to regex
 
     try {
+      const fullPrompt = sessionContext
+        ? `${sessionContext}\n\nNow classify this query:\n${query}`
+        : query;
       const resp = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`,
         {
@@ -1583,7 +1586,7 @@ export function createSearchRouter(tools: McpTool[]) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{ parts: [{ text: `Classify this user query for a startup intelligence platform. Return ONLY valid JSON, no markdown.
-
+${sessionContext ? `\nContext: ${sessionContext}` : ""}
 Query: "${query}"
 
 Return this exact JSON shape:
@@ -1652,11 +1655,13 @@ Entity extraction rules:
     // LLM-only classification — no regex patterns.
     // Session context is injected into the prompt so the LLM understands
     // follow-ups like "go deeper", "compare that to Google", "summarize it".
-    const sessionHint = sessionCtx
-      ? `\n\nSession context: The user was previously discussing "${sessionCtx.entity}" (classification: ${sessionCtx.classification}). If this query is a follow-up referencing that entity (e.g. "go deeper", "compare that to X", "what about their risks"), include "${sessionCtx.entity}" as the entity or in entities array.`
-      : "";
+    // Pass session context as a separate system-level hint, NOT appended to the query.
+    // Appending "compare that to X" to the query caused the LLM to extract "that to X" as an entity.
+    const sessionSystem = sessionCtx
+      ? `Prior session context: user was discussing "${sessionCtx.entity}". If this query references that entity, include it.`
+      : undefined;
 
-    return classifyQueryWithLLM(query + sessionHint);
+    return classifyQueryWithLLM(query, sessionSystem);
   }
 
   // ── POST /search ──────────────────────────────────────────────────
