@@ -13236,6 +13236,39 @@ Entity extraction rules:
           const synthTrace = traceStep("agent_synthesize", "gemini-3.1-flash-lite");
           const synthesized = await synthesizeResults(execution, query.trim(), resolvedLens, callTool);
           synthTrace.ok(`${synthesized.confidence}% confidence`);
+          if (classification.type === "company_search" || classification.type === "competitor" || classification.type === "multi_entity") {
+            try {
+              const mcTrace = traceStep("tool_call", "simulate_decision_paths");
+              const mcResult = await callTool("simulate_decision_paths", {
+                entity: synthesized.entityName,
+                revenue: 0,
+                marketShare: 0.01,
+                runway: 18,
+                numPaths: 100,
+                timeHorizonMonths: 12
+              });
+              if (mcResult?.summary) {
+                const sim = mcResult.summary;
+                synthesized.signals.push(
+                  { name: `Monte Carlo: ${sim.successRate} success rate across ${sim.paths}`, direction: "neutral", impact: "high" },
+                  { name: `Base case: ${sim.medianPayoff} (80% CI: ${sim.confidenceInterval})`, direction: "neutral", impact: "high" }
+                );
+                if (mcResult.bestPath) {
+                  synthesized.signals.push({ name: `Bull case: ${mcResult.bestPath.payoff} at ${mcResult.bestPath.marketShare} share`, direction: "up", impact: "high" });
+                }
+                if (mcResult.worstPath) {
+                  synthesized.signals.push({ name: `Bear case: ${mcResult.worstPath.payoff} \u2014 ${mcResult.worstPath.outcome}`, direction: "down", impact: "high" });
+                }
+                for (const d of (mcResult.decisionSensitivity ?? []).slice(0, 2)) {
+                  synthesized.risks.push({ title: `Key decision: ${d.decision}`, description: `Best path: "${d.bestChoice}" (${d.impact} vs average). This decision materially affects outcomes.` });
+                }
+                synthesized.answer += ` Simulation (${sim.paths}, ${sim.horizon}): ${sim.successRate} success, ${sim.survivalRate} survival. Base payoff ${sim.medianPayoff}.`;
+                synthesized.sources.push({ label: `Monte Carlo (${sim.paths})`, type: "local" });
+              }
+              mcTrace.ok(`${mcResult?.summary?.successRate ?? "?"} success rate`);
+            } catch {
+            }
+          }
           result = {
             canonicalEntity: {
               name: synthesized.entityName,
