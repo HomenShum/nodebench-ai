@@ -20,10 +20,11 @@ const ExportView = lazy(() => import("./ExportView"));
 const ChangeDetectorView = lazy(() => import("./ChangeDetectorView"));
 const FounderStrategyView = lazy(() => import("./FounderStrategyView"));
 const ProfilerInsights = lazy(() => import("../components/ProfilerInsights"));
+const CostTransparency = lazy(() => import("../components/CostTransparency"));
 
 /* ── Tab definitions ──────────────────────────────────────────────── */
 
-type DashboardTab = "overview" | "strategy" | "intake" | "history" | "changes" | "delta" | "export" | "profiler";
+type DashboardTab = "overview" | "strategy" | "intake" | "history" | "changes" | "delta" | "export" | "profiler" | "costs";
 
 const TABS: { id: DashboardTab; label: string }[] = [
   { id: "overview", label: "Overview" },
@@ -34,6 +35,7 @@ const TABS: { id: DashboardTab; label: string }[] = [
   { id: "delta", label: "Delta" },
   { id: "export", label: "Export" },
   { id: "profiler", label: "Profiler" },
+  { id: "costs", label: "Costs" },
 ];
 
 /* ── Skeleton ─────────────────────────────────────────────────────── */
@@ -104,6 +106,7 @@ export default function FounderDashboardTabs() {
           {activeTab === "delta" && <SessionDeltaView />}
           {activeTab === "export" && <ExportView />}
           {activeTab === "profiler" && <div className="mx-auto max-w-4xl px-6 py-8"><ProfilerInsights /></div>}
+          {activeTab === "costs" && <div className="mx-auto max-w-4xl px-6 py-8"><CostTransparency /></div>}
         </Suspense>
       </div>
     </div>
