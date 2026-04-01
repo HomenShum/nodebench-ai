@@ -9617,6 +9617,206 @@ var llmTools = [
   }
 ];
 
+// packages/mcp-local/src/tools/monteCarloTools.ts
+function runSimulation(input) {
+  const paths = [];
+  for (let p = 0; p < input.numPaths; p++) {
+    let revenue = input.currentState.revenue ?? 0;
+    let marketShare = input.currentState.marketShare ?? 0;
+    let runway = input.currentState.runway ?? 18;
+    let cumulativePayoff = 0;
+    const steps = [];
+    for (let month = 1; month <= input.timeHorizonMonths; month++) {
+      const decisionIdx = month % input.decisions.length;
+      const decision = input.decisions[decisionIdx];
+      const probs = decision.probabilities ?? decision.options.map(() => 1 / decision.options.length);
+      const rand = Math.random();
+      let cumProb = 0;
+      let choiceIdx = 0;
+      for (let i = 0; i < probs.length; i++) {
+        cumProb += probs[i];
+        if (rand <= cumProb) {
+          choiceIdx = i;
+          break;
+        }
+      }
+      const choice = decision.options[choiceIdx];
+      const growthRate = 0.02 + Math.random() * 0.08;
+      const riskEvent = Math.random() < 0.05;
+      if (choice.toLowerCase().includes("aggressive") || choice.toLowerCase().includes("raise") || choice.toLowerCase().includes("expand")) {
+        revenue *= 1 + growthRate * 1.5;
+        marketShare += Math.random() * 0.02;
+        runway -= 1.5;
+      } else if (choice.toLowerCase().includes("conservative") || choice.toLowerCase().includes("wait") || choice.toLowerCase().includes("optimize")) {
+        revenue *= 1 + growthRate * 0.5;
+        marketShare += Math.random() * 5e-3;
+        runway -= 0.8;
+      } else {
+        revenue *= 1 + growthRate;
+        marketShare += Math.random() * 0.01;
+        runway -= 1;
+      }
+      if (riskEvent) {
+        revenue *= 0.85;
+        runway -= 2;
+      }
+      marketShare = Math.min(1, Math.max(0, marketShare));
+      runway = Math.max(0, runway);
+      cumulativePayoff = revenue * 12 * marketShare;
+      steps.push({
+        month,
+        decision: decision.name,
+        choice,
+        revenue: Math.round(revenue),
+        marketShare: Math.round(marketShare * 1e4) / 100,
+        runway: Math.round(runway * 10) / 10,
+        cumulativePayoff: Math.round(cumulativePayoff)
+      });
+    }
+    const finalPayoff = cumulativePayoff;
+    const outcome = runway <= 0 ? "failure" : revenue > (input.currentState.revenue ?? 0) * 2 ? "success" : "survival";
+    paths.push({
+      pathId: p,
+      steps,
+      finalPayoff: Math.round(finalPayoff),
+      finalRevenue: Math.round(revenue),
+      finalMarketShare: Math.round(marketShare * 1e4) / 100,
+      outcome
+    });
+  }
+  const sorted = [...paths].sort((a, b) => a.finalPayoff - b.finalPayoff);
+  const avgPayoff = Math.round(paths.reduce((s, p) => s + p.finalPayoff, 0) / paths.length);
+  const medianPayoff = sorted[Math.floor(sorted.length / 2)]?.finalPayoff ?? 0;
+  const p10 = sorted[Math.floor(sorted.length * 0.1)]?.finalPayoff ?? 0;
+  const p90 = sorted[Math.floor(sorted.length * 0.9)]?.finalPayoff ?? 0;
+  const successRate = Math.round(paths.filter((p) => p.outcome === "success").length / paths.length * 100);
+  const survivalRate = Math.round(paths.filter((p) => p.outcome !== "failure").length / paths.length * 100);
+  const failureRate = 100 - survivalRate;
+  const sensitivity = input.decisions.map((d) => {
+    const byChoice = /* @__PURE__ */ new Map();
+    for (const path2 of paths) {
+      for (const step of path2.steps) {
+        if (step.decision === d.name) {
+          if (!byChoice.has(step.choice)) byChoice.set(step.choice, []);
+          byChoice.get(step.choice).push(path2.finalPayoff);
+        }
+      }
+    }
+    let bestChoice = "";
+    let bestAvg = -Infinity;
+    for (const [choice, payoffs] of byChoice) {
+      const avg = payoffs.reduce((s, v) => s + v, 0) / payoffs.length;
+      if (avg > bestAvg) {
+        bestAvg = avg;
+        bestChoice = choice;
+      }
+    }
+    return { decision: d.name, bestChoice, avgPayoffDelta: Math.round(bestAvg - avgPayoff) };
+  });
+  return {
+    entity: input.entity,
+    numPaths: input.numPaths,
+    timeHorizonMonths: input.timeHorizonMonths,
+    averagePayoff: avgPayoff,
+    medianPayoff,
+    bestPath: sorted[sorted.length - 1],
+    worstPath: sorted[0],
+    p10Payoff: p10,
+    p90Payoff: p90,
+    successRate,
+    survivalRate,
+    failureRate,
+    decisionSensitivity: sensitivity,
+    paths: paths.slice(0, 10)
+    // Return top 10 paths for visualization
+  };
+}
+var monteCarloTools = [
+  {
+    name: "simulate_decision_paths",
+    description: "Run Monte Carlo simulation for founder decisions. Generates multiple random paths to visualize possible future outcomes. Shows average payoff, success/failure rates, best/worst paths, and which decisions matter most. Use for: fundraising timing, market entry, build-vs-buy, hiring, pivot analysis.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        entity: { type: "string", description: "Company or project name" },
+        revenue: { type: "number", description: "Current monthly revenue (USD)" },
+        marketShare: { type: "number", description: "Current market share (0-1, e.g., 0.05 = 5%)" },
+        runway: { type: "number", description: "Months of runway remaining" },
+        decisions: {
+          type: "array",
+          description: "Key decisions to simulate. Each has a name and options.",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              options: { type: "array", items: { type: "string" } },
+              probabilities: { type: "array", items: { type: "number" } }
+            }
+          }
+        },
+        timeHorizonMonths: { type: "number", description: "How many months to simulate (default: 12)" },
+        numPaths: { type: "number", description: "Number of simulation paths (default: 100)" }
+      },
+      required: ["entity"]
+    },
+    handler: async (args) => {
+      const entity = String(args.entity ?? "Startup");
+      const decisions = args.decisions ?? [
+        { name: "Fundraising Strategy", options: ["Raise now (aggressive)", "Wait 6 months (conservative)", "Revenue-fund (bootstrap)"], probabilities: [0.4, 0.35, 0.25] },
+        { name: "Market Entry", options: ["Enterprise first", "SMB first", "Developer-led growth"], probabilities: [0.3, 0.3, 0.4] },
+        { name: "Team Growth", options: ["Hire aggressively (10+)", "Hire selectively (3-5)", "Stay lean (1-2)"], probabilities: [0.2, 0.5, 0.3] }
+      ];
+      const result = runSimulation({
+        entity,
+        currentState: {
+          revenue: Number(args.revenue ?? 0),
+          marketShare: Number(args.marketShare ?? 0.01),
+          runway: Number(args.runway ?? 18)
+        },
+        decisions,
+        timeHorizonMonths: Number(args.timeHorizonMonths ?? 12),
+        numPaths: Math.min(Number(args.numPaths ?? 100), 500)
+      });
+      return {
+        summary: {
+          entity: result.entity,
+          paths: result.numPaths,
+          horizon: `${result.timeHorizonMonths} months`,
+          averagePayoff: `$${result.averagePayoff.toLocaleString()}`,
+          medianPayoff: `$${result.medianPayoff.toLocaleString()}`,
+          confidenceInterval: `$${result.p10Payoff.toLocaleString()} \u2013 $${result.p90Payoff.toLocaleString()} (80% CI)`,
+          successRate: `${result.successRate}%`,
+          survivalRate: `${result.survivalRate}%`,
+          failureRate: `${result.failureRate}%`
+        },
+        bestPath: {
+          payoff: `$${result.bestPath.finalPayoff.toLocaleString()}`,
+          finalRevenue: `$${result.bestPath.finalRevenue.toLocaleString()}/mo`,
+          marketShare: `${result.bestPath.finalMarketShare}%`,
+          keyDecisions: result.bestPath.steps.slice(0, 3).map((s) => `${s.decision}: ${s.choice}`)
+        },
+        worstPath: {
+          payoff: `$${result.worstPath.finalPayoff.toLocaleString()}`,
+          finalRevenue: `$${result.worstPath.finalRevenue.toLocaleString()}/mo`,
+          outcome: result.worstPath.outcome
+        },
+        decisionSensitivity: result.decisionSensitivity.map((d) => ({
+          decision: d.decision,
+          bestChoice: d.bestChoice,
+          impact: d.avgPayoffDelta > 0 ? `+$${d.avgPayoffDelta.toLocaleString()}` : `$${d.avgPayoffDelta.toLocaleString()}`
+        })),
+        topPaths: result.paths.slice(0, 5).map((p) => ({
+          id: p.pathId,
+          outcome: p.outcome,
+          payoff: p.finalPayoff,
+          revenue: p.finalRevenue,
+          marketShare: p.finalMarketShare
+        }))
+      };
+    }
+  }
+];
+
 // packages/mcp-local/src/sweep/engine.ts
 init_db();
 var SOURCE_MODULES = [];
@@ -9906,22 +10106,58 @@ ${prompt}` : prompt }] }],
     extractResponse: (data) => data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ""
   }
 };
-var OPENAI_FALLBACK = {
-  name: "gpt-4o",
-  endpoint: "https://api.openai.com/v1/chat/completions",
-  apiKeyEnv: "OPENAI_API_KEY",
-  timeoutMs: 3e4,
-  contextLimit: 128e3,
-  makeBody: (prompt, system, maxTokens) => JSON.stringify({
-    model: "gpt-4o",
-    messages: [
-      ...system ? [{ role: "system", content: system }] : [],
-      { role: "user", content: prompt }
-    ],
-    max_tokens: maxTokens,
-    temperature: 0
-  }),
-  extractResponse: (data) => data?.choices?.[0]?.message?.content ?? ""
+var OPENAI_MODELS = {
+  low: {
+    name: "gpt-5.4-nano",
+    endpoint: "https://api.openai.com/v1/chat/completions",
+    apiKeyEnv: "OPENAI_API_KEY",
+    timeoutMs: 1e4,
+    contextLimit: 128e3,
+    makeBody: (prompt, system, maxTokens) => JSON.stringify({
+      model: "gpt-5.4-nano",
+      messages: [
+        ...system ? [{ role: "system", content: system }] : [],
+        { role: "user", content: prompt }
+      ],
+      max_tokens: maxTokens,
+      temperature: 0
+    }),
+    extractResponse: (data) => data?.choices?.[0]?.message?.content ?? ""
+  },
+  medium: {
+    name: "gpt-5.4-mini",
+    endpoint: "https://api.openai.com/v1/chat/completions",
+    apiKeyEnv: "OPENAI_API_KEY",
+    timeoutMs: 2e4,
+    contextLimit: 128e3,
+    makeBody: (prompt, system, maxTokens) => JSON.stringify({
+      model: "gpt-5.4-mini",
+      messages: [
+        ...system ? [{ role: "system", content: system }] : [],
+        { role: "user", content: prompt }
+      ],
+      max_tokens: maxTokens,
+      temperature: 0
+    }),
+    extractResponse: (data) => data?.choices?.[0]?.message?.content ?? ""
+  },
+  high: {
+    name: "gpt-5.4",
+    endpoint: "https://api.openai.com/v1/chat/completions",
+    apiKeyEnv: "OPENAI_API_KEY",
+    timeoutMs: 35e3,
+    contextLimit: 128e3,
+    makeBody: (prompt, system, maxTokens) => JSON.stringify({
+      model: "gpt-5.4",
+      messages: [
+        ...system ? [{ role: "system", content: system }] : [],
+        { role: "user", content: prompt }
+      ],
+      max_tokens: maxTokens,
+      temperature: 0
+    }),
+    extractResponse: (data) => data?.choices?.[0]?.message?.content ?? ""
+  }
 };
 async function callModel(config, prompt, system, maxTokens) {
   const apiKey = process.env[config.apiKeyEnv];
@@ -9948,9 +10184,10 @@ async function callLLM(_callTool, prompt, system, maxTokens) {
   const complexity = assessComplexity(prompt, tokens);
   const primaryModel = GEMINI_MODELS[complexity];
   const chain = [primaryModel];
+  chain.push(OPENAI_MODELS[complexity]);
   if (complexity === "high") chain.push(GEMINI_MODELS.medium);
   if (complexity !== "low") chain.push(GEMINI_MODELS.low);
-  chain.push(OPENAI_FALLBACK);
+  if (complexity !== "low") chain.push(OPENAI_MODELS.low);
   for (const model of chain) {
     try {
       const result = await callModel(model, prompt, system, tokens);
@@ -10119,10 +10356,9 @@ function buildFallbackPlan(query, classification, entityTargets, lens) {
           { id: "s1", toolName: "linkup_search", args: { query: `${entity} company overview strategy funding competitive position ${year}`, maxResults: 5 }, purpose: "Linkup deep intelligence", parallel: true },
           { id: "s2", toolName: "web_search", args: { query: `${entity} competitors risks challenges ${year}`, maxResults: 5 }, purpose: "Competitive & risk intelligence", parallel: true },
           { id: "s3", toolName: "enrich_entity", args: { query: `${entity} competitive position`, entityName: entity, lens }, purpose: "Structured entity enrichment", parallel: true },
-          { id: "s4", toolName: "run_recon", args: { target: entity, focus: query }, purpose: "Deep recon", parallel: true }
+          { id: "s4", toolName: "run_recon", args: { target: entity, focus: query }, purpose: "Deep recon", parallel: true },
+          { id: "s5", toolName: "simulate_decision_paths", args: { entity, revenue: 0, marketShare: 0.01, runway: 18 }, purpose: "Monte Carlo: 3-case financial model (bull/base/bear)", parallel: true }
           // NOTE: founder_local_gather EXCLUDED from external entity searches.
-          // It returns the FOUNDER'S own dev changes, not the target entity's data.
-          // Including it contaminates "Analyze Anthropic" with "Tool loading changed from static to dynamic imports".
         ],
         synthesisPrompt: `Synthesize intelligence about ${entity} for a ${lens} audience. Include signals, risks, comparables, and next actions.`
       };
@@ -10413,6 +10649,22 @@ Return ONLY valid JSON:
         }
       }
       if (raw?.description) answerParts.push(String(raw.description).slice(0, 300));
+    }
+    if (sr.toolName === "simulate_decision_paths") {
+      const sim = raw?.summary;
+      if (sim) {
+        const bull = raw?.bestPath;
+        const bear = raw?.worstPath;
+        signals.push({ name: `Monte Carlo: ${sim.successRate} success rate across ${sim.paths} paths`, direction: "neutral", impact: "high" });
+        signals.push({ name: `Base case payoff: ${sim.medianPayoff} (80% CI: ${sim.confidenceInterval})`, direction: "neutral", impact: "high" });
+        if (bull) signals.push({ name: `Bull case: ${bull.payoff} revenue at ${bull.marketShare} market share`, direction: "up", impact: "high" });
+        if (bear) signals.push({ name: `Bear case: ${bear.payoff} \u2014 ${bear.outcome}`, direction: "down", impact: "high" });
+        for (const d of raw?.decisionSensitivity ?? []) {
+          risks.push({ title: `Decision: ${d.decision}`, description: `Best choice: "${d.bestChoice}" (${d.impact} vs average). Wrong choice here materially affects outcomes.` });
+        }
+        answerParts.push(`Monte Carlo simulation (${sim.paths}, ${sim.horizon}): ${sim.successRate} success rate. Base case payoff ${sim.medianPayoff}. Survival rate ${sim.survivalRate}, failure rate ${sim.failureRate}.`);
+        sources.push({ label: `Monte Carlo simulation (${sim.paths})`, type: "local" });
+      }
     }
     if (!["web_search", "run_recon", "founder_local_gather", "enrich_entity"].includes(sr.toolName) && !sr.toolName.startsWith("founder_local")) {
       const summary = raw?.summary ?? raw?.answer ?? raw?.result ?? raw?.output ?? raw?.briefing;
@@ -16334,7 +16586,8 @@ var tools = [
   ...reconTools,
   ...founderLocalPipelineTools,
   ...entityEnrichmentTools,
-  ...llmTools
+  ...llmTools,
+  ...monteCarloTools
 ];
 var syncBridge = new SyncBridgeServer();
 var app = express();

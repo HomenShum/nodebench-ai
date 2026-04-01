@@ -157,22 +157,58 @@ const GEMINI_MODELS: Record<TaskComplexity, ModelConfig> = {
   },
 };
 
-const OPENAI_FALLBACK: ModelConfig = {
-  name: "gpt-4o",
-  endpoint: "https://api.openai.com/v1/chat/completions",
-  apiKeyEnv: "OPENAI_API_KEY",
-  timeoutMs: 30000,
-  contextLimit: 128000,
-  makeBody: (prompt, system, maxTokens) => JSON.stringify({
-    model: "gpt-4o",
-    messages: [
-      ...(system ? [{ role: "system", content: system }] : []),
-      { role: "user", content: prompt },
-    ],
-    max_tokens: maxTokens,
-    temperature: 0,
-  }),
-  extractResponse: (data) => data?.choices?.[0]?.message?.content ?? "",
+// OpenAI models — Kilo-style complexity routing
+// GPT-5.4 series (latest as of April 2026)
+// nano=classification, mini=fast analysis, standard=deep synthesis, pro=complex reasoning
+const OPENAI_MODELS: Record<TaskComplexity, ModelConfig> = {
+  low: {
+    name: "gpt-5.4-nano",
+    endpoint: "https://api.openai.com/v1/chat/completions",
+    apiKeyEnv: "OPENAI_API_KEY",
+    timeoutMs: 10000,
+    contextLimit: 128000,
+    makeBody: (prompt, system, maxTokens) => JSON.stringify({
+      model: "gpt-5.4-nano",
+      messages: [
+        ...(system ? [{ role: "system", content: system }] : []),
+        { role: "user", content: prompt },
+      ],
+      max_tokens: maxTokens, temperature: 0,
+    }),
+    extractResponse: (data) => data?.choices?.[0]?.message?.content ?? "",
+  },
+  medium: {
+    name: "gpt-5.4-mini",
+    endpoint: "https://api.openai.com/v1/chat/completions",
+    apiKeyEnv: "OPENAI_API_KEY",
+    timeoutMs: 20000,
+    contextLimit: 128000,
+    makeBody: (prompt, system, maxTokens) => JSON.stringify({
+      model: "gpt-5.4-mini",
+      messages: [
+        ...(system ? [{ role: "system", content: system }] : []),
+        { role: "user", content: prompt },
+      ],
+      max_tokens: maxTokens, temperature: 0,
+    }),
+    extractResponse: (data) => data?.choices?.[0]?.message?.content ?? "",
+  },
+  high: {
+    name: "gpt-5.4",
+    endpoint: "https://api.openai.com/v1/chat/completions",
+    apiKeyEnv: "OPENAI_API_KEY",
+    timeoutMs: 35000,
+    contextLimit: 128000,
+    makeBody: (prompt, system, maxTokens) => JSON.stringify({
+      model: "gpt-5.4",
+      messages: [
+        ...(system ? [{ role: "system", content: system }] : []),
+        { role: "user", content: prompt },
+      ],
+      max_tokens: maxTokens, temperature: 0,
+    }),
+    extractResponse: (data) => data?.choices?.[0]?.message?.content ?? "",
+  },
 };
 
 async function callModel(config: ModelConfig, prompt: string, system: string | undefined, maxTokens: number): Promise<string> {
@@ -209,11 +245,13 @@ async function callLLM(
 
   // Try primary model (complexity-matched), then fallback chain
   const chain = [primaryModel];
-  // Add lower-complexity Gemini as fallback if primary fails
+  // Add complexity-matched OpenAI as second choice
+  chain.push(OPENAI_MODELS[complexity]);
+  // Add lower-complexity Gemini as fallback
   if (complexity === "high") chain.push(GEMINI_MODELS.medium);
   if (complexity !== "low") chain.push(GEMINI_MODELS.low);
-  // OpenAI as final fallback (latest model: gpt-4o, not gpt-4o-mini)
-  chain.push(OPENAI_FALLBACK);
+  // Lower OpenAI as final fallback
+  if (complexity !== "low") chain.push(OPENAI_MODELS.low);
 
   for (const model of chain) {
     try {
@@ -401,9 +439,8 @@ function buildFallbackPlan(query: string, classification: string, entityTargets:
           { id: "s2", toolName: "web_search", args: { query: `${entity} competitors risks challenges ${year}`, maxResults: 5 }, purpose: "Competitive & risk intelligence", parallel: true },
           { id: "s3", toolName: "enrich_entity", args: { query: `${entity} competitive position`, entityName: entity, lens }, purpose: "Structured entity enrichment", parallel: true },
           { id: "s4", toolName: "run_recon", args: { target: entity, focus: query }, purpose: "Deep recon", parallel: true },
+          { id: "s5", toolName: "simulate_decision_paths", args: { entity, revenue: 0, marketShare: 0.01, runway: 18 }, purpose: "Monte Carlo: 3-case financial model (bull/base/bear)", parallel: true },
           // NOTE: founder_local_gather EXCLUDED from external entity searches.
-          // It returns the FOUNDER'S own dev changes, not the target entity's data.
-          // Including it contaminates "Analyze Anthropic" with "Tool loading changed from static to dynamic imports".
         ],
         synthesisPrompt: `Synthesize intelligence about ${entity} for a ${lens} audience. Include signals, risks, comparables, and next actions.`,
       };
@@ -766,6 +803,26 @@ Return ONLY valid JSON:
         }
       }
       if (raw?.description) answerParts.push(String(raw.description).slice(0, 300));
+    }
+
+    // ── simulate_decision_paths (Monte Carlo) results ──
+    if (sr.toolName === "simulate_decision_paths") {
+      const sim = raw?.summary;
+      if (sim) {
+        // IB three-case model: bull (p90), base (median), bear (p10)
+        const bull = raw?.bestPath;
+        const bear = raw?.worstPath;
+        signals.push({ name: `Monte Carlo: ${sim.successRate} success rate across ${sim.paths} paths`, direction: "neutral", impact: "high" });
+        signals.push({ name: `Base case payoff: ${sim.medianPayoff} (80% CI: ${sim.confidenceInterval})`, direction: "neutral", impact: "high" });
+        if (bull) signals.push({ name: `Bull case: ${bull.payoff} revenue at ${bull.marketShare} market share`, direction: "up", impact: "high" });
+        if (bear) signals.push({ name: `Bear case: ${bear.payoff} — ${bear.outcome}`, direction: "down", impact: "high" });
+        // Decision sensitivity → risks
+        for (const d of (raw?.decisionSensitivity ?? [])) {
+          risks.push({ title: `Decision: ${d.decision}`, description: `Best choice: "${d.bestChoice}" (${d.impact} vs average). Wrong choice here materially affects outcomes.` });
+        }
+        answerParts.push(`Monte Carlo simulation (${sim.paths}, ${sim.horizon}): ${sim.successRate} success rate. Base case payoff ${sim.medianPayoff}. Survival rate ${sim.survivalRate}, failure rate ${sim.failureRate}.`);
+        sources.push({ label: `Monte Carlo simulation (${sim.paths})`, type: "local" });
+      }
     }
 
     // ── Generic fallback: extract any summary from unknown tools ──

@@ -7,6 +7,7 @@ import { founderLocalPipelineTools } from "../../packages/mcp-local/src/tools/fo
 import { reconTools } from "../../packages/mcp-local/src/tools/reconTools.js";
 import { webTools } from "../../packages/mcp-local/src/tools/webTools.js";
 import { llmTools } from "../../packages/mcp-local/src/tools/llmTools.js";
+import { monteCarloTools } from "../../packages/mcp-local/src/tools/monteCarloTools.js";
 import { initSweepTables, runSweep, computeDelta, getLatestSweep, getPreviousSweep, generateRecommendations } from "../../packages/mcp-local/src/sweep/engine.js";
 import { createSearchRouter } from "../routes/search.js";
 import { createSharedContextRouter } from "../routes/sharedContext.js";
@@ -26,6 +27,7 @@ const tools: McpTool[] = [
   ...founderLocalPipelineTools,
   ...entityEnrichmentTools,
   ...llmTools,
+  ...monteCarloTools,
 ];
 const syncBridge = new SyncBridgeServer();
 
