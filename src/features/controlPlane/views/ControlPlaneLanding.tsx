@@ -255,18 +255,38 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         return { entity: briefSignalEntity, query: briefSignalQuery, lens: "investor" };
       }
 
-      // 3. Real market signals from dashboard — these are actual events
-      // that happened in the AI agent ecosystem this week
+      // 3. Live sweep signals (Crucix pattern: real-time data sources)
+      try {
+        const sweepResp = await fetch("/api/sweep/latest", { signal: AbortSignal.timeout(2000) });
+        if (sweepResp.ok) {
+          const sweepData = await sweepResp.json();
+          if (sweepData.success && sweepData.topEntity && sweepData.topEntityQuery) {
+            return {
+              entity: sweepData.topEntity,
+              query: sweepData.topEntityQuery,
+              lens: sweepData.topEntitySeverity === "flash" ? "investor" as LensId : "founder" as LensId,
+            };
+          }
+          // Use first signal if no top entity from delta
+          const topSignal = sweepData.signals?.[0];
+          if (topSignal?.entity && topSignal?.headline) {
+            return {
+              entity: topSignal.entity,
+              query: `${topSignal.headline} — what does this mean for founders?`,
+              lens: "founder" as LensId,
+            };
+          }
+        }
+      } catch { /* sweep not available yet */ }
+
+      // 4. Fallback: real market signals with contextual queries
       const marketSignals = [
-        { entity: "Stripe", query: "Stripe published MCP integration benchmark — what does this mean for agent tool ecosystems?", lens: "founder" as LensId },
-        { entity: "GitHub Copilot", query: "GitHub Copilot extensions now support MCP protocol — how does this change agent distribution?", lens: "founder" as LensId },
         { entity: "Anthropic", query: "Anthropic competitive position and enterprise AI strategy 2026", lens: "investor" as LensId },
-        { entity: "ServiceNow", query: "ServiceNow announced AI agent marketplace — what does this validate about agent-native infrastructure?", lens: "ceo" as LensId },
         { entity: "OpenAI", query: "OpenAI risks and competitive threats in enterprise AI 2026", lens: "investor" as LensId },
+        { entity: "Stripe", query: "Stripe's AI and MCP integration strategy", lens: "founder" as LensId },
       ];
-      // Rotate by day+hour for variety
       const now = new Date();
-      const idx = (now.getDay() * 3 + Math.floor(now.getHours() / 6)) % marketSignals.length;
+      const idx = (now.getDay() * 3 + Math.floor(now.getHours() / 8)) % marketSignals.length;
       return marketSignals[idx];
     }
 

@@ -44,6 +44,58 @@ app.use("/api/harness", createHarnessRouter(tools));
 app.use("/shared-context", createSharedContextRouter());
 app.use("/api/shared-context", createSharedContextRouter());
 
+// Sweep API — live signal intelligence
+app.get("/api/sweep/latest", async (_req, res) => {
+  try {
+    const { initSweepTables, getLatestSweep, computeDelta, getPreviousSweep, generateRecommendations } = require("../../packages/mcp-local/src/sweep/engine.js");
+    initSweepTables();
+    const latest = getLatestSweep();
+    if (!latest) return res.json({ success: true, signals: [], message: "No sweep data. Run a sweep first." });
+    const previous = getPreviousSweep();
+    const delta = computeDelta(latest, previous);
+    const recs = generateRecommendations(latest.signals);
+    res.json({
+      success: true,
+      sweepId: latest.sweepId,
+      timestamp: latest.timestamp,
+      topEntity: delta.topEntity,
+      topEntityQuery: delta.topEntityQuery,
+      topEntitySeverity: delta.topEntitySeverity,
+      signalCount: latest.signals.length,
+      newSignals: delta.newSignals.length,
+      escalations: delta.escalations.length,
+      signals: latest.signals.slice(0, 15),
+      recommendations: recs.slice(0, 5),
+      sources: latest.sources,
+    });
+  } catch (err: any) {
+    res.json({ success: false, error: err?.message });
+  }
+});
+
+app.post("/api/sweep/run", async (_req, res) => {
+  try {
+    const { initSweepTables, runSweep, computeDelta, getPreviousSweep, generateRecommendations } = require("../../packages/mcp-local/src/sweep/engine.js");
+    initSweepTables();
+    const result = await runSweep();
+    const previous = getPreviousSweep();
+    const delta = computeDelta(result, previous);
+    const recs = generateRecommendations(result.signals);
+    res.json({
+      success: true,
+      sweepId: result.sweepId,
+      signalCount: result.signals.length,
+      topEntity: delta.topEntity,
+      topEntityQuery: delta.topEntityQuery,
+      sources: result.sources,
+      durationMs: result.totalDurationMs,
+      recommendations: recs.slice(0, 5),
+    });
+  } catch (err: any) {
+    res.json({ success: false, error: err?.message });
+  }
+});
+
 // OTel trace receiver — agents send traces here
 app.post("/v1/traces", (req, res) => {
   try {
