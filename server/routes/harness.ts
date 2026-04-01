@@ -18,6 +18,7 @@
 
 import { Router, type Request, type Response } from "express";
 import { HarnessRuntime, type TraceEvent } from "../harnessRuntime.js";
+import { getPricingSnapshot, getPricingSummary } from "../pricingScraper.js";
 import type { McpTool } from "../../packages/mcp-local/src/types.js";
 
 export function createHarnessRouter(tools: McpTool[]): Router {
@@ -34,6 +35,26 @@ export function createHarnessRouter(tools: McpTool[]): Router {
 
   router.get("/commands", (_req: Request, res: Response) => {
     res.json({ ok: true, commands: runtime.getSlashCommands() });
+  });
+
+  // ── Pricing (live scraped from all providers) ─────────────────
+
+  router.get("/pricing", async (_req: Request, res: Response) => {
+    try {
+      const snapshot = await getPricingSnapshot();
+      res.json({ ok: true, ...snapshot });
+    } catch (err: any) {
+      res.status(500).json({ ok: false, error: err?.message });
+    }
+  });
+
+  router.get("/pricing/summary", async (_req: Request, res: Response) => {
+    try {
+      const snapshot = await getPricingSnapshot();
+      res.json({ ok: true, ...getPricingSummary(snapshot) });
+    } catch (err: any) {
+      res.status(500).json({ ok: false, error: err?.message });
+    }
   });
 
   // ── Create Session ────────────────────────────────────────────

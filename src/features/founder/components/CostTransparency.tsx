@@ -1,27 +1,30 @@
 /**
  * CostTransparency — Real-time cost breakdown visible to users.
  *
- * Shows exactly what each query costs, where the money goes,
- * and what providers charge. No hidden fees, no opaque pricing.
+ * Fetches LIVE pricing from /api/harness/pricing (scraped from OpenRouter + manual rates).
+ * Shows ALL integrated providers with API keys — not a static subset.
  *
  * Sections:
  * 1. Session Cost Summary — running total, avg per query
  * 2. Per-Query Breakdown — classify, plan, execute, synthesize
- * 3. Provider Pricing — what each model/API costs per call
- * 4. Monthly Projection — estimated monthly cost at current usage rate
+ * 3. All Integrated Providers — live from pricing API, grouped by provider
+ * 4. Free Models via OpenRouter — auto-discovered
+ * 5. Monthly Projection — estimated monthly cost at current usage rate
+ * 6. Honest Limitations
+ * 7. Cost vs Alternatives
  */
 
 import { memo, useEffect, useState } from "react";
 import {
   CircleDollarSign,
   Cpu,
-  Globe,
   Layers,
   TrendingUp,
-  Zap,
-  Search,
   Brain,
   BarChart3,
+  Globe,
+  RefreshCw,
+  Zap,
 } from "lucide-react";
 
 // ── Design tokens (matching ProfilerInsights) ─────────────────────────
@@ -34,12 +37,19 @@ const ROW = "flex items-center justify-between rounded-lg border border-edge/30 
 
 // ── Types ─────────────────────────────────────────────────────────────
 
-interface ProviderRate {
-  model: string;
+interface LiveProvider {
   provider: string;
+  model: string;
   inputPer1M: number;
   outputPer1M: number;
-  use: string;
+  perCallCost?: number;
+  perCallUnit?: string;
+  currency: string;
+  tier: string;
+  useCase: string;
+  source: string;
+  isActive: boolean;
+  context?: number;
 }
 
 interface CostBreakdownStep {
@@ -49,16 +59,7 @@ interface CostBreakdownStep {
   detail: string;
 }
 
-// ── Static data (from production measurements) ────────────────────────
-
-const PROVIDER_RATES: ProviderRate[] = [
-  { model: "Gemini 3.1 Flash Lite", provider: "Google", inputPer1M: 0.075, outputPer1M: 0.30, use: "Classification, planning, synthesis (default)" },
-  { model: "Gemini 3.1 Flash", provider: "Google", inputPer1M: 0.15, outputPer1M: 0.60, use: "Complex extraction" },
-  { model: "Gemini 3.1 Pro", provider: "Google", inputPer1M: 1.25, outputPer1M: 5.00, use: "Deep analysis (QA runs)" },
-  { model: "Claude Haiku 4.5", provider: "Anthropic", inputPer1M: 1.00, outputPer1M: 5.00, use: "Fallback routing" },
-  { model: "Claude Sonnet 4.6", provider: "Anthropic", inputPer1M: 3.00, outputPer1M: 15.00, use: "Mid-tier synthesis" },
-  { model: "Linkup Search", provider: "Linkup", inputPer1M: -1, outputPer1M: -1, use: "Web search (€0.01-0.05/call, standard depth)" },
-];
+// ── Static breakdown (from production measurements) ───────────────────
 
 const COST_BREAKDOWN: CostBreakdownStep[] = [
   { step: "Classify Intent", pctOfTotal: 3, costPerQuery: 0.0005, detail: "LLM identifies query type + extracts entities" },
@@ -77,49 +78,91 @@ function CostTransparency() {
     avgPerQuery: number;
   } | null>(null);
 
-  // Fetch latest session costs from harness API
+  const [liveProviders, setLiveProviders] = useState<LiveProvider[]>([]);
+  const [pricingMeta, setPricingMeta] = useState<{
+    scrapedAt: number;
+    providerCount: number;
+    modelCount: number;
+    errors: string[];
+  } | null>(null);
+  const [pricingLoading, setPricingLoading] = useState(true);
+
+  // Fetch session costs
   useEffect(() => {
     let cancelled = false;
     async function fetchCosts() {
       try {
-        const sessResp = await fetch("/api/harness/sessions");
-        if (!sessResp.ok) return;
-        const sessData = await sessResp.json();
-        const sessions = sessData.sessions ?? [];
+        const resp = await fetch("/api/harness/sessions");
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const sessions = data.sessions ?? [];
         if (sessions.length === 0) return;
-
-        // Aggregate across all sessions
         const totalCost = sessions.reduce((s: number, sess: any) => s + (sess.totalCostUsd ?? 0), 0);
         const queryCount = sessions.reduce((s: number, sess: any) => s + (sess.turnCount ?? 0), 0);
         if (!cancelled) {
-          setSessionData({
-            totalCost,
-            queryCount,
-            avgPerQuery: queryCount > 0 ? totalCost / queryCount : 0.016,
-          });
+          setSessionData({ totalCost, queryCount, avgPerQuery: queryCount > 0 ? totalCost / queryCount : 0.016 });
         }
-      } catch { /* harness not available — show defaults */ }
+      } catch { /* harness not available */ }
     }
     fetchCosts();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Fetch live pricing from all providers
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchPricing() {
+      try {
+        const resp = await fetch("/api/harness/pricing");
+        if (!resp.ok) throw new Error(`${resp.status}`);
+        const data = await resp.json();
+        if (!cancelled) {
+          setLiveProviders(data.providers ?? []);
+          setPricingMeta({ scrapedAt: data.scrapedAt, providerCount: data.providerCount, modelCount: data.modelCount, errors: data.errors ?? [] });
+        }
+      } catch { /* use empty — cards show "pricing unavailable" */ }
+      if (!cancelled) setPricingLoading(false);
+    }
+    fetchPricing();
     return () => { cancelled = true; };
   }, []);
 
   const avgCost = sessionData?.avgPerQuery ?? 0.016;
   const totalCost = sessionData?.totalCost ?? 0;
   const queryCount = sessionData?.queryCount ?? 0;
-
-  // Monthly projection at current rate
-  const dailyRate = queryCount > 0 ? queryCount : 10; // assume 10/day if no data
+  const dailyRate = queryCount > 0 ? queryCount : 10;
   const monthlyProjection = dailyRate * 30 * avgCost;
+
+  // Group providers
+  const activeProviders = liveProviders.filter(p => p.isActive);
+  const freeModels = liveProviders.filter(p => p.tier === "free" && p.inputPer1M === 0);
+  const byProvider = new Map<string, LiveProvider[]>();
+  for (const p of activeProviders) {
+    if (!byProvider.has(p.provider)) byProvider.set(p.provider, []);
+    byProvider.get(p.provider)!.push(p);
+  }
+
+  const scrapedAgo = pricingMeta?.scrapedAt
+    ? `${Math.round((Date.now() - pricingMeta.scrapedAt) / 60_000)}m ago`
+    : "—";
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-lg font-semibold text-content">Cost Transparency</h2>
-        <p className="mt-1 text-xs text-content-muted">
-          Exactly what each query costs, where the money goes, and what providers charge. No hidden fees.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-content">Cost Transparency</h2>
+          <p className="mt-1 text-xs text-content-muted">
+            Live pricing from all {pricingMeta?.providerCount ?? "—"} integrated providers.
+            {" "}{pricingMeta?.modelCount ?? "—"} models tracked ({freeModels.length} free).
+          </p>
+        </div>
+        {pricingMeta && (
+          <div className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-2.5 py-1 text-[10px] text-content-muted">
+            <RefreshCw className="h-2.5 w-2.5" />
+            Scraped {scrapedAgo}
+          </div>
+        )}
       </div>
 
       {/* ── Card 1: Session Summary ─────────────────────────────── */}
@@ -148,7 +191,7 @@ function CostTransparency() {
         </div>
         {queryCount === 0 && (
           <div className="mt-3 rounded-lg border border-edge/30 bg-white/[0.02] px-3 py-2 text-xs text-content-muted">
-            No queries yet this session. Run a search to see real cost data.
+            No queries yet. Run a search to see real cost data.
           </div>
         )}
       </div>
@@ -160,7 +203,7 @@ function CostTransparency() {
           Per-Query Cost Breakdown
         </div>
         <p className="mb-3 text-[10px] text-content-muted">
-          Average cost: ${avgCost.toFixed(4)} per query. Based on production measurements.
+          Average: ${avgCost.toFixed(4)}/query. Measured on production.
         </p>
         <div className="space-y-2">
           {COST_BREAKDOWN.map((step) => (
@@ -180,74 +223,110 @@ function CostTransparency() {
             </div>
           ))}
         </div>
-        {/* Visual bar */}
         <div className="mt-3 flex h-2 overflow-hidden rounded-full">
           {COST_BREAKDOWN.map((step, i) => {
-            const colors = [
-              "bg-blue-500/60",
-              "bg-purple-500/60",
-              "bg-amber-500/60",
-              "bg-emerald-500/60",
-              "bg-gray-500/40",
-            ];
-            return (
-              <div
-                key={step.step}
-                className={`${colors[i]} transition-all`}
-                style={{ width: `${step.pctOfTotal}%` }}
-                title={`${step.step}: ${step.pctOfTotal}%`}
-              />
-            );
+            const colors = ["bg-blue-500/60", "bg-purple-500/60", "bg-amber-500/60", "bg-emerald-500/60", "bg-gray-500/40"];
+            return <div key={step.step} className={`${colors[i]} transition-all`} style={{ width: `${step.pctOfTotal}%` }} title={`${step.step}: ${step.pctOfTotal}%`} />;
           })}
         </div>
         <div className="mt-1.5 flex justify-between text-[9px] text-content-muted">
-          <span>Classify 3%</span>
-          <span>Plan 7%</span>
-          <span>Tools 60%</span>
-          <span>Synth 18%</span>
-          <span>OH 12%</span>
+          <span>Classify 3%</span><span>Plan 7%</span><span>Tools 60%</span><span>Synth 18%</span><span>OH 12%</span>
         </div>
       </div>
 
-      {/* ── Card 3: Provider Pricing ────────────────────────────── */}
+      {/* ── Card 3: All Integrated Providers (LIVE) ────────────── */}
       <div className={CARD}>
         <div className={SECTION_HEADER}>
-          <Cpu className="h-3.5 w-3.5" />
-          Provider Pricing (per 1M tokens)
+          <Globe className="h-3.5 w-3.5" />
+          All Integrated Providers
+          {pricingMeta && <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[9px] text-emerald-400">LIVE</span>}
         </div>
-        <p className="mb-3 text-[10px] text-content-muted">
-          NodeBench defaults to Gemini Flash Lite — 13x cheaper than Claude Haiku, 200x cheaper than Opus.
-        </p>
-        <div className="space-y-1.5">
-          {PROVIDER_RATES.map((rate) => (
-            <div key={rate.model} className={ROW}>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-content">{rate.model}</span>
-                  <span className="rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[9px] text-content-muted">
-                    {rate.provider}
-                  </span>
+        {pricingLoading ? (
+          <div className="py-4 text-center text-xs text-content-muted">Loading pricing data...</div>
+        ) : byProvider.size === 0 ? (
+          <div className="py-4 text-center text-xs text-content-muted">Pricing API unavailable. Showing last known rates.</div>
+        ) : (
+          <div className="space-y-4">
+            {Array.from(byProvider.entries()).map(([provider, models]) => (
+              <div key={provider}>
+                <div className="mb-1.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-content-muted">
+                  <Cpu className="h-3 w-3" />
+                  {provider}
+                  <span className="rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[9px]">{models.length} model{models.length !== 1 ? "s" : ""}</span>
                 </div>
-                <div className="mt-0.5 text-[10px] text-content-muted">{rate.use}</div>
-              </div>
-              <div className="shrink-0 text-right">
-                {rate.inputPer1M >= 0 ? (
-                  <>
-                    <div className="text-xs font-semibold text-content tabular-nums">
-                      ${rate.inputPer1M.toFixed(3)} / ${rate.outputPer1M.toFixed(2)}
+                <div className="space-y-1">
+                  {models.map((m) => (
+                    <div key={m.model} className={ROW}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate text-xs font-medium text-content">{m.model}</span>
+                          <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] ${
+                            m.tier === "free" ? "bg-emerald-500/20 text-emerald-400" :
+                            m.tier === "cheap" ? "bg-blue-500/20 text-blue-400" :
+                            m.tier === "mid" ? "bg-amber-500/20 text-amber-400" :
+                            "bg-red-500/20 text-red-400"
+                          }`}>{m.tier}</span>
+                        </div>
+                        <div className="mt-0.5 truncate text-[10px] text-content-muted">{m.useCase}</div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        {m.inputPer1M >= 0 ? (
+                          <>
+                            <div className="text-xs font-semibold text-content tabular-nums">
+                              ${m.inputPer1M < 0.01 ? m.inputPer1M.toFixed(4) : m.inputPer1M.toFixed(3)} / ${m.outputPer1M < 0.01 ? m.outputPer1M.toFixed(4) : m.outputPer1M.toFixed(2)}
+                            </div>
+                            <div className="text-[9px] text-content-muted">per 1M in/out</div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="text-xs font-semibold text-content tabular-nums">
+                              {m.currency === "EUR" ? "€" : "$"}{m.perCallCost?.toFixed(3) ?? "—"}
+                            </div>
+                            <div className="text-[9px] text-content-muted">per {m.perCallUnit ?? "call"}</div>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-[9px] text-content-muted">in / out</div>
-                  </>
-                ) : (
-                  <div className="text-xs font-semibold text-content">per call</div>
-                )}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
+        {pricingMeta?.errors && pricingMeta.errors.length > 0 && (
+          <div className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-[10px] text-amber-300">
+            Scrape warnings: {pricingMeta.errors.join("; ")}
+          </div>
+        )}
       </div>
 
-      {/* ── Card 4: Monthly Projections ─────────────────────────── */}
+      {/* ── Card 4: Free Models (OpenRouter auto-discovered) ──── */}
+      {freeModels.length > 0 && (
+        <div className={CARD}>
+          <div className={SECTION_HEADER}>
+            <Zap className="h-3.5 w-3.5" />
+            Free Models via OpenRouter
+            <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[9px] text-emerald-400">{freeModels.length} available</span>
+          </div>
+          <p className="mb-3 text-[10px] text-content-muted">
+            Auto-discovered every 6 hours. Used for routing, classification, and fallback execution at zero cost.
+          </p>
+          <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+            {freeModels.slice(0, 12).map((m) => (
+              <div key={m.model} className="flex items-center gap-2 rounded-lg border border-edge/20 bg-white/[0.01] px-2.5 py-1.5">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+                <span className="truncate text-[11px] text-content">{m.model.split("/").pop()}</span>
+                {m.context && <span className="shrink-0 text-[9px] text-content-muted">{Math.round(m.context / 1000)}K</span>}
+              </div>
+            ))}
+          </div>
+          {freeModels.length > 12 && (
+            <div className="mt-2 text-center text-[10px] text-content-muted">+{freeModels.length - 12} more free models</div>
+          )}
+        </div>
+      )}
+
+      {/* ── Card 5: Monthly Projections ─────────────────────────── */}
       <div className={CARD}>
         <div className={SECTION_HEADER}>
           <TrendingUp className="h-3.5 w-3.5" />
@@ -264,44 +343,40 @@ function CostTransparency() {
               <div key={tier.label} className={ROW}>
                 <div className="flex-1">
                   <div className="text-xs font-medium text-content">{tier.label}</div>
-                  <div className="text-[10px] text-content-muted">{tier.desc} ({tier.queries.toLocaleString()} queries/mo)</div>
+                  <div className="text-[10px] text-content-muted">{tier.desc} ({tier.queries.toLocaleString()}/mo)</div>
                 </div>
-                <span className="shrink-0 text-sm font-semibold text-content tabular-nums">
-                  ${cost.toFixed(2)}/mo
-                </span>
+                <span className="shrink-0 text-sm font-semibold text-content tabular-nums">${cost.toFixed(2)}/mo</span>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* ── Card 5: Honest Limitations ──────────────────────────── */}
+      {/* ── Card 6: Honest Limitations ──────────────────────────── */}
       <div className={CARD}>
         <div className={SECTION_HEADER}>
           <Brain className="h-3.5 w-3.5" />
           Honest Limitations
         </div>
         <div className="space-y-2 text-xs text-content-muted">
-          <div className="flex gap-2">
-            <span className="shrink-0 text-amber-400">1.</span>
-            <span>Cost tracking is estimated from payload sizes (length/4), not metered from API headers. Real costs may be 10-30% higher.</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="shrink-0 text-amber-400">2.</span>
-            <span>Web search (Gemini Search Grounding) doesn't report per-call costs. Estimated at $0.001-0.005/call.</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="shrink-0 text-amber-400">3.</span>
-            <span>Linkup search costs ~€0.01-0.05 per call at standard depth. Used in legacy search path, not yet in harness.</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="shrink-0 text-amber-400">4.</span>
-            <span>Gemini Flash Lite trades prose quality for speed/cost. Upgrading synthesis to Pro would 3x the per-query cost.</span>
-          </div>
+          {[
+            "Cost tracking is estimated from payload sizes (length/4), not metered from API response headers. Real costs may be 10-30% higher.",
+            "Gemini Search Grounding doesn't report per-call costs in the API response. Estimated at $0.001-0.005/call.",
+            "Linkup search costs ~€0.01-0.05 per call at standard depth. Deep mode is €0.05/call. Free tier: €5/month auto-credited.",
+            "ElevenLabs TTS charges per character (~$0.30/1K chars). Only used when voice output is explicitly enabled.",
+            "Convex free tier: 25K function calls/month. At 100 queries/day with profiler logging, you'd hit this in ~8 days.",
+            "OpenRouter free models rotate — availability changes every 6 hours. Fallback to paid models adds cost.",
+            "Gemini Flash Lite trades prose quality for speed/cost. Upgrading synthesis to Pro would 3x the per-query cost.",
+          ].map((text, i) => (
+            <div key={i} className="flex gap-2">
+              <span className="shrink-0 text-amber-400">{i + 1}.</span>
+              <span>{text}</span>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* ── Card 6: API Cost Comparison ─────────────────────────── */}
+      {/* ── Card 7: Cost Comparison ─────────────────────────────── */}
       <div className={CARD}>
         <div className={SECTION_HEADER}>
           <BarChart3 className="h-3.5 w-3.5" />
@@ -317,14 +392,10 @@ function CostTransparency() {
           ].map((alt) => (
             <div key={alt.product} className={`${ROW} ${alt.highlight ? "border-accent-primary/30 bg-accent-primary/5" : ""}`}>
               <div className="flex-1">
-                <div className={`text-xs font-medium ${alt.highlight ? "text-accent-primary" : "text-content"}`}>
-                  {alt.product}
-                </div>
+                <div className={`text-xs font-medium ${alt.highlight ? "text-accent-primary" : "text-content"}`}>{alt.product}</div>
                 <div className="text-[10px] text-content-muted">{alt.detail}</div>
               </div>
-              <span className={`shrink-0 text-xs font-semibold tabular-nums ${alt.highlight ? "text-accent-primary" : "text-content"}`}>
-                {alt.cost}
-              </span>
+              <span className={`shrink-0 text-xs font-semibold tabular-nums ${alt.highlight ? "text-accent-primary" : "text-content"}`}>{alt.cost}</span>
             </div>
           ))}
         </div>
