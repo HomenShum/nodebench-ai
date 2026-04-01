@@ -243,7 +243,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
     if (autoFiredRef.current || conversation.length > 0) return;
     autoFiredRef.current = true;
 
-    function pickEntity(): { entity: string; query: string; lens: LensId } {
+    async function pickEntity(): Promise<{ entity: string; query: string; lens: LensId }> {
       // 1. Return visitor
       const lastEntity = localStorage.getItem("nodebench-last-entity");
       if (lastEntity && lastEntity.length > 1 && lastEntity !== "Your Company") {
@@ -290,8 +290,8 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
       return marketSignals[idx];
     }
 
-    const { query, lens } = pickEntity();
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
+      const { query, lens } = await pickEntity();
       setActiveLens(lens);
       inputRef.current = query;
       setInput(query);
