@@ -221,10 +221,10 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
 
     // 1. Check for last session entity
     const lastEntity = localStorage.getItem("nodebench-last-entity");
-    // 2. Rotating daily entities based on day of week
+    // 2. Rotating daily entities — strongest data sources first
     const dailyEntities = [
-      "Anthropic", "OpenAI", "Stripe", "Figma",
-      "Vercel", "Linear", "Perplexity",
+      "Anthropic", "Anthropic", "OpenAI", "Stripe",
+      "Anthropic", "OpenAI", "Anthropic",
     ];
     const dayEntity = dailyEntities[new Date().getDay()];
     // 3. Pick the query
