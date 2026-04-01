@@ -9856,94 +9856,104 @@ function budgetToolData(toolResults, maxTokensBudget) {
 ${data}`;
   }).join("\n\n");
 }
-function getProviders() {
-  const providers = [];
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (geminiKey) {
-    providers.push({
-      name: "gemini-3.1-flash-lite",
-      contextLimit: 32e3,
-      timeoutMs: 2e4,
-      call: async (prompt, system, maxTokens) => {
-        const resp = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${geminiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: system ? `${system}
+function assessComplexity(prompt, maxTokens) {
+  const len = prompt.length;
+  if (maxTokens <= 500 && len < 2e3) return "low";
+  if (maxTokens <= 1e3 && len < 8e3) return "medium";
+  return "high";
+}
+var GEMINI_MODELS = {
+  low: {
+    name: "gemini-3.1-flash-lite",
+    endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent",
+    apiKeyEnv: "GEMINI_API_KEY",
+    timeoutMs: 15e3,
+    contextLimit: 32e3,
+    makeBody: (prompt, system, maxTokens) => JSON.stringify({
+      contents: [{ parts: [{ text: system ? `${system}
 
 ${prompt}` : prompt }] }],
-              generationConfig: { temperature: 0, maxOutputTokens: maxTokens }
-            }),
-            signal: AbortSignal.timeout(2e4)
-          }
-        );
-        if (!resp.ok) throw new Error(`Gemini ${resp.status}`);
-        const data = await resp.json();
-        return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-      }
-    });
-    providers.push({
-      name: "gemini-3.1-flash",
-      contextLimit: 128e3,
-      timeoutMs: 3e4,
-      call: async (prompt, system, maxTokens) => {
-        const resp = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-preview:generateContent?key=${geminiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: system ? `${system}
+      generationConfig: { temperature: 0, maxOutputTokens: maxTokens }
+    }),
+    extractResponse: (data) => data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ""
+  },
+  medium: {
+    name: "gemini-3.1-flash",
+    endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-preview:generateContent",
+    apiKeyEnv: "GEMINI_API_KEY",
+    timeoutMs: 25e3,
+    contextLimit: 128e3,
+    makeBody: (prompt, system, maxTokens) => JSON.stringify({
+      contents: [{ parts: [{ text: system ? `${system}
 
 ${prompt}` : prompt }] }],
-              generationConfig: { temperature: 0, maxOutputTokens: maxTokens }
-            }),
-            signal: AbortSignal.timeout(3e4)
-          }
-        );
-        if (!resp.ok) throw new Error(`Gemini Flash ${resp.status}`);
-        const data = await resp.json();
-        return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-      }
-    });
+      generationConfig: { temperature: 0, maxOutputTokens: maxTokens }
+    }),
+    extractResponse: (data) => data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ""
+  },
+  high: {
+    name: "gemini-3.1-pro",
+    endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent",
+    apiKeyEnv: "GEMINI_API_KEY",
+    timeoutMs: 4e4,
+    contextLimit: 128e3,
+    makeBody: (prompt, system, maxTokens) => JSON.stringify({
+      contents: [{ parts: [{ text: system ? `${system}
+
+${prompt}` : prompt }] }],
+      generationConfig: { temperature: 0, maxOutputTokens: maxTokens }
+    }),
+    extractResponse: (data) => data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ""
   }
-  const openaiKey = process.env.OPENAI_API_KEY;
-  if (openaiKey) {
-    providers.push({
-      name: "gpt-4o-mini",
-      contextLimit: 128e3,
-      timeoutMs: 25e3,
-      call: async (prompt, system, maxTokens) => {
-        const resp = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openaiKey}` },
-          body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: [
-              ...system ? [{ role: "system", content: system }] : [],
-              { role: "user", content: prompt }
-            ],
-            max_tokens: maxTokens,
-            temperature: 0
-          }),
-          signal: AbortSignal.timeout(25e3)
-        });
-        if (!resp.ok) throw new Error(`OpenAI ${resp.status}`);
-        const data = await resp.json();
-        return data?.choices?.[0]?.message?.content ?? "";
-      }
-    });
+};
+var OPENAI_FALLBACK = {
+  name: "gpt-4o",
+  endpoint: "https://api.openai.com/v1/chat/completions",
+  apiKeyEnv: "OPENAI_API_KEY",
+  timeoutMs: 3e4,
+  contextLimit: 128e3,
+  makeBody: (prompt, system, maxTokens) => JSON.stringify({
+    model: "gpt-4o",
+    messages: [
+      ...system ? [{ role: "system", content: system }] : [],
+      { role: "user", content: prompt }
+    ],
+    max_tokens: maxTokens,
+    temperature: 0
+  }),
+  extractResponse: (data) => data?.choices?.[0]?.message?.content ?? ""
+};
+async function callModel(config, prompt, system, maxTokens) {
+  const apiKey = process.env[config.apiKeyEnv];
+  if (!apiKey) throw new Error(`No ${config.apiKeyEnv}`);
+  const headers = { "Content-Type": "application/json" };
+  let url = config.endpoint;
+  if (config.apiKeyEnv === "GEMINI_API_KEY") {
+    url += `?key=${apiKey}`;
+  } else {
+    headers["Authorization"] = `Bearer ${apiKey}`;
   }
-  return providers;
+  const resp = await fetch(url, {
+    method: "POST",
+    headers,
+    body: config.makeBody(prompt, system, maxTokens),
+    signal: AbortSignal.timeout(config.timeoutMs)
+  });
+  if (!resp.ok) throw new Error(`${config.name} ${resp.status}`);
+  const data = await resp.json();
+  return config.extractResponse(data);
 }
 async function callLLM(_callTool, prompt, system, maxTokens) {
-  const providers = getProviders();
-  if (providers.length === 0) return "";
-  for (const provider of providers) {
+  const tokens = maxTokens ?? 1e3;
+  const complexity = assessComplexity(prompt, tokens);
+  const primaryModel = GEMINI_MODELS[complexity];
+  const chain = [primaryModel];
+  if (complexity === "high") chain.push(GEMINI_MODELS.medium);
+  if (complexity !== "low") chain.push(GEMINI_MODELS.low);
+  chain.push(OPENAI_FALLBACK);
+  for (const model of chain) {
     try {
-      const result = await provider.call(prompt, system, maxTokens ?? 1e3);
+      const result = await callModel(model, prompt, system, tokens);
       if (result && result.length > 10) return result;
     } catch {
       continue;

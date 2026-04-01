@@ -70,10 +70,11 @@ type ToolCaller = (name: string, args: Record<string, unknown>) => Promise<unkno
 // model's context window and summarize overflow.
 
 const MODEL_CONTEXT_LIMITS: Record<string, number> = {
-  "gemini-3.1-flash-lite": 32000,  // ~32K tokens
+  "gemini-3.1-flash-lite": 32000,
   "gemini-3.1-flash": 128000,
-  "gpt-4o-mini": 128000,
-  "gpt-4o": 128000,
+  "gemini-3.1-pro": 128000,
+  "claude-sonnet-4-6": 200000,
+  "claude-opus-4-6": 200000,
 };
 
 function budgetToolData(toolResults: Array<{ tool: string; data: string }>, maxTokensBudget: number): string {
@@ -91,100 +92,109 @@ function budgetToolData(toolResults: Array<{ tool: string; data: string }>, maxT
     .join("\n\n");
 }
 
-// ── Multi-provider LLM call with failover chain ──────────────────────
-// Pattern: Gemini Flash Lite (fast/cheap) → Gemini Flash (deeper) → OpenAI (fallback)
-// No hardcoded timeouts — each provider gets a budget proportional to its speed.
+// ── Kilo Code-style auto model routing ───────────────────────────────
+// Pattern from Kilo Code: detect task complexity, route to optimal model.
+// - Classification/extraction → Flash Lite (cheapest, fastest)
+// - Analysis/synthesis → Flash or Pro (deeper reasoning)
+// - Complex multi-step → Pro or Claude (highest capability)
+// Only latest models. No deprecated models.
 
-interface LLMProvider {
-  name: string;
-  call: (prompt: string, system: string | undefined, maxTokens: number) => Promise<string>;
-  contextLimit: number;
-  timeoutMs: number;
+type TaskComplexity = "low" | "medium" | "high";
+
+function assessComplexity(prompt: string, maxTokens: number): TaskComplexity {
+  const len = prompt.length;
+  if (maxTokens <= 500 && len < 2000) return "low";      // Classification, extraction
+  if (maxTokens <= 1000 && len < 8000) return "medium";   // Analysis, summarization
+  return "high";                                           // Deep synthesis, IB memo
 }
 
-function getProviders(): LLMProvider[] {
-  const providers: LLMProvider[] = [];
+interface ModelConfig {
+  name: string;
+  endpoint: string;
+  apiKeyEnv: string;
+  timeoutMs: number;
+  contextLimit: number;
+  makeBody: (prompt: string, system: string | undefined, maxTokens: number) => string;
+  extractResponse: (data: any) => string;
+}
 
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (geminiKey) {
-    // Primary: Gemini 3.1 Flash Lite (fastest, cheapest)
-    providers.push({
-      name: "gemini-3.1-flash-lite",
-      contextLimit: 32000,
-      timeoutMs: 20000,
-      call: async (prompt, system, maxTokens) => {
-        const resp = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${geminiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }],
-              generationConfig: { temperature: 0, maxOutputTokens: maxTokens },
-            }),
-            signal: AbortSignal.timeout(20000),
-          }
-        );
-        if (!resp.ok) throw new Error(`Gemini ${resp.status}`);
-        const data = (await resp.json()) as any;
-        return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-      },
-    });
+const GEMINI_MODELS: Record<TaskComplexity, ModelConfig> = {
+  low: {
+    name: "gemini-3.1-flash-lite",
+    endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent",
+    apiKeyEnv: "GEMINI_API_KEY",
+    timeoutMs: 15000,
+    contextLimit: 32000,
+    makeBody: (prompt, system, maxTokens) => JSON.stringify({
+      contents: [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }],
+      generationConfig: { temperature: 0, maxOutputTokens: maxTokens },
+    }),
+    extractResponse: (data) => data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "",
+  },
+  medium: {
+    name: "gemini-3.1-flash",
+    endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-preview:generateContent",
+    apiKeyEnv: "GEMINI_API_KEY",
+    timeoutMs: 25000,
+    contextLimit: 128000,
+    makeBody: (prompt, system, maxTokens) => JSON.stringify({
+      contents: [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }],
+      generationConfig: { temperature: 0, maxOutputTokens: maxTokens },
+    }),
+    extractResponse: (data) => data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "",
+  },
+  high: {
+    name: "gemini-3.1-pro",
+    endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent",
+    apiKeyEnv: "GEMINI_API_KEY",
+    timeoutMs: 40000,
+    contextLimit: 128000,
+    makeBody: (prompt, system, maxTokens) => JSON.stringify({
+      contents: [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }],
+      generationConfig: { temperature: 0, maxOutputTokens: maxTokens },
+    }),
+    extractResponse: (data) => data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "",
+  },
+};
 
-    // Secondary: Gemini 3.1 Flash (more capable, larger context)
-    providers.push({
-      name: "gemini-3.1-flash",
-      contextLimit: 128000,
-      timeoutMs: 30000,
-      call: async (prompt, system, maxTokens) => {
-        const resp = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-preview:generateContent?key=${geminiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }],
-              generationConfig: { temperature: 0, maxOutputTokens: maxTokens },
-            }),
-            signal: AbortSignal.timeout(30000),
-          }
-        );
-        if (!resp.ok) throw new Error(`Gemini Flash ${resp.status}`);
-        const data = (await resp.json()) as any;
-        return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-      },
-    });
+const OPENAI_FALLBACK: ModelConfig = {
+  name: "gpt-4o",
+  endpoint: "https://api.openai.com/v1/chat/completions",
+  apiKeyEnv: "OPENAI_API_KEY",
+  timeoutMs: 30000,
+  contextLimit: 128000,
+  makeBody: (prompt, system, maxTokens) => JSON.stringify({
+    model: "gpt-4o",
+    messages: [
+      ...(system ? [{ role: "system", content: system }] : []),
+      { role: "user", content: prompt },
+    ],
+    max_tokens: maxTokens,
+    temperature: 0,
+  }),
+  extractResponse: (data) => data?.choices?.[0]?.message?.content ?? "",
+};
+
+async function callModel(config: ModelConfig, prompt: string, system: string | undefined, maxTokens: number): Promise<string> {
+  const apiKey = process.env[config.apiKeyEnv];
+  if (!apiKey) throw new Error(`No ${config.apiKeyEnv}`);
+
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  let url = config.endpoint;
+  if (config.apiKeyEnv === "GEMINI_API_KEY") {
+    url += `?key=${apiKey}`;
+  } else {
+    headers["Authorization"] = `Bearer ${apiKey}`;
   }
 
-  const openaiKey = process.env.OPENAI_API_KEY;
-  if (openaiKey) {
-    providers.push({
-      name: "gpt-4o-mini",
-      contextLimit: 128000,
-      timeoutMs: 25000,
-      call: async (prompt, system, maxTokens) => {
-        const resp = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openaiKey}` },
-          body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: [
-              ...(system ? [{ role: "system" as const, content: system }] : []),
-              { role: "user" as const, content: prompt },
-            ],
-            max_tokens: maxTokens,
-            temperature: 0,
-          }),
-          signal: AbortSignal.timeout(25000),
-        });
-        if (!resp.ok) throw new Error(`OpenAI ${resp.status}`);
-        const data = (await resp.json()) as any;
-        return data?.choices?.[0]?.message?.content ?? "";
-      },
-    });
-  }
-
-  return providers;
+  const resp = await fetch(url, {
+    method: "POST", headers,
+    body: config.makeBody(prompt, system, maxTokens),
+    signal: AbortSignal.timeout(config.timeoutMs),
+  });
+  if (!resp.ok) throw new Error(`${config.name} ${resp.status}`);
+  const data = (await resp.json()) as any;
+  return config.extractResponse(data);
 }
 
 async function callLLM(
@@ -193,18 +203,23 @@ async function callLLM(
   system?: string,
   maxTokens?: number,
 ): Promise<string> {
-  const providers = getProviders();
-  if (providers.length === 0) return "";
+  const tokens = maxTokens ?? 1000;
+  const complexity = assessComplexity(prompt, tokens);
+  const primaryModel = GEMINI_MODELS[complexity];
 
-  // Try each provider in order — failover chain, not hardcoded single provider
-  for (const provider of providers) {
+  // Try primary model (complexity-matched), then fallback chain
+  const chain = [primaryModel];
+  // Add lower-complexity Gemini as fallback if primary fails
+  if (complexity === "high") chain.push(GEMINI_MODELS.medium);
+  if (complexity !== "low") chain.push(GEMINI_MODELS.low);
+  // OpenAI as final fallback (latest model: gpt-4o, not gpt-4o-mini)
+  chain.push(OPENAI_FALLBACK);
+
+  for (const model of chain) {
     try {
-      const result = await provider.call(prompt, system, maxTokens ?? 1000);
+      const result = await callModel(model, prompt, system, tokens);
       if (result && result.length > 10) return result;
-    } catch {
-      // Provider failed — try next in chain
-      continue;
-    }
+    } catch { continue; }
   }
   return "";
 }

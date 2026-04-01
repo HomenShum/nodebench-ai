@@ -238,6 +238,10 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
     const { sweepTools } = await import("./tools/sweepTools.js");
     return sweepTools;
   },
+  monte_carlo: async () => {
+    const { monteCarloTools } = await import("./tools/monteCarloTools.js");
+    return monteCarloTools;
+  },
   temporal_intelligence: async () => {
     const { temporalIntelligenceTools } = await import("./tools/temporalIntelligenceTools.js");
     return temporalIntelligenceTools;

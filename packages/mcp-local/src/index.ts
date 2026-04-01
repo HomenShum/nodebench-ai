@@ -94,7 +94,7 @@ const PRESETS: Record<string, string[]> = {
   content:      [...CORE_TOOLSETS, "llm", "critter", "email", "rss", "platform", "architect", "local_dashboard", "engine_context", "thompson_protocol"],
   // ── Persona presets (all under 50 tools for IDE compatibility) ──
   // Founder: decision intelligence + company tracking + session memory + local dashboard (~40 tools)
-  founder:      ["deep_sim", "founder", "learning", "local_dashboard", "autonomous_delivery", "sync_bridge", "shared_context", "site_map", "savings", "profiler", "sweep"],
+  founder:      ["deep_sim", "founder", "learning", "local_dashboard", "autonomous_delivery", "sync_bridge", "shared_context", "site_map", "savings", "profiler", "sweep", "monte_carlo"],
   // Banker/analyst: decision intelligence + company profiling + web research + recon (~39 tools)
   banker:       ["deep_sim", "founder", "web", "recon", "autonomous_delivery", "sync_bridge", "shared_context", "profiler"],
   // Operator: decision intelligence + company tracking + causal memory + action tracing (~40 tools)
@@ -105,7 +105,7 @@ const PRESETS: Record<string, string[]> = {
   cursor:       ["deep_sim", "quality_gate", "learning", "session_memory", "web", "toon"],
   // Hackathon: founder + web intelligence + entity enrichment + shared context (~55 tools)
   // Pairs with retention.sh for QA. Install: claude mcp add nodebench -- npx -y nodebench-mcp --preset=hackathon
-  hackathon:    ["deep_sim", "founder", "learning", "web", "entity_enrichment", "autonomous_delivery", "sync_bridge", "shared_context", "recon", "local_dashboard", "delta", "profiler", "sweep"],
+  hackathon:    ["deep_sim", "founder", "learning", "web", "entity_enrichment", "autonomous_delivery", "sync_bridge", "shared_context", "recon", "local_dashboard", "delta", "profiler", "sweep", "monte_carlo"],
   // Delta: full operating-intelligence preset — all delta.* packet tools + watchlist + entity intel
   delta:        ["deep_sim", "founder", "learning", "web", "entity_enrichment", "autonomous_delivery", "sync_bridge", "shared_context", "recon", "local_dashboard", "quality_gate", "execution_trace", "delta"],
   full: ALL_DOMAIN_KEYS,
