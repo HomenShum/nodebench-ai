@@ -96,11 +96,11 @@ const PRESETS: Record<string, string[]> = {
   // Founder: decision intelligence + company tracking + session memory + local dashboard (~40 tools)
   founder:      ["deep_sim", "founder", "learning", "local_dashboard", "autonomous_delivery", "sync_bridge", "shared_context", "site_map", "savings", "profiler"],
   // Banker/analyst: decision intelligence + company profiling + web research + recon (~39 tools)
-  banker:       ["deep_sim", "founder", "web", "recon", "autonomous_delivery", "sync_bridge", "shared_context"],
+  banker:       ["deep_sim", "founder", "web", "recon", "autonomous_delivery", "sync_bridge", "shared_context", "profiler"],
   // Operator: decision intelligence + company tracking + causal memory + action tracing (~40 tools)
-  operator:     ["deep_sim", "founder", "causal_memory", "autonomous_delivery", "sync_bridge", "shared_context"],
+  operator:     ["deep_sim", "founder", "causal_memory", "autonomous_delivery", "sync_bridge", "shared_context", "profiler"],
   // Researcher: decision intelligence + web + recon + session memory (~32 tools)
-  researcher:   ["deep_sim", "web", "recon", "learning", "autonomous_delivery", "sync_bridge", "shared_context"],
+  researcher:   ["deep_sim", "web", "recon", "learning", "autonomous_delivery", "sync_bridge", "shared_context", "profiler"],
   // Cursor IDE has a hard 40-tool limit across ALL MCP servers.
   cursor:       ["deep_sim", "quality_gate", "learning", "session_memory", "web", "toon"],
   // Hackathon: founder + web intelligence + entity enrichment + shared context (~55 tools)
@@ -2023,18 +2023,23 @@ const dynamicLoadingTools: McpTool[] = [
 // Combine all tools (mutable for dynamic loading)
 let allTools = [...allToolsWithoutDiscovery, ...discoveryTools, ...dynamicLoadingTools];
 
-// Auto-profile all tool calls when --profile is set
+// Always initialize profiler tables (lightweight, non-blocking)
+try {
+  const { initEventCollectorTables } = require("./profiler/eventCollector.js");
+  const { initWorkflowTemplateTables } = require("./profiler/workflowTemplates.js");
+  const { initProofEngineTables } = require("./profiler/proofEngine.js");
+  const { initModelRoutingTables } = require("./profiler/modelRouter.js");
+  initEventCollectorTables();
+  initWorkflowTemplateTables();
+  initProofEngineTables();
+  initModelRoutingTables();
+} catch { /* profiler tables optional */ }
+
+// Wrap all tools with profiling proxy when --profile is set
+// This adds ~1ms per tool call but logs everything to SQLite
 if (useProfile) {
   try {
     const { wrapToolsWithProxy } = require("./profiler/mcpProxy.js");
-    const { initEventCollectorTables } = require("./profiler/eventCollector.js");
-    const { initWorkflowTemplateTables } = require("./profiler/workflowTemplates.js");
-    const { initProofEngineTables } = require("./profiler/proofEngine.js");
-    const { initModelRoutingTables } = require("./profiler/modelRouter.js");
-    initEventCollectorTables();
-    initWorkflowTemplateTables();
-    initProofEngineTables();
-    initModelRoutingTables();
     allTools = wrapToolsWithProxy(allTools, { sessionId: `mcp_${Date.now().toString(36)}` });
     console.error("[profiler] All tools wrapped with profiling proxy (--profile)");
   } catch (e: any) {

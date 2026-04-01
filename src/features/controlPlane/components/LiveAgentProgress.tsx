@@ -11,15 +11,25 @@ interface LiveAgentProgressProps {
 }
 
 function mapBackendStep(t: TraceStep, query: string): { id: string; label: string; icon: React.ElementType } {
-  if (t.step === "classify_query") return { id: t.step, label: `Parsing intent for "${query.slice(0, 30)}..."`, icon: Cpu };
-  if (t.step === "build_context_bundle") return { id: t.step, label: "Gathering local workspace context", icon: Database };
-  if (t.step === "tool_call" && t.tool === "web_search") return { id: t.step, label: "Dispatching multi-agent web search", icon: Globe };
-  if (t.step === "tool_call" && t.tool?.includes("founder")) return { id: t.step, label: "Executing founder synthesis tool", icon: Zap };
-  if (t.step === "tool_call" && t.tool === "run_recon") return { id: t.step, label: "Running company reconnaissance", icon: Search };
-  if (t.step === "llm_extract") return { id: t.step, label: "Extracting entity intelligence & signals", icon: Search };
-  if (t.step === "assemble_response") return { id: t.step, label: "Synthesizing final packet", icon: Zap };
-  
-  return { id: t.step + (t.tool ?? ""), label: `Running ${t.tool || t.step}`, icon: Cpu };
+  // Harness steps
+  if (t.step === "agent_plan") return { id: t.step, label: "Planning intelligence gathering strategy", icon: Cpu };
+  if (t.step === "agent_execute") return { id: t.step, label: `Executing ${t.detail ?? "tool chain"}`, icon: Zap };
+  if (t.step === "agent_synthesize") return { id: t.step, label: "Synthesizing intelligence packet", icon: Zap };
+  if (t.step === "agent_fallback") return { id: t.step, label: "Switching to direct dispatch", icon: Cpu };
+  if (t.step === "parallel_dispatch") return { id: t.step, label: `Running ${t.tool ?? "tools"} in parallel`, icon: Globe };
+
+  // Tool calls
+  if (t.step === "classify_query") return { id: t.step, label: `Understanding "${query.slice(0, 25)}..."`, icon: Cpu };
+  if (t.step === "build_context_bundle") return { id: t.step, label: "Loading your company context", icon: Database };
+  if (t.step === "tool_call" && t.tool === "linkup_search") return { id: t.step, label: "Deep web intelligence search", icon: Globe };
+  if (t.step === "tool_call" && t.tool === "web_search") return { id: t.step, label: t.detail || "Searching the web", icon: Globe };
+  if (t.step === "tool_call" && t.tool === "enrich_entity") return { id: t.step, label: "Enriching entity profile", icon: Search };
+  if (t.step === "tool_call" && t.tool?.includes("founder")) return { id: t.step, label: "Gathering founder context", icon: Zap };
+  if (t.step === "tool_call" && t.tool === "run_recon") return { id: t.step, label: "Running deep reconnaissance", icon: Search };
+  if (t.step === "llm_extract") return { id: t.step, label: "Extracting signals & risks", icon: Search };
+  if (t.step === "assemble_response") return { id: t.step, label: "Assembling final packet", icon: Zap };
+
+  return { id: t.step + (t.tool ?? ""), label: t.detail || `Running ${t.tool || t.step}`, icon: Cpu };
 }
 
 export function LiveAgentProgress({ query, lens, trace = [] }: LiveAgentProgressProps) {

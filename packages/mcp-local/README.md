@@ -7,22 +7,31 @@
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io)
 [![Tools](https://img.shields.io/badge/Tools-338-orange.svg)](https://www.npmjs.com/package/nodebench-mcp)
 
-**Operating intelligence for founders, bankers, researchers, and operators. Turn messy context into decision-ready packets, memos, and delegation briefs.**
+**The operating intelligence layer for agent-native founders.** NodeBench understands your company AND how you operate — then improves both over time.
 
-350 tools across 57 domains. You start with 15 (starter preset). Call `discover_tools` to find what you need, then `load_toolset` to activate it. No context bloat, no IDE crashes.
-
-> **New here?** Read **[AGENT_LOGIC.md](./AGENT_LOGIC.md)** for the complete plain-English guide to how NodeBench thinks — what happens when you say "What changed this week?" or "Analyze Anthropic", the full decision tree, fallback chain, and cost estimates.
+350+ tools across 57 domains. Agent harness with LLM-orchestrated tool chains. Built-in profiler that logs every tool call, finds redundant work, and suggests cheaper valid paths. Multi-model provider bus (Gemini, OpenAI, Anthropic).
 
 ```bash
+# Hackathon preset — full founder intelligence + profiling
+claude mcp add nodebench -- npx -y nodebench-mcp --preset hackathon
+
+# Founder preset with tool profiling enabled
+claude mcp add nodebench -- npx -y nodebench-mcp --preset founder --profile
+
 # Starter preset (15 tools) — decision intelligence + progressive discovery
 claude mcp add nodebench -- npx -y nodebench-mcp
-
-# Founder preset (~40 tools) — decision intelligence, company tracking, session memory
-claude mcp add nodebench -- npx -y nodebench-mcp --preset founder
-
-# All 338 tools
-claude mcp add nodebench -- npx -y nodebench-mcp --preset full
 ```
+
+### What's New
+
+- **Agent Harness** — LLM plans which tools to call, executes them in parallel, synthesizes results. Not a flat switch statement.
+- **Founder Operating Profiler** — logs every tool call with cost/latency, detects redundant work, suggests workflow templates.
+- **Multi-Model Provider Bus** — `call_llm` routes to Gemini → OpenAI → Anthropic based on available keys.
+- **Proof Engine** — validates optimized workflows before recommending them. No unproven shortcuts.
+- **OTel Receiver** — any OTel-instrumented agent framework can send traces to NodeBench.
+- **Dual Persistence** — local SQLite + Convex cloud. Data survives serverless cold starts.
+
+> **New here?** Read **[AGENT_LOGIC.md](./AGENT_LOGIC.md)** for the complete guide to how NodeBench thinks.
 
 ---
 
@@ -44,10 +53,11 @@ Decision intelligence core + progressive discovery. Enough to run Deep Sim scena
 
 | Preset | Tools | What it adds | Best for |
 |---|---|---|---|
-| `founder` | ~40 | Company tracking, session memory, local dashboard, weekly reset, delegation briefs | Solo founders, CEOs making daily decisions |
-| `banker` | ~39 | Company profiling, web research, recon, risk assessment | Due diligence, deal evaluation, market analysis |
-| `operator` | ~40 | Company tracking, causal memory, action tracing, important-change review | COOs, ops leads tracking execution |
-| `researcher` | ~32 | Web search, recon, session memory | Analysts, research-heavy workflows |
+| `founder` | ~40 | Company tracking, session memory, local dashboard, weekly reset, profiler | Solo founders, CEOs making daily decisions |
+| `banker` | ~39 | Company profiling, web research, recon, risk assessment, profiler | Due diligence, deal evaluation, market analysis |
+| `operator` | ~40 | Company tracking, causal memory, action tracing, profiler | COOs, ops leads tracking execution |
+| `researcher` | ~32 | Web search, recon, session memory, profiler | Analysts, research-heavy workflows |
+| `hackathon` | ~55 | Full founder stack + web + entity enrichment + delta + profiler | Hackathon builders, demo-ready |
 
 ### Task Presets (specialized toolsets)
 
