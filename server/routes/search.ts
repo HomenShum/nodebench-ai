@@ -19,6 +19,7 @@ import { Request, Response, Router } from "express";
 import { getDb, genId } from "../../packages/mcp-local/src/db.js";
 import { initBehaviorTables, logSession, logQuery, logToolCall, findSimilarPriorQuery } from "../../packages/mcp-local/src/profiler/behaviorStore.js";
 import { ConvexHttpClient } from "convex/browser";
+import { anyApi } from "convex/server";
 import { generatePlan, executeHarness, synthesizeResults } from "../agentHarness.js";
 import type { McpTool } from "../../packages/mcp-local/src/types.js";
 import {
@@ -1257,7 +1258,7 @@ export function createSearchRouter(tools: McpTool[]) {
     fingerprint?: string;
   }) {
     if (!convex) return;
-    convex.mutation("domains/profiler/mutations:logProfilerEvent" as any, data).catch(() => {});
+    convex.mutation(anyApi.domains.profiler.mutations.logProfilerEvent, data).catch(() => {});
   }
 
   /** Fire-and-forget: forward session summary to Convex */
@@ -1268,7 +1269,7 @@ export function createSearchRouter(tools: McpTool[]) {
     classification?: string; query?: string;
   }) {
     if (!convex) return;
-    convex.mutation("domains/profiler/mutations:logSessionSummary" as any, data).catch(() => {});
+    convex.mutation(anyApi.domains.profiler.mutations.logSessionSummary, data).catch(() => {});
   }
 
   // ── Multi-turn session state ──
@@ -2923,7 +2924,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
     // Fall back to Convex (durable across cold starts)
     if (convex) {
       try {
-        const insights = await convex.query("domains/profiler/queries:getInsights" as any, { daysBack: 7 });
+        const insights = await convex.query(anyApi.domains.profiler.queries.getInsights, { daysBack: 7 });
         if (insights) {
           return res.json({ ...insights, source: "convex" });
         }

@@ -896,8 +896,9 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
               )}
               <button
                 type="button"
-                onClick={handleSubmit}
+                onClick={() => handleSubmit()}
                 disabled={!input.trim() && !isSearching}
+                style={{ zIndex: 10 }}
                 className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#d97757] text-white shadow-sm transition-all hover:bg-[#c4603f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-1 focus-visible:ring-offset-surface active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-30 disabled:active:scale-100"
                 aria-label="Search"
                 data-testid="landing-search-submit"

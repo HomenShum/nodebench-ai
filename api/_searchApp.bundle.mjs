@@ -8901,11 +8901,306 @@ var reconTools = [
 // server/vercel/searchApp.ts
 init_webTools();
 
+// packages/mcp-local/src/tools/llmTools.ts
+async function getGeminiProvider() {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const { GoogleGenAI } = await import("@google/genai");
+    const ai = new GoogleGenAI({ apiKey });
+    return {
+      name: "gemini",
+      available: true,
+      call: async ({ system, prompt, maxTokens, temperature }) => {
+        const model = "gemini-3-flash";
+        const result = await ai.models.generateContent({
+          model,
+          contents: [{ role: "user", parts: [{ text: system ? `${system}
+
+${prompt}` : prompt }] }],
+          config: {
+            maxOutputTokens: maxTokens ?? 1024,
+            temperature: temperature ?? 0.7
+          }
+        });
+        const text = typeof result.text === "string" ? result.text : "";
+        const usage = result.usageMetadata;
+        return {
+          response: text,
+          model,
+          tokensUsed: {
+            input: usage?.promptTokenCount ?? 0,
+            output: usage?.candidatesTokenCount ?? 0
+          }
+        };
+      }
+    };
+  } catch {
+    return null;
+  }
+}
+async function getOpenAIProvider() {
+  if (!process.env.OPENAI_API_KEY) return null;
+  try {
+    const OpenAI = (await import("openai")).default;
+    const client = new OpenAI();
+    return {
+      name: "openai",
+      available: true,
+      call: async ({ system, prompt, maxTokens, temperature }) => {
+        const model = "gpt-5-mini";
+        const messages = [];
+        if (system) messages.push({ role: "system", content: system });
+        messages.push({ role: "user", content: prompt });
+        const result = await client.chat.completions.create({
+          model,
+          messages,
+          max_tokens: maxTokens ?? 1024,
+          temperature: temperature ?? 0.7
+        });
+        const text = result.choices?.[0]?.message?.content ?? "";
+        return {
+          response: text,
+          model,
+          tokensUsed: {
+            input: result.usage?.prompt_tokens ?? 0,
+            output: result.usage?.completion_tokens ?? 0
+          }
+        };
+      }
+    };
+  } catch {
+    return null;
+  }
+}
+async function getAnthropicProvider() {
+  if (!process.env.ANTHROPIC_API_KEY) return null;
+  try {
+    const Anthropic = (await import("@anthropic-ai/sdk")).default;
+    const client = new Anthropic();
+    return {
+      name: "anthropic",
+      available: true,
+      call: async ({ system, prompt, maxTokens, temperature }) => {
+        const model = "claude-haiku-4-5-20251001";
+        const result = await client.messages.create({
+          model,
+          max_tokens: maxTokens ?? 1024,
+          system: system ?? "",
+          messages: [{ role: "user", content: prompt }],
+          temperature: temperature ?? 0.7
+        });
+        const text = result.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+        return {
+          response: text,
+          model,
+          tokensUsed: {
+            input: result.usage?.input_tokens ?? 0,
+            output: result.usage?.output_tokens ?? 0
+          }
+        };
+      }
+    };
+  } catch {
+    return null;
+  }
+}
+async function getProvider() {
+  return await getGeminiProvider() ?? await getOpenAIProvider() ?? await getAnthropicProvider();
+}
+var llmTools = [
+  {
+    name: "call_llm",
+    description: "Call an LLM model directly and get the response with metrics (tokens, latency). Uses available API keys: Gemini \u2192 OpenAI \u2192 Anthropic. Useful for eval-driven workflows, model comparison, structured analysis, and any task where the agent needs an LLM call as a step in its pipeline.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        prompt: { type: "string", description: "The user prompt to send" },
+        system: { type: "string", description: "Optional system prompt" },
+        maxTokens: { type: "number", description: "Max output tokens (default: 1024)" },
+        temperature: { type: "number", description: "Temperature 0-1 (default: 0.7)" }
+      },
+      required: ["prompt"]
+    },
+    handler: async (args) => {
+      const start = Date.now();
+      const provider = await getProvider();
+      if (!provider) {
+        return {
+          error: true,
+          message: "No LLM provider available. Set GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY.",
+          providers: {
+            gemini: !!process.env.GEMINI_API_KEY || !!process.env.GOOGLE_AI_API_KEY,
+            openai: !!process.env.OPENAI_API_KEY,
+            anthropic: !!process.env.ANTHROPIC_API_KEY
+          }
+        };
+      }
+      try {
+        const result = await provider.call({
+          system: args.system,
+          prompt: args.prompt,
+          maxTokens: args.maxTokens,
+          temperature: args.temperature
+        });
+        return {
+          response: result.response,
+          model: result.model,
+          provider: provider.name,
+          tokensUsed: result.tokensUsed,
+          latencyMs: Date.now() - start
+        };
+      } catch (err) {
+        return {
+          error: true,
+          message: `LLM call failed: ${err.message ?? String(err)}`,
+          provider: provider.name,
+          latencyMs: Date.now() - start
+        };
+      }
+    }
+  },
+  {
+    name: "extract_structured_data",
+    description: "Extract structured JSON data from unstructured text using an LLM. Provide the text and a description of the fields you want extracted. Returns validated JSON matching your schema. Useful for turning research findings, web pages, or documents into structured data.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        text: { type: "string", description: "The unstructured text to extract data from" },
+        fields: {
+          type: "string",
+          description: "Description of fields to extract, e.g. 'company_name (string), funding_amount (number), round_type (string), investors (array of strings)'"
+        },
+        context: { type: "string", description: "Optional context about what this text is and what to focus on" }
+      },
+      required: ["text", "fields"]
+    },
+    handler: async (args) => {
+      const start = Date.now();
+      const provider = await getProvider();
+      if (!provider) {
+        return {
+          error: true,
+          message: "No LLM provider available. Set GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY."
+        };
+      }
+      const system = `You are a data extraction assistant. Extract structured data from the provided text and return ONLY valid JSON. No explanation, no markdown, just the JSON object.`;
+      const prompt = [
+        args.context ? `Context: ${args.context}` : null,
+        `Extract these fields: ${args.fields}`,
+        "",
+        "Text to extract from:",
+        args.text.slice(0, 8e3),
+        // Cap input to avoid token limits
+        "",
+        "Return ONLY a JSON object with the extracted fields. Use null for fields that cannot be determined from the text."
+      ].filter(Boolean).join("\n");
+      try {
+        const result = await provider.call({ system, prompt, maxTokens: 2048, temperature: 0.1 });
+        let data;
+        try {
+          const cleaned = result.response.replace(/^```(?:json)?\s*\n?/m, "").replace(/\n?```\s*$/m, "").trim();
+          data = JSON.parse(cleaned);
+        } catch {
+          return {
+            error: true,
+            message: "LLM response was not valid JSON",
+            rawResponse: result.response.slice(0, 500),
+            provider: provider.name,
+            latencyMs: Date.now() - start
+          };
+        }
+        return {
+          data,
+          provider: provider.name,
+          model: result.model,
+          tokensUsed: result.tokensUsed,
+          latencyMs: Date.now() - start
+        };
+      } catch (err) {
+        return {
+          error: true,
+          message: `Extraction failed: ${err.message ?? String(err)}`,
+          provider: provider.name,
+          latencyMs: Date.now() - start
+        };
+      }
+    }
+  },
+  {
+    name: "benchmark_models",
+    description: "Run the same prompt against multiple LLM providers and compare responses. Returns side-by-side results with latency, token usage, and a summary. Useful for model selection, quality comparison, and cost analysis.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        prompt: { type: "string", description: "The prompt to send to all models" },
+        system: { type: "string", description: "Optional system prompt" },
+        maxTokens: { type: "number", description: "Max output tokens per model (default: 512)" },
+        temperature: { type: "number", description: "Temperature 0-1 (default: 0.7)" }
+      },
+      required: ["prompt"]
+    },
+    handler: async (args) => {
+      const providers = [
+        { name: "gemini", getter: getGeminiProvider },
+        { name: "openai", getter: getOpenAIProvider },
+        { name: "anthropic", getter: getAnthropicProvider }
+      ];
+      const results = [];
+      for (const { name, getter } of providers) {
+        const provider = await getter();
+        if (!provider) continue;
+        const start = Date.now();
+        try {
+          const result = await provider.call({
+            system: args.system,
+            prompt: args.prompt,
+            maxTokens: args.maxTokens ?? 512,
+            temperature: args.temperature
+          });
+          results.push({
+            provider: name,
+            model: result.model,
+            response: result.response,
+            tokensUsed: result.tokensUsed,
+            latencyMs: Date.now() - start
+          });
+        } catch (err) {
+          results.push({
+            provider: name,
+            model: "unknown",
+            response: "",
+            tokensUsed: { input: 0, output: 0 },
+            latencyMs: Date.now() - start,
+            error: err.message ?? String(err)
+          });
+        }
+      }
+      if (results.length === 0) {
+        return {
+          error: true,
+          message: "No LLM providers available. Set GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY."
+        };
+      }
+      const fastest = results.reduce((a, b) => a.latencyMs < b.latencyMs ? a : b);
+      const totalTokens = results.reduce((s, r) => s + r.tokensUsed.input + r.tokensUsed.output, 0);
+      return {
+        results,
+        modelsCompared: results.length,
+        fastest: { provider: fastest.provider, model: fastest.model, latencyMs: fastest.latencyMs },
+        totalTokensUsed: totalTokens,
+        summary: `Compared ${results.length} model(s). Fastest: ${fastest.provider} (${fastest.model}) at ${fastest.latencyMs}ms.`
+      };
+    }
+  }
+];
+
 // server/routes/search.ts
 init_db();
 init_behaviorStore();
 import { Router } from "express";
 import { ConvexHttpClient } from "convex/browser";
+import { anyApi } from "convex/server";
 
 // server/agentHarness.ts
 async function callLLM(callTool, prompt, system, maxTokens) {
@@ -8973,14 +9268,14 @@ Rules:
 - For founder questions: founder_local_gather first, then direction_assessment or synthesize.
 - For comparisons: web_search per entity in parallel, then compare.
 - Always include at least one intelligence-gathering step.`;
-async function generatePlan(query, classification, entityTargets, lens, callTool) {
+async function generatePlan(query, classification2, entityTargets, lens, callTool) {
   try {
     const text = await callLLM(
       callTool,
       `${PLAN_PROMPT}
 
 Query: "${query}"
-Classification: ${classification}
+Classification: ${classification2}
 Entities: ${entityTargets.join(", ") || "none"}
 Lens: ${lens}`,
       void 0,
@@ -8991,7 +9286,7 @@ Lens: ${lens}`,
     const parsed = JSON.parse(jsonMatch[0]);
     return {
       objective: parsed.objective ?? query,
-      classification,
+      classification: classification2,
       entityTargets,
       steps: (parsed.steps ?? []).map((s, i) => ({
         id: s.id ?? `step_${i}`,
@@ -9004,17 +9299,41 @@ Lens: ${lens}`,
       synthesisPrompt: parsed.synthesisPrompt ?? "Synthesize results into a structured intelligence packet."
     };
   } catch {
-    return buildFallbackPlan(query, classification, entityTargets, lens);
+    return buildFallbackPlan(query, classification2, entityTargets, lens);
   }
 }
-function buildFallbackPlan(query, classification, entityTargets, lens) {
-  const entity = entityTargets[0] ?? query.split(/\s+/).slice(0, 3).join(" ");
+function extractEntityFromQuery(query) {
+  const stopWords = /* @__PURE__ */ new Set(["what", "why", "how", "when", "where", "who", "which", "the", "are", "is", "do", "does", "did", "can", "will", "should", "would", "could", "am", "i", "my", "for", "in", "on", "at", "to", "of", "a", "an", "and", "or", "not", "biggest", "main", "key", "top", "most", "best", "worst", "right", "now", "today", "currently", "about", "tell", "me", "show", "give", "get", "find", "analyze", "compare", "ready", "pitch"]);
+  const words = query.replace(/[?!.,]+/g, "").split(/\s+/);
+  const candidates = words.filter(
+    (w) => w.length > 1 && /^[A-Z]/.test(w) && !stopWords.has(w.toLowerCase())
+  );
+  if (candidates.length > 0) {
+    const result = [];
+    let current = candidates[0];
+    for (let i = 1; i < candidates.length; i++) {
+      const prevIdx = words.indexOf(candidates[i - 1]);
+      const currIdx = words.indexOf(candidates[i]);
+      if (currIdx === prevIdx + 1) {
+        current += " " + candidates[i];
+      } else {
+        result.push(current);
+        current = candidates[i];
+      }
+    }
+    result.push(current);
+    return result[0];
+  }
+  return words.filter((w) => !stopWords.has(w.toLowerCase())).slice(0, 3).join(" ") || query.slice(0, 30);
+}
+function buildFallbackPlan(query, classification2, entityTargets, lens) {
+  const entity = entityTargets[0] ?? extractEntityFromQuery(query);
   const year = (/* @__PURE__ */ new Date()).getFullYear();
-  switch (classification) {
+  switch (classification2) {
     case "weekly_reset":
       return {
         objective: "Generate founder weekly reset",
-        classification,
+        classification: classification2,
         entityTargets,
         steps: [
           { id: "s1", toolName: "founder_local_weekly_reset", args: { daysBack: 7 }, purpose: "Get weekly reset packet", parallel: false }
@@ -9024,11 +9343,11 @@ function buildFallbackPlan(query, classification, entityTargets, lens) {
     case "important_change":
     case "pre_delegation":
       return {
-        objective: `Synthesize ${classification} packet`,
-        classification,
+        objective: `Synthesize ${classification2} packet`,
+        classification: classification2,
         entityTargets,
         steps: [
-          { id: "s1", toolName: "founder_local_synthesize", args: { query, packetType: classification, daysBack: 7 }, purpose: "Synthesize packet", parallel: false }
+          { id: "s1", toolName: "founder_local_synthesize", args: { query, packetType: classification2, daysBack: 7 }, purpose: "Synthesize packet", parallel: false }
         ],
         synthesisPrompt: "Format as a structured founder packet."
       };
@@ -9049,7 +9368,7 @@ function buildFallbackPlan(query, classification, entityTargets, lens) {
       });
       return {
         objective: `Compare ${entityTargets.join(" vs ")}`,
-        classification,
+        classification: classification2,
         entityTargets,
         steps,
         synthesisPrompt: `Compare ${entityTargets.join(", ")} across key dimensions for a ${lens} audience.`
@@ -9059,7 +9378,7 @@ function buildFallbackPlan(query, classification, entityTargets, lens) {
     case "competitor":
       return {
         objective: `Analyze ${entity}`,
-        classification,
+        classification: classification2,
         entityTargets,
         steps: [
           { id: "s1", toolName: "web_search", args: { query: `${entity} company overview strategy funding ${year}`, maxResults: 5 }, purpose: "Web intelligence", parallel: true },
@@ -9071,7 +9390,7 @@ function buildFallbackPlan(query, classification, entityTargets, lens) {
     case "plan_proposal":
       return {
         objective: `Plan: ${query}`,
-        classification,
+        classification: classification2,
         entityTargets,
         steps: [
           { id: "s1", toolName: "founder_local_gather", args: { daysBack: 7 }, purpose: "Understand current context", parallel: false },
@@ -9082,7 +9401,7 @@ function buildFallbackPlan(query, classification, entityTargets, lens) {
     default:
       return {
         objective: query,
-        classification,
+        classification: classification2,
         entityTargets,
         steps: [
           { id: "s1", toolName: "founder_local_gather", args: { daysBack: 7 }, purpose: "Gather context", parallel: true },
@@ -9167,7 +9486,7 @@ async function synthesizeResults(execution, query, lens, callTool) {
       data: typeof res === "string" ? res.slice(0, 1e3) : JSON.stringify(res).slice(0, 1e3)
     };
   });
-  const entityName = execution.plan.entityTargets[0] ?? query.split(/\s+/).slice(0, 3).join(" ");
+  const entityName = execution.plan.entityTargets[0] ?? extractEntityFromQuery(query);
   if (resultData.length > 0) {
     try {
       const text = await callLLM(
@@ -10398,15 +10717,15 @@ function resolveEffectivePacketType(args) {
   return getFounderRolePacketDefault(toFounderRole(args.lens)).defaultPacketType;
 }
 function normalizeFounderIdentity(args) {
-  const classification = resolveEffectiveClassification(args);
+  const classification2 = resolveEffectiveClassification(args);
   const packetType = resolveEffectivePacketType({
     lens: args.lens,
-    classification,
+    classification: classification2,
     result: args.result
   });
-  const companyMode = resolveCompanyMode({ ...args, classification });
+  const companyMode = resolveCompanyMode({ ...args, classification: classification2 });
   const entityName = companyMode === "own_company" ? inferOwnCompanyName(args.result) ?? "Your Company" : inferOwnCompanyName(args.result);
-  return { classification, packetType, entityName };
+  return { classification: classification2, packetType, entityName };
 }
 function normalizeOwnCompanyFounderPayload(args) {
   const normalizedIdentity = normalizeFounderIdentity(args);
@@ -11297,12 +11616,12 @@ function createSearchRouter(tools2) {
   }
   function forwardToConvex(data) {
     if (!convex) return;
-    convex.mutation("domains/profiler/mutations:logProfilerEvent", data).catch(() => {
+    convex.mutation(anyApi.domains.profiler.mutations.logProfilerEvent, data).catch(() => {
     });
   }
   function forwardSessionToConvex(data) {
     if (!convex) return;
-    convex.mutation("domains/profiler/mutations:logSessionSummary", data).catch(() => {
+    convex.mutation(anyApi.domains.profiler.mutations.logSessionSummary, data).catch(() => {
     });
   }
   const sessionCache = /* @__PURE__ */ new Map();
@@ -11320,12 +11639,12 @@ function createSearchRouter(tools2) {
     }
     return entry;
   }
-  function setSessionContext(key, entity, classification, result) {
+  function setSessionContext(key, entity, classification2, result) {
     if (sessionCache.size >= MAX_SESSIONS2) {
       const oldest = [...sessionCache.entries()].sort((a, b) => a[1].ts - b[1].ts)[0];
       if (oldest) sessionCache.delete(oldest[0]);
     }
-    sessionCache.set(key, { entity, classification, result, ts: Date.now() });
+    sessionCache.set(key, { entity, classification: classification2, result, ts: Date.now() });
   }
   function findTool(name) {
     return tools2.find((t) => t.name === name);
@@ -11647,8 +11966,8 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
     }
     const sessionKey = getSessionKey(req);
     const sessionCtx = getSessionContext(sessionKey);
-    const classification = await classifyWithSession(query.trim(), sessionCtx);
-    const resolvedLens = lens ?? classification.lens;
+    const classification2 = await classifyWithSession(query.trim(), sessionCtx);
+    const resolvedLens = lens ?? classification2.lens;
     const isStream = req.query.stream === "true";
     if (isStream) {
       res.setHeader("Content-Type", "text/event-stream");
@@ -11693,24 +12012,24 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
       };
     }
     const classifyTrace = traceStep("classify_query");
-    classifyTrace.ok(`type=${classification.type}, entity=${classification.entity ?? "none"}`);
+    classifyTrace.ok(`type=${classification2.type}, entity=${classification2.entity ?? "none"}`);
     let behaviorSessionId;
     let behaviorQueryId;
     try {
       behaviorSessionId = logSession({
         interfaceSurface: "ai_app",
         roleInferred: resolvedLens,
-        mainObjective: classification.type
+        mainObjective: classification2.type
       });
       activeProfileSessionId = behaviorSessionId;
       const priorQuery = findSimilarPriorQuery(query.trim(), behaviorSessionId);
       behaviorQueryId = logQuery({
         sessionId: behaviorSessionId,
         rawQuery: query.trim(),
-        classification: classification.type,
-        normalizedIntent: classification.type,
-        entityTargets: classification.entities ?? (classification.entity ? [classification.entity] : []),
-        ownCompanyMode: classification.type === "weekly_reset" || classification.type === "founder_progression",
+        classification: classification2.type,
+        normalizedIntent: classification2.type,
+        entityTargets: classification2.entities ?? (classification2.entity ? [classification2.entity] : []),
+        ownCompanyMode: classification2.type === "weekly_reset" || classification2.type === "founder_progression",
         confidenceScore: priorQuery.found ? 0.95 : void 0,
         latencyMs: Date.now() - startMs
       });
@@ -11742,8 +12061,8 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
           const planTrace = traceStep("agent_plan", "gemini-3.1-flash-lite");
           const plan = await generatePlan(
             query.trim(),
-            classification.type,
-            classification.entities ?? (classification.entity ? [classification.entity] : []),
+            classification2.type,
+            classification2.entities ?? (classification2.entity ? [classification2.entity] : []),
             resolvedLens,
             callTool
           );
@@ -11808,7 +12127,7 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
           fallbackTrace.ok(`harness failed: ${harnessErr?.message ?? "unknown"}, using legacy dispatch`);
         }
       }
-      if (!usedHarness) switch (classification.type) {
+      if (!usedHarness) switch (classification2.type) {
         case "weekly_reset": {
           const t = traceStep("tool_call", "founder_local_weekly_reset");
           const raw = await callTool("founder_local_weekly_reset", { daysBack: daysBack ?? 7 });
@@ -11850,22 +12169,22 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
           const t = traceStep("tool_call", "founder_local_synthesize");
           const raw = await callTool("founder_local_synthesize", {
             query: query.trim(),
-            packetType: classification.type,
+            packetType: classification2.type,
             daysBack: daysBack ?? 7
           });
           if (raw?.error) t.error(raw.message);
           else t.ok();
           const sp = raw?.error ? {} : raw ?? {};
           let liveSources = [];
-          if (classification.entity) {
+          if (classification2.entity) {
             const liveTrace = traceStep("tool_call", "linkup_search");
             const liveSearch = await linkupSearch(
-              `${classification.entity} company updates last ${daysBack ?? 7} days ${(/* @__PURE__ */ new Date()).getFullYear()}`,
+              `${classification2.entity} company updates last ${daysBack ?? 7} days ${(/* @__PURE__ */ new Date()).getFullYear()}`,
               5
             );
             if (liveSearch && liveSearch.sources.length > 0) {
               liveSources = liveSearch.sources.map((source) => ({
-                title: source.name || classification.entity || "Source",
+                title: source.name || classification2.entity || "Source",
                 url: source.url,
                 snippet: source.snippet
               }));
@@ -11874,11 +12193,11 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
               liveTrace.skip("no live sources");
               const webTrace = traceStep("tool_call", "web_search");
               const webSearch = await callTool("web_search", {
-                query: `${classification.entity} company updates last ${daysBack ?? 7} days ${(/* @__PURE__ */ new Date()).getFullYear()}`,
+                query: `${classification2.entity} company updates last ${daysBack ?? 7} days ${(/* @__PURE__ */ new Date()).getFullYear()}`,
                 maxResults: 5
               });
               const webResults = (webSearch?.results ?? []).map((item) => ({
-                title: item.title ?? item.name ?? classification.entity ?? "Source",
+                title: item.title ?? item.name ?? classification2.entity ?? "Source",
                 url: item.url ?? "",
                 snippet: item.snippet ?? item.description ?? ""
               })).filter((item) => Boolean(item.url));
@@ -11890,7 +12209,7 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
               }
             }
           }
-          const spLabel = classification.type === "pre_delegation" ? "Delegation Packet" : "Recent Changes";
+          const spLabel = classification2.type === "pre_delegation" ? "Delegation Packet" : "Recent Changes";
           const spMission = sp.summary ?? sp.overview ?? `${spLabel} \u2014 ${query.trim().slice(0, 100)}`;
           const spFindings = sp.keyFindings ?? sp.signals ?? sp.metrics ?? sp.key_findings ?? [];
           const spChanges = sp.keyFindings ?? sp.changes ?? sp.whatChanged ?? sp.key_findings ?? [];
@@ -11898,7 +12217,7 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
           const spNext = sp.nextSteps ?? sp.actions ?? sp.next_steps ?? [];
           result = {
             canonicalEntity: {
-              name: classification.entity ?? spLabel,
+              name: classification2.entity ?? spLabel,
               canonicalMission: spMission.length > 20 ? spMission : `${spLabel}: synthesized from local context for the last ${daysBack ?? 7} days. Ask follow-up questions to drill deeper.`,
               identityConfidence: (sp.confidence ?? 0.7) > 1 ? sp.confidence : Math.round((sp.confidence ?? 0.7) * 100)
             },
@@ -11919,7 +12238,7 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
               evidence: typeof r === "string" ? "" : r.description ?? r.mitigation ?? ""
             })) : [{ claim: "No contradictions detected in this period", evidence: "Upload more context or extend the analysis window for deeper risk detection." }],
             nextActions: spNext.length > 0 ? spNext.slice(0, 4).map((s) => ({ action: typeof s === "string" ? s : s.step ?? s.action ?? String(s) })) : [{ action: "Review the synthesized packet and identify action items" }, { action: "Upload additional context for richer analysis" }],
-            nextQuestions: classification.type === "pre_delegation" ? ["What should the agent prioritize?", "What context does the agent need?", "What are the success criteria?"] : ["What changed that matters most?", "What contradictions surfaced?", "What should I act on first?"],
+            nextQuestions: classification2.type === "pre_delegation" ? ["What should the agent prioritize?", "What context does the agent need?", "What are the success criteria?"] : ["What changed that matters most?", "What contradictions surfaced?", "What should I act on first?"],
             ...liveSources.length > 0 ? {
               sourcesUsed: liveSources.map((source, index) => ({
                 id: `source:${index + 1}`,
@@ -11938,7 +12257,7 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
           const planTrace = traceStep("tool_call", "synthesize_feature_plan");
           const planRaw = await callTool("synthesize_feature_plan", {
             feature: query.trim(),
-            entity: classification.entity
+            entity: classification2.entity
           });
           if (planRaw?.error) planTrace.error(planRaw.error);
           else planTrace.ok();
@@ -11980,7 +12299,7 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
           break;
         }
         case "multi_entity": {
-          const entities = classification.entities ?? [];
+          const entities = classification2.entities ?? [];
           const entityNames = entities.slice(0, 4);
           const multiLinkupTrace = traceStep("tool_call", `linkup_search x${entityNames.length}`);
           const entityResults = await Promise.all(
@@ -12107,7 +12426,7 @@ Return ONLY valid JSON:
             return matched.length >= 1;
           };
           var isGrounded = isGrounded2;
-          const entityName2 = classification.entity ?? query.trim().split(/\s+/).slice(0, 3).join(" ");
+          const entityName2 = classification2.entity ?? query.trim().split(/\s+/).slice(0, 3).join(" ");
           const linkupTrace = traceStep("tool_call", "linkup_search");
           const webTrace = traceStep("tool_call", "web_search");
           const reconTrace = traceStep("tool_call", "run_recon");
@@ -12465,7 +12784,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       if (founderDirectionTool && shouldRunFounderDirectionAssessment({
         query: query.trim(),
         lens: resolvedLens,
-        classification: classification.type
+        classification: classification2.type
       })) {
         const directionTrace = traceStep("tool_call", "founder_direction_assessment");
         try {
@@ -12485,9 +12804,9 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       try {
         const judge = await getJudge();
         if (judge) {
-          const toolName = classification.type === "weekly_reset" ? "founder_local_weekly_reset" : classification.type === "pre_delegation" || classification.type === "important_change" ? "founder_local_synthesize" : classification.type === "plan_proposal" ? "synthesize_feature_plan" : classification.type === "company_search" || classification.type === "competitor" ? "run_recon" : "founder_local_gather";
+          const toolName = classification2.type === "weekly_reset" ? "founder_local_weekly_reset" : classification2.type === "pre_delegation" || classification2.type === "important_change" ? "founder_local_synthesize" : classification2.type === "plan_proposal" ? "synthesize_feature_plan" : classification2.type === "company_search" || classification2.type === "competitor" ? "run_recon" : "founder_local_gather";
           const verdict = await judge({
-            scenarioId: `app_${classification.type}`,
+            scenarioId: `app_${classification2.type}`,
             prompt: query.trim(),
             toolName,
             result
@@ -12506,7 +12825,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       const proof = decorateResultWithProof({
         query: query.trim(),
         lens: resolvedLens,
-        classification: classification.type,
+        classification: classification2.type,
         result,
         judgeVerdict,
         packetId
@@ -12515,7 +12834,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       const normalizedIdentity = normalizeFounderIdentity({
         query: query.trim(),
         lens: resolvedLens,
-        classification: classification.type,
+        classification: classification2.type,
         result
       });
       const effectiveClassification = normalizedIdentity.classification;
@@ -12531,11 +12850,11 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       result.packetType = normalizedIdentity.packetType;
       const assembleTrace = traceStep("assemble_response");
       assembleTrace.ok(`latency=${latencyMs}ms`);
-      const entityName = result?.canonicalEntity?.name ?? normalizedIdentity.entityName ?? classification.entity ?? "";
+      const entityName = result?.canonicalEntity?.name ?? normalizedIdentity.entityName ?? classification2.entity ?? "";
       if (entityName) {
         setSessionContext(sessionKey, entityName, effectiveClassification, result);
       }
-      if (entityName && (classification.type === "company_search" || classification.type === "multi_entity" || classification.type === "competitor")) {
+      if (entityName && (classification2.type === "company_search" || classification2.type === "multi_entity" || classification2.type === "competitor")) {
         const enrichTool = findTool("enrich_entity");
         if (enrichTool) {
           const signals = (result?.signals ?? []).map((s) => s.name).join("; ");
@@ -12577,7 +12896,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
         success: true,
         classification: effectiveClassification,
         lens: resolvedLens,
-        entity: classification.entity ?? null,
+        entity: classification2.entity ?? null,
         latencyMs,
         result,
         resultPacket: proof.packet,
@@ -12625,7 +12944,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
           totalLatencyMs: latencyMs,
           redundantCalls: 0,
           uniqueTools: [...new Set(trace.map((t) => t.tool).filter(Boolean))],
-          classification: classification.type,
+          classification: classification2.type,
           query: query.trim().slice(0, 200)
         });
       }
@@ -12641,7 +12960,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       const errorPayload = {
         error: true,
         message: err?.message ?? "Search failed",
-        classification: classification.type
+        classification: classification2.type
       };
       if (isStream) {
         res.write(`data: ${JSON.stringify({ type: "error", error: errorPayload })}
@@ -12773,7 +13092,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
     }
     if (convex) {
       try {
-        const insights = await convex.query("domains/profiler/queries:getInsights", { daysBack: 7 });
+        const insights = await convex.query(anyApi.domains.profiler.queries.getInsights, { daysBack: 7 });
         if (insights) {
           return res.json({ ...insights, source: "convex" });
         }
@@ -12804,8 +13123,8 @@ import { Router as Router2 } from "express";
 import { ConvexHttpClient as ConvexHttpClient2 } from "convex/browser";
 
 // convex/_generated/api.js
-import { anyApi, componentsGeneric } from "convex/server";
-var api = anyApi;
+import { anyApi as anyApi2, componentsGeneric } from "convex/server";
+var api = anyApi2;
 var components = componentsGeneric();
 
 // server/routes/sharedContextConvex.ts
@@ -14135,46 +14454,6 @@ var HarnessRuntime = class {
       timestamp: Date.now(),
       turnIndex
     });
-    emitTrace({ step: "classify_query", status: "ok", detail: query.slice(0, 80) });
-    const geminiKey = process.env.GEMINI_API_KEY;
-    let classification = this.classifyWithRegex(query);
-    if (geminiKey) {
-      try {
-        classification = await this.classifyWithLLM(query, geminiKey);
-        emitTrace({ step: "classify_result", status: "ok", detail: `LLM: ${classification.type} \u2192 [${classification.entities.join(", ")}]` });
-      } catch {
-        emitTrace({ step: "classify_result", status: "ok", detail: `Regex fallback: ${classification.type}` });
-      }
-    } else {
-      emitTrace({ step: "classify_result", status: "ok", detail: `Regex: ${classification.type} \u2192 [${classification.entities.join(", ")}]` });
-    }
-    if (turnIndex > 0 && classification.type === "general" && classification.entities.length === 0) {
-      const lastTurn = session.turns[turnIndex - 1];
-      if (lastTurn?.entities.length > 0) {
-        classification.entities = [...lastTurn.entities];
-        emitTrace({ step: "context_inject", status: "ok", detail: `Inherited entities: ${classification.entities.join(", ")}` });
-      }
-    }
-    let plan = null;
-    if (geminiKey) {
-      try {
-        emitTrace({ step: "plan_generate", tool: "gemini-3.1-flash-lite", status: "ok" });
-        plan = await generatePlan(
-          query.trim(),
-          classification.type,
-          classification.entities,
-          session.lens,
-          geminiKey
-        );
-        emitTrace({ step: "plan_ready", status: "ok", detail: `${plan.steps.length} steps: ${plan.steps.map((s) => s.toolName).join(" \u2192 ")}` });
-      } catch (err) {
-        emitTrace({ step: "plan_generate", status: "error", detail: err?.message });
-      }
-    }
-    if (!plan) {
-      plan = this.buildFallbackPlan(query, classification.type, classification.entities, session.lens);
-      emitTrace({ step: "plan_fallback", status: "ok", detail: `Deterministic: ${plan.steps.length} steps` });
-    }
     const callTool = async (name, args) => {
       const perm = checkPermission(session.permissionPolicy, name);
       if (perm === "deny") {
@@ -14208,20 +14487,41 @@ var HarnessRuntime = class {
         return { error: true, message: err?.message ?? "Unknown error" };
       }
     };
+    const hasLLM = this.tools.has("call_llm") || !!process.env.GEMINI_API_KEY;
+    let plan = null;
+    if (hasLLM) {
+      try {
+        emitTrace({ step: "plan_generate", tool: "call_llm", status: "ok" });
+        plan = await generatePlan(
+          query.trim(),
+          classification.type,
+          classification.entities,
+          session.lens,
+          callTool
+        );
+        emitTrace({ step: "plan_ready", status: "ok", detail: `${plan.steps.length} steps: ${plan.steps.map((s) => s.toolName).join(" \u2192 ")}` });
+      } catch (err) {
+        emitTrace({ step: "plan_generate", status: "error", detail: err?.message });
+      }
+    }
+    if (!plan) {
+      plan = this.buildFallbackPlan(query, classification.type, classification.entities, session.lens);
+      emitTrace({ step: "plan_fallback", status: "ok", detail: `Deterministic: ${plan.steps.length} steps` });
+    }
     emitTrace({ step: "execute_plan", status: "ok", detail: `Executing ${plan.steps.length} steps` });
     const execution = await executeHarness(plan, callTool, (step) => {
       emitTrace({ step: step.step, tool: step.tool, status: step.status, detail: step.detail });
     });
     let adaptations = 0;
     const failedSteps = execution.stepResults.filter((s) => !s.success);
-    if (failedSteps.length > 0 && failedSteps.length >= plan.steps.length / 2 && adaptations < maxAdaptations && geminiKey) {
+    if (failedSteps.length > 0 && failedSteps.length >= plan.steps.length / 2 && adaptations < maxAdaptations && hasLLM) {
       adaptations++;
       session.adaptationCount++;
       emitTrace({ step: "adapt_plan", status: "adapting", detail: `${failedSteps.length}/${plan.steps.length} failed \u2014 re-planning` });
       const failedTools = failedSteps.map((s) => s.toolName);
       const recoveryQuery = `${query} (retry: ${failedTools.join(", ")} failed)`;
       try {
-        const recoveryPlan = await generatePlan(recoveryQuery, classification.type, classification.entities, session.lens, geminiKey);
+        const recoveryPlan = await generatePlan(recoveryQuery, classification.type, classification.entities, session.lens, callTool);
         recoveryPlan.steps = recoveryPlan.steps.filter((s) => !failedTools.includes(s.toolName));
         if (recoveryPlan.steps.length > 0) {
           const recoveryExec = await executeHarness(recoveryPlan, callTool, (step) => {
@@ -14234,12 +14534,13 @@ var HarnessRuntime = class {
       }
     }
     emitTrace({ step: "synthesize", status: "ok", detail: `${execution.stepResults.filter((s) => s.success).length} successful results` });
+    const entityName = classification.entities[0] ?? classification.entity ?? this.extractEntity(query) ?? query.replace(/^(tell me about|what are the|analyze|research|who are)\s+/i, "").split(/[?.!,]/)[0].trim().slice(0, 50);
     let synthesized;
     try {
-      synthesized = await synthesizeResults(execution, query, session.lens, geminiKey);
+      synthesized = await synthesizeResults(execution, query, session.lens, callTool);
     } catch {
       synthesized = {
-        entityName: classification.entities[0] ?? query.split(/\s+/).slice(0, 3).join(" "),
+        entityName,
         answer: `Processed ${execution.stepResults.length} steps. ${execution.stepResults.filter((s) => s.success).length} succeeded.`,
         confidence: 30,
         signals: [],
@@ -14969,7 +15270,8 @@ var tools = [
   ...webTools,
   ...reconTools,
   ...founderLocalPipelineTools,
-  ...entityEnrichmentTools
+  ...entityEnrichmentTools,
+  ...llmTools
 ];
 var syncBridge = new SyncBridgeServer();
 var app = express();

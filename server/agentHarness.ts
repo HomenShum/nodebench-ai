@@ -178,8 +178,42 @@ export async function generatePlan(
 
 // ── Fallback deterministic planning ──────────────────────────────────
 
+function extractEntityFromQuery(query: string): string {
+  // Extract likely entity name from natural language query
+  // Look for capitalized proper nouns that aren't common question words
+  const stopWords = new Set(["what", "why", "how", "when", "where", "who", "which", "the", "are", "is", "do", "does", "did", "can", "will", "should", "would", "could", "am", "i", "my", "for", "in", "on", "at", "to", "of", "a", "an", "and", "or", "not", "biggest", "main", "key", "top", "most", "best", "worst", "right", "now", "today", "currently", "about", "tell", "me", "show", "give", "get", "find", "analyze", "compare", "ready", "pitch"]);
+
+  const words = query.replace(/[?!.,]+/g, "").split(/\s+/);
+  const candidates = words.filter(w =>
+    w.length > 1 &&
+    /^[A-Z]/.test(w) &&
+    !stopWords.has(w.toLowerCase())
+  );
+
+  // Join consecutive capitalized words (e.g., "Y Combinator", "Open AI")
+  if (candidates.length > 0) {
+    const result: string[] = [];
+    let current = candidates[0];
+    for (let i = 1; i < candidates.length; i++) {
+      const prevIdx = words.indexOf(candidates[i - 1]);
+      const currIdx = words.indexOf(candidates[i]);
+      if (currIdx === prevIdx + 1) {
+        current += " " + candidates[i];
+      } else {
+        result.push(current);
+        current = candidates[i];
+      }
+    }
+    result.push(current);
+    return result[0]; // Return first entity found
+  }
+
+  // Last resort: first 3 meaningful words
+  return words.filter(w => !stopWords.has(w.toLowerCase())).slice(0, 3).join(" ") || query.slice(0, 30);
+}
+
 function buildFallbackPlan(query: string, classification: string, entityTargets: string[], lens: string): HarnessPlan {
-  const entity = entityTargets[0] ?? query.split(/\s+/).slice(0, 3).join(" ");
+  const entity = entityTargets[0] ?? extractEntityFromQuery(query);
   const year = new Date().getFullYear();
 
   switch (classification) {
@@ -381,8 +415,7 @@ export async function synthesizeResults(
       };
     });
 
-  const entityName = execution.plan.entityTargets[0] ??
-    query.split(/\s+/).slice(0, 3).join(" ");
+  const entityName = execution.plan.entityTargets[0] ?? extractEntityFromQuery(query);
 
   // Use multi-model provider bus (Gemini → OpenAI → Anthropic)
   if (resultData.length > 0) {

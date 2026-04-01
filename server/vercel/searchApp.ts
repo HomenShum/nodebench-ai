@@ -6,8 +6,10 @@ import { entityEnrichmentTools } from "../../packages/mcp-local/src/tools/entity
 import { founderLocalPipelineTools } from "../../packages/mcp-local/src/tools/founderLocalPipeline.js";
 import { reconTools } from "../../packages/mcp-local/src/tools/reconTools.js";
 import { webTools } from "../../packages/mcp-local/src/tools/webTools.js";
+import { llmTools } from "../../packages/mcp-local/src/tools/llmTools.js";
 import { createSearchRouter } from "../routes/search.js";
 import { createSharedContextRouter } from "../routes/sharedContext.js";
+import { createHarnessRouter } from "../routes/harness.js";
 import { SyncBridgeServer } from "../syncBridge.js";
 
 if (!process.env.CONVEX_URL && process.env.VITE_CONVEX_URL) {
@@ -22,6 +24,7 @@ const tools: McpTool[] = [
   ...reconTools,
   ...founderLocalPipelineTools,
   ...entityEnrichmentTools,
+  ...llmTools,
 ];
 const syncBridge = new SyncBridgeServer();
 
@@ -36,6 +39,8 @@ app.use(
 );
 app.use(express.json({ limit: "10mb" }));
 app.use(createSearchRouter(tools));
+app.use("/harness", createHarnessRouter(tools));
+app.use("/api/harness", createHarnessRouter(tools));
 app.use("/shared-context", createSharedContextRouter());
 app.use("/api/shared-context", createSharedContextRouter());
 app.get("/sync-bridge/health", (_req, res) => {
