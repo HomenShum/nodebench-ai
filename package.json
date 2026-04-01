@@ -225,6 +225,7 @@
     "convex-helpers": "^0.1.105",
     "cors": "^2.8.5",
     "discord-interactions": "^4.4.0",
+    "docx": "^9.6.1",
     "dompurify": "^3.3.0",
     "express": "^5.1.0",
     "framer-motion": "^12.23.25",

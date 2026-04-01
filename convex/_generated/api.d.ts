@@ -864,6 +864,8 @@ import type * as domains_proactive_recommendations_behaviorTracking from "../dom
 import type * as domains_proactive_recommendations_index from "../domains/proactive/recommendations/index.js";
 import type * as domains_proactive_recommendations_recommendationEngine from "../domains/proactive/recommendations/recommendationEngine.js";
 import type * as domains_proactive_seedAdmins from "../domains/proactive/seedAdmins.js";
+import type * as domains_profiler_mutations from "../domains/profiler/mutations.js";
+import type * as domains_profiler_queries from "../domains/profiler/queries.js";
 import type * as domains_publishing_deliveryQueue from "../domains/publishing/deliveryQueue.js";
 import type * as domains_publishing_index from "../domains/publishing/index.js";
 import type * as domains_publishing_publishingOrchestrator from "../domains/publishing/publishingOrchestrator.js";
@@ -2200,6 +2202,8 @@ declare const fullApi: ApiFromModules<{
   "domains/proactive/recommendations/index": typeof domains_proactive_recommendations_index;
   "domains/proactive/recommendations/recommendationEngine": typeof domains_proactive_recommendations_recommendationEngine;
   "domains/proactive/seedAdmins": typeof domains_proactive_seedAdmins;
+  "domains/profiler/mutations": typeof domains_profiler_mutations;
+  "domains/profiler/queries": typeof domains_profiler_queries;
   "domains/publishing/deliveryQueue": typeof domains_publishing_deliveryQueue;
   "domains/publishing/index": typeof domains_publishing_index;
   "domains/publishing/publishingOrchestrator": typeof domains_publishing_publishingOrchestrator;
