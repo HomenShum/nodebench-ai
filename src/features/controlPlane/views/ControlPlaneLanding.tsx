@@ -247,7 +247,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
       // 1. Return visitor
       const lastEntity = localStorage.getItem("nodebench-last-entity");
       if (lastEntity && lastEntity.length > 1 && lastEntity !== "Your Company") {
-        return { entity: lastEntity, query: `What changed for ${lastEntity} this week?`, lens: "founder" };
+        return { entity: lastEntity, query: `${lastEntity} competitive position and latest developments`, lens: "investor" };
       }
 
       // 2. Daily brief signal entity (from Convex)

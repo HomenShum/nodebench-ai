@@ -302,7 +302,9 @@ function buildFallbackPlan(query: string, classification: string, entityTargets:
           { id: "s2", toolName: "web_search", args: { query: `${entity} competitors risks challenges ${year}`, maxResults: 5 }, purpose: "Competitive & risk intelligence", parallel: true },
           { id: "s3", toolName: "enrich_entity", args: { query: `${entity} competitive position`, entityName: entity, lens }, purpose: "Structured entity enrichment", parallel: true },
           { id: "s4", toolName: "run_recon", args: { target: entity, focus: query }, purpose: "Deep recon", parallel: true },
-          { id: "s5", toolName: "founder_local_gather", args: { daysBack: 7 }, purpose: "Local context", parallel: true },
+          // NOTE: founder_local_gather EXCLUDED from external entity searches.
+          // It returns the FOUNDER'S own dev changes, not the target entity's data.
+          // Including it contaminates "Analyze Anthropic" with "Tool loading changed from static to dynamic imports".
         ],
         synthesisPrompt: `Synthesize intelligence about ${entity} for a ${lens} audience. Include signals, risks, comparables, and next actions.`,
       };
@@ -323,10 +325,9 @@ function buildFallbackPlan(query: string, classification: string, entityTargets:
         objective: query,
         classification, entityTargets,
         steps: [
-          { id: "s1", toolName: "founder_local_gather", args: { daysBack: 7 }, purpose: "Gather context", parallel: true },
-          { id: "s2", toolName: "web_search", args: { query: `${query} ${year}`, maxResults: 5 }, purpose: "Web research", parallel: true },
-          { id: "s3", toolName: "web_search", args: { query: `${entity} market risks competitors ${year}`, maxResults: 3 }, purpose: "Risk & competitive context", parallel: true },
-          { id: "s4", toolName: "founder_direction_assessment", args: { query }, purpose: "Direction assessment", parallel: false, dependsOn: "s1" },
+          { id: "s1", toolName: "web_search", args: { query: `${query} ${year}`, maxResults: 5 }, purpose: "Web research", parallel: true },
+          { id: "s2", toolName: "web_search", args: { query: `${entity} market risks competitors ${year}`, maxResults: 3 }, purpose: "Risk & competitive context", parallel: true },
+          { id: "s3", toolName: "linkup_search", args: { query: `${query} ${year}`, maxResults: 3 }, purpose: "Deep web intelligence", parallel: true },
         ],
         synthesisPrompt: `Answer the query "${query}" using gathered intelligence. Format as a structured founder packet.`,
       };
