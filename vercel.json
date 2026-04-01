@@ -41,6 +41,8 @@
   "rewrites": [
     { "source": "/api/og/:id", "destination": "/api/og/[id]" },
     { "source": "/api/harness/:path*", "destination": "/api/harness" },
+    { "source": "/api/sweep/:path*", "destination": "/api/search" },
+    { "source": "/api/search/insights", "destination": "/api/search" },
     { "source": "/install.sh", "destination": "https://raw.githubusercontent.com/HomenShum/nodebench-ai/main/packages/mcp-local/scripts/install.sh" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
