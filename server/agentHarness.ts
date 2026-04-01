@@ -490,21 +490,132 @@ Return ONLY valid JSON:
     } catch { /* fall through to deterministic synthesis */ }
   }
 
-  // Deterministic fallback: extract what we can from raw results
+  // Deterministic synthesis: extract structured data from raw tool results
+  // This is the structural path — not a "fallback". Tool results ARE structured data.
+  const signals: Array<{ name: string; direction: string; impact: string }> = [];
+  const changes: Array<{ description: string; date?: string }> = [];
+  const risks: Array<{ title: string; description: string }> = [];
+  const comparables: Array<{ name: string; relevance: string; note: string }> = [];
+  const nextActions: Array<{ action: string; impact: string }> = [];
+  const sources: Array<{ label: string; href?: string; type: string }> = [];
+  const answerParts: string[] = [];
+
+  for (const sr of execution.stepResults) {
+    if (!sr.success || !sr.result) continue;
+    const raw = sr.result as any;
+
+    // ── web_search results ──
+    if (sr.toolName === "web_search") {
+      const results = raw?.results ?? raw?.webResults ?? (Array.isArray(raw) ? raw : []);
+      for (const r of results.slice(0, 5)) {
+        const title = r?.title ?? r?.name ?? "";
+        const snippet = r?.snippet ?? r?.description ?? r?.content ?? "";
+        const url = r?.url ?? r?.link ?? r?.href ?? "";
+        if (title) sources.push({ label: title.slice(0, 80), href: url || undefined, type: "web" });
+        if (snippet) {
+          answerParts.push(snippet.slice(0, 200));
+          // Extract signal-like phrases from snippets
+          if (/\b(growth|revenue|raised|funding|launch|expand|partner|acquir)/i.test(snippet)) {
+            signals.push({ name: title.slice(0, 60), direction: "up", impact: "medium" });
+          }
+          if (/\b(layoff|decline|loss|risk|lawsuit|regulat|concern|investig)/i.test(snippet)) {
+            risks.push({ title: title.slice(0, 60), description: snippet.slice(0, 150) });
+          }
+        }
+      }
+    }
+
+    // ── run_recon results ──
+    if (sr.toolName === "run_recon") {
+      const findings = raw?.findings ?? raw?.signals ?? [];
+      for (const f of (Array.isArray(findings) ? findings : []).slice(0, 5)) {
+        const name = typeof f === "string" ? f : (f?.name ?? f?.title ?? f?.finding ?? "");
+        if (name) signals.push({ name: name.slice(0, 80), direction: f?.direction ?? "neutral", impact: f?.impact ?? "medium" });
+      }
+      if (raw?.summary) answerParts.push(String(raw.summary).slice(0, 300));
+      if (raw?.competitors) {
+        for (const c of (Array.isArray(raw.competitors) ? raw.competitors : []).slice(0, 3)) {
+          const cName = typeof c === "string" ? c : (c?.name ?? "");
+          if (cName) comparables.push({ name: cName, relevance: "medium", note: c?.note ?? "Identified via recon" });
+        }
+      }
+      if (raw?.risks) {
+        for (const r of (Array.isArray(raw.risks) ? raw.risks : []).slice(0, 3)) {
+          const rTitle = typeof r === "string" ? r : (r?.title ?? r?.name ?? "");
+          if (rTitle) risks.push({ title: rTitle.slice(0, 60), description: (r?.description ?? r?.detail ?? rTitle).slice(0, 150) });
+        }
+      }
+    }
+
+    // ── founder_local_* results ──
+    if (sr.toolName.startsWith("founder_local")) {
+      if (raw?.changes) {
+        for (const c of (Array.isArray(raw.changes) ? raw.changes : []).slice(0, 5)) {
+          const desc = typeof c === "string" ? c : (c?.description ?? c?.change ?? "");
+          if (desc) changes.push({ description: desc.slice(0, 120), date: c?.date });
+        }
+      }
+      if (raw?.contradictions) {
+        for (const c of (Array.isArray(raw.contradictions) ? raw.contradictions : []).slice(0, 3)) {
+          const claim = typeof c === "string" ? c : (c?.claim ?? c?.contradiction ?? "");
+          if (claim) risks.push({ title: "Contradiction", description: claim.slice(0, 150) });
+        }
+      }
+      if (raw?.nextMoves ?? raw?.recommendations) {
+        for (const m of (raw.nextMoves ?? raw.recommendations ?? []).slice(0, 3)) {
+          const action = typeof m === "string" ? m : (m?.action ?? m?.move ?? "");
+          if (action) nextActions.push({ action: action.slice(0, 100), impact: m?.impact ?? "medium" });
+        }
+      }
+      if (raw?.summary ?? raw?.briefing) answerParts.push(String(raw.summary ?? raw.briefing).slice(0, 300));
+      sources.push({ label: sr.toolName, type: "local" });
+    }
+
+    // ── enrich_entity results ──
+    if (sr.toolName === "enrich_entity") {
+      if (raw?.signals) {
+        for (const s of (Array.isArray(raw.signals) ? raw.signals : []).slice(0, 5)) {
+          signals.push({ name: s?.name ?? String(s).slice(0, 60), direction: s?.direction ?? "neutral", impact: s?.impact ?? "medium" });
+        }
+      }
+      if (raw?.description) answerParts.push(String(raw.description).slice(0, 300));
+    }
+
+    // ── Generic: extract any stringifiable summary ──
+    if (answerParts.length === 0 && typeof raw === "object") {
+      const summary = raw?.summary ?? raw?.answer ?? raw?.result ?? raw?.output;
+      if (typeof summary === "string") answerParts.push(summary.slice(0, 300));
+    }
+  }
+
+  // Build answer from collected parts
+  const answer = answerParts.length > 0
+    ? answerParts.slice(0, 3).join(" ").slice(0, 500)
+    : `Analysis of "${query}" using ${execution.stepResults.filter(r => r.success).length} tools.`;
+
+  // Add default next actions if none extracted
+  if (nextActions.length === 0) {
+    nextActions.push({ action: `Deep-dive into ${entityName} competitive landscape`, impact: "medium" });
+    nextActions.push({ action: `Review latest ${entityName} filings and announcements`, impact: "medium" });
+  }
+
+  const successCount = execution.stepResults.filter(r => r.success).length;
+  const confidence = Math.min(90, 30 + (successCount * 15) + (signals.length * 5) + (sources.length * 3));
+
   return {
     entityName,
-    answer: `Analysis of "${query}" completed using ${execution.stepResults.length} tools in ${execution.totalDurationMs}ms.`,
-    confidence: execution.stepResults.filter(r => r.success).length > 0 ? 50 : 20,
-    signals: [],
-    changes: [],
-    risks: [],
-    comparables: [],
-    nextActions: [{ action: "Run a deeper analysis with more context", impact: "medium" }],
+    answer,
+    confidence,
+    signals: signals.slice(0, 8),
+    changes: changes.slice(0, 5),
+    risks: risks.slice(0, 5),
+    comparables: comparables.slice(0, 4),
+    nextActions: nextActions.slice(0, 4),
     nextQuestions: [
       `What are the key risks for ${entityName}?`,
       `Who are ${entityName}'s main competitors?`,
-      `What changed for ${entityName} recently?`,
+      `What's ${entityName}'s growth trajectory?`,
     ],
-    sources: resultData.map(r => ({ label: r.tool, type: "local" as const })),
+    sources: sources.slice(0, 8),
   };
 }
