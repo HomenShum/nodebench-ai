@@ -92,6 +92,15 @@ function budgetToolData(toolResults: Array<{ tool: string; data: string }>, maxT
     .join("\n\n");
 }
 
+// ── Model freshness: latest model names as of April 2026 ─────────────
+// These should be updated when new models release.
+// TODO: Add OpenRouter dynamic discovery to auto-detect latest models.
+// For now, manually kept current. Last updated: 2026-04-01.
+const LATEST_MODELS = {
+  gemini: { lite: "gemini-3.1-flash-lite-preview", flash: "gemini-3.1-flash-preview", pro: "gemini-3.1-pro-preview" },
+  openai: { nano: "gpt-5.4-nano", mini: "gpt-5.4-mini", standard: "gpt-5.4", pro: "gpt-5.4-pro" },
+} as const;
+
 // ── Kilo Code-style auto model routing ───────────────────────────────
 // Pattern from Kilo Code: detect task complexity, route to optimal model.
 // - Classification/extraction → Flash Lite (cheapest, fastest)

@@ -13239,11 +13239,16 @@ Entity extraction rules:
           if (classification.type === "company_search" || classification.type === "competitor" || classification.type === "multi_entity") {
             try {
               const mcTrace = traceStep("tool_call", "simulate_decision_paths");
+              const answerText = synthesized.answer ?? "";
+              const revMatch = answerText.match(/\$(\d+(?:\.\d+)?)\s*(B|billion|M|million)/i);
+              const shareMatch = answerText.match(/(\d+(?:\.\d+)?)\s*%\s*(?:market|share)/i);
+              const seedRevenue = revMatch ? parseFloat(revMatch[1]) * (revMatch[2].toLowerCase().startsWith("b") ? 1e9 : 1e6) / 12 : 5e6;
+              const seedShare = shareMatch ? parseFloat(shareMatch[1]) / 100 : 0.05;
               const mcResult = await callTool("simulate_decision_paths", {
                 entity: synthesized.entityName,
-                revenue: 0,
-                marketShare: 0.01,
-                runway: 18,
+                revenue: Math.round(seedRevenue),
+                marketShare: seedShare,
+                runway: 24,
                 numPaths: 100,
                 timeHorizonMonths: 12
               });

@@ -1826,14 +1826,24 @@ Entity extraction rules:
 
           // ── Monte Carlo enrichment: always run for company/competitor searches ──
           // IB three-case model: bull/base/bear scenarios
+          // Extract revenue from the LLM answer to seed with real numbers
           if (classification.type === "company_search" || classification.type === "competitor" || classification.type === "multi_entity") {
             try {
               const mcTrace = traceStep("tool_call", "simulate_decision_paths");
+              // Extract financial data from the synthesized answer
+              const answerText = synthesized.answer ?? "";
+              const revMatch = answerText.match(/\$(\d+(?:\.\d+)?)\s*(B|billion|M|million)/i);
+              const shareMatch = answerText.match(/(\d+(?:\.\d+)?)\s*%\s*(?:market|share)/i);
+              const seedRevenue = revMatch
+                ? parseFloat(revMatch[1]) * (revMatch[2].toLowerCase().startsWith("b") ? 1_000_000_000 : 1_000_000) / 12
+                : 5_000_000; // Default $5M/mo if no data
+              const seedShare = shareMatch ? parseFloat(shareMatch[1]) / 100 : 0.05;
+
               const mcResult = await callTool("simulate_decision_paths", {
                 entity: synthesized.entityName,
-                revenue: 0,
-                marketShare: 0.01,
-                runway: 18,
+                revenue: Math.round(seedRevenue),
+                marketShare: seedShare,
+                runway: 24,
                 numPaths: 100,
                 timeHorizonMonths: 12,
               }) as any;
