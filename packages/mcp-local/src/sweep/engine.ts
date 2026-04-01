@@ -53,6 +53,10 @@ export async function runSweep(): Promise<SweepResult> {
       const ph = await import("./sources/producthunt.js");
       registerSource("producthunt", ph.collect);
     } catch { /* source unavailable */ }
+    try {
+      const ob = await import("./sources/openbb_finance.js");
+      registerSource("openbb_finance", ob.collect);
+    } catch { /* source unavailable */ }
   }
 
   // Run all sources in parallel with per-source timeouts (Crucix pattern)

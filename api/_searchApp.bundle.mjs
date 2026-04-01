@@ -2163,6 +2163,63 @@ var init_producthunt = __esm({
   }
 });
 
+// packages/mcp-local/src/sweep/sources/openbb_finance.ts
+var openbb_finance_exports = {};
+__export(openbb_finance_exports, {
+  collect: () => collect5
+});
+async function collect5() {
+  const signals = [];
+  try {
+    const tickers = Object.keys(TRACKED_TICKERS).join(",");
+    const resp = await fetch(
+      `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${tickers}&fields=regularMarketPrice,regularMarketChangePercent,marketCap,fiftyDayAverage`,
+      { signal: AbortSignal.timeout(5e3), headers: { "User-Agent": "NodeBench/1.0" } }
+    );
+    if (!resp.ok) return [];
+    const data = await resp.json();
+    const quotes = data?.quoteResponse?.result ?? [];
+    for (const q of quotes) {
+      const changePct = q.regularMarketChangePercent ?? 0;
+      const absChange = Math.abs(changePct);
+      if (absChange < 1.5) continue;
+      const name = TRACKED_TICKERS[q.symbol] ?? q.symbol;
+      const mcap = q.marketCap ? `$${(q.marketCap / 1e9).toFixed(0)}B` : "";
+      signals.push({
+        id: `fin_${q.symbol}_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}`,
+        source: "openbb_finance",
+        entity: name,
+        headline: `${name} (${q.symbol}) ${changePct > 0 ? "\u2191" : "\u2193"} ${absChange.toFixed(1)}% ${mcap ? `\u2014 ${mcap} market cap` : ""}`,
+        url: `https://finance.yahoo.com/quote/${q.symbol}`,
+        score: Math.min(100, Math.round(absChange * 15)),
+        category: "market",
+        severity: absChange > 5 ? "flash" : absChange > 3 ? "priority" : "routine",
+        metadata: { ticker: q.symbol, price: q.regularMarketPrice, changePct, marketCap: q.marketCap },
+        collectedAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    }
+  } catch {
+  }
+  return signals;
+}
+var TRACKED_TICKERS;
+var init_openbb_finance = __esm({
+  "packages/mcp-local/src/sweep/sources/openbb_finance.ts"() {
+    "use strict";
+    TRACKED_TICKERS = {
+      "GOOGL": "Alphabet/Google",
+      "MSFT": "Microsoft",
+      "META": "Meta",
+      "NVDA": "NVIDIA",
+      "AMD": "AMD",
+      "CRM": "Salesforce",
+      "PLTR": "Palantir",
+      "SNOW": "Snowflake",
+      "NET": "Cloudflare"
+    };
+  }
+});
+
 // packages/mcp-local/src/profiler/behaviorStore.ts
 var behaviorStore_exports = {};
 __export(behaviorStore_exports, {
@@ -9563,8 +9620,8 @@ var llmTools = [
 // packages/mcp-local/src/sweep/engine.ts
 init_db();
 var SOURCE_MODULES = [];
-function registerSource(name, collect5) {
-  SOURCE_MODULES.push({ name, collect: collect5 });
+function registerSource(name, collect6) {
+  SOURCE_MODULES.push({ name, collect: collect6 });
 }
 async function runSweep() {
   const sweepId = genId("sweep");
@@ -9590,6 +9647,11 @@ async function runSweep() {
     try {
       const ph = await Promise.resolve().then(() => (init_producthunt(), producthunt_exports));
       registerSource("producthunt", ph.collect);
+    } catch {
+    }
+    try {
+      const ob = await Promise.resolve().then(() => (init_openbb_finance(), openbb_finance_exports));
+      registerSource("openbb_finance", ob.collect);
     } catch {
     }
   }
