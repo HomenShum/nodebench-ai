@@ -1782,8 +1782,9 @@ Entity extraction rules:
       // ── Agent Harness: LLM-orchestrated tool chain ──────────────
       // The harness replaces the flat switch with an LLM-planned execution.
       // Falls through to the legacy switch if harness fails or no API key.
-      const geminiKey = process.env.GEMINI_API_KEY;
-      if (geminiKey) {
+      // Agent harness uses call_llm provider bus (Gemini → OpenAI → Anthropic)
+      // No API key check needed — call_llm handles provider detection
+      {
         try {
           const planTrace = traceStep("agent_plan", "gemini-3.1-flash-lite");
           const plan = await generatePlan(
@@ -1791,7 +1792,7 @@ Entity extraction rules:
             classification.type,
             classification.entities ?? (classification.entity ? [classification.entity] : []),
             resolvedLens,
-            geminiKey,
+            callTool,
           );
           planTrace.ok(`${plan.steps.length} steps planned`);
 
@@ -1808,7 +1809,7 @@ Entity extraction rules:
 
           // Synthesize results into a structured packet
           const synthTrace = traceStep("agent_synthesize", "gemini-3.1-flash-lite");
-          const synthesized = await synthesizeResults(execution, query.trim(), resolvedLens, geminiKey);
+          const synthesized = await synthesizeResults(execution, query.trim(), resolvedLens, callTool);
           synthTrace.ok(`${synthesized.confidence}% confidence`);
 
           // Build result in the format the rest of the route expects

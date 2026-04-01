@@ -8908,6 +8908,38 @@ import { Router } from "express";
 import { ConvexHttpClient } from "convex/browser";
 
 // server/agentHarness.ts
+async function callLLM(callTool, prompt, system, maxTokens) {
+  try {
+    const result = await callTool("call_llm", {
+      prompt,
+      system,
+      maxTokens: maxTokens ?? 500,
+      temperature: 0
+    });
+    if (result?.error) throw new Error(result.message);
+    return result?.response ?? result?.text ?? JSON.stringify(result);
+  } catch {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return "";
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: system ? `${system}
+
+${prompt}` : prompt }] }],
+          generationConfig: { temperature: 0, maxOutputTokens: maxTokens ?? 500 }
+        }),
+        signal: AbortSignal.timeout(8e3)
+      }
+    );
+    if (!resp.ok) return "";
+    const data = await resp.json();
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  }
+}
 var PLAN_PROMPT = `You are NodeBench's agent orchestrator. Given a user query, plan which tools to call and in what order.
 
 Available tools:
@@ -8941,28 +8973,19 @@ Rules:
 - For founder questions: founder_local_gather first, then direction_assessment or synthesize.
 - For comparisons: web_search per entity in parallel, then compare.
 - Always include at least one intelligence-gathering step.`;
-async function generatePlan(query, classification, entityTargets, lens, apiKey) {
+async function generatePlan(query, classification, entityTargets, lens, callTool) {
   try {
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `${PLAN_PROMPT}
+    const text = await callLLM(
+      callTool,
+      `${PLAN_PROMPT}
 
 Query: "${query}"
 Classification: ${classification}
 Entities: ${entityTargets.join(", ") || "none"}
-Lens: ${lens}` }] }],
-          generationConfig: { temperature: 0, maxOutputTokens: 500 }
-        }),
-        signal: AbortSignal.timeout(5e3)
-      }
+Lens: ${lens}`,
+      void 0,
+      500
     );
-    if (!resp.ok) throw new Error(`Gemini ${resp.status}`);
-    const data = await resp.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("No JSON in response");
     const parsed = JSON.parse(jsonMatch[0]);
@@ -9136,7 +9159,7 @@ async function executeHarness(plan, callTool, onTrace) {
     adaptations: 0
   };
 }
-async function synthesizeResults(execution, query, lens, apiKey) {
+async function synthesizeResults(execution, query, lens, callTool) {
   const resultData = execution.stepResults.filter((r) => r.success && r.result).map((r) => {
     const res = r.result;
     return {
@@ -9145,15 +9168,11 @@ async function synthesizeResults(execution, query, lens, apiKey) {
     };
   });
   const entityName = execution.plan.entityTargets[0] ?? query.split(/\s+/).slice(0, 3).join(" ");
-  if (apiKey && resultData.length > 0) {
+  if (resultData.length > 0) {
     try {
-      const resp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `Synthesize these tool results into a structured intelligence packet.
+      const text = await callLLM(
+        callTool,
+        `Synthesize these tool results into a structured intelligence packet.
 
 Query: "${query}"
 Lens: ${lens}
@@ -9174,31 +9193,25 @@ Return ONLY valid JSON:
   "nextActions": [{"action": "what to do", "impact": "high|medium|low"}],
   "nextQuestions": ["follow-up question 1", "follow-up question 2"],
   "sources": [{"label": "source name", "href": null, "type": "web|local|doc"}]
-}` }] }],
-            generationConfig: { temperature: 0, maxOutputTokens: 1e3 }
-          }),
-          signal: AbortSignal.timeout(8e3)
-        }
+}`,
+        "You are a startup intelligence analyst. Extract specific facts and return structured JSON.",
+        1e3
       );
-      if (resp.ok) {
-        const data = await resp.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          return {
-            entityName: parsed.entityName ?? entityName,
-            answer: parsed.answer ?? "",
-            confidence: typeof parsed.confidence === "number" ? parsed.confidence : 50,
-            signals: parsed.signals ?? [],
-            changes: parsed.changes ?? [],
-            risks: parsed.risks ?? [],
-            comparables: parsed.comparables ?? [],
-            nextActions: parsed.nextActions ?? [],
-            nextQuestions: parsed.nextQuestions ?? [],
-            sources: parsed.sources ?? []
-          };
-        }
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return {
+          entityName: parsed.entityName ?? entityName,
+          answer: parsed.answer ?? "",
+          confidence: typeof parsed.confidence === "number" ? parsed.confidence : 50,
+          signals: parsed.signals ?? [],
+          changes: parsed.changes ?? [],
+          risks: parsed.risks ?? [],
+          comparables: parsed.comparables ?? [],
+          nextActions: parsed.nextActions ?? [],
+          nextQuestions: parsed.nextQuestions ?? [],
+          sources: parsed.sources ?? []
+        };
       }
     } catch {
     }
@@ -11294,7 +11307,7 @@ function createSearchRouter(tools2) {
   }
   const sessionCache = /* @__PURE__ */ new Map();
   const SESSION_TTL = 30 * 60 * 1e3;
-  const MAX_SESSIONS = 500;
+  const MAX_SESSIONS2 = 500;
   function getSessionKey(req) {
     return req.body?.sessionId ?? req.ip ?? "default";
   }
@@ -11308,7 +11321,7 @@ function createSearchRouter(tools2) {
     return entry;
   }
   function setSessionContext(key, entity, classification, result) {
-    if (sessionCache.size >= MAX_SESSIONS) {
+    if (sessionCache.size >= MAX_SESSIONS2) {
       const oldest = [...sessionCache.entries()].sort((a, b) => a[1].ts - b[1].ts)[0];
       if (oldest) sessionCache.delete(oldest[0]);
     }
@@ -11724,8 +11737,7 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
     try {
       let result;
       let usedHarness = false;
-      const geminiKey = process.env.GEMINI_API_KEY;
-      if (geminiKey) {
+      {
         try {
           const planTrace = traceStep("agent_plan", "gemini-3.1-flash-lite");
           const plan = await generatePlan(
@@ -11733,7 +11745,7 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
             classification.type,
             classification.entities ?? (classification.entity ? [classification.entity] : []),
             resolvedLens,
-            geminiKey
+            callTool
           );
           planTrace.ok(`${plan.steps.length} steps planned`);
           const execTrace = traceStep("agent_execute");
@@ -11748,7 +11760,7 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
           });
           execTrace.ok(`${execution.stepResults.length} steps, ${execution.totalDurationMs}ms`);
           const synthTrace = traceStep("agent_synthesize", "gemini-3.1-flash-lite");
-          const synthesized = await synthesizeResults(execution, query.trim(), resolvedLens, geminiKey);
+          const synthesized = await synthesizeResults(execution, query.trim(), resolvedLens, callTool);
           synthTrace.ok(`${synthesized.confidence}% confidence`);
           result = {
             canonicalEntity: {
@@ -13910,6 +13922,770 @@ function createSharedContextRouter() {
   return router;
 }
 
+// server/routes/harness.ts
+import { Router as Router3 } from "express";
+
+// server/harnessRuntime.ts
+var MODEL_PRICING = {
+  "gemini-3.1-flash-lite-preview": { input: 0.075, output: 0.3 },
+  "gemini-3.1-flash-preview": { input: 0.15, output: 0.6 },
+  "gemini-3.1-pro-preview": { input: 1.25, output: 5 },
+  "claude-haiku-4-5-20251001": { input: 1, output: 5 },
+  "claude-sonnet-4-6": { input: 3, output: 15 },
+  "claude-opus-4-6": { input: 15, output: 75 }
+};
+function estimateCost(model, inputTokens, outputTokens) {
+  const pricing = MODEL_PRICING[model] ?? { input: 0.15, output: 0.6 };
+  return (inputTokens * pricing.input + outputTokens * pricing.output) / 1e6;
+}
+var sessions = /* @__PURE__ */ new Map();
+var MAX_SESSIONS = 200;
+var IDLE_TIMEOUT_MS = 30 * 60 * 1e3;
+var COMPACTION_THRESHOLD = 40;
+function genSessionId() {
+  return `hns_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+function cleanExpiredSessions() {
+  const now = Date.now();
+  for (const [id, session] of sessions) {
+    if (now - session.lastActivityAt > IDLE_TIMEOUT_MS) {
+      sessions.delete(id);
+    }
+  }
+}
+function evictOldest() {
+  if (sessions.size < MAX_SESSIONS) return;
+  let oldest = null;
+  for (const s of sessions.values()) {
+    if (!oldest || s.lastActivityAt < oldest.lastActivityAt) oldest = s;
+  }
+  if (oldest) sessions.delete(oldest.id);
+}
+function checkPermission(policy, toolName) {
+  return policy.toolOverrides[toolName] ?? policy.default;
+}
+function compactSession(session) {
+  const messages = session.messages;
+  if (messages.length < COMPACTION_THRESHOLD) {
+    return { removedMessageCount: 0, preservedMessageCount: messages.length, toolsUsed: [], pendingWork: [], keyFiles: [], currentState: "no compaction needed" };
+  }
+  const systemMsgs = messages.filter((m) => m.role === "system");
+  const recentCount = 10;
+  const recent = messages.slice(-recentCount);
+  const removed = messages.slice(systemMsgs.length, -recentCount);
+  const toolsUsed = [...new Set(removed.filter((m) => m.toolName).map((m) => m.toolName))];
+  const userRequests = removed.filter((m) => m.role === "user").map((m) => m.content.slice(0, 100));
+  const pendingWork = [];
+  for (const msg of removed) {
+    const lower = msg.content.toLowerCase();
+    for (const keyword of ["todo", "next", "pending", "remaining", "should also", "follow up"]) {
+      if (lower.includes(keyword)) {
+        const sentence = msg.content.split(/[.!?\n]/).find((s) => s.toLowerCase().includes(keyword));
+        if (sentence) pendingWork.push(sentence.trim().slice(0, 120));
+      }
+    }
+  }
+  const filePattern = /(?:[\w/.-]+\.(?:ts|tsx|js|json|md|py|rs))/g;
+  const keyFiles = [...new Set(removed.flatMap((m) => m.content.match(filePattern) ?? []))].slice(0, 15);
+  const currentState = `Processed ${userRequests.length} queries. Tools used: ${toolsUsed.join(", ")}. ${pendingWork.length > 0 ? `Pending: ${pendingWork[0]}` : "No pending work."}`;
+  const compactionMessage = {
+    role: "system",
+    content: `[Session Compacted] ${removed.length} messages summarized.
+
+User requests: ${userRequests.join("; ")}
+Tools used: ${toolsUsed.join(", ")}
+Key files: ${keyFiles.join(", ")}
+${pendingWork.length > 0 ? `Pending work: ${pendingWork.join("; ")}` : ""}
+
+Continue from where you left off. Do not recap \u2014 proceed directly.`,
+    timestamp: Date.now(),
+    turnIndex: session.turns.length
+  };
+  session.messages = [...systemMsgs, compactionMessage, ...recent];
+  const summary = {
+    removedMessageCount: removed.length,
+    preservedMessageCount: session.messages.length,
+    toolsUsed,
+    pendingWork: pendingWork.slice(0, 5),
+    keyFiles,
+    currentState
+  };
+  session.compactions.push(summary);
+  session.status = "compacted";
+  return summary;
+}
+var HarnessRuntime = class {
+  constructor(tools2) {
+    this.allTools = tools2;
+    this.tools = new Map(tools2.map((t) => [t.name, t]));
+  }
+  // ── Session lifecycle ────────────────────────────────────────────
+  createSession(options = {}) {
+    cleanExpiredSessions();
+    evictOldest();
+    const session = {
+      id: genSessionId(),
+      createdAt: Date.now(),
+      lastActivityAt: Date.now(),
+      status: "active",
+      preset: options.preset ?? "founder",
+      lens: options.lens ?? "founder",
+      messages: [{
+        role: "system",
+        content: `You are NodeBench, an operating intelligence agent for founders. You have access to ${this.allTools.length} tools for research, analysis, verification, and decision support. Current lens: ${options.lens ?? "founder"}.`,
+        timestamp: Date.now(),
+        turnIndex: 0
+      }],
+      turns: [],
+      totalCostUsd: 0,
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
+      compactions: [],
+      permissionPolicy: {
+        default: options.permissionPolicy?.default ?? "allow",
+        toolOverrides: options.permissionPolicy?.toolOverrides ?? {}
+      },
+      entityContext: options.entityContext ?? {},
+      adaptationCount: 0
+    };
+    sessions.set(session.id, session);
+    return session;
+  }
+  getSession(id) {
+    const s = sessions.get(id);
+    if (s) s.lastActivityAt = Date.now();
+    return s;
+  }
+  listSessions() {
+    return Array.from(sessions.values()).map((s) => ({
+      id: s.id,
+      preset: s.preset,
+      lens: s.lens,
+      status: s.status,
+      turnCount: s.turns.length,
+      totalCostUsd: Math.round(s.totalCostUsd * 1e4) / 1e4,
+      messageCount: s.messages.length,
+      createdAt: s.createdAt,
+      lastActivityAt: s.lastActivityAt
+    }));
+  }
+  endSession(id) {
+    const s = sessions.get(id);
+    if (!s) return false;
+    s.status = "completed";
+    sessions.delete(id);
+    return true;
+  }
+  compactSession(id) {
+    const s = sessions.get(id);
+    if (!s) return null;
+    return compactSession(s);
+  }
+  getSessionTrace(id) {
+    const s = sessions.get(id);
+    if (!s) return null;
+    return s.turns.flatMap(
+      (t) => t.stepResults.map((sr) => ({
+        step: "tool_call",
+        tool: sr.toolName,
+        status: sr.success ? "ok" : "error",
+        detail: sr.error ?? `${sr.toolName} completed`,
+        durationMs: sr.durationMs,
+        timestamp: t.timestamp
+      }))
+    );
+  }
+  getSessionCost(id) {
+    const s = sessions.get(id);
+    if (!s) return null;
+    return {
+      totalUsd: s.totalCostUsd,
+      perTurn: s.turns.map((t, i) => ({
+        turnIndex: i,
+        model: "gemini-3.1-flash-lite-preview",
+        usage: { inputTokens: 0, outputTokens: 0, cacheCreationTokens: 0, cacheReadTokens: 0 },
+        costUsd: t.costUsd,
+        timestamp: t.timestamp
+      }))
+    };
+  }
+  // ── Main execution loop ──────────────────────────────────────────
+  async run(sessionId, query, options = {}) {
+    const session = sessions.get(sessionId);
+    if (!session) throw new Error(`Session ${sessionId} not found`);
+    if (session.status === "completed") throw new Error(`Session ${sessionId} is completed`);
+    session.lastActivityAt = Date.now();
+    const startMs = Date.now();
+    const turnIndex = session.turns.length;
+    const trace = [];
+    const maxAdaptations = options.maxAdaptations ?? 2;
+    const timeoutMs = options.timeoutMs ?? 3e4;
+    const emitTrace = (event) => {
+      const full = { ...event, timestamp: Date.now() };
+      trace.push(full);
+      options.onTrace?.(full);
+    };
+    if (session.messages.length > COMPACTION_THRESHOLD) {
+      emitTrace({ step: "compact_session", status: "ok", detail: `${session.messages.length} messages \u2192 compacting` });
+      compactSession(session);
+    }
+    session.messages.push({
+      role: "user",
+      content: query,
+      timestamp: Date.now(),
+      turnIndex
+    });
+    emitTrace({ step: "classify_query", status: "ok", detail: query.slice(0, 80) });
+    const geminiKey = process.env.GEMINI_API_KEY;
+    let classification = this.classifyWithRegex(query);
+    if (geminiKey) {
+      try {
+        classification = await this.classifyWithLLM(query, geminiKey);
+        emitTrace({ step: "classify_result", status: "ok", detail: `LLM: ${classification.type} \u2192 [${classification.entities.join(", ")}]` });
+      } catch {
+        emitTrace({ step: "classify_result", status: "ok", detail: `Regex fallback: ${classification.type}` });
+      }
+    } else {
+      emitTrace({ step: "classify_result", status: "ok", detail: `Regex: ${classification.type} \u2192 [${classification.entities.join(", ")}]` });
+    }
+    if (turnIndex > 0 && classification.type === "general" && classification.entities.length === 0) {
+      const lastTurn = session.turns[turnIndex - 1];
+      if (lastTurn?.entities.length > 0) {
+        classification.entities = [...lastTurn.entities];
+        emitTrace({ step: "context_inject", status: "ok", detail: `Inherited entities: ${classification.entities.join(", ")}` });
+      }
+    }
+    let plan = null;
+    if (geminiKey) {
+      try {
+        emitTrace({ step: "plan_generate", tool: "gemini-3.1-flash-lite", status: "ok" });
+        plan = await generatePlan(
+          query.trim(),
+          classification.type,
+          classification.entities,
+          session.lens,
+          geminiKey
+        );
+        emitTrace({ step: "plan_ready", status: "ok", detail: `${plan.steps.length} steps: ${plan.steps.map((s) => s.toolName).join(" \u2192 ")}` });
+      } catch (err) {
+        emitTrace({ step: "plan_generate", status: "error", detail: err?.message });
+      }
+    }
+    if (!plan) {
+      plan = this.buildFallbackPlan(query, classification.type, classification.entities, session.lens);
+      emitTrace({ step: "plan_fallback", status: "ok", detail: `Deterministic: ${plan.steps.length} steps` });
+    }
+    const callTool = async (name, args) => {
+      const perm = checkPermission(session.permissionPolicy, name);
+      if (perm === "deny") {
+        emitTrace({ step: "permission_denied", tool: name, status: "error", detail: `Tool ${name} denied by policy` });
+        return { error: true, message: `Permission denied for tool: ${name}` };
+      }
+      const tool = this.tools.get(name);
+      if (!tool) {
+        return { error: true, message: `Tool not found: ${name}` };
+      }
+      const toolStart = Date.now();
+      try {
+        const result = await Promise.race([
+          tool.handler(args),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("tool_timeout")), Math.min(timeoutMs, 15e3)))
+        ]);
+        const inputEstimate = JSON.stringify(args).length / 4;
+        const outputEstimate = JSON.stringify(result).length / 4;
+        const callCost = estimateCost("gemini-3.1-flash-lite-preview", inputEstimate, outputEstimate);
+        session.totalCostUsd += callCost;
+        session.messages.push({
+          role: "tool",
+          content: JSON.stringify(result).slice(0, 3e3),
+          toolName: name,
+          timestamp: Date.now(),
+          turnIndex
+        });
+        return result;
+      } catch (err) {
+        emitTrace({ step: "tool_error", tool: name, status: "error", detail: err?.message, durationMs: Date.now() - toolStart });
+        return { error: true, message: err?.message ?? "Unknown error" };
+      }
+    };
+    emitTrace({ step: "execute_plan", status: "ok", detail: `Executing ${plan.steps.length} steps` });
+    const execution = await executeHarness(plan, callTool, (step) => {
+      emitTrace({ step: step.step, tool: step.tool, status: step.status, detail: step.detail });
+    });
+    let adaptations = 0;
+    const failedSteps = execution.stepResults.filter((s) => !s.success);
+    if (failedSteps.length > 0 && failedSteps.length >= plan.steps.length / 2 && adaptations < maxAdaptations && geminiKey) {
+      adaptations++;
+      session.adaptationCount++;
+      emitTrace({ step: "adapt_plan", status: "adapting", detail: `${failedSteps.length}/${plan.steps.length} failed \u2014 re-planning` });
+      const failedTools = failedSteps.map((s) => s.toolName);
+      const recoveryQuery = `${query} (retry: ${failedTools.join(", ")} failed)`;
+      try {
+        const recoveryPlan = await generatePlan(recoveryQuery, classification.type, classification.entities, session.lens, geminiKey);
+        recoveryPlan.steps = recoveryPlan.steps.filter((s) => !failedTools.includes(s.toolName));
+        if (recoveryPlan.steps.length > 0) {
+          const recoveryExec = await executeHarness(recoveryPlan, callTool, (step) => {
+            emitTrace({ step: step.step, tool: step.tool, status: step.status, detail: `[recovery] ${step.detail}` });
+          });
+          execution.stepResults.push(...recoveryExec.stepResults);
+        }
+      } catch {
+        emitTrace({ step: "adapt_failed", status: "error", detail: "Recovery plan generation failed" });
+      }
+    }
+    emitTrace({ step: "synthesize", status: "ok", detail: `${execution.stepResults.filter((s) => s.success).length} successful results` });
+    let synthesized;
+    try {
+      synthesized = await synthesizeResults(execution, query, session.lens, geminiKey);
+    } catch {
+      synthesized = {
+        entityName: classification.entities[0] ?? query.split(/\s+/).slice(0, 3).join(" "),
+        answer: `Processed ${execution.stepResults.length} steps. ${execution.stepResults.filter((s) => s.success).length} succeeded.`,
+        confidence: 30,
+        signals: [],
+        changes: [],
+        risks: [],
+        comparables: [],
+        nextActions: [],
+        nextQuestions: [],
+        sources: []
+      };
+    }
+    session.messages.push({
+      role: "assistant",
+      content: typeof synthesized.answer === "string" ? synthesized.answer : JSON.stringify(synthesized).slice(0, 2e3),
+      timestamp: Date.now(),
+      turnIndex
+    });
+    const durationMs = Date.now() - startMs;
+    const turnCostEstimate = plan.steps.length * 5e-3 + adaptations * 2e-3;
+    session.totalCostUsd += turnCostEstimate;
+    const turn = {
+      index: turnIndex,
+      query,
+      classification: classification.type,
+      entities: classification.entities,
+      plan,
+      stepResults: execution.stepResults,
+      synthesizedResult: synthesized,
+      durationMs,
+      costUsd: turnCostEstimate,
+      adaptations,
+      timestamp: Date.now()
+    };
+    session.turns.push(turn);
+    emitTrace({ step: "turn_complete", status: "ok", detail: `${durationMs}ms, $${turnCostEstimate.toFixed(4)}, ${adaptations} adaptations`, durationMs });
+    return {
+      sessionId: session.id,
+      turnIndex,
+      result: synthesized,
+      trace,
+      durationMs,
+      costUsd: turnCostEstimate,
+      classification: classification.type,
+      entities: classification.entities,
+      planSteps: plan.steps.length,
+      adaptations,
+      sessionTotalCostUsd: session.totalCostUsd
+    };
+  }
+  // ── LLM classifier ─────────────────────────────────────────────
+  // ── Deterministic regex classifier (no API key needed) ──────
+  classifyWithRegex(query) {
+    const q = query.toLowerCase().trim();
+    if (/\b(weekly|week|briefing|reset|what happened|status update|catch me up)\b/.test(q)) {
+      return { type: "weekly_reset", entities: [] };
+    }
+    if (/\b(what changed|what's new|what is new|since last|recent changes|updates?)\b/.test(q) && !/\bplan\b/.test(q)) {
+      return { type: "important_change", entities: [] };
+    }
+    if (/\b(delegate|handoff|hand off|assign|outsource)\b/.test(q)) {
+      return { type: "pre_delegation", entities: [] };
+    }
+    if (/\b(plan\s+(?:a|for|to|my)|propose|roadmap|go.to.market|gtm|build\s+(?:a|me)|create\s+(?:a|me)|design\s+(?:a|me))\b/.test(q) && !/\b(tell|about|who|what is)\b/.test(q)) {
+      return { type: "plan_proposal", entities: [] };
+    }
+    if (/\bstrategy\s+for\b/.test(q)) {
+      return { type: "plan_proposal", entities: [] };
+    }
+    const vsMatch = q.match(/(.+?)\s+(?:vs\.?|versus|compared?\s+to|against)\s+(.+)/i);
+    if (vsMatch) {
+      const entities = [vsMatch[1].trim(), vsMatch[2].trim()].map((e) => e.replace(/\b(compare|tell\s+me\s+about|in|the|of|for|and)\b/gi, "").trim()).filter((e) => e.length > 1);
+      if (entities.length >= 2) {
+        return { type: "multi_entity", entities, entity: entities[0] };
+      }
+    }
+    if (/\b(competitors?|competing|rivals?|alternatives?|compete with)\b/.test(q)) {
+      const compOfMatch = query.match(/(?:competitors?\s+(?:of|for|to)\s+)([A-Z][A-Za-z\s]+?)(?:\s*[?.!]|$)/i);
+      const whoAreMatch = query.match(/(?:who\s+are\s+)([A-Z][A-Za-z\s]+?)(?:'s?\s+)?(?:competitors?|rivals?)/i);
+      const entity2 = compOfMatch?.[1]?.trim() ?? whoAreMatch?.[1]?.trim() ?? this.extractEntity(query);
+      return { type: "competitor", entities: entity2 ? [entity2] : [], entity: entity2 };
+    }
+    const entity = this.extractEntity(q);
+    if (entity && /\b(tell|about|analyze|research|look up|what is|who is|show me|investigate)\b/.test(q)) {
+      return { type: "company_search", entities: [entity], entity };
+    }
+    if (entity && entity.length > 2) {
+      return { type: "company_search", entities: [entity], entity };
+    }
+    return { type: "general", entities: [] };
+  }
+  extractEntity(query) {
+    const capMatch = query.match(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/);
+    if (capMatch && !["Tell", "What", "How", "Who", "Why", "Where", "When", "Show", "Plan", "Compare", "Analyze"].includes(capMatch[1])) {
+      return capMatch[1];
+    }
+    const quotedMatch = query.match(/"([^"]+)"|'([^']+)'/);
+    if (quotedMatch) return quotedMatch[1] ?? quotedMatch[2];
+    const aboutMatch = query.match(/\babout\s+([A-Za-z][A-Za-z\s]{1,30}?)(?:\s+(?:company|payments|strategy|revenue|funding|market|risks?|competitors?|products?)|[.?!]|$)/i);
+    if (aboutMatch) return aboutMatch[1].trim();
+    return void 0;
+  }
+  async classifyWithLLM(query, apiKey) {
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `Classify this query. Return ONLY valid JSON.
+
+Query: "${query}"
+
+Return:
+{
+  "type": "weekly_reset" | "pre_delegation" | "important_change" | "company_search" | "competitor" | "multi_entity" | "plan_proposal" | "general",
+  "entities": ["entity1", "entity2"],
+  "entity": "primary entity or null"
+}
+
+Rules:
+- company_search: query mentions a specific company by name
+- multi_entity: query compares 2+ companies (uses "vs", "compare", "versus")
+- competitor: query asks about competitors of a company
+- weekly_reset: query asks for weekly summary, what happened, briefing
+- pre_delegation: query is about delegating tasks or handoff
+- important_change: query asks what changed recently
+- plan_proposal: query asks to plan or propose something
+- general: everything else
+- entities: extract all company/product/person names mentioned` }] }],
+          generationConfig: { temperature: 0, maxOutputTokens: 200 }
+        }),
+        signal: AbortSignal.timeout(4e3)
+      }
+    );
+    if (!resp.ok) throw new Error(`Gemini ${resp.status}`);
+    const data = await resp.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON in classification response");
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
+      type: parsed.type ?? "general",
+      entities: Array.isArray(parsed.entities) ? parsed.entities : [],
+      entity: parsed.entity ?? void 0
+    };
+  }
+  // ── Deterministic fallback plan ────────────────────────────────
+  buildFallbackPlan(query, type, entities, lens) {
+    const entity = entities[0] ?? query.split(/\s+/).slice(0, 3).join(" ");
+    const year = (/* @__PURE__ */ new Date()).getFullYear();
+    const plans = {
+      weekly_reset: () => ({
+        objective: "Generate founder weekly reset",
+        classification: type,
+        entityTargets: entities,
+        steps: [{ id: "s1", toolName: "founder_local_weekly_reset", args: { daysBack: 7 }, purpose: "Weekly reset packet" }],
+        synthesisPrompt: "Format as weekly founder reset with changes, contradictions, and next 3 moves."
+      }),
+      company_search: () => ({
+        objective: `Analyze ${entity}`,
+        classification: type,
+        entityTargets: entities,
+        steps: [
+          { id: "s1", toolName: "web_search", args: { query: `${entity} company overview strategy ${year}`, maxResults: 5 }, purpose: "Web intelligence", parallel: true },
+          { id: "s2", toolName: "run_recon", args: { target: entity, focus: query }, purpose: "Deep recon", parallel: true },
+          { id: "s3", toolName: "founder_local_gather", args: { daysBack: 7 }, purpose: "Local context", parallel: true }
+        ],
+        synthesisPrompt: `Synthesize intelligence about ${entity} for a ${lens} audience.`
+      }),
+      multi_entity: () => {
+        const steps = entities.slice(0, 4).map((e, i) => ({
+          id: `s${i + 1}`,
+          toolName: "web_search",
+          args: { query: `${e} company overview ${year}`, maxResults: 3 },
+          purpose: `Research ${e}`,
+          parallel: true
+        }));
+        return {
+          objective: `Compare ${entities.join(" vs ")}`,
+          classification: type,
+          entityTargets: entities,
+          steps,
+          synthesisPrompt: `Compare ${entities.join(", ")} across key dimensions for a ${lens} audience.`
+        };
+      }
+    };
+    const planFn = plans[type];
+    if (planFn) return planFn();
+    return {
+      objective: query,
+      classification: type,
+      entityTargets: entities,
+      steps: [
+        { id: "s1", toolName: "founder_local_gather", args: { daysBack: 7 }, purpose: "Gather context", parallel: true },
+        { id: "s2", toolName: "web_search", args: { query: `${query} ${year}`, maxResults: 3 }, purpose: "Web research", parallel: true }
+      ],
+      synthesisPrompt: `Answer "${query}" using gathered intelligence for a ${lens} audience.`
+    };
+  }
+  // ── Slash commands ─────────────────────────────────────────────
+  getSlashCommands() {
+    return [
+      { name: "/status", description: "Show session status (turns, cost, messages)" },
+      { name: "/cost", description: "Show cost breakdown per turn" },
+      { name: "/compact", description: "Compact session context to free space" },
+      { name: "/trace", description: "Show execution trace for last turn" },
+      { name: "/tools", description: "List available tools", hint: "[search term]" },
+      { name: "/permissions", description: "Show/modify tool permission policy" },
+      { name: "/sessions", description: "List all active sessions" },
+      { name: "/help", description: "Show available commands" }
+    ];
+  }
+  async handleSlashCommand(sessionId, command) {
+    const session = sessions.get(sessionId);
+    const parts = command.trim().split(/\s+/);
+    const cmd = parts[0].toLowerCase();
+    switch (cmd) {
+      case "/status":
+        if (!session) return { text: "No active session." };
+        return {
+          text: `Session ${session.id}
+Turns: ${session.turns.length}
+Messages: ${session.messages.length}
+Cost: $${session.totalCostUsd.toFixed(4)}
+Status: ${session.status}
+Compactions: ${session.compactions.length}`,
+          data: { id: session.id, turns: session.turns.length, messages: session.messages.length, cost: session.totalCostUsd, status: session.status }
+        };
+      case "/cost":
+        if (!session) return { text: "No active session." };
+        const costs = session.turns.map((t, i) => `Turn ${i}: $${t.costUsd.toFixed(4)} (${t.durationMs}ms, ${t.stepResults.length} steps)`);
+        return {
+          text: `Total: $${session.totalCostUsd.toFixed(4)}
+${costs.join("\n")}`,
+          data: this.getSessionCost(sessionId)
+        };
+      case "/compact":
+        if (!session) return { text: "No active session." };
+        const summary = compactSession(session);
+        return {
+          text: `Compacted: removed ${summary.removedMessageCount} messages, ${summary.preservedMessageCount} preserved.
+Tools used: ${summary.toolsUsed.join(", ")}
+Pending: ${summary.pendingWork.join("; ") || "none"}`,
+          data: summary
+        };
+      case "/trace": {
+        if (!session) return { text: "No active session." };
+        const lastTurn = session.turns[session.turns.length - 1];
+        if (!lastTurn) return { text: "No turns executed yet." };
+        const steps = lastTurn.stepResults.map((s) => `${s.success ? "\u2713" : "\u2717"} ${s.toolName} (${s.durationMs}ms)`);
+        return {
+          text: `Turn ${lastTurn.index}: ${lastTurn.classification}
+Steps:
+${steps.join("\n")}`,
+          data: lastTurn
+        };
+      }
+      case "/tools": {
+        const search = parts.slice(1).join(" ").toLowerCase();
+        const matched = this.allTools.filter((t) => !search || t.name.toLowerCase().includes(search) || t.description.toLowerCase().includes(search)).slice(0, 20);
+        return {
+          text: `${matched.length} tools${search ? ` matching "${search}"` : ""}:
+${matched.map((t) => `\u2022 ${t.name}: ${t.description.slice(0, 60)}`).join("\n")}`,
+          data: matched.map((t) => ({ name: t.name, description: t.description.slice(0, 100) }))
+        };
+      }
+      case "/permissions":
+        if (!session) return { text: "No active session." };
+        return {
+          text: `Default: ${session.permissionPolicy.default}
+Overrides: ${JSON.stringify(session.permissionPolicy.toolOverrides)}`,
+          data: session.permissionPolicy
+        };
+      case "/sessions":
+        return {
+          text: this.listSessions().map((s) => `${s.id} (${s.preset}/${s.lens}) \u2014 ${s.turnCount} turns, $${s.totalCostUsd.toFixed(4)}`).join("\n") || "No active sessions.",
+          data: this.listSessions()
+        };
+      case "/help":
+        return {
+          text: this.getSlashCommands().map((c) => `${c.name}${c.hint ? " " + c.hint : ""} \u2014 ${c.description}`).join("\n")
+        };
+      default:
+        return { text: `Unknown command: ${cmd}. Type /help for available commands.` };
+    }
+  }
+  // ── Health & metrics ───────────────────────────────────────────
+  getHealth() {
+    return {
+      activeSessions: sessions.size,
+      totalTools: this.allTools.length,
+      uptimeMs: Date.now() - (sessions.size > 0 ? Math.min(...Array.from(sessions.values()).map((s) => s.createdAt)) : Date.now()),
+      memoryMb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024)
+    };
+  }
+};
+
+// server/routes/harness.ts
+function createHarnessRouter(tools2) {
+  const router = Router3();
+  const runtime = new HarnessRuntime(tools2);
+  router.get("/health", (_req, res) => {
+    res.json({ ok: true, ...runtime.getHealth() });
+  });
+  router.get("/commands", (_req, res) => {
+    res.json({ ok: true, commands: runtime.getSlashCommands() });
+  });
+  router.post("/sessions", (req, res) => {
+    const { preset, lens, permissionPolicy, entityContext } = req.body;
+    const session = runtime.createSession({
+      preset,
+      lens,
+      permissionPolicy,
+      entityContext
+    });
+    res.status(201).json({
+      ok: true,
+      sessionId: session.id,
+      preset: session.preset,
+      lens: session.lens,
+      status: session.status,
+      messageCount: session.messages.length,
+      createdAt: session.createdAt
+    });
+  });
+  router.get("/sessions", (_req, res) => {
+    res.json({ ok: true, sessions: runtime.listSessions() });
+  });
+  router.get("/sessions/:id", (req, res) => {
+    const session = runtime.getSession(req.params.id);
+    if (!session) return res.status(404).json({ ok: false, error: "Session not found" });
+    res.json({
+      ok: true,
+      id: session.id,
+      preset: session.preset,
+      lens: session.lens,
+      status: session.status,
+      turnCount: session.turns.length,
+      messageCount: session.messages.length,
+      totalCostUsd: session.totalCostUsd,
+      adaptationCount: session.adaptationCount,
+      compactions: session.compactions.length,
+      createdAt: session.createdAt,
+      lastActivityAt: session.lastActivityAt,
+      turns: session.turns.map((t) => ({
+        index: t.index,
+        query: t.query,
+        classification: t.classification,
+        entities: t.entities,
+        planSteps: t.plan?.steps.length ?? 0,
+        successfulSteps: t.stepResults.filter((s) => s.success).length,
+        failedSteps: t.stepResults.filter((s) => !s.success).length,
+        durationMs: t.durationMs,
+        costUsd: t.costUsd,
+        adaptations: t.adaptations
+      }))
+    });
+  });
+  router.post("/sessions/:id/run", async (req, res) => {
+    const { query, maxAdaptations, timeoutMs } = req.body;
+    if (!query?.trim()) {
+      return res.status(400).json({ ok: false, error: "query is required" });
+    }
+    if (query.startsWith("/")) {
+      const cmdResult = await runtime.handleSlashCommand(req.params.id, query);
+      return res.json({ ok: true, type: "command", ...cmdResult });
+    }
+    try {
+      const result = await runtime.run(req.params.id, query.trim(), {
+        maxAdaptations,
+        timeoutMs
+      });
+      res.json({ ok: true, ...result });
+    } catch (err) {
+      const status = err.message?.includes("not found") ? 404 : 500;
+      res.status(status).json({ ok: false, error: err.message });
+    }
+  });
+  router.post("/sessions/:id/stream", async (req, res) => {
+    const { query, maxAdaptations, timeoutMs } = req.body;
+    if (!query?.trim()) {
+      return res.status(400).json({ ok: false, error: "query is required" });
+    }
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+      "Access-Control-Allow-Origin": "*"
+    });
+    const send = (event, data) => {
+      res.write(`event: ${event}
+data: ${JSON.stringify(data)}
+
+`);
+    };
+    send("start", { sessionId: req.params.id, query });
+    try {
+      const result = await runtime.run(req.params.id, query.trim(), {
+        maxAdaptations,
+        timeoutMs,
+        onTrace: (event) => {
+          send("trace", event);
+        }
+      });
+      send("result", result);
+      send("complete", {
+        sessionId: result.sessionId,
+        turnIndex: result.turnIndex,
+        durationMs: result.durationMs,
+        costUsd: result.costUsd,
+        classification: result.classification
+      });
+    } catch (err) {
+      send("error", { error: err.message });
+    }
+    res.end();
+  });
+  router.get("/sessions/:id/trace", (req, res) => {
+    const trace = runtime.getSessionTrace(req.params.id);
+    if (!trace) return res.status(404).json({ ok: false, error: "Session not found" });
+    res.json({ ok: true, events: trace });
+  });
+  router.get("/sessions/:id/cost", (req, res) => {
+    const cost = runtime.getSessionCost(req.params.id);
+    if (!cost) return res.status(404).json({ ok: false, error: "Session not found" });
+    res.json({ ok: true, ...cost });
+  });
+  router.post("/sessions/:id/compact", (req, res) => {
+    const summary = runtime.compactSession(req.params.id);
+    if (!summary) return res.status(404).json({ ok: false, error: "Session not found" });
+    res.json({ ok: true, ...summary });
+  });
+  router.post("/sessions/:id/command", async (req, res) => {
+    const { command } = req.body;
+    if (!command) return res.status(400).json({ ok: false, error: "command is required" });
+    const result = await runtime.handleSlashCommand(req.params.id, command);
+    res.json({ ok: true, ...result });
+  });
+  router.delete("/sessions/:id", (req, res) => {
+    const deleted = runtime.endSession(req.params.id);
+    if (!deleted) return res.status(404).json({ ok: false, error: "Session not found" });
+    res.json({ ok: true, deleted: true });
+  });
+  return router;
+}
+
 // server/syncBridge.ts
 import { randomUUID } from "node:crypto";
 import { EventEmitter as EventEmitter2 } from "node:events";
@@ -13976,8 +14752,8 @@ var SyncBridgeServer = class extends EventEmitter2 {
     };
   }
   getAccountSnapshot(userId) {
-    const sessions = Array.from(this.deviceSessions.values()).filter((session) => session.userId === userId);
-    const connectedDevices = sessions.map((session) => ({
+    const sessions2 = Array.from(this.deviceSessions.values()).filter((session) => session.userId === userId);
+    const connectedDevices = sessions2.map((session) => ({
       deviceId: session.deviceId,
       deviceName: session.deviceName,
       platform: session.platform,
@@ -13988,7 +14764,7 @@ var SyncBridgeServer = class extends EventEmitter2 {
     const recentOperations = this.accountOperations.get(userId) ?? [];
     return {
       userId,
-      workspaceId: sessions[0]?.workspaceId,
+      workspaceId: sessions2[0]?.workspaceId,
       connectedDevices,
       recentOperations
     };
@@ -14206,6 +14982,8 @@ app.use(
 );
 app.use(express.json({ limit: "10mb" }));
 app.use(createSearchRouter(tools));
+app.use("/harness", createHarnessRouter(tools));
+app.use("/api/harness", createHarnessRouter(tools));
 app.use("/shared-context", createSharedContextRouter());
 app.use("/api/shared-context", createSharedContextRouter());
 app.get("/sync-bridge/health", (_req, res) => {

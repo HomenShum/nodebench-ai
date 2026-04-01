@@ -59,9 +59,48 @@ export interface HarnessExecution {
 
 export type TraceCallback = (step: { step: string; tool?: string; status: string; detail?: string }) => void;
 
-// ── Tool availability check ──────────────────────────────────────────
-
 type ToolCaller = (name: string, args: Record<string, unknown>) => Promise<unknown>;
+
+// ── Multi-model LLM call via existing provider bus ───────────────────
+// Uses call_llm MCP tool which routes: Gemini → OpenAI → Anthropic
+// Falls back to direct Gemini fetch if call_llm unavailable
+
+async function callLLM(
+  callTool: ToolCaller,
+  prompt: string,
+  system?: string,
+  maxTokens?: number,
+): Promise<string> {
+  try {
+    const result = await callTool("call_llm", {
+      prompt,
+      system,
+      maxTokens: maxTokens ?? 500,
+      temperature: 0,
+    }) as any;
+    if (result?.error) throw new Error(result.message);
+    return result?.response ?? result?.text ?? JSON.stringify(result);
+  } catch {
+    // Fallback: direct Gemini if call_llm not available
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return "";
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }],
+          generationConfig: { temperature: 0, maxOutputTokens: maxTokens ?? 500 },
+        }),
+        signal: AbortSignal.timeout(8000),
+      }
+    );
+    if (!resp.ok) return "";
+    const data = await resp.json() as any;
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  }
+}
 
 // ── Plan generation via LLM ──────────────────────────────────────────
 
@@ -104,25 +143,15 @@ export async function generatePlan(
   classification: string,
   entityTargets: string[],
   lens: string,
-  apiKey: string,
+  callTool: ToolCaller,
 ): Promise<HarnessPlan> {
   try {
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `${PLAN_PROMPT}\n\nQuery: "${query}"\nClassification: ${classification}\nEntities: ${entityTargets.join(", ") || "none"}\nLens: ${lens}` }] }],
-          generationConfig: { temperature: 0, maxOutputTokens: 500 },
-        }),
-        signal: AbortSignal.timeout(5000),
-      }
+    const text = await callLLM(
+      callTool,
+      `${PLAN_PROMPT}\n\nQuery: "${query}"\nClassification: ${classification}\nEntities: ${entityTargets.join(", ") || "none"}\nLens: ${lens}`,
+      undefined,
+      500,
     );
-
-    if (!resp.ok) throw new Error(`Gemini ${resp.status}`);
-    const data = await resp.json() as any;
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("No JSON in response");
 
@@ -327,7 +356,7 @@ export async function synthesizeResults(
   execution: HarnessExecution,
   query: string,
   lens: string,
-  apiKey?: string,
+  callTool: ToolCaller,
 ): Promise<{
   entityName: string;
   answer: string;
@@ -355,16 +384,12 @@ export async function synthesizeResults(
   const entityName = execution.plan.entityTargets[0] ??
     query.split(/\s+/).slice(0, 3).join(" ");
 
-  // If we have a Gemini key, use LLM to synthesize
-  if (apiKey && resultData.length > 0) {
+  // Use multi-model provider bus (Gemini → OpenAI → Anthropic)
+  if (resultData.length > 0) {
     try {
-      const resp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `Synthesize these tool results into a structured intelligence packet.
+      const text = await callLLM(
+        callTool,
+        `Synthesize these tool results into a structured intelligence packet.
 
 Query: "${query}"
 Lens: ${lens}
@@ -385,32 +410,26 @@ Return ONLY valid JSON:
   "nextActions": [{"action": "what to do", "impact": "high|medium|low"}],
   "nextQuestions": ["follow-up question 1", "follow-up question 2"],
   "sources": [{"label": "source name", "href": null, "type": "web|local|doc"}]
-}` }] }],
-            generationConfig: { temperature: 0, maxOutputTokens: 1000 },
-          }),
-          signal: AbortSignal.timeout(8000),
-        }
+}`,
+        "You are a startup intelligence analyst. Extract specific facts and return structured JSON.",
+        1000,
       );
 
-      if (resp.ok) {
-        const data = await resp.json() as any;
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          return {
-            entityName: parsed.entityName ?? entityName,
-            answer: parsed.answer ?? "",
-            confidence: typeof parsed.confidence === "number" ? parsed.confidence : 50,
-            signals: parsed.signals ?? [],
-            changes: parsed.changes ?? [],
-            risks: parsed.risks ?? [],
-            comparables: parsed.comparables ?? [],
-            nextActions: parsed.nextActions ?? [],
-            nextQuestions: parsed.nextQuestions ?? [],
-            sources: parsed.sources ?? [],
-          };
-        }
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return {
+          entityName: parsed.entityName ?? entityName,
+          answer: parsed.answer ?? "",
+          confidence: typeof parsed.confidence === "number" ? parsed.confidence : 50,
+          signals: parsed.signals ?? [],
+          changes: parsed.changes ?? [],
+          risks: parsed.risks ?? [],
+          comparables: parsed.comparables ?? [],
+          nextActions: parsed.nextActions ?? [],
+          nextQuestions: parsed.nextQuestions ?? [],
+          sources: parsed.sources ?? [],
+        };
       }
     } catch { /* fall through to deterministic synthesis */ }
   }
