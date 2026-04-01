@@ -9203,19 +9203,36 @@ import { ConvexHttpClient } from "convex/browser";
 import { anyApi } from "convex/server";
 
 // server/agentHarness.ts
-async function callLLM(callTool, prompt, system, maxTokens) {
+async function callLLM(_callTool, prompt, system, maxTokens) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    const openaiKey = process.env.OPENAI_API_KEY;
+    if (openaiKey) {
+      try {
+        const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openaiKey}` },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [
+              ...system ? [{ role: "system", content: system }] : [],
+              { role: "user", content: prompt }
+            ],
+            max_tokens: maxTokens ?? 500,
+            temperature: 0
+          }),
+          signal: AbortSignal.timeout(1e4)
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          return data?.choices?.[0]?.message?.content ?? "";
+        }
+      } catch {
+      }
+    }
+    return "";
+  }
   try {
-    const result = await callTool("call_llm", {
-      prompt,
-      system,
-      maxTokens: maxTokens ?? 500,
-      temperature: 0
-    });
-    if (result?.error) throw new Error(result.message);
-    return result?.response ?? result?.text ?? JSON.stringify(result);
-  } catch {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return "";
     const resp = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`,
       {
@@ -9227,12 +9244,14 @@ async function callLLM(callTool, prompt, system, maxTokens) {
 ${prompt}` : prompt }] }],
           generationConfig: { temperature: 0, maxOutputTokens: maxTokens ?? 500 }
         }),
-        signal: AbortSignal.timeout(8e3)
+        signal: AbortSignal.timeout(1e4)
       }
     );
     if (!resp.ok) return "";
     const data = await resp.json();
     return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  } catch {
+    return "";
   }
 }
 var PLAN_PROMPT = `You are NodeBench's agent orchestrator. Given a user query, plan which tools to call and in what order.
@@ -9268,14 +9287,14 @@ Rules:
 - For founder questions: founder_local_gather first, then direction_assessment or synthesize.
 - For comparisons: web_search per entity in parallel, then compare.
 - Always include at least one intelligence-gathering step.`;
-async function generatePlan(query, classification2, entityTargets, lens, callTool) {
+async function generatePlan(query, classification, entityTargets, lens, callTool) {
   try {
     const text = await callLLM(
       callTool,
       `${PLAN_PROMPT}
 
 Query: "${query}"
-Classification: ${classification2}
+Classification: ${classification}
 Entities: ${entityTargets.join(", ") || "none"}
 Lens: ${lens}`,
       void 0,
@@ -9286,7 +9305,7 @@ Lens: ${lens}`,
     const parsed = JSON.parse(jsonMatch[0]);
     return {
       objective: parsed.objective ?? query,
-      classification: classification2,
+      classification,
       entityTargets,
       steps: (parsed.steps ?? []).map((s, i) => ({
         id: s.id ?? `step_${i}`,
@@ -9299,7 +9318,7 @@ Lens: ${lens}`,
       synthesisPrompt: parsed.synthesisPrompt ?? "Synthesize results into a structured intelligence packet."
     };
   } catch {
-    return buildFallbackPlan(query, classification2, entityTargets, lens);
+    return buildFallbackPlan(query, classification, entityTargets, lens);
   }
 }
 function extractEntityFromQuery(query) {
@@ -9326,14 +9345,14 @@ function extractEntityFromQuery(query) {
   }
   return words.filter((w) => !stopWords.has(w.toLowerCase())).slice(0, 3).join(" ") || query.slice(0, 30);
 }
-function buildFallbackPlan(query, classification2, entityTargets, lens) {
+function buildFallbackPlan(query, classification, entityTargets, lens) {
   const entity = entityTargets[0] ?? extractEntityFromQuery(query);
   const year = (/* @__PURE__ */ new Date()).getFullYear();
-  switch (classification2) {
+  switch (classification) {
     case "weekly_reset":
       return {
         objective: "Generate founder weekly reset",
-        classification: classification2,
+        classification,
         entityTargets,
         steps: [
           { id: "s1", toolName: "founder_local_weekly_reset", args: { daysBack: 7 }, purpose: "Get weekly reset packet", parallel: false }
@@ -9343,11 +9362,11 @@ function buildFallbackPlan(query, classification2, entityTargets, lens) {
     case "important_change":
     case "pre_delegation":
       return {
-        objective: `Synthesize ${classification2} packet`,
-        classification: classification2,
+        objective: `Synthesize ${classification} packet`,
+        classification,
         entityTargets,
         steps: [
-          { id: "s1", toolName: "founder_local_synthesize", args: { query, packetType: classification2, daysBack: 7 }, purpose: "Synthesize packet", parallel: false }
+          { id: "s1", toolName: "founder_local_synthesize", args: { query, packetType: classification, daysBack: 7 }, purpose: "Synthesize packet", parallel: false }
         ],
         synthesisPrompt: "Format as a structured founder packet."
       };
@@ -9368,7 +9387,7 @@ function buildFallbackPlan(query, classification2, entityTargets, lens) {
       });
       return {
         objective: `Compare ${entityTargets.join(" vs ")}`,
-        classification: classification2,
+        classification,
         entityTargets,
         steps,
         synthesisPrompt: `Compare ${entityTargets.join(", ")} across key dimensions for a ${lens} audience.`
@@ -9378,7 +9397,7 @@ function buildFallbackPlan(query, classification2, entityTargets, lens) {
     case "competitor":
       return {
         objective: `Analyze ${entity}`,
-        classification: classification2,
+        classification,
         entityTargets,
         steps: [
           { id: "s1", toolName: "web_search", args: { query: `${entity} company overview strategy funding ${year}`, maxResults: 5 }, purpose: "Web intelligence", parallel: true },
@@ -9390,7 +9409,7 @@ function buildFallbackPlan(query, classification2, entityTargets, lens) {
     case "plan_proposal":
       return {
         objective: `Plan: ${query}`,
-        classification: classification2,
+        classification,
         entityTargets,
         steps: [
           { id: "s1", toolName: "founder_local_gather", args: { daysBack: 7 }, purpose: "Understand current context", parallel: false },
@@ -9401,7 +9420,7 @@ function buildFallbackPlan(query, classification2, entityTargets, lens) {
     default:
       return {
         objective: query,
-        classification: classification2,
+        classification,
         entityTargets,
         steps: [
           { id: "s1", toolName: "founder_local_gather", args: { daysBack: 7 }, purpose: "Gather context", parallel: true },
@@ -10717,15 +10736,15 @@ function resolveEffectivePacketType(args) {
   return getFounderRolePacketDefault(toFounderRole(args.lens)).defaultPacketType;
 }
 function normalizeFounderIdentity(args) {
-  const classification2 = resolveEffectiveClassification(args);
+  const classification = resolveEffectiveClassification(args);
   const packetType = resolveEffectivePacketType({
     lens: args.lens,
-    classification: classification2,
+    classification,
     result: args.result
   });
-  const companyMode = resolveCompanyMode({ ...args, classification: classification2 });
+  const companyMode = resolveCompanyMode({ ...args, classification });
   const entityName = companyMode === "own_company" ? inferOwnCompanyName(args.result) ?? "Your Company" : inferOwnCompanyName(args.result);
-  return { classification: classification2, packetType, entityName };
+  return { classification, packetType, entityName };
 }
 function normalizeOwnCompanyFounderPayload(args) {
   const normalizedIdentity = normalizeFounderIdentity(args);
@@ -11639,12 +11658,12 @@ function createSearchRouter(tools2) {
     }
     return entry;
   }
-  function setSessionContext(key, entity, classification2, result) {
+  function setSessionContext(key, entity, classification, result) {
     if (sessionCache.size >= MAX_SESSIONS2) {
       const oldest = [...sessionCache.entries()].sort((a, b) => a[1].ts - b[1].ts)[0];
       if (oldest) sessionCache.delete(oldest[0]);
     }
-    sessionCache.set(key, { entity, classification: classification2, result, ts: Date.now() });
+    sessionCache.set(key, { entity, classification, result, ts: Date.now() });
   }
   function findTool(name) {
     return tools2.find((t) => t.name === name);
@@ -11966,8 +11985,8 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
     }
     const sessionKey = getSessionKey(req);
     const sessionCtx = getSessionContext(sessionKey);
-    const classification2 = await classifyWithSession(query.trim(), sessionCtx);
-    const resolvedLens = lens ?? classification2.lens;
+    const classification = await classifyWithSession(query.trim(), sessionCtx);
+    const resolvedLens = lens ?? classification.lens;
     const isStream = req.query.stream === "true";
     if (isStream) {
       res.setHeader("Content-Type", "text/event-stream");
@@ -12012,24 +12031,24 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
       };
     }
     const classifyTrace = traceStep("classify_query");
-    classifyTrace.ok(`type=${classification2.type}, entity=${classification2.entity ?? "none"}`);
+    classifyTrace.ok(`type=${classification.type}, entity=${classification.entity ?? "none"}`);
     let behaviorSessionId;
     let behaviorQueryId;
     try {
       behaviorSessionId = logSession({
         interfaceSurface: "ai_app",
         roleInferred: resolvedLens,
-        mainObjective: classification2.type
+        mainObjective: classification.type
       });
       activeProfileSessionId = behaviorSessionId;
       const priorQuery = findSimilarPriorQuery(query.trim(), behaviorSessionId);
       behaviorQueryId = logQuery({
         sessionId: behaviorSessionId,
         rawQuery: query.trim(),
-        classification: classification2.type,
-        normalizedIntent: classification2.type,
-        entityTargets: classification2.entities ?? (classification2.entity ? [classification2.entity] : []),
-        ownCompanyMode: classification2.type === "weekly_reset" || classification2.type === "founder_progression",
+        classification: classification.type,
+        normalizedIntent: classification.type,
+        entityTargets: classification.entities ?? (classification.entity ? [classification.entity] : []),
+        ownCompanyMode: classification.type === "weekly_reset" || classification.type === "founder_progression",
         confidenceScore: priorQuery.found ? 0.95 : void 0,
         latencyMs: Date.now() - startMs
       });
@@ -12061,8 +12080,8 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
           const planTrace = traceStep("agent_plan", "gemini-3.1-flash-lite");
           const plan = await generatePlan(
             query.trim(),
-            classification2.type,
-            classification2.entities ?? (classification2.entity ? [classification2.entity] : []),
+            classification.type,
+            classification.entities ?? (classification.entity ? [classification.entity] : []),
             resolvedLens,
             callTool
           );
@@ -12127,7 +12146,7 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
           fallbackTrace.ok(`harness failed: ${harnessErr?.message ?? "unknown"}, using legacy dispatch`);
         }
       }
-      if (!usedHarness) switch (classification2.type) {
+      if (!usedHarness) switch (classification.type) {
         case "weekly_reset": {
           const t = traceStep("tool_call", "founder_local_weekly_reset");
           const raw = await callTool("founder_local_weekly_reset", { daysBack: daysBack ?? 7 });
@@ -12169,22 +12188,22 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
           const t = traceStep("tool_call", "founder_local_synthesize");
           const raw = await callTool("founder_local_synthesize", {
             query: query.trim(),
-            packetType: classification2.type,
+            packetType: classification.type,
             daysBack: daysBack ?? 7
           });
           if (raw?.error) t.error(raw.message);
           else t.ok();
           const sp = raw?.error ? {} : raw ?? {};
           let liveSources = [];
-          if (classification2.entity) {
+          if (classification.entity) {
             const liveTrace = traceStep("tool_call", "linkup_search");
             const liveSearch = await linkupSearch(
-              `${classification2.entity} company updates last ${daysBack ?? 7} days ${(/* @__PURE__ */ new Date()).getFullYear()}`,
+              `${classification.entity} company updates last ${daysBack ?? 7} days ${(/* @__PURE__ */ new Date()).getFullYear()}`,
               5
             );
             if (liveSearch && liveSearch.sources.length > 0) {
               liveSources = liveSearch.sources.map((source) => ({
-                title: source.name || classification2.entity || "Source",
+                title: source.name || classification.entity || "Source",
                 url: source.url,
                 snippet: source.snippet
               }));
@@ -12193,11 +12212,11 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
               liveTrace.skip("no live sources");
               const webTrace = traceStep("tool_call", "web_search");
               const webSearch = await callTool("web_search", {
-                query: `${classification2.entity} company updates last ${daysBack ?? 7} days ${(/* @__PURE__ */ new Date()).getFullYear()}`,
+                query: `${classification.entity} company updates last ${daysBack ?? 7} days ${(/* @__PURE__ */ new Date()).getFullYear()}`,
                 maxResults: 5
               });
               const webResults = (webSearch?.results ?? []).map((item) => ({
-                title: item.title ?? item.name ?? classification2.entity ?? "Source",
+                title: item.title ?? item.name ?? classification.entity ?? "Source",
                 url: item.url ?? "",
                 snippet: item.snippet ?? item.description ?? ""
               })).filter((item) => Boolean(item.url));
@@ -12209,7 +12228,7 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
               }
             }
           }
-          const spLabel = classification2.type === "pre_delegation" ? "Delegation Packet" : "Recent Changes";
+          const spLabel = classification.type === "pre_delegation" ? "Delegation Packet" : "Recent Changes";
           const spMission = sp.summary ?? sp.overview ?? `${spLabel} \u2014 ${query.trim().slice(0, 100)}`;
           const spFindings = sp.keyFindings ?? sp.signals ?? sp.metrics ?? sp.key_findings ?? [];
           const spChanges = sp.keyFindings ?? sp.changes ?? sp.whatChanged ?? sp.key_findings ?? [];
@@ -12217,7 +12236,7 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
           const spNext = sp.nextSteps ?? sp.actions ?? sp.next_steps ?? [];
           result = {
             canonicalEntity: {
-              name: classification2.entity ?? spLabel,
+              name: classification.entity ?? spLabel,
               canonicalMission: spMission.length > 20 ? spMission : `${spLabel}: synthesized from local context for the last ${daysBack ?? 7} days. Ask follow-up questions to drill deeper.`,
               identityConfidence: (sp.confidence ?? 0.7) > 1 ? sp.confidence : Math.round((sp.confidence ?? 0.7) * 100)
             },
@@ -12238,7 +12257,7 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
               evidence: typeof r === "string" ? "" : r.description ?? r.mitigation ?? ""
             })) : [{ claim: "No contradictions detected in this period", evidence: "Upload more context or extend the analysis window for deeper risk detection." }],
             nextActions: spNext.length > 0 ? spNext.slice(0, 4).map((s) => ({ action: typeof s === "string" ? s : s.step ?? s.action ?? String(s) })) : [{ action: "Review the synthesized packet and identify action items" }, { action: "Upload additional context for richer analysis" }],
-            nextQuestions: classification2.type === "pre_delegation" ? ["What should the agent prioritize?", "What context does the agent need?", "What are the success criteria?"] : ["What changed that matters most?", "What contradictions surfaced?", "What should I act on first?"],
+            nextQuestions: classification.type === "pre_delegation" ? ["What should the agent prioritize?", "What context does the agent need?", "What are the success criteria?"] : ["What changed that matters most?", "What contradictions surfaced?", "What should I act on first?"],
             ...liveSources.length > 0 ? {
               sourcesUsed: liveSources.map((source, index) => ({
                 id: `source:${index + 1}`,
@@ -12257,7 +12276,7 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
           const planTrace = traceStep("tool_call", "synthesize_feature_plan");
           const planRaw = await callTool("synthesize_feature_plan", {
             feature: query.trim(),
-            entity: classification2.entity
+            entity: classification.entity
           });
           if (planRaw?.error) planTrace.error(planRaw.error);
           else planTrace.ok();
@@ -12299,7 +12318,7 @@ Session context: The user was previously discussing "${sessionCtx.entity}" (clas
           break;
         }
         case "multi_entity": {
-          const entities = classification2.entities ?? [];
+          const entities = classification.entities ?? [];
           const entityNames = entities.slice(0, 4);
           const multiLinkupTrace = traceStep("tool_call", `linkup_search x${entityNames.length}`);
           const entityResults = await Promise.all(
@@ -12426,7 +12445,7 @@ Return ONLY valid JSON:
             return matched.length >= 1;
           };
           var isGrounded = isGrounded2;
-          const entityName2 = classification2.entity ?? query.trim().split(/\s+/).slice(0, 3).join(" ");
+          const entityName2 = classification.entity ?? query.trim().split(/\s+/).slice(0, 3).join(" ");
           const linkupTrace = traceStep("tool_call", "linkup_search");
           const webTrace = traceStep("tool_call", "web_search");
           const reconTrace = traceStep("tool_call", "run_recon");
@@ -12784,7 +12803,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       if (founderDirectionTool && shouldRunFounderDirectionAssessment({
         query: query.trim(),
         lens: resolvedLens,
-        classification: classification2.type
+        classification: classification.type
       })) {
         const directionTrace = traceStep("tool_call", "founder_direction_assessment");
         try {
@@ -12804,9 +12823,9 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       try {
         const judge = await getJudge();
         if (judge) {
-          const toolName = classification2.type === "weekly_reset" ? "founder_local_weekly_reset" : classification2.type === "pre_delegation" || classification2.type === "important_change" ? "founder_local_synthesize" : classification2.type === "plan_proposal" ? "synthesize_feature_plan" : classification2.type === "company_search" || classification2.type === "competitor" ? "run_recon" : "founder_local_gather";
+          const toolName = classification.type === "weekly_reset" ? "founder_local_weekly_reset" : classification.type === "pre_delegation" || classification.type === "important_change" ? "founder_local_synthesize" : classification.type === "plan_proposal" ? "synthesize_feature_plan" : classification.type === "company_search" || classification.type === "competitor" ? "run_recon" : "founder_local_gather";
           const verdict = await judge({
-            scenarioId: `app_${classification2.type}`,
+            scenarioId: `app_${classification.type}`,
             prompt: query.trim(),
             toolName,
             result
@@ -12825,7 +12844,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       const proof = decorateResultWithProof({
         query: query.trim(),
         lens: resolvedLens,
-        classification: classification2.type,
+        classification: classification.type,
         result,
         judgeVerdict,
         packetId
@@ -12834,7 +12853,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       const normalizedIdentity = normalizeFounderIdentity({
         query: query.trim(),
         lens: resolvedLens,
-        classification: classification2.type,
+        classification: classification.type,
         result
       });
       const effectiveClassification = normalizedIdentity.classification;
@@ -12850,11 +12869,11 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       result.packetType = normalizedIdentity.packetType;
       const assembleTrace = traceStep("assemble_response");
       assembleTrace.ok(`latency=${latencyMs}ms`);
-      const entityName = result?.canonicalEntity?.name ?? normalizedIdentity.entityName ?? classification2.entity ?? "";
+      const entityName = result?.canonicalEntity?.name ?? normalizedIdentity.entityName ?? classification.entity ?? "";
       if (entityName) {
         setSessionContext(sessionKey, entityName, effectiveClassification, result);
       }
-      if (entityName && (classification2.type === "company_search" || classification2.type === "multi_entity" || classification2.type === "competitor")) {
+      if (entityName && (classification.type === "company_search" || classification.type === "multi_entity" || classification.type === "competitor")) {
         const enrichTool = findTool("enrich_entity");
         if (enrichTool) {
           const signals = (result?.signals ?? []).map((s) => s.name).join("; ");
@@ -12896,7 +12915,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
         success: true,
         classification: effectiveClassification,
         lens: resolvedLens,
-        entity: classification2.entity ?? null,
+        entity: classification.entity ?? null,
         latencyMs,
         result,
         resultPacket: proof.packet,
@@ -12944,7 +12963,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
           totalLatencyMs: latencyMs,
           redundantCalls: 0,
           uniqueTools: [...new Set(trace.map((t) => t.tool).filter(Boolean))],
-          classification: classification2.type,
+          classification: classification.type,
           query: query.trim().slice(0, 200)
         });
       }
@@ -12960,7 +12979,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       const errorPayload = {
         error: true,
         message: err?.message ?? "Search failed",
-        classification: classification2.type
+        classification: classification.type
       };
       if (isStream) {
         res.write(`data: ${JSON.stringify({ type: "error", error: errorPayload })}
@@ -14488,6 +14507,48 @@ var HarnessRuntime = class {
       }
     };
     const hasLLM = this.tools.has("call_llm") || !!process.env.GEMINI_API_KEY;
+    emitTrace({ step: "classify_query", status: "ok", detail: query.slice(0, 80) });
+    let classification = this.classifyWithRegex(query);
+    if (hasLLM) {
+      try {
+        const classifyResult = await callTool("call_llm", {
+          prompt: `Classify this query. Return ONLY valid JSON.
+
+Query: "${query}"
+
+Return:
+{"type": "weekly_reset" | "pre_delegation" | "important_change" | "company_search" | "competitor" | "multi_entity" | "plan_proposal" | "general", "entities": ["entity1"], "entity": "primary entity or null"}
+
+Rules: company_search = mentions a company, multi_entity = compares 2+ companies, competitor = asks about competitors, weekly_reset = weekly summary, important_change = what changed, plan_proposal = planning/strategy, general = everything else. entities = extract all company/product/person names.`,
+          maxTokens: 200,
+          temperature: 0
+        });
+        const text = classifyResult?.response ?? classifyResult?.text ?? "";
+        const jsonMatch = typeof text === "string" ? text.match(/\{[\s\S]*\}/) : null;
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          classification = {
+            type: parsed.type ?? classification.type,
+            entities: Array.isArray(parsed.entities) ? parsed.entities : classification.entities,
+            entity: parsed.entity ?? classification.entity
+          };
+          emitTrace({ step: "classify_result", status: "ok", detail: `LLM: ${classification.type} \u2192 [${classification.entities.join(", ")}]` });
+        } else {
+          emitTrace({ step: "classify_result", status: "ok", detail: `Regex (LLM no JSON): ${classification.type}` });
+        }
+      } catch {
+        emitTrace({ step: "classify_result", status: "ok", detail: `Regex fallback: ${classification.type}` });
+      }
+    } else {
+      emitTrace({ step: "classify_result", status: "ok", detail: `Regex: ${classification.type} \u2192 [${classification.entities.join(", ")}]` });
+    }
+    if (turnIndex > 0 && classification.type === "general" && classification.entities.length === 0) {
+      const lastTurn = session.turns[turnIndex - 1];
+      if (lastTurn?.entities.length > 0) {
+        classification.entities = [...lastTurn.entities];
+        emitTrace({ step: "context_inject", status: "ok", detail: `Inherited entities: ${classification.entities.join(", ")}` });
+      }
+    }
     let plan = null;
     if (hasLLM) {
       try {
@@ -14642,54 +14703,10 @@ var HarnessRuntime = class {
     if (aboutMatch) return aboutMatch[1].trim();
     return void 0;
   }
-  async classifyWithLLM(query, apiKey) {
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `Classify this query. Return ONLY valid JSON.
-
-Query: "${query}"
-
-Return:
-{
-  "type": "weekly_reset" | "pre_delegation" | "important_change" | "company_search" | "competitor" | "multi_entity" | "plan_proposal" | "general",
-  "entities": ["entity1", "entity2"],
-  "entity": "primary entity or null"
-}
-
-Rules:
-- company_search: query mentions a specific company by name
-- multi_entity: query compares 2+ companies (uses "vs", "compare", "versus")
-- competitor: query asks about competitors of a company
-- weekly_reset: query asks for weekly summary, what happened, briefing
-- pre_delegation: query is about delegating tasks or handoff
-- important_change: query asks what changed recently
-- plan_proposal: query asks to plan or propose something
-- general: everything else
-- entities: extract all company/product/person names mentioned` }] }],
-          generationConfig: { temperature: 0, maxOutputTokens: 200 }
-        }),
-        signal: AbortSignal.timeout(4e3)
-      }
-    );
-    if (!resp.ok) throw new Error(`Gemini ${resp.status}`);
-    const data = await resp.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("No JSON in classification response");
-    const parsed = JSON.parse(jsonMatch[0]);
-    return {
-      type: parsed.type ?? "general",
-      entities: Array.isArray(parsed.entities) ? parsed.entities : [],
-      entity: parsed.entity ?? void 0
-    };
-  }
+  // classifyWithLLM removed — classification now uses callTool("call_llm", ...) in the run() method
   // ── Deterministic fallback plan ────────────────────────────────
   buildFallbackPlan(query, type, entities, lens) {
-    const entity = entities[0] ?? query.split(/\s+/).slice(0, 3).join(" ");
+    const entity = entities[0] ?? this.extractEntity(query) ?? query.replace(/^(tell me about|what are the|analyze|research|who are|compare)\s+/i, "").split(/[?.!,]/)[0].trim().slice(0, 50);
     const year = (/* @__PURE__ */ new Date()).getFullYear();
     const plans = {
       weekly_reset: () => ({

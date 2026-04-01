@@ -66,24 +66,45 @@ type ToolCaller = (name: string, args: Record<string, unknown>) => Promise<unkno
 // Falls back to direct Gemini fetch if call_llm unavailable
 
 async function callLLM(
-  callTool: ToolCaller,
+  _callTool: ToolCaller,
   prompt: string,
   system?: string,
   maxTokens?: number,
 ): Promise<string> {
+  // Direct Gemini REST API call — reliable on Vercel serverless.
+  // The call_llm MCP tool uses @google/genai SDK which isn't bundled
+  // in the serverless function (esbuild --packages=external).
+  // Direct fetch to the REST API works everywhere.
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    // Try OpenAI as fallback
+    const openaiKey = process.env.OPENAI_API_KEY;
+    if (openaiKey) {
+      try {
+        const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openaiKey}` },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [
+              ...(system ? [{ role: "system" as const, content: system }] : []),
+              { role: "user" as const, content: prompt },
+            ],
+            max_tokens: maxTokens ?? 500,
+            temperature: 0,
+          }),
+          signal: AbortSignal.timeout(10000),
+        });
+        if (resp.ok) {
+          const data = await resp.json() as any;
+          return data?.choices?.[0]?.message?.content ?? "";
+        }
+      } catch { /* fall through */ }
+    }
+    return "";
+  }
+
   try {
-    const result = await callTool("call_llm", {
-      prompt,
-      system,
-      maxTokens: maxTokens ?? 500,
-      temperature: 0,
-    }) as any;
-    if (result?.error) throw new Error(result.message);
-    return result?.response ?? result?.text ?? JSON.stringify(result);
-  } catch {
-    // Fallback: direct Gemini if call_llm not available
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return "";
     const resp = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`,
       {
@@ -93,12 +114,14 @@ async function callLLM(
           contents: [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }],
           generationConfig: { temperature: 0, maxOutputTokens: maxTokens ?? 500 },
         }),
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(10000),
       }
     );
     if (!resp.ok) return "";
     const data = await resp.json() as any;
     return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  } catch {
+    return "";
   }
 }
 
