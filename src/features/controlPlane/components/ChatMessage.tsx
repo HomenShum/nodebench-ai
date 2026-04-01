@@ -237,10 +237,10 @@ function AssistantMessage({ entry, onFollowUp, onViewProfile }: {
               ) : (
                 <span className="text-content-muted">{s.label}</span>
               )}
-              {s.confidence != null && (
+              {s.confidence != null && s.confidence > 0 && (
                 <span className="ml-auto flex items-center gap-1 text-content-muted">
-                  <ConfidenceDot confidence={s.confidence * 100} />
-                  {Math.round(s.confidence * 100)}%
+                  <ConfidenceDot confidence={s.confidence > 1 ? s.confidence : s.confidence * 100} />
+                  {s.confidence > 1 ? Math.round(s.confidence) : Math.round(s.confidence * 100)}%
                 </span>
               )}
             </div>

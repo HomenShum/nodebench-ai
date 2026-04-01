@@ -93,7 +93,7 @@ async function callLLM(
             max_tokens: maxTokens ?? 500,
             temperature: 0,
           }),
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.timeout(15000),
         });
         if (resp.ok) {
           const data = await resp.json() as any;
@@ -114,7 +114,7 @@ async function callLLM(
           contents: [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }],
           generationConfig: { temperature: 0, maxOutputTokens: maxTokens ?? 500 },
         }),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(15000),
       }
     );
     if (!resp.ok) return "";
@@ -447,42 +447,52 @@ export async function synthesizeResults(
       const res = r.result as any;
       return {
         tool: r.toolName,
-        data: typeof res === "string" ? res.slice(0, 1000) :
-              JSON.stringify(res).slice(0, 1000),
+        data: typeof res === "string" ? res.slice(0, 2000) :
+              JSON.stringify(res).slice(0, 2000),
       };
     });
 
   const entityName = execution.plan.entityTargets[0] ?? extractEntityFromQuery(query);
 
   // Use multi-model provider bus (Gemini → OpenAI → Anthropic)
+  // This is the PRIMARY synthesis path — an IB analyst writing a memo from raw data.
   if (resultData.length > 0) {
     try {
       const text = await callLLM(
         callTool,
-        `Synthesize these tool results into a structured intelligence packet.
+        `You are a senior investment banking analyst writing an intelligence memo. Analyze these raw data sources and produce a structured assessment.
 
-Query: "${query}"
-Lens: ${lens}
-Objective: ${execution.plan.objective}
+QUERY: "${query}"
+AUDIENCE: ${lens} (tailor depth and focus accordingly)
+OBJECTIVE: ${execution.plan.objective}
 
-Tool Results:
-${resultData.map(r => `[${r.tool}]: ${r.data}`).join("\n\n")}
+RAW DATA FROM ${resultData.length} SOURCES:
+${resultData.map(r => `=== [${r.tool}] ===\n${r.data}`).join("\n\n")}
+
+ANALYSIS REQUIREMENTS:
+1. ANSWER: Write a 3-4 sentence executive summary with SPECIFIC numbers, dates, and facts from the data. No generic statements. If data says "$26B revenue" — cite it. If data mentions "70% market share" — cite it.
+2. SIGNALS: Extract 3-5 key signals with direction (up/down/neutral) and impact. Each signal must reference a specific fact from the data, not a generic observation.
+3. RISKS: Identify 2-3 material risks with evidence. For each risk, explain WHY it matters and what could trigger it. Not just "competition risk" — specify which competitor and what they're doing.
+4. COMPARABLES: Name 2-4 direct competitors with WHY they're relevant (what they do differently, where they overlap, competitive advantage). Include evidence from the data.
+5. NEXT ACTIONS: 2-3 specific, actionable steps the ${lens} should take this week. Not generic "do more research" — specific actions like "review Q4 filing for revenue breakdown" or "compare pricing vs competitor X".
+6. FOLLOW-UP QUESTIONS: 3-4 specific questions that would deepen this analysis. Questions should reference gaps in the current data.
+7. SOURCES: List actual source names/URLs from the data. Never list tool names like "web_search" or "run_recon". Use the actual article titles, document names, or website domains.
 
 Return ONLY valid JSON:
 {
-  "entityName": "primary entity name",
-  "answer": "2-3 sentence executive summary",
+  "entityName": "the primary company/entity name",
+  "answer": "3-4 sentence executive summary with specific facts and numbers",
   "confidence": 0-100,
-  "signals": [{"name": "signal", "direction": "up|down|neutral", "impact": "high|medium|low"}],
-  "changes": [{"description": "what changed", "date": null}],
-  "risks": [{"title": "risk title", "description": "details"}],
-  "comparables": [{"name": "company", "relevance": "high|medium|low", "note": "why relevant"}],
-  "nextActions": [{"action": "what to do", "impact": "high|medium|low"}],
-  "nextQuestions": ["follow-up question 1", "follow-up question 2"],
-  "sources": [{"label": "source name", "href": null, "type": "web|local|doc"}]
+  "signals": [{"name": "specific signal with numbers", "direction": "up|down|neutral", "impact": "high|medium|low"}],
+  "changes": [{"description": "specific recent change with date if available"}],
+  "risks": [{"title": "specific risk name", "description": "2-3 sentence explanation with evidence and trigger conditions"}],
+  "comparables": [{"name": "competitor name", "relevance": "high|medium|low", "note": "specific reason why they're relevant — what they do, how they compete"}],
+  "nextActions": [{"action": "specific actionable step for this week", "impact": "high|medium|low"}],
+  "nextQuestions": ["specific follow-up question referencing data gaps"],
+  "sources": [{"label": "actual source title or domain", "href": "url if available", "type": "web|doc"}]
 }`,
-        "You are a startup intelligence analyst. Extract specific facts and return structured JSON.",
-        1000,
+        "You are a senior investment banking analyst. Every claim must cite specific data. No generic statements. No placeholder text. If data is insufficient, say so honestly rather than fabricating.",
+        1500,
       );
 
       const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -588,7 +598,7 @@ Return ONLY valid JSON:
         if (external.length > 0 || internal.length > 0) {
           signals.push({ name: `Recon plan: ${external.length} external + ${internal.length} internal sources`, direction: "neutral", impact: "medium" });
         }
-        sources.push({ label: `run_recon (${raw.target})`, type: "local" });
+        // Don't add "run_recon" as a source label — use actual findings instead
       }
       if (raw?.findings) {
         for (const f of (Array.isArray(raw.findings) ? raw.findings : []).slice(0, 5)) {
@@ -623,7 +633,7 @@ Return ONLY valid JSON:
       if (raw?.dogfoodFindings?.p0 > 0) {
         risks.push({ title: `${raw.dogfoodFindings.p0} P0 issues`, description: "Critical issues found in dogfood" });
       }
-      sources.push({ label: "founder_local_gather", type: "local" });
+      sources.push({ label: "Local company context", type: "local" });
     }
 
     // ── founder_local_synthesize / weekly_reset ──
@@ -647,7 +657,7 @@ Return ONLY valid JSON:
         }
       }
       if (raw?.summary ?? raw?.briefing) answerParts.push(String(raw.summary ?? raw.briefing).slice(0, 300));
-      sources.push({ label: sr.toolName, type: "local" });
+      sources.push({ label: "Founder intelligence synthesis", type: "local" });
     }
 
     // ── enrich_entity results ──
@@ -665,7 +675,7 @@ Return ONLY valid JSON:
       const summary = raw?.summary ?? raw?.answer ?? raw?.result ?? raw?.output ?? raw?.briefing;
       if (typeof summary === "string" && summary.length > 10) {
         answerParts.push(summary.slice(0, 300));
-        sources.push({ label: sr.toolName, type: "local" });
+        sources.push({ label: summary.slice(0, 40), type: "local" });
       }
     }
   }
@@ -694,9 +704,10 @@ Return ONLY valid JSON:
     comparables: comparables.slice(0, 4),
     nextActions: nextActions.slice(0, 4),
     nextQuestions: [
-      `What are the key risks for ${entityName}?`,
-      `Who are ${entityName}'s main competitors?`,
-      `What's ${entityName}'s growth trajectory?`,
+      `What are the specific drivers behind ${entityName}'s recent growth or decline?`,
+      risks.length > 0 ? `How likely is "${risks[0]?.title}" to materialize, and what would trigger it?` : `What are the biggest threats to ${entityName}'s market position?`,
+      comparables.length > 0 ? `How does ${entityName} compare to ${comparables[0]?.name} on unit economics and retention?` : `Who are ${entityName}'s most dangerous competitors and why?`,
+      `What would make you change your thesis on ${entityName} — what data would you need to see?`,
     ],
     sources: sources.slice(0, 8),
   };
