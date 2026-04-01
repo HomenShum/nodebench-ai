@@ -739,9 +739,7 @@ Return ONLY valid JSON:
         const plan = raw.researchPlan;
         const external = plan?.externalSources ?? [];
         const internal = plan?.internalChecks ?? [];
-        if (external.length > 0 || internal.length > 0) {
-          signals.push({ name: `Recon plan: ${external.length} external + ${internal.length} internal sources`, direction: "neutral", impact: "medium" });
-        }
+        // Recon plan is internal execution status, not intelligence — don't surface it
         // Don't add "run_recon" as a source label — use actual findings instead
       }
       if (raw?.findings) {
@@ -862,7 +860,9 @@ Return ONLY valid JSON:
     entityName,
     answer,
     confidence,
-    signals: signals.slice(0, 8),
+    signals: signals
+      .filter(s => !/in progress|recon plan|project:|commits in last/i.test(s.name))
+      .slice(0, 8),
     changes: changes.slice(0, 5),
     risks: risks.slice(0, 5),
     comparables: comparables.slice(0, 4),

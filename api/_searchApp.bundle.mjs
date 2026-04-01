@@ -10584,9 +10584,6 @@ Return ONLY valid JSON:
         const plan = raw.researchPlan;
         const external = plan?.externalSources ?? [];
         const internal = plan?.internalChecks ?? [];
-        if (external.length > 0 || internal.length > 0) {
-          signals.push({ name: `Recon plan: ${external.length} external + ${internal.length} internal sources`, direction: "neutral", impact: "medium" });
-        }
       }
       if (raw?.findings) {
         for (const f of (Array.isArray(raw.findings) ? raw.findings : []).slice(0, 5)) {
@@ -10685,7 +10682,7 @@ Return ONLY valid JSON:
     entityName,
     answer,
     confidence,
-    signals: signals.slice(0, 8),
+    signals: signals.filter((s) => !/in progress|recon plan|project:|commits in last/i.test(s.name)).slice(0, 8),
     changes: changes.slice(0, 5),
     risks: risks.slice(0, 5),
     comparables: comparables.slice(0, 4),
