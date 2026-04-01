@@ -7,6 +7,7 @@ import { founderLocalPipelineTools } from "../../packages/mcp-local/src/tools/fo
 import { reconTools } from "../../packages/mcp-local/src/tools/reconTools.js";
 import { webTools } from "../../packages/mcp-local/src/tools/webTools.js";
 import { llmTools } from "../../packages/mcp-local/src/tools/llmTools.js";
+import { initSweepTables, runSweep, computeDelta, getLatestSweep, getPreviousSweep, generateRecommendations } from "../../packages/mcp-local/src/sweep/engine.js";
 import { createSearchRouter } from "../routes/search.js";
 import { createSharedContextRouter } from "../routes/sharedContext.js";
 import { createHarnessRouter } from "../routes/harness.js";
@@ -45,10 +46,10 @@ app.use("/shared-context", createSharedContextRouter());
 app.use("/api/shared-context", createSharedContextRouter());
 
 // Sweep API — live signal intelligence
+try { initSweepTables(); } catch { /* tables init */ }
+
 app.get("/api/sweep/latest", async (_req, res) => {
   try {
-    const { initSweepTables, getLatestSweep, computeDelta, getPreviousSweep, generateRecommendations } = require("../../packages/mcp-local/src/sweep/engine.js");
-    initSweepTables();
     const latest = getLatestSweep();
     if (!latest) return res.json({ success: true, signals: [], message: "No sweep data. Run a sweep first." });
     const previous = getPreviousSweep();
@@ -75,8 +76,6 @@ app.get("/api/sweep/latest", async (_req, res) => {
 
 app.post("/api/sweep/run", async (_req, res) => {
   try {
-    const { initSweepTables, runSweep, computeDelta, getPreviousSweep, generateRecommendations } = require("../../packages/mcp-local/src/sweep/engine.js");
-    initSweepTables();
     const result = await runSweep();
     const previous = getPreviousSweep();
     const delta = computeDelta(result, previous);

@@ -1973,6 +1973,196 @@ var init_webTools = __esm({
   }
 });
 
+// packages/mcp-local/src/sweep/sources/hackernews.ts
+var hackernews_exports = {};
+__export(hackernews_exports, {
+  collect: () => collect
+});
+async function collect() {
+  const signals = [];
+  try {
+    const resp = await fetch(HN_TOP_URL, { signal: AbortSignal.timeout(5e3) });
+    if (!resp.ok) return [];
+    const ids = await resp.json();
+    const items = await Promise.all(
+      ids.slice(0, 30).map(async (id) => {
+        try {
+          const r = await fetch(HN_ITEM_URL(id), { signal: AbortSignal.timeout(3e3) });
+          return r.ok ? await r.json() : null;
+        } catch {
+          return null;
+        }
+      })
+    );
+    for (const item of items) {
+      if (!item?.title) continue;
+      if (!SIGNAL_KEYWORDS.test(item.title)) continue;
+      const entityMatch = item.title.match(/([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)/);
+      const entity = entityMatch?.[0] ?? item.title.split(/[:\-–—]/).map((s) => s.trim())[0].slice(0, 30);
+      const score = Math.min(100, Math.round((item.score ?? 0) / 5));
+      const severity = score > 60 ? "flash" : score > 30 ? "priority" : "routine";
+      signals.push({
+        id: `hn_${item.id}`,
+        source: "hackernews",
+        entity,
+        headline: item.title.slice(0, 120),
+        url: item.url ?? `https://news.ycombinator.com/item?id=${item.id}`,
+        score,
+        category: /fund|rais|series|valuation/i.test(item.title) ? "funding" : /launch|ship|release|announce/i.test(item.title) ? "launch" : /acqui|merge|IPO/i.test(item.title) ? "market" : "trend",
+        severity,
+        metadata: { points: item.score, comments: item.descendants },
+        collectedAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    }
+  } catch {
+  }
+  return signals;
+}
+var HN_TOP_URL, HN_ITEM_URL, SIGNAL_KEYWORDS;
+var init_hackernews = __esm({
+  "packages/mcp-local/src/sweep/sources/hackernews.ts"() {
+    "use strict";
+    HN_TOP_URL = "https://hacker-news.firebaseio.com/v0/topstories.json";
+    HN_ITEM_URL = (id) => `https://hacker-news.firebaseio.com/v0/item/${id}.json`;
+    SIGNAL_KEYWORDS = /\b(AI|GPT|Claude|Anthropic|OpenAI|LLM|agent|MCP|startup|YC|funding|Series [A-D]|acquisition|IPO|valuation|launch|open.?source|developer tool|API|infra|vector|RAG|fine.?tun)/i;
+  }
+});
+
+// packages/mcp-local/src/sweep/sources/github_trending.ts
+var github_trending_exports = {};
+__export(github_trending_exports, {
+  collect: () => collect2
+});
+async function collect2() {
+  const signals = [];
+  try {
+    const resp = await fetch("https://api.github.com/search/repositories?q=stars:>100+pushed:>2026-03-25+topic:ai-agent+topic:mcp+topic:llm&sort=stars&order=desc&per_page=10", {
+      signal: AbortSignal.timeout(5e3),
+      headers: { "Accept": "application/vnd.github.v3+json" }
+    });
+    if (!resp.ok) return [];
+    const data = await resp.json();
+    for (const repo of (data.items ?? []).slice(0, 10)) {
+      const entity = repo.full_name?.split("/")?.[1] ?? repo.name ?? "unknown";
+      const stars = repo.stargazers_count ?? 0;
+      const score = Math.min(100, Math.round(stars / 100));
+      signals.push({
+        id: `gh_${repo.id}`,
+        source: "github_trending",
+        entity,
+        headline: `${repo.full_name}: ${(repo.description ?? "").slice(0, 80)}`,
+        url: repo.html_url,
+        score,
+        category: "product",
+        severity: stars > 5e3 ? "flash" : stars > 1e3 ? "priority" : "routine",
+        metadata: { stars, forks: repo.forks_count, language: repo.language },
+        collectedAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    }
+  } catch {
+  }
+  return signals;
+}
+var init_github_trending = __esm({
+  "packages/mcp-local/src/sweep/sources/github_trending.ts"() {
+    "use strict";
+  }
+});
+
+// packages/mcp-local/src/sweep/sources/yahoo_finance.ts
+var yahoo_finance_exports = {};
+__export(yahoo_finance_exports, {
+  collect: () => collect3
+});
+async function collect3() {
+  const signals = [];
+  try {
+    const tickerStr = TICKERS.join(",");
+    const resp = await fetch(
+      `https://query1.finance.yahoo.com/v8/finance/spark?symbols=${tickerStr}&range=1d&interval=1d`,
+      { signal: AbortSignal.timeout(5e3), headers: { "User-Agent": "NodeBench/1.0" } }
+    );
+    if (!resp.ok) return [];
+    const data = await resp.json();
+    for (const ticker of TICKERS) {
+      const spark = data?.spark?.result?.find((r) => r.symbol === ticker);
+      if (!spark?.response?.[0]?.indicators?.quote?.[0]) continue;
+      const quote = spark.response[0].indicators.quote[0];
+      const close = quote.close?.filter(Boolean);
+      if (!close?.length) continue;
+      const current = close[close.length - 1];
+      const prev = close[0];
+      const changePct = prev > 0 ? (current - prev) / prev * 100 : 0;
+      const absChange = Math.abs(changePct);
+      if (absChange < 2) continue;
+      signals.push({
+        id: `yf_${ticker}_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}`,
+        source: "yahoo_finance",
+        entity: ticker,
+        headline: `${ticker} ${changePct > 0 ? "up" : "down"} ${absChange.toFixed(1)}% today ($${current.toFixed(2)})`,
+        url: `https://finance.yahoo.com/quote/${ticker}`,
+        score: Math.min(100, Math.round(absChange * 10)),
+        category: "market",
+        severity: absChange > 5 ? "flash" : absChange > 3 ? "priority" : "routine",
+        metadata: { price: current, changePct: Math.round(changePct * 100) / 100 },
+        collectedAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    }
+  } catch {
+  }
+  return signals;
+}
+var TICKERS;
+var init_yahoo_finance = __esm({
+  "packages/mcp-local/src/sweep/sources/yahoo_finance.ts"() {
+    "use strict";
+    TICKERS = ["GOOGL", "MSFT", "META", "NVDA", "AMD", "PLTR", "SNOW", "CRM"];
+  }
+});
+
+// packages/mcp-local/src/sweep/sources/producthunt.ts
+var producthunt_exports = {};
+__export(producthunt_exports, {
+  collect: () => collect4
+});
+async function collect4() {
+  const signals = [];
+  try {
+    const resp = await fetch("https://www.producthunt.com/feed?category=artificial-intelligence", {
+      signal: AbortSignal.timeout(5e3),
+      headers: { "User-Agent": "NodeBench/1.0", "Accept": "application/json" }
+    });
+    if (!resp.ok) return [];
+    const text = await resp.text();
+    const productMatches = text.matchAll(/"name"\s*:\s*"([^"]+)".*?"tagline"\s*:\s*"([^"]+)"/g);
+    for (const match of productMatches) {
+      const name = match[1];
+      const tagline = match[2];
+      if (!AI_KEYWORDS.test(`${name} ${tagline}`)) continue;
+      signals.push({
+        id: `ph_${name.toLowerCase().replace(/\s+/g, "-")}`,
+        source: "producthunt",
+        entity: name,
+        headline: `${name}: ${tagline.slice(0, 80)}`,
+        url: `https://www.producthunt.com/search?q=${encodeURIComponent(name)}`,
+        score: 50,
+        category: "launch",
+        severity: "priority",
+        collectedAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    }
+  } catch {
+  }
+  return signals.slice(0, 5);
+}
+var AI_KEYWORDS;
+var init_producthunt = __esm({
+  "packages/mcp-local/src/sweep/sources/producthunt.ts"() {
+    "use strict";
+    AI_KEYWORDS = /\b(AI|agent|LLM|GPT|Claude|copilot|automation|workflow|MCP|developer|API|no.?code|low.?code)\b/i;
+  }
+});
+
 // packages/mcp-local/src/profiler/behaviorStore.ts
 var behaviorStore_exports = {};
 __export(behaviorStore_exports, {
@@ -5073,429 +5263,6 @@ var init_llmJudgeLoop = __esm({
         }
       }
     ];
-  }
-});
-
-// packages/mcp-local/src/sweep/sources/hackernews.ts
-var hackernews_exports = {};
-__export(hackernews_exports, {
-  collect: () => collect
-});
-async function collect() {
-  const signals = [];
-  try {
-    const resp = await fetch(HN_TOP_URL, { signal: AbortSignal.timeout(5e3) });
-    if (!resp.ok) return [];
-    const ids = await resp.json();
-    const items = await Promise.all(
-      ids.slice(0, 30).map(async (id) => {
-        try {
-          const r = await fetch(HN_ITEM_URL(id), { signal: AbortSignal.timeout(3e3) });
-          return r.ok ? await r.json() : null;
-        } catch {
-          return null;
-        }
-      })
-    );
-    for (const item of items) {
-      if (!item?.title) continue;
-      if (!SIGNAL_KEYWORDS.test(item.title)) continue;
-      const entityMatch = item.title.match(/([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)/);
-      const entity = entityMatch?.[0] ?? item.title.split(/[:\-–—]/).map((s) => s.trim())[0].slice(0, 30);
-      const score = Math.min(100, Math.round((item.score ?? 0) / 5));
-      const severity = score > 60 ? "flash" : score > 30 ? "priority" : "routine";
-      signals.push({
-        id: `hn_${item.id}`,
-        source: "hackernews",
-        entity,
-        headline: item.title.slice(0, 120),
-        url: item.url ?? `https://news.ycombinator.com/item?id=${item.id}`,
-        score,
-        category: /fund|rais|series|valuation/i.test(item.title) ? "funding" : /launch|ship|release|announce/i.test(item.title) ? "launch" : /acqui|merge|IPO/i.test(item.title) ? "market" : "trend",
-        severity,
-        metadata: { points: item.score, comments: item.descendants },
-        collectedAt: (/* @__PURE__ */ new Date()).toISOString()
-      });
-    }
-  } catch {
-  }
-  return signals;
-}
-var HN_TOP_URL, HN_ITEM_URL, SIGNAL_KEYWORDS;
-var init_hackernews = __esm({
-  "packages/mcp-local/src/sweep/sources/hackernews.ts"() {
-    "use strict";
-    HN_TOP_URL = "https://hacker-news.firebaseio.com/v0/topstories.json";
-    HN_ITEM_URL = (id) => `https://hacker-news.firebaseio.com/v0/item/${id}.json`;
-    SIGNAL_KEYWORDS = /\b(AI|GPT|Claude|Anthropic|OpenAI|LLM|agent|MCP|startup|YC|funding|Series [A-D]|acquisition|IPO|valuation|launch|open.?source|developer tool|API|infra|vector|RAG|fine.?tun)/i;
-  }
-});
-
-// packages/mcp-local/src/sweep/sources/github_trending.ts
-var github_trending_exports = {};
-__export(github_trending_exports, {
-  collect: () => collect2
-});
-async function collect2() {
-  const signals = [];
-  try {
-    const resp = await fetch("https://api.github.com/search/repositories?q=stars:>100+pushed:>2026-03-25+topic:ai-agent+topic:mcp+topic:llm&sort=stars&order=desc&per_page=10", {
-      signal: AbortSignal.timeout(5e3),
-      headers: { "Accept": "application/vnd.github.v3+json" }
-    });
-    if (!resp.ok) return [];
-    const data = await resp.json();
-    for (const repo of (data.items ?? []).slice(0, 10)) {
-      const entity = repo.full_name?.split("/")?.[1] ?? repo.name ?? "unknown";
-      const stars = repo.stargazers_count ?? 0;
-      const score = Math.min(100, Math.round(stars / 100));
-      signals.push({
-        id: `gh_${repo.id}`,
-        source: "github_trending",
-        entity,
-        headline: `${repo.full_name}: ${(repo.description ?? "").slice(0, 80)}`,
-        url: repo.html_url,
-        score,
-        category: "product",
-        severity: stars > 5e3 ? "flash" : stars > 1e3 ? "priority" : "routine",
-        metadata: { stars, forks: repo.forks_count, language: repo.language },
-        collectedAt: (/* @__PURE__ */ new Date()).toISOString()
-      });
-    }
-  } catch {
-  }
-  return signals;
-}
-var init_github_trending = __esm({
-  "packages/mcp-local/src/sweep/sources/github_trending.ts"() {
-    "use strict";
-  }
-});
-
-// packages/mcp-local/src/sweep/sources/yahoo_finance.ts
-var yahoo_finance_exports = {};
-__export(yahoo_finance_exports, {
-  collect: () => collect3
-});
-async function collect3() {
-  const signals = [];
-  try {
-    const tickerStr = TICKERS.join(",");
-    const resp = await fetch(
-      `https://query1.finance.yahoo.com/v8/finance/spark?symbols=${tickerStr}&range=1d&interval=1d`,
-      { signal: AbortSignal.timeout(5e3), headers: { "User-Agent": "NodeBench/1.0" } }
-    );
-    if (!resp.ok) return [];
-    const data = await resp.json();
-    for (const ticker of TICKERS) {
-      const spark = data?.spark?.result?.find((r) => r.symbol === ticker);
-      if (!spark?.response?.[0]?.indicators?.quote?.[0]) continue;
-      const quote = spark.response[0].indicators.quote[0];
-      const close = quote.close?.filter(Boolean);
-      if (!close?.length) continue;
-      const current = close[close.length - 1];
-      const prev = close[0];
-      const changePct = prev > 0 ? (current - prev) / prev * 100 : 0;
-      const absChange = Math.abs(changePct);
-      if (absChange < 2) continue;
-      signals.push({
-        id: `yf_${ticker}_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}`,
-        source: "yahoo_finance",
-        entity: ticker,
-        headline: `${ticker} ${changePct > 0 ? "up" : "down"} ${absChange.toFixed(1)}% today ($${current.toFixed(2)})`,
-        url: `https://finance.yahoo.com/quote/${ticker}`,
-        score: Math.min(100, Math.round(absChange * 10)),
-        category: "market",
-        severity: absChange > 5 ? "flash" : absChange > 3 ? "priority" : "routine",
-        metadata: { price: current, changePct: Math.round(changePct * 100) / 100 },
-        collectedAt: (/* @__PURE__ */ new Date()).toISOString()
-      });
-    }
-  } catch {
-  }
-  return signals;
-}
-var TICKERS;
-var init_yahoo_finance = __esm({
-  "packages/mcp-local/src/sweep/sources/yahoo_finance.ts"() {
-    "use strict";
-    TICKERS = ["GOOGL", "MSFT", "META", "NVDA", "AMD", "PLTR", "SNOW", "CRM"];
-  }
-});
-
-// packages/mcp-local/src/sweep/sources/producthunt.ts
-var producthunt_exports = {};
-__export(producthunt_exports, {
-  collect: () => collect4
-});
-async function collect4() {
-  const signals = [];
-  try {
-    const resp = await fetch("https://www.producthunt.com/feed?category=artificial-intelligence", {
-      signal: AbortSignal.timeout(5e3),
-      headers: { "User-Agent": "NodeBench/1.0", "Accept": "application/json" }
-    });
-    if (!resp.ok) return [];
-    const text = await resp.text();
-    const productMatches = text.matchAll(/"name"\s*:\s*"([^"]+)".*?"tagline"\s*:\s*"([^"]+)"/g);
-    for (const match of productMatches) {
-      const name = match[1];
-      const tagline = match[2];
-      if (!AI_KEYWORDS.test(`${name} ${tagline}`)) continue;
-      signals.push({
-        id: `ph_${name.toLowerCase().replace(/\s+/g, "-")}`,
-        source: "producthunt",
-        entity: name,
-        headline: `${name}: ${tagline.slice(0, 80)}`,
-        url: `https://www.producthunt.com/search?q=${encodeURIComponent(name)}`,
-        score: 50,
-        category: "launch",
-        severity: "priority",
-        collectedAt: (/* @__PURE__ */ new Date()).toISOString()
-      });
-    }
-  } catch {
-  }
-  return signals.slice(0, 5);
-}
-var AI_KEYWORDS;
-var init_producthunt = __esm({
-  "packages/mcp-local/src/sweep/sources/producthunt.ts"() {
-    "use strict";
-    AI_KEYWORDS = /\b(AI|agent|LLM|GPT|Claude|copilot|automation|workflow|MCP|developer|API|no.?code|low.?code)\b/i;
-  }
-});
-
-// packages/mcp-local/src/sweep/engine.ts
-var engine_exports = {};
-__export(engine_exports, {
-  computeDelta: () => computeDelta,
-  generateRecommendations: () => generateRecommendations,
-  getLatestSweep: () => getLatestSweep,
-  getPreviousSweep: () => getPreviousSweep,
-  initSweepTables: () => initSweepTables,
-  registerSource: () => registerSource,
-  runSweep: () => runSweep
-});
-function registerSource(name, collect5) {
-  SOURCE_MODULES.push({ name, collect: collect5 });
-}
-async function runSweep() {
-  const sweepId = genId("sweep");
-  const startMs = Date.now();
-  const sourceResults = [];
-  const allSignals = [];
-  if (SOURCE_MODULES.length === 0) {
-    try {
-      const hn = await Promise.resolve().then(() => (init_hackernews(), hackernews_exports));
-      registerSource("hackernews", hn.collect);
-    } catch {
-    }
-    try {
-      const gh = await Promise.resolve().then(() => (init_github_trending(), github_trending_exports));
-      registerSource("github_trending", gh.collect);
-    } catch {
-    }
-    try {
-      const yf = await Promise.resolve().then(() => (init_yahoo_finance(), yahoo_finance_exports));
-      registerSource("yahoo_finance", yf.collect);
-    } catch {
-    }
-    try {
-      const ph = await Promise.resolve().then(() => (init_producthunt(), producthunt_exports));
-      registerSource("producthunt", ph.collect);
-    } catch {
-    }
-  }
-  const results = await Promise.all(
-    SOURCE_MODULES.map(async (source) => {
-      const sourceStart = Date.now();
-      try {
-        const signals = await Promise.race([
-          source.collect(),
-          new Promise(
-            (_, reject) => setTimeout(() => reject(new Error("timeout")), 1e4)
-          )
-        ]);
-        return {
-          name: source.name,
-          status: "ok",
-          count: signals.length,
-          durationMs: Date.now() - sourceStart,
-          signals
-        };
-      } catch {
-        return {
-          name: source.name,
-          status: "error",
-          count: 0,
-          durationMs: Date.now() - sourceStart,
-          signals: []
-        };
-      }
-    })
-  );
-  for (const r of results) {
-    sourceResults.push({ name: r.name, status: r.status, count: r.count, durationMs: r.durationMs });
-    allSignals.push(...r.signals);
-  }
-  allSignals.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-  const result = {
-    signals: allSignals,
-    sources: sourceResults,
-    totalDurationMs: Date.now() - startMs,
-    sweepId,
-    timestamp: (/* @__PURE__ */ new Date()).toISOString()
-  };
-  persistSweep(result);
-  return result;
-}
-function computeDelta(current, previous) {
-  const prevIds = new Set((previous?.signals ?? []).map((s) => s.id));
-  const prevSeverities = new Map((previous?.signals ?? []).map((s) => [s.id, s.severity]));
-  const newSignals = current.signals.filter((s) => !prevIds.has(s.id));
-  const escalations = [];
-  const deescalations = [];
-  for (const sig of current.signals) {
-    const prevSev = prevSeverities.get(sig.id);
-    if (!prevSev) continue;
-    const sevOrder = { flash: 3, priority: 2, routine: 1 };
-    if (sevOrder[sig.severity] > sevOrder[prevSev]) {
-      escalations.push({ signal: sig, from: prevSev, to: sig.severity });
-    } else if (sevOrder[sig.severity] < sevOrder[prevSev]) {
-      deescalations.push({ signal: sig, from: prevSev, to: sig.severity });
-    }
-  }
-  const topCandidates = [
-    ...newSignals.filter((s) => s.severity === "flash"),
-    ...escalations.map((e) => e.signal),
-    ...newSignals.filter((s) => s.severity === "priority"),
-    ...newSignals
-  ];
-  const topSignal = topCandidates[0] ?? current.signals[0] ?? null;
-  return {
-    newSignals,
-    escalations,
-    deescalations,
-    topEntity: topSignal?.entity ?? null,
-    topEntityQuery: topSignal ? `${topSignal.headline} \u2014 what does this mean for founders?` : null,
-    topEntitySeverity: topSignal?.severity ?? null,
-    sweepId: current.sweepId,
-    previousSweepId: previous?.sweepId ?? null
-  };
-}
-function initSweepTables() {
-  const db = getDb();
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS sweep_results (
-      id TEXT PRIMARY KEY,
-      signals TEXT NOT NULL DEFAULT '[]',
-      sources TEXT NOT NULL DEFAULT '[]',
-      total_duration_ms INTEGER DEFAULT 0,
-      signal_count INTEGER DEFAULT 0,
-      top_entity TEXT,
-      top_entity_query TEXT,
-      new_signal_count INTEGER DEFAULT 0,
-      escalation_count INTEGER DEFAULT 0,
-      timestamp TEXT NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS idx_sr_ts ON sweep_results(timestamp);
-  `);
-}
-function persistSweep(result) {
-  try {
-    const db = getDb();
-    db.prepare(`
-      INSERT OR REPLACE INTO sweep_results (id, signals, sources, total_duration_ms, signal_count, timestamp)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(
-      result.sweepId,
-      JSON.stringify(result.signals.slice(0, 50)),
-      JSON.stringify(result.sources),
-      result.totalDurationMs,
-      result.signals.length,
-      result.timestamp
-    );
-  } catch {
-  }
-}
-function getLatestSweep() {
-  try {
-    const db = getDb();
-    const row = db.prepare(`SELECT * FROM sweep_results ORDER BY timestamp DESC LIMIT 1`).get();
-    if (!row) return null;
-    return {
-      signals: JSON.parse(row.signals ?? "[]"),
-      sources: JSON.parse(row.sources ?? "[]"),
-      totalDurationMs: row.total_duration_ms,
-      sweepId: row.id,
-      timestamp: row.timestamp
-    };
-  } catch {
-    return null;
-  }
-}
-function getPreviousSweep() {
-  try {
-    const db = getDb();
-    const row = db.prepare(`SELECT * FROM sweep_results ORDER BY timestamp DESC LIMIT 1 OFFSET 1`).get();
-    if (!row) return null;
-    return {
-      signals: JSON.parse(row.signals ?? "[]"),
-      sources: JSON.parse(row.sources ?? "[]"),
-      totalDurationMs: row.total_duration_ms,
-      sweepId: row.id,
-      timestamp: row.timestamp
-    };
-  } catch {
-    return null;
-  }
-}
-function generateRecommendations(signals) {
-  const recs = [];
-  for (const sig of signals.slice(0, 10)) {
-    let action = "";
-    let reasoning = "";
-    let urgency = "monitor";
-    let category = "market";
-    if (sig.category === "funding") {
-      action = `Research ${sig.entity}'s funding round. Evaluate if this changes your competitive landscape.`;
-      reasoning = "Funding signals shift market dynamics. A well-funded competitor can accelerate faster.";
-      urgency = "this_week";
-      category = "competitive";
-    } else if (sig.category === "launch") {
-      action = `Evaluate ${sig.entity}. Is this a competitor, partner opportunity, or irrelevant?`;
-      reasoning = "New launches in your space can validate or threaten your wedge.";
-      urgency = sig.severity === "flash" ? "act_now" : "this_week";
-      category = "opportunity";
-    } else if (sig.category === "market" && sig.severity === "flash") {
-      action = `Check your exposure to ${sig.entity}. Review your portfolio and customer base.`;
-      reasoning = "Major market moves can affect your runway, fundraising, and customer behavior.";
-      urgency = "act_now";
-      category = "risk";
-    } else if (sig.category === "trend") {
-      action = `Assess if the ${sig.entity} trend affects your product roadmap or positioning.`;
-      reasoning = "Trending topics signal where developer and investor attention is shifting.";
-      urgency = "this_week";
-      category = "opportunity";
-    } else {
-      action = `Note: ${sig.headline}`;
-      reasoning = "Signal detected but no immediate action required.";
-      urgency = "monitor";
-      category = "market";
-    }
-    recs.push({ signal: sig, action, reasoning, urgency, category });
-  }
-  const urgencyOrder = { act_now: 0, this_week: 1, monitor: 2 };
-  recs.sort((a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency]);
-  return recs;
-}
-var SOURCE_MODULES;
-var init_engine = __esm({
-  "packages/mcp-local/src/sweep/engine.ts"() {
-    "use strict";
-    init_db();
-    SOURCE_MODULES = [];
   }
 });
 
@@ -9792,6 +9559,223 @@ var llmTools = [
     }
   }
 ];
+
+// packages/mcp-local/src/sweep/engine.ts
+init_db();
+var SOURCE_MODULES = [];
+function registerSource(name, collect5) {
+  SOURCE_MODULES.push({ name, collect: collect5 });
+}
+async function runSweep() {
+  const sweepId = genId("sweep");
+  const startMs = Date.now();
+  const sourceResults = [];
+  const allSignals = [];
+  if (SOURCE_MODULES.length === 0) {
+    try {
+      const hn = await Promise.resolve().then(() => (init_hackernews(), hackernews_exports));
+      registerSource("hackernews", hn.collect);
+    } catch {
+    }
+    try {
+      const gh = await Promise.resolve().then(() => (init_github_trending(), github_trending_exports));
+      registerSource("github_trending", gh.collect);
+    } catch {
+    }
+    try {
+      const yf = await Promise.resolve().then(() => (init_yahoo_finance(), yahoo_finance_exports));
+      registerSource("yahoo_finance", yf.collect);
+    } catch {
+    }
+    try {
+      const ph = await Promise.resolve().then(() => (init_producthunt(), producthunt_exports));
+      registerSource("producthunt", ph.collect);
+    } catch {
+    }
+  }
+  const results = await Promise.all(
+    SOURCE_MODULES.map(async (source) => {
+      const sourceStart = Date.now();
+      try {
+        const signals = await Promise.race([
+          source.collect(),
+          new Promise(
+            (_, reject) => setTimeout(() => reject(new Error("timeout")), 1e4)
+          )
+        ]);
+        return {
+          name: source.name,
+          status: "ok",
+          count: signals.length,
+          durationMs: Date.now() - sourceStart,
+          signals
+        };
+      } catch {
+        return {
+          name: source.name,
+          status: "error",
+          count: 0,
+          durationMs: Date.now() - sourceStart,
+          signals: []
+        };
+      }
+    })
+  );
+  for (const r of results) {
+    sourceResults.push({ name: r.name, status: r.status, count: r.count, durationMs: r.durationMs });
+    allSignals.push(...r.signals);
+  }
+  allSignals.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const result = {
+    signals: allSignals,
+    sources: sourceResults,
+    totalDurationMs: Date.now() - startMs,
+    sweepId,
+    timestamp: (/* @__PURE__ */ new Date()).toISOString()
+  };
+  persistSweep(result);
+  return result;
+}
+function computeDelta(current, previous) {
+  const prevIds = new Set((previous?.signals ?? []).map((s) => s.id));
+  const prevSeverities = new Map((previous?.signals ?? []).map((s) => [s.id, s.severity]));
+  const newSignals = current.signals.filter((s) => !prevIds.has(s.id));
+  const escalations = [];
+  const deescalations = [];
+  for (const sig of current.signals) {
+    const prevSev = prevSeverities.get(sig.id);
+    if (!prevSev) continue;
+    const sevOrder = { flash: 3, priority: 2, routine: 1 };
+    if (sevOrder[sig.severity] > sevOrder[prevSev]) {
+      escalations.push({ signal: sig, from: prevSev, to: sig.severity });
+    } else if (sevOrder[sig.severity] < sevOrder[prevSev]) {
+      deescalations.push({ signal: sig, from: prevSev, to: sig.severity });
+    }
+  }
+  const topCandidates = [
+    ...newSignals.filter((s) => s.severity === "flash"),
+    ...escalations.map((e) => e.signal),
+    ...newSignals.filter((s) => s.severity === "priority"),
+    ...newSignals
+  ];
+  const topSignal = topCandidates[0] ?? current.signals[0] ?? null;
+  return {
+    newSignals,
+    escalations,
+    deescalations,
+    topEntity: topSignal?.entity ?? null,
+    topEntityQuery: topSignal ? `${topSignal.headline} \u2014 what does this mean for founders?` : null,
+    topEntitySeverity: topSignal?.severity ?? null,
+    sweepId: current.sweepId,
+    previousSweepId: previous?.sweepId ?? null
+  };
+}
+function initSweepTables() {
+  const db = getDb();
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS sweep_results (
+      id TEXT PRIMARY KEY,
+      signals TEXT NOT NULL DEFAULT '[]',
+      sources TEXT NOT NULL DEFAULT '[]',
+      total_duration_ms INTEGER DEFAULT 0,
+      signal_count INTEGER DEFAULT 0,
+      top_entity TEXT,
+      top_entity_query TEXT,
+      new_signal_count INTEGER DEFAULT 0,
+      escalation_count INTEGER DEFAULT 0,
+      timestamp TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_sr_ts ON sweep_results(timestamp);
+  `);
+}
+function persistSweep(result) {
+  try {
+    const db = getDb();
+    db.prepare(`
+      INSERT OR REPLACE INTO sweep_results (id, signals, sources, total_duration_ms, signal_count, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      result.sweepId,
+      JSON.stringify(result.signals.slice(0, 50)),
+      JSON.stringify(result.sources),
+      result.totalDurationMs,
+      result.signals.length,
+      result.timestamp
+    );
+  } catch {
+  }
+}
+function getLatestSweep() {
+  try {
+    const db = getDb();
+    const row = db.prepare(`SELECT * FROM sweep_results ORDER BY timestamp DESC LIMIT 1`).get();
+    if (!row) return null;
+    return {
+      signals: JSON.parse(row.signals ?? "[]"),
+      sources: JSON.parse(row.sources ?? "[]"),
+      totalDurationMs: row.total_duration_ms,
+      sweepId: row.id,
+      timestamp: row.timestamp
+    };
+  } catch {
+    return null;
+  }
+}
+function getPreviousSweep() {
+  try {
+    const db = getDb();
+    const row = db.prepare(`SELECT * FROM sweep_results ORDER BY timestamp DESC LIMIT 1 OFFSET 1`).get();
+    if (!row) return null;
+    return {
+      signals: JSON.parse(row.signals ?? "[]"),
+      sources: JSON.parse(row.sources ?? "[]"),
+      totalDurationMs: row.total_duration_ms,
+      sweepId: row.id,
+      timestamp: row.timestamp
+    };
+  } catch {
+    return null;
+  }
+}
+function generateRecommendations(signals) {
+  const recs = [];
+  for (const sig of signals.slice(0, 10)) {
+    let action = "";
+    let reasoning = "";
+    let urgency = "monitor";
+    let category = "market";
+    if (sig.category === "funding") {
+      action = `Research ${sig.entity}'s funding round. Evaluate if this changes your competitive landscape.`;
+      reasoning = "Funding signals shift market dynamics. A well-funded competitor can accelerate faster.";
+      urgency = "this_week";
+      category = "competitive";
+    } else if (sig.category === "launch") {
+      action = `Evaluate ${sig.entity}. Is this a competitor, partner opportunity, or irrelevant?`;
+      reasoning = "New launches in your space can validate or threaten your wedge.";
+      urgency = sig.severity === "flash" ? "act_now" : "this_week";
+      category = "opportunity";
+    } else if (sig.category === "market" && sig.severity === "flash") {
+      action = `Check your exposure to ${sig.entity}. Review your portfolio and customer base.`;
+      reasoning = "Major market moves can affect your runway, fundraising, and customer behavior.";
+      urgency = "act_now";
+      category = "risk";
+    } else if (sig.category === "trend") {
+      action = `Assess if the ${sig.entity} trend affects your product roadmap or positioning.`;
+      reasoning = "Trending topics signal where developer and investor attention is shifting.";
+      urgency = "this_week";
+      category = "opportunity";
+    } else {
+      action = `Note: ${sig.headline}`;
+      reasoning = "Signal detected but no immediate action required.";
+      urgency = "monitor";
+      category = "market";
+    }
+    recs.push({ signal: sig, action, reasoning, urgency, category });
+  }
+  const urgencyOrder = { act_now: 0, this_week: 1, monitor: 2 };
+  recs.sort((a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency]);
+  return recs;
+}
 
 // server/routes/search.ts
 init_db();
@@ -16232,15 +16216,17 @@ app.use("/harness", createHarnessRouter(tools));
 app.use("/api/harness", createHarnessRouter(tools));
 app.use("/shared-context", createSharedContextRouter());
 app.use("/api/shared-context", createSharedContextRouter());
+try {
+  initSweepTables();
+} catch {
+}
 app.get("/api/sweep/latest", async (_req, res) => {
   try {
-    const { initSweepTables: initSweepTables2, getLatestSweep: getLatestSweep2, computeDelta: computeDelta2, getPreviousSweep: getPreviousSweep2, generateRecommendations: generateRecommendations2 } = (init_engine(), __toCommonJS(engine_exports));
-    initSweepTables2();
-    const latest = getLatestSweep2();
+    const latest = getLatestSweep();
     if (!latest) return res.json({ success: true, signals: [], message: "No sweep data. Run a sweep first." });
-    const previous = getPreviousSweep2();
-    const delta = computeDelta2(latest, previous);
-    const recs = generateRecommendations2(latest.signals);
+    const previous = getPreviousSweep();
+    const delta = computeDelta(latest, previous);
+    const recs = generateRecommendations(latest.signals);
     res.json({
       success: true,
       sweepId: latest.sweepId,
@@ -16261,12 +16247,10 @@ app.get("/api/sweep/latest", async (_req, res) => {
 });
 app.post("/api/sweep/run", async (_req, res) => {
   try {
-    const { initSweepTables: initSweepTables2, runSweep: runSweep2, computeDelta: computeDelta2, getPreviousSweep: getPreviousSweep2, generateRecommendations: generateRecommendations2 } = (init_engine(), __toCommonJS(engine_exports));
-    initSweepTables2();
-    const result = await runSweep2();
-    const previous = getPreviousSweep2();
-    const delta = computeDelta2(result, previous);
-    const recs = generateRecommendations2(result.signals);
+    const result = await runSweep();
+    const previous = getPreviousSweep();
+    const delta = computeDelta(result, previous);
+    const recs = generateRecommendations(result.signals);
     res.json({
       success: true,
       sweepId: result.sweepId,
