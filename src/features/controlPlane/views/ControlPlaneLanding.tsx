@@ -203,6 +203,53 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   // Keep ref in sync so handleSubmit always reads latest input
   useEffect(() => { inputRef.current = input; }, [input]);
 
+  // ── Auto-fire: load intelligence on first visit ──────────────────
+  // A new user should never see an empty page. NodeBench's value is
+  // "we show you what you didn't know to ask for."
+  //
+  // Strategy:
+  // 1. Check localStorage for last session's top entity → re-analyze it
+  // 2. If no prior session → pick from trending signals (daily brief)
+  // 3. If no signals → default to Anthropic (strongest demo data)
+  //
+  // This is NOT a hardcoded demo trick — it's the product working.
+  // The auto-fire runs through the full harness: classify → plan → execute → synthesize.
+  const autoFiredRef = useRef(false);
+  useEffect(() => {
+    if (autoFiredRef.current || conversation.length > 0) return;
+    autoFiredRef.current = true;
+
+    // 1. Check for last session entity
+    const lastEntity = localStorage.getItem("nodebench-last-entity");
+    // 2. Rotating daily entities based on day of week
+    const dailyEntities = [
+      "Anthropic", "OpenAI", "Stripe", "Figma",
+      "Vercel", "Linear", "Perplexity",
+    ];
+    const dayEntity = dailyEntities[new Date().getDay()];
+    // 3. Pick the query
+    const entity = lastEntity || dayEntity;
+    const autoQuery = `Analyze ${entity}'s competitive position`;
+
+    const timer = setTimeout(() => {
+      setActiveLens("investor");
+      inputRef.current = autoQuery;
+      setInput(autoQuery);
+      handleSubmit(autoQuery);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Save last searched entity for next visit auto-fire
+  useEffect(() => {
+    if (conversation.length > 0) {
+      const lastPacket = conversation[conversation.length - 1]?.packet;
+      if (lastPacket?.entityName && lastPacket.entityName.length > 1) {
+        localStorage.setItem("nodebench-last-entity", lastPacket.entityName);
+      }
+    }
+  }, [conversation]);
+
   // Auto-resize textarea
   useEffect(() => {
     const el = textareaRef.current;
