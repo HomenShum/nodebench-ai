@@ -170,15 +170,7 @@ export const SearchTrace = memo(function SearchTrace({
               {errorSteps} errors
             </span>
           ) : null}
-          {judgeVerdict && (
-            <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
-              judgeVerdict.verdict === "pass"
-                ? "bg-emerald-500/15 text-emerald-400"
-                : "bg-rose-500/15 text-rose-400"
-            }`}>
-              {judgeVerdict.score}%
-            </span>
-          )}
+          {/* Judge verdict hidden from users — internal eval score, not user-facing */}
         </div>
         <ChevronDown className={`h-3.5 w-3.5 text-content-muted transition-transform ${expanded ? "rotate-180" : ""}`} />
       </button>
