@@ -62,6 +62,7 @@ import { initEmbeddingIndex } from "./tools/embeddingProvider.js";
  const autoPresetFlag = cliArgs.includes("--auto-preset");
  const syncConfigsFlag = cliArgs.includes("--sync-configs");
  const useEngine = cliArgs.includes("--engine");
+ const useProfile = cliArgs.includes("--profile");
  const engineSecret = (() => {
    const idx = cliArgs.indexOf("--engine-secret");
    return idx >= 0 && idx + 1 < cliArgs.length ? cliArgs[idx + 1] : process.env.ENGINE_SECRET;
@@ -152,6 +153,7 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
         "  --dynamic           Enable dynamic toolset loading (Search+Load pattern from arxiv 2509.20386)",
         "  --no-toon           Disable TOON encoding (TOON is on by default for ~40% token savings)",
         "  --no-embedding      Disable neural embedding search (uses local HuggingFace model or API keys)",
+        "  --profile           Enable profiling proxy — logs every tool call with cost/latency",
         "  --engine            Start headless API engine server on port 6276",
         "  --engine-secret <s> Require Bearer token for engine API (or set ENGINE_SECRET env var)",
         "  --explain <tool>    Show plain-English explanation of a tool and exit",
@@ -2020,6 +2022,25 @@ const dynamicLoadingTools: McpTool[] = [
 
 // Combine all tools (mutable for dynamic loading)
 let allTools = [...allToolsWithoutDiscovery, ...discoveryTools, ...dynamicLoadingTools];
+
+// Auto-profile all tool calls when --profile is set
+if (useProfile) {
+  try {
+    const { wrapToolsWithProxy } = require("./profiler/mcpProxy.js");
+    const { initEventCollectorTables } = require("./profiler/eventCollector.js");
+    const { initWorkflowTemplateTables } = require("./profiler/workflowTemplates.js");
+    const { initProofEngineTables } = require("./profiler/proofEngine.js");
+    const { initModelRoutingTables } = require("./profiler/modelRouter.js");
+    initEventCollectorTables();
+    initWorkflowTemplateTables();
+    initProofEngineTables();
+    initModelRoutingTables();
+    allTools = wrapToolsWithProxy(allTools, { sessionId: `mcp_${Date.now().toString(36)}` });
+    console.error("[profiler] All tools wrapped with profiling proxy (--profile)");
+  } catch (e: any) {
+    console.error("[profiler] Failed to enable profiling:", e?.message);
+  }
+}
 
 // Background: initialize embedding index for semantic search (non-blocking)
 // Uses Agent-as-a-Graph bipartite corpus: tool nodes + domain nodes for graph-aware retrieval

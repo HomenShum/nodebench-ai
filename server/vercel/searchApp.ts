@@ -43,6 +43,17 @@ app.use("/harness", createHarnessRouter(tools));
 app.use("/api/harness", createHarnessRouter(tools));
 app.use("/shared-context", createSharedContextRouter());
 app.use("/api/shared-context", createSharedContextRouter());
+
+// OTel trace receiver — agents send traces here
+app.post("/v1/traces", (req, res) => {
+  try {
+    const { processOtelPayload } = require("../../packages/mcp-local/src/profiler/otelReceiver.js");
+    const result = processOtelPayload(req.body);
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    res.json({ success: false, error: err?.message });
+  }
+});
 app.get("/sync-bridge/health", (_req, res) => {
   res.json(syncBridge.getHealthSnapshot());
 });

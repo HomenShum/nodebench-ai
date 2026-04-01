@@ -38,3 +38,33 @@ export {
   wrapToolsWithProxy,
   createProfiledDispatcher,
 } from "./mcpProxy.js";
+
+export {
+  type WorkflowTemplate,
+  initWorkflowTemplateTables,
+  saveTemplate,
+  listTemplates,
+  getTemplate,
+  recordTemplateUse,
+  deleteTemplate,
+  validateTemplate,
+} from "./workflowTemplates.js";
+
+export {
+  type ProofRun,
+  initProofEngineTables,
+  evaluateOptimization,
+  getProofRuns,
+} from "./proofEngine.js";
+
+export {
+  processOtelPayload,
+} from "./otelReceiver.js";
+
+export {
+  type ModelRoutingSuggestion,
+  initModelRoutingTables,
+  suggestModelRoute,
+  recordRoutingDecision,
+  getRoutingSuggestions,
+} from "./modelRouter.js";

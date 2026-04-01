@@ -5076,6 +5076,181 @@ var init_llmJudgeLoop = __esm({
   }
 });
 
+// packages/mcp-local/src/profiler/eventCollector.ts
+function estimateEventCost(event) {
+  let cost = TOOL_BASE_COST[event.toolName ?? ""] ?? TOOL_BASE_COST._default;
+  if (event.modelUsed && (event.tokenIn || event.tokenOut)) {
+    const rates = MODEL_COST_PER_1K_TOKENS[event.modelUsed] ?? MODEL_COST_PER_1K_TOKENS._default;
+    cost += (event.tokenIn ?? 0) / 1e3 * rates.input;
+    cost += (event.tokenOut ?? 0) / 1e3 * rates.output;
+  }
+  return Math.round(cost * 1e4) / 1e4;
+}
+function computeFingerprint(toolName, inputSummary) {
+  const raw = `${toolName}:${(inputSummary ?? "").toLowerCase().trim().slice(0, 200)}`;
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) {
+    hash = (hash << 5) - hash + raw.charCodeAt(i) | 0;
+  }
+  return `fp_${Math.abs(hash).toString(36)}`;
+}
+function ingestEvent(event) {
+  const db = getDb();
+  const eventId = event.eventId ?? genId("evt");
+  const timestamp = event.timestamp ?? (/* @__PURE__ */ new Date()).toISOString();
+  const fingerprint = event.fingerprint ?? computeFingerprint(event.toolName ?? "unknown", event.toolInputSummary);
+  const estimatedCost = event.estimatedCostUsd ?? estimateEventCost(event);
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1e3).toISOString();
+  const duplicate = db.prepare(`
+    SELECT event_id FROM unified_events
+    WHERE fingerprint = ? AND session_id = ? AND timestamp > ?
+    LIMIT 1
+  `).get(fingerprint, event.sessionId ?? "unknown", fiveMinAgo);
+  const isDuplicate = !!duplicate;
+  db.prepare(`
+    INSERT OR IGNORE INTO unified_events
+    (event_id, timestamp, surface, integration_path, session_id, trace_id, span_id,
+     company_id, user_id, tool_name, tool_input_summary, tool_output_summary,
+     latency_ms, token_in, token_out, estimated_cost_usd, cache_hit, success,
+     model_used, packet_id, entity_ids, artifact_ids, path_step_index, fingerprint, parent_span_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    eventId,
+    timestamp,
+    event.surface ?? "unknown",
+    event.integrationPath ?? "direct",
+    event.sessionId ?? "unknown",
+    event.traceId ?? null,
+    event.spanId ?? null,
+    event.companyId ?? null,
+    event.userId ?? null,
+    event.toolName ?? "unknown",
+    event.toolInputSummary ?? null,
+    event.toolOutputSummary ?? null,
+    event.latencyMs ?? 0,
+    event.tokenIn ?? 0,
+    event.tokenOut ?? 0,
+    estimatedCost,
+    event.cacheHit ? 1 : 0,
+    event.success !== false ? 1 : 0,
+    event.modelUsed ?? null,
+    event.packetId ?? null,
+    JSON.stringify(event.entityIds ?? []),
+    JSON.stringify(event.artifactIds ?? []),
+    event.pathStepIndex ?? null,
+    fingerprint,
+    event.parentSpanId ?? null
+  );
+  eventCount++;
+  if (eventCount % 500 === 0) {
+    const total = db.prepare(`SELECT COUNT(*) as c FROM unified_events`).get()?.c ?? 0;
+    if (total > MAX_EVENTS) {
+      db.prepare(`DELETE FROM unified_events WHERE event_id IN (SELECT event_id FROM unified_events ORDER BY timestamp ASC LIMIT ?)`).run(total - MAX_EVENTS);
+    }
+  }
+  return { eventId, isDuplicate, estimatedCost };
+}
+function logOtelSpan(data) {
+  const attrs = data.attributes ?? {};
+  return ingestEvent({
+    surface: "otel",
+    integrationPath: "otel_receiver",
+    sessionId: data.traceId,
+    // Use trace as session for OTel
+    traceId: data.traceId,
+    spanId: data.spanId,
+    parentSpanId: data.parentSpanId,
+    toolName: data.toolName,
+    toolInputSummary: attrs["gen_ai.prompt"] ?? attrs["input"],
+    toolOutputSummary: attrs["gen_ai.completion"] ?? attrs["output"],
+    latencyMs: data.endTimeMs - data.startTimeMs,
+    tokenIn: attrs["gen_ai.usage.prompt_tokens"] ?? void 0,
+    tokenOut: attrs["gen_ai.usage.completion_tokens"] ?? void 0,
+    modelUsed: attrs["gen_ai.request.model"] ?? void 0,
+    success: attrs["error"] ? false : true
+  });
+}
+var MODEL_COST_PER_1K_TOKENS, TOOL_BASE_COST, MAX_EVENTS, eventCount;
+var init_eventCollector = __esm({
+  "packages/mcp-local/src/profiler/eventCollector.ts"() {
+    "use strict";
+    init_db();
+    MODEL_COST_PER_1K_TOKENS = {
+      "gemini-3.1-flash-lite-preview": { input: 2e-5, output: 8e-5 },
+      "gemini-3.1-flash-preview": { input: 15e-5, output: 6e-4 },
+      "gemini-2.5-flash-preview": { input: 15e-5, output: 6e-4 },
+      "claude-sonnet-4-6": { input: 3e-3, output: 0.015 },
+      "claude-opus-4-6": { input: 0.015, output: 0.075 },
+      "gpt-4o": { input: 5e-3, output: 0.015 },
+      "gpt-4o-mini": { input: 15e-5, output: 6e-4 },
+      _default: { input: 1e-3, output: 3e-3 }
+    };
+    TOOL_BASE_COST = {
+      web_search: 8e-3,
+      fetch_url: 2e-3,
+      enrich_entity: 0.015,
+      run_deep_sim: 0.05,
+      build_claim_graph: 0.03,
+      render_decision_memo: 0.01,
+      _default: 3e-3
+    };
+    MAX_EVENTS = 1e4;
+    eventCount = 0;
+  }
+});
+
+// packages/mcp-local/src/profiler/otelReceiver.ts
+var otelReceiver_exports = {};
+__export(otelReceiver_exports, {
+  processOtelPayload: () => processOtelPayload
+});
+function parseAttributes(attrs) {
+  const result = {};
+  if (!attrs) return result;
+  for (const a of attrs) {
+    result[a.key] = a.value?.stringValue ?? (a.value?.intValue ? Number(a.value.intValue) : void 0);
+  }
+  return result;
+}
+function processOtelPayload(body) {
+  let spansProcessed = 0;
+  let eventsLogged = 0;
+  const resourceSpans = body?.resourceSpans ?? [];
+  for (const rs of resourceSpans) {
+    const scopeSpans = rs?.scopeSpans ?? [];
+    for (const ss of scopeSpans) {
+      const spans = ss?.spans ?? [];
+      for (const span of spans) {
+        spansProcessed++;
+        const attrs = parseAttributes(span.attributes);
+        const name = span.name ?? "";
+        const isToolSpan = name.includes("execute_tool") || name.includes("tool_call") || attrs["gen_ai.operation.name"] === "execute_tool" || attrs["openai.tool_name"] || attrs["langchain.tool.name"];
+        if (!isToolSpan) continue;
+        const toolName = attrs["openai.tool_name"] ?? attrs["langchain.tool.name"] ?? attrs["tool.name"] ?? name;
+        const startMs = Number(BigInt(span.startTimeUnixNano) / BigInt(1e6));
+        const endMs = Number(BigInt(span.endTimeUnixNano) / BigInt(1e6));
+        logOtelSpan({
+          traceId: span.traceId,
+          spanId: span.spanId,
+          parentSpanId: span.parentSpanId,
+          toolName,
+          startTimeMs: startMs,
+          endTimeMs: endMs,
+          attributes: attrs
+        });
+        eventsLogged++;
+      }
+    }
+  }
+  return { spansProcessed, eventsLogged };
+}
+var init_otelReceiver = __esm({
+  "packages/mcp-local/src/profiler/otelReceiver.ts"() {
+    "use strict";
+    init_eventCollector();
+  }
+});
+
 // server/vercel/searchApp.ts
 import cors from "cors";
 import express from "express";
@@ -9460,7 +9635,7 @@ async function executeHarness(plan, callTool, onTrace) {
         try {
           const result = await Promise.race([
             callTool(step.toolName, step.args),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 15e3))
+            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 8e3))
           ]);
           const duration = Date.now() - stepStart;
           completedSteps.add(step.id);
@@ -9478,7 +9653,7 @@ async function executeHarness(plan, callTool, onTrace) {
     try {
       const result = await Promise.race([
         callTool(step.toolName, step.args),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 15e3))
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 8e3))
       ]);
       completedSteps.add(step.id);
       stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: Date.now() - stepStart });
@@ -9493,7 +9668,7 @@ async function executeHarness(plan, callTool, onTrace) {
     try {
       const result = await Promise.race([
         callTool(step.toolName, step.args),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 15e3))
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 8e3))
       ]);
       completedSteps.add(step.id);
       stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: Date.now() - stepStart });
@@ -15494,6 +15669,15 @@ app.use("/harness", createHarnessRouter(tools));
 app.use("/api/harness", createHarnessRouter(tools));
 app.use("/shared-context", createSharedContextRouter());
 app.use("/api/shared-context", createSharedContextRouter());
+app.post("/v1/traces", (req, res) => {
+  try {
+    const { processOtelPayload: processOtelPayload2 } = (init_otelReceiver(), __toCommonJS(otelReceiver_exports));
+    const result = processOtelPayload2(req.body);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.json({ success: false, error: err?.message });
+  }
+});
 app.get("/sync-bridge/health", (_req, res) => {
   res.json(syncBridge.getHealthSnapshot());
 });
