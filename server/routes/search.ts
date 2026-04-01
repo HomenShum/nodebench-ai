@@ -1310,6 +1310,12 @@ export function createSearchRouter(tools: McpTool[]) {
   let activeProfileSessionId: string | undefined;
 
   async function callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+    // Virtual tools — functions that aren't MCP tools but the harness can call
+    if (name === "linkup_search") {
+      const q = String(args.query ?? "");
+      const max = Number(args.maxResults ?? 5);
+      return linkupSearch(q, max);
+    }
     const tool = findTool(name);
     if (!tool) return { error: true, message: `Tool not found: ${name}` };
     const startMs = Date.now();

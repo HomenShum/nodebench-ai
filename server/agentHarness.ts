@@ -262,13 +262,22 @@ function buildFallbackPlan(query: string, classification: string, entityTargets:
       };
 
     case "multi_entity": {
-      const steps: HarnessStep[] = entityTargets.slice(0, 4).map((e, i) => ({
-        id: `s${i + 1}`,
-        toolName: "web_search",
-        args: { query: `${e} company overview strategy ${year}`, maxResults: 3 },
-        purpose: `Research ${e}`,
-        parallel: true,
-      }));
+      const steps: HarnessStep[] = entityTargets.slice(0, 4).flatMap((e, i) => [
+        {
+          id: `s${i * 2 + 1}`,
+          toolName: "web_search",
+          args: { query: `${e} company overview strategy competitors ${year}`, maxResults: 4 },
+          purpose: `Research ${e}`,
+          parallel: true,
+        },
+        {
+          id: `s${i * 2 + 2}`,
+          toolName: "enrich_entity",
+          args: { query: `${e} competitive position`, entityName: e, lens },
+          purpose: `Enrich ${e}`,
+          parallel: true,
+        },
+      ]);
       steps.push({
         id: `s${steps.length + 1}`,
         toolName: "founder_local_gather",
@@ -289,9 +298,11 @@ function buildFallbackPlan(query: string, classification: string, entityTargets:
         objective: `Analyze ${entity}`,
         classification, entityTargets,
         steps: [
-          { id: "s1", toolName: "web_search", args: { query: `${entity} company overview strategy funding ${year}`, maxResults: 5 }, purpose: "Web intelligence", parallel: true },
-          { id: "s2", toolName: "run_recon", args: { target: entity, focus: query }, purpose: "Deep recon", parallel: true },
-          { id: "s3", toolName: "founder_local_gather", args: { daysBack: 7 }, purpose: "Local context", parallel: true },
+          { id: "s1", toolName: "linkup_search", args: { query: `${entity} company overview strategy funding competitive position ${year}`, maxResults: 5 }, purpose: "Linkup deep intelligence", parallel: true },
+          { id: "s2", toolName: "web_search", args: { query: `${entity} competitors risks challenges ${year}`, maxResults: 5 }, purpose: "Competitive & risk intelligence", parallel: true },
+          { id: "s3", toolName: "enrich_entity", args: { query: `${entity} competitive position`, entityName: entity, lens }, purpose: "Structured entity enrichment", parallel: true },
+          { id: "s4", toolName: "run_recon", args: { target: entity, focus: query }, purpose: "Deep recon", parallel: true },
+          { id: "s5", toolName: "founder_local_gather", args: { daysBack: 7 }, purpose: "Local context", parallel: true },
         ],
         synthesisPrompt: `Synthesize intelligence about ${entity} for a ${lens} audience. Include signals, risks, comparables, and next actions.`,
       };
@@ -313,7 +324,9 @@ function buildFallbackPlan(query: string, classification: string, entityTargets:
         classification, entityTargets,
         steps: [
           { id: "s1", toolName: "founder_local_gather", args: { daysBack: 7 }, purpose: "Gather context", parallel: true },
-          { id: "s2", toolName: "web_search", args: { query: `${query} ${year}`, maxResults: 3 }, purpose: "Web research", parallel: true },
+          { id: "s2", toolName: "web_search", args: { query: `${query} ${year}`, maxResults: 5 }, purpose: "Web research", parallel: true },
+          { id: "s3", toolName: "web_search", args: { query: `${entity} market risks competitors ${year}`, maxResults: 3 }, purpose: "Risk & competitive context", parallel: true },
+          { id: "s4", toolName: "founder_direction_assessment", args: { query }, purpose: "Direction assessment", parallel: false, dependsOn: "s1" },
         ],
         synthesisPrompt: `Answer the query "${query}" using gathered intelligence. Format as a structured founder packet.`,
       };
@@ -506,6 +519,35 @@ Return ONLY valid JSON:
 
     // Skip results that report their own errors (HONEST_STATUS: tool returned 200 but error inside)
     if (raw?.error === true) continue;
+
+    // ── linkup_search results (richest source — answer + sources with snippets) ──
+    if (sr.toolName === "linkup_search") {
+      if (raw?.answer) answerParts.unshift(String(raw.answer).slice(0, 500)); // Linkup answer is highest quality, prepend
+      const lSources = raw?.sources ?? [];
+      for (const s of (Array.isArray(lSources) ? lSources : []).slice(0, 5)) {
+        const title = s?.name ?? s?.title ?? "";
+        const snippet = s?.snippet ?? s?.description ?? "";
+        const url = s?.url ?? "";
+        if (title) sources.push({ label: title.slice(0, 80), href: url || undefined, type: "web" });
+        if (snippet) {
+          if (/\b(revenue|growth|raised|funding|launch|expand|partner|acquir|billion|million|valuation)/i.test(snippet)) {
+            signals.push({ name: snippet.slice(0, 60), direction: "up", impact: "high" });
+          }
+          if (/\b(layoff|decline|loss|risk|lawsuit|regulat|concern|investig|threat|challenge|vulnerab)/i.test(snippet)) {
+            risks.push({ title: "Risk: " + title.slice(0, 40), description: snippet.slice(0, 150) });
+          }
+          if (/\b(compet|rival|alternative|versus|vs\.|compared to)/i.test(snippet)) {
+            // Extract competitor names from snippet
+            const compMatch = snippet.match(/(?:competitors?|rivals?|alternatives?)\s+(?:like|such as|including)\s+([A-Z][a-zA-Z]+(?:\s*,\s*[A-Z][a-zA-Z]+)*)/i);
+            if (compMatch) {
+              for (const name of compMatch[1].split(/,\s*/)) {
+                if (name.trim().length > 1) comparables.push({ name: name.trim(), relevance: "high", note: "Identified via Linkup" });
+              }
+            }
+          }
+        }
+      }
+    }
 
     // ── web_search results ──
     if (sr.toolName === "web_search") {
