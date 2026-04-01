@@ -13,7 +13,7 @@ export default function handler(req, res) {
   if (matched.includes("/sweep/")) {
     req.url = matched;
   } else if (matched.includes("/search/insights")) {
-    req.url = matched;
+    req.url = "/insights";
   } else {
     // Default: strip to just query string (for POST /api/search)
     req.url = `/${url.search}`;
