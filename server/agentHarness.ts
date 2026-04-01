@@ -500,7 +500,7 @@ export async function executeHarness(
         try {
           const result = await Promise.race([
             callTool(step.toolName, step.args),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 8000)),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 12000)),
           ]);
           const duration = Date.now() - stepStart;
           completedSteps.add(step.id);
@@ -520,7 +520,7 @@ export async function executeHarness(
     try {
       const result = await Promise.race([
         callTool(step.toolName, step.args),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 8000)),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 12000)),
       ]);
       completedSteps.add(step.id);
       stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: Date.now() - stepStart });
@@ -537,7 +537,7 @@ export async function executeHarness(
     try {
       const result = await Promise.race([
         callTool(step.toolName, step.args),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 8000)),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 12000)),
       ]);
       completedSteps.add(step.id);
       stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: Date.now() - stepStart });

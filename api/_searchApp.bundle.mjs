@@ -10404,7 +10404,7 @@ async function executeHarness(plan, callTool, onTrace) {
         try {
           const result = await Promise.race([
             callTool(step.toolName, step.args),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 8e3))
+            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 12e3))
           ]);
           const duration = Date.now() - stepStart;
           completedSteps.add(step.id);
@@ -10422,7 +10422,7 @@ async function executeHarness(plan, callTool, onTrace) {
     try {
       const result = await Promise.race([
         callTool(step.toolName, step.args),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 8e3))
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 12e3))
       ]);
       completedSteps.add(step.id);
       stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: Date.now() - stepStart });
@@ -10437,7 +10437,7 @@ async function executeHarness(plan, callTool, onTrace) {
     try {
       const result = await Promise.race([
         callTool(step.toolName, step.args),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 8e3))
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 12e3))
       ]);
       completedSteps.add(step.id);
       stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: Date.now() - stepStart });
