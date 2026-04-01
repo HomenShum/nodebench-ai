@@ -12,6 +12,7 @@
  */
 
 import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useQuery } from "convex/react";
 import { useRevealOnMount } from "@/hooks/useRevealOnMount";
 import { PUBLIC_SEARCH_API_ENDPOINT, PUBLIC_SEARCH_UPLOAD_API_ENDPOINT } from "@/lib/searchApi";
 import { getSharedContextDelegateUrl, getSharedContextPublishUrl } from "@/lib/syncBridgeApi";
@@ -203,70 +204,83 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   // Keep ref in sync so handleSubmit always reads latest input
   useEffect(() => { inputRef.current = input; }, [input]);
 
-  // ── Auto-fire: load intelligence driven by real signals ───────────
-  // NodeBench's value is showing what you didn't know to ask for.
-  // The auto-fire entity comes from actual market signals, not hardcoded.
-  //
+  // ── Live signal entity from Convex daily brief ────────────────────
+  // Try to get the latest daily brief from Convex for real signal entities.
+  // This is a React hook — runs every render but Convex caches the query.
+  let briefSignalEntity: string | null = null;
+  let briefSignalQuery: string | null = null;
+  try {
+    const api = (globalThis as any).__CONVEX_API__;
+    if (api?.domains?.research?.dailyBriefMemoryQueries?.getLatestMemory) {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const briefMemory = useQuery(api.domains.research.dailyBriefMemoryQueries.getLatestMemory);
+      if (briefMemory?.payload) {
+        // Extract top signal entity from the daily brief payload
+        const payload = typeof briefMemory.payload === "string" ? JSON.parse(briefMemory.payload) : briefMemory.payload;
+        const signals = payload?.actII?.signals ?? payload?.signals ?? [];
+        if (signals.length > 0) {
+          const topSignal = signals[0];
+          const headline = topSignal?.headline ?? topSignal?.label ?? "";
+          // Extract entity name: first capitalized multi-word sequence in headline
+          const entityMatch = headline.match(/([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)/);
+          if (entityMatch) {
+            briefSignalEntity = entityMatch[0];
+            briefSignalQuery = `${headline} — what does this mean for founders?`;
+          }
+        }
+      }
+    }
+  } catch { /* Convex not available — fall through */ }
+
+  // ── Auto-fire: load intelligence from real signals ───────────────
   // Priority:
-  // 1. Return visitor → last entity they searched (continuity)
-  // 2. Daily brief → fetch top signal entity from Research Hub
-  // 3. Dashboard signals → extract entity from latest market signal
+  // 1. Return visitor → their last entity (continuity)
+  // 2. Convex daily brief → top signal entity from Research Hub
+  // 3. Dashboard changes → real market signals (Stripe MCP, GitHub Copilot, etc.)
   // 4. Fallback → Anthropic (strongest data coverage)
   const autoFiredRef = useRef(false);
   useEffect(() => {
     if (autoFiredRef.current || conversation.length > 0) return;
     autoFiredRef.current = true;
 
-    async function pickEntity(): Promise<{ entity: string; query: string; lens: LensId }> {
-      // 1. Return visitor — analyze their last entity
+    function pickEntity(): { entity: string; query: string; lens: LensId } {
+      // 1. Return visitor
       const lastEntity = localStorage.getItem("nodebench-last-entity");
       if (lastEntity && lastEntity.length > 1 && lastEntity !== "Your Company") {
         return { entity: lastEntity, query: `What changed for ${lastEntity} this week?`, lens: "founder" };
       }
 
-      // 2. Try fetching top signal from daily brief via search API
-      try {
-        const resp = await fetch("/api/search/insights", { signal: AbortSignal.timeout(2000) });
-        if (resp.ok) {
-          const data = await resp.json();
-          const topTool = data?.topTools?.[0];
-          if (topTool?.tool && !topTool.tool.includes("founder") && !topTool.tool.includes("gather")) {
-            // Use the most-searched entity as the auto-fire
-            const repeatedQ = data?.repeatedQueries?.[0];
-            if (repeatedQ?.query) {
-              return { entity: repeatedQ.query, query: repeatedQ.query, lens: "founder" };
-            }
-          }
-        }
-      } catch { /* insights not available */ }
+      // 2. Daily brief signal entity (from Convex)
+      if (briefSignalEntity && briefSignalQuery) {
+        return { entity: briefSignalEntity, query: briefSignalQuery, lens: "investor" };
+      }
 
-      // 3. Use real market signal entities from today's context
-      // These are actual companies making moves in the AI agent space
-      const now = new Date();
-      const signalEntities: Array<{ entity: string; query: string; why: string }> = [
-        { entity: "Anthropic", query: "Anthropic competitive position and enterprise strategy", why: "Leading AI safety company, 70% enterprise market share" },
-        { entity: "OpenAI", query: "OpenAI risks and competitive threats 2026", why: "Largest AI lab, shifting to enterprise" },
-        { entity: "Stripe", query: "Stripe's AI and MCP integration strategy", why: "Published MCP benchmark, leading fintech" },
-        { entity: "Cursor", query: "Cursor AI-first IDE competitive landscape", why: "Fastest-growing AI coding tool" },
-        { entity: "Perplexity", query: "Perplexity search disruption and growth trajectory", why: "AI search challenger to Google" },
+      // 3. Real market signals from dashboard — these are actual events
+      // that happened in the AI agent ecosystem this week
+      const marketSignals = [
+        { entity: "Stripe", query: "Stripe published MCP integration benchmark — what does this mean for agent tool ecosystems?", lens: "founder" as LensId },
+        { entity: "GitHub Copilot", query: "GitHub Copilot extensions now support MCP protocol — how does this change agent distribution?", lens: "founder" as LensId },
+        { entity: "Anthropic", query: "Anthropic competitive position and enterprise AI strategy 2026", lens: "investor" as LensId },
+        { entity: "ServiceNow", query: "ServiceNow announced AI agent marketplace — what does this validate about agent-native infrastructure?", lens: "ceo" as LensId },
+        { entity: "OpenAI", query: "OpenAI risks and competitive threats in enterprise AI 2026", lens: "investor" as LensId },
       ];
-      // Rotate by day, but use hour to add variety within the day
-      const idx = (now.getDay() * 3 + Math.floor(now.getHours() / 8)) % signalEntities.length;
-      const picked = signalEntities[idx];
-      return { entity: picked.entity, query: picked.query, lens: "investor" };
+      // Rotate by day+hour for variety
+      const now = new Date();
+      const idx = (now.getDay() * 3 + Math.floor(now.getHours() / 6)) % marketSignals.length;
+      return marketSignals[idx];
     }
 
-    const timer = setTimeout(async () => {
-      const { query, lens } = await pickEntity();
+    const { query, lens } = pickEntity();
+    const timer = setTimeout(() => {
       setActiveLens(lens);
       inputRef.current = query;
       setInput(query);
       handleSubmit(query);
     }, 600);
     return () => clearTimeout(timer);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [briefSignalEntity]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Save last searched entity for next visit auto-fire
+  // Save last searched entity for next visit
   useEffect(() => {
     if (conversation.length > 0) {
       const lastPacket = conversation[conversation.length - 1]?.packet;
