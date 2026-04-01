@@ -40,6 +40,7 @@ import { createSharedContextRouter } from "./routes/sharedContext.js";
 import { createShareRouter } from "./routes/share.js";
 import { createWatchlistRouter } from "./routes/watchlist.js";
 import { createRetentionBridgeRouter } from "./routes/retentionBridge.js";
+import { createHarnessRouter } from "./routes/harness.js";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────
 
@@ -274,6 +275,10 @@ async function main(): Promise<void> {
   app.use("/api/shared-context", createSharedContextRouter());
   app.use(createToolGraphRouter());
 
+  // ── Agent Harness Runtime ─────────────────────────────────────────
+  app.use("/harness", createHarnessRouter(tools));
+  app.use("/api/harness", createHarnessRouter(tools));
+
   // ── Delta routes (share, watchlist, retention bridge) ──────────────
   app.use("/share", createShareRouter());
   app.use("/api/share", createShareRouter());
@@ -359,6 +364,7 @@ async function main(): Promise<void> {
     console.log(`[nodebench-server] NemoClaw WS: ws://localhost:${PORT}/nemoclaw/ws`);
     console.log(`[nodebench-server] Provider Bus WebSocket: ws://localhost:${PORT}/bus`);
     console.log(`[nodebench-server] Provider Bus Health: http://localhost:${PORT}/bus/health`);
+    console.log(`[nodebench-server] Agent Harness: http://localhost:${PORT}/api/harness/health`);
     console.log(`[nodebench-server] Tools available: ${gateway.getToolCount()}`);
     if (process.env.NODE_ENV !== "production") {
       console.log(`[nodebench-server] Dev key gen: POST http://localhost:${PORT}/mcp/dev/generate-key`);
