@@ -9847,12 +9847,75 @@ import { ConvexHttpClient } from "convex/browser";
 import { anyApi } from "convex/server";
 
 // server/agentHarness.ts
-async function callLLM(_callTool, prompt, system, maxTokens) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    const openaiKey = process.env.OPENAI_API_KEY;
-    if (openaiKey) {
-      try {
+function budgetToolData(toolResults, maxTokensBudget) {
+  const inputBudget = Math.floor(maxTokensBudget * 0.6 * 4);
+  const perToolBudget = Math.floor(inputBudget / Math.max(toolResults.length, 1));
+  return toolResults.map((r) => {
+    const data = r.data.length > perToolBudget ? r.data.slice(0, perToolBudget - 50) + "\n[...truncated to fit context budget]" : r.data;
+    return `=== [${r.tool}] ===
+${data}`;
+  }).join("\n\n");
+}
+function getProviders() {
+  const providers = [];
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey) {
+    providers.push({
+      name: "gemini-3.1-flash-lite",
+      contextLimit: 32e3,
+      timeoutMs: 2e4,
+      call: async (prompt, system, maxTokens) => {
+        const resp = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${geminiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: system ? `${system}
+
+${prompt}` : prompt }] }],
+              generationConfig: { temperature: 0, maxOutputTokens: maxTokens }
+            }),
+            signal: AbortSignal.timeout(2e4)
+          }
+        );
+        if (!resp.ok) throw new Error(`Gemini ${resp.status}`);
+        const data = await resp.json();
+        return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      }
+    });
+    providers.push({
+      name: "gemini-3.1-flash",
+      contextLimit: 128e3,
+      timeoutMs: 3e4,
+      call: async (prompt, system, maxTokens) => {
+        const resp = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-preview:generateContent?key=${geminiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: system ? `${system}
+
+${prompt}` : prompt }] }],
+              generationConfig: { temperature: 0, maxOutputTokens: maxTokens }
+            }),
+            signal: AbortSignal.timeout(3e4)
+          }
+        );
+        if (!resp.ok) throw new Error(`Gemini Flash ${resp.status}`);
+        const data = await resp.json();
+        return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      }
+    });
+  }
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (openaiKey) {
+    providers.push({
+      name: "gpt-4o-mini",
+      contextLimit: 128e3,
+      timeoutMs: 25e3,
+      call: async (prompt, system, maxTokens) => {
         const resp = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openaiKey}` },
@@ -9862,41 +9925,31 @@ async function callLLM(_callTool, prompt, system, maxTokens) {
               ...system ? [{ role: "system", content: system }] : [],
               { role: "user", content: prompt }
             ],
-            max_tokens: maxTokens ?? 500,
+            max_tokens: maxTokens,
             temperature: 0
           }),
-          signal: AbortSignal.timeout(15e3)
+          signal: AbortSignal.timeout(25e3)
         });
-        if (resp.ok) {
-          const data = await resp.json();
-          return data?.choices?.[0]?.message?.content ?? "";
-        }
-      } catch {
+        if (!resp.ok) throw new Error(`OpenAI ${resp.status}`);
+        const data = await resp.json();
+        return data?.choices?.[0]?.message?.content ?? "";
       }
+    });
+  }
+  return providers;
+}
+async function callLLM(_callTool, prompt, system, maxTokens) {
+  const providers = getProviders();
+  if (providers.length === 0) return "";
+  for (const provider of providers) {
+    try {
+      const result = await provider.call(prompt, system, maxTokens ?? 1e3);
+      if (result && result.length > 10) return result;
+    } catch {
+      continue;
     }
-    return "";
   }
-  try {
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: system ? `${system}
-
-${prompt}` : prompt }] }],
-          generationConfig: { temperature: 0, maxOutputTokens: maxTokens ?? 500 }
-        }),
-        signal: AbortSignal.timeout(15e3)
-      }
-    );
-    if (!resp.ok) return "";
-    const data = await resp.json();
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-  } catch {
-    return "";
-  }
+  return "";
 }
 var PLAN_PROMPT = `You are NodeBench's agent orchestrator. Given a user query, plan which tools to call and in what order.
 
@@ -10160,7 +10213,7 @@ async function synthesizeResults(execution, query, lens, callTool) {
     const res = r.result;
     return {
       tool: r.toolName,
-      data: typeof res === "string" ? res.slice(0, 2e3) : JSON.stringify(res).slice(0, 2e3)
+      data: typeof res === "string" ? res : JSON.stringify(res)
     };
   });
   const entityName = execution.plan.entityTargets[0] ?? extractEntityFromQuery(query);
@@ -10175,8 +10228,7 @@ AUDIENCE: ${lens} (tailor depth and focus accordingly)
 OBJECTIVE: ${execution.plan.objective}
 
 RAW DATA FROM ${resultData.length} SOURCES:
-${resultData.map((r) => `=== [${r.tool}] ===
-${r.data}`).join("\n\n")}
+${budgetToolData(resultData, 32e3)}
 
 ANALYSIS REQUIREMENTS:
 1. ANSWER: Write a 3-4 sentence executive summary with SPECIFIC numbers, dates, and facts from the data. No generic statements. If data says "$26B revenue" \u2014 cite it. If data mentions "70% market share" \u2014 cite it.

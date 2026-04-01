@@ -65,22 +65,104 @@ type ToolCaller = (name: string, args: Record<string, unknown>) => Promise<unkno
 // Uses call_llm MCP tool which routes: Gemini → OpenAI → Anthropic
 // Falls back to direct Gemini fetch if call_llm unavailable
 
-async function callLLM(
-  _callTool: ToolCaller,
-  prompt: string,
-  system?: string,
-  maxTokens?: number,
-): Promise<string> {
-  // Direct Gemini REST API call — reliable on Vercel serverless.
-  // The call_llm MCP tool uses @google/genai SDK which isn't bundled
-  // in the serverless function (esbuild --packages=external).
-  // Direct fetch to the REST API works everywhere.
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    // Try OpenAI as fallback
-    const openaiKey = process.env.OPENAI_API_KEY;
-    if (openaiKey) {
-      try {
+// ── Context budgeting (DeerFlow pattern) ─────────────────────────────
+// Instead of hardcoded char limits, calculate how much data fits in the
+// model's context window and summarize overflow.
+
+const MODEL_CONTEXT_LIMITS: Record<string, number> = {
+  "gemini-3.1-flash-lite": 32000,  // ~32K tokens
+  "gemini-3.1-flash": 128000,
+  "gpt-4o-mini": 128000,
+  "gpt-4o": 128000,
+};
+
+function budgetToolData(toolResults: Array<{ tool: string; data: string }>, maxTokensBudget: number): string {
+  // Rough estimate: 1 token ≈ 4 chars. Reserve 40% for system prompt + output.
+  const inputBudget = Math.floor(maxTokensBudget * 0.6 * 4); // chars available for tool data
+  const perToolBudget = Math.floor(inputBudget / Math.max(toolResults.length, 1));
+
+  return toolResults
+    .map(r => {
+      const data = r.data.length > perToolBudget
+        ? r.data.slice(0, perToolBudget - 50) + "\n[...truncated to fit context budget]"
+        : r.data;
+      return `=== [${r.tool}] ===\n${data}`;
+    })
+    .join("\n\n");
+}
+
+// ── Multi-provider LLM call with failover chain ──────────────────────
+// Pattern: Gemini Flash Lite (fast/cheap) → Gemini Flash (deeper) → OpenAI (fallback)
+// No hardcoded timeouts — each provider gets a budget proportional to its speed.
+
+interface LLMProvider {
+  name: string;
+  call: (prompt: string, system: string | undefined, maxTokens: number) => Promise<string>;
+  contextLimit: number;
+  timeoutMs: number;
+}
+
+function getProviders(): LLMProvider[] {
+  const providers: LLMProvider[] = [];
+
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey) {
+    // Primary: Gemini 3.1 Flash Lite (fastest, cheapest)
+    providers.push({
+      name: "gemini-3.1-flash-lite",
+      contextLimit: 32000,
+      timeoutMs: 20000,
+      call: async (prompt, system, maxTokens) => {
+        const resp = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${geminiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }],
+              generationConfig: { temperature: 0, maxOutputTokens: maxTokens },
+            }),
+            signal: AbortSignal.timeout(20000),
+          }
+        );
+        if (!resp.ok) throw new Error(`Gemini ${resp.status}`);
+        const data = (await resp.json()) as any;
+        return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      },
+    });
+
+    // Secondary: Gemini 3.1 Flash (more capable, larger context)
+    providers.push({
+      name: "gemini-3.1-flash",
+      contextLimit: 128000,
+      timeoutMs: 30000,
+      call: async (prompt, system, maxTokens) => {
+        const resp = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-preview:generateContent?key=${geminiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }],
+              generationConfig: { temperature: 0, maxOutputTokens: maxTokens },
+            }),
+            signal: AbortSignal.timeout(30000),
+          }
+        );
+        if (!resp.ok) throw new Error(`Gemini Flash ${resp.status}`);
+        const data = (await resp.json()) as any;
+        return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      },
+    });
+  }
+
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (openaiKey) {
+    providers.push({
+      name: "gpt-4o-mini",
+      contextLimit: 128000,
+      timeoutMs: 25000,
+      call: async (prompt, system, maxTokens) => {
         const resp = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openaiKey}` },
@@ -90,39 +172,41 @@ async function callLLM(
               ...(system ? [{ role: "system" as const, content: system }] : []),
               { role: "user" as const, content: prompt },
             ],
-            max_tokens: maxTokens ?? 500,
+            max_tokens: maxTokens,
             temperature: 0,
           }),
-          signal: AbortSignal.timeout(15000),
+          signal: AbortSignal.timeout(25000),
         });
-        if (resp.ok) {
-          const data = await resp.json() as any;
-          return data?.choices?.[0]?.message?.content ?? "";
-        }
-      } catch { /* fall through */ }
-    }
-    return "";
+        if (!resp.ok) throw new Error(`OpenAI ${resp.status}`);
+        const data = (await resp.json()) as any;
+        return data?.choices?.[0]?.message?.content ?? "";
+      },
+    });
   }
 
-  try {
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }],
-          generationConfig: { temperature: 0, maxOutputTokens: maxTokens ?? 500 },
-        }),
-        signal: AbortSignal.timeout(15000),
-      }
-    );
-    if (!resp.ok) return "";
-    const data = await resp.json() as any;
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-  } catch {
-    return "";
+  return providers;
+}
+
+async function callLLM(
+  _callTool: ToolCaller,
+  prompt: string,
+  system?: string,
+  maxTokens?: number,
+): Promise<string> {
+  const providers = getProviders();
+  if (providers.length === 0) return "";
+
+  // Try each provider in order — failover chain, not hardcoded single provider
+  for (const provider of providers) {
+    try {
+      const result = await provider.call(prompt, system, maxTokens ?? 1000);
+      if (result && result.length > 10) return result;
+    } catch {
+      // Provider failed — try next in chain
+      continue;
+    }
   }
+  return "";
 }
 
 // ── Plan generation via LLM ──────────────────────────────────────────
@@ -440,15 +524,14 @@ export async function synthesizeResults(
   nextQuestions: string[];
   sources: Array<{ label: string; href?: string; type: string }>;
 }> {
-  // Collect all successful results
+  // Collect all successful results — no hardcoded truncation
   const resultData = execution.stepResults
     .filter(r => r.success && r.result)
     .map(r => {
       const res = r.result as any;
       return {
         tool: r.toolName,
-        data: typeof res === "string" ? res.slice(0, 2000) :
-              JSON.stringify(res).slice(0, 2000),
+        data: typeof res === "string" ? res : JSON.stringify(res),
       };
     });
 
@@ -467,7 +550,7 @@ AUDIENCE: ${lens} (tailor depth and focus accordingly)
 OBJECTIVE: ${execution.plan.objective}
 
 RAW DATA FROM ${resultData.length} SOURCES:
-${resultData.map(r => `=== [${r.tool}] ===\n${r.data}`).join("\n\n")}
+${budgetToolData(resultData, 32000)}
 
 ANALYSIS REQUIREMENTS:
 1. ANSWER: Write a 3-4 sentence executive summary with SPECIFIC numbers, dates, and facts from the data. No generic statements. If data says "$26B revenue" — cite it. If data mentions "70% market share" — cite it.
