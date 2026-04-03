@@ -261,15 +261,24 @@ if (shouldResetLocalServiceWorkers) {
 
 // Register service worker for caching and offline support
 if ('serviceWorker' in navigator && import.meta.env.PROD && !isAutomatedBrowser) {
+  // When skipWaiting is true, the new SW activates immediately without going through
+  // the "waiting" state. This means onNeedRefresh may never fire. The controllerchange
+  // event catches this case — it fires when a new SW takes over from an existing one.
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    console.log('[PWA] New service worker activated, reloading for fresh assets');
+    window.location.reload();
+  });
+
   import('virtual:pwa-register').then(({ registerSW }) => {
     const updateSW = registerSW({
       immediate: true,
       onNeedRefresh() {
         console.log('[PWA] New content available, applying update');
         void updateSW(true);
-        window.setTimeout(() => {
-          window.location.reload();
-        }, 150);
+        // controllerchange listener above handles the reload
       },
       onOfflineReady() {
         console.log('[PWA] App ready to work offline');
