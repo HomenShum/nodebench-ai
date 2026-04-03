@@ -42,6 +42,7 @@ import { createWatchlistRouter } from "./routes/watchlist.js";
 import { createRetentionBridgeRouter } from "./routes/retentionBridge.js";
 import { createHarnessRouter } from "./routes/harness.js";
 import { createWorkspaceSyncRouter } from "./routes/workspaceSync.js";
+import { createExecuteRouter } from "./routes/execute.js";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────
 
@@ -289,6 +290,8 @@ async function main(): Promise<void> {
   app.use("/api/retention", createRetentionBridgeRouter());
   app.use("/workspace", createWorkspaceSyncRouter());
   app.use("/api/workspace", createWorkspaceSyncRouter());
+  app.use("/execute", createExecuteRouter());
+  app.use("/api/execute", createExecuteRouter());
 
   // ── Create HTTP server & wire WebSocket upgrade ─────────────────────
 

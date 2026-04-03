@@ -161,6 +161,44 @@ interface ResearchResource {
   savedAt: string;
 }
 
+// ── Implementation packet types ──────────────────────────────────────────
+
+interface ImplementationPacket {
+  id: string;
+  objective: string;
+  whyNow: string;
+  scope: string[];
+  constraints: string[];
+  successCriteria: string[];
+  validation: string[];
+  context: string;
+  status: "draft" | "approved" | "executing" | "validating" | "completed" | "failed";
+  agentType: "claude_code" | "manual" | "subagent";
+  priority: "low" | "medium" | "high" | "critical";
+  result?: { filesChanged: string[]; testsPassed: boolean; diffSummary: string; costUsd: number; durationMs: number };
+  errorMessage?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ImplementationPacketList {
+  packets: ImplementationPacket[];
+  lastUpdated: string;
+}
+
+function loadImplementationPackets(): ImplementationPacketList {
+  const p = path.join(WORKSPACE_ROOT, "tasks", "implementations.json");
+  if (!fs.existsSync(p)) return { packets: [], lastUpdated: new Date().toISOString() };
+  try { return JSON.parse(fs.readFileSync(p, "utf-8")); }
+  catch { return { packets: [], lastUpdated: new Date().toISOString() }; }
+}
+
+function saveImplementationPackets(list: ImplementationPacketList): void {
+  list.lastUpdated = new Date().toISOString();
+  const p = path.join(WORKSPACE_ROOT, "tasks", "implementations.json");
+  fs.writeFileSync(p, JSON.stringify(list, null, 2));
+}
+
 // ── Tools ────────────────────────────────────────────────────────────────
 
 export const workspaceTools: McpTool[] = [
@@ -618,6 +656,162 @@ export const workspaceTools: McpTool[] = [
 
         default:
           return { success: false, error: `Unknown action: ${action}. Use: add, update, complete, delete, list` };
+      }
+    },
+  },
+
+  // ─── Tool 7: manage_implementation_packets ─────────────────────────────
+  {
+    name: "manage_implementation_packets",
+    description:
+      "Create and manage implementation packets — structured instructions for Claude Code or other coding agents. " +
+      "Each packet defines WHAT to build, WHY now, scope, constraints, success criteria, and validation checks. " +
+      "NodeBench creates the packet (intelligence layer), Claude Code executes it (implementation layer).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        action: {
+          type: "string",
+          enum: ["create", "approve", "execute", "complete", "fail", "list"],
+          description: "Action to perform",
+        },
+        packet: {
+          type: "object",
+          properties: {
+            objective: { type: "string", description: "What to build or change" },
+            whyNow: { type: "string", description: "Why this matters right now" },
+            scope: { type: "array", items: { type: "string" }, description: "File paths or areas to touch" },
+            constraints: { type: "array", items: { type: "string" }, description: "What NOT to do" },
+            successCriteria: { type: "array", items: { type: "string" }, description: "How to know it worked" },
+            validation: { type: "array", items: { type: "string" }, description: "Checks to run after (tests, lint, etc.)" },
+            context: { type: "string", description: "Synthesized context from NodeBench search" },
+            agentType: { type: "string", enum: ["claude_code", "manual", "subagent"], description: "Who executes this" },
+            priority: { type: "string", enum: ["low", "medium", "high", "critical"] },
+          },
+          description: "Packet data (for create)",
+        },
+        packetId: { type: "string", description: "Packet ID (for approve/execute/complete/fail)" },
+        result: {
+          type: "object",
+          properties: {
+            filesChanged: { type: "array", items: { type: "string" } },
+            testsPassed: { type: "boolean" },
+            diffSummary: { type: "string" },
+            costUsd: { type: "number" },
+            durationMs: { type: "number" },
+          },
+          description: "Execution result (for complete)",
+        },
+        errorMessage: { type: "string", description: "Error reason (for fail)" },
+        filter: { type: "string", enum: ["all", "draft", "approved", "executing", "completed", "failed"], description: "Filter for list" },
+      },
+      required: ["action"],
+    },
+    handler: async (args: Record<string, unknown>) => {
+      ensureWorkspace();
+      const action = String(args.action ?? "list");
+      const packetData = args.packet as Record<string, unknown> | undefined;
+      const packetId = args.packetId ? String(args.packetId) : undefined;
+      const resultData = args.result as Record<string, unknown> | undefined;
+      const errorMessage = args.errorMessage ? String(args.errorMessage) : undefined;
+      const filter = args.filter ? String(args.filter) : "all";
+
+      const packets = loadImplementationPackets();
+
+      switch (action) {
+        case "create": {
+          if (!packetData?.objective) return { success: false, error: "objective is required" };
+          if (packets.packets.length >= 200) return { success: false, error: "Packet limit (200) reached. Complete or delete existing packets." };
+          const now = new Date().toISOString();
+          const newPacket: ImplementationPacket = {
+            id: `impl_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            objective: String(packetData.objective),
+            whyNow: packetData.whyNow ? String(packetData.whyNow) : "",
+            scope: Array.isArray(packetData.scope) ? packetData.scope.map(String) : [],
+            constraints: Array.isArray(packetData.constraints) ? packetData.constraints.map(String) : [],
+            successCriteria: Array.isArray(packetData.successCriteria) ? packetData.successCriteria.map(String) : [],
+            validation: Array.isArray(packetData.validation) ? packetData.validation.map(String) : ["npx tsc --noEmit", "npx vite build"],
+            context: packetData.context ? String(packetData.context) : "",
+            status: "draft",
+            agentType: (packetData.agentType as ImplementationPacket["agentType"]) ?? "claude_code",
+            priority: (packetData.priority as ImplementationPacket["priority"]) ?? "medium",
+            createdAt: now,
+            updatedAt: now,
+          };
+          packets.packets.push(newPacket);
+          saveImplementationPackets(packets);
+          syncToplatform("tasks", "implementations.json", JSON.stringify(packets, null, 2)).catch(() => {});
+          return { success: true, action: "created", packet: newPacket, totalPackets: packets.packets.length };
+        }
+
+        case "approve": {
+          if (!packetId) return { success: false, error: "packetId required" };
+          const idx = packets.packets.findIndex(p => p.id === packetId);
+          if (idx === -1) return { success: false, error: `Packet not found: ${packetId}` };
+          if (packets.packets[idx].status !== "draft") return { success: false, error: `Can only approve draft packets (current: ${packets.packets[idx].status})` };
+          packets.packets[idx].status = "approved";
+          packets.packets[idx].updatedAt = new Date().toISOString();
+          saveImplementationPackets(packets);
+          return { success: true, action: "approved", packet: packets.packets[idx] };
+        }
+
+        case "execute": {
+          if (!packetId) return { success: false, error: "packetId required" };
+          const idx = packets.packets.findIndex(p => p.id === packetId);
+          if (idx === -1) return { success: false, error: `Packet not found: ${packetId}` };
+          if (packets.packets[idx].status !== "approved") return { success: false, error: `Can only execute approved packets (current: ${packets.packets[idx].status})` };
+          packets.packets[idx].status = "executing";
+          packets.packets[idx].updatedAt = new Date().toISOString();
+          saveImplementationPackets(packets);
+          return { success: true, action: "executing", packet: packets.packets[idx] };
+        }
+
+        case "complete": {
+          if (!packetId) return { success: false, error: "packetId required" };
+          const idx = packets.packets.findIndex(p => p.id === packetId);
+          if (idx === -1) return { success: false, error: `Packet not found: ${packetId}` };
+          packets.packets[idx].status = "completed";
+          packets.packets[idx].updatedAt = new Date().toISOString();
+          if (resultData) {
+            packets.packets[idx].result = {
+              filesChanged: Array.isArray(resultData.filesChanged) ? resultData.filesChanged.map(String) : [],
+              testsPassed: resultData.testsPassed === true,
+              diffSummary: resultData.diffSummary ? String(resultData.diffSummary) : "",
+              costUsd: typeof resultData.costUsd === "number" ? resultData.costUsd : 0,
+              durationMs: typeof resultData.durationMs === "number" ? resultData.durationMs : 0,
+            };
+          }
+          saveImplementationPackets(packets);
+          return { success: true, action: "completed", packet: packets.packets[idx] };
+        }
+
+        case "fail": {
+          if (!packetId) return { success: false, error: "packetId required" };
+          const idx = packets.packets.findIndex(p => p.id === packetId);
+          if (idx === -1) return { success: false, error: `Packet not found: ${packetId}` };
+          packets.packets[idx].status = "failed";
+          packets.packets[idx].errorMessage = errorMessage;
+          packets.packets[idx].updatedAt = new Date().toISOString();
+          saveImplementationPackets(packets);
+          return { success: true, action: "failed", packet: packets.packets[idx] };
+        }
+
+        case "list": {
+          let filtered = packets.packets;
+          if (filter !== "all") filtered = filtered.filter(p => p.status === filter);
+          const counts = {
+            total: packets.packets.length,
+            draft: packets.packets.filter(p => p.status === "draft").length,
+            approved: packets.packets.filter(p => p.status === "approved").length,
+            executing: packets.packets.filter(p => p.status === "executing").length,
+            completed: packets.packets.filter(p => p.status === "completed").length,
+            failed: packets.packets.filter(p => p.status === "failed").length,
+          };
+          return { success: true, packets: filtered, counts, lastUpdated: packets.lastUpdated };
+        }
+
+        default:
+          return { success: false, error: `Unknown action: ${action}. Use: create, approve, execute, complete, fail, list` };
       }
     },
   },
