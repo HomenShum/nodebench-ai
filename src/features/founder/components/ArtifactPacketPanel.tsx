@@ -172,10 +172,11 @@ function ArtifactPacketPanelInner({
   onShareMemo,
 }: ArtifactPacketPanelProps) {
   const confidencePercent = useMemo(
-    () =>
-      packet
-        ? `${Math.round(packet.canonicalEntity.identityConfidence * 100)}%`
-        : null,
+    () => {
+      if (!packet) return null;
+      const pct = Math.round(packet.canonicalEntity.identityConfidence * 100);
+      return pct > 0 ? `${pct}%` : "Not set";
+    },
     [packet],
   );
 
@@ -191,7 +192,7 @@ function ArtifactPacketPanelInner({
           <div className={SECTION_HEADER}>
             <span className="flex items-center gap-2">
               <Layers className="h-3.5 w-3.5" />
-              Artifact Packet
+              Intelligence Report
             </span>
           </div>
           {packet && (
@@ -289,7 +290,7 @@ function ArtifactPacketPanelInner({
                     SEVERITY_BORDER.medium,
                 )}
               >
-                <p className={SECTION_HEADER}>Biggest Contradiction</p>
+                <p className={SECTION_HEADER}>Key Risk</p>
                 <h3 className="mt-3 text-sm font-semibold text-white/80">
                   {packet.contradictions[0].title}
                 </h3>
@@ -416,20 +417,7 @@ function ArtifactPacketPanelInner({
             </div>
           )}
 
-          {/* ── Agent Instructions ────────────────────────────────── */}
-          {packet.agentInstructions && (
-            <div className={cn(INNER_CARD, "mt-3 border-l-2 border-l-sky-500/30")}>
-              <p className={SECTION_HEADER}>
-                <span className="flex items-center gap-2">
-                  <Bot className="h-3 w-3" />
-                  Agent Instructions
-                </span>
-              </p>
-              <p className="mt-3 text-xs leading-relaxed text-white/60 font-mono">
-                {packet.agentInstructions}
-              </p>
-            </div>
-          )}
+          {/* Agent Instructions hidden — internal-only, not user-facing */}
 
           {/* ── What Changed (narrative) ─────────────────────────── */}
           {packet.whatChanged && (

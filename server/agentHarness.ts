@@ -314,6 +314,12 @@ export async function generatePlan(
   lens: string,
   callTool: ToolCaller,
 ): Promise<HarnessPlan> {
+  // Multi-entity and weekly_reset: always use deterministic fallback plan.
+  // LLM plans often drop the second entity or miss weekly_reset web fallbacks.
+  if (classification === "multi_entity" || classification === "weekly_reset") {
+    return buildFallbackPlan(query, classification, entityTargets, lens);
+  }
+
   try {
     const text = await callLLM(
       callTool,
@@ -388,12 +394,14 @@ function buildFallbackPlan(query: string, classification: string, entityTargets:
   switch (classification) {
     case "weekly_reset":
       return {
-        objective: "Generate founder weekly reset",
+        objective: "Generate founder weekly reset with latest market signals",
         classification, entityTargets,
         steps: [
-          { id: "s1", toolName: "founder_local_weekly_reset", args: { daysBack: 7 }, purpose: "Get weekly reset packet", parallel: false },
+          { id: "s1", toolName: "founder_local_weekly_reset", args: { daysBack: 7 }, purpose: "Get weekly reset packet", parallel: true },
+          { id: "s2", toolName: "web_search", args: { query: `AI startup ecosystem latest news changes this week ${year}`, maxResults: 5 }, purpose: "Latest market signals (fallback for serverless)", parallel: true },
+          { id: "s3", toolName: "linkup_search", args: { query: `top AI and tech changes this week ${year}`, maxResults: 3 }, purpose: "Deep intelligence on weekly changes", parallel: true },
         ],
-        synthesisPrompt: "Format as a weekly founder reset with what changed, contradictions, and next 3 moves.",
+        synthesisPrompt: "Format as a weekly founder reset: what changed, biggest risks, and next 3 moves. Use web intelligence when local context is unavailable.",
       };
 
     case "important_change":
@@ -424,13 +432,7 @@ function buildFallbackPlan(query: string, classification: string, entityTargets:
           parallel: true,
         },
       ]);
-      steps.push({
-        id: `s${steps.length + 1}`,
-        toolName: "founder_local_gather",
-        args: { daysBack: 7 },
-        purpose: "Get local context",
-        parallel: true,
-      });
+      // NOTE: founder_local_gather EXCLUDED from multi-entity comparisons (returns dev noise for external entities)
       return {
         objective: `Compare ${entityTargets.join(" vs ")}`,
         classification, entityTargets, steps,
@@ -581,6 +583,13 @@ export async function synthesizeResults(
   changes: Array<{ description: string; date?: string }>;
   risks: Array<{ title: string; description: string }>;
   comparables: Array<{ name: string; relevance: string; note: string }>;
+  whyThisTeam: {
+    founderCredibility: string;
+    trustSignals: string[];
+    visionMagnitude: string;
+    reinventionCapacity: string;
+    hiddenRequirements: string[];
+  } | null;
   nextActions: Array<{ action: string; impact: string }>;
   nextQuestions: string[];
   sources: Array<{ label: string; href?: string; type: string }>;
@@ -596,7 +605,12 @@ export async function synthesizeResults(
       };
     });
 
-  const entityName = execution.plan.entityTargets[0] ?? extractEntityFromQuery(query);
+  // For entity-focused queries, use the plan's target. For non-entity queries
+  // (weekly_reset, general), use a descriptive label — never extractEntityFromQuery
+  // which hallucinates entities from phrase fragments like "changed this week".
+  const nonEntityTypes = new Set(["weekly_reset", "important_change", "pre_delegation", "general"]);
+  const entityName = execution.plan.entityTargets[0]
+    ?? (nonEntityTypes.has(execution.plan.classification) ? "Your Intelligence Brief" : extractEntityFromQuery(query));
 
   // Use multi-model provider bus (Gemini → OpenAI → Anthropic)
   // This is the PRIMARY synthesis path — an IB analyst writing a memo from raw data.
@@ -618,30 +632,41 @@ ANALYSIS REQUIREMENTS:
 2. SIGNALS: Extract 3-5 key signals with direction (up/down/neutral) and impact. Each signal must reference a specific fact from the data, not a generic observation.
 3. RISKS: Identify 2-3 material risks with evidence. For each risk, explain WHY it matters and what could trigger it. Not just "competition risk" — specify which competitor and what they're doing.
 4. COMPARABLES: Name 2-4 direct competitors with WHY they're relevant (what they do differently, where they overlap, competitive advantage). Include evidence from the data.
-5. NEXT ACTIONS: 2-3 specific, actionable steps the ${lens} should take this week. Not generic "do more research" — specific actions like "review Q4 filing for revenue breakdown" or "compare pricing vs competitor X".
-6. FOLLOW-UP QUESTIONS: 3-4 specific questions that would deepen this analysis. Questions should reference gaps in the current data.
-7. SOURCES: List actual source names/URLs from the data. Never list tool names like "web_search" or "run_recon". Use the actual article titles, document names, or website domains.
+5. WHY THIS TEAM (REQUIRED — this is the most important section. What makes outsiders trust or doubt this company):
+   - founderCredibility: 1-2 sentences on founder background, domain relevance, and what makes them credible for THIS problem
+   - trustSignals: 2-4 specific trust-building facts (notable backers, advisors, prior exits, shipped products, institutional affiliations, public work)
+   - visionMagnitude: 1-2 sentences — is the opportunity large enough to matter? Feature, product, or company?
+   - reinventionCapacity: 1 sentence — can this team adapt if the wedge changes? Evidence of resilience/iteration.
+   - hiddenRequirements: 2-4 things sophisticated outsiders (VCs, banks, enterprise buyers) would secretly expect before taking this seriously
+6. NEXT ACTIONS: 2-3 specific, actionable steps the ${lens} should take this week. Not generic "do more research" — specific actions like "review Q4 filing for revenue breakdown" or "compare pricing vs competitor X".
+7. FOLLOW-UP QUESTIONS: 3-4 specific questions that would deepen this analysis. Questions should reference gaps in the current data.
+8. SOURCES: List actual source names/URLs from the data. Never list tool names like "web_search" or "run_recon". Use the actual article titles, document names, or website domains.
 
-Return ONLY valid JSON:
+Return ONLY valid JSON with ALL fields populated:
 {
-  "entityName": "the primary company/entity name",
-  "answer": "3-4 sentence executive summary with specific facts and numbers",
+  "entityName": "company name",
+  "answer": "3-4 sentence summary with numbers",
   "confidence": 0-100,
-  "signals": [{"name": "specific signal with numbers", "direction": "up|down|neutral", "impact": "high|medium|low"}],
-  "changes": [{"description": "specific recent change with date if available"}],
-  "risks": [{"title": "specific risk name", "description": "2-3 sentence explanation with evidence and trigger conditions"}],
-  "comparables": [{"name": "competitor name", "relevance": "high|medium|low", "note": "specific reason why they're relevant — what they do, how they compete"}],
-  "nextActions": [{"action": "specific actionable step for this week", "impact": "high|medium|low"}],
-  "nextQuestions": ["specific follow-up question referencing data gaps"],
-  "sources": [{"label": "actual source title or domain", "href": "url if available", "type": "web|doc"}]
+  "whyThisTeam": {"founderCredibility": "why these founders are credible for this problem", "trustSignals": ["signal1", "signal2"], "visionMagnitude": "feature, product, or company-scale?", "reinventionCapacity": "can they pivot?", "hiddenRequirements": ["what outsiders expect"]},
+  "signals": [{"name": "signal", "direction": "up|down|neutral", "impact": "high|medium|low"}],
+  "changes": [{"description": "recent change"}],
+  "risks": [{"title": "risk", "description": "why it matters"}],
+  "comparables": [{"name": "competitor", "relevance": "high|medium|low", "note": "why relevant"}],
+  "nextActions": [{"action": "step", "impact": "high|medium|low"}],
+  "nextQuestions": ["follow-up question"],
+  "sources": [{"label": "source title", "href": "url", "type": "web|doc"}]
 }`,
         "You are a senior investment banking analyst. Every claim must cite specific data. No generic statements. No placeholder text. If data is insufficient, say so honestly rather than fabricating.",
-        1500,
+        2200,
       );
 
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
+
+        // whyThisTeam is populated by the search route via a parallel Gemini call
+        // (runs alongside Monte Carlo, not sequentially after synthesis).
+
         return {
           entityName: parsed.entityName ?? entityName,
           answer: parsed.answer ?? "",
@@ -650,6 +675,7 @@ Return ONLY valid JSON:
           changes: parsed.changes ?? [],
           risks: parsed.risks ?? [],
           comparables: parsed.comparables ?? [],
+          whyThisTeam,
           nextActions: parsed.nextActions ?? [],
           nextQuestions: parsed.nextQuestions ?? [],
           sources: parsed.sources ?? [],
@@ -686,19 +712,24 @@ Return ONLY valid JSON:
         if (title) sources.push({ label: title.slice(0, 80), href: url || undefined, type: "web" });
         if (snippet) {
           if (/\b(revenue|growth|raised|funding|launch|expand|partner|acquir|billion|million|valuation)/i.test(snippet)) {
-            signals.push({ name: snippet.slice(0, 60), direction: "up", impact: "high" });
+            const titleNeg = /\b(trouble|fail|declin|crash|struggle|layoff|scandal|problem|crisis|concern|threaten|warn)/i.test(title || snippet);
+            signals.push({ name: (title || snippet).slice(0, 120), direction: titleNeg ? "down" : "up", impact: "high" });
           }
           if (/\b(layoff|decline|loss|risk|lawsuit|regulat|concern|investig|threat|challenge|vulnerab)/i.test(snippet)) {
-            risks.push({ title: "Risk: " + title.slice(0, 40), description: snippet.slice(0, 150) });
+            risks.push({ title: title.slice(0, 80) || "Risk identified", description: snippet.slice(0, 200) });
           }
           if (/\b(compet|rival|alternative|versus|vs\.|compared to)/i.test(snippet)) {
             // Extract competitor names from snippet
             const compMatch = snippet.match(/(?:competitors?|rivals?|alternatives?)\s+(?:like|such as|including)\s+([A-Z][a-zA-Z]+(?:\s*,\s*[A-Z][a-zA-Z]+)*)/i);
             if (compMatch) {
               for (const name of compMatch[1].split(/,\s*/)) {
-                if (name.trim().length > 1) comparables.push({ name: name.trim(), relevance: "high", note: "Identified via Linkup" });
+                if (name.trim().length > 2 && !/^(and|or|the|a|an|its|their|also|but|with)$/i.test(name.trim())) comparables.push({ name: name.trim(), relevance: "high", note: "Identified via Linkup" });
               }
             }
+          }
+          // Extract recent changes from Linkup intelligence
+          if (/\b(announced|launched|released|updated|acquired|raised|hired|expanded|partnered|introduced|unveiled|reported)\b/i.test(snippet)) {
+            changes.push({ description: (title || snippet).slice(0, 150) });
           }
         }
       }
@@ -716,10 +747,25 @@ Return ONLY valid JSON:
         if (snippet) {
           answerParts.push(snippet.slice(0, 200));
           if (/\b(growth|revenue|raised|funding|launch|expand|partner|acquir)/i.test(snippet)) {
-            signals.push({ name: title.slice(0, 60), direction: "up", impact: "medium" });
+            // Check title sentiment — don't assign "up" if headline is negative
+            const titleNeg = /\b(trouble|fail|declin|crash|struggle|layoff|scandal|problem|crisis|concern|threaten|warn)/i.test(title);
+            signals.push({ name: title.slice(0, 120), direction: titleNeg ? "down" : "up", impact: "medium" });
           }
           if (/\b(layoff|decline|loss|risk|lawsuit|regulat|concern|investig)/i.test(snippet)) {
-            risks.push({ title: title.slice(0, 60), description: snippet.slice(0, 150) });
+            risks.push({ title: title.slice(0, 80), description: snippet.slice(0, 200) });
+          }
+          // Extract recent changes from news-style snippets
+          if (/\b(announced|launched|released|updated|acquired|raised|hired|expanded|partnered|introduced|unveiled|reported)\b/i.test(snippet)) {
+            changes.push({ description: (title || snippet).slice(0, 150) });
+          }
+          // Extract comparables from competitive mentions
+          if (/\b(compet|rival|alternative|versus|vs\.|compared to)/i.test(snippet)) {
+            const compMatch = snippet.match(/(?:competitors?|rivals?|alternatives?)\s+(?:like|such as|including)\s+([A-Z][a-zA-Z]+(?:\s*,\s*[A-Z][a-zA-Z]+)*)/i);
+            if (compMatch) {
+              for (const name of compMatch[1].split(/,\s*/)) {
+                if (name.trim().length > 2 && !/^(and|or|the|a|an|its|their|also|but|with)$/i.test(name.trim())) comparables.push({ name: name.trim(), relevance: "high", note: "Web intelligence" });
+              }
+            }
           }
         }
       }
@@ -806,7 +852,7 @@ Return ONLY valid JSON:
     if (sr.toolName === "enrich_entity") {
       if (raw?.signals) {
         for (const s of (Array.isArray(raw.signals) ? raw.signals : []).slice(0, 5)) {
-          signals.push({ name: s?.name ?? String(s).slice(0, 60), direction: s?.direction ?? "neutral", impact: s?.impact ?? "medium" });
+          signals.push({ name: (s?.name ?? String(s)).slice(0, 120), direction: s?.direction ?? "neutral", impact: s?.impact ?? "medium" });
         }
       }
       if (raw?.description) answerParts.push(String(raw.description).slice(0, 300));
@@ -819,16 +865,17 @@ Return ONLY valid JSON:
         // IB three-case model: bull (p90), base (median), bear (p10)
         const bull = raw?.bestPath;
         const bear = raw?.worstPath;
-        signals.push({ name: `Monte Carlo: ${sim.successRate} success rate across ${sim.paths} paths`, direction: "neutral", impact: "high" });
-        signals.push({ name: `Base case payoff: ${sim.medianPayoff} (80% CI: ${sim.confidenceInterval})`, direction: "neutral", impact: "high" });
-        if (bull) signals.push({ name: `Bull case: ${bull.payoff} revenue at ${bull.marketShare} market share`, direction: "up", impact: "high" });
-        if (bear) signals.push({ name: `Bear case: ${bear.payoff} — ${bear.outcome}`, direction: "down", impact: "high" });
+        // Cap MC signals to 2 — simulation context is supplementary, not primary intelligence
+        signals.push({ name: `Monte Carlo (${sim.paths} paths): ${sim.successRate} success, base payoff ${sim.medianPayoff}`, direction: "neutral", impact: "medium" });
+        if (bull && bear) {
+          signals.push({ name: `3-case model: Bull ${bull.payoff} | Bear ${bear.payoff} (${sim.confidenceInterval})`, direction: "neutral", impact: "medium" });
+        }
         // Decision sensitivity → risks
         for (const d of (raw?.decisionSensitivity ?? [])) {
           risks.push({ title: `Decision: ${d.decision}`, description: `Best choice: "${d.bestChoice}" (${d.impact} vs average). Wrong choice here materially affects outcomes.` });
         }
-        answerParts.push(`Monte Carlo simulation (${sim.paths}, ${sim.horizon}): ${sim.successRate} success rate. Base case payoff ${sim.medianPayoff}. Survival rate ${sim.survivalRate}, failure rate ${sim.failureRate}.`);
-        sources.push({ label: `Monte Carlo simulation (${sim.paths})`, type: "local" });
+        // Don't append raw simulation text to answer body — MC data shown in signals
+        sources.push({ label: `Financial simulation (${sim.paths} scenarios)`, type: "local" });
       }
     }
 
@@ -837,36 +884,64 @@ Return ONLY valid JSON:
       const summary = raw?.summary ?? raw?.answer ?? raw?.result ?? raw?.output ?? raw?.briefing;
       if (typeof summary === "string" && summary.length > 10) {
         answerParts.push(summary.slice(0, 300));
-        sources.push({ label: summary.slice(0, 40), type: "local" });
+        sources.push({ label: summary.slice(0, 80), type: "local" });
       }
     }
   }
 
   // Build answer from collected parts
   const answer = answerParts.length > 0
-    ? answerParts.slice(0, 3).join(" ").slice(0, 500)
+    ? answerParts.slice(0, 5).join(" ").slice(0, 800)
     : `Analysis of "${query}" using ${execution.stepResults.filter(r => r.success).length} tools.`;
 
-  // Add default next actions if none extracted
+  // Add default next actions if none extracted — make them specific and actionable
   if (nextActions.length === 0) {
-    nextActions.push({ action: `Deep-dive into ${entityName} competitive landscape`, impact: "medium" });
-    nextActions.push({ action: `Review latest ${entityName} filings and announcements`, impact: "medium" });
+    const isEntityQuery = entityName && entityName.length > 1 && !/^(AI|the|your|my|this)$/i.test(entityName) && !entityName.includes("Intelligence Brief");
+    if (risks.length > 0) {
+      nextActions.push({ action: `Investigate "${risks[0].title}" — how likely is it and what triggers it?`, impact: "high" });
+    }
+    if (isEntityQuery) {
+      if (comparables.length > 0) {
+        nextActions.push({ action: `Compare ${entityName} vs ${comparables[0].name} on unit economics and retention`, impact: "medium" });
+      } else {
+        nextActions.push({ action: `Map ${entityName}'s competitive moat — what's defensible and what isn't?`, impact: "medium" });
+      }
+      nextActions.push({ action: `Review ${entityName}'s most recent public filings or announcements`, impact: "medium" });
+    } else {
+      // Non-entity queries (weekly reset, general) — action-oriented defaults
+      nextActions.push({ action: "Identify the top 3 risks to your current strategy and how to mitigate each", impact: "high" });
+      nextActions.push({ action: "Review what changed this week and decide what to act on vs defer", impact: "medium" });
+    }
   }
 
   const successCount = execution.stepResults.filter(r => r.success).length;
-  const confidence = Math.min(90, 30 + (successCount * 15) + (signals.length * 5) + (sources.length * 3));
+  const totalSteps = execution.stepResults.length;
+  const webSourceCount = sources.filter(s => s.type === "web" && s.href).length;
+  // Confidence formula: rewards web sources (real data) over local tools
+  // Base 20 + success rate bonus + web sources (10 pts each, max 40) + signals (3 pts each, max 15) + comparables (5 pts each, max 10)
+  const successRate = totalSteps > 0 ? successCount / totalSteps : 0;
+  const confidence = Math.min(95, Math.round(
+    20
+    + (successRate * 15)                                      // 0-15: did tools succeed?
+    + (Math.min(webSourceCount, 4) * 10)                      // 0-40: real web sources (most important)
+    + (Math.min(signals.length, 5) * 3)                       // 0-15: intelligence signals
+    + (Math.min(comparables.length, 2) * 5)                   // 0-10: competitive context
+  ));
 
   return {
     entityName,
     answer,
     confidence,
     signals: signals
-      .filter(s => !/in progress|recon plan|project:|commits in last/i.test(s.name))
+      .filter(s => !/in progress|recon plan|project:|commits in last|research plan|status.*active|tool_call|step\s+\d|executing|queued/i.test(s.name))
       .slice(0, 8),
     changes: changes.slice(0, 5),
     risks: risks.slice(0, 5),
     comparables: comparables.slice(0, 4),
-    nextActions: nextActions.slice(0, 4),
+    whyThisTeam: null, // populated by LLM synthesis path; deterministic path lacks founder data
+    nextActions: nextActions
+      .filter(a => !/contextQuestions|check_framework|gather project|ingest_upload|Answer any|Use\s+\w+_\w+/i.test(a.action))
+      .slice(0, 4),
     nextQuestions: [
       `What are the specific drivers behind ${entityName}'s recent growth or decline?`,
       risks.length > 0 ? `How likely is "${risks[0]?.title}" to materialize, and what would trigger it?` : `What are the biggest threats to ${entityName}'s market position?`,

@@ -130,6 +130,10 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
     const { sessionMemoryTools } = await import("./tools/sessionMemoryTools.js");
     return sessionMemoryTools;
   },
+  workspace: async () => {
+    const { workspaceTools } = await import("./tools/workspaceTools.js");
+    return workspaceTools;
+  },
   gaia_solvers: async () => {
     const { gaiaMediaSolvers } = await import("./tools/localFileTools.js");
     return gaiaMediaSolvers;

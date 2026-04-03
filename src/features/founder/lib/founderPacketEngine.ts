@@ -400,7 +400,7 @@ function detectBiggestContradiction(
   if (DEMO_COMPANY.identityConfidence < 0.7) {
     return {
       summary:
-        "Company identity confidence is below 70%. Agents and collaborators may drift from the core wedge without stronger narrative anchoring in every packet.",
+        "Company identity confidence is below 70%. Your team and AI tools may lose focus without a clearer company narrative anchored in every report.",
       severity: "minor",
       affectedInitiatives: [],
     };
@@ -507,7 +507,7 @@ function generateAgentInstructions(
     "",
     contradiction
       ? `Keep this contradiction visible: ${contradiction.summary}`
-      : "No critical contradictions detected. Stay focused on execution.",
+      : "No critical risks detected. Stay focused on execution.",
     "",
     "Execute or support these actions in priority order:",
     actionList,
@@ -752,7 +752,7 @@ export function packetToMarkdown(packet: ArtifactPacket): string {
   lines.push("");
 
   // Biggest Contradiction
-  lines.push("## Biggest Contradiction");
+  lines.push("## Key Risk");
   if (packet.biggestContradiction) {
     lines.push(
       `**${packet.biggestContradiction.severity.toUpperCase()}:** ${packet.biggestContradiction.summary}`,
@@ -763,7 +763,7 @@ export function packetToMarkdown(packet: ArtifactPacket): string {
       );
     }
   } else {
-    lines.push("No critical contradictions detected.");
+    lines.push("No critical risks detected.");
   }
   lines.push("");
 
@@ -839,12 +839,12 @@ export function packetToHTML(packet: ArtifactPacket): string {
 
   const contradictionHtml = packet.biggestContradiction
     ? `<div class="card contradiction">
-        <h2>Biggest Contradiction</h2>
+        <h2>Key Risk</h2>
         <span class="severity severity-${escapeHtml(packet.biggestContradiction.severity)}">${escapeHtml(packet.biggestContradiction.severity.toUpperCase())}</span>
         <p>${escapeHtml(packet.biggestContradiction.summary)}</p>
         ${packet.biggestContradiction.affectedInitiatives.length > 0 ? `<p class="affected">Affected: ${escapeHtml(packet.biggestContradiction.affectedInitiatives.join(", "))}</p>` : ""}
       </div>`
-    : `<div class="card"><h2>Biggest Contradiction</h2><p class="muted">No critical contradictions detected.</p></div>`;
+    : `<div class="card"><h2>Key Risk</h2><p class="muted">No critical risks detected.</p></div>`;
 
   const nextMovesHtml = packet.nextMoves
     .slice(0, 5)

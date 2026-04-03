@@ -131,6 +131,7 @@ export function CockpitLayout({
     if (
       window.innerWidth <= 1024 &&
       location.pathname === "/" &&
+      !location.search && // Don't redirect if explicit params like ?surface=ask
       !sessionStorage.getItem("nodebench-mobile-redirected")
     ) {
       sessionStorage.setItem("nodebench-mobile-redirected", "1");
@@ -311,7 +312,12 @@ export function CockpitLayout({
     if (!canonicalPath || !isLegacyRedirect) return;
     const currentFullPath = `${location.pathname}${location.search}`;
     if (currentFullPath === canonicalPath) return;
-    navigate(canonicalPath, { replace: true });
+    // Defer redirect to next frame — ensures useCockpitRouting state is fully settled
+    // before we navigate, preventing stale surface/view in ActiveSurfaceHost
+    const rafId = requestAnimationFrame(() => {
+      navigate(canonicalPath, { replace: true });
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [canonicalPath, isLegacyRedirect, location.pathname, location.search, navigate]);
 
   const navigateToView = useCallback((view: typeof currentView) => {

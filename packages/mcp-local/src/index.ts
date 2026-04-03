@@ -72,7 +72,7 @@ export { TOOLSET_MAP };
 
 // Starter: ~19 tools. Just decision intelligence + discovery/meta overhead.
 // Users call discover_tools → load_toolset to expand. Under Google's 50-tool IDE limit.
-const STARTER_TOOLSETS = ["deep_sim", "entity_lookup", "site_map"];
+const STARTER_TOOLSETS = ["deep_sim", "entity_lookup", "site_map", "workspace", "session_memory"];
 
 // Core: the original default. ~81 tools across 15 domains.
 const CORE_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "autonomous_delivery", "sync_bridge", "shared_context", "recon", "security", "boilerplate", "skill_update", "context_sandbox", "observability", "execution_trace", "mission_harness", "deep_sim", "founder", "scenario_compiler", "packet_compiler", "entity_temporal"];

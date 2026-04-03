@@ -65,9 +65,28 @@ function stepLabel(step: TraceStep, mode: "dev" | "user"): string {
   if (mode === "user") {
     if (step.step === "classify_query") return "Understood your question";
     if (step.step === "build_context_bundle") return "Loaded your context";
-    if (step.step === "tool_call") return `Ran ${step.tool?.replace(/_/g, " ") ?? "analysis"}`;
+    if (step.step === "tool_call") {
+      const toolMap: Record<string, string> = {
+        web_search: "Searched the web",
+        linkup_search: "Deep web intelligence",
+        run_recon: "Deep reconnaissance",
+        enrich_entity: "Enriched entity profile",
+        founder_local_gather: "Gathered local context",
+        founder_local_weekly_reset: "Weekly intelligence reset",
+        founder_local_synthesize: "Synthesized intelligence",
+        simulate_decision_paths: "Financial scenario modeling",
+        build_claim_graph: "Mapped claims",
+        extract_variables: "Extracted key variables",
+        rank_interventions: "Ranked next actions",
+      };
+      return toolMap[step.tool ?? ""] ?? `Analyzed ${step.tool?.replace(/_/g, " ") ?? "data"}`;
+    }
     if (step.step === "judge") return "Quality checked";
     if (step.step === "assemble_response") return "Built your result";
+    if (step.step === "agent_plan") return "Planned research strategy";
+    if (step.step === "agent_execute") return "Executed research";
+    if (step.step === "agent_synthesize") return "Synthesized findings";
+    if (step.step === "parallel_dispatch") return "Parallel research";
     return step.step.replace(/_/g, " ");
   }
   // Dev mode
@@ -153,7 +172,7 @@ export const SearchTrace = memo(function SearchTrace({
         <div className="flex items-center gap-2.5 text-[10px] text-content-muted">
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            {latencyMs}ms
+            {latencyMs > 1000 ? `${(latencyMs / 1000).toFixed(1)}s` : latencyMs > 0 ? `${latencyMs}ms` : "< 1s"}
           </span>
           <span className="flex items-center gap-1">
             <Zap className="h-3 w-3" />
@@ -254,13 +273,15 @@ export const SearchTrace = memo(function SearchTrace({
             </div>
           )}
 
-          {/* Classification badge */}
-          <div className="mt-2 flex items-center gap-2 text-[10px] text-content-muted">
-            <span className="rounded-md bg-white/[0.05] px-2 py-0.5 font-mono">
-              {classification}
-            </span>
-            <span>classification</span>
-          </div>
+          {/* Classification badge — only in dev mode, hide empty/unknown */}
+          {mode === "dev" && classification && classification !== "unknown" && (
+            <div className="mt-2 flex items-center gap-2 text-[10px] text-content-muted">
+              <span className="rounded-md bg-white/[0.05] px-2 py-0.5 font-mono">
+                {classification.replace(/_/g, " ")}
+              </span>
+              <span>query type</span>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -841,6 +841,7 @@ function buildResultPacket(args: {
       relevance: comparable.relevance ?? "medium",
       note: comparable.note ?? "",
     })),
+    whyThisTeam: result.whyThisTeam ?? null,
     packetId: result.packetId,
     packetType: normalizedIdentity.packetType,
     canonicalEntity: entityName,
@@ -1591,17 +1592,9 @@ export function createSearchRouter(tools: McpTool[]) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `Classify this user query for a startup intelligence platform. Return ONLY valid JSON, no markdown.
+            contents: [{ parts: [{ text: `Classify this user query for a startup intelligence platform.
 ${sessionContext ? `\nContext: ${sessionContext}` : ""}
 Query: "${query}"
-
-Return this exact JSON shape:
-{
-  "type": one of ["weekly_reset", "pre_delegation", "important_change", "plan_proposal", "company_search", "competitor", "multi_entity", "general"],
-  "entity": the primary company/entity name mentioned (null if none or if about the user's own company),
-  "entities": array of all company names if comparing multiple (null if single or none),
-  "lens": best audience lens: "founder" | "investor" | "banker" | "ceo" | "legal" | "student"
-}
 
 Classification rules:
 - "weekly_reset": user wants a weekly summary, founder reset, or "what changed this week"
@@ -1614,12 +1607,31 @@ Classification rules:
 - "general": anything else — general questions, idea validation, pitch readiness, strategic questions
 
 Entity extraction rules:
-- Extract ONLY proper company/product names, not generic words
-- "Compare Stripe vs Square" → entities: ["Stripe", "Square"]
-- "What would Y Combinator look for" → entity: "Y Combinator"
-- "I'm building an AI tutoring app" → entity: null (user's own idea, not a named company)
-- "Am I ready to pitch Sequoia?" → entity: "Sequoia"` }] }],
-            generationConfig: { temperature: 0, maxOutputTokens: 200 },
+- Extract ONLY proper company/product names that appear VERBATIM in the query
+- Do NOT invent entities — if no company name is explicitly in the query, entity must be null
+- "Compare Stripe vs Square" → entities: ["Stripe", "Square"], type: "multi_entity"
+- "What would Y Combinator look for" → entity: "Y Combinator", type: "company_search"
+- "I'm building an AI tutoring app" → entity: null, type: "general"
+- "Am I ready to pitch Sequoia?" → entity: "Sequoia", type: "company_search"
+- "What changed this week?" → entity: null, type: "weekly_reset"
+- "Anthropic" → entity: "Anthropic", type: "company_search"
+- "OpenAI risks and challenges" → entity: "OpenAI", type: "company_search"
+- "How does Notion compare to Coda" → entities: ["Notion", "Coda"], type: "multi_entity"` }] }],
+            generationConfig: {
+              temperature: 0,
+              maxOutputTokens: 200,
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: "object",
+                properties: {
+                  type: { type: "string", enum: ["weekly_reset", "pre_delegation", "important_change", "plan_proposal", "company_search", "competitor", "multi_entity", "general"] },
+                  entity: { type: "string", nullable: true, description: "Primary company/entity name from the query, or null if none" },
+                  entities: { type: "array", items: { type: "string" }, nullable: true, description: "All company names if comparing multiple" },
+                  lens: { type: "string", enum: ["founder", "investor", "banker", "ceo", "legal", "student"] },
+                },
+                required: ["type", "lens"],
+              },
+            },
           }),
           signal: AbortSignal.timeout(3000), // 3s budget — classification must be fast
         }
@@ -1639,14 +1651,46 @@ Entity extraction rules:
       const validLenses = ["founder", "investor", "banker", "ceo", "legal", "student"];
       const lens = validLenses.includes(parsed.lens) ? parsed.lens : "founder";
 
-      return {
-        type,
-        entity: typeof parsed.entity === "string" && parsed.entity.length > 0 ? parsed.entity : undefined,
-        entities: Array.isArray(parsed.entities) && parsed.entities.length >= 2
-          ? parsed.entities.filter((e: any) => typeof e === "string" && e.length > 0)
-          : undefined,
-        lens,
-      };
+      let entities = Array.isArray(parsed.entities) && parsed.entities.length >= 2
+        ? parsed.entities.filter((e: any) => typeof e === "string" && e.length > 0)
+        : undefined;
+
+      // Defensive: if LLM classified as multi_entity or competitor but returned <2 entities,
+      // try regex split on "vs", "versus", "compared to", "and" to extract them from the query
+      if (!entities || entities.length < 2) {
+        const vsMatch = query.match(/^(?:compare\s+)?(.+?)\s+(?:vs\.?|versus|compared?\s+to|against)\s+(.+?)(?:\?|$)/i);
+        if (vsMatch) {
+          entities = [vsMatch[1].trim(), vsMatch[2].trim()].filter(e => e.length > 0);
+          if (entities.length >= 2) {
+            return { type: "multi_entity", entity: entities[0], entities, lens };
+          }
+        }
+      }
+
+      // Post-extraction entity verification: reject hallucinated entities.
+      // Defense 1: entity must appear verbatim in the query text.
+      // Defense 2: entity must be a proper noun (starts with uppercase in original query).
+      // Defense 3: entity must not be a common phrase fragment.
+      // Based on PARSE (arxiv:2510.08623) and few-shot NER best practices.
+      let entity = typeof parsed.entity === "string" && parsed.entity.length > 0 ? parsed.entity : undefined;
+      if (entity) {
+        const entityLower = entity.toLowerCase();
+        const inQuery = query.toLowerCase().includes(entityLower);
+        // Check if entity starts with uppercase in the original query (proper noun)
+        const entityIdx = query.toLowerCase().indexOf(entityLower);
+        const startsUppercase = entityIdx >= 0 && /^[A-Z]/.test(query.charAt(entityIdx));
+        // Reject common phrase fragments that aren't company names
+        const isPhrase = /^(what|how|when|where|why|who|which|the|this|that|my|your|changed|built|building|doing|risks?|challenges?)\b/i.test(entity);
+        if (!inQuery || !startsUppercase || isPhrase) {
+          entity = undefined;
+        }
+      }
+      if (entities) {
+        entities = entities.filter((e: string) => query.toLowerCase().includes(e.toLowerCase()));
+        if (entities.length < 2) entities = undefined;
+      }
+
+      return { type, entity, entities, lens };
     } catch {
       return classifyQuery(query); // Fallback to regex on any failure
     }
@@ -1824,10 +1868,83 @@ Entity extraction rules:
           const synthesized = await synthesizeResults(execution, query.trim(), resolvedLens, callTool);
           synthTrace.ok(`${synthesized.confidence}% confidence`);
 
-          // ── Monte Carlo enrichment: always run for company/competitor searches ──
-          // IB three-case model: bull/base/bear scenarios
-          // Extract revenue from the LLM answer to seed with real numbers
+          // ── Parallel enrichment: Monte Carlo + Why This Team credibility ──
+          // Both run concurrently after synthesis to stay within Vercel timeout.
+          const enrichmentPromises: Promise<void>[] = [];
+
+          // Why This Team — credibility layer via direct Gemini call
+          // For self-search (NodeBench, founder), inject local context (CLAUDE.md, memory, git)
+          if (process.env.GEMINI_API_KEY && !synthesized.whyThisTeam) {
+            enrichmentPromises.push((async () => {
+              try {
+                // Detect self-search: query about NodeBench or the founder
+                const isSelfSearch = /nodebench|homen|shum|my company|our company|my startup/i.test(query);
+                let localContext = "";
+                if (isSelfSearch) {
+                  try {
+                    const fs = await import("node:fs/promises");
+                    const os = await import("node:os");
+                    const path = await import("node:path");
+                    // Read founder identity from CLAUDE.md
+                    const claudeMdPaths = [
+                      path.join(os.homedir(), ".claude", "CLAUDE.md"),
+                      path.join(process.cwd(), "CLAUDE.md"),
+                    ];
+                    for (const p of claudeMdPaths) {
+                      try {
+                        const content = await fs.readFile(p, "utf-8");
+                        // Extract identity section (first 600 chars)
+                        localContext += `\nFOUNDER IDENTITY (from CLAUDE.md):\n${content.slice(0, 600)}`;
+                        break;
+                      } catch { continue; }
+                    }
+                    // Read memory index
+                    const memPath = path.join(os.homedir(), ".claude", "projects");
+                    try {
+                      const dirs = await fs.readdir(memPath);
+                      for (const d of dirs.slice(0, 1)) {
+                        const memFile = path.join(memPath, d, "memory", "MEMORY.md");
+                        try {
+                          const mem = await fs.readFile(memFile, "utf-8");
+                          localContext += `\nPROJECT MEMORY:\n${mem.slice(0, 400)}`;
+                        } catch { /* no memory file */ }
+                      }
+                    } catch { /* no projects dir */ }
+                    // Git stats
+                    try {
+                      const { execSync } = await import("node:child_process");
+                      const commitCount = execSync("git log --oneline --since='2026-01-01' | wc -l", { cwd: process.cwd(), timeout: 3000 }).toString().trim();
+                      const firstCommit = execSync("git log --oneline --reverse | head -1", { cwd: process.cwd(), timeout: 3000 }).toString().trim();
+                      localContext += `\nGIT HISTORY: ${commitCount} commits since Jan 2026. First: ${firstCommit}`;
+                    } catch { /* git not available */ }
+                  } catch { /* local context is best-effort */ }
+                }
+
+                const credResp = await fetch(
+                  `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${process.env.GEMINI_API_KEY}`,
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      contents: [{ parts: [{ text: `Assess founder/team credibility of "${synthesized.entityName}" for a ${resolvedLens} audience.\n\nWeb context: ${(synthesized.answer ?? "").slice(0, 400)}${localContext ? `\n\nLocal founder context (private, high-trust):\n${localContext}` : ""}\n\nReturn ONLY JSON:\n{"founderCredibility":"why credible","trustSignals":["fact1","fact2"],"visionMagnitude":"scale assessment","reinventionCapacity":"pivot ability","hiddenRequirements":["req1","req2"]}` }] }],
+                      generationConfig: { temperature: 0, maxOutputTokens: 600, responseMimeType: "application/json" },
+                    }),
+                    signal: AbortSignal.timeout(8000),
+                  }
+                );
+                if (credResp.ok) {
+                  const credData = await credResp.json() as any;
+                  const credText = credData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+                  const credMatch = credText.match(/\{[\s\S]*\}/);
+                  if (credMatch) synthesized.whyThisTeam = JSON.parse(credMatch[0]);
+                }
+              } catch { /* credibility is non-blocking */ }
+            })());
+          }
+
+          // Monte Carlo enrichment (runs in parallel with credibility)
           if (classification.type === "company_search" || classification.type === "competitor" || classification.type === "multi_entity") {
+            enrichmentPromises.push((async () => {
             try {
               const mcTrace = traceStep("tool_call", "simulate_decision_paths");
               // Extract financial data from the synthesized answer
@@ -1849,24 +1966,28 @@ Entity extraction rules:
               }) as any;
               if (mcResult?.summary) {
                 const sim = mcResult.summary;
+                // Cap MC to 2 signals at medium impact — supplementary, not primary
                 synthesized.signals.push(
-                  { name: `Monte Carlo: ${sim.successRate} success rate across ${sim.paths}`, direction: "neutral", impact: "high" },
-                  { name: `Base case: ${sim.medianPayoff} (80% CI: ${sim.confidenceInterval})`, direction: "neutral", impact: "high" },
+                  { name: `Monte Carlo (${sim.paths} paths): ${sim.successRate} success, base ${sim.medianPayoff}`, direction: "neutral", impact: "medium" },
                 );
-                if (mcResult.bestPath) {
-                  synthesized.signals.push({ name: `Bull case: ${mcResult.bestPath.payoff} at ${mcResult.bestPath.marketShare} share`, direction: "up", impact: "high" });
-                }
-                if (mcResult.worstPath) {
-                  synthesized.signals.push({ name: `Bear case: ${mcResult.worstPath.payoff} — ${mcResult.worstPath.outcome}`, direction: "down", impact: "high" });
+                if (mcResult.bestPath && mcResult.worstPath) {
+                  synthesized.signals.push({ name: `3-case: Bull ${mcResult.bestPath.payoff} | Bear ${mcResult.worstPath.payoff} (${sim.confidenceInterval})`, direction: "neutral", impact: "medium" });
                 }
                 for (const d of (mcResult.decisionSensitivity ?? []).slice(0, 2)) {
                   synthesized.risks.push({ title: `Key decision: ${d.decision}`, description: `Best path: "${d.bestChoice}" (${d.impact} vs average). This decision materially affects outcomes.` });
                 }
-                synthesized.answer += ` Simulation (${sim.paths}, ${sim.horizon}): ${sim.successRate} success, ${sim.survivalRate} survival. Base payoff ${sim.medianPayoff}.`;
+                // NOTE: Don't append raw simulation text to the answer body — it leaks internal pipeline output.
+                // MC data is already surfaced in signals.
                 synthesized.sources.push({ label: `Monte Carlo (${sim.paths})`, type: "local" });
               }
               mcTrace.ok(`${mcResult?.summary?.successRate ?? "?"} success rate`);
             } catch { /* MC enrichment is non-blocking */ }
+            })());
+          }
+
+          // Wait for all parallel enrichments (credibility + MC)
+          if (enrichmentPromises.length > 0) {
+            await Promise.all(enrichmentPromises);
           }
 
           // Build result in the format the rest of the route expects
@@ -1884,6 +2005,7 @@ Entity extraction rules:
               claim: r.title, evidence: r.description,
             })),
             comparables: synthesized.comparables,
+            whyThisTeam: synthesized.whyThisTeam,
             nextActions: synthesized.nextActions,
             nextQuestions: synthesized.nextQuestions,
             sourceRefs: synthesized.sources.map((s, i) => ({

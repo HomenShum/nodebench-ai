@@ -1108,7 +1108,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
 
               <PageHeroHeader
                 icon={"🗺️"}
-                title={"Roadmap Hub"}
+                title={"Agent Roadmap"}
                 date={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                 accent
                 className="mb-6"

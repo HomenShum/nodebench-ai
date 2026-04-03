@@ -741,12 +741,18 @@ export function resolvePathToCockpitState(rawPathname: string, rawSearch = ""): 
     const tabParam = params.get("tab");
     const researchTab = (tabParam as ResearchTab | null) ?? "overview";
     const requestedViewParam = params.get("view");
+    // Views in VIEW_MAP are validated against their registered surface.
+    // Views NOT in VIEW_MAP (calendar, agents, roadmap, workspace) are "inline views"
+    // handled directly by ActiveSurfaceHost — trust the explicit surface param.
+    const INLINE_EDITOR_VIEWS = new Set(["calendar", "agents", "roadmap", "workspace", "timeline"]);
     const requestedView =
       requestedViewParam && requestedViewParam in VIEW_MAP
         ? (requestedViewParam as MainView)
-        : null;
+        : requestedViewParam && INLINE_EDITOR_VIEWS.has(requestedViewParam) && activeSurface === "editor"
+          ? (requestedViewParam as MainView)
+          : null;
     const view =
-      requestedView && getSurfaceForView(requestedView) === activeSurface
+      requestedView && (getSurfaceForView(requestedView) === activeSurface || INLINE_EDITOR_VIEWS.has(requestedView))
         ? requestedView
         : activeSurface === "graph" && params.get("entity")
           ? "entity"

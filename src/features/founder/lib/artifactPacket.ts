@@ -336,13 +336,14 @@ export function artifactPacketToMarkdown(packet: FounderArtifactPacket): string 
   lines.push("");
   lines.push(`## Canonical Entity`);
   lines.push(`- **Mission**: ${packet.canonicalEntity.mission}`);
-  lines.push(`- **Wedge**: ${packet.canonicalEntity.wedge}`);
-  lines.push(`- **Identity confidence**: ${Math.round(packet.canonicalEntity.identityConfidence * 100)}%`);
+  lines.push(`- **Core Focus**: ${packet.canonicalEntity.wedge}`);
+  const confPct = Math.round(packet.canonicalEntity.identityConfidence * 100);
+  lines.push(`- **Identity confidence**: ${confPct > 0 ? `${confPct}%` : "Not set"}`);
   lines.push("");
   lines.push(`## What Changed`);
   lines.push(packet.whatChanged);
   lines.push("");
-  lines.push(`## Contradictions`);
+  lines.push(`## Key Risks`);
   packet.contradictions.forEach((contradiction) => {
     lines.push(`- **${contradiction.title}** (${contradiction.severity}): ${contradiction.detail}`);
   });
@@ -365,10 +366,7 @@ export function artifactPacketToMarkdown(packet: FounderArtifactPacket): string 
     lines.push(`- **${evidence.title}** — ${evidence.detail} (${evidence.source})`);
   });
   lines.push("");
-  lines.push(`## Agent Instructions`);
-  lines.push("```");
-  lines.push(packet.agentInstructions);
-  lines.push("```");
+  // Agent instructions omitted from exports — internal-only
 
   return lines.join("\n");
 }
@@ -419,11 +417,11 @@ p,li{color:#d1d5db}ul,ol{padding-left:20px}.meta{display:flex;gap:12px;flex-wrap
 </head>
 <body>
 <main>
-<h1>${escapeHtml(packet.canonicalEntity.name)} Artifact Packet</h1>
+<h1>${escapeHtml(packet.canonicalEntity.name)} Intelligence Report</h1>
 <div class="meta">
 <span>${escapeHtml(getArtifactPacketTypeLabel(packet.packetType))}</span>
 <span>${escapeHtml(packet.provenance.generatedAt)}</span>
-<span>${Math.round(packet.canonicalEntity.identityConfidence * 100)}% identity confidence</span>
+<span>${Math.round(packet.canonicalEntity.identityConfidence * 100) > 0 ? `${Math.round(packet.canonicalEntity.identityConfidence * 100)}% confidence` : "Getting started"}</span>
 </div>
 <div class="card">
 <h2>Objective</h2>
@@ -433,7 +431,7 @@ p,li{color:#d1d5db}ul,ol{padding-left:20px}.meta{display:flex;gap:12px;flex-wrap
 <h2>Operating Memo</h2>
 <p>${escapeHtml(packet.operatingMemo)}</p>
 </div>
-<div class="card"><h2>Contradictions</h2><ul>${contradictionRows}</ul></div>
+<div class="card"><h2>Key Risks</h2><ul>${contradictionRows}</ul></div>
 <div class="card"><h2>Next Actions</h2><ol>${actionRows}</ol></div>
 <div class="card"><h2>Nearby Entities</h2><ul>${entityRows}</ul></div>
 <div class="card"><h2>Key Evidence</h2><ul>${evidenceRows}</ul></div>

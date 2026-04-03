@@ -22,6 +22,9 @@ import {
   Globe,
   Sparkles,
   ExternalLink,
+  Users,
+  Shield,
+  Eye,
 } from "lucide-react";
 import type { ResultPacket, LensId } from "./searchTypes";
 import { CompanyProfile } from "./CompanyProfile";
@@ -208,6 +211,57 @@ function AssistantMessage({ entry, onFollowUp, onViewProfile }: {
           ))}
         </div>
       </Section>
+
+      {p.whyThisTeam && (
+        <Section title="Why This Team" icon={Users} count={p.whyThisTeam.trustSignals?.length ?? 0} defaultOpen>
+          <div className="space-y-2.5">
+            {p.whyThisTeam.founderCredibility && (
+              <div className="rounded-lg border border-edge/30 bg-white/[0.02] p-2.5">
+                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.12em] text-[#d97757]/70 mb-1">
+                  <Shield className="h-3 w-3" />Founder Credibility
+                </div>
+                <p className="text-[11px] leading-relaxed text-content-secondary">{p.whyThisTeam.founderCredibility}</p>
+              </div>
+            )}
+            {p.whyThisTeam.trustSignals?.length > 0 && (
+              <div className="rounded-lg border border-edge/30 bg-white/[0.02] p-2.5">
+                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.12em] text-emerald-400/70 mb-1.5">
+                  <Check className="h-3 w-3" />Trust Signals
+                </div>
+                <div className="space-y-1">
+                  {p.whyThisTeam.trustSignals.map((s: string, i: number) => (
+                    <div key={i} className="flex items-start gap-2 text-[11px] text-content-secondary">
+                      <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-emerald-400/60" />
+                      {s}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {p.whyThisTeam.visionMagnitude && (
+              <div className="text-[11px] leading-relaxed text-content-muted">
+                <span className="font-medium text-content-secondary">Market magnitude: </span>
+                {p.whyThisTeam.visionMagnitude}
+              </div>
+            )}
+            {p.whyThisTeam.hiddenRequirements?.length > 0 && (
+              <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.03] p-2.5">
+                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.12em] text-amber-400/70 mb-1.5">
+                  <Eye className="h-3 w-3" />What Outsiders Will Expect
+                </div>
+                <div className="space-y-1">
+                  {p.whyThisTeam.hiddenRequirements.map((r: string, i: number) => (
+                    <div key={i} className="flex items-start gap-2 text-[11px] text-content-secondary">
+                      <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-amber-400/60" />
+                      {r}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </Section>
+      )}
 
       <Section title="Competitive Landscape" icon={Globe} count={p.comparables?.length ?? 0}>
         <div className="flex flex-wrap gap-2">

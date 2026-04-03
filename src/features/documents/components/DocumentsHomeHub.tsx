@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { lazy, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation } from "convex/react";
 import { DocumentsCoreProvider } from "../context/DocumentsCoreProvider";
 
@@ -51,6 +51,9 @@ const LazyDocumentsWorkspaceSurface = lazy(
 const LazyDocumentsPlannerSurface = lazy(
   () => import("./DocumentsPlannerSurface"),
 );
+const LazyWorkspaceExplorer = lazy(
+  () => import("./WorkspaceExplorer"),
+);
 
 interface DocumentsHomeHubProps {
   onDocumentSelect: (documentId: Id<"documents">) => void;
@@ -88,6 +91,8 @@ export function DocumentsHomeHub({
   onClearTaskSelection,
 }: DocumentsHomeHubProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isWorkspaceView = location.pathname === "/workspace" || new URLSearchParams(location.search).get("view") === "workspace";
 
   // ---------------------------------------------------------------------------
   // Convex queries
@@ -271,6 +276,15 @@ export function DocumentsHomeHub({
   // Render
   // ---------------------------------------------------------------------------
 
+  // Agent Workspace view — show WorkspaceExplorer when navigated to /workspace
+  if (isWorkspaceView) {
+    return (
+      <Suspense fallback={null}>
+        <LazyWorkspaceExplorer />
+      </Suspense>
+    );
+  }
+
   return (
     <DocumentsCoreProvider
       documentData={documentDataSlice}
@@ -303,6 +317,7 @@ export function DocumentsHomeHub({
           onDocumentSelect={onDocumentSelect}
         />
       </Suspense>
+
     </DocumentsCoreProvider>
   );
 }

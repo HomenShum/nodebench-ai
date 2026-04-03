@@ -71,7 +71,7 @@ function StrategicFitCard({ plan }: { plan: FeaturePlan }) {
               style={{ width: `${alignment}%` }}
             />
           </div>
-          <span className="text-xs text-white/50">Wedge alignment</span>
+          <span className="text-xs text-white/50">Focus alignment</span>
         </div>
       </div>
       <p className="text-sm text-white/70">{plan.strategicFit.whyNow}</p>

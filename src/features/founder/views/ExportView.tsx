@@ -100,7 +100,7 @@ const EXPORT_FORMATS: ExportFormat[] = [
     id: "agent-brief",
     icon: Bot,
     title: "Agent Brief",
-    description: "Brief for Claude/OClaw",
+    description: "Brief for AI assistants",
     actionLabel: "Copy",
   },
 ];
@@ -180,8 +180,7 @@ function packetToAgentBrief(packet: FounderArtifactPacket): string {
     lines.push(`${i + 1}. [${a.priority}] ${a.label}`);
   });
   lines.push("");
-  lines.push("AGENT_INSTRUCTIONS:");
-  lines.push(packet.agentInstructions);
+  // Agent instructions omitted from user exports — internal-only
   return lines.join("\n");
 }
 
@@ -440,7 +439,7 @@ export const ExportView = memo(function ExportView() {
           <Package className="h-12 w-12 text-white/70" />
           <h2 className="text-lg font-semibold text-white/80">No packet loaded</h2>
           <p className="text-[13px] leading-relaxed text-white/60">
-            Generate an Artifact Packet from the Dashboard first. The Export Center
+            Generate an intelligence report from the Dashboard first. The Export Center
             will render it into any downstream format you need.
           </p>
           <button
@@ -497,7 +496,7 @@ export const ExportView = memo(function ExportView() {
           <div>
             <h1 className="text-lg font-semibold text-white/90">Export Center</h1>
             <p className="text-[13px] text-white/60">
-              Turn your Artifact Packet into a presentable deliverable
+              Turn your intelligence report into a presentable deliverable
             </p>
           </div>
         </div>

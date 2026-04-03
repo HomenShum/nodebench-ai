@@ -96,6 +96,9 @@ export function useCockpitRouting(): UseCockpitRoutingReturn {
 
   useEffect(() => {
     const next = parseLocation(location.pathname || "/", location.search || "");
+    // React 18 automatically batches these setState calls within effects.
+    // The legacy redirect effect in CockpitLayout is guarded with RAF to ensure
+    // all state is settled before it fires.
     setEntityName(next.entityName);
     setSelectedSpreadsheetId(next.spreadsheetId ? (next.spreadsheetId as Id<"spreadsheets">) : null);
     setResearchHubInitialTab(next.researchTab);

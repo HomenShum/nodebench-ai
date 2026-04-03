@@ -212,15 +212,7 @@ function AgentHandoffPanelInner() {
         </ul>
       </div>
 
-      {/* ── Agent instructions card ─────────────────────────────────────── */}
-      <div className="rounded-xl border border-white/[0.20] bg-white/[0.12] p-5">
-        <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
-          Agent Instructions
-        </div>
-        <pre className="whitespace-pre-wrap rounded-lg bg-black/20 p-3 text-xs leading-relaxed text-content-secondary">
-          {packet.agentInstructions}
-        </pre>
-      </div>
+      {/* Agent instructions hidden — internal-only, not user-facing */}
 
       {/* ── Action buttons ──────────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-2">

@@ -446,7 +446,7 @@ function MemoryBadge({ memory }: MemoryBadgeProps) {
       <span className="font-medium">{memory.entityName}</span>
       <span className="opacity-75">
         {memory.qualityTier} | {memory.factCount} facts | {memory.ageInDays}d
-        {memory.isStale && " | STALE"}
+        {memory.isStale && " | outdated"}
       </span>
     </div>
   );

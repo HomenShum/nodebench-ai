@@ -85,9 +85,9 @@ const DEMO_SESSION_DELTA = {
     },
   ],
   buildItems: [
-    { title: "Phase 10: Causal Memory (8 tables, 4 views, 10 MCP tools)", content: "Complete. Event ledger, path graph, state diffs, time rollups, packet/memo lineage, important changes.", type: "initiative_update" },
-    { title: "Phase 11: Ambient Intelligence Layer (4 tables, ingestion pipeline)", content: "In progress. Memory provider abstraction, multi-provider event bus, session delta dashboard.", type: "initiative_update" },
-    { title: "MemoryProvider interface for Supermemory/local/zep", content: "Designed. Allows NodeBench to sit above any memory substrate.", type: "build_item" },
+    { title: "Operating Memory: event tracking, change history, and report lineage", content: "Complete. Event ledger, path graph, state diffs, time rollups, report lineage, important changes.", type: "initiative_update" },
+    { title: "Ambient Intelligence: background monitoring and alerts", content: "In progress. Multi-provider event bus, session delta dashboard, always-on signal detection.", type: "initiative_update" },
+    { title: "Multi-provider memory integration", content: "Designed. Allows NodeBench to work with any memory or knowledge backend.", type: "build_item" },
   ],
   risks: [
     { title: "Memory commoditization accelerating", content: "3+ providers with >80% on standard benchmarks. Building memory infrastructure from scratch would be wasted effort.", confidence: 0.85 },
@@ -98,7 +98,7 @@ const DEMO_SESSION_DELTA = {
   attentionRequired: 2,
   recentDetections: 5,
   stalePackets: [
-    { type: "weekly_reset", changeCount: 14, readiness: 0.85, reason: "14 changes since last weekly reset — Phase 10 complete, Phase 11 started, competitive landscape analyzed" },
+    { type: "weekly_reset", changeCount: 14, readiness: 0.85, reason: "14 changes since last weekly reset — operating memory complete, ambient intelligence started, competitive landscape analyzed" },
     { type: "investor_update", changeCount: 8, readiness: 0.7, reason: "Strategic positioning shift and new competitive intelligence" },
   ],
   eventsSinceLastSession: 23,
@@ -236,7 +236,7 @@ function PacketReadinessSection({ packets }: { packets: typeof DEMO_SESSION_DELT
                     "rounded px-1.5 py-0.5 text-[9px] tabular-nums font-medium",
                     pctFull >= 80 ? "bg-red-500/10 text-red-400" : "bg-amber-500/10 text-amber-400",
                   )}>
-                    {pctFull}% stale
+                    {pctFull}% outdated
                   </span>
                 </div>
               </div>
@@ -430,7 +430,7 @@ function CompoundingInvestmentCard() {
           <div className={cn("text-xl font-light tabular-nums", stats.staleCount > 0 ? "text-amber-400" : "text-emerald-400")}>
             {stats.staleCount}
           </div>
-          <div className="text-[8px] uppercase tracking-wider text-white/25">Going Stale</div>
+          <div className="text-[8px] uppercase tracking-wider text-white/25">Needs Refresh</div>
         </div>
       </div>
 
@@ -440,7 +440,7 @@ function CompoundingInvestmentCard() {
       <p className="mt-1 text-[10px] text-accent-primary/60">
         {stats.totalPackets < 10
           ? "Build your intelligence base: run delta_diligence on key entities via CLI."
-          : `Your context is compounding. ${stats.staleCount > 0 ? "Regenerate stale packets to keep intelligence fresh." : "Every session makes the next one more valuable."}`}
+          : `Your context is compounding. ${stats.staleCount > 0 ? "Refresh outdated reports to keep intelligence current." : "Every session makes the next one more valuable."}`}
       </p>
     </div>
   );

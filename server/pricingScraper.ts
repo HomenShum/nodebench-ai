@@ -25,6 +25,7 @@ export interface ProviderPricing {
   currency: "USD" | "EUR";
   context?: number;        // context window size
   tier: "free" | "cheap" | "mid" | "premium" | "enterprise";
+  displayName?: string;    // user-friendly name (falls back to model if missing)
   useCase: string;
   source: "openrouter_api" | "manual" | "provider_docs";
   lastUpdated: number;     // timestamp
@@ -54,32 +55,32 @@ const MANUAL_RATES: ProviderPricing[] = [
   { provider: "Google", model: "gemini-2.5-flash-preview", inputPer1M: 0.15, outputPer1M: 0.60, currency: "USD", tier: "cheap", useCase: "Fallback for Flash Lite failures", source: "manual", lastUpdated: Date.now(), isActive: false },
 
   // Anthropic (published API pricing)
-  { provider: "Anthropic", model: "claude-opus-4-6", inputPer1M: 15.00, outputPer1M: 75.00, currency: "USD", tier: "enterprise", useCase: "Not used in harness — available for premium synthesis", source: "manual", lastUpdated: Date.now(), isActive: false },
-  { provider: "Anthropic", model: "claude-sonnet-4-6", inputPer1M: 3.00, outputPer1M: 15.00, currency: "USD", tier: "mid", useCase: "Mid-tier tasks via call_llm fallback", source: "manual", lastUpdated: Date.now(), isActive: true },
-  { provider: "Anthropic", model: "claude-haiku-4-5-20251001", inputPer1M: 1.00, outputPer1M: 5.00, currency: "USD", tier: "cheap", useCase: "Routing fallback, NemoClaw default", source: "manual", lastUpdated: Date.now(), isActive: true },
+  { provider: "Anthropic", model: "claude-opus-4-6", displayName: "Claude Opus 4.6", inputPer1M: 15.00, outputPer1M: 75.00, currency: "USD", tier: "enterprise", useCase: "Premium synthesis (available on demand)", source: "manual", lastUpdated: Date.now(), isActive: false },
+  { provider: "Anthropic", model: "claude-sonnet-4-6", displayName: "Claude Sonnet 4.6", inputPer1M: 3.00, outputPer1M: 15.00, currency: "USD", tier: "mid", useCase: "Mid-tier analysis and reasoning", source: "manual", lastUpdated: Date.now(), isActive: true },
+  { provider: "Anthropic", model: "claude-haiku-4-5-20251001", displayName: "Claude Haiku 4.5", inputPer1M: 1.00, outputPer1M: 5.00, currency: "USD", tier: "cheap", useCase: "Fast classification and routing", source: "manual", lastUpdated: Date.now(), isActive: true },
 
   // OpenAI (published API pricing)
-  { provider: "OpenAI", model: "gpt-5.4-nano", inputPer1M: 0.10, outputPer1M: 0.40, currency: "USD", tier: "cheap", useCase: "Cheapest OpenAI fallback", source: "manual", lastUpdated: Date.now(), isActive: true },
-  { provider: "OpenAI", model: "gpt-5.4-mini", inputPer1M: 0.15, outputPer1M: 0.60, currency: "USD", tier: "cheap", useCase: "Mid-tier OpenAI fallback", source: "manual", lastUpdated: Date.now(), isActive: true },
-  { provider: "OpenAI", model: "gpt-5.4", inputPer1M: 2.50, outputPer1M: 10.00, currency: "USD", tier: "mid", useCase: "Premium OpenAI (not default)", source: "manual", lastUpdated: Date.now(), isActive: false },
+  { provider: "OpenAI", model: "gpt-5.4-nano", displayName: "GPT-5.4 Nano", inputPer1M: 0.10, outputPer1M: 0.40, currency: "USD", tier: "cheap", useCase: "Lightweight classification tasks", source: "manual", lastUpdated: Date.now(), isActive: true },
+  { provider: "OpenAI", model: "gpt-5.4-mini", displayName: "GPT-5.4 Mini", inputPer1M: 0.15, outputPer1M: 0.60, currency: "USD", tier: "cheap", useCase: "Fast analysis and extraction", source: "manual", lastUpdated: Date.now(), isActive: true },
+  { provider: "OpenAI", model: "gpt-5.4", displayName: "GPT-5.4", inputPer1M: 2.50, outputPer1M: 10.00, currency: "USD", tier: "mid", useCase: "Deep synthesis and reasoning", source: "manual", lastUpdated: Date.now(), isActive: false },
 
-  // Linkup (per-call pricing, EUR)
-  { provider: "Linkup", model: "search-standard", inputPer1M: -1, outputPer1M: -1, perCallCost: 0.03, perCallUnit: "search", currency: "EUR", tier: "cheap", useCase: "Web search — standard depth (default)", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
-  { provider: "Linkup", model: "search-deep", inputPer1M: -1, outputPer1M: -1, perCallCost: 0.05, perCallUnit: "search", currency: "EUR", tier: "mid", useCase: "Web search — deep depth", source: "provider_docs", lastUpdated: Date.now(), isActive: false },
-  { provider: "Linkup", model: "fetch", inputPer1M: -1, outputPer1M: -1, perCallCost: 0.001, perCallUnit: "request", currency: "EUR", tier: "free", useCase: "URL fetch without JS", source: "provider_docs", lastUpdated: Date.now(), isActive: false },
-  { provider: "Linkup", model: "fetch-js", inputPer1M: -1, outputPer1M: -1, perCallCost: 0.005, perCallUnit: "request", currency: "EUR", tier: "cheap", useCase: "URL fetch with JS rendering", source: "provider_docs", lastUpdated: Date.now(), isActive: false },
+  // Linkup (per-call pricing — displayed in USD equivalent)
+  { provider: "Linkup", model: "search-standard", displayName: "Web Search", inputPer1M: -1, outputPer1M: -1, perCallCost: 0.03, perCallUnit: "search", currency: "USD", tier: "cheap", useCase: "Standard web intelligence search", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
+  { provider: "Linkup", model: "search-deep", displayName: "Deep Search", inputPer1M: -1, outputPer1M: -1, perCallCost: 0.05, perCallUnit: "search", currency: "USD", tier: "mid", useCase: "Deep web intelligence search", source: "provider_docs", lastUpdated: Date.now(), isActive: false },
+  { provider: "Linkup", model: "fetch", displayName: "URL Fetch", inputPer1M: -1, outputPer1M: -1, perCallCost: 0.001, perCallUnit: "request", currency: "USD", tier: "free", useCase: "URL content retrieval", source: "provider_docs", lastUpdated: Date.now(), isActive: false },
+  { provider: "Linkup", model: "fetch-js", displayName: "URL Fetch (JS)", inputPer1M: -1, outputPer1M: -1, perCallCost: 0.005, perCallUnit: "request", currency: "USD", tier: "cheap", useCase: "URL content retrieval with rendering", source: "provider_docs", lastUpdated: Date.now(), isActive: false },
 
   // ElevenLabs (per-character pricing)
-  { provider: "ElevenLabs", model: "eleven_turbo_v2_5", inputPer1M: -1, outputPer1M: -1, perCallCost: 0.30, perCallUnit: "1K characters", currency: "USD", tier: "mid", useCase: "Text-to-speech synthesis (server-side proxy)", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
+  { provider: "ElevenLabs", model: "eleven_turbo_v2_5", displayName: "Voice Synthesis", inputPer1M: -1, outputPer1M: -1, perCallCost: 0.30, perCallUnit: "1K characters", currency: "USD", tier: "mid", useCase: "Text-to-speech voice output", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
 
   // Convex (function calls)
-  { provider: "Convex", model: "backend-functions", inputPer1M: -1, outputPer1M: -1, perCallCost: 0, perCallUnit: "function call", currency: "USD", tier: "free", useCase: "Backend persistence — free tier 25K calls/mo, Pro $25/mo unlimited", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
+  { provider: "Convex", model: "backend-functions", displayName: "Cloud Backend", inputPer1M: -1, outputPer1M: -1, perCallCost: 0, perCallUnit: "function call", currency: "USD", tier: "free", useCase: "Data persistence and sync", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
 
   // Figma (API usage)
-  { provider: "Figma", model: "rest-api", inputPer1M: -1, outputPer1M: -1, perCallCost: 0, perCallUnit: "request", currency: "USD", tier: "free", useCase: "Design governance sync — uses personal access token", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
+  { provider: "Figma", model: "rest-api", displayName: "Design API", inputPer1M: -1, outputPer1M: -1, perCallCost: 0, perCallUnit: "request", currency: "USD", tier: "free", useCase: "Design file sync and governance", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
 
   // Vercel (hosting)
-  { provider: "Vercel", model: "serverless-functions", inputPer1M: -1, outputPer1M: -1, perCallCost: 0, perCallUnit: "invocation", currency: "USD", tier: "free", useCase: "Frontend + API hosting — Hobby free (12 functions, 100GB bandwidth)", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
+  { provider: "Vercel", model: "serverless-functions", displayName: "Hosting", inputPer1M: -1, outputPer1M: -1, perCallCost: 0, perCallUnit: "invocation", currency: "USD", tier: "free", useCase: "Frontend hosting and API serving", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
 ];
 
 // ── OpenRouter live scraper ──────────────────────────────────────────

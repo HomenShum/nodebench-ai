@@ -193,7 +193,8 @@ function MiniDiffPanel({ diff }: { diff: PacketDiffResult }) {
 /* ─── Expanded Summary ────────────────────────────────────────────────────── */
 
 function ExpandedSummary({ packet }: { packet: FounderArtifactPacket }) {
-  const conf = Math.round(packet.canonicalEntity.identityConfidence * 100);
+  const confRaw = Math.round(packet.canonicalEntity.identityConfidence * 100);
+  const conf = confRaw > 0 ? confRaw : null;
   return (
     <div className="mt-2 space-y-2 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 text-xs">
       {/* Operating memo */}
@@ -259,20 +260,22 @@ function ExpandedSummary({ packet }: { packet: FounderArtifactPacket }) {
 
       {/* Key metrics row */}
       <div className="flex flex-wrap gap-3 border-t border-white/[0.06] pt-2">
-        <span className="text-[10px] text-white/30">
-          Confidence:{" "}
-          <span
-            className={
-              conf >= 60
-                ? "font-medium text-emerald-400/70"
-                : conf >= 45
-                  ? "font-medium text-amber-400/70"
-                  : "font-medium text-rose-400/70"
-            }
-          >
-            {conf}%
+        {conf != null && (
+          <span className="text-[10px] text-white/30">
+            Confidence:{" "}
+            <span
+              className={
+                conf >= 60
+                  ? "font-medium text-emerald-400/70"
+                  : conf >= 45
+                    ? "font-medium text-amber-400/70"
+                    : "font-medium text-rose-400/70"
+              }
+            >
+              {conf}%
+            </span>
           </span>
-        </span>
+        )}
         <span className="text-[10px] text-white/30">
           Sources: {packet.provenance.sourceCount}
         </span>
@@ -314,7 +317,8 @@ const TimelineEntry = memo(function TimelineEntry({
   onToggleDiff,
 }: TimelineEntryProps) {
   const badge = TYPE_BADGE[packet.packetType];
-  const conf = Math.round(packet.canonicalEntity.identityConfidence * 100);
+  const confRaw = Math.round(packet.canonicalEntity.identityConfidence * 100);
+  const conf = confRaw > 0 ? confRaw : null;
 
   return (
     <div className="relative flex gap-3">
@@ -365,17 +369,23 @@ const TimelineEntry = memo(function TimelineEntry({
             <p className="text-sm font-medium text-white/80">
               {packet.canonicalEntity.name}
             </p>
-            <span
-              className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold tabular-nums ${
-                conf >= 60
-                  ? "bg-emerald-500/10 text-emerald-400/70"
-                  : conf >= 45
-                    ? "bg-amber-500/10 text-amber-400/70"
-                    : "bg-rose-500/10 text-rose-400/70"
-              }`}
-            >
-              {conf}%
-            </span>
+            {conf != null ? (
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold tabular-nums ${
+                  conf >= 60
+                    ? "bg-emerald-500/10 text-emerald-400/70"
+                    : conf >= 45
+                      ? "bg-amber-500/10 text-amber-400/70"
+                      : "bg-rose-500/10 text-rose-400/70"
+                }`}
+              >
+                {conf}%
+              </span>
+            ) : (
+              <span className="rounded-full bg-white/[0.05] px-1.5 py-0.5 text-[9px] text-white/30">
+                New
+              </span>
+            )}
           </div>
 
           {/* Stats row */}

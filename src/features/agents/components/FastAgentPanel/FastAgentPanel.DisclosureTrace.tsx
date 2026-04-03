@@ -288,7 +288,7 @@ function getEventDetail(event: DisclosureEvent): string | null {
       if (!event.found) {
         return "→ not found, will trigger enrichment";
       }
-      return `→ ${event.qualityTier ?? "unknown"} tier, ${event.ageInDays ?? "?"}d old${event.isStale ? " (STALE)" : ""}`;
+      return `→ ${event.qualityTier ?? "unknown"} tier, ${event.ageInDays ?? "?"}d old${event.isStale ? " (outdated)" : ""}`;
     // Reasoning tool events
     case "reasoning.start":
       return `→ prompt: ${event.promptPreview}`;

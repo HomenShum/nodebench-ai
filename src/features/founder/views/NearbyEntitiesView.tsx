@@ -393,7 +393,7 @@ function NearbyEntitiesView() {
               {company.companyState}
             </span>
             <span className="text-[11px] text-white/60">
-              {confidencePct}% confidence
+              {confidencePct > 0 ? `${confidencePct}% confidence` : "Getting started"}
             </span>
           </div>
           <p className="mt-1.5 text-sm text-white/60">{company.wedge}</p>
@@ -525,7 +525,7 @@ const EntityCard = memo(function EntityCard({
                 }`}
               >
                 <AlertTriangle className="h-2.5 w-2.5" />
-                Stale
+                Outdated
               </span>
             )}
             <span className="rounded-full border border-white/[0.08] bg-white/[0.07] px-2 py-0.5 text-[10px] font-medium text-white/60">

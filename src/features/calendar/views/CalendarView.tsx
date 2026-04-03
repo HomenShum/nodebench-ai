@@ -1229,14 +1229,14 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
             {/* Header */}
             <PageHeroHeader
               icon={<CalendarIcon className="h-5 w-5" />}
-              title={"Calendar Hub"}
+              title={"Agent Schedule"}
               date={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
               presets={
                 <>
-                  <span className="text-xs text-content-secondary mr-2">Presets:</span>
-                  <PresetChip onClick={() => void addMockEvents('sprint')}>Sprint Week</PresetChip>
-                  <PresetChip onClick={() => void addMockEvents('meetings')}>Meetings Day</PresetChip>
-                  <PresetChip onClick={() => void addMockEvents('personal')}>Personal</PresetChip>
+                  <span className="text-xs text-content-secondary mr-2">Views:</span>
+                  <PresetChip onClick={() => void addMockEvents('sprint')}>Research Sprints</PresetChip>
+                  <PresetChip onClick={() => void addMockEvents('meetings')}>Review Sessions</PresetChip>
+                  <PresetChip onClick={() => void addMockEvents('personal')}>Deadlines</PresetChip>
                 </>
               }
             />

@@ -496,6 +496,14 @@ export interface ResultPacket {
   risks?: ResultRisk[];
   /** Comparable entities */
   comparables?: ResultComparable[];
+  /** Why This Team — founder/credibility/trust layer */
+  whyThisTeam?: {
+    founderCredibility: string;
+    trustSignals: string[];
+    visionMagnitude: string;
+    reinventionCapacity: string;
+    hiddenRequirements: string[];
+  } | null;
   /** Scenario branches */
   scenarios?: ResultScenario[];
   /** Recommended next actions */

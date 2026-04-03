@@ -190,7 +190,7 @@ function BriefingSectionInner({
       { label: 'Signals', value: resolveMetricValue(signalCount), hint: 'Analysis' },
       { label: 'Actions', value: resolveMetricValue(actionCount), hint: 'Deep Dive' },
       { label: 'Sources', value: resolveMetricValue(sourceCount), hint: 'coverage' },
-      { label: 'Confidence', value: confidence !== null ? `${confidence}%` : 'N/A', hint: 'accuracy score' },
+      { label: 'Confidence', value: confidence !== null ? `${confidence}%` : 'N/A', hint: 'source reliability' },
     ];
   }, [actI?.totalItems, actII?.signals?.length, actIII?.actions?.length, executiveBrief?.meta?.confidence, sourceSummary?.totalItems]);
 

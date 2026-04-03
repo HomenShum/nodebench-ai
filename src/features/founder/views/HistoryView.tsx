@@ -402,7 +402,7 @@ function HistoryView() {
             No packets generated yet
           </p>
           <p className="mt-1 text-xs text-white/70">
-            Generate your first Artifact Packet from the Dashboard or Intake to
+            Generate your first intelligence report from the Dashboard or Intake to
             start building history.
           </p>
         </div>

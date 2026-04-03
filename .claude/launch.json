@@ -4,8 +4,9 @@
     {
       "name": "dev",
       "runtimeExecutable": "cmd",
-      "runtimeArgs": ["/c", "npx", "vite", "--port", "5191", "--host"],
-      "port": 5191
+      "runtimeArgs": ["/c", "npx", "vite", "--host"],
+      "port": 5191,
+      "autoPort": true
     }
   ]
 }

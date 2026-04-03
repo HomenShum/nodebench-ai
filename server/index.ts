@@ -41,6 +41,7 @@ import { createShareRouter } from "./routes/share.js";
 import { createWatchlistRouter } from "./routes/watchlist.js";
 import { createRetentionBridgeRouter } from "./routes/retentionBridge.js";
 import { createHarnessRouter } from "./routes/harness.js";
+import { createWorkspaceSyncRouter } from "./routes/workspaceSync.js";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────
 
@@ -286,6 +287,8 @@ async function main(): Promise<void> {
   app.use("/api/watchlist", createWatchlistRouter());
   app.use("/retention", createRetentionBridgeRouter());
   app.use("/api/retention", createRetentionBridgeRouter());
+  app.use("/workspace", createWorkspaceSyncRouter());
+  app.use("/api/workspace", createWorkspaceSyncRouter());
 
   // ── Create HTTP server & wire WebSocket upgrade ─────────────────────
 

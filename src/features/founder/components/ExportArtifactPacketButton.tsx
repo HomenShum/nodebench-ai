@@ -50,7 +50,7 @@ function packetToShareableMemo(packet: FounderArtifactPacket): ShareableMemoData
       {
         label: "Bull",
         probability: 25,
-        outcome: packet.nextActions[1]?.label ?? "Turn the current wedge into a cleaner, faster operating narrative.",
+        outcome: packet.nextActions[1]?.label ?? "Turn your core focus into a cleaner, faster operating narrative.",
       },
       {
         label: "Bear",
@@ -103,7 +103,7 @@ export function ExportArtifactPacketButton({ packet, className = "", onShared }:
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${packet.canonicalEntity.name} Artifact Packet`,
+          title: `${packet.canonicalEntity.name} Intelligence Report`,
           text: packet.operatingMemo,
           url,
         });

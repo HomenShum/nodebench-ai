@@ -676,10 +676,10 @@ function ContextIntakeView() {
                 </div>
               )}
 
-              {/* Biggest Contradiction */}
+              {/* Key Risk */}
               <div className="mt-5">
                 <h3 className="text-[10px] font-medium uppercase tracking-[0.15em] text-white/60">
-                  Biggest Contradiction
+                  Key Risk
                 </h3>
                 <p className="mt-1.5 text-[12px] italic text-white/60">
                   {extracted.contradiction}

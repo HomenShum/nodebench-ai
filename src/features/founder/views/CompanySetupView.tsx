@@ -618,7 +618,7 @@ function StepCompanyProfile({
         {/* Wedge */}
         <div className="rounded-xl border border-white/[0.20] bg-white/[0.12] p-4">
           <div className="flex items-center justify-between">
-            <span className={labelClasses}>Wedge / Core Value Prop</span>
+            <span className={labelClasses}>Core Focus</span>
             <button
               type="button"
               onClick={() => setEditingField(editingField === "wedge" ? null : "wedge")}

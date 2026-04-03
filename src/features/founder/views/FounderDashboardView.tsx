@@ -322,7 +322,7 @@ function FounderClarityOverview({ identityConfidence, userActions, packet, liveC
         <h3 className="mt-2 text-base font-bold text-white/90">{c.name}</h3>
         <div className="mt-1.5 flex items-center gap-2">
           <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-medium text-white/60">{stateLabel[c.companyState]}</span>
-          <span className={cn("text-xs font-semibold tabular-nums", barTextColor)}>{pct}%</span>
+          <span className={cn("text-xs font-semibold tabular-nums", barTextColor)}>{pct > 0 ? `${pct}%` : "Getting started"}</span>
         </div>
         <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
           <div className={cn("h-full rounded-full transition-all duration-500", barColor)} style={{ width: `${pct}%` }} />
@@ -386,7 +386,7 @@ function ContradictionBanner({ packet, initiatives }: { packet: FounderArtifactP
       <AlertTriangle className={cn("mt-0.5 h-4 w-4 shrink-0", iconStyles[severity])} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent-primary">Biggest Contradiction</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent-primary">Key Risk</span>
           {affectedCount > 0 && <span className="rounded-full bg-accent-primary/10 px-2 py-0.5 text-[10px] font-medium text-accent-primary">{affectedCount} initiative{affectedCount !== 1 ? "s" : ""} affected</span>}
         </div>
         <p className="mt-1 text-sm font-medium text-accent-primary">{title}</p>
@@ -961,7 +961,7 @@ function FounderDashboardViewInner() {
         <div className="relative rounded-xl border border-accent-primary/30 bg-accent-primary/10 px-4 py-3">
           <button onClick={dismissOnboardingTooltip} aria-label="Dismiss welcome message" className="absolute right-2 top-2 text-white/60 hover:text-white/60"><X className="h-3.5 w-3.5" /></button>
           <p className="text-sm font-medium text-accent-primary">Welcome to your Founder Dashboard</p>
-          <p className="mt-1 text-xs text-white/60">This is your operating clarity pipeline. Start by reviewing what changed, then accept or defer the recommended actions below. Use the mode switch to generate different Artifact Packets.</p>
+          <p className="mt-1 text-xs text-white/60">This is your operating clarity pipeline. Start by reviewing what changed, then accept or defer the recommended actions below. Use the mode switch to generate different intelligence reports.</p>
         </div>
       )}
       {/* Live data status banner */}
@@ -978,7 +978,7 @@ function FounderDashboardViewInner() {
           ? `Live data from ${liveEntity.totalFetched} entities · ${liveEntity.results.filter(r => r.status === "success").reduce((s, r) => s + r.changes.length, 0)} signals fetched`
           : liveEntity.isLoading
             ? "Fetching live signals..."
-            : `Demo data · server offline (${liveEntity.totalErrors} errors)`}
+            : `Running locally · demo mode (${liveEntity.totalErrors} errors)`}
         {liveEntity.isLive && liveEntity.lastRefreshAt && (
           <span className="ml-auto text-[10px] text-white/25">
             {relativeTimeFromISO(liveEntity.lastRefreshAt)}

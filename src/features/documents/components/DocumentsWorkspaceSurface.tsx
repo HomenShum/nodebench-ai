@@ -104,8 +104,8 @@ export default function DocumentsWorkspaceSurface({
 
               <PageHeroHeader
                 icon={<FileText className="w-6 h-6" />}
-                title={"My Documents"}
-                subtitle={"Upload, organize, and search your files"}
+                title={"Agent Artifacts"}
+                subtitle={"Documents, memos, and files produced by your agents and research runs"}
                 date={todayLabel}
                 className="mb-6"
               />

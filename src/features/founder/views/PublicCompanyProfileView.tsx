@@ -288,7 +288,7 @@ function PublicCompanyProfileViewInner() {
           <div className="mt-4 rounded-lg border border-accent-primary/20 bg-accent-primary/[0.04] p-4">
             <div className="flex items-center gap-2">
               <Target className="h-4 w-4 text-accent-primary" />
-              <span className="text-[11px] uppercase tracking-[0.2em] text-accent-primary/60">Wedge</span>
+              <span className="text-[11px] uppercase tracking-[0.2em] text-accent-primary/60">Core Focus</span>
             </div>
             <p className="mt-2 text-sm text-white/60">{company.wedge}</p>
           </div>

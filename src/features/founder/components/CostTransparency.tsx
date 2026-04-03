@@ -64,10 +64,27 @@ interface CostBreakdownStep {
 const COST_BREAKDOWN: CostBreakdownStep[] = [
   { step: "Classify Intent", pctOfTotal: 3, costPerQuery: 0.0005, detail: "LLM identifies query type + extracts entities" },
   { step: "Plan Tool Chain", pctOfTotal: 7, costPerQuery: 0.0012, detail: "LLM decides which tools to call and in what order" },
-  { step: "Execute Tools", pctOfTotal: 60, costPerQuery: 0.0098, detail: "web_search, recon, entity enrichment API calls" },
-  { step: "Synthesize Results", pctOfTotal: 18, costPerQuery: 0.0030, detail: "LLM combines tool outputs into structured packet" },
+  { step: "Execute Tools", pctOfTotal: 60, costPerQuery: 0.0098, detail: "Web search, deep research, entity enrichment" },
+  { step: "Synthesize Results", pctOfTotal: 18, costPerQuery: 0.0030, detail: "LLM combines tool outputs into structured report" },
   { step: "Overhead", pctOfTotal: 12, costPerQuery: 0.0020, detail: "Cost tracking, session management, profiling" },
 ];
+
+// ── Model display names (hide raw API IDs from users) ────────────────
+const MODEL_DISPLAY_NAMES: Record<string, string> = {
+  "claude-haiku-4-5-20251001": "Claude Haiku 4.5",
+  "claude-sonnet-4-6": "Claude Sonnet 4.6",
+  "claude-opus-4-6": "Claude Opus 4.6",
+  "gemini-3.1-flash-lite-preview": "Gemini Flash Lite",
+  "gemini-3.1-flash-preview": "Gemini Flash",
+  "gemini-3.1-pro-preview": "Gemini Pro",
+  "gpt-5.4-nano": "GPT-5.4 Nano",
+  "gpt-5.4-mini": "GPT-5.4 Mini",
+  "gpt-5.4": "GPT-5.4",
+  "gpt-5.4-pro": "GPT-5.4 Pro",
+};
+function displayModelName(raw: string, serverDisplayName?: string): string {
+  return serverDisplayName ?? MODEL_DISPLAY_NAMES[raw] ?? raw.split("/").pop()?.replace(/-preview$/, "") ?? raw;
+}
 
 // ── Component ─────────────────────────────────────────────────────────
 
@@ -259,7 +276,7 @@ function CostTransparency() {
                     <div key={m.model} className={ROW}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="truncate text-xs font-medium text-content">{m.model}</span>
+                          <span className="truncate text-xs font-medium text-content">{displayModelName(m.model, m.displayName)}</span>
                           <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] ${
                             m.tier === "free" ? "bg-emerald-500/20 text-emerald-400" :
                             m.tier === "cheap" ? "bg-blue-500/20 text-blue-400" :
@@ -315,7 +332,7 @@ function CostTransparency() {
             {freeModels.slice(0, 12).map((m) => (
               <div key={m.model} className="flex items-center gap-2 rounded-lg border border-edge/20 bg-white/[0.01] px-2.5 py-1.5">
                 <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-                <span className="truncate text-[11px] text-content">{m.model.split("/").pop()}</span>
+                <span className="truncate text-[11px] text-content">{displayModelName(m.model, m.displayName)}</span>
                 {m.context && <span className="shrink-0 text-[9px] text-content-muted">{Math.round(m.context / 1000)}K</span>}
               </div>
             ))}

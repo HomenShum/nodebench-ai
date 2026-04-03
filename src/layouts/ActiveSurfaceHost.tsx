@@ -66,6 +66,9 @@ const OracleView = lazy(() =>
 const AgentTelemetryDashboard = lazy(() =>
   import("@/features/monitoring/views/AgentTelemetryDashboard").then((mod) => ({ default: mod.AgentTelemetryDashboard })),
 );
+const AgentsHub = lazy(() =>
+  import("@/features/agents/views/AgentsHub").then((mod) => ({ default: mod.AgentsHub })),
+);
 const WorkbenchView = lazy(() =>
   import("@/features/benchmarks/views/WorkbenchView").then((mod) => ({ default: mod.WorkbenchView })),
 );
@@ -417,6 +420,10 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
               onGridModeToggle={() => setIsGridMode((value) => !value)}
             />
           );
+        }
+
+        if (currentView === "agents") {
+          return <AgentsHub />;
         }
 
         if (currentView === "roadmap" || currentView === "timeline") {

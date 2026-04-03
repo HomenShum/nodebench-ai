@@ -98,7 +98,7 @@ function TrajectoryHeader({ scores }: { scores: { date: string; overallScore: nu
     <div className="rounded-xl border border-white/[0.20] bg-white/[0.12] p-5">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-[11px] uppercase tracking-[0.2em] text-white/40">Trajectory Score</h2>
+          <h2 className="text-[11px] uppercase tracking-[0.2em] text-white/40">Progress Score</h2>
           <div className="mt-1 flex items-baseline gap-3">
             <span className="text-3xl font-light tabular-nums text-white/90">
               {(latest.overallScore * 100).toFixed(1)}

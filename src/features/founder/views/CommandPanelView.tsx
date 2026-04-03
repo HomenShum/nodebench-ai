@@ -533,7 +533,7 @@ const OrchestratorBubble = memo(function OrchestratorBubble({
         <div className="mb-1 flex items-center gap-2">
           <Zap className="h-3 w-3 text-blue-400" />
           <span className="text-[10px] font-medium uppercase tracking-wider text-blue-400/70">
-            Orchestrator
+            Agent
           </span>
         </div>
         {msg.type === "task_request" ? (

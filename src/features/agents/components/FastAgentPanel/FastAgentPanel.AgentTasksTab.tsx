@@ -80,7 +80,7 @@ const agentTypeConfig: Record<AgentType, { icon: React.ReactNode; color: string;
   orchestrator: {
     icon: <GitBranch className="w-3 h-3" />,
     color: 'text-purple-600 bg-purple-100',
-    label: 'Orchestrator',
+    label: 'Agent',
   },
   main: {
     icon: <Cpu className="w-3 h-3" />,

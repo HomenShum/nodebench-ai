@@ -427,11 +427,11 @@ export const DocumentsTabContent = memo(function DocumentsTabContent(
                       <FileText className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
                     </div>
                     <p className="text-lg font-semibold text-content mb-1">
-                      Drop a PDF to extract key points
+                      Drop files or run an agent
                     </p>
                     <p className="text-sm text-content-muted max-w-xs">
-                      Drag any file here, or click to browse. Key points are
-                      extracted automatically.
+                      Agent research runs produce memos and reports here automatically.
+                      You can also drag any file to upload and analyze.
                     </p>
                   </button>
 

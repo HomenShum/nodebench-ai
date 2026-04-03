@@ -238,10 +238,22 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   // 2. Convex daily brief → top signal entity from Research Hub
   // 3. Dashboard changes → real market signals (Stripe MCP, GitHub Copilot, etc.)
   // 4. Fallback → Anthropic (strongest data coverage)
-  const autoFiredRef = useRef(false);
+  // Auto-fire flag persisted in sessionStorage — survives component unmount/remount
+  // when user navigates Ask → Dashboard → Ask. Without this, every return to Ask
+  // re-triggers the search because useRef resets on remount.
+  const autoFiredRef = useRef(sessionStorage.getItem("nodebench-auto-fired") === "1");
   useEffect(() => {
     if (autoFiredRef.current || conversation.length > 0) return;
+    // Don't auto-fire when a founder sub-view is active (Dashboard, Coordination, Entities)
+    const urlView = new URLSearchParams(window.location.search).get("view");
+    const urlPath = window.location.pathname;
+    if (urlView?.startsWith("founder") || urlView?.startsWith("coordination") || urlView?.startsWith("nearby") || urlPath.startsWith("/founder")) {
+      autoFiredRef.current = true;
+      sessionStorage.setItem("nodebench-auto-fired", "1");
+      return;
+    }
     autoFiredRef.current = true;
+    sessionStorage.setItem("nodebench-auto-fired", "1");
 
     async function pickEntity(): Promise<{ entity: string; query: string; lens: LensId }> {
       // 1. Return visitor
@@ -431,6 +443,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 relevance: c.relevance ?? "medium",
                 note: c.note ?? "",
               })),
+              whyThisTeam: r.whyThisTeam ?? null,
               packetId: r.packetId ?? data.packetId,
               packetType: r.packetType ?? "founder_packet",
               canonicalEntity: canonicalEntityName,

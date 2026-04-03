@@ -50,20 +50,21 @@ export function useCockpitMode() {
       location.pathname === "/home" ||
       location.pathname === "/landing";
     if (!isHomeLikePath) return;
-    // If URL already has an explicit surface param, respect it — don't override
+    // If URL already has an explicit surface OR view param, respect it — don't override.
+    // This prevents /?surface=memo from being clobbered by saved localStorage mode.
     const urlParams = new URLSearchParams(location.search);
-    if (urlParams.has("surface")) return;
+    if (urlParams.has("surface") || urlParams.has("view")) return;
     const saved = localStorage.getItem(COCKPIT_MODE_KEY) as CockpitMode | null;
     if (saved && saved !== mode) {
       const config = MODES.find((m) => m.id === saved);
       if (config) {
         setCurrentView(config.defaultView);
         const path = buildCockpitPath({ surfaceId: getSurfaceForView(config.defaultView) });
-        navigate(path);
+        navigate(path, { replace: true });
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
 
   const setMode = useCallback(
     (m: CockpitMode) => {

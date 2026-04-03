@@ -97,7 +97,7 @@ const TYPE_CONFIG: Record<ClaimType, {
     icon: Eye,
   },
   stale: {
-    label: "STALE",
+    label: "OUTDATED",
     badgeClass: "bg-zinc-500/20 text-zinc-400 border-zinc-500/30",
     borderClass: "border-l-zinc-500/50",
     icon: Clock,
