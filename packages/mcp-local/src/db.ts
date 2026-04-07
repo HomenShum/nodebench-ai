@@ -1038,6 +1038,96 @@ CREATE TABLE IF NOT EXISTS shared_context_tasks (
 
 CREATE INDEX IF NOT EXISTS idx_shared_context_tasks_assignee ON shared_context_tasks(assignee_peer_id, status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_shared_context_tasks_proposer ON shared_context_tasks(proposer_peer_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS founder_harness_episodes (
+  episode_id                  TEXT PRIMARY KEY,
+  correlation_id              TEXT NOT NULL,
+  session_key                 TEXT,
+  workspace_id                TEXT,
+  company_key                 TEXT,
+  surface                     TEXT NOT NULL,
+  episode_type                TEXT NOT NULL,
+  status                      TEXT NOT NULL DEFAULT 'active',
+  query                       TEXT,
+  lens                        TEXT,
+  entity_name                 TEXT,
+  packet_id                   TEXT,
+  packet_type                 TEXT,
+  context_id                  TEXT,
+  task_id                     TEXT,
+  summary                     TEXT,
+  state_before_json           TEXT,
+  state_after_json            TEXT,
+  state_before_hash           TEXT,
+  state_after_hash            TEXT,
+  spans_json                  TEXT NOT NULL DEFAULT '[]',
+  trace_step_count            INTEGER,
+  tools_invoked_json          TEXT NOT NULL DEFAULT '[]',
+  artifacts_produced_json     TEXT NOT NULL DEFAULT '[]',
+  important_changes_detected  INTEGER,
+  contradictions_detected     INTEGER,
+  metadata_json               TEXT,
+  started_at                  TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at                  TEXT NOT NULL DEFAULT (datetime('now')),
+  completed_at                TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_founder_harness_episodes_session ON founder_harness_episodes(session_key, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_founder_harness_episodes_workspace ON founder_harness_episodes(workspace_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_founder_harness_episodes_status ON founder_harness_episodes(status, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_founder_harness_episodes_correlation ON founder_harness_episodes(correlation_id);
+
+-- ═══════════════════════════════════════════
+-- SUBCONSCIOUS MEMORY BLOCKS
+-- ═══════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS subconscious_blocks (
+  id            TEXT PRIMARY KEY,
+  label         TEXT NOT NULL,
+  value         TEXT NOT NULL DEFAULT '',
+  version       INTEGER NOT NULL DEFAULT 1,
+  confidence    TEXT NOT NULL DEFAULT 'low',
+  source_events TEXT NOT NULL DEFAULT '[]',
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS subconscious_whisper_log (
+  id            TEXT PRIMARY KEY,
+  session_id    TEXT NOT NULL,
+  block_ids     TEXT NOT NULL DEFAULT '[]',
+  whisper_text  TEXT NOT NULL,
+  classification TEXT NOT NULL,
+  suppressed    INTEGER NOT NULL DEFAULT 0,
+  reason        TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_whisper_log_session ON subconscious_whisper_log(session_id, created_at DESC);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS object_nodes_fts USING fts5(
+  label,
+  metadata_json,
+  content='object_nodes',
+  content_rowid='rowid'
+);
+
+CREATE TRIGGER IF NOT EXISTS object_nodes_fts_insert AFTER INSERT ON object_nodes BEGIN
+  INSERT INTO object_nodes_fts(rowid, label, metadata_json)
+  VALUES (new.rowid, new.label, new.metadata_json);
+END;
+
+CREATE TRIGGER IF NOT EXISTS object_nodes_fts_delete AFTER DELETE ON object_nodes BEGIN
+  INSERT INTO object_nodes_fts(object_nodes_fts, rowid, label, metadata_json)
+  VALUES ('delete', old.rowid, old.label, old.metadata_json);
+END;
+
+CREATE TRIGGER IF NOT EXISTS object_nodes_fts_update AFTER UPDATE ON object_nodes BEGIN
+  INSERT INTO object_nodes_fts(object_nodes_fts, rowid, label, metadata_json)
+  VALUES ('delete', old.rowid, old.label, old.metadata_json);
+  INSERT INTO object_nodes_fts(rowid, label, metadata_json)
+  VALUES (new.rowid, new.label, new.metadata_json);
+END;
 `;
 
 export function getDb(): NodebenchDb {

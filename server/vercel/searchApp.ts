@@ -12,6 +12,7 @@ import { initSweepTables, runSweep, computeDelta, getLatestSweep, getPreviousSwe
 import { createSearchRouter } from "../routes/search.js";
 import { createSharedContextRouter } from "../routes/sharedContext.js";
 import { createHarnessRouter } from "../routes/harness.js";
+import { createSubconsciousRouter } from "../routes/subconscious.js";
 import { SyncBridgeServer } from "../syncBridge.js";
 
 if (!process.env.CONVEX_URL && process.env.VITE_CONVEX_URL) {
@@ -46,6 +47,8 @@ app.use("/harness", createHarnessRouter(tools));
 app.use("/api/harness", createHarnessRouter(tools));
 app.use("/shared-context", createSharedContextRouter());
 app.use("/api/shared-context", createSharedContextRouter());
+app.use("/subconscious", createSubconsciousRouter());
+app.use("/api/subconscious", createSubconsciousRouter());
 
 // Sweep API — live signal intelligence
 try { initSweepTables(); } catch { /* tables init */ }

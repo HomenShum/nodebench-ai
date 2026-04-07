@@ -554,7 +554,7 @@ export function routeFounderPacket(args: {
 }): FounderPacketRouterDecision {
   const roleDefault = getFounderRolePacketDefault(args.role);
   const needsMoreEvidence = args.hiddenRiskCount > 0 || args.readinessScore < 55;
-  const requiredEvidence = [];
+  const requiredEvidence = [] as string[];
   if (needsMoreEvidence) requiredEvidence.push("readiness_gaps");
   if (args.vertical.includes("healthcare")) requiredEvidence.push("regulatory_or_research_evidence");
   if (!args.hasBenchmarkProof) requiredEvidence.push("benchmark_proof");

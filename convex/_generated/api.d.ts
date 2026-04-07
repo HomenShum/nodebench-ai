@@ -552,6 +552,7 @@ import type * as domains_founder_ambientIntelligenceOps from "../domains/founder
 import type * as domains_founder_backgroundJobs from "../domains/founder/backgroundJobs.js";
 import type * as domains_founder_causalMemoryJobs from "../domains/founder/causalMemoryJobs.js";
 import type * as domains_founder_causalMemoryOps from "../domains/founder/causalMemoryOps.js";
+import type * as domains_founder_founderHarnessOps from "../domains/founder/founderHarnessOps.js";
 import type * as domains_founder_index from "../domains/founder/index.js";
 import type * as domains_founder_operations from "../domains/founder/operations.js";
 import type * as domains_founder_seed from "../domains/founder/seed.js";
@@ -1026,6 +1027,7 @@ import type * as domains_search_analytics_analytics from "../domains/search/anal
 import type * as domains_search_analytics_componentMetrics from "../domains/search/analytics/componentMetrics.js";
 import type * as domains_search_analytics_intentSignals from "../domains/search/analytics/intentSignals.js";
 import type * as domains_search_analytics_ossStats from "../domains/search/analytics/ossStats.js";
+import type * as domains_search_deepDiligence from "../domains/search/deepDiligence.js";
 import type * as domains_search_fusion_actions from "../domains/search/fusion/actions.js";
 import type * as domains_search_fusion_adapters_arxivAdapter from "../domains/search/fusion/adapters/arxivAdapter.js";
 import type * as domains_search_fusion_adapters_braveAdapter from "../domains/search/fusion/adapters/braveAdapter.js";
@@ -1062,6 +1064,8 @@ import type * as domains_search_ragEnhanced from "../domains/search/ragEnhanced.
 import type * as domains_search_ragEnhancedBatchIndex from "../domains/search/ragEnhancedBatchIndex.js";
 import type * as domains_search_ragQueries from "../domains/search/ragQueries.js";
 import type * as domains_search_searchCache from "../domains/search/searchCache.js";
+import type * as domains_search_searchPipeline from "../domains/search/searchPipeline.js";
+import type * as domains_search_searchPipelineNode from "../domains/search/searchPipelineNode.js";
 import type * as domains_signals_index from "../domains/signals/index.js";
 import type * as domains_signals_signalIngester from "../domains/signals/signalIngester.js";
 import type * as domains_signals_signalProcessor from "../domains/signals/signalProcessor.js";
@@ -1890,6 +1894,7 @@ declare const fullApi: ApiFromModules<{
   "domains/founder/backgroundJobs": typeof domains_founder_backgroundJobs;
   "domains/founder/causalMemoryJobs": typeof domains_founder_causalMemoryJobs;
   "domains/founder/causalMemoryOps": typeof domains_founder_causalMemoryOps;
+  "domains/founder/founderHarnessOps": typeof domains_founder_founderHarnessOps;
   "domains/founder/index": typeof domains_founder_index;
   "domains/founder/operations": typeof domains_founder_operations;
   "domains/founder/seed": typeof domains_founder_seed;
@@ -2364,6 +2369,7 @@ declare const fullApi: ApiFromModules<{
   "domains/search/analytics/componentMetrics": typeof domains_search_analytics_componentMetrics;
   "domains/search/analytics/intentSignals": typeof domains_search_analytics_intentSignals;
   "domains/search/analytics/ossStats": typeof domains_search_analytics_ossStats;
+  "domains/search/deepDiligence": typeof domains_search_deepDiligence;
   "domains/search/fusion/actions": typeof domains_search_fusion_actions;
   "domains/search/fusion/adapters/arxivAdapter": typeof domains_search_fusion_adapters_arxivAdapter;
   "domains/search/fusion/adapters/braveAdapter": typeof domains_search_fusion_adapters_braveAdapter;
@@ -2400,6 +2406,8 @@ declare const fullApi: ApiFromModules<{
   "domains/search/ragEnhancedBatchIndex": typeof domains_search_ragEnhancedBatchIndex;
   "domains/search/ragQueries": typeof domains_search_ragQueries;
   "domains/search/searchCache": typeof domains_search_searchCache;
+  "domains/search/searchPipeline": typeof domains_search_searchPipeline;
+  "domains/search/searchPipelineNode": typeof domains_search_searchPipelineNode;
   "domains/signals/index": typeof domains_signals_index;
   "domains/signals/signalIngester": typeof domains_signals_signalIngester;
   "domains/signals/signalProcessor": typeof domains_signals_signalProcessor;

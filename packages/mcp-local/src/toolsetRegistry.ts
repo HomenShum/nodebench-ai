@@ -328,6 +328,10 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
     const { createDeltaTools } = await import("./tools/deltaTools.js");
     return createDeltaTools();
   },
+  subconscious: async () => {
+    const { subconsciousTools } = await import("./subconscious/index.js");
+    return subconsciousTools;
+  },
 };
 
 // ── All known domain keys (available before any load) ──────────────────────

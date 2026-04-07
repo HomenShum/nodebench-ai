@@ -81,6 +81,23 @@ export interface LiveProgressModel {
   graphSummary: ResultGraphSummary;
 }
 
+type LooseSignal = {
+  name?: string;
+  direction?: "up" | "down" | "neutral";
+  impact?: "high" | "medium" | "low";
+};
+
+type LooseNextAction = {
+  action?: string;
+  impact?: "high" | "medium" | "low";
+};
+
+type LooseResultPacket = ResultPacket & {
+  variables?: ResultPacket["variables"];
+  signals?: LooseSignal[];
+  nextActions?: LooseNextAction[];
+};
+
 function slugify(value: string): string {
   return value
     .toLowerCase()
@@ -137,6 +154,30 @@ function resolvePacketType(packet: ResultPacket, lens: LensId): string {
   if (lens === "legal") return "diligence_packet";
   if (lens === "student") return "study_brief";
   return packet.packetType ?? "founder_packet";
+}
+
+function inferFounderCompanyMode(packet: ResultPacket, lens: LensId): "own_company" | "external_company" | "mixed_comparison" {
+  const routedMode = packet.operatingModel?.packetRouter.companyMode;
+  if (routedMode) return routedMode;
+
+  const queryText = `${packet.query} ${packet.entityName} ${packet.canonicalEntity ?? ""}`.toLowerCase();
+  if (/\b(my company|our company|my startup|our startup|weekly reset|founder reset|pre-delegation|important change)\b/i.test(queryText)) {
+    return "own_company";
+  }
+  if (lens === "founder" && /\b(y combinator|investor readiness|investor packet|pitch deck|fundraising)\b/i.test(queryText)) {
+    return "own_company";
+  }
+  if (/\b(vs\.?|versus|compare|comparison)\b/i.test(queryText)) {
+    return "mixed_comparison";
+  }
+  return "external_company";
+}
+
+function shouldIncludeFounderScaffolding(packet: ResultPacket, lens: LensId): boolean {
+  const companyMode = inferFounderCompanyMode(packet, lens);
+  if (companyMode === "own_company") return true;
+  const packetType = resolvePacketType(packet, lens);
+  return /weekly_reset|pre_delegation|important_change|founder_progression/i.test(packetType);
 }
 
 function inferDomain(href?: string): string | undefined {
@@ -230,6 +271,45 @@ function buildSyntheticSources(packet: ResultPacket): ResultSourceRef[] {
 function normalizeSources(packet: ResultPacket): ResultSourceRef[] {
   const sources = packet.sourceRefs?.length ? packet.sourceRefs : buildSyntheticSources(packet);
   return sources.map((source, index) => normalizeSource(source, index, packet));
+}
+
+function asArray<T>(value: T[] | null | undefined): T[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function normalizeInputPacket(packet: ResultPacket): ResultPacket {
+  const loosePacket = packet as LooseResultPacket;
+  const variables = Array.isArray(loosePacket.variables)
+    ? loosePacket.variables
+    : asArray(loosePacket.signals).map((signal, index) => ({
+        rank: index + 1,
+        name: signal.name ?? `Signal ${index + 1}`,
+        direction: signal.direction ?? "neutral",
+        impact: signal.impact ?? "medium",
+      }));
+  const interventions = Array.isArray(packet.interventions)
+    ? packet.interventions
+    : asArray(loosePacket.nextActions)
+        .map((action) => ({
+          action: action.action ?? "",
+          impact: action.impact ?? "medium",
+        }))
+        .filter((action) => action.action.trim().length > 0);
+
+  return {
+    ...packet,
+    variables,
+    keyMetrics: asArray(packet.keyMetrics),
+    changes: asArray(packet.changes),
+    risks: asArray(packet.risks),
+    comparables: asArray(packet.comparables),
+    scenarios: asArray(packet.scenarios),
+    interventions,
+    nextQuestions: asArray(packet.nextQuestions),
+    sourceRefs: asArray(packet.sourceRefs),
+    claimRefs: asArray(packet.claimRefs),
+    answerBlocks: asArray(packet.answerBlocks),
+  };
 }
 
 function buildClaimRefs(
@@ -748,14 +828,15 @@ export function ensureProofPacket(
   packet: ResultPacket,
   lens: LensId = "founder",
 ): ProofReadyResultPacket {
-  const normalizedEntityName = resolveDisplayEntityName(packet);
-  const normalizedPacketType = resolvePacketType(packet, lens);
+  const normalizedPacket = normalizeInputPacket(packet);
+  const normalizedEntityName = resolveDisplayEntityName(normalizedPacket);
+  const normalizedPacketType = resolvePacketType(normalizedPacket, lens);
   const identityPacket: ResultPacket = {
-    ...packet,
+    ...normalizedPacket,
     entityName: normalizedEntityName,
     canonicalEntity:
-      typeof packet.canonicalEntity === "string" && !isGenericWorkspaceLabel(packet.canonicalEntity)
-        ? packet.canonicalEntity
+      typeof normalizedPacket.canonicalEntity === "string" && !isGenericWorkspaceLabel(normalizedPacket.canonicalEntity)
+        ? normalizedPacket.canonicalEntity
         : normalizedEntityName,
     packetType: normalizedPacketType,
   };
@@ -764,6 +845,7 @@ export function ensureProofPacket(
   const answerBlocks = buildAnswerBlocks(identityPacket, sources, claims);
   const memory = buildExplorationMemory(identityPacket, sources, claims, answerBlocks);
   const proofStatus = identityPacket.proofStatus ?? inferProofStatus(identityPacket, sources, answerBlocks);
+  const founderScaffoldingEnabled = shouldIncludeFounderScaffolding(identityPacket, lens);
   const graphNodes =
     identityPacket.graphNodes ??
     buildGraphNodes(identityPacket, lens, sources, claims, answerBlocks, proofStatus);
@@ -776,7 +858,7 @@ export function ensureProofPacket(
       Boolean(identityPacket.recommendedNextAction || identityPacket.nextQuestions?.length),
     );
   const graphSummary = buildGraphSummary(identityPacket, memory, graphNodes.length, graphEdges.length);
-  const strategicAngles = buildStrategicAngles(identityPacket, sources, lens);
+  const strategicAngles = founderScaffoldingEnabled ? buildStrategicAngles(identityPacket, sources, lens) : [];
   const diligencePack = identityPacket.diligencePack ?? buildFallbackDiligencePack(identityPacket);
   const materialsChecklist = identityPacket.materialsChecklist ?? diligencePack.materials.map((label, index) => ({
     id: `material:${index + 1}`,
@@ -827,23 +909,27 @@ export function ensureProofPacket(
       ],
     },
   ];
-  const shareableArtifacts = identityPacket.shareableArtifacts ?? [
-    {
-      id: "artifact:slack_onepage",
-      type: "slack_onepage",
-      title: "Founder one-page Slack report",
-      visibility,
-      summary: "One-page founder report for Slack with stage, risks, and next moves.",
-      payload: {
-        text: [
-          "*NodeBench Founder Report*",
-          `Stage: ${progressionProfile.currentStageLabel}`,
-          `Readiness: ${progressionProfile.readinessScore}/100`,
-          `Next move: ${progressionProfile.recommendedNextAction}`,
-        ].join("\n"),
-      },
-    },
-  ];
+  const shareableArtifacts = identityPacket.shareableArtifacts ?? (
+    founderScaffoldingEnabled
+      ? [
+          {
+            id: "artifact:slack_onepage",
+            type: "slack_onepage",
+            title: "Founder one-page Slack report",
+            visibility,
+            summary: "One-page founder report for Slack with stage, risks, and next moves.",
+            payload: {
+              text: [
+                "*NodeBench Founder Report*",
+                `Stage: ${progressionProfile.currentStageLabel}`,
+                `Readiness: ${progressionProfile.readinessScore}/100`,
+                `Next move: ${progressionProfile.recommendedNextAction}`,
+              ].join("\n"),
+            },
+          },
+        ]
+      : []
+  );
   const benchmarkEvidence = identityPacket.benchmarkEvidence ?? [];
   const workflowComparison = identityPacket.workflowComparison ?? {
     objective: identityPacket.query,

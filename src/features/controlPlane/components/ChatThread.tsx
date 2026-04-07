@@ -26,7 +26,9 @@ export const ChatThread = memo(function ChatThread({
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (typeof bottomRef.current?.scrollIntoView === "function") {
+      bottomRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   }, [entries.length]);
 
   if (entries.length === 0) return null;

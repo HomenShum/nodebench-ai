@@ -5,6 +5,29 @@
         "type": "command",
         "command": "npx tsx ./packages/mcp-local/src/hooks/postCompaction.ts"
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ./packages/claude-code-plugin/plugins/nodebench/hooks/post-tool-nudge.js",
+            "timeout": 3000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ./packages/claude-code-plugin/plugins/nodebench/hooks/stop-check.js",
+            "timeout": 5000
+          }
+        ]
+      }
     ]
   }
 }

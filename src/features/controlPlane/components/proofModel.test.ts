@@ -158,4 +158,113 @@ describe("proofModel", () => {
     expect(progress.stages.find((stage) => stage.id === "answer")?.status).toBe("completed");
     expect(progress.graphSummary.nodeCount).toBeGreaterThan(0);
   });
+
+  it("does not fabricate founder scaffolding for external banker packets", () => {
+    const enriched = ensureProofPacket(
+      {
+        ...basePacket,
+        query: "Prepare a banker-style competitive briefing on Anthropic.",
+        entityName: "Anthropic",
+        operatingModel: {
+          executionOrder: [],
+          queueTopology: [],
+          sourcePolicies: [],
+          roleDefault: {
+            role: "banker",
+            defaultPacketType: "banking_readiness_packet",
+            defaultArtifactType: "investor_memo",
+            shouldMonitorByDefault: true,
+            shouldDelegateByDefault: false,
+          },
+          packetRouter: {
+            role: "banker",
+            companyMode: "external_company",
+            packetType: "banking_readiness_packet",
+            artifactType: "investor_memo",
+            shouldMonitor: true,
+            shouldExport: true,
+            shouldDelegate: false,
+            needsMoreEvidence: false,
+            requiredEvidence: [],
+            visibility: "workspace",
+            rationale: "External banker packet.",
+          },
+          progressionRubric: {
+            currentStage: "foundation",
+            onTrack: false,
+            mandatorySatisfied: [],
+            mandatoryMissing: [],
+            optionalStrengths: [],
+            rationale: "Not a founder packet.",
+          },
+          benchmarkOracles: [],
+        },
+      },
+      "banker",
+    );
+
+    expect(enriched.operatingModel.packetRouter.companyMode).toBe("external_company");
+    expect(enriched.strategicAngles).toEqual([]);
+    expect(enriched.shareableArtifacts).toEqual([]);
+  });
+
+  it("coerces Convex-native search packets that use signals and nextActions", () => {
+    const liveConvexShape = {
+      query: "Databricks",
+      entityName: "Databricks",
+      answer: "Databricks is showing a real operating signal.",
+      confidence: 90,
+      sourceCount: 5,
+      changes: [
+        {
+          description: "Databricks crossed a $5.4 billion revenue run-rate.",
+        },
+      ],
+      comparables: [
+        {
+          name: "Agent Bricks",
+          relevance: "medium",
+          note: "Derived from cited competitive references.",
+        },
+      ],
+      risks: [],
+      keyMetrics: [
+        { label: "Databricks revenue", value: "$5.4B" },
+      ],
+      nextQuestions: ["What would change the thesis?"],
+      nextActions: [
+        {
+          action: "Identify which cited signals are durable versus narrative-driven.",
+          impact: "high",
+        },
+      ],
+      signals: [
+        {
+          name: "Databricks hit $5.4B in annualized revenue in January 2026.",
+          direction: "up",
+          impact: "high",
+        },
+      ],
+      sourceRefs: [
+        {
+          id: "source:1",
+          label: "Databricks revenue, valuation & funding | Sacra",
+          href: "https://sacra.com/c/databricks/",
+          status: "cited",
+          title: "Databricks revenue, valuation & funding | Sacra",
+          type: "web",
+        },
+      ],
+    } as unknown as ResultPacket;
+
+    const enriched = ensureProofPacket(liveConvexShape, "legal");
+
+    expect(enriched.variables).toHaveLength(1);
+    expect(enriched.variables[0]?.name).toContain("Databricks hit $5.4B");
+    expect(enriched.interventions).toHaveLength(1);
+    expect(enriched.interventions?.[0]?.action).toContain("durable versus narrative-driven");
+    expect(enriched.answerBlocks.length).toBeGreaterThan(0);
+    expect(enriched.claimRefs.length).toBeGreaterThan(0);
+    expect(enriched.sourceRefs[0]?.id).toBe("source:1");
+  });
 });

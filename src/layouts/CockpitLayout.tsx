@@ -56,7 +56,7 @@ import { ActiveSurfaceHost } from "./ActiveSurfaceHost";
 import { WorkspaceRail } from "./WorkspaceRail";
 import { MobileTabBar } from "./MobileTabBar";
 // AgentPresenceRail removed — replaced by floating FAB + slide-over panel
-import { FeedbackWidget } from "@/features/founder/components/FeedbackWidget";
+// FeedbackWidget removed — overlapped FastAgent FAB, localStorage-only
 // useBottomSheet removed — unified panel uses fixed position overlay
 import { useSwipeNavigation } from "@/lib/hooks/useSwipeNavigation";
 import { haptic } from "@/lib/haptics";
@@ -127,17 +127,7 @@ export function CockpitLayout({
   // ── Mobile daily brief redirect ─────────────────────────────────────────────
   // On mobile, default landing is the Founder Dashboard (daily brief) not Ask.
   // Only fires once per session, only on exact "/" path.
-  useEffect(() => {
-    if (
-      window.innerWidth <= 1024 &&
-      location.pathname === "/" &&
-      !location.search && // Don't redirect if explicit params like ?surface=ask
-      !sessionStorage.getItem("nodebench-mobile-redirected")
-    ) {
-      sessionStorage.setItem("nodebench-mobile-redirected", "1");
-      navigate("/founder", { replace: true });
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps — intentionally run once on mount
+  
 
   // ── Surface collapse state ─────────────────────────────────────────────────
   const [leftCollapsed, setLeftCollapsed] = useState(false);
@@ -184,6 +174,8 @@ export function CockpitLayout({
   const swipeRef = useRef<HTMLDivElement>(null);
   const MOBILE_SURFACE_ORDER = useMemo(() => ["/founder", "/", "/founder/entities"], []);
   const isMobile = typeof window !== "undefined" && window.innerWidth <= 1024;
+  const isMobileAskRoot = isMobile && currentSurface === "ask" && location.pathname === "/";
+  const shouldHideStatusStrip = isMobileAskRoot;
   useSwipeNavigation({
     ref: swipeRef,
     surfaces: MOBILE_SURFACE_ORDER,
@@ -617,7 +609,11 @@ export function CockpitLayout({
   // ── Onboarding wizard (first visit) ──────────────────────────────────────
   const [showOnboarding, setShowOnboarding] = useState(() => {
     try {
-      return !localStorage.getItem("nodebench-onboarded");
+      const isMobileAskEntry =
+        typeof window !== "undefined" &&
+        window.innerWidth <= 1024 &&
+        window.location.pathname === "/";
+      return !localStorage.getItem("nodebench-onboarded") && !isMobileAskEntry;
     } catch {
       return false;
     }
@@ -696,12 +692,14 @@ export function CockpitLayout({
       <AgentMetadata currentView={currentView} currentPath={location.pathname} />
 
       {/* ── Top: Status Strip ─────────────────────────────────────────── */}
-      <div style={{ gridArea: "status" }}>
-        <StatusStrip
-          currentView={currentView}
-          entityName={entityName}
-        />
-      </div>
+      {!shouldHideStatusStrip ? (
+        <div style={{ gridArea: "status" }}>
+          <StatusStrip
+            currentView={currentView}
+            entityName={entityName}
+          />
+        </div>
+      ) : null}
 
       {/* ── Left: WorkspaceRail (replaces ModeRail + CleanSidebar) ──── */}
       <div style={{ gridArea: "left" }}>
@@ -765,7 +763,7 @@ export function CockpitLayout({
       </div>
 
         {/* ── Floating Ask NodeBench button (replaces right rail) ── */}
-        {!showFastAgent && (
+        {!showFastAgent && !isMobileAskRoot && (
           <button
             type="button"
             onClick={() => setShowFastAgent(true)}
@@ -782,6 +780,7 @@ export function CockpitLayout({
         {/* ── Bottom: Trace bar — live status (Datadog pattern) ──────── */}
         {/* ── Agent panel — single slide-over for all breakpoints ─── */}
 
+        {!isMobileAskRoot ? (
         <div
           style={{ gridArea: "trace" }}
           className="flex items-center gap-4 border-t border-white/[0.06] bg-white/[0.02] px-4 py-1.5 text-[11px] text-content-muted"
@@ -794,9 +793,10 @@ export function CockpitLayout({
           <span>NodeBench</span>
           <span className="ml-auto tabular-nums">{new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
         </div>
+        ) : null}
 
         {/* ── Command Bar — mobile only ── */}
-        <div className="lg:hidden">
+        <div className={`lg:hidden ${isMobileAskRoot ? "hidden" : ""}`}>
           <CommandBar
             mode={mode}
             currentView={currentView}
@@ -877,8 +877,7 @@ export function CockpitLayout({
 
         {isAuthenticated && <QuickCaptureWidget />}
 
-        {/* Feedback widget — always visible, localStorage-only */}
-        <FeedbackWidget />
+        {/* FeedbackWidget removed — overlapped FastAgent FAB, localStorage-only with no backend reader */}
 
         {showSettingsModal && (
           <ErrorBoundary title="Settings failed to load">

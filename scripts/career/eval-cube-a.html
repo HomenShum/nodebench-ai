@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html><head><title>Response A</title><style>
+.cube {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  perspective: 1000px;
+}
+.face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+  transition: all 0.5s ease-in-out;
+}
+.front { transform: rotateY(0deg); }
+.right { transform: rotateY(90deg); }
+.left { transform: rotateY(-90deg); }
+.top { transform: rotateX(90deg); }
+.bottom { transform: rotateX(-90deg); }
+.scrollable {
+  overflow-y: scroll;
+  height: 100px;
+  padding: 10px;
+  border-radius: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: #ccc #fff;
+}
+.scrollable::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  border-radius: 10px;
+  background-color: #ccc;
+}
+.scrollable::-webkit-scrollbar-thumb {
+  background-color: #fff;
+  border-radius: 10px;
+}
+@media (max-width: 320px) {
+  .cube { width: 150px; height: 150px; }
+}
+</style></head><body>
+<div class="cube">
+  <div class="face front">
+    <div class="scrollable">
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+      <p>Cras ultricies ligula sed magna dictum porta.</p>
+      <p>Donec quis lorem sed magna dictum porta.</p>
+    </div>
+  </div>
+  <div class="face back"><p>Back face</p></div>
+  <div class="face left"><p>Left face</p></div>
+  <div class="face right"><p>Right face</p></div>
+  <div class="face top"><p>Top face</p></div>
+  <div class="face bottom"><p>Bottom face</p></div>
+</div>
+</body></html>

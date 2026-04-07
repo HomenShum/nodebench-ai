@@ -20,7 +20,6 @@ import {
   XCircle,
   Zap,
 } from "lucide-react";
-import { SyncProvenanceBadge } from "./SyncProvenanceBadge";
 
 /* ─── Types ────────────────────────────────────────────────────────────────── */
 
@@ -39,6 +38,7 @@ interface SearchTraceProps {
   latencyMs: number;
   classification: string;
   judgeVerdict?: { verdict: string; score: number; failingCriteria?: string[] };
+  sourceRefs?: Array<{ type?: string; href?: string; status?: string }>;
   /** "dev" shows full trace details, "user" shows simplified citation trail */
   mode?: "dev" | "user";
 }
@@ -133,6 +133,7 @@ export const SearchTrace = memo(function SearchTrace({
   latencyMs,
   classification,
   judgeVerdict,
+  sourceRefs,
   mode = "user",
 }: SearchTraceProps) {
   const [expanded, setExpanded] = useState(mode === "dev");
@@ -155,6 +156,26 @@ export const SearchTrace = memo(function SearchTrace({
       durationMs: steps.reduce((sum, step) => sum + step.durationMs, 0),
     }));
   }, [trace]);
+  const provenanceState = useMemo(() => {
+    const citedSources = (sourceRefs ?? []).filter((source) => source.status !== "discarded");
+    const citedWebSources = citedSources.filter((source) => source.type === "web" && source.href);
+    const citedLocalSources = citedSources.filter((source) => source.type !== "web" || !source.href);
+    if (citedWebSources.length > 0) {
+      return {
+        label: citedLocalSources.length > 0 ? "Mixed evidence" : "Live web evidence",
+        detail: citedLocalSources.length > 0 ? `${citedWebSources.length} web` : `${citedWebSources.length} cited`,
+        tone: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
+      };
+    }
+    if (citedSources.length > 0) {
+      return {
+        label: "Local evidence",
+        detail: `${citedSources.length} retained`,
+        tone: "border-white/[0.08] bg-white/[0.03] text-content-muted",
+      };
+    }
+    return null;
+  }, [sourceRefs]);
 
   return (
     <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
@@ -168,7 +189,15 @@ export const SearchTrace = memo(function SearchTrace({
         <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted flex-1">
           {mode === "dev" ? "Execution Trace" : "How we got this answer"}
         </span>
-        {mode === "user" ? <SyncProvenanceBadge compact /> : null}
+        {mode === "user" && provenanceState ? (
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-medium ${provenanceState.tone}`}
+            title={`${provenanceState.label} · ${provenanceState.detail}`}
+          >
+            <span>{provenanceState.label}</span>
+            <span className="opacity-80">· {provenanceState.detail}</span>
+          </span>
+        ) : null}
         <div className="flex items-center gap-2.5 text-[10px] text-content-muted">
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" />

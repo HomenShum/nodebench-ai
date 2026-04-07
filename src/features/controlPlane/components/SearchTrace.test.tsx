@@ -1,9 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-
-vi.mock("./SyncProvenanceBadge", () => ({
-  SyncProvenanceBadge: () => <span>Sync status</span>,
-}));
+import { describe, expect, it } from "vitest";
 
 import { SearchTrace, type TraceStep } from "./SearchTrace";
 
@@ -22,6 +18,7 @@ describe("SearchTrace", () => {
         trace={trace}
         latencyMs={132}
         classification="founder_packet"
+        sourceRefs={[{ type: "web", href: "https://example.com", status: "cited" }]}
         mode="user"
       />,
     );
@@ -33,6 +30,6 @@ describe("SearchTrace", () => {
     expect(screen.getByText("We explored evidence")).toBeInTheDocument();
     expect(screen.getByText("We checked the work")).toBeInTheDocument();
     expect(screen.getByText("We assembled the answer")).toBeInTheDocument();
-    expect(screen.getByText("Sync status")).toBeInTheDocument();
+    expect(screen.getByText("Live web evidence")).toBeInTheDocument();
   });
 });

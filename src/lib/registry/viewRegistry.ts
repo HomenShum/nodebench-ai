@@ -49,7 +49,12 @@ export type MainView =
   | "founder-export"
   | "founder-changes"
   | "founder-session-delta"
-  | "coordination-hub";
+  | "coordination-hub"
+  | "founder-workspace-home"
+  | "founder-packets-home"
+  | "founder-history-home"
+  | "founder-connect-home"
+  | "library-home";
 
 export type ResearchTab = "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
 
@@ -69,14 +74,20 @@ export type RouteGroup = "core" | "nested" | "internal" | "legacy";
 
 export type CockpitSurfaceId =
   | "ask"          // Default: simplified landing + chat input
-  | "memo"         // Decision workbench (DecisionMemoView)
-  | "research"     // Research hub (ResearchHub)
-  | "investigate"  // Adversarial analysis (InvestigationView)
-  | "compare"      // Postmortem / prediction vs reality
-  | "editor"       // Documents + spreadsheets workspace
-  | "graph"        // Entity profile + trust graph
-  | "trace"        // Action receipts + execution trace
-  | "telemetry";   // Stacked ops: benchmarks + health + spend + quality
+  | "memo"         // Decision workbench (DecisionMemoView) — internal
+  | "research"     // Research hub (ResearchHub) — internal
+  | "investigate"  // Adversarial analysis (InvestigationView) — internal
+  | "compare"      // Postmortem / prediction vs reality — internal
+  | "editor"       // Documents + spreadsheets workspace — internal
+  | "graph"        // Entity profile + trust graph — internal
+  | "trace"        // Action receipts + execution trace — internal
+  | "telemetry"    // Stacked ops: benchmarks + health + spend + quality — internal
+  // ── Canonical founder surfaces (public top-level nav) ──
+  | "workspace"    // Founder workspace — company truth, contradictions, next moves
+  | "packets"      // Packet center — active packet, lineage, exports, delegation
+  | "history"      // Founder history — important changes, state diffs, prior packets
+  | "connect"      // Connect — MCP init, watchlist setup, agent connections
+  | "library";     // Library — merged reports + changes + documents
 
 // ─── Registry entry shape ────────────────────────────────────────────────────
 
@@ -229,7 +240,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "control-plane",
-    surfaceId: "ask",
+    surfaceId: "memo",
     commandPaletteVisible: true,
   },
 
@@ -246,6 +257,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     parentId: "control-plane",
     surfaceId: "research",
     legacyRedirectTo: "/?surface=research",
+    commandPaletteVisible: true,
   },
   {
     id: "entity",
@@ -270,6 +282,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: true,
     surfaceId: "investigate",
     legacyRedirectTo: "/?surface=investigate",
+    commandPaletteVisible: true,
   },
 
   // ── Workspace & Build ──────────────────────────────────────────────────────
@@ -282,7 +295,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     component: lazyNamed(() => import("@/features/documents/components/DocumentsHomeHub"), "DocumentsHomeHub"),
     group: "core",
     navVisible: true,
-    surfaceId: "editor",
+    surfaceId: "memo",
     legacyRedirectTo: "/?surface=editor",
   },
 
@@ -317,6 +330,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     parentId: "control-plane",
     surfaceId: "memo",
     legacyRedirectTo: "/?surface=memo",
+    commandPaletteVisible: true,
   },
   {
     id: "decision-snapshot",
@@ -401,7 +415,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "control-plane",
-    surfaceId: "ask",
+    surfaceId: "memo",
     commandPaletteVisible: true,
   },
   {
@@ -413,7 +427,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "control-plane",
-    surfaceId: "ask",
+    surfaceId: "memo",
     commandPaletteVisible: true,
   },
 
@@ -426,10 +440,23 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "control-plane",
-    surfaceId: "ask",
+    surfaceId: "memo",
     commandPaletteVisible: true,
   },
 
+
+  {
+    id: "about",
+    title: "About NodeBench AI",
+    subtitle: "Entity intelligence platform — founder, mission, and product",
+    path: "/about",
+    component: lazyNamed(() => import("@/features/controlPlane/views/AboutPage"), "AboutPage"),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
 
   // ── Founder Platform ──────────────────────────────────────────────────────
   {
@@ -441,7 +468,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     component: lazyView(() => import("@/features/founder/views/FounderDashboardTabs")),
     group: "core",
     navVisible: true,
-    surfaceId: "ask",
+    surfaceId: "memo",
     commandPaletteVisible: true,
   },
   {
@@ -453,7 +480,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: true,
     parentId: "founder-dashboard",
-    surfaceId: "ask",
+    surfaceId: "memo",
     commandPaletteVisible: true,
   },
   {
@@ -466,7 +493,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: true,
     parentId: "founder-dashboard",
-    surfaceId: "ask",
+    surfaceId: "memo",
     commandPaletteVisible: true,
   },
   {
@@ -478,7 +505,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: true,
     parentId: "founder-dashboard",
-    surfaceId: "ask",
+    surfaceId: "memo",
     commandPaletteVisible: true,
   },
   {
@@ -490,7 +517,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: true,
     parentId: "founder-dashboard",
-    surfaceId: "ask",
+    surfaceId: "memo",
     commandPaletteVisible: true,
   },
   {
@@ -502,7 +529,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: true,
     parentId: "founder-dashboard",
-    surfaceId: "ask",
+    surfaceId: "editor",
     commandPaletteVisible: true,
   },
   {
@@ -514,7 +541,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: true,
     parentId: "founder-dashboard",
-    surfaceId: "ask",
+    surfaceId: "memo",
     commandPaletteVisible: true,
   },
 
@@ -528,7 +555,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: true,
     parentId: "founder-dashboard",
-    surfaceId: "ask",
+    surfaceId: "research",
     commandPaletteVisible: false,
   },
   {
@@ -540,7 +567,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "company-search",
-    surfaceId: "ask",
+    surfaceId: "editor",
     commandPaletteVisible: false,
   },
   {
@@ -552,7 +579,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: true,
     parentId: "founder-dashboard",
-    surfaceId: "ask",
+    surfaceId: "research",
     commandPaletteVisible: true,
   },
   {
@@ -564,7 +591,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: true,
     parentId: "founder-dashboard",
-    surfaceId: "ask",
+    surfaceId: "editor",
     commandPaletteVisible: true,
   },
   // ── Phase 11 — Ambient Intelligence ────────────────────────────────
@@ -577,7 +604,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: true,
     parentId: "founder-dashboard",
-    surfaceId: "ask",
+    surfaceId: "editor",
     commandPaletteVisible: true,
   },
   // ── Phase 14 — Shared Context Coordination ───────────────────────
@@ -590,8 +617,73 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: true,
     parentId: "founder-dashboard",
-    surfaceId: "ask",
+    surfaceId: "connect",
     commandPaletteVisible: true,
+  },
+
+  // ── Canonical Founder Surfaces (public top-level) ───────────────────
+  {
+    id: "founder-workspace-home",
+    title: "Workspace",
+    subtitle: "Company truth, contradictions, next moves, and active founder packet",
+    path: "/workspace-home",
+    aliases: ["/founder/workspace"],
+    component: null, // Custom rendering in ActiveSurfaceHost
+    group: "core",
+    navVisible: false,
+    surfaceId: "workspace",
+    legacyRedirectTo: "/?surface=workspace",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "founder-packets-home",
+    title: "Packets",
+    subtitle: "Active packet, lineage, exports, delegation packets, and reuse",
+    path: "/packets-home",
+    aliases: ["/founder/packets"],
+    component: null, // Custom rendering in ActiveSurfaceHost
+    group: "core",
+    navVisible: false,
+    surfaceId: "packets",
+    legacyRedirectTo: "/?surface=packets",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "founder-history-home",
+    title: "History",
+    subtitle: "Important changes, before/after state diffs, prior packets, continuity",
+    path: "/history-home",
+    aliases: ["/founder/history-home"],
+    component: null, // Custom rendering in ActiveSurfaceHost
+    group: "core",
+    navVisible: false,
+    surfaceId: "history",
+    legacyRedirectTo: "/?surface=history",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "founder-connect-home",
+    title: "Connect",
+    subtitle: "MCP init, workspace sync, watchlist setup, agent and runtime connections",
+    path: "/connect-home",
+    aliases: ["/founder/connect"],
+    component: null, // Custom rendering in ActiveSurfaceHost
+    group: "core",
+    navVisible: false,
+    surfaceId: "connect",
+    legacyRedirectTo: "/?surface=connect",
+  },
+
+  // ── Library (merged Reports + Changes + Documents) ─────────────────
+  {
+    id: "library-home",
+    title: "Library",
+    subtitle: "Reports, changes, and documents from every search and workflow",
+    path: "/library",
+    component: null, // Custom rendering in ActiveSurfaceHost
+    group: "core",
+    navVisible: true,
+    surfaceId: "library",
   },
 ];
 
@@ -627,6 +719,12 @@ export const SURFACE_DEFAULT_VIEW: Record<CockpitSurfaceId, MainView> = {
   graph: "entity",
   trace: "receipts",
   telemetry: "oracle",
+  // Canonical founder surfaces
+  workspace: "founder-workspace-home",
+  packets: "founder-packets-home",
+  history: "founder-history-home",
+  connect: "founder-connect-home",
+  library: "library-home",
 };
 
 export const SURFACE_TITLES: Record<CockpitSurfaceId, string> = {
@@ -635,10 +733,16 @@ export const SURFACE_TITLES: Record<CockpitSurfaceId, string> = {
   research: "Research Hub",
   investigate: "Investigation",
   compare: "Forecast Review",
-  editor: "Workspace",
+  editor: "Documents",
   graph: "Entity Graph",
   trace: "Audit Trail",
   telemetry: "System",
+  // Canonical founder surfaces
+  workspace: "Workspace",
+  packets: "Packets",
+  history: "History",
+  connect: "Connect",
+  library: "Library",
 };
 
 export function getSurfaceForView(viewId: MainView): CockpitSurfaceId {

@@ -1364,3 +1364,57 @@ export const sharedContextMessages = defineTable({
   .index("by_to", ["toPeerId", "acknowledged"])
   .index("by_from", ["fromPeerId", "createdAt"])
   .index("by_tenant", ["tenantId", "createdAt"]);
+
+// ---------------------------------------------------------------------------
+// 39. Founder Harness Episodes — public founder-intelligence interaction log
+// ---------------------------------------------------------------------------
+
+export const founderHarnessEpisodes = defineTable({
+  episodeId: v.string(),
+  correlationId: v.string(),
+  sessionKey: v.optional(v.string()),
+  workspaceId: v.optional(v.string()),
+  companyKey: v.optional(v.string()),
+  surface: v.union(
+    v.literal("web"),
+    v.literal("api"),
+    v.literal("browser"),
+    v.literal("claude_code"),
+    v.literal("openclaw"),
+    v.literal("local_runtime"),
+  ),
+  episodeType: v.string(),
+  status: v.union(
+    v.literal("active"),
+    v.literal("completed"),
+    v.literal("error"),
+    v.literal("aborted"),
+  ),
+  query: v.optional(v.string()),
+  lens: v.optional(v.string()),
+  entityName: v.optional(v.string()),
+  packetId: v.optional(v.string()),
+  packetType: v.optional(v.string()),
+  contextId: v.optional(v.string()),
+  taskId: v.optional(v.string()),
+  summary: v.optional(v.string()),
+  stateBefore: v.optional(v.any()),
+  stateAfter: v.optional(v.any()),
+  stateBeforeHash: v.optional(v.string()),
+  stateAfterHash: v.optional(v.string()),
+  spans: v.array(v.any()),
+  traceStepCount: v.optional(v.number()),
+  toolsInvoked: v.array(v.string()),
+  artifactsProduced: v.array(v.string()),
+  importantChangesDetected: v.optional(v.number()),
+  contradictionsDetected: v.optional(v.number()),
+  metadata: v.optional(v.any()),
+  startedAt: v.number(),
+  updatedAt: v.number(),
+  completedAt: v.optional(v.number()),
+})
+  .index("by_episodeId", ["episodeId"])
+  .index("by_session", ["sessionKey", "startedAt"])
+  .index("by_workspace_started", ["workspaceId", "startedAt"])
+  .index("by_correlation", ["correlationId"])
+  .index("by_status_started", ["status", "startedAt"]);

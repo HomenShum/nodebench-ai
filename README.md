@@ -1,197 +1,162 @@
 # NodeBench AI
 
-The local-first operating-memory and entity-context layer for agent-native businesses.
+Entity intelligence for any company, market, or question.
 
-**Live:** [nodebenchai.com](https://www.nodebenchai.com) · **MCP:** `npx nodebench-mcp` · **Docs:** [/developers](https://www.nodebenchai.com/developers)
-
----
-
-## Evolution
-
-```
-PHASE 0 ─── Genesis
-"Can we build operating intelligence for founders?"
-    │
-    ├── Collaborative editor + early AI agents (Convex + Vite)
-    ├── LLM-as-a-judge validation (50% → 100% pass rate)
-    └── VDR-pattern dossiers, SEC disambiguation, news feeds
-    ↓
-PHASE 1 ─── Search Intelligence
-"What if every company had a structured intelligence packet?"
-    │
-    ├── Multi-source search fusion (Linkup + Gemini + web)
-    ├── 6 role lenses: Founder, Investor, Banker, CEO, Legal, Student
-    ├── Entity extraction with Gemini Structured Output
-    └── 4-layer grounding pipeline (claim verification → citation chain)
-    ↓
-PHASE 2 ─── Agent Harness
-"Search alone isn't enough — agents need to orchestrate tool chains."
-    │
-    ├── LLM-planned execution: plan → parallel dispatch → synthesize
-    ├── Multi-provider failover: Gemini → OpenAI → Anthropic
-    ├── Monte Carlo 3-case financial simulation (bull/base/bear)
-    ├── Context budgeting (DeerFlow pattern: per-tool char budget)
-    └── Kilo Code-style auto model routing by task complexity
-    ↓
-PHASE 3 ─── MCP Distribution
-"Meet users where they are — inside Claude Code, Cursor, Windsurf."
-    │
-    ├── 350+ MCP tools across 50 domains
-    ├── Progressive discovery: starter (19 tools) → load_toolset → full (350)
-    ├── Lazy-loading toolset registry (62K lines, only parse on demand)
-    ├── CLI subcommands: discover, setup, workflow, quickref, call, demo
-    └── WebSocket MCP Gateway with API key auth + rate limiting
-    ↓
-PHASE 4 ─── Founder Platform
-"Founders don't just research — they need operating clarity."
-    │
-    ├── 5-surface cockpit: Ask, Decisions, Research, Docs, System
-    ├── Decision Workbench with HCSN timing hierarchy
-    ├── Founder Dashboard: 9 tabs, artifact packets, weekly reset
-    ├── Research Hub with live daily brief + signal tracking
-    └── Entity relationship graph + competitive landscape
-    ↓
-PHASE 5 ─── Credibility & Trust Layer
-"Good companies are judged on people, trust, and hidden criteria."
-    │
-    ├── "Why This Team" — parallel Gemini credibility assessment
-    │     Founder credibility · Trust signals · Vision magnitude
-    │     Reinvention capacity · Hidden qualification requirements
-    ├── Local context injection (CLAUDE.md + memory + git history)
-    ├── Post-extraction entity verification (proper noun + phrase check)
-    └── Confidence formula: 20-95 range based on web source quality
-    ↓
-PHASE 6 ─── Agent Workspace
-"Agents need persistent memory — skills, rules, tasks, research."
-    │
-    ├── 6 MCP workspace tools: write, read, list, mkdir, research, tasks
-    ├── Implementation packet system (draft → approved → executing → completed)
-    ├── WorkspaceExplorer UI: Agents → Workspace → Documents → Schedule → Roadmap
-    ├── Local-first storage (~/.nodebench/workspace/) with platform sync
-    └── All views agent-aware: Agent Artifacts, Agent Schedule, Agent Roadmap
-    ↓
-PHASE 7 ─── Intelligence → Execution Loop
-"NodeBench decides WHAT to build. Claude Code executes."
-    │
-    ├── Implementation packets: objective, scope, constraints, validation
-    ├── Claude Code bridge: structured prompt → Messages API → parsed result
-    ├── Execution API: POST /api/execute → background dispatch → status polling
-    ├── Validation layer: diff check, test check, constraint check, cost tracking
-    └── PWA auto-reload on deploy (controllerchange listener)
-    ↓
-PHASE 8 ─── What's Next
-    │
-    ├── KAIROS-style tick loop: always-on background monitoring
-    ├── MCP proxy integration layer (zero-code-change interception)
-    ├── Trajectory replay: save paths, replay with checkpoints, fallback on drift
-    ├── Workflow compression: learn shortest cheapest valid path
-    └── Team/enterprise: shared context, approval queues, cost governance
-```
+**Live:** [nodebenchai.com](https://www.nodebenchai.com) · **npm:** `npx nodebench-mcp` · **GitHub:** [HomenShum/nodebench-ai](https://github.com/HomenShum/nodebench-ai)
 
 ---
+
+## What It Does
+
+Search any company. Get a decision-ready intelligence packet with people, timeline, financials, competitive landscape, product intelligence, and risk flags — shaped for your role (founder, investor, banker, CEO, legal, student).
+
+- **Deep diligence**: 6 parallel research branches, each chaining up to 3 levels deep
+- **Gap remediation**: Every risk comes with actionable steps, effort estimates, and expected outcomes
+- **SEO audit**: Automatic discoverability scoring with missing-presence detection
+- **Self-search**: Search your own company — NodeBench injects your local context for honest self-assessment
 
 ## Quick Start
 
+### Option 1: Use the Web App
+
+Go to [nodebenchai.com](https://www.nodebenchai.com) and search.
+
+### Option 2: Connect via MCP (Claude Code / Cursor / Windsurf)
+
 ```bash
-# Clone and install
+# Claude Code (one command)
+claude mcp add nodebench -- npx -y nodebench-mcp --preset founder
+
+# Cursor
+npx nodebench-mcp --preset cursor
+
+# Any MCP client
+npx nodebench-mcp --preset starter
+```
+
+That's it. NodeBench starts with 15 tools and discovers more as you need them.
+
+### Option 2b: Claude Code Plugin (slash commands + Codex delegation)
+
+```bash
+/plugin marketplace add HomenShum/nodebench-ai
+/plugin install nodebench@nodebench
+/reload-plugins
+/nodebench:setup
+```
+
+Commands: `/nodebench:search`, `/nodebench:diligence`, `/nodebench:remediate`, `/nodebench:packet`
+
+With [Codex plugin](https://github.com/openai/codex-plugin-cc) installed, `/nodebench:remediate --delegate` sends gap fixes to Codex for background implementation.
+
+### Option 3: Run Everything Locally
+
+```bash
 git clone https://github.com/HomenShum/nodebench-ai.git
-cd nodebench-ai && npm install
+cd nodebench-ai
+npm install
+cp .env.example .env.local  # Add your API keys
 
-# Set up environment
-cp .env.example .env.local
-# Add GEMINI_API_KEY (required for search)
+# Start the app
+npm run dev                  # Frontend (Vite, port 5191)
+npx convex dev               # Backend (Convex)
 
-# Run
-npm run dev          # Frontend (Vite)
-npx nodebench-mcp   # MCP server (standalone)
+# Or just the MCP server
+cd packages/mcp-local && npx tsx src/index.ts
 ```
 
-### MCP Install (Claude Code / Cursor / Windsurf)
+## Claude Code Setup Guide
 
-```bash
-claude mcp add nodebench -- npx -y nodebench-mcp@latest
+After running `claude mcp add nodebench -- npx -y nodebench-mcp --preset founder`, Claude Code can guide itself. Here's what to tell it:
+
+```
+I have NodeBench MCP connected. Help me:
+
+1. Run `discover_tools` to see what's available
+2. Search my company: use `web_search` + `enrich_entity` for "[Your Company]"
+3. Get my weekly reset: use `founder_local_weekly_reset`
+4. Analyze a competitor: use `run_recon` for "[Competitor Name]"
 ```
 
----
+### Presets
+
+| Preset | Tools | Best for |
+|--------|-------|----------|
+| `starter` | 15 | First-time users, any IDE |
+| `founder` | ~40 | Founders — weekly reset, delegation, company truth |
+| `banker` | ~40 | Bankers — diligence, credit memo, risk analysis |
+| `cursor` | 28 | Cursor IDE (fits tool cap) |
+| `full` | 350+ | Power users — everything |
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                  NODEBENCH AI APP                       │
-│  Ask · Decisions · Research · Docs · Dashboard          │
-│  Search → Intelligence Packet → Action                  │
-└────────────────────────┬────────────────────────────────┘
-                         │
-┌────────────────────────┴────────────────────────────────┐
-│              AGENT HARNESS + SEARCH ROUTE               │
-│  LLM classification → Plan → Parallel execution →      │
-│  Synthesis → Why This Team → Monte Carlo → Validation   │
-└────────────────────────┬────────────────────────────────┘
-                         │
-┌────────────────────────┴────────────────────────────────┐
-│                  MCP TOOL LAYER                         │
-│  350 tools · 50 domains · Progressive discovery         │
-│  web_search · linkup · enrich_entity · simulate · etc.  │
-└────────────────────────┬────────────────────────────────┘
-                         │
-┌────────────────────────┴────────────────────────────────┐
-│              WORKSPACE + EXECUTION                      │
-│  Skills · Rules · Tasks · Research · Implementation     │
-│  Claude Code bridge · Packet lifecycle · Validation     │
-└────────────────────────┬────────────────────────────────┘
-                         │
-┌────────────────────────┴────────────────────────────────┐
-│              PERSISTENCE                                │
-│  Local: ~/.nodebench/ (SQLite + workspace files)        │
-│  Cloud: Convex (documents, files, missions, agents)     │
-│  Sync: local-first, Convex when available               │
-└─────────────────────────────────────────────────────────┘
+nodebenchai.com (React + Vite + Tailwind)
+    ↓
+Convex Cloud (realtime DB + 10-min actions + durable workflows)
+    ↓
+Deep Diligence Pipeline:
+  Entity Resolution → 6 Parallel Branches → Chained Depth (3 levels)
+    ├── People & Leadership
+    ├── Company History & Timeline
+    ├── Financials & Metrics
+    ├── Market & Competitive
+    ├── Products & Technology
+    └── Risks & Diligence Flags
+    ↓
+Gap Remediation → SEO Audit → Actionable Next Steps
+    ↓
+Result Packet (realtime via Convex subscription)
 ```
 
----
+### Key Tech
 
-## Key Surfaces
+- **Frontend**: React, Vite, TypeScript, Tailwind CSS
+- **Backend**: Convex (realtime database, serverless functions, durable workflows)
+- **Search**: Linkup API + Gemini 3.1 extraction + 4-layer grounding pipeline
+- **MCP Server**: Node.js, TypeScript, better-sqlite3, 350+ tools across 57 domains
+- **Design**: Glass cards, terracotta `#d97757`, Manrope + JetBrains Mono
 
-| Surface | URL | What |
-|---------|-----|------|
-| **Ask** | `/?surface=ask` | Search any company, get structured intelligence with credibility layer |
-| **Decisions** | `/?surface=memo` | Decision Workbench — map variables, compare branches, surface next move |
-| **Research** | `/?surface=research` | Live daily brief, signal tracking, forecast context |
-| **Docs** | `/?surface=editor` | Agent Artifacts, Workspace, Schedule, Roadmap |
-| **Dashboard** | `/?surface=ask&view=founder-dashboard` | 9-tab founder operating cockpit |
+## API Keys
 
----
+Set these in `.env.local` (local dev) or Convex environment (production):
 
-## Design DNA
+| Key | Required | Purpose |
+|-----|----------|---------|
+| `GEMINI_API_KEY` | Yes | Gemini 3.1 for classification, extraction, synthesis |
+| `LINKUP_API_KEY` | Recommended | Deep web search with sourced answers |
+| `VITE_CONVEX_URL` | Yes (app) | Convex deployment URL |
 
-- Glass cards: `border-white/[0.06] bg-white/[0.02]`
-- Warm terracotta accent: `#d97757`
-- Typography: Manrope (UI) + JetBrains Mono (data)
-- Background: `--bg-primary: #151413`
-- Section headers: `text-[11px] uppercase tracking-[0.2em]`
+```bash
+# Set Convex env vars
+npx convex env set GEMINI_API_KEY "your-key"
+npx convex env set LINKUP_API_KEY "your-key"
+```
 
----
+## Project Structure
 
-## Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 19 + Vite + Tailwind CSS + Recharts |
-| Backend | Convex (real-time DB + serverless functions) |
-| Server | Express + WebSocket MCP Gateway |
-| Search | Gemini 3.1 Flash + Linkup + web_search |
-| Models | Gemini (primary) → OpenAI GPT-5.4 (fallback) → Anthropic (bridge) |
-| MCP | 350 tools, lazy-loaded, progressive discovery |
-| Storage | SQLite (local) + Convex (cloud) + filesystem workspace |
-| Deploy | Vercel (frontend + serverless) + PWA |
-
----
+```
+nodebench-ai/
+├── src/                          # React frontend
+│   ├── features/                 # Feature modules (controlPlane, founder, monitoring)
+│   ├── hooks/useConvexSearch.ts  # Convex search hook (realtime polling)
+│   └── layouts/                  # App shell, surface routing
+├── convex/                       # Convex backend
+│   ├── domains/search/           # Deep diligence pipeline
+│   │   ├── searchPipeline.ts     # Mutations + queries (start, get, cache)
+│   │   ├── searchPipelineNode.ts # Quick search action
+│   │   └── deepDiligence.ts      # 6-branch deep diligence + remediation
+│   └── schema.ts                 # Database schema (50+ tables)
+├── packages/mcp-local/           # MCP server (npm: nodebench-mcp)
+│   ├── src/tools/                # 350+ tool implementations
+│   ├── src/subconscious/         # Memory blocks, graph engine, whisper policy
+│   └── src/toolsetRegistry.ts    # Lazy-loading tool domains
+├── server/                       # Express server (local dev + Vercel)
+│   ├── routes/search.ts          # SSE search (Vercel fallback)
+│   └── agentHarness.ts           # Agent orchestration
+└── docs/architecture/            # Specs and analysis
+```
 
 ## License
 
 MIT
-
----
-
-Built by [Homen Shum](https://github.com/HomenShum) · Banking + Data Engineering + Agentic AI

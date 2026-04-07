@@ -1,0 +1,38 @@
+{
+  "$schema": "https://docs.anthropic.com/schemas/claude-code-settings.json",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/packages/claude-code-plugin/plugins/nodebench/hooks/session-start.js\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/packages/claude-code-plugin/plugins/nodebench/hooks/post-tool-nudge.js\"",
+            "timeout": 3000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/packages/claude-code-plugin/plugins/nodebench/hooks/stop-check.js\"",
+            "timeout": 5000
+          }
+        ]
+      }
+    ]
+  }
+}

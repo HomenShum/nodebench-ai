@@ -1,0 +1,582 @@
+{
+  "version": "1.0.0",
+  "description": "NodeBench Storyboard Bible v1 — 10 boards x 6 frames x 5 annotations. Machine-readable acceptance contract for founder-core UI verification.",
+  "generatedAt": "2026-04-07T00:00:00Z",
+  "boards": [
+    {
+      "id": "landing-first-search",
+      "title": "Landing / First Search",
+      "surface": "ask",
+      "episodeType": null,
+      "frames": [
+        {
+          "stage": "establishing",
+          "uiState": "Empty Ask surface with input bar, quick action chips, voice CTA, and 'Run Live Demo' button visible above the fold",
+          "userEmotion": "Curious but skeptical — what does this do?",
+          "keyCopy": "What are you working on?",
+          "requiredData": "Quick action chips (weekly reset, investigate company, pre-delegation), MCP install command",
+          "transitionTrigger": "User types a query or clicks a quick action chip"
+        },
+        {
+          "stage": "tension",
+          "uiState": "Search input has text, loading skeleton appears in result area, trace bar shows 'classify_query' step",
+          "userEmotion": "Anticipation — will this actually know something useful?",
+          "keyCopy": "Searching...",
+          "requiredData": "Query text, initial trace step",
+          "transitionTrigger": "First search results begin streaming"
+        },
+        {
+          "stage": "truth_reveal",
+          "uiState": "Result workspace renders with entity card, signals, risks, changes, role lens applied, sources bar shows web URLs",
+          "userEmotion": "Surprise — this is more structured than expected",
+          "keyCopy": "Entity name + role lens label + signal count",
+          "requiredData": "Enriched entity data, web search snippets, structured signals, grounding metadata",
+          "transitionTrigger": "User scrolls result or clicks a signal for detail"
+        },
+        {
+          "stage": "decision",
+          "uiState": "User sees actionable next steps in result, trace shows full pipeline (classify → context → search → extract → assemble)",
+          "userEmotion": "Agency — I can act on this",
+          "keyCopy": "Next steps section with specific actions",
+          "requiredData": "Next steps array, full trace, confidence score",
+          "transitionTrigger": "User clicks 'Ask NodeBench' to start a conversation or clicks a next step"
+        },
+        {
+          "stage": "artifact",
+          "uiState": "FastAgent panel opens with demo conversation or real agent response, thinking animation plays",
+          "userEmotion": "Engagement — the system is working with me",
+          "keyCopy": "Agent response with structured analysis",
+          "requiredData": "Agent thread, conversation messages, tool calls",
+          "transitionTrigger": "Conversation completes or user navigates to Workspace"
+        },
+        {
+          "stage": "continuity",
+          "uiState": "Result is saved, episode recorded, founder episode panel shows span timeline, Workspace tab pulses with new data",
+          "userEmotion": "Trust — my work is preserved",
+          "keyCopy": "Episode completed — saved to your workspace",
+          "requiredData": "Episode record with spans, packet reference, Convex persistence confirmation",
+          "transitionTrigger": "User clicks Workspace tab or starts a new search"
+        }
+      ]
+    },
+    {
+      "id": "idea-analysis",
+      "title": "Idea Analysis",
+      "surface": "ask",
+      "episodeType": null,
+      "frames": [
+        {
+          "stage": "establishing",
+          "uiState": "Ask surface with input focused, placeholder text suggests company or idea queries",
+          "userEmotion": "Purposeful — I have a specific company or idea to evaluate",
+          "keyCopy": "What are you working on?",
+          "requiredData": "Input bar, suggestion chips for company search",
+          "transitionTrigger": "User types a company name or idea description"
+        },
+        {
+          "stage": "tension",
+          "uiState": "Multi-step trace shows entity extraction, web search in progress, sources accumulating",
+          "userEmotion": "Patience — watching the system work across sources",
+          "keyCopy": "Searching 3 sources for [entity]...",
+          "requiredData": "Entity name, source count, active trace steps",
+          "transitionTrigger": "Extraction completes, results begin rendering"
+        },
+        {
+          "stage": "truth_reveal",
+          "uiState": "9-card company analysis brief renders: overview, market, competitors, risks, financials, team, tech, moat, verdict",
+          "userEmotion": "Impressed — structured intelligence on demand",
+          "keyCopy": "Company Intelligence: [entity name]",
+          "requiredData": "Structured entity data across 9 dimensions, source citations, confidence per section",
+          "transitionTrigger": "User clicks a card to expand or switches role lens"
+        },
+        {
+          "stage": "decision",
+          "uiState": "Role lens selector active — banker/founder/investor/researcher views reshape the same data for different decisions",
+          "userEmotion": "Empowerment — I can see this from multiple angles",
+          "keyCopy": "Viewing as [role] — [role-specific insight]",
+          "requiredData": "Role-specific templates, filtered signals per lens, lens-appropriate next steps",
+          "transitionTrigger": "User clicks 'Save to Packets' or 'Start Decision Memo'"
+        },
+        {
+          "stage": "artifact",
+          "uiState": "Packet generated — company brief saved with version hash, visible in Packets surface",
+          "userEmotion": "Satisfaction — tangible output from research",
+          "keyCopy": "Packet saved: [entity] intelligence brief v1",
+          "requiredData": "Packet record, version number, content hash, evidence count",
+          "transitionTrigger": "User navigates to Packets or starts a new query"
+        },
+        {
+          "stage": "continuity",
+          "uiState": "Entity added to watchlist suggestion, History shows the analysis episode, Workspace reflects new company context",
+          "userEmotion": "Ownership — this is building my operating context",
+          "keyCopy": "Watch [entity]? Changes will appear in your History",
+          "requiredData": "Watchlist suggestion, episode in history, workspace state updated",
+          "transitionTrigger": "User accepts watchlist or moves to next task"
+        }
+      ]
+    },
+    {
+      "id": "founder-weekly-reset",
+      "title": "Founder Weekly Reset",
+      "surface": "workspace",
+      "episodeType": "weekly_reset",
+      "frames": [
+        {
+          "stage": "establishing",
+          "uiState": "Workspace surface with 3 founder loop cards visible. Weekly Reset card highlighted with refresh icon",
+          "userEmotion": "Ritual — this is my weekly operating rhythm",
+          "keyCopy": "Weekly Reset — Refresh your operating context, surface contradictions, produce a fresh packet",
+          "requiredData": "Loop cards rendered, last reset date shown if available",
+          "transitionTrigger": "User clicks Weekly Reset card"
+        },
+        {
+          "stage": "tension",
+          "uiState": "Agent panel opens, episode starts with 'before' span. System loads prior packet, compares to current state",
+          "userEmotion": "Anticipation — what changed since last week?",
+          "keyCopy": "Loading your last operating packet...",
+          "requiredData": "Prior packet (if exists), current company state, episode started with stateBeforeHash",
+          "transitionTrigger": "State comparison completes, contradictions surfaced"
+        },
+        {
+          "stage": "truth_reveal",
+          "uiState": "Contradictions panel shows mismatches between prior assumptions and current reality. New signals highlighted",
+          "userEmotion": "Clarity — I see what drifted",
+          "keyCopy": "[N] contradictions detected between your last packet and current state",
+          "requiredData": "Contradiction list with severity, new signals since last reset, drift score",
+          "transitionTrigger": "User reviews contradictions, marks resolved/acknowledged"
+        },
+        {
+          "stage": "decision",
+          "uiState": "Next 3 moves suggested based on updated context. User can accept, modify, or reject each",
+          "userEmotion": "Agency — I decide what to prioritize",
+          "keyCopy": "Suggested next moves based on your updated context",
+          "requiredData": "Suggested actions ranked by impact, evidence for each suggestion",
+          "transitionTrigger": "User confirms moves or modifies the list"
+        },
+        {
+          "stage": "artifact",
+          "uiState": "Fresh operating packet generated with updated company truth, resolved contradictions, chosen priorities",
+          "userEmotion": "Accomplishment — my week has a foundation",
+          "keyCopy": "Operating Packet v[N] — Week of [date]",
+          "requiredData": "New packet with version, content hash, stateAfterHash, resolved contradictions, chosen moves",
+          "transitionTrigger": "Packet saved, episode finalized"
+        },
+        {
+          "stage": "continuity",
+          "uiState": "Packet visible in Packets surface, episode in History, Workspace shows updated company truth. Optional: share memo",
+          "userEmotion": "Confidence — I'm operating from current truth",
+          "keyCopy": "Weekly reset complete. Your workspace is current.",
+          "requiredData": "Packet in packets list, episode in history, workspace state refreshed",
+          "transitionTrigger": "User exits to Ask or starts another loop"
+        }
+      ]
+    },
+    {
+      "id": "pre-delegation-briefing",
+      "title": "Pre-Delegation Briefing",
+      "surface": "workspace",
+      "episodeType": "pre_delegation",
+      "frames": [
+        {
+          "stage": "establishing",
+          "uiState": "Workspace surface, Pre-Delegation card active. Input area for task description or context drop",
+          "userEmotion": "Purposeful — I need to hand something off to an agent",
+          "keyCopy": "Pre-Delegation Briefing — Package context for an agent handoff with evidence and guardrails",
+          "requiredData": "Task description input, prior context available",
+          "transitionTrigger": "User describes the delegation task or drops context"
+        },
+        {
+          "stage": "tension",
+          "uiState": "System analyzes context, identifies knowledge gaps, checks if sufficient evidence exists for delegation",
+          "userEmotion": "Concern — is this enough context for the agent?",
+          "keyCopy": "Analyzing context for delegation readiness...",
+          "requiredData": "Context completeness score, evidence inventory, knowledge gaps identified",
+          "transitionTrigger": "Readiness assessment completes"
+        },
+        {
+          "stage": "truth_reveal",
+          "uiState": "Delegation readiness card shows: context score, missing evidence, guardrails needed, recommended agent capabilities",
+          "userEmotion": "Understanding — I see what the agent needs",
+          "keyCopy": "Delegation readiness: [score]% — [N] gaps to resolve",
+          "requiredData": "Readiness score, gap list, guardrail suggestions, capability requirements",
+          "transitionTrigger": "User resolves gaps or accepts current readiness level"
+        },
+        {
+          "stage": "decision",
+          "uiState": "Permission configuration: what can the agent do, what requires approval, what's blocked. Explicit guardrails",
+          "userEmotion": "Control — I set the boundaries",
+          "keyCopy": "Set permissions for this delegation",
+          "requiredData": "Permission modes (auto_allowed, ask_first, manual_only), capability list",
+          "transitionTrigger": "User confirms permissions and delegates"
+        },
+        {
+          "stage": "artifact",
+          "uiState": "Delegation packet generated: task definition, context bundle, permissions, evidence attachments, guardrails",
+          "userEmotion": "Relief — it's packaged and ready",
+          "keyCopy": "Delegation packet created — ready for agent handoff",
+          "requiredData": "founderTaskPacket record with instructions, permissions, evidence IDs, return format",
+          "transitionTrigger": "Packet dispatched to agent or saved for later"
+        },
+        {
+          "stage": "continuity",
+          "uiState": "Delegation visible in Packets surface with status tracking, History shows the handoff episode, agent presence indicator active",
+          "userEmotion": "Trust — I can track what happens next",
+          "keyCopy": "Agent [name] received your delegation. Track progress in Packets.",
+          "requiredData": "Task status, agent acknowledgment, packet in lineage, episode in history",
+          "transitionTrigger": "User monitors via Packets or starts next task"
+        }
+      ]
+    },
+    {
+      "id": "important-change-review",
+      "title": "Important Change Review",
+      "surface": "history",
+      "episodeType": "important_change_review",
+      "frames": [
+        {
+          "stage": "establishing",
+          "uiState": "History surface, Important Changes tab active. Change cards sorted by severity with timestamps",
+          "userEmotion": "Alertness — what happened while I was away?",
+          "keyCopy": "[N] important changes detected since [last session date]",
+          "requiredData": "founderImportantChanges records, severity levels, affected entities",
+          "transitionTrigger": "User clicks a change card to inspect"
+        },
+        {
+          "stage": "tension",
+          "uiState": "Before/after state diff for the selected change. Shows what was true before vs what's true now",
+          "userEmotion": "Concern — how does this affect my current plans?",
+          "keyCopy": "Before: [prior state] → After: [current state]",
+          "requiredData": "founderStateDiffs record, prior packet state, current state, affected packets identified",
+          "transitionTrigger": "User assesses impact, system shows affected packets"
+        },
+        {
+          "stage": "truth_reveal",
+          "uiState": "Affected packets listed with staleness indicators. Contradictions between change and existing packet content highlighted",
+          "userEmotion": "Clarity — I see the downstream effects",
+          "keyCopy": "[N] packets may be stale due to this change",
+          "requiredData": "Stale packet list, contradiction details, refresh recommendations",
+          "transitionTrigger": "User decides to refresh, dismiss, or investigate further"
+        },
+        {
+          "stage": "decision",
+          "uiState": "Action panel: Refresh affected packets, Dismiss (acknowledged), Investigate (deep dive), Delegate (hand to agent)",
+          "userEmotion": "Decisiveness — I know what to do about this",
+          "keyCopy": "What would you like to do about this change?",
+          "requiredData": "Action options with estimated effort, refresh preview",
+          "transitionTrigger": "User selects an action"
+        },
+        {
+          "stage": "artifact",
+          "uiState": "Updated packet generated (if refresh), or change marked resolved with rationale, or delegation packet created",
+          "userEmotion": "Resolution — this is handled",
+          "keyCopy": "Change resolved — [action taken]",
+          "requiredData": "Resolution record, updated packet (if refreshed), episode span recording the decision",
+          "transitionTrigger": "Resolution saved, next change auto-focused"
+        },
+        {
+          "stage": "continuity",
+          "uiState": "Change count decremented, resolved changes move to History, refreshed packets visible in Packets, overall operating context updated",
+          "userEmotion": "Progress — working through the queue",
+          "keyCopy": "[N] remaining changes. Your context is [X]% current.",
+          "requiredData": "Remaining changes count, currentness score, history audit trail",
+          "transitionTrigger": "User proceeds to next change or exits to Workspace"
+        }
+      ]
+    },
+    {
+      "id": "competitor-research",
+      "title": "Competitor Research",
+      "surface": "ask",
+      "episodeType": null,
+      "frames": [
+        {
+          "stage": "establishing",
+          "uiState": "Ask surface with comparison query entered (e.g. 'Anthropic vs OpenAI')",
+          "userEmotion": "Strategic — need competitive intelligence",
+          "keyCopy": "Compare: [entity A] vs [entity B]",
+          "requiredData": "Multi-entity query parsed, entity names extracted",
+          "transitionTrigger": "Search initiated"
+        },
+        {
+          "stage": "tension",
+          "uiState": "Parallel search traces for each entity, sources accumulating for both",
+          "userEmotion": "Patience — multi-entity searches take longer",
+          "keyCopy": "Researching [N] entities across [M] sources...",
+          "requiredData": "Per-entity trace steps, source counts per entity",
+          "transitionTrigger": "Both entity extractions complete"
+        },
+        {
+          "stage": "truth_reveal",
+          "uiState": "Side-by-side comparison view: strengths, weaknesses, market position, funding, team size, tech stack for each entity",
+          "userEmotion": "Insight — structured comparison I couldn't build manually",
+          "keyCopy": "Comparison: [entity A] vs [entity B]",
+          "requiredData": "Structured comparison data per entity, overlapping and differentiating signals",
+          "transitionTrigger": "User clicks to drill into a specific dimension"
+        },
+        {
+          "stage": "decision",
+          "uiState": "Strategic implications panel: where you win, where you lose, blind spots, opportunities",
+          "userEmotion": "Actionable clarity — I know my competitive position",
+          "keyCopy": "Your competitive edge: [summary]",
+          "requiredData": "Competitive position analysis, own company context (if available), gap identification",
+          "transitionTrigger": "User saves comparison or starts a decision memo"
+        },
+        {
+          "stage": "artifact",
+          "uiState": "Competitive analysis packet saved with both entity profiles, comparison matrix, strategic recommendations",
+          "userEmotion": "Prepared — I have the intel for my next meeting",
+          "keyCopy": "Competitive analysis saved to Packets",
+          "requiredData": "Multi-entity packet, comparison matrix, strategic recommendations",
+          "transitionTrigger": "Navigate to Packets or start new research"
+        },
+        {
+          "stage": "continuity",
+          "uiState": "Both entities added to watchlist suggestions, History records the competitive analysis episode",
+          "userEmotion": "Ongoing — I'll be notified if the landscape shifts",
+          "keyCopy": "Watch these competitors? Changes will surface in History",
+          "requiredData": "Watchlist suggestions for both entities, episode saved",
+          "transitionTrigger": "Accept watchlist or exit"
+        }
+      ]
+    },
+    {
+      "id": "history-trajectory",
+      "title": "History / Trajectory",
+      "surface": "history",
+      "episodeType": null,
+      "frames": [
+        {
+          "stage": "establishing",
+          "uiState": "History surface, Prior Episodes tab active. Timeline of founder episodes with status badges",
+          "userEmotion": "Reflective — what's my operating trajectory?",
+          "keyCopy": "[N] episodes across [M] sessions",
+          "requiredData": "founderHarnessEpisodes list, episode types, timestamps, statuses",
+          "transitionTrigger": "User clicks an episode to expand"
+        },
+        {
+          "stage": "tension",
+          "uiState": "Episode detail expands: span timeline, tools invoked, artifacts produced, state before/after",
+          "userEmotion": "Curiosity — what happened in this session?",
+          "keyCopy": "Episode: [query] — [N] tools, [M] artifacts",
+          "requiredData": "Episode spans, tool list, artifact list, state hashes",
+          "transitionTrigger": "User compares with another episode or checks drift"
+        },
+        {
+          "stage": "truth_reveal",
+          "uiState": "Trajectory view: progression score over time, consistency index, contradiction trend, key inflection points marked",
+          "userEmotion": "Self-awareness — I can see my decision patterns",
+          "keyCopy": "Your operating trajectory: [trend label]",
+          "requiredData": "Trajectory scores, consistency metrics, inflection events",
+          "transitionTrigger": "User identifies a pattern or concern"
+        },
+        {
+          "stage": "decision",
+          "uiState": "Recommendations based on trajectory: what to double down on, what to reconsider, where you're drifting",
+          "userEmotion": "Strategic clarity — data-driven self-correction",
+          "keyCopy": "Based on your trajectory: [N] recommendations",
+          "requiredData": "Trajectory-derived recommendations, supporting evidence from episodes",
+          "transitionTrigger": "User acts on a recommendation or acknowledges"
+        },
+        {
+          "stage": "artifact",
+          "uiState": "Trajectory report exportable as memo, with key episodes cited and recommendations documented",
+          "userEmotion": "Accountability — documented for my board or team",
+          "keyCopy": "Export trajectory report",
+          "requiredData": "Report template, cited episodes, trajectory scores, recommendations",
+          "transitionTrigger": "Export or save"
+        },
+        {
+          "stage": "continuity",
+          "uiState": "Trajectory baseline updated, next session will compare against this checkpoint",
+          "userEmotion": "Progress — building a track record",
+          "keyCopy": "Trajectory checkpoint saved. Next session will compare from here.",
+          "requiredData": "Checkpoint state hash, baseline metrics",
+          "transitionTrigger": "User exits to Workspace or Ask"
+        }
+      ]
+    },
+    {
+      "id": "packet-export",
+      "title": "Packet / Export",
+      "surface": "packets",
+      "episodeType": null,
+      "frames": [
+        {
+          "stage": "establishing",
+          "uiState": "Packets surface with active packet card, lineage timeline, export section. Packet version history visible",
+          "userEmotion": "Productive — I need to share or use my packet",
+          "keyCopy": "Active packet: [name] v[N] — [date]",
+          "requiredData": "Current packet, version number, content hash, last modified date",
+          "transitionTrigger": "User clicks export or selects a prior version"
+        },
+        {
+          "stage": "tension",
+          "uiState": "Export format selector: Slack 1-pager, investor memo, banker readiness, PDF, markdown, shared URL",
+          "userEmotion": "Choice — which format fits my audience?",
+          "keyCopy": "Export as...",
+          "requiredData": "Available export formats, packet content preview per format",
+          "transitionTrigger": "User selects a format"
+        },
+        {
+          "stage": "truth_reveal",
+          "uiState": "Export preview renders the packet in the selected format. User can see exactly what the recipient will see",
+          "userEmotion": "Confidence — I can verify before sharing",
+          "keyCopy": "Preview: [format name]",
+          "requiredData": "Rendered export in selected format, metadata (evidence count, sources, confidence)",
+          "transitionTrigger": "User confirms export or adjusts"
+        },
+        {
+          "stage": "decision",
+          "uiState": "Share configuration: recipient, permissions (view/comment/edit), expiration, watermark options",
+          "userEmotion": "Control — I decide who sees what",
+          "keyCopy": "Share with...",
+          "requiredData": "Share options, recipient input, permission levels",
+          "transitionTrigger": "User confirms sharing"
+        },
+        {
+          "stage": "artifact",
+          "uiState": "Export generated: shareable URL or downloaded file. Copy-to-clipboard feedback with confirmation",
+          "userEmotion": "Accomplishment — deliverable ready",
+          "keyCopy": "Exported! [URL copied / file downloaded]",
+          "requiredData": "Export URL or file, share confirmation, audit trail entry",
+          "transitionTrigger": "User copies URL or downloads"
+        },
+        {
+          "stage": "continuity",
+          "uiState": "Export logged in packet lineage. History shows the export event. Packet version preserved for future reference",
+          "userEmotion": "Traceable — I know what I shared and when",
+          "keyCopy": "Export recorded in packet history",
+          "requiredData": "Export event in founderEventLedger, lineage entry, version preserved",
+          "transitionTrigger": "User returns to Packets or starts new work"
+        }
+      ]
+    },
+    {
+      "id": "mcp-connect-init",
+      "title": "MCP Connect / Init / Index",
+      "surface": "connect",
+      "episodeType": null,
+      "frames": [
+        {
+          "stage": "establishing",
+          "uiState": "Connect surface with MCP quick start command, connection status cards (MCP Server, Watchlists, Agents)",
+          "userEmotion": "Setup — I want to wire this into my workflow",
+          "keyCopy": "npx nodebench-mcp@latest --preset=founder",
+          "requiredData": "Install command, connection status per integration",
+          "transitionTrigger": "User copies install command or clicks a connection card"
+        },
+        {
+          "stage": "tension",
+          "uiState": "Connection verification in progress. Testing MCP handshake, tool count, preset validation",
+          "userEmotion": "Uncertainty — will this work with my setup?",
+          "keyCopy": "Verifying connection...",
+          "requiredData": "Connection test status, tool count verification, preset match",
+          "transitionTrigger": "Connection verified or error surfaced"
+        },
+        {
+          "stage": "truth_reveal",
+          "uiState": "Connection confirmed: 304 tools available, founder preset active, workspace sync ready. Or: error with actionable fix",
+          "userEmotion": "Relief or frustration — clear either way",
+          "keyCopy": "Connected: [N] tools via founder preset",
+          "requiredData": "Tool count, active preset, sync status, or error details with fix instructions",
+          "transitionTrigger": "User proceeds to workspace sync or watchlist setup"
+        },
+        {
+          "stage": "decision",
+          "uiState": "Configuration panel: workspace sync frequency, watchlist entities, agent registration, notification preferences",
+          "userEmotion": "Customization — making it mine",
+          "keyCopy": "Configure your integration",
+          "requiredData": "Config options, current settings, recommendations",
+          "transitionTrigger": "User saves configuration"
+        },
+        {
+          "stage": "artifact",
+          "uiState": "Integration configured and tested. First sync completes, workspace populated with initial context",
+          "userEmotion": "Satisfaction — it's live and working",
+          "keyCopy": "Integration active. First sync complete.",
+          "requiredData": "Sync confirmation, initial context summary, next sync scheduled",
+          "transitionTrigger": "User navigates to Workspace to see synced data"
+        },
+        {
+          "stage": "continuity",
+          "uiState": "Connection health dashboard: last sync, tool usage, error rate. Ambient monitoring active",
+          "userEmotion": "Confidence — it's working in the background",
+          "keyCopy": "Last sync: [timestamp]. Health: [status]",
+          "requiredData": "Connection health metrics, sync history, error log",
+          "transitionTrigger": "User exits to Ask or Workspace"
+        }
+      ]
+    },
+    {
+      "id": "watchlist-ambient-monitoring",
+      "title": "Watchlist / Ambient Monitoring",
+      "surface": "connect",
+      "episodeType": null,
+      "frames": [
+        {
+          "stage": "establishing",
+          "uiState": "Connect surface, Watchlists section. Entity cards with monitoring status, alert counts, last checked timestamps",
+          "userEmotion": "Oversight — what am I tracking?",
+          "keyCopy": "Monitoring [N] entities",
+          "requiredData": "Watchlist entries with entity names, alert counts, last checked dates",
+          "transitionTrigger": "User clicks an entity card or 'Add entity' button"
+        },
+        {
+          "stage": "tension",
+          "uiState": "Alert summary for a watched entity: [N] new signals since last check, [M] severity breakdown",
+          "userEmotion": "Alertness — something may need attention",
+          "keyCopy": "[N] new signals for [entity] — [M] high severity",
+          "requiredData": "Alert list, severity levels, signal timestamps, source references",
+          "transitionTrigger": "User clicks an alert to investigate"
+        },
+        {
+          "stage": "truth_reveal",
+          "uiState": "Signal detail: what changed, evidence sources, relevance to your company, recommended action",
+          "userEmotion": "Informed — I understand the signal",
+          "keyCopy": "[Signal type]: [summary] — Sources: [N]",
+          "requiredData": "Signal detail, source URLs, relevance score, action recommendation",
+          "transitionTrigger": "User decides to act, dismiss, or investigate further"
+        },
+        {
+          "stage": "decision",
+          "uiState": "Action menu: Investigate (deep search), Note (add context), Dismiss (acknowledge), Escalate (create important change)",
+          "userEmotion": "Decisive — triaging my monitoring feed",
+          "keyCopy": "How should we handle this signal?",
+          "requiredData": "Action options, signal context, affected packets",
+          "transitionTrigger": "User selects an action"
+        },
+        {
+          "stage": "artifact",
+          "uiState": "Action recorded: investigation started, note saved, signal dismissed with reason, or important change created in History",
+          "userEmotion": "Processed — signal is handled",
+          "keyCopy": "Signal [action]: [summary]",
+          "requiredData": "Action record, updated alert count, affected packet notification (if any)",
+          "transitionTrigger": "Next alert auto-focused or user exits"
+        },
+        {
+          "stage": "continuity",
+          "uiState": "Alert count updated, monitoring continues, History shows triage decisions, Workspace reflects any new important changes",
+          "userEmotion": "Ambient confidence — I'm on top of my landscape",
+          "keyCopy": "[N] alerts remaining. Monitoring active.",
+          "requiredData": "Updated watchlist state, monitoring health, next check schedule",
+          "transitionTrigger": "User exits to Workspace or Ask"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "totalBoards": 10,
+    "framesPerBoard": 6,
+    "annotationsPerFrame": 5,
+    "frameStages": ["establishing", "tension", "truth_reveal", "decision", "artifact", "continuity"],
+    "annotationFields": ["uiState", "userEmotion", "keyCopy", "requiredData", "transitionTrigger"],
+    "surfaceCoverage": {
+      "ask": ["landing-first-search", "idea-analysis", "competitor-research"],
+      "workspace": ["founder-weekly-reset", "pre-delegation-briefing"],
+      "packets": ["packet-export"],
+      "history": ["important-change-review", "history-trajectory"],
+      "connect": ["mcp-connect-init", "watchlist-ambient-monitoring"]
+    },
+    "episodeTypes": ["weekly_reset", "pre_delegation", "important_change_review"]
+  }
+}

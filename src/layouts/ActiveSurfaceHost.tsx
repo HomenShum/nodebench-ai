@@ -78,6 +78,24 @@ const ObservabilityView = lazy(() =>
 const CostDashboard = lazy(() =>
   import("@/features/admin/components/CostDashboard").then((mod) => ({ default: mod.CostDashboard })),
 );
+const SubconsciousDashboard = lazy(() =>
+  import("@/features/monitoring/views/SubconsciousDashboard").then((mod) => ({ default: mod.SubconsciousDashboard })),
+);
+const FounderWorkspaceHome = lazy(() =>
+  import("@/features/founder/views/FounderWorkspaceHome").then((mod) => ({ default: mod.FounderWorkspaceHome })),
+);
+const FounderPacketsHome = lazy(() =>
+  import("@/features/founder/views/FounderPacketsHome").then((mod) => ({ default: mod.FounderPacketsHome })),
+);
+const FounderHistoryHome = lazy(() =>
+  import("@/features/founder/views/FounderHistoryHome").then((mod) => ({ default: mod.FounderHistoryHome })),
+);
+const FounderConnectHome = lazy(() =>
+  import("@/features/founder/views/FounderConnectHome").then((mod) => ({ default: mod.FounderConnectHome })),
+);
+const LibraryHome = lazy(() =>
+  import("@/features/founder/views/LibraryHome").then((mod) => ({ default: mod.LibraryHome })),
+);
 
 const SURFACE_SKELETON_VARIANT: Record<CockpitSurfaceId, "default" | "ask" | "research" | "telemetry" | "memo" | "trace" | "documents"> = {
   ask: "ask",
@@ -89,6 +107,12 @@ const SURFACE_SKELETON_VARIANT: Record<CockpitSurfaceId, "default" | "ask" | "re
   graph: "default",
   trace: "trace",
   telemetry: "telemetry",
+  // Canonical founder surfaces
+  workspace: "default",
+  packets: "default",
+  history: "default",
+  connect: "default",
+  library: "documents",
 };
 
 const MAX_CACHED_SURFACES = 4;
@@ -176,6 +200,7 @@ function SurfaceFrame({
 const TELEMETRY_TABS = [
   { id: "overview", label: "Overview" },
   { id: "activity", label: "Activity" },
+  { id: "subconscious", label: "Subconscious" },
   { id: "benchmarks", label: "Benchmarks" },
   { id: "health", label: "Health" },
   { id: "spend", label: "Spend" },
@@ -301,6 +326,7 @@ function TelemetryStack({ active = true }: { active?: boolean }) {
       <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5" role="tabpanel">
         {activeTab === "overview" && <OracleView />}
         {activeTab === "activity" && <AgentTelemetryDashboard />}
+        {activeTab === "subconscious" && <SubconsciousDashboard />}
         {activeTab === "benchmarks" && <WorkbenchView />}
         {activeTab === "health" && <ObservabilityView />}
         {activeTab === "spend" && <CostDashboard />}
@@ -478,6 +504,28 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
         );
       case "telemetry":
         return <TelemetryStack active={surfaceId === currentSurface} />;
+      // ── Canonical founder surfaces ──────────────────────────────────
+      case "workspace":
+        return <FounderWorkspaceHome onStartEpisode={(type) => onOpenFastAgentWithPrompt?.(`Start ${type} episode`)} />;
+      case "packets":
+        return <FounderPacketsHome />;
+      case "history":
+        return <FounderHistoryHome />;
+      case "connect":
+        return <FounderConnectHome />;
+      case "library":
+        return (
+          <LibraryHome
+            selectedDocumentId={selectedDocumentId}
+            onDocumentSelect={onDocumentSelect}
+            isGridMode={isGridMode}
+            setIsGridMode={setIsGridMode}
+            selectedTaskId={selectedTaskId}
+            selectedTaskSource={selectedTaskSource}
+            onSelectTask={onSelectTask}
+            onClearTaskSelection={onClearTaskSelection}
+          />
+        );
       default:
         return null;
     }

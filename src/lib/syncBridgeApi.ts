@@ -121,3 +121,28 @@ export function getSharedContextPublishUrl(): string {
 export function getSharedContextDelegateUrl(): string {
   return `${SHARED_CONTEXT_API_BASE}/delegate`;
 }
+
+export function getFounderEpisodesUrl(options: { sessionKey?: string; workspaceId?: string; status?: string; limit?: number } = {}): string {
+  const params = new URLSearchParams();
+  params.set("limit", String(options.limit ?? 10));
+  if (options.sessionKey) params.set("sessionKey", options.sessionKey);
+  if (options.workspaceId) params.set("workspaceId", options.workspaceId);
+  if (options.status) params.set("status", options.status);
+  return `${SHARED_CONTEXT_API_BASE}/episodes?${params.toString()}`;
+}
+
+export function getFounderEpisodeUrl(episodeId: string): string {
+  return `${SHARED_CONTEXT_API_BASE}/episodes/${encodeURIComponent(episodeId)}`;
+}
+
+export function getFounderEpisodeStartUrl(): string {
+  return `${SHARED_CONTEXT_API_BASE}/episodes/start`;
+}
+
+export function getFounderEpisodeSpanUrl(episodeId: string): string {
+  return `${SHARED_CONTEXT_API_BASE}/episodes/${encodeURIComponent(episodeId)}/span`;
+}
+
+export function getFounderEpisodeFinalizeUrl(episodeId: string): string {
+  return `${SHARED_CONTEXT_API_BASE}/episodes/${encodeURIComponent(episodeId)}/finalize`;
+}

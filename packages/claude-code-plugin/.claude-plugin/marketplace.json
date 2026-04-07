@@ -1,0 +1,21 @@
+{
+  "name": "nodebench",
+  "owner": {
+    "name": "NodeBench AI"
+  },
+  "metadata": {
+    "description": "Entity intelligence, deep diligence, and founder clarity — right inside Claude Code. Search any company, get a banker-grade packet, delegate remediation to Codex.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "nodebench",
+      "description": "Search companies, run deep diligence, get remediation steps, and inject company truth into your coding session.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Homen Shum"
+      },
+      "source": "./plugins/nodebench"
+    }
+  ]
+}

@@ -80,16 +80,64 @@ function normalizeWorkspaceName(value?: unknown): string | undefined {
   return normalizeDisplayName(value);
 }
 
+function inferExplicitLensFromQuery(query: string): string | undefined {
+  const normalized = query.toLowerCase();
+  if (includesAny(normalized, [
+    "investment banking",
+    "investment-banking",
+    "banker",
+    "banking style",
+    "deal memo",
+    "sell-side",
+    "buy-side",
+    "m&a",
+    "m and a",
+    "capital structure",
+    "comparables",
+    "comps",
+    "banking work output",
+  ])) {
+    return "banker";
+  }
+  if (includesAny(normalized, [
+    "investor memo",
+    "investor update",
+    "vc",
+    "venture",
+    "investment committee",
+    "diligence",
+    "term sheet",
+    "early-stage vc",
+  ])) {
+    return "investor";
+  }
+  if (includesAny(normalized, ["legal", "compliance", "regulatory", "counsel"])) {
+    return "legal";
+  }
+  if (includesAny(normalized, ["student", "thesis", "class", "coursework"])) {
+    return "student";
+  }
+  return undefined;
+}
+
 function inferOwnCompanyName(result: any): string | undefined {
   return normalizeWorkspaceName(result?.identity?.projectName)
     ?? normalizeWorkspaceName(result?.publicSurfaces?.indexHtmlSiteName)
     ?? normalizeWorkspaceName(extractBrandPrefix(result?.publicSurfaces?.indexHtmlTitle))
-    ?? normalizeWorkspaceName(result?.canonicalEntity?.name)
-    ?? normalizeWorkspaceName(result?.companyReadinessPacket?.identity?.companyName)
-    ?? normalizeWorkspaceName(result?.companyNamingPack?.recommendedName)
-    ?? normalizeWorkspaceName(result?.rawPacket?.company?.name)
     ?? normalizeWorkspaceName(result?.localContext?.company?.name)
     ?? normalizeWorkspaceName(result?.identity?.packageName);
+}
+
+function inferDisplayEntityName(result: any, companyMode: "own_company" | "external_company" | "mixed_comparison"): string | undefined {
+  if (companyMode === "own_company") {
+    return normalizeWorkspaceName(result?.companyReadinessPacket?.identity?.companyName)
+      ?? normalizeWorkspaceName(result?.companyNamingPack?.recommendedName)
+      ?? normalizeWorkspaceName(result?.canonicalEntity?.name)
+      ?? inferOwnCompanyName(result);
+  }
+  return normalizeWorkspaceName(result?.canonicalEntity?.name)
+    ?? normalizeWorkspaceName(result?.companyReadinessPacket?.identity?.companyName)
+    ?? normalizeWorkspaceName(result?.companyNamingPack?.recommendedName);
 }
 
 function resolveCompanyMode(args: {
@@ -98,13 +146,61 @@ function resolveCompanyMode(args: {
   classification: string;
   result: any;
 }): "own_company" | "external_company" | "mixed_comparison" {
+  const ownCompanyName = inferOwnCompanyName(args.result);
   const hasPrivateContext = args.lens === "founder"
     && ["weekly_reset", "pre_delegation", "important_change", "founder_progression", "general"].includes(args.classification);
   return detectFounderCompanyMode({
     query: args.query,
-    canonicalEntity: inferOwnCompanyName(args.result) ?? args.result?.canonicalEntity?.name,
+    canonicalEntity: ownCompanyName,
     hasPrivateContext,
   });
+}
+
+function shouldAttachFounderScaffolding(args: {
+  query: string;
+  lens: string;
+  classification: string;
+  result: any;
+}): boolean {
+  const effectiveClassification = resolveEffectiveClassification(args);
+  const companyMode = resolveCompanyMode({
+    query: args.query,
+    lens: args.lens,
+    classification: effectiveClassification,
+    result: args.result,
+  });
+  if (companyMode !== "own_company") return false;
+  return args.lens === "founder"
+    || ["weekly_reset", "pre_delegation", "important_change", "founder_progression", "plan_proposal"].includes(effectiveClassification);
+}
+
+function stripFounderOnlyArtifacts(args: {
+  query: string;
+  lens: string;
+  classification: string;
+  result: any;
+}): any {
+  if (shouldAttachFounderScaffolding(args)) return args.result;
+  const {
+    strategicAngles,
+    progressionProfile,
+    progressionTiers,
+    diligencePack,
+    readinessScore,
+    unlocks,
+    materialsChecklist,
+    scorecards,
+    shareableArtifacts,
+    visibility,
+    benchmarkEvidence,
+    workflowComparison,
+    operatingModel,
+    distributionSurfaceStatus,
+    companyReadinessPacket,
+    companyNamingPack,
+    ...rest
+  } = args.result ?? {};
+  return rest;
 }
 
 function resolveEffectiveClassification(args: {
@@ -148,10 +244,14 @@ function normalizeFounderIdentity(args: {
     result: args.result,
   });
   const companyMode = resolveCompanyMode({ ...args, classification });
+  const normalizedPacketType =
+    companyMode !== "own_company" && packetType === "founder_progression_packet"
+      ? `${classification}_packet`
+      : packetType;
   const entityName = companyMode === "own_company"
-    ? inferOwnCompanyName(args.result) ?? "Your Company"
-    : inferOwnCompanyName(args.result);
-  return { classification, packetType, entityName };
+    ? inferDisplayEntityName(args.result, companyMode) ?? "Your Company"
+    : inferDisplayEntityName(args.result, companyMode);
+  return { classification, packetType: normalizedPacketType, entityName };
 }
 
 function normalizeOwnCompanyFounderPayload(args: {
@@ -373,9 +473,24 @@ function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[])
     });
   }
 
+  const keyFactsText = (Array.isArray(result?.signals) ? result.signals : [])
+    .slice(0, 4)
+    .map((signal: any) => `• ${signal.name ?? signal.title ?? String(signal)}`)
+    .join("\n");
+  if (keyFactsText) {
+    blocks.push({
+      id: "answer:block:key_facts",
+      title: "Key facts and signal readout",
+      text: keyFactsText,
+      sourceRefIds: citedSourceIds,
+      claimIds: [],
+      status: blockStatus(citedSourceIds, !sourceBacked),
+    });
+  }
+
   const changesText = (Array.isArray(result?.whatChanged) ? result.whatChanged : [])
     .slice(0, 3)
-    .map((change: any) => `• ${change.description ?? String(change)}`)
+    .map((change: any) => `• ${change.description ?? String(change)}${change.date ? ` (${change.date})` : ""}`)
     .join("\n");
   if (changesText) {
     blocks.push({
@@ -388,6 +503,47 @@ function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[])
     });
   }
 
+  const comparablesText = (Array.isArray(result?.comparables) ? result.comparables : [])
+    .slice(0, 4)
+    .map((item: any) => `• ${item.name ?? String(item)}${item.note ? `: ${item.note}` : ""}`)
+    .join("\n");
+  if (comparablesText) {
+    blocks.push({
+      id: "answer:block:comparables",
+      title: "Competitive frame",
+      text: comparablesText,
+      sourceRefIds: citedSourceIds,
+      claimIds: [],
+      status: blockStatus(citedSourceIds, !sourceBacked),
+    });
+  }
+
+  const whyThisTeam = result?.whyThisTeam;
+  const credibilityText =
+    whyThisTeam && typeof whyThisTeam === "object"
+      ? [
+          typeof whyThisTeam.founderCredibility === "string" ? whyThisTeam.founderCredibility : "",
+          Array.isArray(whyThisTeam.trustSignals) && whyThisTeam.trustSignals.length > 0
+            ? `Trust signals: ${whyThisTeam.trustSignals.slice(0, 3).join("; ")}`
+            : "",
+          typeof whyThisTeam.visionMagnitude === "string" && whyThisTeam.visionMagnitude
+            ? `Scale lens: ${whyThisTeam.visionMagnitude}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : "";
+  if (credibilityText) {
+    blocks.push({
+      id: "answer:block:credibility",
+      title: "Why this team matters",
+      text: credibilityText,
+      sourceRefIds: citedSourceIds,
+      claimIds: [],
+      status: blockStatus(citedSourceIds, true),
+    });
+  }
+
   const risksText = (Array.isArray(result?.contradictions) ? result.contradictions : [])
     .slice(0, 3)
     .map((item: any) => `• ${item.claim ?? item.title ?? String(item)}${item.evidence ? `: ${item.evidence}` : ""}`)
@@ -395,10 +551,25 @@ function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[])
   if (risksText) {
     blocks.push({
       id: "answer:block:risks",
-      title: "Risks and contradictions",
+      title: "Risks and diligence flags",
       text: risksText,
       sourceRefIds: citedSourceIds,
       claimIds: claimRefs.filter((claim) => claim.answerBlockIds.includes("answer:block:risks")).map((claim) => claim.id),
+      status: blockStatus(citedSourceIds, true),
+    });
+  }
+
+  const diligenceQuestionsText = (Array.isArray(result?.nextQuestions) ? result.nextQuestions : [])
+    .slice(0, 4)
+    .map((question: any) => `• ${String(question)}`)
+    .join("\n");
+  if (diligenceQuestionsText) {
+    blocks.push({
+      id: "answer:block:diligence_questions",
+      title: "Next diligence questions",
+      text: diligenceQuestionsText,
+      sourceRefIds: citedSourceIds,
+      claimIds: [],
       status: blockStatus(citedSourceIds, true),
     });
   }
@@ -444,6 +615,18 @@ function buildStrategicAngles(args: {
   result: any;
   sourceRefs: any[];
 }): Array<Record<string, unknown>> {
+  if (!shouldAttachFounderScaffolding({
+    query: args.query,
+    lens: args.lens,
+    classification: typeof args.result?.packetType === "string"
+      ? String(args.result.packetType).replace(/_packet$/, "")
+      : typeof args.result?.classification === "string"
+        ? args.result.classification
+        : "general",
+    result: args.result,
+  })) {
+    return [];
+  }
   if (Array.isArray(args.result?.strategicAngles) && args.result.strategicAngles.length > 0) {
     return args.result.strategicAngles;
   }
@@ -589,9 +772,20 @@ function shouldRunFounderDirectionAssessment(args: {
   query: string;
   lens: string;
   classification: string;
+  result?: any;
 }): boolean {
+  const externalResearchClassification = ["company_search", "competitor", "multi_entity"].includes(args.classification);
+  if (externalResearchClassification) {
+    if (!args.result) return false;
+    return shouldAttachFounderScaffolding({
+      query: args.query,
+      lens: args.lens,
+      classification: args.classification,
+      result: args.result,
+    });
+  }
   if (args.lens === "founder") return true;
-  if (["weekly_reset", "important_change", "pre_delegation", "general"].includes(args.classification)) {
+  if (["weekly_reset", "important_change", "pre_delegation", "general", "plan_proposal"].includes(args.classification)) {
     return true;
   }
   return includesAny(args.query, [
@@ -603,7 +797,6 @@ function shouldRunFounderDirectionAssessment(args: {
     "maintain",
     "subscription",
     "dashboard",
-    "investor",
     "credibility",
     "adoption",
     "ai",
@@ -791,11 +984,22 @@ function buildResultPacket(args: {
   classification: string;
   entityFallback?: string | null;
 }): Record<string, unknown> {
-  const result = normalizeOwnCompanyFounderPayload({
+  const result = stripFounderOnlyArtifacts({
     query: args.query,
     lens: args.lens,
     classification: args.classification,
-    result: args.result ?? {},
+    result: normalizeOwnCompanyFounderPayload({
+      query: args.query,
+      lens: args.lens,
+      classification: args.classification,
+      result: args.result ?? {},
+    }),
+  });
+  const companyMode = resolveCompanyMode({
+    query: args.query,
+    lens: args.lens,
+    classification: args.classification,
+    result,
   });
   const sourceRefs = Array.isArray(result.sourceRefs) ? result.sourceRefs : [];
   const normalizedIdentity = normalizeFounderIdentity({
@@ -805,10 +1009,16 @@ function buildResultPacket(args: {
     result,
   });
   const entityName =
-    normalizedIdentity.entityName
-    ?? result.canonicalEntity?.name
-    ?? args.entityFallback
-    ?? "NodeBench";
+    companyMode === "own_company"
+      ? normalizedIdentity.entityName
+        ?? result.canonicalEntity?.name
+        ?? args.entityFallback
+        ?? "NodeBench"
+      : args.entityFallback
+        ?? normalizedIdentity.entityName
+        ?? result.canonicalEntity?.name
+        ?? "NodeBench";
+  const keyMetricLimit = args.lens === "banker" ? 6 : 4;
   return {
     query: args.query,
     entityName,
@@ -821,12 +1031,18 @@ function buildResultPacket(args: {
       direction: signal.direction ?? "neutral",
       impact: signal.impact ?? "medium",
     })),
-    keyMetrics: [
-      { label: "Confidence", value: `${result.canonicalEntity?.identityConfidence ?? 0}%` },
-      { label: "Sources", value: String(sourceRefs.length) },
-      { label: "Claims", value: String(result.claimRefs?.length ?? 0) },
-      { label: "Next actions", value: String(result.nextActions?.length ?? 0) },
-    ],
+    keyMetrics:
+      Array.isArray(result.keyMetrics) && result.keyMetrics.length > 0
+        ? result.keyMetrics.slice(0, keyMetricLimit).map((metric: any) => ({
+            label: metric.label ?? "Metric",
+            value: String(metric.value ?? ""),
+          }))
+        : [
+            { label: "Confidence", value: `${result.canonicalEntity?.identityConfidence ?? 0}%` },
+            { label: "Sources", value: String(sourceRefs.length) },
+            { label: "Claims", value: String(result.claimRefs?.length ?? 0) },
+            { label: "Next actions", value: String(result.nextActions?.length ?? 0) },
+          ],
     changes: result.whatChanged?.map((change: any) => ({
       description: change.description ?? String(change),
       date: change.date,
@@ -886,13 +1102,19 @@ function decorateResultWithProof(args: {
   result: any;
   judgeVerdict: any;
   packetId: string;
+  entityFallback?: string | null;
 }): { result: any; packet: Record<string, unknown>; persona: string } {
   const persona = LENS_PERSONA_MAP[args.lens] ?? "FOUNDER_STRATEGY";
-  const baseResult = normalizeOwnCompanyFounderPayload({
+  const baseResult = stripFounderOnlyArtifacts({
     query: args.query,
     lens: args.lens,
     classification: args.classification,
-    result: args.result,
+    result: normalizeOwnCompanyFounderPayload({
+      query: args.query,
+      lens: args.lens,
+      classification: args.classification,
+      result: args.result,
+    }),
   });
   const sourceRefs = normalizeSourceRefs(baseResult);
   const claimRefs = normalizeClaimRefs(baseResult, sourceRefs);
@@ -915,7 +1137,10 @@ function decorateResultWithProof(args: {
   const strategicAngles = buildStrategicAngles({
     query: args.query,
     lens: args.lens,
-    result: baseResult,
+    result: {
+      ...baseResult,
+      classification: args.classification,
+    },
     sourceRefs,
   });
   const strategicQuestions = strategicAngles
@@ -932,10 +1157,21 @@ function decorateResultWithProof(args: {
     classification: args.classification,
     result: baseResult,
   });
+  const companyMode = resolveCompanyMode({
+    query: args.query,
+    lens: args.lens,
+    classification: args.classification,
+    result: baseResult,
+  });
   const canonicalEntityName =
-    normalizedIdentity.entityName
-    ?? baseResult?.canonicalEntity?.name
-    ?? baseResult?.companyReadinessPacket?.identity?.companyName;
+    companyMode === "own_company"
+      ? normalizedIdentity.entityName
+        ?? baseResult?.canonicalEntity?.name
+        ?? baseResult?.companyReadinessPacket?.identity?.companyName
+      : args.entityFallback
+        ?? normalizedIdentity.entityName
+        ?? baseResult?.canonicalEntity?.name
+        ?? baseResult?.companyReadinessPacket?.identity?.companyName;
 
   const decoratedResult = {
     ...baseResult,
@@ -958,7 +1194,7 @@ function decorateResultWithProof(args: {
     ).slice(0, 8),
     graphNodes,
     graphEdges,
-    strategicAngles,
+    ...(strategicAngles.length > 0 ? { strategicAngles } : {}),
   };
 
   return {
@@ -1224,7 +1460,7 @@ async function linkupSearch(query: string, maxResults = 5): Promise<{ answer: st
         includeSources: true,
         maxResults,
       }),
-      signal: AbortSignal.timeout(8_000),
+      signal: AbortSignal.timeout(process.env.VERCEL ? 4_000 : 8_000),
     });
     if (!resp.ok) return null;
     const data = await resp.json() as any;
@@ -1373,8 +1609,8 @@ export function createSearchRouter(tools: McpTool[]) {
     const genericPhrasePattern = /^(what|why|how|when|where|who|should|could|would|do|does|did|is|are|was|were|can|will)\b/i;
     const genericEntityStopwords = new Set([
       "a", "an", "and", "as", "at", "for", "from", "founder", "general", "i", "in", "last", "matters",
-      "market", "my", "next", "now", "of", "our", "question", "risk", "shift", "should", "strategy",
-      "the", "this", "to", "update", "week", "what", "which", "why", "you", "your",
+      "market", "my", "next", "now", "of", "our", "question", "questions", "risk", "risks", "shift", "should", "strategy",
+      "the", "this", "to", "update", "week", "what", "which", "why", "you", "your", "focus", "comparables", "diligence", "flags",
     ]);
     const lq = query.toLowerCase();
     // Require explicit multi-entity syntax: comma, "and" with comma, "vs"
@@ -1384,10 +1620,15 @@ export function createSearchRouter(tools: McpTool[]) {
     if (/\b(my |uploaded|transcript|meeting|document|file|research file)/i.test(lq)) return [];
 
     const cleaned = query
+      .replace(/^(?:prepare|build|create|draft)\s+.+?\b(?:briefing|memo|analysis|packet|report)\s+(?:on|for)\s+/i, "")
+      .replace(/(?:prepare|build|create|draft)\s+(?:an?\s+)?(?:investment(?:-|\s+)banking(?:\s+style)?|banker(?:\s+style)?|investor(?:\s+style)?|competitive)?\s*(?:briefing|memo|analysis|packet|report)\s+(?:on|for)\s+/gi, "")
+      .replace(/(?:briefing|memo|analysis|packet|report)\s+(?:on|for)\s+/gi, "")
       .replace(/(?:compare|analyze|research|tell me about|search|profile|diligence on)\s+/gi, "")
-      .replace(/(?:in\s+(?:the\s+)?|the\s+|an?\s+)(?:AI|tech|fintech|payments?|commerce|market|race|landscape|space|industry|sector|category|segment|vertical)\b.*/gi, "")
+      .replace(/(?:in\s+(?:the\s+)?|the\s+|an?\s+)(?:AI|enterprise(?:\s+AI)?|tech|fintech|payments?|commerce|market|race|landscape|space|industry|sector|category|segment|vertical)\b.*/gi, "")
       .replace(/(?:top \d+ risks across|risks across|what changed.*?for)\s*/gi, "")
       .replace(/(?:competitive landscape|competitive position|strategy|overview).*$/gi, "")
+      .replace(/\b(?:focus on|cover|covering|including|with emphasis on)\b.*$/gi, "")
+      .replace(/[.?!].*$/g, "")
       .trim();
     // Split on comma, "and", "vs", "&"
     const parts = cleaned.split(/\s*(?:,\s*(?:and\s+)?|,?\s+and\s+|\s+vs\.?\s+|\s+versus\s+|\s*&\s*)\s*/i)
@@ -1475,11 +1716,17 @@ export function createSearchRouter(tools: McpTool[]) {
         ?? query.match(/(?:competitive landscape)[:\s]+(.+?)(?:\?|$)/i)?.[1]
         ?? query.match(/(?:competitor.*?(?:against|with))\s+(.+?)(?:\?|$)/i)?.[1];
       if (compClause) {
-        const parts = compClause.split(/\s*(?:,\s*(?:and\s+)?|,?\s+and\s+|\s+vs\.?\s+|\s+versus\s+|\s*&\s*|\s+or\s+)\s*/i)
-          .map(p => p.trim().replace(/[?'"]/g, "").replace(/['\u2019]s$/g, ""))
+        const leadingEntity = query.match(/([A-Z][a-zA-Z0-9.&-]+(?:\s+[A-Z][a-zA-Z0-9.&-]+){0,2})\s+(?:vs\.?|versus|against)/i)?.[1];
+        const cleanedClause = compClause
+          .replace(/\b(?:focus on|cover|covering|including|with emphasis on)\b.*$/i, "")
+          .replace(/(?:in\s+(?:the\s+)?)(?:AI|enterprise(?:\s+AI)?|tech|fintech|payments?|commerce|market|race|landscape|space|industry|sector|category|segment|vertical)\b.*$/i, "")
+          .replace(/[.?!].*$/g, "")
+          .trim();
+        const parts = [leadingEntity, ...cleanedClause.split(/\s*(?:,\s*(?:and\s+)?|,?\s+and\s+|\s+vs\.?\s+|\s+versus\s+|\s*&\s*|\s+or\s+)\s*/i)]
+          .map((p) => String(p ?? "").trim().replace(/[?'"]/g, "").replace(/['\u2019]s$/g, ""))
           .filter(p => p.length > 1 && /^[a-zA-Z]/.test(p));
         if (parts.length >= 2) {
-          return { type: "multi_entity", entities: parts, lens: "investor" };
+          return { type: "multi_entity", entities: Array.from(new Set(parts)), lens: "investor" };
         }
       }
       // Try to extract BOTH entities from "How does X compare to Y" patterns
@@ -1633,7 +1880,7 @@ Entity extraction rules:
               },
             },
           }),
-          signal: AbortSignal.timeout(3000), // 3s budget — classification must be fast
+          signal: AbortSignal.timeout(process.env.VERCEL ? 2_000 : 3_000), // classification must be fast
         }
       );
 
@@ -1740,9 +1987,20 @@ Entity extraction rules:
 
   const handleSearch = async (req: Request, res: Response) => {
     const startMs = Date.now();
+    // Total request budget — must finish before Vercel kills the function (10s on Hobby).
+    // Set to 9s so we have time to write a graceful SSE close.
+    const REQUEST_BUDGET_MS = process.env.VERCEL ? 9_000 : 55_000;
+    const requestDeadline = startMs + REQUEST_BUDGET_MS;
+    const requestAbort = new AbortController();
+    const budgetTimer = setTimeout(() => requestAbort.abort("request_timeout"), REQUEST_BUDGET_MS);
+    const checkBudget = () => {
+      if (Date.now() >= requestDeadline) throw new Error("Request budget exceeded");
+    };
+
     const { query, lens, daysBack } = parseSearchInput(req);
 
     if (!query || typeof query !== "string" || query.trim().length === 0) {
+      clearTimeout(budgetTimer);
       return res.status(400).json({ error: true, message: "Query is required" });
     }
 
@@ -1750,7 +2008,11 @@ Entity extraction rules:
     const sessionKey = getSessionKey(req);
     const sessionCtx = getSessionContext(sessionKey);
     const classification = await classifyWithSession(query.trim(), sessionCtx);
-    const resolvedLens = lens ?? classification.lens;
+    const inferredLens = inferExplicitLensFromQuery(query.trim());
+    const resolvedLens =
+      lens && !(lens === "founder" && inferredLens && inferredLens !== "founder")
+        ? lens
+        : inferredLens ?? classification.lens;
 
     const isStream = req.query.stream === "true";
     if (isStream) {
@@ -1840,6 +2102,7 @@ Entity extraction rules:
       // Falls through to the legacy switch if harness fails or no API key.
       // Agent harness uses call_llm provider bus (Gemini → OpenAI → Anthropic)
       // No API key check needed — call_llm handles provider detection
+      checkBudget();
       {
         try {
           const planTrace = traceStep("agent_plan", "gemini-3.1-flash-lite");
@@ -1864,17 +2127,27 @@ Entity extraction rules:
           execTrace.ok(`${execution.stepResults.length} steps, ${execution.totalDurationMs}ms`);
 
           // Synthesize results into a structured packet
+          checkBudget();
           const synthTrace = traceStep("agent_synthesize", "gemini-3.1-flash-lite");
-          const synthesized = await synthesizeResults(execution, query.trim(), resolvedLens, callTool);
+          const synthesized = await Promise.race([
+            synthesizeResults(execution, query.trim(), resolvedLens, callTool),
+            new Promise<never>((_, reject) => {
+              const remaining = requestDeadline - Date.now() - 1000; // leave 1s for response
+              if (remaining <= 0) reject(new Error("Request budget exceeded"));
+              else setTimeout(() => reject(new Error("Request budget exceeded")), remaining);
+            }),
+          ]);
           synthTrace.ok(`${synthesized.confidence}% confidence`);
 
           // ── Parallel enrichment: Monte Carlo + Why This Team credibility ──
           // Both run concurrently after synthesis to stay within Vercel timeout.
+          // Skip enrichment entirely on Vercel when budget is tight (< 3s remaining)
+          const budgetRemaining = requestDeadline - Date.now();
           const enrichmentPromises: Promise<void>[] = [];
 
           // Why This Team — credibility layer via direct Gemini call
           // For self-search (NodeBench, founder), inject local context (CLAUDE.md, memory, git)
-          if (process.env.GEMINI_API_KEY && !synthesized.whyThisTeam) {
+          if (budgetRemaining > 3000 && process.env.GEMINI_API_KEY && !synthesized.whyThisTeam) {
             enrichmentPromises.push((async () => {
               try {
                 // Detect self-search: query about NodeBench or the founder
@@ -1943,18 +2216,22 @@ Entity extraction rules:
           }
 
           // Monte Carlo enrichment (runs in parallel with credibility)
-          if (classification.type === "company_search" || classification.type === "competitor" || classification.type === "multi_entity") {
+          // Only run when the synthesized answer already contains explicit quantified evidence.
+          // Otherwise it manufactures pseudo-financial noise that dilutes the packet.
+          if (budgetRemaining > 3000 && (classification.type === "company_search" || classification.type === "competitor" || classification.type === "multi_entity")) {
             enrichmentPromises.push((async () => {
             try {
-              const mcTrace = traceStep("tool_call", "simulate_decision_paths");
               // Extract financial data from the synthesized answer
               const answerText = synthesized.answer ?? "";
               const revMatch = answerText.match(/\$(\d+(?:\.\d+)?)\s*(B|billion|M|million)/i);
               const shareMatch = answerText.match(/(\d+(?:\.\d+)?)\s*%\s*(?:market|share)/i);
-              const seedRevenue = revMatch
-                ? parseFloat(revMatch[1]) * (revMatch[2].toLowerCase().startsWith("b") ? 1_000_000_000 : 1_000_000) / 12
-                : 5_000_000; // Default $5M/mo if no data
-              const seedShare = shareMatch ? parseFloat(shareMatch[1]) / 100 : 0.05;
+              if (!revMatch || !shareMatch) {
+                return;
+              }
+              const mcTrace = traceStep("tool_call", "simulate_decision_paths");
+              const seedRevenue =
+                parseFloat(revMatch[1]) * (revMatch[2].toLowerCase().startsWith("b") ? 1_000_000_000 : 1_000_000) / 12;
+              const seedShare = parseFloat(shareMatch[1]) / 100;
 
               const mcResult = await callTool("simulate_decision_paths", {
                 entity: synthesized.entityName,
@@ -1966,28 +2243,31 @@ Entity extraction rules:
               }) as any;
               if (mcResult?.summary) {
                 const sim = mcResult.summary;
-                // Cap MC to 2 signals at medium impact — supplementary, not primary
+                // Keep MC as a supplemental scenario lens, not as a synthetic risk generator.
                 synthesized.signals.push(
-                  { name: `Monte Carlo (${sim.paths} paths): ${sim.successRate} success, base ${sim.medianPayoff}`, direction: "neutral", impact: "medium" },
+                  { name: `Scenario range (${sim.paths} paths): ${sim.successRate} success rate with base payoff ${sim.medianPayoff}.`, direction: "neutral", impact: "low" },
                 );
                 if (mcResult.bestPath && mcResult.worstPath) {
-                  synthesized.signals.push({ name: `3-case: Bull ${mcResult.bestPath.payoff} | Bear ${mcResult.worstPath.payoff} (${sim.confidenceInterval})`, direction: "neutral", impact: "medium" });
+                  synthesized.signals.push({
+                    name: `Three-case range: bull ${mcResult.bestPath.payoff} versus bear ${mcResult.worstPath.payoff} within ${sim.confidenceInterval}.`,
+                    direction: "neutral",
+                    impact: "low",
+                  });
                 }
-                for (const d of (mcResult.decisionSensitivity ?? []).slice(0, 2)) {
-                  synthesized.risks.push({ title: `Key decision: ${d.decision}`, description: `Best path: "${d.bestChoice}" (${d.impact} vs average). This decision materially affects outcomes.` });
-                }
-                // NOTE: Don't append raw simulation text to the answer body — it leaks internal pipeline output.
-                // MC data is already surfaced in signals.
-                synthesized.sources.push({ label: `Monte Carlo (${sim.paths})`, type: "local" });
+                synthesized.sources.push({ label: `Scenario model (${sim.paths} quantified paths)`, type: "local" });
               }
               mcTrace.ok(`${mcResult?.summary?.successRate ?? "?"} success rate`);
             } catch { /* MC enrichment is non-blocking */ }
             })());
           }
 
-          // Wait for all parallel enrichments (credibility + MC)
+          // Wait for all parallel enrichments (credibility + MC) — with remaining budget cap
           if (enrichmentPromises.length > 0) {
-            await Promise.all(enrichmentPromises);
+            const enrichBudget = Math.max(1000, requestDeadline - Date.now() - 500);
+            await Promise.race([
+              Promise.all(enrichmentPromises),
+              new Promise<void>(resolve => setTimeout(resolve, enrichBudget)),
+            ]);
           }
 
           // Build result in the format the rest of the route expects
@@ -2011,12 +2291,14 @@ Entity extraction rules:
             sourceRefs: synthesized.sources.map((s, i) => ({
               id: `src:${i}`, label: s.label, href: s.href, type: s.type, status: "cited",
             })),
-            keyMetrics: [
-              { label: "Confidence", value: `${synthesized.confidence}%` },
-              { label: "Steps", value: String(execution.stepResults.length) },
-              { label: "Sources", value: String(synthesized.sources.length) },
-              { label: "Actions", value: String(synthesized.nextActions.length) },
-            ],
+            keyMetrics: Array.isArray(synthesized.keyMetrics) && synthesized.keyMetrics.length > 0
+              ? synthesized.keyMetrics
+              : [
+                  { label: "Sources", value: String(synthesized.sources.length) },
+                  { label: "Comparables", value: String(synthesized.comparables.length) },
+                  { label: "Diligence flags", value: String(synthesized.risks.length) },
+                  { label: "Confidence", value: `${synthesized.confidence}%` },
+                ],
             harnessExecution: {
               objective: plan.objective,
               stepsPlanned: plan.steps.length,
@@ -2034,6 +2316,7 @@ Entity extraction rules:
       }
 
       // ── Legacy switch (fallback if harness didn't produce a result) ──
+      checkBudget();
       if (!usedHarness) switch (classification.type) {
         case "weekly_reset": {
           const t = traceStep("tool_call", "founder_local_weekly_reset");
@@ -2244,7 +2527,7 @@ Entity extraction rules:
                 // Fallback to web_search
                 const webRes = await Promise.race([
                   callTool("web_search", { query: `${eName} company overview strategy ${new Date().getFullYear()}`, maxResults: 3 }),
-                  new Promise(resolve => setTimeout(() => resolve(null), 6_000)),
+                  new Promise(resolve => setTimeout(() => resolve(null), process.env.VERCEL ? 3_000 : 6_000)),
                 ]) as any;
                 const snippets = (webRes?.results ?? []).map((r: any) => r.snippet ?? r.description ?? "").filter(Boolean);
                 return { name: eName, answer: "", snippets, sources: (webRes?.results ?? []).map((r: any) => r.url).filter(Boolean), resultCount: webRes?.resultCount ?? 0 };
@@ -2280,7 +2563,7 @@ Return ONLY valid JSON:
 }` }] }],
                     generationConfig: { temperature: 0.1, maxOutputTokens: 2000, responseMimeType: "application/json" },
                   }),
-                  signal: AbortSignal.timeout(10_000),
+                  signal: AbortSignal.timeout(process.env.VERCEL ? 4_000 : 10_000),
                 },
               );
               if (geminiResp.ok) {
@@ -2361,7 +2644,7 @@ Return ONLY valid JSON:
                 query: `${entityName} company overview strategy funding ${new Date().getFullYear()}`,
                 maxResults: 5,
               }),
-              new Promise(resolve => setTimeout(() => resolve(null), 8_000)),
+              new Promise(resolve => setTimeout(() => resolve(null), process.env.VERCEL ? 4_000 : 8_000)),
             ]).then(r => { webTrace.ok(`${(r as any)?.resultCount ?? 0} results`); return r; }).catch(() => { webTrace.error("web_search failed"); return null; }),
             callTool("run_recon", {
               target: entityName,
@@ -2436,7 +2719,7 @@ Return ONLY valid JSON:
 }` }] }],
                     generationConfig: { temperature: 0.1, maxOutputTokens: 1500, responseMimeType: "application/json" },
                   }),
-                  signal: AbortSignal.timeout(10_000),
+                  signal: AbortSignal.timeout(process.env.VERCEL ? 4_000 : 10_000),
                 },
               );
               if (geminiResp.ok) {
@@ -2603,7 +2886,7 @@ Return ONLY valid JSON:
               try {
                 const r = await Promise.race([
                   callTool("web_search", { query: query.trim().slice(0, 200), maxResults: 5 }),
-                  new Promise(resolve => setTimeout(() => resolve(null), 8_000)),
+                  new Promise(resolve => setTimeout(() => resolve(null), process.env.VERCEL ? 4_000 : 8_000)),
                 ]) as any;
                 wt.ok(`${r?.resultCount ?? 0} results`);
                 return r;
@@ -2645,7 +2928,7 @@ Return ONLY valid JSON with:
 RULES: Only include facts grounded in the web data. If data is thin, return fewer items.` }] }],
                     generationConfig: { temperature: 0.1, maxOutputTokens: 1200, responseMimeType: "application/json" },
                   }),
-                  signal: AbortSignal.timeout(10_000),
+                  signal: AbortSignal.timeout(process.env.VERCEL ? 4_000 : 10_000),
                 },
               );
               if (resp.ok) {
@@ -2755,6 +3038,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
         query: query.trim(),
         lens: resolvedLens,
         classification: classification.type,
+        result,
       })) {
         const directionTrace = traceStep("tool_call", "founder_direction_assessment");
         try {
@@ -2807,6 +3091,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
         result,
         judgeVerdict,
         packetId,
+        entityFallback: classification.entity,
       });
       result = proof.result;
       const normalizedIdentity = normalizeFounderIdentity({
@@ -2939,6 +3224,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
         });
       }
 
+      clearTimeout(budgetTimer);
       if (isStream) {
         res.write(`data: ${JSON.stringify({ type: "result", payload })}\n\n`);
         return res.end();
@@ -2946,16 +3232,23 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
         return res.json(payload);
       }
     } catch (err: any) {
+      clearTimeout(budgetTimer);
+      const isTimeout = err?.message?.includes("budget") || err?.message?.includes("timeout") || requestAbort.signal.aborted;
       const errorPayload = {
         error: true,
-        message: err?.message ?? "Search failed",
-        classification: classification.type,
+        message: isTimeout ? "Search timed out — try a shorter query or check back later" : (err?.message ?? "Search failed"),
+        classification: classification?.type ?? "unknown",
+        timedOut: isTimeout,
       };
+      if (isStream && !res.headersSent) {
+        res.setHeader("Content-Type", "text/event-stream");
+        res.flushHeaders();
+      }
       if (isStream) {
         res.write(`data: ${JSON.stringify({ type: "error", error: errorPayload })}\n\n`);
         return res.end();
       } else {
-        return res.status(500).json(errorPayload);
+        return res.status(isTimeout ? 504 : 500).json(errorPayload);
       }
     }
   };

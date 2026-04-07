@@ -1,7 +1,7 @@
 /**
  * SourcesBar — Horizontal scrollable row of source pills at the top of results.
  *
- * Each pill shows: favicon (via Google favicon service) + domain name + numbered badge.
+ * Each pill shows: local domain monogram + domain name + numbered badge.
  * Click opens the URL in a new tab.
  *
  * Usage:
@@ -9,7 +9,6 @@
  */
 
 import { memo } from "react";
-import { ExternalLink } from "lucide-react";
 import type { ResultSourceRef } from "./searchTypes";
 
 interface SourcesBarProps {
@@ -40,9 +39,7 @@ export const SourcesBar = memo(function SourcesBar({ sources }: SourcesBarProps)
       >
         {citedSources.map((source, index) => {
           const domain = source.domain ?? extractDomain(source.href);
-          const faviconUrl = domain
-            ? `https://www.google.com/s2/favicons?domain=${domain}&sz=32`
-            : undefined;
+          const monogram = buildMonogram(domain ?? source.label);
 
           return (
             <a
@@ -54,22 +51,10 @@ export const SourcesBar = memo(function SourcesBar({ sources }: SourcesBarProps)
               className="group flex shrink-0 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] px-2.5 py-1.5 transition-all hover:border-[#d97757]/25 hover:bg-[#d97757]/[0.04]"
               aria-label={`Source ${index + 1}: ${source.title ?? source.label}`}
             >
-              {/* Favicon */}
-              {faviconUrl ? (
-                <img
-                  src={faviconUrl}
-                  alt=""
-                  className="h-3.5 w-3.5 shrink-0 rounded-sm"
-                  loading="lazy"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              ) : (
-                <ExternalLink className="h-3 w-3 shrink-0 text-content-muted" />
-              )}
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-white/[0.06] text-[9px] font-semibold uppercase text-content-muted">
+                {monogram}
+              </span>
 
-              {/* Domain name */}
               <span className="max-w-[140px] truncate text-[11px] text-content-muted group-hover:text-content">
                 {domain ?? source.label}
               </span>
@@ -95,4 +80,13 @@ function extractDomain(url?: string): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+function buildMonogram(value: string): string {
+  const segments = value
+    .replace(/^www\./, "")
+    .split(/[.\s-]+/)
+    .filter(Boolean);
+  const joined = segments.slice(0, 2).map((segment) => segment[0]?.toUpperCase() ?? "").join("");
+  return joined || "•";
 }

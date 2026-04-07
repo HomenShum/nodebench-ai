@@ -1,158 +1,202 @@
-# Tesla Python Developer Interview Prep — March 31, 2026
+# Interview Prep — Updated April 2, 2026
 
-**Role**: Python Developer (ML focus) | **Client**: Tesla | **Via**: Collabera
-**Format**: 2 rounds × 45 min — Round 1: Python coding + API | Round 2: Culture fit + behavioral
+## Active Opportunities
+| Role | Company | Base Range | Status |
+|------|---------|-----------|--------|
+| **SWE, Ads Interface & Platform** | **TikTok GMPT** | **$156K-$317K + RSU** | Replied to Wallace, awaiting chat scheduling |
+| Python Developer (ML) | Tesla via Collabera | Contract 6mo | Delayed, reschedule pending |
+| Founding Engineer | $25M ARR startup via Joachim | $180-250K+ equity | Replied, awaiting response |
+| Eng, agent orchestration | via Bryce Reading | $205-280K + equity | Replied, awaiting response |
+
+## TikTok Ads Interface & Platform — What They Want
+- **Python backend** with FastAPI/Flask/Django
+- **RESTful APIs** — scalable, maintainable, secure
+- **High-concurrency, low-latency** backend systems
+- **Monetization product domains** — ads creation, delivery, measurement
+- **Automation tools** to streamline operations
+- YOUR MATCH: MCP gateway (WebSocket, auth, rate limiting), ta-studio-mcp (token-gated API), FastAPI endpoints, 500K tokens/60s rate handling
+
+## Interview Format (TikTok typical)
+- Online assessment: 2 problems, ~90 min
+- Phone screen: review OA + role discussion
+- Onsite: 3-5 rounds × 45 min (coding, system design, behavioral)
+- **System design is a bigger deal at TikTok than Tesla** — expect "design an ads serving pipeline" or "design a rate limiter"
 
 ---
 
-## PYTHON BUILDING BLOCKS — Know These Cold
+# PART 1: WHAT WE DRILLED (rapid fire Q&A session)
 
-### enumerate — what it does and when to use it
+## Lesson 1: Two Sum — the foundational interview problem
 
-`enumerate` gives you BOTH the index AND the value when looping. Without it you'd need a separate counter variable.
+**What it asks:** "Find two numbers in a list that add up to the target. Return their positions."
 
-```python
-# WITHOUT enumerate (ugly, error-prone)
-i = 0
-for name in ["Alice", "Bob", "Carol"]:
-    print(i, name)
-    i += 1
+**The dumb way:** Check every pair. O(n²). Don't do this.
 
-# WITH enumerate (clean)
-for i, name in enumerate(["Alice", "Bob", "Carol"]):
-    print(i, name)
-# Output: 0 Alice, 1 Bob, 2 Carol
+**The smart way:** As you scan each number, ask "have I already seen the number that would complete me?"
 
-# You can start from a different number
-for i, name in enumerate(["Alice", "Bob"], start=1):
-    print(i, name)
-# Output: 1 Alice, 2 Bob
+### Walkthrough with [3, 8, 5, 2], target = 10
+
+```
+See 3 → I need 10-3=7 → Is 7 in my notebook? No.  → Write down: {3: 0}
+See 8 → I need 10-8=2 → Is 2 in my notebook? No.  → Write down: {3: 0, 8: 1}
+See 5 → I need 10-5=5 → Is 5 in my notebook? No.  → Write down: {3: 0, 8: 1, 5: 2}
+See 2 → I need 10-2=8 → Is 8 in my notebook? YES! → Return [1, 3]
 ```
 
-**When you need it in interviews:** Any time you need to track position while iterating. Two Sum uses it. Any "return the INDEX of..." question uses it.
+The dict IS the notebook. Keys are numbers you've seen, values are where you saw them.
 
-**Mental model:** `enumerate(list)` → gives you `(index, value)` tuples. That's it.
+### enumerate — what it is
+
+It numbers your list for you. That's all.
+
+```python
+colors = ["red", "blue", "green"]
+
+for i, color in enumerate(colors):
+    print(i, color)
+
+# 0 red
+# 1 blue
+# 2 green
+```
+
+`i` = position, `color` = value. Without it you'd need a manual counter variable.
+
+**When you need it:** Any time the problem says "return the INDEX." Two Sum needs indices, so you use enumerate.
+
+### The code we built together
+
+```python
+def two_sum(nums, target):
+    seen = {}                          # our notebook: {number: index}
+    for i, n in enumerate(nums):       # i = position, n = the number
+        complement = target - n        # what number would complete this pair?
+        if complement in seen:         # have we seen it before?
+            return [seen[complement], i]  # yes! return both positions
+        seen[n] = i                    # no — write this number down for later
+```
+
+### Trace through [2, 7, 11, 15], target = 9
+
+```
+i=0, n=2:  complement = 9-2 = 7.  7 in {}? No.       seen = {2: 0}
+i=1, n=7:  complement = 9-7 = 2.  2 in {2: 0}? YES!  Return [seen[2], 1] = [0, 1] ✓
+```
+
+Answer: [0, 1] because nums[0]=2 and nums[1]=7 add to 9.
+
+**"What if there are multiple pairs?"** — In the standard interview version, there's exactly one solution. They tell you that. Always clarify: "Can I assume exactly one valid pair?" 99% of the time: yes.
 
 ---
 
-### dict (hash map) — the most important interview tool
+## Lesson 2: Dicts — the cheat code for 60% of interview problems
 
-A dict maps keys to values with O(1) lookup. This is the answer to 60% of coding questions.
+A dict maps keys to values with O(1) lookup. When the problem asks "have I seen this before?" — the answer is always a dict.
+
+### Creating and using
 
 ```python
-# Creating
-d = {}                          # empty
+d = {}                          # empty dict
 d = {"a": 1, "b": 2}           # with values
 
-# Setting and getting
-d["c"] = 3                     # set
-val = d["a"]                   # get (crashes if key missing)
-val = d.get("z", 0)            # get with default (returns 0 if missing, never crashes)
+d["c"] = 3                     # set a value
+val = d["a"]                   # get a value (CRASHES if key missing)
+val = d.get("z", 0)            # get with fallback (returns 0 if missing, never crashes)
 
-# Checking if key exists
-if "a" in d:                   # O(1) lookup — this is why dicts are powerful
+if "a" in d:                   # check if key exists — O(1), instant
     print("found")
-
-# Looping
-for key in d:                  # just keys
-for key, val in d.items():     # keys and values
 ```
 
-**The pattern that solves most interview problems:**
-"Have I seen this value before?" → Use a dict.
-- Two Sum: "Have I seen the complement before?"
-- Frequency count: "How many times has each character appeared?"
-- Deduplication: "Have I visited this node before?"
+### .get() — the safe lookup
+
+`.get(key, fallback)` means: "give me the value for this key, or the fallback if it's not there."
+
+```python
+counts = {"apple": 2, "banana": 1}
+
+counts.get("apple", 0)     # → 2      (apple exists, return its value)
+counts.get("banana", 0)    # → 1      (banana exists, return its value)
+counts.get("mango", 0)     # → 0      (mango doesn't exist, return fallback)
+counts.get("mango", -1)    # → -1     (you pick the fallback)
+counts.get("mango")        # → None   (default fallback is None)
+
+counts["mango"]            # → CRASH! KeyError — this is why .get() exists
+```
+
+### Counting pattern — you'll use this constantly
+
+**The long way:**
+```python
+words = ["apple", "banana", "apple", "cherry", "banana", "apple"]
+counts = {}
+
+for word in words:
+    if word in counts:       # seen this word before?
+        counts[word] += 1    # yes → add 1
+    else:
+        counts[word] = 1     # no → start at 1
+
+# counts = {"apple": 3, "banana": 2, "cherry": 1}
+```
+
+**The shortcut with .get():**
+```python
+counts = {}
+for word in words:
+    counts[word] = counts.get(word, 0) + 1
+```
+
+How it works step by step:
+- First "apple": `counts.get("apple", 0)` → `0` → `0 + 1 = 1` → `{"apple": 1}`
+- Second "apple": `counts.get("apple", 0)` → `1` → `1 + 1 = 2` → `{"apple": 2}`
+- Third "apple": `counts.get("apple", 0)` → `2` → `2 + 1 = 3` → `{"apple": 3}`
+
+**The one-liner (Counter):**
+```python
+from collections import Counter
+counts = Counter(words)   # → {"apple": 3, "banana": 2, "cherry": 1}
+```
+
+Use Counter in interviews unless they say "from scratch."
 
 ---
 
-### Collections you should know
+## Lesson 3: Collections you should know
 
 ```python
 from collections import Counter, defaultdict, deque, OrderedDict
 
-# Counter — count occurrences in one line
-Counter("balloon")  # → {'l': 2, 'o': 2, 'b': 1, 'a': 1, 'n': 1}
-Counter([1,1,2,3])  # → {1: 2, 2: 1, 3: 1}
+# Counter — count things in one line
+Counter("balloon")          # → {'l': 2, 'o': 2, 'b': 1, 'a': 1, 'n': 1}
+Counter([1, 1, 2, 3])      # → {1: 2, 2: 1, 3: 1}
 
-# defaultdict — dict that auto-creates missing keys
+# defaultdict — dict that auto-creates missing keys (no KeyError ever)
 graph = defaultdict(list)
-graph["A"].append("B")  # no KeyError even though "A" didn't exist yet
+graph["A"].append("B")      # no crash even though "A" didn't exist yet
 
-# deque — double-ended queue, O(1) append/pop from both ends
+# deque — queue with O(1) add/remove from both ends
 q = deque()
-q.append(1)       # add to right
-q.appendleft(0)   # add to left
-q.pop()           # remove from right
-q.popleft()       # remove from left
-# USE FOR: BFS (queue), sliding window
+q.append(1)                 # add to right
+q.appendleft(0)             # add to left
+q.popleft()                 # remove from left (use this for BFS)
 
-# OrderedDict — dict that remembers insertion order (used in LRU Cache)
+# OrderedDict — remembers insertion order + can reorder
 od = OrderedDict()
 od["a"] = 1
 od["b"] = 2
-od.move_to_end("a")      # move "a" to end (most recently used)
-od.popitem(last=False)    # remove from front (least recently used)
+od.move_to_end("a")         # move "a" to end
+od.popitem(last=False)      # remove from front
 ```
 
 ---
 
-### Sorting — know this for interviews
+# PART 2: CODING QUESTIONS — STEP BY STEP
 
-```python
-# Basic
-sorted([3, 1, 2])                    # → [1, 2, 3] (returns new list)
-[3, 1, 2].sort()                     # sorts in-place, returns None
+## 1. Two Sum (covered above in Lesson 1)
 
-# Sort by custom key
-sorted(["banana", "apple", "cherry"], key=len)         # by length
-sorted([(1, 'b'), (2, 'a')], key=lambda x: x[1])      # by second element
+## 2. Number of Islands — DFS explained like pouring paint
 
-# Reverse
-sorted([3, 1, 2], reverse=True)      # → [3, 2, 1]
-```
-
----
-
-## CODING QUESTIONS — EXPLAINED STEP BY STEP
-
-### 1. Two Sum
-
-**Problem:** Given array `nums` and integer `target`, return indices of two numbers that add to target.
-Example: `nums = [2, 7, 11, 15], target = 9` → `[0, 1]` because 2 + 7 = 9
-
-**Why the dict approach works:**
-
-For each number, we need to find if its "complement" (target - number) exists somewhere in the array. We COULD check every pair (O(n²)), but a dict lets us check in O(1).
-
-Walk through the example:
-```
-nums = [2, 7, 11, 15], target = 9
-seen = {}
-
-i=0, n=2:  complement = 9-2 = 7.  Is 7 in seen? No.   Store {2: 0}
-i=1, n=7:  complement = 9-7 = 2.  Is 2 in seen? YES!  Return [seen[2], 1] = [0, 1]
-```
-
-**Code:**
-```python
-def two_sum(nums, target):
-    seen = {}  # value → index
-    for i, n in enumerate(nums):     # i = index, n = value
-        complement = target - n
-        if complement in seen:       # O(1) dict lookup
-            return [seen[complement], i]
-        seen[n] = i                  # remember this value's index
-    return []
-```
-
-**What to say in interview:** "I use a hash map to store each number's index as I scan. For each new number, I check if its complement already exists in the map. This gives O(n) time and O(n) space."
-
----
-
-### 2. Number of Islands — DFS EXPLAINED
-
-**Problem:** Given a 2D grid of '1' (land) and '0' (water), count the number of islands. An island is a group of '1's connected horizontally or vertically.
+**Problem:** Grid of '1' (land) and '0' (water). Count islands. Connected '1's = one island.
 
 ```
 grid = [
@@ -164,87 +208,108 @@ grid = [
 Answer: 3 islands
 ```
 
-**The confusion with DFS:** The trick is understanding that DFS here is NOT about finding a path. It's about **marking visited territory**. Think of it like pouring paint.
+**Forget "DFS" as a concept. Think of it as pouring paint.**
 
-**Step by step — imagine you're walking the grid left-to-right, top-to-bottom:**
+You walk the grid left-to-right, top-to-bottom. When you step on land ('1'), you:
+1. Say "found an island!" and add 1 to your count
+2. Pour paint on it — the paint spreads to all connected land (up, down, left, right)
+3. Every cell the paint touches turns from '1' to '0' (now it's "visited")
+4. Keep walking. Skip anything that's already '0'
+
+### Full walkthrough:
 
 ```
-Step 1: Visit (0,0). It's a "1" — ISLAND FOUND! (count = 1)
-        Now "pour paint" on this entire island by DFS:
-        - (0,0) → mark as "0" (visited)
-        - go right → (0,1) is "1" → mark as "0"
-        - go right → (0,2) is "0" → stop this direction
-        - go down from (0,0) → (1,0) is "1" → mark as "0"
-        - go down from (0,1) → (1,1) is "1" → mark as "0"
-        - ...keep going until no more connected "1"s
+Starting grid:
+1 1 0 0
+1 1 0 0
+0 0 1 0
+0 0 0 1
 
-        After paint: entire top-left island is now all "0"s
+Step 1: Walk to (0,0). It's "1" — ISLAND FOUND! count = 1
+        Pour paint starting at (0,0):
+          (0,0) is "1" → paint it → "0"
+          spread right → (0,1) is "1" → paint it → "0"
+          spread right → (0,2) is "0" → stop
+          spread down from (0,0) → (1,0) is "1" → paint it → "0"
+          spread down from (0,1) → (1,1) is "1" → paint it → "0"
+          all neighbors of painted cells are "0" → paint stops
 
-Step 2: Continue scanning. (0,1), (0,2), (0,3), (1,0), (1,1)... all "0" now. Skip.
+        Grid now:
+        0 0 0 0
+        0 0 0 0
+        0 0 1 0
+        0 0 0 1
 
-Step 3: Visit (2,2). It's a "1" — ISLAND FOUND! (count = 2)
-        Pour paint: mark (2,2) as "0". No connected "1"s adjacent.
+Step 2: Keep walking. (0,1), (0,2)... (1,0), (1,1)... all "0". Skip.
 
-Step 4: Visit (3,3). It's a "1" — ISLAND FOUND! (count = 3)
-        Pour paint: mark (3,3) as "0".
+Step 3: Walk to (2,2). It's "1" — ISLAND FOUND! count = 2
+        Pour paint: (2,2) → "0". No connected "1"s.
 
-Result: 3 islands
+Step 4: Walk to (3,3). It's "1" — ISLAND FOUND! count = 3
+        Pour paint: (3,3) → "0".
+
+Result: 3 islands ✓
 ```
 
-**Why we change "1" to "0":** That IS our "visited" marker. Instead of keeping a separate visited set, we modify the grid. Each "1" we visit gets changed to "0" so we never count it twice.
+**Why change '1' to '0'?** That's the "visited" marker. No separate visited set needed. Once painted, you'll never count it again.
 
-**The DFS function — it only does one thing: pour paint on connected land**
+### The paint-pouring function (this IS the DFS)
+
+It does ONE thing: pour paint from a starting cell in all 4 directions.
+
 ```python
-def dfs(grid, i, j):
-    # Stop conditions: out of bounds OR water
-    if i < 0 or j < 0:                    return  # above or left of grid
-    if i >= len(grid) or j >= len(grid[0]): return  # below or right of grid
-    if grid[i][j] != '1':                  return  # water or already visited
+def pour_paint(grid, i, j):
+    # Stop if: out of bounds OR water/already painted
+    if i < 0 or j < 0:                      return  # above or left of grid
+    if i >= len(grid) or j >= len(grid[0]):  return  # below or right of grid
+    if grid[i][j] != '1':                    return  # water or already visited
 
-    # Mark this cell as visited
-    grid[i][j] = '0'
+    grid[i][j] = '0'          # paint this cell
 
-    # Pour paint in all 4 directions
-    dfs(grid, i + 1, j)  # down
-    dfs(grid, i - 1, j)  # up
-    dfs(grid, i, j + 1)  # right
-    dfs(grid, i, j - 1)  # left
+    pour_paint(grid, i + 1, j)  # spread down
+    pour_paint(grid, i - 1, j)  # spread up
+    pour_paint(grid, i, j + 1)  # spread right
+    pour_paint(grid, i, j - 1)  # spread left
 ```
 
-**The main function — scan grid, call DFS when you find unvisited land**
+Each call asks: "Am I on land?" If yes, paint it and spread. If no, stop. That's the entire function.
+
+### The main function
+
 ```python
 def num_islands(grid):
     count = 0
     for i in range(len(grid)):           # each row
         for j in range(len(grid[0])):    # each column
-            if grid[i][j] == '1':        # found unvisited land!
+            if grid[i][j] == '1':        # found unpainted land!
                 count += 1               # new island
-                dfs(grid, i, j)          # pour paint on entire island
+                pour_paint(grid, i, j)   # paint the whole island
     return count
 ```
 
-**What to say in interview:** "I scan every cell. When I find an unvisited '1', that's a new island — I increment the count and then DFS to mark the entire connected island as visited by flipping '1's to '0's. This ensures I never double-count. O(m×n) time and space."
+**What to say:** "I scan every cell. When I find an unvisited '1', that's a new island — count it, then flood-fill to mark all connected land as visited. O(m×n) time."
 
 ---
 
-### 3. LRU Cache
+## 3. LRU Cache
 
-**Problem:** Design a cache that evicts the Least Recently Used item when full.
-- `get(key)` → return value if exists, -1 if not. Marks as recently used.
-- `put(key, value)` → insert or update. If full, evict LRU item first.
+**Problem:** Build a cache. When it's full, evict the item that was used LEAST recently.
 
-**Why OrderedDict:** It's a dict that remembers insertion order AND lets you move items to the end. The front = oldest (LRU), the end = newest (MRU).
+Think of a shelf that holds 2 books. When you read a book, it goes to the right end. When you need room for a new book, you throw away the one on the far left (oldest).
 
 ```
 Capacity = 2
 
-put(1, "A")     cache: [1:A]              1 is newest
-put(2, "B")     cache: [1:A, 2:B]         2 is newest, 1 is oldest
-get(1)          cache: [2:B, 1:A]         1 moves to end (just used)
-put(3, "C")     cache is full!
-                evict front (2:B = least recently used)
-                cache: [1:A, 3:C]
+put(1, "A")     shelf: [1:A]              
+put(2, "B")     shelf: [1:A, 2:B]         full now
+get(1)          shelf: [2:B, 1:A]         1 moves to right (just used it)
+put(3, "C")     full! throw away leftmost (2:B)
+                shelf: [1:A, 3:C]
 ```
+
+OrderedDict = a dict that remembers order AND lets you move things around.
+- Front = oldest (throw away first)
+- End = newest (just used)
 
 ```python
 from collections import OrderedDict
@@ -257,70 +322,131 @@ class LRUCache:
     def get(self, key):
         if key not in self.cache:
             return -1
-        self.cache.move_to_end(key)  # mark as recently used
+        self.cache.move_to_end(key)    # just used it — move to end
         return self.cache[key]
 
     def put(self, key, value):
         if key in self.cache:
-            self.cache.move_to_end(key)  # update = recently used
+            self.cache.move_to_end(key)  # updating = using it
         self.cache[key] = value
         if len(self.cache) > self.cap:
-            self.cache.popitem(last=False)  # evict from FRONT (oldest)
+            self.cache.popitem(last=False)  # throw away from front (oldest)
 ```
 
-**What to say in interview:** "OrderedDict gives me O(1) for all operations. The front is the least recently used, the end is the most recently used. On get, I move to end. On put, if over capacity, I pop from the front."
-
-**YOUR REAL EXPERIENCE:** "In our agentic reliability checklist, every in-memory collection must have a MAX size plus an eviction policy — BOUND rule. LRU is one pattern. This prevents OOM when agents loop — unbounded maps can crash in minutes under agent loops."
+YOUR REAL EXPERIENCE: "In our agentic reliability checklist, every in-memory collection must have MAX + eviction — BOUND rule. Unbounded maps crash in minutes under agent loops."
 
 ---
 
-### 4. Reverse Linked List
+## 4. Reverse Linked List
 
-**Problem:** Reverse a singly linked list. `1→2→3→4` becomes `4→3→2→1`
+### First: what IS a linked list?
 
-**Think of it as picking up cards one at a time and putting each on top of a new pile:**
+A linked list is a chain of nodes. Each node is a tiny object with two things:
+
+```python
+class Node:
+    def __init__(self, val):
+        self.val = val      # the data (1, 2, 3...)
+        self.next = None    # pointer to the next node in the chain
+```
+
+So `1 → 2 → 3 → None` is really:
 
 ```
-Original: 1 → 2 → 3 → None
-
-Step 1: Pick up 1. New pile: 1 → None.  Remaining: 2 → 3 → None
-Step 2: Pick up 2. Put on top. New pile: 2 → 1 → None.  Remaining: 3 → None
-Step 3: Pick up 3. Put on top. New pile: 3 → 2 → 1 → None.  Done!
+Node(1)          Node(2)          Node(3)
+val: 1           val: 2           val: 3
+next: Node(2) →  next: Node(3) →  next: None
 ```
 
-**The three pointers:**
-- `prev` = the new pile (starts as None)
-- `curr` = the card we're picking up
-- `nxt` = save the next card before we detach curr
+**`.next`** is just a property on the node — it holds the address of the next node. `None` means "end of chain."
+
+**`curr`** is just a variable name (short for "current") that holds whichever node you're looking at right now. You could name it anything.
+
+### The three variables
+
+```python
+prev = None      # the "done pile" — empty at start
+curr = head      # the node we're currently processing (starts at first node)
+# nxt gets created INSIDE the loop — it's temporary, just saves the next node
+```
+
+### Why this order matters
+
+You need to do 4 things per node, IN THIS ORDER:
+
+```
+1. nxt = curr.next       # SAVE the rest of the chain (before you break the link)
+2. curr.next = prev      # FLIP this node's pointer backward
+3. prev = curr           # This node is now part of the done pile
+4. curr = nxt            # Move forward to the saved next node
+```
+
+If you do step 2 before step 1: you lose the chain. `curr.next` used to point to the next node — once you overwrite it, that link is gone forever. So you MUST save it first.
+
+### Full trace through 1 → 2 → 3 → None
+
+```
+BEFORE LOOP: prev = None, curr = Node(1)
+
+--- LOOP PASS 1 (curr = Node(1)) ---
+  1. nxt = curr.next           → nxt = Node(2)     [saved the chain]
+  2. curr.next = prev          → Node(1).next = None [flipped! 1 now points at nothing]
+  3. prev = curr               → prev = Node(1)     [1 is top of done pile]
+  4. curr = nxt                → curr = Node(2)     [move forward]
+  
+  State: Done pile: 1→None    Remaining: 2→3→None
+
+--- LOOP PASS 2 (curr = Node(2)) ---
+  1. nxt = curr.next           → nxt = Node(3)
+  2. curr.next = prev          → Node(2).next = Node(1) [2 now points backward at 1]
+  3. prev = curr               → prev = Node(2)
+  4. curr = nxt                → curr = Node(3)
+  
+  State: Done pile: 2→1→None  Remaining: 3→None
+
+--- LOOP PASS 3 (curr = Node(3)) ---
+  1. nxt = curr.next           → nxt = None
+  2. curr.next = prev          → Node(3).next = Node(2) [3 now points backward at 2]
+  3. prev = curr               → prev = Node(3)
+  4. curr = nxt                → curr = None         [loop ends]
+  
+  State: Done pile: 3→2→1→None  ✓ Reversed!
+
+AFTER LOOP: return prev = Node(3) = head of reversed list
+```
+
+### The code — same 4 steps wrapped in a while loop
 
 ```python
 def reverse(head):
-    prev = None      # new pile starts empty
-    curr = head      # start with first card
-    while curr:
-        nxt = curr.next     # save next card BEFORE we detach
-        curr.next = prev    # point current card backward (onto the pile)
-        prev = curr         # current card is now top of pile
-        curr = nxt          # move to next card
-    return prev             # prev is the new head
+    prev = None       # done pile starts empty
+    curr = head       # start at first node
+    while curr:       # keep going until we run out of nodes
+        nxt = curr.next      # 1. SAVE next before breaking link
+        curr.next = prev     # 2. FLIP pointer backward
+        prev = curr          # 3. ADD to done pile
+        curr = nxt           # 4. MOVE forward
+    return prev              # prev is the new head
 ```
+
+**What to say in interview:** "I use three pointers: prev starts at None, curr starts at head. Each step I save curr.next, flip curr's pointer to prev, then advance both. O(n) time, O(1) space."
 
 ---
 
-### 5. Move Zeros to Left
+## 5. Move Zeros to Left
 
-**Problem:** `[1, 0, 2, 0, 3]` → `[0, 0, 1, 2, 3]` (maintain order of non-zeros)
+`[1, 0, 2, 0, 3]` → `[0, 0, 1, 2, 3]` (keep order of non-zeros)
 
-**Approach:** Read from right to left. Copy non-zeros to the right end. Fill remaining with zeros.
+Read from right. Copy non-zeros to the right end. Fill rest with zeros.
 
 ```python
 def move_zeros_left(arr):
-    write = len(arr) - 1                    # start writing from the end
+    write = len(arr) - 1
     for read in range(len(arr) - 1, -1, -1):  # read right to left
         if arr[read] != 0:
             arr[write] = arr[read]
             write -= 1
-    while write >= 0:                       # fill remaining spots with 0
+    while write >= 0:
         arr[write] = 0
         write -= 1
     return arr
@@ -328,44 +454,63 @@ def move_zeros_left(arr):
 
 ---
 
-### 6. Simplify Unix Path
+## 6. Simplify Unix Path
 
-**Problem:** `"/a/./b/../../c/"` → `"/c"`
+`"/a/./b/../../c/"` → `"/c"`
 
-**Rules:** `.` means current dir (ignore). `..` means go up (pop). Multiple `/` are same as one.
+Rules: `.` = current dir (ignore), `..` = go up (pop), extra `/` = ignore
 
-**Use a stack:**
 ```python
 def simplify_path(path):
     stack = []
-    for part in path.split('/'):     # split "/a/./b/../../c" → ["", "a", ".", "b", "..", "..", "c"]
+    for part in path.split('/'):
         if part == '..':
-            if stack: stack.pop()    # go up one directory
-        elif part and part != '.':   # ignore empty strings and "."
+            if stack: stack.pop()     # go up
+        elif part and part != '.':    # skip empty and "."
             stack.append(part)
-    return '/' + '/'.join(stack)     # rebuild: ["c"] → "/c"
+    return '/' + '/'.join(stack)
 ```
 
 ---
 
-### 7. Maximum Number of Balloons
+## 7. Maximum Number of Balloons
 
-**Problem:** Given string `text`, how many times can you spell "balloon"?
-
-**Key insight:** "balloon" has: b×1, a×1, l×2, o×2, n×1. Count each letter and find the bottleneck.
+"balloon" needs: b×1, a×1, l×2, o×2, n×1. Count letters, find the bottleneck.
 
 ```python
 from collections import Counter
 
 def max_balloons(text):
     c = Counter(text)
-    # min of: how many b's, a's, pairs of l's, pairs of o's, n's
     return min(c['b'], c['a'], c['l'] // 2, c['o'] // 2, c['n'])
 ```
 
 ---
 
-### 8. FastAPI Endpoint — Know This for "API Skills"
+## 8. Shortest Path Between Tesla Chargers
+
+Graph BFS with range constraint.
+
+```python
+from collections import deque
+
+def shortest_path(graph, start, end, max_range=320):
+    queue = deque([(start, [start])])
+    visited = {start}
+    while queue:
+        node, path = queue.popleft()
+        if node == end:
+            return path
+        for neighbor, dist in graph[node]:
+            if neighbor not in visited and dist <= max_range:
+                visited.add(neighbor)
+                queue.append((neighbor, path + [neighbor]))
+    return None
+```
+
+---
+
+## 9. FastAPI Endpoint — "API skills" per Priyan
 
 ```python
 from fastapi import FastAPI, HTTPException
@@ -373,10 +518,9 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-# Pydantic model = automatic validation. If client sends wrong type, FastAPI returns 422.
 class PredictRequest(BaseModel):
-    features: list[float]       # must be list of numbers
-    model_name: str = "default" # optional with default
+    features: list[float]
+    model_name: str = "default"
 
 class PredictResponse(BaseModel):
     prediction: float
@@ -386,9 +530,7 @@ class PredictResponse(BaseModel):
 async def predict(req: PredictRequest):
     if not req.features:
         raise HTTPException(status_code=400, detail="Features list cannot be empty")
-
-    # In real code: model = joblib.load("model.pkl"); pred = model.predict(...)
-    prediction = sum(req.features) / len(req.features)  # placeholder
+    prediction = sum(req.features) / len(req.features)
     return PredictResponse(prediction=prediction, confidence=0.95)
 
 @app.get("/health")
@@ -396,57 +538,98 @@ async def health():
     return {"status": "ok"}
 ```
 
-**What to say about API design:**
-- Status codes: 200 OK, 201 Created, 400 Bad Request, 401 Unauthorized, 404 Not Found, 429 Rate Limited, 500 Server Error
-- Always validate input (Pydantic does this automatically)
-- Always have a /health endpoint
-- Version your API: `/api/v1/predict`
+**Status codes to know:** 200 OK, 201 Created, 400 Bad Request, 401 Unauthorized, 404 Not Found, 429 Rate Limited, 500 Server Error
 
-**YOUR REAL EXPERIENCE:** "I built the MCP WebSocket gateway — API key auth, rate limiting at 100/min, idle timeout at 30 min, health endpoints. Close code 4001 for auth failure, 4002 for rate limit, 4003 for timeout. Also published ta-studio-mcp with token-gated auth — email-based token generation via Convex backend."
+**YOUR REAL EXPERIENCE:** "I built the MCP WebSocket gateway — API key auth, rate limiting 100/min, idle timeout 30 min, health endpoints. Close codes: 4001 auth failure, 4002 rate limit, 4003 timeout."
 
 ---
 
-## ROUND 2: BEHAVIORAL — STAR STORIES
+## 10. API Design — REST endpoints for ML model serving
 
-### Your 5 Best Stories
+```
+POST   /api/v1/predict          — Send features, get prediction
+GET    /api/v1/models           — List deployed models
+GET    /api/v1/models/{id}      — Model metadata + metrics
+POST   /api/v1/models           — Deploy new model version
+DELETE /api/v1/models/{id}      — Remove model
+GET    /api/v1/health           — Health check
+```
 
-**Story 1: 100-Day Sprint (HIGH STAKES + DEADLINE)**
-- S: Meta. Sole architect. Build AI QA platform for 350K+ manual test cases. 100-day timeline.
+**Rate limiting:** Token bucket or sliding window. Return 429 with Retry-After header.
+YOUR EXPERIENCE: "Handled 500K tokens/60s by JSON payload reduction 40% and progressive prompt disclosure 75%."
+
+**Auth:** API key in header, JWT, OAuth2.
+YOUR EXPERIENCE: "ta-studio-mcp uses token-gated auth — email-based generation, same email always returns same token, Convex validates."
+
+---
+
+## 11. ML Quick Questions
+
+**Precision vs Recall:**
+- Precision: "Of everything I flagged, how many were actually correct?" — TP / (TP + FP)
+- Recall: "Of everything that was actually positive, how many did I catch?" — TP / (TP + FN)
+- Tesla vehicle service: recall matters more — don't miss a defect
+- YOUR EXPERIENCE: "At Ideaflow we tracked F1 in CI/CD with frozen golden datasets"
+
+**Overfitting:**
+- Training accuracy high, validation low = overfitting
+- Fix: regularization, dropout, early stopping, more data, cross-validation
+
+**Deploy ML to production:**
+- Train → serialize (joblib/ONNX) → API (FastAPI) → containerize (Docker) → deploy → monitor
+- YOUR EXPERIENCE: "At Meta: eval harness → coding agent patches → log tracing → review → rerun evaluation. 64/64 completion, 17x cost reduction."
+
+**Model drift:**
+- Data distribution changes over time → model degrades
+- Monitor prediction distribution, retrain when metrics drop
+
+---
+
+# PART 3: BEHAVIORAL — STAR STORIES
+
+### Tesla's Values
+1. **Move Fast** — speed with purpose
+2. **Think Like Owners** — take responsibility
+3. **First Principles** — reason from ground truth
+4. **Do the Impossible** — tackle big problems
+5. **We Are All In** — mission over ego
+
+### Story 1: 100-Day Sprint (HIGH STAKES + DEADLINE)
+- S: Meta. Sole architect. AI QA platform for 350K+ manual test cases. 100-day timeline.
 - T: Ship concept to production alone.
 - A: Eval-driven workflow — eval harness generates test scenarios, coding agent writes patches, log tracing captures every step, review pipeline scores quality, rerun evaluation until passing. Integrated 10 internal infra systems.
-- R: Promoted contractor → architect in 2 months. 64/64 task completion. 17x cost reduction ($364→$21). VP approval. Launched March 2.
+- R: Promoted contractor → architect in 2 months. 64/64 task completion. 17x cost reduction ($364→$21). VP approval.
 
-**Story 2: Token Compaction (SOLVING WITH LIMITED RESOURCES)**
-- S: Meta, first 30 days. Agent burning 10-50M tokens/run. OOM errors on telemetry dashboard.
-- T: Make it cost-viable with no additional budget.
-- A: Root cause: raw screenshots fed every step. Built compaction — structured trajectories instead of raw pixels. JSON payload reduction 40%, prompt disclosure 75%.
-- R: 1-3M tokens instead of 10-50M. Same steps. Tool calls reduced 11x. 81% zero-error runs.
+### Story 2: Token Compaction (LIMITED RESOURCES)
+- S: Meta, first 30 days. Agent burning 10-50M tokens/run. OOM on telemetry.
+- T: Make it cost-viable, no additional budget.
+- A: Root cause: raw screenshots every step. Built compaction — structured trajectories instead of pixels. JSON reduction 40%, prompt disclosure 75%.
+- R: 1-3M tokens instead of 10-50M. Tool calls 11x reduction. 81% zero-error runs.
 
-**Story 3: Ambiguous → Shipped (TRANSLATING BUSINESS PROBLEM)**
-- S: JPMorgan 2024. Vague ask: "automate prospecting."
-- T: Turn ambiguity into a product with no spec.
-- A: Interviewed bankers to find actual pain (PitchBook→CRM→notes loop). Built LLMsuite with agentic RAG, dynamic tool calling, self-validation loops.
-- R: Demoed firm's first agentic RAG (Jan 2024). Productized for sector mapping, prospecting, note-taking.
+### Story 3: Ambiguous → Shipped (BUSINESS PROBLEM)
+- S: JPMorgan 2024. "Automate prospecting." No spec.
+- T: Turn vague ask into a product.
+- A: Interviewed bankers, found pain (PitchBook→CRM→notes loop). Built LLMsuite with agentic RAG, dynamic tool calling, self-validation.
+- R: Firm's first agentic RAG (Jan 2024). Productized for prospecting + sector mapping.
 
-**Story 4: Disagreement (DATA OVER OPINIONS)**
-- S: Meta. Debate: raw screenshots vs compacted trajectories.
+### Story 4: Data Over Opinions (DISAGREEMENT)
+- S: Meta. Raw screenshots vs compacted trajectories debate.
 - T: Team assumed more data = better.
-- A: Built both, ran same 64 tasks, compared token cost + completion rate + error rate.
-- R: Data showed compaction was 10-17x cheaper with same accuracy. Adopted as standard.
+- A: Built both, ran same 64 tasks, compared cost + completion + error rate.
+- R: Compaction 10-17x cheaper, same accuracy. Data won.
 
-**Story 5: Ownership (TOOK RESPONSIBILITY BEYOND ROLE)**
-- S: CosmaNeura startup. No cloud budget. No infra.
+### Story 5: Beyond Role (OWNERSHIP)
+- S: CosmaNeura. No cloud budget.
 - T: Deploy 3 AI prototypes with zero funding.
-- A: Personally secured $500K Azure credit sponsorship. Built GPT-4 SOAP notes, ICD-10 code rec via vector search, multilingual patient screening.
-- R: Full Azure deployment. 3 production prototypes shipped.
+- A: Personally secured $500K Azure credit. Built SOAP notes, ICD-10 code rec, patient screening.
+- R: Full Azure deployment. 3 prototypes shipped.
 
 ### Why Tesla?
-
-"Tesla solves ML at physical-world scale — vehicles, energy, manufacturing. The JD mentions heterogeneous datasets — text, voice, images, tabular — that's exactly what I work with across my two MCP servers. It says 'translate ambiguous business problems into ML solutions' — I've done that twice: at JPMorgan turning a vague 'automate prospecting' ask into an agentic RAG product, and at Meta turning 'automate QA' into a production MCP server. And I'm in Fremont — literally down the street."
+"Tesla solves ML at physical-world scale — vehicles, energy, manufacturing. The JD says heterogeneous datasets (text, voice, images, tabular) — I work with all four across my MCP servers. It says 'translate ambiguous business problems into ML solutions' — I did that at JPMorgan and at Meta. And I live in Fremont."
 
 ---
 
-## NUMBERS CHEAT SHEET
+# NUMBERS CHEAT SHEET
 
 | What | Number |
 |------|--------|
@@ -470,7 +653,7 @@ async def health():
 
 ---
 
-## TONIGHT: 30 MIN DRILL
+# TONIGHT: 30 MIN DRILL
 
 **10 min — Code from memory:**
 1. Two Sum (dict + enumerate)
@@ -478,8 +661,8 @@ async def health():
 3. Reverse Linked List (prev/curr/nxt)
 
 **10 min — API from memory:**
-1. FastAPI POST /predict with Pydantic model
-2. List the HTTP status codes (200, 400, 401, 404, 429, 500)
+1. FastAPI POST /predict with Pydantic
+2. List the HTTP status codes
 
 **10 min — Talk out loud:**
 1. Meta story in STAR, 2 min, hit: 100 days, 64/64, 17x, eval→patch→trace→review→rerun

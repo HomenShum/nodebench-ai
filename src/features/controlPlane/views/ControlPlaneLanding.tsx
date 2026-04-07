@@ -11,11 +11,17 @@
  * Not: pick a mode, configure agents, browse a dashboard.
  */
 
-import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { useQuery } from "convex/react";
+import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRevealOnMount } from "@/hooks/useRevealOnMount";
+import { useConvexSearch } from "@/hooks/useConvexSearch";
 import { PUBLIC_SEARCH_API_ENDPOINT, PUBLIC_SEARCH_UPLOAD_API_ENDPOINT } from "@/lib/searchApi";
-import { getSharedContextDelegateUrl, getSharedContextPublishUrl } from "@/lib/syncBridgeApi";
+import {
+  getFounderEpisodeFinalizeUrl,
+  getFounderEpisodeStartUrl,
+  getFounderEpisodesUrl,
+  getSharedContextDelegateUrl,
+  getSharedContextPublishUrl,
+} from "@/lib/syncBridgeApi";
 import { LiveAgentProgress } from "../components/LiveAgentProgress";
 import {
   ArrowRight,
@@ -44,12 +50,13 @@ import {
   type LensId,
   type ResultPacket,
   LENSES,
-  EXAMPLE_PROMPTS,
   DEMO_PACKETS,
 } from "../components/searchTypes";
 import { ensureProofPacket } from "../components/proofModel";
 import { ChatThread } from "../components/ChatThread";
 import type { ChatEntry } from "../components/ChatMessage";
+import { FounderEpisodePanel, type FounderEpisodeRecord, type FounderEpisodeSpan } from "../components/FounderEpisodePanel";
+import type { TrajectoryData } from "@/features/telemetry/types";
 
 const SinceLastSession = lazy(() => import("../../founder/components/SinceLastSession"));
 const FeedbackSummary = lazy(() => import("../../founder/components/FeedbackSummary").then(m => ({ default: m.FeedbackSummary })));
@@ -85,13 +92,40 @@ function shouldPreferDemoPacket(demoKey?: string): boolean {
     return false;
   }
 
+  const params = new URLSearchParams(window.location.search);
+  const forceLiveSearch =
+    params.get("liveSearch") === "1" ||
+    window.localStorage.getItem("nodebench-force-live-search") === "1";
+  if (forceLiveSearch) {
+    return false;
+  }
+
   const { hostname, port } = window.location;
   const isLocalShell = (hostname === "127.0.0.1" || hostname === "localhost") && port !== "8020";
-  const isAutomatedBrowser =
-    typeof navigator !== "undefined" &&
-    (navigator.webdriver || /Playwright/i.test(navigator.userAgent));
+  const forceDemo =
+    params.get("demo") === "1" ||
+    window.localStorage.getItem("nodebench-force-demo-packets") === "1";
 
-  return isLocalShell || isAutomatedBrowser;
+  return isLocalShell || forceDemo;
+}
+
+function slugifyValue(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
+
+function getFounderHarnessSessionKey(): string {
+  if (typeof window === "undefined") {
+    return "session:ssr";
+  }
+  const existing = window.sessionStorage.getItem("nodebench-founder-session-key");
+  if (existing) return existing;
+  const created = `session:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+  window.sessionStorage.setItem("nodebench-founder-session-key", created);
+  return created;
 }
 
 /* ─── Lens icon map ──────────────────────────────────────────────────────── */
@@ -113,6 +147,357 @@ const INSTALL_COMMANDS = [
   { tab: "Windsurf", code: "npx -y nodebench-mcp --preset=hackathon", note: "Add to .windsurf/mcp.json" },
   { tab: "Hackathon + QA", code: "RETENTION_TEAM=<CODE> curl -sL retention.sh/install.sh | bash && claude mcp add nodebench -- npx -y nodebench-mcp --preset=hackathon", note: "Full stack: intelligence + QA" },
 ] as const;
+
+const SEARCH_STREAM_TIMEOUT_MS = 60_000;
+
+type PacketLineageNode = {
+  id: string;
+  label: string;
+  detail: string;
+  status: "complete" | "active" | "pending";
+};
+
+type SubconsciousPreview = {
+  mode: "off" | "whisper" | "packet" | "full" | "review";
+  classification: string;
+  whisperText: string;
+  suppressed: boolean;
+  suppressionReason?: string | null;
+  contradictions: string[];
+  stalePackets: string[];
+  blockIdsUsed: string[];
+};
+
+const FOUNDER_QUICK_ACTIONS: Array<{
+  id: string;
+  label: string;
+  description: string;
+  prompt?: string;
+  lens?: LensId;
+  kind?: "prompt" | "connect";
+}> = [
+  {
+    id: "weekly_reset",
+    label: "Weekly Reset",
+    description: "Refresh your operating context, surface contradictions, and produce a fresh packet.",
+    prompt: "Run my weekly reset — review what changed, surface contradictions, and produce a fresh operating packet.",
+    lens: "founder",
+    kind: "prompt",
+  },
+  {
+    id: "hand_off_agent",
+    label: "Hand off to an agent",
+    description: "Package context, evidence, and guardrails for an agent delegation.",
+    prompt: "Help me prepare a delegation packet for an agent handoff with context, evidence, and guardrails.",
+    lens: "founder",
+    kind: "prompt",
+  },
+  {
+    id: "startup_idea",
+    label: "Analyze my startup idea",
+    description: "Turn a rough startup description into company truth, hidden requirements, and next moves.",
+    prompt: "Analyze my startup idea and tell me what company I am actually building, what is weak, and what to do next.",
+    lens: "founder",
+    kind: "prompt",
+  },
+  {
+    id: "competitors",
+    label: "Search competitors",
+    description: "Compare a company, market, or competitor set from a founder, investor, or banker lens.",
+    prompt: "Compare the main competitors in this market and tell me where the wedge is strongest.",
+    lens: "investor",
+    kind: "prompt",
+  },
+  {
+    id: "since_last_session",
+    label: "What changed this week?",
+    description: "Review important changes, contradictions, and what now matters relative to the last session.",
+    prompt: "What changed since the last meaningful founder session, and what should I update before delegating work?",
+    lens: "founder",
+    kind: "prompt",
+  },
+  {
+    id: "connect_context",
+    label: "Connect NodeBench-MCP",
+    description: "Install the MCP bridge so NodeBench can build a live founder workspace from docs, code, and agent work.",
+    kind: "connect",
+  },
+];
+
+function buildSearchAbortSignal(controller: AbortController, timeoutMs: number): AbortSignal {
+  const timeoutFactory = typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function"
+    ? AbortSignal.timeout.bind(AbortSignal)
+    : null;
+  const anyFactory = typeof AbortSignal !== "undefined" && typeof AbortSignal.any === "function"
+    ? AbortSignal.any.bind(AbortSignal)
+    : null;
+
+  if (!timeoutFactory) {
+    return controller.signal;
+  }
+
+  const timeoutSignal = timeoutFactory(timeoutMs);
+  if (!anyFactory) {
+    return controller.signal;
+  }
+
+  return anyFactory([controller.signal, timeoutSignal]);
+}
+
+function buildTrajectoryFromSearchTrace(
+  query: string,
+  trace: TraceStep[],
+  latencyMs: number,
+): TrajectoryData {
+  const completedAt = new Date().toISOString();
+  return {
+    query,
+    steps: trace.map((step, index) => ({
+      id: step.traceId ?? `${step.step}:${step.tool ?? "none"}:${index}`,
+      toolName: step.tool ?? step.step,
+      domain: step.tool ? "search" : "orchestration",
+      latencyMs: step.durationMs ?? 0,
+      status:
+        step.status === "error"
+          ? "fail"
+          : step.isRunning
+            ? "pending"
+            : "pass",
+      inputSummary: step.tool ? `${step.step} via ${step.tool}` : step.step,
+      outputPreview: step.detail ?? step.status,
+      timestamp: completedAt,
+      tokenEstimate: 0,
+    })),
+    totalLatencyMs: latencyMs,
+    toolCount: new Set(trace.map((step) => step.tool ?? step.step)).size,
+    totalTokenEstimate: 0,
+    startedAt: new Date(Date.now() - Math.max(latencyMs, 0)).toISOString(),
+    completedAt,
+  };
+}
+
+function collectTraceTools(traceEntries: TraceStep[]): string[] {
+  return Array.from(
+    new Set(
+      traceEntries
+        .flatMap((step) => String(step.tool ?? "").split(","))
+        .map((tool) => tool.trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
+function dedupeByKey<T>(items: T[], keyFn: (item: T) => string): T[] {
+  const seen = new Set<string>();
+  const deduped: T[] = [];
+  for (const item of items) {
+    const key = keyFn(item);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(item);
+  }
+  return deduped;
+}
+
+function looksStructuredMetric(metric: { label?: string; value?: string } | null | undefined): boolean {
+  const label = String(metric?.label ?? "").trim().toLowerCase();
+  const value = String(metric?.value ?? "").trim();
+  if (!label || !value) return false;
+  if (["confidence", "changes", "contradictions", "actions"].includes(label)) return false;
+  return /[$€£]?\d/.test(value) || /%|x\b|basis points|bps/i.test(value);
+}
+
+function scorePacketCandidate(packet: ResultPacket | null | undefined): number {
+  if (!packet) return -1;
+
+  const answer = packet.answer?.trim() ?? "";
+  const sourceRefs = packet.sourceRefs ?? [];
+  const answerBlocks = packet.answerBlocks ?? [];
+  const keyMetrics = packet.keyMetrics ?? [];
+  const comparables = packet.comparables ?? [];
+  const risks = packet.risks ?? [];
+  const changes = packet.changes ?? [];
+
+  let score = 0;
+  if (answer.length >= 120) score += 20;
+  if (answer.length >= 260) score += 8;
+  if (/\$|\d+%|\billion\b|\bmillion\b/i.test(answer)) score += 12;
+  score += Math.min(24, sourceRefs.filter((source) => Boolean(source?.href)).length * 6);
+  score += Math.min(24, answerBlocks.length * 4);
+  score += Math.min(24, keyMetrics.filter((metric) => looksStructuredMetric(metric)).length * 6);
+  score += Math.min(10, comparables.length * 5);
+  score += Math.min(10, risks.length * 5);
+  score += Math.min(8, changes.length * 4);
+
+  if (/confidence|changes|contradictions|actions/i.test(keyMetrics.map((metric) => metric.label).join(" "))) {
+    score -= 4;
+  }
+
+  return score;
+}
+
+function mergePacketCandidates(primary: ResultPacket, secondary: ResultPacket | null): ResultPacket {
+  if (!secondary) return primary;
+
+  return {
+    ...secondary,
+    ...primary,
+    answer: primary.answer || secondary.answer,
+    entityName: primary.entityName || secondary.entityName,
+    canonicalEntity: primary.canonicalEntity || secondary.canonicalEntity,
+    confidence: primary.confidence || secondary.confidence,
+    sourceCount: Math.max(primary.sourceCount ?? 0, secondary.sourceCount ?? 0),
+    variables: primary.variables?.length ? primary.variables : secondary.variables,
+    keyMetrics:
+      primary.keyMetrics?.length || !secondary.keyMetrics?.length
+        ? primary.keyMetrics
+        : secondary.keyMetrics,
+    changes: primary.changes?.length ? primary.changes : secondary.changes,
+    risks: primary.risks?.length ? primary.risks : secondary.risks,
+    comparables: primary.comparables?.length ? primary.comparables : secondary.comparables,
+    whyThisTeam: primary.whyThisTeam ?? secondary.whyThisTeam,
+    packetId: primary.packetId ?? secondary.packetId,
+    packetType: primary.packetType ?? secondary.packetType,
+    sourceRefs: dedupeByKey(
+      [...(primary.sourceRefs ?? []), ...(secondary.sourceRefs ?? [])],
+      (source) => String(source.id ?? source.href ?? source.label ?? ""),
+    ),
+    claimRefs: dedupeByKey(
+      [...(primary.claimRefs ?? []), ...(secondary.claimRefs ?? [])],
+      (claim) => String(claim.id ?? claim.text ?? ""),
+    ),
+    answerBlocks: dedupeByKey(
+      [...(primary.answerBlocks ?? []), ...(secondary.answerBlocks ?? [])],
+      (block) => String(block.id ?? block.title ?? ""),
+    ),
+    interventions:
+      primary.interventions?.length || !secondary.interventions?.length
+        ? primary.interventions
+        : secondary.interventions,
+    nextQuestions: dedupeByKey(
+      [...(primary.nextQuestions ?? []), ...(secondary.nextQuestions ?? [])],
+      (value) => String(value).trim().toLowerCase(),
+    ),
+  };
+}
+
+function buildPacketFromStructuredResult(structuredResult: any, query: string): ResultPacket | null {
+  if (!structuredResult?.canonicalEntity && !structuredResult?.packetId && !structuredResult?.answerBlocks?.length) {
+    return null;
+  }
+
+  const canonicalEntityName =
+    typeof structuredResult?.canonicalEntity === "string"
+      ? structuredResult.canonicalEntity
+      : structuredResult?.canonicalEntity?.name ?? structuredResult?.entity ?? "NodeBench";
+
+  return {
+    query,
+    entityName: canonicalEntityName,
+    answer: structuredResult?.canonicalEntity?.canonicalMission ?? structuredResult?.summary ?? "",
+    confidence: structuredResult?.canonicalEntity?.identityConfidence ?? structuredResult?.confidence ?? 70,
+    sourceCount:
+      structuredResult?.sourceRefs?.length ??
+      structuredResult?.sourcesUsed?.length ??
+      (structuredResult?.whatChanged?.length ?? 0) + (structuredResult?.signals?.length ?? 0),
+    variables: (structuredResult?.signals ?? []).slice(0, 5).map((signal: any, index: number) => ({
+      rank: index + 1,
+      name: signal.name ?? String(signal),
+      direction: signal.direction ?? "neutral",
+      impact: signal.impact ?? "medium",
+    })),
+    keyMetrics: [
+      { label: "Confidence", value: `${structuredResult?.canonicalEntity?.identityConfidence ?? structuredResult?.confidence ?? 0}%` },
+      { label: "Changes", value: String(structuredResult?.whatChanged?.length ?? 0) },
+      { label: "Contradictions", value: String(structuredResult?.contradictions?.length ?? 0) },
+      { label: "Actions", value: String(structuredResult?.nextActions?.length ?? 0) },
+    ],
+    changes: structuredResult?.whatChanged?.map((change: any) => ({
+      description: change.description ?? String(change),
+      date: change.date,
+    })),
+    risks: structuredResult?.contradictions?.map((contradiction: any) => ({
+      title: contradiction.claim ?? "Contradiction",
+      description: contradiction.evidence ?? "",
+      falsification: contradiction.falsification,
+    })),
+    comparables: structuredResult?.comparables?.map((comparable: any) => ({
+      name: comparable.name ?? String(comparable),
+      relevance: comparable.relevance ?? "medium",
+      note: comparable.note ?? "",
+    })),
+    whyThisTeam: structuredResult?.whyThisTeam ?? null,
+    packetId: structuredResult?.packetId,
+    packetType: structuredResult?.packetType ?? "founder_packet",
+    canonicalEntity: canonicalEntityName,
+    sourceRefs:
+      structuredResult?.sourceRefs ??
+      structuredResult?.sourcesUsed?.map((source: any, index: number) => ({
+        id: source.id ?? `source:${index}`,
+        label: source.title ?? source.label ?? source.url ?? `Source ${index + 1}`,
+        href: source.url,
+        type: source.type ?? "web",
+        status: source.status ?? "cited",
+        title: source.title ?? source.label,
+        domain: source.domain,
+        publishedAt: source.publishedAtIso ?? source.publishedAt,
+        thumbnailUrl: source.thumbnailUrl,
+        excerpt: source.excerpt ?? source.summary,
+        confidence: source.confidence,
+      })),
+    claimRefs: structuredResult?.claimRefs,
+    answerBlocks: structuredResult?.answerBlocks,
+    explorationMemory: structuredResult?.explorationMemory,
+    graphSummary: structuredResult?.graphSummary,
+    proofStatus: structuredResult?.proofStatus,
+    uncertaintyBoundary: structuredResult?.uncertaintyBoundary,
+    recommendedNextAction:
+      structuredResult?.recommendedNextAction ?? structuredResult?.nextActions?.[0]?.action,
+    graphNodes: structuredResult?.graphNodes,
+    graphEdges: structuredResult?.graphEdges,
+    strategicAngles: structuredResult?.strategicAngles,
+    progressionProfile: structuredResult?.progressionProfile,
+    progressionTiers: structuredResult?.progressionTiers,
+    diligencePack: structuredResult?.diligencePack,
+    readinessScore: structuredResult?.readinessScore,
+    unlocks: structuredResult?.unlocks,
+    materialsChecklist: structuredResult?.materialsChecklist,
+    scorecards: structuredResult?.scorecards,
+    shareableArtifacts: structuredResult?.shareableArtifacts,
+    visibility: structuredResult?.visibility,
+    benchmarkEvidence: structuredResult?.benchmarkEvidence,
+    workflowComparison: structuredResult?.workflowComparison,
+    operatingModel: structuredResult?.operatingModel,
+    distributionSurfaceStatus: structuredResult?.distributionSurfaceStatus,
+    companyReadinessPacket: structuredResult?.companyReadinessPacket,
+    companyNamingPack: structuredResult?.companyNamingPack,
+    interventions: structuredResult?.nextActions?.slice(0, 4).map((action: any) => ({
+      action: action.action ?? String(action),
+      impact: action.impact ?? "medium",
+    })),
+    nextQuestions:
+      structuredResult?.nextQuestions ?? structuredResult?.nextActions?.map((action: any) => action.action) ?? [],
+    rawPacket: structuredResult?.rawPacket,
+  };
+}
+
+function resolveStreamResultPacket(data: any, query: string): ResultPacket | null {
+  const explicitPacket =
+    data?.resultPacket && typeof data.resultPacket === "object"
+      ? (data.resultPacket as ResultPacket)
+      : null;
+  const structuredPacket = buildPacketFromStructuredResult(data?.result, query);
+
+  if (explicitPacket && structuredPacket) {
+    const explicitScore = scorePacketCandidate(explicitPacket);
+    const structuredScore = scorePacketCandidate(structuredPacket);
+    return explicitScore >= structuredScore
+      ? mergePacketCandidates(explicitPacket, structuredPacket)
+      : mergePacketCandidates(structuredPacket, explicitPacket);
+  }
+
+  return explicitPacket ?? structuredPacket;
+}
 
 /* ─── Component ──────────────────────────────────────────────────────────── */
 
@@ -137,6 +522,9 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   onOpenFastAgent: _onOpenFastAgent,
   onOpenFastAgentWithPrompt,
 }: ControlPlaneLandingProps) {
+  // ── Convex-native search (10-min budget, realtime updates) ──
+  const convexSearch = useConvexSearch();
+
   const traceEntryId = useCallback(
     (entry: { step: string; tool?: string; startMs?: number }, fallbackIndex?: number) =>
       `${entry.step}:${entry.tool ?? "none"}:${entry.startMs ?? fallbackIndex ?? 0}`,
@@ -169,14 +557,39 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   const pendingVoiceSubmitRef = useRef(false);
   const [copiedInstall, setCopiedInstall] = useState(false);
   const [activeInstallTab, setActiveInstallTab] = useState(0);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
   const [handoffState, setHandoffState] = useState<HandoffState>({ status: "idle" });
+  const [activeEpisode, setActiveEpisode] = useState<FounderEpisodeRecord | null>(null);
+  const [recentEpisodes, setRecentEpisodes] = useState<FounderEpisodeRecord[]>([]);
+  const [subconsciousPreview, setSubconsciousPreview] = useState<SubconsciousPreview | null>(null);
+  const [isSubconsciousLoading, setIsSubconsciousLoading] = useState(false);
+  const founderHarnessSessionKeyRef = useRef(getFounderHarnessSessionKey());
+  const connectCardRef = useRef<HTMLDivElement>(null);
+  const activeSearchRef = useRef<{
+    requestId: string;
+    controller: AbortController;
+    episodeId: string;
+    correlationId: string;
+    traceEntries: TraceStep[];
+    query: string;
+    lens: LensId;
+    convexSessionId?: string;
+    fallbackStarted?: boolean;
+  } | null>(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(max-width: 1023px)").matches
+      : false,
+  );
 
   const voice = useVoiceInput({
     onTranscript: useCallback((text: string) => {
+      inputRef.current = text;
       setInput(text);
     }, []),
     onEnd: useCallback((finalText: string) => {
       if (finalText.trim()) {
+        inputRef.current = finalText.trim();
         setInput(finalText.trim());
         pendingVoiceSubmitRef.current = true;
       }
@@ -191,6 +604,21 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
     );
   }, [voice.isListening]);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+    const mediaQuery = window.matchMedia("(max-width: 1023px)");
+    const handleViewportChange = () => setIsMobileViewport(mediaQuery.matches);
+    handleViewportChange();
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", handleViewportChange);
+      return () => mediaQuery.removeEventListener("change", handleViewportChange);
+    }
+    mediaQuery.addListener(handleViewportChange);
+    return () => mediaQuery.removeListener(handleViewportChange);
+  }, []);
+
   const stagger = useCallback(
     (delay: string): React.CSSProperties => ({
       opacity: isVisible ? 1 : 0,
@@ -204,48 +632,22 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   // Keep ref in sync so handleSubmit always reads latest input
   useEffect(() => { inputRef.current = input; }, [input]);
 
-  // ── Live signal entity from Convex daily brief ────────────────────
-  // Try to get the latest daily brief from Convex for real signal entities.
-  // This is a React hook — runs every render but Convex caches the query.
-  let briefSignalEntity: string | null = null;
-  let briefSignalQuery: string | null = null;
-  try {
-    const api = (globalThis as any).__CONVEX_API__;
-    if (api?.domains?.research?.dailyBriefMemoryQueries?.getLatestMemory) {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const briefMemory = useQuery(api.domains.research.dailyBriefMemoryQueries.getLatestMemory);
-      if (briefMemory?.payload) {
-        // Extract top signal entity from the daily brief payload
-        const payload = typeof briefMemory.payload === "string" ? JSON.parse(briefMemory.payload) : briefMemory.payload;
-        const signals = payload?.actII?.signals ?? payload?.signals ?? [];
-        if (signals.length > 0) {
-          const topSignal = signals[0];
-          const headline = topSignal?.headline ?? topSignal?.label ?? "";
-          // Extract entity name: first capitalized multi-word sequence in headline
-          const entityMatch = headline.match(/([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)/);
-          if (entityMatch) {
-            briefSignalEntity = entityMatch[0];
-            briefSignalQuery = `${headline} — what does this mean for founders?`;
-          }
-        }
-      }
-    }
-  } catch { /* Convex not available — fall through */ }
-
   // ── Auto-fire: load intelligence from real signals ───────────────
   // Priority:
   // 1. Return visitor → their last entity (continuity)
-  // 2. Convex daily brief → top signal entity from Research Hub
-  // 3. Dashboard changes → real market signals (Stripe MCP, GitHub Copilot, etc.)
-  // 4. Fallback → Anthropic (strongest data coverage)
+  // 2. Live sweep signals → real market changes
+  // 3. Fallback → Anthropic (strongest data coverage)
   // Auto-fire flag persisted in sessionStorage — survives component unmount/remount
   // when user navigates Ask → Dashboard → Ask. Without this, every return to Ask
   // re-triggers the search because useRef resets on remount.
   const autoFiredRef = useRef(sessionStorage.getItem("nodebench-auto-fired") === "1");
   useEffect(() => {
-    if (autoFiredRef.current || conversation.length > 0) return;
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const allowAutoFire = params.get("autofire") === "1";
+    if (!allowAutoFire || autoFiredRef.current || conversation.length > 0) return;
     // Don't auto-fire when a founder sub-view is active (Dashboard, Coordination, Entities)
-    const urlView = new URLSearchParams(window.location.search).get("view");
+    const urlView = params.get("view");
     const urlPath = window.location.pathname;
     if (urlView?.startsWith("founder") || urlView?.startsWith("coordination") || urlView?.startsWith("nearby") || urlPath.startsWith("/founder")) {
       autoFiredRef.current = true;
@@ -262,12 +664,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         return { entity: lastEntity, query: `${lastEntity} competitive position and latest developments`, lens: "investor" };
       }
 
-      // 2. Daily brief signal entity (from Convex)
-      if (briefSignalEntity && briefSignalQuery) {
-        return { entity: briefSignalEntity, query: briefSignalQuery, lens: "investor" };
-      }
-
-      // 3. Live sweep signals (Crucix pattern: real-time data sources)
+      // 2. Live sweep signals (Crucix pattern: real-time data sources)
       try {
         const sweepResp = await fetch("/api/sweep/latest", { signal: AbortSignal.timeout(2000) });
         if (sweepResp.ok) {
@@ -291,7 +688,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         }
       } catch { /* sweep not available yet */ }
 
-      // 4. Fallback: real market signals with contextual queries
+      // 3. Fallback: real market signals with contextual queries
       const marketSignals = [
         { entity: "Anthropic", query: "Anthropic competitive position and enterprise AI strategy 2026", lens: "investor" as LensId },
         { entity: "OpenAI", query: "OpenAI risks and competitive threats in enterprise AI 2026", lens: "investor" as LensId },
@@ -310,7 +707,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
       handleSubmit(query);
     }, 600);
     return () => clearTimeout(timer);
-  }, [briefSignalEntity]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [conversation.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Save last searched entity for next visit
   useEffect(() => {
@@ -330,13 +727,272 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
     el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
   }, [input]);
 
-  const showResult = useCallback((packet: ResultPacket, lensOverride?: LensId) => {
+  const refreshRecentEpisodes = useCallback(async () => {
+    try {
+      const response = await fetch(
+        getFounderEpisodesUrl({
+          sessionKey: founderHarnessSessionKeyRef.current,
+          limit: 6,
+        }),
+      );
+      const json = await response.json();
+      if (!response.ok || !json?.success || !Array.isArray(json.episodes)) return;
+      setRecentEpisodes(json.episodes as FounderEpisodeRecord[]);
+    } catch {
+      // Founder harness is observational. Fail quietly.
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshRecentEpisodes();
+  }, [refreshRecentEpisodes]);
+
+  const workspaceTrajectory = useMemo(() => {
+    if (!activeTrace) return undefined;
+    const query = activeResult?.query ?? submittedQuery;
+    if (!query || activeTrace.trace.length === 0) return undefined;
+    return buildTrajectoryFromSearchTrace(query, activeTrace.trace, activeTrace.latencyMs);
+  }, [activeResult?.query, activeTrace, submittedQuery]);
+
+  const packetLineage = useMemo<PacketLineageNode[]>(() => {
+    const packetLabel = activeResult?.packetType ?? activeEpisode?.packetType ?? "founder_packet";
+    const contextId = activeEpisode?.contextId ?? handoffState.contextId;
+    const taskId = activeEpisode?.taskId ?? handoffState.taskId;
+    const traceCount = activeEpisode?.traceStepCount ?? activeTrace?.trace.length ?? 0;
+
+    return [
+      {
+        id: "query",
+        label: "Founder question captured",
+        detail: submittedQuery || activeEpisode?.query || "Waiting for a founder question.",
+        status: submittedQuery || activeEpisode?.query ? "complete" : "pending",
+      },
+      {
+        id: "packet",
+        label: "Canonical packet compiled",
+        detail: activeResult
+          ? `${packetLabel} for ${activeResult.entityName ?? "current company"}${traceCount > 0 ? ` from ${traceCount} trace steps` : ""}`
+          : "The packet is still being assembled.",
+        status: activeResult ? "complete" : activeEpisode ? "active" : "pending",
+      },
+      {
+        id: "context",
+        label: "Shared context published",
+        detail: contextId ? `Context ${contextId}` : "Publish when you want durable reuse and packet handoff.",
+        status: contextId ? "complete" : "pending",
+      },
+      {
+        id: "handoff",
+        label: "Delegation ready",
+        detail: taskId
+          ? `${handoffState.targetLabel ?? "Coding agent"} task ${taskId}`
+          : "No downstream task prepared yet.",
+        status: taskId ? "complete" : handoffState.status === "delegating" ? "active" : "pending",
+      },
+    ];
+  }, [
+    activeEpisode,
+    activeResult,
+    activeTrace?.trace.length,
+    handoffState.contextId,
+    handoffState.status,
+    handoffState.targetLabel,
+    handoffState.taskId,
+    submittedQuery,
+  ]);
+
+  const handleQuickAction = useCallback((action: (typeof FOUNDER_QUICK_ACTIONS)[number]) => {
+    if (action.kind === "connect") {
+      setShowInstallGuide(true);
+      if (typeof connectCardRef.current?.scrollIntoView === "function") {
+        connectCardRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
+    }
+    if (action.prompt) {
+      const nextLens = action.lens ?? activeLens;
+      trackEvent("quick_action_click", { action: action.id, lens: nextLens });
+      setActiveLens(nextLens);
+      setInput(action.prompt);
+      handleSubmit(action.prompt);
+    }
+  }, [activeLens]);
+
+  useEffect(() => {
+    if (!activeResult && !submittedQuery) {
+      setSubconsciousPreview(null);
+      return;
+    }
+
+    const prompt = activeResult?.query ?? submittedQuery;
+    if (!prompt) {
+      setSubconsciousPreview(null);
+      return;
+    }
+
+    const controller = new AbortController();
+    const fallbackPreview = (): SubconsciousPreview => {
+      const contradictionHint =
+        activeResult?.risks?.[0]?.title ??
+        activeResult?.uncertaintyBoundary ??
+        (activeEpisode?.contradictionsDetected ? `${activeEpisode.contradictionsDetected} contradictions still need resolution.` : "");
+      const staleHint =
+        activeEpisode?.importantChangesDetected && activeEpisode.importantChangesDetected > 0
+          ? [`${activeEpisode.importantChangesDetected} important changes should refresh the packet before shipping.`]
+          : [];
+      const primaryHint =
+        activeResult?.recommendedNextAction ??
+        activeResult?.nextActions?.[0]?.action ??
+        activeResult?.nextQuestions?.[0] ??
+        "Route the current packet before asking the founder to restate context.";
+
+      return {
+        mode: activeEpisode?.taskId ? "packet" : "whisper",
+        classification: activeLens,
+        whisperText: primaryHint,
+        suppressed: false,
+        suppressionReason: null,
+        contradictions: contradictionHint ? [contradictionHint] : [],
+        stalePackets: staleHint,
+        blockIdsUsed: contextId ? ["packet_lineage"] : ["company_identity"],
+      };
+    };
+
+    const contextId = activeEpisode?.contextId ?? handoffState.contextId;
+
+    setIsSubconsciousLoading(true);
+    fetch("/api/subconscious/whisper", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt,
+        mode: activeEpisode?.taskId ? "packet" : "whisper",
+        session_id: founderHarnessSessionKeyRef.current,
+      }),
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const json = await response.json();
+        setSubconsciousPreview({
+          mode: json.mode ?? (activeEpisode?.taskId ? "packet" : "whisper"),
+          classification: json.classification?.classification ?? activeLens,
+          whisperText: String(json.whisperText ?? "").replace(/<\/?nodebench_whisper>/g, "").trim(),
+          suppressed: Boolean(json.suppressed),
+          suppressionReason: json.suppressionReason ?? null,
+          contradictions: Array.isArray(json.contradictions) ? json.contradictions : [],
+          stalePackets: Array.isArray(json.stalePackets) ? json.stalePackets : [],
+          blockIdsUsed: Array.isArray(json.blockIdsUsed) ? json.blockIdsUsed : [],
+        });
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setSubconsciousPreview(fallbackPreview());
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsSubconsciousLoading(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, [
+    activeEpisode?.contextId,
+    activeEpisode?.contradictionsDetected,
+    activeEpisode?.importantChangesDetected,
+    activeEpisode?.taskId,
+    activeLens,
+    activeResult,
+    handoffState.contextId,
+    submittedQuery,
+  ]);
+
+  const upsertActiveEpisodeSpan = useCallback((episodeId: string, nextSpan: FounderEpisodeSpan) => {
+    setActiveEpisode((prev) => {
+      if (!prev || prev.episodeId !== episodeId) return prev;
+      const spans = [...prev.spans];
+      const replaceIndex = spans.findIndex((span) => span.stage === nextSpan.stage && span.type === nextSpan.type);
+      if (replaceIndex >= 0) {
+        spans[replaceIndex] = nextSpan;
+      } else {
+        spans.push(nextSpan);
+      }
+      return {
+        ...prev,
+        spans,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+  }, []);
+
+  const finalizeFounderEpisode = useCallback(async (
+    episodeId: string,
+    payload: Record<string, unknown>,
+  ) => {
+    try {
+      const response = await fetch(getFounderEpisodeFinalizeUrl(episodeId), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = await response.json();
+      if (response.ok && json?.success && json.episode) {
+        setActiveEpisode(json.episode as FounderEpisodeRecord);
+        void refreshRecentEpisodes();
+      }
+    } catch {
+      // Best-effort observation only.
+    }
+  }, [refreshRecentEpisodes]);
+
+  const clearActiveSearch = useCallback((requestId?: string) => {
+    if (!activeSearchRef.current) return;
+    if (requestId && activeSearchRef.current.requestId !== requestId) return;
+    activeSearchRef.current = null;
+  }, []);
+
+  const abortActiveSearch = useCallback(() => {
+    const active = activeSearchRef.current;
+    if (active) {
+      active.controller.abort();
+      void finalizeFounderEpisode(active.episodeId, {
+        status: "aborted",
+        summary: "Founder episode was interrupted before completion.",
+        finalSpan: {
+          stage: "after",
+          type: "search_aborted",
+          status: "error",
+          label: "Search interrupted",
+          detail: "The in-flight founder episode was replaced or cancelled before a packet was produced.",
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+    activeSearchRef.current = null;
+  }, [finalizeFounderEpisode]);
+
+  useEffect(() => () => {
+    abortActiveSearch();
+  }, [abortActiveSearch]);
+
+  const showResult = useCallback((packet: ResultPacket, lensOverride?: LensId, targetEntryId?: string) => {
     const enriched = ensureProofPacket(packet, lensOverride ?? activeLens);
     setActiveResult(enriched);
+    setShowFullWorkspace(!isMobileViewport);
     setHandoffState({ status: "idle" });
     setIsSearching(false);
     // Append to conversation thread
     setConversation((prev) => {
+      if (targetEntryId) {
+        let didUpdate = false;
+        const next = prev.map((entry) => {
+          if (entry.id !== targetEntryId) return entry;
+          didUpdate = true;
+          return { ...entry, packet: enriched };
+        });
+        return didUpdate ? next : prev;
+      }
       const lastEntry = prev[prev.length - 1];
       if (lastEntry && lastEntry.packet === null) {
         // Fill in the pending entry
@@ -344,29 +1000,326 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
       }
       return prev;
     });
-    setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
-  }, [activeLens]);
+    setTimeout(() => {
+      if (typeof resultRef.current?.scrollIntoView === "function") {
+        resultRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 100);
+  }, [activeLens, isMobileViewport]);
+
+  // ── Bridge Convex search results into the existing UI ──
+  const convexResultHandledRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!convexSearch.state.result) return;
+    const rid = convexSearch.state.sessionId;
+    if (!rid || convexResultHandledRef.current === rid) return;
+    const active = activeSearchRef.current;
+    if (!active?.convexSessionId || active.convexSessionId !== rid) return;
+
+    convexResultHandledRef.current = rid;
+
+    const traceEntries = convexSearch.state.trace.map((entry, index) => ({
+      step: entry.step,
+      tool: entry.tool,
+      durationMs: entry.durationMs ?? 0,
+      status: entry.status as "ok" | "error",
+      detail: entry.detail,
+      traceId: `${entry.step}:${entry.tool ?? "none"}:${entry.startedAt ?? index}`,
+      isRunning: !entry.durationMs && convexSearch.state.status !== "complete",
+    }));
+    active.traceEntries = traceEntries;
+
+    const packet = ensureProofPacket(convexSearch.state.result as ResultPacket, active.lens);
+    const toolsInvoked = collectTraceTools(traceEntries);
+    const finalSpan: FounderEpisodeSpan = {
+      stage: "after",
+      type: "packet_compiled",
+      status: "ok",
+      label: "Founder packet ready",
+      detail: packet.recommendedNextAction ?? packet.answer,
+      timestamp: new Date().toISOString(),
+      metrics: {
+        confidence: packet.confidence,
+        sources: packet.sourceCount,
+        tools: toolsInvoked.length,
+      },
+    };
+
+    clearActiveSearch(active.requestId);
+    showResult(packet, active.lens, active.requestId);
+    setActiveEpisode((prev) => prev && prev.episodeId === active.episodeId ? {
+      ...prev,
+      status: "completed",
+      entityName: packet.entityName,
+      packetId: packet.packetId ?? null,
+      packetType: packet.packetType ?? null,
+      summary: packet.recommendedNextAction ?? packet.answer,
+      traceStepCount: traceEntries.length,
+      toolsInvoked,
+      artifactsProduced: ["founder_packet"],
+      importantChangesDetected: packet.changes?.length ?? 0,
+      contradictionsDetected: packet.risks?.length ?? 0,
+      updatedAt: finalSpan.timestamp,
+      completedAt: finalSpan.timestamp,
+      spans: [...prev.spans.filter((span) => !(span.stage === "during" && span.type === "trace_progress")), finalSpan],
+    } : prev);
+    void finalizeFounderEpisode(active.episodeId, {
+      status: "completed",
+      entityName: packet.entityName,
+      packetId: packet.packetId,
+      packetType: packet.packetType,
+      workspaceId: packet.canonicalEntity ? `workspace:${slugifyValue(packet.canonicalEntity) || "control-plane"}` : undefined,
+      summary: packet.recommendedNextAction ?? packet.answer,
+      toolsInvoked,
+      artifactsProduced: ["founder_packet"],
+      traceStepCount: traceEntries.length,
+      importantChangesDetected: packet.changes?.length ?? 0,
+      contradictionsDetected: packet.risks?.length ?? 0,
+      stateAfter: {
+        entityName: packet.entityName,
+        confidence: packet.confidence,
+        sourceCount: packet.sourceCount,
+        packetId: packet.packetId ?? null,
+        packetType: packet.packetType ?? null,
+      },
+      finalSpan,
+    });
+    setIsSearching(false);
+  }, [clearActiveSearch, convexSearch.state.result, convexSearch.state.sessionId, convexSearch.state.status, convexSearch.state.trace, finalizeFounderEpisode, showResult]);
+
+  // Sync Convex trace into activeTrace for the LiveAgentProgress component
+  useEffect(() => {
+    if (convexSearch.state.trace.length === 0) return;
+    const active = activeSearchRef.current;
+    if (!active?.convexSessionId || active.convexSessionId !== convexSearch.state.sessionId) return;
+    const normalizedTrace = convexSearch.state.trace.map((t, i) => ({
+      step: t.step,
+      tool: t.tool,
+      durationMs: t.durationMs ?? 0,
+      status: t.status as "ok" | "error",
+      detail: t.detail,
+      traceId: `${t.step}:${t.tool ?? "none"}:${t.startedAt ?? i}`,
+      isRunning: !t.durationMs && !["complete", "error"].includes(convexSearch.state.status ?? ""),
+    }));
+    active.traceEntries = normalizedTrace;
+    setActiveTrace({
+      trace: normalizedTrace,
+      latencyMs: 0,
+      classification: convexSearch.state.status ?? "unknown",
+    });
+    upsertActiveEpisodeSpan(active.episodeId, {
+      stage: "during",
+      type: "trace_progress",
+      status: "running",
+      label: "Convex founder search in progress",
+      detail: `${normalizedTrace.length} steps captured across classification, search, and synthesis.`,
+      timestamp: new Date().toISOString(),
+      metrics: {
+        trace_steps: normalizedTrace.length,
+      },
+    });
+  }, [convexSearch.state.sessionId, convexSearch.state.status, convexSearch.state.trace, upsertActiveEpisodeSpan]);
+
+  // Show Convex search error
+  useEffect(() => {
+    if (!convexSearch.state.error || convexSearch.state.status !== "error") return;
+    const active = activeSearchRef.current;
+    if (!active?.convexSessionId || active.convexSessionId !== convexSearch.state.sessionId) {
+      setIsSearching(false);
+      return;
+    }
+
+    const fallbackPacket: ResultPacket = {
+      query: active.query,
+      entityName: active.query.split(/\s+/).slice(0, 4).join(" "),
+      answer: `NodeBench captured your founder query but the live search pipeline failed before the packet completed. Retry the search, or refine the entity and wedge so the next packet can be assembled cleanly.`,
+      confidence: 32,
+      sourceCount: 0,
+      variables: [],
+      nextQuestions: [
+        "What company am I actually building here?",
+        "What changed since the last meaningful founder session?",
+        "What contradiction or missing proof should I resolve before delegating work?",
+      ],
+    };
+    const finalSpan: FounderEpisodeSpan = {
+      stage: "after",
+      type: "convex_search_error",
+      status: "error",
+      label: "Convex founder search failed",
+      detail: convexSearch.state.error,
+      timestamp: new Date().toISOString(),
+    };
+
+    clearActiveSearch(active.requestId);
+    showResult(fallbackPacket, active.lens, active.requestId);
+    setActiveEpisode((prev) => prev && prev.episodeId === active.episodeId ? {
+      ...prev,
+      status: "error",
+      entityName: fallbackPacket.entityName,
+      summary: convexSearch.state.error,
+      artifactsProduced: ["fallback_packet"],
+      updatedAt: finalSpan.timestamp,
+      completedAt: finalSpan.timestamp,
+      spans: [...prev.spans.filter((span) => !(span.stage === "during" && span.type === "trace_progress")), finalSpan],
+    } : prev);
+    void finalizeFounderEpisode(active.episodeId, {
+      status: "error",
+      entityName: fallbackPacket.entityName,
+      summary: convexSearch.state.error,
+      artifactsProduced: ["fallback_packet"],
+      traceStepCount: active.traceEntries.length,
+      finalSpan,
+      stateAfter: {
+        entityName: fallbackPacket.entityName,
+        confidence: fallbackPacket.confidence,
+      },
+    });
+    setIsSearching(false);
+  }, [clearActiveSearch, convexSearch.state.error, convexSearch.state.sessionId, convexSearch.state.status, finalizeFounderEpisode, showResult]);
 
   const handleSubmit = useCallback((queryOverride?: string) => {
     const trimmed = (queryOverride ?? inputRef.current).trim();
     if (!trimmed) return;
     const demoKey = findDemoPacket(trimmed);
+    const entryId = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const episodeId = `episode:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+    const correlationId = `corr:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+    const controller = new AbortController();
+    const beforeSpan: FounderEpisodeSpan = {
+      stage: "before",
+      type: "search_submitted",
+      status: "ok",
+      label: "Founder query captured",
+      detail: trimmed,
+      timestamp: new Date().toISOString(),
+      metrics: {
+        lens: activeLens,
+        conversation_turns: conversation.length,
+      },
+    };
+    const optimisticEpisode: FounderEpisodeRecord = {
+      episodeId,
+      correlationId,
+      sessionKey: founderHarnessSessionKeyRef.current,
+      workspaceId: "workspace:control-plane",
+      surface: "web",
+      episodeType: "entity_search",
+      status: "active",
+      query: trimmed,
+      lens: activeLens,
+      spans: [beforeSpan],
+      toolsInvoked: [],
+      artifactsProduced: [],
+      startedAt: beforeSpan.timestamp,
+      updatedAt: beforeSpan.timestamp,
+    };
+
+    abortActiveSearch();
+    activeSearchRef.current = {
+      requestId: entryId,
+      controller,
+      episodeId,
+      correlationId,
+      traceEntries: [],
+      query: trimmed,
+      lens: activeLens,
+    };
 
     trackEvent("search_submit", { query: trimmed.slice(0, 80), lens: activeLens });
     setSubmittedQuery(trimmed);
     setIsSearching(true);
+    setActiveEpisode(optimisticEpisode);
     // Add pending entry to conversation
     setConversation((prev) => [
       ...prev,
-      { id: `chat-${Date.now()}`, query: trimmed, lens: activeLens, packet: null, timestamp: new Date() },
+      { id: entryId, query: trimmed, lens: activeLens, packet: null, timestamp: new Date() },
     ]);
     setInput("");
 
-    // 1. Try live API with Server-Sent Events (SSE) streaming
-    setActiveTrace({ trace: [], latencyMs: 0, classification: "unknown" });
+    void fetch(getFounderEpisodeStartUrl(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        episodeId,
+        correlationId,
+        sessionKey: founderHarnessSessionKeyRef.current,
+        workspaceId: "workspace:control-plane",
+        surface: "web",
+        episodeType: "entity_search",
+        query: trimmed,
+        lens: activeLens,
+        stateBefore: {
+          route: typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : "/",
+          conversationTurns: conversation.length,
+          previousEntity: activeResult?.entityName ?? null,
+          handoffStatus: handoffState.status,
+        },
+        initialSpan: beforeSpan,
+      }),
+    }).then(() => refreshRecentEpisodes()).catch(() => {
+      // Best-effort observation only.
+    });
 
-    if (shouldPreferDemoPacket(demoKey)) {
-      setTimeout(() => showResult(DEMO_PACKETS[demoKey], activeLens), 300);
+    const runLegacySearch = () => {
+      if (activeSearchRef.current?.requestId !== entryId) return;
+      if (activeSearchRef.current) {
+        activeSearchRef.current.fallbackStarted = true;
+      }
+      setActiveTrace({ trace: [], latencyMs: 0, classification: "unknown" });
+
+      if (shouldPreferDemoPacket(demoKey)) {
+      setTimeout(() => {
+        if (activeSearchRef.current?.requestId !== entryId) return;
+        clearActiveSearch(entryId);
+        showResult(DEMO_PACKETS[demoKey], activeLens, entryId);
+        const packet = ensureProofPacket(DEMO_PACKETS[demoKey], activeLens);
+        const finalSpan: FounderEpisodeSpan = {
+          stage: "after",
+          type: "packet_compiled",
+          status: "ok",
+          label: "Founder packet ready",
+          detail: packet.recommendedNextAction ?? packet.answer,
+          timestamp: new Date().toISOString(),
+          metrics: {
+            confidence: packet.confidence,
+            sources: packet.sourceCount,
+          },
+        };
+        setActiveEpisode((prev) => prev && prev.episodeId === episodeId ? {
+          ...prev,
+          status: "completed",
+          entityName: packet.entityName,
+          packetId: packet.packetId ?? null,
+          packetType: packet.packetType ?? null,
+          summary: packet.recommendedNextAction ?? packet.answer,
+          traceStepCount: 0,
+          toolsInvoked: [],
+          artifactsProduced: ["founder_packet"],
+          updatedAt: finalSpan.timestamp,
+          completedAt: finalSpan.timestamp,
+          spans: [...prev.spans, finalSpan],
+        } : prev);
+        void finalizeFounderEpisode(episodeId, {
+          status: "completed",
+          entityName: packet.entityName,
+          packetId: packet.packetId,
+          packetType: packet.packetType,
+          summary: packet.recommendedNextAction ?? packet.answer,
+          artifactsProduced: ["founder_packet"],
+          traceStepCount: 0,
+          importantChangesDetected: packet.changes?.length ?? 0,
+          contradictionsDetected: packet.risks?.length ?? 0,
+          stateAfter: {
+            entityName: packet.entityName,
+            packetId: packet.packetId ?? null,
+            packetType: packet.packetType ?? null,
+            confidence: packet.confidence,
+            sourceCount: packet.sourceCount,
+          },
+          finalSpan,
+        });
+      }, 300);
       trackEvent("search_demo_result", { query: trimmed.slice(0, 80), lens: activeLens, demoKey });
       return;
     }
@@ -377,7 +1330,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query: trimmed, lens: activeLens }),
-          signal: AbortSignal.timeout(30_000),
+          signal: buildSearchAbortSignal(controller, SEARCH_STREAM_TIMEOUT_MS),
         });
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -386,9 +1339,15 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         let didShowResult = false;
 
         const processResultPayload = (data: any) => {
+          if (activeSearchRef.current?.requestId !== entryId) return;
           if (!data?.success) throw new Error("No result");
           
           if (data.trace) {
+            activeSearchRef.current.traceEntries = data.trace.map((entry: TraceStep, index: number) => ({
+              ...entry,
+              traceId: entry.traceId ?? traceEntryId(entry, index),
+              isRunning: false,
+            }));
             setActiveTrace({
               trace: data.trace.map((entry: TraceStep, index: number) => ({
                 ...entry,
@@ -399,103 +1358,78 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
               classification: data.classification ?? "unknown",
               judge: data.judge,
             });
+            upsertActiveEpisodeSpan(episodeId, {
+              stage: "during",
+              type: "trace_progress",
+              status: "ok",
+              label: "Evidence path assembled",
+              detail: `${data.trace.length ?? 0} steps across classification, exploration, and verification.`,
+              timestamp: new Date().toISOString(),
+              metrics: {
+                trace_steps: data.trace.length ?? 0,
+                latency_ms: data.latencyMs ?? 0,
+              },
+            });
           }
 
-          if (data.resultPacket) {
-            showResult(data.resultPacket as ResultPacket, activeLens);
-            trackEvent("search_live_result", {
-              entity: (data.resultPacket as ResultPacket).entityName,
-              type: data.classification,
-            });
-            didShowResult = true;
-            return;
-          }
-          
-          const r = data.result;
-          if (r?.canonicalEntity || r?.packetId || r?.answerBlocks?.length) {
-            const canonicalEntityName =
-              typeof r?.canonicalEntity === "string"
-                ? r.canonicalEntity
-                : r?.canonicalEntity?.name ?? data.entity ?? "NodeBench";
-            const packet: ResultPacket = {
-              query: trimmed,
-              entityName: canonicalEntityName,
-              answer: r?.canonicalEntity?.canonicalMission ?? r?.summary ?? "",
-              confidence: r?.canonicalEntity?.identityConfidence ?? r?.confidence ?? 70,
-              sourceCount: r?.sourceRefs?.length ?? r?.sourcesUsed?.length ?? (r?.whatChanged?.length ?? 0) + (r?.signals?.length ?? 0),
-              variables: (r.signals ?? []).slice(0, 5).map((s: any, i: number) => ({
-                rank: i + 1, name: s.name ?? String(s), direction: s.direction ?? "neutral", impact: s.impact ?? "medium",
-              })),
-              keyMetrics: [
-                { label: "Confidence", value: `${r?.canonicalEntity?.identityConfidence ?? r?.confidence ?? 0}%` },
-                { label: "Changes", value: String(r?.whatChanged?.length ?? 0) },
-                { label: "Contradictions", value: String(r?.contradictions?.length ?? 0) },
-                { label: "Actions", value: String(r?.nextActions?.length ?? 0) },
-              ],
-              changes: r.whatChanged?.map((c: any) => ({ description: c.description ?? String(c), date: c.date })),
-              risks: r.contradictions?.map((c: any) => ({
-                title: c.claim ?? "Contradiction",
-                description: c.evidence ?? "",
-                falsification: c.falsification,
-              })),
-              comparables: r.comparables?.map((c: any) => ({
-                name: c.name ?? String(c),
-                relevance: c.relevance ?? "medium",
-                note: c.note ?? "",
-              })),
-              whyThisTeam: r.whyThisTeam ?? null,
-              packetId: r.packetId ?? data.packetId,
-              packetType: r.packetType ?? "founder_packet",
-              canonicalEntity: canonicalEntityName,
-              sourceRefs:
-                r.sourceRefs ??
-                r.sourcesUsed?.map((source: any, index: number) => ({
-                  id: source.id ?? `source:${index}`,
-                  label: source.title ?? source.label ?? source.url ?? `Source ${index + 1}`,
-                  href: source.url,
-                  type: source.type ?? "web",
-                  status: source.status ?? "cited",
-                  title: source.title ?? source.label,
-                  domain: source.domain,
-                  publishedAt: source.publishedAtIso ?? source.publishedAt,
-                  thumbnailUrl: source.thumbnailUrl,
-                  excerpt: source.excerpt ?? source.summary,
-                  confidence: source.confidence,
-                })),
-              claimRefs: r.claimRefs,
-              answerBlocks: r.answerBlocks,
-              explorationMemory: r.explorationMemory,
-              graphSummary: r.graphSummary,
-              proofStatus: r.proofStatus,
-              uncertaintyBoundary: r.uncertaintyBoundary,
-              recommendedNextAction:
-                r.recommendedNextAction ?? r.nextActions?.[0]?.action,
-              graphNodes: r.graphNodes,
-              graphEdges: r.graphEdges,
-              strategicAngles: r.strategicAngles,
-              progressionProfile: r.progressionProfile,
-              progressionTiers: r.progressionTiers,
-              diligencePack: r.diligencePack,
-              readinessScore: r.readinessScore,
-              unlocks: r.unlocks,
-              materialsChecklist: r.materialsChecklist,
-              scorecards: r.scorecards,
-              shareableArtifacts: r.shareableArtifacts,
-                visibility: r.visibility,
-                benchmarkEvidence: r.benchmarkEvidence,
-                workflowComparison: r.workflowComparison,
-                operatingModel: r.operatingModel,
-                distributionSurfaceStatus: r.distributionSurfaceStatus,
-                companyReadinessPacket: r.companyReadinessPacket,
-                companyNamingPack: r.companyNamingPack,
-              interventions: r.nextActions?.slice(0, 4).map((a: any) => ({
-                action: a.action ?? String(a),
-                impact: a.impact ?? "medium",
-              })),
-              nextQuestions: r.nextQuestions ?? r.nextActions?.map((a: any) => a.action) ?? [],
-              rawPacket: r.rawPacket,
+          const resolvedPacket = resolveStreamResultPacket(data, trimmed);
+          if (resolvedPacket) {
+            const traceEntries = activeSearchRef.current?.traceEntries ?? [];
+            const toolsInvoked = collectTraceTools(traceEntries);
+            const traceStepCount = traceEntries.length;
+            clearActiveSearch(entryId);
+            showResult(resolvedPacket, activeLens, entryId);
+            const packet = ensureProofPacket(resolvedPacket, activeLens);
+            const finalSpan: FounderEpisodeSpan = {
+              stage: "after",
+              type: "packet_compiled",
+              status: "ok",
+              label: "Founder packet ready",
+              detail: packet.recommendedNextAction ?? packet.answer,
+              timestamp: new Date().toISOString(),
+              metrics: {
+                confidence: packet.confidence,
+                sources: packet.sourceCount,
+                tools: toolsInvoked.length,
+              },
             };
-            showResult(packet, activeLens);
+            setActiveEpisode((prev) => prev && prev.episodeId === episodeId ? {
+              ...prev,
+              status: "completed",
+              entityName: packet.entityName,
+              packetId: packet.packetId ?? null,
+              packetType: packet.packetType ?? null,
+              summary: packet.recommendedNextAction ?? packet.answer,
+              traceStepCount,
+              toolsInvoked,
+              artifactsProduced: ["founder_packet"],
+              importantChangesDetected: packet.changes?.length ?? 0,
+              contradictionsDetected: packet.risks?.length ?? 0,
+              updatedAt: finalSpan.timestamp,
+              completedAt: finalSpan.timestamp,
+              spans: [...prev.spans.filter((span) => !(span.stage === "during" && span.type === "trace_progress")), finalSpan],
+            } : prev);
+            void finalizeFounderEpisode(episodeId, {
+              status: "completed",
+              entityName: packet.entityName,
+              packetId: packet.packetId,
+              packetType: packet.packetType,
+              workspaceId: packet.canonicalEntity ? `workspace:${slugifyValue(packet.canonicalEntity) || "control-plane"}` : undefined,
+              summary: packet.recommendedNextAction ?? packet.answer,
+              toolsInvoked,
+              artifactsProduced: ["founder_packet"],
+              traceStepCount,
+              importantChangesDetected: packet.changes?.length ?? 0,
+              contradictionsDetected: packet.risks?.length ?? 0,
+              stateAfter: {
+                entityName: packet.entityName,
+                confidence: packet.confidence,
+                sourceCount: packet.sourceCount,
+                packetId: packet.packetId ?? null,
+                packetType: packet.packetType ?? null,
+              },
+              finalSpan,
+            });
             trackEvent("search_live_result", { entity: packet.entityName, type: data.classification });
             didShowResult = true;
             return;
@@ -534,33 +1468,49 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 
                 if (event.type === 'trace') {
                   const entry = event.entry;
+                  if (activeSearchRef.current?.requestId !== entryId) {
+                    continue;
+                  }
+                  const traceId = traceEntryId(entry);
+                  const normalizedEntry: TraceStep = {
+                    step: entry.step,
+                    tool: entry.tool,
+                    durationMs: entry.endMs ? (entry.endMs - entry.startMs) : 0,
+                    status: entry.status,
+                    detail: entry.detail,
+                    traceId,
+                    isRunning: !entry.endMs,
+                  };
+                  const traceEntries = activeSearchRef.current?.traceEntries ?? [];
+                  const existingTraceIndex = traceEntries.findIndex((item) => item.traceId === traceId);
+                  if (existingTraceIndex >= 0) {
+                    traceEntries[existingTraceIndex] = normalizedEntry;
+                  } else {
+                    traceEntries.push(normalizedEntry);
+                  }
                   setActiveTrace(prev => {
                     const trace = [...(prev?.trace || [])];
-                    const traceId = traceEntryId(entry);
                     const existingIdx = trace.findIndex(t => t.traceId === traceId);
                     if (existingIdx >= 0) {
-                      trace[existingIdx] = {
-                        step: entry.step,
-                        tool: entry.tool,
-                        durationMs: entry.endMs ? (entry.endMs - entry.startMs) : 0,
-                        status: entry.status,
-                        detail: entry.detail,
-                        traceId,
-                        isRunning: !entry.endMs,
-                      };
+                      trace[existingIdx] = normalizedEntry;
                     } else {
-                      trace.push({
-                        step: entry.step,
-                        tool: entry.tool,
-                        durationMs: entry.endMs ? (entry.endMs - entry.startMs) : 0,
-                        status: entry.status,
-                        detail: entry.detail,
-                        traceId,
-                        isRunning: !entry.endMs,
-                      });
+                      trace.push(normalizedEntry);
                     }
                     return { ...prev, trace, latencyMs: prev?.latencyMs ?? 0, classification: prev?.classification ?? "unknown" };
                   });
+                  const runningSpan: FounderEpisodeSpan = {
+                    stage: "during",
+                    type: "trace_progress",
+                    status: entry.endMs ? "ok" : "running",
+                    label: entry.tool ? `${entry.step} → ${entry.tool}` : entry.step,
+                    detail: entry.detail,
+                    timestamp: new Date().toISOString(),
+                    metrics: {
+                      trace_steps: traceEntries.length,
+                      running: entry.endMs ? 0 : 1,
+                    },
+                  };
+                  upsertActiveEpisodeSpan(episodeId, runningSpan);
                 } else if (event.type === 'result') {
                   processResultPayload(event.payload);
                 } else if (event.type === 'error') {
@@ -580,9 +1530,47 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
            throw new Error("Stream closed without result");
         }
       } catch {
+        if (controller.signal.aborted || activeSearchRef.current?.requestId !== entryId) {
+          return;
+        }
         // Fallback implementation on error
         if (demoKey) {
-          setTimeout(() => showResult(DEMO_PACKETS[demoKey], activeLens), 300);
+          setTimeout(() => {
+            if (activeSearchRef.current?.requestId !== entryId) return;
+            clearActiveSearch(entryId);
+            showResult(DEMO_PACKETS[demoKey], activeLens, entryId);
+            const packet = ensureProofPacket(DEMO_PACKETS[demoKey], activeLens);
+            const finalSpan: FounderEpisodeSpan = {
+              stage: "after",
+              type: "fallback_demo_packet",
+              status: "error",
+              label: "Search degraded to local founder packet",
+              detail: packet.answer,
+              timestamp: new Date().toISOString(),
+            };
+            setActiveEpisode((prev) => prev && prev.episodeId === episodeId ? {
+              ...prev,
+              status: "error",
+              entityName: packet.entityName,
+              packetId: packet.packetId ?? null,
+              packetType: packet.packetType ?? null,
+              summary: "Search fell back to a local demo packet after a live retrieval failure.",
+              artifactsProduced: ["founder_packet", "fallback_packet"],
+              updatedAt: finalSpan.timestamp,
+              completedAt: finalSpan.timestamp,
+              spans: [...prev.spans.filter((span) => !(span.stage === "during" && span.type === "trace_progress")), finalSpan],
+            } : prev);
+            void finalizeFounderEpisode(episodeId, {
+              status: "error",
+              entityName: packet.entityName,
+              packetId: packet.packetId,
+              packetType: packet.packetType,
+              summary: "Search fell back to a local demo packet after a live retrieval failure.",
+              artifactsProduced: ["founder_packet", "fallback_packet"],
+              traceStepCount: activeSearchRef.current?.traceEntries.length ?? 0,
+              finalSpan,
+            });
+          }, 300);
           return;
         }
         // 3. Final fallback: build an inline acknowledgment packet
@@ -599,11 +1587,80 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             "What changed in AI commerce strategy for Shopify, Amazon, and Google this quarter?",
           ],
         };
-        showResult(fallbackPacket, activeLens);
+        clearActiveSearch(entryId);
+        showResult(fallbackPacket, activeLens, entryId);
+        const finalSpan: FounderEpisodeSpan = {
+          stage: "after",
+          type: "fallback_acknowledgement",
+          status: "error",
+          label: "Search returned degraded fallback",
+          detail: fallbackPacket.answer,
+          timestamp: new Date().toISOString(),
+          metrics: {
+            confidence: fallbackPacket.confidence,
+          },
+        };
+        setActiveEpisode((prev) => prev && prev.episodeId === episodeId ? {
+          ...prev,
+          status: "error",
+          entityName: fallbackPacket.entityName,
+          summary: "Search failed before founder packet synthesis completed.",
+          artifactsProduced: ["fallback_packet"],
+          updatedAt: finalSpan.timestamp,
+          completedAt: finalSpan.timestamp,
+          spans: [...prev.spans.filter((span) => !(span.stage === "during" && span.type === "trace_progress")), finalSpan],
+        } : prev);
+        void finalizeFounderEpisode(episodeId, {
+          status: "error",
+          entityName: fallbackPacket.entityName,
+          summary: "Search failed before founder packet synthesis completed.",
+          artifactsProduced: ["fallback_packet"],
+          traceStepCount: activeSearchRef.current?.traceEntries.length ?? 0,
+          finalSpan,
+          stateAfter: {
+            entityName: fallbackPacket.entityName,
+            confidence: fallbackPacket.confidence,
+          },
+        });
         trackEvent("search_fallback", { query: trimmed.slice(0, 40), lens: activeLens });
       }
-    })();
-  }, [activeLens, showResult, traceEntryId]);
+      })();
+    };
+
+    if (convexSearch.isAvailable && !shouldPreferDemoPacket(demoKey)) {
+      setActiveTrace({ trace: [], latencyMs: 0, classification: "unknown" });
+      convexSearch.reset();
+      convexResultHandledRef.current = null;
+      void convexSearch.startSearch(trimmed, activeLens).then((sid) => {
+        if (activeSearchRef.current?.requestId !== entryId) return;
+        if (sid) {
+          activeSearchRef.current = {
+            ...activeSearchRef.current!,
+            convexSessionId: sid,
+          };
+          return;
+        }
+        console.warn("[search] Convex startSearch returned null, falling back to SSE");
+        runLegacySearch();
+      });
+      return;
+    }
+
+    runLegacySearch();
+  }, [
+    abortActiveSearch,
+    activeLens,
+    activeResult?.entityName,
+    clearActiveSearch,
+    conversation.length,
+    convexSearch,
+    finalizeFounderEpisode,
+    handoffState.status,
+    refreshRecentEpisodes,
+    showResult,
+    traceEntryId,
+    upsertActiveEpisodeSpan,
+  ]);
 
   // Auto-submit when voice transcript finishes
   useEffect(() => {
@@ -670,6 +1727,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           packet: ensureProofPacket(activeResult, activeLens),
+          episodeId: activeEpisode?.episodeId,
         }),
       });
       const json = await response.json();
@@ -685,13 +1743,31 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         message: "Shared context packet is live and ready for delegation.",
         contextId: json.contextId,
       });
+      if (activeEpisode?.episodeId) {
+        const span: FounderEpisodeSpan = {
+          stage: "after",
+          type: "packet_published",
+          status: "ok",
+          label: "Founder packet published",
+          detail: "Shared context now has the canonical packet for delegation.",
+          timestamp: new Date().toISOString(),
+          contextId: json.contextId,
+        };
+        upsertActiveEpisodeSpan(activeEpisode.episodeId, span);
+        setActiveEpisode((prev) => prev && prev.episodeId === activeEpisode.episodeId ? {
+          ...prev,
+          contextId: json.contextId,
+          updatedAt: span.timestamp,
+        } : prev);
+        void refreshRecentEpisodes();
+      }
     } catch (error) {
       setHandoffState({
         status: "error",
         message: error instanceof Error ? error.message : "Failed to publish shared context packet.",
       });
     }
-  }, [activeLens, activeResult]);
+  }, [activeEpisode?.episodeId, activeLens, activeResult, refreshRecentEpisodes, upsertActiveEpisodeSpan]);
 
   const handlePublishStrategicAngle = useCallback(
     async (strategicAngleId: string) => {
@@ -707,6 +1783,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           body: JSON.stringify({
             packet: ensureProofPacket(activeResult, activeLens),
             strategicAngleId,
+            episodeId: activeEpisode?.episodeId,
           }),
         });
         const json = await response.json();
@@ -723,6 +1800,24 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           message: "Strategic issue packet is live and ready for a worker.",
           contextId: json.contextId,
         });
+        if (activeEpisode?.episodeId) {
+          const span: FounderEpisodeSpan = {
+            stage: "after",
+            type: "strategic_issue_published",
+            status: "ok",
+            label: "Strategic issue packet published",
+            detail: "A bounded founder issue packet is ready for a worker handoff.",
+            timestamp: new Date().toISOString(),
+            contextId: json.contextId,
+          };
+          upsertActiveEpisodeSpan(activeEpisode.episodeId, span);
+          setActiveEpisode((prev) => prev && prev.episodeId === activeEpisode.episodeId ? {
+            ...prev,
+            contextId: json.contextId,
+            updatedAt: span.timestamp,
+          } : prev);
+          void refreshRecentEpisodes();
+        }
       } catch (error) {
         setHandoffState({
           status: "error",
@@ -730,7 +1825,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         });
       }
     },
-    [activeLens, activeResult],
+    [activeEpisode?.episodeId, activeLens, activeResult, refreshRecentEpisodes, upsertActiveEpisodeSpan],
   );
 
   const handleDelegate = useCallback(
@@ -749,6 +1844,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           body: JSON.stringify({
             packet: ensureProofPacket(activeResult, activeLens),
             targetAgent: target,
+            episodeId: activeEpisode?.episodeId,
           }),
         });
         const json = await response.json();
@@ -770,6 +1866,26 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           installCommand: json.installCommand,
           handoffPrompt: json.handoffPrompt,
         });
+        if (activeEpisode?.episodeId) {
+          const span: FounderEpisodeSpan = {
+            stage: "after",
+            type: "agent_delegated",
+            status: "ok",
+            label: `${json.targetLabel ?? targetLabel} handoff ready`,
+            detail: json.handoffPrompt ?? `Delegation packet prepared for ${json.targetLabel ?? targetLabel}.`,
+            timestamp: new Date().toISOString(),
+            contextId: json.contextId,
+            taskId: json.taskId,
+          };
+          upsertActiveEpisodeSpan(activeEpisode.episodeId, span);
+          setActiveEpisode((prev) => prev && prev.episodeId === activeEpisode.episodeId ? {
+            ...prev,
+            contextId: json.contextId,
+            taskId: json.taskId,
+            updatedAt: span.timestamp,
+          } : prev);
+          void refreshRecentEpisodes();
+        }
       } catch (error) {
         setHandoffState({
           status: "error",
@@ -777,7 +1893,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         });
       }
     },
-    [activeLens, activeResult],
+    [activeEpisode?.episodeId, activeLens, activeResult, refreshRecentEpisodes, upsertActiveEpisodeSpan],
   );
 
   const handleDelegateStrategicAngle = useCallback(
@@ -797,6 +1913,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             packet: ensureProofPacket(activeResult, activeLens),
             targetAgent: target,
             strategicAngleId,
+            episodeId: activeEpisode?.episodeId,
           }),
         });
         const json = await response.json();
@@ -819,6 +1936,26 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           installCommand: json.installCommand,
           handoffPrompt: json.handoffPrompt,
         });
+        if (activeEpisode?.episodeId) {
+          const span: FounderEpisodeSpan = {
+            stage: "after",
+            type: "strategic_issue_delegated",
+            status: "ok",
+            label: `${json.targetLabel ?? targetLabel} issue handoff ready`,
+            detail: json.handoffPrompt ?? `Strategic issue packet delegated to ${json.targetLabel ?? targetLabel}.`,
+            timestamp: new Date().toISOString(),
+            contextId: json.contextId,
+            taskId: json.taskId,
+          };
+          upsertActiveEpisodeSpan(activeEpisode.episodeId, span);
+          setActiveEpisode((prev) => prev && prev.episodeId === activeEpisode.episodeId ? {
+            ...prev,
+            contextId: json.contextId,
+            taskId: json.taskId,
+            updatedAt: span.timestamp,
+          } : prev);
+          void refreshRecentEpisodes();
+        }
       } catch (error) {
         setHandoffState({
           status: "error",
@@ -826,7 +1963,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         });
       }
     },
-    [activeLens, activeResult],
+    [activeEpisode?.episodeId, activeLens, activeResult, refreshRecentEpisodes, upsertActiveEpisodeSpan],
   );
 
   // File upload handler — reads text from files and submits to ingestion
@@ -933,14 +2070,19 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         {conversation.length === 0 && <div className="text-center">
           <h1
             style={stagger("0s")}
-            className="text-2xl font-bold tracking-tight text-content sm:text-3xl lg:text-4xl text-balance"
+            className="text-2xl font-semibold tracking-tight text-content sm:text-3xl lg:text-4xl text-balance"
           >
-            Every investor has a checklist.{" "}
-            <span className="text-[#d97757]">You've never seen it.</span>
+            What do you want <span className="text-[#d97757]">NodeBench to help with?</span>
           </h1>
           <p
-            style={stagger("0.06s")}
-            className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-content-secondary"
+            style={stagger("0.08s")}
+            className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-content-secondary"
+          >
+            Search a company, describe your startup, upload files, or ask what to do next. NodeBench turns that into company truth, contradictions, and a delegation-ready packet.
+          </p>
+          <p
+            style={stagger("0.08s")}
+            className="hidden"
           >
             VCs, accelerators, and banks judge your startup on hidden criteria they never share. Describe your idea and NodeBench shows you exactly what's missing — before your first pitch.
           </p>
@@ -968,10 +2110,15 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             )}
             <textarea
               ref={textareaRef}
+              id="nodebench-search-input"
+              name="nodebenchSearch"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                inputRef.current = e.target.value;
+                setInput(e.target.value);
+              }}
               onKeyDown={handleKeyDown}
-              placeholder="Describe your startup idea, name a company, or paste your pitch..."
+              placeholder="Search a company, describe your startup, upload files, or ask what to do next..."
               rows={1}
               className="w-full resize-none bg-transparent px-5 py-4 pr-32 text-[15px] text-content placeholder:text-content-muted/60 focus:outline-none"
               aria-label="Search NodeBench"
@@ -1064,6 +2211,122 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
 
         {/* ── Example prompts ──────────────────────────────────────────────── */}
         {conversation.length === 0 && (
+          <div style={stagger("0.18s")} className="mt-6 space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2" data-testid="landing-example-prompts">
+              {FOUNDER_QUICK_ACTIONS.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  onClick={() => handleQuickAction(action)}
+                  className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 text-left transition-all hover:border-white/[0.12] hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-content">{action.label}</div>
+                      <p className="mt-1 text-xs leading-relaxed text-content-muted">{action.description}</p>
+                    </div>
+                    <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-content-muted" aria-hidden="true" />
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="grid gap-3 lg:grid-cols-3">
+              {[
+                {
+                  title: "What NodeBench clarifies",
+                  description: "What company this is, what changed, what is missing, and where the wedge is strongest.",
+                },
+                {
+                  title: "What comes back",
+                  description: "A compact packet, contradictions, next 3 moves, and a delegation-ready handoff.",
+                },
+                {
+                  title: "What happens next",
+                  description: "Search first. Then the workspace, packets, and history deepen automatically from that truth.",
+                },
+              ].map((item) => (
+                <div key={item.title} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+                  <div className="text-[13px] font-medium text-content">{item.title}</div>
+                  <p className="mt-2 text-xs leading-relaxed text-content-muted">{item.description}</p>
+                </div>
+              ))}
+            </div>
+
+            <div
+              ref={connectCardRef}
+              className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4"
+              data-testid="landing-connect-card"
+            >
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                Connect NodeBench-MCP
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-content-secondary">
+                Index your company docs, codebase, and agent context so NodeBench can build your live company dashboard automatically.
+              </p>
+              <div className="mt-4 grid gap-2 sm:grid-cols-4">
+                {[
+                  { step: "1", label: "Install" },
+                  { step: "2", label: "Init" },
+                  { step: "3", label: "Search / Explore / Index" },
+                  { step: "4", label: "Dashboard generated" },
+                ].map((item) => (
+                  <div key={item.step} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3 text-center">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#d97757]">{item.step}</div>
+                    <div className="mt-1 text-xs text-content">{item.label}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowInstallGuide((prev) => !prev)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content"
+                >
+                  {showInstallGuide ? "Hide MCP steps" : "Connect / Initialize MCP"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyInstall}
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content"
+                >
+                  {copiedInstall ? <Check className="h-4 w-4 text-emerald-400" /> : <ClipboardCopy className="h-4 w-4" />}
+                  {copiedInstall ? "Copied install command" : "Copy install command"}
+                </button>
+              </div>
+            </div>
+
+            {recentEpisodes.length > 0 ? (
+              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                  Continue From Recent Founder Episodes
+                </div>
+                <div className="mt-3 grid gap-2">
+                  {recentEpisodes.slice(0, 2).map((episode) => (
+                    <button
+                      key={episode.episodeId}
+                      type="button"
+                      onClick={() => {
+                        const nextQuery = episode.query ?? episode.entityName ?? "";
+                        setInput(nextQuery);
+                        textareaRef.current?.focus();
+                      }}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3 text-left transition-colors hover:bg-white/[0.04]"
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate text-sm text-content">{episode.entityName ?? episode.query ?? episode.episodeType}</div>
+                        <div className="truncate text-xs text-content-muted">{episode.summary ?? `${episode.traceStepCount ?? 0} trace steps`}</div>
+                      </div>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-content-muted" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        )}
+
+        {conversation.length === 0 && false && (
           <div style={stagger("0.2s")} className="mt-6">
             <div className="flex flex-wrap justify-center gap-2" data-testid="landing-example-prompts">
               {EXAMPLE_PROMPTS.map((example, i) => (
@@ -1082,7 +2345,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         )}
 
         {/* ── Founder value prop (replaces internal dev data) ────────────── */}
-        {conversation.length === 0 && (
+        {conversation.length === 0 && false && (
           <div style={stagger("0.24s")} className="mt-12">
             <h2 className="text-center text-lg font-semibold text-content sm:text-xl">
               The invisible checklist VCs use to filter you out
@@ -1135,7 +2398,102 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             CHAT THREAD — Conversational results
             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <div ref={resultRef}>
+        {activeResult && conversation.length > 0 && showFullWorkspace && (
+          <div className="mt-6 space-y-3" data-testid="landing-result-workspace">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                  Current Intelligence Packet
+                </div>
+                <div className="mt-1 text-sm text-content">
+                  {activeResult.entityName || "Current result"} - {activeLens} lens
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowFullWorkspace(false)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content"
+              >
+                Collapse packet
+              </button>
+            </div>
+            <ResultWorkspace
+              packet={activeResult}
+              lens={activeLens}
+              trajectory={workspaceTrajectory}
+              handoffState={handoffState}
+              onFollowUp={(query) => {
+                setInput(query);
+                handleSubmit(query);
+              }}
+              onPublishSharedContext={handlePublishSharedContext}
+              onDelegate={handleDelegate}
+              onPublishStrategicAngle={handlePublishStrategicAngle}
+              onDelegateStrategicAngle={handleDelegateStrategicAngle}
+            />
+          </div>
+        )}
+
+        {activeResult && conversation.length > 0 && !showFullWorkspace && (
+          <div className="mt-6 space-y-3" data-testid="landing-result-workspace-collapsed">
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                    Founder Workspace Summary
+                  </div>
+                  <div className="mt-1 text-base text-content">
+                    {activeResult.entityName || "Current company"} · {activeLens} lens
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowFullWorkspace(true)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  Open full packet
+                </button>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-content-muted">What This Company Is</div>
+                  <div className="mt-2 text-sm leading-relaxed text-content">{activeResult.answer}</div>
+                </div>
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-content-muted">What Changed</div>
+                  <div className="mt-2 text-sm leading-relaxed text-content">
+                    {activeResult.changes?.[0]?.description ?? "No major change has been logged yet for this packet."}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-content-muted">What Is Contradictory / Weak</div>
+                  <div className="mt-2 text-sm leading-relaxed text-content">
+                    {activeResult.risks?.[0]?.title
+                      ? `${activeResult.risks[0].title}${activeResult.risks[0].description ? ` — ${activeResult.risks[0].description}` : ""}`
+                      : activeResult.uncertaintyBoundary ?? "No contradiction has been highlighted yet."}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-content-muted">What To Do Next</div>
+                  <div className="mt-2 space-y-2">
+                    {(activeResult.nextActions?.slice(0, 3) ?? []).map((action, index) => (
+                      <div key={`${action.action}:${index}`} className="text-sm leading-relaxed text-content">
+                        {index + 1}. {action.action}
+                      </div>
+                    ))}
+                    {(!activeResult.nextActions || activeResult.nextActions.length === 0) && (
+                      <div className="text-sm leading-relaxed text-content">{activeResult.recommendedNextAction ?? "No next action has been generated yet."}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div>
           <ChatThread
             entries={conversation}
             onFollowUp={(query) => {
@@ -1143,9 +2501,15 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
               handleSubmit(query);
             }}
             onNewConversation={() => {
+              abortActiveSearch();
+              convexSearch.reset();
+              convexResultHandledRef.current = null;
               setConversation([]);
               setActiveResult(null);
               setActiveTrace(null);
+              setActiveEpisode(null);
+              setIsSearching(false);
+              setSubmittedQuery("");
               setInput("");
               setShowFullWorkspace(false);
               textareaRef.current?.focus();
@@ -1154,14 +2518,27 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         </div>
 
         {/* Execution trace — shows how the latest answer was produced */}
-        {activeTrace && conversation.length > 0 && (
+        {activeTrace && conversation.length > 0 && !showFullWorkspace && (
           <div className="mt-3" data-testid="landing-search-trace">
             <SearchTrace
               trace={activeTrace.trace}
               latencyMs={activeTrace.latencyMs}
               classification={activeTrace.classification}
               judgeVerdict={activeTrace.judge}
+              sourceRefs={activeResult?.sourceRefs}
               mode="user"
+            />
+          </div>
+        )}
+
+        {(activeEpisode || recentEpisodes.length > 0) && conversation.length > 0 && (
+          <div className="mt-3" data-testid="landing-founder-episode">
+            <FounderEpisodePanel
+              activeEpisode={activeEpisode}
+              recentEpisodes={recentEpisodes}
+              packetLineage={packetLineage}
+              subconsciousPreview={subconsciousPreview}
+              isSubconsciousLoading={isSubconsciousLoading}
             />
           </div>
         )}
@@ -1170,7 +2547,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             BELOW THE FOLD — Trust, Install, Proof
             Hidden when conversation is active (chat takes over the page)
             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        {conversation.length === 0 && (<>
+        {conversation.length === 0 && showInstallGuide && (<> 
 
 
         {/* ── How it works ─────────────────────────────────────────────────── */}

@@ -10,6 +10,13 @@
 
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../convex/_generated/api.js";
+import {
+  appendFounderEpisodeSpanConvex as appendFounderEpisodeSpanConvexImpl,
+  finalizeFounderEpisodeConvex as finalizeFounderEpisodeConvexImpl,
+  getFounderEpisodeConvex as getFounderEpisodeConvexImpl,
+  listFounderEpisodesConvex as listFounderEpisodesConvexImpl,
+  startFounderEpisodeConvex as startFounderEpisodeConvexImpl,
+} from "./founderEpisodeConvex.js";
 
 // ---------------------------------------------------------------------------
 // Client singleton
@@ -157,3 +164,15 @@ export async function getSnapshotConvex(
     recentMessages: messages as Array<Record<string, unknown>>,
   };
 }
+
+// ── Founder Episode stubs (Convex persistence not yet wired) ─────────────
+
+export const startFounderEpisodeConvex = startFounderEpisodeConvexImpl;
+
+export const appendFounderEpisodeSpanConvex = appendFounderEpisodeSpanConvexImpl;
+
+export const finalizeFounderEpisodeConvex = finalizeFounderEpisodeConvexImpl;
+
+export const getFounderEpisodeConvex = getFounderEpisodeConvexImpl;
+
+export const listFounderEpisodesConvex = listFounderEpisodesConvexImpl;

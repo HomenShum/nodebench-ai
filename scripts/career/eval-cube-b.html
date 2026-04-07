@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Response B</title><style>
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 800px;
+}
+.cube-container {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  perspective: 800px;
+}
+.hover-area {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 70%;
+  width: 50px;
+  z-index: 10;
+  pointer-events: auto;
+}
+.left-hover-area { left: -60px; }
+.right-hover-area { right: -60px; }
+.cube {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.5s;
+}
+.right-hover-area:hover ~ .cube { transform: rotateY(-90deg); }
+.left-hover-area:hover ~ .cube { transform: rotateY(90deg); }
+.face {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.5);
+  border: 50px solid black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+.front { transform: translateZ(150px); }
+.left { transform: rotateY(-90deg) translateZ(150px); }
+.right { transform: rotateY(90deg) translateZ(150px); }
+.top { transform: rotateX(90deg) translateZ(150px); }
+.bottom { transform: rotateX(-90deg) translateZ(150px); }
+.back { transform: rotateY(180deg) translateZ(150px); }
+.scrollable-section {
+  width: 80%;
+  height: 80%;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid black;
+  border-radius: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: #696969 #dcdcdc;
+}
+.scrollable-section::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+  border-radius: 10px;
+  background-color: #dcdcdc;
+}
+.scrollable-section::-webkit-scrollbar-thumb {
+  background-color: #696969;
+  border-radius: 10px;
+}
+@media only screen and (max-width: 480px) {
+  .cube-container { width: 200px; height: 200px; }
+}
+@media only screen and (max-width: 320px) {
+  .cube-container { width: 150px; height: 150px; }
+}
+</style></head><body>
+<div class="cube-container">
+  <div class="hover-area left-hover-area"></div>
+  <div class="hover-area right-hover-area"></div>
+  <div class="cube">
+    <div class="face front">
+      <div class="scrollable-section">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+        Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore.
+        Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+      </div>
+    </div>
+    <div class="face left">Left Face</div>
+    <div class="face right">Right Face</div>
+    <div class="face top">Top Face</div>
+    <div class="face bottom">Bottom Face</div>
+    <div class="face back">Back Face</div>
+  </div>
+</div>
+</body></html>

@@ -1,22 +1,19 @@
 import { memo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useConvexAuth, useQuery} from "convex/react";
 import {
   Bot,
-  Building2,
   ChevronLeft,
   ChevronRight,
   FileText,
   LogIn,
   MessageSquare,
-  Radar,
+  Radio,
   Search,
   User,
   Settings,
-  Orbit,
   FolderKanban,
-  Network,
-  Radio,
+  Gauge,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useConvexApi } from "@/lib/convexApi";
@@ -33,9 +30,9 @@ interface SurfaceShortcut {
 
 const SURFACE_SHORTCUTS: SurfaceShortcut[] = [
   { id: "ask", label: "Ask", icon: MessageSquare, color: "currentColor" },
-  { id: "memo", label: "Decisions", icon: Orbit, color: "currentColor" },
-  { id: "research", label: "Research", icon: Radar, color: "currentColor" },
-  { id: "editor", label: "Docs", icon: FileText, color: "currentColor" },
+  { id: "library", label: "Library", icon: FileText, color: "currentColor" },
+  { id: "connect", label: "Connect", icon: Radio, color: "currentColor" },
+  { id: "telemetry", label: "System", icon: Gauge, color: "currentColor" },
 ];
 
 const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);
@@ -58,7 +55,6 @@ export const WorkspaceRail = memo(function WorkspaceRail({
   onOpenPalette,
 }: WorkspaceRailProps) {
   const navigate = useNavigate();
-  const location = useLocation();
   const { isAuthenticated } = useConvexAuth();
   const api = useConvexApi();
 
@@ -84,19 +80,6 @@ export const WorkspaceRail = memo(function WorkspaceRail({
   const sessionItems = Array.isArray(recentSessions?.sessions) ? recentSessions.sessions.slice(0, 4) : [];
   const documentItems = Array.isArray(recentDocuments) ? recentDocuments.slice(0, 4) : [];
   const watchlists = Array.isArray(watchlistDigest?.watchlists) ? watchlistDigest.watchlists.slice(0, 3) : [];
-  const activeFounderView = new URLSearchParams(location.search).get("view");
-  const founderNavItems = [
-    { path: "/founder", viewId: "founder-dashboard", label: "Dashboard", icon: Building2 },
-    { path: "/founder/coordination", viewId: "coordination-hub", label: "Coordination", icon: Radio },
-    { path: "/founder/entities", viewId: "nearby-entities", label: "Entities", icon: Network },
-  ] as const;
-
-  const isFounderItemActive = (item: (typeof founderNavItems)[number]) => {
-    if (activeFounderView) return activeFounderView === item.viewId;
-    if (location.pathname === item.path) return true;
-    return item.path !== "/founder" && location.pathname.startsWith(`${item.path}/`);
-  };
-
   return (
     <nav
       className={cn(
@@ -179,39 +162,6 @@ export const WorkspaceRail = memo(function WorkspaceRail({
             >
               <Icon className="h-4 w-4 shrink-0" />
               {!isCollapsed ? <span>{shortcut.label}</span> : null}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── Founder Platform ──────────────────────────────────── */}
-      <div className={cn("px-2 pt-2", isCollapsed && "px-0")}>
-        <div className={cn(
-          "text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30",
-          isCollapsed ? "text-center" : "px-2.5 pb-1",
-        )}>
-          {isCollapsed ? "F" : "Founder"}
-        </div>
-        {founderNavItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = isFounderItemActive(item);
-          return (
-            <button
-              key={item.path}
-              type="button"
-              onClick={() => navigate(item.path)}
-              className={cn(
-                "flex w-full items-center gap-2.5 rounded-md text-[13px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
-                isCollapsed ? "mx-auto h-9 w-9 justify-center" : "px-2.5 py-1.5",
-                isActive
-                  ? "bg-white/[0.08] text-content shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
-                  : "text-content-muted hover:bg-white/[0.04] hover:text-content active:bg-white/[0.06]",
-              )}
-              aria-label={item.label}
-              aria-current={isActive ? "page" : undefined}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              {!isCollapsed ? <span>{item.label}</span> : null}
             </button>
           );
         })}

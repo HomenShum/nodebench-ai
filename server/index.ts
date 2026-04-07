@@ -43,6 +43,7 @@ import { createRetentionBridgeRouter } from "./routes/retentionBridge.js";
 import { createHarnessRouter } from "./routes/harness.js";
 import { createWorkspaceSyncRouter } from "./routes/workspaceSync.js";
 import { createExecuteRouter } from "./routes/execute.js";
+import { createSubconsciousRouter } from "./routes/subconscious.js";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────
 
@@ -280,6 +281,8 @@ async function main(): Promise<void> {
   // ── Agent Harness Runtime ─────────────────────────────────────────
   app.use("/harness", createHarnessRouter(tools));
   app.use("/api/harness", createHarnessRouter(tools));
+  app.use("/subconscious", createSubconsciousRouter());
+  app.use("/api/subconscious", createSubconsciousRouter());
 
   // ── Delta routes (share, watchlist, retention bridge) ──────────────
   app.use("/share", createShareRouter());

@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "dev",
-      "runtimeExecutable": "cmd",
-      "runtimeArgs": ["/c", "npx", "vite", "--host"],
+      "runtimeExecutable": "npx.cmd",
+      "runtimeArgs": ["vite", "--host"],
       "port": 5191,
       "autoPort": true
     }

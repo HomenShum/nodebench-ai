@@ -47,7 +47,6 @@ import type { LensId, ResultPacket } from "./searchTypes";
 import { TrajectoryPanel } from "@/features/telemetry/TrajectoryPanel";
 import type { TrajectoryData } from "@/features/telemetry/types";
 import { ensureProofPacket } from "./proofModel";
-import { SyncProvenanceBadge } from "./SyncProvenanceBadge";
 import { CitationFootnote } from "./CitationFootnote";
 import { SourcesBar } from "./SourcesBar";
 
@@ -205,6 +204,38 @@ function VisibilityBadge({ value }: { value: "internal" | "workspace" | "public"
   );
 }
 
+function PacketProvenanceBadge({ packet }: { packet: ProofReadyResultPacket }) {
+  const citedSources = packet.sourceRefs.filter((source) => source.status !== "discarded");
+  const citedWebSources = citedSources.filter((source) => source.type === "web" && source.href);
+  const citedLocalSources = citedSources.filter((source) => source.type !== "web" || !source.href);
+
+  const state =
+    citedWebSources.length > 0
+      ? {
+          label: citedLocalSources.length > 0 ? "Mixed evidence" : "Live web evidence",
+          detail:
+            citedLocalSources.length > 0
+              ? `${citedWebSources.length} web · ${citedLocalSources.length} local`
+              : `${citedWebSources.length} cited source${citedWebSources.length === 1 ? "" : "s"}`,
+          tone: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
+        }
+      : {
+          label: "Local evidence",
+          detail: `${citedSources.length} retained source${citedSources.length === 1 ? "" : "s"}`,
+          tone: "border-white/[0.08] bg-white/[0.03] text-content-muted",
+        };
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${state.tone}`}
+      title={`${state.label} · ${state.detail}`}
+    >
+      <span>{state.label}</span>
+      <span className="opacity-80">· {state.detail}</span>
+    </span>
+  );
+}
+
 /* ─── Main component ────────────────────────────────────────────────────── */
 
 /* ─── Demo trajectory generator ────────────────────────────────────────── */
@@ -300,7 +331,16 @@ export const ResultWorkspace = memo(function ResultWorkspace({
   const proofPacket = useMemo(() => ensureProofPacket(packet, lens), [packet, lens]);
   const trajectoryData = trajectory ?? buildDemoTrajectory(proofPacket);
   const isOwnCompanyPacket = proofPacket.operatingModel.packetRouter.companyMode === "own_company";
+  const showFounderScaffolding = isOwnCompanyPacket;
+  const showExternalBriefingMode = !showFounderScaffolding;
   const hasSlackOnePager = proofPacket.shareableArtifacts.some((item) => item.type === "slack_onepage");
+  const visibleAnswerBlocks = useMemo(
+    () =>
+      proofPacket.answerBlocks.filter((block) =>
+        showFounderScaffolding || block.id !== "answer:block:credibility",
+      ),
+    [proofPacket.answerBlocks, showFounderScaffolding],
+  );
   const [copiedShare, setCopiedShare] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [copiedSlackReport, setCopiedSlackReport] = useState(false);
@@ -325,10 +365,10 @@ export const ResultWorkspace = memo(function ResultWorkspace({
 
   const activeAnswerBlock = useMemo(
     () =>
-      proofPacket.answerBlocks.find((block) => block.id === selectedAnswerBlockId) ??
-      proofPacket.answerBlocks[0] ??
+      visibleAnswerBlocks.find((block) => block.id === selectedAnswerBlockId) ??
+      visibleAnswerBlocks[0] ??
       null,
-    [proofPacket.answerBlocks, selectedAnswerBlockId],
+    [selectedAnswerBlockId, visibleAnswerBlocks],
   );
 
   const activeSourceIds = useMemo(() => {
@@ -414,6 +454,54 @@ export const ResultWorkspace = memo(function ResultWorkspace({
     () => proofPacket.strategicAngles.find((angle) => angle.id === "stealth-moat") ?? null,
     [proofPacket.strategicAngles],
   );
+  const bankerComparableText = useMemo(
+    () => proofPacket.comparables?.slice(0, 3).map((item) => item.name).join(", ") || "Comparable set still thin",
+    [proofPacket.comparables],
+  );
+  const bankerMetricDeck = useMemo(
+    () => proofPacket.keyMetrics?.slice(0, 6) ?? [],
+    [proofPacket.keyMetrics],
+  );
+  const bankerExecutiveReadout = useMemo(() => {
+    const leadingSentences = proofPacket.answer
+      .split(/(?<=[.!?])\s+/)
+      .map((sentence) => sentence.trim())
+      .filter(Boolean)
+      .slice(0, 2)
+      .join(" ");
+    if (leadingSentences && leadingSentences.length >= 24) return leadingSentences;
+    return proofPacket.answer;
+  }, [proofPacket.answer]);
+  const bankerPrimaryQuestion = useMemo(
+    () => proofPacket.nextQuestions?.[0] ?? proofPacket.recommendedNextAction,
+    [proofPacket.nextQuestions, proofPacket.recommendedNextAction],
+  );
+  const bankerChangeReadout = useMemo(
+    () =>
+      proofPacket.changes?.slice(0, 2).map((item) => item.description).join(" ")
+      || "No recent operating delta has been extracted yet.",
+    [proofPacket.changes],
+  );
+  const bankerComparableReadout = useMemo(
+    () =>
+      proofPacket.comparables?.slice(0, 2)
+        .map((item) => `${item.name}${item.note ? `: ${item.note}` : ""}`)
+        .join(" ")
+      || "Comparable set still needs expansion.",
+    [proofPacket.comparables],
+  );
+  const bankerRiskReadout = useMemo(
+    () =>
+      primaryRisk?.description
+      || "No first-order diligence flag has been extracted yet.",
+    [primaryRisk],
+  );
+  const bankerQuestionReadout = useMemo(
+    () =>
+      proofPacket.nextQuestions?.slice(0, 2).join(" ")
+      || proofPacket.recommendedNextAction,
+    [proofPacket.nextQuestions, proofPacket.recommendedNextAction],
+  );
   const primaryIssueAngleId = primaryIssueAngle?.id ?? null;
   const shareReadinessAngleId = shareTimingAngle?.id ?? primaryIssueAngleId;
   const shareReadinessPrompt = shareTimingAngle?.nextQuestion ?? primaryIssueAngle?.nextQuestion ?? null;
@@ -482,7 +570,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
           <ConfidenceBadge value={proofPacket.confidence} />
           <ProofStatusBadge value={proofPacket.proofStatus} />
           <VisibilityBadge value={proofPacket.visibility} />
-          <span className="hidden lg:inline-flex"><SyncProvenanceBadge compact /></span>
+          <span className="hidden lg:inline-flex"><PacketProvenanceBadge packet={proofPacket} /></span>
           <span className="hidden lg:inline-flex text-[11px] text-content-muted">
             {proofPacket.explorationMemory.citedSourceCount}/
             {proofPacket.explorationMemory.exploredSourceCount} cited
@@ -499,7 +587,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
               <><Share2 className="h-3 w-3" />Share</>
             )}
           </button>
-          {hasSlackOnePager ? (
+          {hasSlackOnePager && showFounderScaffolding ? (
             <button
               type="button"
               onClick={() => { void handleCopySlackReport(); }}
@@ -542,7 +630,134 @@ export const ResultWorkspace = memo(function ResultWorkspace({
       ) : null}
 
       {/* ── Sources bar ───────────────────────────────────────────────────── */}
-      {(primaryRisk || primaryIssueAngle || shouldShowShareReadiness) && (
+      {lens === "banker" ? (
+        <div className="space-y-3">
+          <div
+            data-testid="banker-readout-strip"
+            className="grid gap-3 lg:grid-cols-[1.35fr_1fr]"
+          >
+            <div className="rounded-2xl border border-[#d97757]/20 bg-[#101a2b]/90 px-4 py-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.18em] text-[#f2b49f]">
+                    Underwriting Readout
+                  </div>
+                  <div className="mt-1 text-sm font-medium text-content">
+                    Hard metrics first, diligence second
+                  </div>
+                </div>
+                <div className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                  {proofPacket.proofStatus}
+                </div>
+              </div>
+              <p className="mt-3 text-sm leading-relaxed text-content">
+                {bankerExecutiveReadout}
+              </p>
+              {bankerMetricDeck.length > 0 ? (
+                <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                  {bankerMetricDeck.map((metric) => (
+                    <div
+                      key={`${metric.label}:${metric.value}`}
+                      className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2"
+                    >
+                      <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                        {metric.label}
+                      </div>
+                      <div className="mt-1 text-sm font-semibold text-content">
+                        {metric.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">
+                  Comparable Set
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-content">
+                  {bankerComparableText}
+                </p>
+              </div>
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.05] px-4 py-3">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-amber-300">
+                  Diligence Focus
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-content">
+                  {primaryRisk?.title ?? "No first-order diligence flag extracted yet"}
+                </p>
+                {primaryRisk?.description ? (
+                  <p className="mt-1 text-xs leading-relaxed text-content-muted">
+                    {primaryRisk.description}
+                  </p>
+                ) : null}
+                <p className="mt-3 text-xs leading-relaxed text-content-muted">
+                  {bankerPrimaryQuestion}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            data-testid="banker-memo-brief"
+            className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-4"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.18em] text-content-muted">
+                  Investment Banking Brief
+                </div>
+                <div className="mt-1 text-sm font-medium text-content">
+                  Cleaner memo view from the current evidence set
+                </div>
+              </div>
+              <div className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-content-muted">
+                {proofPacket.proofStatus}
+              </div>
+            </div>
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">
+                  Underwriting View
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-content">
+                  {bankerExecutiveReadout}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">
+                  What Changed
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-content">
+                  {bankerChangeReadout}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">
+                  Comparable Frame
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-content">
+                  {bankerComparableReadout}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">
+                  Diligence Flags And Questions
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-content">
+                  {bankerRiskReadout}
+                </p>
+                <p className="mt-2 text-xs leading-relaxed text-content-muted">
+                  {bankerQuestionReadout}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showFounderScaffolding && (primaryRisk || primaryIssueAngle || shouldShowShareReadiness) ? (
         <div className="grid gap-3 lg:grid-cols-2">
           {primaryRisk || primaryIssueAngle ? (
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.05] px-4 py-3">
@@ -646,7 +861,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
             </div>
           ) : null}
         </div>
-      )}
+      ) : null}
 
       {proofPacket.sourceRefs.length > 0 && (
         <SourcesBar sources={proofPacket.sourceRefs} />
@@ -685,7 +900,12 @@ export const ResultWorkspace = memo(function ResultWorkspace({
         )}
       </Section>
 
-      <Section id="memory" icon={Layers3} title="Exploration Memory">
+      <Section
+        id="memory"
+        icon={Layers3}
+        title={showExternalBriefingMode ? "Briefing Workup" : "Exploration Memory"}
+      >
+        {!showExternalBriefingMode ? (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
           {[
             ["Sources explored", proofPacket.explorationMemory.exploredSourceCount],
@@ -706,8 +926,9 @@ export const ResultWorkspace = memo(function ResultWorkspace({
             </div>
           ))}
         </div>
-        <div className="mt-4 space-y-2">
-          {proofPacket.answerBlocks.map((block, index) => {
+        ) : null}
+        <div className={showExternalBriefingMode ? "grid gap-3 lg:grid-cols-2" : "mt-4 space-y-2"}>
+          {visibleAnswerBlocks.map((block, index) => {
             const isActive = activeAnswerBlock?.id === block.id;
             return (
               <button
@@ -717,7 +938,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
                   setSelectedAnswerBlockId(block.id);
                   setSelectedSourceId(block.sourceRefIds[0] ?? null);
                 }}
-                className={`w-full rounded-xl border px-3 py-3 text-left transition-colors ${
+                className={`${showExternalBriefingMode ? "h-full" : "w-full"} rounded-xl border px-3 py-3 text-left transition-colors ${
                   isActive
                     ? "border-[#d97757]/30 bg-[#d97757]/[0.06]"
                     : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12]"
@@ -737,7 +958,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
                   </div>
                   <SourceStatusBadge value={block.status} />
                 </div>
-                <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-content-muted">
+                <p className={`${showExternalBriefingMode ? "mt-3 text-sm" : "mt-2 line-clamp-2 text-xs"} leading-relaxed text-content-muted`}>
                   {block.text}
                 </p>
               </button>
@@ -746,7 +967,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
         </div>
       </Section>
 
-      {proofPacket.strategicAngles.length > 0 && (
+      {showFounderScaffolding && proofPacket.strategicAngles.length > 0 && (
         <Section
           id="pressure-test"
           icon={GitCompare}
@@ -853,7 +1074,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
         </Section>
       )}
 
-      {lens === "founder" && proofPacket.progressionProfile ? (
+      {lens === "founder" && showFounderScaffolding && proofPacket.progressionProfile ? (
         <Section id="progression" icon={Briefcase} title="Founder Progression Layer">
           <div className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="space-y-3">
@@ -1056,10 +1277,10 @@ export const ResultWorkspace = memo(function ResultWorkspace({
                       Role Default
                     </div>
                     <div className="mt-1 text-sm text-content">
-                      {proofPacket.operatingModel.roleDefault.defaultPacketType}
+                      {proofPacket.operatingModel.roleDefault?.defaultPacketType ?? proofPacket.operatingModel.packetRouter.packetType}
                     </div>
                     <div className="mt-1 text-[11px] text-content-muted">
-                      Artifact {proofPacket.operatingModel.roleDefault.defaultArtifactType}
+                      Artifact {proofPacket.operatingModel.roleDefault?.defaultArtifactType ?? proofPacket.operatingModel.packetRouter.artifactType}
                     </div>
                   </div>
                 </div>

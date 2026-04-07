@@ -11,10 +11,6 @@ vi.mock("@/features/telemetry/TrajectoryPanel", () => ({
   TrajectoryPanel: () => <div data-testid="trajectory-panel">Trajectory</div>,
 }));
 
-vi.mock("./SyncProvenanceBadge", () => ({
-  SyncProvenanceBadge: () => null,
-}));
-
 import { ResultWorkspace } from "./ResultWorkspace";
 import type { ResultPacket } from "./searchTypes";
 
@@ -30,6 +26,7 @@ const founderPacket: ResultPacket = {
       id: "source:1",
       label: "Founder memo",
       title: "Founder memo",
+      href: "https://example.com/founder-memo",
       type: "web",
       status: "cited",
       domain: "example.com",
@@ -40,6 +37,7 @@ const founderPacket: ResultPacket = {
       id: "source:2",
       label: "Benchmark note",
       title: "Benchmark note",
+      href: "https://bench.example.com/note",
       type: "web",
       status: "explored",
       domain: "bench.example.com",
@@ -352,6 +350,40 @@ const founderPacket: ResultPacket = {
   },
 };
 
+const bankerPacket: ResultPacket = {
+  ...founderPacket,
+  query: "Prepare a banker-style competitive briefing on Anthropic.",
+  entityName: "Anthropic",
+  answer: "Anthropic is separating on enterprise traction and pricing discipline, but the diligence burden is still contract durability versus larger platforms.",
+  keyMetrics: [
+    { label: "Anthropic revenue", value: "$19B" },
+    { label: "Anthropic valuation", value: "$380B" },
+    { label: "OpenAI gross margin", value: "33%" },
+  ],
+  comparables: [
+    { name: "OpenAI", relevance: "high", note: "Closest frontier-model operating peer." },
+    { name: "Google", relevance: "high", note: "Distribution and pricing pressure from the hyperscaler stack." },
+  ],
+  risks: [
+    {
+      title: "Pricing pressure",
+      description: "Bundled distribution from hyperscalers can compress standalone model pricing in large accounts.",
+    },
+  ],
+  nextQuestions: [
+    "How durable is Anthropic's pricing versus bundled alternatives in large accounts?",
+    "What evidence would overturn the current enterprise ranking?",
+  ],
+  operatingModel: {
+    ...founderPacket.operatingModel,
+    packetRouter: {
+      ...founderPacket.operatingModel.packetRouter,
+      companyMode: "external_company",
+    },
+  },
+  visibility: "workspace",
+};
+
 describe("ResultWorkspace", () => {
   it("renders the added founder progression, diligence, workflow, and benchmark sections", () => {
     render(<ResultWorkspace packet={founderPacket} lens="founder" />);
@@ -450,5 +482,37 @@ describe("ResultWorkspace", () => {
     expect(screen.getAllByText("Context context:issue:stealth-moat").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: /publish to shared context/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /delegate to claude code/i })).toBeInTheDocument();
+  });
+
+  it("adds a banker readout strip with comparable, risk, and diligence question focus", () => {
+    render(<ResultWorkspace packet={bankerPacket} lens="banker" />);
+
+    const bankerStrip = screen.getByTestId("banker-readout-strip");
+    const bankerBrief = screen.getByTestId("banker-memo-brief");
+    expect(bankerStrip).toBeInTheDocument();
+    expect(bankerBrief).toBeInTheDocument();
+    expect(screen.getByText("Underwriting Readout")).toBeInTheDocument();
+    expect(screen.getByText("Hard metrics first, diligence second")).toBeInTheDocument();
+    expect(screen.getAllByText(/Anthropic is separating on enterprise traction and pricing discipline/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Anthropic revenue").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("$19B").length).toBeGreaterThan(0);
+    expect(screen.getByText("Comparable Set")).toBeInTheDocument();
+    expect(screen.getByText("OpenAI, Google")).toBeInTheDocument();
+    expect(screen.getByText("Diligence Focus")).toBeInTheDocument();
+    expect(screen.getAllByText("Pricing pressure").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("How durable is Anthropic's pricing versus bundled alternatives in large accounts?").length).toBeGreaterThan(0);
+    expect(screen.getByText("Investment Banking Brief")).toBeInTheDocument();
+    expect(screen.getByText("Cleaner memo view from the current evidence set")).toBeInTheDocument();
+    expect(screen.getByText("Underwriting View")).toBeInTheDocument();
+    expect(screen.getByText("What Changed")).toBeInTheDocument();
+    expect(screen.getByText("Comparable Frame")).toBeInTheDocument();
+    expect(screen.getByText("Diligence Flags And Questions")).toBeInTheDocument();
+    expect(screen.getByText("Briefing Workup")).toBeInTheDocument();
+    expect(screen.getByText("Live web evidence")).toBeInTheDocument();
+    expect(screen.queryByText("Strategic Pressure Test")).not.toBeInTheDocument();
+    expect(screen.queryByText("Main Contradiction To Resolve")).not.toBeInTheDocument();
+    expect(screen.queryByText("Share Readiness")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /report for slack/i })).not.toBeInTheDocument();
+    expect(screen.queryByText("Why this team matters")).not.toBeInTheDocument();
   });
 });

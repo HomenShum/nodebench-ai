@@ -61,6 +61,2048 @@ export type TraceCallback = (step: { step: string; tool?: string; status: string
 
 type ToolCaller = (name: string, args: Record<string, unknown>) => Promise<unknown>;
 
+const COMPANY_NAME_STOPWORDS = new Set([
+  "approximately",
+  "ai",
+  "api",
+  "about",
+  "llm",
+  "ml",
+  "nlp",
+  "gpu",
+  "cpu",
+  "yoy",
+  "arr",
+  "mrr",
+  "tm",
+  "inc",
+  "corp",
+  "ltd",
+  "co",
+  "the",
+  "a",
+  "an",
+  "what",
+  "when",
+  "where",
+  "which",
+  "company",
+  "competitive",
+  "landscape",
+  "market",
+  "share",
+  "large",
+  "small",
+  "series",
+  "seed",
+  "pre-seed",
+  "preseed",
+  "round",
+  "however",
+  "therefore",
+  "moreover",
+  "war",
+  "race",
+  "battle",
+  "category",
+  "tpu",
+  "tpus",
+  "trainium",
+  "inferentia",
+  "claude",
+  "gemini",
+  "vertex",
+  "bedrock",
+  "statistics",
+  "analysis",
+  "overview",
+  "report",
+  "update",
+  "latest",
+  "enterprise",
+  "foundation",
+  "models",
+  "model",
+  "position",
+  "positioning",
+  "strategy",
+  "risk",
+  "risks",
+  "challenge",
+  "challenges",
+  "funding",
+  "valuation",
+  "revenue",
+  "growth",
+  "intelligence",
+  "memo",
+  "index",
+  "peer",
+  "it",
+  "multi",
+  "dimensional",
+  "global",
+  "business",
+  "professional",
+  "we",
+  "safety",
+  "focused",
+  "leader",
+  "leaders",
+  "their",
+  "them",
+  "our",
+  "us",
+  "ventures",
+  "venture",
+  "capital",
+  "partners",
+  "management",
+  "holdings",
+  "fund",
+  "fortune",
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december",
+  "overview",
+  "outlook",
+  "briefing",
+  "brief",
+  "readout",
+  "recon",
+  "contracts",
+  "data",
+  "pricing",
+  "buyers",
+  "reporting",
+  "contract",
+  "positioned",
+  "deployments",
+  "ecosystems",
+  "cowork",
+  "coworker",
+  "western",
+]);
+
+const SOURCE_ENTITY_STOPWORDS = new Set([
+  "axios",
+  "bloomberg",
+  "coatue",
+  "crunchbase",
+  "dragoneer",
+  "eweek",
+  "forbes",
+  "gic",
+  "gdpr",
+  "hipaa",
+  "linkedin",
+  "pitchbook",
+  "reddit",
+  "reuters",
+  "sacra",
+  "sequoia",
+  "soc 2",
+  "soc2",
+  "statista",
+  "substack",
+  "techcrunch",
+  "the information",
+  "wikipedia",
+  "youtube",
+]);
+
+const NON_PEER_COMPARABLE_NAMES = new Set([
+  "alphabet",
+  "aws",
+  "azure",
+  "bedrock",
+  "google cloud",
+  "microsoft azure",
+  "pentagon",
+  "vertex ai",
+]);
+
+const COMPARABLE_CONNECTOR_STOPWORDS = new Set([
+  "another",
+  "as",
+  "both",
+  "by",
+  "despite",
+  "each",
+  "every",
+  "many",
+  "most",
+  "other",
+  "others",
+  "several",
+  "some",
+]);
+
+const KNOWN_ACRONYM_COMPANY_NAMES = new Set([
+  "AMD",
+  "AWS",
+  "IBM",
+  "NVIDIA",
+  "SAP",
+  "TSMC",
+]);
+
+const HIGH_AUTHORITY_SOURCE_HOST_PATTERNS = [
+  /anthropic\.com$/i,
+  /openai\.com$/i,
+  /google\.com$/i,
+  /abcxyz\.com$/i,
+  /sec\.gov$/i,
+  /reuters\.com$/i,
+  /nytimes\.com$/i,
+  /wsj\.com$/i,
+  /ft\.com$/i,
+  /bloomberg\.com$/i,
+  /theinformation\.com$/i,
+  /sacra\.com$/i,
+];
+
+const LOW_AUTHORITY_SOURCE_HOST_PATTERNS = [
+  /247wallst\.com$/i,
+  /aibusinessweekly\.net$/i,
+  /atonementlicensing\.com$/i,
+  /electroiq\.com$/i,
+  /europeanbusinessmagazine\.com$/i,
+  /futuresearch\.ai$/i,
+  /redolentech\.com$/i,
+];
+
+const PERCENT_VALUE_PATTERN = /\d{1,3}(?:,\d{3})*(?:\.\d+)?%/g;
+
+function looksLikeSourceTitle(value: string): boolean {
+  return /[|]/.test(value)
+    || /\b(statistics?(?:\s+by)?|company analysis|outlook report|full financial breakdown|what investors need to know|what .* need to know|powerhouse hiding in plain sight|arms race|index(?:\s+\w+){0,3}\s+update|worth buying|turns the tables|who is winning|why .* is winning|why businesses choose|battle that will reshape|looking ahead to|dominance is being tested|ai war|ai race|critical revenue category|leading one half|market share 20\d{2}|competitors?\s*&\s*.+alternatives?|understanding the .* milestone|let'?s break down)\b/i.test(value)
+    || /\s[-:]\s(?:[A-Z][A-Za-z0-9&.]+(?:\s+[A-Z][A-Za-z0-9&.]+){0,3})$/.test(value.trim())
+    || /^\d+\.\s/.test(value);
+}
+
+function decodeCommonHtmlEntities(value: string): string {
+  return value
+    .replace(/&#x27;|&#39;/g, "'")
+    .replace(/&quot;/g, "\"")
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function normalizeWhitespace(value: string): string {
+  return decodeCommonHtmlEntities(value).replace(/\s+/g, " ").replace(/\s+([,.;:!?])/g, "$1").trim();
+}
+
+function sentenceSplit(value: string): string[] {
+  return normalizeWhitespace(value)
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+}
+
+function dedupeStrings(values: string[]): string[] {
+  const seen = new Set<string>();
+  const deduped: string[] = [];
+  for (const value of values) {
+    const normalized = normalizeWhitespace(value).toLowerCase();
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    deduped.push(normalizeWhitespace(value));
+  }
+  return deduped;
+}
+
+function containsRiskLanguage(value: string): boolean {
+  return /\b(risk|pressure|threat|challenge|headwind|dependency|concentration|regulat|compliance|pricing|margin|capital|compute|customer concentration|durability|retention|execution|burn|cash|governance|safety|litigation|antitrust|slowdown|uncertain|exposure)\b/i.test(value);
+}
+
+function isQuestionLike(value: string): boolean {
+  return /\?$/.test(value.trim()) || /^(what|how|why|when|where|which|who)\b/i.test(value.trim());
+}
+
+function looksLikeFundingHeadline(value: string): boolean {
+  return /\b(raises?|raised|funding|post-money valuation|valuation marks|targeting a .* ipo|revenue nearly doubled|powerhouse hiding in plain sight|worth buying)\b/i.test(value);
+}
+
+function looksLikeEvidenceFragment(value: string): boolean {
+  return value.length > 220
+    || /^[a-z]/.test(value)
+    || /^(per\s+user\/month|this report outlines|this article discusses|according to customer data from)/i.test(value)
+    || /^(those|these|they|it)\b/i.test(value)
+    || /^\d{1,2},\s+\d{4}\b/.test(value)
+    || /\.\.\.|prove this .* valuation is real/i.test(value);
+}
+
+function looksLikeNarrativeFluff(value: string): boolean {
+  return /^(this report|the report|this article|the article|this comparison|the comparison)\b/i.test(value)
+    || /\b(could prove conservative|people will keep using the product|projections suggest|the article argues|the report argues|this report highlights|this comparison highlights)\b/i.test(value)
+    || /\b(trajectory resembles|resembles how|feature into a core revenue driver|early capital intensity|market leader in enterprise ai and coding|may hold approximately|anecdotal)\b/i.test(value);
+}
+
+function looksLikeSpeculativeCapitalMarketsFiller(value: string): boolean {
+  return /\b(an ipo would|eye potential ipos?|valuation volatility|clearest look yet|justify a valuation larger than most|larger than most of the s&p 500|high-growth potential into sustainable, long-term enterprise value)\b/i.test(value);
+}
+
+function looksLikeGenericMarketBackdrop(value: string): boolean {
+  return /\b(the enterprise ai market is experiencing exponential growth|moves from niche experiments to foundational technology across industries|across industries|industry faces valuation volatility)\b/i.test(value);
+}
+
+function looksLikeTruncatedNarrative(value: string): boolean {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) return false;
+  if (/[.!?]$/.test(normalized)) return false;
+  if (/\.\.\.$/.test(normalized)) return true;
+  const lastToken = normalized.split(/\s+/).pop() ?? "";
+  if (!lastToken) return false;
+  if (lastToken.length <= 2) return true;
+  if (/^(and|or|but|with|for|to|of|in|on|at|by|as|while|when|because|which|that|who|whose|where|via|than|from|into|over|under|after|before|around|across)$/i.test(lastToken)) {
+    return true;
+  }
+  if (normalized.length >= 145) return true;
+  return false;
+}
+
+function cleanEvidenceSentence(value: string): string {
+  return normalizeWhitespace(value)
+    .replace(/^[-•]+\s*/, "")
+    .replace(/^(?:[A-Z][a-z]{2,9}\.?\s+)?[A-Z][a-z]{2,9}\s+\d{1,2},\s+\d{4}\s+[—-]\s*/i, "")
+    .replace(/^(?:[A-Z][a-z]{2,9}\.?\s+)?\d{1,2},\s+\d{4}\s+/i, "")
+    .replace(/^(?:updated|published|reported)\s+[A-Z][a-z]{2,9}\s+\d{1,2},\s+\d{4}\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function hasBankerSignalContent(value: string): boolean {
+  return /(\$\d|\b\d+%|\b(revenue|run-rate|run rate|growth|pricing|retention|distribution|bundle|bundling|contract|enterprise|valuation|margin|buyers?|share|deployments?|capex|spend|pipeline|bookings|demand|market position|subscriptions?|usage|users?|win rates?)\b)/i.test(value);
+}
+
+function scoreEvidenceSentence(value: string): number {
+  let score = 0;
+  if (/\$\d/.test(value)) score += 3;
+  if (/\b\d+%/.test(value)) score += 2;
+  if (/\b(revenue|run-rate|run rate|valuation|margin|bookings|capex|pricing|retention)\b/i.test(value)) score += 2;
+  if (/\b(contract|enterprise|distribution|buyers?|deployments?|pipeline|demand|market position|win rates?)\b/i.test(value)) score += 1;
+  if (/\b(risk|pressure|headwind|challenge|dependency|exposure)\b/i.test(value)) score += 1;
+  return score;
+}
+
+function hasConcreteMetric(value: string): boolean {
+  PERCENT_VALUE_PATTERN.lastIndex = 0;
+  return /\$\d/.test(value) || PERCENT_VALUE_PATTERN.test(value) || /\b\d+(?:\.\d+)?\s?(?:B|M|billion|million)\b/i.test(value);
+}
+
+function looksLikeSoftAdoptionClaim(value: string): boolean {
+  return /\b(leading position|record highs|strong demand|gaining traction|momentum is real|maintains a leading position|business usage rebounding|challenge .* dominance)\b/i.test(value);
+}
+
+function scoreUnderwritingSignal(value: string): number {
+  let score = scoreEvidenceSentence(value);
+  if (hasConcreteMetric(value)) score += 3;
+  if (/\b(gross margin|run-rate revenue|run rate revenue|annualized revenue|valuation|backlog|contracts?|pricing|retention|compute costs?|inference costs?|bookings|enterprise spend)\b/i.test(value)) {
+    score += 3;
+  }
+  if (/\b(500 customers|fortune 100|paying users?|per user\/month|\$200\/month|\$25[–-]30 per user\/month)\b/i.test(value)) {
+    score += 1;
+  }
+  if (looksLikeSoftAdoptionClaim(value)) score -= 4;
+  if (looksLikeGenericMarketBackdrop(value)) score -= 4;
+  if (looksLikeNarrativeFluff(value)) score -= 3;
+  return score;
+}
+
+function extractSourceHost(href: string | undefined): string | null {
+  if (!href) return null;
+  try {
+    return new URL(href).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function looksLikeWeakBankerSourceLabel(label: string): boolean {
+  return /\b(statistics?(?:\s+202\d)?|top\s+\d+|pitfalls|investors need to know|full financial breakdown|forecast|benchmarks?\b|negotiation tactics|magazine|why .* is winning|dominance is being tested|shocking fall from grace|selling safety as)\b/i.test(label);
+}
+
+function scoreSourceAuthority(label: string, href: string | undefined, type: string): number {
+  let score = 0;
+  const host = extractSourceHost(href);
+  if (type !== "web") score += 2;
+  if (host && HIGH_AUTHORITY_SOURCE_HOST_PATTERNS.some((pattern) => pattern.test(host))) score += 7;
+  if (host && LOW_AUTHORITY_SOURCE_HOST_PATTERNS.some((pattern) => pattern.test(host))) score -= 7;
+  if (/\b(official release|official blog|investor relations|shareholder letter|earnings|transcript|10-k|10-q|sec)\b/i.test(label)) score += 5;
+  if (/\b(sacra|reuters|bloomberg|new york times|wall street journal|financial times|the information)\b/i.test(label)) score += 4;
+  if (looksLikeSourceTitle(label)) score -= 2;
+  if (looksLikeWeakBankerSourceLabel(label)) score -= 5;
+  return score;
+}
+
+function stripTrailingConnectorTail(value: string): string {
+  return value
+    .replace(/\b(?:as|of|the|with|because|which|that|while|and|or|but|to|for|in|on|at|its|their|a|an)(?:\s+\b(?:as|of|the|with|because|which|that|while|and|or|but|to|for|in|on|at|its|their|a|an))*$/i, "")
+    .replace(/[,.:\-\u2013\u2014\s]+$/, "");
+}
+
+function compressNarrativePhrase(value: string, maxLength = 140): string {
+  const normalized = normalizeWhitespace(value).replace(/\s+/g, " ").trim();
+  if (normalized.length <= maxLength) return normalized.replace(/\.$/, "");
+  const clause = normalized.split(/[;:]/)[0]?.trim() ?? normalized;
+  if (clause.length <= maxLength) return clause.replace(/\.$/, "");
+  return clause.slice(0, maxLength).replace(/\s+\S*$/, "").replace(/[,.:\-–—\s]+$/, "");
+}
+
+function hasNonPeerRelationshipCue(value: string): boolean {
+  return /\b(available across|available on|backed by|capital backing|cloud platforms? like|customers including|deployed on|distribution through|hosted on|infrastructure stack|integrated with|partner(?:ed)? with|sold through|strategic backing|used by)\b/i.test(value);
+}
+
+function buildDefaultRiskDescription(title: string): string {
+  if (/pricing/i.test(title)) {
+    return "Large enterprise buyers can use bundled suites and multi-vendor negotiations to pressure pricing and shorten contract duration.";
+  }
+  if (/capital/i.test(title)) {
+    return "Model training and inference costs can compress gross margin and force continued external capital needs.";
+  }
+  if (/customer concentration/i.test(title)) {
+    return "A narrow set of large enterprise accounts can create renewal and spend-concentration risk if one buyer slows usage.";
+  }
+  if (/regulat/i.test(title)) {
+    return "Evolving AI governance, procurement, and compliance rules can slow enterprise adoption and raise diligence burden.";
+  }
+  if (/distribution/i.test(title)) {
+    return "Reliance on larger platform channels can weaken direct buyer access and negotiating leverage.";
+  }
+  return "Rapid enterprise growth still has to convert into repeatable deployments, retention, and disciplined field execution.";
+}
+
+function descriptionMatchesRiskTitle(title: string, description: string): boolean {
+  if (/pricing/i.test(title)) return /\b(pricing|discount|bundle|margin|contract|retention)\b/i.test(description);
+  if (/capital/i.test(title)) return /\b(capital|compute|burn|cash|capex|inference|training)\b/i.test(description);
+  if (/customer concentration/i.test(title)) return /\b(customer concentration|buyers|retention|concentration|renewal|account)\b/i.test(description);
+  if (/regulat/i.test(title)) return /\b(regulat|compliance|antitrust|litigation|governance|policy)\b/i.test(description);
+  if (/distribution/i.test(title)) return /\b(distribution|platform|ecosystem|channel|bundle|cloud)\b/i.test(description);
+  return /\b(execution|retention|deployment|conversion|delivery|concentration|pricing|margin|risk|pressure|headwind)\b/i.test(description);
+}
+
+function normalizeChangeDescription(value: string): string {
+  const normalized = normalizeNarrativeSentence(value);
+  if (!normalized) return "";
+  if (!hasBankerSignalContent(normalized)) return "";
+  const completeNarrative =
+    looksLikeTruncatedNarrative(normalized) && normalized.includes(",")
+      ? normalizeWhitespace(normalized.slice(0, normalized.lastIndexOf(",")))
+      : normalized;
+  if (!completeNarrative) return "";
+  if (!looksLikeTruncatedNarrative(completeNarrative)) {
+    return stripTrailingConnectorTail(completeNarrative);
+  }
+  const cleaned = stripTrailingConnectorTail(completeNarrative);
+  if (!cleaned || !hasBankerSignalContent(cleaned)) return "";
+  if (looksLikeTruncatedNarrative(cleaned)) {
+    const compressed = stripTrailingConnectorTail(compressNarrativePhrase(completeNarrative, 210));
+    return looksLikeTruncatedNarrative(compressed) ? "" : compressed;
+  }
+  return cleaned;
+}
+
+function focusRiskDescription(value: string, title: string): string {
+  const normalized = normalizeNarrativeSentence(value);
+  const candidates = sentenceSplit(normalized)
+    .map((sentence) => normalizeNarrativeSentence(sentence))
+    .filter((sentence) => sentence.length >= 18)
+    .filter((sentence) => !looksLikeSourceTitle(sentence))
+    .filter((sentence) => !looksLikeFundingHeadline(sentence))
+    .filter((sentence) => !looksLikeNarrativeFluff(sentence));
+  const matched =
+    candidates.find((sentence) => descriptionMatchesRiskTitle(title, sentence))
+    ?? candidates.find((sentence) => containsRiskLanguage(`${title} ${sentence}`))
+    ?? candidates[0]
+    ?? normalized;
+  return compressNarrativePhrase(matched, 150);
+}
+
+function extractEvidenceSentences(text: string): string[] {
+  return sentenceSplit(text)
+    .map((sentence) => cleanEvidenceSentence(sentence))
+    .filter((sentence) => sentence.length >= 24)
+    .filter((sentence) => !looksLikeSourceTitle(sentence))
+    .filter((sentence) => !looksLikeEvidenceFragment(sentence))
+    .filter((sentence) => !isQuestionLike(sentence))
+    .filter((sentence) => hasBankerSignalContent(sentence))
+    .sort((a, b) => scoreEvidenceSentence(b) - scoreEvidenceSentence(a))
+    .slice(0, 4);
+  return sentenceSplit(text)
+    .map((sentence) => sentence.replace(/^[-•]\s*/, "").trim())
+    .filter((sentence) => sentence.length >= 25)
+    .filter((sentence) => !looksLikeSourceTitle(sentence))
+    .filter((sentence) => !looksLikeEvidenceFragment(sentence))
+    .filter((sentence) => !isQuestionLike(sentence))
+    .filter((sentence) => /(\$\d|\b\d+%|\b(revenue|run-rate|run rate|growth|pricing|retention|distribution|bundle|bundling|contract|enterprise|valuation|margin|buyers?|share|deployments?)\b)/i.test(sentence))
+    .slice(0, 4);
+}
+
+function normalizeNarrativeSentence(value: string): string {
+  const cleaned = cleanEvidenceSentence(value)
+    .replace(/\*\*/g, "")
+    .replace(/`+/g, "")
+    .replace(/\[[0-9]+\]\s*/g, "")
+    .replace(/^#{1,6}\s+/g, "")
+    .replace(/^[^\p{L}\p{N}$#]+/u, "")
+    .replace(/^(?:reality check|bottom line|takeaway)\s*:\s*/i, "")
+    .trim();
+  const colonIndex = cleaned.indexOf(":");
+  if (colonIndex > 0 && colonIndex <= 34) {
+    const prefix = cleaned.slice(0, colonIndex).trim();
+    const suffix = cleaned.slice(colonIndex + 1).trim();
+    if (
+      suffix.length >= 24
+      && hasBankerSignalContent(suffix)
+      && /^[A-Z][A-Za-z0-9&'/-]*(?:\s+[A-Z][A-Za-z0-9&'/-]*){0,4}$/.test(prefix)
+      && !/\d/.test(prefix)
+    ) {
+      return suffix;
+    }
+  }
+  return cleaned;
+}
+
+function extractEvidenceSentencesSafe(text: string): string[] {
+  return sentenceSplit(text)
+    .map((sentence) => normalizeNarrativeSentence(sentence))
+    .filter((sentence) => sentence.length >= 24)
+    .filter((sentence) => !looksLikeSourceTitle(sentence))
+    .filter((sentence) => !looksLikeEvidenceFragment(sentence))
+    .filter((sentence) => !looksLikeNarrativeFluff(sentence))
+    .filter((sentence) => !isQuestionLike(sentence))
+    .filter((sentence) => hasBankerSignalContent(sentence))
+    .sort((a, b) => scoreEvidenceSentence(b) - scoreEvidenceSentence(a))
+    .slice(0, 4);
+}
+
+function normalizePossibleCompanyName(value: string): string {
+  return normalizeWhitespace(value)
+    .replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9.&, -]+$/g, "")
+    .replace(/^(?:while|as|but|and|however|meanwhile|although|despite|if|when|whereas|versus|vs\.?|against|compared to)\s+/i, "")
+    .replace(/[.,;:]+$/g, "")
+    .trim();
+}
+
+function isPotentialCompanyName(name: string, entityName: string): boolean {
+  const cleaned = normalizePossibleCompanyName(name);
+  if (!cleaned || cleaned.length < 2 || cleaned.length > 60) return false;
+  const lower = cleaned.toLowerCase();
+  if (lower === entityName.toLowerCase()) return false;
+  if (NON_PEER_COMPARABLE_NAMES.has(lower)) return false;
+  if (COMPARABLE_CONNECTOR_STOPWORDS.has(lower)) return false;
+  if (COMPANY_NAME_STOPWORDS.has(lower)) return false;
+  if (SOURCE_ENTITY_STOPWORDS.has(lower)) return false;
+  if (/^(the|a|an)\s+/i.test(cleaned)) return false;
+  if (/^series\s+[a-z0-9]+$/i.test(cleaned)) return false;
+  if (/\b(trainium|inferentia|tpu|tpus|model|models)\b/i.test(cleaned)) return false;
+  if (/\.\s+[A-Z]/.test(cleaned)) return false;
+  if (/\b(this|that|these|those|half|one)\b/i.test(cleaned)) return false;
+  if (/\b(gpus?|cpus?|tpus?|chips?|contracts?|buyers?|accounts?|usage|market|share|pricing|bundling|deployment|deployments)\b/i.test(cleaned)) return false;
+  if (/^(today|yesterday|quarter|year|source|report|index|analysis)$/i.test(cleaned)) return false;
+  if (/^(AI|API|LLM|ML|GPU|CPU|YoY|ARR|MRR)$/i.test(cleaned)) return false;
+  if (/^[A-Z]{3,6}$/.test(cleaned) && !KNOWN_ACRONYM_COMPANY_NAMES.has(cleaned)) return false;
+  if (/^[A-Z][a-z]+ly$/.test(cleaned)) return false;
+  if (/\b(company overview|overview|analysis|outlook|report|briefing|readout|market update|pricing pressure|enterprise ai)\b/i.test(cleaned)) {
+    return false;
+  }
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  if (words.length === 0 || words.length > 4) return false;
+  const nonGenericWords = words.filter((word) => !COMPANY_NAME_STOPWORDS.has(word.toLowerCase()));
+  if (nonGenericWords.length === 0) return false;
+  const genericWordCount = words.length - nonGenericWords.length;
+  if (genericWordCount >= Math.max(1, words.length - 1)) return false;
+  return /[A-Z]/.test(cleaned[0] ?? "") || /[A-Z]{2,}/.test(cleaned);
+}
+
+function inferSignalTheme(value: string): string {
+  const lower = value.toLowerCase();
+  if (/\b(run-rate|run rate|arr|mrr|revenue|bookings|sales)\b/.test(lower)) return "revenue";
+  if (/\b(growth|accelerat|yoy|quarter|momentum)\b/.test(lower)) return "growth";
+  if (/\b(pricing|discount|bundle|bundling|margin|contract|retention|renewal)\b/.test(lower)) return "pricing";
+  if (/\b(distribution|partner|channel|ecosystem|bedrock|cloud|platform)\b/.test(lower)) return "distribution";
+  if (/\b(enterprise|deployments?|buyers?|subscriptions?|usage|adoption)\b/.test(lower)) return "adoption";
+  if (/\b(valuation|funding|capital raise|financing|investor demand)\b/.test(lower)) return "capital_markets";
+  if (/\b(regulat|compliance|governance|policy|litigation|antitrust)\b/.test(lower)) return "regulatory";
+  if (/\b(compute|training|inference|gpu|capex|capital intensity|burn|cash)\b/.test(lower)) return "capital_intensity";
+  if (/\b(product|launch|release|model|feature|developer)\b/.test(lower)) return "product";
+  return "general";
+}
+
+function selectDiverseSignals(
+  items: Array<{ name: string; direction: string; impact: string }>,
+): Array<{ name: string; direction: string; impact: string }> {
+  const selected: Array<{ name: string; direction: string; impact: string }> = [];
+  const themeCounts = new Map<string, number>();
+  const themeLimit = new Map<string, number>([
+    ["revenue", 1],
+    ["growth", 1],
+    ["pricing", 1],
+    ["distribution", 1],
+    ["adoption", 1],
+    ["capital_markets", 1],
+    ["regulatory", 1],
+    ["capital_intensity", 1],
+    ["product", 1],
+    ["general", 2],
+  ]);
+
+  for (const item of items) {
+    if (selected.length >= 5) break;
+    const theme = inferSignalTheme(item.name);
+    if (theme === "adoption" && !hasConcreteMetric(item.name) && looksLikeSoftAdoptionClaim(item.name)) {
+      continue;
+    }
+    const currentCount = themeCounts.get(theme) ?? 0;
+    const maxCount = themeLimit.get(theme) ?? 1;
+    if (currentCount >= maxCount) continue;
+    selected.push(item);
+    themeCounts.set(theme, currentCount + 1);
+  }
+
+  if (selected.length >= 3) {
+    return selected.slice(0, 5);
+  }
+
+  for (const item of items) {
+    if (selected.length >= 5) break;
+    if (selected.some((entry) => entry.name.toLowerCase() === item.name.toLowerCase())) continue;
+    selected.push(item);
+  }
+
+  return selected.slice(0, 5);
+}
+
+function extractComparableCandidatesFromText(
+  text: string,
+  entityName: string,
+  options?: { allowCapitalizedFallback?: boolean },
+): string[] {
+  const candidates: string[] = [];
+  const versusPattern = /\b([A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,2})\s+(?:vs\.?|versus|against|compared to)\s+([A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,2}(?:\s*(?:,\s*|\s+and\s+)[A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,2})*)/g;
+  const nameListPattern =
+    "([A-Z][A-Za-z0-9&.-]*(?:\\s+[A-Z][A-Za-z0-9&.-]*){0,2}(?:\\s*(?:,\\s*|\\s+and\\s+)[A-Z][A-Za-z0-9&.-]*(?:\\s+[A-Z][A-Za-z0-9&.-]*){0,2})*)";
+  const patterns = [
+    new RegExp(`\\b(?:vs\\.?|versus|against|compared to)\\s+${nameListPattern}`, "g"),
+    new RegExp(`\\b(?:competitors?|rivals?|alternatives?)\\s+(?:include|includes|are|remain|such as|like)\\s+${nameListPattern}`, "g"),
+    new RegExp(`\\b(?:competes?|competing|competed|positioned|stacks up)\\s+(?:most directly\\s+)?(?:with|against|versus|vs\\.?)\\s+${nameListPattern}`, "g"),
+  ];
+
+  for (const match of text.matchAll(versusPattern)) {
+    for (const segment of [match[1] ?? "", match[2] ?? ""]) {
+      for (const part of segment.split(/\s*,\s*|\s+and\s+/i)) {
+        const candidate = normalizePossibleCompanyName(part);
+        if (isPotentialCompanyName(candidate, entityName)) {
+          candidates.push(candidate);
+        }
+      }
+    }
+  }
+
+  for (const pattern of patterns) {
+    for (const match of text.matchAll(pattern)) {
+      const segment = match[1] ?? "";
+      for (const part of segment.split(/\s*,\s*|\s+and\s+/i)) {
+        const candidate = normalizePossibleCompanyName(part);
+        if (isPotentialCompanyName(candidate, entityName)) {
+          candidates.push(candidate);
+        }
+      }
+    }
+  }
+
+  if (
+    options?.allowCapitalizedFallback !== false &&
+    (
+      /\b(compete|competitor|rival|alternative|versus|vs\.|against|compared to|peer set|peer group)\b/i.test(text)
+      || (text.toLowerCase().includes(entityName.toLowerCase()) && /\b(pricing|pressure|bundle|distribution|contract|retention|challenge)\b/i.test(text))
+      || /\b(pricing|pressure|bundle|distribution|contract|retention|challenge|enterprise|market share)\b/i.test(text)
+    )
+  ) {
+    const capitalizedMatches = text.match(/\b[A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,2}\b/g) ?? [];
+    for (const candidate of capitalizedMatches) {
+      const cleanedCandidate = normalizePossibleCompanyName(candidate);
+      if (isPotentialCompanyName(cleanedCandidate, entityName)) {
+        candidates.push(cleanedCandidate);
+      }
+    }
+  }
+
+  return dedupeStrings(candidates).slice(0, 6);
+}
+
+function extractEntityCompanyListCandidates(text: string, entityName: string): string[] {
+  if (!text.toLowerCase().includes(entityName.toLowerCase())) {
+    return [];
+  }
+  if (!/[,:]/.test(text) && !/\s+and\s+/i.test(text)) {
+    return [];
+  }
+  if (!/\b(enterprise|market|pricing|retention|distribution|platform|models?|companies|labs?)\b/i.test(text)) {
+    return [];
+  }
+  const capitalizedMatches = text.match(/\b[A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,2}\b/g) ?? [];
+  const candidates: string[] = [];
+  for (const candidate of capitalizedMatches) {
+    const cleanedCandidate = normalizePossibleCompanyName(candidate);
+    if (isPotentialCompanyName(cleanedCandidate, entityName)) {
+      candidates.push(cleanedCandidate);
+    }
+  }
+  return dedupeStrings(candidates).slice(0, 6);
+}
+
+function extractLooseComparableCandidatesFromText(
+  text: string,
+  entityName: string,
+  options?: { allowStrategicCue?: boolean },
+): string[] {
+  const hasCompetitiveCue = /\b(compete|competitor|rival|alternative|versus|vs\.|against|compared to|peer set|peer group|compare)\b/i.test(text);
+  const hasStrategicCue =
+    options?.allowStrategicCue === true
+    && /\b(pricing|pressure|bundle|distribution|contract|retention|buyer|buyers|enterprise)\b/i.test(text);
+  const listCandidates = extractEntityCompanyListCandidates(text, entityName);
+  if (listCandidates.length > 0) {
+    return listCandidates;
+  }
+  if (!hasCompetitiveCue && hasNonPeerRelationshipCue(text)) {
+    return [];
+  }
+  if (!hasCompetitiveCue && !hasStrategicCue) {
+    return [];
+  }
+  const candidates: string[] = [];
+  const capitalizedMatches = text.match(/\b[A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,2}\b/g) ?? [];
+  for (const candidate of capitalizedMatches) {
+    const cleanedCandidate = normalizePossibleCompanyName(candidate);
+    if (isPotentialCompanyName(cleanedCandidate, entityName)) {
+      candidates.push(cleanedCandidate);
+    }
+  }
+  return dedupeStrings(candidates).slice(0, 6);
+}
+
+function addComparableCandidateScores(
+  scores: Map<string, { name: string; score: number }>,
+  candidates: string[],
+  weight: number,
+): void {
+  for (const candidate of candidates) {
+    const cleaned = normalizeWhitespace(candidate);
+    const key = cleaned.toLowerCase();
+    if (!cleaned || !key) continue;
+    const existing = scores.get(key);
+    if (existing) {
+      existing.score += weight;
+      continue;
+    }
+    scores.set(key, { name: cleaned, score: weight });
+  }
+}
+
+function deriveComparableCandidates(execution: HarnessExecution, entityName: string): string[] {
+  if (execution.plan.classification === "multi_entity") {
+    const comparisonTargets = dedupeStrings(
+      (execution.plan.entityTargets ?? []).filter((target): target is string => typeof target === "string" && Boolean(target)),
+    );
+    return (comparisonTargets.slice(1).length > 0 ? comparisonTargets.slice(1) : comparisonTargets).slice(0, 4);
+  }
+
+  const candidateScores = new Map<string, { name: string; score: number }>();
+  const fallbackTexts: string[] = [];
+  const fallbackNarrativeTexts: string[] = [];
+  const fallbackTitleTexts: string[] = [];
+
+  for (const target of execution.plan.entityTargets ?? []) {
+    if (typeof target === "string" && isPotentialCompanyName(target, entityName)) {
+      addComparableCandidateScores(candidateScores, [target], 2.5);
+    }
+  }
+
+  for (const step of execution.stepResults) {
+    if (!step.success || !step.result) continue;
+    const raw = step.result as any;
+
+    if (Array.isArray(raw?.comparables)) {
+      for (const comparable of raw.comparables) {
+        const name = typeof comparable === "string" ? comparable : comparable?.name;
+        if (typeof name === "string" && isPotentialCompanyName(name, entityName)) {
+          addComparableCandidateScores(candidateScores, [name], 1.5);
+        }
+      }
+    }
+
+    if (Array.isArray(raw?.competitors)) {
+      for (const comparable of raw.competitors) {
+        const name = typeof comparable === "string" ? comparable : comparable?.name;
+        if (typeof name === "string" && isPotentialCompanyName(name, entityName)) {
+          addComparableCandidateScores(candidateScores, [name], 1.75);
+        }
+      }
+    }
+
+    const textBlobs: string[] = [];
+    if (typeof raw?.answer === "string") {
+      fallbackTexts.push(raw.answer);
+      if (!looksLikeSourceTitle(raw.answer)) fallbackNarrativeTexts.push(raw.answer);
+      addComparableCandidateScores(
+        candidateScores,
+        extractComparableCandidatesFromText(raw.answer, entityName, { allowCapitalizedFallback: false }),
+        2.5,
+      );
+    }
+    if (typeof raw?.summary === "string") {
+      fallbackTexts.push(raw.summary);
+      if (!looksLikeSourceTitle(raw.summary)) fallbackNarrativeTexts.push(raw.summary);
+      addComparableCandidateScores(
+        candidateScores,
+        extractComparableCandidatesFromText(raw.summary, entityName, { allowCapitalizedFallback: false }),
+        2.25,
+      );
+    }
+    if (typeof raw?.description === "string") {
+      fallbackTexts.push(raw.description);
+      if (!looksLikeSourceTitle(raw.description)) fallbackNarrativeTexts.push(raw.description);
+      addComparableCandidateScores(
+        candidateScores,
+        extractComparableCandidatesFromText(raw.description, entityName, { allowCapitalizedFallback: false }),
+        2.25,
+      );
+    }
+    if (typeof raw?.content === "string") {
+      fallbackTexts.push(raw.content);
+      if (!looksLikeSourceTitle(raw.content)) fallbackNarrativeTexts.push(raw.content);
+      addComparableCandidateScores(
+        candidateScores,
+        extractComparableCandidatesFromText(raw.content, entityName, { allowCapitalizedFallback: false }),
+        2,
+      );
+    }
+    for (const signal of raw?.signals ?? raw?.findings ?? []) {
+      const signalText = typeof signal === "string" ? signal : signal?.name;
+      if (typeof signalText === "string") {
+        fallbackTexts.push(signalText);
+        if (!looksLikeSourceTitle(signalText)) fallbackNarrativeTexts.push(signalText);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(signalText, entityName, { allowCapitalizedFallback: false }),
+          2,
+        );
+      }
+    }
+    for (const item of raw?.sources ?? []) {
+      if (typeof item?.name === "string") {
+        fallbackTexts.push(item.name);
+        fallbackTitleTexts.push(item.name);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(item.name, entityName, { allowCapitalizedFallback: false }),
+          2.5,
+        );
+      }
+      if (typeof item?.title === "string") {
+        fallbackTexts.push(item.title);
+        fallbackTitleTexts.push(item.title);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(item.title, entityName, { allowCapitalizedFallback: false }),
+          2.5,
+        );
+      }
+      if (typeof item?.snippet === "string") {
+        fallbackTexts.push(item.snippet);
+        if (!looksLikeSourceTitle(item.snippet)) fallbackNarrativeTexts.push(item.snippet);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(item.snippet, entityName, { allowCapitalizedFallback: false }),
+          2.25,
+        );
+      }
+      if (typeof item?.description === "string") {
+        fallbackTexts.push(item.description);
+        if (!looksLikeSourceTitle(item.description)) fallbackNarrativeTexts.push(item.description);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(item.description, entityName, { allowCapitalizedFallback: false }),
+          2,
+        );
+      }
+    }
+    for (const item of raw?.results ?? raw?.webResults ?? []) {
+      if (typeof item?.title === "string") {
+        fallbackTexts.push(item.title);
+        fallbackTitleTexts.push(item.title);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(item.title, entityName, { allowCapitalizedFallback: false }),
+          2.5,
+        );
+      }
+      if (typeof item?.snippet === "string") {
+        fallbackTexts.push(item.snippet);
+        if (!looksLikeSourceTitle(item.snippet)) fallbackNarrativeTexts.push(item.snippet);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(item.snippet, entityName, { allowCapitalizedFallback: false }),
+          2.25,
+        );
+      }
+      if (typeof item?.description === "string") {
+        fallbackTexts.push(item.description);
+        if (!looksLikeSourceTitle(item.description)) fallbackNarrativeTexts.push(item.description);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(item.description, entityName, { allowCapitalizedFallback: false }),
+          2,
+        );
+      }
+      if (typeof item?.content === "string") {
+        fallbackTexts.push(item.content);
+        if (!looksLikeSourceTitle(item.content)) fallbackNarrativeTexts.push(item.content);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(item.content, entityName, { allowCapitalizedFallback: false }),
+          2,
+        );
+      }
+    }
+  }
+
+  if (candidateScores.size < 2) {
+    for (const text of fallbackNarrativeTexts) {
+      const listCandidates = extractEntityCompanyListCandidates(text, entityName);
+      const looseCandidates =
+        listCandidates.length > 0
+          ? listCandidates
+          : extractLooseComparableCandidatesFromText(text, entityName, { allowStrategicCue: true });
+      addComparableCandidateScores(
+        candidateScores,
+        looseCandidates,
+        listCandidates.length > 0 ? 1.5 : 1,
+      );
+    }
+  }
+
+  if (candidateScores.size < 2) {
+    for (const text of fallbackTitleTexts) {
+      const listCandidates = extractEntityCompanyListCandidates(text, entityName);
+      const looseCandidates =
+        listCandidates.length > 0
+          ? listCandidates
+          : extractLooseComparableCandidatesFromText(text, entityName, { allowStrategicCue: candidateScores.size > 0 });
+      addComparableCandidateScores(
+        candidateScores,
+        looseCandidates,
+        1.25,
+      );
+    }
+  }
+
+  const ranked = Array.from(candidateScores.values())
+    .sort((left, right) => right.score - left.score || left.name.localeCompare(right.name));
+  const highConfidence = ranked.filter((entry) => entry.score >= 2).map((entry) => entry.name);
+  if (highConfidence.length > 0) {
+    const selected = [...highConfidence];
+    for (const entry of ranked) {
+      if (selected.length >= 4) break;
+      if (selected.includes(entry.name)) continue;
+      if (entry.score < 1.25) continue;
+      selected.push(entry.name);
+    }
+    return selected.slice(0, 4);
+  }
+  return ranked.map((entry) => entry.name).slice(0, 2);
+}
+
+function mergeSignals(
+  primary: Array<{ name: string; direction: string; impact: string }>,
+  fallbacks: Array<{ name: string; direction: string; impact: string }>,
+): Array<{ name: string; direction: string; impact: string }> {
+  const seen = new Set<string>();
+  const merged: Array<{ name: string; direction: string; impact: string }> = [];
+  for (const item of [...primary, ...fallbacks]) {
+    const key = normalizeWhitespace(item.name).toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    merged.push(item);
+  }
+  return merged.slice(0, 5);
+}
+
+function isNarrativeReadySignal(value: string): boolean {
+  if (looksLikeSourceTitle(value)) return false;
+  if (/^(Anthropic|OpenAI|Google|Microsoft|Amazon)\s+(raises|raised|funding|doubles funding|plans to raise)\b/i.test(value)) {
+    return false;
+  }
+  if (/\bseries\s+[a-z0-9]+\b/i.test(value)) return false;
+  return true;
+}
+
+function collectFallbackSignals(execution: HarnessExecution): Array<{ name: string; direction: string; impact: string }> {
+  const signals: Array<{ name?: string; direction?: string; impact?: string }> = [];
+  for (const step of execution.stepResults) {
+    if (!step.success || !step.result) continue;
+    const raw = step.result as any;
+    if (step.toolName === "run_recon" && Array.isArray(raw?.findings)) {
+      for (const finding of raw.findings) {
+        signals.push({
+          name: typeof finding === "string" ? finding : finding?.name,
+          direction: typeof finding === "object" ? finding?.direction : "neutral",
+          impact: typeof finding === "object" ? finding?.impact : "medium",
+        });
+      }
+    }
+    if (step.toolName === "enrich_entity" && Array.isArray(raw?.signals)) {
+      for (const signal of raw.signals) {
+        signals.push({
+          name: typeof signal === "string" ? signal : signal?.name,
+          direction: typeof signal === "object" ? signal?.direction : "neutral",
+          impact: typeof signal === "object" ? signal?.impact : "medium",
+        });
+      }
+    }
+    for (const sentence of extractEvidenceSentencesSafe(String(raw?.answer ?? raw?.summary ?? raw?.description ?? ""))) {
+      signals.push({ name: sentence, direction: "neutral", impact: "high" });
+    }
+    for (const source of [...(Array.isArray(raw?.sources) ? raw.sources : []), ...(Array.isArray(raw?.results) ? raw.results : []), ...(Array.isArray(raw?.webResults) ? raw.webResults : [])].slice(0, 6)) {
+      for (const sentence of extractEvidenceSentencesSafe(String(source?.snippet ?? source?.description ?? source?.content ?? ""))) {
+        signals.push({ name: sentence, direction: "neutral", impact: "medium" });
+      }
+    }
+  }
+  return sanitizeSignals(signals);
+}
+
+function looksLikeOperationalChange(value: string): boolean {
+  return /\b(announced|expanded|grew|growth|increased|launched|now exceeds|partnered|quadrupled|reached|released|reported|represent over half|tripled|updated|unveiled)\b/i.test(value);
+}
+
+function collectFallbackChanges(execution: HarnessExecution): Array<{ description: string; date?: string }> {
+  const changes: Array<{ description: string; date?: string }> = [];
+  for (const step of execution.stepResults) {
+    if (!step.success || !step.result) continue;
+    const raw = step.result as any;
+
+    if (step.toolName === "run_recon" && Array.isArray(raw?.findings)) {
+      for (const finding of raw.findings) {
+        const description = String(typeof finding === "string" ? finding : finding?.name ?? "");
+        if (!description || !looksLikeOperationalChange(description)) continue;
+        changes.push({ description });
+      }
+    }
+
+    for (const change of Array.isArray(raw?.changes) ? raw.changes : []) {
+      const description = String(typeof change === "string" ? change : change?.description ?? change?.change ?? "");
+      if (!description || !looksLikeOperationalChange(description)) continue;
+      changes.push({ description, date: typeof change === "object" ? change?.date : undefined });
+    }
+
+    for (const sentence of extractEvidenceSentencesSafe(String(raw?.answer ?? raw?.summary ?? raw?.description ?? ""))) {
+      const description = sentence;
+      if (!description || !looksLikeOperationalChange(description)) continue;
+      changes.push({ description });
+    }
+
+    for (const source of [...(Array.isArray(raw?.sources) ? raw.sources : []), ...(Array.isArray(raw?.results) ? raw.results : []), ...(Array.isArray(raw?.webResults) ? raw.webResults : [])].slice(0, 8)) {
+      for (const sentence of extractEvidenceSentencesSafe(String(source?.snippet ?? source?.description ?? source?.content ?? ""))) {
+        const description = sentence;
+        if (!description || !looksLikeOperationalChange(description)) continue;
+        changes.push({ description });
+      }
+    }
+  }
+  return changes;
+}
+
+function collectFallbackRisks(execution: HarnessExecution): Array<{ title: string; description: string }> {
+  const risks: Array<{ title?: string; description?: string }> = [];
+  for (const step of execution.stepResults) {
+    if (!step.success || !step.result) continue;
+    const raw = step.result as any;
+
+    if (step.toolName === "run_recon" && Array.isArray(raw?.findings)) {
+      for (const finding of raw.findings) {
+        const description = normalizeWhitespace(String(typeof finding === "string" ? finding : finding?.name ?? ""));
+        const direction = String(typeof finding === "object" ? finding?.direction ?? "" : "");
+        if (!description) continue;
+        if (direction === "down" || containsRiskLanguage(description)) {
+          risks.push({ title: inferRiskTitleFromDescription(description), description });
+        }
+      }
+    }
+
+    if (Array.isArray(raw?.risks)) {
+      for (const risk of raw.risks) {
+        risks.push({
+          title: typeof risk === "object" ? String(risk?.title ?? "") : "",
+          description: typeof risk === "string" ? risk : String(risk?.description ?? ""),
+        });
+      }
+    }
+
+    for (const sentence of extractEvidenceSentencesSafe(String(raw?.answer ?? raw?.summary ?? raw?.description ?? ""))) {
+      if (containsRiskLanguage(sentence)) {
+        risks.push({ title: inferRiskTitleFromDescription(sentence), description: sentence });
+      }
+    }
+
+    for (const source of [...(Array.isArray(raw?.sources) ? raw.sources : []), ...(Array.isArray(raw?.results) ? raw.results : []), ...(Array.isArray(raw?.webResults) ? raw.webResults : [])].slice(0, 8)) {
+      for (const sentence of extractEvidenceSentencesSafe(String(source?.snippet ?? source?.description ?? source?.content ?? ""))) {
+        if (containsRiskLanguage(sentence)) {
+          risks.push({ title: inferRiskTitleFromDescription(sentence), description: sentence });
+        }
+      }
+    }
+  }
+  return sanitizeRisks(risks);
+}
+
+function sanitizeSignals(
+  items: Array<{ name?: string; direction?: string; impact?: string }> | undefined,
+): Array<{ name: string; direction: string; impact: string }> {
+  const seen = new Set<string>();
+  const sanitized: Array<{ name: string; direction: string; impact: string }> = [];
+  for (const item of items ?? []) {
+    const name = normalizeNarrativeSentence(String(item?.name ?? ""));
+    if (!name || /^signal \d+$/i.test(name)) continue;
+    if (/^(company overview|overview|analysis|outlook report|the)$/i.test(name)) continue;
+    if (/\b(company overview|overview|analysis|outlook report|market update)\b/i.test(name)) continue;
+    if (looksLikeAmbiguousSubjectSignal(name)) continue;
+    if (looksLikeFundingHeadline(name)) continue;
+    if (looksLikeEvidenceFragment(name)) continue;
+    if (looksLikeNarrativeFluff(name)) continue;
+    if (looksLikeSpeculativeCapitalMarketsFiller(name)) continue;
+    if (looksLikeGenericMarketBackdrop(name)) continue;
+    if (name.length > 100 && /[-:]\s[A-Z][A-Za-z0-9&.\s]+$/.test(name)) continue;
+    if (looksLikeSourceTitle(name)) continue;
+    if (!hasBankerSignalContent(name) && !containsRiskLanguage(name)) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    sanitized.push({
+      name,
+      direction: item?.direction === "up" || item?.direction === "down" ? item.direction : "neutral",
+      impact: item?.impact === "high" || item?.impact === "low" ? item.impact : "medium",
+    });
+  }
+  return selectDiverseSignals(
+    sanitized
+      .sort((a, b) => scoreUnderwritingSignal(b.name) - scoreUnderwritingSignal(a.name)),
+  );
+}
+
+function sanitizeChanges(
+  items: Array<{ description?: string; date?: string | null }> | undefined,
+): Array<{ description: string; date?: string }> {
+  const normalizedEntries = (items ?? [])
+    .map((item) => ({
+      description: normalizeChangeDescription(String(item?.description ?? "")),
+      date: item?.date ?? undefined,
+    }))
+    .filter((item) => item.description.length > 0);
+  const deduped = dedupeStrings(normalizedEntries.map((item) => item.description))
+    .filter((description) => description.length >= 18)
+    .filter((description) => !looksLikeSourceTitle(description))
+    .filter((description) => !looksLikeFundingHeadline(description))
+    .filter((description) => !looksLikeEvidenceFragment(description))
+    .filter((description) => !looksLikeNarrativeFluff(description))
+    .filter((description) => !looksLikeSpeculativeCapitalMarketsFiller(description))
+    .filter((description) => !looksLikeGenericMarketBackdrop(description))
+    .filter((description) => !looksLikeAmbiguousSubjectSignal(description))
+    .filter((description) => !/\b(sacra|24\/7 wall st|forbes|axios|deepresearchglobal)\b/i.test(description));
+  return deduped.slice(0, 4).map((description, index) => ({
+    description,
+    date: normalizedEntries.find((item) => item.description === description)?.date,
+  }));
+}
+
+function inferRiskTitleFromDescription(description: string): string {
+  if (/\bpricing|bundle|discount|margin\b/i.test(description)) return "Pricing pressure";
+  if (/\bcustomer concentration|enterprise buyers|buyer concentration|retention\b/i.test(description)) return "Customer concentration";
+  if (/\bregulat|compliance|litigation|antitrust|governance\b/i.test(description)) return "Regulatory exposure";
+  if (/\bcapital|compute|cash|burn|capex\b/i.test(description)) return "Capital intensity";
+  if (/\bdistribution|platform|ecosystem\b/i.test(description)) return "Distribution dependency";
+  return "Execution risk";
+}
+
+function sanitizeRisks(
+  items: Array<{ title?: string; description?: string }> | undefined,
+): Array<{ title: string; description: string }> {
+  const seen = new Set<string>();
+  const seenTitles = new Set<string>();
+  const sanitized: Array<{ title: string; description: string }> = [];
+  for (const item of items ?? []) {
+    let title = normalizeWhitespace(String(item?.title ?? ""));
+    let description = normalizeNarrativeSentence(String(item?.description ?? ""));
+    if (!description || description.length < 18) continue;
+    if (looksLikeSourceTitle(description)) continue;
+    if (looksLikeFundingHeadline(description)) continue;
+    if (looksLikeEvidenceFragment(description)) continue;
+    if (looksLikeNarrativeFluff(description)) continue;
+    if (!title || isQuestionLike(title) || looksLikeSourceTitle(title) || title.length > 90) {
+      title = inferRiskTitleFromDescription(description);
+    }
+    if (looksLikeFundingHeadline(title)) {
+      title = inferRiskTitleFromDescription(description);
+    }
+    description = focusRiskDescription(description, title);
+    if (!descriptionMatchesRiskTitle(title, description) || (!/[.!?]$/.test(description) && description.length > 85)) {
+      description = buildDefaultRiskDescription(title);
+    }
+    if (!containsRiskLanguage(`${title} ${description}`)) continue;
+    const key = `${title.toLowerCase()}::${description.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    const titleKey = title.toLowerCase();
+    if (seenTitles.has(titleKey)) continue;
+    seen.add(key);
+    seenTitles.add(titleKey);
+    sanitized.push({ title, description });
+  }
+  return sanitized.slice(0, 4);
+}
+
+function sanitizeComparables(
+  items: Array<{ name?: string; relevance?: string; note?: string }> | undefined,
+  entityName: string,
+  fallbacks: string[],
+  context?: { classification?: string; entityTargets?: string[] },
+): Array<{ name: string; relevance: string; note: string }> {
+  const seen = new Set<string>();
+  const sanitized: Array<{ name: string; relevance: string; note: string }> = [];
+  const fallbackSet = new Set(fallbacks.map((value) => normalizeWhitespace(value).toLowerCase()).filter(Boolean));
+  const normalizedTargets = dedupeStrings((context?.entityTargets ?? []).map((value) => normalizeWhitespace(String(value))));
+  const targetSet = new Set(normalizedTargets.map((value) => value.toLowerCase()).filter(Boolean));
+  const entityTokens = new Set(entityName.split(/\s+vs\s+|\s*,\s*/i).map((value) => normalizeWhitespace(value).toLowerCase()).filter(Boolean));
+  const anchorTarget = normalizedTargets[0]?.toLowerCase();
+
+  const pushComparable = (name: string, relevance = "medium", note = "Referenced in cited sources.") => {
+    const cleanedName = normalizeWhitespace(name);
+    const explicitTarget = targetSet.has(cleanedName.toLowerCase());
+    if (!explicitTarget && !isPotentialCompanyName(cleanedName, entityName)) return;
+    const lowerName = cleanedName.toLowerCase();
+    const noteText = normalizeWhitespace(note).toLowerCase();
+    if (SOURCE_ENTITY_STOPWORDS.has(lowerName) && !explicitTarget) return;
+    if (looksLikeSourceTitle(cleanedName)) return;
+    if (/\b(index|statistics|report|briefing|analysis|investors need to know)\b/i.test(`${cleanedName} ${note}`)) return;
+    if (context?.classification === "multi_entity") {
+      if (anchorTarget && lowerName === anchorTarget && normalizedTargets.length > 1) return;
+      if (!targetSet.has(lowerName) && !fallbackSet.has(lowerName)) return;
+      if (entityTokens.has(lowerName) && !targetSet.has(lowerName)) return;
+    }
+    if ((context?.classification === "competitor" || context?.classification === "company_search") && fallbackSet.size > 0) {
+      if (!fallbackSet.has(lowerName) && !targetSet.has(lowerName)) return;
+    }
+    if ((/research|index|statistics|report|outlook|news|publication|newsletter/.test(noteText) || /market update/.test(noteText)) && !targetSet.has(lowerName)) {
+      return;
+    }
+    const key = cleanedName.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    sanitized.push({
+      name: cleanedName,
+      relevance: relevance === "high" || relevance === "low" ? relevance : "medium",
+      note: normalizeWhitespace(note || "Referenced in cited sources."),
+    });
+  };
+
+  for (const item of items ?? []) {
+    pushComparable(String(item?.name ?? ""), String(item?.relevance ?? "medium"), String(item?.note ?? ""));
+  }
+  for (const fallback of fallbacks) {
+    pushComparable(fallback, "medium", "Derived from cited competitive references.");
+  }
+  if (context?.classification === "multi_entity") {
+    for (const target of normalizedTargets.slice(1)) {
+      pushComparable(target, "high", "Explicit company in the scoped comparison set.");
+    }
+  }
+
+  const maxComparables = context?.classification === "multi_entity" ? 4 : 2;
+  return sanitized.slice(0, maxComparables);
+}
+
+function sanitizeNextActions(
+  items: Array<{ action?: string; impact?: string }> | undefined,
+  lens: string,
+  entityName: string,
+  comparables: Array<{ name: string; relevance: string; note: string }>,
+  risks: Array<{ title: string; description: string }>,
+  context?: { classification?: string; entityTargets?: string[] },
+): Array<{ action: string; impact: string }> {
+  const deduped = dedupeStrings((items ?? []).map((item) => String(item?.action ?? "")));
+  const sanitized = deduped
+    .filter((action) => action.length >= 12)
+    .filter((action) => !/contextQuestions|check_framework|gather project|ingest_upload|Answer any|Use\s+\w+_\w+/i.test(action))
+    .filter((action) => !/^(review the provided context|gather project context|answer context questions)/i.test(action))
+    .filter((action) => !/^(do more research|research further|investigate further)$/i.test(action))
+    .filter((action) => context?.classification !== "multi_entity" || !/\bbenchmark\b.+\bagainst\b/i.test(action))
+    .slice(0, 3)
+    .map((action, index) => ({
+      action,
+      impact: items?.[index]?.impact === "low" || items?.[index]?.impact === "medium" ? items[index].impact : "high",
+    }));
+
+  const topComparable = comparables[0]?.name;
+  const topRisk = risks[0]?.title.toLowerCase().includes("regulat") || risks[0]?.description.toLowerCase().includes("regulat")
+    ? `Pressure-test regulatory and diligence exposure around ${entityName}.`
+    : topComparable
+      ? `Benchmark ${entityName} against ${topComparable} on positioning, pricing, and enterprise traction.`
+      : `Pressure-test the core investment thesis for ${entityName} against the cited evidence.`;
+
+  const targetNames = dedupeStrings((context?.entityTargets ?? []).map((item) => normalizeWhitespace(String(item))));
+  const comparisonLabel = targetNames.length > 1 ? targetNames.join(", ") : entityName;
+  const defaults =
+    context?.classification === "multi_entity" && lens === "banker"
+      ? [
+          `Build a side-by-side diligence matrix for ${comparisonLabel} covering pricing, enterprise traction, buyer fit, and contract durability.`,
+          `Pressure-test which company has the most defensible distribution advantage versus bundled platform pressure.`,
+          `Map likely strategic buyers, counterparties, or financing narratives for each company in the set before choosing a preferred angle.`,
+        ]
+      : context?.classification === "multi_entity" && lens === "investor"
+        ? [
+            `Build a side-by-side market map for ${comparisonLabel} covering pricing power, enterprise traction, and distribution leverage.`,
+            `Pressure-test whether the current winner is product-led, distribution-led, or simply benefiting from timing and narrative momentum.`,
+            `Identify the one data point that would most change the relative ranking across the current peer set.`,
+          ]
+        : lens === "banker"
+      ? [
+          `Build a buyer and strategic-counterparty map for ${entityName} using the current competitive set.`,
+          `Pressure-test revenue durability, customer concentration, and capital intensity for ${entityName}.`,
+          topRisk,
+        ]
+      : lens === "investor"
+        ? [
+            `Benchmark ${entityName}'s market position, share gains, and enterprise traction against the nearest cited peer set.`,
+            `Pressure-test whether ${entityName}'s current edge is product-led, distribution-led, or simply timing-driven.`,
+            topRisk,
+          ]
+        : [
+            `Identify which cited signals for ${entityName} are durable versus narrative-driven.`,
+            `Turn the strongest comparable set into an explicit positioning map for ${entityName}.`,
+            topRisk,
+          ];
+
+  const merged = [...sanitized];
+  for (const action of defaults) {
+    if (merged.length >= 3) break;
+    if (merged.some((item) => item.action.toLowerCase() === action.toLowerCase())) continue;
+    merged.push({ action, impact: "high" });
+  }
+
+  return merged.slice(0, 3);
+}
+
+function buildDefaultNextQuestions(args: {
+  classification: string;
+  entityName: string;
+  comparables: Array<{ name: string; relevance: string; note: string }>;
+  risks: Array<{ title: string; description: string }>;
+  entityTargets?: string[];
+}): string[] {
+  if (args.classification === "multi_entity") {
+    const comparisonLabel = dedupeStrings((args.entityTargets ?? []).map((item) => normalizeWhitespace(String(item)))).slice(0, 3).join(", ") || args.entityName;
+    return [
+      `Which company in ${comparisonLabel} has the strongest enterprise distribution today, and what evidence would overturn that ranking?`,
+      `Where do pricing power and contract durability differ most across the current peer set?`,
+      `Which buyer segment structurally favors one company over the others, and why?`,
+      `What evidence would most change the relative ranking across the current comparison set?`,
+    ];
+  }
+
+  return [
+    `What are the specific drivers behind ${args.entityName}'s recent growth or decline?`,
+    args.risks.length > 0
+      ? `How likely is "${args.risks[0]?.title}" to materialize, and what would trigger it?`
+      : `What are the biggest threats to ${args.entityName}'s market position?`,
+    args.comparables.length > 0
+      ? `How does ${args.entityName} compare to ${args.comparables[0]?.name} on unit economics and retention?`
+      : `Who are ${args.entityName}'s most dangerous competitors and why?`,
+    `What would make you change your thesis on ${args.entityName} and what evidence would you need to see?`,
+  ];
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function inferMetricEntity(value: string, entityName: string, entityTargets?: string[]): string | null {
+  const orderedTargets = dedupeStrings([...(entityTargets ?? []), entityName].map((item) => normalizeWhitespace(String(item))));
+  for (const target of orderedTargets) {
+    if (!target) continue;
+    const pattern = new RegExp(`\\b${escapeRegex(target)}\\b`, "i");
+    if (pattern.test(value)) return target;
+  }
+  return null;
+}
+
+function mentionsEntityTarget(value: string, entityTargets?: string[]): boolean {
+  return inferMetricEntity(value, "", entityTargets) !== null;
+}
+
+function looksLikeAmbiguousSubjectSignal(value: string): boolean {
+  return /^(its|the company|reports indicated|by march|by december|new data from)/i.test(normalizeWhitespace(value));
+}
+
+function inferMetricLabels(
+  sentence: string,
+  entityName: string,
+  entityTargets?: string[],
+): string[] {
+  const normalizedTargets = dedupeStrings((entityTargets ?? []).map((item) => normalizeWhitespace(String(item))));
+  const multiEntity = normalizedTargets.length > 1;
+  const subject = inferMetricEntity(sentence, entityName, entityTargets) ?? (multiEntity ? null : entityName);
+  if (!subject) return [];
+  const prefix = `${subject} `;
+  const labels: string[] = [];
+  if (/\b(annualized revenue|run-rate revenue|run rate revenue|pace to generate|revenue reached|revenue now exceeds|arr)\b/i.test(sentence)) {
+    labels.push(`${prefix}revenue`.trim());
+  }
+  if (/\b(post-money valuation|valuation|valued at)\b/i.test(sentence)) {
+    labels.push(`${prefix}valuation`.trim());
+  }
+  if (/\bgross margin\b/i.test(sentence)) {
+    labels.push(`${prefix}gross margin`.trim());
+  }
+  if (/\b(inference costs?|compute costs?|training costs?|capex)\b/i.test(sentence)) {
+    labels.push(`${prefix}compute cost`.trim());
+  }
+  if (/\b(market share|enterprise l?lm market share|share of enterprise spend|enterprise share)\b/i.test(sentence)) {
+    labels.push(`${prefix}market share`.trim());
+  }
+  if (/\b(year-over-year|yoy|growth)\b/i.test(sentence) && /\d{1,3}(?:,\d{3})*(?:\.\d+)?%/.test(sentence)) {
+    labels.push(`${prefix}growth`.trim());
+  }
+  if (/\b(paying users?|enterprise use|subscriptions?|contracts?|deployments?)\b/i.test(sentence) && /\d{1,3}(?:,\d{3})*(?:\.\d+)?%/.test(sentence)) {
+    labels.push(`${prefix}usage mix`.trim());
+  }
+  return labels;
+}
+
+function inferMetricLabel(
+  sentence: string,
+  entityName: string,
+  entityTargets?: string[],
+): string | null {
+  return inferMetricLabels(sentence, entityName, entityTargets)[0] ?? null;
+}
+
+function normalizeMetricValue(rawValue: string): string {
+  return normalizeWhitespace(rawValue)
+    .replace(/\b(billion|million)\b/gi, (match) => (match.toLowerCase() === "billion" ? "B" : "M"))
+    .replace(/\s+([bBmM])\b/g, (_, suffix: string) => suffix.toUpperCase())
+    .replace(/\s+(B|M)\b/g, "$1");
+}
+
+function getMetricCategory(label: string): string {
+  const normalized = label.toLowerCase();
+  if (normalized.includes("revenue")) return "revenue";
+  if (normalized.includes("valuation")) return "valuation";
+  if (normalized.includes("gross margin")) return "gross_margin";
+  if (normalized.includes("compute cost")) return "compute_cost";
+  if (normalized.includes("market share")) return "market_share";
+  if (normalized.includes("growth")) return "growth";
+  if (normalized.includes("usage mix")) return "usage_mix";
+  return "other";
+}
+
+function formatMetricClause(metric: { label: string; value: string }): string {
+  const label = normalizeWhitespace(metric.label);
+  const value = normalizeMetricValue(metric.value);
+  if (!label || !value) return "";
+  if (/\b(gross margin|growth|market share|usage mix)\b/i.test(label)) {
+    return `${label} of ${value}`;
+  }
+  if (/\b(revenue|valuation|compute cost)\b/i.test(label)) {
+    return `${label} at ${value}`;
+  }
+  return `${label} ${value}`;
+}
+
+function joinNaturalLanguage(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? "";
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
+}
+
+function sentenceSupportsMetricLabel(sentence: string, label: string): boolean {
+  const normalizedLabel = label.toLowerCase();
+  if (normalizedLabel.includes("revenue")) {
+    return /\b(annualized revenue|run-rate revenue|run rate revenue|pace to generate|revenue reached|revenue now exceeds|revenue|arr)\b/i.test(sentence);
+  }
+  if (normalizedLabel.includes("valuation")) {
+    return /\b(post-money valuation|valuation|valued at)\b/i.test(sentence);
+  }
+  if (normalizedLabel.includes("compute cost")) {
+    return /\b(inference costs?|compute costs?|training costs?|capex)\b/i.test(sentence);
+  }
+  if (normalizedLabel.includes("gross margin")) {
+    return /\bgross margin\b/i.test(sentence);
+  }
+  if (normalizedLabel.includes("market share")) {
+    return /\b(market share|enterprise l?lm market share|share of enterprise spend|enterprise share)\b/i.test(sentence);
+  }
+  if (normalizedLabel.includes("growth")) {
+    return /\b(year-over-year|yoy|growth)\b/i.test(sentence);
+  }
+  if (normalizedLabel.includes("usage mix")) {
+    return /\b(paying users?|enterprise use|subscriptions?|contracts?|deployments?|share of enterprise spend)\b/i.test(sentence);
+  }
+  return true;
+}
+
+function hasMetricEvidenceSupport(
+  label: string,
+  value: string,
+  evidenceSentences: Array<{ text: string }>,
+): boolean {
+  const normalizedValue = normalizeMetricValue(value).toLowerCase();
+  return evidenceSentences.some((evidence) => {
+    if (!sentenceSupportsMetricLabel(evidence.text, label)) return false;
+    const selectedCandidate = selectMetricCandidate(evidence.text, label);
+    if (!selectedCandidate) return false;
+    return normalizeMetricValue(selectedCandidate).toLowerCase() === normalizedValue;
+  });
+}
+
+function collectMetricMatches(pattern: RegExp, sentence: string): Array<{ value: string; index: number }> {
+  const safePattern = new RegExp(pattern.source, pattern.flags);
+  return Array.from(sentence.matchAll(safePattern)).map((match) => ({
+    value: match[0],
+    index: match.index ?? 0,
+  }));
+}
+
+function selectMetricCandidate(sentence: string, label: string): string | null {
+  const currencyMatches = collectMetricMatches(/\$\d+(?:\.\d+)?\s?(?:B|M|billion|million)/gi, sentence);
+  const percentMatches = collectMetricMatches(PERCENT_VALUE_PATTERN, sentence);
+  const normalizedLabel = label.toLowerCase();
+
+  const closestMatch = (
+    matches: Array<{ value: string; index: number }>,
+    cuePattern: RegExp,
+  ): string | null => {
+    if (matches.length === 0) return null;
+    const cueMatch = cuePattern.exec(sentence);
+    cuePattern.lastIndex = 0;
+    if (!cueMatch || typeof cueMatch.index !== "number") {
+      return matches[0]?.value ?? null;
+    }
+    return matches
+      .slice()
+      .sort((left, right) => Math.abs(left.index - cueMatch.index) - Math.abs(right.index - cueMatch.index))[0]?.value
+      ?? null;
+  };
+
+  if (normalizedLabel.includes("revenue")) {
+    return closestMatch(currencyMatches, /\b(annualized revenue|run-rate revenue|run rate revenue|pace to generate|revenue reached|revenue now exceeds|revenue|arr)\b/i);
+  }
+  if (normalizedLabel.includes("valuation")) {
+    return closestMatch(currencyMatches, /\b(post-money valuation|valuation|valued at)\b/i);
+  }
+  if (normalizedLabel.includes("compute cost")) {
+    return closestMatch(currencyMatches, /\b(inference costs?|compute costs?|training costs?|capex)\b/i);
+  }
+  if (normalizedLabel.includes("gross margin")) {
+    return closestMatch(percentMatches, /\bgross margin\b/i);
+  }
+  if (normalizedLabel.includes("market share")) {
+    return closestMatch(percentMatches, /\b(market share|enterprise l?lm market share|share of enterprise spend|enterprise share)\b/i);
+  }
+  if (normalizedLabel.includes("growth")) {
+    return closestMatch(percentMatches, /\b(year-over-year|yoy|growth)\b/i);
+  }
+  if (normalizedLabel.includes("usage mix")) {
+    return closestMatch(percentMatches, /\b(paying users?|enterprise use|subscriptions?|contracts?|deployments?)\b/i);
+  }
+  return currencyMatches[0]?.value ?? percentMatches[0]?.value ?? null;
+}
+
+function collectMetricSentences(
+  execution: HarnessExecution,
+  signals: Array<{ name: string }>,
+  changes: Array<{ description: string }>,
+): Array<{ text: string; source: "signal" | "change" | "tool_text" | "tool_finding" | "web_snippet" }> {
+  const evidences: Array<{ text: string; source: "signal" | "change" | "tool_text" | "tool_finding" | "web_snippet" }> = [];
+  const pushEvidence = (
+    text: unknown,
+    source: "signal" | "change" | "tool_text" | "tool_finding" | "web_snippet",
+  ) => {
+    if (typeof text !== "string" || !text.trim()) return;
+    for (const sentence of extractEvidenceSentencesSafe(text)) {
+      evidences.push({ text: sentence, source });
+    }
+  };
+
+  for (const signal of signals) pushEvidence(signal.name, "signal");
+  for (const change of changes) pushEvidence(change.description, "change");
+  for (const step of execution.stepResults) {
+    if (!step.success || !step.result) continue;
+    const raw = step.result as any;
+    for (const field of [raw?.answer, raw?.summary, raw?.description, raw?.content]) {
+      pushEvidence(field, "tool_text");
+    }
+    for (const finding of raw?.findings ?? raw?.signals ?? []) {
+      const text = typeof finding === "string" ? finding : finding?.name;
+      pushEvidence(text, "tool_finding");
+    }
+    for (const item of [...(raw?.sources ?? []), ...(raw?.results ?? []), ...(raw?.webResults ?? [])]) {
+      for (const field of [item?.snippet, item?.description, item?.content]) {
+        pushEvidence(field, "web_snippet");
+      }
+    }
+  }
+  const byText = new Map<string, { text: string; source: "signal" | "change" | "tool_text" | "tool_finding" | "web_snippet"; rank: number }>();
+  const sourceRank: Record<string, number> = {
+    signal: 5,
+    change: 4,
+    tool_finding: 3,
+    tool_text: 2,
+    web_snippet: 1,
+  };
+  for (const evidence of evidences) {
+    const key = normalizeWhitespace(evidence.text).toLowerCase();
+    if (!key) continue;
+    const rank = sourceRank[evidence.source] ?? 0;
+    const existing = byText.get(key);
+    if (!existing || rank > existing.rank) {
+      byText.set(key, { ...evidence, rank });
+    }
+  }
+  return Array.from(byText.values()).map(({ text, source }) => ({ text, source }));
+}
+
+function deriveEvidenceKeyMetrics(args: {
+  provided?: Array<{ label?: string; value?: string }>;
+  execution: HarnessExecution;
+  entityName: string;
+  entityTargets?: string[];
+  lens?: string;
+  classification?: string;
+  signals: Array<{ name: string; direction: string; impact: string }>;
+  changes: Array<{ description: string; date?: string }>;
+}): Array<{ label: string; value: string }> {
+  const candidatesByLabelValue = new Map<string, {
+    label: string;
+    value: string;
+    totalScore: number;
+    supportCount: number;
+    maxScore: number;
+  }>();
+  const evidenceSentences = collectMetricSentences(args.execution, args.signals, args.changes);
+  const scoreMetricEvidence = (
+    evidence: { text: string; source: "signal" | "change" | "tool_text" | "tool_finding" | "web_snippet" },
+  ): number => {
+    let score = scoreEvidenceSentence(evidence.text);
+    if (evidence.source === "signal") score += 6;
+    else if (evidence.source === "change") score += 5;
+    else if (evidence.source === "tool_finding") score += 3;
+    else if (evidence.source === "tool_text") score += 2;
+    return score;
+  };
+
+  const metricValueMatchesLabel = (label: string, value: string): boolean => {
+    const normalizedLabel = label.toLowerCase();
+    const isCurrency = /\$\d/i.test(value);
+    const isPercent = /%/.test(value);
+    if (normalizedLabel.includes("revenue") || normalizedLabel.includes("valuation") || normalizedLabel.includes("compute cost")) {
+      return isCurrency;
+    }
+    if (normalizedLabel.includes("gross margin") || normalizedLabel.includes("market share") || normalizedLabel.includes("growth") || normalizedLabel.includes("usage mix")) {
+      return isPercent;
+    }
+    return isCurrency || isPercent;
+  };
+
+  const pushMetric = (label: string, value: string, score: number) => {
+    const cleanedLabel = normalizeWhitespace(label);
+    const cleanedValue = normalizeMetricValue(value);
+    if (!cleanedLabel || !cleanedValue) return;
+    if (/^(sources?|confidence|comparables?|diligence flags?)$/i.test(cleanedLabel)) return;
+    if (!/(\$\d|\d+(?:\.\d+)?%|\d+(?:\.\d+)?(?:x|B|M)\b)/i.test(cleanedValue)) return;
+    if (!metricValueMatchesLabel(cleanedLabel, cleanedValue)) return;
+    const key = `${cleanedLabel.toLowerCase()}::${cleanedValue.toLowerCase()}`;
+    const existing = candidatesByLabelValue.get(key);
+    if (existing) {
+      existing.totalScore += score;
+      existing.supportCount += 1;
+      existing.maxScore = Math.max(existing.maxScore, score);
+      return;
+    }
+    candidatesByLabelValue.set(key, {
+      label: cleanedLabel,
+      value: cleanedValue,
+      totalScore: score,
+      supportCount: 1,
+      maxScore: score,
+    });
+  };
+
+  for (const item of args.provided ?? []) {
+    if (typeof item?.label !== "string" || typeof item?.value !== "string") continue;
+    const category = getMetricCategory(item.label);
+    const bankerPercentCategory = ["gross_margin", "market_share", "growth", "usage_mix"].includes(category);
+    if (args.lens === "banker" && bankerPercentCategory) {
+      continue;
+    }
+    const requiresEvidenceSupport =
+      args.lens === "banker"
+      && category !== "other";
+    if (requiresEvidenceSupport && !hasMetricEvidenceSupport(item.label, item.value, evidenceSentences)) continue;
+    pushMetric(item.label, item.value, 3);
+  }
+
+  for (const evidence of evidenceSentences) {
+    for (const label of inferMetricLabels(evidence.text, args.entityName, args.entityTargets)) {
+      const candidate = selectMetricCandidate(evidence.text, label);
+      if (!candidate) continue;
+      let score = scoreMetricEvidence(evidence);
+      if (/\$\d/.test(candidate)) score += 2;
+      if (/%/.test(candidate)) score += 1;
+      if (label.toLowerCase().includes("revenue") || label.toLowerCase().includes("valuation")) score += 1;
+      pushMetric(label, candidate, score);
+    }
+  }
+
+  const bestByLabel = new Map<string, {
+    label: string;
+    value: string;
+    totalScore: number;
+    supportCount: number;
+    maxScore: number;
+  }>();
+
+  for (const candidate of candidatesByLabelValue.values()) {
+    const key = candidate.label.toLowerCase();
+    const existing = bestByLabel.get(key);
+    if (
+      !existing
+      || candidate.supportCount > existing.supportCount
+      || (candidate.supportCount === existing.supportCount && candidate.totalScore > existing.totalScore)
+      || (candidate.supportCount === existing.supportCount
+        && candidate.totalScore === existing.totalScore
+        && candidate.maxScore > existing.maxScore)
+    ) {
+      bestByLabel.set(key, candidate);
+    }
+  }
+
+  const ranked = Array.from(bestByLabel.values())
+    .sort((left, right) =>
+      right.supportCount - left.supportCount
+      || right.totalScore - left.totalScore
+      || right.maxScore - left.maxScore
+      || left.label.localeCompare(right.label),
+    );
+
+  const limit = args.lens === "banker" ? 6 : 4;
+  const preferredCategoryOrder =
+    args.lens === "banker"
+      ? ["revenue", "valuation", "gross_margin", "compute_cost", "market_share", "growth", "usage_mix", "other"]
+      : ["revenue", "growth", "valuation", "gross_margin", "compute_cost", "market_share", "usage_mix", "other"];
+
+  const selected: Array<{
+    label: string;
+    value: string;
+    totalScore: number;
+    supportCount: number;
+    maxScore: number;
+  }> = [];
+  const selectedLabels = new Set<string>();
+  const entityCounts = new Map<string, number>();
+
+  const canSelectMetric = (metric: {
+    label: string;
+    value: string;
+    totalScore: number;
+    supportCount: number;
+    maxScore: number;
+  }): boolean => {
+    if (selectedLabels.has(metric.label.toLowerCase())) return false;
+    if (!(args.lens === "banker" && args.classification === "multi_entity")) return true;
+    const entity = inferMetricEntity(metric.label, args.entityName, args.entityTargets);
+    if (!entity) return true;
+    return (entityCounts.get(entity.toLowerCase()) ?? 0) < 2;
+  };
+
+  const commitMetric = (metric: {
+    label: string;
+    value: string;
+    totalScore: number;
+    supportCount: number;
+    maxScore: number;
+  }) => {
+    const key = metric.label.toLowerCase();
+    if (selectedLabels.has(key)) return;
+    selected.push(metric);
+    selectedLabels.add(key);
+    const entity = inferMetricEntity(metric.label, args.entityName, args.entityTargets);
+    if (entity) {
+      const entityKey = entity.toLowerCase();
+      entityCounts.set(entityKey, (entityCounts.get(entityKey) ?? 0) + 1);
+    }
+  };
+
+  for (const category of preferredCategoryOrder) {
+    if (selected.length >= limit) break;
+    const candidate = ranked.find((metric) => getMetricCategory(metric.label) === category && canSelectMetric(metric));
+    if (candidate) commitMetric(candidate);
+  }
+
+  for (const metric of ranked) {
+    if (selected.length >= limit) break;
+    if (!canSelectMetric(metric)) continue;
+    commitMetric(metric);
+  }
+
+  return selected.map(({ label, value }) => ({ label, value }));
+}
+
+function sanitizeSources(
+  items: Array<{ label?: string; href?: string; type?: string }> | undefined,
+  execution: HarnessExecution,
+): Array<{ label: string; href?: string; type: string }> {
+  const seen = new Set<string>();
+  const sanitized: Array<{ label: string; href?: string; type: string; authorityScore: number }> = [];
+
+  const pushSource = (label: string, href: string | undefined, type: string) => {
+    const cleanedLabel = normalizeWhitespace(label);
+    if (!cleanedLabel || /^(web_search|run_recon|linkup_search|enrich_entity|simulate_decision_paths)$/i.test(cleanedLabel)) {
+      return;
+    }
+    if (/\b(powerhouse hiding in plain sight|worth buying|turns the tables|arms race|who will win|why .* is winning|leading one half|outlook report|ramp ai index)\b/i.test(cleanedLabel)) {
+      return;
+    }
+    if (href && /vertexaisearch\.cloud\.google\.com\/grounding-api-redirect/i.test(href)) {
+      return;
+    }
+    const authorityScore = scoreSourceAuthority(cleanedLabel, href, type || "web");
+    if (authorityScore < 0) {
+      return;
+    }
+    const key = `${cleanedLabel.toLowerCase()}::${href ?? ""}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    sanitized.push({ label: cleanedLabel, href, type: type || "web", authorityScore });
+  };
+
+  for (const item of items ?? []) {
+    pushSource(String(item?.label ?? ""), item?.href, String(item?.type ?? "web"));
+  }
+
+  if (sanitized.length === 0) {
+    for (const step of execution.stepResults) {
+      if (!step.success || !step.result) continue;
+      const raw = step.result as any;
+      for (const source of raw?.sources ?? []) {
+        pushSource(String(source?.name ?? source?.title ?? ""), source?.url, "web");
+      }
+      for (const source of raw?.results ?? raw?.webResults ?? []) {
+        pushSource(String(source?.title ?? source?.name ?? ""), source?.url ?? source?.link ?? source?.href, "web");
+      }
+    }
+  }
+
+  const webSources = sanitized
+    .filter((item) => item.type === "web" && item.href)
+    .sort((left, right) => right.authorityScore - left.authorityScore || left.label.localeCompare(right.label));
+  if (webSources.length >= 3) {
+    const retainedLocalSources = sanitized.filter(
+      (item) =>
+        item.type !== "web"
+        && /\b(10-k|10-q|earnings|filing|transcript|investor presentation|proxy|sec|official release)\b/i.test(item.label),
+    );
+    return [...webSources, ...retainedLocalSources]
+      .slice(0, 8)
+      .map(({ label, href, type }) => ({ label, href, type }));
+  }
+
+  return sanitized.slice(0, 8).map(({ label, href, type }) => ({ label, href, type }));
+}
+
+function sanitizeExecutiveAnswer(
+  answer: string,
+  entityName: string,
+  keyMetrics: Array<{ label: string; value: string }>,
+  signals: Array<{ name: string; direction: string; impact: string }>,
+  comparables: Array<{ name: string; relevance: string; note: string }>,
+  risks: Array<{ title: string; description: string }>,
+  nextActions: Array<{ action: string; impact: string }>,
+  context?: { classification?: string; entityTargets?: string[]; lens?: string },
+): string {
+  const cleaned = normalizeWhitespace(answer.replace(/```json|```/g, ""));
+  const sentences = dedupeStrings(sentenceSplit(cleaned))
+    .filter((sentence) => sentence.length >= 25 && !/^sources?:/i.test(sentence));
+  const filteredSentences = sentences.filter(
+    (sentence) => !/\b(arms race|what investors need to know|index\s+\w+\s+update|source artifact|worth buying|turns the tables|leading one half)\b/i.test(sentence)
+      && !looksLikeNarrativeFluff(sentence)
+      && !looksLikeSpeculativeCapitalMarketsFiller(sentence)
+      && !looksLikeGenericMarketBackdrop(sentence)
+  );
+
+  const looksHealthy =
+    filteredSentences.length >= 2 &&
+    filteredSentences.length <= 5 &&
+    cleaned.length <= 700 &&
+    !/\.{3,}|^\{/.test(cleaned) &&
+    filteredSentences.every((sentence) => /[.!?]$/.test(sentence) || sentence.length <= 100) &&
+    !filteredSentences.some((sentence) => looksLikeSourceTitle(sentence) || looksLikeFundingHeadline(sentence)) &&
+    !looksLikeSourceTitle(cleaned) &&
+    !looksLikeFundingHeadline(cleaned) &&
+    !looksLikeSpeculativeCapitalMarketsFiller(cleaned) &&
+    !looksLikeGenericMarketBackdrop(cleaned) &&
+    !/(most clearly defined against|what investors need to know|arms race|index\s+\w+\s+update|worth buying|turns the tables|leading one half)/i.test(cleaned);
+
+  const summarySignals = signals.filter((signal) => !looksLikeGenericMarketBackdrop(signal.name));
+  if (looksHealthy) {
+    return filteredSentences.slice(0, 4).join(" ");
+  }
+
+  const summaryParts: string[] = [];
+  const preferredLeadSignal =
+    summarySignals.find((signal) => !containsRiskLanguage(signal.name) && scoreUnderwritingSignal(signal.name) >= 6)
+    ?? summarySignals.find((signal) => !containsRiskLanguage(signal.name) && (signal.direction === "up" || scoreUnderwritingSignal(signal.name) >= 4))
+    ?? summarySignals.find((signal) => !containsRiskLanguage(signal.name))
+    ?? summarySignals[0]
+    ?? signals.find((signal) => !containsRiskLanguage(signal.name) && scoreUnderwritingSignal(signal.name) >= 6)
+    ?? signals.find((signal) => !containsRiskLanguage(signal.name) && (signal.direction === "up" || scoreUnderwritingSignal(signal.name) >= 4))
+    ?? signals.find((signal) => !containsRiskLanguage(signal.name))
+    ?? signals[0];
+  const leadSignalEntity = context?.classification === "multi_entity"
+    ? inferMetricEntity(preferredLeadSignal?.name ?? "", entityName, context?.entityTargets)
+    : null;
+  const supportCandidates = [...summarySignals, ...signals]
+    .filter((signal) => signal.name !== preferredLeadSignal?.name)
+    .filter((signal) => {
+      if (context?.classification !== "multi_entity") return true;
+      if (!looksLikeAmbiguousSubjectSignal(signal.name)) return true;
+      return mentionsEntityTarget(signal.name, context?.entityTargets);
+    });
+  const preferredSupportSignal =
+    supportCandidates.find((signal) =>
+      context?.classification === "multi_entity"
+      && leadSignalEntity
+      && !containsRiskLanguage(signal.name)
+      && scoreUnderwritingSignal(signal.name) >= 6
+      && inferMetricEntity(signal.name, entityName, context?.entityTargets)
+      && inferMetricEntity(signal.name, entityName, context?.entityTargets) !== leadSignalEntity,
+    )
+    ?? supportCandidates.find((signal) => !containsRiskLanguage(signal.name) && scoreUnderwritingSignal(signal.name) >= 6 && (context?.classification !== "multi_entity" || mentionsEntityTarget(signal.name, context?.entityTargets)))
+    ?? supportCandidates.find((signal) => !containsRiskLanguage(signal.name) && scoreUnderwritingSignal(signal.name) >= 4)
+    ?? supportCandidates.find((signal) => !containsRiskLanguage(signal.name))
+    ?? supportCandidates.find(() => true)
+    ?? null;
+  const leadSignal = preferredLeadSignal?.name;
+  const supportSignal = preferredSupportSignal?.name;
+  const leadComparable = comparables[0]?.name;
+  const comparableLabel = comparables.slice(0, 2).map((item) => item.name).join(" and ");
+  const leadRisk = risks[0];
+  const comparisonSet = dedupeStrings((context?.entityTargets ?? []).map((item) => normalizeWhitespace(String(item)))).slice(0, 3);
+  const bankerMetricClauses = keyMetrics
+    .slice(0, context?.lens === "banker" ? 4 : 3)
+    .map((metric) => formatMetricClause(metric))
+    .filter(Boolean);
+
+  if (context?.lens === "banker") {
+    const scope = context?.classification === "multi_entity"
+      ? (comparisonSet.length > 1 ? comparisonSet.join(", ") : entityName)
+      : entityName;
+    summaryParts.push(
+      context?.classification === "multi_entity"
+        ? `The current underwriting read on ${scope} is that the peer set is separating on revenue quality, margin durability, and distribution leverage rather than raw model quality alone.`
+        : `The current underwriting read on ${entityName} is that the cited evidence supports a real operating story, but the quality of revenue and durability of pricing still need to hold up under diligence.`,
+    );
+    if (bankerMetricClauses.length > 0) {
+      summaryParts.push(`Current hard datapoints include ${joinNaturalLanguage(bankerMetricClauses)}.`);
+    } else if (leadSignal && !looksLikeSourceTitle(leadSignal) && !looksLikeEvidenceFragment(leadSignal) && leadSignal.length <= 170) {
+      summaryParts.push(`One critical data point is ${stripTrailingConnectorTail(compressNarrativePhrase(leadSignal, 150))}.`);
+    }
+    if (leadRisk) {
+      summaryParts.push(
+        context?.classification === "multi_entity"
+          ? `The underwriting question is which platform can keep pricing power and contract durability once buyers consolidate spend, with ${leadRisk.title.toLowerCase()} as the main current flag because ${stripTrailingConnectorTail(compressNarrativePhrase(leadRisk.description, 135))}.`
+          : `The underwriting question is whether ${entityName} can keep pricing power and contract durability, with ${leadRisk.title.toLowerCase()} as the main current flag because ${stripTrailingConnectorTail(compressNarrativePhrase(leadRisk.description, 135))}.`,
+      );
+    } else if (comparableLabel) {
+      summaryParts.push(`The closest operating comparables in the cited set are ${comparableLabel}.`);
+    }
+    if (nextActions[0]?.action) {
+      summaryParts.push(`The immediate next step is to ${nextActions[0].action.charAt(0).toLowerCase()}${nextActions[0].action.slice(1)}.`);
+    }
+    return normalizeWhitespace(summaryParts.slice(0, 4).join(" "))
+      .replace(/\.(?:\s*\.)+/g, ".")
+      .replace(/\.{2,}/g, ".");
+  }
+
+  if (context?.classification === "multi_entity") {
+    const scope = comparisonSet.length > 1 ? comparisonSet.join(", ") : entityName;
+    summaryParts.push(`Across ${scope}, the current evidence separates the peer set on enterprise traction, pricing leverage, and distribution durability.`);
+    if (leadSignal && !looksLikeSourceTitle(leadSignal) && !looksLikeEvidenceFragment(leadSignal) && leadSignal.length <= 170) {
+      summaryParts.push(`One critical data point is ${stripTrailingConnectorTail(compressNarrativePhrase(leadSignal, 150))}.`);
+      if (
+        context?.lens === "banker"
+        && supportSignal
+        && supportSignal !== leadSignal
+        && !looksLikeSourceTitle(supportSignal)
+        && !looksLikeEvidenceFragment(supportSignal)
+      ) {
+        summaryParts.push(`A second underwriting datapoint is ${stripTrailingConnectorTail(compressNarrativePhrase(supportSignal, 145))}.`);
+      }
+    } else if (context?.lens === "banker") {
+      summaryParts.push("The current read suggests the comparison is separating on distribution leverage, contract durability, and pricing power rather than raw model capability alone.");
+    } else {
+      summaryParts.push("The current read suggests the comparison is separating on enterprise distribution, pricing leverage, and buyer fit.");
+    }
+    if (context?.lens === "banker") {
+      summaryParts.push("For a banker, the underwriting question is which platform can hold pricing power and contract durability once enterprise buyers consolidate spend.");
+    }
+    if (leadRisk) {
+      summaryParts.push(`The main diligence flag is ${leadRisk.title.toLowerCase()}, which matters because ${stripTrailingConnectorTail(compressNarrativePhrase(leadRisk.description, 135))}.`);
+    }
+    if (nextActions[0]?.action) {
+      summaryParts.push(`The immediate next move is to ${nextActions[0].action.charAt(0).toLowerCase()}${nextActions[0].action.slice(1)}.`);
+    }
+    return summaryParts.slice(0, 4).join(" ");
+  }
+
+  summaryParts.push(
+    leadSignal && isNarrativeReadySignal(leadSignal) && !looksLikeEvidenceFragment(leadSignal)
+      ? `${entityName} is showing a real operating signal: ${stripTrailingConnectorTail(compressNarrativePhrase(leadSignal, 145))}.`
+      : `${entityName} is being assessed on enterprise traction, pricing leverage, and contract durability using the current cited evidence set.`,
+  );
+  if (leadComparable) {
+    summaryParts.push(
+      comparableLabel
+        ? `The closest operating comparables in the current evidence set are ${comparableLabel}.`
+        : `${entityName}'s closest operating comparable in the current evidence set is ${leadComparable}.`,
+    );
+    if (context?.lens === "banker") {
+      summaryParts.push(`For a banker, the underwriting question is whether ${entityName} can defend pricing and contract durability against ${comparableLabel || leadComparable}.`);
+    }
+  }
+  if (leadRisk) {
+    summaryParts.push(`The main diligence flag is ${leadRisk.title.toLowerCase()}, which matters because ${stripTrailingConnectorTail(compressNarrativePhrase(leadRisk.description, 130))}.`);
+  }
+  if (nextActions[0]?.action) {
+    summaryParts.push(`The immediate next move is to ${nextActions[0].action.charAt(0).toLowerCase()}${nextActions[0].action.slice(1)}.`);
+  }
+
+  return normalizeWhitespace(summaryParts.slice(0, 4).join(" "))
+    .replace(/\.(?:\s*\.)+/g, ".")
+    .replace(/\.{2,}/g, ".");
+}
+
 // ── Multi-model LLM call via existing provider bus ───────────────────
 // Uses call_llm MCP tool which routes: Gemini → OpenAI → Anthropic
 // Falls back to direct Gemini fetch if call_llm unavailable
@@ -243,12 +2285,30 @@ async function callModel(config: ModelConfig, prompt: string, system: string | u
 }
 
 async function callLLM(
-  _callTool: ToolCaller,
+  callTool: ToolCaller,
   prompt: string,
   system?: string,
   maxTokens?: number,
 ): Promise<string> {
   const tokens = maxTokens ?? 1000;
+  try {
+    const toolResult = await callTool("call_llm", {
+      prompt,
+      system,
+      maxTokens: tokens,
+      temperature: 0,
+    }) as { response?: string; output?: string; content?: string; error?: boolean } | string;
+    const text =
+      typeof toolResult === "string"
+        ? toolResult
+        : toolResult?.error
+          ? ""
+          : String(toolResult?.response ?? toolResult?.output ?? toolResult?.content ?? "");
+    if (text.length > 10) return text;
+  } catch {
+    // Fall back to direct provider calls below when the tool bus is unavailable.
+  }
+
   const complexity = assessComplexity(prompt, tokens);
   const primaryModel = GEMINI_MODELS[complexity];
 
@@ -316,7 +2376,12 @@ export async function generatePlan(
 ): Promise<HarnessPlan> {
   // Multi-entity and weekly_reset: always use deterministic fallback plan.
   // LLM plans often drop the second entity or miss weekly_reset web fallbacks.
-  if (classification === "multi_entity" || classification === "weekly_reset") {
+  if (
+    classification === "multi_entity" ||
+    classification === "weekly_reset" ||
+    classification === "company_search" ||
+    classification === "competitor"
+  ) {
     return buildFallbackPlan(query, classification, entityTargets, lens);
   }
 
@@ -416,27 +2481,45 @@ function buildFallbackPlan(query: string, classification: string, entityTargets:
       };
 
     case "multi_entity": {
-      const steps: HarnessStep[] = entityTargets.slice(0, 4).flatMap((e, i) => [
+      const comparisonSet = entityTargets.slice(0, 3);
+      const steps: HarnessStep[] = comparisonSet.flatMap((e, i) => [
         {
-          id: `s${i * 2 + 1}`,
-          toolName: "web_search",
-          args: { query: `${e} company overview strategy competitors ${year}`, maxResults: 4 },
-          purpose: `Research ${e}`,
+          id: `s${i * 4 + 1}`,
+          toolName: "linkup_search",
+          args: { query: `${e} enterprise AI revenue valuation customers pricing competitors ${year}`, maxResults: 4 },
+          purpose: `Deep comparative research for ${e}`,
           parallel: true,
         },
         {
-          id: `s${i * 2 + 2}`,
+          id: `s${i * 4 + 2}`,
+          toolName: "web_search",
+          args: { query: `${e} competitors market share enterprise AI pricing risks ${year}`, maxResults: 4 },
+          purpose: `Competitive and pricing evidence for ${e}`,
+          parallel: true,
+        },
+        {
+          id: `s${i * 4 + 3}`,
+          toolName: "run_recon",
+          args: { target: e, focus: `Compare ${e} against ${comparisonSet.filter((target) => target !== e).join(", ") || query}` },
+          purpose: `Structured diligence scan for ${e}`,
+          parallel: true,
+        },
+        {
+          id: `s${i * 4 + 4}`,
           toolName: "enrich_entity",
-          args: { query: `${e} competitive position`, entityName: e, lens },
-          purpose: `Enrich ${e}`,
+          args: { query: `${e} competitive position, enterprise traction, and diligence flags`, entityName: e, lens },
+          purpose: `Structured enrichment for ${e}`,
           parallel: true,
         },
       ]);
       // NOTE: founder_local_gather EXCLUDED from multi-entity comparisons (returns dev noise for external entities)
       return {
-        objective: `Compare ${entityTargets.join(" vs ")}`,
+        objective: `Compare ${comparisonSet.join(" vs ")}`,
         classification, entityTargets, steps,
-        synthesisPrompt: `Compare ${entityTargets.join(", ")} across key dimensions for a ${lens} audience.`,
+        synthesisPrompt:
+          lens === "banker"
+            ? `Build an investment-banking style comparative briefing on ${comparisonSet.join(", ")}. Cover market position, financial evidence, comparables, diligence flags, and next diligence questions.`
+            : `Compare ${comparisonSet.join(", ")} across competitive position, traction, risks, and next actions for a ${lens} audience.`,
       };
     }
 
@@ -446,14 +2529,14 @@ function buildFallbackPlan(query: string, classification: string, entityTargets:
         objective: `Analyze ${entity}`,
         classification, entityTargets,
         steps: [
-          { id: "s1", toolName: "linkup_search", args: { query: `${entity} company overview strategy funding competitive position ${year}`, maxResults: 5 }, purpose: "Linkup deep intelligence", parallel: true },
-          { id: "s2", toolName: "web_search", args: { query: `${entity} competitors risks challenges ${year}`, maxResults: 5 }, purpose: "Competitive & risk intelligence", parallel: true },
-          { id: "s3", toolName: "enrich_entity", args: { query: `${entity} competitive position`, entityName: entity, lens }, purpose: "Structured entity enrichment", parallel: true },
-          { id: "s4", toolName: "run_recon", args: { target: entity, focus: query }, purpose: "Deep recon", parallel: true },
-          { id: "s5", toolName: "simulate_decision_paths", args: { entity, revenue: 0, marketShare: 0.01, runway: 18 }, purpose: "Monte Carlo: 3-case financial model (bull/base/bear)", parallel: true },
+          { id: "s1", toolName: "linkup_search", args: { query: `${entity} revenue valuation funding enterprise customers market share ${year}`, maxResults: 5 }, purpose: "Deep entity, financial, and market-share intelligence", parallel: true },
+          { id: "s2", toolName: "web_search", args: { query: `${entity} competitors enterprise market share pricing risks ${year}`, maxResults: 5 }, purpose: "Competitive map, pricing pressure, and core risks", parallel: true },
+          { id: "s3", toolName: "web_search", args: { query: `${entity} revenue valuation funding growth enterprise customers ${year}`, maxResults: 5 }, purpose: "Financial and operating evidence", parallel: true },
+          { id: "s4", toolName: "run_recon", args: { target: entity, focus: query }, purpose: "Structured recon for positioning and diligence gaps", parallel: true },
+          { id: "s5", toolName: "enrich_entity", args: { query: `${entity} strategic position and competitive moat`, entityName: entity, lens }, purpose: "Structured lens-specific synthesis", parallel: true },
           // NOTE: founder_local_gather EXCLUDED from external entity searches.
         ],
-        synthesisPrompt: `Synthesize intelligence about ${entity} for a ${lens} audience. Include signals, risks, comparables, and next actions.`,
+        synthesisPrompt: `Synthesize intelligence about ${entity} for a ${lens} audience. Include financial facts, competitive set, diligence flags, and concrete next actions.`,
       };
 
     case "plan_proposal":
@@ -487,10 +2570,12 @@ export async function executeHarness(
   plan: HarnessPlan,
   callTool: ToolCaller,
   onTrace?: TraceCallback,
+  options?: { toolTimeoutMs?: number },
 ): Promise<HarnessExecution> {
   const startMs = Date.now();
   const stepResults: HarnessStepResult[] = [];
   const completedSteps = new Set<string>();
+  const toolTimeoutMs = options?.toolTimeoutMs ?? 12_000;
 
   // Group steps by dependency level
   const readySteps = plan.steps.filter(s => !s.dependsOn);
@@ -511,7 +2596,7 @@ export async function executeHarness(
         try {
           const result = await Promise.race([
             callTool(step.toolName, step.args),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 12000)),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), toolTimeoutMs)),
           ]);
           const duration = Date.now() - stepStart;
           completedSteps.add(step.id);
@@ -531,7 +2616,7 @@ export async function executeHarness(
     try {
       const result = await Promise.race([
         callTool(step.toolName, step.args),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 12000)),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), toolTimeoutMs)),
       ]);
       completedSteps.add(step.id);
       stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: Date.now() - stepStart });
@@ -548,7 +2633,7 @@ export async function executeHarness(
     try {
       const result = await Promise.race([
         callTool(step.toolName, step.args),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 12000)),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), toolTimeoutMs)),
       ]);
       completedSteps.add(step.id);
       stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: Date.now() - stepStart });
@@ -579,6 +2664,7 @@ export async function synthesizeResults(
   entityName: string;
   answer: string;
   confidence: number;
+  keyMetrics: Array<{ label: string; value: string }>;
   signals: Array<{ name: string; direction: string; impact: string }>;
   changes: Array<{ description: string; date?: string }>;
   risks: Array<{ title: string; description: string }>;
@@ -594,6 +2680,8 @@ export async function synthesizeResults(
   nextQuestions: string[];
   sources: Array<{ label: string; href?: string; type: string }>;
 }> {
+  const comparableFallbacks = deriveComparableCandidates(execution, execution.plan.entityTargets[0] ?? extractEntityFromQuery(query));
+
   // Collect all successful results — no hardcoded truncation
   const resultData = execution.stepResults
     .filter(r => r.success && r.result)
@@ -609,8 +2697,11 @@ export async function synthesizeResults(
   // (weekly_reset, general), use a descriptive label — never extractEntityFromQuery
   // which hallucinates entities from phrase fragments like "changed this week".
   const nonEntityTypes = new Set(["weekly_reset", "important_change", "pre_delegation", "general"]);
-  const entityName = execution.plan.entityTargets[0]
-    ?? (nonEntityTypes.has(execution.plan.classification) ? "Your Intelligence Brief" : extractEntityFromQuery(query));
+  const entityName =
+    execution.plan.classification === "multi_entity" && (execution.plan.entityTargets?.length ?? 0) > 1
+      ? execution.plan.entityTargets.slice(0, 3).join(" vs ")
+      : execution.plan.entityTargets[0]
+        ?? (nonEntityTypes.has(execution.plan.classification) ? "Your Intelligence Brief" : extractEntityFromQuery(query));
 
   // Use multi-model provider bus (Gemini → OpenAI → Anthropic)
   // This is the PRIMARY synthesis path — an IB analyst writing a memo from raw data.
@@ -629,9 +2720,12 @@ ${budgetToolData(resultData, 32000)}
 
 ANALYSIS REQUIREMENTS:
 1. ANSWER: Write a 3-4 sentence executive summary with SPECIFIC numbers, dates, and facts from the data. No generic statements. If data says "$26B revenue" — cite it. If data mentions "70% market share" — cite it.
-2. SIGNALS: Extract 3-5 key signals with direction (up/down/neutral) and impact. Each signal must reference a specific fact from the data, not a generic observation.
+2. KEY METRICS: Extract up to 4 banker-grade datapoints as {label, value}. Use real numbers only, such as revenue, valuation, gross margin, market share, compute cost, or growth.
+3. SIGNALS: Extract 3-5 key signals with direction (up/down/neutral) and impact. Each signal must reference a specific fact from the data, not a generic observation.
 3. RISKS: Identify 2-3 material risks with evidence. For each risk, explain WHY it matters and what could trigger it. Not just "competition risk" — specify which competitor and what they're doing.
 4. COMPARABLES: Name 2-4 direct competitors with WHY they're relevant (what they do differently, where they overlap, competitive advantage). Include evidence from the data.
+   - Never use publishers, research outlets, indices, newsletters, or article-title fragments as comparables.
+   - For multi-entity requests, keep the comparison set anchored to the companies explicitly in scope plus directly adjacent operating peers only.
 5. WHY THIS TEAM (REQUIRED — this is the most important section. What makes outsiders trust or doubt this company):
    - founderCredibility: 1-2 sentences on founder background, domain relevance, and what makes them credible for THIS problem
    - trustSignals: 2-4 specific trust-building facts (notable backers, advisors, prior exits, shipped products, institutional affiliations, public work)
@@ -647,6 +2741,7 @@ Return ONLY valid JSON with ALL fields populated:
   "entityName": "company name",
   "answer": "3-4 sentence summary with numbers",
   "confidence": 0-100,
+  "keyMetrics": [{"label": "metric name", "value": "metric value"}],
   "whyThisTeam": {"founderCredibility": "why these founders are credible for this problem", "trustSignals": ["signal1", "signal2"], "visionMagnitude": "feature, product, or company-scale?", "reinventionCapacity": "can they pivot?", "hiddenRequirements": ["what outsiders expect"]},
   "signals": [{"name": "signal", "direction": "up|down|neutral", "impact": "high|medium|low"}],
   "changes": [{"description": "recent change"}],
@@ -663,22 +2758,95 @@ Return ONLY valid JSON with ALL fields populated:
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
-
-        // whyThisTeam is populated by the search route via a parallel Gemini call
-        // (runs alongside Monte Carlo, not sequentially after synthesis).
+        const signals = mergeSignals(collectFallbackSignals(execution), sanitizeSignals(parsed.signals));
+        const changes = sanitizeChanges([
+          ...collectFallbackChanges(execution),
+          ...(Array.isArray(parsed.changes) ? parsed.changes : []),
+        ]);
+        const risks = sanitizeRisks([
+          ...collectFallbackRisks(execution),
+          ...(Array.isArray(parsed.risks) ? parsed.risks : []),
+        ]);
+        const comparables = sanitizeComparables(parsed.comparables, entityName, comparableFallbacks, {
+          classification: execution.plan.classification,
+          entityTargets: execution.plan.entityTargets,
+        });
+        const keyMetrics = deriveEvidenceKeyMetrics({
+          provided: Array.isArray(parsed.keyMetrics) ? parsed.keyMetrics : [],
+          execution,
+          entityName,
+          entityTargets: execution.plan.entityTargets,
+          lens,
+          classification: execution.plan.classification,
+          signals,
+          changes,
+        });
+        const nextActions = sanitizeNextActions(parsed.nextActions, lens, entityName, comparables, risks, {
+          classification: execution.plan.classification,
+          entityTargets: execution.plan.entityTargets,
+        });
+        const sources = sanitizeSources(parsed.sources, execution);
+        const nextQuestions = dedupeStrings(
+          Array.isArray(parsed.nextQuestions) ? parsed.nextQuestions.map((item: unknown) => String(item ?? "")) : [],
+        )
+          .filter((item) => item.length >= 12 && isQuestionLike(item))
+          .slice(0, 4);
+        const finalQuestions = dedupeStrings([
+          ...nextQuestions,
+          ...buildDefaultNextQuestions({
+            classification: execution.plan.classification,
+            entityName,
+            comparables,
+            risks,
+            entityTargets: execution.plan.entityTargets,
+          }),
+        ]).slice(0, 4);
+        const whyThisTeam =
+          parsed.whyThisTeam && typeof parsed.whyThisTeam === "object"
+            ? {
+                founderCredibility: normalizeWhitespace(String(parsed.whyThisTeam.founderCredibility ?? "")),
+                trustSignals: dedupeStrings(
+                  Array.isArray(parsed.whyThisTeam.trustSignals)
+                    ? parsed.whyThisTeam.trustSignals.map((item: unknown) => String(item ?? ""))
+                    : [],
+                ).slice(0, 4),
+                visionMagnitude: normalizeWhitespace(String(parsed.whyThisTeam.visionMagnitude ?? "")),
+                reinventionCapacity: normalizeWhitespace(String(parsed.whyThisTeam.reinventionCapacity ?? "")),
+                hiddenRequirements: dedupeStrings(
+                  Array.isArray(parsed.whyThisTeam.hiddenRequirements)
+                    ? parsed.whyThisTeam.hiddenRequirements.map((item: unknown) => String(item ?? ""))
+                    : [],
+                ).slice(0, 4),
+              }
+            : null;
+        const answer = sanitizeExecutiveAnswer(
+          String(parsed.answer ?? ""),
+          entityName,
+          keyMetrics,
+          signals,
+          comparables,
+          risks,
+          nextActions,
+          {
+            classification: execution.plan.classification,
+            entityTargets: execution.plan.entityTargets,
+            lens,
+          },
+        );
 
         return {
           entityName: parsed.entityName ?? entityName,
-          answer: parsed.answer ?? "",
+          answer,
           confidence: typeof parsed.confidence === "number" ? parsed.confidence : 50,
-          signals: parsed.signals ?? [],
-          changes: parsed.changes ?? [],
-          risks: parsed.risks ?? [],
-          comparables: parsed.comparables ?? [],
+          keyMetrics,
+          signals,
+          changes,
+          risks,
+          comparables,
           whyThisTeam,
-          nextActions: parsed.nextActions ?? [],
-          nextQuestions: parsed.nextQuestions ?? [],
-          sources: parsed.sources ?? [],
+          nextActions,
+          nextQuestions: finalQuestions,
+          sources,
         };
       }
     } catch { /* fall through to deterministic synthesis */ }
@@ -713,10 +2881,10 @@ Return ONLY valid JSON with ALL fields populated:
         if (snippet) {
           if (/\b(revenue|growth|raised|funding|launch|expand|partner|acquir|billion|million|valuation)/i.test(snippet)) {
             const titleNeg = /\b(trouble|fail|declin|crash|struggle|layoff|scandal|problem|crisis|concern|threaten|warn)/i.test(title || snippet);
-            signals.push({ name: (title || snippet).slice(0, 120), direction: titleNeg ? "down" : "up", impact: "high" });
+            signals.push({ name: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 120), direction: titleNeg ? "down" : "up", impact: "high" });
           }
           if (/\b(layoff|decline|loss|risk|lawsuit|regulat|concern|investig|threat|challenge|vulnerab)/i.test(snippet)) {
-            risks.push({ title: title.slice(0, 80) || "Risk identified", description: snippet.slice(0, 200) });
+            risks.push({ title: inferRiskTitleFromDescription(snippet), description: snippet.slice(0, 200) });
           }
           if (/\b(compet|rival|alternative|versus|vs\.|compared to)/i.test(snippet)) {
             // Extract competitor names from snippet
@@ -729,7 +2897,8 @@ Return ONLY valid JSON with ALL fields populated:
           }
           // Extract recent changes from Linkup intelligence
           if (/\b(announced|launched|released|updated|acquired|raised|hired|expanded|partnered|introduced|unveiled|reported)\b/i.test(snippet)) {
-            changes.push({ description: (title || snippet).slice(0, 150) });
+            const description = normalizeChangeDescription(extractEvidenceSentencesSafe(snippet)[0] ?? snippet);
+            if (description) changes.push({ description });
           }
         }
       }
@@ -749,14 +2918,15 @@ Return ONLY valid JSON with ALL fields populated:
           if (/\b(growth|revenue|raised|funding|launch|expand|partner|acquir)/i.test(snippet)) {
             // Check title sentiment — don't assign "up" if headline is negative
             const titleNeg = /\b(trouble|fail|declin|crash|struggle|layoff|scandal|problem|crisis|concern|threaten|warn)/i.test(title);
-            signals.push({ name: title.slice(0, 120), direction: titleNeg ? "down" : "up", impact: "medium" });
+            signals.push({ name: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 120), direction: titleNeg ? "down" : "up", impact: "medium" });
           }
           if (/\b(layoff|decline|loss|risk|lawsuit|regulat|concern|investig)/i.test(snippet)) {
-            risks.push({ title: title.slice(0, 80), description: snippet.slice(0, 200) });
+            risks.push({ title: inferRiskTitleFromDescription(snippet), description: snippet.slice(0, 200) });
           }
           // Extract recent changes from news-style snippets
           if (/\b(announced|launched|released|updated|acquired|raised|hired|expanded|partnered|introduced|unveiled|reported)\b/i.test(snippet)) {
-            changes.push({ description: (title || snippet).slice(0, 150) });
+            const description = normalizeChangeDescription(extractEvidenceSentencesSafe(snippet)[0] ?? snippet);
+            if (description) changes.push({ description });
           }
           // Extract comparables from competitive mentions
           if (/\b(compet|rival|alternative|versus|vs\.|compared to)/i.test(snippet)) {
@@ -791,7 +2961,13 @@ Return ONLY valid JSON with ALL fields populated:
       if (raw?.findings) {
         for (const f of (Array.isArray(raw.findings) ? raw.findings : []).slice(0, 5)) {
           const name = typeof f === "string" ? f : (f?.name ?? f?.title ?? f?.finding ?? "");
-          if (name) signals.push({ name: name.slice(0, 80), direction: f?.direction ?? "neutral", impact: f?.impact ?? "medium" });
+          if (!name) continue;
+          const normalizedFinding = normalizeWhitespace(name).slice(0, 260);
+          signals.push({ name: normalizedFinding, direction: f?.direction ?? "neutral", impact: f?.impact ?? "medium" });
+          if (/\b(quadrupled|doubled|tripled|expanded|grew|growth|increased|reached|now exceeds|accelerat|represent over half|enterprise use)\b/i.test(normalizedFinding)) {
+            const description = normalizeChangeDescription(normalizedFinding);
+            if (description) changes.push({ description });
+          }
         }
       }
       if (raw?.nextSteps) {
@@ -890,33 +3066,67 @@ Return ONLY valid JSON with ALL fields populated:
   }
 
   // Build answer from collected parts
-  const answer = answerParts.length > 0
-    ? answerParts.slice(0, 5).join(" ").slice(0, 800)
-    : `Analysis of "${query}" using ${execution.stepResults.filter(r => r.success).length} tools.`;
+  const sanitizedSignals = mergeSignals(sanitizeSignals(signals), collectFallbackSignals(execution));
+  const sanitizedChanges = sanitizeChanges(changes);
+  const sanitizedRisks = sanitizeRisks([...risks, ...collectFallbackRisks(execution)]);
+  const sanitizedComparables = sanitizeComparables(comparables, entityName, comparableFallbacks, {
+    classification: execution.plan.classification,
+    entityTargets: execution.plan.entityTargets,
+  });
+  const keyMetrics = deriveEvidenceKeyMetrics({
+    execution,
+    entityName,
+    entityTargets: execution.plan.entityTargets,
+    lens,
+    classification: execution.plan.classification,
+    signals: sanitizedSignals,
+    changes: sanitizedChanges,
+  });
+  const sanitizedNextActions = sanitizeNextActions(nextActions, lens, entityName, sanitizedComparables, sanitizedRisks, {
+    classification: execution.plan.classification,
+    entityTargets: execution.plan.entityTargets,
+  });
+  const sanitizedSources = sanitizeSources(sources, execution);
+  const answer = sanitizeExecutiveAnswer(
+    answerParts.length > 0
+      ? answerParts.slice(0, 5).join(" ").slice(0, 800)
+      : `Analysis of "${query}" using ${execution.stepResults.filter(r => r.success).length} tools.`,
+    entityName,
+    keyMetrics,
+    sanitizedSignals,
+    sanitizedComparables,
+    sanitizedRisks,
+    sanitizedNextActions,
+    {
+      classification: execution.plan.classification,
+      entityTargets: execution.plan.entityTargets,
+      lens,
+    },
+  );
 
   // Add default next actions if none extracted — make them specific and actionable
-  if (nextActions.length === 0) {
+  if (sanitizedNextActions.length === 0) {
     const isEntityQuery = entityName && entityName.length > 1 && !/^(AI|the|your|my|this)$/i.test(entityName) && !entityName.includes("Intelligence Brief");
-    if (risks.length > 0) {
-      nextActions.push({ action: `Investigate "${risks[0].title}" — how likely is it and what triggers it?`, impact: "high" });
+    if (sanitizedRisks.length > 0) {
+      sanitizedNextActions.push({ action: `Investigate "${sanitizedRisks[0].title}" and identify the concrete trigger points that would make it matter.`, impact: "high" });
     }
     if (isEntityQuery) {
-      if (comparables.length > 0) {
-        nextActions.push({ action: `Compare ${entityName} vs ${comparables[0].name} on unit economics and retention`, impact: "medium" });
+      if (sanitizedComparables.length > 0) {
+        sanitizedNextActions.push({ action: `Compare ${entityName} against ${sanitizedComparables[0].name} on pricing, enterprise traction, and durability of demand.`, impact: "medium" });
       } else {
-        nextActions.push({ action: `Map ${entityName}'s competitive moat — what's defensible and what isn't?`, impact: "medium" });
+        sanitizedNextActions.push({ action: `Map ${entityName}'s competitive moat and separate durable edge from narrative momentum.`, impact: "medium" });
       }
-      nextActions.push({ action: `Review ${entityName}'s most recent public filings or announcements`, impact: "medium" });
+      sanitizedNextActions.push({ action: `Review ${entityName}'s most recent filings, announcements, or product launches for diligence-grade evidence.`, impact: "medium" });
     } else {
       // Non-entity queries (weekly reset, general) — action-oriented defaults
-      nextActions.push({ action: "Identify the top 3 risks to your current strategy and how to mitigate each", impact: "high" });
-      nextActions.push({ action: "Review what changed this week and decide what to act on vs defer", impact: "medium" });
+      sanitizedNextActions.push({ action: "Identify the top 3 risks to your current strategy and assign a concrete mitigation owner to each.", impact: "high" });
+      sanitizedNextActions.push({ action: "Review what changed this week and decide what to act on versus defer with explicit rationale.", impact: "medium" });
     }
   }
 
   const successCount = execution.stepResults.filter(r => r.success).length;
   const totalSteps = execution.stepResults.length;
-  const webSourceCount = sources.filter(s => s.type === "web" && s.href).length;
+  const webSourceCount = sanitizedSources.filter(s => s.type === "web" && s.href).length;
   // Confidence formula: rewards web sources (real data) over local tools
   // Base 20 + success rate bonus + web sources (10 pts each, max 40) + signals (3 pts each, max 15) + comparables (5 pts each, max 10)
   const successRate = totalSteps > 0 ? successCount / totalSteps : 0;
@@ -932,22 +3142,26 @@ Return ONLY valid JSON with ALL fields populated:
     entityName,
     answer,
     confidence,
-    signals: signals
+    keyMetrics,
+    signals: sanitizedSignals
       .filter(s => !/in progress|recon plan|project:|commits in last|research plan|status.*active|tool_call|step\s+\d|executing|queued/i.test(s.name))
       .slice(0, 8),
-    changes: changes.slice(0, 5),
-    risks: risks.slice(0, 5),
-    comparables: comparables.slice(0, 4),
+    changes: sanitizedChanges.slice(0, 5),
+    risks: sanitizedRisks.slice(0, 5),
+    comparables: sanitizedComparables.slice(0, 4),
     whyThisTeam: null, // populated by LLM synthesis path; deterministic path lacks founder data
-    nextActions: nextActions
+    nextActions: sanitizedNextActions
       .filter(a => !/contextQuestions|check_framework|gather project|ingest_upload|Answer any|Use\s+\w+_\w+/i.test(a.action))
       .slice(0, 4),
-    nextQuestions: [
-      `What are the specific drivers behind ${entityName}'s recent growth or decline?`,
-      risks.length > 0 ? `How likely is "${risks[0]?.title}" to materialize, and what would trigger it?` : `What are the biggest threats to ${entityName}'s market position?`,
-      comparables.length > 0 ? `How does ${entityName} compare to ${comparables[0]?.name} on unit economics and retention?` : `Who are ${entityName}'s most dangerous competitors and why?`,
-      `What would make you change your thesis on ${entityName} — what data would you need to see?`,
-    ],
-    sources: sources.slice(0, 8),
+    nextQuestions: dedupeStrings(
+      buildDefaultNextQuestions({
+        classification: execution.plan.classification,
+        entityName,
+        comparables: sanitizedComparables,
+        risks: sanitizedRisks,
+        entityTargets: execution.plan.entityTargets,
+      }),
+    ).slice(0, 4),
+    sources: sanitizedSources.slice(0, 8),
   };
 }

@@ -3,6 +3,9 @@
  */
 
 import express from "express";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createSharedContextRouter } from "./routes/sharedContext.js";
@@ -10,8 +13,11 @@ import { createSharedContextRouter } from "./routes/sharedContext.js";
 describe("createSharedContextRouter", () => {
   let server: ReturnType<express.Express["listen"]>;
   let baseUrl = "";
+  let tempDir = "";
 
   beforeAll(async () => {
+    tempDir = mkdtempSync(join(tmpdir(), "nodebench-shared-context-"));
+    process.env.NODEBENCH_DATA_DIR = tempDir;
     const app = express();
     app.use(express.json());
     app.use("/shared-context", createSharedContextRouter());
@@ -35,6 +41,13 @@ describe("createSharedContextRouter", () => {
         else resolve();
       });
     });
+    if (tempDir) {
+      try {
+        rmSync(tempDir, { recursive: true, force: true });
+      } catch {
+        // Windows can keep the sqlite handle open briefly in tests.
+      }
+    }
   });
 
   it("publishes a result packet and creates a delegated agent handoff", async () => {
@@ -214,5 +227,118 @@ describe("createSharedContextRouter", () => {
     expect(manifestJson.manifest.snapshotQuery.taskType).toBe("strategic_angle_handoff");
     expect(manifestJson.manifest.packetResources.some((resource: { contextId: string }) => resource.contextId === issuePublishJson.contextId)).toBe(true);
     expect(String(manifestJson.urls.eventsUrl)).toContain("contextType=issue_packet");
+  });
+
+  it("records founder harness episodes across search, publish, and delegate spans", async () => {
+    const suffix = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const episodeId = `episode_${suffix}`;
+    const correlationId = `corr_${suffix}`;
+    const sessionKey = `session_${suffix}`;
+    const packet = {
+      query: `Understand founder wedge ${suffix}`,
+      entityName: `EpisodeCo ${suffix}`,
+      canonicalEntity: `EpisodeCo ${suffix}`,
+      answer: "EpisodeCo should package founder truth before delegation.",
+      confidence: 87,
+      packetId: `packet_${suffix}`,
+      packetType: "founder_packet",
+      changes: [{ description: "Investor checklist changed this week." }],
+      risks: [{ title: "Narrative drift", description: "The delegation prompt can outrun the packet." }],
+      nextQuestions: ["What packet should we delegate next?"],
+      recommendedNextAction: "Publish the packet, then delegate implementation.",
+    };
+
+    const startResponse = await fetch(`${baseUrl}/shared-context/episodes/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        episodeId,
+        correlationId,
+        sessionKey,
+        surface: "web",
+        episodeType: "entity_search",
+        query: packet.query,
+        lens: "founder",
+        stateBefore: { route: "/?surface=ask", conversationTurns: 0 },
+        initialSpan: {
+          stage: "before",
+          type: "search_submitted",
+          status: "ok",
+          label: "Founder query captured",
+          timestamp: new Date().toISOString(),
+        },
+      }),
+    });
+    const startJson = await startResponse.json() as any;
+
+    expect(startResponse.status).toBe(200);
+    expect(startJson.success).toBe(true);
+    expect(startJson.episode.episodeId).toBe(episodeId);
+    expect(startJson.episode.spans).toHaveLength(1);
+
+    const publishResponse = await fetch(`${baseUrl}/shared-context/publish`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ packet, episodeId }),
+    });
+    const publishJson = await publishResponse.json() as any;
+    expect(publishResponse.status).toBe(200);
+    expect(publishJson.success).toBe(true);
+
+    const finalizeResponse = await fetch(`${baseUrl}/shared-context/episodes/${encodeURIComponent(episodeId)}/finalize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: "completed",
+        entityName: packet.entityName,
+        packetId: packet.packetId,
+        packetType: packet.packetType,
+        contextId: publishJson.contextId,
+        toolsInvoked: ["linkup_search", "run_recon"],
+        artifactsProduced: ["founder_packet"],
+        traceStepCount: 4,
+        importantChangesDetected: 1,
+        contradictionsDetected: 1,
+        summary: packet.recommendedNextAction,
+        finalSpan: {
+          stage: "after",
+          type: "packet_compiled",
+          status: "ok",
+          label: "Founder packet ready",
+          timestamp: new Date().toISOString(),
+        },
+      }),
+    });
+    const finalizeJson = await finalizeResponse.json() as any;
+
+    expect(finalizeResponse.status).toBe(200);
+    expect(finalizeJson.success).toBe(true);
+    expect(finalizeJson.episode.status).toBe("completed");
+    expect(finalizeJson.episode.toolsInvoked).toContain("linkup_search");
+
+    const delegateResponse = await fetch(`${baseUrl}/shared-context/delegate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ packet, episodeId, targetAgent: "claude_code" }),
+    });
+    const delegateJson = await delegateResponse.json() as any;
+
+    expect(delegateResponse.status).toBe(200);
+    expect(delegateJson.success).toBe(true);
+
+    const episodeResponse = await fetch(`${baseUrl}/shared-context/episodes/${encodeURIComponent(episodeId)}`);
+    const episodeJson = await episodeResponse.json() as any;
+    expect(episodeResponse.status).toBe(200);
+    expect(episodeJson.episode.contextId).toBe(delegateJson.contextId);
+    expect(episodeJson.episode.taskId).toBe(delegateJson.taskId);
+    expect(episodeJson.episode.spans.some((span: { type: string }) => span.type === "packet_published")).toBe(true);
+    expect(episodeJson.episode.spans.some((span: { type: string }) => span.type === "agent_delegated")).toBe(true);
+
+    const listResponse = await fetch(
+      `${baseUrl}/shared-context/episodes?sessionKey=${encodeURIComponent(sessionKey)}&limit=5`,
+    );
+    const listJson = await listResponse.json() as any;
+    expect(listResponse.status).toBe(200);
+    expect(listJson.episodes.some((episode: { episodeId: string }) => episode.episodeId === episodeId)).toBe(true);
   });
 });

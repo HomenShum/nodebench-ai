@@ -26,17 +26,20 @@ const CostTransparency = lazy(() => import("../components/CostTransparency"));
 
 type DashboardTab = "overview" | "strategy" | "intake" | "history" | "changes" | "delta" | "export" | "profiler" | "costs";
 
-const TABS: { id: DashboardTab; label: string }[] = [
+const PRIMARY_TABS: { id: DashboardTab; label: string }[] = [
   { id: "overview", label: "Overview" },
-  { id: "strategy", label: "Strategy" },
-  { id: "intake", label: "Intake" },
   { id: "history", label: "History" },
   { id: "changes", label: "Changes" },
-  { id: "delta", label: "Delta" },
-  { id: "export", label: "Export" },
-  { id: "profiler", label: "Profiler" },
-  { id: "costs", label: "Costs" },
+  { id: "export", label: "Packets" },
 ];
+
+const LEGACY_TAB_ALIASES: Partial<Record<DashboardTab, DashboardTab>> = {
+  strategy: "overview",
+  intake: "overview",
+  delta: "changes",
+  profiler: "overview",
+  costs: "overview",
+};
 
 /* ── Skeleton ─────────────────────────────────────────────────────── */
 
@@ -54,7 +57,7 @@ export default function FounderDashboardTabs() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab") as DashboardTab | null;
   const [activeTab, setActiveTab] = useState<DashboardTab>(
-    tabParam && TABS.some((t) => t.id === tabParam) ? tabParam : "overview",
+    tabParam ? (LEGACY_TAB_ALIASES[tabParam] ?? tabParam) : "overview",
   );
 
   const switchTab = useCallback(
@@ -73,23 +76,31 @@ export default function FounderDashboardTabs() {
 
   return (
     <div className="flex h-full flex-col bg-[#151413]">
-      {/* Tab bar */}
-      <div className="flex shrink-0 items-center gap-1 border-b border-white/[0.06] px-4 pt-1">
-        {TABS.map((tab) => (
+      <div className="shrink-0 border-b border-white/[0.06] px-4 pb-3 pt-4">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/35">
+          Workspace
+        </div>
+        <div className="mt-1 text-sm text-white/70">
+          Company truth, changes, packets, and next moves.
+        </div>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-2 overflow-x-auto border-b border-white/[0.06] px-4 py-2">
+        {PRIMARY_TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => switchTab(tab.id)}
             className={cn(
-              "relative px-3 py-2 text-[12px] font-medium transition-colors",
+              "relative whitespace-nowrap rounded-full px-3 py-2 text-[12px] font-medium transition-colors",
               activeTab === tab.id
-                ? "text-accent-primary"
-                : "text-white/40 hover:text-white/60",
+                ? "bg-white/[0.06] text-accent-primary"
+                : "text-white/40 hover:bg-white/[0.04] hover:text-white/70",
             )}
           >
             {tab.label}
             {activeTab === tab.id && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-accent-primary" />
+              <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-accent-primary" />
             )}
           </button>
         ))}

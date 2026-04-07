@@ -1082,6 +1082,96 @@ CREATE TABLE IF NOT EXISTS shared_context_tasks (
 
 CREATE INDEX IF NOT EXISTS idx_shared_context_tasks_assignee ON shared_context_tasks(assignee_peer_id, status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_shared_context_tasks_proposer ON shared_context_tasks(proposer_peer_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS founder_harness_episodes (
+  episode_id                  TEXT PRIMARY KEY,
+  correlation_id              TEXT NOT NULL,
+  session_key                 TEXT,
+  workspace_id                TEXT,
+  company_key                 TEXT,
+  surface                     TEXT NOT NULL,
+  episode_type                TEXT NOT NULL,
+  status                      TEXT NOT NULL DEFAULT 'active',
+  query                       TEXT,
+  lens                        TEXT,
+  entity_name                 TEXT,
+  packet_id                   TEXT,
+  packet_type                 TEXT,
+  context_id                  TEXT,
+  task_id                     TEXT,
+  summary                     TEXT,
+  state_before_json           TEXT,
+  state_after_json            TEXT,
+  state_before_hash           TEXT,
+  state_after_hash            TEXT,
+  spans_json                  TEXT NOT NULL DEFAULT '[]',
+  trace_step_count            INTEGER,
+  tools_invoked_json          TEXT NOT NULL DEFAULT '[]',
+  artifacts_produced_json     TEXT NOT NULL DEFAULT '[]',
+  important_changes_detected  INTEGER,
+  contradictions_detected     INTEGER,
+  metadata_json               TEXT,
+  started_at                  TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at                  TEXT NOT NULL DEFAULT (datetime('now')),
+  completed_at                TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_founder_harness_episodes_session ON founder_harness_episodes(session_key, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_founder_harness_episodes_workspace ON founder_harness_episodes(workspace_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_founder_harness_episodes_status ON founder_harness_episodes(status, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_founder_harness_episodes_correlation ON founder_harness_episodes(correlation_id);
+
+-- \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+-- SUBCONSCIOUS MEMORY BLOCKS
+-- \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+CREATE TABLE IF NOT EXISTS subconscious_blocks (
+  id            TEXT PRIMARY KEY,
+  label         TEXT NOT NULL,
+  value         TEXT NOT NULL DEFAULT '',
+  version       INTEGER NOT NULL DEFAULT 1,
+  confidence    TEXT NOT NULL DEFAULT 'low',
+  source_events TEXT NOT NULL DEFAULT '[]',
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS subconscious_whisper_log (
+  id            TEXT PRIMARY KEY,
+  session_id    TEXT NOT NULL,
+  block_ids     TEXT NOT NULL DEFAULT '[]',
+  whisper_text  TEXT NOT NULL,
+  classification TEXT NOT NULL,
+  suppressed    INTEGER NOT NULL DEFAULT 0,
+  reason        TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_whisper_log_session ON subconscious_whisper_log(session_id, created_at DESC);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS object_nodes_fts USING fts5(
+  label,
+  metadata_json,
+  content='object_nodes',
+  content_rowid='rowid'
+);
+
+CREATE TRIGGER IF NOT EXISTS object_nodes_fts_insert AFTER INSERT ON object_nodes BEGIN
+  INSERT INTO object_nodes_fts(rowid, label, metadata_json)
+  VALUES (new.rowid, new.label, new.metadata_json);
+END;
+
+CREATE TRIGGER IF NOT EXISTS object_nodes_fts_delete AFTER DELETE ON object_nodes BEGIN
+  INSERT INTO object_nodes_fts(object_nodes_fts, rowid, label, metadata_json)
+  VALUES ('delete', old.rowid, old.label, old.metadata_json);
+END;
+
+CREATE TRIGGER IF NOT EXISTS object_nodes_fts_update AFTER UPDATE ON object_nodes BEGIN
+  INSERT INTO object_nodes_fts(object_nodes_fts, rowid, label, metadata_json)
+  VALUES ('delete', old.rowid, old.label, old.metadata_json);
+  INSERT INTO object_nodes_fts(rowid, label, metadata_json)
+  VALUES (new.rowid, new.label, new.metadata_json);
+END;
 `;
   }
 });
@@ -10047,6 +10137,1562 @@ import { ConvexHttpClient } from "convex/browser";
 import { anyApi } from "convex/server";
 
 // server/agentHarness.ts
+var COMPANY_NAME_STOPWORDS = /* @__PURE__ */ new Set([
+  "approximately",
+  "ai",
+  "api",
+  "about",
+  "llm",
+  "ml",
+  "nlp",
+  "gpu",
+  "cpu",
+  "yoy",
+  "arr",
+  "mrr",
+  "tm",
+  "inc",
+  "corp",
+  "ltd",
+  "co",
+  "the",
+  "a",
+  "an",
+  "what",
+  "when",
+  "where",
+  "which",
+  "company",
+  "competitive",
+  "landscape",
+  "market",
+  "share",
+  "large",
+  "small",
+  "series",
+  "seed",
+  "pre-seed",
+  "preseed",
+  "round",
+  "however",
+  "therefore",
+  "moreover",
+  "war",
+  "race",
+  "battle",
+  "category",
+  "tpu",
+  "tpus",
+  "trainium",
+  "inferentia",
+  "claude",
+  "gemini",
+  "vertex",
+  "bedrock",
+  "statistics",
+  "analysis",
+  "overview",
+  "report",
+  "update",
+  "latest",
+  "enterprise",
+  "foundation",
+  "models",
+  "model",
+  "position",
+  "positioning",
+  "strategy",
+  "risk",
+  "risks",
+  "challenge",
+  "challenges",
+  "funding",
+  "valuation",
+  "revenue",
+  "growth",
+  "intelligence",
+  "memo",
+  "index",
+  "peer",
+  "it",
+  "multi",
+  "dimensional",
+  "global",
+  "business",
+  "professional",
+  "we",
+  "safety",
+  "focused",
+  "leader",
+  "leaders",
+  "their",
+  "them",
+  "our",
+  "us",
+  "ventures",
+  "venture",
+  "capital",
+  "partners",
+  "management",
+  "holdings",
+  "fund",
+  "fortune",
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december",
+  "overview",
+  "outlook",
+  "briefing",
+  "brief",
+  "readout",
+  "recon",
+  "contracts",
+  "data",
+  "pricing",
+  "buyers",
+  "reporting",
+  "contract",
+  "positioned",
+  "deployments",
+  "ecosystems",
+  "cowork",
+  "coworker",
+  "western"
+]);
+var SOURCE_ENTITY_STOPWORDS = /* @__PURE__ */ new Set([
+  "axios",
+  "bloomberg",
+  "coatue",
+  "crunchbase",
+  "dragoneer",
+  "eweek",
+  "forbes",
+  "gic",
+  "gdpr",
+  "hipaa",
+  "linkedin",
+  "pitchbook",
+  "reddit",
+  "reuters",
+  "sacra",
+  "sequoia",
+  "soc 2",
+  "soc2",
+  "statista",
+  "substack",
+  "techcrunch",
+  "the information",
+  "wikipedia",
+  "youtube"
+]);
+var NON_PEER_COMPARABLE_NAMES = /* @__PURE__ */ new Set([
+  "alphabet",
+  "aws",
+  "azure",
+  "bedrock",
+  "google cloud",
+  "microsoft azure",
+  "pentagon",
+  "vertex ai"
+]);
+var COMPARABLE_CONNECTOR_STOPWORDS = /* @__PURE__ */ new Set([
+  "another",
+  "as",
+  "both",
+  "by",
+  "despite",
+  "each",
+  "every",
+  "many",
+  "most",
+  "other",
+  "others",
+  "several",
+  "some"
+]);
+var KNOWN_ACRONYM_COMPANY_NAMES = /* @__PURE__ */ new Set([
+  "AMD",
+  "AWS",
+  "IBM",
+  "NVIDIA",
+  "SAP",
+  "TSMC"
+]);
+var HIGH_AUTHORITY_SOURCE_HOST_PATTERNS = [
+  /anthropic\.com$/i,
+  /openai\.com$/i,
+  /google\.com$/i,
+  /abcxyz\.com$/i,
+  /sec\.gov$/i,
+  /reuters\.com$/i,
+  /nytimes\.com$/i,
+  /wsj\.com$/i,
+  /ft\.com$/i,
+  /bloomberg\.com$/i,
+  /theinformation\.com$/i,
+  /sacra\.com$/i
+];
+var LOW_AUTHORITY_SOURCE_HOST_PATTERNS = [
+  /247wallst\.com$/i,
+  /aibusinessweekly\.net$/i,
+  /atonementlicensing\.com$/i,
+  /electroiq\.com$/i,
+  /europeanbusinessmagazine\.com$/i,
+  /futuresearch\.ai$/i,
+  /redolentech\.com$/i
+];
+var PERCENT_VALUE_PATTERN = /\d{1,3}(?:,\d{3})*(?:\.\d+)?%/g;
+function looksLikeSourceTitle(value) {
+  return /[|]/.test(value) || /\b(statistics?(?:\s+by)?|company analysis|outlook report|full financial breakdown|what investors need to know|what .* need to know|powerhouse hiding in plain sight|arms race|index(?:\s+\w+){0,3}\s+update|worth buying|turns the tables|who is winning|why .* is winning|why businesses choose|battle that will reshape|looking ahead to|dominance is being tested|ai war|ai race|critical revenue category|leading one half|market share 20\d{2}|competitors?\s*&\s*.+alternatives?|understanding the .* milestone|let'?s break down)\b/i.test(value) || /\s[-:]\s(?:[A-Z][A-Za-z0-9&.]+(?:\s+[A-Z][A-Za-z0-9&.]+){0,3})$/.test(value.trim()) || /^\d+\.\s/.test(value);
+}
+function decodeCommonHtmlEntities(value) {
+  return value.replace(/&#x27;|&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+}
+function normalizeWhitespace(value) {
+  return decodeCommonHtmlEntities(value).replace(/\s+/g, " ").replace(/\s+([,.;:!?])/g, "$1").trim();
+}
+function sentenceSplit(value) {
+  return normalizeWhitespace(value).split(/(?<=[.!?])\s+/).map((sentence) => sentence.trim()).filter(Boolean);
+}
+function dedupeStrings2(values) {
+  const seen = /* @__PURE__ */ new Set();
+  const deduped = [];
+  for (const value of values) {
+    const normalized = normalizeWhitespace(value).toLowerCase();
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    deduped.push(normalizeWhitespace(value));
+  }
+  return deduped;
+}
+function containsRiskLanguage(value) {
+  return /\b(risk|pressure|threat|challenge|headwind|dependency|concentration|regulat|compliance|pricing|margin|capital|compute|customer concentration|durability|retention|execution|burn|cash|governance|safety|litigation|antitrust|slowdown|uncertain|exposure)\b/i.test(value);
+}
+function isQuestionLike(value) {
+  return /\?$/.test(value.trim()) || /^(what|how|why|when|where|which|who)\b/i.test(value.trim());
+}
+function looksLikeFundingHeadline(value) {
+  return /\b(raises?|raised|funding|post-money valuation|valuation marks|targeting a .* ipo|revenue nearly doubled|powerhouse hiding in plain sight|worth buying)\b/i.test(value);
+}
+function looksLikeEvidenceFragment(value) {
+  return value.length > 220 || /^[a-z]/.test(value) || /^(per\s+user\/month|this report outlines|this article discusses|according to customer data from)/i.test(value) || /^(those|these|they|it)\b/i.test(value) || /^\d{1,2},\s+\d{4}\b/.test(value) || /\.\.\.|prove this .* valuation is real/i.test(value);
+}
+function looksLikeNarrativeFluff(value) {
+  return /^(this report|the report|this article|the article|this comparison|the comparison)\b/i.test(value) || /\b(could prove conservative|people will keep using the product|projections suggest|the article argues|the report argues|this report highlights|this comparison highlights)\b/i.test(value) || /\b(trajectory resembles|resembles how|feature into a core revenue driver|early capital intensity|market leader in enterprise ai and coding|may hold approximately|anecdotal)\b/i.test(value);
+}
+function looksLikeSpeculativeCapitalMarketsFiller(value) {
+  return /\b(an ipo would|eye potential ipos?|valuation volatility|clearest look yet|justify a valuation larger than most|larger than most of the s&p 500|high-growth potential into sustainable, long-term enterprise value)\b/i.test(value);
+}
+function looksLikeGenericMarketBackdrop(value) {
+  return /\b(the enterprise ai market is experiencing exponential growth|moves from niche experiments to foundational technology across industries|across industries|industry faces valuation volatility)\b/i.test(value);
+}
+function looksLikeTruncatedNarrative(value) {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) return false;
+  if (/[.!?]$/.test(normalized)) return false;
+  if (/\.\.\.$/.test(normalized)) return true;
+  const lastToken = normalized.split(/\s+/).pop() ?? "";
+  if (!lastToken) return false;
+  if (lastToken.length <= 2) return true;
+  if (/^(and|or|but|with|for|to|of|in|on|at|by|as|while|when|because|which|that|who|whose|where|via|than|from|into|over|under|after|before|around|across)$/i.test(lastToken)) {
+    return true;
+  }
+  if (normalized.length >= 145) return true;
+  return false;
+}
+function cleanEvidenceSentence(value) {
+  return normalizeWhitespace(value).replace(/^[-•]+\s*/, "").replace(/^(?:[A-Z][a-z]{2,9}\.?\s+)?[A-Z][a-z]{2,9}\s+\d{1,2},\s+\d{4}\s+[—-]\s*/i, "").replace(/^(?:[A-Z][a-z]{2,9}\.?\s+)?\d{1,2},\s+\d{4}\s+/i, "").replace(/^(?:updated|published|reported)\s+[A-Z][a-z]{2,9}\s+\d{1,2},\s+\d{4}\s*/i, "").replace(/\s+/g, " ").trim();
+}
+function hasBankerSignalContent(value) {
+  return /(\$\d|\b\d+%|\b(revenue|run-rate|run rate|growth|pricing|retention|distribution|bundle|bundling|contract|enterprise|valuation|margin|buyers?|share|deployments?|capex|spend|pipeline|bookings|demand|market position|subscriptions?|usage|users?|win rates?)\b)/i.test(value);
+}
+function scoreEvidenceSentence(value) {
+  let score = 0;
+  if (/\$\d/.test(value)) score += 3;
+  if (/\b\d+%/.test(value)) score += 2;
+  if (/\b(revenue|run-rate|run rate|valuation|margin|bookings|capex|pricing|retention)\b/i.test(value)) score += 2;
+  if (/\b(contract|enterprise|distribution|buyers?|deployments?|pipeline|demand|market position|win rates?)\b/i.test(value)) score += 1;
+  if (/\b(risk|pressure|headwind|challenge|dependency|exposure)\b/i.test(value)) score += 1;
+  return score;
+}
+function hasConcreteMetric(value) {
+  PERCENT_VALUE_PATTERN.lastIndex = 0;
+  return /\$\d/.test(value) || PERCENT_VALUE_PATTERN.test(value) || /\b\d+(?:\.\d+)?\s?(?:B|M|billion|million)\b/i.test(value);
+}
+function looksLikeSoftAdoptionClaim(value) {
+  return /\b(leading position|record highs|strong demand|gaining traction|momentum is real|maintains a leading position|business usage rebounding|challenge .* dominance)\b/i.test(value);
+}
+function scoreUnderwritingSignal(value) {
+  let score = scoreEvidenceSentence(value);
+  if (hasConcreteMetric(value)) score += 3;
+  if (/\b(gross margin|run-rate revenue|run rate revenue|annualized revenue|valuation|backlog|contracts?|pricing|retention|compute costs?|inference costs?|bookings|enterprise spend)\b/i.test(value)) {
+    score += 3;
+  }
+  if (/\b(500 customers|fortune 100|paying users?|per user\/month|\$200\/month|\$25[–-]30 per user\/month)\b/i.test(value)) {
+    score += 1;
+  }
+  if (looksLikeSoftAdoptionClaim(value)) score -= 4;
+  if (looksLikeGenericMarketBackdrop(value)) score -= 4;
+  if (looksLikeNarrativeFluff(value)) score -= 3;
+  return score;
+}
+function extractSourceHost(href) {
+  if (!href) return null;
+  try {
+    return new URL(href).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+function looksLikeWeakBankerSourceLabel(label) {
+  return /\b(statistics?(?:\s+202\d)?|top\s+\d+|pitfalls|investors need to know|full financial breakdown|forecast|benchmarks?\b|negotiation tactics|magazine|why .* is winning|dominance is being tested|shocking fall from grace|selling safety as)\b/i.test(label);
+}
+function scoreSourceAuthority(label, href, type) {
+  let score = 0;
+  const host = extractSourceHost(href);
+  if (type !== "web") score += 2;
+  if (host && HIGH_AUTHORITY_SOURCE_HOST_PATTERNS.some((pattern) => pattern.test(host))) score += 7;
+  if (host && LOW_AUTHORITY_SOURCE_HOST_PATTERNS.some((pattern) => pattern.test(host))) score -= 7;
+  if (/\b(official release|official blog|investor relations|shareholder letter|earnings|transcript|10-k|10-q|sec)\b/i.test(label)) score += 5;
+  if (/\b(sacra|reuters|bloomberg|new york times|wall street journal|financial times|the information)\b/i.test(label)) score += 4;
+  if (looksLikeSourceTitle(label)) score -= 2;
+  if (looksLikeWeakBankerSourceLabel(label)) score -= 5;
+  return score;
+}
+function stripTrailingConnectorTail(value) {
+  return value.replace(/\b(?:as|of|the|with|because|which|that|while|and|or|but|to|for|in|on|at|its|their|a|an)(?:\s+\b(?:as|of|the|with|because|which|that|while|and|or|but|to|for|in|on|at|its|their|a|an))*$/i, "").replace(/[,.:\-\u2013\u2014\s]+$/, "");
+}
+function compressNarrativePhrase(value, maxLength = 140) {
+  const normalized = normalizeWhitespace(value).replace(/\s+/g, " ").trim();
+  if (normalized.length <= maxLength) return normalized.replace(/\.$/, "");
+  const clause = normalized.split(/[;:]/)[0]?.trim() ?? normalized;
+  if (clause.length <= maxLength) return clause.replace(/\.$/, "");
+  return clause.slice(0, maxLength).replace(/\s+\S*$/, "").replace(/[,.:\-–—\s]+$/, "");
+}
+function hasNonPeerRelationshipCue(value) {
+  return /\b(available across|available on|backed by|capital backing|cloud platforms? like|customers including|deployed on|distribution through|hosted on|infrastructure stack|integrated with|partner(?:ed)? with|sold through|strategic backing|used by)\b/i.test(value);
+}
+function buildDefaultRiskDescription(title) {
+  if (/pricing/i.test(title)) {
+    return "Large enterprise buyers can use bundled suites and multi-vendor negotiations to pressure pricing and shorten contract duration.";
+  }
+  if (/capital/i.test(title)) {
+    return "Model training and inference costs can compress gross margin and force continued external capital needs.";
+  }
+  if (/customer concentration/i.test(title)) {
+    return "A narrow set of large enterprise accounts can create renewal and spend-concentration risk if one buyer slows usage.";
+  }
+  if (/regulat/i.test(title)) {
+    return "Evolving AI governance, procurement, and compliance rules can slow enterprise adoption and raise diligence burden.";
+  }
+  if (/distribution/i.test(title)) {
+    return "Reliance on larger platform channels can weaken direct buyer access and negotiating leverage.";
+  }
+  return "Rapid enterprise growth still has to convert into repeatable deployments, retention, and disciplined field execution.";
+}
+function descriptionMatchesRiskTitle(title, description) {
+  if (/pricing/i.test(title)) return /\b(pricing|discount|bundle|margin|contract|retention)\b/i.test(description);
+  if (/capital/i.test(title)) return /\b(capital|compute|burn|cash|capex|inference|training)\b/i.test(description);
+  if (/customer concentration/i.test(title)) return /\b(customer concentration|buyers|retention|concentration|renewal|account)\b/i.test(description);
+  if (/regulat/i.test(title)) return /\b(regulat|compliance|antitrust|litigation|governance|policy)\b/i.test(description);
+  if (/distribution/i.test(title)) return /\b(distribution|platform|ecosystem|channel|bundle|cloud)\b/i.test(description);
+  return /\b(execution|retention|deployment|conversion|delivery|concentration|pricing|margin|risk|pressure|headwind)\b/i.test(description);
+}
+function normalizeChangeDescription(value) {
+  const normalized = normalizeNarrativeSentence(value);
+  if (!normalized) return "";
+  if (!hasBankerSignalContent(normalized)) return "";
+  const completeNarrative = looksLikeTruncatedNarrative(normalized) && normalized.includes(",") ? normalizeWhitespace(normalized.slice(0, normalized.lastIndexOf(","))) : normalized;
+  if (!completeNarrative) return "";
+  if (!looksLikeTruncatedNarrative(completeNarrative)) {
+    return stripTrailingConnectorTail(completeNarrative);
+  }
+  const cleaned = stripTrailingConnectorTail(completeNarrative);
+  if (!cleaned || !hasBankerSignalContent(cleaned)) return "";
+  if (looksLikeTruncatedNarrative(cleaned)) {
+    const compressed = stripTrailingConnectorTail(compressNarrativePhrase(completeNarrative, 210));
+    return looksLikeTruncatedNarrative(compressed) ? "" : compressed;
+  }
+  return cleaned;
+}
+function focusRiskDescription(value, title) {
+  const normalized = normalizeNarrativeSentence(value);
+  const candidates = sentenceSplit(normalized).map((sentence) => normalizeNarrativeSentence(sentence)).filter((sentence) => sentence.length >= 18).filter((sentence) => !looksLikeSourceTitle(sentence)).filter((sentence) => !looksLikeFundingHeadline(sentence)).filter((sentence) => !looksLikeNarrativeFluff(sentence));
+  const matched = candidates.find((sentence) => descriptionMatchesRiskTitle(title, sentence)) ?? candidates.find((sentence) => containsRiskLanguage(`${title} ${sentence}`)) ?? candidates[0] ?? normalized;
+  return compressNarrativePhrase(matched, 150);
+}
+function normalizeNarrativeSentence(value) {
+  const cleaned = cleanEvidenceSentence(value).replace(/\*\*/g, "").replace(/`+/g, "").replace(/\[[0-9]+\]\s*/g, "").replace(/^#{1,6}\s+/g, "").replace(/^[^\p{L}\p{N}$#]+/u, "").replace(/^(?:reality check|bottom line|takeaway)\s*:\s*/i, "").trim();
+  const colonIndex = cleaned.indexOf(":");
+  if (colonIndex > 0 && colonIndex <= 34) {
+    const prefix = cleaned.slice(0, colonIndex).trim();
+    const suffix = cleaned.slice(colonIndex + 1).trim();
+    if (suffix.length >= 24 && hasBankerSignalContent(suffix) && /^[A-Z][A-Za-z0-9&'/-]*(?:\s+[A-Z][A-Za-z0-9&'/-]*){0,4}$/.test(prefix) && !/\d/.test(prefix)) {
+      return suffix;
+    }
+  }
+  return cleaned;
+}
+function extractEvidenceSentencesSafe(text) {
+  return sentenceSplit(text).map((sentence) => normalizeNarrativeSentence(sentence)).filter((sentence) => sentence.length >= 24).filter((sentence) => !looksLikeSourceTitle(sentence)).filter((sentence) => !looksLikeEvidenceFragment(sentence)).filter((sentence) => !looksLikeNarrativeFluff(sentence)).filter((sentence) => !isQuestionLike(sentence)).filter((sentence) => hasBankerSignalContent(sentence)).sort((a, b) => scoreEvidenceSentence(b) - scoreEvidenceSentence(a)).slice(0, 4);
+}
+function normalizePossibleCompanyName(value) {
+  return normalizeWhitespace(value).replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9.&, -]+$/g, "").replace(/^(?:while|as|but|and|however|meanwhile|although|despite|if|when|whereas|versus|vs\.?|against|compared to)\s+/i, "").replace(/[.,;:]+$/g, "").trim();
+}
+function isPotentialCompanyName(name, entityName) {
+  const cleaned = normalizePossibleCompanyName(name);
+  if (!cleaned || cleaned.length < 2 || cleaned.length > 60) return false;
+  const lower = cleaned.toLowerCase();
+  if (lower === entityName.toLowerCase()) return false;
+  if (NON_PEER_COMPARABLE_NAMES.has(lower)) return false;
+  if (COMPARABLE_CONNECTOR_STOPWORDS.has(lower)) return false;
+  if (COMPANY_NAME_STOPWORDS.has(lower)) return false;
+  if (SOURCE_ENTITY_STOPWORDS.has(lower)) return false;
+  if (/^(the|a|an)\s+/i.test(cleaned)) return false;
+  if (/^series\s+[a-z0-9]+$/i.test(cleaned)) return false;
+  if (/\b(trainium|inferentia|tpu|tpus|model|models)\b/i.test(cleaned)) return false;
+  if (/\.\s+[A-Z]/.test(cleaned)) return false;
+  if (/\b(this|that|these|those|half|one)\b/i.test(cleaned)) return false;
+  if (/\b(gpus?|cpus?|tpus?|chips?|contracts?|buyers?|accounts?|usage|market|share|pricing|bundling|deployment|deployments)\b/i.test(cleaned)) return false;
+  if (/^(today|yesterday|quarter|year|source|report|index|analysis)$/i.test(cleaned)) return false;
+  if (/^(AI|API|LLM|ML|GPU|CPU|YoY|ARR|MRR)$/i.test(cleaned)) return false;
+  if (/^[A-Z]{3,6}$/.test(cleaned) && !KNOWN_ACRONYM_COMPANY_NAMES.has(cleaned)) return false;
+  if (/^[A-Z][a-z]+ly$/.test(cleaned)) return false;
+  if (/\b(company overview|overview|analysis|outlook|report|briefing|readout|market update|pricing pressure|enterprise ai)\b/i.test(cleaned)) {
+    return false;
+  }
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  if (words.length === 0 || words.length > 4) return false;
+  const nonGenericWords = words.filter((word) => !COMPANY_NAME_STOPWORDS.has(word.toLowerCase()));
+  if (nonGenericWords.length === 0) return false;
+  const genericWordCount = words.length - nonGenericWords.length;
+  if (genericWordCount >= Math.max(1, words.length - 1)) return false;
+  return /[A-Z]/.test(cleaned[0] ?? "") || /[A-Z]{2,}/.test(cleaned);
+}
+function inferSignalTheme(value) {
+  const lower = value.toLowerCase();
+  if (/\b(run-rate|run rate|arr|mrr|revenue|bookings|sales)\b/.test(lower)) return "revenue";
+  if (/\b(growth|accelerat|yoy|quarter|momentum)\b/.test(lower)) return "growth";
+  if (/\b(pricing|discount|bundle|bundling|margin|contract|retention|renewal)\b/.test(lower)) return "pricing";
+  if (/\b(distribution|partner|channel|ecosystem|bedrock|cloud|platform)\b/.test(lower)) return "distribution";
+  if (/\b(enterprise|deployments?|buyers?|subscriptions?|usage|adoption)\b/.test(lower)) return "adoption";
+  if (/\b(valuation|funding|capital raise|financing|investor demand)\b/.test(lower)) return "capital_markets";
+  if (/\b(regulat|compliance|governance|policy|litigation|antitrust)\b/.test(lower)) return "regulatory";
+  if (/\b(compute|training|inference|gpu|capex|capital intensity|burn|cash)\b/.test(lower)) return "capital_intensity";
+  if (/\b(product|launch|release|model|feature|developer)\b/.test(lower)) return "product";
+  return "general";
+}
+function selectDiverseSignals(items) {
+  const selected = [];
+  const themeCounts = /* @__PURE__ */ new Map();
+  const themeLimit = /* @__PURE__ */ new Map([
+    ["revenue", 1],
+    ["growth", 1],
+    ["pricing", 1],
+    ["distribution", 1],
+    ["adoption", 1],
+    ["capital_markets", 1],
+    ["regulatory", 1],
+    ["capital_intensity", 1],
+    ["product", 1],
+    ["general", 2]
+  ]);
+  for (const item of items) {
+    if (selected.length >= 5) break;
+    const theme = inferSignalTheme(item.name);
+    if (theme === "adoption" && !hasConcreteMetric(item.name) && looksLikeSoftAdoptionClaim(item.name)) {
+      continue;
+    }
+    const currentCount = themeCounts.get(theme) ?? 0;
+    const maxCount = themeLimit.get(theme) ?? 1;
+    if (currentCount >= maxCount) continue;
+    selected.push(item);
+    themeCounts.set(theme, currentCount + 1);
+  }
+  if (selected.length >= 3) {
+    return selected.slice(0, 5);
+  }
+  for (const item of items) {
+    if (selected.length >= 5) break;
+    if (selected.some((entry) => entry.name.toLowerCase() === item.name.toLowerCase())) continue;
+    selected.push(item);
+  }
+  return selected.slice(0, 5);
+}
+function extractComparableCandidatesFromText(text, entityName, options) {
+  const candidates = [];
+  const versusPattern = /\b([A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,2})\s+(?:vs\.?|versus|against|compared to)\s+([A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,2}(?:\s*(?:,\s*|\s+and\s+)[A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,2})*)/g;
+  const nameListPattern = "([A-Z][A-Za-z0-9&.-]*(?:\\s+[A-Z][A-Za-z0-9&.-]*){0,2}(?:\\s*(?:,\\s*|\\s+and\\s+)[A-Z][A-Za-z0-9&.-]*(?:\\s+[A-Z][A-Za-z0-9&.-]*){0,2})*)";
+  const patterns = [
+    new RegExp(`\\b(?:vs\\.?|versus|against|compared to)\\s+${nameListPattern}`, "g"),
+    new RegExp(`\\b(?:competitors?|rivals?|alternatives?)\\s+(?:include|includes|are|remain|such as|like)\\s+${nameListPattern}`, "g"),
+    new RegExp(`\\b(?:competes?|competing|competed|positioned|stacks up)\\s+(?:most directly\\s+)?(?:with|against|versus|vs\\.?)\\s+${nameListPattern}`, "g")
+  ];
+  for (const match of text.matchAll(versusPattern)) {
+    for (const segment of [match[1] ?? "", match[2] ?? ""]) {
+      for (const part of segment.split(/\s*,\s*|\s+and\s+/i)) {
+        const candidate = normalizePossibleCompanyName(part);
+        if (isPotentialCompanyName(candidate, entityName)) {
+          candidates.push(candidate);
+        }
+      }
+    }
+  }
+  for (const pattern of patterns) {
+    for (const match of text.matchAll(pattern)) {
+      const segment = match[1] ?? "";
+      for (const part of segment.split(/\s*,\s*|\s+and\s+/i)) {
+        const candidate = normalizePossibleCompanyName(part);
+        if (isPotentialCompanyName(candidate, entityName)) {
+          candidates.push(candidate);
+        }
+      }
+    }
+  }
+  if (options?.allowCapitalizedFallback !== false && (/\b(compete|competitor|rival|alternative|versus|vs\.|against|compared to|peer set|peer group)\b/i.test(text) || text.toLowerCase().includes(entityName.toLowerCase()) && /\b(pricing|pressure|bundle|distribution|contract|retention|challenge)\b/i.test(text) || /\b(pricing|pressure|bundle|distribution|contract|retention|challenge|enterprise|market share)\b/i.test(text))) {
+    const capitalizedMatches = text.match(/\b[A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,2}\b/g) ?? [];
+    for (const candidate of capitalizedMatches) {
+      const cleanedCandidate = normalizePossibleCompanyName(candidate);
+      if (isPotentialCompanyName(cleanedCandidate, entityName)) {
+        candidates.push(cleanedCandidate);
+      }
+    }
+  }
+  return dedupeStrings2(candidates).slice(0, 6);
+}
+function extractEntityCompanyListCandidates(text, entityName) {
+  if (!text.toLowerCase().includes(entityName.toLowerCase())) {
+    return [];
+  }
+  if (!/[,:]/.test(text) && !/\s+and\s+/i.test(text)) {
+    return [];
+  }
+  if (!/\b(enterprise|market|pricing|retention|distribution|platform|models?|companies|labs?)\b/i.test(text)) {
+    return [];
+  }
+  const capitalizedMatches = text.match(/\b[A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,2}\b/g) ?? [];
+  const candidates = [];
+  for (const candidate of capitalizedMatches) {
+    const cleanedCandidate = normalizePossibleCompanyName(candidate);
+    if (isPotentialCompanyName(cleanedCandidate, entityName)) {
+      candidates.push(cleanedCandidate);
+    }
+  }
+  return dedupeStrings2(candidates).slice(0, 6);
+}
+function extractLooseComparableCandidatesFromText(text, entityName, options) {
+  const hasCompetitiveCue = /\b(compete|competitor|rival|alternative|versus|vs\.|against|compared to|peer set|peer group|compare)\b/i.test(text);
+  const hasStrategicCue = options?.allowStrategicCue === true && /\b(pricing|pressure|bundle|distribution|contract|retention|buyer|buyers|enterprise)\b/i.test(text);
+  const listCandidates = extractEntityCompanyListCandidates(text, entityName);
+  if (listCandidates.length > 0) {
+    return listCandidates;
+  }
+  if (!hasCompetitiveCue && hasNonPeerRelationshipCue(text)) {
+    return [];
+  }
+  if (!hasCompetitiveCue && !hasStrategicCue) {
+    return [];
+  }
+  const candidates = [];
+  const capitalizedMatches = text.match(/\b[A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,2}\b/g) ?? [];
+  for (const candidate of capitalizedMatches) {
+    const cleanedCandidate = normalizePossibleCompanyName(candidate);
+    if (isPotentialCompanyName(cleanedCandidate, entityName)) {
+      candidates.push(cleanedCandidate);
+    }
+  }
+  return dedupeStrings2(candidates).slice(0, 6);
+}
+function addComparableCandidateScores(scores, candidates, weight) {
+  for (const candidate of candidates) {
+    const cleaned = normalizeWhitespace(candidate);
+    const key = cleaned.toLowerCase();
+    if (!cleaned || !key) continue;
+    const existing = scores.get(key);
+    if (existing) {
+      existing.score += weight;
+      continue;
+    }
+    scores.set(key, { name: cleaned, score: weight });
+  }
+}
+function deriveComparableCandidates(execution, entityName) {
+  if (execution.plan.classification === "multi_entity") {
+    const comparisonTargets = dedupeStrings2(
+      (execution.plan.entityTargets ?? []).filter((target) => typeof target === "string" && Boolean(target))
+    );
+    return (comparisonTargets.slice(1).length > 0 ? comparisonTargets.slice(1) : comparisonTargets).slice(0, 4);
+  }
+  const candidateScores = /* @__PURE__ */ new Map();
+  const fallbackTexts = [];
+  const fallbackNarrativeTexts = [];
+  const fallbackTitleTexts = [];
+  for (const target of execution.plan.entityTargets ?? []) {
+    if (typeof target === "string" && isPotentialCompanyName(target, entityName)) {
+      addComparableCandidateScores(candidateScores, [target], 2.5);
+    }
+  }
+  for (const step of execution.stepResults) {
+    if (!step.success || !step.result) continue;
+    const raw = step.result;
+    if (Array.isArray(raw?.comparables)) {
+      for (const comparable of raw.comparables) {
+        const name = typeof comparable === "string" ? comparable : comparable?.name;
+        if (typeof name === "string" && isPotentialCompanyName(name, entityName)) {
+          addComparableCandidateScores(candidateScores, [name], 1.5);
+        }
+      }
+    }
+    if (Array.isArray(raw?.competitors)) {
+      for (const comparable of raw.competitors) {
+        const name = typeof comparable === "string" ? comparable : comparable?.name;
+        if (typeof name === "string" && isPotentialCompanyName(name, entityName)) {
+          addComparableCandidateScores(candidateScores, [name], 1.75);
+        }
+      }
+    }
+    const textBlobs = [];
+    if (typeof raw?.answer === "string") {
+      fallbackTexts.push(raw.answer);
+      if (!looksLikeSourceTitle(raw.answer)) fallbackNarrativeTexts.push(raw.answer);
+      addComparableCandidateScores(
+        candidateScores,
+        extractComparableCandidatesFromText(raw.answer, entityName, { allowCapitalizedFallback: false }),
+        2.5
+      );
+    }
+    if (typeof raw?.summary === "string") {
+      fallbackTexts.push(raw.summary);
+      if (!looksLikeSourceTitle(raw.summary)) fallbackNarrativeTexts.push(raw.summary);
+      addComparableCandidateScores(
+        candidateScores,
+        extractComparableCandidatesFromText(raw.summary, entityName, { allowCapitalizedFallback: false }),
+        2.25
+      );
+    }
+    if (typeof raw?.description === "string") {
+      fallbackTexts.push(raw.description);
+      if (!looksLikeSourceTitle(raw.description)) fallbackNarrativeTexts.push(raw.description);
+      addComparableCandidateScores(
+        candidateScores,
+        extractComparableCandidatesFromText(raw.description, entityName, { allowCapitalizedFallback: false }),
+        2.25
+      );
+    }
+    if (typeof raw?.content === "string") {
+      fallbackTexts.push(raw.content);
+      if (!looksLikeSourceTitle(raw.content)) fallbackNarrativeTexts.push(raw.content);
+      addComparableCandidateScores(
+        candidateScores,
+        extractComparableCandidatesFromText(raw.content, entityName, { allowCapitalizedFallback: false }),
+        2
+      );
+    }
+    for (const signal of raw?.signals ?? raw?.findings ?? []) {
+      const signalText = typeof signal === "string" ? signal : signal?.name;
+      if (typeof signalText === "string") {
+        fallbackTexts.push(signalText);
+        if (!looksLikeSourceTitle(signalText)) fallbackNarrativeTexts.push(signalText);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(signalText, entityName, { allowCapitalizedFallback: false }),
+          2
+        );
+      }
+    }
+    for (const item of raw?.sources ?? []) {
+      if (typeof item?.name === "string") {
+        fallbackTexts.push(item.name);
+        fallbackTitleTexts.push(item.name);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(item.name, entityName, { allowCapitalizedFallback: false }),
+          2.5
+        );
+      }
+      if (typeof item?.title === "string") {
+        fallbackTexts.push(item.title);
+        fallbackTitleTexts.push(item.title);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(item.title, entityName, { allowCapitalizedFallback: false }),
+          2.5
+        );
+      }
+      if (typeof item?.snippet === "string") {
+        fallbackTexts.push(item.snippet);
+        if (!looksLikeSourceTitle(item.snippet)) fallbackNarrativeTexts.push(item.snippet);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(item.snippet, entityName, { allowCapitalizedFallback: false }),
+          2.25
+        );
+      }
+      if (typeof item?.description === "string") {
+        fallbackTexts.push(item.description);
+        if (!looksLikeSourceTitle(item.description)) fallbackNarrativeTexts.push(item.description);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(item.description, entityName, { allowCapitalizedFallback: false }),
+          2
+        );
+      }
+    }
+    for (const item of raw?.results ?? raw?.webResults ?? []) {
+      if (typeof item?.title === "string") {
+        fallbackTexts.push(item.title);
+        fallbackTitleTexts.push(item.title);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(item.title, entityName, { allowCapitalizedFallback: false }),
+          2.5
+        );
+      }
+      if (typeof item?.snippet === "string") {
+        fallbackTexts.push(item.snippet);
+        if (!looksLikeSourceTitle(item.snippet)) fallbackNarrativeTexts.push(item.snippet);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(item.snippet, entityName, { allowCapitalizedFallback: false }),
+          2.25
+        );
+      }
+      if (typeof item?.description === "string") {
+        fallbackTexts.push(item.description);
+        if (!looksLikeSourceTitle(item.description)) fallbackNarrativeTexts.push(item.description);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(item.description, entityName, { allowCapitalizedFallback: false }),
+          2
+        );
+      }
+      if (typeof item?.content === "string") {
+        fallbackTexts.push(item.content);
+        if (!looksLikeSourceTitle(item.content)) fallbackNarrativeTexts.push(item.content);
+        addComparableCandidateScores(
+          candidateScores,
+          extractComparableCandidatesFromText(item.content, entityName, { allowCapitalizedFallback: false }),
+          2
+        );
+      }
+    }
+  }
+  if (candidateScores.size < 2) {
+    for (const text of fallbackNarrativeTexts) {
+      const listCandidates = extractEntityCompanyListCandidates(text, entityName);
+      const looseCandidates = listCandidates.length > 0 ? listCandidates : extractLooseComparableCandidatesFromText(text, entityName, { allowStrategicCue: true });
+      addComparableCandidateScores(
+        candidateScores,
+        looseCandidates,
+        listCandidates.length > 0 ? 1.5 : 1
+      );
+    }
+  }
+  if (candidateScores.size < 2) {
+    for (const text of fallbackTitleTexts) {
+      const listCandidates = extractEntityCompanyListCandidates(text, entityName);
+      const looseCandidates = listCandidates.length > 0 ? listCandidates : extractLooseComparableCandidatesFromText(text, entityName, { allowStrategicCue: candidateScores.size > 0 });
+      addComparableCandidateScores(
+        candidateScores,
+        looseCandidates,
+        1.25
+      );
+    }
+  }
+  const ranked = Array.from(candidateScores.values()).sort((left, right) => right.score - left.score || left.name.localeCompare(right.name));
+  const highConfidence = ranked.filter((entry) => entry.score >= 2).map((entry) => entry.name);
+  if (highConfidence.length > 0) {
+    const selected = [...highConfidence];
+    for (const entry of ranked) {
+      if (selected.length >= 4) break;
+      if (selected.includes(entry.name)) continue;
+      if (entry.score < 1.25) continue;
+      selected.push(entry.name);
+    }
+    return selected.slice(0, 4);
+  }
+  return ranked.map((entry) => entry.name).slice(0, 2);
+}
+function mergeSignals(primary, fallbacks) {
+  const seen = /* @__PURE__ */ new Set();
+  const merged = [];
+  for (const item of [...primary, ...fallbacks]) {
+    const key = normalizeWhitespace(item.name).toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    merged.push(item);
+  }
+  return merged.slice(0, 5);
+}
+function isNarrativeReadySignal(value) {
+  if (looksLikeSourceTitle(value)) return false;
+  if (/^(Anthropic|OpenAI|Google|Microsoft|Amazon)\s+(raises|raised|funding|doubles funding|plans to raise)\b/i.test(value)) {
+    return false;
+  }
+  if (/\bseries\s+[a-z0-9]+\b/i.test(value)) return false;
+  return true;
+}
+function collectFallbackSignals(execution) {
+  const signals = [];
+  for (const step of execution.stepResults) {
+    if (!step.success || !step.result) continue;
+    const raw = step.result;
+    if (step.toolName === "run_recon" && Array.isArray(raw?.findings)) {
+      for (const finding of raw.findings) {
+        signals.push({
+          name: typeof finding === "string" ? finding : finding?.name,
+          direction: typeof finding === "object" ? finding?.direction : "neutral",
+          impact: typeof finding === "object" ? finding?.impact : "medium"
+        });
+      }
+    }
+    if (step.toolName === "enrich_entity" && Array.isArray(raw?.signals)) {
+      for (const signal of raw.signals) {
+        signals.push({
+          name: typeof signal === "string" ? signal : signal?.name,
+          direction: typeof signal === "object" ? signal?.direction : "neutral",
+          impact: typeof signal === "object" ? signal?.impact : "medium"
+        });
+      }
+    }
+    for (const sentence of extractEvidenceSentencesSafe(String(raw?.answer ?? raw?.summary ?? raw?.description ?? ""))) {
+      signals.push({ name: sentence, direction: "neutral", impact: "high" });
+    }
+    for (const source of [...Array.isArray(raw?.sources) ? raw.sources : [], ...Array.isArray(raw?.results) ? raw.results : [], ...Array.isArray(raw?.webResults) ? raw.webResults : []].slice(0, 6)) {
+      for (const sentence of extractEvidenceSentencesSafe(String(source?.snippet ?? source?.description ?? source?.content ?? ""))) {
+        signals.push({ name: sentence, direction: "neutral", impact: "medium" });
+      }
+    }
+  }
+  return sanitizeSignals(signals);
+}
+function looksLikeOperationalChange(value) {
+  return /\b(announced|expanded|grew|growth|increased|launched|now exceeds|partnered|quadrupled|reached|released|reported|represent over half|tripled|updated|unveiled)\b/i.test(value);
+}
+function collectFallbackChanges(execution) {
+  const changes = [];
+  for (const step of execution.stepResults) {
+    if (!step.success || !step.result) continue;
+    const raw = step.result;
+    if (step.toolName === "run_recon" && Array.isArray(raw?.findings)) {
+      for (const finding of raw.findings) {
+        const description = String(typeof finding === "string" ? finding : finding?.name ?? "");
+        if (!description || !looksLikeOperationalChange(description)) continue;
+        changes.push({ description });
+      }
+    }
+    for (const change of Array.isArray(raw?.changes) ? raw.changes : []) {
+      const description = String(typeof change === "string" ? change : change?.description ?? change?.change ?? "");
+      if (!description || !looksLikeOperationalChange(description)) continue;
+      changes.push({ description, date: typeof change === "object" ? change?.date : void 0 });
+    }
+    for (const sentence of extractEvidenceSentencesSafe(String(raw?.answer ?? raw?.summary ?? raw?.description ?? ""))) {
+      const description = sentence;
+      if (!description || !looksLikeOperationalChange(description)) continue;
+      changes.push({ description });
+    }
+    for (const source of [...Array.isArray(raw?.sources) ? raw.sources : [], ...Array.isArray(raw?.results) ? raw.results : [], ...Array.isArray(raw?.webResults) ? raw.webResults : []].slice(0, 8)) {
+      for (const sentence of extractEvidenceSentencesSafe(String(source?.snippet ?? source?.description ?? source?.content ?? ""))) {
+        const description = sentence;
+        if (!description || !looksLikeOperationalChange(description)) continue;
+        changes.push({ description });
+      }
+    }
+  }
+  return changes;
+}
+function collectFallbackRisks(execution) {
+  const risks = [];
+  for (const step of execution.stepResults) {
+    if (!step.success || !step.result) continue;
+    const raw = step.result;
+    if (step.toolName === "run_recon" && Array.isArray(raw?.findings)) {
+      for (const finding of raw.findings) {
+        const description = normalizeWhitespace(String(typeof finding === "string" ? finding : finding?.name ?? ""));
+        const direction = String(typeof finding === "object" ? finding?.direction ?? "" : "");
+        if (!description) continue;
+        if (direction === "down" || containsRiskLanguage(description)) {
+          risks.push({ title: inferRiskTitleFromDescription(description), description });
+        }
+      }
+    }
+    if (Array.isArray(raw?.risks)) {
+      for (const risk of raw.risks) {
+        risks.push({
+          title: typeof risk === "object" ? String(risk?.title ?? "") : "",
+          description: typeof risk === "string" ? risk : String(risk?.description ?? "")
+        });
+      }
+    }
+    for (const sentence of extractEvidenceSentencesSafe(String(raw?.answer ?? raw?.summary ?? raw?.description ?? ""))) {
+      if (containsRiskLanguage(sentence)) {
+        risks.push({ title: inferRiskTitleFromDescription(sentence), description: sentence });
+      }
+    }
+    for (const source of [...Array.isArray(raw?.sources) ? raw.sources : [], ...Array.isArray(raw?.results) ? raw.results : [], ...Array.isArray(raw?.webResults) ? raw.webResults : []].slice(0, 8)) {
+      for (const sentence of extractEvidenceSentencesSafe(String(source?.snippet ?? source?.description ?? source?.content ?? ""))) {
+        if (containsRiskLanguage(sentence)) {
+          risks.push({ title: inferRiskTitleFromDescription(sentence), description: sentence });
+        }
+      }
+    }
+  }
+  return sanitizeRisks(risks);
+}
+function sanitizeSignals(items) {
+  const seen = /* @__PURE__ */ new Set();
+  const sanitized = [];
+  for (const item of items ?? []) {
+    const name = normalizeNarrativeSentence(String(item?.name ?? ""));
+    if (!name || /^signal \d+$/i.test(name)) continue;
+    if (/^(company overview|overview|analysis|outlook report|the)$/i.test(name)) continue;
+    if (/\b(company overview|overview|analysis|outlook report|market update)\b/i.test(name)) continue;
+    if (looksLikeAmbiguousSubjectSignal(name)) continue;
+    if (looksLikeFundingHeadline(name)) continue;
+    if (looksLikeEvidenceFragment(name)) continue;
+    if (looksLikeNarrativeFluff(name)) continue;
+    if (looksLikeSpeculativeCapitalMarketsFiller(name)) continue;
+    if (looksLikeGenericMarketBackdrop(name)) continue;
+    if (name.length > 100 && /[-:]\s[A-Z][A-Za-z0-9&.\s]+$/.test(name)) continue;
+    if (looksLikeSourceTitle(name)) continue;
+    if (!hasBankerSignalContent(name) && !containsRiskLanguage(name)) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    sanitized.push({
+      name,
+      direction: item?.direction === "up" || item?.direction === "down" ? item.direction : "neutral",
+      impact: item?.impact === "high" || item?.impact === "low" ? item.impact : "medium"
+    });
+  }
+  return selectDiverseSignals(
+    sanitized.sort((a, b) => scoreUnderwritingSignal(b.name) - scoreUnderwritingSignal(a.name))
+  );
+}
+function sanitizeChanges(items) {
+  const normalizedEntries = (items ?? []).map((item) => ({
+    description: normalizeChangeDescription(String(item?.description ?? "")),
+    date: item?.date ?? void 0
+  })).filter((item) => item.description.length > 0);
+  const deduped = dedupeStrings2(normalizedEntries.map((item) => item.description)).filter((description) => description.length >= 18).filter((description) => !looksLikeSourceTitle(description)).filter((description) => !looksLikeFundingHeadline(description)).filter((description) => !looksLikeEvidenceFragment(description)).filter((description) => !looksLikeNarrativeFluff(description)).filter((description) => !looksLikeSpeculativeCapitalMarketsFiller(description)).filter((description) => !looksLikeGenericMarketBackdrop(description)).filter((description) => !looksLikeAmbiguousSubjectSignal(description)).filter((description) => !/\b(sacra|24\/7 wall st|forbes|axios|deepresearchglobal)\b/i.test(description));
+  return deduped.slice(0, 4).map((description, index) => ({
+    description,
+    date: normalizedEntries.find((item) => item.description === description)?.date
+  }));
+}
+function inferRiskTitleFromDescription(description) {
+  if (/\bpricing|bundle|discount|margin\b/i.test(description)) return "Pricing pressure";
+  if (/\bcustomer concentration|enterprise buyers|buyer concentration|retention\b/i.test(description)) return "Customer concentration";
+  if (/\bregulat|compliance|litigation|antitrust|governance\b/i.test(description)) return "Regulatory exposure";
+  if (/\bcapital|compute|cash|burn|capex\b/i.test(description)) return "Capital intensity";
+  if (/\bdistribution|platform|ecosystem\b/i.test(description)) return "Distribution dependency";
+  return "Execution risk";
+}
+function sanitizeRisks(items) {
+  const seen = /* @__PURE__ */ new Set();
+  const seenTitles = /* @__PURE__ */ new Set();
+  const sanitized = [];
+  for (const item of items ?? []) {
+    let title = normalizeWhitespace(String(item?.title ?? ""));
+    let description = normalizeNarrativeSentence(String(item?.description ?? ""));
+    if (!description || description.length < 18) continue;
+    if (looksLikeSourceTitle(description)) continue;
+    if (looksLikeFundingHeadline(description)) continue;
+    if (looksLikeEvidenceFragment(description)) continue;
+    if (looksLikeNarrativeFluff(description)) continue;
+    if (!title || isQuestionLike(title) || looksLikeSourceTitle(title) || title.length > 90) {
+      title = inferRiskTitleFromDescription(description);
+    }
+    if (looksLikeFundingHeadline(title)) {
+      title = inferRiskTitleFromDescription(description);
+    }
+    description = focusRiskDescription(description, title);
+    if (!descriptionMatchesRiskTitle(title, description) || !/[.!?]$/.test(description) && description.length > 85) {
+      description = buildDefaultRiskDescription(title);
+    }
+    if (!containsRiskLanguage(`${title} ${description}`)) continue;
+    const key = `${title.toLowerCase()}::${description.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    const titleKey = title.toLowerCase();
+    if (seenTitles.has(titleKey)) continue;
+    seen.add(key);
+    seenTitles.add(titleKey);
+    sanitized.push({ title, description });
+  }
+  return sanitized.slice(0, 4);
+}
+function sanitizeComparables(items, entityName, fallbacks, context) {
+  const seen = /* @__PURE__ */ new Set();
+  const sanitized = [];
+  const fallbackSet = new Set(fallbacks.map((value) => normalizeWhitespace(value).toLowerCase()).filter(Boolean));
+  const normalizedTargets = dedupeStrings2((context?.entityTargets ?? []).map((value) => normalizeWhitespace(String(value))));
+  const targetSet = new Set(normalizedTargets.map((value) => value.toLowerCase()).filter(Boolean));
+  const entityTokens = new Set(entityName.split(/\s+vs\s+|\s*,\s*/i).map((value) => normalizeWhitespace(value).toLowerCase()).filter(Boolean));
+  const anchorTarget = normalizedTargets[0]?.toLowerCase();
+  const pushComparable = (name, relevance = "medium", note = "Referenced in cited sources.") => {
+    const cleanedName = normalizeWhitespace(name);
+    const explicitTarget = targetSet.has(cleanedName.toLowerCase());
+    if (!explicitTarget && !isPotentialCompanyName(cleanedName, entityName)) return;
+    const lowerName = cleanedName.toLowerCase();
+    const noteText = normalizeWhitespace(note).toLowerCase();
+    if (SOURCE_ENTITY_STOPWORDS.has(lowerName) && !explicitTarget) return;
+    if (looksLikeSourceTitle(cleanedName)) return;
+    if (/\b(index|statistics|report|briefing|analysis|investors need to know)\b/i.test(`${cleanedName} ${note}`)) return;
+    if (context?.classification === "multi_entity") {
+      if (anchorTarget && lowerName === anchorTarget && normalizedTargets.length > 1) return;
+      if (!targetSet.has(lowerName) && !fallbackSet.has(lowerName)) return;
+      if (entityTokens.has(lowerName) && !targetSet.has(lowerName)) return;
+    }
+    if ((context?.classification === "competitor" || context?.classification === "company_search") && fallbackSet.size > 0) {
+      if (!fallbackSet.has(lowerName) && !targetSet.has(lowerName)) return;
+    }
+    if ((/research|index|statistics|report|outlook|news|publication|newsletter/.test(noteText) || /market update/.test(noteText)) && !targetSet.has(lowerName)) {
+      return;
+    }
+    const key = cleanedName.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    sanitized.push({
+      name: cleanedName,
+      relevance: relevance === "high" || relevance === "low" ? relevance : "medium",
+      note: normalizeWhitespace(note || "Referenced in cited sources.")
+    });
+  };
+  for (const item of items ?? []) {
+    pushComparable(String(item?.name ?? ""), String(item?.relevance ?? "medium"), String(item?.note ?? ""));
+  }
+  for (const fallback of fallbacks) {
+    pushComparable(fallback, "medium", "Derived from cited competitive references.");
+  }
+  if (context?.classification === "multi_entity") {
+    for (const target of normalizedTargets.slice(1)) {
+      pushComparable(target, "high", "Explicit company in the scoped comparison set.");
+    }
+  }
+  const maxComparables = context?.classification === "multi_entity" ? 4 : 2;
+  return sanitized.slice(0, maxComparables);
+}
+function sanitizeNextActions(items, lens, entityName, comparables, risks, context) {
+  const deduped = dedupeStrings2((items ?? []).map((item) => String(item?.action ?? "")));
+  const sanitized = deduped.filter((action) => action.length >= 12).filter((action) => !/contextQuestions|check_framework|gather project|ingest_upload|Answer any|Use\s+\w+_\w+/i.test(action)).filter((action) => !/^(review the provided context|gather project context|answer context questions)/i.test(action)).filter((action) => !/^(do more research|research further|investigate further)$/i.test(action)).filter((action) => context?.classification !== "multi_entity" || !/\bbenchmark\b.+\bagainst\b/i.test(action)).slice(0, 3).map((action, index) => ({
+    action,
+    impact: items?.[index]?.impact === "low" || items?.[index]?.impact === "medium" ? items[index].impact : "high"
+  }));
+  const topComparable = comparables[0]?.name;
+  const topRisk = risks[0]?.title.toLowerCase().includes("regulat") || risks[0]?.description.toLowerCase().includes("regulat") ? `Pressure-test regulatory and diligence exposure around ${entityName}.` : topComparable ? `Benchmark ${entityName} against ${topComparable} on positioning, pricing, and enterprise traction.` : `Pressure-test the core investment thesis for ${entityName} against the cited evidence.`;
+  const targetNames = dedupeStrings2((context?.entityTargets ?? []).map((item) => normalizeWhitespace(String(item))));
+  const comparisonLabel = targetNames.length > 1 ? targetNames.join(", ") : entityName;
+  const defaults = context?.classification === "multi_entity" && lens === "banker" ? [
+    `Build a side-by-side diligence matrix for ${comparisonLabel} covering pricing, enterprise traction, buyer fit, and contract durability.`,
+    `Pressure-test which company has the most defensible distribution advantage versus bundled platform pressure.`,
+    `Map likely strategic buyers, counterparties, or financing narratives for each company in the set before choosing a preferred angle.`
+  ] : context?.classification === "multi_entity" && lens === "investor" ? [
+    `Build a side-by-side market map for ${comparisonLabel} covering pricing power, enterprise traction, and distribution leverage.`,
+    `Pressure-test whether the current winner is product-led, distribution-led, or simply benefiting from timing and narrative momentum.`,
+    `Identify the one data point that would most change the relative ranking across the current peer set.`
+  ] : lens === "banker" ? [
+    `Build a buyer and strategic-counterparty map for ${entityName} using the current competitive set.`,
+    `Pressure-test revenue durability, customer concentration, and capital intensity for ${entityName}.`,
+    topRisk
+  ] : lens === "investor" ? [
+    `Benchmark ${entityName}'s market position, share gains, and enterprise traction against the nearest cited peer set.`,
+    `Pressure-test whether ${entityName}'s current edge is product-led, distribution-led, or simply timing-driven.`,
+    topRisk
+  ] : [
+    `Identify which cited signals for ${entityName} are durable versus narrative-driven.`,
+    `Turn the strongest comparable set into an explicit positioning map for ${entityName}.`,
+    topRisk
+  ];
+  const merged = [...sanitized];
+  for (const action of defaults) {
+    if (merged.length >= 3) break;
+    if (merged.some((item) => item.action.toLowerCase() === action.toLowerCase())) continue;
+    merged.push({ action, impact: "high" });
+  }
+  return merged.slice(0, 3);
+}
+function buildDefaultNextQuestions(args) {
+  if (args.classification === "multi_entity") {
+    const comparisonLabel = dedupeStrings2((args.entityTargets ?? []).map((item) => normalizeWhitespace(String(item)))).slice(0, 3).join(", ") || args.entityName;
+    return [
+      `Which company in ${comparisonLabel} has the strongest enterprise distribution today, and what evidence would overturn that ranking?`,
+      `Where do pricing power and contract durability differ most across the current peer set?`,
+      `Which buyer segment structurally favors one company over the others, and why?`,
+      `What evidence would most change the relative ranking across the current comparison set?`
+    ];
+  }
+  return [
+    `What are the specific drivers behind ${args.entityName}'s recent growth or decline?`,
+    args.risks.length > 0 ? `How likely is "${args.risks[0]?.title}" to materialize, and what would trigger it?` : `What are the biggest threats to ${args.entityName}'s market position?`,
+    args.comparables.length > 0 ? `How does ${args.entityName} compare to ${args.comparables[0]?.name} on unit economics and retention?` : `Who are ${args.entityName}'s most dangerous competitors and why?`,
+    `What would make you change your thesis on ${args.entityName} and what evidence would you need to see?`
+  ];
+}
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function inferMetricEntity(value, entityName, entityTargets) {
+  const orderedTargets = dedupeStrings2([...entityTargets ?? [], entityName].map((item) => normalizeWhitespace(String(item))));
+  for (const target of orderedTargets) {
+    if (!target) continue;
+    const pattern = new RegExp(`\\b${escapeRegex(target)}\\b`, "i");
+    if (pattern.test(value)) return target;
+  }
+  return null;
+}
+function mentionsEntityTarget(value, entityTargets) {
+  return inferMetricEntity(value, "", entityTargets) !== null;
+}
+function looksLikeAmbiguousSubjectSignal(value) {
+  return /^(its|the company|reports indicated|by march|by december|new data from)/i.test(normalizeWhitespace(value));
+}
+function inferMetricLabels(sentence, entityName, entityTargets) {
+  const normalizedTargets = dedupeStrings2((entityTargets ?? []).map((item) => normalizeWhitespace(String(item))));
+  const multiEntity = normalizedTargets.length > 1;
+  const subject = inferMetricEntity(sentence, entityName, entityTargets) ?? (multiEntity ? null : entityName);
+  if (!subject) return [];
+  const prefix = `${subject} `;
+  const labels = [];
+  if (/\b(annualized revenue|run-rate revenue|run rate revenue|pace to generate|revenue reached|revenue now exceeds|arr)\b/i.test(sentence)) {
+    labels.push(`${prefix}revenue`.trim());
+  }
+  if (/\b(post-money valuation|valuation|valued at)\b/i.test(sentence)) {
+    labels.push(`${prefix}valuation`.trim());
+  }
+  if (/\bgross margin\b/i.test(sentence)) {
+    labels.push(`${prefix}gross margin`.trim());
+  }
+  if (/\b(inference costs?|compute costs?|training costs?|capex)\b/i.test(sentence)) {
+    labels.push(`${prefix}compute cost`.trim());
+  }
+  if (/\b(market share|enterprise l?lm market share|share of enterprise spend|enterprise share)\b/i.test(sentence)) {
+    labels.push(`${prefix}market share`.trim());
+  }
+  if (/\b(year-over-year|yoy|growth)\b/i.test(sentence) && /\d{1,3}(?:,\d{3})*(?:\.\d+)?%/.test(sentence)) {
+    labels.push(`${prefix}growth`.trim());
+  }
+  if (/\b(paying users?|enterprise use|subscriptions?|contracts?|deployments?)\b/i.test(sentence) && /\d{1,3}(?:,\d{3})*(?:\.\d+)?%/.test(sentence)) {
+    labels.push(`${prefix}usage mix`.trim());
+  }
+  return labels;
+}
+function normalizeMetricValue(rawValue) {
+  return normalizeWhitespace(rawValue).replace(/\b(billion|million)\b/gi, (match) => match.toLowerCase() === "billion" ? "B" : "M").replace(/\s+([bBmM])\b/g, (_, suffix) => suffix.toUpperCase()).replace(/\s+(B|M)\b/g, "$1");
+}
+function getMetricCategory(label) {
+  const normalized = label.toLowerCase();
+  if (normalized.includes("revenue")) return "revenue";
+  if (normalized.includes("valuation")) return "valuation";
+  if (normalized.includes("gross margin")) return "gross_margin";
+  if (normalized.includes("compute cost")) return "compute_cost";
+  if (normalized.includes("market share")) return "market_share";
+  if (normalized.includes("growth")) return "growth";
+  if (normalized.includes("usage mix")) return "usage_mix";
+  return "other";
+}
+function formatMetricClause(metric) {
+  const label = normalizeWhitespace(metric.label);
+  const value = normalizeMetricValue(metric.value);
+  if (!label || !value) return "";
+  if (/\b(gross margin|growth|market share|usage mix)\b/i.test(label)) {
+    return `${label} of ${value}`;
+  }
+  if (/\b(revenue|valuation|compute cost)\b/i.test(label)) {
+    return `${label} at ${value}`;
+  }
+  return `${label} ${value}`;
+}
+function joinNaturalLanguage(items) {
+  if (items.length <= 1) return items[0] ?? "";
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
+}
+function sentenceSupportsMetricLabel(sentence, label) {
+  const normalizedLabel = label.toLowerCase();
+  if (normalizedLabel.includes("revenue")) {
+    return /\b(annualized revenue|run-rate revenue|run rate revenue|pace to generate|revenue reached|revenue now exceeds|revenue|arr)\b/i.test(sentence);
+  }
+  if (normalizedLabel.includes("valuation")) {
+    return /\b(post-money valuation|valuation|valued at)\b/i.test(sentence);
+  }
+  if (normalizedLabel.includes("compute cost")) {
+    return /\b(inference costs?|compute costs?|training costs?|capex)\b/i.test(sentence);
+  }
+  if (normalizedLabel.includes("gross margin")) {
+    return /\bgross margin\b/i.test(sentence);
+  }
+  if (normalizedLabel.includes("market share")) {
+    return /\b(market share|enterprise l?lm market share|share of enterprise spend|enterprise share)\b/i.test(sentence);
+  }
+  if (normalizedLabel.includes("growth")) {
+    return /\b(year-over-year|yoy|growth)\b/i.test(sentence);
+  }
+  if (normalizedLabel.includes("usage mix")) {
+    return /\b(paying users?|enterprise use|subscriptions?|contracts?|deployments?|share of enterprise spend)\b/i.test(sentence);
+  }
+  return true;
+}
+function hasMetricEvidenceSupport(label, value, evidenceSentences) {
+  const normalizedValue = normalizeMetricValue(value).toLowerCase();
+  return evidenceSentences.some((evidence) => {
+    if (!sentenceSupportsMetricLabel(evidence.text, label)) return false;
+    const selectedCandidate = selectMetricCandidate(evidence.text, label);
+    if (!selectedCandidate) return false;
+    return normalizeMetricValue(selectedCandidate).toLowerCase() === normalizedValue;
+  });
+}
+function collectMetricMatches(pattern, sentence) {
+  const safePattern = new RegExp(pattern.source, pattern.flags);
+  return Array.from(sentence.matchAll(safePattern)).map((match) => ({
+    value: match[0],
+    index: match.index ?? 0
+  }));
+}
+function selectMetricCandidate(sentence, label) {
+  const currencyMatches = collectMetricMatches(/\$\d+(?:\.\d+)?\s?(?:B|M|billion|million)/gi, sentence);
+  const percentMatches = collectMetricMatches(PERCENT_VALUE_PATTERN, sentence);
+  const normalizedLabel = label.toLowerCase();
+  const closestMatch = (matches, cuePattern) => {
+    if (matches.length === 0) return null;
+    const cueMatch = cuePattern.exec(sentence);
+    cuePattern.lastIndex = 0;
+    if (!cueMatch || typeof cueMatch.index !== "number") {
+      return matches[0]?.value ?? null;
+    }
+    return matches.slice().sort((left, right) => Math.abs(left.index - cueMatch.index) - Math.abs(right.index - cueMatch.index))[0]?.value ?? null;
+  };
+  if (normalizedLabel.includes("revenue")) {
+    return closestMatch(currencyMatches, /\b(annualized revenue|run-rate revenue|run rate revenue|pace to generate|revenue reached|revenue now exceeds|revenue|arr)\b/i);
+  }
+  if (normalizedLabel.includes("valuation")) {
+    return closestMatch(currencyMatches, /\b(post-money valuation|valuation|valued at)\b/i);
+  }
+  if (normalizedLabel.includes("compute cost")) {
+    return closestMatch(currencyMatches, /\b(inference costs?|compute costs?|training costs?|capex)\b/i);
+  }
+  if (normalizedLabel.includes("gross margin")) {
+    return closestMatch(percentMatches, /\bgross margin\b/i);
+  }
+  if (normalizedLabel.includes("market share")) {
+    return closestMatch(percentMatches, /\b(market share|enterprise l?lm market share|share of enterprise spend|enterprise share)\b/i);
+  }
+  if (normalizedLabel.includes("growth")) {
+    return closestMatch(percentMatches, /\b(year-over-year|yoy|growth)\b/i);
+  }
+  if (normalizedLabel.includes("usage mix")) {
+    return closestMatch(percentMatches, /\b(paying users?|enterprise use|subscriptions?|contracts?|deployments?)\b/i);
+  }
+  return currencyMatches[0]?.value ?? percentMatches[0]?.value ?? null;
+}
+function collectMetricSentences(execution, signals, changes) {
+  const evidences = [];
+  const pushEvidence = (text, source) => {
+    if (typeof text !== "string" || !text.trim()) return;
+    for (const sentence of extractEvidenceSentencesSafe(text)) {
+      evidences.push({ text: sentence, source });
+    }
+  };
+  for (const signal of signals) pushEvidence(signal.name, "signal");
+  for (const change of changes) pushEvidence(change.description, "change");
+  for (const step of execution.stepResults) {
+    if (!step.success || !step.result) continue;
+    const raw = step.result;
+    for (const field of [raw?.answer, raw?.summary, raw?.description, raw?.content]) {
+      pushEvidence(field, "tool_text");
+    }
+    for (const finding of raw?.findings ?? raw?.signals ?? []) {
+      const text = typeof finding === "string" ? finding : finding?.name;
+      pushEvidence(text, "tool_finding");
+    }
+    for (const item of [...raw?.sources ?? [], ...raw?.results ?? [], ...raw?.webResults ?? []]) {
+      for (const field of [item?.snippet, item?.description, item?.content]) {
+        pushEvidence(field, "web_snippet");
+      }
+    }
+  }
+  const byText = /* @__PURE__ */ new Map();
+  const sourceRank = {
+    signal: 5,
+    change: 4,
+    tool_finding: 3,
+    tool_text: 2,
+    web_snippet: 1
+  };
+  for (const evidence of evidences) {
+    const key = normalizeWhitespace(evidence.text).toLowerCase();
+    if (!key) continue;
+    const rank = sourceRank[evidence.source] ?? 0;
+    const existing = byText.get(key);
+    if (!existing || rank > existing.rank) {
+      byText.set(key, { ...evidence, rank });
+    }
+  }
+  return Array.from(byText.values()).map(({ text, source }) => ({ text, source }));
+}
+function deriveEvidenceKeyMetrics(args) {
+  const candidatesByLabelValue = /* @__PURE__ */ new Map();
+  const evidenceSentences = collectMetricSentences(args.execution, args.signals, args.changes);
+  const scoreMetricEvidence = (evidence) => {
+    let score = scoreEvidenceSentence(evidence.text);
+    if (evidence.source === "signal") score += 6;
+    else if (evidence.source === "change") score += 5;
+    else if (evidence.source === "tool_finding") score += 3;
+    else if (evidence.source === "tool_text") score += 2;
+    return score;
+  };
+  const metricValueMatchesLabel = (label, value) => {
+    const normalizedLabel = label.toLowerCase();
+    const isCurrency = /\$\d/i.test(value);
+    const isPercent = /%/.test(value);
+    if (normalizedLabel.includes("revenue") || normalizedLabel.includes("valuation") || normalizedLabel.includes("compute cost")) {
+      return isCurrency;
+    }
+    if (normalizedLabel.includes("gross margin") || normalizedLabel.includes("market share") || normalizedLabel.includes("growth") || normalizedLabel.includes("usage mix")) {
+      return isPercent;
+    }
+    return isCurrency || isPercent;
+  };
+  const pushMetric = (label, value, score) => {
+    const cleanedLabel = normalizeWhitespace(label);
+    const cleanedValue = normalizeMetricValue(value);
+    if (!cleanedLabel || !cleanedValue) return;
+    if (/^(sources?|confidence|comparables?|diligence flags?)$/i.test(cleanedLabel)) return;
+    if (!/(\$\d|\d+(?:\.\d+)?%|\d+(?:\.\d+)?(?:x|B|M)\b)/i.test(cleanedValue)) return;
+    if (!metricValueMatchesLabel(cleanedLabel, cleanedValue)) return;
+    const key = `${cleanedLabel.toLowerCase()}::${cleanedValue.toLowerCase()}`;
+    const existing = candidatesByLabelValue.get(key);
+    if (existing) {
+      existing.totalScore += score;
+      existing.supportCount += 1;
+      existing.maxScore = Math.max(existing.maxScore, score);
+      return;
+    }
+    candidatesByLabelValue.set(key, {
+      label: cleanedLabel,
+      value: cleanedValue,
+      totalScore: score,
+      supportCount: 1,
+      maxScore: score
+    });
+  };
+  for (const item of args.provided ?? []) {
+    if (typeof item?.label !== "string" || typeof item?.value !== "string") continue;
+    const category = getMetricCategory(item.label);
+    const bankerPercentCategory = ["gross_margin", "market_share", "growth", "usage_mix"].includes(category);
+    if (args.lens === "banker" && bankerPercentCategory) {
+      continue;
+    }
+    const requiresEvidenceSupport = args.lens === "banker" && category !== "other";
+    if (requiresEvidenceSupport && !hasMetricEvidenceSupport(item.label, item.value, evidenceSentences)) continue;
+    pushMetric(item.label, item.value, 3);
+  }
+  for (const evidence of evidenceSentences) {
+    for (const label of inferMetricLabels(evidence.text, args.entityName, args.entityTargets)) {
+      const candidate = selectMetricCandidate(evidence.text, label);
+      if (!candidate) continue;
+      let score = scoreMetricEvidence(evidence);
+      if (/\$\d/.test(candidate)) score += 2;
+      if (/%/.test(candidate)) score += 1;
+      if (label.toLowerCase().includes("revenue") || label.toLowerCase().includes("valuation")) score += 1;
+      pushMetric(label, candidate, score);
+    }
+  }
+  const bestByLabel = /* @__PURE__ */ new Map();
+  for (const candidate of candidatesByLabelValue.values()) {
+    const key = candidate.label.toLowerCase();
+    const existing = bestByLabel.get(key);
+    if (!existing || candidate.supportCount > existing.supportCount || candidate.supportCount === existing.supportCount && candidate.totalScore > existing.totalScore || candidate.supportCount === existing.supportCount && candidate.totalScore === existing.totalScore && candidate.maxScore > existing.maxScore) {
+      bestByLabel.set(key, candidate);
+    }
+  }
+  const ranked = Array.from(bestByLabel.values()).sort(
+    (left, right) => right.supportCount - left.supportCount || right.totalScore - left.totalScore || right.maxScore - left.maxScore || left.label.localeCompare(right.label)
+  );
+  const limit = args.lens === "banker" ? 6 : 4;
+  const preferredCategoryOrder = args.lens === "banker" ? ["revenue", "valuation", "gross_margin", "compute_cost", "market_share", "growth", "usage_mix", "other"] : ["revenue", "growth", "valuation", "gross_margin", "compute_cost", "market_share", "usage_mix", "other"];
+  const selected = [];
+  const selectedLabels = /* @__PURE__ */ new Set();
+  const entityCounts = /* @__PURE__ */ new Map();
+  const canSelectMetric = (metric) => {
+    if (selectedLabels.has(metric.label.toLowerCase())) return false;
+    if (!(args.lens === "banker" && args.classification === "multi_entity")) return true;
+    const entity = inferMetricEntity(metric.label, args.entityName, args.entityTargets);
+    if (!entity) return true;
+    return (entityCounts.get(entity.toLowerCase()) ?? 0) < 2;
+  };
+  const commitMetric = (metric) => {
+    const key = metric.label.toLowerCase();
+    if (selectedLabels.has(key)) return;
+    selected.push(metric);
+    selectedLabels.add(key);
+    const entity = inferMetricEntity(metric.label, args.entityName, args.entityTargets);
+    if (entity) {
+      const entityKey = entity.toLowerCase();
+      entityCounts.set(entityKey, (entityCounts.get(entityKey) ?? 0) + 1);
+    }
+  };
+  for (const category of preferredCategoryOrder) {
+    if (selected.length >= limit) break;
+    const candidate = ranked.find((metric) => getMetricCategory(metric.label) === category && canSelectMetric(metric));
+    if (candidate) commitMetric(candidate);
+  }
+  for (const metric of ranked) {
+    if (selected.length >= limit) break;
+    if (!canSelectMetric(metric)) continue;
+    commitMetric(metric);
+  }
+  return selected.map(({ label, value }) => ({ label, value }));
+}
+function sanitizeSources(items, execution) {
+  const seen = /* @__PURE__ */ new Set();
+  const sanitized = [];
+  const pushSource = (label, href, type) => {
+    const cleanedLabel = normalizeWhitespace(label);
+    if (!cleanedLabel || /^(web_search|run_recon|linkup_search|enrich_entity|simulate_decision_paths)$/i.test(cleanedLabel)) {
+      return;
+    }
+    if (/\b(powerhouse hiding in plain sight|worth buying|turns the tables|arms race|who will win|why .* is winning|leading one half|outlook report|ramp ai index)\b/i.test(cleanedLabel)) {
+      return;
+    }
+    if (href && /vertexaisearch\.cloud\.google\.com\/grounding-api-redirect/i.test(href)) {
+      return;
+    }
+    const authorityScore = scoreSourceAuthority(cleanedLabel, href, type || "web");
+    if (authorityScore < 0) {
+      return;
+    }
+    const key = `${cleanedLabel.toLowerCase()}::${href ?? ""}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    sanitized.push({ label: cleanedLabel, href, type: type || "web", authorityScore });
+  };
+  for (const item of items ?? []) {
+    pushSource(String(item?.label ?? ""), item?.href, String(item?.type ?? "web"));
+  }
+  if (sanitized.length === 0) {
+    for (const step of execution.stepResults) {
+      if (!step.success || !step.result) continue;
+      const raw = step.result;
+      for (const source of raw?.sources ?? []) {
+        pushSource(String(source?.name ?? source?.title ?? ""), source?.url, "web");
+      }
+      for (const source of raw?.results ?? raw?.webResults ?? []) {
+        pushSource(String(source?.title ?? source?.name ?? ""), source?.url ?? source?.link ?? source?.href, "web");
+      }
+    }
+  }
+  const webSources = sanitized.filter((item) => item.type === "web" && item.href).sort((left, right) => right.authorityScore - left.authorityScore || left.label.localeCompare(right.label));
+  if (webSources.length >= 3) {
+    const retainedLocalSources = sanitized.filter(
+      (item) => item.type !== "web" && /\b(10-k|10-q|earnings|filing|transcript|investor presentation|proxy|sec|official release)\b/i.test(item.label)
+    );
+    return [...webSources, ...retainedLocalSources].slice(0, 8).map(({ label, href, type }) => ({ label, href, type }));
+  }
+  return sanitized.slice(0, 8).map(({ label, href, type }) => ({ label, href, type }));
+}
+function sanitizeExecutiveAnswer(answer, entityName, keyMetrics, signals, comparables, risks, nextActions, context) {
+  const cleaned = normalizeWhitespace(answer.replace(/```json|```/g, ""));
+  const sentences = dedupeStrings2(sentenceSplit(cleaned)).filter((sentence) => sentence.length >= 25 && !/^sources?:/i.test(sentence));
+  const filteredSentences = sentences.filter(
+    (sentence) => !/\b(arms race|what investors need to know|index\s+\w+\s+update|source artifact|worth buying|turns the tables|leading one half)\b/i.test(sentence) && !looksLikeNarrativeFluff(sentence) && !looksLikeSpeculativeCapitalMarketsFiller(sentence) && !looksLikeGenericMarketBackdrop(sentence)
+  );
+  const looksHealthy = filteredSentences.length >= 2 && filteredSentences.length <= 5 && cleaned.length <= 700 && !/\.{3,}|^\{/.test(cleaned) && filteredSentences.every((sentence) => /[.!?]$/.test(sentence) || sentence.length <= 100) && !filteredSentences.some((sentence) => looksLikeSourceTitle(sentence) || looksLikeFundingHeadline(sentence)) && !looksLikeSourceTitle(cleaned) && !looksLikeFundingHeadline(cleaned) && !looksLikeSpeculativeCapitalMarketsFiller(cleaned) && !looksLikeGenericMarketBackdrop(cleaned) && !/(most clearly defined against|what investors need to know|arms race|index\s+\w+\s+update|worth buying|turns the tables|leading one half)/i.test(cleaned);
+  const summarySignals = signals.filter((signal) => !looksLikeGenericMarketBackdrop(signal.name));
+  if (looksHealthy) {
+    return filteredSentences.slice(0, 4).join(" ");
+  }
+  const summaryParts = [];
+  const preferredLeadSignal = summarySignals.find((signal) => !containsRiskLanguage(signal.name) && scoreUnderwritingSignal(signal.name) >= 6) ?? summarySignals.find((signal) => !containsRiskLanguage(signal.name) && (signal.direction === "up" || scoreUnderwritingSignal(signal.name) >= 4)) ?? summarySignals.find((signal) => !containsRiskLanguage(signal.name)) ?? summarySignals[0] ?? signals.find((signal) => !containsRiskLanguage(signal.name) && scoreUnderwritingSignal(signal.name) >= 6) ?? signals.find((signal) => !containsRiskLanguage(signal.name) && (signal.direction === "up" || scoreUnderwritingSignal(signal.name) >= 4)) ?? signals.find((signal) => !containsRiskLanguage(signal.name)) ?? signals[0];
+  const leadSignalEntity = context?.classification === "multi_entity" ? inferMetricEntity(preferredLeadSignal?.name ?? "", entityName, context?.entityTargets) : null;
+  const supportCandidates = [...summarySignals, ...signals].filter((signal) => signal.name !== preferredLeadSignal?.name).filter((signal) => {
+    if (context?.classification !== "multi_entity") return true;
+    if (!looksLikeAmbiguousSubjectSignal(signal.name)) return true;
+    return mentionsEntityTarget(signal.name, context?.entityTargets);
+  });
+  const preferredSupportSignal = supportCandidates.find(
+    (signal) => context?.classification === "multi_entity" && leadSignalEntity && !containsRiskLanguage(signal.name) && scoreUnderwritingSignal(signal.name) >= 6 && inferMetricEntity(signal.name, entityName, context?.entityTargets) && inferMetricEntity(signal.name, entityName, context?.entityTargets) !== leadSignalEntity
+  ) ?? supportCandidates.find((signal) => !containsRiskLanguage(signal.name) && scoreUnderwritingSignal(signal.name) >= 6 && (context?.classification !== "multi_entity" || mentionsEntityTarget(signal.name, context?.entityTargets))) ?? supportCandidates.find((signal) => !containsRiskLanguage(signal.name) && scoreUnderwritingSignal(signal.name) >= 4) ?? supportCandidates.find((signal) => !containsRiskLanguage(signal.name)) ?? supportCandidates.find(() => true) ?? null;
+  const leadSignal = preferredLeadSignal?.name;
+  const supportSignal = preferredSupportSignal?.name;
+  const leadComparable = comparables[0]?.name;
+  const comparableLabel = comparables.slice(0, 2).map((item) => item.name).join(" and ");
+  const leadRisk = risks[0];
+  const comparisonSet = dedupeStrings2((context?.entityTargets ?? []).map((item) => normalizeWhitespace(String(item)))).slice(0, 3);
+  const bankerMetricClauses = keyMetrics.slice(0, context?.lens === "banker" ? 4 : 3).map((metric) => formatMetricClause(metric)).filter(Boolean);
+  if (context?.lens === "banker") {
+    const scope = context?.classification === "multi_entity" ? comparisonSet.length > 1 ? comparisonSet.join(", ") : entityName : entityName;
+    summaryParts.push(
+      context?.classification === "multi_entity" ? `The current underwriting read on ${scope} is that the peer set is separating on revenue quality, margin durability, and distribution leverage rather than raw model quality alone.` : `The current underwriting read on ${entityName} is that the cited evidence supports a real operating story, but the quality of revenue and durability of pricing still need to hold up under diligence.`
+    );
+    if (bankerMetricClauses.length > 0) {
+      summaryParts.push(`Current hard datapoints include ${joinNaturalLanguage(bankerMetricClauses)}.`);
+    } else if (leadSignal && !looksLikeSourceTitle(leadSignal) && !looksLikeEvidenceFragment(leadSignal) && leadSignal.length <= 170) {
+      summaryParts.push(`One critical data point is ${stripTrailingConnectorTail(compressNarrativePhrase(leadSignal, 150))}.`);
+    }
+    if (leadRisk) {
+      summaryParts.push(
+        context?.classification === "multi_entity" ? `The underwriting question is which platform can keep pricing power and contract durability once buyers consolidate spend, with ${leadRisk.title.toLowerCase()} as the main current flag because ${stripTrailingConnectorTail(compressNarrativePhrase(leadRisk.description, 135))}.` : `The underwriting question is whether ${entityName} can keep pricing power and contract durability, with ${leadRisk.title.toLowerCase()} as the main current flag because ${stripTrailingConnectorTail(compressNarrativePhrase(leadRisk.description, 135))}.`
+      );
+    } else if (comparableLabel) {
+      summaryParts.push(`The closest operating comparables in the cited set are ${comparableLabel}.`);
+    }
+    if (nextActions[0]?.action) {
+      summaryParts.push(`The immediate next step is to ${nextActions[0].action.charAt(0).toLowerCase()}${nextActions[0].action.slice(1)}.`);
+    }
+    return normalizeWhitespace(summaryParts.slice(0, 4).join(" ")).replace(/\.(?:\s*\.)+/g, ".").replace(/\.{2,}/g, ".");
+  }
+  if (context?.classification === "multi_entity") {
+    const scope = comparisonSet.length > 1 ? comparisonSet.join(", ") : entityName;
+    summaryParts.push(`Across ${scope}, the current evidence separates the peer set on enterprise traction, pricing leverage, and distribution durability.`);
+    if (leadSignal && !looksLikeSourceTitle(leadSignal) && !looksLikeEvidenceFragment(leadSignal) && leadSignal.length <= 170) {
+      summaryParts.push(`One critical data point is ${stripTrailingConnectorTail(compressNarrativePhrase(leadSignal, 150))}.`);
+      if (context?.lens === "banker" && supportSignal && supportSignal !== leadSignal && !looksLikeSourceTitle(supportSignal) && !looksLikeEvidenceFragment(supportSignal)) {
+        summaryParts.push(`A second underwriting datapoint is ${stripTrailingConnectorTail(compressNarrativePhrase(supportSignal, 145))}.`);
+      }
+    } else if (context?.lens === "banker") {
+      summaryParts.push("The current read suggests the comparison is separating on distribution leverage, contract durability, and pricing power rather than raw model capability alone.");
+    } else {
+      summaryParts.push("The current read suggests the comparison is separating on enterprise distribution, pricing leverage, and buyer fit.");
+    }
+    if (context?.lens === "banker") {
+      summaryParts.push("For a banker, the underwriting question is which platform can hold pricing power and contract durability once enterprise buyers consolidate spend.");
+    }
+    if (leadRisk) {
+      summaryParts.push(`The main diligence flag is ${leadRisk.title.toLowerCase()}, which matters because ${stripTrailingConnectorTail(compressNarrativePhrase(leadRisk.description, 135))}.`);
+    }
+    if (nextActions[0]?.action) {
+      summaryParts.push(`The immediate next move is to ${nextActions[0].action.charAt(0).toLowerCase()}${nextActions[0].action.slice(1)}.`);
+    }
+    return summaryParts.slice(0, 4).join(" ");
+  }
+  summaryParts.push(
+    leadSignal && isNarrativeReadySignal(leadSignal) && !looksLikeEvidenceFragment(leadSignal) ? `${entityName} is showing a real operating signal: ${stripTrailingConnectorTail(compressNarrativePhrase(leadSignal, 145))}.` : `${entityName} is being assessed on enterprise traction, pricing leverage, and contract durability using the current cited evidence set.`
+  );
+  if (leadComparable) {
+    summaryParts.push(
+      comparableLabel ? `The closest operating comparables in the current evidence set are ${comparableLabel}.` : `${entityName}'s closest operating comparable in the current evidence set is ${leadComparable}.`
+    );
+    if (context?.lens === "banker") {
+      summaryParts.push(`For a banker, the underwriting question is whether ${entityName} can defend pricing and contract durability against ${comparableLabel || leadComparable}.`);
+    }
+  }
+  if (leadRisk) {
+    summaryParts.push(`The main diligence flag is ${leadRisk.title.toLowerCase()}, which matters because ${stripTrailingConnectorTail(compressNarrativePhrase(leadRisk.description, 130))}.`);
+  }
+  if (nextActions[0]?.action) {
+    summaryParts.push(`The immediate next move is to ${nextActions[0].action.charAt(0).toLowerCase()}${nextActions[0].action.slice(1)}.`);
+  }
+  return normalizeWhitespace(summaryParts.slice(0, 4).join(" ")).replace(/\.(?:\s*\.)+/g, ".").replace(/\.{2,}/g, ".");
+}
 function budgetToolData(toolResults, maxTokensBudget) {
   const inputBudget = Math.floor(maxTokensBudget * 0.6 * 4);
   const perToolBudget = Math.floor(inputBudget / Math.max(toolResults.length, 1));
@@ -10179,8 +11825,19 @@ async function callModel(config, prompt, system, maxTokens) {
   const data = await resp.json();
   return config.extractResponse(data);
 }
-async function callLLM(_callTool, prompt, system, maxTokens) {
+async function callLLM(callTool, prompt, system, maxTokens) {
   const tokens = maxTokens ?? 1e3;
+  try {
+    const toolResult = await callTool("call_llm", {
+      prompt,
+      system,
+      maxTokens: tokens,
+      temperature: 0
+    });
+    const text = typeof toolResult === "string" ? toolResult : toolResult?.error ? "" : String(toolResult?.response ?? toolResult?.output ?? toolResult?.content ?? "");
+    if (text.length > 10) return text;
+  } catch {
+  }
   const complexity = assessComplexity(prompt, tokens);
   const primaryModel = GEMINI_MODELS[complexity];
   const chain = [primaryModel];
@@ -10232,6 +11889,9 @@ Rules:
 - For comparisons: web_search per entity in parallel, then compare.
 - Always include at least one intelligence-gathering step.`;
 async function generatePlan(query, classification, entityTargets, lens, callTool) {
+  if (classification === "multi_entity" || classification === "weekly_reset" || classification === "company_search" || classification === "competitor") {
+    return buildFallbackPlan(query, classification, entityTargets, lens);
+  }
   try {
     const text = await callLLM(
       callTool,
@@ -10295,13 +11955,15 @@ function buildFallbackPlan(query, classification, entityTargets, lens) {
   switch (classification) {
     case "weekly_reset":
       return {
-        objective: "Generate founder weekly reset",
+        objective: "Generate founder weekly reset with latest market signals",
         classification,
         entityTargets,
         steps: [
-          { id: "s1", toolName: "founder_local_weekly_reset", args: { daysBack: 7 }, purpose: "Get weekly reset packet", parallel: false }
+          { id: "s1", toolName: "founder_local_weekly_reset", args: { daysBack: 7 }, purpose: "Get weekly reset packet", parallel: true },
+          { id: "s2", toolName: "web_search", args: { query: `AI startup ecosystem latest news changes this week ${year}`, maxResults: 5 }, purpose: "Latest market signals (fallback for serverless)", parallel: true },
+          { id: "s3", toolName: "linkup_search", args: { query: `top AI and tech changes this week ${year}`, maxResults: 3 }, purpose: "Deep intelligence on weekly changes", parallel: true }
         ],
-        synthesisPrompt: "Format as a weekly founder reset with what changed, contradictions, and next 3 moves."
+        synthesisPrompt: "Format as a weekly founder reset: what changed, biggest risks, and next 3 moves. Use web intelligence when local context is unavailable."
       };
     case "important_change":
     case "pre_delegation":
@@ -10315,35 +11977,43 @@ function buildFallbackPlan(query, classification, entityTargets, lens) {
         synthesisPrompt: "Format as a structured founder packet."
       };
     case "multi_entity": {
-      const steps = entityTargets.slice(0, 4).flatMap((e, i) => [
+      const comparisonSet = entityTargets.slice(0, 3);
+      const steps = comparisonSet.flatMap((e, i) => [
         {
-          id: `s${i * 2 + 1}`,
-          toolName: "web_search",
-          args: { query: `${e} company overview strategy competitors ${year}`, maxResults: 4 },
-          purpose: `Research ${e}`,
+          id: `s${i * 4 + 1}`,
+          toolName: "linkup_search",
+          args: { query: `${e} enterprise AI revenue valuation customers pricing competitors ${year}`, maxResults: 4 },
+          purpose: `Deep comparative research for ${e}`,
           parallel: true
         },
         {
-          id: `s${i * 2 + 2}`,
+          id: `s${i * 4 + 2}`,
+          toolName: "web_search",
+          args: { query: `${e} competitors market share enterprise AI pricing risks ${year}`, maxResults: 4 },
+          purpose: `Competitive and pricing evidence for ${e}`,
+          parallel: true
+        },
+        {
+          id: `s${i * 4 + 3}`,
+          toolName: "run_recon",
+          args: { target: e, focus: `Compare ${e} against ${comparisonSet.filter((target) => target !== e).join(", ") || query}` },
+          purpose: `Structured diligence scan for ${e}`,
+          parallel: true
+        },
+        {
+          id: `s${i * 4 + 4}`,
           toolName: "enrich_entity",
-          args: { query: `${e} competitive position`, entityName: e, lens },
-          purpose: `Enrich ${e}`,
+          args: { query: `${e} competitive position, enterprise traction, and diligence flags`, entityName: e, lens },
+          purpose: `Structured enrichment for ${e}`,
           parallel: true
         }
       ]);
-      steps.push({
-        id: `s${steps.length + 1}`,
-        toolName: "founder_local_gather",
-        args: { daysBack: 7 },
-        purpose: "Get local context",
-        parallel: true
-      });
       return {
-        objective: `Compare ${entityTargets.join(" vs ")}`,
+        objective: `Compare ${comparisonSet.join(" vs ")}`,
         classification,
         entityTargets,
         steps,
-        synthesisPrompt: `Compare ${entityTargets.join(", ")} across key dimensions for a ${lens} audience.`
+        synthesisPrompt: lens === "banker" ? `Build an investment-banking style comparative briefing on ${comparisonSet.join(", ")}. Cover market position, financial evidence, comparables, diligence flags, and next diligence questions.` : `Compare ${comparisonSet.join(", ")} across competitive position, traction, risks, and next actions for a ${lens} audience.`
       };
     }
     case "company_search":
@@ -10353,14 +12023,14 @@ function buildFallbackPlan(query, classification, entityTargets, lens) {
         classification,
         entityTargets,
         steps: [
-          { id: "s1", toolName: "linkup_search", args: { query: `${entity} company overview strategy funding competitive position ${year}`, maxResults: 5 }, purpose: "Linkup deep intelligence", parallel: true },
-          { id: "s2", toolName: "web_search", args: { query: `${entity} competitors risks challenges ${year}`, maxResults: 5 }, purpose: "Competitive & risk intelligence", parallel: true },
-          { id: "s3", toolName: "enrich_entity", args: { query: `${entity} competitive position`, entityName: entity, lens }, purpose: "Structured entity enrichment", parallel: true },
-          { id: "s4", toolName: "run_recon", args: { target: entity, focus: query }, purpose: "Deep recon", parallel: true },
-          { id: "s5", toolName: "simulate_decision_paths", args: { entity, revenue: 0, marketShare: 0.01, runway: 18 }, purpose: "Monte Carlo: 3-case financial model (bull/base/bear)", parallel: true }
+          { id: "s1", toolName: "linkup_search", args: { query: `${entity} revenue valuation funding enterprise customers market share ${year}`, maxResults: 5 }, purpose: "Deep entity, financial, and market-share intelligence", parallel: true },
+          { id: "s2", toolName: "web_search", args: { query: `${entity} competitors enterprise market share pricing risks ${year}`, maxResults: 5 }, purpose: "Competitive map, pricing pressure, and core risks", parallel: true },
+          { id: "s3", toolName: "web_search", args: { query: `${entity} revenue valuation funding growth enterprise customers ${year}`, maxResults: 5 }, purpose: "Financial and operating evidence", parallel: true },
+          { id: "s4", toolName: "run_recon", args: { target: entity, focus: query }, purpose: "Structured recon for positioning and diligence gaps", parallel: true },
+          { id: "s5", toolName: "enrich_entity", args: { query: `${entity} strategic position and competitive moat`, entityName: entity, lens }, purpose: "Structured lens-specific synthesis", parallel: true }
           // NOTE: founder_local_gather EXCLUDED from external entity searches.
         ],
-        synthesisPrompt: `Synthesize intelligence about ${entity} for a ${lens} audience. Include signals, risks, comparables, and next actions.`
+        synthesisPrompt: `Synthesize intelligence about ${entity} for a ${lens} audience. Include financial facts, competitive set, diligence flags, and concrete next actions.`
       };
     case "plan_proposal":
       return {
@@ -10387,10 +12057,11 @@ function buildFallbackPlan(query, classification, entityTargets, lens) {
       };
   }
 }
-async function executeHarness(plan, callTool, onTrace) {
+async function executeHarness(plan, callTool, onTrace, options) {
   const startMs = Date.now();
   const stepResults = [];
   const completedSteps = /* @__PURE__ */ new Set();
+  const toolTimeoutMs = options?.toolTimeoutMs ?? 12e3;
   const readySteps = plan.steps.filter((s) => !s.dependsOn);
   const dependentSteps = plan.steps.filter((s) => s.dependsOn);
   const parallelBatch = readySteps.filter((s) => s.parallel);
@@ -10404,7 +12075,7 @@ async function executeHarness(plan, callTool, onTrace) {
         try {
           const result = await Promise.race([
             callTool(step.toolName, step.args),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 12e3))
+            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), toolTimeoutMs))
           ]);
           const duration = Date.now() - stepStart;
           completedSteps.add(step.id);
@@ -10422,7 +12093,7 @@ async function executeHarness(plan, callTool, onTrace) {
     try {
       const result = await Promise.race([
         callTool(step.toolName, step.args),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 12e3))
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), toolTimeoutMs))
       ]);
       completedSteps.add(step.id);
       stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: Date.now() - stepStart });
@@ -10437,7 +12108,7 @@ async function executeHarness(plan, callTool, onTrace) {
     try {
       const result = await Promise.race([
         callTool(step.toolName, step.args),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 12e3))
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), toolTimeoutMs))
       ]);
       completedSteps.add(step.id);
       stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: Date.now() - stepStart });
@@ -10455,6 +12126,7 @@ async function executeHarness(plan, callTool, onTrace) {
   };
 }
 async function synthesizeResults(execution, query, lens, callTool) {
+  const comparableFallbacks = deriveComparableCandidates(execution, execution.plan.entityTargets[0] ?? extractEntityFromQuery(query));
   const resultData = execution.stepResults.filter((r) => r.success && r.result).map((r) => {
     const res = r.result;
     return {
@@ -10462,7 +12134,8 @@ async function synthesizeResults(execution, query, lens, callTool) {
       data: typeof res === "string" ? res : JSON.stringify(res)
     };
   });
-  const entityName = execution.plan.entityTargets[0] ?? extractEntityFromQuery(query);
+  const nonEntityTypes = /* @__PURE__ */ new Set(["weekly_reset", "important_change", "pre_delegation", "general"]);
+  const entityName = execution.plan.classification === "multi_entity" && (execution.plan.entityTargets?.length ?? 0) > 1 ? execution.plan.entityTargets.slice(0, 3).join(" vs ") : execution.plan.entityTargets[0] ?? (nonEntityTypes.has(execution.plan.classification) ? "Your Intelligence Brief" : extractEntityFromQuery(query));
   if (resultData.length > 0) {
     try {
       const text = await callLLM(
@@ -10478,43 +12151,122 @@ ${budgetToolData(resultData, 32e3)}
 
 ANALYSIS REQUIREMENTS:
 1. ANSWER: Write a 3-4 sentence executive summary with SPECIFIC numbers, dates, and facts from the data. No generic statements. If data says "$26B revenue" \u2014 cite it. If data mentions "70% market share" \u2014 cite it.
-2. SIGNALS: Extract 3-5 key signals with direction (up/down/neutral) and impact. Each signal must reference a specific fact from the data, not a generic observation.
+2. KEY METRICS: Extract up to 4 banker-grade datapoints as {label, value}. Use real numbers only, such as revenue, valuation, gross margin, market share, compute cost, or growth.
+3. SIGNALS: Extract 3-5 key signals with direction (up/down/neutral) and impact. Each signal must reference a specific fact from the data, not a generic observation.
 3. RISKS: Identify 2-3 material risks with evidence. For each risk, explain WHY it matters and what could trigger it. Not just "competition risk" \u2014 specify which competitor and what they're doing.
 4. COMPARABLES: Name 2-4 direct competitors with WHY they're relevant (what they do differently, where they overlap, competitive advantage). Include evidence from the data.
-5. NEXT ACTIONS: 2-3 specific, actionable steps the ${lens} should take this week. Not generic "do more research" \u2014 specific actions like "review Q4 filing for revenue breakdown" or "compare pricing vs competitor X".
-6. FOLLOW-UP QUESTIONS: 3-4 specific questions that would deepen this analysis. Questions should reference gaps in the current data.
-7. SOURCES: List actual source names/URLs from the data. Never list tool names like "web_search" or "run_recon". Use the actual article titles, document names, or website domains.
+   - Never use publishers, research outlets, indices, newsletters, or article-title fragments as comparables.
+   - For multi-entity requests, keep the comparison set anchored to the companies explicitly in scope plus directly adjacent operating peers only.
+5. WHY THIS TEAM (REQUIRED \u2014 this is the most important section. What makes outsiders trust or doubt this company):
+   - founderCredibility: 1-2 sentences on founder background, domain relevance, and what makes them credible for THIS problem
+   - trustSignals: 2-4 specific trust-building facts (notable backers, advisors, prior exits, shipped products, institutional affiliations, public work)
+   - visionMagnitude: 1-2 sentences \u2014 is the opportunity large enough to matter? Feature, product, or company?
+   - reinventionCapacity: 1 sentence \u2014 can this team adapt if the wedge changes? Evidence of resilience/iteration.
+   - hiddenRequirements: 2-4 things sophisticated outsiders (VCs, banks, enterprise buyers) would secretly expect before taking this seriously
+6. NEXT ACTIONS: 2-3 specific, actionable steps the ${lens} should take this week. Not generic "do more research" \u2014 specific actions like "review Q4 filing for revenue breakdown" or "compare pricing vs competitor X".
+7. FOLLOW-UP QUESTIONS: 3-4 specific questions that would deepen this analysis. Questions should reference gaps in the current data.
+8. SOURCES: List actual source names/URLs from the data. Never list tool names like "web_search" or "run_recon". Use the actual article titles, document names, or website domains.
 
-Return ONLY valid JSON:
+Return ONLY valid JSON with ALL fields populated:
 {
-  "entityName": "the primary company/entity name",
-  "answer": "3-4 sentence executive summary with specific facts and numbers",
+  "entityName": "company name",
+  "answer": "3-4 sentence summary with numbers",
   "confidence": 0-100,
-  "signals": [{"name": "specific signal with numbers", "direction": "up|down|neutral", "impact": "high|medium|low"}],
-  "changes": [{"description": "specific recent change with date if available"}],
-  "risks": [{"title": "specific risk name", "description": "2-3 sentence explanation with evidence and trigger conditions"}],
-  "comparables": [{"name": "competitor name", "relevance": "high|medium|low", "note": "specific reason why they're relevant \u2014 what they do, how they compete"}],
-  "nextActions": [{"action": "specific actionable step for this week", "impact": "high|medium|low"}],
-  "nextQuestions": ["specific follow-up question referencing data gaps"],
-  "sources": [{"label": "actual source title or domain", "href": "url if available", "type": "web|doc"}]
+  "keyMetrics": [{"label": "metric name", "value": "metric value"}],
+  "whyThisTeam": {"founderCredibility": "why these founders are credible for this problem", "trustSignals": ["signal1", "signal2"], "visionMagnitude": "feature, product, or company-scale?", "reinventionCapacity": "can they pivot?", "hiddenRequirements": ["what outsiders expect"]},
+  "signals": [{"name": "signal", "direction": "up|down|neutral", "impact": "high|medium|low"}],
+  "changes": [{"description": "recent change"}],
+  "risks": [{"title": "risk", "description": "why it matters"}],
+  "comparables": [{"name": "competitor", "relevance": "high|medium|low", "note": "why relevant"}],
+  "nextActions": [{"action": "step", "impact": "high|medium|low"}],
+  "nextQuestions": ["follow-up question"],
+  "sources": [{"label": "source title", "href": "url", "type": "web|doc"}]
 }`,
         "You are a senior investment banking analyst. Every claim must cite specific data. No generic statements. No placeholder text. If data is insufficient, say so honestly rather than fabricating.",
-        1500
+        2200
       );
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
+        const signals2 = mergeSignals(collectFallbackSignals(execution), sanitizeSignals(parsed.signals));
+        const changes2 = sanitizeChanges([
+          ...collectFallbackChanges(execution),
+          ...Array.isArray(parsed.changes) ? parsed.changes : []
+        ]);
+        const risks2 = sanitizeRisks([
+          ...collectFallbackRisks(execution),
+          ...Array.isArray(parsed.risks) ? parsed.risks : []
+        ]);
+        const comparables2 = sanitizeComparables(parsed.comparables, entityName, comparableFallbacks, {
+          classification: execution.plan.classification,
+          entityTargets: execution.plan.entityTargets
+        });
+        const keyMetrics2 = deriveEvidenceKeyMetrics({
+          provided: Array.isArray(parsed.keyMetrics) ? parsed.keyMetrics : [],
+          execution,
+          entityName,
+          entityTargets: execution.plan.entityTargets,
+          lens,
+          classification: execution.plan.classification,
+          signals: signals2,
+          changes: changes2
+        });
+        const nextActions2 = sanitizeNextActions(parsed.nextActions, lens, entityName, comparables2, risks2, {
+          classification: execution.plan.classification,
+          entityTargets: execution.plan.entityTargets
+        });
+        const sources2 = sanitizeSources(parsed.sources, execution);
+        const nextQuestions = dedupeStrings2(
+          Array.isArray(parsed.nextQuestions) ? parsed.nextQuestions.map((item) => String(item ?? "")) : []
+        ).filter((item) => item.length >= 12 && isQuestionLike(item)).slice(0, 4);
+        const finalQuestions = dedupeStrings2([
+          ...nextQuestions,
+          ...buildDefaultNextQuestions({
+            classification: execution.plan.classification,
+            entityName,
+            comparables: comparables2,
+            risks: risks2,
+            entityTargets: execution.plan.entityTargets
+          })
+        ]).slice(0, 4);
+        const whyThisTeam = parsed.whyThisTeam && typeof parsed.whyThisTeam === "object" ? {
+          founderCredibility: normalizeWhitespace(String(parsed.whyThisTeam.founderCredibility ?? "")),
+          trustSignals: dedupeStrings2(
+            Array.isArray(parsed.whyThisTeam.trustSignals) ? parsed.whyThisTeam.trustSignals.map((item) => String(item ?? "")) : []
+          ).slice(0, 4),
+          visionMagnitude: normalizeWhitespace(String(parsed.whyThisTeam.visionMagnitude ?? "")),
+          reinventionCapacity: normalizeWhitespace(String(parsed.whyThisTeam.reinventionCapacity ?? "")),
+          hiddenRequirements: dedupeStrings2(
+            Array.isArray(parsed.whyThisTeam.hiddenRequirements) ? parsed.whyThisTeam.hiddenRequirements.map((item) => String(item ?? "")) : []
+          ).slice(0, 4)
+        } : null;
+        const answer2 = sanitizeExecutiveAnswer(
+          String(parsed.answer ?? ""),
+          entityName,
+          keyMetrics2,
+          signals2,
+          comparables2,
+          risks2,
+          nextActions2,
+          {
+            classification: execution.plan.classification,
+            entityTargets: execution.plan.entityTargets,
+            lens
+          }
+        );
         return {
           entityName: parsed.entityName ?? entityName,
-          answer: parsed.answer ?? "",
+          answer: answer2,
           confidence: typeof parsed.confidence === "number" ? parsed.confidence : 50,
-          signals: parsed.signals ?? [],
-          changes: parsed.changes ?? [],
-          risks: parsed.risks ?? [],
-          comparables: parsed.comparables ?? [],
-          nextActions: parsed.nextActions ?? [],
-          nextQuestions: parsed.nextQuestions ?? [],
-          sources: parsed.sources ?? []
+          keyMetrics: keyMetrics2,
+          signals: signals2,
+          changes: changes2,
+          risks: risks2,
+          comparables: comparables2,
+          whyThisTeam,
+          nextActions: nextActions2,
+          nextQuestions: finalQuestions,
+          sources: sources2
         };
       }
     } catch {
@@ -10541,18 +12293,23 @@ Return ONLY valid JSON:
         if (title) sources.push({ label: title.slice(0, 80), href: url || void 0, type: "web" });
         if (snippet) {
           if (/\b(revenue|growth|raised|funding|launch|expand|partner|acquir|billion|million|valuation)/i.test(snippet)) {
-            signals.push({ name: snippet.slice(0, 60), direction: "up", impact: "high" });
+            const titleNeg = /\b(trouble|fail|declin|crash|struggle|layoff|scandal|problem|crisis|concern|threaten|warn)/i.test(title || snippet);
+            signals.push({ name: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 120), direction: titleNeg ? "down" : "up", impact: "high" });
           }
           if (/\b(layoff|decline|loss|risk|lawsuit|regulat|concern|investig|threat|challenge|vulnerab)/i.test(snippet)) {
-            risks.push({ title: "Risk: " + title.slice(0, 40), description: snippet.slice(0, 150) });
+            risks.push({ title: inferRiskTitleFromDescription(snippet), description: snippet.slice(0, 200) });
           }
           if (/\b(compet|rival|alternative|versus|vs\.|compared to)/i.test(snippet)) {
             const compMatch = snippet.match(/(?:competitors?|rivals?|alternatives?)\s+(?:like|such as|including)\s+([A-Z][a-zA-Z]+(?:\s*,\s*[A-Z][a-zA-Z]+)*)/i);
             if (compMatch) {
               for (const name of compMatch[1].split(/,\s*/)) {
-                if (name.trim().length > 1) comparables.push({ name: name.trim(), relevance: "high", note: "Identified via Linkup" });
+                if (name.trim().length > 2 && !/^(and|or|the|a|an|its|their|also|but|with)$/i.test(name.trim())) comparables.push({ name: name.trim(), relevance: "high", note: "Identified via Linkup" });
               }
             }
+          }
+          if (/\b(announced|launched|released|updated|acquired|raised|hired|expanded|partnered|introduced|unveiled|reported)\b/i.test(snippet)) {
+            const description = normalizeChangeDescription(extractEvidenceSentencesSafe(snippet)[0] ?? snippet);
+            if (description) changes.push({ description });
           }
         }
       }
@@ -10567,10 +12324,23 @@ Return ONLY valid JSON:
         if (snippet) {
           answerParts.push(snippet.slice(0, 200));
           if (/\b(growth|revenue|raised|funding|launch|expand|partner|acquir)/i.test(snippet)) {
-            signals.push({ name: title.slice(0, 60), direction: "up", impact: "medium" });
+            const titleNeg = /\b(trouble|fail|declin|crash|struggle|layoff|scandal|problem|crisis|concern|threaten|warn)/i.test(title);
+            signals.push({ name: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 120), direction: titleNeg ? "down" : "up", impact: "medium" });
           }
           if (/\b(layoff|decline|loss|risk|lawsuit|regulat|concern|investig)/i.test(snippet)) {
-            risks.push({ title: title.slice(0, 60), description: snippet.slice(0, 150) });
+            risks.push({ title: inferRiskTitleFromDescription(snippet), description: snippet.slice(0, 200) });
+          }
+          if (/\b(announced|launched|released|updated|acquired|raised|hired|expanded|partnered|introduced|unveiled|reported)\b/i.test(snippet)) {
+            const description = normalizeChangeDescription(extractEvidenceSentencesSafe(snippet)[0] ?? snippet);
+            if (description) changes.push({ description });
+          }
+          if (/\b(compet|rival|alternative|versus|vs\.|compared to)/i.test(snippet)) {
+            const compMatch = snippet.match(/(?:competitors?|rivals?|alternatives?)\s+(?:like|such as|including)\s+([A-Z][a-zA-Z]+(?:\s*,\s*[A-Z][a-zA-Z]+)*)/i);
+            if (compMatch) {
+              for (const name of compMatch[1].split(/,\s*/)) {
+                if (name.trim().length > 2 && !/^(and|or|the|a|an|its|their|also|but|with)$/i.test(name.trim())) comparables.push({ name: name.trim(), relevance: "high", note: "Web intelligence" });
+              }
+            }
           }
         }
       }
@@ -10588,7 +12358,13 @@ Return ONLY valid JSON:
       if (raw?.findings) {
         for (const f of (Array.isArray(raw.findings) ? raw.findings : []).slice(0, 5)) {
           const name = typeof f === "string" ? f : f?.name ?? f?.title ?? f?.finding ?? "";
-          if (name) signals.push({ name: name.slice(0, 80), direction: f?.direction ?? "neutral", impact: f?.impact ?? "medium" });
+          if (!name) continue;
+          const normalizedFinding = normalizeWhitespace(name).slice(0, 260);
+          signals.push({ name: normalizedFinding, direction: f?.direction ?? "neutral", impact: f?.impact ?? "medium" });
+          if (/\b(quadrupled|doubled|tripled|expanded|grew|growth|increased|reached|now exceeds|accelerat|represent over half|enterprise use)\b/i.test(normalizedFinding)) {
+            const description = normalizeChangeDescription(normalizedFinding);
+            if (description) changes.push({ description });
+          }
         }
       }
       if (raw?.nextSteps) {
@@ -10642,7 +12418,7 @@ Return ONLY valid JSON:
     if (sr.toolName === "enrich_entity") {
       if (raw?.signals) {
         for (const s of (Array.isArray(raw.signals) ? raw.signals : []).slice(0, 5)) {
-          signals.push({ name: s?.name ?? String(s).slice(0, 60), direction: s?.direction ?? "neutral", impact: s?.impact ?? "medium" });
+          signals.push({ name: (s?.name ?? String(s)).slice(0, 120), direction: s?.direction ?? "neutral", impact: s?.impact ?? "medium" });
         }
       }
       if (raw?.description) answerParts.push(String(raw.description).slice(0, 300));
@@ -10652,48 +12428,106 @@ Return ONLY valid JSON:
       if (sim) {
         const bull = raw?.bestPath;
         const bear = raw?.worstPath;
-        signals.push({ name: `Monte Carlo: ${sim.successRate} success rate across ${sim.paths} paths`, direction: "neutral", impact: "high" });
-        signals.push({ name: `Base case payoff: ${sim.medianPayoff} (80% CI: ${sim.confidenceInterval})`, direction: "neutral", impact: "high" });
-        if (bull) signals.push({ name: `Bull case: ${bull.payoff} revenue at ${bull.marketShare} market share`, direction: "up", impact: "high" });
-        if (bear) signals.push({ name: `Bear case: ${bear.payoff} \u2014 ${bear.outcome}`, direction: "down", impact: "high" });
+        signals.push({ name: `Monte Carlo (${sim.paths} paths): ${sim.successRate} success, base payoff ${sim.medianPayoff}`, direction: "neutral", impact: "medium" });
+        if (bull && bear) {
+          signals.push({ name: `3-case model: Bull ${bull.payoff} | Bear ${bear.payoff} (${sim.confidenceInterval})`, direction: "neutral", impact: "medium" });
+        }
         for (const d of raw?.decisionSensitivity ?? []) {
           risks.push({ title: `Decision: ${d.decision}`, description: `Best choice: "${d.bestChoice}" (${d.impact} vs average). Wrong choice here materially affects outcomes.` });
         }
-        answerParts.push(`Monte Carlo simulation (${sim.paths}, ${sim.horizon}): ${sim.successRate} success rate. Base case payoff ${sim.medianPayoff}. Survival rate ${sim.survivalRate}, failure rate ${sim.failureRate}.`);
-        sources.push({ label: `Monte Carlo simulation (${sim.paths})`, type: "local" });
+        sources.push({ label: `Financial simulation (${sim.paths} scenarios)`, type: "local" });
       }
     }
     if (!["web_search", "run_recon", "founder_local_gather", "enrich_entity"].includes(sr.toolName) && !sr.toolName.startsWith("founder_local")) {
       const summary = raw?.summary ?? raw?.answer ?? raw?.result ?? raw?.output ?? raw?.briefing;
       if (typeof summary === "string" && summary.length > 10) {
         answerParts.push(summary.slice(0, 300));
-        sources.push({ label: summary.slice(0, 40), type: "local" });
+        sources.push({ label: summary.slice(0, 80), type: "local" });
       }
     }
   }
-  const answer = answerParts.length > 0 ? answerParts.slice(0, 3).join(" ").slice(0, 500) : `Analysis of "${query}" using ${execution.stepResults.filter((r) => r.success).length} tools.`;
-  if (nextActions.length === 0) {
-    nextActions.push({ action: `Deep-dive into ${entityName} competitive landscape`, impact: "medium" });
-    nextActions.push({ action: `Review latest ${entityName} filings and announcements`, impact: "medium" });
+  const sanitizedSignals = mergeSignals(sanitizeSignals(signals), collectFallbackSignals(execution));
+  const sanitizedChanges = sanitizeChanges(changes);
+  const sanitizedRisks = sanitizeRisks([...risks, ...collectFallbackRisks(execution)]);
+  const sanitizedComparables = sanitizeComparables(comparables, entityName, comparableFallbacks, {
+    classification: execution.plan.classification,
+    entityTargets: execution.plan.entityTargets
+  });
+  const keyMetrics = deriveEvidenceKeyMetrics({
+    execution,
+    entityName,
+    entityTargets: execution.plan.entityTargets,
+    lens,
+    classification: execution.plan.classification,
+    signals: sanitizedSignals,
+    changes: sanitizedChanges
+  });
+  const sanitizedNextActions = sanitizeNextActions(nextActions, lens, entityName, sanitizedComparables, sanitizedRisks, {
+    classification: execution.plan.classification,
+    entityTargets: execution.plan.entityTargets
+  });
+  const sanitizedSources = sanitizeSources(sources, execution);
+  const answer = sanitizeExecutiveAnswer(
+    answerParts.length > 0 ? answerParts.slice(0, 5).join(" ").slice(0, 800) : `Analysis of "${query}" using ${execution.stepResults.filter((r) => r.success).length} tools.`,
+    entityName,
+    keyMetrics,
+    sanitizedSignals,
+    sanitizedComparables,
+    sanitizedRisks,
+    sanitizedNextActions,
+    {
+      classification: execution.plan.classification,
+      entityTargets: execution.plan.entityTargets,
+      lens
+    }
+  );
+  if (sanitizedNextActions.length === 0) {
+    const isEntityQuery = entityName && entityName.length > 1 && !/^(AI|the|your|my|this)$/i.test(entityName) && !entityName.includes("Intelligence Brief");
+    if (sanitizedRisks.length > 0) {
+      sanitizedNextActions.push({ action: `Investigate "${sanitizedRisks[0].title}" and identify the concrete trigger points that would make it matter.`, impact: "high" });
+    }
+    if (isEntityQuery) {
+      if (sanitizedComparables.length > 0) {
+        sanitizedNextActions.push({ action: `Compare ${entityName} against ${sanitizedComparables[0].name} on pricing, enterprise traction, and durability of demand.`, impact: "medium" });
+      } else {
+        sanitizedNextActions.push({ action: `Map ${entityName}'s competitive moat and separate durable edge from narrative momentum.`, impact: "medium" });
+      }
+      sanitizedNextActions.push({ action: `Review ${entityName}'s most recent filings, announcements, or product launches for diligence-grade evidence.`, impact: "medium" });
+    } else {
+      sanitizedNextActions.push({ action: "Identify the top 3 risks to your current strategy and assign a concrete mitigation owner to each.", impact: "high" });
+      sanitizedNextActions.push({ action: "Review what changed this week and decide what to act on versus defer with explicit rationale.", impact: "medium" });
+    }
   }
   const successCount = execution.stepResults.filter((r) => r.success).length;
-  const confidence = Math.min(90, 30 + successCount * 15 + signals.length * 5 + sources.length * 3);
+  const totalSteps = execution.stepResults.length;
+  const webSourceCount = sanitizedSources.filter((s) => s.type === "web" && s.href).length;
+  const successRate = totalSteps > 0 ? successCount / totalSteps : 0;
+  const confidence = Math.min(95, Math.round(
+    20 + successRate * 15 + Math.min(webSourceCount, 4) * 10 + Math.min(signals.length, 5) * 3 + Math.min(comparables.length, 2) * 5
+    // 0-10: competitive context
+  ));
   return {
     entityName,
     answer,
     confidence,
-    signals: signals.filter((s) => !/in progress|recon plan|project:|commits in last/i.test(s.name)).slice(0, 8),
-    changes: changes.slice(0, 5),
-    risks: risks.slice(0, 5),
-    comparables: comparables.slice(0, 4),
-    nextActions: nextActions.slice(0, 4),
-    nextQuestions: [
-      `What are the specific drivers behind ${entityName}'s recent growth or decline?`,
-      risks.length > 0 ? `How likely is "${risks[0]?.title}" to materialize, and what would trigger it?` : `What are the biggest threats to ${entityName}'s market position?`,
-      comparables.length > 0 ? `How does ${entityName} compare to ${comparables[0]?.name} on unit economics and retention?` : `Who are ${entityName}'s most dangerous competitors and why?`,
-      `What would make you change your thesis on ${entityName} \u2014 what data would you need to see?`
-    ],
-    sources: sources.slice(0, 8)
+    keyMetrics,
+    signals: sanitizedSignals.filter((s) => !/in progress|recon plan|project:|commits in last|research plan|status.*active|tool_call|step\s+\d|executing|queued/i.test(s.name)).slice(0, 8),
+    changes: sanitizedChanges.slice(0, 5),
+    risks: sanitizedRisks.slice(0, 5),
+    comparables: sanitizedComparables.slice(0, 4),
+    whyThisTeam: null,
+    // populated by LLM synthesis path; deterministic path lacks founder data
+    nextActions: sanitizedNextActions.filter((a) => !/contextQuestions|check_framework|gather project|ingest_upload|Answer any|Use\s+\w+_\w+/i.test(a.action)).slice(0, 4),
+    nextQuestions: dedupeStrings2(
+      buildDefaultNextQuestions({
+        classification: execution.plan.classification,
+        entityName,
+        comparables: sanitizedComparables,
+        risks: sanitizedRisks,
+        entityTargets: execution.plan.entityTargets
+      })
+    ).slice(0, 4),
+    sources: sanitizedSources.slice(0, 8)
   };
 }
 
@@ -11832,16 +13666,96 @@ function normalizeWorkspaceName(value) {
   if (typeof value !== "string") return void 0;
   return normalizeDisplayName(value);
 }
+function inferExplicitLensFromQuery(query) {
+  const normalized = query.toLowerCase();
+  if (includesAny2(normalized, [
+    "investment banking",
+    "investment-banking",
+    "banker",
+    "banking style",
+    "deal memo",
+    "sell-side",
+    "buy-side",
+    "m&a",
+    "m and a",
+    "capital structure",
+    "comparables",
+    "comps",
+    "banking work output"
+  ])) {
+    return "banker";
+  }
+  if (includesAny2(normalized, [
+    "investor memo",
+    "investor update",
+    "vc",
+    "venture",
+    "investment committee",
+    "diligence",
+    "term sheet",
+    "early-stage vc"
+  ])) {
+    return "investor";
+  }
+  if (includesAny2(normalized, ["legal", "compliance", "regulatory", "counsel"])) {
+    return "legal";
+  }
+  if (includesAny2(normalized, ["student", "thesis", "class", "coursework"])) {
+    return "student";
+  }
+  return void 0;
+}
 function inferOwnCompanyName(result) {
-  return normalizeWorkspaceName(result?.identity?.projectName) ?? normalizeWorkspaceName(result?.publicSurfaces?.indexHtmlSiteName) ?? normalizeWorkspaceName(extractBrandPrefix2(result?.publicSurfaces?.indexHtmlTitle)) ?? normalizeWorkspaceName(result?.canonicalEntity?.name) ?? normalizeWorkspaceName(result?.companyReadinessPacket?.identity?.companyName) ?? normalizeWorkspaceName(result?.companyNamingPack?.recommendedName) ?? normalizeWorkspaceName(result?.rawPacket?.company?.name) ?? normalizeWorkspaceName(result?.localContext?.company?.name) ?? normalizeWorkspaceName(result?.identity?.packageName);
+  return normalizeWorkspaceName(result?.identity?.projectName) ?? normalizeWorkspaceName(result?.publicSurfaces?.indexHtmlSiteName) ?? normalizeWorkspaceName(extractBrandPrefix2(result?.publicSurfaces?.indexHtmlTitle)) ?? normalizeWorkspaceName(result?.localContext?.company?.name) ?? normalizeWorkspaceName(result?.identity?.packageName);
+}
+function inferDisplayEntityName(result, companyMode) {
+  if (companyMode === "own_company") {
+    return normalizeWorkspaceName(result?.companyReadinessPacket?.identity?.companyName) ?? normalizeWorkspaceName(result?.companyNamingPack?.recommendedName) ?? normalizeWorkspaceName(result?.canonicalEntity?.name) ?? inferOwnCompanyName(result);
+  }
+  return normalizeWorkspaceName(result?.canonicalEntity?.name) ?? normalizeWorkspaceName(result?.companyReadinessPacket?.identity?.companyName) ?? normalizeWorkspaceName(result?.companyNamingPack?.recommendedName);
 }
 function resolveCompanyMode(args) {
+  const ownCompanyName = inferOwnCompanyName(args.result);
   const hasPrivateContext = args.lens === "founder" && ["weekly_reset", "pre_delegation", "important_change", "founder_progression", "general"].includes(args.classification);
   return detectFounderCompanyMode({
     query: args.query,
-    canonicalEntity: inferOwnCompanyName(args.result) ?? args.result?.canonicalEntity?.name,
+    canonicalEntity: ownCompanyName,
     hasPrivateContext
   });
+}
+function shouldAttachFounderScaffolding(args) {
+  const effectiveClassification = resolveEffectiveClassification(args);
+  const companyMode = resolveCompanyMode({
+    query: args.query,
+    lens: args.lens,
+    classification: effectiveClassification,
+    result: args.result
+  });
+  if (companyMode !== "own_company") return false;
+  return args.lens === "founder" || ["weekly_reset", "pre_delegation", "important_change", "founder_progression", "plan_proposal"].includes(effectiveClassification);
+}
+function stripFounderOnlyArtifacts(args) {
+  if (shouldAttachFounderScaffolding(args)) return args.result;
+  const {
+    strategicAngles,
+    progressionProfile,
+    progressionTiers,
+    diligencePack,
+    readinessScore,
+    unlocks,
+    materialsChecklist,
+    scorecards,
+    shareableArtifacts,
+    visibility,
+    benchmarkEvidence,
+    workflowComparison,
+    operatingModel,
+    distributionSurfaceStatus,
+    companyReadinessPacket,
+    companyNamingPack,
+    ...rest
+  } = args.result ?? {};
+  return rest;
 }
 function resolveEffectiveClassification(args) {
   if (args.classification !== "general") return args.classification;
@@ -11868,8 +13782,9 @@ function normalizeFounderIdentity(args) {
     result: args.result
   });
   const companyMode = resolveCompanyMode({ ...args, classification });
-  const entityName = companyMode === "own_company" ? inferOwnCompanyName(args.result) ?? "Your Company" : inferOwnCompanyName(args.result);
-  return { classification, packetType, entityName };
+  const normalizedPacketType = companyMode !== "own_company" && packetType === "founder_progression_packet" ? `${classification}_packet` : packetType;
+  const entityName = companyMode === "own_company" ? inferDisplayEntityName(args.result, companyMode) ?? "Your Company" : inferDisplayEntityName(args.result, companyMode);
+  return { classification, packetType: normalizedPacketType, entityName };
 }
 function normalizeOwnCompanyFounderPayload(args) {
   const normalizedIdentity = normalizeFounderIdentity(args);
@@ -12022,7 +13937,18 @@ function normalizeAnswerBlocks(result, sourceRefs, claimRefs) {
       status: blockStatus(citedSourceIds, !sourceBacked)
     });
   }
-  const changesText = (Array.isArray(result?.whatChanged) ? result.whatChanged : []).slice(0, 3).map((change) => `\u2022 ${change.description ?? String(change)}`).join("\n");
+  const keyFactsText = (Array.isArray(result?.signals) ? result.signals : []).slice(0, 4).map((signal) => `\u2022 ${signal.name ?? signal.title ?? String(signal)}`).join("\n");
+  if (keyFactsText) {
+    blocks.push({
+      id: "answer:block:key_facts",
+      title: "Key facts and signal readout",
+      text: keyFactsText,
+      sourceRefIds: citedSourceIds,
+      claimIds: [],
+      status: blockStatus(citedSourceIds, !sourceBacked)
+    });
+  }
+  const changesText = (Array.isArray(result?.whatChanged) ? result.whatChanged : []).slice(0, 3).map((change) => `\u2022 ${change.description ?? String(change)}${change.date ? ` (${change.date})` : ""}`).join("\n");
   if (changesText) {
     blocks.push({
       id: "answer:block:changes",
@@ -12033,14 +13959,52 @@ function normalizeAnswerBlocks(result, sourceRefs, claimRefs) {
       status: blockStatus(citedSourceIds, !sourceBacked)
     });
   }
+  const comparablesText = (Array.isArray(result?.comparables) ? result.comparables : []).slice(0, 4).map((item) => `\u2022 ${item.name ?? String(item)}${item.note ? `: ${item.note}` : ""}`).join("\n");
+  if (comparablesText) {
+    blocks.push({
+      id: "answer:block:comparables",
+      title: "Competitive frame",
+      text: comparablesText,
+      sourceRefIds: citedSourceIds,
+      claimIds: [],
+      status: blockStatus(citedSourceIds, !sourceBacked)
+    });
+  }
+  const whyThisTeam = result?.whyThisTeam;
+  const credibilityText = whyThisTeam && typeof whyThisTeam === "object" ? [
+    typeof whyThisTeam.founderCredibility === "string" ? whyThisTeam.founderCredibility : "",
+    Array.isArray(whyThisTeam.trustSignals) && whyThisTeam.trustSignals.length > 0 ? `Trust signals: ${whyThisTeam.trustSignals.slice(0, 3).join("; ")}` : "",
+    typeof whyThisTeam.visionMagnitude === "string" && whyThisTeam.visionMagnitude ? `Scale lens: ${whyThisTeam.visionMagnitude}` : ""
+  ].filter(Boolean).join("\n") : "";
+  if (credibilityText) {
+    blocks.push({
+      id: "answer:block:credibility",
+      title: "Why this team matters",
+      text: credibilityText,
+      sourceRefIds: citedSourceIds,
+      claimIds: [],
+      status: blockStatus(citedSourceIds, true)
+    });
+  }
   const risksText = (Array.isArray(result?.contradictions) ? result.contradictions : []).slice(0, 3).map((item) => `\u2022 ${item.claim ?? item.title ?? String(item)}${item.evidence ? `: ${item.evidence}` : ""}`).join("\n");
   if (risksText) {
     blocks.push({
       id: "answer:block:risks",
-      title: "Risks and contradictions",
+      title: "Risks and diligence flags",
       text: risksText,
       sourceRefIds: citedSourceIds,
       claimIds: claimRefs.filter((claim) => claim.answerBlockIds.includes("answer:block:risks")).map((claim) => claim.id),
+      status: blockStatus(citedSourceIds, true)
+    });
+  }
+  const diligenceQuestionsText = (Array.isArray(result?.nextQuestions) ? result.nextQuestions : []).slice(0, 4).map((question) => `\u2022 ${String(question)}`).join("\n");
+  if (diligenceQuestionsText) {
+    blocks.push({
+      id: "answer:block:diligence_questions",
+      title: "Next diligence questions",
+      text: diligenceQuestionsText,
+      sourceRefIds: citedSourceIds,
+      claimIds: [],
       status: blockStatus(citedSourceIds, true)
     });
   }
@@ -12076,6 +14040,14 @@ function includesAny2(value, terms) {
   return terms.some((term) => normalized.includes(term));
 }
 function buildStrategicAngles(args) {
+  if (!shouldAttachFounderScaffolding({
+    query: args.query,
+    lens: args.lens,
+    classification: typeof args.result?.packetType === "string" ? String(args.result.packetType).replace(/_packet$/, "") : typeof args.result?.classification === "string" ? args.result.classification : "general",
+    result: args.result
+  })) {
+    return [];
+  }
   if (Array.isArray(args.result?.strategicAngles) && args.result.strategicAngles.length > 0) {
     return args.result.strategicAngles;
   }
@@ -12190,8 +14162,18 @@ function buildStrategicAngles(args) {
   return angles;
 }
 function shouldRunFounderDirectionAssessment(args) {
+  const externalResearchClassification = ["company_search", "competitor", "multi_entity"].includes(args.classification);
+  if (externalResearchClassification) {
+    if (!args.result) return false;
+    return shouldAttachFounderScaffolding({
+      query: args.query,
+      lens: args.lens,
+      classification: args.classification,
+      result: args.result
+    });
+  }
   if (args.lens === "founder") return true;
-  if (["weekly_reset", "important_change", "pre_delegation", "general"].includes(args.classification)) {
+  if (["weekly_reset", "important_change", "pre_delegation", "general", "plan_proposal"].includes(args.classification)) {
     return true;
   }
   return includesAny2(args.query, [
@@ -12203,7 +14185,6 @@ function shouldRunFounderDirectionAssessment(args) {
     "maintain",
     "subscription",
     "dashboard",
-    "investor",
     "credibility",
     "adoption",
     "ai",
@@ -12358,11 +14339,22 @@ function toProofStatus(sourceRefs, answerBlocks, judgeVerdict) {
   return "provisional";
 }
 function buildResultPacket(args) {
-  const result = normalizeOwnCompanyFounderPayload({
+  const result = stripFounderOnlyArtifacts({
     query: args.query,
     lens: args.lens,
     classification: args.classification,
-    result: args.result ?? {}
+    result: normalizeOwnCompanyFounderPayload({
+      query: args.query,
+      lens: args.lens,
+      classification: args.classification,
+      result: args.result ?? {}
+    })
+  });
+  const companyMode = resolveCompanyMode({
+    query: args.query,
+    lens: args.lens,
+    classification: args.classification,
+    result
   });
   const sourceRefs = Array.isArray(result.sourceRefs) ? result.sourceRefs : [];
   const normalizedIdentity = normalizeFounderIdentity({
@@ -12371,7 +14363,8 @@ function buildResultPacket(args) {
     classification: args.classification,
     result
   });
-  const entityName = normalizedIdentity.entityName ?? result.canonicalEntity?.name ?? args.entityFallback ?? "NodeBench";
+  const entityName = companyMode === "own_company" ? normalizedIdentity.entityName ?? result.canonicalEntity?.name ?? args.entityFallback ?? "NodeBench" : args.entityFallback ?? normalizedIdentity.entityName ?? result.canonicalEntity?.name ?? "NodeBench";
+  const keyMetricLimit = args.lens === "banker" ? 6 : 4;
   return {
     query: args.query,
     entityName,
@@ -12384,7 +14377,10 @@ function buildResultPacket(args) {
       direction: signal.direction ?? "neutral",
       impact: signal.impact ?? "medium"
     })),
-    keyMetrics: [
+    keyMetrics: Array.isArray(result.keyMetrics) && result.keyMetrics.length > 0 ? result.keyMetrics.slice(0, keyMetricLimit).map((metric) => ({
+      label: metric.label ?? "Metric",
+      value: String(metric.value ?? "")
+    })) : [
       { label: "Confidence", value: `${result.canonicalEntity?.identityConfidence ?? 0}%` },
       { label: "Sources", value: String(sourceRefs.length) },
       { label: "Claims", value: String(result.claimRefs?.length ?? 0) },
@@ -12404,6 +14400,7 @@ function buildResultPacket(args) {
       relevance: comparable.relevance ?? "medium",
       note: comparable.note ?? ""
     })),
+    whyThisTeam: result.whyThisTeam ?? null,
     packetId: result.packetId,
     packetType: normalizedIdentity.packetType,
     canonicalEntity: entityName,
@@ -12442,11 +14439,16 @@ function buildResultPacket(args) {
 }
 function decorateResultWithProof(args) {
   const persona = LENS_PERSONA_MAP[args.lens] ?? "FOUNDER_STRATEGY";
-  const baseResult = normalizeOwnCompanyFounderPayload({
+  const baseResult = stripFounderOnlyArtifacts({
     query: args.query,
     lens: args.lens,
     classification: args.classification,
-    result: args.result
+    result: normalizeOwnCompanyFounderPayload({
+      query: args.query,
+      lens: args.lens,
+      classification: args.classification,
+      result: args.result
+    })
   });
   const sourceRefs = normalizeSourceRefs(baseResult);
   const claimRefs = normalizeClaimRefs(baseResult, sourceRefs);
@@ -12467,7 +14469,10 @@ function decorateResultWithProof(args) {
   const strategicAngles = buildStrategicAngles({
     query: args.query,
     lens: args.lens,
-    result: baseResult,
+    result: {
+      ...baseResult,
+      classification: args.classification
+    },
     sourceRefs
   });
   const strategicQuestions = strategicAngles.map((angle) => typeof angle.nextQuestion === "string" ? angle.nextQuestion : "").filter(Boolean);
@@ -12478,7 +14483,13 @@ function decorateResultWithProof(args) {
     classification: args.classification,
     result: baseResult
   });
-  const canonicalEntityName = normalizedIdentity.entityName ?? baseResult?.canonicalEntity?.name ?? baseResult?.companyReadinessPacket?.identity?.companyName;
+  const companyMode = resolveCompanyMode({
+    query: args.query,
+    lens: args.lens,
+    classification: args.classification,
+    result: baseResult
+  });
+  const canonicalEntityName = companyMode === "own_company" ? normalizedIdentity.entityName ?? baseResult?.canonicalEntity?.name ?? baseResult?.companyReadinessPacket?.identity?.companyName : args.entityFallback ?? normalizedIdentity.entityName ?? baseResult?.canonicalEntity?.name ?? baseResult?.companyReadinessPacket?.identity?.companyName;
   const decoratedResult = {
     ...baseResult,
     packetId: args.packetId,
@@ -12500,7 +14511,7 @@ function decorateResultWithProof(args) {
     ).slice(0, 8),
     graphNodes,
     graphEdges,
-    strategicAngles
+    ...strategicAngles.length > 0 ? { strategicAngles } : {}
   };
   return {
     result: decoratedResult,
@@ -12732,7 +14743,7 @@ async function linkupSearch(query, maxResults = 5) {
         includeSources: true,
         maxResults
       }),
-      signal: AbortSignal.timeout(8e3)
+      signal: AbortSignal.timeout(process.env.VERCEL ? 4e3 : 8e3)
     });
     if (!resp.ok) return null;
     const data = await resp.json();
@@ -12875,7 +14886,9 @@ function createSearchRouter(tools2) {
       "of",
       "our",
       "question",
+      "questions",
       "risk",
+      "risks",
       "shift",
       "should",
       "strategy",
@@ -12888,13 +14901,17 @@ function createSearchRouter(tools2) {
       "which",
       "why",
       "you",
-      "your"
+      "your",
+      "focus",
+      "comparables",
+      "diligence",
+      "flags"
     ]);
     const lq = query.toLowerCase();
     const hasMultiSyntax = /,\s*(?:and\s+)?\w/.test(lq) || /\bvs\.?\s/i.test(lq) || /\bversus\b/i.test(lq);
     if (!hasMultiSyntax) return [];
     if (/\b(my |uploaded|transcript|meeting|document|file|research file)/i.test(lq)) return [];
-    const cleaned = query.replace(/(?:compare|analyze|research|tell me about|search|profile|diligence on)\s+/gi, "").replace(/(?:in\s+(?:the\s+)?|the\s+|an?\s+)(?:AI|tech|fintech|payments?|commerce|market|race|landscape|space|industry|sector|category|segment|vertical)\b.*/gi, "").replace(/(?:top \d+ risks across|risks across|what changed.*?for)\s*/gi, "").replace(/(?:competitive landscape|competitive position|strategy|overview).*$/gi, "").trim();
+    const cleaned = query.replace(/^(?:prepare|build|create|draft)\s+.+?\b(?:briefing|memo|analysis|packet|report)\s+(?:on|for)\s+/i, "").replace(/(?:prepare|build|create|draft)\s+(?:an?\s+)?(?:investment(?:-|\s+)banking(?:\s+style)?|banker(?:\s+style)?|investor(?:\s+style)?|competitive)?\s*(?:briefing|memo|analysis|packet|report)\s+(?:on|for)\s+/gi, "").replace(/(?:briefing|memo|analysis|packet|report)\s+(?:on|for)\s+/gi, "").replace(/(?:compare|analyze|research|tell me about|search|profile|diligence on)\s+/gi, "").replace(/(?:in\s+(?:the\s+)?|the\s+|an?\s+)(?:AI|enterprise(?:\s+AI)?|tech|fintech|payments?|commerce|market|race|landscape|space|industry|sector|category|segment|vertical)\b.*/gi, "").replace(/(?:top \d+ risks across|risks across|what changed.*?for)\s*/gi, "").replace(/(?:competitive landscape|competitive position|strategy|overview).*$/gi, "").replace(/\b(?:focus on|cover|covering|including|with emphasis on)\b.*$/gi, "").replace(/[.?!].*$/g, "").trim();
     const parts = cleaned.split(/\s*(?:,\s*(?:and\s+)?|,?\s+and\s+|\s+vs\.?\s+|\s+versus\s+|\s*&\s*)\s*/i).map((part) => part.trim().replace(/^['"]|['"]$/g, "").replace(/'s$/g, "").replace(/[?!.,]+$/g, "")).filter((part) => {
       if (!(part.length > 1 && part.length < 40 && /^[a-zA-Z]/.test(part))) return false;
       if (genericPhrasePattern.test(part)) return false;
@@ -12948,9 +14965,11 @@ function createSearchRouter(tools2) {
     if (isCompetitorQuery) {
       const compClause = query.match(/(?:compete with|against|vs\.?|versus|compare)\s+(.+?)(?:\?|$)/i)?.[1] ?? query.match(/(?:competitive landscape)[:\s]+(.+?)(?:\?|$)/i)?.[1] ?? query.match(/(?:competitor.*?(?:against|with))\s+(.+?)(?:\?|$)/i)?.[1];
       if (compClause) {
-        const parts = compClause.split(/\s*(?:,\s*(?:and\s+)?|,?\s+and\s+|\s+vs\.?\s+|\s+versus\s+|\s*&\s*|\s+or\s+)\s*/i).map((p) => p.trim().replace(/[?'"]/g, "").replace(/['\u2019]s$/g, "")).filter((p) => p.length > 1 && /^[a-zA-Z]/.test(p));
+        const leadingEntity = query.match(/([A-Z][a-zA-Z0-9.&-]+(?:\s+[A-Z][a-zA-Z0-9.&-]+){0,2})\s+(?:vs\.?|versus|against)/i)?.[1];
+        const cleanedClause = compClause.replace(/\b(?:focus on|cover|covering|including|with emphasis on)\b.*$/i, "").replace(/(?:in\s+(?:the\s+)?)(?:AI|enterprise(?:\s+AI)?|tech|fintech|payments?|commerce|market|race|landscape|space|industry|sector|category|segment|vertical)\b.*$/i, "").replace(/[.?!].*$/g, "").trim();
+        const parts = [leadingEntity, ...cleanedClause.split(/\s*(?:,\s*(?:and\s+)?|,?\s+and\s+|\s+vs\.?\s+|\s+versus\s+|\s*&\s*|\s+or\s+)\s*/i)].map((p) => String(p ?? "").trim().replace(/[?'"]/g, "").replace(/['\u2019]s$/g, "")).filter((p) => p.length > 1 && /^[a-zA-Z]/.test(p));
         if (parts.length >= 2) {
-          return { type: "multi_entity", entities: parts, lens: "investor" };
+          return { type: "multi_entity", entities: Array.from(new Set(parts)), lens: "investor" };
         }
       }
       const compareToMatch = query.match(/(?:how does)\s+(\w+)\s+(?:compete|compare|stack up)\s+(?:to|with|against)\s+(\w+)/i);
@@ -13037,18 +15056,10 @@ ${query}` : query;
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `Classify this user query for a startup intelligence platform. Return ONLY valid JSON, no markdown.
+            contents: [{ parts: [{ text: `Classify this user query for a startup intelligence platform.
 ${sessionContext ? `
 Context: ${sessionContext}` : ""}
 Query: "${query}"
-
-Return this exact JSON shape:
-{
-  "type": one of ["weekly_reset", "pre_delegation", "important_change", "plan_proposal", "company_search", "competitor", "multi_entity", "general"],
-  "entity": the primary company/entity name mentioned (null if none or if about the user's own company),
-  "entities": array of all company names if comparing multiple (null if single or none),
-  "lens": best audience lens: "founder" | "investor" | "banker" | "ceo" | "legal" | "student"
-}
 
 Classification rules:
 - "weekly_reset": user wants a weekly summary, founder reset, or "what changed this week"
@@ -13061,15 +15072,34 @@ Classification rules:
 - "general": anything else \u2014 general questions, idea validation, pitch readiness, strategic questions
 
 Entity extraction rules:
-- Extract ONLY proper company/product names, not generic words
-- "Compare Stripe vs Square" \u2192 entities: ["Stripe", "Square"]
-- "What would Y Combinator look for" \u2192 entity: "Y Combinator"
-- "I'm building an AI tutoring app" \u2192 entity: null (user's own idea, not a named company)
-- "Am I ready to pitch Sequoia?" \u2192 entity: "Sequoia"` }] }],
-            generationConfig: { temperature: 0, maxOutputTokens: 200 }
+- Extract ONLY proper company/product names that appear VERBATIM in the query
+- Do NOT invent entities \u2014 if no company name is explicitly in the query, entity must be null
+- "Compare Stripe vs Square" \u2192 entities: ["Stripe", "Square"], type: "multi_entity"
+- "What would Y Combinator look for" \u2192 entity: "Y Combinator", type: "company_search"
+- "I'm building an AI tutoring app" \u2192 entity: null, type: "general"
+- "Am I ready to pitch Sequoia?" \u2192 entity: "Sequoia", type: "company_search"
+- "What changed this week?" \u2192 entity: null, type: "weekly_reset"
+- "Anthropic" \u2192 entity: "Anthropic", type: "company_search"
+- "OpenAI risks and challenges" \u2192 entity: "OpenAI", type: "company_search"
+- "How does Notion compare to Coda" \u2192 entities: ["Notion", "Coda"], type: "multi_entity"` }] }],
+            generationConfig: {
+              temperature: 0,
+              maxOutputTokens: 200,
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: "object",
+                properties: {
+                  type: { type: "string", enum: ["weekly_reset", "pre_delegation", "important_change", "plan_proposal", "company_search", "competitor", "multi_entity", "general"] },
+                  entity: { type: "string", nullable: true, description: "Primary company/entity name from the query, or null if none" },
+                  entities: { type: "array", items: { type: "string" }, nullable: true, description: "All company names if comparing multiple" },
+                  lens: { type: "string", enum: ["founder", "investor", "banker", "ceo", "legal", "student"] }
+                },
+                required: ["type", "lens"]
+              }
+            }
           }),
-          signal: AbortSignal.timeout(3e3)
-          // 3s budget — classification must be fast
+          signal: AbortSignal.timeout(process.env.VERCEL ? 2e3 : 3e3)
+          // classification must be fast
         }
       );
       if (!resp.ok) return classifyQuery(query);
@@ -13082,12 +15112,32 @@ Entity extraction rules:
       const type = validTypes.includes(parsed.type) ? parsed.type : "general";
       const validLenses = ["founder", "investor", "banker", "ceo", "legal", "student"];
       const lens = validLenses.includes(parsed.lens) ? parsed.lens : "founder";
-      return {
-        type,
-        entity: typeof parsed.entity === "string" && parsed.entity.length > 0 ? parsed.entity : void 0,
-        entities: Array.isArray(parsed.entities) && parsed.entities.length >= 2 ? parsed.entities.filter((e) => typeof e === "string" && e.length > 0) : void 0,
-        lens
-      };
+      let entities = Array.isArray(parsed.entities) && parsed.entities.length >= 2 ? parsed.entities.filter((e) => typeof e === "string" && e.length > 0) : void 0;
+      if (!entities || entities.length < 2) {
+        const vsMatch = query.match(/^(?:compare\s+)?(.+?)\s+(?:vs\.?|versus|compared?\s+to|against)\s+(.+?)(?:\?|$)/i);
+        if (vsMatch) {
+          entities = [vsMatch[1].trim(), vsMatch[2].trim()].filter((e) => e.length > 0);
+          if (entities.length >= 2) {
+            return { type: "multi_entity", entity: entities[0], entities, lens };
+          }
+        }
+      }
+      let entity = typeof parsed.entity === "string" && parsed.entity.length > 0 ? parsed.entity : void 0;
+      if (entity) {
+        const entityLower = entity.toLowerCase();
+        const inQuery = query.toLowerCase().includes(entityLower);
+        const entityIdx = query.toLowerCase().indexOf(entityLower);
+        const startsUppercase = entityIdx >= 0 && /^[A-Z]/.test(query.charAt(entityIdx));
+        const isPhrase = /^(what|how|when|where|why|who|which|the|this|that|my|your|changed|built|building|doing|risks?|challenges?)\b/i.test(entity);
+        if (!inQuery || !startsUppercase || isPhrase) {
+          entity = void 0;
+        }
+      }
+      if (entities) {
+        entities = entities.filter((e) => query.toLowerCase().includes(e.toLowerCase()));
+        if (entities.length < 2) entities = void 0;
+      }
+      return { type, entity, entities, lens };
     } catch {
       return classifyQuery(query);
     }
@@ -13112,14 +15162,23 @@ Entity extraction rules:
   };
   const handleSearch = async (req, res) => {
     const startMs = Date.now();
+    const REQUEST_BUDGET_MS = process.env.VERCEL ? 9e3 : 55e3;
+    const requestDeadline = startMs + REQUEST_BUDGET_MS;
+    const requestAbort = new AbortController();
+    const budgetTimer = setTimeout(() => requestAbort.abort("request_timeout"), REQUEST_BUDGET_MS);
+    const checkBudget = () => {
+      if (Date.now() >= requestDeadline) throw new Error("Request budget exceeded");
+    };
     const { query, lens, daysBack } = parseSearchInput(req);
     if (!query || typeof query !== "string" || query.trim().length === 0) {
+      clearTimeout(budgetTimer);
       return res.status(400).json({ error: true, message: "Query is required" });
     }
     const sessionKey = getSessionKey(req);
     const sessionCtx = getSessionContext(sessionKey);
     const classification = await classifyWithSession(query.trim(), sessionCtx);
-    const resolvedLens = lens ?? classification.lens;
+    const inferredLens = inferExplicitLensFromQuery(query.trim());
+    const resolvedLens = lens && !(lens === "founder" && inferredLens && inferredLens !== "founder") ? lens : inferredLens ?? classification.lens;
     const isStream = req.query.stream === "true";
     if (isStream) {
       res.setHeader("Content-Type", "text/event-stream");
@@ -13208,6 +15267,7 @@ Entity extraction rules:
     try {
       let result;
       let usedHarness = false;
+      checkBudget();
       {
         try {
           const planTrace = traceStep("agent_plan", "gemini-3.1-flash-lite");
@@ -13230,46 +15290,145 @@ Entity extraction rules:
             }
           });
           execTrace.ok(`${execution.stepResults.length} steps, ${execution.totalDurationMs}ms`);
+          checkBudget();
           const synthTrace = traceStep("agent_synthesize", "gemini-3.1-flash-lite");
-          const synthesized = await synthesizeResults(execution, query.trim(), resolvedLens, callTool);
+          const synthesized = await Promise.race([
+            synthesizeResults(execution, query.trim(), resolvedLens, callTool),
+            new Promise((_, reject) => {
+              const remaining = requestDeadline - Date.now() - 1e3;
+              if (remaining <= 0) reject(new Error("Request budget exceeded"));
+              else setTimeout(() => reject(new Error("Request budget exceeded")), remaining);
+            })
+          ]);
           synthTrace.ok(`${synthesized.confidence}% confidence`);
-          if (classification.type === "company_search" || classification.type === "competitor" || classification.type === "multi_entity") {
-            try {
-              const mcTrace = traceStep("tool_call", "simulate_decision_paths");
-              const answerText = synthesized.answer ?? "";
-              const revMatch = answerText.match(/\$(\d+(?:\.\d+)?)\s*(B|billion|M|million)/i);
-              const shareMatch = answerText.match(/(\d+(?:\.\d+)?)\s*%\s*(?:market|share)/i);
-              const seedRevenue = revMatch ? parseFloat(revMatch[1]) * (revMatch[2].toLowerCase().startsWith("b") ? 1e9 : 1e6) / 12 : 5e6;
-              const seedShare = shareMatch ? parseFloat(shareMatch[1]) / 100 : 0.05;
-              const mcResult = await callTool("simulate_decision_paths", {
-                entity: synthesized.entityName,
-                revenue: Math.round(seedRevenue),
-                marketShare: seedShare,
-                runway: 24,
-                numPaths: 100,
-                timeHorizonMonths: 12
-              });
-              if (mcResult?.summary) {
-                const sim = mcResult.summary;
-                synthesized.signals.push(
-                  { name: `Monte Carlo: ${sim.successRate} success rate across ${sim.paths}`, direction: "neutral", impact: "high" },
-                  { name: `Base case: ${sim.medianPayoff} (80% CI: ${sim.confidenceInterval})`, direction: "neutral", impact: "high" }
+          const budgetRemaining = requestDeadline - Date.now();
+          const enrichmentPromises = [];
+          if (budgetRemaining > 3e3 && process.env.GEMINI_API_KEY && !synthesized.whyThisTeam) {
+            enrichmentPromises.push((async () => {
+              try {
+                const isSelfSearch = /nodebench|homen|shum|my company|our company|my startup/i.test(query);
+                let localContext = "";
+                if (isSelfSearch) {
+                  try {
+                    const fs = await import("node:fs/promises");
+                    const os = await import("node:os");
+                    const path2 = await import("node:path");
+                    const claudeMdPaths = [
+                      path2.join(os.homedir(), ".claude", "CLAUDE.md"),
+                      path2.join(process.cwd(), "CLAUDE.md")
+                    ];
+                    for (const p of claudeMdPaths) {
+                      try {
+                        const content = await fs.readFile(p, "utf-8");
+                        localContext += `
+FOUNDER IDENTITY (from CLAUDE.md):
+${content.slice(0, 600)}`;
+                        break;
+                      } catch {
+                        continue;
+                      }
+                    }
+                    const memPath = path2.join(os.homedir(), ".claude", "projects");
+                    try {
+                      const dirs = await fs.readdir(memPath);
+                      for (const d of dirs.slice(0, 1)) {
+                        const memFile = path2.join(memPath, d, "memory", "MEMORY.md");
+                        try {
+                          const mem = await fs.readFile(memFile, "utf-8");
+                          localContext += `
+PROJECT MEMORY:
+${mem.slice(0, 400)}`;
+                        } catch {
+                        }
+                      }
+                    } catch {
+                    }
+                    try {
+                      const { execSync: execSync2 } = await import("node:child_process");
+                      const commitCount = execSync2("git log --oneline --since='2026-01-01' | wc -l", { cwd: process.cwd(), timeout: 3e3 }).toString().trim();
+                      const firstCommit = execSync2("git log --oneline --reverse | head -1", { cwd: process.cwd(), timeout: 3e3 }).toString().trim();
+                      localContext += `
+GIT HISTORY: ${commitCount} commits since Jan 2026. First: ${firstCommit}`;
+                    } catch {
+                    }
+                  } catch {
+                  }
+                }
+                const credResp = await fetch(
+                  `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${process.env.GEMINI_API_KEY}`,
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      contents: [{ parts: [{ text: `Assess founder/team credibility of "${synthesized.entityName}" for a ${resolvedLens} audience.
+
+Web context: ${(synthesized.answer ?? "").slice(0, 400)}${localContext ? `
+
+Local founder context (private, high-trust):
+${localContext}` : ""}
+
+Return ONLY JSON:
+{"founderCredibility":"why credible","trustSignals":["fact1","fact2"],"visionMagnitude":"scale assessment","reinventionCapacity":"pivot ability","hiddenRequirements":["req1","req2"]}` }] }],
+                      generationConfig: { temperature: 0, maxOutputTokens: 600, responseMimeType: "application/json" }
+                    }),
+                    signal: AbortSignal.timeout(8e3)
+                  }
                 );
-                if (mcResult.bestPath) {
-                  synthesized.signals.push({ name: `Bull case: ${mcResult.bestPath.payoff} at ${mcResult.bestPath.marketShare} share`, direction: "up", impact: "high" });
+                if (credResp.ok) {
+                  const credData = await credResp.json();
+                  const credText = credData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+                  const credMatch = credText.match(/\{[\s\S]*\}/);
+                  if (credMatch) synthesized.whyThisTeam = JSON.parse(credMatch[0]);
                 }
-                if (mcResult.worstPath) {
-                  synthesized.signals.push({ name: `Bear case: ${mcResult.worstPath.payoff} \u2014 ${mcResult.worstPath.outcome}`, direction: "down", impact: "high" });
-                }
-                for (const d of (mcResult.decisionSensitivity ?? []).slice(0, 2)) {
-                  synthesized.risks.push({ title: `Key decision: ${d.decision}`, description: `Best path: "${d.bestChoice}" (${d.impact} vs average). This decision materially affects outcomes.` });
-                }
-                synthesized.answer += ` Simulation (${sim.paths}, ${sim.horizon}): ${sim.successRate} success, ${sim.survivalRate} survival. Base payoff ${sim.medianPayoff}.`;
-                synthesized.sources.push({ label: `Monte Carlo (${sim.paths})`, type: "local" });
+              } catch {
               }
-              mcTrace.ok(`${mcResult?.summary?.successRate ?? "?"} success rate`);
-            } catch {
-            }
+            })());
+          }
+          if (budgetRemaining > 3e3 && (classification.type === "company_search" || classification.type === "competitor" || classification.type === "multi_entity")) {
+            enrichmentPromises.push((async () => {
+              try {
+                const answerText = synthesized.answer ?? "";
+                const revMatch = answerText.match(/\$(\d+(?:\.\d+)?)\s*(B|billion|M|million)/i);
+                const shareMatch = answerText.match(/(\d+(?:\.\d+)?)\s*%\s*(?:market|share)/i);
+                if (!revMatch || !shareMatch) {
+                  return;
+                }
+                const mcTrace = traceStep("tool_call", "simulate_decision_paths");
+                const seedRevenue = parseFloat(revMatch[1]) * (revMatch[2].toLowerCase().startsWith("b") ? 1e9 : 1e6) / 12;
+                const seedShare = parseFloat(shareMatch[1]) / 100;
+                const mcResult = await callTool("simulate_decision_paths", {
+                  entity: synthesized.entityName,
+                  revenue: Math.round(seedRevenue),
+                  marketShare: seedShare,
+                  runway: 24,
+                  numPaths: 100,
+                  timeHorizonMonths: 12
+                });
+                if (mcResult?.summary) {
+                  const sim = mcResult.summary;
+                  synthesized.signals.push(
+                    { name: `Scenario range (${sim.paths} paths): ${sim.successRate} success rate with base payoff ${sim.medianPayoff}.`, direction: "neutral", impact: "low" }
+                  );
+                  if (mcResult.bestPath && mcResult.worstPath) {
+                    synthesized.signals.push({
+                      name: `Three-case range: bull ${mcResult.bestPath.payoff} versus bear ${mcResult.worstPath.payoff} within ${sim.confidenceInterval}.`,
+                      direction: "neutral",
+                      impact: "low"
+                    });
+                  }
+                  synthesized.sources.push({ label: `Scenario model (${sim.paths} quantified paths)`, type: "local" });
+                }
+                mcTrace.ok(`${mcResult?.summary?.successRate ?? "?"} success rate`);
+              } catch {
+              }
+            })());
+          }
+          if (enrichmentPromises.length > 0) {
+            const enrichBudget = Math.max(1e3, requestDeadline - Date.now() - 500);
+            await Promise.race([
+              Promise.all(enrichmentPromises),
+              new Promise((resolve4) => setTimeout(resolve4, enrichBudget))
+            ]);
           }
           result = {
             canonicalEntity: {
@@ -13288,6 +15447,7 @@ Entity extraction rules:
               evidence: r.description
             })),
             comparables: synthesized.comparables,
+            whyThisTeam: synthesized.whyThisTeam,
             nextActions: synthesized.nextActions,
             nextQuestions: synthesized.nextQuestions,
             sourceRefs: synthesized.sources.map((s, i) => ({
@@ -13297,11 +15457,11 @@ Entity extraction rules:
               type: s.type,
               status: "cited"
             })),
-            keyMetrics: [
-              { label: "Confidence", value: `${synthesized.confidence}%` },
-              { label: "Steps", value: String(execution.stepResults.length) },
+            keyMetrics: Array.isArray(synthesized.keyMetrics) && synthesized.keyMetrics.length > 0 ? synthesized.keyMetrics : [
               { label: "Sources", value: String(synthesized.sources.length) },
-              { label: "Actions", value: String(synthesized.nextActions.length) }
+              { label: "Comparables", value: String(synthesized.comparables.length) },
+              { label: "Diligence flags", value: String(synthesized.risks.length) },
+              { label: "Confidence", value: `${synthesized.confidence}%` }
             ],
             harnessExecution: {
               objective: plan.objective,
@@ -13317,6 +15477,7 @@ Entity extraction rules:
           fallbackTrace.ok(`harness failed: ${harnessErr?.message ?? "unknown"}, using legacy dispatch`);
         }
       }
+      checkBudget();
       if (!usedHarness) switch (classification.type) {
         case "weekly_reset": {
           const t = traceStep("tool_call", "founder_local_weekly_reset");
@@ -13507,7 +15668,7 @@ Entity extraction rules:
                 }
                 const webRes = await Promise.race([
                   callTool("web_search", { query: `${eName} company overview strategy ${(/* @__PURE__ */ new Date()).getFullYear()}`, maxResults: 3 }),
-                  new Promise((resolve4) => setTimeout(() => resolve4(null), 6e3))
+                  new Promise((resolve4) => setTimeout(() => resolve4(null), process.env.VERCEL ? 3e3 : 6e3))
                 ]);
                 const snippets = (webRes?.results ?? []).map((r) => r.snippet ?? r.description ?? "").filter(Boolean);
                 return { name: eName, answer: "", snippets, sources: (webRes?.results ?? []).map((r) => r.url).filter(Boolean), resultCount: webRes?.resultCount ?? 0 };
@@ -13544,7 +15705,7 @@ Return ONLY valid JSON:
 }` }] }],
                     generationConfig: { temperature: 0.1, maxOutputTokens: 2e3, responseMimeType: "application/json" }
                   }),
-                  signal: AbortSignal.timeout(1e4)
+                  signal: AbortSignal.timeout(process.env.VERCEL ? 4e3 : 1e4)
                 }
               );
               if (geminiResp.ok) {
@@ -13634,7 +15795,7 @@ Return ONLY valid JSON:
                 query: `${entityName2} company overview strategy funding ${(/* @__PURE__ */ new Date()).getFullYear()}`,
                 maxResults: 5
               }),
-              new Promise((resolve4) => setTimeout(() => resolve4(null), 8e3))
+              new Promise((resolve4) => setTimeout(() => resolve4(null), process.env.VERCEL ? 4e3 : 8e3))
             ]).then((r) => {
               webTrace.ok(`${r?.resultCount ?? 0} results`);
               return r;
@@ -13715,7 +15876,7 @@ Return ONLY valid JSON:
 }` }] }],
                     generationConfig: { temperature: 0.1, maxOutputTokens: 1500, responseMimeType: "application/json" }
                   }),
-                  signal: AbortSignal.timeout(1e4)
+                  signal: AbortSignal.timeout(process.env.VERCEL ? 4e3 : 1e4)
                 }
               );
               if (geminiResp.ok) {
@@ -13846,7 +16007,7 @@ Return ONLY valid JSON:
               try {
                 const r = await Promise.race([
                   callTool("web_search", { query: query.trim().slice(0, 200), maxResults: 5 }),
-                  new Promise((resolve4) => setTimeout(() => resolve4(null), 8e3))
+                  new Promise((resolve4) => setTimeout(() => resolve4(null), process.env.VERCEL ? 4e3 : 8e3))
                 ]);
                 wt.ok(`${r?.resultCount ?? 0} results`);
                 return r;
@@ -13887,7 +16048,7 @@ Return ONLY valid JSON with:
 RULES: Only include facts grounded in the web data. If data is thin, return fewer items.` }] }],
                     generationConfig: { temperature: 0.1, maxOutputTokens: 1200, responseMimeType: "application/json" }
                   }),
-                  signal: AbortSignal.timeout(1e4)
+                  signal: AbortSignal.timeout(process.env.VERCEL ? 4e3 : 1e4)
                 }
               );
               if (resp.ok) {
@@ -13974,7 +16135,8 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
       if (founderDirectionTool && shouldRunFounderDirectionAssessment({
         query: query.trim(),
         lens: resolvedLens,
-        classification: classification.type
+        classification: classification.type,
+        result
       })) {
         const directionTrace = traceStep("tool_call", "founder_direction_assessment");
         try {
@@ -14018,7 +16180,8 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
         classification: classification.type,
         result,
         judgeVerdict,
-        packetId
+        packetId,
+        entityFallback: classification.entity
       });
       result = proof.result;
       const normalizedIdentity = normalizeFounderIdentity({
@@ -14138,6 +16301,7 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
           query: query.trim().slice(0, 200)
         });
       }
+      clearTimeout(budgetTimer);
       if (isStream) {
         res.write(`data: ${JSON.stringify({ type: "result", payload })}
 
@@ -14147,18 +16311,25 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
         return res.json(payload);
       }
     } catch (err) {
+      clearTimeout(budgetTimer);
+      const isTimeout = err?.message?.includes("budget") || err?.message?.includes("timeout") || requestAbort.signal.aborted;
       const errorPayload = {
         error: true,
-        message: err?.message ?? "Search failed",
-        classification: classification.type
+        message: isTimeout ? "Search timed out \u2014 try a shorter query or check back later" : err?.message ?? "Search failed",
+        classification: classification?.type ?? "unknown",
+        timedOut: isTimeout
       };
+      if (isStream && !res.headersSent) {
+        res.setHeader("Content-Type", "text/event-stream");
+        res.flushHeaders();
+      }
       if (isStream) {
         res.write(`data: ${JSON.stringify({ type: "error", error: errorPayload })}
 
 `);
         return res.end();
       } else {
-        return res.status(500).json(errorPayload);
+        return res.status(isTimeout ? 504 : 500).json(errorPayload);
       }
     }
   };
@@ -14309,28 +16480,320 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
 // server/routes/sharedContext.ts
 import { Router as Router2 } from "express";
 
+// packages/mcp-local/src/sync/founderEpisodeStore.ts
+init_db();
+import { createHash as createHash2 } from "node:crypto";
+function json2(value, fallback = {}) {
+  return JSON.stringify(value ?? fallback);
+}
+function parseJson2(value, fallback) {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+function hashPayload2(payload) {
+  return createHash2("sha256").update(JSON.stringify(payload ?? null)).digest("hex");
+}
+function parseRow(row) {
+  return {
+    episodeId: row.episode_id,
+    correlationId: row.correlation_id,
+    sessionKey: row.session_key ?? null,
+    workspaceId: row.workspace_id ?? null,
+    companyKey: row.company_key ?? null,
+    surface: row.surface,
+    episodeType: row.episode_type,
+    status: row.status,
+    query: row.query ?? null,
+    lens: row.lens ?? null,
+    entityName: row.entity_name ?? null,
+    packetId: row.packet_id ?? null,
+    packetType: row.packet_type ?? null,
+    contextId: row.context_id ?? null,
+    taskId: row.task_id ?? null,
+    summary: row.summary ?? null,
+    stateBefore: parseJson2(row.state_before_json, {}),
+    stateAfter: parseJson2(row.state_after_json, {}),
+    stateBeforeHash: row.state_before_hash ?? null,
+    stateAfterHash: row.state_after_hash ?? null,
+    spans: parseJson2(row.spans_json, []),
+    traceStepCount: row.trace_step_count ?? null,
+    toolsInvoked: parseJson2(row.tools_invoked_json, []),
+    artifactsProduced: parseJson2(row.artifacts_produced_json, []),
+    importantChangesDetected: row.important_changes_detected ?? null,
+    contradictionsDetected: row.contradictions_detected ?? null,
+    metadata: parseJson2(row.metadata_json, {}),
+    startedAt: row.started_at,
+    updatedAt: row.updated_at,
+    completedAt: row.completed_at ?? null
+  };
+}
+function startFounderEpisode(input) {
+  const db = getDb();
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const episodeId = input.episodeId ?? genId("episode");
+  const correlationId = input.correlationId ?? genId("corr");
+  const existing = db.prepare(`
+    SELECT *
+    FROM founder_harness_episodes
+    WHERE episode_id = ?
+    LIMIT 1
+  `).get(episodeId);
+  const stateBeforeHash = input.stateBeforeHash ?? hashPayload2(input.stateBefore ?? null);
+  const spans = input.initialSpan ? [input.initialSpan] : [];
+  if (existing) {
+    db.prepare(`
+      UPDATE founder_harness_episodes
+      SET correlation_id = ?,
+          session_key = COALESCE(?, session_key),
+          workspace_id = COALESCE(?, workspace_id),
+          company_key = COALESCE(?, company_key),
+          surface = ?,
+          episode_type = ?,
+          query = COALESCE(?, query),
+          lens = COALESCE(?, lens),
+          entity_name = COALESCE(?, entity_name),
+          state_before_json = COALESCE(?, state_before_json),
+          state_before_hash = COALESCE(?, state_before_hash),
+          spans_json = CASE WHEN length(COALESCE(spans_json, '')) > 2 THEN spans_json ELSE ? END,
+          metadata_json = COALESCE(?, metadata_json),
+          updated_at = ?,
+          status = CASE WHEN status = 'completed' THEN status ELSE 'active' END
+      WHERE episode_id = ?
+    `).run(
+      correlationId,
+      input.sessionKey ?? null,
+      input.workspaceId ?? null,
+      input.companyKey ?? null,
+      input.surface,
+      input.episodeType,
+      input.query ?? null,
+      input.lens ?? null,
+      input.entityName ?? null,
+      input.stateBefore ? json2(input.stateBefore) : null,
+      stateBeforeHash,
+      json2(spans, []),
+      input.metadata ? json2(input.metadata) : null,
+      now,
+      episodeId
+    );
+  } else {
+    db.prepare(`
+      INSERT INTO founder_harness_episodes (
+        episode_id, correlation_id, session_key, workspace_id, company_key,
+        surface, episode_type, status, query, lens, entity_name, state_before_json,
+        state_before_hash, spans_json, tools_invoked_json, artifacts_produced_json,
+        metadata_json, started_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, '[]', '[]', ?, ?, ?)
+    `).run(
+      episodeId,
+      correlationId,
+      input.sessionKey ?? null,
+      input.workspaceId ?? null,
+      input.companyKey ?? null,
+      input.surface,
+      input.episodeType,
+      input.query ?? null,
+      input.lens ?? null,
+      input.entityName ?? null,
+      json2(input.stateBefore),
+      stateBeforeHash,
+      json2(spans, []),
+      input.metadata ? json2(input.metadata) : null,
+      now,
+      now
+    );
+  }
+  return getFounderEpisode(episodeId);
+}
+function appendFounderEpisodeSpan(input) {
+  const db = getDb();
+  const existing = getFounderEpisode(input.episodeId);
+  if (!existing) {
+    throw new Error(`Founder harness episode not found: ${input.episodeId}`);
+  }
+  const spans = [...existing.spans, input.span];
+  const metadata = input.metadata ? { ...existing.metadata ?? {}, ...input.metadata } : existing.metadata;
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  db.prepare(`
+    UPDATE founder_harness_episodes
+    SET spans_json = ?,
+        context_id = COALESCE(?, context_id),
+        task_id = COALESCE(?, task_id),
+        entity_name = COALESCE(?, entity_name),
+        packet_id = COALESCE(?, packet_id),
+        packet_type = COALESCE(?, packet_type),
+        workspace_id = COALESCE(?, workspace_id),
+        company_key = COALESCE(?, company_key),
+        metadata_json = ?,
+        updated_at = ?
+    WHERE episode_id = ?
+  `).run(
+    json2(spans, []),
+    input.contextId ?? null,
+    input.taskId ?? null,
+    input.entityName ?? null,
+    input.packetId ?? null,
+    input.packetType ?? null,
+    input.workspaceId ?? null,
+    input.companyKey ?? null,
+    json2(metadata),
+    now,
+    input.episodeId
+  );
+  return getFounderEpisode(input.episodeId);
+}
+function finalizeFounderEpisode(input) {
+  const db = getDb();
+  const existing = getFounderEpisode(input.episodeId);
+  if (!existing) {
+    throw new Error(`Founder harness episode not found: ${input.episodeId}`);
+  }
+  const spans = input.finalSpan ? [...existing.spans, input.finalSpan] : existing.spans;
+  const toolsInvoked = input.toolsInvoked ? Array.from(/* @__PURE__ */ new Set([...existing.toolsInvoked ?? [], ...input.toolsInvoked])) : existing.toolsInvoked;
+  const artifactsProduced = input.artifactsProduced ? Array.from(/* @__PURE__ */ new Set([...existing.artifactsProduced ?? [], ...input.artifactsProduced])) : existing.artifactsProduced;
+  const metadata = input.metadata ? { ...existing.metadata ?? {}, ...input.metadata } : existing.metadata;
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  db.prepare(`
+    UPDATE founder_harness_episodes
+    SET status = ?,
+        state_after_json = COALESCE(?, state_after_json),
+        state_after_hash = COALESCE(?, state_after_hash),
+        summary = COALESCE(?, summary),
+        tools_invoked_json = ?,
+        artifacts_produced_json = ?,
+        trace_step_count = COALESCE(?, trace_step_count),
+        important_changes_detected = COALESCE(?, important_changes_detected),
+        contradictions_detected = COALESCE(?, contradictions_detected),
+        context_id = COALESCE(?, context_id),
+        task_id = COALESCE(?, task_id),
+        entity_name = COALESCE(?, entity_name),
+        packet_id = COALESCE(?, packet_id),
+        packet_type = COALESCE(?, packet_type),
+        workspace_id = COALESCE(?, workspace_id),
+        company_key = COALESCE(?, company_key),
+        spans_json = ?,
+        metadata_json = ?,
+        updated_at = ?,
+        completed_at = ?
+    WHERE episode_id = ?
+  `).run(
+    input.status ?? "completed",
+    input.stateAfter ? json2(input.stateAfter) : null,
+    input.stateAfterHash ?? hashPayload2(input.stateAfter ?? existing.stateAfter ?? null),
+    input.summary ?? null,
+    json2(toolsInvoked, []),
+    json2(artifactsProduced, []),
+    input.traceStepCount ?? null,
+    input.importantChangesDetected ?? null,
+    input.contradictionsDetected ?? null,
+    input.contextId ?? null,
+    input.taskId ?? null,
+    input.entityName ?? null,
+    input.packetId ?? null,
+    input.packetType ?? null,
+    input.workspaceId ?? null,
+    input.companyKey ?? null,
+    json2(spans, []),
+    json2(metadata),
+    now,
+    now,
+    input.episodeId
+  );
+  return getFounderEpisode(input.episodeId);
+}
+function getFounderEpisode(episodeId) {
+  const row = getDb().prepare(`
+    SELECT *
+    FROM founder_harness_episodes
+    WHERE episode_id = ?
+    LIMIT 1
+  `).get(episodeId);
+  return row ? parseRow(row) : null;
+}
+function listFounderEpisodes(input = {}) {
+  const limit = Math.min(Math.max(input.limit ?? 10, 1), 50);
+  const db = getDb();
+  let rows = [];
+  if (input.sessionKey) {
+    rows = db.prepare(`
+      SELECT *
+      FROM founder_harness_episodes
+      WHERE session_key = ?
+      ORDER BY started_at DESC
+      LIMIT ?
+    `).all(input.sessionKey, limit * 2);
+  } else if (input.workspaceId) {
+    rows = db.prepare(`
+      SELECT *
+      FROM founder_harness_episodes
+      WHERE workspace_id = ?
+      ORDER BY started_at DESC
+      LIMIT ?
+    `).all(input.workspaceId, limit * 2);
+  } else {
+    rows = db.prepare(`
+      SELECT *
+      FROM founder_harness_episodes
+      ORDER BY started_at DESC
+      LIMIT ?
+    `).all(limit * 2);
+  }
+  const parsed = rows.map(parseRow);
+  return input.status ? parsed.filter((row) => row.status === input.status).slice(0, limit) : parsed.slice(0, limit);
+}
+
 // server/routes/sharedContextConvex.ts
-import { ConvexHttpClient as ConvexHttpClient2 } from "convex/browser";
+import { ConvexHttpClient as ConvexHttpClient3 } from "convex/browser";
 
 // convex/_generated/api.js
 import { anyApi as anyApi2, componentsGeneric } from "convex/server";
 var api = anyApi2;
 var components = componentsGeneric();
 
-// server/routes/sharedContextConvex.ts
+// server/routes/founderEpisodeConvex.ts
+import { ConvexHttpClient as ConvexHttpClient2 } from "convex/browser";
 var _client = null;
 function getConvexClient() {
   if (_client) return _client;
   const url = process.env.CONVEX_URL ?? process.env.VITE_CONVEX_URL;
-  if (!url) throw new Error("CONVEX_URL not set \u2014 cannot use Convex adapter");
+  if (!url) throw new Error("CONVEX_URL not set \u2014 cannot use Convex founder harness adapter");
   _client = new ConvexHttpClient2(url);
   return _client;
+}
+async function startFounderEpisodeConvex(input) {
+  return getConvexClient().mutation(api.domains.founder.founderHarnessOps.startEpisode, input);
+}
+async function appendFounderEpisodeSpanConvex(input) {
+  return getConvexClient().mutation(api.domains.founder.founderHarnessOps.appendEpisodeSpan, input);
+}
+async function finalizeFounderEpisodeConvex(input) {
+  return getConvexClient().mutation(api.domains.founder.founderHarnessOps.finalizeEpisode, input);
+}
+async function getFounderEpisodeConvex(episodeId) {
+  return getConvexClient().query(api.domains.founder.founderHarnessOps.getEpisode, { episodeId });
+}
+async function listFounderEpisodesConvex(input) {
+  return getConvexClient().query(api.domains.founder.founderHarnessOps.listEpisodes, input);
+}
+
+// server/routes/sharedContextConvex.ts
+var _client2 = null;
+function getConvexClient2() {
+  if (_client2) return _client2;
+  const url = process.env.CONVEX_URL ?? process.env.VITE_CONVEX_URL;
+  if (!url) throw new Error("CONVEX_URL not set \u2014 cannot use Convex adapter");
+  _client2 = new ConvexHttpClient3(url);
+  return _client2;
 }
 function isConvexAvailable() {
   return !!(process.env.CONVEX_URL ?? process.env.VITE_CONVEX_URL);
 }
 async function registerPeerConvex(input) {
-  const client = getConvexClient();
+  const client = getConvexClient2();
   await client.mutation(api.domains.founder.sharedContextOps.registerPeer, {
     peerId: input.peerId,
     product: input.product ?? "nodebench",
@@ -14344,7 +16807,7 @@ async function registerPeerConvex(input) {
   return { peerId: input.peerId };
 }
 async function publishPacketConvex(input) {
-  const client = getConvexClient();
+  const client = getConvexClient2();
   await client.mutation(api.domains.founder.sharedContextOps.publishPacket, {
     contextId: input.contextId,
     contextType: input.contextType,
@@ -14362,11 +16825,11 @@ async function publishPacketConvex(input) {
   return { contextId: input.contextId };
 }
 async function getPacketConvex(contextId) {
-  const client = getConvexClient();
+  const client = getConvexClient2();
   return client.query(api.domains.founder.sharedContextOps.getPacket, { contextId });
 }
 async function proposeTaskConvex(input) {
-  const client = getConvexClient();
+  const client = getConvexClient2();
   await client.mutation(api.domains.founder.sharedContextOps.proposeTask, {
     taskId: input.taskId,
     taskType: input.taskType ?? "agent_handoff",
@@ -14379,7 +16842,7 @@ async function proposeTaskConvex(input) {
   return { taskId: input.taskId };
 }
 async function getSnapshotConvex(limit = 10, _requestingPeerId) {
-  const client = getConvexClient();
+  const client = getConvexClient2();
   const [peers, packets, tasks, messages] = await Promise.all([
     client.query(api.domains.founder.sharedContextOps.listPeers, { limit }),
     client.query(api.domains.founder.sharedContextOps.listPackets, { limit }),
@@ -14393,6 +16856,11 @@ async function getSnapshotConvex(limit = 10, _requestingPeerId) {
     recentMessages: messages
   };
 }
+var startFounderEpisodeConvex2 = startFounderEpisodeConvex;
+var appendFounderEpisodeSpanConvex2 = appendFounderEpisodeSpanConvex;
+var finalizeFounderEpisodeConvex2 = finalizeFounderEpisodeConvex;
+var getFounderEpisodeConvex2 = getFounderEpisodeConvex;
+var listFounderEpisodesConvex2 = listFounderEpisodesConvex;
 
 // server/routes/sharedContext.ts
 var useConvex = () => !!(process.env.VERCEL && isConvexAvailable());
@@ -14434,6 +16902,23 @@ function parseSnapshotFilters(query) {
     messageClass,
     eventTypes: eventTypesRaw ? eventTypesRaw.split(",").map((value) => value.trim()).filter(Boolean) : void 0
   };
+}
+function positiveLimit(value, fallback) {
+  const parsed = Number(firstQueryValue(value) ?? fallback);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.min(Math.trunc(parsed), 50);
+}
+function normalizeEpisodeSurface(value) {
+  if (value === "web" || value === "api" || value === "browser" || value === "claude_code" || value === "openclaw" || value === "local_runtime") {
+    return value;
+  }
+  return "web";
+}
+function normalizeEpisodeStatus(value) {
+  if (value === "active" || value === "completed" || value === "error" || value === "aborted") {
+    return value;
+  }
+  return void 0;
 }
 function filterSnapshot(snapshot, filters) {
   const peers = filters.workspaceId ? snapshot.peers.filter((peer) => peer.workspaceId === filters.workspaceId) : snapshot.peers;
@@ -14760,6 +17245,182 @@ function buildStrategicIssuePayload(args) {
 }
 function createSharedContextRouter() {
   const router = Router2();
+  router.get("/episodes", async (req, res) => {
+    const sessionKey = firstQueryValue(req.query.sessionKey);
+    const workspaceId = firstQueryValue(req.query.workspaceId);
+    const status = normalizeEpisodeStatus(firstQueryValue(req.query.status));
+    const limit = positiveLimit(req.query.limit, 10);
+    try {
+      const episodes = useConvex() ? await listFounderEpisodesConvex2({ sessionKey, workspaceId, status, limit }) : listFounderEpisodes({ sessionKey, workspaceId, status, limit });
+      return res.json({
+        success: true,
+        episodes,
+        filters: { sessionKey, workspaceId, status: status ?? null, limit }
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  router.get("/episodes/:episodeId", async (req, res) => {
+    try {
+      const episode = useConvex() ? await getFounderEpisodeConvex2(req.params.episodeId) : getFounderEpisode(req.params.episodeId);
+      if (!episode) {
+        return res.status(404).json({
+          success: false,
+          message: `Founder harness episode not found: ${req.params.episodeId}`
+        });
+      }
+      return res.json({ success: true, episode });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  router.post("/episodes/start", async (req, res) => {
+    const body = req.body ?? {};
+    if (!body.query?.trim() && !body.entityName?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Founder harness episodes require a query or entityName."
+      });
+    }
+    try {
+      const episode = useConvex() ? await startFounderEpisodeConvex2({
+        episodeId: body.episodeId ?? `episode:${Date.now()}`,
+        correlationId: body.correlationId ?? `corr:${Date.now()}`,
+        sessionKey: body.sessionKey,
+        workspaceId: body.workspaceId,
+        companyKey: body.companyKey,
+        surface: normalizeEpisodeSurface(body.surface),
+        episodeType: body.episodeType ?? "entity_search",
+        query: body.query?.trim(),
+        lens: body.lens?.trim(),
+        entityName: body.entityName?.trim(),
+        stateBefore: body.stateBefore,
+        stateBeforeHash: body.stateBeforeHash,
+        metadata: body.metadata,
+        initialSpan: body.initialSpan
+      }) : startFounderEpisode({
+        episodeId: body.episodeId,
+        correlationId: body.correlationId,
+        sessionKey: body.sessionKey,
+        workspaceId: body.workspaceId,
+        companyKey: body.companyKey,
+        surface: normalizeEpisodeSurface(body.surface),
+        episodeType: body.episodeType ?? "entity_search",
+        query: body.query?.trim(),
+        lens: body.lens?.trim(),
+        entityName: body.entityName?.trim(),
+        stateBefore: body.stateBefore,
+        stateBeforeHash: body.stateBeforeHash,
+        metadata: body.metadata,
+        initialSpan: body.initialSpan
+      });
+      return res.json({ success: true, episode });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  router.post("/episodes/:episodeId/span", async (req, res) => {
+    const body = req.body ?? {};
+    if (!body.span) {
+      return res.status(400).json({
+        success: false,
+        message: "Founder harness span payload is required."
+      });
+    }
+    try {
+      const episode = useConvex() ? await appendFounderEpisodeSpanConvex2({
+        episodeId: req.params.episodeId,
+        span: body.span,
+        contextId: body.contextId,
+        taskId: body.taskId,
+        entityName: body.entityName,
+        packetId: body.packetId,
+        packetType: body.packetType,
+        workspaceId: body.workspaceId,
+        companyKey: body.companyKey,
+        metadata: body.metadata
+      }) : appendFounderEpisodeSpan({
+        episodeId: req.params.episodeId,
+        span: body.span,
+        contextId: body.contextId,
+        taskId: body.taskId,
+        entityName: body.entityName,
+        packetId: body.packetId,
+        packetType: body.packetType,
+        workspaceId: body.workspaceId,
+        companyKey: body.companyKey,
+        metadata: body.metadata
+      });
+      return res.json({ success: true, episode });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  router.post("/episodes/:episodeId/finalize", async (req, res) => {
+    const body = req.body ?? {};
+    try {
+      const episode = useConvex() ? await finalizeFounderEpisodeConvex2({
+        episodeId: req.params.episodeId,
+        status: normalizeEpisodeStatus(body.status),
+        stateAfter: body.stateAfter,
+        stateAfterHash: body.stateAfterHash,
+        summary: body.summary,
+        toolsInvoked: body.toolsInvoked,
+        artifactsProduced: body.artifactsProduced,
+        traceStepCount: typeof body.traceStepCount === "number" ? body.traceStepCount : void 0,
+        importantChangesDetected: typeof body.importantChangesDetected === "number" ? body.importantChangesDetected : void 0,
+        contradictionsDetected: typeof body.contradictionsDetected === "number" ? body.contradictionsDetected : void 0,
+        contextId: body.contextId,
+        taskId: body.taskId,
+        entityName: body.entityName,
+        packetId: body.packetId,
+        packetType: body.packetType,
+        workspaceId: body.workspaceId,
+        companyKey: body.companyKey,
+        finalSpan: body.finalSpan,
+        metadata: body.metadata
+      }) : finalizeFounderEpisode({
+        episodeId: req.params.episodeId,
+        status: normalizeEpisodeStatus(body.status),
+        stateAfter: body.stateAfter,
+        stateAfterHash: body.stateAfterHash,
+        summary: body.summary,
+        toolsInvoked: body.toolsInvoked,
+        artifactsProduced: body.artifactsProduced,
+        traceStepCount: typeof body.traceStepCount === "number" ? body.traceStepCount : void 0,
+        importantChangesDetected: typeof body.importantChangesDetected === "number" ? body.importantChangesDetected : void 0,
+        contradictionsDetected: typeof body.contradictionsDetected === "number" ? body.contradictionsDetected : void 0,
+        contextId: body.contextId,
+        taskId: body.taskId,
+        entityName: body.entityName,
+        packetId: body.packetId,
+        packetType: body.packetType,
+        workspaceId: body.workspaceId,
+        companyKey: body.companyKey,
+        finalSpan: body.finalSpan,
+        metadata: body.metadata
+      });
+      return res.json({ success: true, episode });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
   router.get("/snapshot", async (req, res) => {
     const rawLimit = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
     const limit = typeof rawLimit === "string" ? Number.parseInt(rawLimit, 10) : 10;
@@ -15056,6 +17717,29 @@ function createSharedContextRouter() {
           await publishPacketConvex(issuePayload);
         }
         const snapshot = await getSnapshotConvex(6);
+        if (body.episodeId) {
+          await appendFounderEpisodeSpanConvex2({
+            episodeId: body.episodeId,
+            span: {
+              stage: "after",
+              type: strategicAngle ? "strategic_issue_published" : "packet_published",
+              status: "ok",
+              label: strategicAngle ? "Published strategic issue packet" : "Published founder packet",
+              detail: strategicAngle?.title ?? getSubject(packet),
+              timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+              contextId: strategicAngle ? issueContextId ?? contextId : contextId
+            },
+            contextId: strategicAngle ? issueContextId ?? contextId : contextId,
+            entityName: packet.canonicalEntity ?? packet.entityName,
+            packetId: packet.packetId,
+            packetType: packet.packetType,
+            workspaceId,
+            metadata: {
+              publishedVia: "shared_context",
+              strategicAngleId: strategicAngle?.id ?? null
+            }
+          });
+        }
         return res.json({
           success: true,
           contextId: strategicAngle ? issueContextId ?? contextId : contextId,
@@ -15092,6 +17776,29 @@ function createSharedContextRouter() {
         const issuePayload = buildStrategicIssuePayload({ packet, angle: strategicAngle });
         publishSharedContextPacket(issuePayload);
         responseContextId = issuePayload.contextId ?? contextId;
+      }
+      if (body.episodeId) {
+        appendFounderEpisodeSpan({
+          episodeId: body.episodeId,
+          span: {
+            stage: "after",
+            type: strategicAngle ? "strategic_issue_published" : "packet_published",
+            status: "ok",
+            label: strategicAngle ? "Published strategic issue packet" : "Published founder packet",
+            detail: strategicAngle?.title ?? getSubject(packet),
+            timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+            contextId: responseContextId
+          },
+          contextId: responseContextId,
+          entityName: packet.canonicalEntity ?? packet.entityName,
+          packetId: packet.packetId,
+          packetType: packet.packetType,
+          workspaceId,
+          metadata: {
+            publishedVia: "shared_context",
+            strategicAngleId: strategicAngle?.id ?? null
+          }
+        });
       }
       return res.json({
         success: true,
@@ -15237,6 +17944,31 @@ function createSharedContextRouter() {
           reason: goal
         });
         const snapshot = await getSnapshotConvex(6);
+        if (body.episodeId) {
+          await appendFounderEpisodeSpanConvex2({
+            episodeId: body.episodeId,
+            span: {
+              stage: "after",
+              type: strategicAngle ? "strategic_issue_delegated" : "agent_delegated",
+              status: "ok",
+              label: strategicAngle ? `Delegated issue to ${DELEGATE_TARGETS[target].label}` : `Delegated to ${DELEGATE_TARGETS[target].label}`,
+              detail: goal,
+              timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+              contextId: delegateContextId,
+              taskId
+            },
+            contextId: delegateContextId,
+            taskId,
+            entityName: packet.canonicalEntity ?? packet.entityName,
+            packetId: packet.packetId,
+            packetType: packet.packetType,
+            workspaceId,
+            metadata: {
+              targetAgent: target,
+              strategicAngleId: strategicAngle?.id ?? null
+            }
+          });
+        }
         return res.json({
           success: true,
           contextId: delegateContextId,
@@ -15284,6 +18016,31 @@ function createSharedContextRouter() {
         },
         queueForSync: false
       });
+      if (body.episodeId) {
+        appendFounderEpisodeSpan({
+          episodeId: body.episodeId,
+          span: {
+            stage: "after",
+            type: strategicAngle ? "strategic_issue_delegated" : "agent_delegated",
+            status: "ok",
+            label: strategicAngle ? `Delegated issue to ${DELEGATE_TARGETS[target].label}` : `Delegated to ${DELEGATE_TARGETS[target].label}`,
+            detail: goal,
+            timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+            contextId: delegateContextId,
+            taskId: proposed.taskId
+          },
+          contextId: delegateContextId,
+          taskId: proposed.taskId,
+          entityName: packet.canonicalEntity ?? packet.entityName,
+          packetId: packet.packetId,
+          packetType: packet.packetType,
+          workspaceId,
+          metadata: {
+            targetAgent: target,
+            strategicAngleId: strategicAngle?.id ?? null
+          }
+        });
+      }
       return res.json({
         success: true,
         contextId: delegateContextId,
@@ -16036,26 +18793,26 @@ var MANUAL_RATES = [
   { provider: "Google", model: "gemini-3.1-pro-preview", inputPer1M: 1.25, outputPer1M: 5, currency: "USD", tier: "mid", useCase: "Deep analysis, Pro QA runs (Gemini QA loop)", source: "manual", lastUpdated: Date.now(), isActive: true },
   { provider: "Google", model: "gemini-2.5-flash-preview", inputPer1M: 0.15, outputPer1M: 0.6, currency: "USD", tier: "cheap", useCase: "Fallback for Flash Lite failures", source: "manual", lastUpdated: Date.now(), isActive: false },
   // Anthropic (published API pricing)
-  { provider: "Anthropic", model: "claude-opus-4-6", inputPer1M: 15, outputPer1M: 75, currency: "USD", tier: "enterprise", useCase: "Not used in harness \u2014 available for premium synthesis", source: "manual", lastUpdated: Date.now(), isActive: false },
-  { provider: "Anthropic", model: "claude-sonnet-4-6", inputPer1M: 3, outputPer1M: 15, currency: "USD", tier: "mid", useCase: "Mid-tier tasks via call_llm fallback", source: "manual", lastUpdated: Date.now(), isActive: true },
-  { provider: "Anthropic", model: "claude-haiku-4-5-20251001", inputPer1M: 1, outputPer1M: 5, currency: "USD", tier: "cheap", useCase: "Routing fallback, NemoClaw default", source: "manual", lastUpdated: Date.now(), isActive: true },
+  { provider: "Anthropic", model: "claude-opus-4-6", displayName: "Claude Opus 4.6", inputPer1M: 15, outputPer1M: 75, currency: "USD", tier: "enterprise", useCase: "Premium synthesis (available on demand)", source: "manual", lastUpdated: Date.now(), isActive: false },
+  { provider: "Anthropic", model: "claude-sonnet-4-6", displayName: "Claude Sonnet 4.6", inputPer1M: 3, outputPer1M: 15, currency: "USD", tier: "mid", useCase: "Mid-tier analysis and reasoning", source: "manual", lastUpdated: Date.now(), isActive: true },
+  { provider: "Anthropic", model: "claude-haiku-4-5-20251001", displayName: "Claude Haiku 4.5", inputPer1M: 1, outputPer1M: 5, currency: "USD", tier: "cheap", useCase: "Fast classification and routing", source: "manual", lastUpdated: Date.now(), isActive: true },
   // OpenAI (published API pricing)
-  { provider: "OpenAI", model: "gpt-5.4-nano", inputPer1M: 0.1, outputPer1M: 0.4, currency: "USD", tier: "cheap", useCase: "Cheapest OpenAI fallback", source: "manual", lastUpdated: Date.now(), isActive: true },
-  { provider: "OpenAI", model: "gpt-5.4-mini", inputPer1M: 0.15, outputPer1M: 0.6, currency: "USD", tier: "cheap", useCase: "Mid-tier OpenAI fallback", source: "manual", lastUpdated: Date.now(), isActive: true },
-  { provider: "OpenAI", model: "gpt-5.4", inputPer1M: 2.5, outputPer1M: 10, currency: "USD", tier: "mid", useCase: "Premium OpenAI (not default)", source: "manual", lastUpdated: Date.now(), isActive: false },
-  // Linkup (per-call pricing, EUR)
-  { provider: "Linkup", model: "search-standard", inputPer1M: -1, outputPer1M: -1, perCallCost: 0.03, perCallUnit: "search", currency: "EUR", tier: "cheap", useCase: "Web search \u2014 standard depth (default)", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
-  { provider: "Linkup", model: "search-deep", inputPer1M: -1, outputPer1M: -1, perCallCost: 0.05, perCallUnit: "search", currency: "EUR", tier: "mid", useCase: "Web search \u2014 deep depth", source: "provider_docs", lastUpdated: Date.now(), isActive: false },
-  { provider: "Linkup", model: "fetch", inputPer1M: -1, outputPer1M: -1, perCallCost: 1e-3, perCallUnit: "request", currency: "EUR", tier: "free", useCase: "URL fetch without JS", source: "provider_docs", lastUpdated: Date.now(), isActive: false },
-  { provider: "Linkup", model: "fetch-js", inputPer1M: -1, outputPer1M: -1, perCallCost: 5e-3, perCallUnit: "request", currency: "EUR", tier: "cheap", useCase: "URL fetch with JS rendering", source: "provider_docs", lastUpdated: Date.now(), isActive: false },
+  { provider: "OpenAI", model: "gpt-5.4-nano", displayName: "GPT-5.4 Nano", inputPer1M: 0.1, outputPer1M: 0.4, currency: "USD", tier: "cheap", useCase: "Lightweight classification tasks", source: "manual", lastUpdated: Date.now(), isActive: true },
+  { provider: "OpenAI", model: "gpt-5.4-mini", displayName: "GPT-5.4 Mini", inputPer1M: 0.15, outputPer1M: 0.6, currency: "USD", tier: "cheap", useCase: "Fast analysis and extraction", source: "manual", lastUpdated: Date.now(), isActive: true },
+  { provider: "OpenAI", model: "gpt-5.4", displayName: "GPT-5.4", inputPer1M: 2.5, outputPer1M: 10, currency: "USD", tier: "mid", useCase: "Deep synthesis and reasoning", source: "manual", lastUpdated: Date.now(), isActive: false },
+  // Linkup (per-call pricing — displayed in USD equivalent)
+  { provider: "Linkup", model: "search-standard", displayName: "Web Search", inputPer1M: -1, outputPer1M: -1, perCallCost: 0.03, perCallUnit: "search", currency: "USD", tier: "cheap", useCase: "Standard web intelligence search", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
+  { provider: "Linkup", model: "search-deep", displayName: "Deep Search", inputPer1M: -1, outputPer1M: -1, perCallCost: 0.05, perCallUnit: "search", currency: "USD", tier: "mid", useCase: "Deep web intelligence search", source: "provider_docs", lastUpdated: Date.now(), isActive: false },
+  { provider: "Linkup", model: "fetch", displayName: "URL Fetch", inputPer1M: -1, outputPer1M: -1, perCallCost: 1e-3, perCallUnit: "request", currency: "USD", tier: "free", useCase: "URL content retrieval", source: "provider_docs", lastUpdated: Date.now(), isActive: false },
+  { provider: "Linkup", model: "fetch-js", displayName: "URL Fetch (JS)", inputPer1M: -1, outputPer1M: -1, perCallCost: 5e-3, perCallUnit: "request", currency: "USD", tier: "cheap", useCase: "URL content retrieval with rendering", source: "provider_docs", lastUpdated: Date.now(), isActive: false },
   // ElevenLabs (per-character pricing)
-  { provider: "ElevenLabs", model: "eleven_turbo_v2_5", inputPer1M: -1, outputPer1M: -1, perCallCost: 0.3, perCallUnit: "1K characters", currency: "USD", tier: "mid", useCase: "Text-to-speech synthesis (server-side proxy)", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
+  { provider: "ElevenLabs", model: "eleven_turbo_v2_5", displayName: "Voice Synthesis", inputPer1M: -1, outputPer1M: -1, perCallCost: 0.3, perCallUnit: "1K characters", currency: "USD", tier: "mid", useCase: "Text-to-speech voice output", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
   // Convex (function calls)
-  { provider: "Convex", model: "backend-functions", inputPer1M: -1, outputPer1M: -1, perCallCost: 0, perCallUnit: "function call", currency: "USD", tier: "free", useCase: "Backend persistence \u2014 free tier 25K calls/mo, Pro $25/mo unlimited", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
+  { provider: "Convex", model: "backend-functions", displayName: "Cloud Backend", inputPer1M: -1, outputPer1M: -1, perCallCost: 0, perCallUnit: "function call", currency: "USD", tier: "free", useCase: "Data persistence and sync", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
   // Figma (API usage)
-  { provider: "Figma", model: "rest-api", inputPer1M: -1, outputPer1M: -1, perCallCost: 0, perCallUnit: "request", currency: "USD", tier: "free", useCase: "Design governance sync \u2014 uses personal access token", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
+  { provider: "Figma", model: "rest-api", displayName: "Design API", inputPer1M: -1, outputPer1M: -1, perCallCost: 0, perCallUnit: "request", currency: "USD", tier: "free", useCase: "Design file sync and governance", source: "provider_docs", lastUpdated: Date.now(), isActive: true },
   // Vercel (hosting)
-  { provider: "Vercel", model: "serverless-functions", inputPer1M: -1, outputPer1M: -1, perCallCost: 0, perCallUnit: "invocation", currency: "USD", tier: "free", useCase: "Frontend + API hosting \u2014 Hobby free (12 functions, 100GB bandwidth)", source: "provider_docs", lastUpdated: Date.now(), isActive: true }
+  { provider: "Vercel", model: "serverless-functions", displayName: "Hosting", inputPer1M: -1, outputPer1M: -1, perCallCost: 0, perCallUnit: "invocation", currency: "USD", tier: "free", useCase: "Frontend hosting and API serving", source: "provider_docs", lastUpdated: Date.now(), isActive: true }
 ];
 async function scrapeOpenRouter() {
   try {
@@ -16333,6 +19090,721 @@ data: ${JSON.stringify(data)}
     const deleted = runtime.endSession(req.params.id);
     if (!deleted) return res.status(404).json({ ok: false, error: "Session not found" });
     res.json({ ok: true, deleted: true });
+  });
+  return router;
+}
+
+// server/routes/subconscious.ts
+import { Router as Router4 } from "express";
+
+// packages/mcp-local/src/subconscious/blocks.ts
+init_db();
+var BLOCK_LABELS = {
+  founder_identity: "Founder Identity",
+  company_identity: "Company Identity",
+  current_wedge: "Current Wedge",
+  top_priorities: "Top Priorities",
+  open_contradictions: "Open Contradictions",
+  readiness_gaps: "Readiness Gaps",
+  validated_workflows: "Validated Workflows",
+  recent_important_changes: "Recent Important Changes",
+  entity_watchlist: "Entity Watchlist",
+  agent_preferences: "Agent Preferences",
+  artifact_preferences: "Artifact Preferences",
+  packet_lineage: "Packet Lineage"
+};
+var ALL_BLOCK_TYPES = Object.keys(BLOCK_LABELS);
+var MAX_SOURCE_EVENTS = 50;
+function ensureBlocksExist() {
+  const db = getDb();
+  for (const [id, label] of Object.entries(BLOCK_LABELS)) {
+    db.prepare(
+      `INSERT OR IGNORE INTO subconscious_blocks (id, label, value, version, confidence, source_events)
+       VALUES (?, ?, '', 1, 'low', '[]')`
+    ).run(id, label);
+  }
+}
+function getBlock(id) {
+  ensureBlocksExist();
+  const db = getDb();
+  const row = db.prepare("SELECT * FROM subconscious_blocks WHERE id = ?").get(id);
+  if (!row) {
+    return {
+      id,
+      label: BLOCK_LABELS[id],
+      value: "",
+      version: 1,
+      confidence: "low",
+      sourceEvents: [],
+      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+  }
+  return rowToBlock(row);
+}
+function getAllBlocks() {
+  ensureBlocksExist();
+  const db = getDb();
+  const rows = db.prepare("SELECT * FROM subconscious_blocks ORDER BY id").all();
+  return rows.map(rowToBlock);
+}
+function getBlocksByIds(ids) {
+  if (ids.length === 0) return [];
+  ensureBlocksExist();
+  const db = getDb();
+  const placeholders = ids.map(() => "?").join(",");
+  const rows = db.prepare(`SELECT * FROM subconscious_blocks WHERE id IN (${placeholders})`).all(...ids);
+  return rows.map(rowToBlock);
+}
+function updateBlock(id, update) {
+  ensureBlocksExist();
+  const db = getDb();
+  const current = getBlock(id);
+  const newEvents = current.sourceEvents.slice();
+  if (update.sourceEvent) {
+    newEvents.push(update.sourceEvent);
+    if (newEvents.length > MAX_SOURCE_EVENTS) {
+      newEvents.splice(0, newEvents.length - MAX_SOURCE_EVENTS);
+    }
+  }
+  db.prepare(
+    `UPDATE subconscious_blocks
+     SET value = ?, version = version + 1, confidence = ?, source_events = ?, updated_at = datetime('now')
+     WHERE id = ?`
+  ).run(
+    update.value,
+    update.confidence ?? current.confidence,
+    JSON.stringify(newEvents),
+    id
+  );
+  return getBlock(id);
+}
+function getStaleBlocks(maxAgeDays = 7) {
+  const cutoff = /* @__PURE__ */ new Date();
+  cutoff.setDate(cutoff.getDate() - maxAgeDays);
+  const cutoffStr = cutoff.toISOString();
+  const all = getAllBlocks();
+  return all.filter((b) => b.value.length > 0 && b.updatedAt < cutoffStr);
+}
+function getBlockSummary() {
+  const blocks = getAllBlocks();
+  const lines = [];
+  for (const b of blocks) {
+    if (b.value.length === 0) continue;
+    const firstLine = b.value.split("\n")[0].slice(0, 80);
+    const stale = isStale(b) ? " [STALE]" : "";
+    lines.push(`- ${b.label} (v${b.version}, ${b.confidence})${stale}: ${firstLine}`);
+  }
+  return lines.length > 0 ? lines.join("\n") : "(no blocks populated yet)";
+}
+function logWhisper(entry) {
+  const db = getDb();
+  db.prepare(
+    `INSERT INTO subconscious_whisper_log (id, session_id, block_ids, whisper_text, classification, suppressed, reason)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    genId("wh"),
+    entry.sessionId,
+    JSON.stringify(entry.blockIds),
+    entry.whisperText,
+    entry.classification,
+    entry.suppressed ? 1 : 0,
+    entry.reason ?? null
+  );
+}
+function getRecentWhispers(sessionId, limit = 10) {
+  const db = getDb();
+  const rows = db.prepare(
+    `SELECT * FROM subconscious_whisper_log
+       WHERE session_id = ?
+       ORDER BY created_at DESC
+       LIMIT ?`
+  ).all(sessionId, limit);
+  return rows.map((r) => ({
+    id: r.id,
+    sessionId: r.session_id,
+    blockIds: JSON.parse(r.block_ids || "[]"),
+    whisperText: r.whisper_text,
+    classification: r.classification,
+    suppressed: r.suppressed === 1,
+    reason: r.reason,
+    createdAt: r.created_at
+  }));
+}
+function rowToBlock(row) {
+  return {
+    id: row.id,
+    label: row.label,
+    value: row.value,
+    version: row.version,
+    confidence: row.confidence,
+    sourceEvents: JSON.parse(row.source_events || "[]"),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+function isStale(block, maxAgeDays = 7) {
+  if (block.value.length === 0) return false;
+  const cutoff = /* @__PURE__ */ new Date();
+  cutoff.setDate(cutoff.getDate() - maxAgeDays);
+  return new Date(block.updatedAt) < cutoff;
+}
+
+// packages/mcp-local/src/subconscious/graphEngine.ts
+init_db();
+function searchEntities(query, limit = 10) {
+  const db = getDb();
+  try {
+    const rows = db.prepare(
+      `SELECT n.* FROM object_nodes_fts fts
+         JOIN object_nodes n ON n.rowid = fts.rowid
+         WHERE object_nodes_fts MATCH ?
+         ORDER BY rank
+         LIMIT ?`
+    ).all(query, limit);
+    return rows.map(rowToEntity);
+  } catch {
+    const rows = db.prepare(
+      `SELECT * FROM object_nodes
+         WHERE label LIKE ? OR metadata_json LIKE ?
+         ORDER BY updated_at DESC
+         LIMIT ?`
+    ).all(`%${query}%`, `%${query}%`, limit);
+    return rows.map(rowToEntity);
+  }
+}
+function resolveEntity(nameOrId) {
+  const db = getDb();
+  let row = db.prepare("SELECT * FROM object_nodes WHERE id = ?").get(nameOrId);
+  if (row) return rowToEntity(row);
+  row = db.prepare("SELECT * FROM object_nodes WHERE label = ? ORDER BY updated_at DESC LIMIT 1").get(nameOrId);
+  if (row) return rowToEntity(row);
+  const results = searchEntities(nameOrId, 1);
+  return results.length > 0 ? results[0] : null;
+}
+function getEdgesFrom(entityId, relationFilter) {
+  const db = getDb();
+  if (relationFilter && relationFilter.length > 0) {
+    const placeholders = relationFilter.map(() => "?").join(",");
+    return db.prepare(
+      `SELECT * FROM object_edges WHERE from_id = ? AND edge_type IN (${placeholders})`
+    ).all(entityId, ...relationFilter).map(rowToEdge);
+  }
+  return db.prepare("SELECT * FROM object_edges WHERE from_id = ?").all(entityId).map(rowToEdge);
+}
+function getEdgesTo(entityId, relationFilter) {
+  const db = getDb();
+  if (relationFilter && relationFilter.length > 0) {
+    const placeholders = relationFilter.map(() => "?").join(",");
+    return db.prepare(
+      `SELECT * FROM object_edges WHERE to_id = ? AND edge_type IN (${placeholders})`
+    ).all(entityId, ...relationFilter).map(rowToEdge);
+  }
+  return db.prepare("SELECT * FROM object_edges WHERE to_id = ?").all(entityId).map(rowToEdge);
+}
+function traverseGraph(startEntityId, maxDepth = 2, relationFilter) {
+  const visited = /* @__PURE__ */ new Set();
+  const queue = [
+    { entityId: startEntityId, depth: 0, path: [] }
+  ];
+  const results = [];
+  const db = getDb();
+  while (queue.length > 0) {
+    const { entityId, depth, path: path2 } = queue.shift();
+    if (depth > maxDepth || visited.has(entityId)) continue;
+    visited.add(entityId);
+    const outEdges = getEdgesFrom(entityId, relationFilter);
+    const inEdges = getEdgesTo(entityId, relationFilter);
+    const allEdges = [
+      ...outEdges.map((e) => ({ edge: e, neighborId: e.toId })),
+      ...inEdges.map((e) => ({ edge: e, neighborId: e.fromId }))
+    ];
+    for (const { edge, neighborId } of allEdges) {
+      if (visited.has(neighborId)) continue;
+      const newPath = [...path2, edge];
+      const entityRow = db.prepare("SELECT * FROM object_nodes WHERE id = ?").get(neighborId);
+      if (!entityRow) continue;
+      results.push({
+        entity: rowToEntity(entityRow),
+        hopDistance: depth + 1,
+        path: newPath,
+        reachedVia: edge.edgeType,
+        confidence: newPath.reduce((acc, e) => acc * e.confidence, 1)
+      });
+      if (depth + 1 < maxDepth) {
+        queue.push({ entityId: neighborId, depth: depth + 1, path: newPath });
+      }
+    }
+  }
+  return results.sort((a, b) => b.confidence - a.confidence);
+}
+function findContradictions(entityId, maxDepth = 2) {
+  return traverseGraph(entityId, maxDepth, ["contradicts"]);
+}
+function getGraphSummary() {
+  const db = getDb();
+  const totalEntities = db.prepare("SELECT COUNT(*) as c FROM object_nodes").get().c;
+  const totalEdges = db.prepare("SELECT COUNT(*) as c FROM object_edges").get().c;
+  const kindCounts = db.prepare("SELECT kind, COUNT(*) as c FROM object_nodes GROUP BY kind").all();
+  const entitiesByType = {};
+  for (const row of kindCounts) entitiesByType[row.kind] = row.c;
+  const edgeTypeCounts = db.prepare("SELECT edge_type, COUNT(*) as c FROM object_edges GROUP BY edge_type").all();
+  const edgesByType = {};
+  for (const row of edgeTypeCounts) edgesByType[row.edge_type] = row.c;
+  const recent = db.prepare(
+    "SELECT label, kind, updated_at FROM object_nodes ORDER BY updated_at DESC LIMIT 10"
+  ).all();
+  return {
+    totalEntities,
+    totalEdges,
+    entitiesByType,
+    edgesByType,
+    recentEntities: recent.map((r) => ({
+      label: r.label,
+      kind: r.kind,
+      updatedAt: r.updated_at
+    }))
+  };
+}
+function rowToEntity(row) {
+  return {
+    id: row.id,
+    kind: row.kind,
+    label: row.label,
+    source: row.source,
+    status: row.status,
+    properties: JSON.parse(row.metadata_json || "{}"),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+function rowToEdge(row) {
+  return {
+    id: row.id,
+    fromId: row.from_id,
+    toId: row.to_id,
+    edgeType: row.edge_type,
+    confidence: row.confidence,
+    metadata: JSON.parse(row.metadata_json || "{}"),
+    createdAt: row.created_at
+  };
+}
+
+// packages/mcp-local/src/subconscious/classifier.ts
+var BLOCK_MAP = {
+  code: ["agent_preferences", "current_wedge", "validated_workflows"],
+  strategy: [
+    "founder_identity",
+    "company_identity",
+    "current_wedge",
+    "top_priorities",
+    "open_contradictions"
+  ],
+  research: ["entity_watchlist", "recent_important_changes"],
+  delegation: ["validated_workflows", "packet_lineage", "agent_preferences"],
+  diligence: ["readiness_gaps", "company_identity", "packet_lineage"],
+  unknown: ["current_wedge"]
+};
+var PATTERNS = [
+  {
+    classification: "code",
+    keywords: /\b(implement|build|code|fix|bug|refactor|test|debug|compile|deploy|typescript|function|component|endpoint|route|api|import|export|npm|git|commit|push|pr|pull request|merge|lint|type[- ]?check)\b/i
+  },
+  {
+    classification: "diligence",
+    keywords: /\b(investor|diligence|due diligence|banking|bank|fundraise|series [a-d]|pitch|deck|readiness|compliance|audit|soc2|legal|term sheet|valuation|cap table|runway)\b/i
+  },
+  {
+    classification: "strategy",
+    keywords: /\b(strategy|wedge|positioning|roadmap|priorities|direction|pivot|moat|differentiat|competitive advantage|mission|vision|market fit|icp|buyer|distribution|pricing|go.?to.?market|gtm)\b/i
+  },
+  {
+    classification: "delegation",
+    keywords: /\b(delegate|dispatch|agent|task|packet|assign|orchestrat|automat|background|worker|swarm|teammate|pipeline|workflow)\b/i
+  },
+  {
+    classification: "research",
+    keywords: /\b(research|search|look up|find|competitor|market|entity|company|investigate|analyze|compare|benchmark|signal|trend|news|watchlist)\b/i
+  }
+];
+var ENTITY_PATTERN = /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+(?:Inc|LLC|Corp|Ltd|AI|Labs|Co)\.?)?)\b/g;
+var ENTITY_STOPWORDS = /* @__PURE__ */ new Set([
+  "The",
+  "This",
+  "That",
+  "These",
+  "Those",
+  "What",
+  "When",
+  "Where",
+  "Why",
+  "How",
+  "Which",
+  "Please",
+  "Can",
+  "Could",
+  "Would",
+  "Should",
+  "Let",
+  "Make",
+  "Build",
+  "Create",
+  "Update",
+  "Delete",
+  "Add",
+  "Remove",
+  "Fix",
+  "Run",
+  "Start",
+  "Stop",
+  "Check",
+  "Test",
+  "Help",
+  "Show",
+  "Tell",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December"
+]);
+function classifyPrompt(prompt) {
+  const scores = {
+    code: 0,
+    strategy: 0,
+    research: 0,
+    delegation: 0,
+    diligence: 0,
+    unknown: 0
+  };
+  for (const pattern of PATTERNS) {
+    const matches = prompt.match(pattern.keywords);
+    if (matches) {
+      scores[pattern.classification] += matches.length;
+    }
+  }
+  let best = "unknown";
+  let bestScore = 0;
+  for (const [cls, score] of Object.entries(scores)) {
+    if (cls !== "unknown" && score > bestScore) {
+      best = cls;
+      bestScore = score;
+    }
+  }
+  const totalMatches = Object.values(scores).reduce((a, b) => a + b, 0);
+  const confidence = totalMatches > 0 ? bestScore / totalMatches : 0;
+  const entities = extractEntities(prompt);
+  return {
+    classification: best,
+    confidence: Math.min(1, confidence),
+    relevantBlocks: BLOCK_MAP[best],
+    entities
+  };
+}
+function extractEntities(text) {
+  const matches = text.matchAll(ENTITY_PATTERN);
+  const seen = /* @__PURE__ */ new Set();
+  const entities = [];
+  for (const match of matches) {
+    const name = match[1].trim();
+    if (name.length < 3) continue;
+    if (ENTITY_STOPWORDS.has(name)) continue;
+    if (seen.has(name.toLowerCase())) continue;
+    seen.add(name.toLowerCase());
+    entities.push(name);
+  }
+  return entities;
+}
+function isTrivialPrompt(prompt) {
+  if (prompt.length < 30) return true;
+  if (/^(git |npm |npx |ls |cd |cat |pwd)/i.test(prompt.trim())) return true;
+  if (/^fix (typo|spelling|whitespace|indent)/i.test(prompt.trim())) return true;
+  return false;
+}
+
+// packages/mcp-local/src/subconscious/whisperPolicy.ts
+var TOKEN_BUDGETS = {
+  off: 0,
+  whisper: 200,
+  packet: 1e3,
+  full: 2e3,
+  review: 0
+};
+function generateWhisper(prompt, sessionId, mode = "whisper") {
+  const classification = classifyPrompt(prompt);
+  if (mode === "off" || mode === "review") {
+    return {
+      mode,
+      classification,
+      whisperText: "",
+      suppressed: true,
+      suppressionReason: `mode=${mode}`,
+      blockIdsUsed: [],
+      contradictions: [],
+      stalePackets: []
+    };
+  }
+  if (isTrivialPrompt(prompt)) {
+    const result = {
+      mode,
+      classification,
+      whisperText: "",
+      suppressed: true,
+      suppressionReason: "trivial_prompt",
+      blockIdsUsed: [],
+      contradictions: [],
+      stalePackets: []
+    };
+    logWhisper({
+      sessionId,
+      blockIds: [],
+      whisperText: "",
+      classification: classification.classification,
+      suppressed: true,
+      reason: "trivial_prompt"
+    });
+    return result;
+  }
+  const recentWhispers = getRecentWhispers(sessionId, 3);
+  const recentSameClass = recentWhispers.filter(
+    (w) => !w.suppressed && w.classification === classification.classification
+  );
+  if (recentSameClass.length >= 2) {
+    const result = {
+      mode,
+      classification,
+      whisperText: "",
+      suppressed: true,
+      suppressionReason: "duplicate_recent",
+      blockIdsUsed: [],
+      contradictions: [],
+      stalePackets: []
+    };
+    logWhisper({
+      sessionId,
+      blockIds: [],
+      whisperText: "",
+      classification: classification.classification,
+      suppressed: true,
+      reason: "duplicate_recent"
+    });
+    return result;
+  }
+  const blocks = getBlocksByIds(classification.relevantBlocks);
+  const populatedBlocks = blocks.filter((b) => b.value.length > 0);
+  const lines = [];
+  const blockIdsUsed = [];
+  const contradictions = [];
+  for (const entityName of classification.entities) {
+    const entity = resolveEntity(entityName);
+    if (!entity) continue;
+    const contradictionResults = findContradictions(entity.id, 2);
+    for (const cr of contradictionResults.slice(0, 2)) {
+      contradictions.push(
+        `"${entity.label}" contradicts "${cr.entity.label}" (via ${cr.reachedVia}, confidence ${(cr.confidence * 100).toFixed(0)}%)`
+      );
+    }
+  }
+  const stalePackets = [];
+  const packetLineage = getBlock("packet_lineage");
+  if (packetLineage.value.length > 0) {
+    const staleBlocks = getStaleBlocks(7);
+    for (const sb of staleBlocks.slice(0, 3)) {
+      stalePackets.push(`${sb.label} (last updated: ${sb.updatedAt.split("T")[0]})`);
+    }
+  }
+  if (mode === "whisper") {
+    if (contradictions.length > 0) {
+      lines.push(`Contradiction: ${contradictions[0]}`);
+    }
+    if (populatedBlocks.length > 0) {
+      const topBlock = populatedBlocks[0];
+      const firstLine = topBlock.value.split("\n")[0].slice(0, 100);
+      lines.push(`${topBlock.label}: ${firstLine}`);
+      blockIdsUsed.push(topBlock.id);
+    }
+    if (stalePackets.length > 0) {
+      lines.push(`Stale: ${stalePackets[0]}`);
+    }
+  } else if (mode === "packet" || mode === "full") {
+    if (contradictions.length > 0) {
+      lines.push("Contradictions:");
+      for (const c of contradictions) lines.push(`  - ${c}`);
+    }
+    for (const block of populatedBlocks) {
+      const budget2 = mode === "full" ? 500 : 200;
+      const truncated = block.value.slice(0, budget2);
+      lines.push(`
+[${block.label}] (v${block.version}, ${block.confidence})`);
+      lines.push(truncated);
+      blockIdsUsed.push(block.id);
+    }
+    if (stalePackets.length > 0) {
+      lines.push("\nStale blocks:");
+      for (const sp of stalePackets) lines.push(`  - ${sp}`);
+    }
+  }
+  const budget = TOKEN_BUDGETS[mode];
+  let whisperText = lines.join("\n");
+  if (whisperText.length > budget * 4) {
+    whisperText = whisperText.slice(0, budget * 4) + "\n...";
+  }
+  if (whisperText.length > 0) {
+    whisperText = `<nodebench_whisper>
+${whisperText}
+</nodebench_whisper>`;
+  }
+  logWhisper({
+    sessionId,
+    blockIds: blockIdsUsed,
+    whisperText,
+    classification: classification.classification,
+    suppressed: false,
+    reason: null
+  });
+  return {
+    mode,
+    classification,
+    whisperText,
+    suppressed: whisperText.length === 0,
+    suppressionReason: whisperText.length === 0 ? "no_relevant_blocks" : null,
+    blockIdsUsed,
+    contradictions,
+    stalePackets
+  };
+}
+
+// server/routes/subconscious.ts
+function createSubconsciousRouter() {
+  const router = Router4();
+  router.get("/health", (_req, res) => {
+    try {
+      ensureBlocksExist();
+      res.json({ ok: true, service: "subconscious", blockCount: ALL_BLOCK_TYPES.length });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+  router.get("/blocks", (_req, res) => {
+    try {
+      const blocks = getAllBlocks();
+      res.json({ ok: true, blocks });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+  router.get("/blocks/:id", (req, res) => {
+    try {
+      const id = req.params.id;
+      if (!ALL_BLOCK_TYPES.includes(id)) {
+        res.status(400).json({ ok: false, error: `Invalid block ID. Valid: ${ALL_BLOCK_TYPES.join(", ")}` });
+        return;
+      }
+      const block = getBlock(id);
+      res.json({ ok: true, block });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+  router.post("/blocks/:id", (req, res) => {
+    try {
+      const id = req.params.id;
+      if (!ALL_BLOCK_TYPES.includes(id)) {
+        res.status(400).json({ ok: false, error: `Invalid block ID` });
+        return;
+      }
+      const { value, confidence } = req.body;
+      if (typeof value !== "string") {
+        res.status(400).json({ ok: false, error: "value (string) is required" });
+        return;
+      }
+      const updated = updateBlock(id, {
+        value,
+        confidence: confidence ?? "medium",
+        sourceEvent: `api_update_${Date.now()}`
+      });
+      res.json({ ok: true, block: updated });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+  router.get("/summary", (_req, res) => {
+    try {
+      const blocks = getAllBlocks();
+      const populated = blocks.filter((b) => b.value.length > 0);
+      const stale = getStaleBlocks(7);
+      res.json({
+        ok: true,
+        summary: getBlockSummary(),
+        totalBlocks: ALL_BLOCK_TYPES.length,
+        populatedBlocks: populated.length,
+        staleCount: stale.length,
+        staleBlocks: stale.map((b) => ({ id: b.id, label: b.label, updatedAt: b.updatedAt }))
+      });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+  router.get("/whispers/:sessionId", (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit) || 20;
+      const whispers = getRecentWhispers(req.params.sessionId, Math.min(limit, 100));
+      res.json({ ok: true, whispers });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+  router.get("/graph/summary", (_req, res) => {
+    try {
+      const summary = getGraphSummary();
+      res.json({ ok: true, ...summary });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+  router.post("/classify", (req, res) => {
+    try {
+      const { prompt } = req.body;
+      if (!prompt) {
+        res.status(400).json({ ok: false, error: "prompt is required" });
+        return;
+      }
+      const result = classifyPrompt(prompt);
+      res.json({ ok: true, ...result });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+  router.post("/whisper", (req, res) => {
+    try {
+      const { prompt, mode, session_id } = req.body;
+      if (!prompt) {
+        res.status(400).json({ ok: false, error: "prompt is required" });
+        return;
+      }
+      const result = generateWhisper(
+        prompt,
+        session_id ?? "api",
+        mode ?? "whisper"
+      );
+      res.json({ ok: true, ...result });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
   });
   return router;
 }
@@ -16639,6 +20111,8 @@ app.use("/harness", createHarnessRouter(tools));
 app.use("/api/harness", createHarnessRouter(tools));
 app.use("/shared-context", createSharedContextRouter());
 app.use("/api/shared-context", createSharedContextRouter());
+app.use("/subconscious", createSubconsciousRouter());
+app.use("/api/subconscious", createSubconsciousRouter());
 try {
   initSweepTables();
 } catch {

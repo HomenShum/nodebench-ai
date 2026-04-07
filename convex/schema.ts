@@ -193,6 +193,7 @@ import {
   sharedContextPackets,
   sharedContextTasks,
   sharedContextMessages,
+  founderHarnessEpisodes,
 } from "./domains/founder/schema";
 
 /* ------------------------------------------------------------------ */
@@ -13019,4 +13020,77 @@ export default defineSchema({
     timestamp: v.number(),
   })
     .index("by_timestamp", ["timestamp"]),
+
+  // ── Search Sessions (Convex-native search pipeline) ──────────────────
+  searchSessions: defineTable({
+    query: v.string(),
+    lens: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("classifying"),
+      v.literal("searching"),
+      v.literal("extracting"),
+      v.literal("synthesizing"),
+      v.literal("enriching"),
+      v.literal("complete"),
+      v.literal("error"),
+    ),
+    classification: v.optional(v.object({
+      type: v.string(),
+      entity: v.optional(v.string()),
+      entities: v.optional(v.array(v.string())),
+      lens: v.string(),
+    })),
+    trace: v.array(v.object({
+      step: v.string(),
+      tool: v.optional(v.string()),
+      status: v.string(),
+      detail: v.optional(v.string()),
+      durationMs: v.optional(v.number()),
+      startedAt: v.number(),
+    })),
+    result: v.optional(v.any()),
+    error: v.optional(v.string()),
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    userId: v.optional(v.id("users")),
+    episodeId: v.optional(v.id("founderEpisodes")),
+  })
+    .index("by_user", ["userId", "startedAt"])
+    .index("by_status", ["status"]),
+
+  // ── Founder Episodes (durable before/during/after lifecycle) ──────────
+  founderEpisodes: defineTable({
+    episodeType: v.string(),
+    status: v.union(
+      v.literal("active"),
+      v.literal("completed"),
+      v.literal("error"),
+      v.literal("aborted"),
+    ),
+    query: v.optional(v.string()),
+    lens: v.optional(v.string()),
+    entityName: v.optional(v.string()),
+    packetId: v.optional(v.string()),
+    packetType: v.optional(v.string()),
+    summary: v.optional(v.string()),
+    searchSessionId: v.optional(v.id("searchSessions")),
+    spans: v.array(v.object({
+      stage: v.union(v.literal("before"), v.literal("during"), v.literal("after")),
+      type: v.string(),
+      status: v.union(v.literal("ok"), v.literal("running"), v.literal("error")),
+      label: v.string(),
+      detail: v.optional(v.string()),
+      timestamp: v.string(),
+      metrics: v.optional(v.any()),
+    })),
+    toolsInvoked: v.array(v.string()),
+    artifactsProduced: v.array(v.string()),
+    traceStepCount: v.optional(v.number()),
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    userId: v.optional(v.id("users")),
+  })
+    .index("by_status", ["status"])
+    .index("by_type", ["episodeType", "startedAt"]),
 });

@@ -11,14 +11,26 @@ import {
   publishSharedContextPacket,
   registerSharedContextPeer,
 } from "../../packages/mcp-local/src/sync/store.js";
+import {
+  appendFounderEpisodeSpan,
+  finalizeFounderEpisode,
+  getFounderEpisode,
+  listFounderEpisodes,
+  startFounderEpisode,
+} from "../../packages/mcp-local/src/sync/founderEpisodeStore.js";
 
 import {
+  appendFounderEpisodeSpanConvex,
+  finalizeFounderEpisodeConvex,
+  getFounderEpisodeConvex,
   getPacketConvex,
+  listFounderEpisodesConvex,
   getSnapshotConvex,
   isConvexAvailable,
   proposeTaskConvex,
   publishPacketConvex,
   registerPeerConvex,
+  startFounderEpisodeConvex,
 } from "./sharedContextConvex.js";
 
 /**
@@ -96,6 +108,9 @@ type SnapshotFilters = {
 
 type StrategicAngle = NonNullable<IncomingResultPacket["strategicAngles"]>[number];
 
+type FounderEpisodeSurface = "web" | "api" | "browser" | "claude_code" | "openclaw" | "local_runtime";
+type FounderEpisodeStatus = "active" | "completed" | "error" | "aborted";
+
 function firstQueryValue(value: unknown): string | undefined {
   if (Array.isArray(value)) return typeof value[0] === "string" ? value[0] : undefined;
   return typeof value === "string" ? value : undefined;
@@ -124,6 +139,33 @@ function parseSnapshotFilters(query: Record<string, unknown>): SnapshotFilters {
       ? eventTypesRaw.split(",").map((value) => value.trim()).filter(Boolean)
       : undefined,
   };
+}
+
+function positiveLimit(value: unknown, fallback: number): number {
+  const parsed = Number(firstQueryValue(value) ?? fallback);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.min(Math.trunc(parsed), 50);
+}
+
+function normalizeEpisodeSurface(value: unknown): FounderEpisodeSurface {
+  if (
+    value === "web" ||
+    value === "api" ||
+    value === "browser" ||
+    value === "claude_code" ||
+    value === "openclaw" ||
+    value === "local_runtime"
+  ) {
+    return value;
+  }
+  return "web";
+}
+
+function normalizeEpisodeStatus(value: unknown): FounderEpisodeStatus | undefined {
+  if (value === "active" || value === "completed" || value === "error" || value === "aborted") {
+    return value;
+  }
+  return undefined;
 }
 
 function filterSnapshot(snapshot: ReturnType<typeof getSharedContextSnapshot>, filters: SnapshotFilters) {
@@ -517,6 +559,251 @@ function buildStrategicIssuePayload(args: {
 export function createSharedContextRouter(): Router {
   const router = Router();
 
+  router.get("/episodes", async (req, res) => {
+    const sessionKey = firstQueryValue(req.query.sessionKey);
+    const workspaceId = firstQueryValue(req.query.workspaceId);
+    const status = normalizeEpisodeStatus(firstQueryValue(req.query.status));
+    const limit = positiveLimit(req.query.limit, 10);
+
+    try {
+      const episodes = useConvex()
+        ? await listFounderEpisodesConvex({ sessionKey, workspaceId, status, limit })
+        : listFounderEpisodes({ sessionKey, workspaceId, status, limit });
+
+      return res.json({
+        success: true,
+        episodes,
+        filters: { sessionKey, workspaceId, status: status ?? null, limit },
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  router.get("/episodes/:episodeId", async (req, res) => {
+    try {
+      const episode = useConvex()
+        ? await getFounderEpisodeConvex(req.params.episodeId)
+        : getFounderEpisode(req.params.episodeId);
+      if (!episode) {
+        return res.status(404).json({
+          success: false,
+          message: `Founder harness episode not found: ${req.params.episodeId}`,
+        });
+      }
+      return res.json({ success: true, episode });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  router.post("/episodes/start", async (req, res) => {
+    const body = (req.body as {
+      episodeId?: string;
+      correlationId?: string;
+      sessionKey?: string;
+      workspaceId?: string;
+      companyKey?: string;
+      surface?: FounderEpisodeSurface;
+      episodeType?: string;
+      query?: string;
+      lens?: string;
+      entityName?: string;
+      stateBefore?: Record<string, unknown>;
+      stateBeforeHash?: string;
+      metadata?: Record<string, unknown>;
+      initialSpan?: Record<string, unknown>;
+    }) ?? {};
+
+    if (!body.query?.trim() && !body.entityName?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Founder harness episodes require a query or entityName.",
+      });
+    }
+
+    try {
+      const episode = useConvex()
+        ? await startFounderEpisodeConvex({
+            episodeId: body.episodeId ?? `episode:${Date.now()}`,
+            correlationId: body.correlationId ?? `corr:${Date.now()}`,
+            sessionKey: body.sessionKey,
+            workspaceId: body.workspaceId,
+            companyKey: body.companyKey,
+            surface: normalizeEpisodeSurface(body.surface),
+            episodeType: body.episodeType ?? "entity_search",
+            query: body.query?.trim(),
+            lens: body.lens?.trim(),
+            entityName: body.entityName?.trim(),
+            stateBefore: body.stateBefore,
+            stateBeforeHash: body.stateBeforeHash,
+            metadata: body.metadata,
+            initialSpan: body.initialSpan,
+          })
+        : startFounderEpisode({
+            episodeId: body.episodeId,
+            correlationId: body.correlationId,
+            sessionKey: body.sessionKey,
+            workspaceId: body.workspaceId,
+            companyKey: body.companyKey,
+            surface: normalizeEpisodeSurface(body.surface),
+            episodeType: body.episodeType ?? "entity_search",
+            query: body.query?.trim(),
+            lens: body.lens?.trim(),
+            entityName: body.entityName?.trim(),
+            stateBefore: body.stateBefore,
+            stateBeforeHash: body.stateBeforeHash,
+            metadata: body.metadata,
+            initialSpan: body.initialSpan,
+          });
+
+      return res.json({ success: true, episode });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  router.post("/episodes/:episodeId/span", async (req, res) => {
+    const body = (req.body as {
+      span?: Record<string, unknown>;
+      contextId?: string;
+      taskId?: string;
+      entityName?: string;
+      packetId?: string;
+      packetType?: string;
+      workspaceId?: string;
+      companyKey?: string;
+      metadata?: Record<string, unknown>;
+    }) ?? {};
+
+    if (!body.span) {
+      return res.status(400).json({
+        success: false,
+        message: "Founder harness span payload is required.",
+      });
+    }
+
+    try {
+      const episode = useConvex()
+        ? await appendFounderEpisodeSpanConvex({
+            episodeId: req.params.episodeId,
+            span: body.span,
+            contextId: body.contextId,
+            taskId: body.taskId,
+            entityName: body.entityName,
+            packetId: body.packetId,
+            packetType: body.packetType,
+            workspaceId: body.workspaceId,
+            companyKey: body.companyKey,
+            metadata: body.metadata,
+          })
+        : appendFounderEpisodeSpan({
+            episodeId: req.params.episodeId,
+            span: body.span,
+            contextId: body.contextId,
+            taskId: body.taskId,
+            entityName: body.entityName,
+            packetId: body.packetId,
+            packetType: body.packetType,
+            workspaceId: body.workspaceId,
+            companyKey: body.companyKey,
+            metadata: body.metadata,
+          });
+
+      return res.json({ success: true, episode });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  router.post("/episodes/:episodeId/finalize", async (req, res) => {
+    const body = (req.body as {
+      status?: FounderEpisodeStatus;
+      stateAfter?: Record<string, unknown>;
+      stateAfterHash?: string;
+      summary?: string;
+      toolsInvoked?: string[];
+      artifactsProduced?: string[];
+      traceStepCount?: number;
+      importantChangesDetected?: number;
+      contradictionsDetected?: number;
+      contextId?: string;
+      taskId?: string;
+      entityName?: string;
+      packetId?: string;
+      packetType?: string;
+      workspaceId?: string;
+      companyKey?: string;
+      finalSpan?: Record<string, unknown>;
+      metadata?: Record<string, unknown>;
+    }) ?? {};
+
+    try {
+      const episode = useConvex()
+        ? await finalizeFounderEpisodeConvex({
+            episodeId: req.params.episodeId,
+            status: normalizeEpisodeStatus(body.status),
+            stateAfter: body.stateAfter,
+            stateAfterHash: body.stateAfterHash,
+            summary: body.summary,
+            toolsInvoked: body.toolsInvoked,
+            artifactsProduced: body.artifactsProduced,
+            traceStepCount: typeof body.traceStepCount === "number" ? body.traceStepCount : undefined,
+            importantChangesDetected: typeof body.importantChangesDetected === "number" ? body.importantChangesDetected : undefined,
+            contradictionsDetected: typeof body.contradictionsDetected === "number" ? body.contradictionsDetected : undefined,
+            contextId: body.contextId,
+            taskId: body.taskId,
+            entityName: body.entityName,
+            packetId: body.packetId,
+            packetType: body.packetType,
+            workspaceId: body.workspaceId,
+            companyKey: body.companyKey,
+            finalSpan: body.finalSpan,
+            metadata: body.metadata,
+          })
+        : finalizeFounderEpisode({
+            episodeId: req.params.episodeId,
+            status: normalizeEpisodeStatus(body.status),
+            stateAfter: body.stateAfter,
+            stateAfterHash: body.stateAfterHash,
+            summary: body.summary,
+            toolsInvoked: body.toolsInvoked,
+            artifactsProduced: body.artifactsProduced,
+            traceStepCount: typeof body.traceStepCount === "number" ? body.traceStepCount : undefined,
+            importantChangesDetected: typeof body.importantChangesDetected === "number" ? body.importantChangesDetected : undefined,
+            contradictionsDetected: typeof body.contradictionsDetected === "number" ? body.contradictionsDetected : undefined,
+            contextId: body.contextId,
+            taskId: body.taskId,
+            entityName: body.entityName,
+            packetId: body.packetId,
+            packetType: body.packetType,
+            workspaceId: body.workspaceId,
+            companyKey: body.companyKey,
+            finalSpan: body.finalSpan,
+            metadata: body.metadata,
+          });
+
+      return res.json({ success: true, episode });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
   router.get("/snapshot", async (req, res) => {
     const rawLimit = Array.isArray(req.query.limit) ? req.query.limit[0] : req.query.limit;
     const limit = typeof rawLimit === "string" ? Number.parseInt(rawLimit, 10) : 10;
@@ -779,7 +1066,7 @@ export function createSharedContextRouter(): Router {
   });
 
   router.post("/publish", async (req, res) => {
-    const body = (req.body as { packet?: IncomingResultPacket; strategicAngleId?: string }) ?? {};
+    const body = (req.body as { packet?: IncomingResultPacket; strategicAngleId?: string; episodeId?: string }) ?? {};
     const packet = body.packet;
 
     if (!packet?.answer || !(packet.canonicalEntity ?? packet.entityName)) {
@@ -835,6 +1122,29 @@ export function createSharedContextRouter(): Router {
           await publishPacketConvex(issuePayload);
         }
         const snapshot = await getSnapshotConvex(6);
+        if (body.episodeId) {
+          await appendFounderEpisodeSpanConvex({
+            episodeId: body.episodeId,
+            span: {
+              stage: "after",
+              type: strategicAngle ? "strategic_issue_published" : "packet_published",
+              status: "ok",
+              label: strategicAngle ? "Published strategic issue packet" : "Published founder packet",
+              detail: strategicAngle?.title ?? getSubject(packet),
+              timestamp: new Date().toISOString(),
+              contextId: strategicAngle ? issueContextId ?? contextId : contextId,
+            },
+            contextId: strategicAngle ? issueContextId ?? contextId : contextId,
+            entityName: packet.canonicalEntity ?? packet.entityName,
+            packetId: packet.packetId,
+            packetType: packet.packetType,
+            workspaceId,
+            metadata: {
+              publishedVia: "shared_context",
+              strategicAngleId: strategicAngle?.id ?? null,
+            },
+          });
+        }
         return res.json({
           success: true,
           contextId: strategicAngle ? issueContextId ?? contextId : contextId,
@@ -874,6 +1184,29 @@ export function createSharedContextRouter(): Router {
         responseContextId = issuePayload.contextId ?? contextId;
       }
 
+      if (body.episodeId) {
+        appendFounderEpisodeSpan({
+          episodeId: body.episodeId,
+          span: {
+            stage: "after",
+            type: strategicAngle ? "strategic_issue_published" : "packet_published",
+            status: "ok",
+            label: strategicAngle ? "Published strategic issue packet" : "Published founder packet",
+            detail: strategicAngle?.title ?? getSubject(packet),
+            timestamp: new Date().toISOString(),
+            contextId: responseContextId,
+          },
+          contextId: responseContextId,
+          entityName: packet.canonicalEntity ?? packet.entityName,
+          packetId: packet.packetId,
+          packetType: packet.packetType,
+          workspaceId,
+          metadata: {
+            publishedVia: "shared_context",
+            strategicAngleId: strategicAngle?.id ?? null,
+          },
+        });
+      }
       return res.json({
         success: true,
         contextId: responseContextId,
@@ -897,6 +1230,7 @@ export function createSharedContextRouter(): Router {
       targetAgent?: SharedContextDelegateTarget;
       goal?: string;
       strategicAngleId?: string;
+      episodeId?: string;
     }) ?? {};
     const packet = body.packet;
     const target = body.targetAgent ?? "claude_code";
@@ -1043,6 +1377,31 @@ export function createSharedContextRouter(): Router {
           reason: goal,
         });
         const snapshot = await getSnapshotConvex(6);
+        if (body.episodeId) {
+          await appendFounderEpisodeSpanConvex({
+            episodeId: body.episodeId,
+            span: {
+              stage: "after",
+              type: strategicAngle ? "strategic_issue_delegated" : "agent_delegated",
+              status: "ok",
+              label: strategicAngle ? `Delegated issue to ${DELEGATE_TARGETS[target].label}` : `Delegated to ${DELEGATE_TARGETS[target].label}`,
+              detail: goal,
+              timestamp: new Date().toISOString(),
+              contextId: delegateContextId,
+              taskId,
+            },
+            contextId: delegateContextId,
+            taskId,
+            entityName: packet.canonicalEntity ?? packet.entityName,
+            packetId: packet.packetId,
+            packetType: packet.packetType,
+            workspaceId,
+            metadata: {
+              targetAgent: target,
+              strategicAngleId: strategicAngle?.id ?? null,
+            },
+          });
+        }
         return res.json({
           success: true,
           contextId: delegateContextId,
@@ -1092,6 +1451,31 @@ export function createSharedContextRouter(): Router {
         queueForSync: false,
       });
 
+      if (body.episodeId) {
+        appendFounderEpisodeSpan({
+          episodeId: body.episodeId,
+          span: {
+            stage: "after",
+            type: strategicAngle ? "strategic_issue_delegated" : "agent_delegated",
+            status: "ok",
+            label: strategicAngle ? `Delegated issue to ${DELEGATE_TARGETS[target].label}` : `Delegated to ${DELEGATE_TARGETS[target].label}`,
+            detail: goal,
+            timestamp: new Date().toISOString(),
+            contextId: delegateContextId,
+            taskId: proposed.taskId,
+          },
+          contextId: delegateContextId,
+          taskId: proposed.taskId,
+          entityName: packet.canonicalEntity ?? packet.entityName,
+          packetId: packet.packetId,
+          packetType: packet.packetType,
+          workspaceId,
+          metadata: {
+            targetAgent: target,
+            strategicAngleId: strategicAngle?.id ?? null,
+          },
+        });
+      }
       return res.json({
         success: true,
         contextId: delegateContextId,
