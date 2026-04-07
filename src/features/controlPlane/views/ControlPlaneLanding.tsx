@@ -216,12 +216,6 @@ const FOUNDER_QUICK_ACTIONS: Array<{
     lens: "founder",
     kind: "prompt",
   },
-  {
-    id: "connect_context",
-    label: "Connect NodeBench-MCP",
-    description: "Install the MCP bridge so NodeBench can build a live founder workspace from docs, code, and agent work.",
-    kind: "connect",
-  },
 ];
 
 function buildSearchAbortSignal(controller: AbortController, timeoutMs: number): AbortSignal {
@@ -2118,9 +2112,9 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 setInput(e.target.value);
               }}
               onKeyDown={handleKeyDown}
-              placeholder="Search a company, describe your startup, upload files, or ask what to do next..."
+              placeholder="Search a company, describe your startup, or ask what to do next..."
               rows={1}
-              className="w-full resize-none bg-transparent px-5 py-4 pr-32 text-[15px] text-content placeholder:text-content-muted/60 focus:outline-none"
+              className="w-full resize-none bg-transparent px-5 py-4 pr-36 text-[15px] text-content placeholder:text-content-muted/60 focus:outline-none"
               aria-label="Search NodeBench"
               data-testid="landing-search-input"
             />
@@ -2229,71 +2223,6 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                   </div>
                 </button>
               ))}
-            </div>
-
-            <div className="grid gap-3 lg:grid-cols-3">
-              {[
-                {
-                  title: "What NodeBench clarifies",
-                  description: "What company this is, what changed, what is missing, and where the wedge is strongest.",
-                },
-                {
-                  title: "What comes back",
-                  description: "A compact packet, contradictions, next 3 moves, and a delegation-ready handoff.",
-                },
-                {
-                  title: "What happens next",
-                  description: "Search first. Then the workspace, packets, and history deepen automatically from that truth.",
-                },
-              ].map((item) => (
-                <div key={item.title} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
-                  <div className="text-[13px] font-medium text-content">{item.title}</div>
-                  <p className="mt-2 text-xs leading-relaxed text-content-muted">{item.description}</p>
-                </div>
-              ))}
-            </div>
-
-            <div
-              ref={connectCardRef}
-              className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4"
-              data-testid="landing-connect-card"
-            >
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
-                Connect NodeBench-MCP
-              </div>
-              <p className="mt-2 text-sm leading-relaxed text-content-secondary">
-                Index your company docs, codebase, and agent context so NodeBench can build your live company dashboard automatically.
-              </p>
-              <div className="mt-4 grid gap-2 sm:grid-cols-4">
-                {[
-                  { step: "1", label: "Install" },
-                  { step: "2", label: "Init" },
-                  { step: "3", label: "Search / Explore / Index" },
-                  { step: "4", label: "Dashboard generated" },
-                ].map((item) => (
-                  <div key={item.step} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3 text-center">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#d97757]">{item.step}</div>
-                    <div className="mt-1 text-xs text-content">{item.label}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowInstallGuide((prev) => !prev)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content"
-                >
-                  {showInstallGuide ? "Hide MCP steps" : "Connect / Initialize MCP"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCopyInstall}
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content"
-                >
-                  {copiedInstall ? <Check className="h-4 w-4 text-emerald-400" /> : <ClipboardCopy className="h-4 w-4" />}
-                  {copiedInstall ? "Copied install command" : "Copy install command"}
-                </button>
-              </div>
             </div>
 
             {recentEpisodes.length > 0 ? (

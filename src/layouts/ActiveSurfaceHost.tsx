@@ -4,6 +4,7 @@ import { useQuery} from "convex/react";
 import { Id } from "../../convex/_generated/dataModel";
 import { useConvexApi } from "@/lib/convexApi";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
+import { DataSourceBanner } from "@/shared/components/DataSourceBanner";
 import { ViewSkeleton } from "@/components/skeletons";
 import { AgentScreen } from "@/shared/agent-ui/AgentScreen";
 import { TrajectorySparkline } from "@/shared/ui/TrajectorySparkline";
@@ -198,10 +199,7 @@ function SurfaceFrame({
 }
 
 const TELEMETRY_TABS = [
-  { id: "overview", label: "Overview" },
   { id: "activity", label: "Activity" },
-  { id: "subconscious", label: "Subconscious" },
-  { id: "benchmarks", label: "Benchmarks" },
   { id: "health", label: "Health" },
   { id: "spend", label: "Spend" },
 ] as const;
@@ -212,7 +210,7 @@ function TelemetryStack({ active = true }: { active?: boolean }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get("tab");
   const activeTab: TelemetryTabId =
-    TELEMETRY_TABS.some((t) => t.id === rawTab) ? (rawTab as TelemetryTabId) : "overview";
+    TELEMETRY_TABS.some((t) => t.id === rawTab) ? (rawTab as TelemetryTabId) : "activity";
 
   const setTab = useCallback(
     (tab: TelemetryTabId) => {
@@ -225,7 +223,7 @@ function TelemetryStack({ active = true }: { active?: boolean }) {
     [setSearchParams],
   );
 
-  // Live metrics with demo fallback — skip subscriptions when surface is cached (not visible)
+  // Live metrics with demo fallback
   const api = useConvexApi();
   const agentStats = useQuery(
     active && api?.domains.agents.agentHubQueries.getAgentStats
@@ -242,68 +240,50 @@ function TelemetryStack({ active = true }: { active?: boolean }) {
   );
   const isLive = agentStats !== undefined && receipts !== undefined && (receipts?.length ?? 0) > 0;
 
-  // Day-seeded demo metrics so the dashboard feels alive across visits
   const daySeed = Math.floor(Date.now() / 86400000) % 5;
   const DEMO_HEALTH = [96, 97, 98, 99, 98] as const;
   const DEMO_ACTIONS = [41, 47, 53, 38, 45] as const;
   const DEMO_DENIED = [1, 2, 3, 1, 2] as const;
-  const DEMO_VERIFIED = [35, 38, 42, 31, 39] as const;
 
   const healthPct = isLive ? (agentStats?.successRate ?? 98) : DEMO_HEALTH[daySeed];
   const actionsTraced = isLive ? (receipts?.length ?? 0) : DEMO_ACTIONS[daySeed];
   const deniedCount = isLive
     ? (receipts?.filter((r: any) => r.approval?.state === "denied" || r.result?.success === false).length ?? 0)
     : DEMO_DENIED[daySeed];
-  const verifiedCount = isLive
-    ? (receipts?.filter((r: any) => r.result?.success === true).length ?? 0)
-    : DEMO_VERIFIED[daySeed];
   const healthLabel = healthPct >= 90 ? "Healthy" : healthPct >= 70 ? "Degraded" : "At Risk";
-  const healthColor = healthPct >= 90 ? "bg-emerald-500/15 text-emerald-400" : healthPct >= 70 ? "bg-amber-500/15 text-amber-400" : "bg-rose-500/15 text-rose-400";
+  const healthColor = healthPct >= 90 ? "text-emerald-400" : healthPct >= 70 ? "text-amber-400" : "text-rose-400";
 
   return (
-    <div className="flex h-full flex-col gap-4 overflow-auto px-4 pb-24 pt-4">
-      {/* ── Hero metric card ─────────────────────────────────────── */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-8">
-          {/* Primary metric */}
-          <div className="flex-1">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
-              Agent Health
-            </div>
-            <div className="mt-1 flex items-baseline gap-3">
-              <span className="text-4xl font-bold tabular-nums text-content">{healthPct}%</span>
-              <TrajectorySparkline
-                data={[91, 93, 94, 96, 95, 97, healthPct]}
-                width={48}
-                height={16}
-                color="var(--accent-primary)"
-              />
-              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${healthColor}`}>
-                {healthLabel}
-              </span>
-            </div>
-          </div>
+    <div className="flex h-full flex-col items-center overflow-auto px-4 pb-24 pt-12">
+      {/* Headline — matches Ask/Library/Connect */}
+      <h1 className="text-center text-3xl font-bold text-content sm:text-4xl">
+        System <span className="text-accent-primary">health</span>
+      </h1>
+      <p className="mt-3 max-w-lg text-center text-sm text-content-muted">
+        Agent performance, evidence quality, and operational status.
+      </p>
+      <DataSourceBanner className="mt-3" />
 
-          {/* Supporting stats */}
-          <div className="flex gap-6">
-            <div>
-              <div className="text-[11px] uppercase tracking-[0.2em] text-content-muted">Actions traced</div>
-              <div className="mt-0.5 text-2xl font-bold tabular-nums text-content">{actionsTraced}</div>
-            </div>
-            <div>
-              <div className="text-[11px] uppercase tracking-[0.2em] text-content-muted">Denied by policy</div>
-              <div className="mt-0.5 text-2xl font-bold tabular-nums text-content">{deniedCount}</div>
-            </div>
-            <div>
-              <div className="text-[11px] uppercase tracking-[0.2em] text-content-muted">Evidence verified</div>
-              <div className="mt-0.5 text-2xl font-bold tabular-nums text-content">{verifiedCount}</div>
-            </div>
-          </div>
+      {/* Compact metrics row */}
+      <div className="mt-8 flex w-full max-w-3xl items-center justify-center gap-8 sm:gap-12">
+        <div className="text-center">
+          <div className={`text-3xl font-bold tabular-nums ${healthColor}`}>{healthPct}%</div>
+          <div className="mt-1 text-[11px] text-content-muted">{healthLabel}</div>
+        </div>
+        <div className="h-8 w-px bg-white/[0.06]" />
+        <div className="text-center">
+          <div className="text-3xl font-bold tabular-nums text-content">{actionsTraced}</div>
+          <div className="mt-1 text-[11px] text-content-muted">Actions</div>
+        </div>
+        <div className="h-8 w-px bg-white/[0.06]" />
+        <div className="text-center">
+          <div className="text-3xl font-bold tabular-nums text-content">{deniedCount}</div>
+          <div className="mt-1 text-[11px] text-content-muted">Denied</div>
         </div>
       </div>
 
-      {/* ── Tab bar ──────────────────────────────────────────────── */}
-      <div className="flex gap-1 border-b border-white/[0.06]" role="tablist">
+      {/* Tab bar */}
+      <div className="mt-8 flex w-full max-w-3xl gap-1 border-b border-white/[0.06]" role="tablist">
         {TELEMETRY_TABS.map((tab) => (
           <button
             key={tab.id}
@@ -311,9 +291,9 @@ function TelemetryStack({ active = true }: { active?: boolean }) {
             role="tab"
             aria-selected={activeTab === tab.id}
             onClick={() => setTab(tab.id)}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
+            className={`px-4 py-2.5 text-sm font-medium transition-colors ${
               activeTab === tab.id
-                ? "border-b-2 border-[var(--accent-primary)] text-content"
+                ? "border-b-2 border-accent-primary text-content"
                 : "text-content-muted hover:text-content-secondary"
             }`}
           >
@@ -322,15 +302,12 @@ function TelemetryStack({ active = true }: { active?: boolean }) {
         ))}
       </div>
 
-      {/* ── Active tab content ───────────────────────────────────── */}
-      <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5" role="tabpanel">
-        {activeTab === "overview" && <OracleView />}
+      {/* Tab content */}
+      <div className="mt-4 w-full max-w-3xl rounded-xl border border-white/[0.06] bg-white/[0.02] p-5" role="tabpanel">
         {activeTab === "activity" && <AgentTelemetryDashboard />}
-        {activeTab === "subconscious" && <SubconsciousDashboard />}
-        {activeTab === "benchmarks" && <WorkbenchView />}
         {activeTab === "health" && <ObservabilityView />}
         {activeTab === "spend" && <CostDashboard />}
-      </section>
+      </div>
     </div>
   );
 }

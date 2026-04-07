@@ -1,20 +1,15 @@
 /**
  * FounderConnectHome — Canonical "Connect" surface.
  *
- * MCP init/index/search/explore, workspace sync, watchlist setup,
- * agent and runtime connections.
+ * Matches Ask/Library pattern: centered headline, subtitle, then content.
+ * No hero cards, no section labels, no nested tab components.
  */
 
-import { lazy, Suspense, useState } from "react";
-import { Radio, Eye, Bot, Terminal, Copy, Check } from "lucide-react";
-import { ViewSkeleton } from "@/components/skeletons";
+import { useState, useEffect } from "react";
+import { Terminal, Eye, Bot, Copy, Check, ChevronRight, MessageSquareCode } from "lucide-react";
+import { useDataSource } from "@/lib/hooks/useDataSource";
+import { DataSourceBanner } from "@/shared/components/DataSourceBanner";
 import { cn } from "@/lib/utils";
-
-const CoordinationTabs = lazy(() =>
-  import("@/features/founder/views/CoordinationTabs").then((mod) => ({
-    default: mod.default,
-  })),
-);
 
 const MCP_INSTALL_COMMAND = `npx nodebench-mcp@latest --preset=founder`;
 
@@ -29,112 +24,128 @@ function CopyButton({ text }: { text: string }) {
           setTimeout(() => setCopied(false), 2000);
         });
       }}
-      className="flex h-7 w-7 items-center justify-center rounded-md text-content-muted transition-colors hover:bg-white/[0.08] hover:text-content"
+      className="flex h-8 w-8 items-center justify-center rounded-md text-content-muted transition-colors hover:bg-white/[0.08] hover:text-content"
       aria-label="Copy command"
     >
-      {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+      {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
     </button>
   );
 }
 
-const CONNECT_CARDS = [
+const CONNECTIONS_STATIC = [
+  {
+    id: "claude_code",
+    title: "Claude Code Transcripts",
+    description: "Ingest session history from ~/.claude/ as founder context",
+    icon: MessageSquareCode,
+    status: "setup" as const,
+    action: "Connect",
+  },
   {
     id: "mcp",
     title: "MCP Server",
-    description: "Connect your IDE (Claude Code, Cursor, Windsurf) to NodeBench's 304-tool MCP server",
+    description: "Connect your IDE to 304 tools for company intelligence",
     icon: Terminal,
-    status: "ready",
+    status: "ready" as const,
+    action: "Configure",
   },
   {
     id: "watchlists",
     title: "Watchlists",
-    description: "Monitor entities, competitors, and market signals with ambient alerts",
+    description: "Monitor entities and get alerts when things change",
     icon: Eye,
-    status: "setup",
+    status: "setup" as const,
+    action: "Set up",
   },
   {
     id: "agents",
-    title: "Agent Connections",
-    description: "Register Claude Code, OpenClaw, or custom agents for delegation and oversight",
+    title: "Agents",
+    description: "Register Claude Code or OpenClaw for delegation",
     icon: Bot,
-    status: "setup",
+    status: "setup" as const,
+    action: "Set up",
   },
 ] as const;
 
 export function FounderConnectHome() {
-  return (
-    <div className="flex h-full flex-col gap-4 overflow-auto px-4 pb-24 pt-4">
-      {/* Hero */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-primary/10">
-            <Radio className="h-5 w-5 text-accent-primary" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-content">Connect</h2>
-            <p className="text-sm text-content-muted">
-              Wire NodeBench into your tools, agents, and monitoring
-            </p>
-          </div>
-        </div>
-      </div>
+  const { convexAuth, mcpReachable } = useDataSource();
 
-      {/* MCP install command */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
-          Quick Start
-        </div>
-        <div className="flex items-center gap-2 rounded-lg border border-white/[0.08] bg-black/30 px-3 py-2">
+  // Claude Code detection — check if MCP server can reach transcripts
+  // When MCP is running, Claude Code ingest tools are available
+  const [claudeCodeReady, setClaudeCodeReady] = useState(false);
+  useEffect(() => {
+    // If MCP server is reachable, Claude Code data is accessible through the ingest tools
+    setClaudeCodeReady(mcpReachable);
+  }, [mcpReachable]);
+
+  // Live status detection for connection cards
+  const connections: typeof CONNECTIONS_STATIC = CONNECTIONS_STATIC.map((c) => {
+    if (c.id === "claude_code") return { ...c, status: claudeCodeReady ? "ready" as const : "setup" as const };
+    if (c.id === "mcp") return { ...c, status: mcpReachable ? "ready" as const : "setup" as const };
+    if (c.id === "agents") return { ...c, status: convexAuth ? "ready" as const : "setup" as const };
+    return c;
+  });
+
+  return (
+    <div className="flex h-full flex-col items-center overflow-auto px-4 pb-24 pt-12">
+      {/* Headline — matches Ask/Library */}
+      <h1 className="text-center text-3xl font-bold text-content sm:text-4xl">
+        Your <span className="text-accent-primary">connections</span>
+      </h1>
+      <p className="mt-3 max-w-lg text-center text-sm text-content-muted">
+        Wire NodeBench into your IDE, agents, and monitoring.
+      </p>
+      <DataSourceBanner className="mt-3" />
+
+      {/* Install command — the primary action */}
+      <div className="mt-8 w-full max-w-2xl">
+        <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-[#1a1918] px-4 py-3.5">
           <Terminal className="h-4 w-4 shrink-0 text-accent-primary" />
-          <code className="flex-1 text-sm font-mono text-content">{MCP_INSTALL_COMMAND}</code>
+          <span className="flex-1 select-all font-mono text-[13px] text-white">{MCP_INSTALL_COMMAND}</span>
           <CopyButton text={MCP_INSTALL_COMMAND} />
         </div>
-        <p className="mt-2 text-xs text-content-muted">
-          Installs the MCP server with founder preset (contextual tools for company intelligence)
+        <p className="mt-2.5 text-center text-xs text-content-muted">
+          Run this in your terminal to connect your IDE
         </p>
       </div>
 
-      {/* Connection cards */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        {CONNECT_CARDS.map((card) => {
-          const Icon = card.icon;
+      {/* Connection cards — same card pattern as Library */}
+      <div className="mt-6 grid w-full max-w-2xl gap-3">
+        {connections.map((conn) => {
+          const Icon = conn.icon;
           return (
             <div
-              key={card.id}
-              className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
+              key={conn.id}
+              className={cn(
+                "group flex cursor-pointer items-center gap-4 rounded-xl border p-4 transition-all",
+                "border-white/[0.06] bg-white/[0.02]",
+                "hover:border-white/[0.12] hover:bg-white/[0.04]",
+                "active:scale-[0.98]",
+              )}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-accent-primary" />
-                  <span className="text-sm font-medium text-content">{card.title}</span>
-                </div>
-                <span
-                  className={cn(
-                    "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase",
-                    card.status === "ready"
-                      ? "bg-emerald-500/15 text-emerald-400"
-                      : "bg-amber-500/15 text-amber-400",
-                  )}
-                >
-                  {card.status === "ready" ? "Ready" : "Setup"}
-                </span>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-primary/8">
+                <Icon className="h-5 w-5 text-accent-primary/70" />
               </div>
-              <p className="mt-2 text-xs leading-relaxed text-content-muted">{card.description}</p>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] font-medium text-content">{conn.title}</span>
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide",
+                      conn.status === "ready"
+                        ? "bg-emerald-500/12 text-emerald-400"
+                        : "bg-amber-500/12 text-amber-400",
+                    )}
+                  >
+                    {conn.status === "ready" ? "Connected" : "Not set up"}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-content-muted">{conn.description}</p>
+              </div>
+              <ChevronRight className="h-4 w-4 shrink-0 text-content-muted/40" />
             </div>
           );
         })}
-      </div>
-
-      {/* Coordination hub — existing component */}
-      <div className="min-h-0 flex-1">
-        <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
-          Team Coordination
-        </div>
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02]">
-          <Suspense fallback={<ViewSkeleton variant="default" />}>
-            <CoordinationTabs />
-          </Suspense>
-        </div>
       </div>
     </div>
   );

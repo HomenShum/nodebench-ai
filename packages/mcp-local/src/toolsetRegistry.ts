@@ -332,6 +332,10 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
     const { subconsciousTools } = await import("./subconscious/index.js");
     return subconsciousTools;
   },
+  claude_code_ingest: async () => {
+    const { createClaudeCodeIngestTools } = await import("./tools/claudeCodeIngestTools.js");
+    return createClaudeCodeIngestTools();
+  },
 };
 
 // ── All known domain keys (available before any load) ──────────────────────

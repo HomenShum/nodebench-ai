@@ -6,6 +6,7 @@
  */
 
 import { RefreshCw, ArrowRight, AlertTriangle } from "lucide-react";
+import { DataSourceBanner } from "@/shared/components/DataSourceBanner";
 import { cn } from "@/lib/utils";
 
 const FOUNDER_LOOPS = [
@@ -46,6 +47,7 @@ export function FounderWorkspaceHome({
       <p className="mt-3 max-w-lg text-center text-sm text-content-muted">
         Pick a workflow. NodeBench reviews your company context, surfaces what matters, and produces a ready-to-use artifact.
       </p>
+      <DataSourceBanner className="mt-3" />
 
       {/* Loop cards — same visual weight as Ask's quick actions */}
       <div className="mt-8 grid w-full max-w-2xl gap-3">

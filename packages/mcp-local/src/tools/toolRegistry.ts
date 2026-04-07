@@ -5503,6 +5503,47 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     phase: "research",
     complexity: "high",
   },
+
+  // ── Claude Code Ingestion ────────────────────────────────────────────
+  {
+    name: "ingest_claude_code_sessions",
+    category: "ingestion",
+    tags: ["claude-code", "jsonl", "transcript", "session", "ingest", "import", "context", "founder"],
+    quickRef: {
+      nextAction: "Sessions scanned. Review summaries, then use ingest_codebase_changes to fingerprint the working directory, or get_ingest_status for full source overview.",
+      nextTools: ["ingest_codebase_changes", "get_ingest_status"],
+      methodology: "founder",
+      tip: "Use projectFilter to scope to a specific project. Use since to only get recent sessions.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "ingest_codebase_changes",
+    category: "ingestion",
+    tags: ["codebase", "fingerprint", "git", "changes", "diff", "ingest", "context", "founder"],
+    quickRef: {
+      nextAction: "Codebase fingerprinted. Compare with previous fingerprint to detect changes, or use ingest_claude_code_sessions to correlate with coding sessions.",
+      nextTools: ["ingest_claude_code_sessions", "get_ingest_status"],
+      methodology: "founder",
+      tip: "Tracks package.json, README, CLAUDE.md, schema files, and recent git commits.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "get_ingest_status",
+    category: "ingestion",
+    tags: ["status", "sources", "claude-code", "codebase", "sync", "health", "founder"],
+    quickRef: {
+      nextAction: "Status checked. If sources are ready, use ingest_claude_code_sessions or ingest_codebase_changes to pull context.",
+      nextTools: ["ingest_claude_code_sessions", "ingest_codebase_changes"],
+      methodology: "founder",
+      tip: "Run this first to see what data sources are available before ingesting.",
+    },
+    phase: "utility",
+    complexity: "low",
+  },
 ];
 
 // ── Exported lookup structures ───────────────────────────────────────────
