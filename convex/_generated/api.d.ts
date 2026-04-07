@@ -1066,6 +1066,7 @@ import type * as domains_search_ragQueries from "../domains/search/ragQueries.js
 import type * as domains_search_searchCache from "../domains/search/searchCache.js";
 import type * as domains_search_searchPipeline from "../domains/search/searchPipeline.js";
 import type * as domains_search_searchPipelineNode from "../domains/search/searchPipelineNode.js";
+import type * as domains_search_signalTaxonomy from "../domains/search/signalTaxonomy.js";
 import type * as domains_signals_index from "../domains/signals/index.js";
 import type * as domains_signals_signalIngester from "../domains/signals/signalIngester.js";
 import type * as domains_signals_signalProcessor from "../domains/signals/signalProcessor.js";
@@ -2408,6 +2409,7 @@ declare const fullApi: ApiFromModules<{
   "domains/search/searchCache": typeof domains_search_searchCache;
   "domains/search/searchPipeline": typeof domains_search_searchPipeline;
   "domains/search/searchPipelineNode": typeof domains_search_searchPipelineNode;
+  "domains/search/signalTaxonomy": typeof domains_search_signalTaxonomy;
   "domains/signals/index": typeof domains_signals_index;
   "domains/signals/signalIngester": typeof domains_signals_signalIngester;
   "domains/signals/signalProcessor": typeof domains_signals_signalProcessor;

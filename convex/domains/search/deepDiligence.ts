@@ -27,6 +27,12 @@
 import { v } from "convex/values";
 import { internalAction, internalMutation } from "../../_generated/server";
 import { internal } from "../../_generated/api";
+import {
+  buildClassificationPrompt,
+  collapseSignals,
+  generateFollowUpQuestions,
+  type ClassifiedSignal,
+} from "./signalTaxonomy.js";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -316,12 +322,69 @@ export const executeDeepDiligence = internalAction({
       const totalSearches = branchResults.reduce((s, r) => s + r.searchCount, 0);
       const maxDepth = Math.max(...branchResults.map((r) => r.depth));
 
-      // ── Step 3: Generate gap remediation for every risk/gap found ────
+      // ── Step 3: Classify signals into controlled taxonomy ─────────
+      let classifiedSignals: ClassifiedSignal[] = [];
+      let classificationError: string | undefined;
+      try {
+        // Limit to top 5 findings per branch (30 max) to keep prompt under token limit
+        const rawFindingsText = branchResults
+          .flatMap((r) => r.findings.slice(0, 5).map((f, i) => `[src_${r.branch}_${i}] ${f.title}: ${f.body.slice(0, 200)}`))
+          .join("\n")
+          .slice(0, 6000); // hard cap
+        const classifyPrompt = buildClassificationPrompt(resolved.name, rawFindingsText);
+        if (!geminiKey) {
+          classificationError = "GEMINI_API_KEY not available in action env";
+        } else if (rawFindingsText.length <= 50) {
+          classificationError = `rawFindingsText too short: ${rawFindingsText.length} chars`;
+        }
+        if (geminiKey && rawFindingsText.length > 50) {
+          const resp = await fetch(`${GEMINI_API_URL}?key=${geminiKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: classifyPrompt }] }],
+              generationConfig: { temperature: 0.1, maxOutputTokens: 4000 },
+            }),
+            signal: AbortSignal.timeout(30_000),
+          });
+          if (resp.ok) {
+            const data = (await resp.json()) as any;
+            let text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+            text = text.replace(/```(?:json)?\s*/gi, "").replace(/```\s*/g, "").trim();
+            const match = text.match(/\[[\s\S]*\]/);
+            if (match) {
+              try {
+                const parsed = JSON.parse(match[0]);
+                if (Array.isArray(parsed) && parsed.length > 0) classifiedSignals = parsed;
+                else classificationError = `Parsed array but length=${parsed?.length ?? 0}`;
+              } catch (parseErr: unknown) {
+                classificationError = `JSON parse failed: ${parseErr instanceof Error ? parseErr.message : String(parseErr)}. First 200 chars: ${match[0].slice(0, 200)}`;
+              }
+            } else {
+              classificationError = `No JSON array found in response (${text.length} chars). First 200: ${text.slice(0, 200)}`;
+            }
+          } else {
+            classificationError = `Gemini HTTP ${resp.status}`;
+          }
+        }
+      } catch (classErr: unknown) {
+        classificationError = classErr instanceof Error ? classErr.message : String(classErr);
+      }
+
+      // Collapse duplicates and sort by category
+      classifiedSignals = collapseSignals(classifiedSignals);
+
+      // Generate taxonomy-aware follow-up questions
+      const taxonomyFollowUps = classifiedSignals.length > 0
+        ? generateFollowUpQuestions(classifiedSignals, resolved.name)
+        : [];
+
+      // ── Step 4: Generate gap remediation for every risk/gap found ────
       const risks = resultMap.risks?.findings ?? [];
       const gaps = branchResults.flatMap((b) => b.gaps);
       const remediation = generateRemediation(resolved.name, risks, gaps, branchResults);
 
-      // ── Step 4: Build the full result packet ───────────────────────
+      // ── Step 5: Build the full result packet ───────────────────────
       const result = {
         success: true,
         query: args.query,
@@ -331,6 +394,10 @@ export const executeDeepDiligence = internalAction({
         answer: synthesis.answer,
         confidence: synthesis.confidence,
         sourceCount: totalSources,
+        // Classified signals (taxonomy-controlled) — used by UI for grouped display
+        classifiedSignals,
+        classificationError,
+        // Raw signals kept for backward compat and drill-down
         signals: branchResults.flatMap((r) =>
           r.findings.map((f) => ({ title: f.title, body: f.body, confidence: f.confidence })),
         ),
@@ -338,7 +405,7 @@ export const executeDeepDiligence = internalAction({
         changes: (resultMap.history?.findings ?? []).map((f) => ({ description: f.title, detail: f.body })),
         comparables: synthesis.comparables,
         nextActions: [...synthesis.nextActions, ...remediation.topActions],
-        nextQuestions: synthesis.nextQuestions,
+        nextQuestions: [...(taxonomyFollowUps.length > 0 ? taxonomyFollowUps : synthesis.nextQuestions)],
         sources: [...new Set(branchResults.flatMap((r) => r.findings.flatMap((f) => f.sources)))]
           .map((url, i) => ({ label: url, url, type: "web", sourceIdx: i })),
         keyMetrics: synthesis.keyMetrics,

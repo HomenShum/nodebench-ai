@@ -26,6 +26,7 @@ import {
   detectFounderCompanyMode,
   getFounderRolePacketDefault,
 } from "../../packages/mcp-local/src/tools/founderOperatingModel.js";
+import { classifySignals } from "../lib/signalTaxonomy.js";
 import {
   getSyncBridgeStatus,
   linkDurableObjects,
@@ -1025,11 +1026,16 @@ function buildResultPacket(args: {
     answer: result.canonicalEntity?.canonicalMission ?? "",
     confidence: result.canonicalEntity?.identityConfidence ?? 70,
     sourceCount: sourceRefs.length,
-    variables: (result.signals ?? []).slice(0, 5).map((signal: any, index: number) => ({
+    variables: classifySignals((result.signals ?? []).slice(0, 8)).slice(0, 5).map((sig, index) => ({
       rank: index + 1,
-      name: signal.name ?? String(signal),
-      direction: signal.direction ?? "neutral",
-      impact: signal.impact ?? "medium",
+      name: sig.label,
+      category: sig.category,
+      direction: sig.direction,
+      impact: sig.impact,
+      confidence: sig.confidence,
+      rawName: sig.rawName,
+      evidenceRefs: sig.evidenceRefs,
+      needsOntologyReview: sig.needsOntologyReview,
     })),
     keyMetrics:
       Array.isArray(result.keyMetrics) && result.keyMetrics.length > 0

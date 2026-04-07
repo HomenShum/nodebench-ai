@@ -12531,6 +12531,139 @@ Return ONLY valid JSON with ALL fields populated:
   };
 }
 
+// server/lib/signalTaxonomy.ts
+var CANONICAL_LABELS = [
+  // Team / Founder
+  { label: "Founder-Market Fit", category: "Team / Founder", keywords: ["founder", "background", "domain expertise", "experience"] },
+  { label: "Key Technical Leadership", category: "Team / Founder", keywords: ["cto", "technical", "engineering", "leadership", "team"] },
+  { label: "Hiring Velocity", category: "Team / Founder", keywords: ["hiring", "headcount", "growth", "talent", "recruiting"] },
+  // Market
+  { label: "Market Size", category: "Market", keywords: ["tam", "sam", "market size", "addressable", "opportunity"] },
+  { label: "Market Timing", category: "Market", keywords: ["timing", "wave", "adoption", "inflection", "trend"] },
+  { label: "Competitive Density", category: "Market", keywords: ["competitors", "crowded", "fragmented", "consolidated", "landscape"] },
+  // Product
+  { label: "Product-Market Fit Signals", category: "Product", keywords: ["pmf", "retention", "engagement", "usage", "product-market"] },
+  { label: "Technical Differentiation", category: "Product", keywords: ["architecture", "tech stack", "proprietary", "novel", "innovation"] },
+  { label: "User Experience Quality", category: "Product", keywords: ["ux", "design", "usability", "onboarding", "friction"] },
+  // Traction
+  { label: "Revenue Growth", category: "Traction", keywords: ["revenue", "arr", "mrr", "sales", "growth rate"] },
+  { label: "User Growth", category: "Traction", keywords: ["users", "dau", "mau", "signups", "adoption rate"] },
+  { label: "Commercial Validation", category: "Traction", keywords: ["customers", "contracts", "pilots", "enterprise", "paid"] },
+  // GTM / Distribution
+  { label: "Distribution Channel", category: "GTM / Distribution", keywords: ["distribution", "channel", "viral", "organic", "acquisition"] },
+  { label: "Sales Efficiency", category: "GTM / Distribution", keywords: ["cac", "ltv", "payback", "sales cycle", "efficiency"] },
+  { label: "Developer Adoption", category: "GTM / Distribution", keywords: ["developer", "open source", "api", "sdk", "developer adoption"] },
+  // Moat / Defensibility
+  { label: "IP Defensibility", category: "Moat / Defensibility", keywords: ["ip", "patent", "proprietary", "trade secret", "defensibility"] },
+  { label: "Network Effects", category: "Moat / Defensibility", keywords: ["network effect", "flywheel", "ecosystem", "platform", "switching cost"] },
+  { label: "Data Moat", category: "Moat / Defensibility", keywords: ["data", "training data", "proprietary data", "data advantage", "data flywheel"] },
+  // Technical Risk
+  { label: "Scalability Risk", category: "Technical Risk", keywords: ["scale", "infrastructure", "performance", "bottleneck", "architecture risk"] },
+  { label: "Dependency Risk", category: "Technical Risk", keywords: ["dependency", "vendor lock-in", "api dependency", "platform risk", "single point"] },
+  // Financial Readiness
+  { label: "Runway", category: "Financial Readiness", keywords: ["runway", "burn rate", "cash", "months remaining", "fundraising"] },
+  { label: "Unit Economics", category: "Financial Readiness", keywords: ["unit economics", "margin", "gross margin", "contribution", "profitability"] },
+  // Diligence / Verifiability
+  { label: "Evidence Quality", category: "Diligence / Verifiability", keywords: ["evidence", "source", "verifiable", "citation", "proof"] },
+  { label: "Claim Consistency", category: "Diligence / Verifiability", keywords: ["contradiction", "inconsistent", "conflicting", "mismatch"] },
+  // Regulatory / Compliance
+  { label: "Regulatory Exposure", category: "Regulatory / Compliance", keywords: ["regulation", "compliance", "legal", "gdpr", "licensing"] },
+  // Strategic Fit
+  { label: "Strategic Alignment", category: "Strategic Fit", keywords: ["strategy", "alignment", "thesis", "portfolio fit", "synergy"] },
+  { label: "Independence", category: "Strategic Fit", keywords: ["independent", "autonomy", "parent company", "subsidiary", "spin-off"] },
+  // Execution Risk
+  { label: "Execution Complexity", category: "Execution Risk", keywords: ["complexity", "execution risk", "operational", "coordination", "delivery"] },
+  { label: "Go-to-Market Risk", category: "Execution Risk", keywords: ["gtm risk", "market entry", "launch", "adoption risk", "timing risk"] }
+];
+var KEYWORD_CACHE = /* @__PURE__ */ new Map();
+var MAX_CACHE = 500;
+function keywordScore(text, keywords) {
+  const lower = text.toLowerCase();
+  let score = 0;
+  for (const kw of keywords) {
+    if (lower.includes(kw)) score += kw.length;
+  }
+  return score;
+}
+function classifySignal(raw) {
+  const rawName = raw.name ?? raw.title ?? String(raw);
+  const cacheKey = rawName.toLowerCase().trim();
+  const cached = KEYWORD_CACHE.get(cacheKey);
+  if (cached) {
+    return {
+      category: cached.label.category,
+      label: cached.label.label,
+      rawName,
+      direction: raw.direction ?? "neutral",
+      impact: raw.impact ?? "medium",
+      confidence: Math.min(0.95, cached.score / 20),
+      // normalize
+      summary: rawName,
+      evidenceRefs: raw.sourceIdx != null ? [`src_${raw.sourceIdx}`] : [],
+      needsOntologyReview: false
+    };
+  }
+  let bestLabel = null;
+  let bestScore = 0;
+  for (const cl of CANONICAL_LABELS) {
+    const score = keywordScore(rawName, cl.keywords);
+    if (score > bestScore) {
+      bestScore = score;
+      bestLabel = cl;
+    }
+  }
+  if (bestLabel && bestScore > 0) {
+    if (KEYWORD_CACHE.size >= MAX_CACHE) {
+      const firstKey = KEYWORD_CACHE.keys().next().value;
+      if (firstKey) KEYWORD_CACHE.delete(firstKey);
+    }
+    KEYWORD_CACHE.set(cacheKey, { label: bestLabel, score: bestScore });
+  }
+  if (bestLabel && bestScore >= 3) {
+    return {
+      category: bestLabel.category,
+      label: bestLabel.label,
+      rawName,
+      direction: raw.direction ?? "neutral",
+      impact: raw.impact ?? "medium",
+      confidence: Math.min(0.95, bestScore / 20),
+      summary: rawName,
+      evidenceRefs: raw.sourceIdx != null ? [`src_${raw.sourceIdx}`] : [],
+      needsOntologyReview: bestScore < 6
+    };
+  }
+  return {
+    category: "Execution Risk",
+    // safe default
+    label: rawName.length > 40 ? rawName.slice(0, 37) + "..." : rawName,
+    rawName,
+    direction: raw.direction ?? "neutral",
+    impact: raw.impact ?? "medium",
+    confidence: 0.3,
+    summary: rawName,
+    evidenceRefs: raw.sourceIdx != null ? [`src_${raw.sourceIdx}`] : [],
+    needsOntologyReview: true
+  };
+}
+function classifySignals(rawSignals) {
+  const classified = rawSignals.map((s) => classifySignal(s));
+  const merged = /* @__PURE__ */ new Map();
+  for (const sig of classified) {
+    const key = `${sig.category}::${sig.label}`;
+    const existing = merged.get(key);
+    if (existing) {
+      if (sig.confidence > existing.confidence) {
+        existing.confidence = sig.confidence;
+        existing.summary = sig.summary;
+      }
+      existing.evidenceRefs = [.../* @__PURE__ */ new Set([...existing.evidenceRefs, ...sig.evidenceRefs])];
+    } else {
+      merged.set(key, { ...sig });
+    }
+  }
+  return Array.from(merged.values()).sort((a, b) => b.confidence - a.confidence);
+}
+
 // packages/mcp-local/src/sync/store.ts
 init_db();
 import { createHash } from "node:crypto";
@@ -14371,11 +14504,16 @@ function buildResultPacket(args) {
     answer: result.canonicalEntity?.canonicalMission ?? "",
     confidence: result.canonicalEntity?.identityConfidence ?? 70,
     sourceCount: sourceRefs.length,
-    variables: (result.signals ?? []).slice(0, 5).map((signal, index) => ({
+    variables: classifySignals((result.signals ?? []).slice(0, 8)).slice(0, 5).map((sig, index) => ({
       rank: index + 1,
-      name: signal.name ?? String(signal),
-      direction: signal.direction ?? "neutral",
-      impact: signal.impact ?? "medium"
+      name: sig.label,
+      category: sig.category,
+      direction: sig.direction,
+      impact: sig.impact,
+      confidence: sig.confidence,
+      rawName: sig.rawName,
+      evidenceRefs: sig.evidenceRefs,
+      needsOntologyReview: sig.needsOntologyReview
     })),
     keyMetrics: Array.isArray(result.keyMetrics) && result.keyMetrics.length > 0 ? result.keyMetrics.slice(0, keyMetricLimit).map((metric) => ({
       label: metric.label ?? "Metric",
