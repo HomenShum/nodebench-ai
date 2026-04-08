@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  History,
   LogIn,
   MessageSquare,
   Radio,
@@ -13,7 +14,6 @@ import {
   User,
   Settings,
   FolderKanban,
-  Gauge,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useConvexApi } from "@/lib/convexApi";
@@ -30,9 +30,10 @@ interface SurfaceShortcut {
 
 const SURFACE_SHORTCUTS: SurfaceShortcut[] = [
   { id: "ask", label: "Ask", icon: MessageSquare, color: "currentColor" },
-  { id: "library", label: "Library", icon: FileText, color: "currentColor" },
+  { id: "workspace", label: "Workspace", icon: FolderKanban, color: "currentColor" },
+  { id: "packets", label: "Packets", icon: FileText, color: "currentColor" },
+  { id: "history", label: "History", icon: History, color: "currentColor" },
   { id: "connect", label: "Connect", icon: Radio, color: "currentColor" },
-  { id: "telemetry", label: "System", icon: Gauge, color: "currentColor" },
 ];
 
 const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);

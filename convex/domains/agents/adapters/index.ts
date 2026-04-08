@@ -84,8 +84,9 @@ export type { VercelAiSdkAdapterConfig, VercelAiSdkToolDefinition } from "./verc
 
 export {
   createLangGraphAdapter,
+  createTemporalForecastGraphAdapter,
 } from "./langgraph/langgraphAdapter";
-export type { LangGraphAdapterConfig } from "./langgraph/langgraphAdapter";
+export type { LangGraphAdapterConfig, TemporalForecastGraphResult } from "./langgraph/langgraphAdapter";
 
 // Cross-SDK handoff bridge
 export {

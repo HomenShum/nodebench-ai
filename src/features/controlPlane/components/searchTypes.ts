@@ -475,6 +475,40 @@ export interface ResultFounderOperatingModel {
   benchmarkOracles: ResultBenchmarkOracleDefinition[];
 }
 
+export type ForecastTrendDirection =
+  | "improving"
+  | "stable"
+  | "declining"
+  | "volatile"
+  | "insufficient_data";
+
+export type ForecastRecommendedAction =
+  | "suppress"
+  | "refresh_packet"
+  | "deepen_diligence"
+  | "escalate"
+  | "delegate"
+  | "observe";
+
+export interface ResultForecastGate {
+  streamKey: string;
+  valuesCount: number;
+  modelUsed: string;
+  trendDirection: ForecastTrendDirection;
+  latestOutsideInterval: boolean;
+  confidenceBandWidth: number | null;
+  recommendedAction: ForecastRecommendedAction;
+  explanation: string;
+  evidenceRefs: string[];
+}
+
+export interface ResultTemporalTrajectory {
+  kind: string;
+  streamKey: string;
+  valuesCount: number;
+  modelUsed: string;
+}
+
 export interface ResultPacket {
   /** The user's original query */
   query: string;
@@ -554,6 +588,10 @@ export interface ResultPacket {
   distributionSurfaceStatus?: ResultDistributionSurfaceStatus[];
   companyReadinessPacket?: ResultCompanyReadinessPacket;
   companyNamingPack?: ResultCompanyNamingPack;
+  /** Forecast-aware orchestration gate derived from repeated numeric observations */
+  forecastGate?: ResultForecastGate;
+  /** Compact trajectory metadata for founder surfaces */
+  temporalTrajectory?: ResultTemporalTrajectory;
   /** Raw packet from backend (plan proposals, artifact packets, etc.) */
   rawPacket?: unknown;
 }

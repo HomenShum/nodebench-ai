@@ -46,6 +46,12 @@ export interface RecoveryStrategy {
   lastUsed: string;
 }
 
+type RecoveryStrategyRow = {
+  strategy: string;
+  success_count: number;
+  failure_count: number;
+};
+
 // ─── Schema init ─────────────────────────────────────────────────
 
 const MAX_ACTIONS_PER_EPISODE = 200;
@@ -106,7 +112,7 @@ export function recordAction(action: Omit<ActionRecord, "actionId">): ActionReco
   const db = getDb();
   initSessionMemoryTables();
 
-  const actionId = genId();
+  const actionId = genId("action");
 
   // Enforce bounded memory: evict oldest actions if over limit
   const countStmt = db.prepare("SELECT COUNT(*) as cnt FROM session_actions WHERE episode_id = ?");
@@ -141,7 +147,7 @@ export function recordFailure(failure: Omit<FailureRecord, "failureId">): Failur
   const db = getDb();
   initSessionMemoryTables();
 
-  const failureId = genId();
+  const failureId = genId("failure");
 
   db.prepare(`
     INSERT INTO session_failures (failure_id, episode_id, step_index, tool_name, failure_type, root_cause, recovery_strategy, recovery_successful, timestamp)
@@ -196,7 +202,7 @@ export function recordRecoveryOutcome(
     db.prepare(`
       INSERT INTO recovery_strategies (strategy_id, failure_type, tool_name, strategy, success_count, failure_count, last_used)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(genId(), failureType, toolName, strategy, succeeded ? 1 : 0, succeeded ? 0 : 1, new Date().toISOString());
+    `).run(genId("recovery"), failureType, toolName, strategy, succeeded ? 1 : 0, succeeded ? 0 : 1, new Date().toISOString());
   }
 }
 
@@ -209,7 +215,7 @@ export function getReflectionPrompt(failureType: string, toolName: string): stri
   // Get proven recovery strategies for this failure type
   const strategies = db.prepare(
     "SELECT strategy, success_count, failure_count FROM recovery_strategies WHERE failure_type = ? AND tool_name = ? AND success_count > 0 ORDER BY success_count DESC LIMIT 3"
-  ).all(failureType, toolName) as RecoveryStrategy[];
+  ).all(failureType, toolName) as RecoveryStrategyRow[];
 
   if (strategies.length === 0) {
     return `No known recovery strategies for ${failureType} on ${toolName}. Try a different approach.`;

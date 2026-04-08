@@ -26,13 +26,14 @@
 
 import { v } from "convex/values";
 import { internalAction, internalMutation } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import {
   buildClassificationPrompt,
   collapseSignals,
   generateFollowUpQuestions,
   type ClassifiedSignal,
 } from "./signalTaxonomy.js";
+import { buildSearchForecastGate } from "./searchForecastGate.js";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -423,11 +424,29 @@ export const executeDeepDiligence = internalAction({
         seoAudit: remediation.seoAudit,
         missingPresence: remediation.missingPresence,
       };
+      const recentSessions = await ctx.runQuery(api.domains.search.searchPipeline.listRecentSearches, { limit: 25 });
+      const forecastGate = buildSearchForecastGate({
+        recentSessions,
+        entityName: resolved.name,
+        lens: args.lens,
+        currentConfidence: synthesis.confidence,
+        currentSessionId: args.sessionId,
+      });
+      const resultWithForecastGate = {
+        ...result,
+        forecastGate,
+        temporalTrajectory: {
+          kind: "search_session_confidence",
+          streamKey: forecastGate.streamKey,
+          valuesCount: forecastGate.valuesCount,
+          modelUsed: forecastGate.modelUsed,
+        },
+      };
 
       await ctx.runMutation(internal.domains.search.searchPipeline.updateSearchStatus, {
         sessionId: args.sessionId,
         status: "complete",
-        result,
+        result: resultWithForecastGate,
         completedAt: Date.now(),
       });
     } catch (err: any) {

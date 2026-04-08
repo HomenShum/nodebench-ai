@@ -9,6 +9,7 @@ import { lazy, Suspense } from "react";
 import { FileText, Download, Link2, Copy, Bot } from "lucide-react";
 import { ViewSkeleton } from "@/components/skeletons";
 import { cn } from "@/lib/utils";
+import { ForecastGateSummary } from "../components/ForecastGateSummary";
 
 const ExportView = lazy(() =>
   import("@/features/founder/views/ExportView").then((mod) => ({
@@ -52,6 +53,8 @@ export function FounderPacketsHome() {
           );
         })}
       </div>
+
+      <ForecastGateSummary surface="packets" />
 
       {/* Export center — existing, handles the real packet management */}
       <div className="mt-8 w-full max-w-2xl">

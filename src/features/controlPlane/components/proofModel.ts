@@ -83,6 +83,10 @@ export interface LiveProgressModel {
 
 type LooseSignal = {
   name?: string;
+  title?: string;
+  label?: string;
+  body?: string;
+  description?: string;
   direction?: "up" | "down" | "neutral";
   impact?: "high" | "medium" | "low";
 };
@@ -277,13 +281,34 @@ function asArray<T>(value: T[] | null | undefined): T[] {
   return Array.isArray(value) ? value : [];
 }
 
+function firstUsefulText(...values: Array<string | null | undefined>): string | undefined {
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (trimmed) return trimmed;
+  }
+  return undefined;
+}
+
+function summarizeSignal(signal: LooseSignal, index: number): string {
+  const text = firstUsefulText(signal.name, signal.title, signal.label, signal.description, signal.body);
+  if (!text) return `Signal ${index + 1}`;
+  const sentence = text.split(/(?<=[.!?])\s+/)[0]?.trim();
+  return sentence || text;
+}
+
+function formatRiskText(risk: { title?: string; description?: string | null; body?: string | null; detail?: string | null }): string {
+  const title = firstUsefulText(risk.title, "Risk") ?? "Risk";
+  const description = firstUsefulText(risk.description, risk.body, risk.detail);
+  return description ? `${title}: ${description}` : title;
+}
+
 function normalizeInputPacket(packet: ResultPacket): ResultPacket {
   const loosePacket = packet as LooseResultPacket;
   const variables = Array.isArray(loosePacket.variables)
     ? loosePacket.variables
     : asArray(loosePacket.signals).map((signal, index) => ({
         rank: index + 1,
-        name: signal.name ?? `Signal ${index + 1}`,
+        name: summarizeSignal(signal, index),
         direction: signal.direction ?? "neutral",
         impact: signal.impact ?? "medium",
       }));
@@ -301,7 +326,12 @@ function normalizeInputPacket(packet: ResultPacket): ResultPacket {
     variables,
     keyMetrics: asArray(packet.keyMetrics),
     changes: asArray(packet.changes),
-    risks: asArray(packet.risks),
+    risks: asArray(packet.risks).map((risk: any) => ({
+      title: firstUsefulText(risk.title, risk.name) ?? "Risk",
+      description: firstUsefulText(risk.description, risk.body, risk.detail) ?? "",
+      falsification: risk.falsification,
+      sourceIdx: risk.sourceIdx,
+    })),
     comparables: asArray(packet.comparables),
     scenarios: asArray(packet.scenarios),
     interventions,
@@ -417,7 +447,7 @@ function buildAnswerBlocks(
     blocks.push({
       id: "answer_block:risks",
       title: "Contradictions",
-      text: packet.risks.map((risk) => `${risk.title}: ${risk.description}`).join(" "),
+      text: packet.risks.map((risk) => formatRiskText(risk)).join(" "),
       sourceRefIds: blockSourcesByIndex(sources, 2, 2),
       claimIds: claims
         .filter((claim) => packet.risks?.some((risk) => risk.title === claim.text))

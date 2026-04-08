@@ -267,4 +267,32 @@ describe("proofModel", () => {
     expect(enriched.claimRefs.length).toBeGreaterThan(0);
     expect(enriched.sourceRefs[0]?.id).toBe("source:1");
   });
+
+  it("normalizes deep-diligence title/body signals and risks without rendering undefined", () => {
+    const enriched = ensureProofPacket(
+      {
+        ...basePacket,
+        variables: undefined as unknown as ResultPacket["variables"],
+        signals: [
+          {
+            title: "Revenue Run Rate",
+            body: "Databricks crossed a $5.4B revenue run-rate.",
+            confidence: 100,
+          },
+        ],
+        risks: [
+          {
+            title: "Hyperscaler dependency",
+            body: "AWS, Microsoft, and Google are both partners and competitors.",
+          },
+        ],
+      } as unknown as ResultPacket,
+      "founder",
+    );
+
+    expect(enriched.variables[0]?.name).toBe("Revenue Run Rate");
+    const riskBlock = enriched.answerBlocks.find((block) => block.id === "answer_block:risks");
+    expect(riskBlock?.text).toContain("Hyperscaler dependency: AWS, Microsoft, and Google");
+    expect(riskBlock?.text).not.toContain("undefined");
+  });
 });

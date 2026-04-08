@@ -14,6 +14,7 @@ import {
   buildObservationsFromExtraction,
   getSafeAverageStepMs,
 } from "./ingestionUtils";
+import { classifyForecastGate } from "./forecastGatePolicy";
 
 /* ================================================================== */
 /* TYPES                                                               */
@@ -460,10 +461,15 @@ export const ingestStructuredSourceText = action({
 const TSFM_BASE_URL = process.env.TSFM_BASE_URL ?? "http://localhost:8010";
 
 interface TsfmForecastResponse {
-  model: string;
-  horizon: number;
-  forecasts: Array<{ predicted: number; lower: number; upper: number }>;
-  computation_time_ms: number;
+  predictions: Array<{
+    timestamp_offset?: number;
+    predicted: number;
+    lower: number;
+    upper: number;
+  }>;
+  model_used: string;
+  computation_ms: number;
+  request_id?: string;
 }
 
 /**
@@ -473,7 +479,7 @@ interface TsfmForecastResponse {
 async function callTsfmService(
   values: number[],
   horizon: number,
-  model: "chronos" | "timesfm" | "statistical" = "chronos",
+  model: "auto" | "chronos" | "timesfm" | "statistical" = "chronos",
 ): Promise<TsfmForecastResponse | null> {
   try {
     const controller = new AbortController();
@@ -481,7 +487,7 @@ async function callTsfmService(
     const resp = await fetch(`${TSFM_BASE_URL}/forecast`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ values, horizon, model }),
+      body: JSON.stringify({ values, horizon, model, confidence_level: 0.9 }),
       signal: controller.signal,
     });
     clearTimeout(timeout);
@@ -520,10 +526,16 @@ export const forecastStream = action({
     );
 
     if (numericSeries.length < 3) {
+      const values = numericSeries.map((p) => p.v);
       return {
         error: "Insufficient data",
         message: `Need at least 3 numeric observations, found ${numericSeries.length}`,
         streamKey,
+        forecastGate: classifyForecastGate({
+          streamKey,
+          values,
+          modelUsed: "insufficient_data",
+        }),
       };
     }
 
@@ -538,13 +550,13 @@ export const forecastStream = action({
 
     // Try TSFM microservice for chronos/timesfm/auto
     if (usedMethod === "chronos" || usedMethod === "timesfm" || usedMethod === "auto" || usedMethod === "statistical") {
-      const tsfmModel = usedMethod === "auto" ? "chronos" : usedMethod === "exponential_smoothing" ? "statistical" : usedMethod;
-      const tsfmResult = await callTsfmService(values, horizonSteps, tsfmModel as "chronos" | "timesfm" | "statistical");
+      const tsfmModel = usedMethod === "auto" ? "auto" : usedMethod === "exponential_smoothing" ? "statistical" : usedMethod;
+      const tsfmResult = await callTsfmService(values, horizonSteps, tsfmModel as "auto" | "chronos" | "timesfm" | "statistical");
 
       if (tsfmResult) {
-        usedMethod = tsfmResult.model as typeof usedMethod;
-        forecasts = tsfmResult.forecasts.map((f, i) => ({
-          t: lastT + avgStepMs * (i + 1),
+        usedMethod = tsfmResult.model_used as typeof usedMethod;
+        forecasts = tsfmResult.predictions.map((f, i) => ({
+          t: lastT + avgStepMs * (f.timestamp_offset ?? i + 1),
           predicted: f.predicted,
           lower: f.lower,
           upper: f.upper,
@@ -560,6 +572,27 @@ export const forecastStream = action({
     }
 
     const momentum = detectMomentum(numericSeries);
+    const roundedForecasts = forecasts.map((f) => ({
+      timestamp: f.t,
+      date: new Date(f.t).toISOString().split("T")[0],
+      predicted: Math.round(f.predicted * 100) / 100,
+      lower: Math.round(f.lower * 100) / 100,
+      upper: Math.round(f.upper * 100) / 100,
+    }));
+    const forecastGate = classifyForecastGate({
+      streamKey,
+      values,
+      modelUsed: usedMethod,
+      forecasts: roundedForecasts.map((forecast) => ({
+        predicted: forecast.predicted,
+        lower: forecast.lower,
+        upper: forecast.upper,
+      })),
+      evidenceRefs: numericSeries
+        .map((point) => point.headline)
+        .filter((ref): ref is string => typeof ref === "string" && ref.trim().length > 0)
+        .slice(0, 5),
+    });
 
     return {
       streamKey,
@@ -573,13 +606,8 @@ export const forecastStream = action({
         rSquared: momentum.rSquared,
         slope: momentum.slope,
       } : null,
-      forecasts: forecasts.map((f) => ({
-        timestamp: f.t,
-        date: new Date(f.t).toISOString().split("T")[0],
-        predicted: Math.round(f.predicted * 100) / 100,
-        lower: Math.round(f.lower * 100) / 100,
-        upper: Math.round(f.upper * 100) / 100,
-      })),
+      forecasts: roundedForecasts,
+      forecastGate,
     };
   },
 });

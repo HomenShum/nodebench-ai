@@ -9,10 +9,11 @@ export function ensureDefaultAdaptersRegistered(): Promise<void> {
 
   registrationPromise = (async () => {
     if (
-      getAdapter("DefaultAnthropicReasoning") ||
-      getAdapter("DefaultOpenAIAgents") ||
-      getAdapter("DefaultVercelAiSdk") ||
-      getAdapter("DefaultLangGraph")
+      getAdapter("DefaultAnthropicReasoning") &&
+      getAdapter("DefaultOpenAIAgents") &&
+      getAdapter("DefaultVercelAiSdk") &&
+      getAdapter("DefaultLangGraph") &&
+      getAdapter("TemporalForecastLangGraph")
     ) {
       return;
     }
@@ -25,7 +26,7 @@ export function ensureDefaultAdaptersRegistered(): Promise<void> {
         import("./langgraph/langgraphAdapter"),
       ]);
 
-    registerAdapter(
+    if (!getAdapter("DefaultAnthropicReasoning")) registerAdapter(
       anthropicModule.createAnthropicReasoningAdapter({
         name: "DefaultAnthropicReasoning",
         thinking: { enabled: false, budgetTokens: 0 },
@@ -33,7 +34,7 @@ export function ensureDefaultAdaptersRegistered(): Promise<void> {
       })
     );
 
-    registerAdapter(
+    if (!getAdapter("DefaultOpenAIAgents")) registerAdapter(
       openaiModule.createOpenAIAgentsAdapter({
         name: "DefaultOpenAIAgents",
         instructions: "You are a helpful assistant. Answer concisely.",
@@ -42,7 +43,7 @@ export function ensureDefaultAdaptersRegistered(): Promise<void> {
       })
     );
 
-    registerAdapter(
+    if (!getAdapter("DefaultVercelAiSdk")) registerAdapter(
       vercelModule.createVercelAiSdkAdapter({
         name: "DefaultVercelAiSdk",
         model: "gpt-5-mini",
@@ -51,12 +52,19 @@ export function ensureDefaultAdaptersRegistered(): Promise<void> {
       })
     );
 
-    registerAdapter(
+    if (!getAdapter("DefaultLangGraph")) registerAdapter(
       langgraphModule.createLangGraphAdapter({
         name: "DefaultLangGraph",
         model: "gpt-5-mini",
         systemPrompt: "You are a helpful assistant. Answer concisely.",
         maxIterations: 5,
+      })
+    );
+
+    if (!getAdapter("TemporalForecastLangGraph")) registerAdapter(
+      langgraphModule.createTemporalForecastGraphAdapter({
+        name: "TemporalForecastLangGraph",
+        maxIterations: 12,
       })
     );
   })().catch((err) => {

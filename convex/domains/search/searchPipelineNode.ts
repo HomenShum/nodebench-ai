@@ -2,7 +2,7 @@
 
 import { v } from "convex/values";
 import { internalAction } from "../../_generated/server";
-import { internal } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 import type { McpTool } from "../../../packages/mcp-local/src/types.js";
 import { entityEnrichmentTools } from "../../../packages/mcp-local/src/tools/entityEnrichmentTools.js";
 import { founderLocalPipelineTools } from "../../../packages/mcp-local/src/tools/founderLocalPipeline.js";
@@ -15,6 +15,7 @@ import {
   generatePlan,
   synthesizeResults,
 } from "../../../server/agentHarness.js";
+import { buildSearchForecastGate } from "./searchForecastGate.js";
 
 type SearchTraceEntry = {
   step: string;
@@ -415,6 +416,25 @@ export const executeSearch = internalAction({
         execution,
         synthesis,
       });
+      const recentSessions = await ctx.runQuery(api.domains.search.searchPipeline.listRecentSearches, { limit: 25 });
+      const forecastGate = buildSearchForecastGate({
+        recentSessions,
+        entityName: String(packet.entityName ?? synthesis.entityName ?? classification.entity ?? args.query),
+        lens: classification.lens,
+        currentConfidence: Number(packet.confidence ?? synthesis.confidence ?? 0),
+        currentSessionId: args.sessionId,
+        packetId: typeof packet.packetId === "string" ? packet.packetId : undefined,
+      });
+      const packetWithForecastGate = {
+        ...packet,
+        forecastGate,
+        temporalTrajectory: {
+          kind: "search_session_confidence",
+          streamKey: forecastGate.streamKey,
+          valuesCount: forecastGate.valuesCount,
+          modelUsed: forecastGate.modelUsed,
+        },
+      };
 
       const completedTrace = [
         ...realtimeTrace,
@@ -432,7 +452,7 @@ export const executeSearch = internalAction({
         status: "complete",
         trace: completedTrace,
         classification,
-        result: packet,
+        result: packetWithForecastGate,
         completedAt: Date.now(),
       });
       // ── Episode: after span (packet compiled) ─────────────────────

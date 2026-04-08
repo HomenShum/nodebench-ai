@@ -8,6 +8,7 @@
 import { RefreshCw, ArrowRight, AlertTriangle } from "lucide-react";
 import { DataSourceBanner } from "@/shared/components/DataSourceBanner";
 import { cn } from "@/lib/utils";
+import { ForecastGateSummary } from "../components/ForecastGateSummary";
 
 const FOUNDER_LOOPS = [
   {
@@ -75,6 +76,8 @@ export function FounderWorkspaceHome({
           );
         })}
       </div>
+
+      <ForecastGateSummary surface="workspace" />
     </div>
   );
 }

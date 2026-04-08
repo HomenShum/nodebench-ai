@@ -50,6 +50,7 @@ import { ensureProofPacket } from "./proofModel";
 import { CitationFootnote } from "./CitationFootnote";
 import { SourcesBar } from "./SourcesBar";
 import { SignalCard } from "./SignalCard";
+import { ForecastGateCard } from "./ForecastGateCard";
 
 /* ─── Section shell ──────────────────────────────────────────────────────── */
 
@@ -629,6 +630,8 @@ export const ResultWorkspace = memo(function ResultWorkspace({
           </div>
         </div>
       ) : null}
+
+      <ForecastGateCard gate={proofPacket.forecastGate} />
 
       {/* ── Sources bar ───────────────────────────────────────────────────── */}
       {lens === "banker" ? (

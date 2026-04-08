@@ -8,6 +8,8 @@
 import { internalAction, internalMutation, internalQuery } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { v } from "convex/values";
+import { buildForecastAwareOpenClawHandoff } from "./forecastHandoffPolicy";
+import type { ForecastGateDecision } from "../temporal/forecastGatePolicy";
 
 /**
  * Log a skill execution (called after proxy enforcement)
@@ -100,11 +102,52 @@ export const executeSkill = internalAction({
     canUndo: v.optional(v.boolean()),
     undoInstructions: v.optional(v.string()),
     requiresApproval: v.optional(v.boolean()),
+    forecastGate: v.optional(v.any()),
+    activePacketId: v.optional(v.string()),
+    packetLineageId: v.optional(v.string()),
+    currentCompanyTruth: v.optional(v.string()),
+    constraints: v.optional(v.array(v.string())),
+    successCriteria: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     const t0 = Date.now();
-    const requiresApproval = args.requiresApproval ?? false;
-    const resultStatus = requiresApproval ? "approval_required" : "success";
+    const skillArgsRecord =
+      args.skillArgs && typeof args.skillArgs === "object" && !Array.isArray(args.skillArgs)
+        ? (args.skillArgs as Record<string, unknown>)
+        : {};
+    const forecastGate =
+      args.forecastGate && typeof args.forecastGate === "object" && !Array.isArray(args.forecastGate)
+        ? (args.forecastGate as ForecastGateDecision)
+        : undefined;
+    const forecastHandoff = forecastGate
+      ? buildForecastAwareOpenClawHandoff({
+          forecastGate,
+          activePacketId:
+            args.activePacketId ??
+            (typeof skillArgsRecord.packetId === "string" ? skillArgsRecord.packetId : undefined) ??
+            (typeof skillArgsRecord.activePacketId === "string" ? skillArgsRecord.activePacketId : undefined),
+          packetLineageId:
+            args.packetLineageId ??
+            (typeof skillArgsRecord.packetLineageId === "string" ? skillArgsRecord.packetLineageId : undefined),
+          currentCompanyTruth:
+            args.currentCompanyTruth ??
+            (typeof skillArgsRecord.currentCompanyTruth === "string" ? skillArgsRecord.currentCompanyTruth : undefined),
+          constraints: args.constraints,
+          successCriteria: args.successCriteria,
+          evidenceRefs: args.evidenceRefs,
+          approvalRequired: args.requiresApproval,
+          undoInstructions: args.undoInstructions,
+        })
+      : null;
+    const blockedByForecastGate = forecastHandoff ? !forecastHandoff.shouldExecute : false;
+    const requiresApproval = blockedByForecastGate
+      ? forecastHandoff?.requiresApproval === true
+      : args.requiresApproval ?? forecastHandoff?.requiresApproval ?? false;
+    const resultStatus = blockedByForecastGate
+      ? "blocked_by_forecast_gate"
+      : requiresApproval
+        ? "approval_required"
+        : "success";
 
     // Log the execution attempt
     const execId = await ctx.runMutation(
@@ -113,11 +156,31 @@ export const executeSkill = internalAction({
         sessionId: args.sessionId,
         userId: args.userId,
         skillName: args.skillName,
-        args: args.skillArgs,
+        args: forecastHandoff
+          ? {
+              ...(skillArgsRecord as Record<string, unknown>),
+              forecastGate: forecastHandoff.packet.forecastGate,
+              forecastHandoff,
+            }
+          : args.skillArgs,
         resultStatus,
+        violationType: blockedByForecastGate ? "forecast_gate_hold" : undefined,
         durationMs: Date.now() - t0,
       }
     );
+
+    const policyAction = blockedByForecastGate ? "denied" : requiresApproval ? "escalated" : "allowed";
+    const approvalState = blockedByForecastGate && !requiresApproval
+      ? "not_required"
+      : requiresApproval
+        ? "pending"
+        : "not_required";
+    const resultSuccess = !requiresApproval && !blockedByForecastGate;
+    const actionSummary =
+      args.actionSummary ??
+      (forecastHandoff
+        ? `OpenClaw ${forecastHandoff.executionDirective} for ${args.skillName}`
+        : `OpenClaw ${requiresApproval ? "drafted" : "executed"} ${args.skillName}`);
 
     await ctx.runAction(
       internal.domains.agents.receipts.actionReceipts.emitReceipt,
@@ -131,23 +194,38 @@ export const executeSkill = internalAction({
         openclawSessionId: args.sessionId,
         openclawExecutionId: execId,
         deployment: args.deployment ?? "openclaw",
-        params: args.skillArgs,
-        actionSummary:
-          args.actionSummary ??
-          `OpenClaw ${requiresApproval ? "drafted" : "executed"} ${args.skillName}`,
+        params: forecastHandoff
+          ? {
+              ...(skillArgsRecord as Record<string, unknown>),
+              forecastHandoff,
+            }
+          : args.skillArgs,
+        actionSummary,
         policyId: args.policyId ?? "pol_openclaw_default",
         policyRuleName: args.policyRuleName ?? "OpenClaw default policy",
-        policyAction: requiresApproval ? "escalated" : "allowed",
+        policyAction,
         evidenceRefs: args.evidenceRefs ?? [],
-        resultSuccess: !requiresApproval,
-        resultSummary: requiresApproval
+        resultSuccess,
+        resultSummary: blockedByForecastGate
+          ? `${args.skillName} held by forecast gate: ${forecastHandoff?.reason ?? "no execution permitted"}`
+          : requiresApproval
           ? `Held for approval before ${args.skillName} can execute`
           : `${args.skillName} completed in ${Date.now() - t0}ms`,
         resultOutputHash: undefined,
         canUndo: args.canUndo ?? false,
         undoInstructions: args.undoInstructions,
-        approvalState: requiresApproval ? "pending" : "not_required",
-        violations: requiresApproval
+        approvalState,
+        violations: blockedByForecastGate
+          ? [
+              {
+                ruleId: "rule_openclaw_forecast_gate",
+                ruleName: "Forecast Gate",
+                severity: requiresApproval ? "warning" : "info",
+                description: forecastHandoff?.reason ?? `OpenClaw action ${args.skillName} was held by forecast policy`,
+                resolution: forecastGate?.explanation ?? "Inspect forecast gate context before retrying the handoff.",
+              },
+            ]
+          : requiresApproval
           ? [
               {
                 ruleId: "rule_openclaw_approval_required",
@@ -165,7 +243,8 @@ export const executeSkill = internalAction({
       executionId: execId,
       skillName: args.skillName,
       status: resultStatus,
-      approvalState: requiresApproval ? "pending" : "not_required",
+      approvalState,
+      forecastHandoff,
       durationMs: Date.now() - t0,
     };
   },

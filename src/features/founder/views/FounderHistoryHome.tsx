@@ -7,6 +7,7 @@
 
 import { lazy, Suspense } from "react";
 import { ViewSkeleton } from "@/components/skeletons";
+import { ForecastGateSummary } from "../components/ForecastGateSummary";
 
 const ChangeDetectorView = lazy(() =>
   import("@/features/founder/views/ChangeDetectorView").then((mod) => ({
@@ -26,6 +27,8 @@ export function FounderHistoryHome() {
       </p>
 
       {/* Single change timeline — no tabs, just the changes */}
+      <ForecastGateSummary surface="history" />
+
       <div className="mt-8 w-full max-w-3xl">
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
           <Suspense fallback={<ViewSkeleton variant="default" />}>

@@ -7,7 +7,7 @@
  */
 
 import { memo } from "react";
-import { MessageSquare, FileText, Radio, Gauge } from "lucide-react";
+import { FileText, FolderKanban, History, MessageSquare, Radio } from "lucide-react";
 import type { CockpitSurfaceId } from "@/lib/registry/viewRegistry";
 import { cn } from "@/lib/utils";
 
@@ -23,10 +23,11 @@ const TABS: readonly {
   label: string;
   icon: typeof MessageSquare;
 }[] = [
-  { id: "ask",       label: "Ask",     icon: MessageSquare },
-  { id: "library",   label: "Library", icon: FileText },
-  { id: "connect",   label: "Connect", icon: Radio },
-  { id: "telemetry", label: "System",  icon: Gauge },
+  { id: "ask", label: "Ask", icon: MessageSquare },
+  { id: "workspace", label: "Workspace", icon: FolderKanban },
+  { id: "packets", label: "Packets", icon: FileText },
+  { id: "history", label: "History", icon: History },
+  { id: "connect", label: "Connect", icon: Radio },
 ];
 
 export const MobileTabBar = memo(function MobileTabBar({

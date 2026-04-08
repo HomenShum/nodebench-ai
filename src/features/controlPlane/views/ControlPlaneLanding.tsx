@@ -56,6 +56,7 @@ import { ensureProofPacket } from "../components/proofModel";
 import { ChatThread } from "../components/ChatThread";
 import type { ChatEntry } from "../components/ChatMessage";
 import { FounderEpisodePanel, type FounderEpisodeRecord, type FounderEpisodeSpan } from "../components/FounderEpisodePanel";
+import { ForecastGateCard } from "../components/ForecastGateCard";
 import type { TrajectoryData } from "@/features/telemetry/types";
 
 const SinceLastSession = lazy(() => import("../../founder/components/SinceLastSession"));
@@ -176,6 +177,12 @@ const FOUNDER_QUICK_ACTIONS: Array<{
   lens?: LensId;
   kind?: "prompt" | "connect";
 }> = [
+  {
+    id: "connect_mcp",
+    label: "Connect NodeBench-MCP",
+    description: "Index docs, codebase, and agent context for a live founder dashboard.",
+    kind: "connect",
+  },
   {
     id: "weekly_reset",
     label: "Weekly Reset",
@@ -465,6 +472,8 @@ function buildPacketFromStructuredResult(structuredResult: any, query: string): 
     distributionSurfaceStatus: structuredResult?.distributionSurfaceStatus,
     companyReadinessPacket: structuredResult?.companyReadinessPacket,
     companyNamingPack: structuredResult?.companyNamingPack,
+    forecastGate: structuredResult?.forecastGate,
+    temporalTrajectory: structuredResult?.temporalTrajectory,
     interventions: structuredResult?.nextActions?.slice(0, 4).map((action: any) => ({
       action: action.action ?? String(action),
       impact: action.impact ?? "medium",
@@ -1995,7 +2004,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             style={stagger("0.08s")}
             className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-content-secondary"
           >
-            Search a company, describe your startup, or ask what to do next. NodeBench turns that into company truth, contradictions, and a delegation-ready packet.
+            Search a company, describe your startup, upload files, or ask what to do next. Connect context when you want NodeBench to turn it into company truth, contradictions, and a delegation-ready packet.
           </p>
         </div>}
 
@@ -2039,7 +2048,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 setInput(e.target.value);
               }}
               onKeyDown={handleKeyDown}
-              placeholder="Search a company, describe your startup, or ask what to do next..."
+              placeholder="Search a company, describe your startup, upload files, or ask what to do next..."
               rows={1}
               className="w-full resize-none bg-transparent px-5 py-4 pr-36 text-[15px] text-content placeholder:text-content-muted/60 focus:outline-none"
               aria-label="Search NodeBench"
@@ -2133,21 +2142,23 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         {/* ── Example prompts ──────────────────────────────────────────────── */}
         {conversation.length === 0 && (
           <div style={stagger("0.18s")} className="mt-4 space-y-4 sm:mt-6">
-            {/* Mobile: compact suggestion chips (ChatGPT pattern) */}
-            <div className="flex flex-wrap gap-2 sm:hidden" data-testid="landing-mobile-chips">
-              {FOUNDER_QUICK_ACTIONS.slice(0, 4).map((action) => (
+            {/* Mobile: compact founder actions */}
+            {isMobileViewport ? <div className="flex flex-wrap gap-2 sm:hidden" data-testid="landing-mobile-chips">
+              {FOUNDER_QUICK_ACTIONS.slice(0, 4).map((chip) => (
                 <button
-                  key={action.id}
+                  key={chip.id}
                   type="button"
-                  onClick={() => handleQuickAction(action)}
+                  onClick={() => {
+                    handleQuickAction(chip);
+                  }}
                   className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[12px] text-content-muted transition-all hover:bg-white/[0.06] hover:text-content"
                 >
-                  {action.label}
+                  {chip.label}
                 </button>
               ))}
-            </div>
-            {/* Desktop: full action cards */}
-            <div className="hidden gap-3 sm:grid sm:grid-cols-2" data-testid="landing-example-prompts">
+            </div> : null}
+            {/* Desktop: full founder action cards */}
+            {!isMobileViewport ? <div className="hidden gap-3 sm:grid sm:grid-cols-2" data-testid="landing-example-prompts">
               {FOUNDER_QUICK_ACTIONS.map((action) => (
                 <button
                   key={action.id}
@@ -2164,7 +2175,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                   </div>
                 </button>
               ))}
-            </div>
+            </div> : null}
 
             {recentEpisodes.length > 0 ? (
               <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
@@ -2327,6 +2338,11 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
               </div>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {activeResult.forecastGate ? (
+                  <div className="sm:col-span-2">
+                    <ForecastGateCard gate={activeResult.forecastGate} compact />
+                  </div>
+                ) : null}
                 <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
                   <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-content-muted">What This Company Is</div>
                   <div className="mt-2 text-sm leading-relaxed text-content">{activeResult.answer}</div>
@@ -2417,7 +2433,16 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             BELOW THE FOLD — Trust, Install, Proof
             Hidden when conversation is active (chat takes over the page)
             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        {conversation.length === 0 && showInstallGuide && (<> 
+        {conversation.length === 0 && showInstallGuide && (<>
+        <div className="mt-6 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setShowInstallGuide(false)}
+            className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[12px] text-content-muted transition-all hover:bg-white/[0.06] hover:text-content"
+          >
+            Hide MCP steps
+          </button>
+        </div>
 
 
         {/* ── How it works ─────────────────────────────────────────────────── */}

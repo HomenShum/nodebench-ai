@@ -760,6 +760,7 @@ import type * as domains_observability_selfHealer from "../domains/observability
 import type * as domains_observability_telemetry from "../domains/observability/telemetry.js";
 import type * as domains_observability_traces from "../domains/observability/traces.js";
 import type * as domains_openclaw_executionEngine from "../domains/openclaw/executionEngine.js";
+import type * as domains_openclaw_forecastHandoffPolicy from "../domains/openclaw/forecastHandoffPolicy.js";
 import type * as domains_openclaw_monitoring from "../domains/openclaw/monitoring.js";
 import type * as domains_openclaw_sessionManager from "../domains/openclaw/sessionManager.js";
 import type * as domains_openclaw_tools_openclawAgentTools from "../domains/openclaw/tools/openclawAgentTools.js";
@@ -1064,6 +1065,7 @@ import type * as domains_search_ragEnhanced from "../domains/search/ragEnhanced.
 import type * as domains_search_ragEnhancedBatchIndex from "../domains/search/ragEnhancedBatchIndex.js";
 import type * as domains_search_ragQueries from "../domains/search/ragQueries.js";
 import type * as domains_search_searchCache from "../domains/search/searchCache.js";
+import type * as domains_search_searchForecastGate from "../domains/search/searchForecastGate.js";
 import type * as domains_search_searchPipeline from "../domains/search/searchPipeline.js";
 import type * as domains_search_searchPipelineNode from "../domains/search/searchPipelineNode.js";
 import type * as domains_search_signalTaxonomy from "../domains/search/signalTaxonomy.js";
@@ -1117,6 +1119,7 @@ import type * as domains_tasks_workflows_index from "../domains/tasks/workflows/
 import type * as domains_teachability_index from "../domains/teachability/index.js";
 import type * as domains_telemetry_disclosureEvents from "../domains/telemetry/disclosureEvents.js";
 import type * as domains_temporal_feynmanEditor from "../domains/temporal/feynmanEditor.js";
+import type * as domains_temporal_forecastGatePolicy from "../domains/temporal/forecastGatePolicy.js";
 import type * as domains_temporal_index from "../domains/temporal/index.js";
 import type * as domains_temporal_ingestion from "../domains/temporal/ingestion.js";
 import type * as domains_temporal_ingestionUtils from "../domains/temporal/ingestionUtils.js";
@@ -2103,6 +2106,7 @@ declare const fullApi: ApiFromModules<{
   "domains/observability/telemetry": typeof domains_observability_telemetry;
   "domains/observability/traces": typeof domains_observability_traces;
   "domains/openclaw/executionEngine": typeof domains_openclaw_executionEngine;
+  "domains/openclaw/forecastHandoffPolicy": typeof domains_openclaw_forecastHandoffPolicy;
   "domains/openclaw/monitoring": typeof domains_openclaw_monitoring;
   "domains/openclaw/sessionManager": typeof domains_openclaw_sessionManager;
   "domains/openclaw/tools/openclawAgentTools": typeof domains_openclaw_tools_openclawAgentTools;
@@ -2407,6 +2411,7 @@ declare const fullApi: ApiFromModules<{
   "domains/search/ragEnhancedBatchIndex": typeof domains_search_ragEnhancedBatchIndex;
   "domains/search/ragQueries": typeof domains_search_ragQueries;
   "domains/search/searchCache": typeof domains_search_searchCache;
+  "domains/search/searchForecastGate": typeof domains_search_searchForecastGate;
   "domains/search/searchPipeline": typeof domains_search_searchPipeline;
   "domains/search/searchPipelineNode": typeof domains_search_searchPipelineNode;
   "domains/search/signalTaxonomy": typeof domains_search_signalTaxonomy;
@@ -2460,6 +2465,7 @@ declare const fullApi: ApiFromModules<{
   "domains/teachability/index": typeof domains_teachability_index;
   "domains/telemetry/disclosureEvents": typeof domains_telemetry_disclosureEvents;
   "domains/temporal/feynmanEditor": typeof domains_temporal_feynmanEditor;
+  "domains/temporal/forecastGatePolicy": typeof domains_temporal_forecastGatePolicy;
   "domains/temporal/index": typeof domains_temporal_index;
   "domains/temporal/ingestion": typeof domains_temporal_ingestion;
   "domains/temporal/ingestionUtils": typeof domains_temporal_ingestionUtils;

@@ -59,7 +59,7 @@ logger.info("Models loaded: %s | GPU: %s", LOADED_MODELS, GPU_AVAILABLE)
 class ForecastRequest(BaseModel):
     values: list[float] = Field(..., min_length=2, max_length=10000, description="Numeric time series")
     horizon: int = Field(..., ge=1, le=1000, description="Number of future steps")
-    model: str = Field("auto", pattern="^(chronos|timesfm|auto)$")
+    model: str = Field("auto", pattern="^(chronos|timesfm|auto|statistical)$")
     confidence_level: float = Field(0.9, ge=0.5, le=0.99)
     request_id: Optional[str] = None
 
@@ -125,7 +125,7 @@ class StreamInput(BaseModel):
 
 class BatchForecastRequest(BaseModel):
     streams: list[StreamInput] = Field(..., min_length=1, max_length=50)
-    model: str = Field("auto", pattern="^(chronos|timesfm|auto)$")
+    model: str = Field("auto", pattern="^(chronos|timesfm|auto|statistical)$")
     confidence_level: float = Field(0.9, ge=0.5, le=0.99)
     request_id: Optional[str] = None
 
@@ -174,6 +174,8 @@ SHORT_SERIES_THRESHOLD = 100  # auto mode prefers Chronos below this
 
 def _resolve_model(model_hint: str, series_len: int) -> str:
     """Pick a concrete model given the hint and series length."""
+    if model_hint == "statistical":
+        return "statistical"
     if model_hint == "chronos" and chronos.available:
         return "chronos"
     if model_hint == "timesfm" and timesfm_model.available:
