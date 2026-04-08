@@ -336,6 +336,10 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
     const { createClaudeCodeIngestTools } = await import("./tools/claudeCodeIngestTools.js");
     return createClaudeCodeIngestTools();
   },
+  graphify: async () => {
+    const { graphifyTools } = await import("./tools/graphifyTools.js");
+    return graphifyTools;
+  },
 };
 
 // ── All known domain keys (available before any load) ──────────────────────

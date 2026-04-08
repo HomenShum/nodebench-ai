@@ -27,6 +27,7 @@ import {
   getFounderRolePacketDefault,
 } from "../../packages/mcp-local/src/tools/founderOperatingModel.js";
 import { classifySignals } from "../lib/signalTaxonomy.js";
+import { createEvidenceSpans } from "../lib/evidenceSpan.js";
 import {
   getSyncBridgeStatus,
   linkDurableObjects,
@@ -1098,6 +1099,10 @@ function buildResultPacket(args: {
       impact: action.impact ?? "medium",
     })),
     nextQuestions: result.nextQuestions ?? result.nextActions?.map((action: any) => action.action) ?? [],
+    evidence: createEvidenceSpans(
+      result.sourceSnippets ?? sourceRefs.map((ref: any) => ({ url: ref.url, title: ref.title, snippet: ref.snippet })),
+      result.signals ?? [],
+    ),
   };
 }
 
