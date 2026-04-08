@@ -82,6 +82,9 @@ const CostDashboard = lazy(() =>
 const SubconsciousDashboard = lazy(() =>
   import("@/features/monitoring/views/SubconsciousDashboard").then((mod) => ({ default: mod.SubconsciousDashboard })),
 );
+const TrajectoryConsole = lazy(() =>
+  import("@/features/monitoring/views/TrajectoryConsole").then((mod) => ({ default: mod.TrajectoryConsole })),
+);
 const FounderWorkspaceHome = lazy(() =>
   import("@/features/founder/views/FounderWorkspaceHome").then((mod) => ({ default: mod.FounderWorkspaceHome })),
 );
@@ -200,6 +203,8 @@ function SurfaceFrame({
 
 const TELEMETRY_TABS = [
   { id: "activity", label: "Activity" },
+  { id: "trajectory", label: "Trajectory" },
+  { id: "subconscious", label: "Memory" },
   { id: "health", label: "Health" },
   { id: "spend", label: "Spend" },
 ] as const;
@@ -305,6 +310,8 @@ function TelemetryStack({ active = true }: { active?: boolean }) {
       {/* Tab content */}
       <div className="mt-4 w-full max-w-3xl rounded-xl border border-white/[0.06] bg-white/[0.02] p-5" role="tabpanel">
         {activeTab === "activity" && <AgentTelemetryDashboard />}
+        {activeTab === "trajectory" && <TrajectoryConsole session={null} />}
+        {activeTab === "subconscious" && <SubconsciousDashboard />}
         {activeTab === "health" && <ObservabilityView />}
         {activeTab === "spend" && <CostDashboard />}
       </div>
