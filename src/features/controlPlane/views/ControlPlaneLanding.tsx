@@ -2061,7 +2061,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             SEARCH CANVAS — The hero. Hidden when conversation active.
             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        {conversation.length === 0 && <div className="text-center">
+        {conversation.length === 0 && <div className="hidden text-center sm:block">
           <h1
             style={stagger("0s")}
             className="text-2xl font-semibold tracking-tight text-content sm:text-3xl lg:text-4xl text-balance"
@@ -2072,18 +2072,22 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             style={stagger("0.08s")}
             className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-content-secondary"
           >
-            Search a company, describe your startup, upload files, or ask what to do next. NodeBench turns that into company truth, contradictions, and a delegation-ready packet.
-          </p>
-          <p
-            style={stagger("0.08s")}
-            className="hidden"
-          >
-            VCs, accelerators, and banks judge your startup on hidden criteria they never share. Describe your idea and NodeBench shows you exactly what's missing — before your first pitch.
+            Search a company, describe your startup, or ask what to do next. NodeBench turns that into company truth, contradictions, and a delegation-ready packet.
           </p>
         </div>}
 
         {/* ── Search input with upload dropzone ─────────────────────────── */}
-        <div style={stagger("0.12s")} className="mt-8">
+        {/* On mobile during active search: show compact status instead of full input */}
+        {isSearching && isMobileViewport && conversation.length > 0 && (
+          <div className="mt-2 flex items-center gap-3 rounded-xl border border-[#d97757]/30 bg-[#d97757]/10 px-4 py-3 sm:hidden">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#d97757]/30 border-t-[#d97757]" />
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-medium text-content">Researching {submittedQuery}...</div>
+              <div className="text-[10px] text-content-muted">{activeLens} lens · deep diligence in progress</div>
+            </div>
+          </div>
+        )}
+        <div style={stagger("0.12s")} className={`mt-4 sm:mt-8 ${isSearching && isMobileViewport ? "hidden sm:block" : ""}`}>
           <div
             onDrop={handleDrop}
             onDragOver={handleDragOver}
@@ -2174,7 +2178,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         </div>
 
         {/* ── Lens selector ────────────────────────────────────────────────── */}
-        <div style={stagger("0.16s")} className="mt-4 flex flex-wrap items-center justify-center gap-1">
+        <div style={stagger("0.16s")} className={`mt-4 flex flex-wrap items-center justify-center gap-1 ${isSearching && isMobileViewport ? "hidden sm:flex" : ""}`}>
 
           {LENSES.map((lens) => {
             const Icon = LENS_ICONS[lens.id];
@@ -2205,8 +2209,22 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
 
         {/* ── Example prompts ──────────────────────────────────────────────── */}
         {conversation.length === 0 && (
-          <div style={stagger("0.18s")} className="mt-6 space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2" data-testid="landing-example-prompts">
+          <div style={stagger("0.18s")} className="mt-4 space-y-4 sm:mt-6">
+            {/* Mobile: compact suggestion chips (ChatGPT pattern) */}
+            <div className="flex flex-wrap gap-2 sm:hidden" data-testid="landing-mobile-chips">
+              {FOUNDER_QUICK_ACTIONS.slice(0, 4).map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  onClick={() => handleQuickAction(action)}
+                  className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[12px] text-content-muted transition-all hover:bg-white/[0.06] hover:text-content"
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
+            {/* Desktop: full action cards */}
+            <div className="hidden gap-3 sm:grid sm:grid-cols-2" data-testid="landing-example-prompts">
               {FOUNDER_QUICK_ACTIONS.map((action) => (
                 <button
                   key={action.id}
