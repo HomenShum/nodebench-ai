@@ -49,6 +49,7 @@ import type { TrajectoryData } from "@/features/telemetry/types";
 import { ensureProofPacket } from "./proofModel";
 import { CitationFootnote } from "./CitationFootnote";
 import { SourcesBar } from "./SourcesBar";
+import { SignalCard } from "./SignalCard";
 
 /* ─── Section shell ──────────────────────────────────────────────────────── */
 
@@ -1711,22 +1712,13 @@ export const ResultWorkspace = memo(function ResultWorkspace({
 
       {/* ── 3. Key Signals ─────────────────────────────────────────────────── */}
       <Section id="signals" icon={BarChart3} title="Key Signals">
-        <div className="space-y-2">
+        <div className="grid gap-2 sm:grid-cols-2">
           {proofPacket.variables.map((v) => (
-            <div key={v.rank} className="flex items-center gap-3 text-sm">
-              <span className="w-5 text-right text-[11px] tabular-nums text-content-muted">{v.rank}</span>
-              <DirectionArrow direction={v.direction} />
-              <span className="flex-1 text-content">
-                {v.name}
-                {v.sourceIdx != null && (
-                  <CitationFootnote
-                    index={v.sourceIdx}
-                    source={proofPacket.sourceRefs[v.sourceIdx]}
-                  />
-                )}
-              </span>
-              <ImpactTag impact={v.impact} />
-            </div>
+            <SignalCard
+              key={v.rank}
+              signal={v}
+              evidence={(proofPacket as any).evidence}
+            />
           ))}
         </div>
       </Section>

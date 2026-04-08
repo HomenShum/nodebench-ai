@@ -10136,6 +10136,119 @@ import { Router } from "express";
 import { ConvexHttpClient } from "convex/browser";
 import { anyApi } from "convex/server";
 
+// packages/mcp-local/src/sync/sessionMemory.ts
+init_db();
+var MAX_ACTIONS_PER_EPISODE = 200;
+var TRUNCATE_LIMIT = 2048;
+function truncate(s, limit = TRUNCATE_LIMIT) {
+  return s.length > limit ? s.slice(0, limit - 3) + "..." : s;
+}
+function initSessionMemoryTables() {
+  const db = getDb();
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS session_actions (
+      action_id TEXT PRIMARY KEY,
+      episode_id TEXT NOT NULL,
+      step_index INTEGER NOT NULL,
+      tool_name TEXT NOT NULL,
+      input TEXT NOT NULL,
+      output TEXT NOT NULL,
+      success INTEGER NOT NULL,
+      duration_ms INTEGER NOT NULL,
+      timestamp TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS session_failures (
+      failure_id TEXT PRIMARY KEY,
+      episode_id TEXT NOT NULL,
+      step_index INTEGER NOT NULL,
+      tool_name TEXT NOT NULL,
+      failure_type TEXT NOT NULL,
+      root_cause TEXT NOT NULL,
+      recovery_strategy TEXT NOT NULL,
+      recovery_successful INTEGER,
+      timestamp TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS recovery_strategies (
+      strategy_id TEXT PRIMARY KEY,
+      failure_type TEXT NOT NULL,
+      tool_name TEXT NOT NULL,
+      strategy TEXT NOT NULL,
+      success_count INTEGER NOT NULL DEFAULT 0,
+      failure_count INTEGER NOT NULL DEFAULT 0,
+      last_used TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_actions_episode ON session_actions(episode_id);
+    CREATE INDEX IF NOT EXISTS idx_failures_episode ON session_failures(episode_id);
+    CREATE INDEX IF NOT EXISTS idx_recovery_type ON recovery_strategies(failure_type, tool_name);
+  `);
+}
+function recordAction(action) {
+  const db = getDb();
+  initSessionMemoryTables();
+  const actionId = genId();
+  const countStmt = db.prepare("SELECT COUNT(*) as cnt FROM session_actions WHERE episode_id = ?");
+  const count = countStmt.get(action.episodeId)?.cnt ?? 0;
+  if (count >= MAX_ACTIONS_PER_EPISODE) {
+    db.prepare(
+      "DELETE FROM session_actions WHERE action_id IN (SELECT action_id FROM session_actions WHERE episode_id = ? ORDER BY timestamp ASC LIMIT 10)"
+    ).run(action.episodeId);
+  }
+  db.prepare(`
+    INSERT INTO session_actions (action_id, episode_id, step_index, tool_name, input, output, success, duration_ms, timestamp)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    actionId,
+    action.episodeId,
+    action.stepIndex,
+    action.toolName,
+    truncate(action.input),
+    truncate(action.output),
+    action.success ? 1 : 0,
+    action.durationMs,
+    action.timestamp
+  );
+  return { ...action, actionId };
+}
+function recordFailure(failure) {
+  const db = getDb();
+  initSessionMemoryTables();
+  const failureId = genId();
+  db.prepare(`
+    INSERT INTO session_failures (failure_id, episode_id, step_index, tool_name, failure_type, root_cause, recovery_strategy, recovery_successful, timestamp)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    failureId,
+    failure.episodeId,
+    failure.stepIndex,
+    failure.toolName,
+    failure.failureType,
+    failure.rootCause,
+    failure.recoveryStrategy,
+    failure.recoverySuccessful == null ? null : failure.recoverySuccessful ? 1 : 0,
+    failure.timestamp
+  );
+  return { ...failure, failureId };
+}
+function getReflectionPrompt(failureType, toolName) {
+  const db = getDb();
+  initSessionMemoryTables();
+  const strategies = db.prepare(
+    "SELECT strategy, success_count, failure_count FROM recovery_strategies WHERE failure_type = ? AND tool_name = ? AND success_count > 0 ORDER BY success_count DESC LIMIT 3"
+  ).all(failureType, toolName);
+  if (strategies.length === 0) {
+    return `No known recovery strategies for ${failureType} on ${toolName}. Try a different approach.`;
+  }
+  const lines = strategies.map(
+    (s, i) => `${i + 1}. "${s.strategy}" (succeeded ${s.success_count}x, failed ${s.failure_count}x)`
+  );
+  return `Known recovery strategies for ${failureType} on ${toolName}:
+${lines.join("\n")}
+Use the most successful strategy, or try a new approach if all have been exhausted.`;
+}
+
 // server/agentHarness.ts
 var COMPANY_NAME_STOPWORDS = /* @__PURE__ */ new Set([
   "approximately",
@@ -12062,6 +12175,11 @@ async function executeHarness(plan, callTool, onTrace, options) {
   const stepResults = [];
   const completedSteps = /* @__PURE__ */ new Set();
   const toolTimeoutMs = options?.toolTimeoutMs ?? 12e3;
+  const episodeId = options?.episodeId ?? `harness_${Date.now()}`;
+  try {
+    initSessionMemoryTables();
+  } catch {
+  }
   const readySteps = plan.steps.filter((s) => !s.dependsOn);
   const dependentSteps = plan.steps.filter((s) => s.dependsOn);
   const parallelBatch = readySteps.filter((s) => s.parallel);
@@ -12085,9 +12203,21 @@ async function executeHarness(plan, callTool, onTrace, options) {
         }
       })
     );
+    for (const pr of parallelResults) {
+      try {
+        recordAction({ episodeId, stepIndex: parallelBatch.findIndex((s) => s.id === pr.stepId), toolName: pr.toolName, input: JSON.stringify(parallelBatch.find((s) => s.id === pr.stepId)?.args ?? {}).slice(0, 2048), output: JSON.stringify(pr.result ?? pr.error ?? "").slice(0, 2048), success: pr.success, durationMs: pr.durationMs, timestamp: (/* @__PURE__ */ new Date()).toISOString() });
+        if (!pr.success && pr.error) {
+          const failureType = pr.error.includes("timeout") ? "timeout" : "error";
+          const reflection = getReflectionPrompt(failureType, pr.toolName);
+          recordFailure({ episodeId, stepIndex: parallelBatch.findIndex((s) => s.id === pr.stepId), toolName: pr.toolName, failureType, rootCause: pr.error, recoveryStrategy: reflection, recoverySuccessful: null, timestamp: (/* @__PURE__ */ new Date()).toISOString() });
+        }
+      } catch {
+      }
+    }
     stepResults.push(...parallelResults);
   }
-  for (const step of serialSteps) {
+  for (let si = 0; si < serialSteps.length; si++) {
+    const step = serialSteps[si];
     const stepStart = Date.now();
     onTrace?.({ step: "tool_call", tool: step.toolName, status: "ok", detail: step.purpose });
     try {
@@ -12096,9 +12226,22 @@ async function executeHarness(plan, callTool, onTrace, options) {
         new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), toolTimeoutMs))
       ]);
       completedSteps.add(step.id);
-      stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: Date.now() - stepStart });
+      const dur = Date.now() - stepStart;
+      stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: dur });
+      try {
+        recordAction({ episodeId, stepIndex: si, toolName: step.toolName, input: JSON.stringify(step.args).slice(0, 2048), output: JSON.stringify(result ?? "").slice(0, 2048), success: true, durationMs: dur, timestamp: (/* @__PURE__ */ new Date()).toISOString() });
+      } catch {
+      }
     } catch (err) {
-      stepResults.push({ stepId: step.id, toolName: step.toolName, result: null, success: false, durationMs: Date.now() - stepStart, error: err?.message });
+      const dur = Date.now() - stepStart;
+      stepResults.push({ stepId: step.id, toolName: step.toolName, result: null, success: false, durationMs: dur, error: err?.message });
+      try {
+        const failureType = err?.message?.includes("timeout") ? "timeout" : "error";
+        recordAction({ episodeId, stepIndex: si, toolName: step.toolName, input: JSON.stringify(step.args).slice(0, 2048), output: err?.message ?? "unknown", success: false, durationMs: dur, timestamp: (/* @__PURE__ */ new Date()).toISOString() });
+        const reflection = getReflectionPrompt(failureType, step.toolName);
+        recordFailure({ episodeId, stepIndex: si, toolName: step.toolName, failureType, rootCause: err?.message ?? "unknown", recoveryStrategy: reflection, recoverySuccessful: null, timestamp: (/* @__PURE__ */ new Date()).toISOString() });
+      } catch {
+      }
     }
   }
   for (const step of dependentSteps) {
@@ -12662,6 +12805,266 @@ function classifySignals(rawSignals) {
     }
   }
   return Array.from(merged.values()).sort((a, b) => b.confidence - a.confidence);
+}
+
+// server/lib/evidenceSpan.ts
+var spanCounter = 0;
+function nextSpanId() {
+  return `esp_${++spanCounter}_${Date.now().toString(36)}`;
+}
+function createEvidenceSpans(sourceSnippets, signals) {
+  const spans = [];
+  for (const src of sourceSnippets) {
+    const snippet = src.snippet ?? src.source ?? "";
+    if (!snippet) continue;
+    const linkedSignals = signals.filter((s) => {
+      if (s.sourceIdx != null && sourceSnippets.indexOf(src) === s.sourceIdx) return true;
+      const name = (s.name ?? s.title ?? "").toLowerCase();
+      return name.length > 3 && snippet.toLowerCase().includes(name.slice(0, 20));
+    });
+    const status = snippet.length > 100 ? "verified" : snippet.length > 30 ? "partial" : "unverified";
+    const confidence = status === "verified" ? 0.85 : status === "partial" ? 0.55 : 0.2;
+    spans.push({
+      spanId: nextSpanId(),
+      sourceUrl: src.url ?? null,
+      claimText: linkedSignals.map((s) => s.name ?? s.title ?? "").filter(Boolean).join("; ") || "General context",
+      verificationStatus: status,
+      confidence,
+      sourceSnippet: snippet.slice(0, 300),
+      retrievalMethod: src.url ? "web_search" : "inferred",
+      sourceTitle: src.title ?? extractDomain(src.url) ?? "Source"
+    });
+  }
+  for (const sig of signals) {
+    const name = sig.name ?? sig.title ?? "";
+    const hasEvidence = spans.some(
+      (sp) => sp.claimText.toLowerCase().includes(name.toLowerCase().slice(0, 15))
+    );
+    if (!hasEvidence && name) {
+      spans.push({
+        spanId: nextSpanId(),
+        sourceUrl: null,
+        claimText: name,
+        verificationStatus: "unverified",
+        confidence: 0.15,
+        sourceSnippet: "",
+        retrievalMethod: "inferred",
+        sourceTitle: "No source found"
+      });
+    }
+  }
+  const verifiedCount = spans.filter((s) => s.verificationStatus === "verified").length;
+  const partialCount = spans.filter((s) => s.verificationStatus === "partial").length;
+  const unverifiedCount = spans.filter((s) => s.verificationStatus === "unverified").length;
+  const contradictedCount = spans.filter((s) => s.verificationStatus === "contradicted").length;
+  return {
+    totalSpans: spans.length,
+    verifiedCount,
+    partialCount,
+    unverifiedCount,
+    contradictedCount,
+    verificationRate: spans.length > 0 ? (verifiedCount + partialCount) / spans.length : 0,
+    spans
+  };
+}
+function extractDomain(url) {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname.replace("www.", "");
+  } catch {
+    return null;
+  }
+}
+
+// server/lib/routingHints.ts
+var DOMAIN_CAPABILITIES = [
+  {
+    domain: "company_search",
+    label: "Company Intelligence",
+    keywords: [
+      "company",
+      "startup",
+      "competitor",
+      "market",
+      "funding",
+      "revenue",
+      "valuation",
+      "team",
+      "founder",
+      "ceo",
+      "investors",
+      "series",
+      "acquisition",
+      "ipo",
+      "growth",
+      "traction",
+      "product",
+      "moat",
+      "defensibility",
+      "diligence",
+      "analysis",
+      "research",
+      "investigate",
+      "who",
+      "what is",
+      "tell me about",
+      "search"
+    ]
+  },
+  {
+    domain: "founder_ops",
+    label: "Founder Operations",
+    keywords: [
+      "weekly reset",
+      "weekly",
+      "delegation",
+      "hand off",
+      "delegate",
+      "agent",
+      "packet",
+      "operating",
+      "contradictions",
+      "changed",
+      "what changed",
+      "my company",
+      "our",
+      "my startup",
+      "my team",
+      "refresh",
+      "context",
+      "priorities",
+      "next moves",
+      "strategy"
+    ]
+  },
+  {
+    domain: "competitor_analysis",
+    label: "Competitive Analysis",
+    keywords: [
+      "vs",
+      "versus",
+      "compare",
+      "comparison",
+      "competitor",
+      "alternative",
+      "better than",
+      "difference",
+      "landscape",
+      "market share",
+      "head to head",
+      "benchmark",
+      "relative"
+    ]
+  },
+  {
+    domain: "financial_analysis",
+    label: "Financial Analysis",
+    keywords: [
+      "revenue",
+      "arr",
+      "mrr",
+      "burn",
+      "runway",
+      "margins",
+      "unit economics",
+      "cac",
+      "ltv",
+      "payback",
+      "profitability",
+      "raise",
+      "fundraise",
+      "valuation",
+      "cap table",
+      "dilution",
+      "series a",
+      "series b",
+      "seed",
+      "pre-seed",
+      "banker"
+    ]
+  },
+  {
+    domain: "diligence",
+    label: "Due Diligence",
+    keywords: [
+      "diligence",
+      "risk",
+      "red flag",
+      "compliance",
+      "regulatory",
+      "legal",
+      "ip",
+      "patent",
+      "lawsuit",
+      "fraud",
+      "verify",
+      "evidence",
+      "proof",
+      "audit",
+      "investigate",
+      "check",
+      "contradiction",
+      "inconsistent",
+      "claim"
+    ]
+  },
+  {
+    domain: "idea_validation",
+    label: "Idea Validation",
+    keywords: [
+      "idea",
+      "validate",
+      "build",
+      "should i",
+      "feasible",
+      "wedge",
+      "beachhead",
+      "pmf",
+      "product market fit",
+      "problem",
+      "solution",
+      "hypothesis",
+      "experiment",
+      "mvp",
+      "prototype",
+      "test",
+      "assumption"
+    ]
+  }
+];
+function computeRoutingHints(query) {
+  const queryTokens = tokenize(query);
+  const results = [];
+  for (const domain of DOMAIN_CAPABILITIES) {
+    let matchWeight = 0;
+    for (const keyword of domain.keywords) {
+      const kwTokens = keyword.split(/\s+/);
+      if (kwTokens.length > 1) {
+        const allPresent = kwTokens.every(
+          (t) => queryTokens.some((qt) => qt.includes(t) || t.includes(qt))
+        );
+        if (allPresent) matchWeight += kwTokens.length * 2;
+      } else {
+        if (queryTokens.some((qt) => qt.includes(keyword) || keyword.includes(qt))) {
+          matchWeight += 1;
+        }
+      }
+    }
+    const maxPossible = domain.keywords.length * 1.5;
+    const score = Math.min(1, matchWeight / maxPossible);
+    results.push({ domain: domain.domain, label: domain.label, score: Math.round(score * 100) / 100 });
+  }
+  return results.sort((a, b) => b.score - a.score);
+}
+function formatRoutingHintsForPrompt(hints) {
+  const top = hints.filter((h) => h.score > 0).slice(0, 3);
+  if (top.length === 0) return "";
+  const lines = top.map((h) => `${h.label}: ${h.score}`).join(" | ");
+  const best = top[0];
+  return `Routing hints (token overlap): ${lines} \u2014 Highest signal: ${best.label}`;
+}
+function tokenize(text) {
+  return text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((t) => t.length > 2);
 }
 
 // packages/mcp-local/src/sync/store.ts
@@ -14572,7 +14975,11 @@ function buildResultPacket(args) {
       action: action.action ?? String(action),
       impact: action.impact ?? "medium"
     })),
-    nextQuestions: result.nextQuestions ?? result.nextActions?.map((action) => action.action) ?? []
+    nextQuestions: result.nextQuestions ?? result.nextActions?.map((action) => action.action) ?? [],
+    evidence: createEvidenceSpans(
+      result.sourceSnippets ?? sourceRefs.map((ref) => ({ url: ref.url, title: ref.title, snippet: ref.snippet })),
+      result.signals ?? []
+    )
   };
 }
 function decorateResultWithProof(args) {
@@ -15408,9 +15815,17 @@ Entity extraction rules:
       checkBudget();
       {
         try {
+          const routingHints = computeRoutingHints(query.trim());
+          const routingHintText = formatRoutingHintsForPrompt(routingHints);
+          const queryWithHints = routingHintText ? `${query.trim()}
+
+[${routingHintText}]` : query.trim();
           const planTrace = traceStep("agent_plan", "gemini-3.1-flash-lite");
+          if (routingHintText) {
+            trace.push({ step: "routing_hints", tool: "token_overlap", status: "ok", detail: routingHintText });
+          }
           const plan = await generatePlan(
-            query.trim(),
+            queryWithHints,
             classification.type,
             classification.entities ?? (classification.entity ? [classification.entity] : []),
             resolvedLens,

@@ -21,6 +21,8 @@
  * LLM-orchestrated execution loop.
  */
 
+import { recordAction, recordFailure, getReflectionPrompt, recordRecoveryOutcome, initSessionMemoryTables } from "../packages/mcp-local/src/sync/sessionMemory.js";
+
 // ── Types ─────────────────────────────────────────────────────────────
 
 export interface HarnessStep {
@@ -2570,12 +2572,16 @@ export async function executeHarness(
   plan: HarnessPlan,
   callTool: ToolCaller,
   onTrace?: TraceCallback,
-  options?: { toolTimeoutMs?: number },
+  options?: { toolTimeoutMs?: number; episodeId?: string },
 ): Promise<HarnessExecution> {
   const startMs = Date.now();
   const stepResults: HarnessStepResult[] = [];
   const completedSteps = new Set<string>();
   const toolTimeoutMs = options?.toolTimeoutMs ?? 12_000;
+  const episodeId = options?.episodeId ?? `harness_${Date.now()}`;
+
+  // Initialize session memory tables (safe if already exists)
+  try { initSessionMemoryTables(); } catch { /* SQLite may not be available in all envs */ }
 
   // Group steps by dependency level
   const readySteps = plan.steps.filter(s => !s.dependsOn);
@@ -2606,11 +2612,23 @@ export async function executeHarness(
         }
       })
     );
+    // Record parallel results in session memory
+    for (const pr of parallelResults) {
+      try {
+        recordAction({ episodeId, stepIndex: parallelBatch.findIndex(s => s.id === pr.stepId), toolName: pr.toolName, input: JSON.stringify(parallelBatch.find(s => s.id === pr.stepId)?.args ?? {}).slice(0, 2048), output: JSON.stringify(pr.result ?? pr.error ?? "").slice(0, 2048), success: pr.success, durationMs: pr.durationMs, timestamp: new Date().toISOString() });
+        if (!pr.success && pr.error) {
+          const failureType = pr.error.includes("timeout") ? "timeout" : "error";
+          const reflection = getReflectionPrompt(failureType, pr.toolName);
+          recordFailure({ episodeId, stepIndex: parallelBatch.findIndex(s => s.id === pr.stepId), toolName: pr.toolName, failureType, rootCause: pr.error, recoveryStrategy: reflection, recoverySuccessful: null, timestamp: new Date().toISOString() });
+        }
+      } catch { /* session memory is best-effort */ }
+    }
     stepResults.push(...parallelResults);
   }
 
   // Run serial steps
-  for (const step of serialSteps) {
+  for (let si = 0; si < serialSteps.length; si++) {
+    const step = serialSteps[si];
     const stepStart = Date.now();
     onTrace?.({ step: "tool_call", tool: step.toolName, status: "ok", detail: step.purpose });
     try {
@@ -2619,9 +2637,18 @@ export async function executeHarness(
         new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), toolTimeoutMs)),
       ]);
       completedSteps.add(step.id);
-      stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: Date.now() - stepStart });
+      const dur = Date.now() - stepStart;
+      stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: dur });
+      try { recordAction({ episodeId, stepIndex: si, toolName: step.toolName, input: JSON.stringify(step.args).slice(0, 2048), output: JSON.stringify(result ?? "").slice(0, 2048), success: true, durationMs: dur, timestamp: new Date().toISOString() }); } catch { /* best-effort */ }
     } catch (err: any) {
-      stepResults.push({ stepId: step.id, toolName: step.toolName, result: null, success: false, durationMs: Date.now() - stepStart, error: err?.message });
+      const dur = Date.now() - stepStart;
+      stepResults.push({ stepId: step.id, toolName: step.toolName, result: null, success: false, durationMs: dur, error: err?.message });
+      try {
+        const failureType = err?.message?.includes("timeout") ? "timeout" : "error";
+        recordAction({ episodeId, stepIndex: si, toolName: step.toolName, input: JSON.stringify(step.args).slice(0, 2048), output: err?.message ?? "unknown", success: false, durationMs: dur, timestamp: new Date().toISOString() });
+        const reflection = getReflectionPrompt(failureType, step.toolName);
+        recordFailure({ episodeId, stepIndex: si, toolName: step.toolName, failureType, rootCause: err?.message ?? "unknown", recoveryStrategy: reflection, recoverySuccessful: null, timestamp: new Date().toISOString() });
+      } catch { /* best-effort */ }
     }
   }
 

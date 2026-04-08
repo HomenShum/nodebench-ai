@@ -28,6 +28,7 @@ import {
 } from "../../packages/mcp-local/src/tools/founderOperatingModel.js";
 import { classifySignals } from "../lib/signalTaxonomy.js";
 import { createEvidenceSpans } from "../lib/evidenceSpan.js";
+import { computeRoutingHints, formatRoutingHintsForPrompt } from "../lib/routingHints.js";
 import {
   getSyncBridgeStatus,
   linkDurableObjects,
@@ -2116,9 +2117,19 @@ Entity extraction rules:
       checkBudget();
       {
         try {
+          // Compute deterministic routing hints (TA Studio pattern)
+          const routingHints = computeRoutingHints(query.trim());
+          const routingHintText = formatRoutingHintsForPrompt(routingHints);
+          const queryWithHints = routingHintText
+            ? `${query.trim()}\n\n[${routingHintText}]`
+            : query.trim();
+
           const planTrace = traceStep("agent_plan", "gemini-3.1-flash-lite");
+          if (routingHintText) {
+            trace.push({ step: "routing_hints", tool: "token_overlap", status: "ok" as const, detail: routingHintText });
+          }
           const plan = await generatePlan(
-            query.trim(),
+            queryWithHints,
             classification.type,
             classification.entities ?? (classification.entity ? [classification.entity] : []),
             resolvedLens,

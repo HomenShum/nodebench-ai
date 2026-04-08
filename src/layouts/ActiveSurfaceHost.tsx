@@ -85,6 +85,15 @@ const SubconsciousDashboard = lazy(() =>
 const TrajectoryConsole = lazy(() =>
   import("@/features/monitoring/views/TrajectoryConsole").then((mod) => ({ default: mod.TrajectoryConsole })),
 );
+const RunCompareView = lazy(() =>
+  import("@/features/monitoring/views/RunCompareView").then((mod) => ({ default: mod.RunCompareView })),
+);
+const SavingsDashboard = lazy(() =>
+  import("@/features/monitoring/views/SavingsDashboard").then((mod) => ({ default: mod.SavingsDashboard })),
+);
+const JudgeDashboard = lazy(() =>
+  import("@/features/monitoring/views/JudgeDashboard").then((mod) => ({ default: mod.JudgeDashboard })),
+);
 const FounderWorkspaceHome = lazy(() =>
   import("@/features/founder/views/FounderWorkspaceHome").then((mod) => ({ default: mod.FounderWorkspaceHome })),
 );
@@ -204,6 +213,9 @@ function SurfaceFrame({
 const TELEMETRY_TABS = [
   { id: "activity", label: "Activity" },
   { id: "trajectory", label: "Trajectory" },
+  { id: "compare", label: "Compare" },
+  { id: "judge", label: "Verdicts" },
+  { id: "savings", label: "Savings" },
   { id: "subconscious", label: "Memory" },
   { id: "health", label: "Health" },
   { id: "spend", label: "Spend" },
@@ -311,6 +323,9 @@ function TelemetryStack({ active = true }: { active?: boolean }) {
       <div className="mt-4 w-full max-w-3xl rounded-xl border border-white/[0.06] bg-white/[0.02] p-5" role="tabpanel">
         {activeTab === "activity" && <AgentTelemetryDashboard />}
         {activeTab === "trajectory" && <TrajectoryConsole session={null} />}
+        {activeTab === "compare" && <RunCompareView />}
+        {activeTab === "judge" && <JudgeDashboard />}
+        {activeTab === "savings" && <SavingsDashboard />}
         {activeTab === "subconscious" && <SubconsciousDashboard />}
         {activeTab === "health" && <ObservabilityView />}
         {activeTab === "spend" && <CostDashboard />}
