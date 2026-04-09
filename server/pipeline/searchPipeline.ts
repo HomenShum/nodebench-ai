@@ -12,6 +12,7 @@ import { classifySignals, type ClassifiedSignal } from "../lib/signalTaxonomy.js
 import { createEvidenceSpans, type EvidenceManifest } from "../lib/evidenceSpan.js";
 import { computeRoutingHints, formatRoutingHintsForPrompt, type RoutingHint } from "../lib/routingHints.js";
 import { detectPainResolutions, type PainResolution } from "../lib/painMapping.js";
+import { extractDCFInputs, runDCF, runReverseDCF, type DCFResult, type ReverseDCFResult } from "../lib/dcfModel.js";
 
 // ─── Pipeline State ──────────────────────────────────────────────
 
@@ -27,11 +28,10 @@ export interface PipelineState {
 
   // Search (Linkup)
   searchAnswer: string;
-  searchSources: Array<{
-    name: string;
-    url: string;
-    snippet: string;
-  }>;
+  searchSources: SearchSource[];
+  searchExploredSourceCount: number;
+  searchDiscardedSourceCount: number;
+  searchQueryVariants: string[];
 
   // Analyze (Gemini)
   entityName: string;
@@ -55,10 +55,406 @@ export interface PipelineState {
   evidence: EvidenceManifest;
   painResolutions: PainResolution[];
 
+  // Valuation
+  dcf: DCFResult | null;
+  reverseDCF: ReverseDCFResult | null;
+
   // Trace
   trace: Array<{ step: string; tool?: string; status: string; detail?: string; durationMs?: number }>;
   totalDurationMs: number;
   error: string | null;
+}
+
+export type SearchSourceKind =
+  | "official_root"
+  | "official_article"
+  | "official_legal"
+  | "official_jobs"
+  | "external_profile"
+  | "external_press"
+  | "directory"
+  | "social"
+  | "general";
+
+export interface SearchSource {
+  name: string;
+  url: string;
+  snippet: string;
+  domain?: string;
+  path?: string;
+  kind?: SearchSourceKind;
+  qualityScore?: number;
+  matchedTokens?: number;
+  entityGrounded?: boolean;
+  corroboration?: "self_reported" | "external";
+}
+
+const ENTITY_STOP_WORDS = new Set([
+  "inc",
+  "llc",
+  "ltd",
+  "co",
+  "company",
+  "corp",
+  "corporation",
+  "group",
+  "holdings",
+  "technologies",
+  "technology",
+  "systems",
+  "labs",
+  "lab",
+]);
+
+const HIGH_SIGNAL_EXTERNAL_DOMAINS = new Set([
+  "linkedin.com",
+  "crunchbase.com",
+  "glassdoor.com",
+  "businesswire.com",
+  "zoominfo.com",
+  "pitchbook.com",
+  "tracxn.com",
+]);
+
+const LOW_SIGNAL_SOCIAL_DOMAINS = new Set([
+  "instagram.com",
+  "facebook.com",
+  "x.com",
+  "twitter.com",
+  "youtube.com",
+  "tiktok.com",
+]);
+
+const LOW_SIGNAL_PAGE_PATTERNS = [
+  /\bprivacy\b/i,
+  /\bterms?\b/i,
+  /\bpolicy\b/i,
+  /\bcareers?\b/i,
+  /\bjobs?\b/i,
+  /\bcookies?\b/i,
+  /\blogin\b/i,
+  /\bsign[\s-]?in\b/i,
+];
+
+const PRIMARY_OFFICIAL_PATH_PATTERNS = [
+  /^\/?$/i,
+  /^\/(about|company|services|solutions|products?|platform|partners)\/?$/i,
+];
+
+function stripInlineSourceCitations(value: string | null | undefined): string {
+  return (value ?? "")
+    .replace(/\s*\[S\d+\]/gi, "")
+    .replace(/\s+,/g, ",")
+    .replace(/,\s*,+/g, ",")
+    .replace(/,\s*\./g, ".")
+    .replace(/\.\s*,/g, ".")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function extractSourceIndices(value: string | null | undefined): number[] {
+  return Array.from((value ?? "").matchAll(/\[S(\d+)\]/gi))
+    .map((match) => Number.parseInt(match[1] ?? "", 10) - 1)
+    .filter((index) => Number.isFinite(index) && index >= 0);
+}
+
+function normalizeSearchText(value: string | null | undefined): string {
+  return (value ?? "")
+    .toLowerCase()
+    .replace(/https?:\/\//g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function tokenizeEntity(value: string | null | undefined): string[] {
+  return normalizeSearchText(value)
+    .split(" ")
+    .filter((token) => token.length >= 3 && !ENTITY_STOP_WORDS.has(token));
+}
+
+function sourceEntityScore(
+  entity: string | null,
+  source: { name: string; url: string; snippet: string },
+): { score: number; matchedTokens: number } {
+  const phrase = normalizeSearchText(entity);
+  const compactPhrase = phrase.replace(/\s+/g, "");
+  const tokens = tokenizeEntity(entity);
+  const titleHaystack = normalizeSearchText(source.name);
+  const urlHaystack = normalizeSearchText(source.url);
+  const snippetHaystack = normalizeSearchText(source.snippet);
+  const combinedHaystack = [titleHaystack, urlHaystack, snippetHaystack].filter(Boolean).join(" ");
+  const titleAndUrlHaystack = [titleHaystack, urlHaystack].filter(Boolean).join(" ");
+  const compactUrl = (source.url ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  let score = 0;
+  if (phrase && combinedHaystack.includes(phrase)) score += 8;
+  if (compactPhrase && compactUrl.includes(compactPhrase)) score += 6;
+  if (tokens.length > 0 && tokens.every((token) => titleAndUrlHaystack.includes(token))) score += 5;
+  if (tokens.length > 0 && tokens.every((token) => snippetHaystack.includes(token))) score += 4;
+
+  const matchedTokens = tokens.filter((token) => combinedHaystack.includes(token)).length;
+  if (matchedTokens >= 2) {
+    score += matchedTokens;
+  } else if (tokens.length === 1 && matchedTokens === 1) {
+    score += 2;
+  }
+
+  return { score, matchedTokens };
+}
+
+function parseSourceLocation(url: string | null | undefined): { domain?: string; path?: string } {
+  if (!url) return {};
+  try {
+    const parsed = new URL(url);
+    return {
+      domain: parsed.hostname.replace(/^www\./, "").toLowerCase(),
+      path: parsed.pathname || "/",
+    };
+  } catch {
+    return {};
+  }
+}
+
+function compactEntity(entity: string | null | undefined): string {
+  return normalizeSearchText(entity).replace(/\s+/g, "");
+}
+
+function inferOfficialDomains(
+  entity: string | null,
+  sources: Array<{ name: string; url: string; snippet: string }>,
+): Set<string> {
+  const phrase = normalizeSearchText(entity);
+  const compactPhrase = compactEntity(entity);
+  const domains = new Set<string>();
+
+  for (const source of sources) {
+    const { domain, path } = parseSourceLocation(source.url);
+    if (!domain) continue;
+    const title = normalizeSearchText(source.name);
+    const looksOfficial =
+      (compactPhrase && domain.replace(/[^a-z0-9]/g, "").includes(compactPhrase)) ||
+      (phrase && title.includes(phrase) && PRIMARY_OFFICIAL_PATH_PATTERNS.some((pattern) => pattern.test(path ?? "/")));
+    if (looksOfficial) {
+      domains.add(domain);
+    }
+  }
+
+  return domains;
+}
+
+function classifySearchSourceKind(
+  source: { name: string; url: string; snippet: string },
+  officialDomains: Set<string>,
+): SearchSourceKind {
+  const { domain = "", path = "/" } = parseSourceLocation(source.url);
+  const title = source.name ?? "";
+  const haystack = `${title} ${path}`;
+
+  if (officialDomains.has(domain)) {
+    if (LOW_SIGNAL_PAGE_PATTERNS.some((pattern) => pattern.test(haystack))) {
+      return /\bcareers?\b|\bjobs?\b/i.test(haystack) ? "official_jobs" : "official_legal";
+    }
+    if (PRIMARY_OFFICIAL_PATH_PATTERNS.some((pattern) => pattern.test(path))) {
+      return "official_root";
+    }
+    return "official_article";
+  }
+
+  if (domain === "linkedin.com" && /\/company\//i.test(path)) return "external_profile";
+  if (HIGH_SIGNAL_EXTERNAL_DOMAINS.has(domain)) {
+    return domain === "businesswire.com" ? "external_press" : "external_profile";
+  }
+  if (LOW_SIGNAL_SOCIAL_DOMAINS.has(domain)) return "social";
+  if (/(zoominfo|pitchbook|tracxn|craft\.co|cbinsights)/i.test(domain)) return "directory";
+  return "general";
+}
+
+function scoreSearchSourceQuality(
+  entity: string | null,
+  source: { name: string; url: string; snippet: string },
+  officialDomains: Set<string>,
+): SearchSource {
+  const { score: entityScore, matchedTokens } = sourceEntityScore(entity, source);
+  const { domain, path } = parseSourceLocation(source.url);
+  const kind = classifySearchSourceKind(source, officialDomains);
+  const title = normalizeSearchText(source.name);
+  const snippet = normalizeSearchText(source.snippet);
+  const urlText = normalizeSearchText(source.url);
+  const phrase = normalizeSearchText(entity);
+  const compactPhrase = compactEntity(entity);
+  const entityGrounded =
+    Boolean(phrase && (title.includes(phrase) || snippet.includes(phrase) || urlText.includes(phrase))) ||
+    Boolean(compactPhrase && (domain ?? "").replace(/[^a-z0-9]/g, "").includes(compactPhrase));
+
+  let qualityScore = entityScore;
+
+  if (phrase && title.includes(phrase)) qualityScore += 4;
+  if (phrase && snippet.includes(phrase)) qualityScore += 3;
+  if (compactPhrase && (domain ?? "").replace(/[^a-z0-9]/g, "").includes(compactPhrase)) qualityScore += 3;
+
+  switch (kind) {
+    case "official_root":
+      qualityScore += 6;
+      break;
+    case "external_profile":
+      qualityScore += 6;
+      break;
+    case "external_press":
+      qualityScore += 5;
+      break;
+    case "official_article":
+      qualityScore += 2;
+      break;
+    case "directory":
+      qualityScore += 2;
+      break;
+    case "social":
+      qualityScore -= 3;
+      break;
+    case "official_jobs":
+    case "official_legal":
+      qualityScore -= 8;
+      break;
+    default:
+      break;
+  }
+
+  if (LOW_SIGNAL_PAGE_PATTERNS.some((pattern) => pattern.test(`${source.name} ${path ?? ""}`))) {
+    qualityScore -= 4;
+  }
+
+  return {
+    ...source,
+    domain,
+    path,
+    kind,
+    qualityScore,
+    matchedTokens,
+    entityGrounded,
+    corroboration: kind.startsWith("official_") ? "self_reported" : "external",
+  };
+}
+
+export function buildSearchQueries(
+  query: string,
+  entity: string | null,
+  classification: string,
+): string[] {
+  const baseQuery = query.trim();
+  if (classification !== "company_search" || !entity?.trim()) {
+    return [baseQuery];
+  }
+
+  return Array.from(new Set([
+    baseQuery,
+    `"${entity}" company linkedin crunchbase glassdoor`,
+  ]));
+}
+
+function dedupeSources(sources: Array<{ name: string; url: string; snippet: string }>): Array<{ name: string; url: string; snippet: string }> {
+  const seen = new Set<string>();
+  return sources.filter((source) => {
+    const key = `${source.url}::${source.name}`.trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+export function filterSearchSourcesForEntity(
+  entity: string | null,
+  sources: Array<{ name: string; url: string; snippet: string }>,
+  classification: string,
+): SearchSource[] {
+  if (classification !== "company_search" || !entity?.trim()) {
+    return sources.map((source) => ({
+      ...source,
+      ...parseSourceLocation(source.url),
+      kind: "general",
+      qualityScore: sourceEntityScore(entity, source).score,
+      corroboration: "external",
+    }));
+  }
+
+  const dedupedSources = dedupeSources(sources);
+  const tokens = tokenizeEntity(entity);
+  const officialDomains = inferOfficialDomains(entity, dedupedSources);
+  const rankedSources = dedupedSources
+    .map((source) => scoreSearchSourceQuality(entity, source, officialDomains))
+    .filter((source) => {
+      if (source.kind === "official_legal" || source.kind === "official_jobs") {
+        return false;
+      }
+      if (tokens.length >= 2 && !source.entityGrounded) {
+        return false;
+      }
+      return (source.qualityScore ?? 0) >= 8;
+    })
+    .sort((left, right) => (right.qualityScore ?? 0) - (left.qualityScore ?? 0));
+
+  if (rankedSources.length === 0) {
+    return dedupedSources.slice(0, Math.min(dedupedSources.length, 6)).map((source) => ({
+      ...source,
+      ...parseSourceLocation(source.url),
+      kind: "general",
+      qualityScore: sourceEntityScore(entity, source).score,
+      corroboration: "external",
+    }));
+  }
+
+  const selected: SearchSource[] = [];
+  const domainCounts = new Map<string, number>();
+
+  for (const source of rankedSources) {
+    const domain = source.domain ?? "";
+    const domainCap = officialDomains.has(domain) ? 2 : 1;
+    if ((domainCounts.get(domain) ?? 0) >= domainCap) continue;
+    selected.push(source);
+    domainCounts.set(domain, (domainCounts.get(domain) ?? 0) + 1);
+    if (selected.length >= 6) break;
+  }
+
+  const hasExternal = selected.some((source) => source.corroboration === "external");
+  if (!hasExternal) {
+    const externalFallback = rankedSources.find((source) => source.corroboration === "external");
+    if (externalFallback) {
+      selected.pop();
+      selected.push(externalFallback);
+    }
+  }
+
+  return dedupeSources(selected).map((source) => {
+    const ranked = rankedSources.find((candidate) => candidate.url === source.url && candidate.name === source.name);
+    return ranked ?? {
+      ...source,
+      ...parseSourceLocation(source.url),
+      kind: "general",
+      qualityScore: sourceEntityScore(entity, source).score,
+      corroboration: "external",
+    };
+  });
+}
+
+function buildSearchContextSummary(
+  entity: string | null,
+  classification: string,
+  rawAnswer: string,
+  sources: SearchSource[],
+): string {
+  if (classification !== "company_search" || sources.length === 0) {
+    return rawAnswer;
+  }
+
+  return sources
+    .slice(0, 6)
+    .map((source, index) => {
+      const title = source.name || `Source ${index + 1}`;
+      const snippet = source.snippet.trim().slice(0, 240);
+      const sourceTags = [source.kind, source.corroboration].filter(Boolean).join(", ");
+      return `[S${index + 1}] ${title}${sourceTags ? ` (${sourceTags})` : ""}: ${snippet}`;
+    })
+    .join("\n");
 }
 
 // ─── Node 1: Classify ────────────────────────────────────────────
@@ -109,46 +505,73 @@ export async function search(state: PipelineState): Promise<PipelineState> {
       ...state,
       searchAnswer: "",
       searchSources: [],
+      searchExploredSourceCount: 0,
+      searchDiscardedSourceCount: 0,
+      searchQueryVariants: [],
       trace: [...state.trace, { step: "search", tool: "linkup", status: "error", detail: "No LINKUP_API_KEY", durationMs: Date.now() - start }],
     };
   }
 
   try {
-    const resp = await fetch("https://api.linkup.so/v1/search", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${linkupKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        q: state.query,
-        depth: "standard",
-        outputType: "sourcedAnswer",
-      }),
-      signal: AbortSignal.timeout(30_000),
-    });
+    const queries = buildSearchQueries(state.query, state.entity, state.classification);
+    const results = await Promise.allSettled(
+      queries.map(async (queryVariant) => {
+        const resp = await fetch("https://api.linkup.so/v1/search", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${linkupKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            q: queryVariant,
+            depth: "standard",
+            outputType: "sourcedAnswer",
+          }),
+          signal: AbortSignal.timeout(30_000),
+        });
 
-    if (!resp.ok) {
-      throw new Error(`Linkup ${resp.status}`);
+        if (!resp.ok) {
+          throw new Error(`Linkup ${resp.status}`);
+        }
+
+        const data = (await resp.json()) as any;
+        return {
+          answer: data?.answer ?? "",
+          sources: (data?.sources ?? []).map((source: any) => ({
+            name: source.name ?? source.title ?? "",
+            url: source.url ?? "",
+            snippet: source.snippet ?? source.content ?? "",
+          })),
+        };
+      }),
+    );
+
+    const successful = results
+      .filter((result): result is PromiseFulfilledResult<{ answer: string; sources: Array<{ name: string; url: string; snippet: string }> }> => result.status === "fulfilled")
+      .map((result) => result.value);
+
+    if (successful.length === 0) {
+      throw new Error("Linkup returned no successful query variants");
     }
 
-    const data = (await resp.json()) as any;
-    const answer = data?.answer ?? "";
-    const sources = (data?.sources ?? []).map((s: any) => ({
-      name: s.name ?? s.title ?? "",
-      url: s.url ?? "",
-      snippet: s.snippet ?? s.content ?? "",
-    }));
+    const answer = successful.find((result) => result.answer.trim().length > 0)?.answer ?? "";
+    const rawSources = successful.flatMap((result) => result.sources);
+    const filteredSources = filterSearchSourcesForEntity(state.entity, rawSources, state.classification);
+    const filteredAnswer = buildSearchContextSummary(state.entity, state.classification, answer, filteredSources);
+    const exploredSourceCount = dedupeSources(rawSources).length;
 
     return {
       ...state,
-      searchAnswer: answer,
-      searchSources: sources,
+      searchAnswer: filteredAnswer,
+      searchSources: filteredSources,
+      searchExploredSourceCount: exploredSourceCount,
+      searchDiscardedSourceCount: Math.max(0, exploredSourceCount - filteredSources.length),
+      searchQueryVariants: queries,
       trace: [...state.trace, {
         step: "search",
         tool: "linkup",
         status: "ok",
-        detail: `${sources.length} sources, ${answer.length} chars answer`,
+        detail: `${filteredSources.length}/${exploredSourceCount} retained across ${queries.length} query variants, ${filteredAnswer.length} chars context`,
         durationMs: Date.now() - start,
       }],
     };
@@ -157,6 +580,9 @@ export async function search(state: PipelineState): Promise<PipelineState> {
       ...state,
       searchAnswer: "",
       searchSources: [],
+      searchExploredSourceCount: 0,
+      searchDiscardedSourceCount: 0,
+      searchQueryVariants: [],
       trace: [...state.trace, {
         step: "search",
         tool: "linkup",
@@ -169,6 +595,45 @@ export async function search(state: PipelineState): Promise<PipelineState> {
 }
 
 // ─── Node 3: Analyze (Gemini structured extraction) ───────────────
+
+function buildSourceAudit(
+  sources: SearchSource[],
+): {
+  officialCount: number;
+  externalCount: number;
+  selfReportedCount: number;
+  retainedCount: number;
+} {
+  return {
+    officialCount: sources.filter((source) => source.corroboration === "self_reported").length,
+    externalCount: sources.filter((source) => source.corroboration === "external").length,
+    selfReportedCount: sources.filter((source) => source.corroboration === "self_reported").length,
+    retainedCount: sources.length,
+  };
+}
+
+function applyConfidenceGuardrails(
+  confidence: number,
+  audit: ReturnType<typeof buildSourceAudit>,
+): number {
+  let guarded = confidence;
+  if (audit.externalCount === 0) guarded = Math.min(guarded, 58);
+  else if (audit.externalCount === 1) guarded = Math.min(guarded, 72);
+  if (audit.selfReportedCount >= Math.max(1, audit.retainedCount - 1)) guarded = Math.min(guarded, 68);
+  if (audit.retainedCount < 3) guarded = Math.min(guarded, 65);
+  return Math.max(0, Math.min(100, guarded));
+}
+
+function normalizeParsedSourceIdx(sourceIdx: unknown, citationIndices: number[]): number | undefined {
+  if (citationIndices.length > 0) {
+    return citationIndices[0];
+  }
+  if (typeof sourceIdx === "number" && Number.isFinite(sourceIdx)) {
+    if (sourceIdx <= 0) return 0;
+    return sourceIdx - 1;
+  }
+  return undefined;
+}
 
 export async function analyze(state: PipelineState): Promise<PipelineState> {
   const start = Date.now();
@@ -199,8 +664,9 @@ export async function analyze(state: PipelineState): Promise<PipelineState> {
 
   const sourcesContext = state.searchSources
     .slice(0, 8)
-    .map((s, i) => `[S${i + 1}] ${s.name}\n${s.url}\n${s.snippet.slice(0, 300)}`)
+    .map((s, i) => `[S${i + 1}] ${s.name}\nkind=${s.kind ?? "general"} corroboration=${s.corroboration ?? "external"}\n${s.url}\n${s.snippet.slice(0, 300)}`)
     .join("\n\n");
+  const sourceAudit = buildSourceAudit(state.searchSources);
 
   const prompt = `Analyze this company/topic for a ${state.lens} audience.
 
@@ -212,6 +678,13 @@ ${state.searchAnswer.slice(0, 1500)}
 
 SOURCES:
 ${sourcesContext}
+
+Ignore sources that only overlap on a shared keyword and do not clearly refer to the target entity "${state.entity ?? "unknown"}".
+For company searches, prefer official pages, company profiles, and snippets that explicitly name the entity.
+Treat company-authored pages, blog posts, and press releases as self-reported claims, not independent verification.
+Do not present self-reported funding, traction, headcount, or expansion claims as externally verified unless corroborated by an external source.
+Avoid privacy policies, terms pages, careers pages, and other thin legal/admin pages in the summary.
+If corroboration is weak, say that explicitly and lower confidence.
 
 Return ONLY valid JSON:
 {
@@ -261,24 +734,59 @@ Return ONLY valid JSON:
     }
 
     const parsed = JSON.parse(jsonMatch[0].replace(/,\s*([\]}])/g, "$1"));
+    const normalizedSignals = Array.isArray(parsed.signals)
+      ? parsed.signals
+          .map((signal: any) => {
+            const citationIndices = extractSourceIndices(signal?.name);
+            return {
+              name: stripInlineSourceCitations(signal?.name ?? ""),
+              direction: signal?.direction ?? "neutral",
+              impact: signal?.impact ?? "medium",
+              sourceIdx: normalizeParsedSourceIdx(signal?.sourceIdx, citationIndices),
+            };
+          })
+          .filter((signal: { name: string }) => signal.name.length > 0)
+      : [];
+    const normalizedRisks = Array.isArray(parsed.risks)
+      ? parsed.risks
+          .map((risk: any) => {
+            const citationIndices = extractSourceIndices(`${risk?.title ?? ""} ${risk?.description ?? ""}`);
+            return {
+              title: stripInlineSourceCitations(risk?.title ?? "Risk"),
+              description: stripInlineSourceCitations(risk?.description ?? ""),
+              sourceIdx: normalizeParsedSourceIdx(risk?.sourceIdx, citationIndices),
+            };
+          })
+          .filter((risk: { title: string; description: string }) => risk.title.length > 0 || risk.description.length > 0)
+      : [];
+    const guardedConfidence = applyConfidenceGuardrails(
+      typeof parsed.confidence === "number" ? parsed.confidence : 50,
+      sourceAudit,
+    );
+    const nextQuestions = Array.isArray(parsed.nextQuestions)
+      ? parsed.nextQuestions.filter((question: unknown): question is string => typeof question === "string" && question.trim().length > 0)
+      : [];
+    if (sourceAudit.externalCount < 2) {
+      nextQuestions.unshift("What third-party evidence corroborates the company’s core product, traction, or funding claims?");
+    }
 
     return {
       ...state,
       entityName: parsed.entityName ?? state.entity ?? "Unknown",
       answer: parsed.answer ?? "",
-      confidence: typeof parsed.confidence === "number" ? parsed.confidence : 50,
-      signals: Array.isArray(parsed.signals) ? parsed.signals : [],
-      risks: Array.isArray(parsed.risks) ? parsed.risks : [],
+      confidence: guardedConfidence,
+      signals: normalizedSignals,
+      risks: normalizedRisks,
       comparables: Array.isArray(parsed.comparables) ? parsed.comparables : [],
       nextActions: Array.isArray(parsed.nextActions) ? parsed.nextActions : [],
-      nextQuestions: Array.isArray(parsed.nextQuestions) ? parsed.nextQuestions : [],
+      nextQuestions: Array.from(new Set(nextQuestions)),
       keyMetrics: Array.isArray(parsed.keyMetrics) ? parsed.keyMetrics : [],
       whyThisTeam: parsed.whyThisTeam ?? null,
       trace: [...state.trace, {
         step: "analyze",
         tool: "gemini",
         status: "ok",
-        detail: `${parsed.signals?.length ?? 0} signals, ${parsed.risks?.length ?? 0} risks, confidence ${parsed.confidence ?? 0}`,
+        detail: `${normalizedSignals.length} signals, ${normalizedRisks.length} risks, confidence ${guardedConfidence}`,
         durationMs: Date.now() - start,
       }],
     };
@@ -316,7 +824,14 @@ export function packageResult(state: PipelineState): PipelineState {
 
   // Build evidence spans from search sources
   const evidence = createEvidenceSpans(
-    state.searchSources.map((s) => ({ url: s.url, title: s.name, snippet: s.snippet })),
+    state.searchSources.map((s) => ({
+      url: s.url,
+      title: s.name,
+      snippet: s.snippet,
+      kind: s.kind,
+      corroboration: s.corroboration,
+      qualityScore: s.qualityScore,
+    })),
     state.signals,
   );
 
@@ -335,15 +850,35 @@ export function packageResult(state: PipelineState): PipelineState {
     nextActions: state.nextActions,
   });
 
+  // DCF + Reverse DCF (banker/investor lenses, company searches only)
+  let dcfResult: DCFResult | null = null;
+  let reverseDCFResult: ReverseDCFResult | null = null;
+  if (state.classification === "company_search" && (state.lens === "investor" || state.lens === "banker")) {
+    const dcfInputs = extractDCFInputs({
+      entityName: state.entityName,
+      answer: state.answer,
+      keyMetrics: state.keyMetrics,
+      signals: state.signals,
+    });
+    if (dcfInputs.canRunDCF && dcfInputs.dcfInput) {
+      dcfResult = runDCF(dcfInputs.dcfInput);
+    }
+    if (dcfInputs.reverseDCFInput) {
+      reverseDCFResult = runReverseDCF(dcfInputs.reverseDCFInput);
+    }
+  }
+
   return {
     ...state,
     classifiedSignals,
     evidence,
     painResolutions,
+    dcf: dcfResult,
+    reverseDCF: reverseDCFResult,
     trace: [...state.trace, {
       step: "package",
       status: "ok",
-      detail: `${classifiedSignals.length} signals, ${evidence.totalSpans} evidence, ${painResolutions.length} pains resolved`,
+      detail: `${classifiedSignals.length} signals, ${evidence.totalSpans} evidence, ${painResolutions.length} pains resolved${dcfResult ? `, DCF: $${(dcfResult.enterpriseValue / 1e9).toFixed(1)}B` : ""}`,
       durationMs: Date.now() - start,
     }],
   };
@@ -363,6 +898,9 @@ export async function runSearchPipeline(query: string, lens: string): Promise<Pi
     routingHints: [],
     searchAnswer: "",
     searchSources: [],
+    searchExploredSourceCount: 0,
+    searchDiscardedSourceCount: 0,
+    searchQueryVariants: [],
     entityName: "",
     answer: "",
     confidence: 0,
@@ -376,6 +914,8 @@ export async function runSearchPipeline(query: string, lens: string): Promise<Pi
     classifiedSignals: [],
     evidence: { totalSpans: 0, verifiedCount: 0, partialCount: 0, unverifiedCount: 0, contradictedCount: 0, verificationRate: 0, spans: [] },
     painResolutions: [],
+    dcf: null,
+    reverseDCF: null,
     trace: [],
     totalDurationMs: 0,
     error: null,
@@ -395,10 +935,54 @@ export async function runSearchPipeline(query: string, lens: string): Promise<Pi
 // ─── Convert pipeline state to ResultPacket format ────────────────
 
 export function stateToResultPacket(state: PipelineState): Record<string, unknown> {
+  const cleanedAnswer = stripInlineSourceCitations(state.answer);
+  const sourceRefs = state.searchSources.map((source, index) => ({
+    id: `src_${index + 1}`,
+    label: source.name,
+    title: source.name,
+    href: source.url,
+    type: "web" as const,
+    status: index < 5 ? "cited" as const : "explored" as const,
+    domain: source.domain,
+    excerpt: source.snippet.slice(0, 280),
+    confidence: Math.max(45, Math.min(95, Math.round(source.qualityScore ?? 60))),
+  }));
+
+  const claimRefs = state.answer
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length > 0)
+    .slice(0, 4)
+    .map((sentence, index) => ({
+      id: `claim_${index + 1}`,
+      text: stripInlineSourceCitations(sentence),
+      sourceRefIds: extractSourceIndices(sentence)
+        .map((sourceIndex) => sourceRefs[sourceIndex]?.id)
+        .filter((sourceId): sourceId is string => Boolean(sourceId)),
+      answerBlockIds: ["answer_summary"],
+      status: "retained" as const,
+    }))
+    .filter((claim) => claim.text.length > 0)
+    .map((claim) => ({
+      ...claim,
+      sourceRefIds: claim.sourceRefIds.length > 0 ? claim.sourceRefIds : sourceRefs.slice(0, 2).map((source) => source.id),
+    }));
+
+  const answerBlocks = [
+    {
+      id: "answer_summary",
+      title: "Executive Summary",
+      text: cleanedAnswer,
+      sourceRefIds: Array.from(new Set(claimRefs.flatMap((claim) => claim.sourceRefIds))).slice(0, 4),
+      claimIds: claimRefs.map((claim) => claim.id),
+      status: "cited" as const,
+    },
+  ];
+
   return {
     query: state.query,
     entityName: state.entityName,
-    answer: state.answer,
+    answer: cleanedAnswer,
     confidence: state.confidence,
     sourceCount: state.searchSources.length,
     variables: state.classifiedSignals.slice(0, 5).map((sig, i) => ({
@@ -411,28 +995,39 @@ export function stateToResultPacket(state: PipelineState): Record<string, unknow
       rawName: sig.rawName,
       evidenceRefs: sig.evidenceRefs,
       needsOntologyReview: sig.needsOntologyReview,
+      sourceIdx: state.signals[i]?.sourceIdx,
     })),
     keyMetrics: state.keyMetrics.length > 0 ? state.keyMetrics : [
       { label: "Confidence", value: `${state.confidence}%` },
-      { label: "Sources", value: String(state.searchSources.length) },
+      { label: "Retained Sources", value: String(state.searchSources.length) },
       { label: "Signals", value: String(state.classifiedSignals.length) },
     ],
     changes: [],
     risks: state.risks.slice(0, 3),
     comparables: state.comparables.slice(0, 4),
     whyThisTeam: state.whyThisTeam,
+    interventions: state.nextActions,
     nextActions: state.nextActions,
     nextQuestions: state.nextQuestions,
-    sourceRefs: state.searchSources.map((s) => ({
-      label: s.name,
-      href: s.url,
-      type: "web",
-    })),
+    sourceRefs,
+    claimRefs,
+    answerBlocks,
+    explorationMemory: {
+      exploredSourceCount: state.searchExploredSourceCount || state.searchSources.length,
+      citedSourceCount: sourceRefs.filter((source) => source.status === "cited").length,
+      discardedSourceCount: state.searchDiscardedSourceCount,
+      entityCount: 1,
+      claimCount: claimRefs.length,
+      contradictionCount: state.risks.length,
+    },
     evidence: state.evidence,
     painResolutions: state.painResolutions,
+    dcf: state.dcf,
+    reverseDCF: state.reverseDCF,
     trace: state.trace,
     packetType: "company_search",
     classification: state.classification,
     routingHints: state.routingHints.slice(0, 3),
+    recommendedNextAction: state.nextActions[0]?.action,
   };
 }
