@@ -60,6 +60,24 @@ function resolveSharedContextApiBase(): string {
 
 export const SHARED_CONTEXT_API_BASE = resolveSharedContextApiBase();
 
+function resolveSubconsciousApiBase(): string {
+  if (typeof window === "undefined") {
+    return "/api/subconscious";
+  }
+
+  const { hostname, protocol, port } = window.location;
+  const isLocalHost = hostname === "127.0.0.1" || hostname === "localhost";
+  const shouldProxyToLocalApi = isLocalHost && port && port !== "3100";
+
+  if (shouldProxyToLocalApi) {
+    return `${protocol}//${hostname}:3100/api/subconscious`;
+  }
+
+  return "/api/subconscious";
+}
+
+export const SUBCONSCIOUS_API_BASE = resolveSubconsciousApiBase();
+
 type SharedContextQueryOptions = {
   limit?: number;
   peerId?: string;
@@ -120,6 +138,10 @@ export function getSharedContextPublishUrl(): string {
 
 export function getSharedContextDelegateUrl(): string {
   return `${SHARED_CONTEXT_API_BASE}/delegate`;
+}
+
+export function getSubconsciousWhisperUrl(): string {
+  return `${SUBCONSCIOUS_API_BASE}/whisper`;
 }
 
 export function getFounderEpisodesUrl(options: { sessionKey?: string; workspaceId?: string; status?: string; limit?: number } = {}): string {

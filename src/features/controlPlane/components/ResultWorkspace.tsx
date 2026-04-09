@@ -1,162 +1,110 @@
-/**
- * ResultWorkspace — 8-section entity intelligence result page.
- *
- * Canonical structure:
- *   1. Entity Truth (executive summary)
- *   2. What Changed / Why Now
- *   3. Key Signals
- *   4. Risks / Contradictions
- *   5. Comparables / Related Entities
- *   6. Recommended Next Questions
- *   7. Packet Actions (export)
- *   8. Keep Warm / Monitor
- *
- * Adapts section ordering and emphasis based on active lens.
- */
-
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import {
-  saveMemoToStorage,
-  generateMemoId,
-  copyMemoUrl,
-  type ShareableMemoData,
-} from "@/features/founder/views/ShareableMemoView";
+import { memo, useMemo, useState, type ElementType, type ReactNode } from "react";
 import {
   AlertTriangle,
   ArrowRight,
-  BarChart3,
   Bell,
-  Briefcase,
   BookOpen,
-  Check,
-  ClipboardCopy,
   Download,
-  Eye,
   ExternalLink,
-  FileText,
   GitCompare,
-  HelpCircle,
   Layers3,
   Network,
-  Pin,
   Share2,
-  TrendingUp,
-  Waypoints,
 } from "lucide-react";
-import type { LensId, ResultPacket } from "./searchTypes";
 import { TrajectoryPanel } from "@/features/telemetry/TrajectoryPanel";
 import type { TrajectoryData } from "@/features/telemetry/types";
-import { ensureProofPacket } from "./proofModel";
 import { CitationFootnote } from "./CitationFootnote";
-import { SourcesBar } from "./SourcesBar";
-import { SignalCard } from "./SignalCard";
 import { ForecastGateCard } from "./ForecastGateCard";
+import { ensureProofPacket, type ProofReadyResultPacket } from "./proofModel";
+import { SourcesBar } from "./SourcesBar";
+import type { LensId, ResultPacket } from "./searchTypes";
 
-/* ─── Section shell ──────────────────────────────────────────────────────── */
+interface ResultWorkspaceProps {
+  packet: ResultPacket;
+  lens: LensId;
+  onFollowUp?: (question: string) => void;
+  onExport?: (type: "brief" | "sheet" | "deck" | "html") => void;
+  onPublishSharedContext?: () => void;
+  onDelegate?: (target: "claude_code" | "openclaw") => void;
+  onPublishStrategicAngle?: (angleId: string) => void;
+  onDelegateStrategicAngle?: (angleId: string, target: "claude_code" | "openclaw") => void;
+  onMonitor?: () => void;
+  trajectory?: TrajectoryData;
+  handoffState?: {
+    status: "idle" | "publishing" | "published" | "delegating" | "delegated" | "error";
+    message?: string;
+    contextId?: string;
+    taskId?: string;
+    targetLabel?: string;
+    installCommand?: string;
+    handoffPrompt?: string;
+  };
+}
+
+type LineItem = {
+  text: string;
+  sourceIds: string[];
+};
 
 function Section({
   id,
-  icon: Icon,
   title,
+  icon: Icon,
   children,
-  defaultOpen = true,
-  openSignal,
+  defaultOpen = false,
 }: {
   id: string;
-  icon: React.ElementType;
   title: string;
-  children: React.ReactNode;
+  icon: ElementType;
+  children: ReactNode;
   defaultOpen?: boolean;
-  openSignal?: string | number | null;
 }) {
   const [open, setOpen] = useState(defaultOpen);
-  useEffect(() => {
-    if (openSignal !== undefined && openSignal !== null) {
-      setOpen(true);
-    }
-  }, [openSignal]);
   return (
-    <section
-      id={`result-${id}`}
-      className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden transition-all"
-    >
+    <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center gap-2.5 px-5 py-4 text-left transition-colors hover:bg-white/[0.02]"
+        onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        aria-controls={`result-${id}-content`}
+        aria-controls={`result-${id}`}
       >
         <Icon className="h-4 w-4 shrink-0 text-content-muted" aria-hidden="true" />
-        <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted flex-1">
+        <span className="flex-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
           {title}
         </span>
-        <span
-          className={`text-content-muted transition-transform text-xs ${open ? "rotate-180" : ""}`}
-          aria-hidden="true"
-        >
-          &#9662;
+        <span className={`text-content-muted transition-transform text-xs ${open ? "rotate-180" : ""}`}>
+          ▾
         </span>
       </button>
-      {open && (
-        <div id={`result-${id}-content`} className="border-t border-white/[0.06] px-5 py-4">
+      {open ? (
+        <div id={`result-${id}`} className="border-t border-white/[0.06] px-5 py-4">
           {children}
         </div>
-      )}
+      ) : null}
     </section>
   );
 }
 
-/* ─── Confidence badge ──────────────────────────────────────────────────── */
-
 function ConfidenceBadge({ value }: { value: number }) {
-  const color =
+  const tone =
     value >= 75
-      ? "bg-emerald-500/15 text-emerald-400"
+      ? "bg-emerald-500/15 text-emerald-300"
       : value >= 50
-        ? "bg-amber-500/15 text-amber-400"
-        : "bg-rose-500/15 text-rose-400";
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${color}`}>
-      <span className="h-1.5 w-1.5 rounded-full bg-current" />
-      {value}% confidence
-    </span>
-  );
+        ? "bg-amber-500/15 text-amber-300"
+        : "bg-rose-500/15 text-rose-300";
+  return <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${tone}`}>{value}% confidence</span>;
 }
 
-/* ─── Impact tag ────────────────────────────────────────────────────────── */
-
-function ImpactTag({ impact }: { impact: "high" | "medium" | "low" }) {
-  const cls =
-    impact === "high"
-      ? "text-amber-400 bg-amber-500/10"
-      : impact === "medium"
-        ? "text-blue-400 bg-blue-500/10"
-        : "text-zinc-400 bg-zinc-500/10";
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${cls}`}>
-      {impact}
-    </span>
-  );
-}
-
-/* ─── Direction arrow ───────────────────────────────────────────────────── */
-
-function DirectionArrow({ direction }: { direction: "up" | "down" | "neutral" }) {
-  if (direction === "up") return <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />;
-  if (direction === "down") return <TrendingUp className="h-3.5 w-3.5 rotate-180 text-rose-400" />;
-  return <ArrowRight className="h-3.5 w-3.5 text-zinc-500" />;
-}
-
-function ProofStatusBadge({ value }: { value: string }) {
+function ProofBadge({ value }: { value: ProofReadyResultPacket["proofStatus"] }) {
   const tone =
     value === "verified"
       ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
       : value === "drifting"
         ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
-        : value === "provisional" || value === "loading"
-          ? "border-[#d97757]/20 bg-[#d97757]/10 text-[#f2b49f]"
-          : "border-rose-500/20 bg-rose-500/10 text-rose-300";
+        : value === "incomplete"
+          ? "border-rose-500/20 bg-rose-500/10 text-rose-300"
+          : "border-[#d97757]/20 bg-[#d97757]/10 text-[#f2b49f]";
   return (
     <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${tone}`}>
       {value}
@@ -164,35 +112,7 @@ function ProofStatusBadge({ value }: { value: string }) {
   );
 }
 
-function SourceStatusBadge({ value }: { value: string }) {
-  const tone =
-    value === "cited"
-      ? "bg-emerald-500/10 text-emerald-300"
-      : value === "discarded"
-        ? "bg-zinc-500/10 text-zinc-400"
-        : "bg-[#d97757]/10 text-[#f2b49f]";
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${tone}`}>
-      {value}
-    </span>
-  );
-}
-
-function StrategicAngleStatusBadge({ value }: { value: "strong" | "watch" | "unknown" }) {
-  const tone =
-    value === "strong"
-      ? "bg-emerald-500/10 text-emerald-300"
-      : value === "watch"
-        ? "bg-amber-500/10 text-amber-300"
-        : "bg-white/[0.06] text-content-muted";
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${tone}`}>
-      {value}
-    </span>
-  );
-}
-
-function VisibilityBadge({ value }: { value: "internal" | "workspace" | "public" }) {
+function VisibilityBadge({ value }: { value: ProofReadyResultPacket["visibility"] }) {
   const tone =
     value === "public"
       ? "bg-emerald-500/10 text-emerald-300"
@@ -206,115 +126,260 @@ function VisibilityBadge({ value }: { value: "internal" | "workspace" | "public"
   );
 }
 
-function PacketProvenanceBadge({ packet }: { packet: ProofReadyResultPacket }) {
-  const citedSources = packet.sourceRefs.filter((source) => source.status !== "discarded");
-  const citedWebSources = citedSources.filter((source) => source.type === "web" && source.href);
-  const citedLocalSources = citedSources.filter((source) => source.type !== "web" || !source.href);
-
-  const state =
-    citedWebSources.length > 0
-      ? {
-          label: citedLocalSources.length > 0 ? "Mixed evidence" : "Live web evidence",
-          detail:
-            citedLocalSources.length > 0
-              ? `${citedWebSources.length} web · ${citedLocalSources.length} local`
-              : `${citedWebSources.length} cited source${citedWebSources.length === 1 ? "" : "s"}`,
-          tone: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
-        }
-      : {
-          label: "Local evidence",
-          detail: `${citedSources.length} retained source${citedSources.length === 1 ? "" : "s"}`,
-          tone: "border-white/[0.08] bg-white/[0.03] text-content-muted",
-        };
-
+function ActionButton({
+  children,
+  onClick,
+  disabled,
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${state.tone}`}
-      title={`${state.label} · ${state.detail}`}
+    <button
+      type="button"
+      className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content disabled:cursor-not-allowed disabled:opacity-50"
+      onClick={onClick}
+      disabled={disabled || !onClick}
     >
-      <span>{state.label}</span>
-      <span className="opacity-80">· {state.detail}</span>
-    </span>
+      {children}
+    </button>
   );
 }
 
-/* ─── Main component ────────────────────────────────────────────────────── */
-
-/* ─── Demo trajectory generator ────────────────────────────────────────── */
-
-function buildDemoTrajectory(packet: ResultPacket): TrajectoryData {
-  const now = Date.now();
-  const toolSteps: Array<{
-    tool: string;
-    domain: string;
-    ms: number;
-    status: "pass" | "fail" | "skipped";
-    input: string;
-    output: string;
-    tokens: number;
-  }> = [
-    { tool: "classify_query", domain: "search", ms: 12, status: "pass", input: `query="${packet.query}"`, output: `type=company_search, lens=${packet.entityName}`, tokens: 85 },
-    { tool: "build_context_bundle", domain: "context", ms: 45, status: "pass", input: `entity="${packet.entityName}"`, output: "pinned=185tok, injected=210tok", tokens: 120 },
-    { tool: "search_entities", domain: "entity", ms: 230, status: "pass", input: `name="${packet.entityName}", fuzzy=true`, output: `matched 1 entity, confidence=92%`, tokens: 340 },
-    { tool: "founder_local_gather", domain: "founder", ms: 180, status: "pass", input: `entityId="${packet.entityName.toLowerCase()}", daysBack=30`, output: `${packet.sourceCount} actions gathered`, tokens: 520 },
-    { tool: "run_recon", domain: "recon", ms: 1200, status: "pass", input: `target="${packet.entityName}", depth=standard`, output: `${packet.variables.length} signals, ${packet.risks?.length ?? 0} risks identified`, tokens: 1850 },
-    { tool: "linkup_search", domain: "search", ms: 890, status: "pass", input: `q="${packet.entityName} competitive position 2025"`, output: `answer=${packet.answer.slice(0, 60)}...`, tokens: 780 },
-    { tool: "judge_tool_output", domain: "eval", ms: 340, status: "pass", input: "structural + semantic criteria", output: `pass_rate=90%, criteria_rate=85%`, tokens: 420 },
-    { tool: "build_result_packet", domain: "synthesis", ms: 95, status: "pass", input: `entity="${packet.entityName}", sections=8`, output: `confidence=${packet.confidence}%, sources=${packet.sourceCount}`, tokens: 290 },
-  ];
-
-  let totalMs = 0;
-  let totalTokens = 0;
-  const steps = toolSteps.map((t, i) => {
-    totalMs += t.ms;
-    totalTokens += t.tokens;
-    return {
-      id: `step-${i}`,
-      toolName: t.tool,
-      domain: t.domain,
-      latencyMs: t.ms,
-      status: t.status as "pass" | "fail" | "pending" | "skipped",
-      inputSummary: t.input,
-      outputPreview: t.output,
-      timestamp: new Date(now - (toolSteps.length - i) * 1000).toISOString(),
-      tokenEstimate: t.tokens,
-    };
+function dedupeLines(lines: LineItem[]): LineItem[] {
+  const seen = new Set<string>();
+  return lines.filter((line) => {
+    const key = line.text.trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
   });
+}
 
+function splitSentences(value: string): string[] {
+  return value
+    .split(/(?<=[.!?])\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function isLowSignalClaim(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return true;
+  const words = trimmed.split(/\s+/).filter(Boolean);
+  const hasDigits = /\d/.test(trimmed);
+  const hasSentencePunctuation = /[.!?:]/.test(trimmed);
+  const looksLikePersonName = /^[A-Z][a-z]+(?:\s+[A-Z][a-z.]+){0,2}$/.test(trimmed);
+  const looksLikeInitialSequence = /^(?:[A-Z]\.)+(?:\s+[A-Z]\.)*$/.test(trimmed) || /^[A-Z]\.$/.test(trimmed);
+  if (looksLikePersonName || looksLikeInitialSequence) return true;
+  if (words.length <= 3 && !hasDigits && !hasSentencePunctuation) return true;
+  if (trimmed.length < 24 && !hasDigits && !hasSentencePunctuation) return true;
+  return false;
+}
+
+function buildHeadlineClaim(packet: ProofReadyResultPacket): LineItem | null {
+  const answerBlock = packet.answerBlocks.find((block) => block.status !== "discarded" && block.text.trim().length > 0);
+  const answerSentence = answerBlock ? splitSentences(answerBlock.text)[0] : splitSentences(packet.answer)[0];
+  if (answerSentence) {
+    return {
+      text: answerSentence,
+      sourceIds: answerBlock?.sourceRefIds ?? packet.sourceRefs.slice(0, 1).map((source) => source.id),
+    };
+  }
+  return null;
+}
+
+function buildSummaryClaims(packet: ProofReadyResultPacket): LineItem[] {
+  const claimLines = packet.claimRefs
+    .filter((claim) => claim.status !== "discarded" && !isLowSignalClaim(claim.text))
+    .slice(0, 5)
+    .map((claim) => ({ text: claim.text, sourceIds: claim.sourceRefIds }));
+  if (claimLines.length > 0) return dedupeLines(claimLines);
+  const fallbackSourceIds = packet.answerBlocks[0]?.sourceRefIds ?? packet.sourceRefs.slice(0, 1).map((source) => source.id);
+  const answerLines = splitSentences(packet.answer)
+    .filter((text) => !isLowSignalClaim(text))
+    .map((text) => ({
+      text,
+      sourceIds: fallbackSourceIds,
+    }));
+  const metricLines = (packet.keyMetrics ?? []).slice(0, 3).map((metric) => ({
+    text: `${metric.label}: ${metric.value}`,
+    sourceIds: fallbackSourceIds,
+  }));
+  const changeLines = (packet.changes ?? []).slice(0, 2).map((change) => ({
+    text: change.date ? `${change.description} (${change.date})` : change.description,
+    sourceIds: fallbackSourceIds,
+  }));
+  const riskLines = (packet.risks ?? []).slice(0, 2).map((risk) => ({
+    text: risk.description ? `${risk.title}: ${risk.description}` : risk.title,
+    sourceIds: fallbackSourceIds,
+  }));
+  return dedupeLines([...answerLines, ...metricLines, ...changeLines, ...riskLines]).slice(0, 5);
+}
+
+function buildObservedLines(packet: ProofReadyResultPacket): LineItem[] {
+  const fromMetrics = (packet.keyMetrics ?? []).slice(0, 3).map((metric) => ({
+    text: `${metric.label}: ${metric.value}`,
+    sourceIds: packet.sourceRefs.slice(0, 1).map((source) => source.id),
+  }));
+  const fromSignals = packet.variables.slice(0, 3).map((signal) => ({
+    text: signal.name,
+    sourceIds:
+      signal.sourceIdx !== undefined && packet.sourceRefs[signal.sourceIdx]
+        ? [packet.sourceRefs[signal.sourceIdx]!.id]
+        : packet.sourceRefs.slice(0, 1).map((source) => source.id),
+  }));
+  const fromChanges = (packet.changes ?? []).slice(0, 2).map((change) => ({
+    text: change.date ? `${change.description} (${change.date})` : change.description,
+    sourceIds:
+      change.sourceIdx !== undefined && packet.sourceRefs[change.sourceIdx]
+        ? [packet.sourceRefs[change.sourceIdx]!.id]
+        : packet.sourceRefs.slice(0, 1).map((source) => source.id),
+  }));
+  return dedupeLines([...fromMetrics, ...fromSignals, ...fromChanges]).slice(0, 4);
+}
+
+function buildEstimatedLines(packet: ProofReadyResultPacket): LineItem[] {
+  const estimatePattern = /\b(estimate|estimated|target|forecast|projected|valuation|arr|revenue|burn)\b/i;
+  const claimEstimates = packet.claimRefs
+    .filter((claim) => claim.status !== "discarded" && estimatePattern.test(claim.text))
+    .map((claim) => ({ text: claim.text, sourceIds: claim.sourceRefIds }));
+  const answerEstimates = splitSentences(packet.answer)
+    .filter((sentence) => estimatePattern.test(sentence))
+    .map((text) => ({
+      text,
+      sourceIds: packet.answerBlocks[0]?.sourceRefIds ?? packet.sourceRefs.slice(0, 1).map((source) => source.id),
+    }));
+  return dedupeLines([...claimEstimates, ...answerEstimates]).slice(0, 3);
+}
+
+function buildGapLines(packet: ProofReadyResultPacket): LineItem[] {
+  const gaps: string[] = [
+    ...(packet.progressionProfile.missingFoundations ?? []),
+    ...(packet.companyReadinessPacket.contradictionsAndHiddenRisks ?? []),
+    ...(packet.nextQuestions ?? []),
+  ];
+  return dedupeLines(
+    gaps.map((text) => ({
+      text,
+      sourceIds: packet.sourceRefs.slice(0, 1).map((source) => source.id),
+    })),
+  ).slice(0, 4);
+}
+
+function buildComparables(packet: ProofReadyResultPacket) {
+  return (packet.comparables ?? [])
+    .filter((item) => item.name?.trim() || item.note?.trim())
+    .slice(0, 6);
+}
+
+function buildDemoTrajectory(packet: ProofReadyResultPacket): TrajectoryData {
+  const now = Date.now();
+  const steps = [
+    {
+      id: "query",
+      toolName: "receive_query",
+      domain: "search",
+      latencyMs: 18,
+      status: "pass" as const,
+      inputSummary: packet.query,
+      outputPreview: `lens=${packet.operatingModel.packetRouter.role}`,
+      timestamp: new Date(now - 900).toISOString(),
+      tokenEstimate: 80,
+    },
+    {
+      id: "proof",
+      toolName: "assemble_packet",
+      domain: "packet",
+      latencyMs: 220,
+      status: "pass" as const,
+      inputSummary: `${packet.sourceRefs.length} retained sources`,
+      outputPreview: `${packet.claimRefs.length} claims, ${packet.answerBlocks.length} answer blocks`,
+      timestamp: new Date(now - 500).toISOString(),
+      tokenEstimate: 340,
+    },
+    {
+      id: "handoff",
+      toolName: "prepare_next_move",
+      domain: "workflow",
+      latencyMs: 96,
+      status: "pass" as const,
+      inputSummary: packet.recommendedNextAction,
+      outputPreview: packet.operatingModel.packetRouter.shouldDelegate ? "delegation available" : "follow-up only",
+      timestamp: new Date(now - 120).toISOString(),
+      tokenEstimate: 110,
+    },
+  ];
   return {
     query: packet.query,
     steps,
-    totalLatencyMs: totalMs,
-    toolCount: new Set(toolSteps.map((t) => t.tool)).size,
-    totalTokenEstimate: totalTokens,
-    startedAt: new Date(now - totalMs).toISOString(),
+    totalLatencyMs: steps.reduce((sum, step) => sum + step.latencyMs, 0),
+    toolCount: steps.length,
+    totalTokenEstimate: steps.reduce((sum, step) => sum + (step.tokenEstimate ?? 0), 0),
+    startedAt: new Date(now - 1000).toISOString(),
     completedAt: new Date(now).toISOString(),
   };
 }
 
-/* ─── Main component ────────────────────────────────────────────────────── */
+function ClaimLine({
+  item,
+  packet,
+  sourceIndex,
+}: {
+  item: LineItem;
+  packet: ProofReadyResultPacket;
+  sourceIndex: Map<string, number>;
+}) {
+  return (
+    <li className="text-sm leading-relaxed text-content">
+      <span>{item.text}</span>
+      <span className="ml-1 inline-flex items-center">
+        {item.sourceIds.slice(0, 3).map((sourceId) => {
+          const index = sourceIndex.get(sourceId);
+          if (index === undefined) return null;
+          return (
+            <CitationFootnote
+              key={sourceId}
+              index={index}
+              source={packet.sourceRefs[index]}
+            />
+          );
+        })}
+      </span>
+    </li>
+  );
+}
 
-interface ResultWorkspaceProps {
-  packet: ResultPacket;
-  lens: LensId;
-  onFollowUp?: (question: string) => void;
-  onExport?: (type: "brief" | "sheet" | "deck" | "html") => void;
-  onPublishSharedContext?: () => void;
-  onDelegate?: (target: "claude_code" | "openclaw") => void;
-  onPublishStrategicAngle?: (angleId: string) => void;
-  onDelegateStrategicAngle?: (angleId: string, target: "claude_code" | "openclaw") => void;
-  onMonitor?: () => void;
-  /** Optional live trajectory data. Falls back to demo trajectory if absent. */
-  trajectory?: TrajectoryData;
-  handoffState?: {
-    status: "idle" | "publishing" | "published" | "delegating" | "delegated" | "error";
-    message?: string;
-    contextId?: string;
-    taskId?: string;
-    targetLabel?: string;
-    installCommand?: string;
-    handoffPrompt?: string;
-  };
+function ClaimText({
+  item,
+  packet,
+  sourceIndex,
+  className,
+}: {
+  item: LineItem;
+  packet: ProofReadyResultPacket;
+  sourceIndex: Map<string, number>;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <span>{item.text}</span>
+      <span className="ml-1 inline-flex items-center align-middle">
+        {item.sourceIds.slice(0, 3).map((sourceId) => {
+          const index = sourceIndex.get(sourceId);
+          if (index === undefined) return null;
+          return (
+            <CitationFootnote
+              key={sourceId}
+              index={index}
+              source={packet.sourceRefs[index]}
+            />
+          );
+        })}
+      </span>
+    </div>
+  );
 }
 
 export const ResultWorkspace = memo(function ResultWorkspace({
@@ -331,1675 +396,356 @@ export const ResultWorkspace = memo(function ResultWorkspace({
   handoffState,
 }: ResultWorkspaceProps) {
   const proofPacket = useMemo(() => ensureProofPacket(packet, lens), [packet, lens]);
+  const sourceIndex = useMemo(
+    () => new Map(proofPacket.sourceRefs.map((source, index) => [source.id, index])),
+    [proofPacket.sourceRefs],
+  );
+  const summaryClaims = useMemo(() => buildSummaryClaims(proofPacket), [proofPacket]);
+  const observedLines = useMemo(() => buildObservedLines(proofPacket), [proofPacket]);
+  const estimatedLines = useMemo(() => buildEstimatedLines(proofPacket), [proofPacket]);
+  const gapLines = useMemo(() => buildGapLines(proofPacket), [proofPacket]);
+  const comparables = useMemo(() => buildComparables(proofPacket), [proofPacket]);
+  const citedCount = proofPacket.explorationMemory.citedSourceCount || proofPacket.sourceRefs.filter((source) => source.status === "cited").length;
+  const exploredCount = proofPacket.explorationMemory.exploredSourceCount || proofPacket.sourceCount;
+  const contradictions = (proofPacket.risks ?? []).slice(0, 3);
+  const founderMove = proofPacket.recommendedNextAction;
+  const diligenceMove = proofPacket.nextQuestions[0] ?? proofPacket.progressionProfile.hiddenRisks[0] ?? "Tighten the missing evidence before expanding the packet.";
+  const delegationMove =
+    handoffState?.message ??
+    (proofPacket.operatingModel.packetRouter.shouldDelegate
+      ? `Delegate ${proofPacket.packetType} with packet ${proofPacket.packetId}.`
+      : "No bounded delegation is prepared yet.");
+  const handoffBusy = handoffState?.status === "publishing" || handoffState?.status === "delegating";
   const trajectoryData = trajectory ?? buildDemoTrajectory(proofPacket);
-  const isOwnCompanyPacket = proofPacket.operatingModel.packetRouter.companyMode === "own_company";
-  const showFounderScaffolding = isOwnCompanyPacket;
-  const showExternalBriefingMode = !showFounderScaffolding;
-  const hasSlackOnePager = proofPacket.shareableArtifacts.some((item) => item.type === "slack_onepage");
-  const visibleAnswerBlocks = useMemo(
-    () =>
-      proofPacket.answerBlocks.filter((block) =>
-        showFounderScaffolding || block.id !== "answer:block:credibility",
-      ),
-    [proofPacket.answerBlocks, showFounderScaffolding],
-  );
-  const [copiedShare, setCopiedShare] = useState(false);
-  const [copiedPrompt, setCopiedPrompt] = useState(false);
-  const [copiedSlackReport, setCopiedSlackReport] = useState(false);
-  const [showAllFollowUps, setShowAllFollowUps] = useState(false);
-  const [hoveredSourceId, setHoveredSourceId] = useState<string | null>(null);
-  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
-  const [selectedAnswerBlockId, setSelectedAnswerBlockId] = useState<string | null>(
-    proofPacket.answerBlocks[0]?.id ?? null,
-  );
-  const handoffBusy =
-    handoffState?.status === "publishing" || handoffState?.status === "delegating";
-  const handoffSignal =
-    handoffState?.status && handoffState.status !== "idle"
-      ? [handoffState.status, handoffState.contextId, handoffState.taskId, handoffState.message]
-          .filter(Boolean)
-          .join(":")
-      : null;
-  const handoffTone =
-    handoffState?.status === "error"
-      ? "border-rose-500/20 bg-rose-500/10 text-rose-300"
-      : "border-emerald-500/20 bg-emerald-500/10 text-emerald-200";
-
-  const activeAnswerBlock = useMemo(
-    () =>
-      visibleAnswerBlocks.find((block) => block.id === selectedAnswerBlockId) ??
-      visibleAnswerBlocks[0] ??
-      null,
-    [selectedAnswerBlockId, visibleAnswerBlocks],
-  );
-
-  const activeSourceIds = useMemo(() => {
-    const sourceIds = new Set<string>();
-    if (activeAnswerBlock) {
-      activeAnswerBlock.sourceRefIds.forEach((sourceId) => sourceIds.add(sourceId));
-    }
-    if (selectedSourceId) sourceIds.add(selectedSourceId);
-    if (hoveredSourceId) sourceIds.add(hoveredSourceId);
-    return sourceIds;
-  }, [activeAnswerBlock, hoveredSourceId, selectedSourceId]);
-
-  const activeSource = useMemo(() => {
-    const preferredId =
-      selectedSourceId ?? hoveredSourceId ?? activeAnswerBlock?.sourceRefIds[0] ?? null;
-    if (!preferredId) return null;
-    return proofPacket.sourceRefs.find((source) => source.id === preferredId) ?? null;
-  }, [activeAnswerBlock, hoveredSourceId, proofPacket.sourceRefs, selectedSourceId]);
-
-  const activeClaims = useMemo(() => {
-    if (!activeAnswerBlock) return [];
-    return proofPacket.claimRefs.filter((claim) => activeAnswerBlock.claimIds.includes(claim.id));
-  }, [activeAnswerBlock, proofPacket.claimRefs]);
-
-  const followUpChain = useMemo(() => {
-    const normalizePrompt = (value: string) => value.trim().replace(/\s+/g, " ").toLowerCase();
-    const seen = new Set<string>();
-    const unresolvedAngles = proofPacket.strategicAngles.filter(
-      (angle) => angle.status !== "strong" && angle.nextQuestion,
-    );
-    const unresolvedAnglePrompts = new Set(
-      unresolvedAngles
-        .map((angle) => angle.nextQuestion)
-        .filter((value): value is string => Boolean(value))
-        .map(normalizePrompt),
-    );
-    const chain: Array<{
-      id: string;
-      label: string;
-      prompt: string;
-      accent: "action" | "question";
-    }> = [];
-
-    const pushItem = (
-      label: string,
-      prompt: string | undefined,
-      accent: "action" | "question",
-      options?: { allowIfUnresolvedAngle?: boolean },
-    ) => {
-      if (!prompt) return;
-      const normalized = normalizePrompt(prompt);
-      if (!normalized || seen.has(normalized)) return;
-      if (!options?.allowIfUnresolvedAngle && unresolvedAnglePrompts.has(normalized)) return;
-      seen.add(normalized);
-      chain.push({
-        id: `${accent}:${chain.length + 1}`,
-        label,
-        prompt,
-        accent,
-      });
-    };
-
-    pushItem("Start here", proofPacket.recommendedNextAction, "action");
-    pushItem("Then gather proof", proofPacket.nextQuestions?.[0], "question");
-    pushItem("Then prepare delegation", proofPacket.nextQuestions?.[2], "question");
-
-    for (const prompt of proofPacket.nextQuestions ?? []) {
-      pushItem("Next prompt", prompt, "question");
-    }
-
-    return {
-      visible: chain.slice(0, 3),
-      overflow: chain.slice(3),
-    };
-  }, [proofPacket.nextQuestions, proofPacket.recommendedNextAction, proofPacket.strategicAngles]);
-
-  const primaryIssueAngle = useMemo(
-    () => proofPacket.strategicAngles.find((angle) => angle.status !== "strong") ?? null,
-    [proofPacket.strategicAngles],
-  );
-  const primaryRisk = proofPacket.risks?.[0] ?? null;
-  const shareTimingAngle = useMemo(
-    () => proofPacket.strategicAngles.find((angle) => angle.id === "stealth-moat") ?? null,
-    [proofPacket.strategicAngles],
-  );
-  const bankerComparableText = useMemo(
-    () => proofPacket.comparables?.slice(0, 3).map((item) => item.name).join(", ") || "Comparable set still thin",
-    [proofPacket.comparables],
-  );
-  const bankerMetricDeck = useMemo(
-    () => proofPacket.keyMetrics?.slice(0, 6) ?? [],
-    [proofPacket.keyMetrics],
-  );
-  const bankerExecutiveReadout = useMemo(() => {
-    const leadingSentences = proofPacket.answer
-      .split(/(?<=[.!?])\s+/)
-      .map((sentence) => sentence.trim())
-      .filter(Boolean)
-      .slice(0, 2)
-      .join(" ");
-    if (leadingSentences && leadingSentences.length >= 24) return leadingSentences;
-    return proofPacket.answer;
-  }, [proofPacket.answer]);
-  const bankerPrimaryQuestion = useMemo(
-    () => proofPacket.nextQuestions?.[0] ?? proofPacket.recommendedNextAction,
-    [proofPacket.nextQuestions, proofPacket.recommendedNextAction],
-  );
-  const bankerChangeReadout = useMemo(
-    () =>
-      proofPacket.changes?.slice(0, 2).map((item) => item.description).join(" ")
-      || "No recent operating delta has been extracted yet.",
-    [proofPacket.changes],
-  );
-  const bankerComparableReadout = useMemo(
-    () =>
-      proofPacket.comparables?.slice(0, 2)
-        .map((item) => `${item.name}${item.note ? `: ${item.note}` : ""}`)
-        .join(" ")
-      || "Comparable set still needs expansion.",
-    [proofPacket.comparables],
-  );
-  const bankerRiskReadout = useMemo(
-    () =>
-      primaryRisk?.description
-      || "No first-order diligence flag has been extracted yet.",
-    [primaryRisk],
-  );
-  const bankerQuestionReadout = useMemo(
-    () =>
-      proofPacket.nextQuestions?.slice(0, 2).join(" ")
-      || proofPacket.recommendedNextAction,
-    [proofPacket.nextQuestions, proofPacket.recommendedNextAction],
-  );
-  const primaryIssueAngleId = primaryIssueAngle?.id ?? null;
-  const shareReadinessAngleId = shareTimingAngle?.id ?? primaryIssueAngleId;
-  const shareReadinessPrompt = shareTimingAngle?.nextQuestion ?? primaryIssueAngle?.nextQuestion ?? null;
-  const shouldShowShareReadiness = hasSlackOnePager && proofPacket.visibility !== "public" && Boolean(shareReadinessPrompt);
-
-  const handleShare = useCallback(() => {
-    const id = generateMemoId();
-    const memoData: ShareableMemoData = {
-      id,
-      company: proofPacket.entityName,
-      date: new Date().toISOString().slice(0, 10),
-      question: proofPacket.query,
-      answer: proofPacket.answer,
-      confidence: proofPacket.confidence,
-      sourceCount: proofPacket.sourceCount,
-      variables: proofPacket.variables.map((v) => ({
-        rank: v.rank,
-        name: v.name,
-        direction: v.direction,
-        impact: v.impact,
-      })),
-      scenarios: proofPacket.scenarios?.map((s) => ({
-        label: s.label,
-        probability: s.probability,
-        outcome: s.outcome,
-      })) ?? [],
-      actions: proofPacket.interventions?.map((a) => ({
-        action: a.action,
-        impact: a.impact,
-      })) ?? proofPacket.nextQuestions?.slice(0, 3).map((q) => ({
-        action: q,
-        impact: "medium" as const,
-      })) ?? [],
-    };
-    saveMemoToStorage(memoData);
-    copyMemoUrl(id);
-    setCopiedShare(true);
-    setTimeout(() => setCopiedShare(false), 2500);
-  }, [proofPacket]);
-
-  const handleCopyPrompt = useCallback(async () => {
-    if (!handoffState?.handoffPrompt || !navigator.clipboard?.writeText) return;
-    await navigator.clipboard.writeText(handoffState.handoffPrompt);
-    setCopiedPrompt(true);
-    setTimeout(() => setCopiedPrompt(false), 2500);
-  }, [handoffState?.handoffPrompt]);
-
-  const handleCopySlackReport = useCallback(async () => {
-    const artifact = proofPacket.shareableArtifacts.find((item) => item.type === "slack_onepage");
-    const text = typeof artifact?.payload?.text === "string" ? artifact.payload.text : null;
-    if (!text || !navigator.clipboard?.writeText) return;
-    await navigator.clipboard.writeText(text);
-    setCopiedSlackReport(true);
-    setTimeout(() => setCopiedSlackReport(false), 2500);
-  }, [proofPacket.shareableArtifacts]);
+  const headlineClaim = useMemo(() => buildHeadlineClaim(proofPacket), [proofPacket]);
+  const supportingClaims = (headlineClaim
+    ? summaryClaims.filter((claim) => claim.text !== headlineClaim.text)
+    : summaryClaims
+  ).slice(0, 2);
 
   return (
-    <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {/* ── Header bar ─────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-semibold text-content truncate">{proofPacket.entityName}</h2>
-          <p className="text-xs text-content-muted mt-0.5 truncate">{proofPacket.query}</p>
+    <div className="space-y-4" data-testid="result-workspace">
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">Founder Read</div>
+            <h2 className="mt-1 text-lg font-semibold text-content">{proofPacket.entityName}</h2>
+            <div className="mt-1 text-xs uppercase tracking-[0.14em] text-content-muted">
+              {lens} lens · {proofPacket.packetType.replace(/_/g, " ")}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <ConfidenceBadge value={proofPacket.confidence} />
+            <ProofBadge value={proofPacket.proofStatus} />
+            <VisibilityBadge value={proofPacket.visibility} />
+            <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-content-muted">
+              {citedCount}/{exploredCount} cited
+            </span>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
-          <ConfidenceBadge value={proofPacket.confidence} />
-          <ProofStatusBadge value={proofPacket.proofStatus} />
-          <VisibilityBadge value={proofPacket.visibility} />
-          <span className="hidden lg:inline-flex"><PacketProvenanceBadge packet={proofPacket} /></span>
-          <span className="hidden lg:inline-flex text-[11px] text-content-muted">
-            {proofPacket.explorationMemory.citedSourceCount}/
-            {proofPacket.explorationMemory.exploredSourceCount} cited
-          </span>
-          <button
-            type="button"
-            onClick={handleShare}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5 text-[11px] font-medium text-content-muted transition-colors hover:bg-white/[0.06] hover:text-content"
-            aria-label={copiedShare ? "Link copied" : "Share result"}
-          >
-            {copiedShare ? (
-              <><Check className="h-3 w-3 text-emerald-400" /><span className="text-emerald-400">Copied</span></>
-            ) : (
-              <><Share2 className="h-3 w-3" />Share</>
-            )}
-          </button>
-          {hasSlackOnePager && showFounderScaffolding ? (
-            <button
-              type="button"
-              onClick={() => { void handleCopySlackReport(); }}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#d97757]/20 bg-[#d97757]/10 px-2.5 py-1.5 text-[11px] font-medium text-[#f2b49f] transition-colors hover:bg-[#d97757]/16"
-              aria-label={copiedSlackReport ? "Slack report copied" : "Report for Slack"}
-            >
-              {copiedSlackReport ? (
-                <><Check className="h-3 w-3" /><span>Slack report copied</span></>
-              ) : (
-                <><FileText className="h-3 w-3" />Slack report</>
-              )}
-            </button>
-          ) : null}
+        {headlineClaim ? (
+          <div className="mt-4 rounded-xl border border-white/[0.06] bg-black/20 p-4">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-content-muted">Bottom Line</div>
+            <ClaimText
+              item={headlineClaim}
+              packet={proofPacket}
+              sourceIndex={sourceIndex}
+              className="mt-2 text-sm leading-relaxed text-content"
+            />
+          </div>
+        ) : null}
+        {supportingClaims.length > 0 ? (
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            {supportingClaims.map((claim) => (
+              <div key={claim.text} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3">
+                <ClaimText
+                  item={claim}
+                  packet={proofPacket}
+                  sourceIndex={sourceIndex}
+                  className="text-sm leading-relaxed text-content-secondary"
+                />
+              </div>
+            ))}
+          </div>
+        ) : null}
+        <div className="mt-4 grid gap-3 sm:grid-cols-4">
+          <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Truth Claims</div>
+            <div className="mt-1 text-lg font-semibold text-content">{summaryClaims.length}</div>
+          </div>
+          <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Contradictions</div>
+            <div className="mt-1 text-lg font-semibold text-content">{proofPacket.explorationMemory.contradictionCount}</div>
+          </div>
+          <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Packet Type</div>
+            <div className="mt-1 text-sm font-semibold text-content">{proofPacket.packetType}</div>
+          </div>
+          <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Memory Status</div>
+            <div className="mt-1 text-sm font-semibold text-content">
+              {proofPacket.shareableArtifacts.length > 0 ? "compounding" : "packet only"}
+            </div>
+          </div>
         </div>
       </div>
 
-      {handoffState?.status && handoffState.status !== "idle" ? (
-        <div className={`rounded-xl border px-4 py-3 ${handoffTone}`}>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.16em] opacity-80">
-                Shared Context Status
-              </div>
-              <div className="mt-1 text-sm font-medium">{handoffState.message}</div>
-              {(handoffState.contextId || handoffState.taskId) ? (
-                <div className="mt-1 text-xs opacity-90">
-                  {handoffState.contextId ? `Context ${handoffState.contextId}` : ""}
-                  {handoffState.contextId && handoffState.taskId ? " · " : ""}
-                  {handoffState.taskId ? `Task ${handoffState.taskId}` : ""}
-                </div>
-              ) : null}
-            </div>
-            {handoffState.targetLabel ? (
-              <span className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]">
-                {handoffState.targetLabel}
-              </span>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-
+      <SourcesBar sources={proofPacket.sourceRefs} />
       <ForecastGateCard gate={proofPacket.forecastGate} />
 
-      {/* ── Sources bar ───────────────────────────────────────────────────── */}
-      {lens === "banker" ? (
-        <div className="space-y-3">
-          <div
-            data-testid="banker-readout-strip"
-            className="grid gap-3 lg:grid-cols-[1.35fr_1fr]"
-          >
-            <div className="rounded-2xl border border-[#d97757]/20 bg-[#101a2b]/90 px-4 py-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="text-[10px] uppercase tracking-[0.18em] text-[#f2b49f]">
-                    Underwriting Readout
-                  </div>
-                  <div className="mt-1 text-sm font-medium text-content">
-                    Hard metrics first, diligence second
-                  </div>
-                </div>
-                <div className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                  {proofPacket.proofStatus}
-                </div>
-              </div>
-              <p className="mt-3 text-sm leading-relaxed text-content">
-                {bankerExecutiveReadout}
-              </p>
-              {bankerMetricDeck.length > 0 ? (
-                <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                  {bankerMetricDeck.map((metric) => (
-                    <div
-                      key={`${metric.label}:${metric.value}`}
-                      className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2"
-                    >
-                      <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                        {metric.label}
-                      </div>
-                      <div className="mt-1 text-sm font-semibold text-content">
-                        {metric.value}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">
-                  Comparable Set
-                </div>
-                <p className="mt-2 text-sm leading-relaxed text-content">
-                  {bankerComparableText}
-                </p>
-              </div>
-              <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.05] px-4 py-3">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-amber-300">
-                  Diligence Focus
-                </div>
-                <p className="mt-2 text-sm leading-relaxed text-content">
-                  {primaryRisk?.title ?? "No first-order diligence flag extracted yet"}
-                </p>
-                {primaryRisk?.description ? (
-                  <p className="mt-1 text-xs leading-relaxed text-content-muted">
-                    {primaryRisk.description}
-                  </p>
-                ) : null}
-                <p className="mt-3 text-xs leading-relaxed text-content-muted">
-                  {bankerPrimaryQuestion}
-                </p>
-              </div>
-            </div>
+      <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+        <div className="flex items-center gap-2">
+          <BookOpen className="h-4 w-4 text-content-muted" />
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Founder Truth</h3>
+        </div>
+        <ul className="mt-4 space-y-3">
+          {summaryClaims.map((claim) => (
+            <ClaimLine key={claim.text} item={claim} packet={proofPacket} sourceIndex={sourceIndex} />
+          ))}
+        </ul>
+        <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+            <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Observed</div>
+            <ul className="mt-3 space-y-2">
+              {observedLines.map((line) => (
+                <ClaimLine key={line.text} item={line} packet={proofPacket} sourceIndex={sourceIndex} />
+              ))}
+            </ul>
           </div>
-
-          <div
-            data-testid="banker-memo-brief"
-            className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-4"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="text-[10px] uppercase tracking-[0.18em] text-content-muted">
-                  Investment Banking Brief
-                </div>
-                <div className="mt-1 text-sm font-medium text-content">
-                  Cleaner memo view from the current evidence set
-                </div>
-              </div>
-              <div className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                {proofPacket.proofStatus}
-              </div>
-            </div>
-            <div className="mt-4 grid gap-3 lg:grid-cols-2">
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">
-                  Underwriting View
-                </div>
-                <p className="mt-2 text-sm leading-relaxed text-content">
-                  {bankerExecutiveReadout}
-                </p>
-              </div>
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">
-                  What Changed
-                </div>
-                <p className="mt-2 text-sm leading-relaxed text-content">
-                  {bankerChangeReadout}
-                </p>
-              </div>
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">
-                  Comparable Frame
-                </div>
-                <p className="mt-2 text-sm leading-relaxed text-content">
-                  {bankerComparableReadout}
-                </p>
-              </div>
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">
-                  Diligence Flags And Questions
-                </div>
-                <p className="mt-2 text-sm leading-relaxed text-content">
-                  {bankerRiskReadout}
-                </p>
-                <p className="mt-2 text-xs leading-relaxed text-content-muted">
-                  {bankerQuestionReadout}
-                </p>
-              </div>
-            </div>
+          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+            <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Estimated</div>
+            <ul className="mt-3 space-y-2">
+              {(estimatedLines.length > 0 ? estimatedLines : [{ text: "No explicit estimate is strong enough to elevate above the fold yet.", sourceIds: [] }]).map((line) =>
+                line.sourceIds.length > 0 ? (
+                  <ClaimLine key={line.text} item={line} packet={proofPacket} sourceIndex={sourceIndex} />
+                ) : (
+                  <li key={line.text} className="text-sm leading-relaxed text-content-muted">{line.text}</li>
+                ),
+              )}
+            </ul>
+          </div>
+          <div className="rounded-xl border border-[#d97757]/20 bg-[#d97757]/[0.05] p-4">
+            <div className="text-[10px] uppercase tracking-[0.16em] text-[#f2b49f]">Missing To Believe This</div>
+            <ul className="mt-3 space-y-2">
+              {gapLines.map((line) => (
+                <li key={line.text} className="text-sm leading-relaxed text-content">{line.text}</li>
+              ))}
+            </ul>
           </div>
         </div>
-      ) : null}
+      </section>
 
-      {showFounderScaffolding && (primaryRisk || primaryIssueAngle || shouldShowShareReadiness) ? (
-        <div className="grid gap-3 lg:grid-cols-2">
-          {primaryRisk || primaryIssueAngle ? (
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.05] px-4 py-3">
-              <div className="text-[10px] uppercase tracking-[0.16em] text-amber-300">
-                Main Contradiction To Resolve
-              </div>
-              <div className="mt-2 text-sm font-medium text-content">
-                {primaryRisk?.title ?? primaryIssueAngle?.title}
-              </div>
-              <p className="mt-1 text-xs leading-relaxed text-content-muted">
-                {primaryRisk?.description ?? primaryIssueAngle?.summary}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {primaryIssueAngle?.nextQuestion ? (
-                  <button
-                    type="button"
-                    onClick={() => onFollowUp?.(primaryIssueAngle.nextQuestion)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-200 transition hover:bg-amber-500/15"
-                  >
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                    Resolve now
-                  </button>
-                ) : null}
-                {onPublishStrategicAngle && primaryIssueAngleId ? (
-                  <button
-                    type="button"
-                    onClick={() => onPublishStrategicAngle(primaryIssueAngleId)}
-                    disabled={handoffBusy}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <Network className="h-3.5 w-3.5" />
-                    Publish issue packet
-                  </button>
-                ) : null}
-                {onDelegateStrategicAngle && primaryIssueAngleId ? (
-                  <button
-                    type="button"
-                    onClick={() => onDelegateStrategicAngle(primaryIssueAngleId, "claude_code")}
-                    disabled={handoffBusy}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <ArrowRight className="h-3.5 w-3.5" />
-                    Delegate issue
-                  </button>
-                ) : null}
-                {primaryRisk?.falsification ? (
-                  <span className="inline-flex items-center rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-content-muted">
-                    Falsify: {primaryRisk.falsification}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-
-          {shouldShowShareReadiness ? (
-            <div className="rounded-xl border border-[#d97757]/20 bg-[#d97757]/[0.05] px-4 py-3">
-              <div className="text-[10px] uppercase tracking-[0.16em] text-[#f2b49f]">
-                Share Readiness
-              </div>
-              <div className="mt-2 text-sm font-medium text-content">
-                Keep this founder packet workspace-only until the moat and evidence story are clearer.
-              </div>
-              <p className="mt-1 text-xs leading-relaxed text-content-muted">
-                The Slack report is ready to copy, but this packet still flags stealth and proof questions that should be pressure-tested before broader sharing.
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => onFollowUp?.(shareReadinessPrompt!)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#d97757]/20 bg-[#d97757]/10 px-3 py-2 text-xs font-medium text-[#f2b49f] transition hover:bg-[#d97757]/15"
-                >
-                  <HelpCircle className="h-3.5 w-3.5" />
-                  Pressure-test share timing
-                </button>
-                {onPublishStrategicAngle && shareReadinessAngleId ? (
-                  <button
-                    type="button"
-                    onClick={() => onPublishStrategicAngle(shareReadinessAngleId)}
-                    disabled={handoffBusy}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <Network className="h-3.5 w-3.5" />
-                    Publish issue packet
-                  </button>
-                ) : null}
-                {onDelegateStrategicAngle && shareReadinessAngleId ? (
-                  <button
-                    type="button"
-                    onClick={() => onDelegateStrategicAngle(shareReadinessAngleId, "claude_code")}
-                    disabled={handoffBusy}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <ArrowRight className="h-3.5 w-3.5" />
-                    Delegate issue
-                  </button>
-                ) : null}
-                <span className="inline-flex items-center rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-content-muted">
-                  Current visibility: {proofPacket.visibility}
-                </span>
-              </div>
-            </div>
-          ) : null}
+      <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+        <div className="flex items-center gap-2">
+          <GitCompare className="h-4 w-4 text-content-muted" />
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Why This Holds / Breaks</h3>
         </div>
-      ) : null}
-
-      {proofPacket.sourceRefs.length > 0 && (
-        <SourcesBar sources={proofPacket.sourceRefs} />
-      )}
-
-      {/* ── 1. Entity Truth ────────────────────────────────────────────────── */}
-      <Section id="truth" icon={BookOpen} title="Entity Truth">
-        <p className="text-sm leading-relaxed text-content">{proofPacket.answer}</p>
-        <div className="mt-4 grid gap-3 md:grid-cols-[1.4fr_1fr]">
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-            <div className="text-[10px] uppercase tracking-[0.18em] text-content-muted">
-              Uncertainty Boundary
-            </div>
-            <p className="mt-2 text-xs leading-relaxed text-content-muted">
-              {proofPacket.uncertaintyBoundary}
-            </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Supported By</div>
+            <div className="mt-2 text-2xl font-semibold text-content">{citedCount}</div>
+            <p className="mt-2 text-xs leading-relaxed text-content-muted">Cited sources attached to the packet, not just explored in the trace.</p>
           </div>
-          <div className="rounded-xl border border-[#d97757]/20 bg-[#d97757]/[0.05] p-3">
-            <div className="text-[10px] uppercase tracking-[0.18em] text-[#f2b49f]">
-              Recommended Next Action
-            </div>
-            <p className="mt-2 text-sm leading-relaxed text-content">
-              {proofPacket.recommendedNextAction}
-            </p>
+          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Contradicted By</div>
+            <div className="mt-2 text-2xl font-semibold text-content">{proofPacket.explorationMemory.contradictionCount}</div>
+            <p className="mt-2 text-xs leading-relaxed text-content-muted">Tracked contradictions or unresolved conflicts in the retained packet.</p>
+          </div>
+          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Packet Shortcut</div>
+            <p className="mt-2 text-sm leading-relaxed text-content">{proofPacket.workflowComparison.rationale}</p>
           </div>
         </div>
-        {proofPacket.keyMetrics && proofPacket.keyMetrics.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-4">
-            {proofPacket.keyMetrics.map((m) => (
-              <div key={m.label} className="min-w-[100px]">
-                <div className="text-[10px] uppercase tracking-[0.15em] text-content-muted">{m.label}</div>
-                <div className="mt-0.5 text-lg font-bold tabular-nums text-content">{m.value}</div>
+        <div className="mt-4 grid gap-3 lg:grid-cols-[1.3fr_0.7fr]">
+          <div className="space-y-3">
+            {contradictions.map((risk) => (
+              <div key={risk.title} className="rounded-xl border border-rose-500/10 bg-rose-500/[0.04] p-4">
+                <div className="text-sm font-medium text-content">{risk.title}</div>
+                <p className="mt-1 text-sm leading-relaxed text-content-muted">{risk.description}</p>
               </div>
             ))}
+          </div>
+          <div className="space-y-3">
+            <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+              <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Uncertainty Boundary</div>
+              <p className="mt-2 text-sm leading-relaxed text-content-muted">{proofPacket.uncertaintyBoundary}</p>
+            </div>
+            {proofPacket.strategicAngles.slice(0, 2).map((angle) => (
+              <div key={angle.id} className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium text-content">{angle.title}</div>
+                    <p className="mt-1 text-xs leading-relaxed text-content-muted">{angle.summary}</p>
+                  </div>
+                  <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-content-muted">
+                    {angle.status}
+                  </span>
+                </div>
+                {(onPublishStrategicAngle || onDelegateStrategicAngle) && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <ActionButton onClick={onPublishStrategicAngle ? () => onPublishStrategicAngle(angle.id) : undefined}>
+                      Publish issue packet
+                    </ActionButton>
+                    <ActionButton
+                      onClick={
+                        onDelegateStrategicAngle
+                          ? () => onDelegateStrategicAngle(angle.id, "claude_code")
+                          : undefined
+                      }
+                    >
+                      Delegate issue
+                    </ActionButton>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+        <div className="flex items-center gap-2">
+          <ArrowRight className="h-4 w-4 text-content-muted" />
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Next Move</h3>
+        </div>
+        <div className="mt-4 grid gap-3 lg:grid-cols-3">
+          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+            <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Founder Move</div>
+            <p className="mt-2 text-sm leading-relaxed text-content">{founderMove}</p>
+          </div>
+          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+            <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Diligence Move</div>
+            <p className="mt-2 text-sm leading-relaxed text-content">{diligenceMove}</p>
+            <div className="mt-3">
+              <ActionButton onClick={onFollowUp ? () => onFollowUp(diligenceMove) : undefined}>Run follow-up</ActionButton>
+            </div>
+          </div>
+          <div className="rounded-xl border border-[#d97757]/20 bg-[#d97757]/[0.05] p-4">
+            <div className="text-[10px] uppercase tracking-[0.16em] text-[#f2b49f]">Delegation Move</div>
+            <p className="mt-2 text-sm leading-relaxed text-content">{delegationMove}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <ActionButton onClick={onPublishSharedContext} disabled={handoffBusy}>Publish to shared context</ActionButton>
+              <ActionButton onClick={onDelegate ? () => onDelegate("claude_code") : undefined} disabled={handoffBusy}>
+                Delegate to Claude Code
+              </ActionButton>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+        <div className="flex items-center gap-2">
+          <Layers3 className="h-4 w-4 text-content-muted" />
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Ready Packet</h3>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Packet Identity</div>
+            <div className="mt-2 text-sm font-medium text-content">{proofPacket.packetId}</div>
+            <div className="mt-1 text-xs text-content-muted">{proofPacket.packetType}</div>
+          </div>
+          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Shared Context Status</div>
+            <div className="mt-2 text-sm font-medium text-content">{handoffState?.status ?? "idle"}</div>
+            <div className="mt-1 text-xs text-content-muted">{handoffState?.message ?? "Packet has not been published yet."}</div>
+          </div>
+          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Allowed Destinations</div>
+            <div className="mt-2 text-sm font-medium text-content">
+              {(proofPacket.companyReadinessPacket.allowedDestinations ?? []).join(", ") || "No export route defined"}
+            </div>
+          </div>
+          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Compounding Memory</div>
+            <div className="mt-2 text-sm font-medium text-content">
+              {proofPacket.shareableArtifacts.length > 0 ? `${proofPacket.shareableArtifacts.length} reusable artifact(s)` : "No reusable artifact yet"}
+            </div>
+          </div>
+        </div>
+        {(handoffState?.contextId || handoffState?.taskId || handoffState?.handoffPrompt) && (
+          <div className="mt-4 rounded-xl border border-white/[0.06] bg-black/20 p-4">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Handoff Details</div>
+            {handoffState?.contextId ? <div className="mt-2 text-sm text-content">Context {handoffState.contextId}</div> : null}
+            {handoffState?.taskId ? <div className="mt-1 text-sm text-content">Task {handoffState.taskId}</div> : null}
+            {handoffState?.handoffPrompt ? <p className="mt-2 text-xs leading-relaxed text-content-muted">{handoffState.handoffPrompt}</p> : null}
+          </div>
+        )}
+        <div className="mt-4 flex flex-wrap gap-2">
+          <ActionButton onClick={onExport ? () => onExport("brief") : undefined}><Download className="h-3.5 w-3.5" />Export packet</ActionButton>
+          <ActionButton onClick={onPublishSharedContext} disabled={handoffBusy}><Share2 className="h-3.5 w-3.5" />Publish and handoff</ActionButton>
+          <ActionButton onClick={onDelegate ? () => onDelegate("openclaw") : undefined} disabled={handoffBusy}><ExternalLink className="h-3.5 w-3.5" />Delegate to OpenClaw</ActionButton>
+          <ActionButton onClick={onMonitor}><Bell className="h-3.5 w-3.5" />Keep warm / monitor</ActionButton>
+        </div>
+      </section>
+
+      <Section id="sources" title="Inspect Sources" icon={Network}>
+        <div className="space-y-3">
+          {proofPacket.sourceRefs
+            .filter((source) => source.status !== "discarded")
+            .map((source, index) => (
+              <div key={source.id} className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium text-content">{source.title ?? source.label}</div>
+                    <div className="mt-1 text-xs text-content-muted">{source.domain ?? source.type ?? "source"}</div>
+                  </div>
+                  <span className="rounded-full bg-[#d97757]/15 px-2 py-0.5 text-[10px] font-bold text-[#d97757]">{index + 1}</span>
+                </div>
+                {source.excerpt ? <p className="mt-2 text-sm leading-relaxed text-content-muted">{source.excerpt}</p> : null}
+              </div>
+            ))}
+        </div>
+      </Section>
+
+      <Section id="claims" title="Claim Ledger" icon={BookOpen}>
+        <div className="space-y-3">
+          {proofPacket.claimRefs.slice(0, 12).map((claim) => (
+            <div key={claim.id} className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="text-sm leading-relaxed text-content">{claim.text}</div>
+                <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-content-muted">
+                  {claim.status}
+                </span>
+              </div>
+              <div className="mt-2 inline-flex items-center">
+                {claim.sourceRefIds.map((sourceId) => {
+                  const index = sourceIndex.get(sourceId);
+                  if (index === undefined) return null;
+                  return <CitationFootnote key={sourceId} index={index} source={proofPacket.sourceRefs[index]} />;
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section id="comparables" title="Comparables" icon={GitCompare}>
+        {comparables.length > 0 ? (
+          <div className="space-y-3">
+            {comparables.map((comparable) => (
+              <div key={`${comparable.name}-${comparable.note}`} className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="text-sm font-medium text-content">{comparable.name || "Unnamed comparable"}</div>
+                  <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-content-muted">
+                    {comparable.relevance}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-content-muted">{comparable.note}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4 text-sm text-content-muted">
+            No reliable comparables are strong enough to surface yet.
           </div>
         )}
       </Section>
 
-      <Section
-        id="memory"
-        icon={Layers3}
-        title={showExternalBriefingMode ? "Briefing Workup" : "Exploration Memory"}
-      >
-        {!showExternalBriefingMode ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-          {[
-            ["Sources explored", proofPacket.explorationMemory.exploredSourceCount],
-            ["Sources cited", proofPacket.explorationMemory.citedSourceCount],
-            ["Sources dropped", proofPacket.explorationMemory.discardedSourceCount],
-            ["Entities retained", proofPacket.explorationMemory.entityCount],
-            ["Claims retained", proofPacket.explorationMemory.claimCount],
-            ["Contradictions", proofPacket.explorationMemory.contradictionCount],
-          ].map(([label, value]) => (
-            <div
-              key={label}
-              className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5"
-            >
-              <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                {label}
-              </div>
-              <div className="mt-1 text-lg font-semibold text-content">{value}</div>
-            </div>
-          ))}
-        </div>
-        ) : null}
-        <div className={showExternalBriefingMode ? "grid gap-3 lg:grid-cols-2" : "mt-4 space-y-2"}>
-          {visibleAnswerBlocks.map((block, index) => {
-            const isActive = activeAnswerBlock?.id === block.id;
-            return (
-              <button
-                key={block.id}
-                type="button"
-                onClick={() => {
-                  setSelectedAnswerBlockId(block.id);
-                  setSelectedSourceId(block.sourceRefIds[0] ?? null);
-                }}
-                className={`${showExternalBriefingMode ? "h-full" : "w-full"} rounded-xl border px-3 py-3 text-left transition-colors ${
-                  isActive
-                    ? "border-[#d97757]/30 bg-[#d97757]/[0.06]"
-                    : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12]"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/[0.06] text-[10px] font-semibold text-content-muted">
-                      {index + 1}
-                    </span>
-                    <div>
-                      <div className="text-sm font-medium text-content">{block.title}</div>
-                      <div className="mt-1 text-[11px] text-content-muted">
-                        {block.sourceRefIds.length} linked sources · {block.claimIds.length} linked claims
-                      </div>
-                    </div>
-                  </div>
-                  <SourceStatusBadge value={block.status} />
-                </div>
-                <p className={`${showExternalBriefingMode ? "mt-3 text-sm" : "mt-2 line-clamp-2 text-xs"} leading-relaxed text-content-muted`}>
-                  {block.text}
-                </p>
-              </button>
-            );
-          })}
-        </div>
+      <Section id="trajectory" title="Agent Trajectory" icon={AlertTriangle}>
+        <TrajectoryPanel data={trajectoryData} defaultCollapsed={false} />
       </Section>
-
-      {showFounderScaffolding && proofPacket.strategicAngles.length > 0 && (
-        <Section
-          id="pressure-test"
-          icon={GitCompare}
-          title={lens === "founder" ? "Founder Pressure Test" : "Strategic Pressure Test"}
-        >
-          <div className="grid gap-3 lg:grid-cols-2">
-            {proofPacket.strategicAngles.map((angle) => (
-              <div
-                key={angle.id}
-                className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-content line-clamp-2">{angle.title}</div>
-                    <div className="mt-1 text-xs leading-relaxed text-content-muted line-clamp-2">
-                      {angle.summary}
-                    </div>
-                  </div>
-                  <StrategicAngleStatusBadge value={angle.status} />
-                </div>
-                <div className="mt-3 rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
-                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                    Why this matters
-                  </div>
-                  <div className="mt-1 text-xs leading-relaxed text-content-muted line-clamp-3">
-                    {angle.whyItMatters}
-                  </div>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {angle.evidenceRefIds.slice(0, 2).map((sourceId) => {
-                    const source = proofPacket.sourceRefs.find((item) => item.id === sourceId);
-                    if (!source) return null;
-                    return (
-                      <button
-                        key={sourceId}
-                        type="button"
-                        onClick={() => setSelectedSourceId(sourceId)}
-                        className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[11px] text-content-muted transition-colors hover:border-[#d97757]/30 hover:text-content"
-                      >
-                        {source.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                {angle.nextQuestion && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onFollowUp?.(angle.nextQuestion!)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#d97757]/20 bg-[#d97757]/10 px-3 py-2 text-xs font-medium text-[#f2b49f] transition hover:bg-[#d97757]/15"
-                    >
-                      <HelpCircle className="h-3.5 w-3.5" />
-                      {angle.nextQuestion}
-                    </button>
-                    {onPublishStrategicAngle ? (
-                      <button
-                        type="button"
-                        onClick={() => onPublishStrategicAngle(angle.id)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content"
-                      >
-                        <Network className="h-3.5 w-3.5" />
-                        Publish issue packet
-                      </button>
-                    ) : null}
-                    {onDelegateStrategicAngle && angle.status !== "strong" ? (
-                      <button
-                        type="button"
-                        onClick={() => onDelegateStrategicAngle(angle.id, "claude_code")}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20"
-                      >
-                        <ArrowRight className="h-3.5 w-3.5" />
-                        Delegate issue
-                      </button>
-                    ) : null}
-                  </div>
-                )}
-                {!angle.nextQuestion && (onPublishStrategicAngle || onDelegateStrategicAngle) ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {onPublishStrategicAngle ? (
-                      <button
-                        type="button"
-                        onClick={() => onPublishStrategicAngle(angle.id)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content"
-                      >
-                        <Network className="h-3.5 w-3.5" />
-                        Publish issue packet
-                      </button>
-                    ) : null}
-                    {onDelegateStrategicAngle && angle.status !== "strong" ? (
-                      <button
-                        type="button"
-                        onClick={() => onDelegateStrategicAngle(angle.id, "claude_code")}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20"
-                      >
-                        <ArrowRight className="h-3.5 w-3.5" />
-                        Delegate issue
-                      </button>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {lens === "founder" && showFounderScaffolding && proofPacket.progressionProfile ? (
-        <Section id="progression" icon={Briefcase} title="Founder Progression Layer">
-          <div className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="space-y-3">
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Current Stage</div>
-                  <div className="mt-1 text-sm font-medium text-content">{proofPacket.progressionProfile.currentStageLabel}</div>
-                </div>
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Readiness</div>
-                  <div className="mt-1 text-sm font-medium text-content">{proofPacket.progressionProfile.readinessScore}/100</div>
-                </div>
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Status</div>
-                  <div className="mt-1 text-sm font-medium text-content">
-                    {proofPacket.progressionProfile.onTrackStatus.replace("_", " ")}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Missing Foundations</div>
-                  <div className="mt-2 space-y-2 text-xs leading-relaxed text-content-muted">
-                    {(proofPacket.progressionProfile.missingFoundations.length > 0
-                      ? proofPacket.progressionProfile.missingFoundations
-                      : ["No obvious missing foundations flagged in this packet."]
-                    ).map((item) => (
-                      <div key={item}>• {item}</div>
-                    ))}
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Hidden Risks</div>
-                  <div className="mt-2 space-y-2 text-xs leading-relaxed text-content-muted">
-                    {(proofPacket.progressionProfile.hiddenRisks.length > 0
-                      ? proofPacket.progressionProfile.hiddenRisks.slice(0, 4)
-                      : ["No hidden risks surfaced yet."]
-                    ).map((item) => (
-                      <div key={item}>• {item}</div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Delegable Work</div>
-                  <div className="mt-2 space-y-2 text-xs leading-relaxed text-content-muted">
-                    {proofPacket.progressionProfile.delegableWork.map((item) => (
-                      <div key={item}>• {item}</div>
-                    ))}
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Founder-only Work</div>
-                  <div className="mt-2 space-y-2 text-xs leading-relaxed text-content-muted">
-                    {proofPacket.progressionProfile.founderOnlyWork.map((item) => (
-                      <div key={item}>• {item}</div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {proofPacket.companyNamingPack ? (
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                        {isOwnCompanyPacket ? "Company Profile Snapshot" : "Starter Company Profile"}
-                      </div>
-                      <div className="mt-1 text-sm font-medium text-content">
-                        {proofPacket.companyNamingPack.recommendedName}
-                      </div>
-                    </div>
-                    <VisibilityBadge value={proofPacket.visibility} />
-                  </div>
-                  <div className="mt-2 text-xs leading-relaxed text-content-muted">
-                    {proofPacket.companyNamingPack.starterProfile.oneLineDescription}
-                  </div>
-                  {isOwnCompanyPacket ? (
-                    <div className="mt-3 rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2 text-[11px] leading-relaxed text-content-muted">
-                      Using the current workspace identity for founder guidance. Alternate company names are hidden on own-company runs to avoid mixing real brand context with idea-generation suggestions.
-                    </div>
-                  ) : (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {proofPacket.companyNamingPack.suggestedNames.slice(0, 5).map((name) => (
-                        <span
-                          key={name}
-                          className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[11px] text-content-muted"
-                        >
-                          {name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : null}
-
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                  Pricing and Unlock Progress
-                </div>
-                <div className="mt-2 space-y-2">
-                  {proofPacket.progressionTiers.map((tier) => {
-                    const isCurrent = tier.id === proofPacket.progressionProfile.currentStage;
-                    return (
-                      <div
-                        key={tier.id}
-                        className={`rounded-lg border px-3 py-2 ${
-                          isCurrent
-                            ? "border-[#d97757]/30 bg-[#d97757]/[0.06]"
-                            : "border-white/[0.06] bg-black/20"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <div className="text-sm font-medium text-content">{tier.label}</div>
-                            <div className="mt-1 text-[11px] text-content-muted">{tier.priceLabel}</div>
-                          </div>
-                          <StrategicAngleStatusBadge value={isCurrent ? "strong" : "unknown"} />
-                        </div>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {tier.unlocks.slice(0, 3).map((unlock) => (
-                            <span
-                              key={unlock}
-                              className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[10px] text-content-muted"
-                            >
-                              {unlock}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Recommended Next Unlocks</div>
-                <div className="mt-2 space-y-2">
-                  {proofPacket.unlocks.map((unlock) => (
-                    <div key={unlock.id} className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm text-content">{unlock.title}</div>
-                        <StrategicAngleStatusBadge value={unlock.status === "ready" ? "strong" : unlock.status === "watch" ? "watch" : "unknown"} />
-                      </div>
-                      <div className="mt-1 text-[11px] text-content-muted">
-                        {unlock.requiredSignals.join(" · ")}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Qualification Gaps and Materials</div>
-                <div className="mt-2 space-y-2 text-xs leading-relaxed text-content-muted">
-                  {proofPacket.materialsChecklist.slice(0, 5).map((item) => (
-                    <div key={item.id} className="flex items-start justify-between gap-3 rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-                      <div>
-                        <div className="text-sm text-content">{item.label}</div>
-                        <div className="mt-1 text-[11px] text-content-muted">{item.whyItMatters}</div>
-                      </div>
-                      <StrategicAngleStatusBadge value={item.status === "ready" ? "strong" : item.status === "watch" ? "watch" : "unknown"} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                    Operating Model and Packet Router
-                  </div>
-                  <VisibilityBadge value={proofPacket.operatingModel.packetRouter.visibility} />
-                </div>
-                <div className="mt-2 text-sm font-medium text-content">
-                  {proofPacket.operatingModel.packetRouter.packetType}
-                </div>
-                <div className="mt-1 text-[11px] leading-relaxed text-content-muted">
-                  {proofPacket.operatingModel.packetRouter.rationale}
-                </div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  <div className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-                    <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                      Company Mode
-                    </div>
-                    <div className="mt-1 text-sm text-content">
-                      {proofPacket.operatingModel.packetRouter.companyMode.replaceAll("_", " ")}
-                    </div>
-                    <div className="mt-1 text-[11px] text-content-muted">
-                      Action {proofPacket.operatingModel.packetRouter.shouldDelegate ? "delegate" : proofPacket.operatingModel.packetRouter.shouldExport ? "export" : proofPacket.operatingModel.packetRouter.shouldMonitor ? "monitor" : "investigate"}
-                    </div>
-                  </div>
-                  <div className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-                    <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                      Role Default
-                    </div>
-                    <div className="mt-1 text-sm text-content">
-                      {proofPacket.operatingModel.roleDefault?.defaultPacketType ?? proofPacket.operatingModel.packetRouter.packetType}
-                    </div>
-                    <div className="mt-1 text-[11px] text-content-muted">
-                      Artifact {proofPacket.operatingModel.roleDefault?.defaultArtifactType ?? proofPacket.operatingModel.packetRouter.artifactType}
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-3">
-                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                    Canonical Execution Order
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {proofPacket.operatingModel.executionOrder.map((step) => (
-                      <span
-                        key={step.id}
-                        className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[10px] text-content-muted"
-                      >
-                        {step.label}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">2-week / 3-month Plan</div>
-                <div className="mt-2 space-y-2">
-                  {proofPacket.scorecards.map((scorecard) => (
-                    <div key={scorecard.id} className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm text-content">{scorecard.label}</div>
-                        <StrategicAngleStatusBadge value={scorecard.status === "on_track" ? "strong" : scorecard.status === "watch" ? "watch" : "unknown"} />
-                      </div>
-                      <div className="mt-1 text-[11px] text-content-muted">{scorecard.summary}</div>
-                      <div className="mt-2 space-y-1 text-[11px] text-content-muted">
-                        {scorecard.mustHappen.map((item) => (
-                          <div key={item}>• {item}</div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                  Vertical Diligence Pack
-                </div>
-                <div className="mt-1 text-sm font-medium text-content">{proofPacket.diligencePack.label}</div>
-                <div className="mt-1 text-[11px] leading-relaxed text-content-muted">
-                  {proofPacket.diligencePack.summary}
-                </div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  <div className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-                    <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                      External Evaluators
-                    </div>
-                    <div className="mt-2 space-y-1 text-[11px] text-content-muted">
-                      {proofPacket.diligencePack.externalEvaluators.slice(0, 3).map((item) => (
-                        <div key={item}>• {item}</div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-                    <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                      Ready Means
-                    </div>
-                    <div className="mt-2 text-[11px] leading-relaxed text-content-muted">
-                      {proofPacket.diligencePack.readyDefinition}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                  Workflow Compare
-                </div>
-                <div className="mt-2 text-sm font-medium text-content">
-                  {proofPacket.workflowComparison.objective}
-                </div>
-                <div className="mt-3 grid gap-3 md:grid-cols-2">
-                  <div className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-                    <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                      Current Path
-                    </div>
-                    <div className="mt-2 space-y-1 text-[11px] text-content-muted">
-                      {proofPacket.workflowComparison.currentPath.map((step) => (
-                        <div key={step}>• {step}</div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2">
-                    <div className="text-[10px] uppercase tracking-[0.14em] text-emerald-300">
-                      Optimized Path
-                    </div>
-                    <div className="mt-2 space-y-1 text-[11px] text-emerald-100/85">
-                      {proofPacket.workflowComparison.optimizedPath.map((step) => (
-                        <div key={step}>• {step}</div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-content-muted">
-                  <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1">
-                    Time saved {proofPacket.workflowComparison.estimatedSavings.timePercent}%
-                  </span>
-                  <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1">
-                    Cost saved {proofPacket.workflowComparison.estimatedSavings.costPercent}%
-                  </span>
-                  <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-emerald-300">
-                    Verdict {proofPacket.workflowComparison.verdict}
-                  </span>
-                </div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {proofPacket.operatingModel.queueTopology.map((queue) => (
-                    <div key={queue.id} className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-                      <div className="text-sm text-content">{queue.label}</div>
-                      <div className="mt-1 text-[11px] text-content-muted">{queue.purpose}</div>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {queue.outputs.slice(0, 3).map((job) => (
-                          <span
-                            key={job}
-                            className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 text-[10px] text-content-muted"
-                          >
-                            {job}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                  Benchmark Proof and Distribution
-                </div>
-                <div className="mt-3 space-y-2">
-                  {proofPacket.benchmarkEvidence.slice(0, 2).map((benchmark) => (
-                    <div key={benchmark.benchmarkId} className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm text-content">{benchmark.lane}</div>
-                        <span className="text-[11px] text-content-muted">
-                          reuse {benchmark.reuseScore}
-                        </span>
-                      </div>
-                      <div className="mt-1 text-[11px] leading-relaxed text-content-muted">
-                        {benchmark.summary}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {proofPacket.companyReadinessPacket.distributionSurfaceStatus.slice(0, 4).map((surface) => (
-                    <div key={surface.surfaceId} className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm text-content">{surface.label}</div>
-                        <StrategicAngleStatusBadge
-                          value={surface.status === "ready" ? "strong" : surface.status === "partial" ? "watch" : "unknown"}
-                        />
-                      </div>
-                      <div className="mt-1 text-[11px] text-content-muted">{surface.whyItMatters}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                      Sharing Sensitivity
-                    </div>
-                    <VisibilityBadge value={proofPacket.companyReadinessPacket.sensitivity} />
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {proofPacket.companyReadinessPacket.allowedDestinations.map((destination) => (
-                      <span
-                        key={destination}
-                        className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[10px] text-content-muted"
-                      >
-                        {destination}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  <div className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-                    <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                      Source Trust Policy
-                    </div>
-                    <div className="mt-2 space-y-1 text-[11px] text-content-muted">
-                      {proofPacket.operatingModel.sourcePolicies.slice(0, 4).map((policy) => (
-                        <div key={policy.sourceType}>
-                          • {policy.sourceType.replaceAll("_", " ")}: {policy.exportPolicy.replaceAll("_", " ")}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-                    <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                      Benchmark Oracles
-                    </div>
-                    <div className="mt-2 space-y-1 text-[11px] text-content-muted">
-                      {proofPacket.operatingModel.benchmarkOracles.slice(0, 2).map((oracle) => (
-                        <div key={oracle.lane}>
-                          • {oracle.lane.replaceAll("_", " ")}: {oracle.deterministicChecks[0]}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Section>
-      ) : null}
-
-      <Section id="sources" icon={Waypoints} title="Source Map">
-        <div className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="space-y-2">
-            {proofPacket.sourceRefs.map((source) => {
-              const isPinned = selectedSourceId === source.id;
-              const isHighlighted = activeSourceIds.has(source.id);
-              return (
-                <button
-                  key={source.id}
-                  type="button"
-                  onMouseEnter={() => setHoveredSourceId(source.id)}
-                  onMouseLeave={() =>
-                    setHoveredSourceId((current) => (current === source.id ? null : current))
-                  }
-                  onFocus={() => setHoveredSourceId(source.id)}
-                  onBlur={() =>
-                    setHoveredSourceId((current) => (current === source.id ? null : current))
-                  }
-                  onClick={() =>
-                    setSelectedSourceId((current) => (current === source.id ? null : source.id))
-                  }
-                  aria-pressed={isPinned}
-                  aria-label={`Source: ${source.title ?? source.label}${isPinned ? " (pinned)" : ""}`}
-                  className={`w-full rounded-xl border px-3 py-3 text-left transition-colors ${
-                    isPinned
-                      ? "border-[#d97757]/30 bg-[#d97757]/[0.06]"
-                      : isHighlighted
-                        ? "border-emerald-500/20 bg-emerald-500/[0.05]"
-                        : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12]"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <div className="truncate text-sm font-medium text-content">
-                          {source.title ?? source.label}
-                        </div>
-                        <SourceStatusBadge value={source.status ?? "explored"} />
-                      </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-content-muted">
-                        <span>{source.domain}</span>
-                        {source.publishedAt ? <span>{source.publishedAt}</span> : null}
-                        <span>{source.confidence ?? proofPacket.confidence}% confidence</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {source.href ? (
-                        <a
-                          href={source.href}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(event) => event.stopPropagation()}
-                          className="rounded-lg border border-white/[0.06] bg-white/[0.04] p-1.5 text-content-muted transition-colors hover:text-content"
-                          aria-label={`Open ${source.title ?? source.label}`}
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </a>
-                      ) : null}
-                      <span
-                        className={`rounded-lg border p-1.5 ${
-                          isPinned
-                            ? "border-[#d97757]/30 bg-[#d97757]/10 text-[#f2b49f]"
-                            : "border-white/[0.06] bg-white/[0.04] text-content-muted"
-                        }`}
-                        aria-hidden="true"
-                      >
-                        <Pin className="h-3.5 w-3.5" />
-                      </span>
-                    </div>
-                  </div>
-                  <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-content-muted">
-                    {source.excerpt}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-            <div className="text-[10px] uppercase tracking-[0.18em] text-content-muted">
-              Source Preview
-            </div>
-            {activeSource ? (
-              <div className="mt-3 space-y-3">
-                <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.03]">
-                  {activeSource.thumbnailUrl ? (
-                    <img
-                      src={activeSource.thumbnailUrl}
-                      alt={activeSource.title ?? activeSource.label}
-                      className="h-32 w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-32 items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(217,119,87,0.18),_transparent_55%),linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.01))] px-5 text-center text-xs text-content-muted">
-                      Thumbnail unavailable. Showing structured preview from retained source metadata.
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-content">
-                    {activeSource.title ?? activeSource.label}
-                  </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-content-muted">
-                    <span>{activeSource.domain}</span>
-                    <span>{activeSource.type ?? "doc"}</span>
-                    {activeSource.publishedAt ? <span>{activeSource.publishedAt}</span> : null}
-                  </div>
-                </div>
-                <p className="text-xs leading-relaxed text-content-muted">{activeSource.excerpt}</p>
-                <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
-                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                    Linked Answer Block
-                  </div>
-                  <div className="mt-2 text-sm text-content">
-                    {activeAnswerBlock?.title ?? "Executive Summary"}
-                  </div>
-                  <div className="mt-1 text-xs text-content-muted">
-                    {activeClaims.length
-                      ? `${activeClaims.length} supporting claims linked`
-                      : "No retained claims linked yet"}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-3 rounded-xl border border-dashed border-white/[0.08] px-4 py-5 text-xs leading-relaxed text-content-muted">
-                Hover or pin a cited source to inspect its preview, linked claims, and original location.
-              </div>
-            )}
-          </div>
-        </div>
-      </Section>
-
-      <Section id="graph" icon={Network} title="Connection Graph">
-        <div className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-            <div className="flex flex-wrap gap-2">
-              {proofPacket.graphSummary.primaryPath.map((step) => (
-                <span
-                  key={step}
-                  className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[11px] text-content-muted"
-                >
-                  {step}
-                </span>
-              ))}
-            </div>
-            <div className="mt-4 grid gap-2 sm:grid-cols-3">
-              <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
-                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Nodes</div>
-                <div className="mt-1 text-lg font-semibold text-content">
-                  {proofPacket.graphSummary.nodeCount}
-                </div>
-              </div>
-              <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
-                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Edges</div>
-                <div className="mt-1 text-lg font-semibold text-content">
-                  {proofPacket.graphSummary.edgeCount}
-                </div>
-              </div>
-              <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
-                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Clusters</div>
-                <div className="mt-1 text-lg font-semibold text-content">
-                  {proofPacket.graphSummary.clusterCount}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-            <div className="text-[10px] uppercase tracking-[0.18em] text-content-muted">
-              Hierarchical Trace Path
-            </div>
-            <div className="mt-3 space-y-2">
-              {[
-                `Query -> ${proofPacket.query}`,
-                `Lens -> ${lens}`,
-                `Persona -> ${proofPacket.graphNodes.find((node) => node.kind === "persona")?.label ?? "Unknown"}`,
-                `Answer block -> ${activeAnswerBlock?.title ?? proofPacket.answerBlocks[0]?.title ?? "Summary"}`,
-                `Source -> ${activeSource?.label ?? proofPacket.sourceRefs[0]?.label ?? "Awaiting source"}`,
-              ].map((step) => (
-                <div
-                  key={step}
-                  className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2 text-xs text-content-muted"
-                >
-                  {step}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </Section>
-
-      {/* ── 2. What Changed / Why Now ──────────────────────────────────────── */}
-      {proofPacket.changes && proofPacket.changes.length > 0 && (
-        <Section id="changes" icon={TrendingUp} title="What Changed / Why Now">
-          <div className="space-y-2.5">
-            {proofPacket.changes.map((c, i) => (
-              <div key={i} className="flex items-start gap-3 text-sm">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[#d97757]/10 text-[10px] font-bold text-[#d97757]">
-                  {i + 1}
-                </span>
-                <div className="min-w-0">
-                  <span className="text-content">{c.description}</span>
-                  {c.sourceIdx != null && (
-                    <CitationFootnote
-                      index={c.sourceIdx}
-                      source={proofPacket.sourceRefs[c.sourceIdx]}
-                    />
-                  )}
-                  {c.date && (
-                    <span className="ml-2 text-[10px] text-content-muted">{c.date}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {/* ── 3. Key Signals ─────────────────────────────────────────────────── */}
-      <Section id="signals" icon={BarChart3} title="Key Signals">
-        <div className="grid gap-2 sm:grid-cols-2">
-          {proofPacket.variables.map((v) => (
-            <SignalCard
-              key={v.rank}
-              signal={v}
-              evidence={(proofPacket as any).evidence}
-            />
-          ))}
-        </div>
-      </Section>
-
-      {/* ── 4. Risks / Contradictions ──────────────────────────────────────── */}
-      {proofPacket.risks && proofPacket.risks.length > 0 && (
-        <Section id="risks" icon={AlertTriangle} title="Risks / Contradictions">
-          <div className="space-y-3">
-            {proofPacket.risks.map((r, i) => (
-              <div key={i} className="rounded-lg border border-rose-500/10 bg-rose-500/[0.03] p-3">
-                <div className="text-sm font-medium text-content">
-                  {r.title}
-                  {r.sourceIdx != null && (
-                    <CitationFootnote
-                      index={r.sourceIdx}
-                      source={proofPacket.sourceRefs[r.sourceIdx]}
-                    />
-                  )}
-                </div>
-                <p className="mt-1 text-xs leading-relaxed text-content-muted">{r.description}</p>
-                {r.falsification && (
-                  <p className="mt-1.5 text-[10px] text-rose-400/80 italic">
-                    Falsify: {r.falsification}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {/* ── 5. Comparables ─────────────────────────────────────────────────── */}
-      {proofPacket.comparables && proofPacket.comparables.length > 0 && (
-        <Section id="comparables" icon={GitCompare} title="Comparables / Related Entities">
-          <div className="overflow-x-auto -mx-1">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-[10px] uppercase tracking-[0.15em] text-content-muted">
-                  <th className="px-2 py-1.5 text-left font-semibold">Entity</th>
-                  <th className="px-2 py-1.5 text-left font-semibold">Relevance</th>
-                  <th className="px-2 py-1.5 text-left font-semibold">Note</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.04]">
-                {proofPacket.comparables.map((c) => (
-                  <tr key={c.name} className="hover:bg-white/[0.02]">
-                    <td className="px-2 py-2 font-medium text-content">{c.name}</td>
-                    <td className="px-2 py-2"><ImpactTag impact={c.relevance} /></td>
-                    <td className="px-2 py-2 text-content-muted text-xs">{c.note}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Section>
-      )}
-
-      {/* ── 6. Recommended Next Questions ──────────────────────────────────── */}
-      {(followUpChain.visible.length > 0 || followUpChain.overflow.length > 0) && (
-        <Section id="next" icon={Waypoints} title="Guided Follow-Up Chain">
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3 text-xs leading-relaxed text-content-muted">
-            Start with the current packet action, then deepen the evidence only where the packet is still weak. Extra prompts stay hidden until you need them.
-          </div>
-          <div className="mt-3 space-y-2">
-            {followUpChain.visible.map((item, index) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onFollowUp?.(item.prompt)}
-                className={`group flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm text-content transition-all ${
-                  item.accent === "action"
-                    ? "border-[#d97757]/20 bg-[#d97757]/[0.05] hover:bg-[#d97757]/[0.08]"
-                    : "border-white/[0.04] bg-white/[0.01] hover:border-[#d97757]/20 hover:bg-[#d97757]/[0.03]"
-                }`}
-              >
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/[0.05] text-[10px] font-bold text-content-muted group-hover:bg-[#d97757]/10 group-hover:text-[#d97757]">
-                  {index + 1}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                    {item.label}
-                  </div>
-                  <div className="mt-1 leading-relaxed">{item.prompt}</div>
-                </div>
-                <ArrowRight className="h-3.5 w-3.5 text-content-muted opacity-0 transition-opacity group-hover:opacity-100" />
-              </button>
-            ))}
-          </div>
-          {followUpChain.overflow.length > 0 ? (
-            <div className="mt-3">
-              <button
-                type="button"
-                onClick={() => setShowAllFollowUps((value) => !value)}
-                className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content"
-              >
-                <HelpCircle className="h-3.5 w-3.5" />
-                {showAllFollowUps
-                  ? "Hide extra prompts"
-                  : `Show ${followUpChain.overflow.length} more prompts`}
-              </button>
-              {showAllFollowUps ? (
-                <div className="mt-3 space-y-2">
-                  {followUpChain.overflow.map((item, index) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => onFollowUp?.(item.prompt)}
-                      className="group flex w-full items-center gap-3 rounded-lg border border-white/[0.04] bg-white/[0.01] px-3 py-2.5 text-left text-sm text-content transition-all hover:border-[#d97757]/20 hover:bg-[#d97757]/[0.03]"
-                    >
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/[0.05] text-[10px] font-bold text-content-muted group-hover:bg-[#d97757]/10 group-hover:text-[#d97757]">
-                        {followUpChain.visible.length + index + 1}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">
-                          {item.label}
-                        </div>
-                        <div className="mt-1 leading-relaxed">{item.prompt}</div>
-                      </div>
-                      <ArrowRight className="h-3.5 w-3.5 text-content-muted opacity-0 transition-opacity group-hover:opacity-100" />
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-        </Section>
-      )}
-
-      {/* ── 7. Packet Actions ──────────────────────────────────────────────── */}
-      <Section id="actions" icon={Download} title="Export Packet" defaultOpen={false}>
-        <div className="flex flex-wrap gap-2">
-          {(
-            [
-              { type: "brief" as const, label: "Brief", icon: FileText },
-              { type: "sheet" as const, label: "Sheet", icon: BarChart3 },
-              { type: "deck" as const, label: "Deck", icon: Eye },
-              { type: "html" as const, label: "HTML", icon: Share2 },
-            ] as const
-          ).map(({ type, label, icon: BtnIcon }) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => onExport?.(type)}
-              className="inline-flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-sm font-medium text-content transition-all hover:border-[#d97757]/20 hover:bg-[#d97757]/[0.04] hover:text-[#d97757]"
-            >
-              <BtnIcon className="h-4 w-4" />
-              {label}
-            </button>
-          ))}
-          {proofPacket.shareableArtifacts.some((item) => item.type === "slack_onepage") ? (
-            <button
-              type="button"
-              onClick={handleCopySlackReport}
-              className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-300 transition hover:bg-emerald-500/20"
-            >
-              {copiedSlackReport ? <Check className="h-4 w-4" /> : <ClipboardCopy className="h-4 w-4" />}
-              {copiedSlackReport ? "Slack report copied" : "Report for Slack"}
-            </button>
-          ) : null}
-        </div>
-      </Section>
-
-      {/* ── 8. Keep Warm / Monitor ─────────────────────────────────────────── */}
-      {(onPublishSharedContext || onDelegate) && (
-        <Section
-          id="delegate"
-          icon={Share2}
-          title="Publish and Delegate"
-          defaultOpen={false}
-          openSignal={handoffSignal}
-        >
-          <div className="flex flex-wrap gap-2">
-            {onPublishSharedContext ? (
-              <button
-                type="button"
-                onClick={onPublishSharedContext}
-                disabled={handoffBusy}
-                className="inline-flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-sm font-medium text-content transition-all hover:border-[#d97757]/20 hover:bg-[#d97757]/[0.04] hover:text-[#d97757] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <Share2 className="h-4 w-4" />
-                Publish to Shared Context
-              </button>
-            ) : null}
-            {onDelegate ? (
-              <button
-                type="button"
-                onClick={() => onDelegate("claude_code")}
-                disabled={handoffBusy}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#d97757] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c96a4d] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <ArrowRight className="h-4 w-4" />
-                Delegate to Claude Code
-              </button>
-            ) : null}
-            {onDelegate ? (
-              <button
-                type="button"
-                onClick={() => onDelegate("openclaw")}
-                disabled={handoffBusy}
-                className="inline-flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-sm font-medium text-content transition-all hover:border-[#d97757]/20 hover:bg-[#d97757]/[0.04] hover:text-[#d97757] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <ArrowRight className="h-4 w-4" />
-                Delegate to OpenClaw
-              </button>
-            ) : null}
-          </div>
-          <p className="mt-3 text-xs leading-relaxed text-content-muted">
-            Publish this result as a versioned shared-context packet, then hand the same packet to a coding agent so the company truth does not have to be restated across separate threads.
-          </p>
-          {handoffState?.status && handoffState.status !== "idle" ? (
-            <div
-              className={`mt-3 rounded-xl border px-3 py-3 text-sm ${handoffTone}`}
-            >
-              <div className="font-medium">{handoffState.message}</div>
-              {(handoffState.contextId || handoffState.taskId) ? (
-                <div className="mt-1 text-xs opacity-90">
-                  {handoffState.contextId ? `Context ${handoffState.contextId}` : ""}
-                  {handoffState.contextId && handoffState.taskId ? " · " : ""}
-                  {handoffState.taskId ? `Task ${handoffState.taskId}` : ""}
-                </div>
-              ) : null}
-              {handoffState.installCommand ? (
-                <div className="mt-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 font-mono text-[11px] text-content-secondary">
-                  {handoffState.installCommand}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-          {handoffState?.handoffPrompt ? (
-            <div className="mt-3 rounded-xl border border-white/[0.06] bg-black/20 p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">
-                  Agent Handoff Prompt
-                </div>
-                <button
-                  type="button"
-                  onClick={() => void handleCopyPrompt()}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-medium text-content-muted transition-colors hover:bg-white/[0.08] hover:text-content"
-                >
-                  {copiedPrompt ? (
-                    <>
-                      <Check className="h-3 w-3 text-emerald-400" />
-                      <span className="text-emerald-400">Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <ClipboardCopy className="h-3 w-3" />
-                      Copy prompt
-                    </>
-                  )}
-                </button>
-              </div>
-              <pre className="mt-3 whitespace-pre-wrap text-xs leading-relaxed text-content-secondary">
-                {handoffState.handoffPrompt}
-              </pre>
-            </div>
-          ) : null}
-        </Section>
-      )}
-
-      <Section id="monitor" icon={Bell} title="Keep Warm / Monitor" defaultOpen={false}>
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={onMonitor}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#d97757] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#c96a4d]"
-          >
-            <Bell className="h-4 w-4" />
-            Add to Watchlist
-          </button>
-          <p className="text-xs text-content-muted">
-            Get notified when material changes occur. Daily or weekly digest available.
-          </p>
-        </div>
-      </Section>
-
-      {/* ── 9. Agent Trajectory ─────────────────────────────────────────────── */}
-      <TrajectoryPanel data={trajectoryData} defaultCollapsed={true} />
     </div>
   );
 });
+
+export default ResultWorkspace;

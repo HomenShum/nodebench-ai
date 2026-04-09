@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { EventEmitter } from "node:events";
 
-import { genId, getDb } from "../db.js";
+import { genId, getDb, withObjectNodesFtsRepair } from "../db.js";
 import type {
   DurableObjectKind,
   SharedContextMessageClass,
@@ -421,26 +421,28 @@ export function upsertDurableObject(input: DurableObjectInput): { objectId: stri
   const objectId = input.id ?? genId(String(input.kind));
   const metadataJson = json(input.metadata);
 
-  db.prepare(`
-    INSERT INTO object_nodes (id, kind, label, source, status, metadata_json, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      kind = excluded.kind,
-      label = excluded.label,
-      source = excluded.source,
-      status = excluded.status,
-      metadata_json = excluded.metadata_json,
-      updated_at = excluded.updated_at
-  `).run(
-    objectId,
-    input.kind,
-    input.label,
-    input.source ?? "local",
-    input.status ?? "active",
-    metadataJson,
-    now,
-    now,
-  );
+  withObjectNodesFtsRepair(() => {
+    db.prepare(`
+      INSERT INTO object_nodes (id, kind, label, source, status, metadata_json, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        kind = excluded.kind,
+        label = excluded.label,
+        source = excluded.source,
+        status = excluded.status,
+        metadata_json = excluded.metadata_json,
+        updated_at = excluded.updated_at
+    `).run(
+      objectId,
+      input.kind,
+      input.label,
+      input.source ?? "local",
+      input.status ?? "active",
+      metadataJson,
+      now,
+      now,
+    );
+  });
 
   const queuedSyncId = input.queueForSync === false
     ? undefined

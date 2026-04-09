@@ -132,6 +132,15 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api\/sync-bridge/, "/api/sync-bridge"),
         },
+        "/api/hyperloop": {
+          target: "http://localhost:3100",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/hyperloop/, "/api/hyperloop"),
+        },
+        "/api/pipeline": {
+          target: "http://localhost:3100",
+          changeOrigin: true,
+        },
         "/voice": {
           target: "http://localhost:3100",
           changeOrigin: true,

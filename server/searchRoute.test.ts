@@ -559,6 +559,111 @@ describe("createSearchRouter", () => {
     expect(payload.result?.operatingModel?.packetRouter?.companyMode).toBe("own_company");
   });
 
+  it("routes lowercase bare company queries into company search instead of founder progression", async () => {
+    const response = await fetch(`${baseUrl}/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: "tests assured",
+        lens: "founder",
+      }),
+    });
+
+    const payload = await response.json() as any;
+
+    expect(response.status).toBe(200);
+    expect(payload.classification).toBe("company_search");
+    expect(payload.result?.packetType).toBe("company_search_packet");
+    expect(payload.result?.canonicalEntity?.name).toBe("Tests Assured");
+  });
+
+  it("filters low-signal names and generic filler before serializing founder packets", async () => {
+    const noisyFounderGatherTool: McpTool = {
+      name: "founder_local_gather",
+      description: "Returns intentionally noisy founder context for packet filtering tests.",
+      inputSchema: {},
+      handler: async () => ({
+        identity: {
+          projectName: "NodeBench",
+          packageName: "NodeBench",
+        },
+        publicSurfaces: {
+          indexHtmlSiteName: "NodeBench",
+        },
+        company: {
+          name: "NodeBench",
+          canonicalMission: "Imad Abdelgawad Sujesh Pulikkal. No personnel data found for Tests Assured.",
+          identityConfidence: 61,
+        },
+        summary: "There is no specific information available about NodeBench facing lawsuits in 2026.",
+        recentActions: [
+          { description: "NodeBench shipped a reusable founder packet with inline citations", date: "2026-04-01" },
+          { description: "S.", date: "2026-04-02" },
+        ],
+        signals: [
+          { name: "Imad Abdelgawad", direction: "up", impact: "medium" },
+          { name: "Sujesh Pulikkal", direction: "up", impact: "medium" },
+          { name: "NodeBench shipped reusable founder packets with inline citations", direction: "up", impact: "high" },
+        ],
+        contradictions: [
+          { claim: "There is no specific information available about NodeBench facing lawsuits in 2026.", evidence: "Generic filler." },
+          { claim: "NodeBench still lacks a durable proof story for external sharing", evidence: "The packet is stronger than before, but external proof is still thin." },
+        ],
+        nextActions: [
+          { action: "Ship the founder packet." },
+        ],
+      }),
+    };
+
+    const app = express();
+    app.use(express.json());
+    app.use(createSearchRouter([noisyFounderGatherTool]));
+
+    const localServer = await new Promise<ReturnType<express.Express["listen"]>>((resolve) => {
+      const instance = app.listen(0, "127.0.0.1", () => resolve(instance));
+    });
+
+    const address = localServer.address();
+    if (!address || typeof address === "string") {
+      throw new Error("Failed to bind noisy founder test server");
+    }
+
+    const localBaseUrl = `http://127.0.0.1:${address.port}`;
+
+    try {
+      const response = await fetch(`${localBaseUrl}/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: "Given everything about my company, what should I do next?",
+          lens: "founder",
+        }),
+      });
+
+      const payload = await response.json() as any;
+
+      expect(response.status).toBe(200);
+      expect(payload.resultPacket?.answer).not.toMatch(/There is no specific information available/i);
+      expect(payload.resultPacket?.answer).not.toMatch(/Imad Abdelgawad|Sujesh Pulikkal/i);
+      expect(payload.resultPacket?.variables?.some((item: any) => /Imad Abdelgawad|Sujesh Pulikkal/.test(item.name))).toBe(false);
+      expect(payload.resultPacket?.changes?.some((item: any) => /^S\.$/.test(item.description))).toBe(false);
+      expect((payload.resultPacket?.changes ?? []).length).toBeLessThanOrEqual(1);
+      expect(payload.resultPacket?.risks?.some((item: any) => /There is no specific information available/i.test(item.title))).toBe(false);
+      expect(payload.resultPacket?.claimRefs?.some((item: any) => /Imad Abdelgawad|Sujesh Pulikkal/.test(item.text))).toBe(false);
+    } finally {
+      await new Promise<void>((resolve, reject) => {
+        localServer.close((error) => {
+          if (error) reject(error);
+          else resolve();
+        });
+      });
+    }
+  });
+
   it("builds a deeper competitor packet without synthetic decision-noise risks", async () => {
     const response = await fetch(`${baseUrl}/`, {
       method: "POST",
@@ -703,22 +808,22 @@ describe("createSearchRouter", () => {
                     hiddenRequirements: ["Durable retention", "Compute discipline"],
                   },
                   signals: [
-                    { name: "Anthropic raises $30 billion in Series G funding at $380 billion post-money valuation", direction: "up", impact: "high" },
-                    { name: "Anthropic's Revenue Nearly Doubled in Two Months. Now It's Targeting a $60 Billion IPO.", direction: "up", impact: "high" },
+                    { name: "Anthropic raises $30 billion in Series G funding at $380 billion post-money valuation", direction: "up", impact: "high", score: 91, sourceLabel: "Anthropic vs. OpenAI: Why Claude is Winning the 2026 Enterprise Growth Race", sourceHref: "https://example.com/race", evidenceQuote: "Anthropic raised $30 billion in Series G funding at a $380 billion post-money valuation." },
+                    { name: "Anthropic's Revenue Nearly Doubled in Two Months. Now It's Targeting a $60 Billion IPO.", direction: "up", impact: "high", score: 12, sourceLabel: "Anthropic vs. OpenAI: Why Claude is Winning the 2026 Enterprise Growth Race", sourceHref: "https://example.com/race", evidenceQuote: "Anthropic's Revenue Nearly Doubled in Two Months." },
                   ],
                   changes: [
-                    { description: "Anthropic raises $30 billion in Series G funding at $380 billion post-money valuation" },
-                    { description: "Anthropic's $380 Billion Valuation Marks A Turning Point For Enterprise AI" },
+                    { description: "Anthropic raises $30 billion in Series G funding at $380 billion post-money valuation", score: 90, sourceLabel: "Anthropic vs. OpenAI: Why Claude is Winning the 2026 Enterprise Growth Race", sourceHref: "https://example.com/race", evidenceQuote: "Anthropic raised $30 billion in Series G funding." },
+                    { description: "Anthropic's $380 Billion Valuation Marks A Turning Point For Enterprise AI", score: 20, sourceLabel: "Anthropic vs. OpenAI: Why Claude is Winning the 2026 Enterprise Growth Race", sourceHref: "https://example.com/race", evidenceQuote: "Anthropic's $380 Billion Valuation Marks A Turning Point." },
                   ],
                   risks: [
-                    { title: "AI Regulation In 2026: What Businesses Need To Know About Risks And Realities", description: "Enterprises in 2026 face data leakage, hallucinations, and regulatory non-compliance." },
-                    { title: "Execution risk", description: "Platform bundling remains a real pricing pressure in large enterprise accounts." },
+                    { title: "AI Regulation In 2026: What Businesses Need To Know About Risks And Realities", description: "Enterprises in 2026 face data leakage, hallucinations, and regulatory non-compliance.", score: 18, sourceLabel: "Anthropic vs. OpenAI: Why Claude is Winning the 2026 Enterprise Growth Race", sourceHref: "https://example.com/race", evidenceQuote: "Businesses need to know about risks and realities." },
+                    { title: "Execution risk", description: "Platform bundling remains a real pricing pressure in large enterprise accounts.", score: 82, sourceLabel: "Anthropic vs. OpenAI: Why Claude is Winning the 2026 Enterprise Growth Race", sourceHref: "https://example.com/race", evidenceQuote: "Platform bundling remains a real pricing pressure in large enterprise accounts." },
                   ],
                   comparables: [
-                    { name: "Google", relevance: "high", note: "Cloud and distribution overlap." },
-                    { name: "Pentagon", relevance: "medium", note: "Noise from a defense article." },
-                    { name: "RPA", relevance: "medium", note: "A category, not a company." },
-                    { name: "Nvidia GPUs. These", relevance: "medium", note: "Hardware mention, not a company." },
+                    { name: "Google", relevance: "high", note: "Cloud and distribution overlap.", score: 88, sourceLabel: "Anthropic vs. OpenAI: Why Claude is Winning the 2026 Enterprise Growth Race", sourceHref: "https://example.com/race", evidenceQuote: "Enterprise buyers compare Anthropic versus OpenAI and Google." },
+                    { name: "Pentagon", relevance: "medium", note: "Noise from a defense article.", score: 12, sourceLabel: "Anthropic vs. OpenAI: Why Claude is Winning the 2026 Enterprise Growth Race", sourceHref: "https://example.com/race", evidenceQuote: "Noise from a defense article." },
+                    { name: "RPA", relevance: "medium", note: "A category, not a company.", score: 10, sourceLabel: "Anthropic vs. OpenAI: Why Claude is Winning the 2026 Enterprise Growth Race", sourceHref: "https://example.com/race", evidenceQuote: "A category, not a company." },
+                    { name: "Nvidia GPUs. These", relevance: "medium", note: "Hardware mention, not a company.", score: 9, sourceLabel: "Anthropic vs. OpenAI: Why Claude is Winning the 2026 Enterprise Growth Race", sourceHref: "https://example.com/race", evidenceQuote: "Hardware mention, not a company." },
                   ],
                   nextActions: [
                     { action: "Benchmark Anthropic against Google on pricing and enterprise traction.", impact: "high" },
@@ -802,6 +907,8 @@ describe("createSearchRouter", () => {
       expect(result.risks.some((item) => /pricing|execution|distribution/i.test(item.title))).toBe(true);
       expect(result.answer).not.toMatch(/arms race|worth buying|turns the tables|targeting a \$60 billion ipo/i);
       expect(result.keyMetrics.some((item) => item.label === "growth")).toBe(false);
+      expect(result.risks.some((item) => Boolean(item.evidenceQuote))).toBe(true);
+      expect(result.comparables.find((item) => item.name === "Google")?.sourceHref).toBeTruthy();
     } finally {
       vi.stubGlobal("fetch", originalFetch);
       process.env.OPENAI_API_KEY = originalOpenAiKey;

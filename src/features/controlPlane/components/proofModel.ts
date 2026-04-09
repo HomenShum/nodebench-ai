@@ -320,6 +320,11 @@ function normalizeInputPacket(packet: ResultPacket): ResultPacket {
           impact: action.impact ?? "medium",
         }))
         .filter((action) => action.action.trim().length > 0);
+  const comparables = asArray(packet.comparables).filter((comparable: any) => {
+    const name = typeof comparable?.name === "string" ? comparable.name.trim() : "";
+    const note = typeof comparable?.note === "string" ? comparable.note.trim() : "";
+    return name.length > 0 || note.length > 0;
+  });
 
   return {
     ...packet,
@@ -332,7 +337,7 @@ function normalizeInputPacket(packet: ResultPacket): ResultPacket {
       falsification: risk.falsification,
       sourceIdx: risk.sourceIdx,
     })),
-    comparables: asArray(packet.comparables),
+    comparables,
     scenarios: asArray(packet.scenarios),
     interventions,
     nextQuestions: asArray(packet.nextQuestions),

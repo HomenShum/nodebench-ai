@@ -14,13 +14,14 @@
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRevealOnMount } from "@/hooks/useRevealOnMount";
 import { useConvexSearch } from "@/hooks/useConvexSearch";
-import { PUBLIC_SEARCH_API_ENDPOINT, PUBLIC_SEARCH_UPLOAD_API_ENDPOINT } from "@/lib/searchApi";
+import { PUBLIC_SEARCH_API_ENDPOINT, PUBLIC_SEARCH_UPLOAD_API_ENDPOINT, PUBLIC_PIPELINE_API_ENDPOINT } from "@/lib/searchApi";
 import {
   getFounderEpisodeFinalizeUrl,
   getFounderEpisodeStartUrl,
   getFounderEpisodesUrl,
   getSharedContextDelegateUrl,
   getSharedContextPublishUrl,
+  getSubconsciousWhisperUrl,
 } from "@/lib/syncBridgeApi";
 import { LiveAgentProgress } from "../components/LiveAgentProgress";
 import {
@@ -178,48 +179,42 @@ const FOUNDER_QUICK_ACTIONS: Array<{
   kind?: "prompt" | "connect";
 }> = [
   {
-    id: "connect_mcp",
-    label: "Connect NodeBench-MCP",
-    description: "Index docs, codebase, and agent context for a live founder dashboard.",
-    kind: "connect",
+    id: "startup_idea",
+    label: "What am I actually building?",
+    description: "Paste your rough idea. Get company truth, hidden requirements, and next 3 moves.",
+    prompt: "Analyze my startup idea and tell me what company I am actually building, what is weak, and what to do next.",
+    lens: "founder",
+    kind: "prompt",
+  },
+  {
+    id: "since_last_session",
+    label: "What changed since last time?",
+    description: "See contradictions, stale packets, and what matters now.",
+    prompt: "What changed since the last meaningful founder session, and what should I update before delegating work?",
+    lens: "founder",
+    kind: "prompt",
+  },
+  {
+    id: "competitors",
+    label: "How do I compare?",
+    description: "Side-by-side competitor brief with cited evidence.",
+    prompt: "Compare the main competitors in this market and tell me where the wedge is strongest.",
+    lens: "investor",
+    kind: "prompt",
   },
   {
     id: "weekly_reset",
-    label: "Weekly Reset",
-    description: "Refresh your operating context, surface contradictions, and produce a fresh packet.",
+    label: "Refresh my operating context",
+    description: "Surface what drifted, produce a fresh packet.",
     prompt: "Run my weekly reset — review what changed, surface contradictions, and produce a fresh operating packet.",
     lens: "founder",
     kind: "prompt",
   },
   {
     id: "hand_off_agent",
-    label: "Hand off to an agent",
-    description: "Package context, evidence, and guardrails for an agent delegation.",
+    label: "Package this for an agent",
+    description: "Context + evidence + guardrails, ready to delegate.",
     prompt: "Help me prepare a delegation packet for an agent handoff with context, evidence, and guardrails.",
-    lens: "founder",
-    kind: "prompt",
-  },
-  {
-    id: "startup_idea",
-    label: "Analyze my startup idea",
-    description: "Turn a rough startup description into company truth, hidden requirements, and next moves.",
-    prompt: "Analyze my startup idea and tell me what company I am actually building, what is weak, and what to do next.",
-    lens: "founder",
-    kind: "prompt",
-  },
-  {
-    id: "competitors",
-    label: "Search competitors",
-    description: "Compare a company, market, or competitor set from a founder, investor, or banker lens.",
-    prompt: "Compare the main competitors in this market and tell me where the wedge is strongest.",
-    lens: "investor",
-    kind: "prompt",
-  },
-  {
-    id: "since_last_session",
-    label: "What changed this week?",
-    description: "Review important changes, contradictions, and what now matters relative to the last session.",
-    prompt: "What changed since the last meaningful founder session, and what should I update before delegating work?",
     lens: "founder",
     kind: "prompt",
   },
@@ -787,7 +782,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
     const contextId = activeEpisode?.contextId ?? handoffState.contextId;
 
     setIsSubconsciousLoading(true);
-    fetch("/api/subconscious/whisper", {
+    fetch(getSubconsciousWhisperUrl(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1251,6 +1246,33 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
     }
 
     (async () => {
+      // Try Pipeline v2 first (Linkup → Gemini 3.1 → taxonomy), fall back to legacy stream
+      try {
+        const v2Resp = await fetch(PUBLIC_PIPELINE_API_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: trimmed, lens: activeLens }),
+          signal: buildSearchAbortSignal(controller, 45_000),
+        });
+        if (v2Resp.ok) {
+          const v2Data = await v2Resp.json();
+          if (v2Data.success && (v2Data.variables?.length > 0 || v2Data.answer)) {
+            if (activeSearchRef.current?.requestId !== entryId) return;
+            if (v2Data.trace) {
+              activeSearchRef.current.traceEntries = (v2Data.trace ?? []).map((t: any, i: number) => ({
+                ...t, traceId: `${t.step}:${i}`, isRunning: false,
+              }));
+              setActiveTrace({ trace: activeSearchRef.current.traceEntries, latencyMs: v2Data.latencyMs ?? 0, classification: v2Data.classification ?? "unknown" });
+            }
+            clearActiveSearch(entryId);
+            showResult(v2Data, activeLens, entryId);
+            setIsSearching(false);
+            trackEvent("search_pipeline_v2", { query: trimmed.slice(0, 80), lens: activeLens, signals: v2Data.variables?.length ?? 0 });
+            return;
+          }
+        }
+      } catch { /* Pipeline v2 failed — fall through to legacy */ }
+
       try {
         const response = await fetch(`${PUBLIC_SEARCH_API_ENDPOINT}?stream=true`, {
           method: "POST",
@@ -1998,13 +2020,13 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             style={stagger("0s")}
             className="text-2xl font-semibold tracking-tight text-content sm:text-3xl lg:text-4xl text-balance"
           >
-            What do you want <span className="text-[#d97757]">NodeBench to help with?</span>
+            Know what you're <span className="text-[#d97757]">building</span>, what's <span className="text-[#d97757]">missing</span>,{"\n"}and what to <span className="text-[#d97757]">do next</span>.
           </h1>
           <p
             style={stagger("0.08s")}
             className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-content-secondary"
           >
-            Search a company, describe your startup, upload files, or ask what to do next. Connect context when you want NodeBench to turn it into company truth, contradictions, and a delegation-ready packet.
+            Describe your startup or name a company. NodeBench finds the truth, surfaces what outsiders will care about, and gives you a ready-to-send packet.
           </p>
         </div>}
 
@@ -2139,7 +2161,30 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           })}
         </div>
 
-        {/* ── Example prompts ──────────────────────────────────────────────── */}
+        {/* ── Visible aha: show what you get before you search ──────────── */}
+        {conversation.length === 0 && (
+          <div style={stagger("0.16s")} className="mx-auto mt-5 hidden max-w-2xl sm:block">
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-content-muted">Example: "Anthropic AI"</div>
+              <div className="mt-2 text-[13px] leading-relaxed text-content">
+                Anthropic holds a strong #2 position with differentiated safety research creating a defensible moat.
+                <span className="ml-1 rounded bg-accent-primary/15 px-1 py-0.5 text-[10px] font-medium text-accent-primary">S1</span>
+                <span className="ml-0.5 rounded bg-accent-primary/15 px-1 py-0.5 text-[10px] font-medium text-accent-primary">S4</span>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="rounded-md bg-emerald-500/10 px-2 py-1 text-[10px] font-medium text-emerald-400">95% confidence</span>
+                <span className="rounded-md bg-white/[0.04] px-2 py-1 text-[10px] text-content-muted">20 sources</span>
+                <span className="rounded-md bg-white/[0.04] px-2 py-1 text-[10px] text-content-muted">3 signals</span>
+                <span className="rounded-md bg-rose-500/10 px-2 py-1 text-[10px] font-medium text-rose-400">2 contradictions</span>
+              </div>
+              <div className="mt-2 flex gap-3 text-[10px] text-content-muted">
+                <span>Missing: install plan, benchmark memo, Slack one-pager</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Quick actions ──────────────────────────────────────────────── */}
         {conversation.length === 0 && (
           <div style={stagger("0.18s")} className="mt-4 space-y-4 sm:mt-6">
             {/* Mobile: compact founder actions */}
@@ -2280,7 +2325,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             CHAT THREAD — Conversational results
             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
         {activeResult && conversation.length > 0 && showFullWorkspace && (
-          <div className="mt-6 space-y-3" data-testid="landing-result-workspace">
+          <div ref={resultRef} className="mt-6 space-y-3" data-testid="landing-result-workspace">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
@@ -2316,7 +2361,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         )}
 
         {activeResult && conversation.length > 0 && !showFullWorkspace && (
-          <div className="mt-6 space-y-3" data-testid="landing-result-workspace-collapsed">
+          <div ref={resultRef} className="mt-6 space-y-3" data-testid="landing-result-workspace-collapsed">
             <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -2379,29 +2424,31 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           </div>
         )}
 
-        <div>
-          <ChatThread
-            entries={conversation}
-            onFollowUp={(query) => {
-              setInput(query);
-              handleSubmit(query);
-            }}
-            onNewConversation={() => {
-              abortActiveSearch();
-              convexSearch.reset();
-              convexResultHandledRef.current = null;
-              setConversation([]);
-              setActiveResult(null);
-              setActiveTrace(null);
-              setActiveEpisode(null);
-              setIsSearching(false);
-              setSubmittedQuery("");
-              setInput("");
-              setShowFullWorkspace(false);
-              textareaRef.current?.focus();
-            }}
-          />
-        </div>
+        {!showFullWorkspace && (
+          <div>
+            <ChatThread
+              entries={conversation}
+              onFollowUp={(query) => {
+                setInput(query);
+                handleSubmit(query);
+              }}
+              onNewConversation={() => {
+                abortActiveSearch();
+                convexSearch.reset();
+                convexResultHandledRef.current = null;
+                setConversation([]);
+                setActiveResult(null);
+                setActiveTrace(null);
+                setActiveEpisode(null);
+                setIsSearching(false);
+                setSubmittedQuery("");
+                setInput("");
+                setShowFullWorkspace(false);
+                textareaRef.current?.focus();
+              }}
+            />
+          </div>
+        )}
 
         {/* Execution trace — shows how the latest answer was produced */}
         {activeTrace && conversation.length > 0 && !showFullWorkspace && (
@@ -2417,7 +2464,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           </div>
         )}
 
-        {(activeEpisode || recentEpisodes.length > 0) && conversation.length > 0 && (
+        {(activeEpisode || recentEpisodes.length > 0) && conversation.length > 0 && !showFullWorkspace && (
           <div className="mt-3" data-testid="landing-founder-episode">
             <FounderEpisodePanel
               activeEpisode={activeEpisode}

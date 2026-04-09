@@ -10,6 +10,34 @@ const require = createRequire(import.meta.url);
 let _db: NodebenchDb | null = null;
 let _databaseCtor: any | null | undefined;
 
+const OBJECT_NODES_FTS_SQL = `
+CREATE VIRTUAL TABLE IF NOT EXISTS object_nodes_fts USING fts5(
+  label,
+  metadata_json,
+  content='object_nodes',
+  content_rowid='rowid'
+);
+`;
+
+const OBJECT_NODES_FTS_TRIGGERS_SQL = `
+CREATE TRIGGER IF NOT EXISTS object_nodes_fts_insert AFTER INSERT ON object_nodes BEGIN
+  INSERT INTO object_nodes_fts(rowid, label, metadata_json)
+  VALUES (new.rowid, new.label, new.metadata_json);
+END;
+
+CREATE TRIGGER IF NOT EXISTS object_nodes_fts_delete AFTER DELETE ON object_nodes BEGIN
+  INSERT INTO object_nodes_fts(object_nodes_fts, rowid, label, metadata_json)
+  VALUES ('delete', old.rowid, old.label, old.metadata_json);
+END;
+
+CREATE TRIGGER IF NOT EXISTS object_nodes_fts_update AFTER UPDATE ON object_nodes BEGIN
+  INSERT INTO object_nodes_fts(object_nodes_fts, rowid, label, metadata_json)
+  VALUES ('delete', old.rowid, old.label, old.metadata_json);
+  INSERT INTO object_nodes_fts(rowid, label, metadata_json)
+  VALUES (new.rowid, new.label, new.metadata_json);
+END;
+`;
+
 function loadDatabaseCtor(): any | null {
   if (_databaseCtor !== undefined) return _databaseCtor;
   try {
@@ -1105,29 +1133,8 @@ CREATE TABLE IF NOT EXISTS subconscious_whisper_log (
 
 CREATE INDEX IF NOT EXISTS idx_whisper_log_session ON subconscious_whisper_log(session_id, created_at DESC);
 
-CREATE VIRTUAL TABLE IF NOT EXISTS object_nodes_fts USING fts5(
-  label,
-  metadata_json,
-  content='object_nodes',
-  content_rowid='rowid'
-);
-
-CREATE TRIGGER IF NOT EXISTS object_nodes_fts_insert AFTER INSERT ON object_nodes BEGIN
-  INSERT INTO object_nodes_fts(rowid, label, metadata_json)
-  VALUES (new.rowid, new.label, new.metadata_json);
-END;
-
-CREATE TRIGGER IF NOT EXISTS object_nodes_fts_delete AFTER DELETE ON object_nodes BEGIN
-  INSERT INTO object_nodes_fts(object_nodes_fts, rowid, label, metadata_json)
-  VALUES ('delete', old.rowid, old.label, old.metadata_json);
-END;
-
-CREATE TRIGGER IF NOT EXISTS object_nodes_fts_update AFTER UPDATE ON object_nodes BEGIN
-  INSERT INTO object_nodes_fts(object_nodes_fts, rowid, label, metadata_json)
-  VALUES ('delete', old.rowid, old.label, old.metadata_json);
-  INSERT INTO object_nodes_fts(rowid, label, metadata_json)
-  VALUES (new.rowid, new.label, new.metadata_json);
-END;
+${OBJECT_NODES_FTS_SQL.trim()}
+${OBJECT_NODES_FTS_TRIGGERS_SQL.trim()}
 `;
 
 export function getDb(): NodebenchDb {
@@ -1154,9 +1161,64 @@ export function getDb(): NodebenchDb {
     if (g.c > 0 && gFts.c === 0) {
       _db.exec("INSERT INTO gaps_fts(gaps_fts) VALUES('rebuild')");
     }
+    ensureObjectNodesFtsHealthy();
   } catch { /* FTS tables not yet available — fresh DB, triggers will handle it */ }
 
   return _db;
+}
+
+function looksLikeSqliteFtsFailure(error: unknown, tableName: string): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return (
+    message.includes(tableName)
+    || message.includes("SQLITE_CORRUPT_VTAB")
+    || message.includes("database disk image is malformed")
+    || message.includes("malformed")
+    || message.includes("no such table")
+  );
+}
+
+export function ensureObjectNodesFtsHealthy(): void {
+  const db = getDb();
+  try {
+    const objectCount = db.prepare("SELECT COUNT(*) as c FROM object_nodes").get() as { c?: number };
+    const ftsCount = db.prepare("SELECT COUNT(*) as c FROM object_nodes_fts").get() as { c?: number };
+    if ((objectCount.c ?? 0) > 0 && (ftsCount.c ?? 0) === 0) {
+      db.exec("INSERT INTO object_nodes_fts(object_nodes_fts) VALUES('rebuild')");
+    }
+  } catch (error) {
+    if (!looksLikeSqliteFtsFailure(error, "object_nodes_fts")) {
+      throw error;
+    }
+    rebuildObjectNodesFts();
+  }
+}
+
+export function rebuildObjectNodesFts(): void {
+  const db = getDb();
+  db.exec("DROP TRIGGER IF EXISTS object_nodes_fts_insert");
+  db.exec("DROP TRIGGER IF EXISTS object_nodes_fts_delete");
+  db.exec("DROP TRIGGER IF EXISTS object_nodes_fts_update");
+  db.exec("DROP TABLE IF EXISTS object_nodes_fts");
+  db.exec("DROP TABLE IF EXISTS object_nodes_fts_data");
+  db.exec("DROP TABLE IF EXISTS object_nodes_fts_idx");
+  db.exec("DROP TABLE IF EXISTS object_nodes_fts_docsize");
+  db.exec("DROP TABLE IF EXISTS object_nodes_fts_config");
+  db.exec(OBJECT_NODES_FTS_SQL);
+  db.exec(OBJECT_NODES_FTS_TRIGGERS_SQL);
+  db.exec("INSERT INTO object_nodes_fts(object_nodes_fts) VALUES('rebuild')");
+}
+
+export function withObjectNodesFtsRepair<T>(operation: () => T): T {
+  try {
+    return operation();
+  } catch (error) {
+    if (!looksLikeSqliteFtsFailure(error, "object_nodes_fts")) {
+      throw error;
+    }
+    rebuildObjectNodesFts();
+    return operation();
+  }
 }
 
 export function isFirstRun(): boolean {

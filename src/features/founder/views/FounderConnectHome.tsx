@@ -109,7 +109,22 @@ export function FounderConnectHome() {
         </p>
       </div>
 
-      {/* Connection cards — same card pattern as Library */}
+      {/* How it works — 3-step narrative (Attrition pattern) */}
+      <div className="mt-6 grid w-full max-w-2xl grid-cols-3 gap-3">
+        {[
+          { step: "1", label: "Install", detail: "Run the command above in your IDE terminal" },
+          { step: "2", label: "Index", detail: "NodeBench reads your docs, code, and agent context" },
+          { step: "3", label: "Search", detail: "Ask anything — your company context is always live" },
+        ].map((s) => (
+          <div key={s.step} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3 text-center">
+            <div className="text-lg font-bold text-accent-primary">{s.step}</div>
+            <div className="text-[12px] font-medium text-content">{s.label}</div>
+            <div className="mt-1 text-[10px] leading-relaxed text-content-muted">{s.detail}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Connection cards */}
       <div className="mt-6 grid w-full max-w-2xl gap-3">
         {connections.map((conn) => {
           const Icon = conn.icon;

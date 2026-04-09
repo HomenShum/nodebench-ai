@@ -1,26 +1,43 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-
-vi.mock("@/features/founder/views/ShareableMemoView", () => ({
-  generateMemoId: () => "memo_test",
-  saveMemoToStorage: vi.fn(),
-  copyMemoUrl: vi.fn(),
-}));
+import { ResultWorkspace } from "./ResultWorkspace";
+import type { ResultPacket } from "./searchTypes";
 
 vi.mock("@/features/telemetry/TrajectoryPanel", () => ({
   TrajectoryPanel: () => <div data-testid="trajectory-panel">Trajectory</div>,
 }));
 
-import { ResultWorkspace } from "./ResultWorkspace";
-import type { ResultPacket } from "./searchTypes";
-
-const founderPacket: ResultPacket = {
+const packet: ResultPacket = {
   query: "Analyze NodeBench for a founder.",
   entityName: "NodeBench",
-  answer: "NodeBench is becoming a founder-first operating system with reusable packets.",
-  confidence: 88,
-  sourceCount: 2,
-  variables: [{ rank: 1, name: "Founder workflow", direction: "up", impact: "high" }],
+  answer:
+    "NodeBench has a reusable founder packet loop, but proof still breaks when claims are detached from citations. The current packet needs stronger handoff and cleaner comparables before it feels investor-grade.",
+  confidence: 78,
+  sourceCount: 4,
+  variables: [
+    { rank: 1, name: "Founder packet reuse is becoming a real workflow", direction: "up", impact: "high", sourceIdx: 0 },
+    { rank: 2, name: "Ask surface still over-exposes internal machinery", direction: "down", impact: "high", sourceIdx: 1 },
+  ],
+  keyMetrics: [
+    { label: "Cited sources", value: "2" },
+    { label: "Contradictions", value: "1" },
+  ],
+  changes: [{ description: "Shared context packet is now available in the control plane", date: "Apr 2026", sourceIdx: 0 }],
+  risks: [
+    {
+      title: "Proof is detached from claims",
+      description: "The answer still forces users to inspect a separate source map instead of seeing citations next to the claim.",
+      sourceIdx: 1,
+    },
+  ],
+  comparables: [
+    { name: "Claude Research", relevance: "high", note: "Citation-first research flow with bounded answer framing." },
+    { name: "", relevance: "low", note: "" },
+  ],
+  nextQuestions: [
+    "What exact evidence would upgrade the founder packet from plausible to trusted?",
+    "Which packet should be delegated first?",
+  ],
   sourceRefs: [
     {
       id: "source:1",
@@ -30,489 +47,176 @@ const founderPacket: ResultPacket = {
       type: "web",
       status: "cited",
       domain: "example.com",
-      excerpt: "Primary founder evidence excerpt.",
+      excerpt: "Reusable founder packet and handoff notes.",
       confidence: 88,
     },
     {
       id: "source:2",
-      label: "Benchmark note",
-      title: "Benchmark note",
-      href: "https://bench.example.com/note",
+      label: "UX audit",
+      title: "UX audit",
+      href: "https://example.com/ux-audit",
       type: "web",
-      status: "explored",
-      domain: "bench.example.com",
-      excerpt: "Secondary benchmark excerpt for keyboard focus.",
-      confidence: 82,
-    },
-  ],
-  answerBlocks: [
-    {
-      id: "answer:1",
-      title: "Bottom line",
-      text: "Founder packet summary.",
-      sourceRefIds: ["source:1"],
-      claimIds: ["claim:1"],
       status: "cited",
+      domain: "example.com",
+      excerpt: "The current ask surface still separates claims from proof.",
+      confidence: 82,
     },
   ],
   claimRefs: [
     {
       id: "claim:1",
-      text: "NodeBench compresses founder context into one packet.",
+      text: "NodeBench has a reusable founder packet loop.",
       sourceRefIds: ["source:1"],
       answerBlockIds: ["answer:1"],
       status: "retained",
     },
+    {
+      id: "claim:2",
+      text: "The current packet needs stronger handoff and cleaner comparables.",
+      sourceRefIds: ["source:2"],
+      answerBlockIds: ["answer:1"],
+      status: "retained",
+    },
+  ],
+  answerBlocks: [
+    {
+      id: "answer:1",
+      title: "Summary",
+      text: "NodeBench has a reusable founder packet loop, but proof still breaks when claims are detached from citations.",
+      sourceRefIds: ["source:1", "source:2"],
+      claimIds: ["claim:1", "claim:2"],
+      status: "cited",
+    },
   ],
   explorationMemory: {
-    exploredSourceCount: 2,
-    citedSourceCount: 1,
-    discardedSourceCount: 1,
+    exploredSourceCount: 4,
+    citedSourceCount: 2,
+    discardedSourceCount: 2,
     entityCount: 1,
-    claimCount: 1,
-    contradictionCount: 0,
+    claimCount: 2,
+    contradictionCount: 1,
   },
   graphSummary: {
-    nodeCount: 8,
-    edgeCount: 6,
-    clusterCount: 1,
-    primaryPath: ["query", "lens", "persona", "source", "answer_block", "artifact"],
+    nodeCount: 10,
+    edgeCount: 9,
+    clusterCount: 2,
+    primaryPath: ["query", "lens", "source", "claim", "answer_block"],
   },
-  proofStatus: "verified",
-  uncertaintyBoundary: "Requires refreshed live data for public claims.",
-  recommendedNextAction: "Ship the founder packet and benchmark proof.",
-  nextQuestions: [
-    "Generate my founder weekly reset — what changed, main contradiction, next 3 moves",
-    "What moat justifies going public now?",
-    "Build a pre-delegation packet for my agent",
-    "Should the first wedge land as a local MCP tool, a hosted dashboard, or a hybrid with local truth and web review?",
-  ],
+  proofStatus: "drifting",
+  uncertaintyBoundary: "The packet still depends on local memory and only two cited sources.",
+  recommendedNextAction: "Collapse the first response to truth, proof, next move, and packet readiness.",
   strategicAngles: [
     {
-      id: "stealth-moat",
-      title: "Stealth and moat timing",
+      id: "proof-grade",
+      title: "Proof has to become local",
       status: "watch",
-      summary: "Stay private until the wedge is harder to copy.",
-      whyItMatters: "Premature posting teaches the market.",
-      evidenceRefIds: ["source:1"],
-      nextQuestion: "What moat justifies going public now?",
+      summary: "Claim-level citations should be inline, not detached in a later source map.",
+      whyItMatters: "Investors will not inspect a long appendix to validate the core thesis.",
+      evidenceRefIds: ["source:2"],
     },
   ],
-  progressionProfile: {
-    currentStage: "foundation",
-    currentStageLabel: "Stage 1: Foundation",
-    readinessScore: 64,
-    missingFoundations: ["Investor-ready memo"],
-    hiddenRisks: ["Distribution proof still thin"],
-    nextUnlocks: [
-      {
-        id: "useful-packet",
-        title: "Generate one useful founder packet and use it in a real decision",
-        status: "ready",
-        requiredSignals: ["Founder packet exported"],
-      },
-    ],
-    delegableWork: ["Prepare the Slack report"],
-    founderOnlyWork: ["Choose the wedge"],
-    onTrackStatus: "watch",
-    recommendedNextAction: "Ship the founder packet and benchmark proof.",
+  forecastGate: {
+    streamKey: "founder_confidence",
+    valuesCount: 3,
+    modelUsed: "search_session_confidence_stream",
+    trendDirection: "stable",
+    latestOutsideInterval: false,
+    confidenceBandWidth: 0.18,
+    recommendedAction: "delegate",
+    explanation: "The packet has enough observations to support a delegation-ready view.",
+    evidenceRefs: ["source:1"],
   },
-  progressionTiers: [
-    { id: "clarity", label: "Stage 0: Clarity", priceLabel: "Free", unlocks: ["Search and ask"], services: [] },
-    { id: "foundation", label: "Stage 1: Foundation", priceLabel: "$1", unlocks: ["Readiness checklist"], services: [] },
-    { id: "readiness", label: "Stage 2: Readiness", priceLabel: "$5", unlocks: ["Investor packet"], services: [] },
-  ],
-  diligencePack: {
-    id: "ai_software",
-    label: "AI / Software Diligence Pack",
-    summary: "Workflow adoption, installability, and benchmark proof.",
-    externalEvaluators: ["Founders", "Investors", "Bankers"],
-    evidenceClasses: [],
-    requirements: [],
-    highRiskClaims: ["workflow lock-in"],
-    materials: ["Founder packet", "Slack one-page report"],
-    readyDefinition: "Ready when installability, proof, and distribution are all explicit.",
-  },
-  readinessScore: 64,
-  unlocks: [
-    {
-      id: "useful-packet",
-      title: "Generate one useful founder packet and use it in a real decision",
-      status: "ready",
-      requiredSignals: ["Founder packet exported"],
-    },
-  ],
-  materialsChecklist: [
-    {
-      id: "material:1",
-      label: "Slack one-page report",
-      status: "watch",
-      audience: "external",
-      whyItMatters: "Makes the founder packet easy to share.",
-    },
-  ],
-  scorecards: [
-    {
-      id: "two_week",
-      label: "2-week scorecard",
-      status: "watch",
-      summary: "Ship one useful packet and one shareable artifact.",
-      mustHappen: ["Produce one useful founder packet"],
-    },
-    {
-      id: "three_month",
-      label: "3-month scorecard",
-      status: "watch",
-      summary: "Publish one benchmark-backed proof story.",
-      mustHappen: ["Show repeated packet reuse"],
-    },
-  ],
-  shareableArtifacts: [
-    {
-      id: "artifact:slack_onepage",
-      type: "slack_onepage",
-      title: "Founder one-page Slack report",
-      visibility: "workspace",
-      summary: "Slack report",
-      payload: { text: "*NodeBench Founder Report*" },
-    },
-  ],
-  visibility: "workspace",
-  benchmarkEvidence: [
-    {
-      benchmarkId: "bench:1",
-      lane: "weekly_founder_reset",
-      objective: "Run the weekly founder reset autopilot.",
-      packetRef: "packet:1",
-      agentsInvolved: ["nodebench", "claude_code"],
-      actionsTaken: ["Gather", "Synthesize", "Export"],
-      beforeState: "Scattered founder context",
-      afterState: "One reusable packet",
-      artifactsProduced: ["Founder packet"],
-      validationPasses: ["Packet assembled"],
-      validationFailures: [],
-      timeMs: 1800,
-      estimatedCostUsd: 0.24,
-      humanInterventions: ["Approve the export"],
-      reuseScore: 72,
-      summary: "Weekly reset autopilot proves the founder packet loop.",
-    },
-  ],
-  workflowComparison: {
-    objective: "Shorten the founder packet workflow.",
-    currentPath: ["Restate the context manually", "Draft the memo from scratch"],
-    optimizedPath: ["Reuse the founder packet", "Copy the Slack report"],
-    rationale: "Packet reuse removes repeated restatement.",
-    validationChecks: ["The same artifact still exists"],
-    estimatedSavings: { timePercent: 38, costPercent: 24 },
-    verdict: "valid",
-  },
-  risks: [
-    {
-      title: "Routing still drifts into generic workspace mode",
-      description: "Own-company prompts should not look generic.",
-      falsification: "If deeper founder prompts keep resolving to NodeBench and founder progression packets, the drift is resolved.",
-    },
-  ],
-  operatingModel: {
-    executionOrder: [
-      { id: "ingest", label: "Ingest", description: "Collect founder inputs." },
-      { id: "route", label: "Route", description: "Choose the packet and artifact." },
-    ],
-    queueTopology: [
-      {
-        id: "packet_refresh",
-        label: "Refresh",
-        purpose: "Refresh sweeps and packet state.",
-        upstream: ["sweeps"],
-        outputs: ["packet refresh"],
-      },
-    ],
-    sourcePolicies: [
-      {
-        sourceType: "uploads",
-        canRead: true,
-        canStore: true,
-        canSummarize: true,
-        exportPolicy: "redact",
-        notes: "Founder uploads stay private by default.",
-      },
-    ],
-    roleDefault: {
-      role: "founder",
-      defaultPacketType: "founder_progression_packet",
-      defaultArtifactType: "slack_onepage",
-      shouldMonitorByDefault: true,
-      shouldDelegateByDefault: true,
-    },
-    packetRouter: {
-      role: "founder",
-      companyMode: "own_company",
-      packetType: "founder_progression_packet",
-      artifactType: "slack_onepage",
-      shouldMonitor: true,
-      shouldExport: true,
-      shouldDelegate: true,
-      needsMoreEvidence: false,
-      requiredEvidence: [],
-      visibility: "workspace",
-      rationale: "Use the founder packet as the canonical route for own-company work.",
-    },
-    progressionRubric: {
-      currentStage: "foundation",
-      onTrack: false,
-      mandatorySatisfied: ["Founder packet exported"],
-      mandatoryMissing: ["External proof story"],
-      optionalStrengths: ["shareable_artifact"],
-      rationale: "External proof story is still missing.",
-    },
-    benchmarkOracles: [
-      {
-        lane: "weekly_founder_reset",
-        deterministicChecks: ["packet present"],
-        probabilisticJudges: ["usefulness"],
-        baseline: "manual founder recap",
-        heldOutScenarios: ["messy founder context"],
-      },
-    ],
-  },
-  distributionSurfaceStatus: [
-    {
-      surfaceId: "mcp_cli",
-      label: "MCP / CLI",
-      status: "ready",
-      whyItMatters: "Fastest install path for founders using Claude Code.",
-    },
-    {
-      surfaceId: "dashboard",
-      label: "Dashboard",
-      status: "partial",
-      whyItMatters: "Shared review and approvals drive team retention.",
-    },
-  ],
-  companyReadinessPacket: {
-    packetId: "packet:1",
-    visibility: "workspace",
-    identity: {
-      companyName: "NodeBench",
-      vertical: "AI/software",
-      subvertical: "developer and agent tooling",
-      stage: "Stage 1: Foundation",
-      mission: "Founder operating system",
-      wedge: "Reusable founder packets",
-    },
-    founderTeamCredibility: ["Map background to wedge"],
-    productAndWedge: ["Founder operating system"],
-    marketAndGtm: ["Meet users inside Claude Code"],
-    financialReadiness: ["Track runway clearly"],
-    operatingReadiness: ["Prepare the Slack report"],
-    diligenceEvidence: ["Founder packet"],
-    contradictionsAndHiddenRisks: ["Distribution proof still thin"],
-    nextUnlocks: ["Generate one useful founder packet and use it in a real decision"],
-    pricingStage: {
-      stageId: "foundation",
-      label: "Stage 1: Foundation",
-      priceLabel: "$1",
-    },
-    distributionSurfaceStatus: [
-      {
-        surfaceId: "mcp_cli",
-        label: "MCP / CLI",
-        status: "ready",
-        whyItMatters: "Fastest install path for founders using Claude Code.",
-      },
-      {
-        surfaceId: "dashboard",
-        label: "Dashboard",
-        status: "partial",
-        whyItMatters: "Shared review and approvals drive team retention.",
-      },
-    ],
-    provenance: {
-      sourceRefIds: ["source:1"],
-      confidence: 88,
-      freshness: new Date().toISOString(),
-    },
-    allowedDestinations: ["slack_onepage", "investor_memo"],
-    sensitivity: "workspace",
-  },
-  companyNamingPack: {
-    suggestedNames: ["NodeBench", "Signal Forge"],
-    recommendedName: "NodeBench",
-    starterProfile: {
-      companyName: "NodeBench",
-      oneLineDescription: "Founder operating system for reusable packets.",
-      categories: ["AI/software"],
-      stage: "Stage 1: Foundation",
-      initialCustomers: ["Founders"],
-      wedge: "Reusable founder packets",
-    },
-  },
-};
-
-const bankerPacket: ResultPacket = {
-  ...founderPacket,
-  query: "Prepare a banker-style competitive briefing on Anthropic.",
-  entityName: "Anthropic",
-  answer: "Anthropic is separating on enterprise traction and pricing discipline, but the diligence burden is still contract durability versus larger platforms.",
-  keyMetrics: [
-    { label: "Anthropic revenue", value: "$19B" },
-    { label: "Anthropic valuation", value: "$380B" },
-    { label: "OpenAI gross margin", value: "33%" },
-  ],
-  comparables: [
-    { name: "OpenAI", relevance: "high", note: "Closest frontier-model operating peer." },
-    { name: "Google", relevance: "high", note: "Distribution and pricing pressure from the hyperscaler stack." },
-  ],
-  risks: [
-    {
-      title: "Pricing pressure",
-      description: "Bundled distribution from hyperscalers can compress standalone model pricing in large accounts.",
-    },
-  ],
-  nextQuestions: [
-    "How durable is Anthropic's pricing versus bundled alternatives in large accounts?",
-    "What evidence would overturn the current enterprise ranking?",
-  ],
-  operatingModel: {
-    ...founderPacket.operatingModel,
-    packetRouter: {
-      ...founderPacket.operatingModel.packetRouter,
-      companyMode: "external_company",
-    },
-  },
-  visibility: "workspace",
 };
 
 describe("ResultWorkspace", () => {
-  it("renders the added founder progression, diligence, workflow, and benchmark sections", () => {
-    render(<ResultWorkspace packet={founderPacket} lens="founder" />);
+  it("renders the new four-block ask surface with inline proof", () => {
+    render(<ResultWorkspace packet={packet} lens="founder" />);
 
-    expect(screen.getByText("Founder Progression Layer")).toBeInTheDocument();
-    expect(screen.getByText("Company Profile Snapshot")).toBeInTheDocument();
-    expect(screen.getByText("Pricing and Unlock Progress")).toBeInTheDocument();
-    expect(screen.getByText("Vertical Diligence Pack")).toBeInTheDocument();
-    expect(screen.getByText("Operating Model and Packet Router")).toBeInTheDocument();
-    expect(screen.getByText("Canonical Execution Order")).toBeInTheDocument();
-    expect(screen.getByText("Workflow Compare")).toBeInTheDocument();
-    expect(screen.getByText("Guided Follow-Up Chain")).toBeInTheDocument();
-    expect(screen.getByText("Main Contradiction To Resolve")).toBeInTheDocument();
-    expect(screen.getByText("Share Readiness")).toBeInTheDocument();
-    expect(screen.getByText("Benchmark Proof and Distribution")).toBeInTheDocument();
-    expect(screen.getByText("Source Trust Policy")).toBeInTheDocument();
-    expect(screen.getByText("Benchmark Oracles")).toBeInTheDocument();
-    expect(screen.getByText("AI / Software Diligence Pack")).toBeInTheDocument();
-    expect(screen.queryByText("Signal Forge")).not.toBeInTheDocument();
-    expect(screen.getByText("Generate my founder weekly reset — what changed, main contradiction, next 3 moves")).toBeInTheDocument();
-    expect(screen.queryAllByText("What moat justifies going public now?")).toHaveLength(1);
+    expect(screen.getByText("Founder Read")).toBeInTheDocument();
+    expect(screen.getByText("Bottom Line")).toBeInTheDocument();
+    expect(screen.getAllByText("Founder Truth").length).toBeGreaterThan(0);
+    expect(screen.getByText("Why This Holds / Breaks")).toBeInTheDocument();
+    expect(screen.getByText("Next Move")).toBeInTheDocument();
+    expect(screen.getByText("Ready Packet")).toBeInTheDocument();
+    expect(screen.getByText("Observed")).toBeInTheDocument();
+    expect(screen.getByText("Estimated")).toBeInTheDocument();
+    expect(screen.getByText("Missing To Believe This")).toBeInTheDocument();
+    expect(screen.getByText("2/4 cited")).toBeInTheDocument();
+    expect(screen.getAllByLabelText(/Source 1: Founder memo/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText("Unnamed comparable")).not.toBeInTheDocument();
+    expect(screen.queryByText(packet.answer)).not.toBeInTheDocument();
   });
 
-  it("renders the Slack export action and supports source focus interaction", () => {
-    render(<ResultWorkspace packet={founderPacket} lens="founder" />);
-
-    expect(screen.getByRole("button", { name: /report for slack/i })).toBeInTheDocument();
-
-    const secondSource = screen.getByRole("button", { name: /Source: Benchmark note/i });
-    fireEvent.focus(secondSource);
-
-    expect(screen.getAllByText("Secondary benchmark excerpt for keyboard focus.").length).toBeGreaterThan(0);
-  });
-
-  it("keeps extra follow-up prompts collapsed until requested", () => {
-    render(<ResultWorkspace packet={founderPacket} lens="founder" />);
-
-    expect(screen.queryByText("Should the first wedge land as a local MCP tool, a hosted dashboard, or a hybrid with local truth and web review?")).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: /show 1 more prompts/i }));
-
-    expect(screen.getByText("Should the first wedge land as a local MCP tool, a hosted dashboard, or a hybrid with local truth and web review?")).toBeInTheDocument();
-  });
-
-  it("routes contradiction and share-readiness callouts into follow-up actions", () => {
+  it("routes follow-up, publish, delegate, and strategic-angle actions", () => {
     const onFollowUp = vi.fn();
-    render(<ResultWorkspace packet={founderPacket} lens="founder" onFollowUp={onFollowUp} />);
-
-    fireEvent.click(screen.getByRole("button", { name: /resolve now/i }));
-    expect(onFollowUp).toHaveBeenCalledWith("What moat justifies going public now?");
-
-    fireEvent.click(screen.getByRole("button", { name: /pressure-test share timing/i }));
-    expect(onFollowUp).toHaveBeenCalledWith("What moat justifies going public now?");
-  });
-
-  it("publishes and delegates direct issue actions from the top founder callouts", () => {
+    const onPublishSharedContext = vi.fn();
+    const onDelegate = vi.fn();
     const onPublishStrategicAngle = vi.fn();
     const onDelegateStrategicAngle = vi.fn();
+
     render(
       <ResultWorkspace
-        packet={founderPacket}
+        packet={packet}
         lens="founder"
+        onFollowUp={onFollowUp}
+        onPublishSharedContext={onPublishSharedContext}
+        onDelegate={onDelegate}
         onPublishStrategicAngle={onPublishStrategicAngle}
         onDelegateStrategicAngle={onDelegateStrategicAngle}
       />,
     );
 
-    const publishButtons = screen.getAllByRole("button", { name: /publish issue packet/i });
-    const delegateButtons = screen.getAllByRole("button", { name: /delegate issue/i });
+    fireEvent.click(screen.getByRole("button", { name: /run follow-up/i }));
+    expect(onFollowUp).toHaveBeenCalledWith("What exact evidence would upgrade the founder packet from plausible to trusted?");
 
-    fireEvent.click(publishButtons[0]);
-    expect(onPublishStrategicAngle).toHaveBeenCalledWith("stealth-moat");
+    fireEvent.click(screen.getAllByRole("button", { name: /publish to shared context/i })[0]);
+    expect(onPublishSharedContext).toHaveBeenCalled();
 
-    fireEvent.click(delegateButtons[0]);
-    expect(onDelegateStrategicAngle).toHaveBeenCalledWith("stealth-moat", "claude_code");
+    fireEvent.click(screen.getByRole("button", { name: /delegate to claude code/i }));
+    expect(onDelegate).toHaveBeenCalledWith("claude_code");
+
+    fireEvent.click(screen.getByRole("button", { name: /publish issue packet/i }));
+    expect(onPublishStrategicAngle).toHaveBeenCalledWith("proof-grade");
+
+    fireEvent.click(screen.getByRole("button", { name: /delegate issue/i }));
+    expect(onDelegateStrategicAngle).toHaveBeenCalledWith("proof-grade", "claude_code");
   });
 
-  it("surfaces shared-context status above the fold and auto-opens handoff details", () => {
+  it("surfaces handoff state inside packet readiness", () => {
     render(
       <ResultWorkspace
-        packet={founderPacket}
+        packet={packet}
         lens="founder"
-        onPublishSharedContext={vi.fn()}
-        onDelegate={vi.fn()}
         handoffState={{
           status: "published",
-          message: "Strategic issue packet is live and ready for a worker.",
-          contextId: "context:issue:stealth-moat",
-          targetLabel: "Claude Code",
+          message: "Shared founder packet is live and ready for a coding agent.",
+          contextId: "context:founder:1",
+          taskId: "task:founder:1",
+          handoffPrompt: "Implement the ask surface rewrite using the shared packet.",
         }}
       />,
     );
 
-    expect(screen.getByText("Shared Context Status")).toBeInTheDocument();
-    expect(screen.getAllByText("Strategic issue packet is live and ready for a worker.").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Context context:issue:stealth-moat").length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: /publish to shared context/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /delegate to claude code/i })).toBeInTheDocument();
+    expect(screen.getAllByText("Shared founder packet is live and ready for a coding agent.").length).toBeGreaterThan(0);
+    expect(screen.getByText("Context context:founder:1")).toBeInTheDocument();
+    expect(screen.getByText("Task task:founder:1")).toBeInTheDocument();
+    expect(screen.getByText("Implement the ask surface rewrite using the shared packet.")).toBeInTheDocument();
   });
 
-  it("adds a banker readout strip with comparable, risk, and diligence question focus", () => {
-    render(<ResultWorkspace packet={bankerPacket} lens="banker" />);
+  it("keeps sources, claims, comparables, and trajectory below the fold until opened", () => {
+    render(<ResultWorkspace packet={packet} lens="founder" />);
 
-    const bankerStrip = screen.getByTestId("banker-readout-strip");
-    const bankerBrief = screen.getByTestId("banker-memo-brief");
-    expect(bankerStrip).toBeInTheDocument();
-    expect(bankerBrief).toBeInTheDocument();
-    expect(screen.getByText("Underwriting Readout")).toBeInTheDocument();
-    expect(screen.getByText("Hard metrics first, diligence second")).toBeInTheDocument();
-    expect(screen.getAllByText(/Anthropic is separating on enterprise traction and pricing discipline/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Anthropic revenue").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("$19B").length).toBeGreaterThan(0);
-    expect(screen.getByText("Comparable Set")).toBeInTheDocument();
-    expect(screen.getByText("OpenAI, Google")).toBeInTheDocument();
-    expect(screen.getByText("Diligence Focus")).toBeInTheDocument();
-    expect(screen.getAllByText("Pricing pressure").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("How durable is Anthropic's pricing versus bundled alternatives in large accounts?").length).toBeGreaterThan(0);
-    expect(screen.getByText("Investment Banking Brief")).toBeInTheDocument();
-    expect(screen.getByText("Cleaner memo view from the current evidence set")).toBeInTheDocument();
-    expect(screen.getByText("Underwriting View")).toBeInTheDocument();
-    expect(screen.getByText("What Changed")).toBeInTheDocument();
-    expect(screen.getByText("Comparable Frame")).toBeInTheDocument();
-    expect(screen.getByText("Diligence Flags And Questions")).toBeInTheDocument();
-    expect(screen.getByText("Briefing Workup")).toBeInTheDocument();
-    expect(screen.getByText("Live web evidence")).toBeInTheDocument();
-    expect(screen.queryByText("Strategic Pressure Test")).not.toBeInTheDocument();
-    expect(screen.queryByText("Main Contradiction To Resolve")).not.toBeInTheDocument();
-    expect(screen.queryByText("Share Readiness")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /report for slack/i })).not.toBeInTheDocument();
-    expect(screen.queryByText("Why this team matters")).not.toBeInTheDocument();
+    expect(screen.queryByText("Reusable founder packet and handoff notes.")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /inspect sources/i }));
+    expect(screen.getByText("Reusable founder packet and handoff notes.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /claim ledger/i }));
+    expect(screen.getAllByText("NodeBench has a reusable founder packet loop.").length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole("button", { name: /^comparables/i }));
+    expect(screen.getByText("Claude Research")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /agent trajectory/i }));
+    expect(screen.getByTestId("trajectory-panel")).toBeInTheDocument();
   });
 });

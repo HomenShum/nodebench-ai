@@ -90,19 +90,90 @@ function getDb() {
     if (g.c > 0 && gFts.c === 0) {
       _db.exec("INSERT INTO gaps_fts(gaps_fts) VALUES('rebuild')");
     }
+    ensureObjectNodesFtsHealthy();
   } catch {
   }
   return _db;
 }
+function looksLikeSqliteFtsFailure(error, tableName) {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return message.includes(tableName) || message.includes("SQLITE_CORRUPT_VTAB") || message.includes("database disk image is malformed") || message.includes("malformed") || message.includes("no such table");
+}
+function ensureObjectNodesFtsHealthy() {
+  const db = getDb();
+  try {
+    const objectCount = db.prepare("SELECT COUNT(*) as c FROM object_nodes").get();
+    const ftsCount = db.prepare("SELECT COUNT(*) as c FROM object_nodes_fts").get();
+    if ((objectCount.c ?? 0) > 0 && (ftsCount.c ?? 0) === 0) {
+      db.exec("INSERT INTO object_nodes_fts(object_nodes_fts) VALUES('rebuild')");
+    }
+  } catch (error) {
+    if (!looksLikeSqliteFtsFailure(error, "object_nodes_fts")) {
+      throw error;
+    }
+    rebuildObjectNodesFts();
+  }
+}
+function rebuildObjectNodesFts() {
+  const db = getDb();
+  db.exec("DROP TRIGGER IF EXISTS object_nodes_fts_insert");
+  db.exec("DROP TRIGGER IF EXISTS object_nodes_fts_delete");
+  db.exec("DROP TRIGGER IF EXISTS object_nodes_fts_update");
+  db.exec("DROP TABLE IF EXISTS object_nodes_fts");
+  db.exec("DROP TABLE IF EXISTS object_nodes_fts_data");
+  db.exec("DROP TABLE IF EXISTS object_nodes_fts_idx");
+  db.exec("DROP TABLE IF EXISTS object_nodes_fts_docsize");
+  db.exec("DROP TABLE IF EXISTS object_nodes_fts_config");
+  db.exec(OBJECT_NODES_FTS_SQL);
+  db.exec(OBJECT_NODES_FTS_TRIGGERS_SQL);
+  db.exec("INSERT INTO object_nodes_fts(object_nodes_fts) VALUES('rebuild')");
+}
+function withObjectNodesFtsRepair(operation) {
+  try {
+    return operation();
+  } catch (error) {
+    if (!looksLikeSqliteFtsFailure(error, "object_nodes_fts")) {
+      throw error;
+    }
+    rebuildObjectNodesFts();
+    return operation();
+  }
+}
 function genId(prefix) {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 }
-var require2, _db, _databaseCtor, SCHEMA_SQL;
+var require2, _db, _databaseCtor, OBJECT_NODES_FTS_SQL, OBJECT_NODES_FTS_TRIGGERS_SQL, SCHEMA_SQL;
 var init_db = __esm({
   "packages/mcp-local/src/db.ts"() {
     "use strict";
     require2 = createRequire(import.meta.url);
     _db = null;
+    OBJECT_NODES_FTS_SQL = `
+CREATE VIRTUAL TABLE IF NOT EXISTS object_nodes_fts USING fts5(
+  label,
+  metadata_json,
+  content='object_nodes',
+  content_rowid='rowid'
+);
+`;
+    OBJECT_NODES_FTS_TRIGGERS_SQL = `
+CREATE TRIGGER IF NOT EXISTS object_nodes_fts_insert AFTER INSERT ON object_nodes BEGIN
+  INSERT INTO object_nodes_fts(rowid, label, metadata_json)
+  VALUES (new.rowid, new.label, new.metadata_json);
+END;
+
+CREATE TRIGGER IF NOT EXISTS object_nodes_fts_delete AFTER DELETE ON object_nodes BEGIN
+  INSERT INTO object_nodes_fts(object_nodes_fts, rowid, label, metadata_json)
+  VALUES ('delete', old.rowid, old.label, old.metadata_json);
+END;
+
+CREATE TRIGGER IF NOT EXISTS object_nodes_fts_update AFTER UPDATE ON object_nodes BEGIN
+  INSERT INTO object_nodes_fts(object_nodes_fts, rowid, label, metadata_json)
+  VALUES ('delete', old.rowid, old.label, old.metadata_json);
+  INSERT INTO object_nodes_fts(rowid, label, metadata_json)
+  VALUES (new.rowid, new.label, new.metadata_json);
+END;
+`;
     SCHEMA_SQL = `
 PRAGMA journal_mode = WAL;
 PRAGMA busy_timeout = 5000;
@@ -1149,29 +1220,8 @@ CREATE TABLE IF NOT EXISTS subconscious_whisper_log (
 
 CREATE INDEX IF NOT EXISTS idx_whisper_log_session ON subconscious_whisper_log(session_id, created_at DESC);
 
-CREATE VIRTUAL TABLE IF NOT EXISTS object_nodes_fts USING fts5(
-  label,
-  metadata_json,
-  content='object_nodes',
-  content_rowid='rowid'
-);
-
-CREATE TRIGGER IF NOT EXISTS object_nodes_fts_insert AFTER INSERT ON object_nodes BEGIN
-  INSERT INTO object_nodes_fts(rowid, label, metadata_json)
-  VALUES (new.rowid, new.label, new.metadata_json);
-END;
-
-CREATE TRIGGER IF NOT EXISTS object_nodes_fts_delete AFTER DELETE ON object_nodes BEGIN
-  INSERT INTO object_nodes_fts(object_nodes_fts, rowid, label, metadata_json)
-  VALUES ('delete', old.rowid, old.label, old.metadata_json);
-END;
-
-CREATE TRIGGER IF NOT EXISTS object_nodes_fts_update AFTER UPDATE ON object_nodes BEGIN
-  INSERT INTO object_nodes_fts(object_nodes_fts, rowid, label, metadata_json)
-  VALUES ('delete', old.rowid, old.label, old.metadata_json);
-  INSERT INTO object_nodes_fts(rowid, label, metadata_json)
-  VALUES (new.rowid, new.label, new.metadata_json);
-END;
+${OBJECT_NODES_FTS_SQL.trim()}
+${OBJECT_NODES_FTS_TRIGGERS_SQL.trim()}
 `;
   }
 });
@@ -10188,7 +10238,7 @@ function initSessionMemoryTables() {
 function recordAction(action) {
   const db = getDb();
   initSessionMemoryTables();
-  const actionId = genId();
+  const actionId = genId("action");
   const countStmt = db.prepare("SELECT COUNT(*) as cnt FROM session_actions WHERE episode_id = ?");
   const count = countStmt.get(action.episodeId)?.cnt ?? 0;
   if (count >= MAX_ACTIONS_PER_EPISODE) {
@@ -10215,7 +10265,7 @@ function recordAction(action) {
 function recordFailure(failure) {
   const db = getDb();
   initSessionMemoryTables();
-  const failureId = genId();
+  const failureId = genId("failure");
   db.prepare(`
     INSERT INTO session_failures (failure_id, episode_id, step_index, tool_name, failure_type, root_cause, recovery_strategy, recovery_successful, timestamp)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -10470,22 +10520,37 @@ function looksLikeSourceTitle(value) {
 function decodeCommonHtmlEntities(value) {
   return value.replace(/&#x27;|&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 }
-function normalizeWhitespace(value) {
+function normalizeWhitespace2(value) {
   return decodeCommonHtmlEntities(value).replace(/\s+/g, " ").replace(/\s+([,.;:!?])/g, "$1").trim();
 }
 function sentenceSplit(value) {
-  return normalizeWhitespace(value).split(/(?<=[.!?])\s+/).map((sentence) => sentence.trim()).filter(Boolean);
+  return normalizeWhitespace2(value).split(/(?<=[.!?])\s+/).map((sentence) => sentence.trim()).filter(Boolean);
 }
 function dedupeStrings2(values) {
   const seen = /* @__PURE__ */ new Set();
   const deduped = [];
   for (const value of values) {
-    const normalized = normalizeWhitespace(value).toLowerCase();
+    const normalized = normalizeWhitespace2(value).toLowerCase();
     if (!normalized || seen.has(normalized)) continue;
     seen.add(normalized);
-    deduped.push(normalizeWhitespace(value));
+    deduped.push(normalizeWhitespace2(value));
   }
   return deduped;
+}
+function normalizeCandidateScore(value) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return void 0;
+  if (value <= 1 && value >= 0) return Math.round(value * 100);
+  const normalized = Math.round(value);
+  if (normalized < 0 || normalized > 100) return void 0;
+  return normalized;
+}
+function normalizeCandidateMetadata(item) {
+  return {
+    score: normalizeCandidateScore(item?.score),
+    sourceLabel: normalizeWhitespace2(String(item?.sourceLabel ?? "")) || void 0,
+    sourceHref: normalizeWhitespace2(String(item?.sourceHref ?? "")) || void 0,
+    evidenceQuote: normalizeWhitespace2(String(item?.evidenceQuote ?? "")) || void 0
+  };
 }
 function containsRiskLanguage(value) {
   return /\b(risk|pressure|threat|challenge|headwind|dependency|concentration|regulat|compliance|pricing|margin|capital|compute|customer concentration|durability|retention|execution|burn|cash|governance|safety|litigation|antitrust|slowdown|uncertain|exposure)\b/i.test(value);
@@ -10509,7 +10574,7 @@ function looksLikeGenericMarketBackdrop(value) {
   return /\b(the enterprise ai market is experiencing exponential growth|moves from niche experiments to foundational technology across industries|across industries|industry faces valuation volatility)\b/i.test(value);
 }
 function looksLikeTruncatedNarrative(value) {
-  const normalized = normalizeWhitespace(value);
+  const normalized = normalizeWhitespace2(value);
   if (!normalized) return false;
   if (/[.!?]$/.test(normalized)) return false;
   if (/\.\.\.$/.test(normalized)) return true;
@@ -10523,7 +10588,7 @@ function looksLikeTruncatedNarrative(value) {
   return false;
 }
 function cleanEvidenceSentence(value) {
-  return normalizeWhitespace(value).replace(/^[-•]+\s*/, "").replace(/^(?:[A-Z][a-z]{2,9}\.?\s+)?[A-Z][a-z]{2,9}\s+\d{1,2},\s+\d{4}\s+[—-]\s*/i, "").replace(/^(?:[A-Z][a-z]{2,9}\.?\s+)?\d{1,2},\s+\d{4}\s+/i, "").replace(/^(?:updated|published|reported)\s+[A-Z][a-z]{2,9}\s+\d{1,2},\s+\d{4}\s*/i, "").replace(/\s+/g, " ").trim();
+  return normalizeWhitespace2(value).replace(/^[-•]+\s*/, "").replace(/^(?:[A-Z][a-z]{2,9}\.?\s+)?[A-Z][a-z]{2,9}\s+\d{1,2},\s+\d{4}\s+[—-]\s*/i, "").replace(/^(?:[A-Z][a-z]{2,9}\.?\s+)?\d{1,2},\s+\d{4}\s+/i, "").replace(/^(?:updated|published|reported)\s+[A-Z][a-z]{2,9}\s+\d{1,2},\s+\d{4}\s*/i, "").replace(/\s+/g, " ").trim();
 }
 function hasBankerSignalContent(value) {
   return /(\$\d|\b\d+%|\b(revenue|run-rate|run rate|growth|pricing|retention|distribution|bundle|bundling|contract|enterprise|valuation|margin|buyers?|share|deployments?|capex|spend|pipeline|bookings|demand|market position|subscriptions?|usage|users?|win rates?)\b)/i.test(value);
@@ -10585,7 +10650,7 @@ function stripTrailingConnectorTail(value) {
   return value.replace(/\b(?:as|of|the|with|because|which|that|while|and|or|but|to|for|in|on|at|its|their|a|an)(?:\s+\b(?:as|of|the|with|because|which|that|while|and|or|but|to|for|in|on|at|its|their|a|an))*$/i, "").replace(/[,.:\-\u2013\u2014\s]+$/, "");
 }
 function compressNarrativePhrase(value, maxLength = 140) {
-  const normalized = normalizeWhitespace(value).replace(/\s+/g, " ").trim();
+  const normalized = normalizeWhitespace2(value).replace(/\s+/g, " ").trim();
   if (normalized.length <= maxLength) return normalized.replace(/\.$/, "");
   const clause = normalized.split(/[;:]/)[0]?.trim() ?? normalized;
   if (clause.length <= maxLength) return clause.replace(/\.$/, "");
@@ -10624,7 +10689,7 @@ function normalizeChangeDescription(value) {
   const normalized = normalizeNarrativeSentence(value);
   if (!normalized) return "";
   if (!hasBankerSignalContent(normalized)) return "";
-  const completeNarrative = looksLikeTruncatedNarrative(normalized) && normalized.includes(",") ? normalizeWhitespace(normalized.slice(0, normalized.lastIndexOf(","))) : normalized;
+  const completeNarrative = looksLikeTruncatedNarrative(normalized) && normalized.includes(",") ? normalizeWhitespace2(normalized.slice(0, normalized.lastIndexOf(","))) : normalized;
   if (!completeNarrative) return "";
   if (!looksLikeTruncatedNarrative(completeNarrative)) {
     return stripTrailingConnectorTail(completeNarrative);
@@ -10659,7 +10724,7 @@ function extractEvidenceSentencesSafe(text) {
   return sentenceSplit(text).map((sentence) => normalizeNarrativeSentence(sentence)).filter((sentence) => sentence.length >= 24).filter((sentence) => !looksLikeSourceTitle(sentence)).filter((sentence) => !looksLikeEvidenceFragment(sentence)).filter((sentence) => !looksLikeNarrativeFluff(sentence)).filter((sentence) => !isQuestionLike(sentence)).filter((sentence) => hasBankerSignalContent(sentence)).sort((a, b) => scoreEvidenceSentence(b) - scoreEvidenceSentence(a)).slice(0, 4);
 }
 function normalizePossibleCompanyName(value) {
-  return normalizeWhitespace(value).replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9.&, -]+$/g, "").replace(/^(?:while|as|but|and|however|meanwhile|although|despite|if|when|whereas|versus|vs\.?|against|compared to)\s+/i, "").replace(/[.,;:]+$/g, "").trim();
+  return normalizeWhitespace2(value).replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9.&, -]+$/g, "").replace(/^(?:while|as|but|and|however|meanwhile|although|despite|if|when|whereas|versus|vs\.?|against|compared to)\s+/i, "").replace(/[.,;:]+$/g, "").trim();
 }
 function isPotentialCompanyName(name, entityName) {
   const cleaned = normalizePossibleCompanyName(name);
@@ -10827,7 +10892,7 @@ function extractLooseComparableCandidatesFromText(text, entityName, options) {
 }
 function addComparableCandidateScores(scores, candidates, weight) {
   for (const candidate of candidates) {
-    const cleaned = normalizeWhitespace(candidate);
+    const cleaned = normalizeWhitespace2(candidate);
     const key = cleaned.toLowerCase();
     if (!cleaned || !key) continue;
     const existing = scores.get(key);
@@ -11039,7 +11104,7 @@ function mergeSignals(primary, fallbacks) {
   const seen = /* @__PURE__ */ new Set();
   const merged = [];
   for (const item of [...primary, ...fallbacks]) {
-    const key = normalizeWhitespace(item.name).toLowerCase();
+    const key = normalizeWhitespace2(item.name).toLowerCase();
     if (!key || seen.has(key)) continue;
     seen.add(key);
     merged.push(item);
@@ -11130,7 +11195,7 @@ function collectFallbackRisks(execution) {
     const raw = step.result;
     if (step.toolName === "run_recon" && Array.isArray(raw?.findings)) {
       for (const finding of raw.findings) {
-        const description = normalizeWhitespace(String(typeof finding === "string" ? finding : finding?.name ?? ""));
+        const description = normalizeWhitespace2(String(typeof finding === "string" ? finding : finding?.name ?? ""));
         const direction = String(typeof finding === "object" ? finding?.direction ?? "" : "");
         if (!description) continue;
         if (direction === "down" || containsRiskLanguage(description)) {
@@ -11181,10 +11246,12 @@ function sanitizeSignals(items) {
     const key = name.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
+    const metadata = normalizeCandidateMetadata(item);
     sanitized.push({
       name,
       direction: item?.direction === "up" || item?.direction === "down" ? item.direction : "neutral",
-      impact: item?.impact === "high" || item?.impact === "low" ? item.impact : "medium"
+      impact: item?.impact === "high" || item?.impact === "low" ? item.impact : "medium",
+      ...metadata
     });
   }
   return selectDiverseSignals(
@@ -11194,12 +11261,17 @@ function sanitizeSignals(items) {
 function sanitizeChanges(items) {
   const normalizedEntries = (items ?? []).map((item) => ({
     description: normalizeChangeDescription(String(item?.description ?? "")),
-    date: item?.date ?? void 0
+    date: item?.date ?? void 0,
+    ...normalizeCandidateMetadata(item)
   })).filter((item) => item.description.length > 0);
   const deduped = dedupeStrings2(normalizedEntries.map((item) => item.description)).filter((description) => description.length >= 18).filter((description) => !looksLikeSourceTitle(description)).filter((description) => !looksLikeFundingHeadline(description)).filter((description) => !looksLikeEvidenceFragment(description)).filter((description) => !looksLikeNarrativeFluff(description)).filter((description) => !looksLikeSpeculativeCapitalMarketsFiller(description)).filter((description) => !looksLikeGenericMarketBackdrop(description)).filter((description) => !looksLikeAmbiguousSubjectSignal(description)).filter((description) => !/\b(sacra|24\/7 wall st|forbes|axios|deepresearchglobal)\b/i.test(description));
-  return deduped.slice(0, 4).map((description, index) => ({
+  return deduped.slice(0, 4).map((description) => ({
     description,
-    date: normalizedEntries.find((item) => item.description === description)?.date
+    date: normalizedEntries.find((item) => item.description === description)?.date,
+    score: normalizedEntries.find((item) => item.description === description)?.score,
+    sourceLabel: normalizedEntries.find((item) => item.description === description)?.sourceLabel,
+    sourceHref: normalizedEntries.find((item) => item.description === description)?.sourceHref,
+    evidenceQuote: normalizedEntries.find((item) => item.description === description)?.evidenceQuote
   }));
 }
 function inferRiskTitleFromDescription(description) {
@@ -11215,7 +11287,7 @@ function sanitizeRisks(items) {
   const seenTitles = /* @__PURE__ */ new Set();
   const sanitized = [];
   for (const item of items ?? []) {
-    let title = normalizeWhitespace(String(item?.title ?? ""));
+    let title = normalizeWhitespace2(String(item?.title ?? ""));
     let description = normalizeNarrativeSentence(String(item?.description ?? ""));
     if (!description || description.length < 18) continue;
     if (looksLikeSourceTitle(description)) continue;
@@ -11239,24 +11311,24 @@ function sanitizeRisks(items) {
     if (seenTitles.has(titleKey)) continue;
     seen.add(key);
     seenTitles.add(titleKey);
-    sanitized.push({ title, description });
+    sanitized.push({ title, description, ...normalizeCandidateMetadata(item) });
   }
   return sanitized.slice(0, 4);
 }
 function sanitizeComparables(items, entityName, fallbacks, context) {
   const seen = /* @__PURE__ */ new Set();
   const sanitized = [];
-  const fallbackSet = new Set(fallbacks.map((value) => normalizeWhitespace(value).toLowerCase()).filter(Boolean));
-  const normalizedTargets = dedupeStrings2((context?.entityTargets ?? []).map((value) => normalizeWhitespace(String(value))));
+  const fallbackSet = new Set(fallbacks.map((value) => normalizeWhitespace2(value).toLowerCase()).filter(Boolean));
+  const normalizedTargets = dedupeStrings2((context?.entityTargets ?? []).map((value) => normalizeWhitespace2(String(value))));
   const targetSet = new Set(normalizedTargets.map((value) => value.toLowerCase()).filter(Boolean));
-  const entityTokens = new Set(entityName.split(/\s+vs\s+|\s*,\s*/i).map((value) => normalizeWhitespace(value).toLowerCase()).filter(Boolean));
+  const entityTokens = new Set(entityName.split(/\s+vs\s+|\s*,\s*/i).map((value) => normalizeWhitespace2(value).toLowerCase()).filter(Boolean));
   const anchorTarget = normalizedTargets[0]?.toLowerCase();
-  const pushComparable = (name, relevance = "medium", note = "Referenced in cited sources.") => {
-    const cleanedName = normalizeWhitespace(name);
+  const pushComparable = (name, relevance = "medium", note = "Referenced in cited sources.", metadata) => {
+    const cleanedName = normalizeWhitespace2(name);
     const explicitTarget = targetSet.has(cleanedName.toLowerCase());
     if (!explicitTarget && !isPotentialCompanyName(cleanedName, entityName)) return;
     const lowerName = cleanedName.toLowerCase();
-    const noteText = normalizeWhitespace(note).toLowerCase();
+    const noteText = normalizeWhitespace2(note).toLowerCase();
     if (SOURCE_ENTITY_STOPWORDS.has(lowerName) && !explicitTarget) return;
     if (looksLikeSourceTitle(cleanedName)) return;
     if (/\b(index|statistics|report|briefing|analysis|investors need to know)\b/i.test(`${cleanedName} ${note}`)) return;
@@ -11277,11 +11349,17 @@ function sanitizeComparables(items, entityName, fallbacks, context) {
     sanitized.push({
       name: cleanedName,
       relevance: relevance === "high" || relevance === "low" ? relevance : "medium",
-      note: normalizeWhitespace(note || "Referenced in cited sources.")
+      note: normalizeWhitespace2(note || "Referenced in cited sources."),
+      ...metadata
     });
   };
   for (const item of items ?? []) {
-    pushComparable(String(item?.name ?? ""), String(item?.relevance ?? "medium"), String(item?.note ?? ""));
+    pushComparable(
+      String(item?.name ?? ""),
+      String(item?.relevance ?? "medium"),
+      String(item?.note ?? ""),
+      normalizeCandidateMetadata(item)
+    );
   }
   for (const fallback of fallbacks) {
     pushComparable(fallback, "medium", "Derived from cited competitive references.");
@@ -11302,7 +11380,7 @@ function sanitizeNextActions(items, lens, entityName, comparables, risks, contex
   }));
   const topComparable = comparables[0]?.name;
   const topRisk = risks[0]?.title.toLowerCase().includes("regulat") || risks[0]?.description.toLowerCase().includes("regulat") ? `Pressure-test regulatory and diligence exposure around ${entityName}.` : topComparable ? `Benchmark ${entityName} against ${topComparable} on positioning, pricing, and enterprise traction.` : `Pressure-test the core investment thesis for ${entityName} against the cited evidence.`;
-  const targetNames = dedupeStrings2((context?.entityTargets ?? []).map((item) => normalizeWhitespace(String(item))));
+  const targetNames = dedupeStrings2((context?.entityTargets ?? []).map((item) => normalizeWhitespace2(String(item))));
   const comparisonLabel = targetNames.length > 1 ? targetNames.join(", ") : entityName;
   const defaults = context?.classification === "multi_entity" && lens === "banker" ? [
     `Build a side-by-side diligence matrix for ${comparisonLabel} covering pricing, enterprise traction, buyer fit, and contract durability.`,
@@ -11335,7 +11413,7 @@ function sanitizeNextActions(items, lens, entityName, comparables, risks, contex
 }
 function buildDefaultNextQuestions(args) {
   if (args.classification === "multi_entity") {
-    const comparisonLabel = dedupeStrings2((args.entityTargets ?? []).map((item) => normalizeWhitespace(String(item)))).slice(0, 3).join(", ") || args.entityName;
+    const comparisonLabel = dedupeStrings2((args.entityTargets ?? []).map((item) => normalizeWhitespace2(String(item)))).slice(0, 3).join(", ") || args.entityName;
     return [
       `Which company in ${comparisonLabel} has the strongest enterprise distribution today, and what evidence would overturn that ranking?`,
       `Where do pricing power and contract durability differ most across the current peer set?`,
@@ -11354,7 +11432,7 @@ function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 function inferMetricEntity(value, entityName, entityTargets) {
-  const orderedTargets = dedupeStrings2([...entityTargets ?? [], entityName].map((item) => normalizeWhitespace(String(item))));
+  const orderedTargets = dedupeStrings2([...entityTargets ?? [], entityName].map((item) => normalizeWhitespace2(String(item))));
   for (const target of orderedTargets) {
     if (!target) continue;
     const pattern = new RegExp(`\\b${escapeRegex(target)}\\b`, "i");
@@ -11366,10 +11444,10 @@ function mentionsEntityTarget(value, entityTargets) {
   return inferMetricEntity(value, "", entityTargets) !== null;
 }
 function looksLikeAmbiguousSubjectSignal(value) {
-  return /^(its|the company|reports indicated|by march|by december|new data from)/i.test(normalizeWhitespace(value));
+  return /^(its|the company|reports indicated|by march|by december|new data from)/i.test(normalizeWhitespace2(value));
 }
 function inferMetricLabels(sentence, entityName, entityTargets) {
-  const normalizedTargets = dedupeStrings2((entityTargets ?? []).map((item) => normalizeWhitespace(String(item))));
+  const normalizedTargets = dedupeStrings2((entityTargets ?? []).map((item) => normalizeWhitespace2(String(item))));
   const multiEntity = normalizedTargets.length > 1;
   const subject = inferMetricEntity(sentence, entityName, entityTargets) ?? (multiEntity ? null : entityName);
   if (!subject) return [];
@@ -11399,7 +11477,7 @@ function inferMetricLabels(sentence, entityName, entityTargets) {
   return labels;
 }
 function normalizeMetricValue(rawValue) {
-  return normalizeWhitespace(rawValue).replace(/\b(billion|million)\b/gi, (match) => match.toLowerCase() === "billion" ? "B" : "M").replace(/\s+([bBmM])\b/g, (_, suffix) => suffix.toUpperCase()).replace(/\s+(B|M)\b/g, "$1");
+  return normalizeWhitespace2(rawValue).replace(/\b(billion|million)\b/gi, (match) => match.toLowerCase() === "billion" ? "B" : "M").replace(/\s+([bBmM])\b/g, (_, suffix) => suffix.toUpperCase()).replace(/\s+(B|M)\b/g, "$1");
 }
 function getMetricCategory(label) {
   const normalized = label.toLowerCase();
@@ -11413,7 +11491,7 @@ function getMetricCategory(label) {
   return "other";
 }
 function formatMetricClause(metric) {
-  const label = normalizeWhitespace(metric.label);
+  const label = normalizeWhitespace2(metric.label);
   const value = normalizeMetricValue(metric.value);
   if (!label || !value) return "";
   if (/\b(gross margin|growth|market share|usage mix)\b/i.test(label)) {
@@ -11541,7 +11619,7 @@ function collectMetricSentences(execution, signals, changes) {
     web_snippet: 1
   };
   for (const evidence of evidences) {
-    const key = normalizeWhitespace(evidence.text).toLowerCase();
+    const key = normalizeWhitespace2(evidence.text).toLowerCase();
     if (!key) continue;
     const rank = sourceRank[evidence.source] ?? 0;
     const existing = byText.get(key);
@@ -11575,7 +11653,7 @@ function deriveEvidenceKeyMetrics(args) {
     return isCurrency || isPercent;
   };
   const pushMetric = (label, value, score) => {
-    const cleanedLabel = normalizeWhitespace(label);
+    const cleanedLabel = normalizeWhitespace2(label);
     const cleanedValue = normalizeMetricValue(value);
     if (!cleanedLabel || !cleanedValue) return;
     if (/^(sources?|confidence|comparables?|diligence flags?)$/i.test(cleanedLabel)) return;
@@ -11669,7 +11747,7 @@ function sanitizeSources(items, execution) {
   const seen = /* @__PURE__ */ new Set();
   const sanitized = [];
   const pushSource = (label, href, type) => {
-    const cleanedLabel = normalizeWhitespace(label);
+    const cleanedLabel = normalizeWhitespace2(label);
     if (!cleanedLabel || /^(web_search|run_recon|linkup_search|enrich_entity|simulate_decision_paths)$/i.test(cleanedLabel)) {
       return;
     }
@@ -11713,7 +11791,7 @@ function sanitizeSources(items, execution) {
   return sanitized.slice(0, 8).map(({ label, href, type }) => ({ label, href, type }));
 }
 function sanitizeExecutiveAnswer(answer, entityName, keyMetrics, signals, comparables, risks, nextActions, context) {
-  const cleaned = normalizeWhitespace(answer.replace(/```json|```/g, ""));
+  const cleaned = normalizeWhitespace2(answer.replace(/```json|```/g, ""));
   const sentences = dedupeStrings2(sentenceSplit(cleaned)).filter((sentence) => sentence.length >= 25 && !/^sources?:/i.test(sentence));
   const filteredSentences = sentences.filter(
     (sentence) => !/\b(arms race|what investors need to know|index\s+\w+\s+update|source artifact|worth buying|turns the tables|leading one half)\b/i.test(sentence) && !looksLikeNarrativeFluff(sentence) && !looksLikeSpeculativeCapitalMarketsFiller(sentence) && !looksLikeGenericMarketBackdrop(sentence)
@@ -11739,7 +11817,7 @@ function sanitizeExecutiveAnswer(answer, entityName, keyMetrics, signals, compar
   const leadComparable = comparables[0]?.name;
   const comparableLabel = comparables.slice(0, 2).map((item) => item.name).join(" and ");
   const leadRisk = risks[0];
-  const comparisonSet = dedupeStrings2((context?.entityTargets ?? []).map((item) => normalizeWhitespace(String(item)))).slice(0, 3);
+  const comparisonSet = dedupeStrings2((context?.entityTargets ?? []).map((item) => normalizeWhitespace2(String(item)))).slice(0, 3);
   const bankerMetricClauses = keyMetrics.slice(0, context?.lens === "banker" ? 4 : 3).map((metric) => formatMetricClause(metric)).filter(Boolean);
   if (context?.lens === "banker") {
     const scope = context?.classification === "multi_entity" ? comparisonSet.length > 1 ? comparisonSet.join(", ") : entityName : entityName;
@@ -11761,7 +11839,7 @@ function sanitizeExecutiveAnswer(answer, entityName, keyMetrics, signals, compar
     if (nextActions[0]?.action) {
       summaryParts.push(`The immediate next step is to ${nextActions[0].action.charAt(0).toLowerCase()}${nextActions[0].action.slice(1)}.`);
     }
-    return normalizeWhitespace(summaryParts.slice(0, 4).join(" ")).replace(/\.(?:\s*\.)+/g, ".").replace(/\.{2,}/g, ".");
+    return normalizeWhitespace2(summaryParts.slice(0, 4).join(" ")).replace(/\.(?:\s*\.)+/g, ".").replace(/\.{2,}/g, ".");
   }
   if (context?.classification === "multi_entity") {
     const scope = comparisonSet.length > 1 ? comparisonSet.join(", ") : entityName;
@@ -11804,7 +11882,7 @@ function sanitizeExecutiveAnswer(answer, entityName, keyMetrics, signals, compar
   if (nextActions[0]?.action) {
     summaryParts.push(`The immediate next move is to ${nextActions[0].action.charAt(0).toLowerCase()}${nextActions[0].action.slice(1)}.`);
   }
-  return normalizeWhitespace(summaryParts.slice(0, 4).join(" ")).replace(/\.(?:\s*\.)+/g, ".").replace(/\.{2,}/g, ".");
+  return normalizeWhitespace2(summaryParts.slice(0, 4).join(" ")).replace(/\.(?:\s*\.)+/g, ".").replace(/\.{2,}/g, ".");
 }
 function budgetToolData(toolResults, maxTokensBudget) {
   const inputBudget = Math.floor(maxTokensBudget * 0.6 * 4);
@@ -11949,7 +12027,38 @@ async function callLLM(callTool, prompt, system, maxTokens) {
     });
     const text = typeof toolResult === "string" ? toolResult : toolResult?.error ? "" : String(toolResult?.response ?? toolResult?.output ?? toolResult?.content ?? "");
     if (text.length > 10) return text;
-  } catch {
+  } catch (toolErr) {
+    console.error("[callLLM] tool bus failed:", toolErr?.message?.slice(0, 80));
+  }
+  const geminiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
+  if (geminiKey) {
+    try {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${geminiKey}`;
+      const body = {
+        contents: [{ parts: [{ text: system ? `${system}
+
+${prompt}` : prompt }] }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: tokens, responseMimeType: "application/json" }
+      };
+      const resp = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(25e3)
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+        if (text.length > 10) {
+          console.error("[callLLM] Gemini direct succeeded:", text.length, "chars");
+          return text;
+        }
+      } else {
+        console.error("[callLLM] Gemini direct failed:", resp.status);
+      }
+    } catch (geminiErr) {
+      console.error("[callLLM] Gemini direct error:", geminiErr?.message?.slice(0, 80));
+    }
   }
   const complexity = assessComplexity(prompt, tokens);
   const primaryModel = GEMINI_MODELS[complexity];
@@ -11966,6 +12075,7 @@ async function callLLM(callTool, prompt, system, maxTokens) {
       continue;
     }
   }
+  console.error("[callLLM] ALL paths failed. Returning empty.");
   return "";
 }
 var PLAN_PROMPT = `You are NodeBench's agent orchestrator. Given a user query, plan which tools to call and in what order.
@@ -12309,6 +12419,7 @@ ANALYSIS REQUIREMENTS:
 6. NEXT ACTIONS: 2-3 specific, actionable steps the ${lens} should take this week. Not generic "do more research" \u2014 specific actions like "review Q4 filing for revenue breakdown" or "compare pricing vs competitor X".
 7. FOLLOW-UP QUESTIONS: 3-4 specific questions that would deepen this analysis. Questions should reference gaps in the current data.
 8. SOURCES: List actual source names/URLs from the data. Never list tool names like "web_search" or "run_recon". Use the actual article titles, document names, or website domains.
+9. SOURCE LINKING: Every signal, change, risk, and comparable must include score (0-100), sourceLabel, sourceHref when available, and evidenceQuote. Omit weak items instead of fabricating provenance.
 
 Return ONLY valid JSON with ALL fields populated:
 {
@@ -12317,10 +12428,10 @@ Return ONLY valid JSON with ALL fields populated:
   "confidence": 0-100,
   "keyMetrics": [{"label": "metric name", "value": "metric value"}],
   "whyThisTeam": {"founderCredibility": "why these founders are credible for this problem", "trustSignals": ["signal1", "signal2"], "visionMagnitude": "feature, product, or company-scale?", "reinventionCapacity": "can they pivot?", "hiddenRequirements": ["what outsiders expect"]},
-  "signals": [{"name": "signal", "direction": "up|down|neutral", "impact": "high|medium|low"}],
-  "changes": [{"description": "recent change"}],
-  "risks": [{"title": "risk", "description": "why it matters"}],
-  "comparables": [{"name": "competitor", "relevance": "high|medium|low", "note": "why relevant"}],
+  "signals": [{"name": "signal", "direction": "up|down|neutral", "impact": "high|medium|low", "score": 0, "sourceLabel": "source", "sourceHref": "https://...", "evidenceQuote": "proof"}],
+  "changes": [{"description": "recent change", "date": "optional", "score": 0, "sourceLabel": "source", "sourceHref": "https://...", "evidenceQuote": "proof"}],
+  "risks": [{"title": "risk", "description": "why it matters", "score": 0, "sourceLabel": "source", "sourceHref": "https://...", "evidenceQuote": "proof"}],
+  "comparables": [{"name": "competitor", "relevance": "high|medium|low", "note": "why relevant", "score": 0, "sourceLabel": "source", "sourceHref": "https://...", "evidenceQuote": "proof"}],
   "nextActions": [{"action": "step", "impact": "high|medium|low"}],
   "nextQuestions": ["follow-up question"],
   "sources": [{"label": "source title", "href": "url", "type": "web|doc"}]
@@ -12329,8 +12440,11 @@ Return ONLY valid JSON with ALL fields populated:
         2200
       );
       const jsonMatch = text.match(/\{[\s\S]*\}/);
+      console.error("[synthesis] LLM returned", text.length, "chars. jsonMatch:", jsonMatch ? jsonMatch[0].length + " chars" : "null", "first 100:", text.slice(0, 100));
       if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+        const cleaned = jsonMatch[0].replace(/,\s*([\]}])/g, "$1");
+        const parsed = JSON.parse(cleaned);
+        console.error("[synthesis] Parsed OK. entityName:", parsed.entityName, "signals:", parsed.signals?.length, "risks:", parsed.risks?.length);
         const signals2 = mergeSignals(collectFallbackSignals(execution), sanitizeSignals(parsed.signals));
         const changes2 = sanitizeChanges([
           ...collectFallbackChanges(execution),
@@ -12373,12 +12487,12 @@ Return ONLY valid JSON with ALL fields populated:
           })
         ]).slice(0, 4);
         const whyThisTeam = parsed.whyThisTeam && typeof parsed.whyThisTeam === "object" ? {
-          founderCredibility: normalizeWhitespace(String(parsed.whyThisTeam.founderCredibility ?? "")),
+          founderCredibility: normalizeWhitespace2(String(parsed.whyThisTeam.founderCredibility ?? "")),
           trustSignals: dedupeStrings2(
             Array.isArray(parsed.whyThisTeam.trustSignals) ? parsed.whyThisTeam.trustSignals.map((item) => String(item ?? "")) : []
           ).slice(0, 4),
-          visionMagnitude: normalizeWhitespace(String(parsed.whyThisTeam.visionMagnitude ?? "")),
-          reinventionCapacity: normalizeWhitespace(String(parsed.whyThisTeam.reinventionCapacity ?? "")),
+          visionMagnitude: normalizeWhitespace2(String(parsed.whyThisTeam.visionMagnitude ?? "")),
+          reinventionCapacity: normalizeWhitespace2(String(parsed.whyThisTeam.reinventionCapacity ?? "")),
           hiddenRequirements: dedupeStrings2(
             Array.isArray(parsed.whyThisTeam.hiddenRequirements) ? parsed.whyThisTeam.hiddenRequirements.map((item) => String(item ?? "")) : []
           ).slice(0, 4)
@@ -12412,7 +12526,8 @@ Return ONLY valid JSON with ALL fields populated:
           sources: sources2
         };
       }
-    } catch {
+    } catch (synthErr) {
+      console.error("[synthesis] LLM path failed:", synthErr?.message?.slice(0, 150));
     }
   }
   const signals = [];
@@ -12437,22 +12552,37 @@ Return ONLY valid JSON with ALL fields populated:
         if (snippet) {
           if (/\b(revenue|growth|raised|funding|launch|expand|partner|acquir|billion|million|valuation)/i.test(snippet)) {
             const titleNeg = /\b(trouble|fail|declin|crash|struggle|layoff|scandal|problem|crisis|concern|threaten|warn)/i.test(title || snippet);
-            signals.push({ name: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 120), direction: titleNeg ? "down" : "up", impact: "high" });
+            signals.push({
+              name: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 120),
+              direction: titleNeg ? "down" : "up",
+              impact: "high",
+              score: 82,
+              sourceLabel: title || void 0,
+              sourceHref: url || void 0,
+              evidenceQuote: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 180)
+            });
           }
           if (/\b(layoff|decline|loss|risk|lawsuit|regulat|concern|investig|threat|challenge|vulnerab)/i.test(snippet)) {
-            risks.push({ title: inferRiskTitleFromDescription(snippet), description: snippet.slice(0, 200) });
+            risks.push({
+              title: inferRiskTitleFromDescription(snippet),
+              description: snippet.slice(0, 200),
+              score: 80,
+              sourceLabel: title || void 0,
+              sourceHref: url || void 0,
+              evidenceQuote: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 180)
+            });
           }
           if (/\b(compet|rival|alternative|versus|vs\.|compared to)/i.test(snippet)) {
             const compMatch = snippet.match(/(?:competitors?|rivals?|alternatives?)\s+(?:like|such as|including)\s+([A-Z][a-zA-Z]+(?:\s*,\s*[A-Z][a-zA-Z]+)*)/i);
             if (compMatch) {
               for (const name of compMatch[1].split(/,\s*/)) {
-                if (name.trim().length > 2 && !/^(and|or|the|a|an|its|their|also|but|with)$/i.test(name.trim())) comparables.push({ name: name.trim(), relevance: "high", note: "Identified via Linkup" });
+                if (name.trim().length > 2 && !/^(and|or|the|a|an|its|their|also|but|with)$/i.test(name.trim())) comparables.push({ name: name.trim(), relevance: "high", note: "Identified via Linkup", score: 76, sourceLabel: title || void 0, sourceHref: url || void 0, evidenceQuote: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 180) });
               }
             }
           }
           if (/\b(announced|launched|released|updated|acquired|raised|hired|expanded|partnered|introduced|unveiled|reported)\b/i.test(snippet)) {
             const description = normalizeChangeDescription(extractEvidenceSentencesSafe(snippet)[0] ?? snippet);
-            if (description) changes.push({ description });
+            if (description) changes.push({ description, score: 78, sourceLabel: title || void 0, sourceHref: url || void 0, evidenceQuote: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 180) });
           }
         }
       }
@@ -12468,20 +12598,35 @@ Return ONLY valid JSON with ALL fields populated:
           answerParts.push(snippet.slice(0, 200));
           if (/\b(growth|revenue|raised|funding|launch|expand|partner|acquir)/i.test(snippet)) {
             const titleNeg = /\b(trouble|fail|declin|crash|struggle|layoff|scandal|problem|crisis|concern|threaten|warn)/i.test(title);
-            signals.push({ name: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 120), direction: titleNeg ? "down" : "up", impact: "medium" });
+            signals.push({
+              name: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 120),
+              direction: titleNeg ? "down" : "up",
+              impact: "medium",
+              score: 74,
+              sourceLabel: title || void 0,
+              sourceHref: url || void 0,
+              evidenceQuote: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 180)
+            });
           }
           if (/\b(layoff|decline|loss|risk|lawsuit|regulat|concern|investig)/i.test(snippet)) {
-            risks.push({ title: inferRiskTitleFromDescription(snippet), description: snippet.slice(0, 200) });
+            risks.push({
+              title: inferRiskTitleFromDescription(snippet),
+              description: snippet.slice(0, 200),
+              score: 72,
+              sourceLabel: title || void 0,
+              sourceHref: url || void 0,
+              evidenceQuote: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 180)
+            });
           }
           if (/\b(announced|launched|released|updated|acquired|raised|hired|expanded|partnered|introduced|unveiled|reported)\b/i.test(snippet)) {
             const description = normalizeChangeDescription(extractEvidenceSentencesSafe(snippet)[0] ?? snippet);
-            if (description) changes.push({ description });
+            if (description) changes.push({ description, score: 70, sourceLabel: title || void 0, sourceHref: url || void 0, evidenceQuote: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 180) });
           }
           if (/\b(compet|rival|alternative|versus|vs\.|compared to)/i.test(snippet)) {
             const compMatch = snippet.match(/(?:competitors?|rivals?|alternatives?)\s+(?:like|such as|including)\s+([A-Z][a-zA-Z]+(?:\s*,\s*[A-Z][a-zA-Z]+)*)/i);
             if (compMatch) {
               for (const name of compMatch[1].split(/,\s*/)) {
-                if (name.trim().length > 2 && !/^(and|or|the|a|an|its|their|also|but|with)$/i.test(name.trim())) comparables.push({ name: name.trim(), relevance: "high", note: "Web intelligence" });
+                if (name.trim().length > 2 && !/^(and|or|the|a|an|its|their|also|but|with)$/i.test(name.trim())) comparables.push({ name: name.trim(), relevance: "high", note: "Web intelligence", score: 68, sourceLabel: title || void 0, sourceHref: url || void 0, evidenceQuote: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 180) });
               }
             }
           }
@@ -12502,7 +12647,7 @@ Return ONLY valid JSON with ALL fields populated:
         for (const f of (Array.isArray(raw.findings) ? raw.findings : []).slice(0, 5)) {
           const name = typeof f === "string" ? f : f?.name ?? f?.title ?? f?.finding ?? "";
           if (!name) continue;
-          const normalizedFinding = normalizeWhitespace(name).slice(0, 260);
+          const normalizedFinding = normalizeWhitespace2(name).slice(0, 260);
           signals.push({ name: normalizedFinding, direction: f?.direction ?? "neutral", impact: f?.impact ?? "medium" });
           if (/\b(quadrupled|doubled|tripled|expanded|grew|growth|increased|reached|now exceeds|accelerat|represent over half|enterprise use)\b/i.test(normalizedFinding)) {
             const description = normalizeChangeDescription(normalizedFinding);
@@ -13217,26 +13362,28 @@ function upsertDurableObject(input) {
   const now = (/* @__PURE__ */ new Date()).toISOString();
   const objectId = input.id ?? genId(String(input.kind));
   const metadataJson = json(input.metadata);
-  db.prepare(`
-    INSERT INTO object_nodes (id, kind, label, source, status, metadata_json, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      kind = excluded.kind,
-      label = excluded.label,
-      source = excluded.source,
-      status = excluded.status,
-      metadata_json = excluded.metadata_json,
-      updated_at = excluded.updated_at
-  `).run(
-    objectId,
-    input.kind,
-    input.label,
-    input.source ?? "local",
-    input.status ?? "active",
-    metadataJson,
-    now,
-    now
-  );
+  withObjectNodesFtsRepair(() => {
+    db.prepare(`
+      INSERT INTO object_nodes (id, kind, label, source, status, metadata_json, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        kind = excluded.kind,
+        label = excluded.label,
+        source = excluded.source,
+        status = excluded.status,
+        metadata_json = excluded.metadata_json,
+        updated_at = excluded.updated_at
+    `).run(
+      objectId,
+      input.kind,
+      input.label,
+      input.source ?? "local",
+      input.status ?? "active",
+      metadataJson,
+      now,
+      now
+    );
+  });
   const queuedSyncId = input.queueForSync === false ? void 0 : enqueueSyncOperation({
     objectId,
     objectKind: input.kind,
@@ -14164,6 +14311,534 @@ function getSharedContextScopedSnapshot(filters = {}) {
 
 // server/routes/search.ts
 init_contextInjection();
+
+// packages/mcp-local/src/sync/hyperloopEval.ts
+init_db();
+
+// packages/mcp-local/src/sync/hyperloopArchive.ts
+init_db();
+var MAX_ARCHIVE = 200;
+function initHyperloopTables() {
+  const db = getDb();
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS hyperloop_archive (
+      id TEXT PRIMARY KEY,
+      type TEXT NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL,
+      content TEXT NOT NULL,
+      source_episode_id TEXT NOT NULL,
+      source_query TEXT NOT NULL,
+      source_lens TEXT NOT NULL,
+      source_entity TEXT,
+      evidence_coverage REAL NOT NULL DEFAULT 0,
+      contradictions_caught INTEGER NOT NULL DEFAULT 0,
+      user_edit_distance REAL NOT NULL DEFAULT 1,
+      was_exported INTEGER NOT NULL DEFAULT 0,
+      was_delegated INTEGER NOT NULL DEFAULT 0,
+      quality_score REAL NOT NULL DEFAULT 0,
+      improvement_delta REAL NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'candidate',
+      usage_count INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_archive_type_status ON hyperloop_archive(type, status);
+    CREATE INDEX IF NOT EXISTS idx_archive_quality ON hyperloop_archive(quality_score DESC);
+    CREATE INDEX IF NOT EXISTS idx_archive_type_quality ON hyperloop_archive(type, quality_score DESC);
+  `);
+}
+function addArchiveEntry(entry) {
+  const db = getDb();
+  initHyperloopTables();
+  const id = genId("hyp");
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const countRow = db.prepare("SELECT COUNT(*) as cnt FROM hyperloop_archive").get();
+  if ((countRow?.cnt ?? 0) >= MAX_ARCHIVE) {
+    db.prepare(
+      "DELETE FROM hyperloop_archive WHERE id IN (SELECT id FROM hyperloop_archive WHERE status = 'candidate' ORDER BY quality_score ASC LIMIT 10)"
+    ).run();
+  }
+  db.prepare(`
+    INSERT INTO hyperloop_archive (id, type, name, description, content, source_episode_id, source_query, source_lens, source_entity, evidence_coverage, contradictions_caught, user_edit_distance, was_exported, was_delegated, quality_score, improvement_delta, status, usage_count, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'candidate', 0, ?, ?)
+  `).run(
+    id,
+    entry.type,
+    entry.name,
+    entry.description,
+    entry.content,
+    entry.sourceEpisodeId,
+    entry.sourceQuery,
+    entry.sourceLens,
+    entry.sourceEntity ?? null,
+    entry.evidenceCoverage,
+    entry.contradictionsCaught,
+    entry.userEditDistance,
+    entry.wasExported ? 1 : 0,
+    entry.wasDelegated ? 1 : 0,
+    entry.qualityScore,
+    entry.improvementDelta,
+    entry.createdAt,
+    now
+  );
+  return { ...entry, id, status: "candidate", usageCount: 0, updatedAt: now };
+}
+function lookupBestVariant(type, lens, entity) {
+  const db = getDb();
+  initHyperloopTables();
+  let row = null;
+  if (entity) {
+    row = db.prepare(
+      "SELECT * FROM hyperloop_archive WHERE type = ? AND status = 'promoted' AND source_entity = ? ORDER BY quality_score DESC LIMIT 1"
+    ).get(type, entity);
+  }
+  if (!row && lens) {
+    row = db.prepare(
+      "SELECT * FROM hyperloop_archive WHERE type = ? AND status = 'promoted' AND source_lens = ? ORDER BY quality_score DESC LIMIT 1"
+    ).get(type, lens);
+  }
+  if (!row) {
+    row = db.prepare(
+      "SELECT * FROM hyperloop_archive WHERE type = ? AND status IN ('promoted', 'validated') ORDER BY quality_score DESC LIMIT 1"
+    ).get(type);
+  }
+  if (!row) return null;
+  db.prepare("UPDATE hyperloop_archive SET usage_count = usage_count + 1, updated_at = ? WHERE id = ?").run((/* @__PURE__ */ new Date()).toISOString(), row.id);
+  return rowToEntry(row);
+}
+function getArchiveStats() {
+  const db = getDb();
+  initHyperloopTables();
+  const total = db.prepare("SELECT COUNT(*) as cnt FROM hyperloop_archive").get()?.cnt ?? 0;
+  const typeRows = db.prepare("SELECT type, COUNT(*) as cnt FROM hyperloop_archive GROUP BY type").all();
+  const byType = {};
+  for (const r of typeRows) byType[r.type] = r.cnt;
+  const statusRows = db.prepare("SELECT status, COUNT(*) as cnt FROM hyperloop_archive GROUP BY status").all();
+  const byStatus = {};
+  for (const r of statusRows) byStatus[r.status] = r.cnt;
+  const avgRow = db.prepare("SELECT AVG(quality_score) as avg FROM hyperloop_archive").get();
+  const avgQuality = avgRow?.avg ?? 0;
+  return { total, byType, byStatus, avgQuality: Math.round(avgQuality * 100) / 100 };
+}
+function rowToEntry(row) {
+  return {
+    id: row.id,
+    type: row.type,
+    name: row.name,
+    description: row.description,
+    content: row.content,
+    sourceEpisodeId: row.source_episode_id,
+    sourceQuery: row.source_query,
+    sourceLens: row.source_lens,
+    sourceEntity: row.source_entity,
+    evidenceCoverage: row.evidence_coverage,
+    contradictionsCaught: row.contradictions_caught,
+    userEditDistance: row.user_edit_distance,
+    wasExported: !!row.was_exported,
+    wasDelegated: !!row.was_delegated,
+    qualityScore: row.quality_score,
+    improvementDelta: row.improvement_delta,
+    status: row.status,
+    usageCount: row.usage_count,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+// packages/mcp-local/src/sync/hyperloopEval.ts
+function initEvalTables() {
+  const db = getDb();
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS hyperloop_evaluations (
+      eval_id TEXT PRIMARY KEY,
+      episode_id TEXT NOT NULL,
+      query TEXT NOT NULL,
+      lens TEXT NOT NULL,
+      entity TEXT,
+      classification TEXT NOT NULL,
+      evidence_coverage REAL NOT NULL,
+      contradiction_rate REAL NOT NULL,
+      grounding_rate REAL NOT NULL,
+      user_edit_distance REAL NOT NULL,
+      was_exported INTEGER NOT NULL DEFAULT 0,
+      was_delegated INTEGER NOT NULL DEFAULT 0,
+      latency_ms INTEGER NOT NULL,
+      cost_usd REAL NOT NULL DEFAULT 0,
+      tool_call_count INTEGER NOT NULL DEFAULT 0,
+      quality_score REAL NOT NULL,
+      rubric_version TEXT NOT NULL DEFAULT 'hyperloop_v2',
+      score_components TEXT NOT NULL DEFAULT '[]',
+      gates TEXT NOT NULL DEFAULT '[]',
+      policy_action TEXT NOT NULL DEFAULT 'archive_only',
+      llm_judge TEXT,
+      reference_variant_id TEXT,
+      improvement_delta REAL NOT NULL DEFAULT 0,
+      timestamp TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_eval_episode ON hyperloop_evaluations(episode_id);
+    CREATE INDEX IF NOT EXISTS idx_eval_quality ON hyperloop_evaluations(quality_score DESC);
+    CREATE INDEX IF NOT EXISTS idx_eval_classification ON hyperloop_evaluations(classification);
+  `);
+  ensureEvalColumn("rubric_version", "TEXT NOT NULL DEFAULT 'hyperloop_v2'");
+  ensureEvalColumn("score_components", "TEXT NOT NULL DEFAULT '[]'");
+  ensureEvalColumn("gates", "TEXT NOT NULL DEFAULT '[]'");
+  ensureEvalColumn("policy_action", "TEXT NOT NULL DEFAULT 'archive_only'");
+  ensureEvalColumn("llm_judge", "TEXT");
+}
+function ensureEvalColumn(columnName, definition) {
+  const db = getDb();
+  const columns = db.prepare("PRAGMA table_info(hyperloop_evaluations)").all();
+  if (!columns.some((column) => column.name === columnName)) {
+    db.exec(`ALTER TABLE hyperloop_evaluations ADD COLUMN ${columnName} ${definition}`);
+  }
+}
+function clamp01(value) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(1, value));
+}
+function roundScore(value) {
+  return Math.round(clamp01(value) * 100) / 100;
+}
+function buildHyperloopScorecard(metrics) {
+  const scoreComponents = [
+    {
+      key: "evidence_coverage",
+      label: "Evidence coverage",
+      weight: 0.3,
+      rawValue: roundScore(metrics.evidenceCoverage),
+      normalizedScore: roundScore(metrics.evidenceCoverage),
+      weightedContribution: roundScore(metrics.evidenceCoverage * 0.3),
+      detail: "Verified or source-backed signals divided by total surfaced signals."
+    },
+    {
+      key: "claim_grounding",
+      label: "Claim grounding",
+      weight: 0.25,
+      rawValue: roundScore(metrics.groundingRate),
+      normalizedScore: roundScore(metrics.groundingRate),
+      weightedContribution: roundScore(metrics.groundingRate * 0.25),
+      detail: "Claims with explicit evidence text divided by total surfaced claims."
+    },
+    {
+      key: "contradiction_capture",
+      label: "Contradiction capture",
+      weight: 0.15,
+      rawValue: roundScore(metrics.contradictionRate),
+      normalizedScore: roundScore(Math.min(1, metrics.contradictionRate * 4)),
+      weightedContribution: roundScore(Math.min(1, metrics.contradictionRate * 4) * 0.15),
+      detail: "Non-zero only when the run actually surfaced contradictions or diligence flags."
+    },
+    {
+      key: "human_edit_burden",
+      label: "Human edit burden",
+      weight: 0.15,
+      rawValue: roundScore(1 - metrics.userEditDistance),
+      normalizedScore: roundScore(1 - metrics.userEditDistance),
+      weightedContribution: roundScore((1 - metrics.userEditDistance) * 0.15),
+      detail: "Starts at 1.0 and falls as the human has to rewrite more of the result."
+    },
+    {
+      key: "outcome_readiness",
+      label: "Outcome readiness",
+      weight: 0.1,
+      rawValue: roundScore((metrics.wasExported ? 0.5 : 0) + (metrics.wasDelegated ? 0.5 : 0)),
+      normalizedScore: roundScore((metrics.wasExported ? 0.5 : 0) + (metrics.wasDelegated ? 0.5 : 0)),
+      weightedContribution: roundScore(((metrics.wasExported ? 0.5 : 0) + (metrics.wasDelegated ? 0.5 : 0)) * 0.1),
+      detail: "Gives credit only when the result was strong enough to export or delegate."
+    },
+    {
+      key: "latency_budget",
+      label: "Latency budget",
+      weight: 0.05,
+      rawValue: metrics.latencyMs,
+      normalizedScore: metrics.latencyMs <= 5e3 ? 1 : metrics.latencyMs <= 12e3 ? 0.6 : metrics.latencyMs <= 2e4 ? 0.35 : 0.1,
+      weightedContribution: roundScore((metrics.latencyMs <= 5e3 ? 1 : metrics.latencyMs <= 12e3 ? 0.6 : metrics.latencyMs <= 2e4 ? 0.35 : 0.1) * 0.05),
+      detail: "Fast runs get a small bonus, but speed is deliberately not a dominant factor."
+    }
+  ].map((component) => ({
+    ...component,
+    normalizedScore: roundScore(component.normalizedScore),
+    weightedContribution: roundScore(component.weightedContribution)
+  }));
+  const qualityScore = roundScore(scoreComponents.reduce((sum, component) => sum + component.weightedContribution, 0));
+  const gates = [
+    {
+      key: "minimum_evidence",
+      label: "Minimum evidence",
+      passed: metrics.evidenceCoverage >= 0.25,
+      critical: true,
+      reason: metrics.evidenceCoverage >= 0.25 ? "Evidence coverage cleared the minimum threshold." : "Too few surfaced signals were actually source-backed."
+    },
+    {
+      key: "minimum_grounding",
+      label: "Minimum grounding",
+      passed: metrics.groundingRate >= 0.25,
+      critical: true,
+      reason: metrics.groundingRate >= 0.25 ? "Grounding rate cleared the minimum threshold." : "Too many claims are unsupported or missing direct evidence text."
+    },
+    {
+      key: "human_edit_load",
+      label: "Human edit load",
+      passed: metrics.userEditDistance <= 0.6,
+      critical: false,
+      reason: metrics.userEditDistance <= 0.6 ? "Human edit burden is still within acceptable review bounds." : "The human would need to rewrite too much of this output."
+    },
+    {
+      key: "latency_window",
+      label: "Latency window",
+      passed: metrics.latencyMs <= 15e3,
+      critical: false,
+      reason: metrics.latencyMs <= 15e3 ? "Latency stayed within the target review window." : "This run was too slow for routine founder use."
+    },
+    {
+      key: "archive_candidate_score",
+      label: "Archive candidate score",
+      passed: qualityScore >= 0.62,
+      critical: false,
+      reason: qualityScore >= 0.62 ? "Composite score is high enough to consider archive candidacy." : "Composite score is still too weak for a reusable archive candidate."
+    }
+  ];
+  const hasCriticalFailure = gates.some((gate) => gate.critical && !gate.passed);
+  const policyAction = !hasCriticalFailure && qualityScore >= 0.62 ? "candidate" : "archive_only";
+  return {
+    qualityScore,
+    scoreComponents,
+    gates,
+    policyAction
+  };
+}
+function evaluateTask(input) {
+  const db = getDb();
+  initEvalTables();
+  const evidenceCoverage = input.totalSignals > 0 ? input.verifiedSignals / input.totalSignals : 0;
+  const groundingRate = input.totalClaims > 0 ? input.groundedClaims / input.totalClaims : 0;
+  const contradictionRate = input.totalClaims > 0 ? input.contradictionsCaught / input.totalClaims : 0;
+  const {
+    qualityScore,
+    scoreComponents,
+    gates,
+    policyAction
+  } = buildHyperloopScorecard({
+    evidenceCoverage,
+    groundingRate,
+    contradictionRate,
+    userEditDistance: input.userEditDistance,
+    wasExported: input.wasExported,
+    wasDelegated: input.wasDelegated,
+    latencyMs: input.latencyMs
+  });
+  const archiveType = classificationToArchiveType(input.classification);
+  const reference = lookupBestVariant(archiveType, input.lens, input.entity ?? void 0);
+  const improvementDelta = reference ? Math.round((qualityScore - reference.qualityScore) * 100) / 100 : 0;
+  const evalId = genId("eval");
+  const timestamp = (/* @__PURE__ */ new Date()).toISOString();
+  const llmJudge = normalizeLlmJudge(input.llmJudge);
+  db.prepare(`
+    INSERT INTO hyperloop_evaluations (eval_id, episode_id, query, lens, entity, classification, evidence_coverage, contradiction_rate, grounding_rate, user_edit_distance, was_exported, was_delegated, latency_ms, cost_usd, tool_call_count, quality_score, rubric_version, score_components, gates, policy_action, llm_judge, reference_variant_id, improvement_delta, timestamp)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    evalId,
+    input.episodeId,
+    input.query,
+    input.lens,
+    input.entity,
+    input.classification,
+    evidenceCoverage,
+    contradictionRate,
+    groundingRate,
+    input.userEditDistance,
+    input.wasExported ? 1 : 0,
+    input.wasDelegated ? 1 : 0,
+    input.latencyMs,
+    input.costUsd,
+    input.toolCallCount,
+    qualityScore,
+    "hyperloop_v2",
+    JSON.stringify(scoreComponents),
+    JSON.stringify(gates),
+    policyAction,
+    llmJudge ? JSON.stringify(llmJudge) : null,
+    reference?.id ?? null,
+    improvementDelta,
+    timestamp
+  );
+  if (policyAction === "candidate") {
+    addArchiveEntry({
+      type: archiveType,
+      name: `${input.classification}:${input.entity ?? input.lens}`,
+      description: `Structured candidate (${Math.round(qualityScore * 100)}%) from "${input.query.slice(0, 60)}"`,
+      content: JSON.stringify({
+        classification: input.classification,
+        lens: input.lens,
+        entity: input.entity,
+        toolCallCount: input.toolCallCount,
+        latencyMs: input.latencyMs,
+        rubricVersion: "hyperloop_v2",
+        scoreComponents,
+        gates,
+        llmJudge
+      }),
+      sourceEpisodeId: input.episodeId,
+      sourceQuery: input.query,
+      sourceLens: input.lens,
+      sourceEntity: input.entity,
+      evidenceCoverage,
+      contradictionsCaught: input.contradictionsCaught,
+      userEditDistance: input.userEditDistance,
+      wasExported: input.wasExported,
+      wasDelegated: input.wasDelegated,
+      qualityScore,
+      improvementDelta,
+      createdAt: timestamp
+    });
+  }
+  return {
+    evalId,
+    episodeId: input.episodeId,
+    query: input.query,
+    lens: input.lens,
+    entity: input.entity,
+    classification: input.classification,
+    evidenceCoverage,
+    contradictionRate,
+    groundingRate,
+    userEditDistance: input.userEditDistance,
+    wasExported: input.wasExported,
+    wasDelegated: input.wasDelegated,
+    latencyMs: input.latencyMs,
+    costUsd: input.costUsd,
+    toolCallCount: input.toolCallCount,
+    qualityScore,
+    rubricVersion: "hyperloop_v2",
+    scoreComponents,
+    gates,
+    policyAction,
+    llmJudge,
+    referenceVariantId: reference?.id ?? null,
+    improvementDelta,
+    timestamp
+  };
+}
+function computeImprovementAtK(classification, k = 5) {
+  const db = getDb();
+  initEvalTables();
+  const rows = db.prepare(
+    "SELECT quality_score, improvement_delta FROM hyperloop_evaluations WHERE classification = ? ORDER BY timestamp ASC"
+  ).all(classification);
+  if (rows.length === 0) return [];
+  const results = [];
+  const chunkSize = Math.max(1, Math.floor(rows.length / k));
+  for (let gen = 0; gen < k && gen * chunkSize < rows.length; gen++) {
+    const chunk = rows.slice(gen * chunkSize, (gen + 1) * chunkSize);
+    const avgQuality = chunk.reduce((s, r) => s + r.quality_score, 0) / chunk.length;
+    const avgImprovement = chunk.reduce((s, r) => s + r.improvement_delta, 0) / chunk.length;
+    results.push({
+      classification,
+      k: gen + 1,
+      avgQuality: Math.round(avgQuality * 100) / 100,
+      avgImprovement: Math.round(avgImprovement * 100) / 100,
+      sampleSize: chunk.length
+    });
+  }
+  return results;
+}
+function listRecentEvaluations(limit = 12) {
+  const db = getDb();
+  initEvalTables();
+  const rows = db.prepare(
+    `SELECT eval_id, query, classification, quality_score, improvement_delta, evidence_coverage, grounding_rate, latency_ms, tool_call_count, timestamp, rubric_version, policy_action, score_components, gates, llm_judge
+     FROM hyperloop_evaluations
+     ORDER BY timestamp DESC
+     LIMIT ?`
+  ).all(limit);
+  return rows.map((row) => ({
+    evalId: row.eval_id,
+    query: row.query,
+    classification: row.classification,
+    qualityScore: row.quality_score,
+    improvementDelta: row.improvement_delta,
+    evidenceCoverage: row.evidence_coverage,
+    groundingRate: row.grounding_rate,
+    latencyMs: row.latency_ms,
+    toolCallCount: row.tool_call_count,
+    timestamp: row.timestamp,
+    rubricVersion: row.rubric_version ?? "hyperloop_v2",
+    policyAction: row.policy_action ?? "archive_only",
+    scoreComponents: parseJsonArray(row.score_components),
+    gates: parseJsonArray(row.gates),
+    llmJudge: parseJsonObject(row.llm_judge)
+  }));
+}
+function listTrackedClassifications(limit = 6) {
+  const db = getDb();
+  initEvalTables();
+  const rows = db.prepare(
+    `SELECT classification, COUNT(*) as cnt
+     FROM hyperloop_evaluations
+     GROUP BY classification
+     ORDER BY cnt DESC, MAX(timestamp) DESC
+     LIMIT ?`
+  ).all(limit);
+  return rows.map((row) => row.classification);
+}
+function classificationToArchiveType(classification) {
+  const map = {
+    company_search: "packet_template",
+    competitor: "packet_template",
+    multi_entity: "packet_template",
+    weekly_reset: "workflow_path",
+    pre_delegation: "delegation_shape",
+    important_change: "signal_recipe",
+    idea_validation: "packet_template",
+    general: "routing_policy"
+  };
+  return map[classification] ?? "routing_policy";
+}
+function parseJsonArray(value) {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+function parseJsonObject(value) {
+  if (!value) return void 0;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? parsed : void 0;
+  } catch {
+    return void 0;
+  }
+}
+function normalizeLlmJudge(input) {
+  if (!input) return void 0;
+  const verdict = input.verdict?.trim();
+  const score = input.score?.trim();
+  const failingCriteria = Array.isArray(input.failingCriteria) ? input.failingCriteria.filter(Boolean) : [];
+  const fixSuggestions = Array.isArray(input.fixSuggestions) ? input.fixSuggestions.filter(Boolean) : [];
+  const reasoningParts = [
+    verdict ? `Verdict: ${verdict}.` : null,
+    failingCriteria.length > 0 ? `Failures: ${failingCriteria.join("; ")}.` : "Failures: none called out.",
+    fixSuggestions.length > 0 ? `Fixes: ${fixSuggestions.join("; ")}.` : "Fixes: none suggested."
+  ].filter(Boolean);
+  if (!verdict && !score && failingCriteria.length === 0 && fixSuggestions.length === 0) {
+    return void 0;
+  }
+  return {
+    verdict: verdict ?? "UNSPECIFIED",
+    score,
+    failingCriteria,
+    fixSuggestions,
+    reasoningSummary: reasoningParts.join(" ")
+  };
+}
+
+// server/routes/search.ts
 var SEARCH_SOURCE = "search_api";
 var CONTROL_PLANE_VIEW_ID = "view:control-plane";
 var LENS_PERSONA_MAP = {
@@ -14415,40 +15090,179 @@ function normalizeSourceRefs(result) {
   });
   return dedupeBy(mapped, (source) => String(source.href ?? source.label ?? source.id));
 }
-function normalizeClaimRefs(result, sourceRefs) {
-  if (Array.isArray(result?.claimRefs) && result.claimRefs.length > 0) {
-    return result.claimRefs;
+function resolveSourceRefIdsForCandidate(sourceRefs, candidate, fallbackSourceIds) {
+  if (Array.isArray(candidate.sourceRefIds) && candidate.sourceRefIds.length > 0) {
+    return candidate.sourceRefIds;
   }
+  const normalizedLabel = normalizeClaimText(candidate.sourceLabel, 220).toLowerCase();
+  const normalizedHref = typeof candidate.sourceHref === "string" ? candidate.sourceHref.trim().toLowerCase() : "";
+  const normalizedQuote = normalizeClaimText(candidate.evidenceQuote, 220).toLowerCase();
+  const matched = sourceRefs.filter((source) => {
+    const sourceLabel = String(source.label ?? source.title ?? "").toLowerCase();
+    const sourceHref = String(source.href ?? "").toLowerCase();
+    const sourceExcerpt = String(source.excerpt ?? "").toLowerCase();
+    if (normalizedHref && sourceHref && sourceHref === normalizedHref) return true;
+    if (normalizedLabel && sourceLabel && sourceLabel === normalizedLabel) return true;
+    if (normalizedLabel && sourceLabel && (sourceLabel.includes(normalizedLabel) || normalizedLabel.includes(sourceLabel))) return true;
+    if (normalizedQuote && sourceExcerpt && sourceExcerpt.includes(normalizedQuote)) return true;
+    return false;
+  }).map((source) => String(source.id)).filter(Boolean);
+  return matched.length > 0 ? matched : fallbackSourceIds;
+}
+function normalizeClaimText(value, max = 320) {
+  if (typeof value !== "string") return "";
+  return trimText(value.replace(/\s+/g, " ").trim(), max);
+}
+function getPacketEntityName(result) {
+  return normalizeWorkspaceName(result?.canonicalEntity?.name) ?? normalizeWorkspaceName(result?.companyReadinessPacket?.identity?.companyName) ?? normalizeWorkspaceName(result?.identity?.projectName) ?? normalizeWorkspaceName(result?.publicSurfaces?.indexHtmlSiteName);
+}
+function claimEntityTokens(entityName) {
+  if (!entityName) return [];
+  return entityName.split(/[^a-zA-Z0-9]+/).map((token) => token.trim().toLowerCase()).filter((token) => token.length >= 4);
+}
+function mentionsEntityToken(text, entityName) {
+  const normalized = text.toLowerCase();
+  return claimEntityTokens(entityName).some((token) => normalized.includes(token));
+}
+function looksLikeStandalonePersonName(text) {
+  return /^[A-Z][a-z]+(?:\s+[A-Z][a-z.]+){1,2}$/.test(text);
+}
+function looksLikeInitialOnly(text) {
+  return /^(?:[A-Z]\.)+(?:\s+[A-Z]\.)*$/.test(text) || /^[A-Z]\.$/.test(text);
+}
+function isGenericClaimFiller(text) {
+  return [
+    /\bthere is no specific information available\b/i,
+    /\bbusinesses generally face\b/i,
+    /\bexpected to continue broadly\b/i,
+    /\bwhat businesses need to know\b/i,
+    /\bincreased regulatory scrutiny\b/i,
+    /\bno personnel data found\b/i,
+    /\bpersonnel data\b/i,
+    /\bgeneral queries work best\b/i,
+    /\blimited context available\b/i,
+    /\banalysis in progress\b/i,
+    /\bquery received\b/i,
+    /\bprofile created from \d+\b/i,
+    /\bupload more context\b/i
+  ].some((pattern) => pattern.test(text));
+}
+function scoreClaimText(text, entityName, kind = "signal") {
+  const normalized = normalizeClaimText(text);
+  if (!normalized) return Number.NEGATIVE_INFINITY;
+  const words = normalized.split(/\s+/).filter(Boolean);
+  const hasDigits = /\d/.test(normalized);
+  const hasSentencePunctuation = /[.!?:]/.test(normalized);
+  let score = 0;
+  if (kind === "change" || kind === "risk") score += 2;
+  if (words.length >= 6) score += 2;
+  if (words.length >= 12) score += 1;
+  if (hasDigits) score += 2;
+  if (hasSentencePunctuation) score += 1;
+  if (mentionsEntityToken(normalized, entityName)) score += 3;
+  if (/\b(founder|team|director|headcount|revenue|valuation|arr|burn|assets|filing|customer|product|platform|market|competition|margin|funding|contradiction|evidence|risk|growth|cash)\b/i.test(normalized)) {
+    score += 2;
+  }
+  if (looksLikeStandalonePersonName(normalized) || looksLikeInitialOnly(normalized)) score -= 8;
+  if (words.length <= 3 && !hasDigits && !hasSentencePunctuation) score -= 6;
+  if (normalized.length < 24 && !hasDigits && !hasSentencePunctuation) score -= 4;
+  if (isGenericClaimFiller(normalized)) score -= 8;
+  return score;
+}
+function isHighSignalClaim(text, entityName, kind = "signal") {
+  return scoreClaimText(text, entityName, kind) >= 2;
+}
+function buildBottomLineText(result, claimRefs, entityName) {
+  const canonicalMission = normalizeClaimText(result?.canonicalEntity?.canonicalMission ?? result?.summary ?? "", 420);
+  if (canonicalMission && isHighSignalClaim(canonicalMission, entityName, "change")) {
+    return canonicalMission;
+  }
+  const topClaims = claimRefs.filter((claim) => claim.status !== "discarded").slice(0, 2).map((claim) => normalizeClaimText(claim.text, 220)).filter(Boolean);
+  if (topClaims.length > 0) {
+    return trimText(topClaims.join(" "), 420);
+  }
+  return canonicalMission;
+}
+function normalizeClaimRefs(result, sourceRefs) {
+  const entityName = getPacketEntityName(result);
   const defaultSourceIds = sourceRefs.slice(0, 3).map((source) => source.id);
   const claims = [];
-  for (const signal of Array.isArray(result?.signals) ? result.signals : []) {
+  const pushClaim = (candidate) => {
+    const text = normalizeClaimText(candidate.text);
+    const kind = candidate.kind ?? "signal";
+    if (!text || !isHighSignalClaim(text, entityName, kind)) return;
     claims.push({
-      id: `claim:signal:${claims.length + 1}`,
-      text: signal.name ?? signal.title ?? String(signal),
-      sourceRefIds: defaultSourceIds,
-      answerBlockIds: ["answer:block:summary"],
-      status: "retained"
+      id: candidate.id,
+      text,
+      sourceRefIds: resolveSourceRefIdsForCandidate(sourceRefs, candidate, defaultSourceIds),
+      answerBlockIds: Array.isArray(candidate.answerBlockIds) ? candidate.answerBlockIds : [],
+      status: candidate.status ?? "retained",
+      _score: typeof candidate.score === "number" && Number.isFinite(candidate.score) ? candidate.score : scoreClaimText(text, entityName, kind)
     });
+  };
+  if (Array.isArray(result?.claimRefs) && result.claimRefs.length > 0) {
+    for (const claim of result.claimRefs) {
+      pushClaim({
+        id: claim.id ?? `claim:existing:${claims.length + 1}`,
+        text: claim.text,
+        sourceRefIds: claim.sourceRefIds,
+        sourceLabel: claim.sourceLabel,
+        sourceHref: claim.sourceHref,
+        evidenceQuote: claim.evidenceQuote,
+        answerBlockIds: claim.answerBlockIds,
+        status: claim.status,
+        kind: claim.status === "contradicted" ? "risk" : "signal",
+        score: claim.score
+      });
+    }
+  } else {
+    for (const signal of Array.isArray(result?.signals) ? result.signals : []) {
+      pushClaim({
+        id: `claim:signal:${claims.length + 1}`,
+        text: signal.name ?? signal.title ?? String(signal),
+        sourceRefIds: signal.sourceRefIds,
+        sourceLabel: signal.sourceLabel,
+        sourceHref: signal.sourceHref,
+        evidenceQuote: signal.evidenceQuote,
+        answerBlockIds: ["answer:block:summary", "answer:block:key_facts"],
+        status: "retained",
+        kind: "signal",
+        score: signal.score
+      });
+    }
+    for (const change of Array.isArray(result?.whatChanged) ? result.whatChanged : []) {
+      pushClaim({
+        id: `claim:change:${claims.length + 1}`,
+        text: change.description ?? String(change),
+        sourceRefIds: change.sourceRefIds,
+        sourceLabel: change.sourceLabel,
+        sourceHref: change.sourceHref,
+        evidenceQuote: change.evidenceQuote,
+        answerBlockIds: ["answer:block:changes"],
+        status: "retained",
+        kind: "change",
+        score: change.score
+      });
+    }
+    for (const contradiction of Array.isArray(result?.contradictions) ? result.contradictions : []) {
+      pushClaim({
+        id: `claim:risk:${claims.length + 1}`,
+        text: contradiction.claim ?? contradiction.title ?? String(contradiction),
+        sourceRefIds: contradiction.sourceRefIds,
+        sourceLabel: contradiction.sourceLabel,
+        sourceHref: contradiction.sourceHref,
+        evidenceQuote: contradiction.evidenceQuote,
+        answerBlockIds: ["answer:block:risks"],
+        status: "contradicted",
+        kind: "risk",
+        score: contradiction.score
+      });
+    }
   }
-  for (const change of Array.isArray(result?.whatChanged) ? result.whatChanged : []) {
-    claims.push({
-      id: `claim:change:${claims.length + 1}`,
-      text: change.description ?? String(change),
-      sourceRefIds: defaultSourceIds,
-      answerBlockIds: ["answer:block:changes"],
-      status: "retained"
-    });
-  }
-  for (const contradiction of Array.isArray(result?.contradictions) ? result.contradictions : []) {
-    claims.push({
-      id: `claim:risk:${claims.length + 1}`,
-      text: contradiction.claim ?? contradiction.title ?? String(contradiction),
-      sourceRefIds: defaultSourceIds,
-      answerBlockIds: ["answer:block:risks"],
-      status: "contradicted"
-    });
-  }
-  return claims.slice(0, 12);
+  return dedupeBy(
+    claims.sort((left, right) => right._score - left._score).slice(0, 12).map(({ _score, ...claim }) => claim),
+    (claim) => `${claim.status}:${String(claim.text).toLowerCase()}`
+  );
 }
 function blockStatus(sourceRefIds, explicitUncertainty) {
   if (sourceRefIds.length > 0) return "cited";
@@ -14462,7 +15276,8 @@ function normalizeAnswerBlocks(result, sourceRefs, claimRefs) {
   const citedSourceIds = sourceRefs.slice(0, 4).map((source) => source.id);
   const sourceBacked = citedSourceIds.length > 0;
   const blocks = [];
-  const summaryText = trimText(result?.canonicalEntity?.canonicalMission ?? result?.summary ?? "", 420);
+  const entityName = getPacketEntityName(result);
+  const summaryText = buildBottomLineText(result, claimRefs, entityName);
   if (summaryText) {
     blocks.push({
       id: "answer:block:summary",
@@ -14473,18 +15288,19 @@ function normalizeAnswerBlocks(result, sourceRefs, claimRefs) {
       status: blockStatus(citedSourceIds, !sourceBacked)
     });
   }
-  const keyFactsText = (Array.isArray(result?.signals) ? result.signals : []).slice(0, 4).map((signal) => `\u2022 ${signal.name ?? signal.title ?? String(signal)}`).join("\n");
+  const keyFactClaims = claimRefs.filter((claim) => claim.status === "retained").slice(0, 4);
+  const keyFactsText = keyFactClaims.map((claim) => `- ${claim.text}`).join("\n");
   if (keyFactsText) {
     blocks.push({
       id: "answer:block:key_facts",
       title: "Key facts and signal readout",
       text: keyFactsText,
       sourceRefIds: citedSourceIds,
-      claimIds: [],
+      claimIds: keyFactClaims.map((claim) => claim.id),
       status: blockStatus(citedSourceIds, !sourceBacked)
     });
   }
-  const changesText = (Array.isArray(result?.whatChanged) ? result.whatChanged : []).slice(0, 3).map((change) => `\u2022 ${change.description ?? String(change)}${change.date ? ` (${change.date})` : ""}`).join("\n");
+  const changesText = (Array.isArray(result?.whatChanged) ? result.whatChanged : []).filter((change) => isHighSignalClaim(change.description ?? String(change), entityName, "change")).slice(0, 3).map((change) => `- ${change.description ?? String(change)}${change.date ? ` (${change.date})` : ""}`).join("\n");
   if (changesText) {
     blocks.push({
       id: "answer:block:changes",
@@ -14495,7 +15311,10 @@ function normalizeAnswerBlocks(result, sourceRefs, claimRefs) {
       status: blockStatus(citedSourceIds, !sourceBacked)
     });
   }
-  const comparablesText = (Array.isArray(result?.comparables) ? result.comparables : []).slice(0, 4).map((item) => `\u2022 ${item.name ?? String(item)}${item.note ? `: ${item.note}` : ""}`).join("\n");
+  const comparablesText = (Array.isArray(result?.comparables) ? result.comparables : []).filter((item) => {
+    const name = normalizeClaimText(item?.name ?? String(item), 120);
+    return Boolean(name) && !/^(?:n\/a|unknown|none|general|company)$/i.test(name) && !isGenericClaimFiller(name) && !looksLikeStandalonePersonName(name);
+  }).slice(0, 4).map((item) => `- ${item.name ?? String(item)}${item.note ? `: ${item.note}` : ""}`).join("\n");
   if (comparablesText) {
     blocks.push({
       id: "answer:block:comparables",
@@ -14522,7 +15341,7 @@ function normalizeAnswerBlocks(result, sourceRefs, claimRefs) {
       status: blockStatus(citedSourceIds, true)
     });
   }
-  const risksText = (Array.isArray(result?.contradictions) ? result.contradictions : []).slice(0, 3).map((item) => `\u2022 ${item.claim ?? item.title ?? String(item)}${item.evidence ? `: ${item.evidence}` : ""}`).join("\n");
+  const risksText = (Array.isArray(result?.contradictions) ? result.contradictions : []).filter((item) => isHighSignalClaim(item.claim ?? item.title ?? String(item), entityName, "risk")).slice(0, 3).map((item) => `- ${item.claim ?? item.title ?? String(item)}${item.evidence ? `: ${item.evidence}` : ""}`).join("\n");
   if (risksText) {
     blocks.push({
       id: "answer:block:risks",
@@ -14533,7 +15352,7 @@ function normalizeAnswerBlocks(result, sourceRefs, claimRefs) {
       status: blockStatus(citedSourceIds, true)
     });
   }
-  const diligenceQuestionsText = (Array.isArray(result?.nextQuestions) ? result.nextQuestions : []).slice(0, 4).map((question) => `\u2022 ${String(question)}`).join("\n");
+  const diligenceQuestionsText = (Array.isArray(result?.nextQuestions) ? result.nextQuestions : []).slice(0, 4).map((question) => `- ${String(question)}`).join("\n");
   if (diligenceQuestionsText) {
     blocks.push({
       id: "answer:block:diligence_questions",
@@ -14901,13 +15720,21 @@ function buildResultPacket(args) {
   });
   const entityName = companyMode === "own_company" ? normalizedIdentity.entityName ?? result.canonicalEntity?.name ?? args.entityFallback ?? "NodeBench" : args.entityFallback ?? normalizedIdentity.entityName ?? result.canonicalEntity?.name ?? "NodeBench";
   const keyMetricLimit = args.lens === "banker" ? 6 : 4;
+  const summaryBlock = Array.isArray(result.answerBlocks) ? result.answerBlocks.find((block) => block.id === "answer:block:summary") : null;
+  const filteredVariables = classifySignals((result.signals ?? []).slice(0, 8)).filter((sig) => isHighSignalClaim(sig.label ?? sig.rawName ?? "", entityName, "signal")).slice(0, 5);
+  const filteredChanges = (Array.isArray(result.whatChanged) ? result.whatChanged : []).filter((change) => isHighSignalClaim(change.description ?? String(change), entityName, "change"));
+  const filteredRisks = (Array.isArray(result.contradictions) ? result.contradictions : []).filter((contradiction) => isHighSignalClaim(contradiction.claim ?? contradiction.title ?? String(contradiction), entityName, "risk"));
+  const filteredComparables = (Array.isArray(result.comparables) ? result.comparables : []).filter((comparable) => {
+    const name = normalizeClaimText(comparable?.name ?? String(comparable), 120);
+    return Boolean(name) && !/^(?:n\/a|unknown|none|general|company)$/i.test(name) && !isGenericClaimFiller(name) && !looksLikeStandalonePersonName(name);
+  });
   return {
     query: args.query,
     entityName,
-    answer: result.canonicalEntity?.canonicalMission ?? "",
+    answer: summaryBlock?.text ?? result.canonicalEntity?.canonicalMission ?? "",
     confidence: result.canonicalEntity?.identityConfidence ?? 70,
     sourceCount: sourceRefs.length,
-    variables: classifySignals((result.signals ?? []).slice(0, 8)).slice(0, 5).map((sig, index) => ({
+    variables: filteredVariables.map((sig, index) => ({
       rank: index + 1,
       name: sig.label,
       category: sig.category,
@@ -14927,16 +15754,16 @@ function buildResultPacket(args) {
       { label: "Claims", value: String(result.claimRefs?.length ?? 0) },
       { label: "Next actions", value: String(result.nextActions?.length ?? 0) }
     ],
-    changes: result.whatChanged?.map((change) => ({
+    changes: filteredChanges.map((change) => ({
       description: change.description ?? String(change),
       date: change.date
     })),
-    risks: result.contradictions?.map((contradiction) => ({
+    risks: filteredRisks.map((contradiction) => ({
       title: contradiction.claim ?? contradiction.title ?? "Contradiction",
       description: contradiction.evidence ?? contradiction.description ?? "",
       falsification: contradiction.falsification
     })),
-    comparables: result.comparables?.map((comparable) => ({
+    comparables: filteredComparables.map((comparable) => ({
       name: comparable.name ?? String(comparable),
       relevance: comparable.relevance ?? "medium",
       note: comparable.note ?? ""
@@ -14978,7 +15805,7 @@ function buildResultPacket(args) {
     nextQuestions: result.nextQuestions ?? result.nextActions?.map((action) => action.action) ?? [],
     evidence: createEvidenceSpans(
       result.sourceSnippets ?? sourceRefs.map((ref) => ({ url: ref.url, title: ref.title, snippet: ref.snippet })),
-      result.signals ?? []
+      filteredVariables
     )
   };
 }
@@ -15469,6 +16296,25 @@ function createSearchRouter(tools2) {
     });
     return parts.length >= 2 ? parts : [];
   }
+  function toEntityDisplayName(value) {
+    return normalizeWhitespace(value).split(/\s+/).filter(Boolean).map((word) => {
+      if (/^[A-Z0-9&.-]{2,}$/.test(word)) return word;
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    }).join(" ");
+  }
+  function extractBareEntityQuery(query) {
+    const normalized = normalizeWhitespace(query.replace(/[?!.,;:]+$/g, ""));
+    if (!normalized || normalized.length < 2 || normalized.length > 50) return void 0;
+    const lower = normalized.toLowerCase();
+    if (/\b(my|our|we|i|me|us|uploaded|document|file|transcript|meeting|should|build|plan|weekly|delegation|change|changed|compare|competitor|risk|risks|strategy|pitch|ready|help)\b/i.test(lower)) {
+      return void 0;
+    }
+    const words = normalized.split(/\s+/).filter(Boolean);
+    if (words.length === 0 || words.length > 4) return void 0;
+    if (words.some((word) => /\d/.test(word))) return void 0;
+    if (words.some((word) => word.length === 1)) return void 0;
+    return toEntityDisplayName(normalized);
+  }
   function classifyQuery(query) {
     function extractPrimaryEntity(queryText) {
       const entityPatterns = [
@@ -15585,6 +16431,10 @@ function createSearchRouter(tools2) {
     if (capitalizedMatch && capitalizedMatch[1].length > 2 && capitalizedMatch[1].length < 40) {
       return { type: "company_search", entity: capitalizedMatch[1], lens: "investor" };
     }
+    const bareEntity = extractBareEntityQuery(query);
+    if (bareEntity) {
+      return { type: "company_search", entity: bareEntity, lens: "investor" };
+    }
     return { type: "general", lens: "founder" };
   }
   async function classifyQueryWithLLM(query, sessionContext) {
@@ -15681,6 +16531,10 @@ Entity extraction rules:
       if (entities) {
         entities = entities.filter((e) => query.toLowerCase().includes(e.toLowerCase()));
         if (entities.length < 2) entities = void 0;
+      }
+      const bareEntity = extractBareEntityQuery(query);
+      if ((!entity || type === "general") && bareEntity) {
+        return { type: "company_search", entity: bareEntity, lens: lens === "founder" ? "investor" : lens };
       }
       return { type, entity, entities, lens };
     } catch {
@@ -15983,33 +16837,43 @@ Return ONLY JSON:
               new Promise((resolve4) => setTimeout(resolve4, enrichBudget))
             ]);
           }
+          console.error("[harness] Building result from synthesized:", synthesized.entityName, "signals:", synthesized.signals?.length);
+          const synthesizedSourceRefs = synthesized.sources.map((s, i) => ({
+            id: `src:${i}`,
+            label: s.label,
+            href: s.href,
+            type: s.type,
+            status: "cited"
+          }));
           result = {
             canonicalEntity: {
               name: synthesized.entityName,
               canonicalMission: synthesized.answer,
               identityConfidence: synthesized.confidence
             },
-            signals: synthesized.signals.map((s, i) => ({
+            signals: synthesized.signals.map((s) => ({
               name: s.name,
               direction: s.direction,
-              impact: s.impact
+              impact: s.impact,
+              score: s.score,
+              sourceLabel: s.sourceLabel,
+              sourceHref: s.sourceHref,
+              evidenceQuote: s.evidenceQuote
             })),
             whatChanged: synthesized.changes,
             contradictions: synthesized.risks.map((r) => ({
               claim: r.title,
-              evidence: r.description
+              evidence: r.description,
+              score: r.score,
+              sourceLabel: r.sourceLabel,
+              sourceHref: r.sourceHref,
+              evidenceQuote: r.evidenceQuote
             })),
             comparables: synthesized.comparables,
             whyThisTeam: synthesized.whyThisTeam,
             nextActions: synthesized.nextActions,
             nextQuestions: synthesized.nextQuestions,
-            sourceRefs: synthesized.sources.map((s, i) => ({
-              id: `src:${i}`,
-              label: s.label,
-              href: s.href,
-              type: s.type,
-              status: "cited"
-            })),
+            sourceRefs: synthesizedSourceRefs,
             keyMetrics: Array.isArray(synthesized.keyMetrics) && synthesized.keyMetrics.length > 0 ? synthesized.keyMetrics : [
               { label: "Sources", value: String(synthesized.sources.length) },
               { label: "Comparables", value: String(synthesized.comparables.length) },
@@ -16026,6 +16890,7 @@ Return ONLY JSON:
           };
           usedHarness = true;
         } catch (harnessErr) {
+          console.error("[harness] FAILED:", harnessErr?.message?.slice(0, 200), harnessErr?.stack?.split("\n").slice(0, 3).join(" | "));
           const fallbackTrace = traceStep("agent_fallback");
           fallbackTrace.ok(`harness failed: ${harnessErr?.message ?? "unknown"}, using legacy dispatch`);
         }
@@ -16797,6 +17662,42 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
         });
       } catch (persistError) {
         console.error("[search] failed to persist founder-first run", persistError);
+      }
+      if (!process.env.VERCEL) {
+        try {
+          const resultSignals = Array.isArray(result?.signals) ? result.signals : [];
+          const resultRisks = Array.isArray(result?.contradictions) ? result.contradictions : [];
+          const totalClaims = resultSignals.length + resultRisks.length;
+          const verifiedSignals = resultSignals.filter((signal) => {
+            const evidenceRefs = signal?.evidenceRefs ?? signal?.sourceRefIds ?? [];
+            return signal?.verified === true || typeof signal?.confidence === "number" && signal.confidence >= 75 || Array.isArray(evidenceRefs) && evidenceRefs.length > 0 || Boolean(signal?.evidence);
+          }).length;
+          const groundedClaims = [
+            ...resultSignals.map((signal) => signal?.evidence ?? signal?.description ?? null),
+            ...resultRisks.map((risk) => risk?.evidence ?? risk?.description ?? null)
+          ].filter((value) => typeof value === "string" && value.trim().length > 0).length;
+          evaluateTask({
+            episodeId: persistedIds?.runId ?? genId("episode"),
+            query: query.trim(),
+            lens: resolvedLens,
+            entity: entityName || null,
+            classification: effectiveClassification,
+            totalSignals: resultSignals.length,
+            verifiedSignals,
+            totalClaims,
+            groundedClaims,
+            contradictionsCaught: resultRisks.length,
+            userEditDistance: 0.25,
+            wasExported: false,
+            wasDelegated: false,
+            latencyMs,
+            costUsd: Math.round(trace.reduce((sum, item) => sum + (TOOL_COST[item.tool ?? ""] ?? 3e-3), 0) * 1e3) / 1e3,
+            toolCallCount: trace.length,
+            llmJudge: judgeVerdict
+          });
+        } catch (hyperloopError) {
+          console.error("[search] failed to record HyperLoop evaluation", hyperloopError);
+        }
       }
       const payload = {
         success: true,
@@ -20362,6 +21263,38 @@ function createSubconsciousRouter() {
   return router;
 }
 
+// server/routes/hyperloop.ts
+import { Router as Router5 } from "express";
+function createHyperloopRouter() {
+  const router = Router5();
+  router.get("/stats", (_req, res) => {
+    try {
+      const archive = getArchiveStats();
+      const recentEvals = listRecentEvaluations(12);
+      const improvementCurve = Object.fromEntries(
+        listTrackedClassifications(6).map((classification) => [
+          classification,
+          computeImprovementAtK(classification, 5)
+        ])
+      );
+      res.json({
+        archive,
+        recentEvals,
+        improvementCurve
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: true,
+        message: error?.message ?? "Failed to load HyperLoop stats",
+        archive: { total: 0, byType: {}, byStatus: {}, avgQuality: 0 },
+        recentEvals: [],
+        improvementCurve: {}
+      });
+    }
+  });
+  return router;
+}
+
 // server/syncBridge.ts
 import { randomUUID } from "node:crypto";
 import { EventEmitter as EventEmitter2 } from "node:events";
@@ -20666,6 +21599,8 @@ app.use("/shared-context", createSharedContextRouter());
 app.use("/api/shared-context", createSharedContextRouter());
 app.use("/subconscious", createSubconsciousRouter());
 app.use("/api/subconscious", createSubconsciousRouter());
+app.use("/hyperloop", createHyperloopRouter());
+app.use("/api/hyperloop", createHyperloopRouter());
 try {
   initSweepTables();
 } catch {

@@ -371,8 +371,24 @@ export function LibraryHome({
               <FileCard key={file.id} file={file} />
             ))}
             {files.length === 0 && (
-              <div className="col-span-full py-16 text-center text-sm text-content-muted">
-                No files yet. Search for a company or run a workflow to create your first report.
+              <div className="col-span-full space-y-4">
+                {/* Visible aha: show what a populated library looks like */}
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 opacity-60">
+                  <div className="flex items-start justify-between">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-primary/8">
+                      <FileBarChart className="h-4 w-4 text-accent-primary/70" />
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-[13px] font-medium text-content">Anthropic AI — Investor Brief</span>
+                    <span className="rounded-full bg-accent-primary/12 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-accent-primary">Example</span>
+                  </div>
+                  <p className="mt-1 text-[12px] text-content-muted">95% confidence · 20 sources · 3 signals · 2 contradictions</p>
+                  <div className="mt-2 border-t border-white/[0.04] pt-2 text-[10px] text-content-muted/60">REPORT · Apr 9</div>
+                </div>
+                <p className="text-center text-xs text-content-muted">
+                  Search for a company on the Ask page to create your first report.
+                </p>
               </div>
             )}
           </div>

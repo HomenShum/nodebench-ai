@@ -353,10 +353,13 @@ describe("ControlPlaneLanding", () => {
         screen.getAllByText(/cohere is sharpening its enterprise position as buyers compare it with anthropic, openai, and google/i).length,
       ).toBeGreaterThan(0);
     });
+    expect(screen.queryByRole("button", { name: /new conversation/i })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("landing-founder-episode")).not.toBeInTheDocument();
     const searchCall = fetchMock.mock.calls.find(([url]) => String(url).includes("/search?stream=true"));
     expect(searchCall).toBeTruthy();
     expect(String(searchCall?.[1]?.body)).toContain("Analyze Cohere competitive position 2026");
     expect(String(searchCall?.[1]?.body)).toContain("founder");
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/api/subconscious/whisper"))).toBe(true);
   });
 
   it("handles text/event-stream search responses and does not fall back when the stream completes successfully", async () => {

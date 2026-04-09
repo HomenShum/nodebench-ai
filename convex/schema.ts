@@ -60,6 +60,11 @@ import {
   specDocs,
 } from "./domains/temporal/schema";
 import {
+  hyperloopVariants,
+  hyperloopEvaluationRuns,
+  hyperloopPromotions,
+} from "./domains/hyperloop/schema";
+import {
   relationshipObservations,
   relationshipEdges,
   worldEvents,
@@ -13093,4 +13098,7 @@ export default defineSchema({
   })
     .index("by_status", ["status"])
     .index("by_type", ["episodeType", "startedAt"]),
+  hyperloopVariants,
+  hyperloopEvaluationRuns,
+  hyperloopPromotions,
 });

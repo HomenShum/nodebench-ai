@@ -35,8 +35,20 @@ function resolvePublicSearchApiBase(): string | null {
   return null;
 }
 
+function resolvePipelineApiBase(): string | null {
+  if (typeof window === "undefined") return null;
+  const { hostname, protocol, port } = window.location;
+  const isLocalHost = hostname === "127.0.0.1" || hostname === "localhost";
+  const isFrontendPort = Boolean(port) && port !== "3100" && port !== "8020";
+  if (isLocalHost && isFrontendPort) {
+    return `${protocol}//${hostname}:3100/pipeline`;
+  }
+  return null;
+}
+
 const HEADLESS_API_BASE = resolveHeadlessApiBase();
 const PUBLIC_SEARCH_API_BASE = resolvePublicSearchApiBase();
+const PIPELINE_API_BASE = resolvePipelineApiBase();
 
 export const SEARCH_API_ENDPOINT = HEADLESS_API_BASE
   ? `${HEADLESS_API_BASE}/v1/search`
@@ -47,6 +59,11 @@ export const SEARCH_UPLOAD_API_ENDPOINT = "/api/search-upload";
 export const SEARCH_HEALTH_API_ENDPOINT = HEADLESS_API_BASE
   ? `${HEADLESS_API_BASE}/health`
   : "/api/search-health";
+
+// Pipeline v2 is the primary search path; legacy /api/search is fallback
+export const PUBLIC_PIPELINE_API_ENDPOINT = PIPELINE_API_BASE
+  ? `${PIPELINE_API_BASE}/search`
+  : "/api/pipeline/search";
 
 export const PUBLIC_SEARCH_API_ENDPOINT = PUBLIC_SEARCH_API_BASE ?? "/api/search";
 

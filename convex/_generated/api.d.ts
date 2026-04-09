@@ -569,6 +569,8 @@ import type * as domains_hitl_distributionDriftDetection from "../domains/hitl/d
 import type * as domains_hitl_labelerCalibration from "../domains/hitl/labelerCalibration.js";
 import type * as domains_hitl_labelingQueue from "../domains/hitl/labelingQueue.js";
 import type * as domains_hitl_validationWorkspaceEnforcement from "../domains/hitl/validationWorkspaceEnforcement.js";
+import type * as domains_hyperloop_operations from "../domains/hyperloop/operations.js";
+import type * as domains_hyperloop_policy from "../domains/hyperloop/policy.js";
 import type * as domains_integrations_billing_apiUsageTracking from "../domains/integrations/billing/apiUsageTracking.js";
 import type * as domains_integrations_billing_billing from "../domains/integrations/billing/billing.js";
 import type * as domains_integrations_billing_index from "../domains/integrations/billing/index.js";
@@ -1915,6 +1917,8 @@ declare const fullApi: ApiFromModules<{
   "domains/hitl/labelerCalibration": typeof domains_hitl_labelerCalibration;
   "domains/hitl/labelingQueue": typeof domains_hitl_labelingQueue;
   "domains/hitl/validationWorkspaceEnforcement": typeof domains_hitl_validationWorkspaceEnforcement;
+  "domains/hyperloop/operations": typeof domains_hyperloop_operations;
+  "domains/hyperloop/policy": typeof domains_hyperloop_policy;
   "domains/integrations/billing/apiUsageTracking": typeof domains_integrations_billing_apiUsageTracking;
   "domains/integrations/billing/billing": typeof domains_integrations_billing_billing;
   "domains/integrations/billing/index": typeof domains_integrations_billing_index;

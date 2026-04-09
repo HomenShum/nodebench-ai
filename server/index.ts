@@ -35,6 +35,7 @@ import { createSessionRouter } from "./routes/session.js";
 import { createTtsRouter } from "./routes/tts.js";
 import { mountNemoClaw } from "./nemoclaw/index.js";
 import { createSearchRouter } from "./routes/search.js";
+import { createPipelineRouter } from "./routes/pipelineRoute.js";
 import { createToolGraphRouter } from "./routes/toolGraph.js";
 import { createSharedContextRouter } from "./routes/sharedContext.js";
 import { createShareRouter } from "./routes/share.js";
@@ -44,6 +45,7 @@ import { createHarnessRouter } from "./routes/harness.js";
 import { createWorkspaceSyncRouter } from "./routes/workspaceSync.js";
 import { createExecuteRouter } from "./routes/execute.js";
 import { createSubconsciousRouter } from "./routes/subconscious.js";
+import { createHyperloopRouter } from "./routes/hyperloop.js";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────
 
@@ -274,6 +276,8 @@ async function main(): Promise<void> {
 
   app.use("/search", createSearchRouter(tools));
   app.use("/api/search", createSearchRouter(tools));
+  app.use("/pipeline", createPipelineRouter());
+  app.use("/api/pipeline", createPipelineRouter());
   app.use("/shared-context", createSharedContextRouter());
   app.use("/api/shared-context", createSharedContextRouter());
   app.use(createToolGraphRouter());
@@ -283,6 +287,8 @@ async function main(): Promise<void> {
   app.use("/api/harness", createHarnessRouter(tools));
   app.use("/subconscious", createSubconsciousRouter());
   app.use("/api/subconscious", createSubconsciousRouter());
+  app.use("/hyperloop", createHyperloopRouter());
+  app.use("/api/hyperloop", createHyperloopRouter());
 
   // ── Delta routes (share, watchlist, retention bridge) ──────────────
   app.use("/share", createShareRouter());

@@ -94,6 +94,9 @@ const SavingsDashboard = lazy(() =>
 const JudgeDashboard = lazy(() =>
   import("@/features/monitoring/views/JudgeDashboard").then((mod) => ({ default: mod.JudgeDashboard })),
 );
+const HyperLoopDashboard = lazy(() =>
+  import("@/features/monitoring/views/HyperLoopDashboard").then((mod) => ({ default: mod.HyperLoopDashboard })),
+);
 const FounderWorkspaceHome = lazy(() =>
   import("@/features/founder/views/FounderWorkspaceHome").then((mod) => ({ default: mod.FounderWorkspaceHome })),
 );
@@ -212,6 +215,7 @@ function SurfaceFrame({
 
 const TELEMETRY_TABS = [
   { id: "activity", label: "Activity" },
+  { id: "hyperloop", label: "HyperLoop" },
   { id: "trajectory", label: "Trajectory" },
   { id: "compare", label: "Compare" },
   { id: "judge", label: "Verdicts" },
@@ -274,10 +278,10 @@ function TelemetryStack({ active = true }: { active?: boolean }) {
     <div className="flex h-full flex-col items-center overflow-auto px-4 pb-24 pt-12">
       {/* Headline — matches Ask/Library/Connect */}
       <h1 className="text-center text-3xl font-bold text-content sm:text-4xl">
-        System <span className="text-accent-primary">health</span>
+        Getting <span className="text-accent-primary">better</span> every run
       </h1>
       <p className="mt-3 max-w-lg text-center text-sm text-content-muted">
-        Agent performance, evidence quality, and operational status.
+        See how search quality, evidence coverage, and cost efficiency improve over time.
       </p>
       <DataSourceBanner className="mt-3" />
 
@@ -322,6 +326,7 @@ function TelemetryStack({ active = true }: { active?: boolean }) {
       {/* Tab content */}
       <div className="mt-4 w-full max-w-3xl rounded-xl border border-white/[0.06] bg-white/[0.02] p-5" role="tabpanel">
         {activeTab === "activity" && <AgentTelemetryDashboard />}
+        {activeTab === "hyperloop" && <HyperLoopDashboard />}
         {activeTab === "trajectory" && <TrajectoryConsole session={null} />}
         {activeTab === "compare" && <RunCompareView />}
         {activeTab === "judge" && <JudgeDashboard />}

@@ -38,6 +38,7 @@ import {
   upsertDurableObject,
 } from "../../packages/mcp-local/src/sync/store.js";
 import { buildContextBundle } from "../../packages/mcp-local/src/tools/contextInjection.js";
+import { evaluateTask } from "../../packages/mcp-local/src/sync/hyperloopEval.js";
 
 const SEARCH_SOURCE = "search_api";
 const CONTROL_PLANE_VIEW_ID = "view:control-plane";
@@ -408,45 +409,238 @@ function normalizeSourceRefs(result: any): any[] {
   return dedupeBy(mapped, (source) => String(source.href ?? source.label ?? source.id));
 }
 
+function resolveSourceRefIdsForCandidate(
+  sourceRefs: any[],
+  candidate: { sourceRefIds?: string[]; sourceLabel?: unknown; sourceHref?: unknown; evidenceQuote?: unknown },
+  fallbackSourceIds: string[],
+): string[] {
+  if (Array.isArray(candidate.sourceRefIds) && candidate.sourceRefIds.length > 0) {
+    return candidate.sourceRefIds;
+  }
+
+  const normalizedLabel = normalizeClaimText(candidate.sourceLabel, 220).toLowerCase();
+  const normalizedHref = typeof candidate.sourceHref === "string" ? candidate.sourceHref.trim().toLowerCase() : "";
+  const normalizedQuote = normalizeClaimText(candidate.evidenceQuote, 220).toLowerCase();
+
+  const matched = sourceRefs
+    .filter((source) => {
+      const sourceLabel = String(source.label ?? source.title ?? "").toLowerCase();
+      const sourceHref = String(source.href ?? "").toLowerCase();
+      const sourceExcerpt = String(source.excerpt ?? "").toLowerCase();
+      if (normalizedHref && sourceHref && sourceHref === normalizedHref) return true;
+      if (normalizedLabel && sourceLabel && sourceLabel === normalizedLabel) return true;
+      if (normalizedLabel && sourceLabel && (sourceLabel.includes(normalizedLabel) || normalizedLabel.includes(sourceLabel))) return true;
+      if (normalizedQuote && sourceExcerpt && sourceExcerpt.includes(normalizedQuote)) return true;
+      return false;
+    })
+    .map((source) => String(source.id))
+    .filter(Boolean);
+
+  return matched.length > 0 ? matched : fallbackSourceIds;
+}
+
+function normalizeClaimText(value: unknown, max = 320): string {
+  if (typeof value !== "string") return "";
+  return trimText(value.replace(/\s+/g, " ").trim(), max);
+}
+
+function getPacketEntityName(result: any): string | undefined {
+  return normalizeWorkspaceName(result?.canonicalEntity?.name)
+    ?? normalizeWorkspaceName(result?.companyReadinessPacket?.identity?.companyName)
+    ?? normalizeWorkspaceName(result?.identity?.projectName)
+    ?? normalizeWorkspaceName(result?.publicSurfaces?.indexHtmlSiteName);
+}
+
+function claimEntityTokens(entityName?: string): string[] {
+  if (!entityName) return [];
+  return entityName
+    .split(/[^a-zA-Z0-9]+/)
+    .map((token) => token.trim().toLowerCase())
+    .filter((token) => token.length >= 4);
+}
+
+function mentionsEntityToken(text: string, entityName?: string): boolean {
+  const normalized = text.toLowerCase();
+  return claimEntityTokens(entityName).some((token) => normalized.includes(token));
+}
+
+function looksLikeStandalonePersonName(text: string): boolean {
+  return /^[A-Z][a-z]+(?:\s+[A-Z][a-z.]+){1,2}$/.test(text);
+}
+
+function looksLikeInitialOnly(text: string): boolean {
+  return /^(?:[A-Z]\.)+(?:\s+[A-Z]\.)*$/.test(text) || /^[A-Z]\.$/.test(text);
+}
+
+function isGenericClaimFiller(text: string): boolean {
+  return [
+    /\bthere is no specific information available\b/i,
+    /\bbusinesses generally face\b/i,
+    /\bexpected to continue broadly\b/i,
+    /\bwhat businesses need to know\b/i,
+    /\bincreased regulatory scrutiny\b/i,
+    /\bno personnel data found\b/i,
+    /\bpersonnel data\b/i,
+    /\bgeneral queries work best\b/i,
+    /\blimited context available\b/i,
+    /\banalysis in progress\b/i,
+    /\bquery received\b/i,
+    /\bprofile created from \d+\b/i,
+    /\bupload more context\b/i,
+  ].some((pattern) => pattern.test(text));
+}
+
+function scoreClaimText(text: string, entityName?: string, kind: "signal" | "change" | "risk" = "signal"): number {
+  const normalized = normalizeClaimText(text);
+  if (!normalized) return Number.NEGATIVE_INFINITY;
+  const words = normalized.split(/\s+/).filter(Boolean);
+  const hasDigits = /\d/.test(normalized);
+  const hasSentencePunctuation = /[.!?:]/.test(normalized);
+  let score = 0;
+
+  if (kind === "change" || kind === "risk") score += 2;
+  if (words.length >= 6) score += 2;
+  if (words.length >= 12) score += 1;
+  if (hasDigits) score += 2;
+  if (hasSentencePunctuation) score += 1;
+  if (mentionsEntityToken(normalized, entityName)) score += 3;
+  if (/\b(founder|team|director|headcount|revenue|valuation|arr|burn|assets|filing|customer|product|platform|market|competition|margin|funding|contradiction|evidence|risk|growth|cash)\b/i.test(normalized)) {
+    score += 2;
+  }
+
+  if (looksLikeStandalonePersonName(normalized) || looksLikeInitialOnly(normalized)) score -= 8;
+  if (words.length <= 3 && !hasDigits && !hasSentencePunctuation) score -= 6;
+  if (normalized.length < 24 && !hasDigits && !hasSentencePunctuation) score -= 4;
+  if (isGenericClaimFiller(normalized)) score -= 8;
+
+  return score;
+}
+
+function isHighSignalClaim(text: string, entityName?: string, kind: "signal" | "change" | "risk" = "signal"): boolean {
+  return scoreClaimText(text, entityName, kind) >= 2;
+}
+
+function buildBottomLineText(result: any, claimRefs: any[], entityName?: string): string {
+  const canonicalMission = normalizeClaimText(result?.canonicalEntity?.canonicalMission ?? result?.summary ?? "", 420);
+  if (canonicalMission && isHighSignalClaim(canonicalMission, entityName, "change")) {
+    return canonicalMission;
+  }
+
+  const topClaims = claimRefs
+    .filter((claim) => claim.status !== "discarded")
+    .slice(0, 2)
+    .map((claim) => normalizeClaimText(claim.text, 220))
+    .filter(Boolean);
+
+  if (topClaims.length > 0) {
+    return trimText(topClaims.join(" "), 420);
+  }
+
+  return canonicalMission;
+}
+
 function normalizeClaimRefs(result: any, sourceRefs: any[]): any[] {
-  if (Array.isArray(result?.claimRefs) && result.claimRefs.length > 0) {
-    return result.claimRefs;
-  }
-
+  const entityName = getPacketEntityName(result);
   const defaultSourceIds = sourceRefs.slice(0, 3).map((source) => source.id);
-  const claims: any[] = [];
+  const claims: Array<any & { _score: number }> = [];
 
-  for (const signal of Array.isArray(result?.signals) ? result.signals : []) {
+  const pushClaim = (candidate: {
+    id: string;
+    text: unknown;
+    sourceRefIds?: string[];
+    sourceLabel?: unknown;
+    sourceHref?: unknown;
+    evidenceQuote?: unknown;
+    answerBlockIds?: string[];
+    status?: string;
+    kind?: "signal" | "change" | "risk";
+    score?: unknown;
+  }) => {
+    const text = normalizeClaimText(candidate.text);
+    const kind = candidate.kind ?? "signal";
+    if (!text || !isHighSignalClaim(text, entityName, kind)) return;
     claims.push({
-      id: `claim:signal:${claims.length + 1}`,
-      text: signal.name ?? signal.title ?? String(signal),
-      sourceRefIds: defaultSourceIds,
-      answerBlockIds: ["answer:block:summary"],
-      status: "retained",
+      id: candidate.id,
+      text,
+      sourceRefIds: resolveSourceRefIdsForCandidate(sourceRefs, candidate, defaultSourceIds),
+      answerBlockIds: Array.isArray(candidate.answerBlockIds) ? candidate.answerBlockIds : [],
+      status: candidate.status ?? "retained",
+      _score:
+        typeof candidate.score === "number" && Number.isFinite(candidate.score)
+          ? candidate.score
+          : scoreClaimText(text, entityName, kind),
     });
+  };
+
+  if (Array.isArray(result?.claimRefs) && result.claimRefs.length > 0) {
+    for (const claim of result.claimRefs) {
+      pushClaim({
+        id: claim.id ?? `claim:existing:${claims.length + 1}`,
+        text: claim.text,
+        sourceRefIds: claim.sourceRefIds,
+        sourceLabel: claim.sourceLabel,
+        sourceHref: claim.sourceHref,
+        evidenceQuote: claim.evidenceQuote,
+        answerBlockIds: claim.answerBlockIds,
+        status: claim.status,
+        kind: claim.status === "contradicted" ? "risk" : "signal",
+        score: claim.score,
+      });
+    }
+  } else {
+    for (const signal of Array.isArray(result?.signals) ? result.signals : []) {
+      pushClaim({
+        id: `claim:signal:${claims.length + 1}`,
+        text: signal.name ?? signal.title ?? String(signal),
+        sourceRefIds: signal.sourceRefIds,
+        sourceLabel: signal.sourceLabel,
+        sourceHref: signal.sourceHref,
+        evidenceQuote: signal.evidenceQuote,
+        answerBlockIds: ["answer:block:summary", "answer:block:key_facts"],
+        status: "retained",
+        kind: "signal",
+        score: signal.score,
+      });
+    }
+
+    for (const change of Array.isArray(result?.whatChanged) ? result.whatChanged : []) {
+      pushClaim({
+        id: `claim:change:${claims.length + 1}`,
+        text: change.description ?? String(change),
+        sourceRefIds: change.sourceRefIds,
+        sourceLabel: change.sourceLabel,
+        sourceHref: change.sourceHref,
+        evidenceQuote: change.evidenceQuote,
+        answerBlockIds: ["answer:block:changes"],
+        status: "retained",
+        kind: "change",
+        score: change.score,
+      });
+    }
+
+    for (const contradiction of Array.isArray(result?.contradictions) ? result.contradictions : []) {
+      pushClaim({
+        id: `claim:risk:${claims.length + 1}`,
+        text: contradiction.claim ?? contradiction.title ?? String(contradiction),
+        sourceRefIds: contradiction.sourceRefIds,
+        sourceLabel: contradiction.sourceLabel,
+        sourceHref: contradiction.sourceHref,
+        evidenceQuote: contradiction.evidenceQuote,
+        answerBlockIds: ["answer:block:risks"],
+        status: "contradicted",
+        kind: "risk",
+        score: contradiction.score,
+      });
+    }
   }
 
-  for (const change of Array.isArray(result?.whatChanged) ? result.whatChanged : []) {
-    claims.push({
-      id: `claim:change:${claims.length + 1}`,
-      text: change.description ?? String(change),
-      sourceRefIds: defaultSourceIds,
-      answerBlockIds: ["answer:block:changes"],
-      status: "retained",
-    });
-  }
-
-  for (const contradiction of Array.isArray(result?.contradictions) ? result.contradictions : []) {
-    claims.push({
-      id: `claim:risk:${claims.length + 1}`,
-      text: contradiction.claim ?? contradiction.title ?? String(contradiction),
-      sourceRefIds: defaultSourceIds,
-      answerBlockIds: ["answer:block:risks"],
-      status: "contradicted",
-    });
-  }
-
-  return claims.slice(0, 12);
+  return dedupeBy(
+    claims
+      .sort((left, right) => right._score - left._score)
+      .slice(0, 12)
+      .map(({ _score, ...claim }) => claim),
+    (claim) => `${claim.status}:${String(claim.text).toLowerCase()}`,
+  );
 }
 
 function blockStatus(sourceRefIds: string[], explicitUncertainty?: boolean): "cited" | "uncertain" | "draft" {
@@ -463,8 +657,9 @@ function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[])
   const citedSourceIds = sourceRefs.slice(0, 4).map((source) => source.id);
   const sourceBacked = citedSourceIds.length > 0;
   const blocks: any[] = [];
+  const entityName = getPacketEntityName(result);
 
-  const summaryText = trimText(result?.canonicalEntity?.canonicalMission ?? result?.summary ?? "", 420);
+  const summaryText = buildBottomLineText(result, claimRefs, entityName);
   if (summaryText) {
     blocks.push({
       id: "answer:block:summary",
@@ -476,9 +671,9 @@ function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[])
     });
   }
 
-  const keyFactsText = (Array.isArray(result?.signals) ? result.signals : [])
-    .slice(0, 4)
-    .map((signal: any) => `• ${signal.name ?? signal.title ?? String(signal)}`)
+  const keyFactClaims = claimRefs.filter((claim) => claim.status === "retained").slice(0, 4);
+  const keyFactsText = keyFactClaims
+    .map((claim) => `- ${claim.text}`)
     .join("\n");
   if (keyFactsText) {
     blocks.push({
@@ -486,14 +681,15 @@ function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[])
       title: "Key facts and signal readout",
       text: keyFactsText,
       sourceRefIds: citedSourceIds,
-      claimIds: [],
+      claimIds: keyFactClaims.map((claim) => claim.id),
       status: blockStatus(citedSourceIds, !sourceBacked),
     });
   }
 
   const changesText = (Array.isArray(result?.whatChanged) ? result.whatChanged : [])
+    .filter((change: any) => isHighSignalClaim(change.description ?? String(change), entityName, "change"))
     .slice(0, 3)
-    .map((change: any) => `• ${change.description ?? String(change)}${change.date ? ` (${change.date})` : ""}`)
+    .map((change: any) => `- ${change.description ?? String(change)}${change.date ? ` (${change.date})` : ""}`)
     .join("\n");
   if (changesText) {
     blocks.push({
@@ -507,8 +703,15 @@ function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[])
   }
 
   const comparablesText = (Array.isArray(result?.comparables) ? result.comparables : [])
+    .filter((item: any) => {
+      const name = normalizeClaimText(item?.name ?? String(item), 120);
+      return Boolean(name)
+        && !/^(?:n\/a|unknown|none|general|company)$/i.test(name)
+        && !isGenericClaimFiller(name)
+        && !looksLikeStandalonePersonName(name);
+    })
     .slice(0, 4)
-    .map((item: any) => `• ${item.name ?? String(item)}${item.note ? `: ${item.note}` : ""}`)
+    .map((item: any) => `- ${item.name ?? String(item)}${item.note ? `: ${item.note}` : ""}`)
     .join("\n");
   if (comparablesText) {
     blocks.push({
@@ -548,8 +751,9 @@ function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[])
   }
 
   const risksText = (Array.isArray(result?.contradictions) ? result.contradictions : [])
+    .filter((item: any) => isHighSignalClaim(item.claim ?? item.title ?? String(item), entityName, "risk"))
     .slice(0, 3)
-    .map((item: any) => `• ${item.claim ?? item.title ?? String(item)}${item.evidence ? `: ${item.evidence}` : ""}`)
+    .map((item: any) => `- ${item.claim ?? item.title ?? String(item)}${item.evidence ? `: ${item.evidence}` : ""}`)
     .join("\n");
   if (risksText) {
     blocks.push({
@@ -564,7 +768,7 @@ function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[])
 
   const diligenceQuestionsText = (Array.isArray(result?.nextQuestions) ? result.nextQuestions : [])
     .slice(0, 4)
-    .map((question: any) => `• ${String(question)}`)
+    .map((question: any) => `- ${String(question)}`)
     .join("\n");
   if (diligenceQuestionsText) {
     blocks.push({
@@ -1022,13 +1226,32 @@ function buildResultPacket(args: {
         ?? result.canonicalEntity?.name
         ?? "NodeBench";
   const keyMetricLimit = args.lens === "banker" ? 6 : 4;
+  const summaryBlock = Array.isArray(result.answerBlocks)
+    ? result.answerBlocks.find((block: any) => block.id === "answer:block:summary")
+    : null;
+  const filteredVariables = classifySignals((result.signals ?? []).slice(0, 8))
+    .filter((sig) => isHighSignalClaim(sig.label ?? sig.rawName ?? "", entityName, "signal"))
+    .slice(0, 5);
+  const filteredChanges = (Array.isArray(result.whatChanged) ? result.whatChanged : [])
+    .filter((change: any) => isHighSignalClaim(change.description ?? String(change), entityName, "change"));
+  const filteredRisks = (Array.isArray(result.contradictions) ? result.contradictions : [])
+    .filter((contradiction: any) => isHighSignalClaim(contradiction.claim ?? contradiction.title ?? String(contradiction), entityName, "risk"));
+  const filteredComparables = (Array.isArray(result.comparables) ? result.comparables : [])
+    .filter((comparable: any) => {
+      const name = normalizeClaimText(comparable?.name ?? String(comparable), 120);
+      return Boolean(name)
+        && !/^(?:n\/a|unknown|none|general|company)$/i.test(name)
+        && !isGenericClaimFiller(name)
+        && !looksLikeStandalonePersonName(name);
+    });
+
   return {
     query: args.query,
     entityName,
-    answer: result.canonicalEntity?.canonicalMission ?? "",
+    answer: summaryBlock?.text ?? result.canonicalEntity?.canonicalMission ?? "",
     confidence: result.canonicalEntity?.identityConfidence ?? 70,
     sourceCount: sourceRefs.length,
-    variables: classifySignals((result.signals ?? []).slice(0, 8)).slice(0, 5).map((sig, index) => ({
+    variables: filteredVariables.map((sig, index) => ({
       rank: index + 1,
       name: sig.label,
       category: sig.category,
@@ -1051,16 +1274,16 @@ function buildResultPacket(args: {
             { label: "Claims", value: String(result.claimRefs?.length ?? 0) },
             { label: "Next actions", value: String(result.nextActions?.length ?? 0) },
           ],
-    changes: result.whatChanged?.map((change: any) => ({
+    changes: filteredChanges.map((change: any) => ({
       description: change.description ?? String(change),
       date: change.date,
     })),
-    risks: result.contradictions?.map((contradiction: any) => ({
+    risks: filteredRisks.map((contradiction: any) => ({
       title: contradiction.claim ?? contradiction.title ?? "Contradiction",
       description: contradiction.evidence ?? contradiction.description ?? "",
       falsification: contradiction.falsification,
     })),
-    comparables: result.comparables?.map((comparable: any) => ({
+    comparables: filteredComparables.map((comparable: any) => ({
       name: comparable.name ?? String(comparable),
       relevance: comparable.relevance ?? "medium",
       note: comparable.note ?? "",
@@ -1102,7 +1325,7 @@ function buildResultPacket(args: {
     nextQuestions: result.nextQuestions ?? result.nextActions?.map((action: any) => action.action) ?? [],
     evidence: createEvidenceSpans(
       result.sourceSnippets ?? sourceRefs.map((ref: any) => ({ url: ref.url, title: ref.title, snippet: ref.snippet })),
-      result.signals ?? [],
+      filteredVariables,
     ),
   };
 }
@@ -1659,6 +1882,35 @@ export function createSearchRouter(tools: McpTool[]) {
     return parts.length >= 2 ? parts : [];
   }
 
+  function normalizeWhitespace(value: string): string {
+    return value.replace(/\s+/g, " ").trim();
+  }
+
+  function toEntityDisplayName(value: string): string {
+    return normalizeWhitespace(value)
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((word) => {
+        if (/^[A-Z0-9&.-]{2,}$/.test(word)) return word;
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
+      .join(" ");
+  }
+
+  function extractBareEntityQuery(query: string): string | undefined {
+    const normalized = normalizeWhitespace(query.replace(/[?!.,;:]+$/g, ""));
+    if (!normalized || normalized.length < 2 || normalized.length > 50) return undefined;
+    const lower = normalized.toLowerCase();
+    if (/\b(my|our|we|i|me|us|uploaded|document|file|transcript|meeting|should|build|plan|weekly|delegation|change|changed|compare|competitor|risk|risks|strategy|pitch|ready|help)\b/i.test(lower)) {
+      return undefined;
+    }
+    const words = normalized.split(/\s+/).filter(Boolean);
+    if (words.length === 0 || words.length > 4) return undefined;
+    if (words.some((word) => /\d/.test(word))) return undefined;
+    if (words.some((word) => word.length === 1)) return undefined;
+    return toEntityDisplayName(normalized);
+  }
+
   function classifyQuery(query: string): {
     type: "weekly_reset" | "pre_delegation" | "important_change" | "plan_proposal" | "company_search" | "competitor" | "multi_entity" | "general";
     entity?: string;
@@ -1824,6 +2076,11 @@ export function createSearchRouter(tools: McpTool[]) {
       return { type: "company_search", entity: capitalizedMatch[1], lens: "investor" };
     }
 
+    const bareEntity = extractBareEntityQuery(query);
+    if (bareEntity) {
+      return { type: "company_search", entity: bareEntity, lens: "investor" };
+    }
+
     return { type: "general", lens: "founder" };
   }
 
@@ -1949,6 +2206,11 @@ Entity extraction rules:
         if (entities.length < 2) entities = undefined;
       }
 
+      const bareEntity = extractBareEntityQuery(query);
+      if ((!entity || type === "general") && bareEntity) {
+        return { type: "company_search", entity: bareEntity, lens: lens === "founder" ? "investor" : lens };
+      }
+
       return { type, entity, entities, lens };
     } catch {
       return classifyQuery(query); // Fallback to regex on any failure
@@ -1974,6 +2236,20 @@ Entity extraction rules:
   }
 
   // ── POST /search ──────────────────────────────────────────────────
+  function normalizeClassificationForDirectEntityQuery(
+    query: string,
+    classification: ClassifyResult,
+  ): ClassifyResult {
+    if (classification.type !== "general") return classification;
+    const bareEntity = extractBareEntityQuery(query);
+    if (!bareEntity) return classification;
+    return {
+      type: "company_search",
+      entity: bareEntity,
+      lens: classification.lens === "founder" ? "investor" : classification.lens,
+    };
+  }
+
   const parseSearchInput = (req: Request): { query?: string; lens?: string; daysBack?: number } => {
     if (req.method === "GET") {
       const query = typeof req.query.query === "string" ? req.query.query : undefined;
@@ -2019,7 +2295,8 @@ Entity extraction rules:
     // Use session-aware classifier for multi-turn follow-ups
     const sessionKey = getSessionKey(req);
     const sessionCtx = getSessionContext(sessionKey);
-    const classification = await classifyWithSession(query.trim(), sessionCtx);
+    const rawClassification = await classifyWithSession(query.trim(), sessionCtx);
+    const classification = normalizeClassificationForDirectEntityQuery(query.trim(), rawClassification);
     const inferredLens = inferExplicitLensFromQuery(query.trim());
     const resolvedLens =
       lens && !(lens === "founder" && inferredLens && inferredLens !== "founder")
@@ -2293,26 +2570,43 @@ Entity extraction rules:
           }
 
           // Build result in the format the rest of the route expects
+          console.error("[harness] Building result from synthesized:", synthesized.entityName, "signals:", synthesized.signals?.length);
+          const synthesizedSourceRefs = synthesized.sources.map((s, i) => ({
+            id: `src:${i}`,
+            label: s.label,
+            href: s.href,
+            type: s.type,
+            status: "cited",
+          }));
           result = {
             canonicalEntity: {
               name: synthesized.entityName,
               canonicalMission: synthesized.answer,
               identityConfidence: synthesized.confidence,
             },
-            signals: synthesized.signals.map((s, i) => ({
-              name: s.name, direction: s.direction, impact: s.impact,
+            signals: synthesized.signals.map((s) => ({
+              name: s.name,
+              direction: s.direction,
+              impact: s.impact,
+              score: s.score,
+              sourceLabel: s.sourceLabel,
+              sourceHref: s.sourceHref,
+              evidenceQuote: s.evidenceQuote,
             })),
             whatChanged: synthesized.changes,
             contradictions: synthesized.risks.map(r => ({
-              claim: r.title, evidence: r.description,
+              claim: r.title,
+              evidence: r.description,
+              score: r.score,
+              sourceLabel: r.sourceLabel,
+              sourceHref: r.sourceHref,
+              evidenceQuote: r.evidenceQuote,
             })),
             comparables: synthesized.comparables,
             whyThisTeam: synthesized.whyThisTeam,
             nextActions: synthesized.nextActions,
             nextQuestions: synthesized.nextQuestions,
-            sourceRefs: synthesized.sources.map((s, i) => ({
-              id: `src:${i}`, label: s.label, href: s.href, type: s.type, status: "cited",
-            })),
+            sourceRefs: synthesizedSourceRefs,
             keyMetrics: Array.isArray(synthesized.keyMetrics) && synthesized.keyMetrics.length > 0
               ? synthesized.keyMetrics
               : [
@@ -2332,6 +2626,7 @@ Entity extraction rules:
           usedHarness = true;
         } catch (harnessErr: any) {
           // Harness failed — fall through to legacy switch
+          console.error("[harness] FAILED:", harnessErr?.message?.slice(0, 200), harnessErr?.stack?.split('\n').slice(0, 3).join(' | '));
           const fallbackTrace = traceStep("agent_fallback");
           fallbackTrace.ok(`harness failed: ${harnessErr?.message ?? "unknown"}, using legacy dispatch`);
         }
@@ -3184,6 +3479,47 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
         });
       } catch (persistError) {
         console.error("[search] failed to persist founder-first run", persistError);
+      }
+
+      if (!process.env.VERCEL) {
+        try {
+          const resultSignals = Array.isArray(result?.signals) ? result.signals : [];
+          const resultRisks = Array.isArray(result?.contradictions) ? result.contradictions : [];
+          const totalClaims = resultSignals.length + resultRisks.length;
+          const verifiedSignals = resultSignals.filter((signal: any) => {
+            const evidenceRefs = signal?.evidenceRefs ?? signal?.sourceRefIds ?? [];
+            return signal?.verified === true
+              || (typeof signal?.confidence === "number" && signal.confidence >= 75)
+              || (Array.isArray(evidenceRefs) && evidenceRefs.length > 0)
+              || Boolean(signal?.evidence);
+          }).length;
+          const groundedClaims = [
+            ...resultSignals.map((signal: any) => signal?.evidence ?? signal?.description ?? null),
+            ...resultRisks.map((risk: any) => risk?.evidence ?? risk?.description ?? null),
+          ].filter((value) => typeof value === "string" && value.trim().length > 0).length;
+
+          evaluateTask({
+            episodeId: persistedIds?.runId ?? genId("episode"),
+            query: query.trim(),
+            lens: resolvedLens,
+            entity: entityName || null,
+            classification: effectiveClassification,
+            totalSignals: resultSignals.length,
+            verifiedSignals,
+            totalClaims,
+            groundedClaims,
+            contradictionsCaught: resultRisks.length,
+            userEditDistance: 0.25,
+            wasExported: false,
+            wasDelegated: false,
+            latencyMs,
+            costUsd: Math.round(trace.reduce((sum, item) => sum + (TOOL_COST[item.tool ?? ""] ?? 0.003), 0) * 1000) / 1000,
+            toolCallCount: trace.length,
+            llmJudge: judgeVerdict,
+          });
+        } catch (hyperloopError) {
+          console.error("[search] failed to record HyperLoop evaluation", hyperloopError);
+        }
       }
 
       // Use the pre-computed contextBundle (computed before dispatch)

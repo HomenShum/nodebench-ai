@@ -63,6 +63,50 @@ export type TraceCallback = (step: { step: string; tool?: string; status: string
 
 type ToolCaller = (name: string, args: Record<string, unknown>) => Promise<unknown>;
 
+type SynthesizedSource = {
+  label: string;
+  href?: string;
+  type: string;
+};
+
+type SynthesizedSignal = {
+  name: string;
+  direction: string;
+  impact: string;
+  score?: number;
+  sourceLabel?: string;
+  sourceHref?: string;
+  evidenceQuote?: string;
+};
+
+type SynthesizedChange = {
+  description: string;
+  date?: string;
+  score?: number;
+  sourceLabel?: string;
+  sourceHref?: string;
+  evidenceQuote?: string;
+};
+
+type SynthesizedRisk = {
+  title: string;
+  description: string;
+  score?: number;
+  sourceLabel?: string;
+  sourceHref?: string;
+  evidenceQuote?: string;
+};
+
+type SynthesizedComparable = {
+  name: string;
+  relevance: string;
+  note: string;
+  score?: number;
+  sourceLabel?: string;
+  sourceHref?: string;
+  evidenceQuote?: string;
+};
+
 const COMPANY_NAME_STOPWORDS = new Set([
   "approximately",
   "ai",
@@ -323,6 +367,28 @@ function dedupeStrings(values: string[]): string[] {
     deduped.push(normalizeWhitespace(value));
   }
   return deduped;
+}
+
+function normalizeCandidateScore(value: unknown): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  if (value <= 1 && value >= 0) return Math.round(value * 100);
+  const normalized = Math.round(value);
+  if (normalized < 0 || normalized > 100) return undefined;
+  return normalized;
+}
+
+function normalizeCandidateMetadata<T extends {
+  score?: unknown;
+  sourceLabel?: unknown;
+  sourceHref?: unknown;
+  evidenceQuote?: unknown;
+}>(item: T) {
+  return {
+    score: normalizeCandidateScore(item?.score),
+    sourceLabel: normalizeWhitespace(String(item?.sourceLabel ?? "")) || undefined,
+    sourceHref: normalizeWhitespace(String(item?.sourceHref ?? "")) || undefined,
+    evidenceQuote: normalizeWhitespace(String(item?.evidenceQuote ?? "")) || undefined,
+  };
 }
 
 function containsRiskLanguage(value: string): boolean {
@@ -615,7 +681,7 @@ function isPotentialCompanyName(name: string, entityName: string): boolean {
   if (/\b(gpus?|cpus?|tpus?|chips?|contracts?|buyers?|accounts?|usage|market|share|pricing|bundling|deployment|deployments)\b/i.test(cleaned)) return false;
   if (/^(today|yesterday|quarter|year|source|report|index|analysis)$/i.test(cleaned)) return false;
   if (/^(AI|API|LLM|ML|GPU|CPU|YoY|ARR|MRR)$/i.test(cleaned)) return false;
-  if (/^[A-Z]{3,6}$/.test(cleaned) && !KNOWN_ACRONYM_COMPANY_NAMES.has(cleaned)) return false;
+  if (/^[A-Z]{2,6}$/.test(cleaned) && !KNOWN_ACRONYM_COMPANY_NAMES.has(cleaned)) return false;
   if (/^[A-Z][a-z]+ly$/.test(cleaned)) return false;
   if (/\b(company overview|overview|analysis|outlook|report|briefing|readout|market update|pricing pressure|enterprise ai)\b/i.test(cleaned)) {
     return false;
@@ -1029,11 +1095,11 @@ function deriveComparableCandidates(execution: HarnessExecution, entityName: str
 }
 
 function mergeSignals(
-  primary: Array<{ name: string; direction: string; impact: string }>,
-  fallbacks: Array<{ name: string; direction: string; impact: string }>,
-): Array<{ name: string; direction: string; impact: string }> {
+  primary: SynthesizedSignal[],
+  fallbacks: SynthesizedSignal[],
+): SynthesizedSignal[] {
   const seen = new Set<string>();
-  const merged: Array<{ name: string; direction: string; impact: string }> = [];
+  const merged: SynthesizedSignal[] = [];
   for (const item of [...primary, ...fallbacks]) {
     const key = normalizeWhitespace(item.name).toLowerCase();
     if (!key || seen.has(key)) continue;
@@ -1052,8 +1118,11 @@ function isNarrativeReadySignal(value: string): boolean {
   return true;
 }
 
-function collectFallbackSignals(execution: HarnessExecution): Array<{ name: string; direction: string; impact: string }> {
-  const signals: Array<{ name?: string; direction?: string; impact?: string }> = [];
+function collectFallbackSignals(
+  execution: HarnessExecution,
+  context?: { entityName?: string; classification?: string; entityTargets?: string[] },
+): SynthesizedSignal[] {
+  const signals: Array<Partial<SynthesizedSignal>> = [];
   for (const step of execution.stepResults) {
     if (!step.success || !step.result) continue;
     const raw = step.result as any;
@@ -1084,7 +1153,7 @@ function collectFallbackSignals(execution: HarnessExecution): Array<{ name: stri
       }
     }
   }
-  return sanitizeSignals(signals);
+  return sanitizeSignals(signals, context);
 }
 
 function looksLikeOperationalChange(value: string): boolean {
@@ -1172,10 +1241,11 @@ function collectFallbackRisks(execution: HarnessExecution): Array<{ title: strin
 }
 
 function sanitizeSignals(
-  items: Array<{ name?: string; direction?: string; impact?: string }> | undefined,
-): Array<{ name: string; direction: string; impact: string }> {
+  items: Array<Partial<SynthesizedSignal>> | undefined,
+  context?: { entityName?: string; classification?: string; entityTargets?: string[] },
+): SynthesizedSignal[] {
   const seen = new Set<string>();
-  const sanitized: Array<{ name: string; direction: string; impact: string }> = [];
+  const sanitized: SynthesizedSignal[] = [];
   for (const item of items ?? []) {
     const name = normalizeNarrativeSentence(String(item?.name ?? ""));
     if (!name || /^signal \d+$/i.test(name)) continue;
@@ -1187,16 +1257,34 @@ function sanitizeSignals(
     if (looksLikeNarrativeFluff(name)) continue;
     if (looksLikeSpeculativeCapitalMarketsFiller(name)) continue;
     if (looksLikeGenericMarketBackdrop(name)) continue;
+    if (
+      context?.entityName
+      && isSingleEntityPacketClassification(context.classification)
+      && !isEntityGroundedCandidate(
+        {
+          text: name,
+          sourceLabel: item?.sourceLabel,
+          sourceHref: item?.sourceHref,
+          evidenceQuote: item?.evidenceQuote,
+        },
+        context.entityName,
+        context.entityTargets,
+      )
+    ) {
+      continue;
+    }
     if (name.length > 100 && /[-:]\s[A-Z][A-Za-z0-9&.\s]+$/.test(name)) continue;
     if (looksLikeSourceTitle(name)) continue;
     if (!hasBankerSignalContent(name) && !containsRiskLanguage(name)) continue;
     const key = name.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
+    const metadata = normalizeCandidateMetadata(item);
     sanitized.push({
       name,
       direction: item?.direction === "up" || item?.direction === "down" ? item.direction : "neutral",
       impact: item?.impact === "high" || item?.impact === "low" ? item.impact : "medium",
+      ...metadata,
     });
   }
   return selectDiverseSignals(
@@ -1206,12 +1294,14 @@ function sanitizeSignals(
 }
 
 function sanitizeChanges(
-  items: Array<{ description?: string; date?: string | null }> | undefined,
-): Array<{ description: string; date?: string }> {
+  items: Array<Partial<SynthesizedChange>> | undefined,
+  context?: { entityName?: string; classification?: string; entityTargets?: string[] },
+): SynthesizedChange[] {
   const normalizedEntries = (items ?? [])
     .map((item) => ({
       description: normalizeChangeDescription(String(item?.description ?? "")),
       date: item?.date ?? undefined,
+      ...normalizeCandidateMetadata(item),
     }))
     .filter((item) => item.description.length > 0);
   const deduped = dedupeStrings(normalizedEntries.map((item) => item.description))
@@ -1224,10 +1314,26 @@ function sanitizeChanges(
     .filter((description) => !looksLikeGenericMarketBackdrop(description))
     .filter((description) => !looksLikeAmbiguousSubjectSignal(description))
     .filter((description) => !/\b(sacra|24\/7 wall st|forbes|axios|deepresearchglobal)\b/i.test(description));
-  return deduped.slice(0, 4).map((description, index) => ({
+  return deduped.slice(0, 4).map((description) => ({
     description,
     date: normalizedEntries.find((item) => item.description === description)?.date,
-  }));
+    score: normalizedEntries.find((item) => item.description === description)?.score,
+    sourceLabel: normalizedEntries.find((item) => item.description === description)?.sourceLabel,
+    sourceHref: normalizedEntries.find((item) => item.description === description)?.sourceHref,
+    evidenceQuote: normalizedEntries.find((item) => item.description === description)?.evidenceQuote,
+  })).filter((item) => {
+    if (!context?.entityName || !isSingleEntityPacketClassification(context.classification)) return true;
+    return isEntityGroundedCandidate(
+      {
+        text: item.description,
+        sourceLabel: item.sourceLabel,
+        sourceHref: item.sourceHref,
+        evidenceQuote: item.evidenceQuote,
+      },
+      context.entityName,
+      context.entityTargets,
+    );
+  });
 }
 
 function inferRiskTitleFromDescription(description: string): string {
@@ -1240,11 +1346,12 @@ function inferRiskTitleFromDescription(description: string): string {
 }
 
 function sanitizeRisks(
-  items: Array<{ title?: string; description?: string }> | undefined,
-): Array<{ title: string; description: string }> {
+  items: Array<Partial<SynthesizedRisk>> | undefined,
+  context?: { entityName?: string; classification?: string; entityTargets?: string[] },
+): SynthesizedRisk[] {
   const seen = new Set<string>();
   const seenTitles = new Set<string>();
-  const sanitized: Array<{ title: string; description: string }> = [];
+  const sanitized: SynthesizedRisk[] = [];
   for (const item of items ?? []) {
     let title = normalizeWhitespace(String(item?.title ?? ""));
     let description = normalizeNarrativeSentence(String(item?.description ?? ""));
@@ -1264,32 +1371,53 @@ function sanitizeRisks(
       description = buildDefaultRiskDescription(title);
     }
     if (!containsRiskLanguage(`${title} ${description}`)) continue;
+    if (
+      context?.entityName
+      && isSingleEntityPacketClassification(context.classification)
+      && !isEntityGroundedCandidate(
+        {
+          text: `${title}. ${description}`,
+          sourceLabel: item?.sourceLabel,
+          sourceHref: item?.sourceHref,
+          evidenceQuote: item?.evidenceQuote,
+        },
+        context.entityName,
+        context.entityTargets,
+      )
+    ) {
+      continue;
+    }
     const key = `${title.toLowerCase()}::${description.toLowerCase()}`;
     if (seen.has(key)) continue;
     const titleKey = title.toLowerCase();
     if (seenTitles.has(titleKey)) continue;
     seen.add(key);
     seenTitles.add(titleKey);
-    sanitized.push({ title, description });
+    sanitized.push({ title, description, ...normalizeCandidateMetadata(item) });
   }
   return sanitized.slice(0, 4);
 }
 
 function sanitizeComparables(
-  items: Array<{ name?: string; relevance?: string; note?: string }> | undefined,
+  items: Array<Partial<SynthesizedComparable>> | undefined,
   entityName: string,
   fallbacks: string[],
   context?: { classification?: string; entityTargets?: string[] },
-): Array<{ name: string; relevance: string; note: string }> {
+): SynthesizedComparable[] {
   const seen = new Set<string>();
-  const sanitized: Array<{ name: string; relevance: string; note: string }> = [];
+  const sanitized: SynthesizedComparable[] = [];
   const fallbackSet = new Set(fallbacks.map((value) => normalizeWhitespace(value).toLowerCase()).filter(Boolean));
   const normalizedTargets = dedupeStrings((context?.entityTargets ?? []).map((value) => normalizeWhitespace(String(value))));
   const targetSet = new Set(normalizedTargets.map((value) => value.toLowerCase()).filter(Boolean));
   const entityTokens = new Set(entityName.split(/\s+vs\s+|\s*,\s*/i).map((value) => normalizeWhitespace(value).toLowerCase()).filter(Boolean));
   const anchorTarget = normalizedTargets[0]?.toLowerCase();
 
-  const pushComparable = (name: string, relevance = "medium", note = "Referenced in cited sources.") => {
+  const pushComparable = (
+    name: string,
+    relevance = "medium",
+    note = "Referenced in cited sources.",
+    metadata?: ReturnType<typeof normalizeCandidateMetadata>,
+  ) => {
     const cleanedName = normalizeWhitespace(name);
     const explicitTarget = targetSet.has(cleanedName.toLowerCase());
     if (!explicitTarget && !isPotentialCompanyName(cleanedName, entityName)) return;
@@ -1316,11 +1444,17 @@ function sanitizeComparables(
       name: cleanedName,
       relevance: relevance === "high" || relevance === "low" ? relevance : "medium",
       note: normalizeWhitespace(note || "Referenced in cited sources."),
+      ...metadata,
     });
   };
 
   for (const item of items ?? []) {
-    pushComparable(String(item?.name ?? ""), String(item?.relevance ?? "medium"), String(item?.note ?? ""));
+    pushComparable(
+      String(item?.name ?? ""),
+      String(item?.relevance ?? "medium"),
+      String(item?.note ?? ""),
+      normalizeCandidateMetadata(item),
+    );
   }
   for (const fallback of fallbacks) {
     pushComparable(fallback, "medium", "Derived from cited competitive references.");
@@ -1447,6 +1581,39 @@ function inferMetricEntity(value: string, entityName: string, entityTargets?: st
     if (pattern.test(value)) return target;
   }
   return null;
+}
+
+function isSingleEntityPacketClassification(classification?: string): boolean {
+  return classification === "company_search";
+}
+
+function hrefMentionsEntityTarget(href: string | undefined, entityName: string, entityTargets?: string[]): boolean {
+  if (!href) return false;
+  const lowerHref = href.toLowerCase();
+  const orderedTargets = dedupeStrings([...(entityTargets ?? []), entityName].map((item) => normalizeWhitespace(String(item)))).filter(Boolean);
+  for (const target of orderedTargets) {
+    const lowerTarget = target.toLowerCase();
+    if (lowerHref.includes(lowerTarget)) return true;
+    const tokens = lowerTarget.split(/\s+/).filter((token) => token.length >= 3);
+    if (tokens.length > 0 && tokens.every((token) => lowerHref.includes(token))) return true;
+  }
+  return false;
+}
+
+function isEntityGroundedCandidate(
+  value: { text?: string; sourceLabel?: string; sourceHref?: string; evidenceQuote?: string },
+  entityName: string,
+  entityTargets?: string[],
+): boolean {
+  const combined = normalizeWhitespace(
+    [value.text, value.sourceLabel, value.evidenceQuote]
+      .map((item) => String(item ?? ""))
+      .join(" "),
+  );
+  if (combined && inferMetricEntity(combined, entityName, entityTargets) !== null) {
+    return true;
+  }
+  return hrefMentionsEntityTarget(value.sourceHref, entityName, entityTargets);
 }
 
 function mentionsEntityTarget(value: string, entityTargets?: string[]): boolean {
@@ -1874,6 +2041,7 @@ function deriveEvidenceKeyMetrics(args: {
 function sanitizeSources(
   items: Array<{ label?: string; href?: string; type?: string }> | undefined,
   execution: HarnessExecution,
+  context?: { entityName?: string; classification?: string; entityTargets?: string[] },
 ): Array<{ label: string; href?: string; type: string }> {
   const seen = new Set<string>();
   const sanitized: Array<{ label: string; href?: string; type: string; authorityScore: number }> = [];
@@ -1887,6 +2055,21 @@ function sanitizeSources(
       return;
     }
     if (href && /vertexaisearch\.cloud\.google\.com\/grounding-api-redirect/i.test(href)) {
+      return;
+    }
+    if (
+      context?.entityName
+      && isSingleEntityPacketClassification(context.classification)
+      && !isEntityGroundedCandidate(
+        {
+          text: cleanedLabel,
+          sourceLabel: cleanedLabel,
+          sourceHref: href,
+        },
+        context.entityName,
+        context.entityTargets,
+      )
+    ) {
       return;
     }
     const authorityScore = scoreSourceAuthority(cleanedLabel, href, type || "web");
@@ -2293,6 +2476,8 @@ async function callLLM(
   maxTokens?: number,
 ): Promise<string> {
   const tokens = maxTokens ?? 1000;
+
+  // Path 1: MCP tool bus
   try {
     const toolResult = await callTool("call_llm", {
       prompt,
@@ -2307,21 +2492,47 @@ async function callLLM(
           ? ""
           : String(toolResult?.response ?? toolResult?.output ?? toolResult?.content ?? "");
     if (text.length > 10) return text;
-  } catch {
-    // Fall back to direct provider calls below when the tool bus is unavailable.
+  } catch (toolErr: any) {
+    console.error("[callLLM] tool bus failed:", toolErr?.message?.slice(0, 80));
   }
 
+  // Path 2: Direct Gemini API (most reliable — always try this)
+  const geminiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
+  if (geminiKey) {
+    try {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${geminiKey}`;
+      const body = {
+        contents: [{ parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: tokens, responseMimeType: "application/json" },
+      };
+      const resp = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(25_000),
+      });
+      if (resp.ok) {
+        const data = (await resp.json()) as any;
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+        if (text.length > 10) {
+          console.error("[callLLM] Gemini direct succeeded:", text.length, "chars");
+          return text;
+        }
+      } else {
+        console.error("[callLLM] Gemini direct failed:", resp.status);
+      }
+    } catch (geminiErr: any) {
+      console.error("[callLLM] Gemini direct error:", geminiErr?.message?.slice(0, 80));
+    }
+  }
+
+  // Path 3: Model bus fallback chain (Gemini variants + OpenAI)
   const complexity = assessComplexity(prompt, tokens);
   const primaryModel = GEMINI_MODELS[complexity];
-
-  // Try primary model (complexity-matched), then fallback chain
   const chain = [primaryModel];
-  // Add complexity-matched OpenAI as second choice
   chain.push(OPENAI_MODELS[complexity]);
-  // Add lower-complexity Gemini as fallback
   if (complexity === "high") chain.push(GEMINI_MODELS.medium);
   if (complexity !== "low") chain.push(GEMINI_MODELS.low);
-  // Lower OpenAI as final fallback
   if (complexity !== "low") chain.push(OPENAI_MODELS.low);
 
   for (const model of chain) {
@@ -2330,6 +2541,8 @@ async function callLLM(
       if (result && result.length > 10) return result;
     } catch { continue; }
   }
+
+  console.error("[callLLM] ALL paths failed. Returning empty.");
   return "";
 }
 
@@ -2692,10 +2905,10 @@ export async function synthesizeResults(
   answer: string;
   confidence: number;
   keyMetrics: Array<{ label: string; value: string }>;
-  signals: Array<{ name: string; direction: string; impact: string }>;
-  changes: Array<{ description: string; date?: string }>;
-  risks: Array<{ title: string; description: string }>;
-  comparables: Array<{ name: string; relevance: string; note: string }>;
+  signals: SynthesizedSignal[];
+  changes: SynthesizedChange[];
+  risks: SynthesizedRisk[];
+  comparables: SynthesizedComparable[];
   whyThisTeam: {
     founderCredibility: string;
     trustSignals: string[];
@@ -2705,7 +2918,7 @@ export async function synthesizeResults(
   } | null;
   nextActions: Array<{ action: string; impact: string }>;
   nextQuestions: string[];
-  sources: Array<{ label: string; href?: string; type: string }>;
+  sources: SynthesizedSource[];
 }> {
   const comparableFallbacks = deriveComparableCandidates(execution, execution.plan.entityTargets[0] ?? extractEntityFromQuery(query));
 
@@ -2762,6 +2975,7 @@ ANALYSIS REQUIREMENTS:
 6. NEXT ACTIONS: 2-3 specific, actionable steps the ${lens} should take this week. Not generic "do more research" — specific actions like "review Q4 filing for revenue breakdown" or "compare pricing vs competitor X".
 7. FOLLOW-UP QUESTIONS: 3-4 specific questions that would deepen this analysis. Questions should reference gaps in the current data.
 8. SOURCES: List actual source names/URLs from the data. Never list tool names like "web_search" or "run_recon". Use the actual article titles, document names, or website domains.
+9. SOURCE LINKING: Every signal, change, risk, and comparable must include score (0-100), sourceLabel, sourceHref when available, and evidenceQuote. Omit weak items instead of fabricating provenance.
 
 Return ONLY valid JSON with ALL fields populated:
 {
@@ -2770,10 +2984,10 @@ Return ONLY valid JSON with ALL fields populated:
   "confidence": 0-100,
   "keyMetrics": [{"label": "metric name", "value": "metric value"}],
   "whyThisTeam": {"founderCredibility": "why these founders are credible for this problem", "trustSignals": ["signal1", "signal2"], "visionMagnitude": "feature, product, or company-scale?", "reinventionCapacity": "can they pivot?", "hiddenRequirements": ["what outsiders expect"]},
-  "signals": [{"name": "signal", "direction": "up|down|neutral", "impact": "high|medium|low"}],
-  "changes": [{"description": "recent change"}],
-  "risks": [{"title": "risk", "description": "why it matters"}],
-  "comparables": [{"name": "competitor", "relevance": "high|medium|low", "note": "why relevant"}],
+  "signals": [{"name": "signal", "direction": "up|down|neutral", "impact": "high|medium|low", "score": 0, "sourceLabel": "source", "sourceHref": "https://...", "evidenceQuote": "proof"}],
+  "changes": [{"description": "recent change", "date": "optional", "score": 0, "sourceLabel": "source", "sourceHref": "https://...", "evidenceQuote": "proof"}],
+  "risks": [{"title": "risk", "description": "why it matters", "score": 0, "sourceLabel": "source", "sourceHref": "https://...", "evidenceQuote": "proof"}],
+  "comparables": [{"name": "competitor", "relevance": "high|medium|low", "note": "why relevant", "score": 0, "sourceLabel": "source", "sourceHref": "https://...", "evidenceQuote": "proof"}],
   "nextActions": [{"action": "step", "impact": "high|medium|low"}],
   "nextQuestions": ["follow-up question"],
   "sources": [{"label": "source title", "href": "url", "type": "web|doc"}]
@@ -2783,17 +2997,25 @@ Return ONLY valid JSON with ALL fields populated:
       );
 
       const jsonMatch = text.match(/\{[\s\S]*\}/);
+      console.error("[synthesis] LLM returned", text.length, "chars. jsonMatch:", jsonMatch ? jsonMatch[0].length + " chars" : "null", "first 100:", text.slice(0, 100));
       if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        const signals = mergeSignals(collectFallbackSignals(execution), sanitizeSignals(parsed.signals));
+        const cleaned = jsonMatch[0].replace(/,\s*([\]}])/g, "$1"); // strip trailing commas
+        const parsed = JSON.parse(cleaned);
+        console.error("[synthesis] Parsed OK. entityName:", parsed.entityName, "signals:", parsed.signals?.length, "risks:", parsed.risks?.length);
+        const signalContext = {
+          entityName,
+          classification: execution.plan.classification,
+          entityTargets: execution.plan.entityTargets,
+        };
+        const signals = mergeSignals(collectFallbackSignals(execution, signalContext), sanitizeSignals(parsed.signals, signalContext));
         const changes = sanitizeChanges([
           ...collectFallbackChanges(execution),
           ...(Array.isArray(parsed.changes) ? parsed.changes : []),
-        ]);
+        ], signalContext);
         const risks = sanitizeRisks([
           ...collectFallbackRisks(execution),
           ...(Array.isArray(parsed.risks) ? parsed.risks : []),
-        ]);
+        ], signalContext);
         const comparables = sanitizeComparables(parsed.comparables, entityName, comparableFallbacks, {
           classification: execution.plan.classification,
           entityTargets: execution.plan.entityTargets,
@@ -2812,7 +3034,7 @@ Return ONLY valid JSON with ALL fields populated:
           classification: execution.plan.classification,
           entityTargets: execution.plan.entityTargets,
         });
-        const sources = sanitizeSources(parsed.sources, execution);
+        const sources = sanitizeSources(parsed.sources, execution, signalContext);
         const nextQuestions = dedupeStrings(
           Array.isArray(parsed.nextQuestions) ? parsed.nextQuestions.map((item: unknown) => String(item ?? "")) : [],
         )
@@ -2876,15 +3098,15 @@ Return ONLY valid JSON with ALL fields populated:
           sources,
         };
       }
-    } catch { /* fall through to deterministic synthesis */ }
+    } catch (synthErr: any) { console.error("[synthesis] LLM path failed:", synthErr?.message?.slice(0, 150)); }
   }
 
   // Deterministic synthesis: extract structured data from raw tool results
   // This is the structural path — not a "fallback". Tool results ARE structured data.
-  const signals: Array<{ name: string; direction: string; impact: string }> = [];
-  const changes: Array<{ description: string; date?: string }> = [];
-  const risks: Array<{ title: string; description: string }> = [];
-  const comparables: Array<{ name: string; relevance: string; note: string }> = [];
+  const signals: SynthesizedSignal[] = [];
+  const changes: SynthesizedChange[] = [];
+  const risks: SynthesizedRisk[] = [];
+  const comparables: SynthesizedComparable[] = [];
   const nextActions: Array<{ action: string; impact: string }> = [];
   const sources: Array<{ label: string; href?: string; type: string }> = [];
   const answerParts: string[] = [];
@@ -2908,24 +3130,39 @@ Return ONLY valid JSON with ALL fields populated:
         if (snippet) {
           if (/\b(revenue|growth|raised|funding|launch|expand|partner|acquir|billion|million|valuation)/i.test(snippet)) {
             const titleNeg = /\b(trouble|fail|declin|crash|struggle|layoff|scandal|problem|crisis|concern|threaten|warn)/i.test(title || snippet);
-            signals.push({ name: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 120), direction: titleNeg ? "down" : "up", impact: "high" });
+            signals.push({
+              name: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 120),
+              direction: titleNeg ? "down" : "up",
+              impact: "high",
+              score: 82,
+              sourceLabel: title || undefined,
+              sourceHref: url || undefined,
+              evidenceQuote: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 180),
+            });
           }
           if (/\b(layoff|decline|loss|risk|lawsuit|regulat|concern|investig|threat|challenge|vulnerab)/i.test(snippet)) {
-            risks.push({ title: inferRiskTitleFromDescription(snippet), description: snippet.slice(0, 200) });
+            risks.push({
+              title: inferRiskTitleFromDescription(snippet),
+              description: snippet.slice(0, 200),
+              score: 80,
+              sourceLabel: title || undefined,
+              sourceHref: url || undefined,
+              evidenceQuote: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 180),
+            });
           }
           if (/\b(compet|rival|alternative|versus|vs\.|compared to)/i.test(snippet)) {
             // Extract competitor names from snippet
             const compMatch = snippet.match(/(?:competitors?|rivals?|alternatives?)\s+(?:like|such as|including)\s+([A-Z][a-zA-Z]+(?:\s*,\s*[A-Z][a-zA-Z]+)*)/i);
             if (compMatch) {
               for (const name of compMatch[1].split(/,\s*/)) {
-                if (name.trim().length > 2 && !/^(and|or|the|a|an|its|their|also|but|with)$/i.test(name.trim())) comparables.push({ name: name.trim(), relevance: "high", note: "Identified via Linkup" });
+                if (name.trim().length > 2 && !/^(and|or|the|a|an|its|their|also|but|with)$/i.test(name.trim())) comparables.push({ name: name.trim(), relevance: "high", note: "Identified via Linkup", score: 76, sourceLabel: title || undefined, sourceHref: url || undefined, evidenceQuote: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 180) });
               }
             }
           }
           // Extract recent changes from Linkup intelligence
           if (/\b(announced|launched|released|updated|acquired|raised|hired|expanded|partnered|introduced|unveiled|reported)\b/i.test(snippet)) {
             const description = normalizeChangeDescription(extractEvidenceSentencesSafe(snippet)[0] ?? snippet);
-            if (description) changes.push({ description });
+            if (description) changes.push({ description, score: 78, sourceLabel: title || undefined, sourceHref: url || undefined, evidenceQuote: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 180) });
           }
         }
       }
@@ -2945,22 +3182,37 @@ Return ONLY valid JSON with ALL fields populated:
           if (/\b(growth|revenue|raised|funding|launch|expand|partner|acquir)/i.test(snippet)) {
             // Check title sentiment — don't assign "up" if headline is negative
             const titleNeg = /\b(trouble|fail|declin|crash|struggle|layoff|scandal|problem|crisis|concern|threaten|warn)/i.test(title);
-            signals.push({ name: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 120), direction: titleNeg ? "down" : "up", impact: "medium" });
+            signals.push({
+              name: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 120),
+              direction: titleNeg ? "down" : "up",
+              impact: "medium",
+              score: 74,
+              sourceLabel: title || undefined,
+              sourceHref: url || undefined,
+              evidenceQuote: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 180),
+            });
           }
           if (/\b(layoff|decline|loss|risk|lawsuit|regulat|concern|investig)/i.test(snippet)) {
-            risks.push({ title: inferRiskTitleFromDescription(snippet), description: snippet.slice(0, 200) });
+            risks.push({
+              title: inferRiskTitleFromDescription(snippet),
+              description: snippet.slice(0, 200),
+              score: 72,
+              sourceLabel: title || undefined,
+              sourceHref: url || undefined,
+              evidenceQuote: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 180),
+            });
           }
           // Extract recent changes from news-style snippets
           if (/\b(announced|launched|released|updated|acquired|raised|hired|expanded|partnered|introduced|unveiled|reported)\b/i.test(snippet)) {
             const description = normalizeChangeDescription(extractEvidenceSentencesSafe(snippet)[0] ?? snippet);
-            if (description) changes.push({ description });
+            if (description) changes.push({ description, score: 70, sourceLabel: title || undefined, sourceHref: url || undefined, evidenceQuote: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 180) });
           }
           // Extract comparables from competitive mentions
           if (/\b(compet|rival|alternative|versus|vs\.|compared to)/i.test(snippet)) {
             const compMatch = snippet.match(/(?:competitors?|rivals?|alternatives?)\s+(?:like|such as|including)\s+([A-Z][a-zA-Z]+(?:\s*,\s*[A-Z][a-zA-Z]+)*)/i);
             if (compMatch) {
               for (const name of compMatch[1].split(/,\s*/)) {
-                if (name.trim().length > 2 && !/^(and|or|the|a|an|its|their|also|but|with)$/i.test(name.trim())) comparables.push({ name: name.trim(), relevance: "high", note: "Web intelligence" });
+                if (name.trim().length > 2 && !/^(and|or|the|a|an|its|their|also|but|with)$/i.test(name.trim())) comparables.push({ name: name.trim(), relevance: "high", note: "Web intelligence", score: 68, sourceLabel: title || undefined, sourceHref: url || undefined, evidenceQuote: extractEvidenceSentencesSafe(snippet)[0] ?? snippet.slice(0, 180) });
               }
             }
           }
@@ -3093,9 +3345,14 @@ Return ONLY valid JSON with ALL fields populated:
   }
 
   // Build answer from collected parts
-  const sanitizedSignals = mergeSignals(sanitizeSignals(signals), collectFallbackSignals(execution));
-  const sanitizedChanges = sanitizeChanges(changes);
-  const sanitizedRisks = sanitizeRisks([...risks, ...collectFallbackRisks(execution)]);
+  const signalContext = {
+    entityName,
+    classification: execution.plan.classification,
+    entityTargets: execution.plan.entityTargets,
+  };
+  const sanitizedSignals = mergeSignals(sanitizeSignals(signals, signalContext), collectFallbackSignals(execution, signalContext));
+  const sanitizedChanges = sanitizeChanges(changes, signalContext);
+  const sanitizedRisks = sanitizeRisks([...risks, ...collectFallbackRisks(execution)], signalContext);
   const sanitizedComparables = sanitizeComparables(comparables, entityName, comparableFallbacks, {
     classification: execution.plan.classification,
     entityTargets: execution.plan.entityTargets,
@@ -3113,7 +3370,7 @@ Return ONLY valid JSON with ALL fields populated:
     classification: execution.plan.classification,
     entityTargets: execution.plan.entityTargets,
   });
-  const sanitizedSources = sanitizeSources(sources, execution);
+  const sanitizedSources = sanitizeSources(sources, execution, signalContext);
   const answer = sanitizeExecutiveAnswer(
     answerParts.length > 0
       ? answerParts.slice(0, 5).join(" ").slice(0, 800)
