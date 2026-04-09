@@ -493,6 +493,21 @@ export const ResultWorkspace = memo(function ResultWorkspace({
       <SourcesBar sources={proofPacket.sourceRefs} />
       <ForecastGateCard gate={proofPacket.forecastGate} />
 
+      {/* Pain resolutions — show which real problems this result solved */}
+      {Array.isArray((proofPacket as any).painResolutions) && (proofPacket as any).painResolutions.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {((proofPacket as any).painResolutions as Array<{ painId: string; painLabel: string; fix: string; proof: string }>).map((pr) => (
+            <div key={pr.painId} className="group relative rounded-lg border border-emerald-500/20 bg-emerald-500/[0.04] px-3 py-2">
+              <div className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="text-[11px] font-medium text-emerald-400">{pr.painLabel}</span>
+              </div>
+              <p className="mt-1 text-[10px] leading-relaxed text-content-muted">{pr.fix}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
         <div className="flex items-center gap-2">
           <BookOpen className="h-4 w-4 text-content-muted" />

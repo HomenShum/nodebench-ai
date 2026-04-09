@@ -11,6 +11,7 @@
 import { classifySignals, type ClassifiedSignal } from "../lib/signalTaxonomy.js";
 import { createEvidenceSpans, type EvidenceManifest } from "../lib/evidenceSpan.js";
 import { computeRoutingHints, formatRoutingHintsForPrompt, type RoutingHint } from "../lib/routingHints.js";
+import { detectPainResolutions, type PainResolution } from "../lib/painMapping.js";
 
 // ─── Pipeline State ──────────────────────────────────────────────
 
@@ -52,6 +53,7 @@ export interface PipelineState {
   // Package
   classifiedSignals: ClassifiedSignal[];
   evidence: EvidenceManifest;
+  painResolutions: PainResolution[];
 
   // Trace
   trace: Array<{ step: string; tool?: string; status: string; detail?: string; durationMs?: number }>;
@@ -318,14 +320,30 @@ export function packageResult(state: PipelineState): PipelineState {
     state.signals,
   );
 
+  // Detect which pains this result resolves
+  const painResolutions = detectPainResolutions({
+    query: state.query,
+    classification: state.classification,
+    entityName: state.entityName,
+    answer: state.answer,
+    confidence: state.confidence,
+    signals: state.signals,
+    risks: state.risks,
+    comparables: state.comparables,
+    evidence,
+    sourceRefs: state.searchSources.map((s) => ({ label: s.name, href: s.url, type: "web" })),
+    nextActions: state.nextActions,
+  });
+
   return {
     ...state,
     classifiedSignals,
     evidence,
+    painResolutions,
     trace: [...state.trace, {
       step: "package",
       status: "ok",
-      detail: `${classifiedSignals.length} classified signals, ${evidence.totalSpans} evidence spans, ${Math.round(evidence.verificationRate * 100)}% verified`,
+      detail: `${classifiedSignals.length} signals, ${evidence.totalSpans} evidence, ${painResolutions.length} pains resolved`,
       durationMs: Date.now() - start,
     }],
   };
@@ -357,6 +375,7 @@ export async function runSearchPipeline(query: string, lens: string): Promise<Pi
     whyThisTeam: null,
     classifiedSignals: [],
     evidence: { totalSpans: 0, verifiedCount: 0, partialCount: 0, unverifiedCount: 0, contradictedCount: 0, verificationRate: 0, spans: [] },
+    painResolutions: [],
     trace: [],
     totalDurationMs: 0,
     error: null,
@@ -410,6 +429,7 @@ export function stateToResultPacket(state: PipelineState): Record<string, unknow
       type: "web",
     })),
     evidence: state.evidence,
+    painResolutions: state.painResolutions,
     trace: state.trace,
     packetType: "company_search",
     classification: state.classification,
