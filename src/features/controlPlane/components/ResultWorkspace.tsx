@@ -17,6 +17,7 @@ import { CitationFootnote } from "./CitationFootnote";
 import { ForecastGateCard } from "./ForecastGateCard";
 import { ensureProofPacket, type ProofReadyResultPacket } from "./proofModel";
 import { SourcesBar } from "./SourcesBar";
+import { DCFCard } from "./DCFCard";
 import type { LensId, ResultPacket } from "./searchTypes";
 
 interface ResultWorkspaceProps {
@@ -525,6 +526,13 @@ export const ResultWorkspace = memo(function ResultWorkspace({
           ))}
         </div>
       )}
+
+      {/* DCF + Reverse DCF valuation card (banker/investor lenses) */}
+      <DCFCard
+        dcf={(proofPacket as any).dcf ?? null}
+        reverseDCF={(proofPacket as any).reverseDCF ?? null}
+        entityName={proofPacket.entityName}
+      />
 
       <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
         <div className="flex items-center gap-2">
