@@ -29,6 +29,7 @@ import {
 import { classifySignals } from "../lib/signalTaxonomy.js";
 import { createEvidenceSpans } from "../lib/evidenceSpan.js";
 import { computeRoutingHints, formatRoutingHintsForPrompt } from "../lib/routingHints.js";
+import { detectPainResolutions } from "../lib/painMapping.js";
 import {
   getSyncBridgeStatus,
   linkDurableObjects,
@@ -1327,6 +1328,22 @@ function buildResultPacket(args: {
       result.sourceSnippets ?? sourceRefs.map((ref: any) => ({ url: ref.url, title: ref.title, snippet: ref.snippet })),
       filteredVariables,
     ),
+    painResolutions: detectPainResolutions({
+      query: args.query,
+      classification: args.classification ?? "company_search",
+      entityName,
+      answer: result.canonicalEntity?.canonicalMission ?? "",
+      confidence: result.canonicalEntity?.identityConfidence ?? 0,
+      signals: filteredVariables,
+      risks: result.contradictions ?? [],
+      comparables: result.comparables ?? [],
+      evidence: createEvidenceSpans(
+        result.sourceSnippets ?? sourceRefs.map((ref: any) => ({ url: ref.url, title: ref.title, snippet: ref.snippet })),
+        filteredVariables,
+      ),
+      sourceRefs,
+      nextActions: result.nextActions ?? [],
+    }),
   };
 }
 

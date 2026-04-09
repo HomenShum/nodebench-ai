@@ -493,16 +493,34 @@ export const ResultWorkspace = memo(function ResultWorkspace({
       <SourcesBar sources={proofPacket.sourceRefs} />
       <ForecastGateCard gate={proofPacket.forecastGate} />
 
-      {/* Pain resolutions — show which real problems this result solved */}
+      {/* Pain resolutions — pain → what found → what's ready → action */}
       {Array.isArray((proofPacket as any).painResolutions) && (proofPacket as any).painResolutions.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {((proofPacket as any).painResolutions as Array<{ painId: string; painLabel: string; fix: string; proof: string }>).map((pr) => (
-            <div key={pr.painId} className="group relative rounded-lg border border-emerald-500/20 bg-emerald-500/[0.04] px-3 py-2">
+        <div className="grid gap-2 sm:grid-cols-2">
+          {((proofPacket as any).painResolutions as Array<{ painId: string; painLabel: string; userPain: string; fix: string; proof: string }>).map((pr) => (
+            <div key={pr.painId} className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.04] p-3">
               <div className="flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                 <span className="text-[11px] font-medium text-emerald-400">{pr.painLabel}</span>
               </div>
-              <p className="mt-1 text-[10px] leading-relaxed text-content-muted">{pr.fix}</p>
+              <p className="mt-1.5 text-[10px] text-content-muted">{pr.fix}</p>
+              <p className="mt-1 text-[9px] text-content-muted/60">{pr.proof}</p>
+              <div className="mt-2 flex gap-1.5">
+                {pr.painId === "handoff" && (
+                  <button type="button" className="rounded-md bg-accent-primary/10 px-2 py-1 text-[9px] font-medium text-accent-primary transition-colors hover:bg-accent-primary/20">Export memo</button>
+                )}
+                {pr.painId === "duplication" && (
+                  <button type="button" className="rounded-md bg-accent-primary/10 px-2 py-1 text-[9px] font-medium text-accent-primary transition-colors hover:bg-accent-primary/20">Share packet</button>
+                )}
+                {pr.painId === "trust" && (
+                  <button type="button" className="rounded-md bg-accent-primary/10 px-2 py-1 text-[9px] font-medium text-accent-primary transition-colors hover:bg-accent-primary/20">View sources</button>
+                )}
+                {pr.painId === "clarity" && (
+                  <button type="button" className="rounded-md bg-accent-primary/10 px-2 py-1 text-[9px] font-medium text-accent-primary transition-colors hover:bg-accent-primary/20">Save to library</button>
+                )}
+                {pr.painId === "continuity" && (
+                  <button type="button" className="rounded-md bg-accent-primary/10 px-2 py-1 text-[9px] font-medium text-accent-primary transition-colors hover:bg-accent-primary/20">Track changes</button>
+                )}
+              </div>
             </div>
           ))}
         </div>
