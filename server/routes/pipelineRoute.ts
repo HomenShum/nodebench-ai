@@ -13,6 +13,7 @@ import { Router, type Request, type Response } from "express";
 import { runSearchPipeline, stateToResultPacket } from "../pipeline/searchPipeline.js";
 import { evaluateTask } from "../../packages/mcp-local/src/sync/hyperloopEval.js";
 import { runPromotionCycle } from "../../packages/mcp-local/src/sync/hyperloopArchive.js";
+import { runPreSearchHooks, runPostSearchHooks } from "../pipeline/hooks.js";
 
 export function createPipelineRouter(): Router {
   const router = Router();
@@ -26,9 +27,19 @@ export function createPipelineRouter(): Router {
       return res.status(400).json({ error: true, message: "Query is required" });
     }
 
+    // Pre-search hooks (block/modify)
+    const preHooks = runPreSearchHooks(query, lens);
+    if (!preHooks.allowed) {
+      return res.status(422).json({
+        error: true,
+        message: preHooks.hookResults.find(h => h.decision === "deny")?.reason ?? "Query blocked by pre-search hook",
+        hooks: preHooks.hookResults,
+      });
+    }
+
     try {
-      // Run the 4-node pipeline: classify → search → analyze → package
-      const state = await runSearchPipeline(query, lens);
+      // Run the 4-node pipeline with hook-modified query/lens
+      const state = await runSearchPipeline(preHooks.query, preHooks.lens);
 
       // Convert to ResultPacket format
       const packet = stateToResultPacket(state);
@@ -56,9 +67,13 @@ export function createPipelineRouter(): Router {
         runPromotionCycle();
       } catch { /* HyperLoop is best-effort */ }
 
+      // Post-search hooks (log, flag, auto-actions)
+      const postHooks = runPostSearchHooks(state);
+
       // Return flat shape matching legacy /api/search so frontend parsers work unchanged
       return res.json({
         success: true,
+        hooks: { pre: preHooks.hookResults, post: postHooks.hookResults, actions: postHooks.allActions },
         pipeline: "v2",
         durationMs: Date.now() - startMs,
         latencyMs: state.totalDurationMs,
