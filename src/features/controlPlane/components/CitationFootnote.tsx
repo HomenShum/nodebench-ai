@@ -20,11 +20,17 @@ interface CitationFootnoteProps {
   index: number;
   /** The resolved source reference */
   source: ResultSourceRef | undefined;
+  /** Verification status from evidence spans */
+  verification?: "verified" | "partial" | "unverified" | "contradicted";
+  /** Which claim this source supports */
+  claimText?: string;
 }
 
 export const CitationFootnote = memo(function CitationFootnote({
   index,
   source,
+  verification,
+  claimText,
 }: CitationFootnoteProps) {
   const [open, setOpen] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -89,6 +95,25 @@ export const CitationFootnote = memo(function CitationFootnote({
                 {displayNum}
               </span>
             </span>
+
+            {/* Verification + claim */}
+            {(verification || claimText) && (
+              <span className="mt-2 flex flex-wrap items-center gap-1.5">
+                {verification && (
+                  <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase ${
+                    verification === "verified" ? "bg-emerald-500/10 text-emerald-400" :
+                    verification === "partial" ? "bg-amber-500/10 text-amber-400" :
+                    verification === "contradicted" ? "bg-rose-500/10 text-rose-400" :
+                    "bg-white/[0.04] text-content-muted"
+                  }`}>
+                    {verification}
+                  </span>
+                )}
+                {claimText && (
+                  <span className="text-[9px] text-content-muted/70 line-clamp-1">{claimText}</span>
+                )}
+              </span>
+            )}
 
             {/* Snippet */}
             {source.excerpt && (
