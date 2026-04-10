@@ -2,18 +2,17 @@ import { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useConvexAuth, useQuery} from "convex/react";
 import {
+  Bell,
   Bot,
   ChevronLeft,
   ChevronRight,
   FileText,
-  History,
+  Home,
   LogIn,
   MessageSquare,
-  Radio,
   Search,
   User,
   Settings,
-  FolderKanban,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useConvexApi } from "@/lib/convexApi";
@@ -29,11 +28,11 @@ interface SurfaceShortcut {
 }
 
 const SURFACE_SHORTCUTS: SurfaceShortcut[] = [
-  { id: "ask", label: "Home", icon: MessageSquare, color: "currentColor" },
-  { id: "workspace", label: "Chat", icon: FolderKanban, color: "currentColor" },
+  { id: "ask", label: "Home", icon: Home, color: "currentColor" },
+  { id: "workspace", label: "Chat", icon: MessageSquare, color: "currentColor" },
   { id: "packets", label: "Reports", icon: FileText, color: "currentColor" },
-  { id: "history", label: "Nudges", icon: History, color: "currentColor" },
-  { id: "connect", label: "Me", icon: Radio, color: "currentColor" },
+  { id: "history", label: "Nudges", icon: Bell, color: "currentColor" },
+  { id: "connect", label: "Me", icon: User, color: "currentColor" },
 ];
 
 const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);
@@ -89,7 +88,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
       )}
       id="main-navigation"
       role="navigation"
-      aria-label="Workspace rail"
+      aria-label="Primary navigation"
       data-agent-id="cockpit:workspace-rail"
     >
       <div
@@ -102,14 +101,14 @@ export const WorkspaceRail = memo(function WorkspaceRail({
           type="button"
           onClick={() => onSurfaceChange("ask")}
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.08] text-sm font-bold text-content transition-colors hover:bg-white/[0.12]"
-          aria-label="Open workspace"
+          aria-label="Open home"
         >
           N
         </button>
         {!isCollapsed ? (
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold text-content">NodeBench</div>
-            <div className="truncate text-[11px] uppercase tracking-[0.16em] text-content-muted">Operating intelligence</div>
+            <div className="truncate text-[11px] uppercase tracking-[0.16em] text-content-muted">Anything in. Clear report out.</div>
           </div>
         ) : null}
       </div>
@@ -172,7 +171,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
         {sessionItems.length > 0 && (
           <RailSection
             collapsed={isCollapsed}
-            title="Recent runs"
+            title="Recent chats"
             items={sessionItems.map((session) => ({
               id: session._id,
               label: session.title ?? session.type ?? "Untitled run",
@@ -186,7 +185,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
         {documentItems.length > 0 && (
           <RailSection
             collapsed={isCollapsed}
-            title="Documents"
+            title="Reports & files"
             items={documentItems.map((document) => ({
               id: String(document._id),
               label: document.title ?? "Untitled document",
@@ -200,12 +199,12 @@ export const WorkspaceRail = memo(function WorkspaceRail({
         {watchlists.length > 0 && (
           <RailSection
             collapsed={isCollapsed}
-            title="Watchlists"
+            title="Tracked items"
             items={watchlists.map((watchlist) => ({
               id: String(watchlist._id),
               label: watchlist.title ?? watchlist.watchlistKey ?? "Watchlist",
               detail: `${watchlist.alertEventCount ?? 0} alerts`,
-              icon: FolderKanban,
+              icon: Bell,
               onClick: () => navigate(buildCockpitPath({ surfaceId: "research", tab: "overview" })),
             }))}
           />

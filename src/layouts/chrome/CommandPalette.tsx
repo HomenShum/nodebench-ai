@@ -4,11 +4,13 @@ import { useQuery} from "convex/react";
 import { useConvexApi } from "@/lib/convexApi";
 import {
     Search,
+    Bell,
     FileText,
     CheckSquare,
     Zap,
     Settings,
     Home,
+    MessageSquare,
     TrendingUp,
     Plus,
     Command,
@@ -20,6 +22,7 @@ import {
     HeartPulse,
     FlaskConical,
     Activity,
+    User,
 } from 'lucide-react';
 import { sanitizeDocumentTitle } from "@/lib/displayText";
 import { rankCommandPaletteCommands } from "./commandPaletteUtils";
@@ -85,10 +88,10 @@ export function CommandPalette({
             // Navigation
             {
                 id: 'nav-home',
-                label: 'Go to NodeBench Home',
-                description: 'Open the operating intelligence dashboard',
+                label: 'Go to Home',
+                description: 'Start with a question, upload, or quick preview',
                 icon: <Home className="w-4 h-4" />,
-                keywords: ['home', 'control plane', 'receipts', 'main', 'deeptrace'],
+                keywords: ['home', 'start', 'ask', 'upload', 'main'],
                 section: 'navigation',
                 action: () => {
                     onNavigate?.('control-plane');
@@ -96,62 +99,50 @@ export function CommandPalette({
                 }
             },
             {
-                id: 'nav-receipts',
-                label: 'Go to Receipts',
-                description: 'Inspect denied, approval-gated, and reversible agent actions',
-                icon: <Orbit className="w-4 h-4" />,
-                keywords: ['receipts', 'actions', 'trust', 'review', 'approval'],
+                id: 'nav-chat',
+                label: 'Go to Chat',
+                description: 'Watch the agent work and continue a live session',
+                icon: <MessageSquare className="w-4 h-4" />,
+                keywords: ['chat', 'session', 'live', 'agent', 'tools'],
                 section: 'navigation',
                 action: () => {
-                    onNavigate?.('receipts');
+                    onNavigate?.('founder-workspace-home');
                     onClose();
                 }
             },
             {
-                id: 'nav-delegation',
-                label: 'Go to Passport',
-                description: 'Review scoped permissions, denied tools, and approval gates',
-                icon: <CheckSquare className="w-4 h-4" />,
-                keywords: ['passport', 'delegation', 'scope', 'permissions', 'approve', 'policy'],
-                section: 'navigation',
-                action: () => {
-                    onNavigate?.('delegation');
-                    onClose();
-                }
-            },
-            {
-                id: 'nav-investigation',
-                label: 'Go to Investigation',
-                description: 'Trace from action to evidence to approval',
-                icon: <TrendingUp className="w-4 h-4" />,
-                keywords: ['investigation', 'evidence', 'trace', 'replay', 'prove'],
-                section: 'navigation',
-                action: () => {
-                    onNavigate?.('investigation');
-                    onClose();
-                }
-            },
-            {
-                id: 'nav-documents',
-                label: 'Go to Workspace',
-                description: 'View documents, notes, and active work',
+                id: 'nav-reports',
+                label: 'Go to Reports',
+                description: 'Open saved reports, exports, and reusable outputs',
                 icon: <FileText className="w-4 h-4" />,
-                keywords: ['documents', 'files', 'workspace'],
+                keywords: ['reports', 'saved', 'exports', 'history', 'packets'],
                 section: 'navigation',
                 action: () => {
-                    onNavigate?.('documents');
+                    onNavigate?.('founder-packets-home');
                     onClose();
                 }
             },
             {
-                id: 'nav-research',
-                label: 'Go to Research Hub',
-                description: 'Open live signals, briefs, and timelines',
-                icon: <Sparkles className="w-4 h-4" />,
-                keywords: ['research', 'signals', 'briefing', 'hub'],
+                id: 'nav-nudges',
+                label: 'Go to Nudges',
+                description: 'Review changes, reminders, and follow-ups',
+                icon: <Bell className="w-4 h-4" />,
+                keywords: ['nudges', 'changes', 'reminders', 'follow-up', 'alerts'],
                 section: 'navigation',
                 action: () => {
-                    onNavigate?.('research');
+                    onNavigate?.('founder-history-home');
+                    onClose();
+                }
+            },
+            {
+                id: 'nav-me',
+                label: 'Go to Me',
+                description: 'Manage your files, profile, and connected context',
+                icon: <User className="w-4 h-4" />,
+                keywords: ['me', 'profile', 'files', 'settings', 'context'],
+                section: 'navigation',
+                action: () => {
+                    onNavigate?.('founder-connect-home');
                     onClose();
                 }
             },

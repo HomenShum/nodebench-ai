@@ -191,8 +191,8 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
   // ── Control Plane (landing) ──────────────────────────────────────────────
   {
     id: "control-plane",
-    title: "Ask",
-    subtitle: "Agent trust control plane by NodeBench",
+    title: "Home",
+    subtitle: "Search any company, founder, or market",
     path: "/",
     aliases: ["/control-plane", "/home", "/landing"],
     component: null, // Custom rendering in ActiveSurfaceHost
@@ -634,8 +634,8 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
   // ── Canonical Founder Surfaces (public top-level) ───────────────────
   {
     id: "founder-workspace-home",
-    title: "Workspace",
-    subtitle: "Company truth, contradictions, next moves, and active founder packet",
+    title: "Chat",
+    subtitle: "Live agent session — watch the research happen",
     path: "/workspace-home",
     aliases: ["/founder/workspace"],
     component: null, // Custom rendering in ActiveSurfaceHost
@@ -647,8 +647,8 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
   },
   {
     id: "founder-packets-home",
-    title: "Packets",
-    subtitle: "Active packet, lineage, exports, delegation packets, and reuse",
+    title: "Reports",
+    subtitle: "Saved reports — search, reopen, refresh",
     path: "/packets-home",
     aliases: ["/founder/packets"],
     component: null, // Custom rendering in ActiveSurfaceHost
@@ -660,8 +660,8 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
   },
   {
     id: "founder-history-home",
-    title: "History",
-    subtitle: "Important changes, before/after state diffs, prior packets, continuity",
+    title: "Nudges",
+    subtitle: "Reminders, follow-ups, and connector actions",
     path: "/history-home",
     aliases: ["/founder/history-home"],
     component: null, // Custom rendering in ActiveSurfaceHost
@@ -673,8 +673,8 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
   },
   {
     id: "founder-connect-home",
-    title: "Connect",
-    subtitle: "MCP init, workspace sync, watchlist setup, agent and runtime connections",
+    title: "Me",
+    subtitle: "My files, profile, saved context, and preferences",
     path: "/connect-home",
     aliases: ["/founder/connect"],
     component: null, // Custom rendering in ActiveSurfaceHost
