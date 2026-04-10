@@ -190,8 +190,17 @@ export function extractDCFInputs(result: {
     ...result.signals.map((s: any) => s.name ?? ""),
   ].join(" ");
 
-  const revenue = extractDollarAmount(text, ["revenue", "arr", "annual revenue", "annualized revenue"]);
-  const valuation = extractDollarAmount(text, ["valuation", "valued at", "market cap", "worth"]);
+  const revenue = extractDollarAmount(text, [
+    "revenue", "arr", "annual revenue", "annualized revenue",
+    "revenue of", "arr of", "revenue run rate", "annual run rate",
+    "revenue reaching", "revenue surpass", "revenue hit",
+    "generating", "earned", "brought in",
+  ]);
+  const valuation = extractDollarAmount(text, [
+    "valuation", "valued at", "market cap", "worth",
+    "valuation of", "valued", "market capitalization",
+    "valuation reaching", "valuation hit", "valued around",
+  ]);
 
   if (!revenue) {
     return { canRunDCF: false, reason: "No revenue data found in search results" };
