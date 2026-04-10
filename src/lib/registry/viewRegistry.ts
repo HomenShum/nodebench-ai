@@ -83,21 +83,22 @@ export type RouteGroup = "core" | "nested" | "internal" | "legacy";
 // ─── Cockpit surface model ──────────────────────────────────────────────────
 
 export type CockpitSurfaceId =
-  | "ask"          // Default: simplified landing + chat input
-  | "memo"         // Decision workbench (DecisionMemoView) — internal
-  | "research"     // Research hub (ResearchHub) — internal
-  | "investigate"  // Adversarial analysis (InvestigationView) — internal
-  | "compare"      // Postmortem / prediction vs reality — internal
-  | "editor"       // Documents + spreadsheets workspace — internal
-  | "graph"        // Entity profile + trust graph — internal
-  | "trace"        // Action receipts + execution trace — internal
-  | "telemetry"    // Stacked ops: benchmarks + health + spend + quality — internal
-  // ── Canonical founder surfaces (public top-level nav) ──
-  | "workspace"    // Founder workspace — company truth, contradictions, next moves
-  | "packets"      // Packet center — active packet, lineage, exports, delegation
-  | "history"      // Founder history — important changes, state diffs, prior packets
-  | "connect"      // Connect — MCP init, watchlist setup, agent connections
-  | "library";     // Library — merged reports + changes + documents
+  // ── Product surfaces (public nav: Home / Chat / Reports / Nudges / Me) ──
+  | "ask"          // Home — search + upload + public cards
+  | "workspace"    // Chat — live agent session
+  | "packets"      // Reports — saved research
+  | "history"      // Nudges — reminders + connector actions
+  | "connect"      // Me — private files, profile, context
+  // ── Internal surfaces (hidden from nav, admin/debug URL only) ──
+  | "memo"         // Decision workbench (admin)
+  | "research"     // Research hub (admin)
+  | "investigate"  // Adversarial analysis (admin)
+  | "compare"      // Forecast review (admin)
+  | "editor"       // Documents workspace (admin)
+  | "graph"        // Entity graph (admin)
+  | "trace"        // Execution trace (admin)
+  | "telemetry"    // System admin
+  | "library";     // Library (admin)
 
 // ─── Registry entry shape ────────────────────────────────────────────────────
 
@@ -192,7 +193,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
   {
     id: "control-plane",
     title: "Home",
-    subtitle: "Search any company, founder, or market",
+    subtitle: "Discover, ask, upload, and preview useful reports",
     path: "/",
     aliases: ["/control-plane", "/home", "/landing"],
     component: null, // Custom rendering in ActiveSurfaceHost
@@ -288,25 +289,26 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/investigation",
     aliases: ["/investigate", "/enterprise-demo"],
     component: lazyView(() => import("@/features/investigation/views/EnterpriseInvestigationView")),
-    group: "core",
-    navVisible: true,
+    group: "internal",
+    navVisible: false,
     surfaceId: "investigate",
     legacyRedirectTo: "/?surface=investigate",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
 
   // ── Workspace & Build ──────────────────────────────────────────────────────
   {
     id: "documents",
-    title: "Workspace",
-    subtitle: "Files, notes, and work in progress",
+    title: "Files",
+    subtitle: "Private files, notes, and work in progress",
     path: "/workspace",
     aliases: ["/documents", "/docs"],
     component: lazyNamed(() => import("@/features/documents/components/DocumentsHomeHub"), "DocumentsHomeHub"),
-    group: "core",
-    navVisible: true,
+    group: "internal",
+    navVisible: false,
     surfaceId: "memo",
     legacyRedirectTo: "/?surface=editor",
+    commandPaletteVisible: false,
   },
 
 
@@ -320,10 +322,11 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/oracle",
     aliases: ["/career", "/trajectory"],
     component: lazyNamed(() => import("@/features/oracle/views/OracleView"), "OracleView"),
-    group: "core",
-    navVisible: true,
+    group: "internal",
+    navVisible: false,
     surfaceId: "telemetry",
     legacyRedirectTo: "/?surface=telemetry",
+    commandPaletteVisible: false,
   },
 
 
@@ -476,10 +479,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/founder",
     aliases: ["/founder-dashboard"],
     component: lazyView(() => import("@/features/founder/views/FounderDashboardTabs")),
-    group: "core",
-    navVisible: true,
+    group: "internal",
+    navVisible: false,
     surfaceId: "memo",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "agent-oversight",
@@ -488,10 +491,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/founder/agents",
     component: lazyView(() => import("@/features/founder/views/AgentOversightView")),
     group: "nested",
-    navVisible: true,
+    navVisible: false,
     parentId: "founder-dashboard",
     surfaceId: "memo",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "command-panel",
@@ -501,10 +504,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     aliases: ["/founder/messages"],
     component: lazyView(() => import("@/features/founder/views/CommandPanelView")),
     group: "nested",
-    navVisible: true,
+    navVisible: false,
     parentId: "founder-dashboard",
     surfaceId: "memo",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "context-intake",
@@ -513,10 +516,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/founder/intake",
     component: lazyView(() => import("@/features/founder/views/ContextIntakeView")),
     group: "nested",
-    navVisible: true,
+    navVisible: false,
     parentId: "founder-dashboard",
     surfaceId: "memo",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "agent-brief",
@@ -525,10 +528,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/founder/brief",
     component: lazyView(() => import("@/features/founder/components/AgentHandoffPanel")),
     group: "nested",
-    navVisible: true,
+    navVisible: false,
     parentId: "founder-dashboard",
     surfaceId: "memo",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "founder-history",
@@ -537,10 +540,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/founder/history",
     component: lazyView(() => import("@/features/founder/views/HistoryView")),
     group: "nested",
-    navVisible: true,
+    navVisible: false,
     parentId: "founder-dashboard",
     surfaceId: "editor",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "nearby-entities",
@@ -549,10 +552,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/founder/entities",
     component: lazyView(() => import("@/features/founder/views/NearbyEntitiesView")),
     group: "nested",
-    navVisible: true,
+    navVisible: false,
     parentId: "founder-dashboard",
     surfaceId: "memo",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
 
   // ── Company Intelligence ───────────────────────────────────────────────────
@@ -587,10 +590,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/founder/export",
     component: lazyView(() => import("@/features/founder/views/ExportView")),
     group: "nested",
-    navVisible: true,
+    navVisible: false,
     parentId: "founder-dashboard",
     surfaceId: "research",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   {
     id: "founder-changes",
@@ -599,10 +602,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/founder/changes",
     component: lazyView(() => import("@/features/founder/views/ChangeDetectorView")),
     group: "nested",
-    navVisible: true,
+    navVisible: false,
     parentId: "founder-dashboard",
     surfaceId: "editor",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   // ── Phase 11 — Ambient Intelligence ────────────────────────────────
   {
@@ -612,10 +615,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/founder/delta",
     component: lazyView(() => import("@/features/founder/views/SessionDeltaView")),
     group: "nested",
-    navVisible: true,
+    navVisible: false,
     parentId: "founder-dashboard",
     surfaceId: "editor",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
   // ── Phase 14 — Shared Context Coordination ───────────────────────
   {
@@ -625,10 +628,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/founder/coordination",
     component: lazyView(() => import("@/features/founder/views/CoordinationTabs")),
     group: "nested",
-    navVisible: true,
+    navVisible: false,
     parentId: "founder-dashboard",
     surfaceId: "connect",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
 
   // ── Canonical Founder Surfaces (public top-level) ───────────────────
@@ -691,9 +694,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     subtitle: "Reports, changes, and documents from every search and workflow",
     path: "/library",
     component: null, // Custom rendering in ActiveSurfaceHost
-    group: "core",
-    navVisible: true,
+    group: "internal",
+    navVisible: false,
     surfaceId: "library",
+    commandPaletteVisible: false,
   },
 
   // ── Conference Capture ──────────────────────────────────────────────────
@@ -704,10 +708,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/capture",
     aliases: ["/conference", "/event-capture"],
     component: lazyView(() => import("@/features/controlPlane/components/ConferenceCapture")),
-    group: "core",
-    navVisible: true,
+    group: "internal",
+    navVisible: false,
     surfaceId: "ask",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
 
   // ── Entity Compare ──────────────────────────────────────────────────────
@@ -718,10 +722,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/compare",
     aliases: ["/entity-compare", "/compare-entities"],
     component: lazyView(() => import("@/features/controlPlane/components/EntityCompare")),
-    group: "core",
-    navVisible: true,
+    group: "internal",
+    navVisible: false,
     surfaceId: "ask",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
 
   // ── Benchmark Comparison ────────────────────────────────────────────────
@@ -732,10 +736,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/benchmarks",
     aliases: ["/benchmark", "/eval"],
     component: lazyView(() => import("@/features/controlPlane/components/BenchmarkComparison")),
-    group: "core",
-    navVisible: true,
+    group: "internal",
+    navVisible: false,
     surfaceId: "telemetry",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
 
   // ── Role Lens Output ────────────────────────────────────────────────────
@@ -761,10 +765,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/homes",
     aliases: ["/homes-hub", "/sessions"],
     component: lazyView(() => import("@/features/controlPlane/components/HomesHubSession")),
-    group: "core",
-    navVisible: true,
+    group: "internal",
+    navVisible: false,
     surfaceId: "ask",
-    commandPaletteVisible: true,
+    commandPaletteVisible: false,
   },
 ];
 

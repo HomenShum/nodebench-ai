@@ -112,18 +112,9 @@ const NudgesHome = lazy(() =>
 const MeHome = lazy(() =>
   import("@/features/me/views/MeHome").then((mod) => ({ default: mod.MeHome })),
 );
-const FounderWorkspaceHome = lazy(() =>
-  import("@/features/founder/views/FounderWorkspaceHome").then((mod) => ({ default: mod.FounderWorkspaceHome })),
-);
-const FounderPacketsHome = lazy(() =>
-  import("@/features/founder/views/FounderPacketsHome").then((mod) => ({ default: mod.FounderPacketsHome })),
-);
-const FounderHistoryHome = lazy(() =>
-  import("@/features/founder/views/FounderHistoryHome").then((mod) => ({ default: mod.FounderHistoryHome })),
-);
-const FounderConnectHome = lazy(() =>
-  import("@/features/founder/views/FounderConnectHome").then((mod) => ({ default: mod.FounderConnectHome })),
-);
+// Dead imports removed — FounderWorkspaceHome, FounderPacketsHome,
+// FounderHistoryHome, FounderConnectHome replaced by ChatHome,
+// ReportsHome, NudgesHome, MeHome in the ultraplan remake.
 const LibraryHome = lazy(() =>
   import("@/features/founder/views/LibraryHome").then((mod) => ({ default: mod.LibraryHome })),
 );
@@ -419,6 +410,7 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
           return <NotFoundPage />;
         }
         return <HomeLanding />;
+      // Internal surfaces — hidden from main nav, accessible via admin/debug URL only
       case "memo":
         return <DecisionMemoView />;
       case "research":
