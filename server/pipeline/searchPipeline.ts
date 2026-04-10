@@ -556,9 +556,27 @@ export async function search(state: PipelineState): Promise<PipelineState> {
 
     const answer = successful.find((result) => result.answer.trim().length > 0)?.answer ?? "";
     const rawSources = successful.flatMap((result) => result.sources);
+
+    // Merge with secondary providers (Brave/Serper/Tavily) if configured
+    let secondaryProviders: string[] = [];
+    try {
+      const { multiSearch, toSearchSources: toMultiSources } = await import("../lib/multiSearch.js");
+      const multi = await multiSearch(state.query, 8000);
+      if (multi.sources.length > 0) {
+        const extraSources = toMultiSources(multi.sources).map((s) => ({
+          name: s.name,
+          url: s.url,
+          snippet: s.content,
+        }));
+        rawSources.push(...extraSources);
+        secondaryProviders = multi.providers.filter((p) => p !== "linkup");
+      }
+    } catch { /* secondary providers are best-effort */ }
+
     const filteredSources = filterSearchSourcesForEntity(state.entity, rawSources, state.classification);
     const filteredAnswer = buildSearchContextSummary(state.entity, state.classification, answer, filteredSources);
     const exploredSourceCount = dedupeSources(rawSources).length;
+    const providerNote = secondaryProviders.length > 0 ? ` + ${secondaryProviders.join("+")}` : "";
 
     return {
       ...state,
@@ -569,9 +587,9 @@ export async function search(state: PipelineState): Promise<PipelineState> {
       searchQueryVariants: queries,
       trace: [...state.trace, {
         step: "search",
-        tool: "linkup",
+        tool: `linkup${providerNote}`,
         status: "ok",
-        detail: `${filteredSources.length}/${exploredSourceCount} retained across ${queries.length} query variants, ${filteredAnswer.length} chars context`,
+        detail: `${filteredSources.length}/${exploredSourceCount} retained across ${queries.length} query variants${providerNote}, ${filteredAnswer.length} chars context`,
         durationMs: Date.now() - start,
       }],
     };
@@ -668,6 +686,16 @@ export async function analyze(state: PipelineState): Promise<PipelineState> {
     .join("\n\n");
   const sourceAudit = buildSourceAudit(state.searchSources);
 
+  // Context carry-forward: inject prior research if available
+  let priorContextBlock = "";
+  try {
+    const { getSearchContext, buildContextPrompt } = await import("../lib/searchContext.js");
+    const prior = getSearchContext(state.entity ?? state.query, state.lens);
+    if (prior) {
+      priorContextBlock = `\nPRIOR RESEARCH (build on this, focus on what is NEW or CHANGED):\n${buildContextPrompt(prior)}\n`;
+    }
+  } catch { /* context carry-forward is best-effort */ }
+
   const prompt = `You are a senior analyst writing a research brief about "${state.entity ?? "unknown"}" for a ${state.lens}.
 
 ENTITY: ${state.entity ?? "unknown"}
@@ -678,7 +706,7 @@ ${sourcesContext}
 
 ADDITIONAL CONTEXT:
 ${state.searchAnswer.slice(0, 800)}
-
+${priorContextBlock}
 RULES:
 1. Every factual claim MUST cite a source number [S1], [S2], etc.
 2. Do NOT include generic industry commentary — only entity-specific facts.
@@ -970,6 +998,25 @@ export async function runSearchPipeline(
   onProgress?.({ stage: "package", phase: "done", state, durationMs: Date.now() - packageStart });
 
   state.totalDurationMs = Date.now() - pipelineStart;
+
+  // Save context for follow-up carry-forward
+  try {
+    const { setSearchContext } = await import("../lib/searchContext.js");
+    if (state.entityName && state.confidence >= 30) {
+      setSearchContext({
+        entityName: state.entityName,
+        lens,
+        query,
+        answer: state.answer,
+        confidence: state.confidence,
+        sourceUrls: state.searchSources.map((s) => s.url).slice(0, 10),
+        signals: state.signals.map((s) => s.name).slice(0, 10),
+        risks: state.risks.map((r) => r.title).slice(0, 5),
+        keyMetrics: state.keyMetrics.slice(0, 5),
+        timestamp: Date.now(),
+      });
+    }
+  } catch { /* context save is best-effort */ }
 
   return state;
 }

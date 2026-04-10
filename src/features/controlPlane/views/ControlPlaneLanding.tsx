@@ -2416,29 +2416,29 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         )}
 
         {/* ── Loading state — live streaming telemetry feed ─────────────── */}
-        {/* Show telemetry when: SSE is streaming, OR stages arrived (even after Convex resolves), OR Convex is loading */}
-        {(showSimplifiedLiveLoading || streaming.isStreaming || (streaming.stages.length > 0 && !activeResult)) && (
+        {/* SSE telemetry is the PRIMARY loading UI. Show it whenever streaming is active or has stages. */}
+        {streaming.stages.length > 0 && (
           <div className="mt-6">
-            {streaming.stages.length > 0 ? (
-              <LiveSearchTelemetry
-                stages={streaming.stages}
-                query={submittedQuery}
-                lens={activeLens}
-                isStreaming={streaming.isStreaming}
-                error={streaming.error}
-              />
-            ) : (
-              <div className="mt-6 space-y-4">
-                <LivePipelineProgress
-                  currentStep={convexSearch.state.status as PipelineStep ?? (activeTrace ? "searching" : null)}
-                  traceSteps={activeTrace?.trace}
-                  sourceCount={activeTrace?.trace?.filter((t) => t.step?.includes("search") || t.tool?.includes("search")).length ?? undefined}
-                  entityName={submittedQuery.split(/\s+/).slice(0, 3).join(" ") || undefined}
-                  elapsedMs={activeSearchRef.current?.startedAt ? Date.now() - activeSearchRef.current.startedAt : undefined}
-                />
-                <ResultWorkspaceSkeleton />
-              </div>
-            )}
+            <LiveSearchTelemetry
+              stages={streaming.stages}
+              query={submittedQuery}
+              lens={activeLens}
+              isStreaming={streaming.isStreaming}
+              error={streaming.error}
+            />
+          </div>
+        )}
+        {/* Fallback: show skeleton when Convex is loading but no SSE stages yet */}
+        {showSimplifiedLiveLoading && streaming.stages.length === 0 && (
+          <div className="mt-6 space-y-4">
+            <LivePipelineProgress
+              currentStep={convexSearch.state.status as PipelineStep ?? (activeTrace ? "searching" : null)}
+              traceSteps={activeTrace?.trace}
+              sourceCount={activeTrace?.trace?.filter((t) => t.step?.includes("search") || t.tool?.includes("search")).length ?? undefined}
+              entityName={submittedQuery.split(/\s+/).slice(0, 3).join(" ") || undefined}
+              elapsedMs={activeSearchRef.current?.startedAt ? Date.now() - activeSearchRef.current.startedAt : undefined}
+            />
+            <ResultWorkspaceSkeleton />
           </div>
         )}
 
