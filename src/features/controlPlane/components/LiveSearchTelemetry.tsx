@@ -192,6 +192,59 @@ export const LiveSearchTelemetry = memo(function LiveSearchTelemetry({
           />
         </div>
 
+        {/* ── Partial entity header — appears <1s when classify completes ── */}
+        {(() => {
+          const classifyDone = stages.find((s) => s.tool === "classify" && s.status === "done");
+          const searchDone = stages.find((s) => (s.tool === "web_search" || s.tool === "search") && s.status === "done");
+          const analyzeDone = stages.find((s) => (s.tool === "entity_extract" || s.tool === "analyze") && s.status === "done");
+          const entity = classifyDone?.preview?.entity as string | undefined;
+          const classification = classifyDone?.preview?.classification as string | undefined;
+          const sourceCount = searchDone?.preview?.sourceCount as number | undefined;
+          const confidence = analyzeDone?.preview?.confidence as number | undefined;
+          const signalCount = analyzeDone?.preview?.signalCount as number | undefined;
+          const riskCount = analyzeDone?.preview?.riskCount as number | undefined;
+          const keyMetrics = analyzeDone?.preview?.keyMetrics as Array<{ label: string; value: string }> | undefined;
+
+          if (!entity) return null;
+
+          return (
+            <div className="mt-3 rounded-lg border border-white/[0.08] bg-white/[0.03] p-3 animate-in fade-in duration-300">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base font-semibold text-content">{entity}</h3>
+                {classification && (
+                  <span className="rounded bg-white/[0.06] px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-content-muted">{classification.replace(/_/g, " ")}</span>
+                )}
+                {confidence !== undefined && (
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${confidence >= 75 ? "bg-emerald-500/15 text-emerald-300" : confidence >= 50 ? "bg-amber-500/15 text-amber-300" : "bg-rose-500/15 text-rose-300"}`}>
+                    {confidence}%
+                  </span>
+                )}
+                {sourceCount !== undefined && (
+                  <span className="text-[10px] text-content-muted">{sourceCount} sources</span>
+                )}
+              </div>
+              {/* Key metrics appear when analyze completes */}
+              {keyMetrics && keyMetrics.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-3 text-[11px]">
+                  {keyMetrics.map((m) => (
+                    <span key={m.label} className="text-content-muted">
+                      <span className="text-content-muted/50">{m.label}: </span>
+                      <span className="font-medium text-content">{m.value}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {/* Signals + risks appear when analyze completes */}
+              {(signalCount !== undefined || riskCount !== undefined) && (
+                <div className="mt-1.5 flex gap-3 text-[10px]">
+                  {signalCount !== undefined && <span className="text-emerald-400">{signalCount} signals</span>}
+                  {riskCount !== undefined && riskCount > 0 && <span className="text-rose-400">{riskCount} risks</span>}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {/* Tool cards */}
         <div role="list" className="mt-3 space-y-2 max-h-[400px] overflow-y-auto pr-1">
           {stages.map((stage) => (
