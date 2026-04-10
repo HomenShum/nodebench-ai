@@ -183,24 +183,45 @@ export function extractDCFInputs(result: {
   keyMetrics: Array<{ label: string; value: string }>;
   signals: any[];
 }): { canRunDCF: boolean; dcfInput?: DCFInput; reverseDCFInput?: ReverseDCFInput; reason?: string } {
-  // Try to extract revenue and valuation from key metrics and answer text
+  // Try to extract revenue and valuation from key metrics first (most reliable),
+  // then fall back to text extraction from answer + signals
   const text = [
     result.answer,
     ...result.keyMetrics.map(m => `${m.label}: ${m.value}`),
     ...result.signals.map((s: any) => s.name ?? ""),
   ].join(" ");
 
-  const revenue = extractDollarAmount(text, [
-    "revenue", "arr", "annual revenue", "annualized revenue",
-    "revenue of", "arr of", "revenue run rate", "annual run rate",
-    "revenue reaching", "revenue surpass", "revenue hit",
-    "generating", "earned", "brought in",
-  ]);
-  const valuation = extractDollarAmount(text, [
-    "valuation", "valued at", "market cap", "worth",
-    "valuation of", "valued", "market capitalization",
-    "valuation reaching", "valuation hit", "valued around",
-  ]);
+  // Direct metric extraction: check keyMetrics for labeled values
+  let revenue: number | null = null;
+  let valuation: number | null = null;
+
+  for (const m of result.keyMetrics) {
+    const label = m.label.toLowerCase();
+    const val = parseDollarValue(m.value);
+    if (val && !revenue && (label.includes("revenue") || label.includes("arr") || label === "mrr")) {
+      revenue = label === "mrr" ? val * 12 : val;
+    }
+    if (val && !valuation && (label.includes("valuation") || label.includes("market cap"))) {
+      valuation = val;
+    }
+  }
+
+  // Text extraction fallback
+  if (!revenue) {
+    revenue = extractDollarAmount(text, [
+      "revenue", "arr", "annual revenue", "annualized revenue",
+      "revenue of", "arr of", "revenue run rate", "annual run rate",
+      "revenue reaching", "revenue surpass", "revenue hit",
+      "generating", "earned", "brought in",
+    ]);
+  }
+  if (!valuation) {
+    valuation = extractDollarAmount(text, [
+      "valuation", "valued at", "market cap", "worth",
+      "valuation of", "valued", "market capitalization",
+      "valuation reaching", "valuation hit", "valued around",
+    ]);
+  }
 
   if (!revenue) {
     return { canRunDCF: false, reason: "No revenue data found in search results" };
@@ -236,6 +257,20 @@ export function extractDCFInputs(result: {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────
+
+/** Parse a dollar string like "$2B", "$500M", "$2.5 billion" into a number */
+function parseDollarValue(value: string): number | null {
+  const match = value.match(/\$?([\d,.]+)\s*(billion|B|million|M|trillion|T)?/i);
+  if (!match) return null;
+  const num = parseFloat(match[1].replace(/,/g, ""));
+  if (isNaN(num)) return null;
+  const unit = (match[2] ?? "").toLowerCase();
+  if (unit === "trillion" || unit === "t") return num * 1e12;
+  if (unit === "billion" || unit === "b") return num * 1e9;
+  if (unit === "million" || unit === "m") return num * 1e6;
+  if (num > 1e6) return num; // Already in raw dollars
+  return null;
+}
 
 function extractDollarAmount(text: string, keywords: string[]): number | null {
   for (const kw of keywords) {

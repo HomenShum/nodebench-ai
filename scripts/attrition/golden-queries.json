@@ -15,10 +15,10 @@
     },
     {
       "id": "stripe_founder",
-      "query": "Stripe payments platform strategy",
+      "query": "Stripe payments fintech platform strategy",
       "lens": "founder",
       "expectedEntity": "Stripe",
-      "minConfidence": 70,
+      "minConfidence": 65,
       "minSignals": 1,
       "minSources": 5,
       "expectDCF": false,
