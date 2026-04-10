@@ -1081,6 +1081,8 @@ CREATE TABLE IF NOT EXISTS founder_harness_episodes (
   entity_name                 TEXT,
   packet_id                   TEXT,
   packet_type                 TEXT,
+  workflow_asset_id           TEXT,
+  workflow_envelope_id        TEXT,
   context_id                  TEXT,
   task_id                     TEXT,
   summary                     TEXT,

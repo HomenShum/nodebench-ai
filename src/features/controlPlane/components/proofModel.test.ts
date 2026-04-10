@@ -53,6 +53,11 @@ describe("proofModel", () => {
     expect(enriched.operatingModel.executionOrder.length).toBeGreaterThan(0);
     expect(enriched.operatingModel.queueTopology.length).toBeGreaterThan(0);
     expect(enriched.operatingModel.benchmarkOracles.length).toBeGreaterThan(0);
+    expect(enriched.workflowAsset.assetId).toContain("asset:");
+    expect(enriched.workflowAsset.canonicalPacketId).toBe(enriched.packetId);
+    expect(enriched.workflowAsset.canonicalPacketType).toBe(enriched.packetType);
+    expect(enriched.workflowAsset.stages).toContain("shared_context_ready");
+    expect(enriched.workflowAsset.replayReady).toBe(true);
     expect(enriched.companyReadinessPacket.identity.companyName.length).toBeGreaterThan(0);
   });
 

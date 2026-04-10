@@ -1168,6 +1168,8 @@ CREATE TABLE IF NOT EXISTS founder_harness_episodes (
   entity_name                 TEXT,
   packet_id                   TEXT,
   packet_type                 TEXT,
+  workflow_asset_id           TEXT,
+  workflow_envelope_id        TEXT,
   context_id                  TEXT,
   task_id                     TEXT,
   summary                     TEXT,
@@ -10520,20 +10522,20 @@ function looksLikeSourceTitle(value) {
 function decodeCommonHtmlEntities(value) {
   return value.replace(/&#x27;|&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 }
-function normalizeWhitespace2(value) {
+function normalizeWhitespace(value) {
   return decodeCommonHtmlEntities(value).replace(/\s+/g, " ").replace(/\s+([,.;:!?])/g, "$1").trim();
 }
 function sentenceSplit(value) {
-  return normalizeWhitespace2(value).split(/(?<=[.!?])\s+/).map((sentence) => sentence.trim()).filter(Boolean);
+  return normalizeWhitespace(value).split(/(?<=[.!?])\s+/).map((sentence) => sentence.trim()).filter(Boolean);
 }
 function dedupeStrings2(values) {
   const seen = /* @__PURE__ */ new Set();
   const deduped = [];
   for (const value of values) {
-    const normalized = normalizeWhitespace2(value).toLowerCase();
+    const normalized = normalizeWhitespace(value).toLowerCase();
     if (!normalized || seen.has(normalized)) continue;
     seen.add(normalized);
-    deduped.push(normalizeWhitespace2(value));
+    deduped.push(normalizeWhitespace(value));
   }
   return deduped;
 }
@@ -10547,9 +10549,9 @@ function normalizeCandidateScore(value) {
 function normalizeCandidateMetadata(item) {
   return {
     score: normalizeCandidateScore(item?.score),
-    sourceLabel: normalizeWhitespace2(String(item?.sourceLabel ?? "")) || void 0,
-    sourceHref: normalizeWhitespace2(String(item?.sourceHref ?? "")) || void 0,
-    evidenceQuote: normalizeWhitespace2(String(item?.evidenceQuote ?? "")) || void 0
+    sourceLabel: normalizeWhitespace(String(item?.sourceLabel ?? "")) || void 0,
+    sourceHref: normalizeWhitespace(String(item?.sourceHref ?? "")) || void 0,
+    evidenceQuote: normalizeWhitespace(String(item?.evidenceQuote ?? "")) || void 0
   };
 }
 function containsRiskLanguage(value) {
@@ -10574,7 +10576,7 @@ function looksLikeGenericMarketBackdrop(value) {
   return /\b(the enterprise ai market is experiencing exponential growth|moves from niche experiments to foundational technology across industries|across industries|industry faces valuation volatility)\b/i.test(value);
 }
 function looksLikeTruncatedNarrative(value) {
-  const normalized = normalizeWhitespace2(value);
+  const normalized = normalizeWhitespace(value);
   if (!normalized) return false;
   if (/[.!?]$/.test(normalized)) return false;
   if (/\.\.\.$/.test(normalized)) return true;
@@ -10588,7 +10590,7 @@ function looksLikeTruncatedNarrative(value) {
   return false;
 }
 function cleanEvidenceSentence(value) {
-  return normalizeWhitespace2(value).replace(/^[-•]+\s*/, "").replace(/^(?:[A-Z][a-z]{2,9}\.?\s+)?[A-Z][a-z]{2,9}\s+\d{1,2},\s+\d{4}\s+[—-]\s*/i, "").replace(/^(?:[A-Z][a-z]{2,9}\.?\s+)?\d{1,2},\s+\d{4}\s+/i, "").replace(/^(?:updated|published|reported)\s+[A-Z][a-z]{2,9}\s+\d{1,2},\s+\d{4}\s*/i, "").replace(/\s+/g, " ").trim();
+  return normalizeWhitespace(value).replace(/^[-•]+\s*/, "").replace(/^(?:[A-Z][a-z]{2,9}\.?\s+)?[A-Z][a-z]{2,9}\s+\d{1,2},\s+\d{4}\s+[—-]\s*/i, "").replace(/^(?:[A-Z][a-z]{2,9}\.?\s+)?\d{1,2},\s+\d{4}\s+/i, "").replace(/^(?:updated|published|reported)\s+[A-Z][a-z]{2,9}\s+\d{1,2},\s+\d{4}\s*/i, "").replace(/\s+/g, " ").trim();
 }
 function hasBankerSignalContent(value) {
   return /(\$\d|\b\d+%|\b(revenue|run-rate|run rate|growth|pricing|retention|distribution|bundle|bundling|contract|enterprise|valuation|margin|buyers?|share|deployments?|capex|spend|pipeline|bookings|demand|market position|subscriptions?|usage|users?|win rates?)\b)/i.test(value);
@@ -10650,7 +10652,7 @@ function stripTrailingConnectorTail(value) {
   return value.replace(/\b(?:as|of|the|with|because|which|that|while|and|or|but|to|for|in|on|at|its|their|a|an)(?:\s+\b(?:as|of|the|with|because|which|that|while|and|or|but|to|for|in|on|at|its|their|a|an))*$/i, "").replace(/[,.:\-\u2013\u2014\s]+$/, "");
 }
 function compressNarrativePhrase(value, maxLength = 140) {
-  const normalized = normalizeWhitespace2(value).replace(/\s+/g, " ").trim();
+  const normalized = normalizeWhitespace(value).replace(/\s+/g, " ").trim();
   if (normalized.length <= maxLength) return normalized.replace(/\.$/, "");
   const clause = normalized.split(/[;:]/)[0]?.trim() ?? normalized;
   if (clause.length <= maxLength) return clause.replace(/\.$/, "");
@@ -10689,7 +10691,7 @@ function normalizeChangeDescription(value) {
   const normalized = normalizeNarrativeSentence(value);
   if (!normalized) return "";
   if (!hasBankerSignalContent(normalized)) return "";
-  const completeNarrative = looksLikeTruncatedNarrative(normalized) && normalized.includes(",") ? normalizeWhitespace2(normalized.slice(0, normalized.lastIndexOf(","))) : normalized;
+  const completeNarrative = looksLikeTruncatedNarrative(normalized) && normalized.includes(",") ? normalizeWhitespace(normalized.slice(0, normalized.lastIndexOf(","))) : normalized;
   if (!completeNarrative) return "";
   if (!looksLikeTruncatedNarrative(completeNarrative)) {
     return stripTrailingConnectorTail(completeNarrative);
@@ -10724,7 +10726,7 @@ function extractEvidenceSentencesSafe(text) {
   return sentenceSplit(text).map((sentence) => normalizeNarrativeSentence(sentence)).filter((sentence) => sentence.length >= 24).filter((sentence) => !looksLikeSourceTitle(sentence)).filter((sentence) => !looksLikeEvidenceFragment(sentence)).filter((sentence) => !looksLikeNarrativeFluff(sentence)).filter((sentence) => !isQuestionLike(sentence)).filter((sentence) => hasBankerSignalContent(sentence)).sort((a, b) => scoreEvidenceSentence(b) - scoreEvidenceSentence(a)).slice(0, 4);
 }
 function normalizePossibleCompanyName(value) {
-  return normalizeWhitespace2(value).replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9.&, -]+$/g, "").replace(/^(?:while|as|but|and|however|meanwhile|although|despite|if|when|whereas|versus|vs\.?|against|compared to)\s+/i, "").replace(/[.,;:]+$/g, "").trim();
+  return normalizeWhitespace(value).replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9.&, -]+$/g, "").replace(/^(?:while|as|but|and|however|meanwhile|although|despite|if|when|whereas|versus|vs\.?|against|compared to)\s+/i, "").replace(/[.,;:]+$/g, "").trim();
 }
 function isPotentialCompanyName(name, entityName) {
   const cleaned = normalizePossibleCompanyName(name);
@@ -10743,7 +10745,7 @@ function isPotentialCompanyName(name, entityName) {
   if (/\b(gpus?|cpus?|tpus?|chips?|contracts?|buyers?|accounts?|usage|market|share|pricing|bundling|deployment|deployments)\b/i.test(cleaned)) return false;
   if (/^(today|yesterday|quarter|year|source|report|index|analysis)$/i.test(cleaned)) return false;
   if (/^(AI|API|LLM|ML|GPU|CPU|YoY|ARR|MRR)$/i.test(cleaned)) return false;
-  if (/^[A-Z]{3,6}$/.test(cleaned) && !KNOWN_ACRONYM_COMPANY_NAMES.has(cleaned)) return false;
+  if (/^[A-Z]{2,6}$/.test(cleaned) && !KNOWN_ACRONYM_COMPANY_NAMES.has(cleaned)) return false;
   if (/^[A-Z][a-z]+ly$/.test(cleaned)) return false;
   if (/\b(company overview|overview|analysis|outlook|report|briefing|readout|market update|pricing pressure|enterprise ai)\b/i.test(cleaned)) {
     return false;
@@ -10892,7 +10894,7 @@ function extractLooseComparableCandidatesFromText(text, entityName, options) {
 }
 function addComparableCandidateScores(scores, candidates, weight) {
   for (const candidate of candidates) {
-    const cleaned = normalizeWhitespace2(candidate);
+    const cleaned = normalizeWhitespace(candidate);
     const key = cleaned.toLowerCase();
     if (!cleaned || !key) continue;
     const existing = scores.get(key);
@@ -11104,7 +11106,7 @@ function mergeSignals(primary, fallbacks) {
   const seen = /* @__PURE__ */ new Set();
   const merged = [];
   for (const item of [...primary, ...fallbacks]) {
-    const key = normalizeWhitespace2(item.name).toLowerCase();
+    const key = normalizeWhitespace(item.name).toLowerCase();
     if (!key || seen.has(key)) continue;
     seen.add(key);
     merged.push(item);
@@ -11119,7 +11121,7 @@ function isNarrativeReadySignal(value) {
   if (/\bseries\s+[a-z0-9]+\b/i.test(value)) return false;
   return true;
 }
-function collectFallbackSignals(execution) {
+function collectFallbackSignals(execution, context) {
   const signals = [];
   for (const step of execution.stepResults) {
     if (!step.success || !step.result) continue;
@@ -11151,7 +11153,7 @@ function collectFallbackSignals(execution) {
       }
     }
   }
-  return sanitizeSignals(signals);
+  return sanitizeSignals(signals, context);
 }
 function looksLikeOperationalChange(value) {
   return /\b(announced|expanded|grew|growth|increased|launched|now exceeds|partnered|quadrupled|reached|released|reported|represent over half|tripled|updated|unveiled)\b/i.test(value);
@@ -11195,7 +11197,7 @@ function collectFallbackRisks(execution) {
     const raw = step.result;
     if (step.toolName === "run_recon" && Array.isArray(raw?.findings)) {
       for (const finding of raw.findings) {
-        const description = normalizeWhitespace2(String(typeof finding === "string" ? finding : finding?.name ?? ""));
+        const description = normalizeWhitespace(String(typeof finding === "string" ? finding : finding?.name ?? ""));
         const direction = String(typeof finding === "object" ? finding?.direction ?? "" : "");
         if (!description) continue;
         if (direction === "down" || containsRiskLanguage(description)) {
@@ -11226,7 +11228,7 @@ function collectFallbackRisks(execution) {
   }
   return sanitizeRisks(risks);
 }
-function sanitizeSignals(items) {
+function sanitizeSignals(items, context) {
   const seen = /* @__PURE__ */ new Set();
   const sanitized = [];
   for (const item of items ?? []) {
@@ -11240,6 +11242,18 @@ function sanitizeSignals(items) {
     if (looksLikeNarrativeFluff(name)) continue;
     if (looksLikeSpeculativeCapitalMarketsFiller(name)) continue;
     if (looksLikeGenericMarketBackdrop(name)) continue;
+    if (context?.entityName && isSingleEntityPacketClassification(context.classification) && !isEntityGroundedCandidate(
+      {
+        text: name,
+        sourceLabel: item?.sourceLabel,
+        sourceHref: item?.sourceHref,
+        evidenceQuote: item?.evidenceQuote
+      },
+      context.entityName,
+      context.entityTargets
+    )) {
+      continue;
+    }
     if (name.length > 100 && /[-:]\s[A-Z][A-Za-z0-9&.\s]+$/.test(name)) continue;
     if (looksLikeSourceTitle(name)) continue;
     if (!hasBankerSignalContent(name) && !containsRiskLanguage(name)) continue;
@@ -11258,7 +11272,7 @@ function sanitizeSignals(items) {
     sanitized.sort((a, b) => scoreUnderwritingSignal(b.name) - scoreUnderwritingSignal(a.name))
   );
 }
-function sanitizeChanges(items) {
+function sanitizeChanges(items, context) {
   const normalizedEntries = (items ?? []).map((item) => ({
     description: normalizeChangeDescription(String(item?.description ?? "")),
     date: item?.date ?? void 0,
@@ -11272,7 +11286,19 @@ function sanitizeChanges(items) {
     sourceLabel: normalizedEntries.find((item) => item.description === description)?.sourceLabel,
     sourceHref: normalizedEntries.find((item) => item.description === description)?.sourceHref,
     evidenceQuote: normalizedEntries.find((item) => item.description === description)?.evidenceQuote
-  }));
+  })).filter((item) => {
+    if (!context?.entityName || !isSingleEntityPacketClassification(context.classification)) return true;
+    return isEntityGroundedCandidate(
+      {
+        text: item.description,
+        sourceLabel: item.sourceLabel,
+        sourceHref: item.sourceHref,
+        evidenceQuote: item.evidenceQuote
+      },
+      context.entityName,
+      context.entityTargets
+    );
+  });
 }
 function inferRiskTitleFromDescription(description) {
   if (/\bpricing|bundle|discount|margin\b/i.test(description)) return "Pricing pressure";
@@ -11282,12 +11308,12 @@ function inferRiskTitleFromDescription(description) {
   if (/\bdistribution|platform|ecosystem\b/i.test(description)) return "Distribution dependency";
   return "Execution risk";
 }
-function sanitizeRisks(items) {
+function sanitizeRisks(items, context) {
   const seen = /* @__PURE__ */ new Set();
   const seenTitles = /* @__PURE__ */ new Set();
   const sanitized = [];
   for (const item of items ?? []) {
-    let title = normalizeWhitespace2(String(item?.title ?? ""));
+    let title = normalizeWhitespace(String(item?.title ?? ""));
     let description = normalizeNarrativeSentence(String(item?.description ?? ""));
     if (!description || description.length < 18) continue;
     if (looksLikeSourceTitle(description)) continue;
@@ -11305,6 +11331,18 @@ function sanitizeRisks(items) {
       description = buildDefaultRiskDescription(title);
     }
     if (!containsRiskLanguage(`${title} ${description}`)) continue;
+    if (context?.entityName && isSingleEntityPacketClassification(context.classification) && !isEntityGroundedCandidate(
+      {
+        text: `${title}. ${description}`,
+        sourceLabel: item?.sourceLabel,
+        sourceHref: item?.sourceHref,
+        evidenceQuote: item?.evidenceQuote
+      },
+      context.entityName,
+      context.entityTargets
+    )) {
+      continue;
+    }
     const key = `${title.toLowerCase()}::${description.toLowerCase()}`;
     if (seen.has(key)) continue;
     const titleKey = title.toLowerCase();
@@ -11318,17 +11356,17 @@ function sanitizeRisks(items) {
 function sanitizeComparables(items, entityName, fallbacks, context) {
   const seen = /* @__PURE__ */ new Set();
   const sanitized = [];
-  const fallbackSet = new Set(fallbacks.map((value) => normalizeWhitespace2(value).toLowerCase()).filter(Boolean));
-  const normalizedTargets = dedupeStrings2((context?.entityTargets ?? []).map((value) => normalizeWhitespace2(String(value))));
+  const fallbackSet = new Set(fallbacks.map((value) => normalizeWhitespace(value).toLowerCase()).filter(Boolean));
+  const normalizedTargets = dedupeStrings2((context?.entityTargets ?? []).map((value) => normalizeWhitespace(String(value))));
   const targetSet = new Set(normalizedTargets.map((value) => value.toLowerCase()).filter(Boolean));
-  const entityTokens = new Set(entityName.split(/\s+vs\s+|\s*,\s*/i).map((value) => normalizeWhitespace2(value).toLowerCase()).filter(Boolean));
+  const entityTokens = new Set(entityName.split(/\s+vs\s+|\s*,\s*/i).map((value) => normalizeWhitespace(value).toLowerCase()).filter(Boolean));
   const anchorTarget = normalizedTargets[0]?.toLowerCase();
   const pushComparable = (name, relevance = "medium", note = "Referenced in cited sources.", metadata) => {
-    const cleanedName = normalizeWhitespace2(name);
+    const cleanedName = normalizeWhitespace(name);
     const explicitTarget = targetSet.has(cleanedName.toLowerCase());
     if (!explicitTarget && !isPotentialCompanyName(cleanedName, entityName)) return;
     const lowerName = cleanedName.toLowerCase();
-    const noteText = normalizeWhitespace2(note).toLowerCase();
+    const noteText = normalizeWhitespace(note).toLowerCase();
     if (SOURCE_ENTITY_STOPWORDS.has(lowerName) && !explicitTarget) return;
     if (looksLikeSourceTitle(cleanedName)) return;
     if (/\b(index|statistics|report|briefing|analysis|investors need to know)\b/i.test(`${cleanedName} ${note}`)) return;
@@ -11349,7 +11387,7 @@ function sanitizeComparables(items, entityName, fallbacks, context) {
     sanitized.push({
       name: cleanedName,
       relevance: relevance === "high" || relevance === "low" ? relevance : "medium",
-      note: normalizeWhitespace2(note || "Referenced in cited sources."),
+      note: normalizeWhitespace(note || "Referenced in cited sources."),
       ...metadata
     });
   };
@@ -11380,7 +11418,7 @@ function sanitizeNextActions(items, lens, entityName, comparables, risks, contex
   }));
   const topComparable = comparables[0]?.name;
   const topRisk = risks[0]?.title.toLowerCase().includes("regulat") || risks[0]?.description.toLowerCase().includes("regulat") ? `Pressure-test regulatory and diligence exposure around ${entityName}.` : topComparable ? `Benchmark ${entityName} against ${topComparable} on positioning, pricing, and enterprise traction.` : `Pressure-test the core investment thesis for ${entityName} against the cited evidence.`;
-  const targetNames = dedupeStrings2((context?.entityTargets ?? []).map((item) => normalizeWhitespace2(String(item))));
+  const targetNames = dedupeStrings2((context?.entityTargets ?? []).map((item) => normalizeWhitespace(String(item))));
   const comparisonLabel = targetNames.length > 1 ? targetNames.join(", ") : entityName;
   const defaults = context?.classification === "multi_entity" && lens === "banker" ? [
     `Build a side-by-side diligence matrix for ${comparisonLabel} covering pricing, enterprise traction, buyer fit, and contract durability.`,
@@ -11413,7 +11451,7 @@ function sanitizeNextActions(items, lens, entityName, comparables, risks, contex
 }
 function buildDefaultNextQuestions(args) {
   if (args.classification === "multi_entity") {
-    const comparisonLabel = dedupeStrings2((args.entityTargets ?? []).map((item) => normalizeWhitespace2(String(item)))).slice(0, 3).join(", ") || args.entityName;
+    const comparisonLabel = dedupeStrings2((args.entityTargets ?? []).map((item) => normalizeWhitespace(String(item)))).slice(0, 3).join(", ") || args.entityName;
     return [
       `Which company in ${comparisonLabel} has the strongest enterprise distribution today, and what evidence would overturn that ranking?`,
       `Where do pricing power and contract durability differ most across the current peer set?`,
@@ -11432,7 +11470,7 @@ function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 function inferMetricEntity(value, entityName, entityTargets) {
-  const orderedTargets = dedupeStrings2([...entityTargets ?? [], entityName].map((item) => normalizeWhitespace2(String(item))));
+  const orderedTargets = dedupeStrings2([...entityTargets ?? [], entityName].map((item) => normalizeWhitespace(String(item))));
   for (const target of orderedTargets) {
     if (!target) continue;
     const pattern = new RegExp(`\\b${escapeRegex(target)}\\b`, "i");
@@ -11440,14 +11478,64 @@ function inferMetricEntity(value, entityName, entityTargets) {
   }
   return null;
 }
+function isSingleEntityPacketClassification(classification) {
+  return classification === "company_search";
+}
+function hrefMentionsEntityTarget(href, entityName, entityTargets) {
+  if (!href) return false;
+  const lowerHref = href.toLowerCase();
+  const orderedTargets = dedupeStrings2([...entityTargets ?? [], entityName].map((item) => normalizeWhitespace(String(item)))).filter(Boolean);
+  for (const target of orderedTargets) {
+    const lowerTarget = target.toLowerCase();
+    if (lowerHref.includes(lowerTarget)) return true;
+    const tokens = lowerTarget.split(/\s+/).filter((token) => token.length >= 3);
+    if (tokens.length > 0 && tokens.every((token) => lowerHref.includes(token))) return true;
+  }
+  return false;
+}
+function isEntityGroundedCandidate(value, entityName, entityTargets) {
+  const combined = normalizeWhitespace(
+    [value.text, value.sourceLabel, value.evidenceQuote].map((item) => String(item ?? "")).join(" ")
+  );
+  if (combined && inferMetricEntity(combined, entityName, entityTargets) !== null) {
+    return true;
+  }
+  return hrefMentionsEntityTarget(value.sourceHref, entityName, entityTargets);
+}
+function findExecutionSourceEvidence(execution, label, href) {
+  const normalizedLabel = normalizeWhitespace(label).toLowerCase();
+  const normalizedHref = normalizeWhitespace(href ?? "").toLowerCase();
+  if (!normalizedLabel && !normalizedHref) return void 0;
+  for (const step of execution.stepResults) {
+    if (!step.success || !step.result) continue;
+    const raw = step.result;
+    const candidates = [
+      ...Array.isArray(raw?.sources) ? raw.sources : [],
+      ...Array.isArray(raw?.results) ? raw.results : [],
+      ...Array.isArray(raw?.webResults) ? raw.webResults : []
+    ];
+    for (const candidate of candidates) {
+      const candidateLabel = normalizeWhitespace(String(candidate?.name ?? candidate?.title ?? candidate?.label ?? ""));
+      const candidateHref = normalizeWhitespace(String(candidate?.url ?? candidate?.link ?? candidate?.href ?? ""));
+      const labelMatch = normalizedLabel.length > 0 && candidateLabel.length > 0 && (candidateLabel.toLowerCase() === normalizedLabel || candidateLabel.toLowerCase().includes(normalizedLabel) || normalizedLabel.includes(candidateLabel.toLowerCase()));
+      const hrefMatch = normalizedHref.length > 0 && candidateHref.length > 0 && candidateHref.toLowerCase() === normalizedHref;
+      if (!labelMatch && !hrefMatch) continue;
+      const evidence = normalizeWhitespace(
+        String(candidate?.snippet ?? candidate?.description ?? candidate?.summary ?? candidate?.content ?? "")
+      );
+      if (evidence) return evidence;
+    }
+  }
+  return void 0;
+}
 function mentionsEntityTarget(value, entityTargets) {
   return inferMetricEntity(value, "", entityTargets) !== null;
 }
 function looksLikeAmbiguousSubjectSignal(value) {
-  return /^(its|the company|reports indicated|by march|by december|new data from)/i.test(normalizeWhitespace2(value));
+  return /^(its|the company|reports indicated|by march|by december|new data from)/i.test(normalizeWhitespace(value));
 }
 function inferMetricLabels(sentence, entityName, entityTargets) {
-  const normalizedTargets = dedupeStrings2((entityTargets ?? []).map((item) => normalizeWhitespace2(String(item))));
+  const normalizedTargets = dedupeStrings2((entityTargets ?? []).map((item) => normalizeWhitespace(String(item))));
   const multiEntity = normalizedTargets.length > 1;
   const subject = inferMetricEntity(sentence, entityName, entityTargets) ?? (multiEntity ? null : entityName);
   if (!subject) return [];
@@ -11477,7 +11565,7 @@ function inferMetricLabels(sentence, entityName, entityTargets) {
   return labels;
 }
 function normalizeMetricValue(rawValue) {
-  return normalizeWhitespace2(rawValue).replace(/\b(billion|million)\b/gi, (match) => match.toLowerCase() === "billion" ? "B" : "M").replace(/\s+([bBmM])\b/g, (_, suffix) => suffix.toUpperCase()).replace(/\s+(B|M)\b/g, "$1");
+  return normalizeWhitespace(rawValue).replace(/\b(billion|million)\b/gi, (match) => match.toLowerCase() === "billion" ? "B" : "M").replace(/\s+([bBmM])\b/g, (_, suffix) => suffix.toUpperCase()).replace(/\s+(B|M)\b/g, "$1");
 }
 function getMetricCategory(label) {
   const normalized = label.toLowerCase();
@@ -11491,7 +11579,7 @@ function getMetricCategory(label) {
   return "other";
 }
 function formatMetricClause(metric) {
-  const label = normalizeWhitespace2(metric.label);
+  const label = normalizeWhitespace(metric.label);
   const value = normalizeMetricValue(metric.value);
   if (!label || !value) return "";
   if (/\b(gross margin|growth|market share|usage mix)\b/i.test(label)) {
@@ -11619,7 +11707,7 @@ function collectMetricSentences(execution, signals, changes) {
     web_snippet: 1
   };
   for (const evidence of evidences) {
-    const key = normalizeWhitespace2(evidence.text).toLowerCase();
+    const key = normalizeWhitespace(evidence.text).toLowerCase();
     if (!key) continue;
     const rank = sourceRank[evidence.source] ?? 0;
     const existing = byText.get(key);
@@ -11653,7 +11741,7 @@ function deriveEvidenceKeyMetrics(args) {
     return isCurrency || isPercent;
   };
   const pushMetric = (label, value, score) => {
-    const cleanedLabel = normalizeWhitespace2(label);
+    const cleanedLabel = normalizeWhitespace(label);
     const cleanedValue = normalizeMetricValue(value);
     if (!cleanedLabel || !cleanedValue) return;
     if (/^(sources?|confidence|comparables?|diligence flags?)$/i.test(cleanedLabel)) return;
@@ -11743,11 +11831,11 @@ function deriveEvidenceKeyMetrics(args) {
   }
   return selected.map(({ label, value }) => ({ label, value }));
 }
-function sanitizeSources(items, execution) {
+function sanitizeSources(items, execution, context) {
   const seen = /* @__PURE__ */ new Set();
   const sanitized = [];
   const pushSource = (label, href, type) => {
-    const cleanedLabel = normalizeWhitespace2(label);
+    const cleanedLabel = normalizeWhitespace(label);
     if (!cleanedLabel || /^(web_search|run_recon|linkup_search|enrich_entity|simulate_decision_paths)$/i.test(cleanedLabel)) {
       return;
     }
@@ -11755,6 +11843,18 @@ function sanitizeSources(items, execution) {
       return;
     }
     if (href && /vertexaisearch\.cloud\.google\.com\/grounding-api-redirect/i.test(href)) {
+      return;
+    }
+    if (context?.entityName && isSingleEntityPacketClassification(context.classification) && !isEntityGroundedCandidate(
+      {
+        text: cleanedLabel,
+        sourceLabel: cleanedLabel,
+        sourceHref: href,
+        evidenceQuote: findExecutionSourceEvidence(execution, cleanedLabel, href)
+      },
+      context.entityName,
+      context.entityTargets
+    )) {
       return;
     }
     const authorityScore = scoreSourceAuthority(cleanedLabel, href, type || "web");
@@ -11791,7 +11891,7 @@ function sanitizeSources(items, execution) {
   return sanitized.slice(0, 8).map(({ label, href, type }) => ({ label, href, type }));
 }
 function sanitizeExecutiveAnswer(answer, entityName, keyMetrics, signals, comparables, risks, nextActions, context) {
-  const cleaned = normalizeWhitespace2(answer.replace(/```json|```/g, ""));
+  const cleaned = normalizeWhitespace(answer.replace(/```json|```/g, ""));
   const sentences = dedupeStrings2(sentenceSplit(cleaned)).filter((sentence) => sentence.length >= 25 && !/^sources?:/i.test(sentence));
   const filteredSentences = sentences.filter(
     (sentence) => !/\b(arms race|what investors need to know|index\s+\w+\s+update|source artifact|worth buying|turns the tables|leading one half)\b/i.test(sentence) && !looksLikeNarrativeFluff(sentence) && !looksLikeSpeculativeCapitalMarketsFiller(sentence) && !looksLikeGenericMarketBackdrop(sentence)
@@ -11817,7 +11917,7 @@ function sanitizeExecutiveAnswer(answer, entityName, keyMetrics, signals, compar
   const leadComparable = comparables[0]?.name;
   const comparableLabel = comparables.slice(0, 2).map((item) => item.name).join(" and ");
   const leadRisk = risks[0];
-  const comparisonSet = dedupeStrings2((context?.entityTargets ?? []).map((item) => normalizeWhitespace2(String(item)))).slice(0, 3);
+  const comparisonSet = dedupeStrings2((context?.entityTargets ?? []).map((item) => normalizeWhitespace(String(item)))).slice(0, 3);
   const bankerMetricClauses = keyMetrics.slice(0, context?.lens === "banker" ? 4 : 3).map((metric) => formatMetricClause(metric)).filter(Boolean);
   if (context?.lens === "banker") {
     const scope = context?.classification === "multi_entity" ? comparisonSet.length > 1 ? comparisonSet.join(", ") : entityName : entityName;
@@ -11839,7 +11939,7 @@ function sanitizeExecutiveAnswer(answer, entityName, keyMetrics, signals, compar
     if (nextActions[0]?.action) {
       summaryParts.push(`The immediate next step is to ${nextActions[0].action.charAt(0).toLowerCase()}${nextActions[0].action.slice(1)}.`);
     }
-    return normalizeWhitespace2(summaryParts.slice(0, 4).join(" ")).replace(/\.(?:\s*\.)+/g, ".").replace(/\.{2,}/g, ".");
+    return normalizeWhitespace(summaryParts.slice(0, 4).join(" ")).replace(/\.(?:\s*\.)+/g, ".").replace(/\.{2,}/g, ".");
   }
   if (context?.classification === "multi_entity") {
     const scope = comparisonSet.length > 1 ? comparisonSet.join(", ") : entityName;
@@ -11882,7 +11982,7 @@ function sanitizeExecutiveAnswer(answer, entityName, keyMetrics, signals, compar
   if (nextActions[0]?.action) {
     summaryParts.push(`The immediate next move is to ${nextActions[0].action.charAt(0).toLowerCase()}${nextActions[0].action.slice(1)}.`);
   }
-  return normalizeWhitespace2(summaryParts.slice(0, 4).join(" ")).replace(/\.(?:\s*\.)+/g, ".").replace(/\.{2,}/g, ".");
+  return normalizeWhitespace(summaryParts.slice(0, 4).join(" ")).replace(/\.(?:\s*\.)+/g, ".").replace(/\.{2,}/g, ".");
 }
 function budgetToolData(toolResults, maxTokensBudget) {
   const inputBudget = Math.floor(maxTokensBudget * 0.6 * 4);
@@ -12445,15 +12545,20 @@ Return ONLY valid JSON with ALL fields populated:
         const cleaned = jsonMatch[0].replace(/,\s*([\]}])/g, "$1");
         const parsed = JSON.parse(cleaned);
         console.error("[synthesis] Parsed OK. entityName:", parsed.entityName, "signals:", parsed.signals?.length, "risks:", parsed.risks?.length);
-        const signals2 = mergeSignals(collectFallbackSignals(execution), sanitizeSignals(parsed.signals));
+        const signalContext2 = {
+          entityName,
+          classification: execution.plan.classification,
+          entityTargets: execution.plan.entityTargets
+        };
+        const signals2 = mergeSignals(collectFallbackSignals(execution, signalContext2), sanitizeSignals(parsed.signals, signalContext2));
         const changes2 = sanitizeChanges([
           ...collectFallbackChanges(execution),
           ...Array.isArray(parsed.changes) ? parsed.changes : []
-        ]);
+        ], signalContext2);
         const risks2 = sanitizeRisks([
           ...collectFallbackRisks(execution),
           ...Array.isArray(parsed.risks) ? parsed.risks : []
-        ]);
+        ], signalContext2);
         const comparables2 = sanitizeComparables(parsed.comparables, entityName, comparableFallbacks, {
           classification: execution.plan.classification,
           entityTargets: execution.plan.entityTargets
@@ -12472,7 +12577,7 @@ Return ONLY valid JSON with ALL fields populated:
           classification: execution.plan.classification,
           entityTargets: execution.plan.entityTargets
         });
-        const sources2 = sanitizeSources(parsed.sources, execution);
+        const sources2 = sanitizeSources(parsed.sources, execution, signalContext2);
         const nextQuestions = dedupeStrings2(
           Array.isArray(parsed.nextQuestions) ? parsed.nextQuestions.map((item) => String(item ?? "")) : []
         ).filter((item) => item.length >= 12 && isQuestionLike(item)).slice(0, 4);
@@ -12487,12 +12592,12 @@ Return ONLY valid JSON with ALL fields populated:
           })
         ]).slice(0, 4);
         const whyThisTeam = parsed.whyThisTeam && typeof parsed.whyThisTeam === "object" ? {
-          founderCredibility: normalizeWhitespace2(String(parsed.whyThisTeam.founderCredibility ?? "")),
+          founderCredibility: normalizeWhitespace(String(parsed.whyThisTeam.founderCredibility ?? "")),
           trustSignals: dedupeStrings2(
             Array.isArray(parsed.whyThisTeam.trustSignals) ? parsed.whyThisTeam.trustSignals.map((item) => String(item ?? "")) : []
           ).slice(0, 4),
-          visionMagnitude: normalizeWhitespace2(String(parsed.whyThisTeam.visionMagnitude ?? "")),
-          reinventionCapacity: normalizeWhitespace2(String(parsed.whyThisTeam.reinventionCapacity ?? "")),
+          visionMagnitude: normalizeWhitespace(String(parsed.whyThisTeam.visionMagnitude ?? "")),
+          reinventionCapacity: normalizeWhitespace(String(parsed.whyThisTeam.reinventionCapacity ?? "")),
           hiddenRequirements: dedupeStrings2(
             Array.isArray(parsed.whyThisTeam.hiddenRequirements) ? parsed.whyThisTeam.hiddenRequirements.map((item) => String(item ?? "")) : []
           ).slice(0, 4)
@@ -12647,7 +12752,7 @@ Return ONLY valid JSON with ALL fields populated:
         for (const f of (Array.isArray(raw.findings) ? raw.findings : []).slice(0, 5)) {
           const name = typeof f === "string" ? f : f?.name ?? f?.title ?? f?.finding ?? "";
           if (!name) continue;
-          const normalizedFinding = normalizeWhitespace2(name).slice(0, 260);
+          const normalizedFinding = normalizeWhitespace(name).slice(0, 260);
           signals.push({ name: normalizedFinding, direction: f?.direction ?? "neutral", impact: f?.impact ?? "medium" });
           if (/\b(quadrupled|doubled|tripled|expanded|grew|growth|increased|reached|now exceeds|accelerat|represent over half|enterprise use)\b/i.test(normalizedFinding)) {
             const description = normalizeChangeDescription(normalizedFinding);
@@ -12734,9 +12839,14 @@ Return ONLY valid JSON with ALL fields populated:
       }
     }
   }
-  const sanitizedSignals = mergeSignals(sanitizeSignals(signals), collectFallbackSignals(execution));
-  const sanitizedChanges = sanitizeChanges(changes);
-  const sanitizedRisks = sanitizeRisks([...risks, ...collectFallbackRisks(execution)]);
+  const signalContext = {
+    entityName,
+    classification: execution.plan.classification,
+    entityTargets: execution.plan.entityTargets
+  };
+  const sanitizedSignals = mergeSignals(sanitizeSignals(signals, signalContext), collectFallbackSignals(execution, signalContext));
+  const sanitizedChanges = sanitizeChanges(changes, signalContext);
+  const sanitizedRisks = sanitizeRisks([...risks, ...collectFallbackRisks(execution)], signalContext);
   const sanitizedComparables = sanitizeComparables(comparables, entityName, comparableFallbacks, {
     classification: execution.plan.classification,
     entityTargets: execution.plan.entityTargets
@@ -12754,7 +12864,7 @@ Return ONLY valid JSON with ALL fields populated:
     classification: execution.plan.classification,
     entityTargets: execution.plan.entityTargets
   });
-  const sanitizedSources = sanitizeSources(sources, execution);
+  const sanitizedSources = sanitizeSources(sources, execution, signalContext);
   const answer = sanitizeExecutiveAnswer(
     answerParts.length > 0 ? answerParts.slice(0, 5).join(" ").slice(0, 800) : `Analysis of "${query}" using ${execution.stepResults.filter((r) => r.success).length} tools.`,
     entityName,
@@ -12967,8 +13077,10 @@ function createEvidenceSpans(sourceSnippets, signals) {
       const name = (s.name ?? s.title ?? "").toLowerCase();
       return name.length > 3 && snippet.toLowerCase().includes(name.slice(0, 20));
     });
-    const status = snippet.length > 100 ? "verified" : snippet.length > 30 ? "partial" : "unverified";
-    const confidence = status === "verified" ? 0.85 : status === "partial" ? 0.55 : 0.2;
+    const isExternal = src.corroboration === "external";
+    const isLowSignalKind = src.kind === "official_legal" || src.kind === "official_jobs" || src.kind === "social";
+    const status = isLowSignalKind ? "unverified" : isExternal && snippet.length > 100 ? "verified" : snippet.length > 60 ? "partial" : snippet.length > 30 ? "partial" : "unverified";
+    const confidence = status === "verified" ? Math.max(0.7, Math.min(0.95, (src.qualityScore ?? 85) / 100)) : status === "partial" ? Math.max(0.35, Math.min(0.7, (src.qualityScore ?? 55) / 100)) : 0.2;
     spans.push({
       spanId: nextSpanId(),
       sourceUrl: src.url ?? null,
@@ -13210,6 +13322,92 @@ function formatRoutingHintsForPrompt(hints) {
 }
 function tokenize(text) {
   return text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((t) => t.length > 2);
+}
+
+// server/lib/painMapping.ts
+var PAIN_THEMES = {
+  clarity: {
+    id: "clarity",
+    label: "Now you know what you're building",
+    pain: "Founders can't articulate what company they're building, what's weak, or what outsiders will care about.",
+    sourceQuote: "I keep rewriting my pitch because I don't actually know what I'm building yet."
+  },
+  continuity: {
+    id: "continuity",
+    label: "You didn't start over this time",
+    pain: "Every new session restarts from zero. Prior decisions, contradictions, and context are lost.",
+    sourceQuote: "I keep repeating the same context to my AI tools. They're brilliant strangers every time."
+  },
+  duplication: {
+    id: "duplication",
+    label: "Your context traveled with you",
+    pain: "Founders re-explain the same company truth to every tool, agent, investor, and banker.",
+    sourceQuote: "I explained my startup to ChatGPT, then Claude, then my investor deck, then my bank \u2014 four times."
+  },
+  trust: {
+    id: "trust",
+    label: "Every claim is cited",
+    pain: "AI outputs mix real facts with hallucinations. No way to tell which claims are grounded.",
+    sourceQuote: "The AI gave me revenue numbers that sounded great. Turns out they were completely made up."
+  },
+  handoff: {
+    id: "handoff",
+    label: "Ready to send right now",
+    pain: "Good analysis sits in a dashboard. It never becomes a memo, email, or delegation packet.",
+    sourceQuote: "I have all this intelligence but I still spend 2 hours turning it into something I can send."
+  }
+};
+function detectPainResolutions(result) {
+  const resolutions = [];
+  const q = result.query.toLowerCase();
+  if (result.answer && result.answer.length > 50 && result.confidence > 0) {
+    const signalCount = result.signals?.length ?? 0;
+    const riskCount = result.risks?.length ?? 0;
+    resolutions.push({
+      painId: "clarity",
+      painLabel: PAIN_THEMES.clarity.label,
+      userPain: PAIN_THEMES.clarity.pain,
+      fix: `Identified ${result.entityName} with ${signalCount} signals, ${riskCount} risks, and ${result.confidence}% confidence.`,
+      proof: `${result.sourceRefs?.length ?? 0} sources searched, ${result.evidence.verifiedCount} claims verified.`
+    });
+  }
+  if (result.evidence.totalSpans > 0 && result.evidence.verifiedCount > 0) {
+    resolutions.push({
+      painId: "trust",
+      painLabel: PAIN_THEMES.trust.label,
+      userPain: PAIN_THEMES.trust.pain,
+      fix: `${result.evidence.verifiedCount}/${result.evidence.totalSpans} claims backed by source citations.`,
+      proof: `${Math.round(result.evidence.verificationRate * 100)}% verification rate across ${result.sourceRefs?.length ?? 0} sources.`
+    });
+  }
+  if (result.answer && result.nextActions?.length > 0) {
+    resolutions.push({
+      painId: "handoff",
+      painLabel: PAIN_THEMES.handoff.label,
+      userPain: PAIN_THEMES.handoff.pain,
+      fix: `Structured packet with ${result.nextActions.length} next actions, ready to export or delegate.`,
+      proof: `Packet includes entity truth, risks, comparables, and cited next moves.`
+    });
+  }
+  if (result.classification === "company_search" && result.entityName) {
+    resolutions.push({
+      painId: "duplication",
+      painLabel: PAIN_THEMES.duplication.label,
+      userPain: PAIN_THEMES.duplication.pain,
+      fix: `${result.entityName} context packaged once \u2014 export as memo, Slack brief, or agent delegation.`,
+      proof: `One search produces investor, banker, founder, and CEO views of the same truth.`
+    });
+  }
+  if (q.includes("changed") || q.includes("reset") || q.includes("since last") || q.includes("refresh")) {
+    resolutions.push({
+      painId: "continuity",
+      painLabel: PAIN_THEMES.continuity.label,
+      userPain: PAIN_THEMES.continuity.pain,
+      fix: `Compared current state to prior context and surfaced what matters now.`,
+      proof: `Session-aware search with packet lineage tracking.`
+    });
+  }
+  return resolutions;
 }
 
 // packages/mcp-local/src/sync/store.ts
@@ -14838,6 +15036,146 @@ function normalizeLlmJudge(input) {
   };
 }
 
+// server/lib/workflowEnvelope.ts
+import { createHash as createHash2 } from "node:crypto";
+var _counter = 0;
+function createEnvelopeId() {
+  const ts = Date.now().toString(36);
+  const rand = Math.random().toString(36).slice(2, 8);
+  _counter = (_counter + 1) % 1e4;
+  return `env_${ts}_${rand}_${_counter.toString(36)}`;
+}
+function stableStringify(obj) {
+  if (obj === null || obj === void 0) return JSON.stringify(obj);
+  if (typeof obj !== "object") return JSON.stringify(obj);
+  if (Array.isArray(obj)) return `[${obj.map(stableStringify).join(",")}]`;
+  const sorted = Object.keys(obj).sort();
+  const pairs = sorted.map((k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`);
+  return `{${pairs.join(",")}}`;
+}
+function hashContent(content) {
+  return createHash2("sha256").update(stableStringify(content)).digest("hex").slice(0, 16);
+}
+function slugifyEnvelopeValue(value) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+}
+function resolvePacketCanonicalEntity(packet) {
+  if (typeof packet.canonicalEntity === "string" && packet.canonicalEntity.trim()) {
+    return packet.canonicalEntity.trim();
+  }
+  if (packet.canonicalEntity && typeof packet.canonicalEntity === "object" && typeof packet.canonicalEntity.name === "string" && packet.canonicalEntity.name.trim()) {
+    return packet.canonicalEntity.name.trim();
+  }
+  if (typeof packet.entityName === "string" && packet.entityName.trim()) {
+    return packet.entityName.trim();
+  }
+  return "NodeBench";
+}
+function resolvePacketId(packet) {
+  if (typeof packet.packetId === "string" && packet.packetId.trim()) {
+    return packet.packetId.trim();
+  }
+  const canonicalEntity = resolvePacketCanonicalEntity(packet);
+  const query = typeof packet.query === "string" ? packet.query : canonicalEntity;
+  return `pkt-${slugifyEnvelopeValue(canonicalEntity)}-${hashContent({ query, answer: packet.answer ?? "", entity: canonicalEntity })}`;
+}
+function createEnvelopeFromResultPacket(packet) {
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const canonicalEntity = resolvePacketCanonicalEntity(packet);
+  const canonicalPacketId = resolvePacketId(packet);
+  const packetType = typeof packet.packetType === "string" && packet.packetType.trim() ? packet.packetType : "entity_packet";
+  const sourceRefs = (packet.sourceRefs ?? []).map((source, index) => ({
+    id: source.id ?? `src_${index + 1}`,
+    label: source.label ?? source.title ?? source.href ?? `source-${index + 1}`,
+    href: source.href,
+    type: source.type ?? (source.href ? "web" : "doc"),
+    confidence: source.confidence
+  }));
+  const claims = (packet.claimRefs ?? []).map((claim) => typeof claim.text === "string" ? claim.text.trim() : "").filter(Boolean).slice(0, 24);
+  const answerDerivedClaims = claims.length > 0 ? claims : (packet.answerBlocks ?? []).map((block) => typeof block.text === "string" ? block.text.trim() : "").filter(Boolean).slice(0, 12);
+  const traceSteps = (packet.trace ?? []).map((step, index) => ({
+    step: step.step ?? `packet_step_${index + 1}`,
+    tool: step.tool,
+    status: step.status ?? "ok",
+    detail: step.detail,
+    durationMs: step.durationMs
+  }));
+  return {
+    transport: {
+      envelopeId: packet.workflowAsset?.envelopeId ?? createEnvelopeId(),
+      envelopeType: "search_result",
+      version: 1,
+      createdAt: packet.workflowAsset?.generatedAt ?? now
+    },
+    content: {
+      subject: typeof packet.query === "string" && packet.query.trim() ? packet.query.trim() : canonicalEntity,
+      entityName: canonicalEntity,
+      summary: typeof packet.answer === "string" && packet.answer.trim() ? packet.answer.trim().slice(0, 500) : canonicalEntity,
+      confidence: typeof packet.confidence === "number" ? packet.confidence : 0,
+      classification: packet.classification,
+      lens: packet.lens
+    },
+    proof: {
+      sourceRefs,
+      claims: answerDerivedClaims,
+      evidenceRefs: sourceRefs.map((source) => source.id),
+      verificationRate: sourceRefs.length > 0 ? sourceRefs.filter((source) => (source.confidence ?? 0) >= 65).length / sourceRefs.length : 0
+    },
+    trace: {
+      steps: traceSteps,
+      totalDurationMs: traceSteps.reduce((sum, step) => sum + (step.durationMs ?? 0), 0),
+      toolsInvoked: Array.from(new Set(traceSteps.map((step) => step.tool).filter((tool) => Boolean(tool))))
+    },
+    lineage: {
+      parentIds: [],
+      sourceRunId: packet.workflowAsset?.lineage?.sourceRunId ?? canonicalPacketId,
+      sourceContextId: packet.workflowAsset?.lineage?.sourceContextId
+    },
+    scope: {
+      visibility: "internal",
+      surface: "packet_engine"
+    },
+    payload: {
+      packetId: canonicalPacketId,
+      packetType,
+      canonicalEntity,
+      recommendedNextAction: packet.recommendedNextAction,
+      nextQuestionCount: Array.isArray(packet.nextQuestions) ? packet.nextQuestions.length : 0
+    }
+  };
+}
+function buildWorkflowAssetFromEnvelope(packet, envelope, overrides = {}) {
+  const canonicalEntity = resolvePacketCanonicalEntity(packet);
+  const canonicalPacketId = resolvePacketId(packet);
+  const canonicalPacketType = typeof packet.packetType === "string" && packet.packetType.trim() ? packet.packetType : "entity_packet";
+  const existing = packet.workflowAsset ?? {};
+  const lineage = {
+    sourceRunId: existing.lineage?.sourceRunId ?? envelope.lineage.sourceRunId ?? canonicalPacketId,
+    sourceContextId: existing.lineage?.sourceContextId ?? envelope.lineage.sourceContextId,
+    parentAssetId: existing.lineage?.parentAssetId,
+    ...overrides.lineage ?? {}
+  };
+  return {
+    assetId: existing.assetId ?? `asset:${slugifyEnvelopeValue(canonicalEntity)}:${canonicalPacketId}`,
+    assetType: existing.assetType ?? "research_packet",
+    state: existing.state ?? "generated",
+    canonicalPacketId,
+    canonicalPacketType,
+    canonicalEntity,
+    generatedAt: existing.generatedAt ?? envelope.transport.createdAt,
+    stages: existing.stages?.length ? existing.stages : ["packetized_truth"],
+    replayReady: existing.replayReady ?? envelope.trace.steps.length > 0,
+    delegationReady: existing.delegationReady ?? Boolean(packet.recommendedNextAction || Array.isArray(packet.nextQuestions) && packet.nextQuestions.length > 0),
+    currentContextId: existing.currentContextId,
+    lastTaskId: existing.lastTaskId,
+    targetAgents: existing.targetAgents?.length ? existing.targetAgents : ["claude_code", "openclaw"],
+    envelopeId: existing.envelopeId ?? envelope.transport.envelopeId,
+    envelopeType: existing.envelopeType ?? envelope.transport.envelopeType,
+    ...overrides,
+    lineage
+  };
+}
+
 // server/routes/search.ts
 var SEARCH_SOURCE = "search_api";
 var CONTROL_PLANE_VIEW_ID = "view:control-plane";
@@ -15063,9 +15401,54 @@ function dedupeBy(items, keyFn) {
   }
   return deduped;
 }
+function normalizeSourceTitle(value, fallback) {
+  const normalized = normalizeClaimText(value, 180);
+  return normalized || fallback;
+}
+function isSyntheticMemorySource(source) {
+  const domain = String(source.domain ?? "").toLowerCase();
+  const label = normalizeClaimText(source.label ?? source.title, 180).toLowerCase();
+  const excerpt = normalizeClaimText(source.excerpt, 220).toLowerCase();
+  if (source.href) return false;
+  return domain === "nodebench memory" || source.type === "doc" || /\b(nodebench memory|change \d+|finding \d+|source \d+)\b/i.test(label) || /\bstructured preview from retained source metadata\b/i.test(excerpt);
+}
+function scoreSourceRef(source) {
+  const label = normalizeClaimText(source.label ?? source.title, 180).toLowerCase();
+  const excerpt = normalizeClaimText(source.excerpt, 220).toLowerCase();
+  const domain = String(source.domain ?? "").toLowerCase();
+  let score = 0;
+  if (source.href) score += 6;
+  if (source.status === "cited") score += 3;
+  if (typeof source.confidence === "number") score += source.confidence / 25;
+  if (domain && domain !== "nodebench memory") score += 2;
+  if (/\b(linkedin|crunchbase|pitchbook|companieshouse|sec|businesswire|bloomberg|reuters)\b/i.test(`${domain} ${label}`)) score += 3;
+  if (/\b(official|filing|report|press release|company profile)\b/i.test(`${label} ${excerpt}`)) score += 2;
+  if (isSyntheticMemorySource(source)) score -= 8;
+  if (isGenericClaimFiller(`${label} ${excerpt}`)) score -= 6;
+  return score;
+}
+function finalizeSourceRefs(sourceRefs) {
+  const deduped = dedupeBy(sourceRefs, (source) => String(source.href ?? source.label ?? source.id));
+  const externalCount = deduped.filter((source) => Boolean(source.href)).length;
+  const filtered = externalCount >= 2 ? deduped.filter((source) => !isSyntheticMemorySource(source)) : deduped;
+  return filtered.sort((left, right) => scoreSourceRef(right) - scoreSourceRef(left)).slice(0, 12);
+}
 function normalizeSourceRefs(result) {
   if (Array.isArray(result?.sourceRefs) && result.sourceRefs.length > 0) {
-    return dedupeBy(result.sourceRefs, (source) => String(source.id ?? source.href ?? source.label ?? ""));
+    const normalizedExisting = result.sourceRefs.map((source, index) => ({
+      id: source.id ?? `source:${index + 1}`,
+      label: normalizeSourceTitle(source.label ?? source.title ?? source.name, source.href ?? `Source ${index + 1}`),
+      href: source.href ?? source.url ?? void 0,
+      type: source.type ?? (source.href || source.url ? "web" : "doc"),
+      status: source.status ?? "cited",
+      title: normalizeSourceTitle(source.title ?? source.label ?? source.name, source.href ?? `Source ${index + 1}`),
+      domain: source.domain ?? toDomain(source.href ?? source.url),
+      publishedAt: source.publishedAtIso ?? source.publishedAt ?? null,
+      thumbnailUrl: source.thumbnailUrl,
+      excerpt: trimText(source.excerpt ?? source.snippet ?? source.summary ?? source.content, 260),
+      confidence: typeof source.confidence === "number" ? source.confidence : void 0
+    }));
+    return finalizeSourceRefs(normalizedExisting);
   }
   const rawSources = [
     ...Array.isArray(result?.sourcesUsed) ? result.sourcesUsed : [],
@@ -15073,7 +15456,7 @@ function normalizeSourceRefs(result) {
   ];
   const mapped = rawSources.map((source, index) => {
     const href = source.url ?? source.href ?? void 0;
-    const title = source.title ?? source.label ?? source.name ?? href ?? `Source ${index + 1}`;
+    const title = normalizeSourceTitle(source.title ?? source.label ?? source.name, href ?? `Source ${index + 1}`);
     return {
       id: source.id ?? `source:${index + 1}`,
       label: title,
@@ -15088,7 +15471,7 @@ function normalizeSourceRefs(result) {
       confidence: typeof source.confidence === "number" ? source.confidence : void 0
     };
   });
-  return dedupeBy(mapped, (source) => String(source.href ?? source.label ?? source.id));
+  return finalizeSourceRefs(mapped);
 }
 function resolveSourceRefIdsForCandidate(sourceRefs, candidate, fallbackSourceIds) {
   if (Array.isArray(candidate.sourceRefIds) && candidate.sourceRefIds.length > 0) {
@@ -15185,7 +15568,7 @@ function buildBottomLineText(result, claimRefs, entityName) {
 }
 function normalizeClaimRefs(result, sourceRefs) {
   const entityName = getPacketEntityName(result);
-  const defaultSourceIds = sourceRefs.slice(0, 3).map((source) => source.id);
+  const defaultSourceIds = sourceRefs.length === 1 ? sourceRefs.slice(0, 1).map((source) => source.id) : [];
   const claims = [];
   const pushClaim = (candidate) => {
     const text = normalizeClaimText(candidate.text);
@@ -15277,38 +15660,46 @@ function normalizeAnswerBlocks(result, sourceRefs, claimRefs) {
   const sourceBacked = citedSourceIds.length > 0;
   const blocks = [];
   const entityName = getPacketEntityName(result);
+  const claimSourceIdsForBlock = (blockId) => Array.from(
+    new Set(
+      claimRefs.filter((claim) => Array.isArray(claim.answerBlockIds) && claim.answerBlockIds.includes(blockId)).flatMap((claim) => Array.isArray(claim.sourceRefIds) ? claim.sourceRefIds : [])
+    )
+  );
   const summaryText = buildBottomLineText(result, claimRefs, entityName);
+  const summarySourceIds = claimSourceIdsForBlock("answer:block:summary");
   if (summaryText) {
     blocks.push({
       id: "answer:block:summary",
       title: "Bottom line",
       text: summaryText,
-      sourceRefIds: citedSourceIds,
+      sourceRefIds: summarySourceIds.length > 0 ? summarySourceIds : citedSourceIds.slice(0, 2),
       claimIds: claimRefs.filter((claim) => claim.answerBlockIds.includes("answer:block:summary")).map((claim) => claim.id),
-      status: blockStatus(citedSourceIds, !sourceBacked)
+      status: blockStatus(summarySourceIds.length > 0 ? summarySourceIds : citedSourceIds.slice(0, 2), !sourceBacked)
     });
   }
   const keyFactClaims = claimRefs.filter((claim) => claim.status === "retained").slice(0, 4);
   const keyFactsText = keyFactClaims.map((claim) => `- ${claim.text}`).join("\n");
+  const keyFactsSourceIds = Array.from(new Set(keyFactClaims.flatMap((claim) => claim.sourceRefIds ?? [])));
   if (keyFactsText) {
     blocks.push({
       id: "answer:block:key_facts",
       title: "Key facts and signal readout",
       text: keyFactsText,
-      sourceRefIds: citedSourceIds,
+      sourceRefIds: keyFactsSourceIds,
       claimIds: keyFactClaims.map((claim) => claim.id),
-      status: blockStatus(citedSourceIds, !sourceBacked)
+      status: blockStatus(keyFactsSourceIds, !sourceBacked)
     });
   }
   const changesText = (Array.isArray(result?.whatChanged) ? result.whatChanged : []).filter((change) => isHighSignalClaim(change.description ?? String(change), entityName, "change")).slice(0, 3).map((change) => `- ${change.description ?? String(change)}${change.date ? ` (${change.date})` : ""}`).join("\n");
+  const changeSourceIds = claimSourceIdsForBlock("answer:block:changes");
   if (changesText) {
     blocks.push({
       id: "answer:block:changes",
       title: "What changed",
       text: changesText,
-      sourceRefIds: citedSourceIds,
+      sourceRefIds: changeSourceIds,
       claimIds: claimRefs.filter((claim) => claim.answerBlockIds.includes("answer:block:changes")).map((claim) => claim.id),
-      status: blockStatus(citedSourceIds, !sourceBacked)
+      status: blockStatus(changeSourceIds, !sourceBacked)
     });
   }
   const comparablesText = (Array.isArray(result?.comparables) ? result.comparables : []).filter((item) => {
@@ -15320,9 +15711,9 @@ function normalizeAnswerBlocks(result, sourceRefs, claimRefs) {
       id: "answer:block:comparables",
       title: "Competitive frame",
       text: comparablesText,
-      sourceRefIds: citedSourceIds,
+      sourceRefIds: citedSourceIds.slice(0, 2),
       claimIds: [],
-      status: blockStatus(citedSourceIds, !sourceBacked)
+      status: blockStatus(citedSourceIds.slice(0, 2), !sourceBacked)
     });
   }
   const whyThisTeam = result?.whyThisTeam;
@@ -15336,20 +15727,21 @@ function normalizeAnswerBlocks(result, sourceRefs, claimRefs) {
       id: "answer:block:credibility",
       title: "Why this team matters",
       text: credibilityText,
-      sourceRefIds: citedSourceIds,
+      sourceRefIds: [],
       claimIds: [],
-      status: blockStatus(citedSourceIds, true)
+      status: blockStatus([], true)
     });
   }
   const risksText = (Array.isArray(result?.contradictions) ? result.contradictions : []).filter((item) => isHighSignalClaim(item.claim ?? item.title ?? String(item), entityName, "risk")).slice(0, 3).map((item) => `- ${item.claim ?? item.title ?? String(item)}${item.evidence ? `: ${item.evidence}` : ""}`).join("\n");
+  const riskSourceIds = claimSourceIdsForBlock("answer:block:risks");
   if (risksText) {
     blocks.push({
       id: "answer:block:risks",
       title: "Risks and diligence flags",
       text: risksText,
-      sourceRefIds: citedSourceIds,
+      sourceRefIds: riskSourceIds,
       claimIds: claimRefs.filter((claim) => claim.answerBlockIds.includes("answer:block:risks")).map((claim) => claim.id),
-      status: blockStatus(citedSourceIds, true)
+      status: blockStatus(riskSourceIds, true)
     });
   }
   const diligenceQuestionsText = (Array.isArray(result?.nextQuestions) ? result.nextQuestions : []).slice(0, 4).map((question) => `- ${String(question)}`).join("\n");
@@ -15358,9 +15750,9 @@ function normalizeAnswerBlocks(result, sourceRefs, claimRefs) {
       id: "answer:block:diligence_questions",
       title: "Next diligence questions",
       text: diligenceQuestionsText,
-      sourceRefIds: citedSourceIds,
+      sourceRefIds: [],
       claimIds: [],
-      status: blockStatus(citedSourceIds, true)
+      status: blockStatus([], true)
     });
   }
   const nextAction = (Array.isArray(result?.nextActions) ? result.nextActions : [])[0];
@@ -15369,9 +15761,9 @@ function normalizeAnswerBlocks(result, sourceRefs, claimRefs) {
       id: "answer:block:next",
       title: "Recommended next move",
       text: nextAction.action ?? String(nextAction),
-      sourceRefIds: citedSourceIds,
+      sourceRefIds: [],
       claimIds: [],
-      status: blockStatus(citedSourceIds, true)
+      status: blockStatus([], true)
     });
   }
   return blocks;
@@ -15728,7 +16120,7 @@ function buildResultPacket(args) {
     const name = normalizeClaimText(comparable?.name ?? String(comparable), 120);
     return Boolean(name) && !/^(?:n\/a|unknown|none|general|company)$/i.test(name) && !isGenericClaimFiller(name) && !looksLikeStandalonePersonName(name);
   });
-  return {
+  const basePacket = {
     query: args.query,
     entityName,
     answer: summaryBlock?.text ?? result.canonicalEntity?.canonicalMission ?? "",
@@ -15806,6 +16198,52 @@ function buildResultPacket(args) {
     evidence: createEvidenceSpans(
       result.sourceSnippets ?? sourceRefs.map((ref) => ({ url: ref.url, title: ref.title, snippet: ref.snippet })),
       filteredVariables
+    ),
+    painResolutions: detectPainResolutions({
+      query: args.query,
+      classification: args.classification ?? "company_search",
+      entityName,
+      answer: result.canonicalEntity?.canonicalMission ?? "",
+      confidence: result.canonicalEntity?.identityConfidence ?? 0,
+      signals: filteredVariables,
+      risks: result.contradictions ?? [],
+      comparables: result.comparables ?? [],
+      evidence: createEvidenceSpans(
+        result.sourceSnippets ?? sourceRefs.map((ref) => ({ url: ref.url, title: ref.title, snippet: ref.snippet })),
+        filteredVariables
+      ),
+      sourceRefs,
+      nextActions: result.nextActions ?? []
+    })
+  };
+  const envelope = createEnvelopeFromResultPacket({
+    ...basePacket,
+    packetId: result.packetId,
+    packetType: normalizedIdentity.packetType,
+    classification: normalizedIdentity.classification,
+    lens: args.lens
+  });
+  return {
+    ...basePacket,
+    workflowAsset: buildWorkflowAssetFromEnvelope(
+      {
+        ...basePacket,
+        packetId: result.packetId,
+        packetType: normalizedIdentity.packetType,
+        classification: normalizedIdentity.classification,
+        lens: args.lens
+      },
+      envelope,
+      {
+        assetType: result.packetType === "issue_packet" ? "issue_packet" : "research_packet",
+        stages: ["legacy_search_dispatch", "proof_decorated", "packetized_truth", "shared_context_ready"],
+        replayReady: Array.isArray(result.trace) ? result.trace.length > 0 : sourceRefs.length > 0,
+        delegationReady: Boolean(result.recommendedNextAction ?? result.nextActions?.length),
+        targetAgents: ["claude_code", "openclaw"],
+        lineage: {
+          sourceRunId: typeof result.packetId === "string" ? result.packetId : void 0
+        }
+      }
     )
   };
 }
@@ -15885,15 +16323,19 @@ function decorateResultWithProof(args) {
     graphEdges,
     ...strategicAngles.length > 0 ? { strategicAngles } : {}
   };
-  return {
+  const packet = buildResultPacket({
+    query: args.query,
+    lens: args.lens,
     result: decoratedResult,
-    packet: buildResultPacket({
-      query: args.query,
-      lens: args.lens,
-      result: decoratedResult,
-      classification: normalizedIdentity.classification,
-      entityFallback: canonicalEntityName ?? baseResult?.canonicalEntity?.name
-    }),
+    classification: normalizedIdentity.classification,
+    entityFallback: canonicalEntityName ?? baseResult?.canonicalEntity?.name
+  });
+  return {
+    result: {
+      ...decoratedResult,
+      workflowAsset: packet.workflowAsset
+    },
+    packet,
     persona
   };
 }
@@ -16296,14 +16738,17 @@ function createSearchRouter(tools2) {
     });
     return parts.length >= 2 ? parts : [];
   }
+  function normalizeWhitespace2(value) {
+    return value.replace(/\s+/g, " ").trim();
+  }
   function toEntityDisplayName(value) {
-    return normalizeWhitespace(value).split(/\s+/).filter(Boolean).map((word) => {
+    return normalizeWhitespace2(value).split(/\s+/).filter(Boolean).map((word) => {
       if (/^[A-Z0-9&.-]{2,}$/.test(word)) return word;
       return word.charAt(0).toUpperCase() + word.slice(1);
     }).join(" ");
   }
   function extractBareEntityQuery(query) {
-    const normalized = normalizeWhitespace(query.replace(/[?!.,;:]+$/g, ""));
+    const normalized = normalizeWhitespace2(query.replace(/[?!.,;:]+$/g, ""));
     if (!normalized || normalized.length < 2 || normalized.length > 50) return void 0;
     const lower = normalized.toLowerCase();
     if (/\b(my|our|we|i|me|us|uploaded|document|file|transcript|meeting|should|build|plan|weekly|delegation|change|changed|compare|competitor|risk|risks|strategy|pitch|ready|help)\b/i.test(lower)) {
@@ -16545,6 +16990,16 @@ Entity extraction rules:
     const sessionSystem = sessionCtx ? `Prior session context: user was discussing "${sessionCtx.entity}". If this query references that entity, include it.` : void 0;
     return classifyQueryWithLLM(query, sessionSystem);
   }
+  function normalizeClassificationForDirectEntityQuery(query, classification) {
+    if (classification.type !== "general") return classification;
+    const bareEntity = extractBareEntityQuery(query);
+    if (!bareEntity) return classification;
+    return {
+      type: "company_search",
+      entity: bareEntity,
+      lens: classification.lens === "founder" ? "investor" : classification.lens
+    };
+  }
   const parseSearchInput = (req) => {
     if (req.method === "GET") {
       const query2 = typeof req.query.query === "string" ? req.query.query : void 0;
@@ -16575,7 +17030,8 @@ Entity extraction rules:
     }
     const sessionKey = getSessionKey(req);
     const sessionCtx = getSessionContext(sessionKey);
-    const classification = await classifyWithSession(query.trim(), sessionCtx);
+    const rawClassification = await classifyWithSession(query.trim(), sessionCtx);
+    const classification = normalizeClassificationForDirectEntityQuery(query.trim(), rawClassification);
     const inferredLens = inferExplicitLensFromQuery(query.trim());
     const resolvedLens = lens && !(lens === "founder" && inferredLens && inferredLens !== "founder") ? lens : inferredLens ?? classification.lens;
     const isStream = req.query.stream === "true";
@@ -17936,7 +18392,7 @@ import { Router as Router2 } from "express";
 
 // packages/mcp-local/src/sync/founderEpisodeStore.ts
 init_db();
-import { createHash as createHash2 } from "node:crypto";
+import { createHash as createHash3 } from "node:crypto";
 function json2(value, fallback = {}) {
   return JSON.stringify(value ?? fallback);
 }
@@ -17949,7 +18405,17 @@ function parseJson2(value, fallback) {
   }
 }
 function hashPayload2(payload) {
-  return createHash2("sha256").update(JSON.stringify(payload ?? null)).digest("hex");
+  return createHash3("sha256").update(JSON.stringify(payload ?? null)).digest("hex");
+}
+function ensureFounderEpisodeColumns() {
+  const db = getDb();
+  const columns = db.prepare("PRAGMA table_info(founder_harness_episodes)").all();
+  if (!columns.some((column) => column.name === "workflow_asset_id")) {
+    db.exec("ALTER TABLE founder_harness_episodes ADD COLUMN workflow_asset_id TEXT");
+  }
+  if (!columns.some((column) => column.name === "workflow_envelope_id")) {
+    db.exec("ALTER TABLE founder_harness_episodes ADD COLUMN workflow_envelope_id TEXT");
+  }
 }
 function parseRow(row) {
   return {
@@ -17966,6 +18432,8 @@ function parseRow(row) {
     entityName: row.entity_name ?? null,
     packetId: row.packet_id ?? null,
     packetType: row.packet_type ?? null,
+    workflowAssetId: row.workflow_asset_id ?? null,
+    workflowEnvelopeId: row.workflow_envelope_id ?? null,
     contextId: row.context_id ?? null,
     taskId: row.task_id ?? null,
     summary: row.summary ?? null,
@@ -17986,6 +18454,7 @@ function parseRow(row) {
   };
 }
 function startFounderEpisode(input) {
+  ensureFounderEpisodeColumns();
   const db = getDb();
   const now = (/* @__PURE__ */ new Date()).toISOString();
   const episodeId = input.episodeId ?? genId("episode");
@@ -18010,6 +18479,8 @@ function startFounderEpisode(input) {
           query = COALESCE(?, query),
           lens = COALESCE(?, lens),
           entity_name = COALESCE(?, entity_name),
+          workflow_asset_id = COALESCE(?, workflow_asset_id),
+          workflow_envelope_id = COALESCE(?, workflow_envelope_id),
           state_before_json = COALESCE(?, state_before_json),
           state_before_hash = COALESCE(?, state_before_hash),
           spans_json = CASE WHEN length(COALESCE(spans_json, '')) > 2 THEN spans_json ELSE ? END,
@@ -18027,6 +18498,8 @@ function startFounderEpisode(input) {
       input.query ?? null,
       input.lens ?? null,
       input.entityName ?? null,
+      input.workflowAssetId ?? null,
+      input.workflowEnvelopeId ?? null,
       input.stateBefore ? json2(input.stateBefore) : null,
       stateBeforeHash,
       json2(spans, []),
@@ -18039,9 +18512,9 @@ function startFounderEpisode(input) {
       INSERT INTO founder_harness_episodes (
         episode_id, correlation_id, session_key, workspace_id, company_key,
         surface, episode_type, status, query, lens, entity_name, state_before_json,
-        state_before_hash, spans_json, tools_invoked_json, artifacts_produced_json,
+        workflow_asset_id, workflow_envelope_id, state_before_hash, spans_json, tools_invoked_json, artifacts_produced_json,
         metadata_json, started_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, '[]', '[]', ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       episodeId,
       correlationId,
@@ -18050,12 +18523,17 @@ function startFounderEpisode(input) {
       input.companyKey ?? null,
       input.surface,
       input.episodeType,
+      "active",
       input.query ?? null,
       input.lens ?? null,
       input.entityName ?? null,
       json2(input.stateBefore),
+      input.workflowAssetId ?? null,
+      input.workflowEnvelopeId ?? null,
       stateBeforeHash,
       json2(spans, []),
+      "[]",
+      "[]",
       input.metadata ? json2(input.metadata) : null,
       now,
       now
@@ -18064,6 +18542,7 @@ function startFounderEpisode(input) {
   return getFounderEpisode(episodeId);
 }
 function appendFounderEpisodeSpan(input) {
+  ensureFounderEpisodeColumns();
   const db = getDb();
   const existing = getFounderEpisode(input.episodeId);
   if (!existing) {
@@ -18080,6 +18559,8 @@ function appendFounderEpisodeSpan(input) {
         entity_name = COALESCE(?, entity_name),
         packet_id = COALESCE(?, packet_id),
         packet_type = COALESCE(?, packet_type),
+        workflow_asset_id = COALESCE(?, workflow_asset_id),
+        workflow_envelope_id = COALESCE(?, workflow_envelope_id),
         workspace_id = COALESCE(?, workspace_id),
         company_key = COALESCE(?, company_key),
         metadata_json = ?,
@@ -18092,6 +18573,8 @@ function appendFounderEpisodeSpan(input) {
     input.entityName ?? null,
     input.packetId ?? null,
     input.packetType ?? null,
+    input.workflowAssetId ?? null,
+    input.workflowEnvelopeId ?? null,
     input.workspaceId ?? null,
     input.companyKey ?? null,
     json2(metadata),
@@ -18101,6 +18584,7 @@ function appendFounderEpisodeSpan(input) {
   return getFounderEpisode(input.episodeId);
 }
 function finalizeFounderEpisode(input) {
+  ensureFounderEpisodeColumns();
   const db = getDb();
   const existing = getFounderEpisode(input.episodeId);
   if (!existing) {
@@ -18127,6 +18611,8 @@ function finalizeFounderEpisode(input) {
         entity_name = COALESCE(?, entity_name),
         packet_id = COALESCE(?, packet_id),
         packet_type = COALESCE(?, packet_type),
+        workflow_asset_id = COALESCE(?, workflow_asset_id),
+        workflow_envelope_id = COALESCE(?, workflow_envelope_id),
         workspace_id = COALESCE(?, workspace_id),
         company_key = COALESCE(?, company_key),
         spans_json = ?,
@@ -18149,6 +18635,8 @@ function finalizeFounderEpisode(input) {
     input.entityName ?? null,
     input.packetId ?? null,
     input.packetType ?? null,
+    input.workflowAssetId ?? null,
+    input.workflowEnvelopeId ?? null,
     input.workspaceId ?? null,
     input.companyKey ?? null,
     json2(spans, []),
@@ -18160,6 +18648,7 @@ function finalizeFounderEpisode(input) {
   return getFounderEpisode(input.episodeId);
 }
 function getFounderEpisode(episodeId) {
+  ensureFounderEpisodeColumns();
   const row = getDb().prepare(`
     SELECT *
     FROM founder_harness_episodes
@@ -18169,6 +18658,7 @@ function getFounderEpisode(episodeId) {
   return row ? parseRow(row) : null;
 }
 function listFounderEpisodes(input = {}) {
+  ensureFounderEpisodeColumns();
   const limit = Math.min(Math.max(input.limit ?? 10, 1), 50);
   const db = getDb();
   let rows = [];
@@ -18494,6 +18984,50 @@ function getContextId(packet) {
 function getTaskId(packet, target) {
   return `task:${target}:${packet.packetId ?? slugify(`${packet.canonicalEntity ?? packet.entityName ?? "nodebench"}-${packet.query ?? "query"}`)}`;
 }
+function getWorkflowAsset(packet) {
+  const packetId = packet.packetId ?? slugify(`${packet.canonicalEntity ?? packet.entityName ?? "nodebench"}-${packet.query ?? "query"}`);
+  const packetType = packet.packetType ?? "founder_packet";
+  const canonicalEntity = packet.canonicalEntity ?? packet.entityName ?? "NodeBench";
+  return {
+    assetId: packet.workflowAsset?.assetId ?? `asset:${slugify(canonicalEntity)}:${packetId}`,
+    assetType: packet.workflowAsset?.assetType ?? "research_packet",
+    state: packet.workflowAsset?.state ?? "generated",
+    canonicalPacketId: packet.workflowAsset?.canonicalPacketId ?? packetId,
+    canonicalPacketType: packet.workflowAsset?.canonicalPacketType ?? packetType,
+    canonicalEntity: packet.workflowAsset?.canonicalEntity ?? canonicalEntity,
+    generatedAt: packet.workflowAsset?.generatedAt ?? (/* @__PURE__ */ new Date()).toISOString(),
+    stages: packet.workflowAsset?.stages?.length ? packet.workflowAsset.stages : ["ask_surface", "shared_context_ready"],
+    replayReady: packet.workflowAsset?.replayReady ?? true,
+    delegationReady: packet.workflowAsset?.delegationReady ?? Boolean(packet.recommendedNextAction),
+    currentContextId: packet.workflowAsset?.currentContextId,
+    lastTaskId: packet.workflowAsset?.lastTaskId,
+    targetAgents: packet.workflowAsset?.targetAgents?.length ? packet.workflowAsset.targetAgents : ["claude_code", "openclaw"],
+    envelopeId: packet.workflowAsset?.envelopeId,
+    envelopeType: packet.workflowAsset?.envelopeType,
+    lineage: {
+      sourceRunId: packet.workflowAsset?.lineage?.sourceRunId ?? (typeof packet.packetId === "string" ? packet.packetId : void 0),
+      sourceContextId: packet.workflowAsset?.lineage?.sourceContextId,
+      parentAssetId: packet.workflowAsset?.lineage?.parentAssetId
+    }
+  };
+}
+function withWorkflowAsset(packet, updates) {
+  const workflowAsset = {
+    ...getWorkflowAsset(packet),
+    ...updates,
+    lineage: {
+      ...getWorkflowAsset(packet).lineage,
+      ...updates?.lineage ?? {}
+    }
+  };
+  return {
+    ...packet,
+    packetId: packet.packetId ?? workflowAsset.canonicalPacketId,
+    packetType: packet.packetType ?? workflowAsset.canonicalPacketType,
+    canonicalEntity: packet.canonicalEntity ?? workflowAsset.canonicalEntity,
+    workflowAsset
+  };
+}
 function getStrategicTaskId(packet, target, angle) {
   return `${getTaskId(packet, target)}:${slugify(angle.id ?? angle.title ?? "issue")}`;
 }
@@ -18529,12 +19063,14 @@ function buildHandoffPrompt(args) {
   const entity = args.packet.canonicalEntity ?? args.packet.entityName ?? "the company";
   const workspaceId = getWorkspaceId(args.packet);
   const subject = args.subject ?? getSubject(args.packet);
+  const workflowAsset = getWorkflowAsset(args.packet);
   return [
     `Use NodeBench MCP as the truth layer for this task. You are the ${target.label} worker.`,
     "",
     `Goal: ${args.goal}`,
     `Workspace: ${workspaceId}`,
     `Shared context packet: ${args.contextId}`,
+    `Workflow asset: ${workflowAsset.assetId}`,
     ...args.parentContextId ? [`Parent packet: ${args.parentContextId}`] : [],
     `Shared task: ${args.taskId}`,
     "",
@@ -18543,11 +19079,13 @@ function buildHandoffPrompt(args) {
     `2. Pull the packet with pull_shared_context using {"workspaceId":"${workspaceId}","subjectIncludes":"${subject}","limit":1}.`,
     "3. Use get_shared_context_snapshot if you need to inspect recent packets and task handoffs.",
     `4. Treat ${entity} as the canonical subject. Do not restate or re-infer the company from scratch unless the packet is contradicted.`,
-    "5. Execute the requested implementation, keeping changes tied to the packet's next action and contradictions.",
-    "6. When done, publish any updated packet or verdict back through NodeBench MCP so the shared truth stays current."
+    `5. Treat the workflow stages as the durable spine: ${workflowAsset.stages.join(" -> ")}.`,
+    "6. Execute the requested implementation, keeping changes tied to the packet's next action and contradictions.",
+    "7. When done, publish any updated packet or verdict back through NodeBench MCP so the shared truth stays current."
   ].join("\n");
 }
 function registerWebPeer(packet) {
+  const workflowAsset = getWorkflowAsset(packet);
   registerSharedContextPeer({
     peerId: WEB_PRODUCER_PEER_ID,
     product: "nodebench",
@@ -18564,7 +19102,9 @@ function registerWebPeer(packet) {
     },
     metadata: {
       packetId: packet.packetId ?? null,
-      packetType: packet.packetType ?? null
+      packetType: packet.packetType ?? null,
+      workflowAssetId: workflowAsset.assetId,
+      workflowAssetType: workflowAsset.assetType
     },
     queueForSync: false
   });
@@ -18643,6 +19183,7 @@ function buildStrategicIssuePayload(args) {
   const entitySlug = slugify(packet.canonicalEntity ?? packet.entityName ?? "nodebench");
   const workspaceId = getWorkspaceId(packet);
   const parentContextId = getContextId(packet);
+  const workflowAsset = getWorkflowAsset(packet);
   const matchedSourceRefs = (packet.sourceRefs ?? []).filter((source) => (angle.evidenceRefIds ?? []).includes(String(source.id ?? ""))).map((source) => source.href ?? source.label ?? source.title ?? source.id ?? "").filter(Boolean);
   return {
     contextId: getStrategicContextId(packet, angle),
@@ -18688,6 +19229,8 @@ function buildStrategicIssuePayload(args) {
     metadata: {
       packetId: packet.packetId ?? null,
       packetType: packet.packetType ?? null,
+      workflowAssetId: workflowAsset.assetId,
+      workflowAssetParentId: workflowAsset.assetId,
       proofStatus: packet.proofStatus ?? null,
       strategicAngleId: angle.id ?? null,
       strategicAngleStatus: angle.status ?? null,
@@ -19122,7 +19665,7 @@ function createSharedContextRouter() {
   });
   router.post("/publish", async (req, res) => {
     const body = req.body ?? {};
-    const packet = body.packet;
+    const packet = body.packet ? withWorkflowAsset(body.packet) : void 0;
     if (!packet?.answer || !(packet.canonicalEntity ?? packet.entityName)) {
       return res.status(400).json({
         success: false,
@@ -19132,6 +19675,14 @@ function createSharedContextRouter() {
     const contextId = getContextId(packet);
     const workspaceId = getWorkspaceId(packet);
     const strategicAngle = findStrategicAngle(packet, body.strategicAngleId);
+    const publishedPacket = withWorkflowAsset(packet, {
+      state: "published",
+      currentContextId: contextId,
+      stages: Array.from(/* @__PURE__ */ new Set([...getWorkflowAsset(packet).stages, "shared_context_published"])),
+      lineage: {
+        sourceContextId: contextId
+      }
+    });
     const packetPayload = {
       contextId,
       contextType: "entity_packet",
@@ -19143,14 +19694,14 @@ function createSharedContextRouter() {
         `packet:${packet.packetType ?? "founder_packet"}`
       ],
       subject: getSubject(packet),
-      summary: summarizePacket(packet),
-      claims: collectClaims(packet),
-      evidenceRefs: collectEvidenceRefs(packet),
-      confidence: typeof packet.confidence === "number" ? Math.max(0, Math.min(1, packet.confidence / 100)) : void 0,
+      summary: summarizePacket(publishedPacket),
+      claims: collectClaims(publishedPacket),
+      evidenceRefs: collectEvidenceRefs(publishedPacket),
+      confidence: typeof publishedPacket.confidence === "number" ? Math.max(0, Math.min(1, publishedPacket.confidence / 100)) : void 0,
       lineage: {
-        sourceRunId: typeof packet.packetId === "string" ? packet.packetId : void 0
+        sourceRunId: typeof publishedPacket.packetId === "string" ? publishedPacket.packetId : void 0
       },
-      freshness: getFreshness(packet)
+      freshness: getFreshness(publishedPacket)
     };
     try {
       if (useConvex()) {
@@ -19166,7 +19717,7 @@ function createSharedContextRouter() {
         await publishPacketConvex(packetPayload);
         let issueContextId = null;
         if (strategicAngle) {
-          const issuePayload = buildStrategicIssuePayload({ packet, angle: strategicAngle });
+          const issuePayload = buildStrategicIssuePayload({ packet: publishedPacket, angle: strategicAngle });
           issueContextId = issuePayload.contextId ?? null;
           await publishPacketConvex(issuePayload);
         }
@@ -19179,14 +19730,14 @@ function createSharedContextRouter() {
               type: strategicAngle ? "strategic_issue_published" : "packet_published",
               status: "ok",
               label: strategicAngle ? "Published strategic issue packet" : "Published founder packet",
-              detail: strategicAngle?.title ?? getSubject(packet),
+              detail: strategicAngle?.title ?? getSubject(publishedPacket),
               timestamp: (/* @__PURE__ */ new Date()).toISOString(),
               contextId: strategicAngle ? issueContextId ?? contextId : contextId
             },
             contextId: strategicAngle ? issueContextId ?? contextId : contextId,
-            entityName: packet.canonicalEntity ?? packet.entityName,
-            packetId: packet.packetId,
-            packetType: packet.packetType,
+            entityName: publishedPacket.canonicalEntity ?? publishedPacket.entityName,
+            packetId: publishedPacket.packetId,
+            packetType: publishedPacket.packetType,
             workspaceId,
             metadata: {
               publishedVia: "shared_context",
@@ -19200,34 +19751,40 @@ function createSharedContextRouter() {
           parentContextId: strategicAngle ? contextId : null,
           workspaceId,
           strategicAngleId: strategicAngle?.id ?? null,
-          resource: buildPacketResourceHints(strategicAngle ? issueContextId ?? contextId : contextId, packet),
+          workflowAsset: withWorkflowAsset(publishedPacket, {
+            currentContextId: strategicAngle ? issueContextId ?? contextId : contextId,
+            lineage: { sourceContextId: strategicAngle ? issueContextId ?? contextId : contextId }
+          }).workflowAsset,
+          resource: buildPacketResourceHints(strategicAngle ? issueContextId ?? contextId : contextId, publishedPacket),
           snapshot
         });
       }
-      registerWebPeer(packet);
+      registerWebPeer(publishedPacket);
       publishSharedContextPacket({
         ...packetPayload,
-        stateSnapshot: packet,
+        stateSnapshot: publishedPacket,
         permissions: {
           visibility: "workspace",
           allowedRoles: ["researcher", "compiler", "judge", "router"]
         },
         nextActions: [
-          ...(packet.interventions ?? []).map((item) => item.action ?? "").filter(Boolean),
-          ...(packet.nextQuestions ?? []).slice(0, 3)
+          ...(publishedPacket.interventions ?? []).map((item) => item.action ?? "").filter(Boolean),
+          ...(publishedPacket.nextQuestions ?? []).slice(0, 3)
         ].slice(0, 6),
         metadata: {
-          query: packet.query ?? null,
-          packetId: packet.packetId ?? null,
-          packetType: packet.packetType ?? null,
-          proofStatus: packet.proofStatus ?? null,
-          recommendedNextAction: packet.recommendedNextAction ?? null
+          query: publishedPacket.query ?? null,
+          packetId: publishedPacket.packetId ?? null,
+          packetType: publishedPacket.packetType ?? null,
+          proofStatus: publishedPacket.proofStatus ?? null,
+          recommendedNextAction: publishedPacket.recommendedNextAction ?? null,
+          workflowAssetId: publishedPacket.workflowAsset?.assetId ?? null,
+          workflowAssetState: publishedPacket.workflowAsset?.state ?? null
         },
         queueForSync: false
       });
       let responseContextId = contextId;
       if (strategicAngle) {
-        const issuePayload = buildStrategicIssuePayload({ packet, angle: strategicAngle });
+        const issuePayload = buildStrategicIssuePayload({ packet: publishedPacket, angle: strategicAngle });
         publishSharedContextPacket(issuePayload);
         responseContextId = issuePayload.contextId ?? contextId;
       }
@@ -19239,14 +19796,14 @@ function createSharedContextRouter() {
             type: strategicAngle ? "strategic_issue_published" : "packet_published",
             status: "ok",
             label: strategicAngle ? "Published strategic issue packet" : "Published founder packet",
-            detail: strategicAngle?.title ?? getSubject(packet),
+            detail: strategicAngle?.title ?? getSubject(publishedPacket),
             timestamp: (/* @__PURE__ */ new Date()).toISOString(),
             contextId: responseContextId
           },
           contextId: responseContextId,
-          entityName: packet.canonicalEntity ?? packet.entityName,
-          packetId: packet.packetId,
-          packetType: packet.packetType,
+          entityName: publishedPacket.canonicalEntity ?? publishedPacket.entityName,
+          packetId: publishedPacket.packetId,
+          packetType: publishedPacket.packetType,
           workspaceId,
           metadata: {
             publishedVia: "shared_context",
@@ -19260,7 +19817,11 @@ function createSharedContextRouter() {
         parentContextId: strategicAngle ? contextId : null,
         workspaceId,
         strategicAngleId: strategicAngle?.id ?? null,
-        resource: buildPacketResourceHints(responseContextId, packet),
+        workflowAsset: withWorkflowAsset(publishedPacket, {
+          currentContextId: responseContextId,
+          lineage: { sourceContextId: responseContextId }
+        }).workflowAsset,
+        resource: buildPacketResourceHints(responseContextId, publishedPacket),
         snapshot: getSharedContextSnapshot(6)
       });
     } catch (error) {
@@ -19272,7 +19833,7 @@ function createSharedContextRouter() {
   });
   router.post("/delegate", async (req, res) => {
     const body = req.body ?? {};
-    const packet = body.packet;
+    const packet = body.packet ? withWorkflowAsset(body.packet) : void 0;
     const target = body.targetAgent ?? "claude_code";
     if (!packet?.answer || !(packet.canonicalEntity ?? packet.entityName)) {
       return res.status(400).json({
@@ -19291,6 +19852,15 @@ function createSharedContextRouter() {
     const strategicAngle = findStrategicAngle(packet, body.strategicAngleId);
     const delegateContextId = strategicAngle ? getStrategicContextId(packet, strategicAngle) : contextId;
     try {
+      const delegatedPacket = withWorkflowAsset(packet, {
+        state: "delegated",
+        currentContextId: delegateContextId,
+        stages: Array.from(/* @__PURE__ */ new Set([...getWorkflowAsset(packet).stages, "shared_context_published", "delegation_prepared"])),
+        targetAgents: Array.from(/* @__PURE__ */ new Set([...getWorkflowAsset(packet).targetAgents ?? [], target])),
+        lineage: {
+          sourceContextId: delegateContextId
+        }
+      });
       if (useConvex()) {
         await registerPeerConvex({
           peerId: WEB_PRODUCER_PEER_ID,
@@ -19315,25 +19885,25 @@ function createSharedContextRouter() {
           workspaceId,
           scope: [
             "workspace",
-            `entity:${slugify(packet.canonicalEntity ?? packet.entityName ?? "nodebench")}`,
+            `entity:${slugify(delegatedPacket.canonicalEntity ?? delegatedPacket.entityName ?? "nodebench")}`,
             `delegate:${target}`
           ],
-          subject: getSubject(packet),
-          summary: summarizePacket(packet),
-          claims: collectClaims(packet),
-          evidenceRefs: collectEvidenceRefs(packet),
-          confidence: typeof packet.confidence === "number" ? Math.max(0, Math.min(1, packet.confidence / 100)) : void 0,
+          subject: getSubject(delegatedPacket),
+          summary: summarizePacket(delegatedPacket),
+          claims: collectClaims(delegatedPacket),
+          evidenceRefs: collectEvidenceRefs(delegatedPacket),
+          confidence: typeof delegatedPacket.confidence === "number" ? Math.max(0, Math.min(1, delegatedPacket.confidence / 100)) : void 0,
           lineage: {
-            sourceRunId: typeof packet.packetId === "string" ? packet.packetId : void 0
+            sourceRunId: typeof delegatedPacket.packetId === "string" ? delegatedPacket.packetId : void 0
           },
-          freshness: getFreshness(packet)
+          freshness: getFreshness(delegatedPacket)
         });
         if (strategicAngle) {
-          await publishPacketConvex(buildStrategicIssuePayload({ packet, angle: strategicAngle, target }));
+          await publishPacketConvex(buildStrategicIssuePayload({ packet: delegatedPacket, angle: strategicAngle, target }));
         }
       } else {
-        registerWebPeer(packet);
-        registerDelegatePeer(packet, target);
+        registerWebPeer(delegatedPacket);
+        registerDelegatePeer(delegatedPacket, target);
         publishSharedContextPacket({
           contextId,
           contextType: "entity_packet",
@@ -19341,44 +19911,52 @@ function createSharedContextRouter() {
           workspaceId,
           scope: [
             "workspace",
-            `entity:${slugify(packet.canonicalEntity ?? packet.entityName ?? "nodebench")}`,
-            `packet:${packet.packetType ?? "founder_packet"}`,
+            `entity:${slugify(delegatedPacket.canonicalEntity ?? delegatedPacket.entityName ?? "nodebench")}`,
+            `packet:${delegatedPacket.packetType ?? "founder_packet"}`,
             `delegate:${target}`
           ],
-          subject: getSubject(packet),
-          summary: summarizePacket(packet),
-          claims: collectClaims(packet),
-          evidenceRefs: collectEvidenceRefs(packet),
-          stateSnapshot: packet,
-          freshness: getFreshness(packet),
+          subject: getSubject(delegatedPacket),
+          summary: summarizePacket(delegatedPacket),
+          claims: collectClaims(delegatedPacket),
+          evidenceRefs: collectEvidenceRefs(delegatedPacket),
+          stateSnapshot: delegatedPacket,
+          freshness: getFreshness(delegatedPacket),
           permissions: {
             visibility: "workspace",
             allowedRoles: ["researcher", "compiler", "judge", "router"]
           },
-          confidence: typeof packet.confidence === "number" ? Math.max(0, Math.min(1, packet.confidence / 100)) : void 0,
+          confidence: typeof delegatedPacket.confidence === "number" ? Math.max(0, Math.min(1, delegatedPacket.confidence / 100)) : void 0,
           lineage: {
-            sourceRunId: typeof packet.packetId === "string" ? packet.packetId : void 0
+            sourceRunId: typeof delegatedPacket.packetId === "string" ? delegatedPacket.packetId : void 0
           },
           nextActions: [
-            ...(packet.interventions ?? []).map((item) => item.action ?? "").filter(Boolean),
-            ...(packet.nextQuestions ?? []).slice(0, 3)
+            ...(delegatedPacket.interventions ?? []).map((item) => item.action ?? "").filter(Boolean),
+            ...(delegatedPacket.nextQuestions ?? []).slice(0, 3)
           ].slice(0, 6),
           metadata: {
-            query: packet.query ?? null,
-            packetId: packet.packetId ?? null,
-            packetType: packet.packetType ?? null,
-            proofStatus: packet.proofStatus ?? null,
-            recommendedNextAction: packet.recommendedNextAction ?? null,
-            targetAgent: target
+            query: delegatedPacket.query ?? null,
+            packetId: delegatedPacket.packetId ?? null,
+            packetType: delegatedPacket.packetType ?? null,
+            proofStatus: delegatedPacket.proofStatus ?? null,
+            recommendedNextAction: delegatedPacket.recommendedNextAction ?? null,
+            targetAgent: target,
+            workflowAssetId: delegatedPacket.workflowAsset?.assetId ?? null,
+            workflowAssetState: delegatedPacket.workflowAsset?.state ?? null
           },
           queueForSync: false
         });
         if (strategicAngle) {
-          publishSharedContextPacket(buildStrategicIssuePayload({ packet, angle: strategicAngle, target }));
+          publishSharedContextPacket(buildStrategicIssuePayload({ packet: delegatedPacket, angle: strategicAngle, target }));
         }
       }
-      const goal = body.goal?.trim() || strategicAngle?.nextQuestion?.trim() || strategicAngle?.summary?.trim() || packet.recommendedNextAction?.trim() || packet.nextQuestions?.[0]?.trim() || "Continue implementation from the published NodeBench packet.";
-      const taskId = strategicAngle ? getStrategicTaskId(packet, target, strategicAngle) : getTaskId(packet, target);
+      const goal = body.goal?.trim() || strategicAngle?.nextQuestion?.trim() || strategicAngle?.summary?.trim() || delegatedPacket.recommendedNextAction?.trim() || delegatedPacket.nextQuestions?.[0]?.trim() || "Continue implementation from the published NodeBench packet.";
+      const taskId = strategicAngle ? getStrategicTaskId(delegatedPacket, target, strategicAngle) : getTaskId(delegatedPacket, target);
+      const delegatedWorkflowAsset = withWorkflowAsset(delegatedPacket, {
+        lastTaskId: taskId,
+        currentContextId: delegateContextId,
+        targetAgents: Array.from(/* @__PURE__ */ new Set([...delegatedPacket.workflowAsset?.targetAgents ?? [], target])),
+        stages: Array.from(/* @__PURE__ */ new Set([...delegatedPacket.workflowAsset?.stages ?? [], "delegation_handoff_created"]))
+      }).workflowAsset;
       if (useConvex()) {
         await proposeTaskConvex({
           taskId,
@@ -19390,9 +19968,10 @@ function createSharedContextRouter() {
             targetLabel: DELEGATE_TARGETS[target].label,
             goal,
             installCommand: DELEGATE_TARGETS[target].installCommand,
-            proofStatus: packet.proofStatus ?? null,
+            proofStatus: delegatedPacket.proofStatus ?? null,
             strategicAngleId: strategicAngle?.id ?? null,
-            strategicAngleTitle: strategicAngle?.title ?? null
+            strategicAngleTitle: strategicAngle?.title ?? null,
+            workflowAssetId: delegatedWorkflowAsset.assetId
           },
           inputContextIds: strategicAngle ? [contextId, delegateContextId] : [contextId],
           reason: goal
@@ -19413,13 +19992,14 @@ function createSharedContextRouter() {
             },
             contextId: delegateContextId,
             taskId,
-            entityName: packet.canonicalEntity ?? packet.entityName,
-            packetId: packet.packetId,
-            packetType: packet.packetType,
+            entityName: delegatedPacket.canonicalEntity ?? delegatedPacket.entityName,
+            packetId: delegatedPacket.packetId,
+            packetType: delegatedPacket.packetType,
             workspaceId,
             metadata: {
               targetAgent: target,
-              strategicAngleId: strategicAngle?.id ?? null
+              strategicAngleId: strategicAngle?.id ?? null,
+              workflowAssetId: delegatedWorkflowAsset.assetId
             }
           });
         }
@@ -19433,16 +20013,17 @@ function createSharedContextRouter() {
           targetAgent: target,
           targetLabel: DELEGATE_TARGETS[target].label,
           installCommand: DELEGATE_TARGETS[target].installCommand,
+          workflowAsset: delegatedWorkflowAsset,
           handoffPrompt: buildHandoffPrompt({
-            packet,
+            packet: { ...delegatedPacket, workflowAsset: delegatedWorkflowAsset },
             contextId: delegateContextId,
             parentContextId: strategicAngle ? contextId : null,
             taskId,
             target,
             goal,
-            subject: strategicAngle ? getStrategicSubject(packet, strategicAngle) : getSubject(packet)
+            subject: strategicAngle ? getStrategicSubject(delegatedPacket, strategicAngle) : getSubject(delegatedPacket)
           }),
-          resource: buildPacketResourceHints(delegateContextId, packet),
+          resource: buildPacketResourceHints(delegateContextId, delegatedPacket),
           snapshot
         });
       }
@@ -19456,17 +20037,19 @@ function createSharedContextRouter() {
           targetLabel: DELEGATE_TARGETS[target].label,
           goal,
           installCommand: DELEGATE_TARGETS[target].installCommand,
-          proofStatus: packet.proofStatus ?? null,
+          proofStatus: delegatedPacket.proofStatus ?? null,
           strategicAngleId: strategicAngle?.id ?? null,
-          strategicAngleTitle: strategicAngle?.title ?? null
+          strategicAngleTitle: strategicAngle?.title ?? null,
+          workflowAssetId: delegatedWorkflowAsset.assetId
         },
         inputContextIds: strategicAngle ? [contextId, delegateContextId] : [contextId],
         reason: goal,
         metadata: {
-          entityName: packet.canonicalEntity ?? packet.entityName ?? "NodeBench",
-          query: packet.query ?? null,
+          entityName: delegatedPacket.canonicalEntity ?? delegatedPacket.entityName ?? "NodeBench",
+          query: delegatedPacket.query ?? null,
           strategicAngleId: strategicAngle?.id ?? null,
-          strategicAngleTitle: strategicAngle?.title ?? null
+          strategicAngleTitle: strategicAngle?.title ?? null,
+          workflowAssetId: delegatedWorkflowAsset.assetId
         },
         queueForSync: false
       });
@@ -19485,13 +20068,14 @@ function createSharedContextRouter() {
           },
           contextId: delegateContextId,
           taskId: proposed.taskId,
-          entityName: packet.canonicalEntity ?? packet.entityName,
-          packetId: packet.packetId,
-          packetType: packet.packetType,
+          entityName: delegatedPacket.canonicalEntity ?? delegatedPacket.entityName,
+          packetId: delegatedPacket.packetId,
+          packetType: delegatedPacket.packetType,
           workspaceId,
           metadata: {
             targetAgent: target,
-            strategicAngleId: strategicAngle?.id ?? null
+            strategicAngleId: strategicAngle?.id ?? null,
+            workflowAssetId: delegatedWorkflowAsset.assetId
           }
         });
       }
@@ -19505,16 +20089,17 @@ function createSharedContextRouter() {
         targetAgent: target,
         targetLabel: DELEGATE_TARGETS[target].label,
         installCommand: DELEGATE_TARGETS[target].installCommand,
+        workflowAsset: delegatedWorkflowAsset,
         handoffPrompt: buildHandoffPrompt({
-          packet,
+          packet: { ...delegatedPacket, workflowAsset: delegatedWorkflowAsset },
           contextId: delegateContextId,
           parentContextId: strategicAngle ? contextId : null,
           taskId: proposed.taskId,
           target,
           goal,
-          subject: strategicAngle ? getStrategicSubject(packet, strategicAngle) : getSubject(packet)
+          subject: strategicAngle ? getStrategicSubject(delegatedPacket, strategicAngle) : getSubject(delegatedPacket)
         }),
-        resource: buildPacketResourceHints(delegateContextId, packet),
+        resource: buildPacketResourceHints(delegateContextId, delegatedPacket),
         snapshot: getSharedContextSnapshot(6)
       });
     } catch (error) {

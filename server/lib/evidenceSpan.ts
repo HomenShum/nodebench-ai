@@ -64,6 +64,9 @@ export function createEvidenceSpans(
     title?: string;
     snippet?: string;
     source?: string;
+    kind?: string;
+    corroboration?: "self_reported" | "external";
+    qualityScore?: number;
   }>,
   signals: Array<{
     name?: string;
@@ -86,14 +89,18 @@ export function createEvidenceSpans(
       return name.length > 3 && snippet.toLowerCase().includes(name.slice(0, 20));
     });
 
+    const isExternal = src.corroboration === "external";
+    const isLowSignalKind = src.kind === "official_legal" || src.kind === "official_jobs" || src.kind === "social";
     const status: VerificationStatus =
-      snippet.length > 100 ? "verified"
-        : snippet.length > 30 ? "partial"
-          : "unverified";
+      isLowSignalKind ? "unverified"
+        : isExternal && snippet.length > 100 ? "verified"
+          : snippet.length > 60 ? "partial"
+            : snippet.length > 30 ? "partial"
+              : "unverified";
 
     const confidence =
-      status === "verified" ? 0.85
-        : status === "partial" ? 0.55
+      status === "verified" ? Math.max(0.7, Math.min(0.95, (src.qualityScore ?? 85) / 100))
+        : status === "partial" ? Math.max(0.35, Math.min(0.7, (src.qualityScore ?? 55) / 100))
           : 0.2;
 
     spans.push({

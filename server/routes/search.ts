@@ -40,6 +40,7 @@ import {
 } from "../../packages/mcp-local/src/sync/store.js";
 import { buildContextBundle } from "../../packages/mcp-local/src/tools/contextInjection.js";
 import { evaluateTask } from "../../packages/mcp-local/src/sync/hyperloopEval.js";
+import { buildWorkflowAssetFromEnvelope, createEnvelopeFromResultPacket } from "../lib/workflowEnvelope.js";
 
 const SEARCH_SOURCE = "search_api";
 const CONTROL_PLANE_VIEW_ID = "view:control-plane";
@@ -379,9 +380,83 @@ function dedupeBy<T>(items: T[], keyFn: (item: T) => string): T[] {
   return deduped;
 }
 
+function normalizeSourceTitle(value: unknown, fallback: string): string {
+  const normalized = normalizeClaimText(value, 180);
+  return normalized || fallback;
+}
+
+function isSyntheticMemorySource(source: {
+  href?: string;
+  label?: string;
+  title?: string;
+  domain?: string;
+  type?: string;
+  excerpt?: string;
+}): boolean {
+  const domain = String(source.domain ?? "").toLowerCase();
+  const label = normalizeClaimText(source.label ?? source.title, 180).toLowerCase();
+  const excerpt = normalizeClaimText(source.excerpt, 220).toLowerCase();
+  if (source.href) return false;
+  return (
+    domain === "nodebench memory"
+    || source.type === "doc"
+    || /\b(nodebench memory|change \d+|finding \d+|source \d+)\b/i.test(label)
+    || /\bstructured preview from retained source metadata\b/i.test(excerpt)
+  );
+}
+
+function scoreSourceRef(source: {
+  href?: string;
+  label?: string;
+  title?: string;
+  domain?: string;
+  type?: string;
+  excerpt?: string;
+  status?: string;
+  confidence?: number;
+}): number {
+  const label = normalizeClaimText(source.label ?? source.title, 180).toLowerCase();
+  const excerpt = normalizeClaimText(source.excerpt, 220).toLowerCase();
+  const domain = String(source.domain ?? "").toLowerCase();
+  let score = 0;
+  if (source.href) score += 6;
+  if (source.status === "cited") score += 3;
+  if (typeof source.confidence === "number") score += source.confidence / 25;
+  if (domain && domain !== "nodebench memory") score += 2;
+  if (/\b(linkedin|crunchbase|pitchbook|companieshouse|sec|businesswire|bloomberg|reuters)\b/i.test(`${domain} ${label}`)) score += 3;
+  if (/\b(official|filing|report|press release|company profile)\b/i.test(`${label} ${excerpt}`)) score += 2;
+  if (isSyntheticMemorySource(source)) score -= 8;
+  if (isGenericClaimFiller(`${label} ${excerpt}`)) score -= 6;
+  return score;
+}
+
+function finalizeSourceRefs(sourceRefs: any[]): any[] {
+  const deduped = dedupeBy(sourceRefs, (source) => String(source.href ?? source.label ?? source.id));
+  const externalCount = deduped.filter((source) => Boolean(source.href)).length;
+  const filtered = externalCount >= 2
+    ? deduped.filter((source) => !isSyntheticMemorySource(source))
+    : deduped;
+  return filtered
+    .sort((left, right) => scoreSourceRef(right) - scoreSourceRef(left))
+    .slice(0, 12);
+}
+
 function normalizeSourceRefs(result: any): any[] {
   if (Array.isArray(result?.sourceRefs) && result.sourceRefs.length > 0) {
-    return dedupeBy(result.sourceRefs, (source: any) => String(source.id ?? source.href ?? source.label ?? ""));
+    const normalizedExisting = result.sourceRefs.map((source: any, index: number) => ({
+      id: source.id ?? `source:${index + 1}`,
+      label: normalizeSourceTitle(source.label ?? source.title ?? source.name, source.href ?? `Source ${index + 1}`),
+      href: source.href ?? source.url ?? undefined,
+      type: source.type ?? (source.href || source.url ? "web" : "doc"),
+      status: source.status ?? "cited",
+      title: normalizeSourceTitle(source.title ?? source.label ?? source.name, source.href ?? `Source ${index + 1}`),
+      domain: source.domain ?? toDomain(source.href ?? source.url),
+      publishedAt: source.publishedAtIso ?? source.publishedAt ?? null,
+      thumbnailUrl: source.thumbnailUrl,
+      excerpt: trimText(source.excerpt ?? source.snippet ?? source.summary ?? source.content, 260),
+      confidence: typeof source.confidence === "number" ? source.confidence : undefined,
+    }));
+    return finalizeSourceRefs(normalizedExisting);
   }
 
   const rawSources = [
@@ -391,7 +466,7 @@ function normalizeSourceRefs(result: any): any[] {
 
   const mapped = rawSources.map((source: any, index: number) => {
     const href = source.url ?? source.href ?? undefined;
-    const title = source.title ?? source.label ?? source.name ?? href ?? `Source ${index + 1}`;
+    const title = normalizeSourceTitle(source.title ?? source.label ?? source.name, href ?? `Source ${index + 1}`);
     return {
       id: source.id ?? `source:${index + 1}`,
       label: title,
@@ -407,7 +482,7 @@ function normalizeSourceRefs(result: any): any[] {
     };
   });
 
-  return dedupeBy(mapped, (source) => String(source.href ?? source.label ?? source.id));
+  return finalizeSourceRefs(mapped);
 }
 
 function resolveSourceRefIdsForCandidate(
@@ -542,7 +617,7 @@ function buildBottomLineText(result: any, claimRefs: any[], entityName?: string)
 
 function normalizeClaimRefs(result: any, sourceRefs: any[]): any[] {
   const entityName = getPacketEntityName(result);
-  const defaultSourceIds = sourceRefs.slice(0, 3).map((source) => source.id);
+  const defaultSourceIds = sourceRefs.length === 1 ? sourceRefs.slice(0, 1).map((source) => source.id) : [];
   const claims: Array<any & { _score: number }> = [];
 
   const pushClaim = (candidate: {
@@ -659,16 +734,25 @@ function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[])
   const sourceBacked = citedSourceIds.length > 0;
   const blocks: any[] = [];
   const entityName = getPacketEntityName(result);
+  const claimSourceIdsForBlock = (blockId: string) =>
+    Array.from(
+      new Set(
+        claimRefs
+          .filter((claim) => Array.isArray(claim.answerBlockIds) && claim.answerBlockIds.includes(blockId))
+          .flatMap((claim) => (Array.isArray(claim.sourceRefIds) ? claim.sourceRefIds : [])),
+      ),
+    );
 
   const summaryText = buildBottomLineText(result, claimRefs, entityName);
+  const summarySourceIds = claimSourceIdsForBlock("answer:block:summary");
   if (summaryText) {
     blocks.push({
       id: "answer:block:summary",
       title: "Bottom line",
       text: summaryText,
-      sourceRefIds: citedSourceIds,
+      sourceRefIds: summarySourceIds.length > 0 ? summarySourceIds : citedSourceIds.slice(0, 2),
       claimIds: claimRefs.filter((claim) => claim.answerBlockIds.includes("answer:block:summary")).map((claim) => claim.id),
-      status: blockStatus(citedSourceIds, !sourceBacked),
+      status: blockStatus(summarySourceIds.length > 0 ? summarySourceIds : citedSourceIds.slice(0, 2), !sourceBacked),
     });
   }
 
@@ -676,14 +760,15 @@ function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[])
   const keyFactsText = keyFactClaims
     .map((claim) => `- ${claim.text}`)
     .join("\n");
+  const keyFactsSourceIds = Array.from(new Set(keyFactClaims.flatMap((claim) => claim.sourceRefIds ?? [])));
   if (keyFactsText) {
     blocks.push({
       id: "answer:block:key_facts",
       title: "Key facts and signal readout",
       text: keyFactsText,
-      sourceRefIds: citedSourceIds,
+      sourceRefIds: keyFactsSourceIds,
       claimIds: keyFactClaims.map((claim) => claim.id),
-      status: blockStatus(citedSourceIds, !sourceBacked),
+      status: blockStatus(keyFactsSourceIds, !sourceBacked),
     });
   }
 
@@ -692,14 +777,15 @@ function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[])
     .slice(0, 3)
     .map((change: any) => `- ${change.description ?? String(change)}${change.date ? ` (${change.date})` : ""}`)
     .join("\n");
+  const changeSourceIds = claimSourceIdsForBlock("answer:block:changes");
   if (changesText) {
     blocks.push({
       id: "answer:block:changes",
       title: "What changed",
       text: changesText,
-      sourceRefIds: citedSourceIds,
+      sourceRefIds: changeSourceIds,
       claimIds: claimRefs.filter((claim) => claim.answerBlockIds.includes("answer:block:changes")).map((claim) => claim.id),
-      status: blockStatus(citedSourceIds, !sourceBacked),
+      status: blockStatus(changeSourceIds, !sourceBacked),
     });
   }
 
@@ -719,9 +805,9 @@ function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[])
       id: "answer:block:comparables",
       title: "Competitive frame",
       text: comparablesText,
-      sourceRefIds: citedSourceIds,
+      sourceRefIds: citedSourceIds.slice(0, 2),
       claimIds: [],
-      status: blockStatus(citedSourceIds, !sourceBacked),
+      status: blockStatus(citedSourceIds.slice(0, 2), !sourceBacked),
     });
   }
 
@@ -745,9 +831,9 @@ function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[])
       id: "answer:block:credibility",
       title: "Why this team matters",
       text: credibilityText,
-      sourceRefIds: citedSourceIds,
+      sourceRefIds: [],
       claimIds: [],
-      status: blockStatus(citedSourceIds, true),
+      status: blockStatus([], true),
     });
   }
 
@@ -756,14 +842,15 @@ function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[])
     .slice(0, 3)
     .map((item: any) => `- ${item.claim ?? item.title ?? String(item)}${item.evidence ? `: ${item.evidence}` : ""}`)
     .join("\n");
+  const riskSourceIds = claimSourceIdsForBlock("answer:block:risks");
   if (risksText) {
     blocks.push({
       id: "answer:block:risks",
       title: "Risks and diligence flags",
       text: risksText,
-      sourceRefIds: citedSourceIds,
+      sourceRefIds: riskSourceIds,
       claimIds: claimRefs.filter((claim) => claim.answerBlockIds.includes("answer:block:risks")).map((claim) => claim.id),
-      status: blockStatus(citedSourceIds, true),
+      status: blockStatus(riskSourceIds, true),
     });
   }
 
@@ -776,9 +863,9 @@ function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[])
       id: "answer:block:diligence_questions",
       title: "Next diligence questions",
       text: diligenceQuestionsText,
-      sourceRefIds: citedSourceIds,
+      sourceRefIds: [],
       claimIds: [],
-      status: blockStatus(citedSourceIds, true),
+      status: blockStatus([], true),
     });
   }
 
@@ -788,9 +875,9 @@ function normalizeAnswerBlocks(result: any, sourceRefs: any[], claimRefs: any[])
       id: "answer:block:next",
       title: "Recommended next move",
       text: nextAction.action ?? String(nextAction),
-      sourceRefIds: citedSourceIds,
+      sourceRefIds: [],
       claimIds: [],
-      status: blockStatus(citedSourceIds, true),
+      status: blockStatus([], true),
     });
   }
 
@@ -1246,7 +1333,7 @@ function buildResultPacket(args: {
         && !looksLikeStandalonePersonName(name);
     });
 
-  return {
+  const basePacket = {
     query: args.query,
     entityName,
     answer: summaryBlock?.text ?? result.canonicalEntity?.canonicalMission ?? "",
@@ -1344,6 +1431,38 @@ function buildResultPacket(args: {
       sourceRefs,
       nextActions: result.nextActions ?? [],
     }),
+  };
+
+  const envelope = createEnvelopeFromResultPacket({
+    ...basePacket,
+    packetId: result.packetId,
+    packetType: normalizedIdentity.packetType,
+    classification: normalizedIdentity.classification,
+    lens: args.lens,
+  });
+
+  return {
+    ...basePacket,
+    workflowAsset: buildWorkflowAssetFromEnvelope(
+      {
+        ...basePacket,
+        packetId: result.packetId,
+        packetType: normalizedIdentity.packetType,
+        classification: normalizedIdentity.classification,
+        lens: args.lens,
+      },
+      envelope,
+      {
+        assetType: result.packetType === "issue_packet" ? "issue_packet" : "research_packet",
+        stages: ["legacy_search_dispatch", "proof_decorated", "packetized_truth", "shared_context_ready"],
+        replayReady: Array.isArray(result.trace) ? result.trace.length > 0 : sourceRefs.length > 0,
+        delegationReady: Boolean(result.recommendedNextAction ?? result.nextActions?.length),
+        targetAgents: ["claude_code", "openclaw"],
+        lineage: {
+          sourceRunId: typeof result.packetId === "string" ? result.packetId : undefined,
+        },
+      },
+    ),
   };
 }
 
@@ -1449,15 +1568,20 @@ function decorateResultWithProof(args: {
     ...(strategicAngles.length > 0 ? { strategicAngles } : {}),
   };
 
-  return {
+  const packet = buildResultPacket({
+    query: args.query,
+    lens: args.lens,
     result: decoratedResult,
-    packet: buildResultPacket({
-      query: args.query,
-      lens: args.lens,
-      result: decoratedResult,
-      classification: normalizedIdentity.classification,
-      entityFallback: canonicalEntityName ?? baseResult?.canonicalEntity?.name,
-    }),
+    classification: normalizedIdentity.classification,
+    entityFallback: canonicalEntityName ?? baseResult?.canonicalEntity?.name,
+  });
+
+  return {
+    result: {
+      ...decoratedResult,
+      workflowAsset: packet.workflowAsset,
+    },
+    packet,
     persona,
   };
 }

@@ -146,19 +146,15 @@ describe("ControlPlaneLanding", () => {
       expect((global.fetch as unknown as { mock: { calls: unknown[] } }).mock.calls.length).toBeGreaterThan(0);
     });
 
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/know what you're building/i);
     expect(
-      screen.getByRole("heading", {
-        name: /what do you want nodebench to help with/i,
-      }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/search a company, describe your startup, upload files, or ask what to do next/i),
+      screen.getByPlaceholderText(/search a company, describe your startup, upload files, or ask what to do next/i),
     ).toBeInTheDocument();
     expect(screen.getByTestId("landing-lens-founder")).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByTestId("landing-example-prompts")).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: /analyze my startup idea/i,
+        name: /what am i actually building\?/i,
       }),
     ).toBeInTheDocument();
     expect(
@@ -193,6 +189,7 @@ describe("ControlPlaneLanding", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /hide mcp steps/i })).toBeInTheDocument();
     });
+    expect(screen.getByRole("heading", { name: /already building\? connect your context\./i })).toBeInTheDocument();
   });
 
   it("prepares founder search submission state for live queries", async () => {
@@ -360,6 +357,153 @@ describe("ControlPlaneLanding", () => {
     expect(String(searchCall?.[1]?.body)).toContain("Analyze Cohere competitive position 2026");
     expect(String(searchCall?.[1]?.body)).toContain("founder");
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/api/subconscious/whisper"))).toBe(true);
+  });
+
+  it("prefers the direct live search path over Convex deep-search when live search is forced", async () => {
+    convexSearchMock.isAvailable = true;
+    convexSearchMock.startSearch = vi.fn(async () => "mock-session-id");
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/shared-context/episodes?")) {
+        return {
+          ok: true,
+          json: async () => ({ success: true, episodes: [] }),
+          headers: { get: () => "application/json" },
+        } as Response;
+      }
+      if (url.endsWith("/api/shared-context/episodes/start")) {
+        return {
+          ok: true,
+          json: async () => ({ success: true, episode: { status: "active", spans: [], toolsInvoked: [], artifactsProduced: [] } }),
+          headers: { get: () => "application/json" },
+        } as Response;
+      }
+      if (url.includes("/api/shared-context/episodes/") && url.endsWith("/finalize")) {
+        return {
+          ok: true,
+          json: async () => ({ success: true, episode: { status: "completed", spans: [], toolsInvoked: [], artifactsProduced: [] } }),
+          headers: { get: () => "application/json" },
+        } as Response;
+      }
+      if (url.includes("/pipeline/search")) {
+        return {
+          ok: true,
+          json: async () => ({
+            success: true,
+            classification: "company_search",
+            answer: "Direct pipeline packet",
+            variables: [{ name: "Signal", direction: "up", impact: "high" }],
+            confidence: 72,
+            sourceCount: 2,
+            entityName: "Tests Assured",
+            comparables: [],
+            changes: [],
+            risks: [],
+            sourceRefs: [],
+            answerBlocks: [],
+            claimRefs: [],
+          }),
+          headers: { get: () => "application/json" },
+        } as Response;
+      }
+      return {
+        ok: true,
+        json: async () => ({ success: true }),
+        headers: { get: () => "application/json" },
+      } as Response;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ControlPlaneLanding onNavigate={vi.fn()} />);
+
+    fireEvent.change(screen.getByLabelText(/search nodebench/i), {
+      target: { value: "tests assured" },
+    });
+    fireEvent.click(screen.getByTestId("landing-search-submit"));
+
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/pipeline/search"))).toBe(true);
+    });
+
+    expect(convexSearchMock.startSearch).not.toHaveBeenCalled();
+  });
+
+  it("shows the simplified founder loading state during forced live search and hides the legacy stack", async () => {
+    let resolvePipelineSearch: ((value: Response) => void) | null = null;
+
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/shared-context/episodes?")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, episodes: [] }),
+          headers: { get: () => "application/json" },
+        } as Response);
+      }
+      if (url.endsWith("/api/shared-context/episodes/start")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, episode: { status: "active", spans: [], toolsInvoked: [], artifactsProduced: [] } }),
+          headers: { get: () => "application/json" },
+        } as Response);
+      }
+      if (url.includes("/api/shared-context/episodes/") && url.endsWith("/finalize")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, episode: { status: "completed", spans: [], toolsInvoked: [], artifactsProduced: [] } }),
+          headers: { get: () => "application/json" },
+        } as Response);
+      }
+      if (url.includes("/pipeline/search")) {
+        return new Promise<Response>((resolve) => {
+          resolvePipelineSearch = resolve;
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ success: true }),
+        headers: { get: () => "application/json" },
+      } as Response);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ControlPlaneLanding onNavigate={vi.fn()} />);
+
+    fireEvent.change(screen.getByLabelText(/search nodebench/i), {
+      target: { value: "tests assured" },
+    });
+    fireEvent.click(screen.getByTestId("landing-search-submit"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("landing-live-loading")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/building a cited founder packet for tests assured/i)).toBeInTheDocument();
+    expect(screen.queryByText(/agent network active/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /new conversation/i })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("landing-founder-episode")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("landing-search-trace")).not.toBeInTheDocument();
+
+    resolvePipelineSearch?.({
+      ok: true,
+      json: async () => ({
+        success: true,
+        classification: "company_search",
+        answer: "Tests Assured provides QA automation services for enterprise teams.",
+        variables: [{ name: "Signal", direction: "up", impact: "high" }],
+        confidence: 72,
+        sourceCount: 2,
+        entityName: "Tests Assured",
+        comparables: [],
+        changes: [],
+        risks: [],
+        sourceRefs: [],
+        answerBlocks: [],
+        claimRefs: [],
+      }),
+      headers: { get: () => "application/json" },
+    } as Response);
   });
 
   it("handles text/event-stream search responses and does not fall back when the stream completes successfully", async () => {

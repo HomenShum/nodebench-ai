@@ -475,6 +475,29 @@ export interface ResultFounderOperatingModel {
   benchmarkOracles: ResultBenchmarkOracleDefinition[];
 }
 
+export interface ResultWorkflowAsset {
+  assetId: string;
+  assetType: "research_packet" | "issue_packet" | "workflow_template" | "delegation_packet";
+  state: "generated" | "published" | "delegated";
+  canonicalPacketId: string;
+  canonicalPacketType: string;
+  canonicalEntity: string;
+  generatedAt: string;
+  stages: string[];
+  replayReady: boolean;
+  delegationReady: boolean;
+  currentContextId?: string;
+  lastTaskId?: string;
+  targetAgents?: string[];
+  envelopeId?: string;
+  envelopeType?: "search_result" | "context_handoff" | "episode_trace" | "workflow_replay" | "retention_sync";
+  lineage?: {
+    sourceRunId?: string;
+    sourceContextId?: string;
+    parentAssetId?: string;
+  };
+}
+
 export type ForecastTrendDirection =
   | "improving"
   | "stable"
@@ -585,6 +608,7 @@ export interface ResultPacket {
   benchmarkEvidence?: ResultAutonomyBenchmarkRun[];
   workflowComparison?: ResultWorkflowPathComparison;
   operatingModel?: ResultFounderOperatingModel;
+  workflowAsset?: ResultWorkflowAsset;
   distributionSurfaceStatus?: ResultDistributionSurfaceStatus[];
   companyReadinessPacket?: ResultCompanyReadinessPacket;
   companyNamingPack?: ResultCompanyNamingPack;

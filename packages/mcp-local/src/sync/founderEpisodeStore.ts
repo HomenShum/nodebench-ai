@@ -19,6 +19,8 @@ export interface FounderEpisodeRecord {
   entityName?: string | null;
   packetId?: string | null;
   packetType?: string | null;
+  workflowAssetId?: string | null;
+  workflowEnvelopeId?: string | null;
   contextId?: string | null;
   taskId?: string | null;
   summary?: string | null;
@@ -55,6 +57,17 @@ function hashPayload(payload: unknown): string {
   return createHash("sha256").update(JSON.stringify(payload ?? null)).digest("hex");
 }
 
+function ensureFounderEpisodeColumns(): void {
+  const db = getDb();
+  const columns = db.prepare("PRAGMA table_info(founder_harness_episodes)").all() as Array<{ name: string }>;
+  if (!columns.some((column) => column.name === "workflow_asset_id")) {
+    db.exec("ALTER TABLE founder_harness_episodes ADD COLUMN workflow_asset_id TEXT");
+  }
+  if (!columns.some((column) => column.name === "workflow_envelope_id")) {
+    db.exec("ALTER TABLE founder_harness_episodes ADD COLUMN workflow_envelope_id TEXT");
+  }
+}
+
 function parseRow(row: any): FounderEpisodeRecord {
   return {
     episodeId: row.episode_id,
@@ -70,6 +83,8 @@ function parseRow(row: any): FounderEpisodeRecord {
     entityName: row.entity_name ?? null,
     packetId: row.packet_id ?? null,
     packetType: row.packet_type ?? null,
+    workflowAssetId: row.workflow_asset_id ?? null,
+    workflowEnvelopeId: row.workflow_envelope_id ?? null,
     contextId: row.context_id ?? null,
     taskId: row.task_id ?? null,
     summary: row.summary ?? null,
@@ -105,7 +120,10 @@ export function startFounderEpisode(input: {
   stateBeforeHash?: string;
   metadata?: Record<string, unknown>;
   initialSpan?: Record<string, unknown>;
+  workflowAssetId?: string | null;
+  workflowEnvelopeId?: string | null;
 }): FounderEpisodeRecord {
+  ensureFounderEpisodeColumns();
   const db = getDb();
   const now = new Date().toISOString();
   const episodeId = input.episodeId ?? genId("episode");
@@ -132,6 +150,8 @@ export function startFounderEpisode(input: {
           query = COALESCE(?, query),
           lens = COALESCE(?, lens),
           entity_name = COALESCE(?, entity_name),
+          workflow_asset_id = COALESCE(?, workflow_asset_id),
+          workflow_envelope_id = COALESCE(?, workflow_envelope_id),
           state_before_json = COALESCE(?, state_before_json),
           state_before_hash = COALESCE(?, state_before_hash),
           spans_json = CASE WHEN length(COALESCE(spans_json, '')) > 2 THEN spans_json ELSE ? END,
@@ -149,6 +169,8 @@ export function startFounderEpisode(input: {
       input.query ?? null,
       input.lens ?? null,
       input.entityName ?? null,
+      input.workflowAssetId ?? null,
+      input.workflowEnvelopeId ?? null,
       input.stateBefore ? json(input.stateBefore) : null,
       stateBeforeHash,
       json(spans, []),
@@ -161,9 +183,9 @@ export function startFounderEpisode(input: {
       INSERT INTO founder_harness_episodes (
         episode_id, correlation_id, session_key, workspace_id, company_key,
         surface, episode_type, status, query, lens, entity_name, state_before_json,
-        state_before_hash, spans_json, tools_invoked_json, artifacts_produced_json,
+        workflow_asset_id, workflow_envelope_id, state_before_hash, spans_json, tools_invoked_json, artifacts_produced_json,
         metadata_json, started_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, '[]', '[]', ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       episodeId,
       correlationId,
@@ -172,12 +194,17 @@ export function startFounderEpisode(input: {
       input.companyKey ?? null,
       input.surface,
       input.episodeType,
+      "active",
       input.query ?? null,
       input.lens ?? null,
       input.entityName ?? null,
       json(input.stateBefore),
+      input.workflowAssetId ?? null,
+      input.workflowEnvelopeId ?? null,
       stateBeforeHash,
       json(spans, []),
+      "[]",
+      "[]",
       input.metadata ? json(input.metadata) : null,
       now,
       now,
@@ -198,7 +225,10 @@ export function appendFounderEpisodeSpan(input: {
   workspaceId?: string | null;
   companyKey?: string | null;
   metadata?: Record<string, unknown>;
+  workflowAssetId?: string | null;
+  workflowEnvelopeId?: string | null;
 }): FounderEpisodeRecord {
+  ensureFounderEpisodeColumns();
   const db = getDb();
   const existing = getFounderEpisode(input.episodeId);
   if (!existing) {
@@ -217,6 +247,8 @@ export function appendFounderEpisodeSpan(input: {
         entity_name = COALESCE(?, entity_name),
         packet_id = COALESCE(?, packet_id),
         packet_type = COALESCE(?, packet_type),
+        workflow_asset_id = COALESCE(?, workflow_asset_id),
+        workflow_envelope_id = COALESCE(?, workflow_envelope_id),
         workspace_id = COALESCE(?, workspace_id),
         company_key = COALESCE(?, company_key),
         metadata_json = ?,
@@ -229,6 +261,8 @@ export function appendFounderEpisodeSpan(input: {
     input.entityName ?? null,
     input.packetId ?? null,
     input.packetType ?? null,
+    input.workflowAssetId ?? null,
+    input.workflowEnvelopeId ?? null,
     input.workspaceId ?? null,
     input.companyKey ?? null,
     json(metadata),
@@ -259,7 +293,10 @@ export function finalizeFounderEpisode(input: {
   companyKey?: string | null;
   finalSpan?: Record<string, unknown>;
   metadata?: Record<string, unknown>;
+  workflowAssetId?: string | null;
+  workflowEnvelopeId?: string | null;
 }): FounderEpisodeRecord {
+  ensureFounderEpisodeColumns();
   const db = getDb();
   const existing = getFounderEpisode(input.episodeId);
   if (!existing) {
@@ -292,6 +329,8 @@ export function finalizeFounderEpisode(input: {
         entity_name = COALESCE(?, entity_name),
         packet_id = COALESCE(?, packet_id),
         packet_type = COALESCE(?, packet_type),
+        workflow_asset_id = COALESCE(?, workflow_asset_id),
+        workflow_envelope_id = COALESCE(?, workflow_envelope_id),
         workspace_id = COALESCE(?, workspace_id),
         company_key = COALESCE(?, company_key),
         spans_json = ?,
@@ -314,6 +353,8 @@ export function finalizeFounderEpisode(input: {
     input.entityName ?? null,
     input.packetId ?? null,
     input.packetType ?? null,
+    input.workflowAssetId ?? null,
+    input.workflowEnvelopeId ?? null,
     input.workspaceId ?? null,
     input.companyKey ?? null,
     json(spans, []),
@@ -327,6 +368,7 @@ export function finalizeFounderEpisode(input: {
 }
 
 export function getFounderEpisode(episodeId: string): FounderEpisodeRecord | null {
+  ensureFounderEpisodeColumns();
   const row = getDb().prepare(`
     SELECT *
     FROM founder_harness_episodes
@@ -343,6 +385,7 @@ export function listFounderEpisodes(input: {
   status?: FounderEpisodeStatus;
   limit?: number;
 } = {}): FounderEpisodeRecord[] {
+  ensureFounderEpisodeColumns();
   const limit = Math.min(Math.max(input.limit ?? 10, 1), 50);
   const db = getDb();
 

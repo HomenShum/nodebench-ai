@@ -19,6 +19,8 @@ export interface WorkflowTemplate {
   lastUsedAt: string;
   createdAt: string;
   validated: boolean;
+  workflowAssetId?: string | null;
+  workflowEnvelopeId?: string | null;
 }
 
 export function initWorkflowTemplateTables(): void {
@@ -34,10 +36,19 @@ export function initWorkflowTemplateTables(): void {
       usage_count INTEGER DEFAULT 0,
       last_used_at TEXT,
       created_at TEXT NOT NULL,
-      validated INTEGER DEFAULT 0
+      validated INTEGER DEFAULT 0,
+      workflow_asset_id TEXT,
+      workflow_envelope_id TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_wt_name ON workflow_templates(name);
   `);
+  const columns = db.prepare("PRAGMA table_info(workflow_templates)").all() as Array<{ name: string }>;
+  if (!columns.some((column) => column.name === "workflow_asset_id")) {
+    db.exec("ALTER TABLE workflow_templates ADD COLUMN workflow_asset_id TEXT");
+  }
+  if (!columns.some((column) => column.name === "workflow_envelope_id")) {
+    db.exec("ALTER TABLE workflow_templates ADD COLUMN workflow_envelope_id TEXT");
+  }
 }
 
 export function saveTemplate(data: {
@@ -46,13 +57,27 @@ export function saveTemplate(data: {
   steps: WorkflowTemplate["steps"];
   avgLatencyMs?: number;
   avgCostUsd?: number;
+  workflowAssetId?: string | null;
+  workflowEnvelopeId?: string | null;
 }): string {
   const db = getDb();
   const id = genId("wft");
   db.prepare(`
-    INSERT INTO workflow_templates (id, name, objective, steps, avg_latency_ms, avg_cost_usd, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(id, data.name, data.objective, JSON.stringify(data.steps), data.avgLatencyMs ?? 0, data.avgCostUsd ?? 0, new Date().toISOString());
+    INSERT INTO workflow_templates (
+      id, name, objective, steps, avg_latency_ms, avg_cost_usd, created_at, workflow_asset_id, workflow_envelope_id
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id,
+    data.name,
+    data.objective,
+    JSON.stringify(data.steps),
+    data.avgLatencyMs ?? 0,
+    data.avgCostUsd ?? 0,
+    new Date().toISOString(),
+    data.workflowAssetId ?? null,
+    data.workflowEnvelopeId ?? null,
+  );
   return id;
 }
 
@@ -65,6 +90,8 @@ export function listTemplates(): WorkflowTemplate[] {
     avgLatencyMs: r.avg_latency_ms, avgCostUsd: r.avg_cost_usd,
     usageCount: r.usage_count, lastUsedAt: r.last_used_at,
     createdAt: r.created_at, validated: !!r.validated,
+    workflowAssetId: r.workflow_asset_id ?? null,
+    workflowEnvelopeId: r.workflow_envelope_id ?? null,
   }));
 }
 
@@ -78,6 +105,8 @@ export function getTemplate(id: string): WorkflowTemplate | null {
     avgLatencyMs: r.avg_latency_ms, avgCostUsd: r.avg_cost_usd,
     usageCount: r.usage_count, lastUsedAt: r.last_used_at,
     createdAt: r.created_at, validated: !!r.validated,
+    workflowAssetId: r.workflow_asset_id ?? null,
+    workflowEnvelopeId: r.workflow_envelope_id ?? null,
   };
 }
 

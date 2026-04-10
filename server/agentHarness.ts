@@ -1616,6 +1616,51 @@ function isEntityGroundedCandidate(
   return hrefMentionsEntityTarget(value.sourceHref, entityName, entityTargets);
 }
 
+function findExecutionSourceEvidence(
+  execution: HarnessExecution,
+  label: string,
+  href?: string,
+): string | undefined {
+  const normalizedLabel = normalizeWhitespace(label).toLowerCase();
+  const normalizedHref = normalizeWhitespace(href ?? "").toLowerCase();
+  if (!normalizedLabel && !normalizedHref) return undefined;
+
+  for (const step of execution.stepResults) {
+    if (!step.success || !step.result) continue;
+    const raw = step.result as any;
+    const candidates = [
+      ...(Array.isArray(raw?.sources) ? raw.sources : []),
+      ...(Array.isArray(raw?.results) ? raw.results : []),
+      ...(Array.isArray(raw?.webResults) ? raw.webResults : []),
+    ];
+
+    for (const candidate of candidates) {
+      const candidateLabel = normalizeWhitespace(String(candidate?.name ?? candidate?.title ?? candidate?.label ?? ""));
+      const candidateHref = normalizeWhitespace(String(candidate?.url ?? candidate?.link ?? candidate?.href ?? ""));
+      const labelMatch =
+        normalizedLabel.length > 0
+        && candidateLabel.length > 0
+        && (
+          candidateLabel.toLowerCase() === normalizedLabel
+          || candidateLabel.toLowerCase().includes(normalizedLabel)
+          || normalizedLabel.includes(candidateLabel.toLowerCase())
+        );
+      const hrefMatch =
+        normalizedHref.length > 0
+        && candidateHref.length > 0
+        && candidateHref.toLowerCase() === normalizedHref;
+      if (!labelMatch && !hrefMatch) continue;
+
+      const evidence = normalizeWhitespace(
+        String(candidate?.snippet ?? candidate?.description ?? candidate?.summary ?? candidate?.content ?? ""),
+      );
+      if (evidence) return evidence;
+    }
+  }
+
+  return undefined;
+}
+
 function mentionsEntityTarget(value: string, entityTargets?: string[]): boolean {
   return inferMetricEntity(value, "", entityTargets) !== null;
 }
@@ -2065,6 +2110,7 @@ function sanitizeSources(
           text: cleanedLabel,
           sourceLabel: cleanedLabel,
           sourceHref: href,
+          evidenceQuote: findExecutionSourceEvidence(execution, cleanedLabel, href),
         },
         context.entityName,
         context.entityTargets,

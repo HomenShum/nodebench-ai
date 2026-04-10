@@ -75,6 +75,28 @@ type IncomingResultPacket = {
     evidenceRefIds?: string[];
     nextQuestion?: string;
   }>;
+  workflowAsset?: {
+    assetId?: string;
+    assetType?: string;
+    state?: string;
+    canonicalPacketId?: string;
+    canonicalPacketType?: string;
+    canonicalEntity?: string;
+    generatedAt?: string;
+    stages?: string[];
+    replayReady?: boolean;
+    delegationReady?: boolean;
+    currentContextId?: string;
+    lastTaskId?: string;
+    targetAgents?: string[];
+    envelopeId?: string;
+    envelopeType?: string;
+    lineage?: {
+      sourceRunId?: string;
+      sourceContextId?: string;
+      parentAssetId?: string;
+    };
+  };
 };
 
 const WEB_PRODUCER_PEER_ID = "peer:web:control_plane";
@@ -310,6 +332,59 @@ function getTaskId(packet: IncomingResultPacket, target: SharedContextDelegateTa
   return `task:${target}:${packet.packetId ?? slugify(`${packet.canonicalEntity ?? packet.entityName ?? "nodebench"}-${packet.query ?? "query"}`)}`;
 }
 
+function getWorkflowAsset(packet: IncomingResultPacket) {
+  const packetId = packet.packetId ?? slugify(`${packet.canonicalEntity ?? packet.entityName ?? "nodebench"}-${packet.query ?? "query"}`);
+  const packetType = packet.packetType ?? "founder_packet";
+  const canonicalEntity = packet.canonicalEntity ?? packet.entityName ?? "NodeBench";
+  return {
+    assetId: packet.workflowAsset?.assetId ?? `asset:${slugify(canonicalEntity)}:${packetId}`,
+    assetType: packet.workflowAsset?.assetType ?? "research_packet",
+    state: packet.workflowAsset?.state ?? "generated",
+    canonicalPacketId: packet.workflowAsset?.canonicalPacketId ?? packetId,
+    canonicalPacketType: packet.workflowAsset?.canonicalPacketType ?? packetType,
+    canonicalEntity: packet.workflowAsset?.canonicalEntity ?? canonicalEntity,
+    generatedAt: packet.workflowAsset?.generatedAt ?? new Date().toISOString(),
+    stages: packet.workflowAsset?.stages?.length
+      ? packet.workflowAsset.stages
+      : ["ask_surface", "shared_context_ready"],
+    replayReady: packet.workflowAsset?.replayReady ?? true,
+    delegationReady: packet.workflowAsset?.delegationReady ?? Boolean(packet.recommendedNextAction),
+    currentContextId: packet.workflowAsset?.currentContextId,
+    lastTaskId: packet.workflowAsset?.lastTaskId,
+    targetAgents: packet.workflowAsset?.targetAgents?.length
+      ? packet.workflowAsset.targetAgents
+      : ["claude_code", "openclaw"],
+    envelopeId: packet.workflowAsset?.envelopeId,
+    envelopeType: packet.workflowAsset?.envelopeType,
+    lineage: {
+      sourceRunId: packet.workflowAsset?.lineage?.sourceRunId ?? (typeof packet.packetId === "string" ? packet.packetId : undefined),
+      sourceContextId: packet.workflowAsset?.lineage?.sourceContextId,
+      parentAssetId: packet.workflowAsset?.lineage?.parentAssetId,
+    },
+  };
+}
+
+function withWorkflowAsset(
+  packet: IncomingResultPacket,
+  updates?: Partial<ReturnType<typeof getWorkflowAsset>>,
+): IncomingResultPacket {
+  const workflowAsset = {
+    ...getWorkflowAsset(packet),
+    ...updates,
+    lineage: {
+      ...getWorkflowAsset(packet).lineage,
+      ...(updates?.lineage ?? {}),
+    },
+  };
+  return {
+    ...packet,
+    packetId: packet.packetId ?? workflowAsset.canonicalPacketId,
+    packetType: packet.packetType ?? workflowAsset.canonicalPacketType,
+    canonicalEntity: packet.canonicalEntity ?? workflowAsset.canonicalEntity,
+    workflowAsset,
+  };
+}
+
 function getStrategicTaskId(
   packet: IncomingResultPacket,
   target: SharedContextDelegateTarget,
@@ -365,12 +440,14 @@ function buildHandoffPrompt(args: {
   const entity = args.packet.canonicalEntity ?? args.packet.entityName ?? "the company";
   const workspaceId = getWorkspaceId(args.packet);
   const subject = args.subject ?? getSubject(args.packet);
+  const workflowAsset = getWorkflowAsset(args.packet);
   return [
     `Use NodeBench MCP as the truth layer for this task. You are the ${target.label} worker.`,
     "",
     `Goal: ${args.goal}`,
     `Workspace: ${workspaceId}`,
     `Shared context packet: ${args.contextId}`,
+    `Workflow asset: ${workflowAsset.assetId}`,
     ...(args.parentContextId ? [`Parent packet: ${args.parentContextId}`] : []),
     `Shared task: ${args.taskId}`,
     "",
@@ -379,12 +456,14 @@ function buildHandoffPrompt(args: {
     `2. Pull the packet with pull_shared_context using {"workspaceId":"${workspaceId}","subjectIncludes":"${subject}","limit":1}.`,
     "3. Use get_shared_context_snapshot if you need to inspect recent packets and task handoffs.",
     `4. Treat ${entity} as the canonical subject. Do not restate or re-infer the company from scratch unless the packet is contradicted.`,
-    "5. Execute the requested implementation, keeping changes tied to the packet's next action and contradictions.",
-    "6. When done, publish any updated packet or verdict back through NodeBench MCP so the shared truth stays current.",
+    `5. Treat the workflow stages as the durable spine: ${workflowAsset.stages.join(" -> ")}.`,
+    "6. Execute the requested implementation, keeping changes tied to the packet's next action and contradictions.",
+    "7. When done, publish any updated packet or verdict back through NodeBench MCP so the shared truth stays current.",
   ].join("\n");
 }
 
 function registerWebPeer(packet: IncomingResultPacket) {
+  const workflowAsset = getWorkflowAsset(packet);
   registerSharedContextPeer({
     peerId: WEB_PRODUCER_PEER_ID,
     product: "nodebench",
@@ -402,6 +481,8 @@ function registerWebPeer(packet: IncomingResultPacket) {
     metadata: {
       packetId: packet.packetId ?? null,
       packetType: packet.packetType ?? null,
+      workflowAssetId: workflowAsset.assetId,
+      workflowAssetType: workflowAsset.assetType,
     },
     queueForSync: false,
   });
@@ -494,6 +575,7 @@ function buildStrategicIssuePayload(args: {
   const entitySlug = slugify(packet.canonicalEntity ?? packet.entityName ?? "nodebench");
   const workspaceId = getWorkspaceId(packet);
   const parentContextId = getContextId(packet);
+  const workflowAsset = getWorkflowAsset(packet);
   const matchedSourceRefs = (packet.sourceRefs ?? [])
     .filter((source) => (angle.evidenceRefIds ?? []).includes(String(source.id ?? "")))
     .map((source) => source.href ?? source.label ?? source.title ?? source.id ?? "")
@@ -546,6 +628,8 @@ function buildStrategicIssuePayload(args: {
     metadata: {
       packetId: packet.packetId ?? null,
       packetType: packet.packetType ?? null,
+      workflowAssetId: workflowAsset.assetId,
+      workflowAssetParentId: workflowAsset.assetId,
       proofStatus: packet.proofStatus ?? null,
       strategicAngleId: angle.id ?? null,
       strategicAngleStatus: angle.status ?? null,
@@ -1067,7 +1151,7 @@ export function createSharedContextRouter(): Router {
 
   router.post("/publish", async (req, res) => {
     const body = (req.body as { packet?: IncomingResultPacket; strategicAngleId?: string; episodeId?: string }) ?? {};
-    const packet = body.packet;
+    const packet = body.packet ? withWorkflowAsset(body.packet) : undefined;
 
     if (!packet?.answer || !(packet.canonicalEntity ?? packet.entityName)) {
       return res.status(400).json({
@@ -1079,6 +1163,14 @@ export function createSharedContextRouter(): Router {
     const contextId = getContextId(packet);
     const workspaceId = getWorkspaceId(packet);
     const strategicAngle = findStrategicAngle(packet, body.strategicAngleId);
+    const publishedPacket = withWorkflowAsset(packet, {
+      state: "published",
+      currentContextId: contextId,
+      stages: Array.from(new Set([...getWorkflowAsset(packet).stages, "shared_context_published"])),
+      lineage: {
+        sourceContextId: contextId,
+      },
+    });
     const packetPayload = {
       contextId,
       contextType: "entity_packet" as const,
@@ -1090,17 +1182,17 @@ export function createSharedContextRouter(): Router {
         `packet:${packet.packetType ?? "founder_packet"}`,
       ],
       subject: getSubject(packet),
-      summary: summarizePacket(packet),
-      claims: collectClaims(packet),
-      evidenceRefs: collectEvidenceRefs(packet),
+      summary: summarizePacket(publishedPacket),
+      claims: collectClaims(publishedPacket),
+      evidenceRefs: collectEvidenceRefs(publishedPacket),
       confidence:
-        typeof packet.confidence === "number"
-          ? Math.max(0, Math.min(1, packet.confidence / 100))
+        typeof publishedPacket.confidence === "number"
+          ? Math.max(0, Math.min(1, publishedPacket.confidence / 100))
           : undefined,
       lineage: {
-        sourceRunId: typeof packet.packetId === "string" ? packet.packetId : undefined,
+        sourceRunId: typeof publishedPacket.packetId === "string" ? publishedPacket.packetId : undefined,
       },
-      freshness: getFreshness(packet),
+      freshness: getFreshness(publishedPacket),
     };
 
     try {
@@ -1117,7 +1209,7 @@ export function createSharedContextRouter(): Router {
         await publishPacketConvex(packetPayload);
         let issueContextId: string | null = null;
         if (strategicAngle) {
-          const issuePayload = buildStrategicIssuePayload({ packet, angle: strategicAngle });
+          const issuePayload = buildStrategicIssuePayload({ packet: publishedPacket, angle: strategicAngle });
           issueContextId = issuePayload.contextId ?? null;
           await publishPacketConvex(issuePayload);
         }
@@ -1130,14 +1222,14 @@ export function createSharedContextRouter(): Router {
               type: strategicAngle ? "strategic_issue_published" : "packet_published",
               status: "ok",
               label: strategicAngle ? "Published strategic issue packet" : "Published founder packet",
-              detail: strategicAngle?.title ?? getSubject(packet),
+              detail: strategicAngle?.title ?? getSubject(publishedPacket),
               timestamp: new Date().toISOString(),
               contextId: strategicAngle ? issueContextId ?? contextId : contextId,
             },
             contextId: strategicAngle ? issueContextId ?? contextId : contextId,
-            entityName: packet.canonicalEntity ?? packet.entityName,
-            packetId: packet.packetId,
-            packetType: packet.packetType,
+            entityName: publishedPacket.canonicalEntity ?? publishedPacket.entityName,
+            packetId: publishedPacket.packetId,
+            packetType: publishedPacket.packetType,
             workspaceId,
             metadata: {
               publishedVia: "shared_context",
@@ -1151,35 +1243,41 @@ export function createSharedContextRouter(): Router {
           parentContextId: strategicAngle ? contextId : null,
           workspaceId,
           strategicAngleId: strategicAngle?.id ?? null,
-          resource: buildPacketResourceHints(strategicAngle ? issueContextId ?? contextId : contextId, packet),
+          workflowAsset: withWorkflowAsset(publishedPacket, {
+            currentContextId: strategicAngle ? issueContextId ?? contextId : contextId,
+            lineage: { sourceContextId: strategicAngle ? issueContextId ?? contextId : contextId },
+          }).workflowAsset,
+          resource: buildPacketResourceHints(strategicAngle ? issueContextId ?? contextId : contextId, publishedPacket),
           snapshot,
         });
       }
 
-      registerWebPeer(packet);
+      registerWebPeer(publishedPacket);
       publishSharedContextPacket({
         ...packetPayload,
-        stateSnapshot: packet as Record<string, unknown>,
+        stateSnapshot: publishedPacket as Record<string, unknown>,
         permissions: {
           visibility: "workspace",
           allowedRoles: ["researcher", "compiler", "judge", "router"],
         },
         nextActions: [
-          ...(packet.interventions ?? []).map((item) => item.action ?? "").filter(Boolean),
-          ...(packet.nextQuestions ?? []).slice(0, 3),
+          ...(publishedPacket.interventions ?? []).map((item) => item.action ?? "").filter(Boolean),
+          ...(publishedPacket.nextQuestions ?? []).slice(0, 3),
         ].slice(0, 6),
         metadata: {
-          query: packet.query ?? null,
-          packetId: packet.packetId ?? null,
-          packetType: packet.packetType ?? null,
-          proofStatus: packet.proofStatus ?? null,
-          recommendedNextAction: packet.recommendedNextAction ?? null,
+          query: publishedPacket.query ?? null,
+          packetId: publishedPacket.packetId ?? null,
+          packetType: publishedPacket.packetType ?? null,
+          proofStatus: publishedPacket.proofStatus ?? null,
+          recommendedNextAction: publishedPacket.recommendedNextAction ?? null,
+          workflowAssetId: publishedPacket.workflowAsset?.assetId ?? null,
+          workflowAssetState: publishedPacket.workflowAsset?.state ?? null,
         },
         queueForSync: false,
       });
       let responseContextId = contextId;
       if (strategicAngle) {
-        const issuePayload = buildStrategicIssuePayload({ packet, angle: strategicAngle });
+        const issuePayload = buildStrategicIssuePayload({ packet: publishedPacket, angle: strategicAngle });
         publishSharedContextPacket(issuePayload);
         responseContextId = issuePayload.contextId ?? contextId;
       }
@@ -1192,14 +1290,14 @@ export function createSharedContextRouter(): Router {
             type: strategicAngle ? "strategic_issue_published" : "packet_published",
             status: "ok",
             label: strategicAngle ? "Published strategic issue packet" : "Published founder packet",
-            detail: strategicAngle?.title ?? getSubject(packet),
+            detail: strategicAngle?.title ?? getSubject(publishedPacket),
             timestamp: new Date().toISOString(),
             contextId: responseContextId,
           },
           contextId: responseContextId,
-          entityName: packet.canonicalEntity ?? packet.entityName,
-          packetId: packet.packetId,
-          packetType: packet.packetType,
+          entityName: publishedPacket.canonicalEntity ?? publishedPacket.entityName,
+          packetId: publishedPacket.packetId,
+          packetType: publishedPacket.packetType,
           workspaceId,
           metadata: {
             publishedVia: "shared_context",
@@ -1213,7 +1311,11 @@ export function createSharedContextRouter(): Router {
         parentContextId: strategicAngle ? contextId : null,
         workspaceId,
         strategicAngleId: strategicAngle?.id ?? null,
-        resource: buildPacketResourceHints(responseContextId, packet),
+        workflowAsset: withWorkflowAsset(publishedPacket, {
+          currentContextId: responseContextId,
+          lineage: { sourceContextId: responseContextId },
+        }).workflowAsset,
+        resource: buildPacketResourceHints(responseContextId, publishedPacket),
         snapshot: getSharedContextSnapshot(6),
       });
     } catch (error) {
@@ -1232,7 +1334,7 @@ export function createSharedContextRouter(): Router {
       strategicAngleId?: string;
       episodeId?: string;
     }) ?? {};
-    const packet = body.packet;
+    const packet = body.packet ? withWorkflowAsset(body.packet) : undefined;
     const target = body.targetAgent ?? "claude_code";
 
     if (!packet?.answer || !(packet.canonicalEntity ?? packet.entityName)) {
@@ -1255,6 +1357,15 @@ export function createSharedContextRouter(): Router {
     const delegateContextId = strategicAngle ? getStrategicContextId(packet, strategicAngle) : contextId;
 
     try {
+      const delegatedPacket = withWorkflowAsset(packet, {
+        state: "delegated",
+        currentContextId: delegateContextId,
+        stages: Array.from(new Set([...getWorkflowAsset(packet).stages, "shared_context_published", "delegation_prepared"])),
+        targetAgents: Array.from(new Set([...(getWorkflowAsset(packet).targetAgents ?? []), target])),
+        lineage: {
+          sourceContextId: delegateContextId,
+        },
+      });
       if (useConvex()) {
         await registerPeerConvex({
           peerId: WEB_PRODUCER_PEER_ID,
@@ -1279,28 +1390,28 @@ export function createSharedContextRouter(): Router {
           workspaceId,
           scope: [
             "workspace",
-            `entity:${slugify(packet.canonicalEntity ?? packet.entityName ?? "nodebench")}`,
+            `entity:${slugify(delegatedPacket.canonicalEntity ?? delegatedPacket.entityName ?? "nodebench")}`,
             `delegate:${target}`,
           ],
-          subject: getSubject(packet),
-          summary: summarizePacket(packet),
-          claims: collectClaims(packet),
-          evidenceRefs: collectEvidenceRefs(packet),
+          subject: getSubject(delegatedPacket),
+          summary: summarizePacket(delegatedPacket),
+          claims: collectClaims(delegatedPacket),
+          evidenceRefs: collectEvidenceRefs(delegatedPacket),
           confidence:
-            typeof packet.confidence === "number"
-              ? Math.max(0, Math.min(1, packet.confidence / 100))
+            typeof delegatedPacket.confidence === "number"
+              ? Math.max(0, Math.min(1, delegatedPacket.confidence / 100))
               : undefined,
           lineage: {
-            sourceRunId: typeof packet.packetId === "string" ? packet.packetId : undefined,
+            sourceRunId: typeof delegatedPacket.packetId === "string" ? delegatedPacket.packetId : undefined,
           },
-          freshness: getFreshness(packet),
+          freshness: getFreshness(delegatedPacket),
         });
         if (strategicAngle) {
-          await publishPacketConvex(buildStrategicIssuePayload({ packet, angle: strategicAngle, target }));
+          await publishPacketConvex(buildStrategicIssuePayload({ packet: delegatedPacket, angle: strategicAngle, target }));
         }
       } else {
-        registerWebPeer(packet);
-        registerDelegatePeer(packet, target);
+        registerWebPeer(delegatedPacket);
+        registerDelegatePeer(delegatedPacket, target);
         publishSharedContextPacket({
           contextId,
           contextType: "entity_packet",
@@ -1308,43 +1419,45 @@ export function createSharedContextRouter(): Router {
           workspaceId,
           scope: [
             "workspace",
-            `entity:${slugify(packet.canonicalEntity ?? packet.entityName ?? "nodebench")}`,
-            `packet:${packet.packetType ?? "founder_packet"}`,
+            `entity:${slugify(delegatedPacket.canonicalEntity ?? delegatedPacket.entityName ?? "nodebench")}`,
+            `packet:${delegatedPacket.packetType ?? "founder_packet"}`,
             `delegate:${target}`,
           ],
-          subject: getSubject(packet),
-          summary: summarizePacket(packet),
-          claims: collectClaims(packet),
-          evidenceRefs: collectEvidenceRefs(packet),
-          stateSnapshot: packet as Record<string, unknown>,
-          freshness: getFreshness(packet),
+          subject: getSubject(delegatedPacket),
+          summary: summarizePacket(delegatedPacket),
+          claims: collectClaims(delegatedPacket),
+          evidenceRefs: collectEvidenceRefs(delegatedPacket),
+          stateSnapshot: delegatedPacket as Record<string, unknown>,
+          freshness: getFreshness(delegatedPacket),
           permissions: {
             visibility: "workspace",
             allowedRoles: ["researcher", "compiler", "judge", "router"],
           },
           confidence:
-            typeof packet.confidence === "number"
-              ? Math.max(0, Math.min(1, packet.confidence / 100))
+            typeof delegatedPacket.confidence === "number"
+              ? Math.max(0, Math.min(1, delegatedPacket.confidence / 100))
               : undefined,
           lineage: {
-            sourceRunId: typeof packet.packetId === "string" ? packet.packetId : undefined,
+            sourceRunId: typeof delegatedPacket.packetId === "string" ? delegatedPacket.packetId : undefined,
           },
           nextActions: [
-            ...(packet.interventions ?? []).map((item) => item.action ?? "").filter(Boolean),
-            ...(packet.nextQuestions ?? []).slice(0, 3),
+            ...(delegatedPacket.interventions ?? []).map((item) => item.action ?? "").filter(Boolean),
+            ...(delegatedPacket.nextQuestions ?? []).slice(0, 3),
           ].slice(0, 6),
           metadata: {
-            query: packet.query ?? null,
-            packetId: packet.packetId ?? null,
-            packetType: packet.packetType ?? null,
-            proofStatus: packet.proofStatus ?? null,
-            recommendedNextAction: packet.recommendedNextAction ?? null,
+            query: delegatedPacket.query ?? null,
+            packetId: delegatedPacket.packetId ?? null,
+            packetType: delegatedPacket.packetType ?? null,
+            proofStatus: delegatedPacket.proofStatus ?? null,
+            recommendedNextAction: delegatedPacket.recommendedNextAction ?? null,
             targetAgent: target,
+            workflowAssetId: delegatedPacket.workflowAsset?.assetId ?? null,
+            workflowAssetState: delegatedPacket.workflowAsset?.state ?? null,
           },
           queueForSync: false,
         });
         if (strategicAngle) {
-          publishSharedContextPacket(buildStrategicIssuePayload({ packet, angle: strategicAngle, target }));
+          publishSharedContextPacket(buildStrategicIssuePayload({ packet: delegatedPacket, angle: strategicAngle, target }));
         }
       }
 
@@ -1352,11 +1465,17 @@ export function createSharedContextRouter(): Router {
         body.goal?.trim() ||
         strategicAngle?.nextQuestion?.trim() ||
         strategicAngle?.summary?.trim() ||
-        packet.recommendedNextAction?.trim() ||
-        packet.nextQuestions?.[0]?.trim() ||
+        delegatedPacket.recommendedNextAction?.trim() ||
+        delegatedPacket.nextQuestions?.[0]?.trim() ||
         "Continue implementation from the published NodeBench packet.";
 
-      const taskId = strategicAngle ? getStrategicTaskId(packet, target, strategicAngle) : getTaskId(packet, target);
+      const taskId = strategicAngle ? getStrategicTaskId(delegatedPacket, target, strategicAngle) : getTaskId(delegatedPacket, target);
+      const delegatedWorkflowAsset = withWorkflowAsset(delegatedPacket, {
+        lastTaskId: taskId,
+        currentContextId: delegateContextId,
+        targetAgents: Array.from(new Set([...(delegatedPacket.workflowAsset?.targetAgents ?? []), target])),
+        stages: Array.from(new Set([...(delegatedPacket.workflowAsset?.stages ?? []), "delegation_handoff_created"])),
+      }).workflowAsset;
 
       if (useConvex()) {
         await proposeTaskConvex({
@@ -1369,9 +1488,10 @@ export function createSharedContextRouter(): Router {
             targetLabel: DELEGATE_TARGETS[target].label,
             goal,
             installCommand: DELEGATE_TARGETS[target].installCommand,
-            proofStatus: packet.proofStatus ?? null,
+            proofStatus: delegatedPacket.proofStatus ?? null,
             strategicAngleId: strategicAngle?.id ?? null,
             strategicAngleTitle: strategicAngle?.title ?? null,
+            workflowAssetId: delegatedWorkflowAsset.assetId,
           },
           inputContextIds: strategicAngle ? [contextId, delegateContextId] : [contextId],
           reason: goal,
@@ -1392,13 +1512,14 @@ export function createSharedContextRouter(): Router {
             },
             contextId: delegateContextId,
             taskId,
-            entityName: packet.canonicalEntity ?? packet.entityName,
-            packetId: packet.packetId,
-            packetType: packet.packetType,
+            entityName: delegatedPacket.canonicalEntity ?? delegatedPacket.entityName,
+            packetId: delegatedPacket.packetId,
+            packetType: delegatedPacket.packetType,
             workspaceId,
             metadata: {
               targetAgent: target,
               strategicAngleId: strategicAngle?.id ?? null,
+              workflowAssetId: delegatedWorkflowAsset.assetId,
             },
           });
         }
@@ -1412,16 +1533,17 @@ export function createSharedContextRouter(): Router {
           targetAgent: target,
           targetLabel: DELEGATE_TARGETS[target].label,
           installCommand: DELEGATE_TARGETS[target].installCommand,
+          workflowAsset: delegatedWorkflowAsset,
           handoffPrompt: buildHandoffPrompt({
-            packet,
+            packet: { ...delegatedPacket, workflowAsset: delegatedWorkflowAsset },
             contextId: delegateContextId,
             parentContextId: strategicAngle ? contextId : null,
             taskId,
             target,
             goal,
-            subject: strategicAngle ? getStrategicSubject(packet, strategicAngle) : getSubject(packet),
+            subject: strategicAngle ? getStrategicSubject(delegatedPacket, strategicAngle) : getSubject(delegatedPacket),
           }),
-          resource: buildPacketResourceHints(delegateContextId, packet),
+          resource: buildPacketResourceHints(delegateContextId, delegatedPacket),
           snapshot,
         });
       }
@@ -1436,17 +1558,19 @@ export function createSharedContextRouter(): Router {
           targetLabel: DELEGATE_TARGETS[target].label,
           goal,
           installCommand: DELEGATE_TARGETS[target].installCommand,
-          proofStatus: packet.proofStatus ?? null,
+          proofStatus: delegatedPacket.proofStatus ?? null,
           strategicAngleId: strategicAngle?.id ?? null,
           strategicAngleTitle: strategicAngle?.title ?? null,
+          workflowAssetId: delegatedWorkflowAsset.assetId,
         },
         inputContextIds: strategicAngle ? [contextId, delegateContextId] : [contextId],
         reason: goal,
         metadata: {
-          entityName: packet.canonicalEntity ?? packet.entityName ?? "NodeBench",
-          query: packet.query ?? null,
+          entityName: delegatedPacket.canonicalEntity ?? delegatedPacket.entityName ?? "NodeBench",
+          query: delegatedPacket.query ?? null,
           strategicAngleId: strategicAngle?.id ?? null,
           strategicAngleTitle: strategicAngle?.title ?? null,
+          workflowAssetId: delegatedWorkflowAsset.assetId,
         },
         queueForSync: false,
       });
@@ -1466,13 +1590,14 @@ export function createSharedContextRouter(): Router {
           },
           contextId: delegateContextId,
           taskId: proposed.taskId,
-          entityName: packet.canonicalEntity ?? packet.entityName,
-          packetId: packet.packetId,
-          packetType: packet.packetType,
+          entityName: delegatedPacket.canonicalEntity ?? delegatedPacket.entityName,
+          packetId: delegatedPacket.packetId,
+          packetType: delegatedPacket.packetType,
           workspaceId,
           metadata: {
             targetAgent: target,
             strategicAngleId: strategicAngle?.id ?? null,
+            workflowAssetId: delegatedWorkflowAsset.assetId,
           },
         });
       }
@@ -1486,16 +1611,17 @@ export function createSharedContextRouter(): Router {
         targetAgent: target,
         targetLabel: DELEGATE_TARGETS[target].label,
         installCommand: DELEGATE_TARGETS[target].installCommand,
+        workflowAsset: delegatedWorkflowAsset,
         handoffPrompt: buildHandoffPrompt({
-          packet,
+          packet: { ...delegatedPacket, workflowAsset: delegatedWorkflowAsset },
           contextId: delegateContextId,
           parentContextId: strategicAngle ? contextId : null,
           taskId: proposed.taskId,
           target,
           goal,
-          subject: strategicAngle ? getStrategicSubject(packet, strategicAngle) : getSubject(packet),
+          subject: strategicAngle ? getStrategicSubject(delegatedPacket, strategicAngle) : getSubject(delegatedPacket),
         }),
-        resource: buildPacketResourceHints(delegateContextId, packet),
+        resource: buildPacketResourceHints(delegateContextId, delegatedPacket),
         snapshot: getSharedContextSnapshot(6),
       });
     } catch (error) {

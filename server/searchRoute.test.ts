@@ -647,13 +647,15 @@ describe("createSearchRouter", () => {
       const payload = await response.json() as any;
 
       expect(response.status).toBe(200);
-      expect(payload.resultPacket?.answer).not.toMatch(/There is no specific information available/i);
-      expect(payload.resultPacket?.answer).not.toMatch(/Imad Abdelgawad|Sujesh Pulikkal/i);
-      expect(payload.resultPacket?.variables?.some((item: any) => /Imad Abdelgawad|Sujesh Pulikkal/.test(item.name))).toBe(false);
-      expect(payload.resultPacket?.changes?.some((item: any) => /^S\.$/.test(item.description))).toBe(false);
-      expect((payload.resultPacket?.changes ?? []).length).toBeLessThanOrEqual(1);
-      expect(payload.resultPacket?.risks?.some((item: any) => /There is no specific information available/i.test(item.title))).toBe(false);
-      expect(payload.resultPacket?.claimRefs?.some((item: any) => /Imad Abdelgawad|Sujesh Pulikkal/.test(item.text))).toBe(false);
+    expect(payload.resultPacket?.answer).not.toMatch(/There is no specific information available/i);
+    expect(payload.resultPacket?.answer).not.toMatch(/Imad Abdelgawad|Sujesh Pulikkal/i);
+    expect(payload.resultPacket?.variables?.some((item: any) => /Imad Abdelgawad|Sujesh Pulikkal/.test(item.name))).toBe(false);
+    expect(payload.resultPacket?.changes?.some((item: any) => /^S\.$/.test(item.description))).toBe(false);
+    expect((payload.resultPacket?.changes ?? []).length).toBeLessThanOrEqual(1);
+    expect(payload.resultPacket?.risks?.some((item: any) => /There is no specific information available/i.test(item.title))).toBe(false);
+    expect(payload.resultPacket?.claimRefs?.some((item: any) => /Imad Abdelgawad|Sujesh Pulikkal/.test(item.text))).toBe(false);
+    expect(typeof payload.resultPacket?.workflowAsset?.assetId).toBe("string");
+    expect(typeof payload.resultPacket?.workflowAsset?.envelopeId).toBe("string");
     } finally {
       await new Promise<void>((resolve, reject) => {
         localServer.close((error) => {
@@ -692,6 +694,8 @@ describe("createSearchRouter", () => {
     expect(payload.resultPacket?.answerBlocks?.some((block: any) => block.title === "Bottom line")).toBe(true);
     expect(payload.resultPacket?.answer).toMatch(/enterprise|pricing|OpenAI|Google/i);
     expect(payload.resultPacket?.answer).not.toMatch(/arms race|Ramp AI Index/i);
+    expect(payload.resultPacket?.workflowAsset?.canonicalPacketId).toBe(payload.resultPacket?.packetId);
+    expect(payload.result?.workflowAsset?.assetId).toBe(payload.resultPacket?.workflowAsset?.assetId);
   });
 
   it("overrides founder-default lens for explicit banker prompts and strips founder-only scaffolding from external research", async () => {
@@ -1323,6 +1327,65 @@ describe("createSearchRouter", () => {
 
     expect(result.comparables.map((item) => item.name)).toEqual(expect.arrayContaining(["OpenAI", "Google"]));
     expect(result.answer).toMatch(/closest operating comparables/i);
+  });
+
+  it("retains single-entity sources when the matched source snippet grounds the company", async () => {
+    const result = await synthesizeResults(
+      {
+        plan: {
+          objective: "Analyze Anthropic",
+          classification: "company_search",
+          entityTargets: ["Anthropic"],
+          steps: [],
+        },
+        stepResults: [
+          {
+            stepId: "web",
+            toolName: "web_search",
+            success: true,
+            durationMs: 9,
+            result: {
+              results: [
+                {
+                  title: "Anthropic vs OpenAI enterprise contracts",
+                  url: "https://example.com/contracts",
+                  snippet:
+                    "Enterprise buyers compare Anthropic versus OpenAI on pricing, retention, and bundle pressure from larger platform ecosystems.",
+                },
+                {
+                  title: "Google pressures model pricing",
+                  url: "https://example.com/google-pricing",
+                  snippet:
+                    "Google's broader cloud footprint increases pricing pressure and creates a distribution challenge for Anthropic in large accounts.",
+                },
+                {
+                  title: "Ramp AI Index March 2026 update",
+                  url: "https://example.com/ramp-ai-index",
+                  snippet:
+                    "The index aggregates enterprise AI usage trends, but it is a source artifact rather than an operating peer for Anthropic.",
+                },
+              ],
+            },
+          },
+        ],
+        totalDurationMs: 9,
+        totalCostUsd: 0,
+        adaptations: 0,
+      },
+      "Analyze Anthropic competitive position in enterprise AI for an investor.",
+      "investor",
+      async () => {
+        throw new Error("call_llm tool unavailable in this test");
+      },
+    );
+
+    expect(result.sources.map((source) => source.label)).toEqual(
+      expect.arrayContaining([
+        "Anthropic vs OpenAI enterprise contracts",
+        "Google pressures model pricing",
+      ]),
+    );
+    expect(result.sources.some((source) => /Ramp AI Index/i.test(source.label))).toBe(false);
   });
 
   it("filters investor, regulatory, and acronym noise from single-entity comparable extraction", async () => {

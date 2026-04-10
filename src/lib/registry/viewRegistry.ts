@@ -54,7 +54,14 @@ export type MainView =
   | "founder-packets-home"
   | "founder-history-home"
   | "founder-connect-home"
-  | "library-home";
+  | "library-home"
+  | "conference-capture"
+  | "entity-compare"
+  | "about"
+  | "spreadsheets"
+  | "world-monitor"
+  | "watchlists"
+  | "agents";
 
 export type ResearchTab = "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
 
@@ -684,6 +691,34 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "core",
     navVisible: true,
     surfaceId: "library",
+  },
+
+  // ── Conference Capture ──────────────────────────────────────────────────
+  {
+    id: "conference-capture",
+    title: "Conference Capture",
+    subtitle: "Fast mobile capture for events — notes, voice, entities, CRM packets",
+    path: "/capture",
+    aliases: ["/conference", "/event-capture"],
+    component: lazyView(() => import("@/features/controlPlane/components/ConferenceCapture")),
+    group: "core",
+    navVisible: true,
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+
+  // ── Entity Compare ──────────────────────────────────────────────────────
+  {
+    id: "entity-compare",
+    title: "Compare",
+    subtitle: "Side-by-side diligence with role-specific framing",
+    path: "/compare",
+    aliases: ["/entity-compare", "/compare-entities"],
+    component: lazyView(() => import("@/features/controlPlane/components/EntityCompare")),
+    group: "core",
+    navVisible: true,
+    surfaceId: "ask",
+    commandPaletteVisible: true,
   },
 ];
 

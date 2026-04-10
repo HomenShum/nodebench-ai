@@ -138,10 +138,12 @@ describe("ResultWorkspace", () => {
     expect(screen.getByText("Why This Holds / Breaks")).toBeInTheDocument();
     expect(screen.getByText("Next Move")).toBeInTheDocument();
     expect(screen.getByText("Ready Packet")).toBeInTheDocument();
+    expect(screen.getByText("Workflow Asset")).toBeInTheDocument();
     expect(screen.getByText("Observed")).toBeInTheDocument();
     expect(screen.getByText("Estimated")).toBeInTheDocument();
     expect(screen.getByText("Missing To Believe This")).toBeInTheDocument();
     expect(screen.getByText("2/4 cited")).toBeInTheDocument();
+    expect(screen.getByText(/replay ready/i)).toBeInTheDocument();
     expect(screen.getAllByLabelText(/Source 1: Founder memo/i).length).toBeGreaterThan(0);
     expect(screen.queryByText("Unnamed comparable")).not.toBeInTheDocument();
     expect(screen.queryByText(packet.answer)).not.toBeInTheDocument();
@@ -198,6 +200,7 @@ describe("ResultWorkspace", () => {
     );
 
     expect(screen.getAllByText("Shared founder packet is live and ready for a coding agent.").length).toBeGreaterThan(0);
+    expect(screen.getByText(/asset:/i)).toBeInTheDocument();
     expect(screen.getByText("Context context:founder:1")).toBeInTheDocument();
     expect(screen.getByText("Task task:founder:1")).toBeInTheDocument();
     expect(screen.getByText("Implement the ask surface rewrite using the shared packet.")).toBeInTheDocument();

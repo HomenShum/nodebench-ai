@@ -23,6 +23,7 @@ import type {
   ResultStrategicAngle,
   ResultSourceRef,
   ResultUnlockCriteria,
+  ResultWorkflowAsset,
   ResultWorkflowPathComparison,
 } from "./searchTypes";
 import { PUBLIC_LENS_PERSONA_MAP } from "./searchTypes";
@@ -54,6 +55,7 @@ export interface ProofReadyResultPacket extends ResultPacket {
   benchmarkEvidence: ResultAutonomyBenchmarkRun[];
   workflowComparison: ResultWorkflowPathComparison;
   operatingModel: ResultFounderOperatingModel;
+  workflowAsset: ResultWorkflowAsset;
   distributionSurfaceStatus: ResultDistributionSurfaceStatus[];
   companyReadinessPacket: ResultCompanyReadinessPacket;
   companyNamingPack: ResultCompanyNamingPack;
@@ -124,6 +126,14 @@ function buildPacketId(packet: ResultPacket): string {
     `pkt-${slugify(packet.entityName || "nodebench")}-${hashString(
       `${packet.query}|${packet.answer}|${packet.sourceCount}`,
     )}`
+  );
+}
+
+function buildWorkflowAssetId(packet: ResultPacket): string {
+  const packetId = packet.packetId ?? buildPacketId(packet);
+  return (
+    packet.workflowAsset?.assetId ??
+    `asset:${slugify(packet.canonicalEntity || packet.entityName || "nodebench")}:${packetId}`
   );
 }
 
@@ -859,6 +869,42 @@ function buildFallbackDiligencePack(packet: ResultPacket): ResultDiligencePackDe
   };
 }
 
+function buildWorkflowAsset(packet: ResultPacket): ResultWorkflowAsset {
+  const canonicalPacketId = packet.packetId ?? buildPacketId(packet);
+  const canonicalPacketType = packet.packetType ?? "founder_packet";
+  const canonicalEntity = packet.canonicalEntity ?? packet.entityName;
+  const existing = packet.workflowAsset;
+
+  return {
+    assetId: buildWorkflowAssetId(packet),
+    assetType: existing?.assetType ?? "research_packet",
+    state: existing?.state ?? "generated",
+    canonicalPacketId,
+    canonicalPacketType,
+    canonicalEntity,
+    generatedAt: existing?.generatedAt ?? new Date().toISOString(),
+    stages:
+      existing?.stages?.length
+        ? existing.stages
+        : ["ask_surface", "pipeline_search", "packetized_truth", "shared_context_ready"],
+    replayReady: existing?.replayReady ?? true,
+    delegationReady: existing?.delegationReady ?? Boolean(packet.operatingModel?.packetRouter.shouldDelegate ?? true),
+    currentContextId: existing?.currentContextId,
+    lastTaskId: existing?.lastTaskId,
+    targetAgents:
+      existing?.targetAgents?.length
+        ? existing.targetAgents
+        : packet.companyReadinessPacket?.allowedDestinations ?? ["claude_code", "openclaw"],
+    envelopeId: existing?.envelopeId,
+    envelopeType: existing?.envelopeType,
+    lineage: {
+      sourceRunId: existing?.lineage?.sourceRunId ?? canonicalPacketId,
+      sourceContextId: existing?.lineage?.sourceContextId,
+      parentAssetId: existing?.lineage?.parentAssetId,
+    },
+  };
+}
+
 export function ensureProofPacket(
   packet: ResultPacket,
   lens: LensId = "founder",
@@ -1117,6 +1163,14 @@ export function ensureProofPacket(
     allowedDestinations: ["slack_onepage", "investor_memo", "banker_readiness", "pitchbook_like", "crunchbase_like", "yc_context"],
     sensitivity: visibility === "public" ? "workspace" : visibility,
   };
+  const workflowAsset = buildWorkflowAsset({
+    ...identityPacket,
+    packetId: identityPacket.packetId ?? buildPacketId(identityPacket),
+    packetType: identityPacket.packetType ?? "founder_packet",
+    canonicalEntity: identityPacket.canonicalEntity ?? identityPacket.entityName,
+    companyReadinessPacket,
+    operatingModel,
+  });
 
   const enriched: ProofReadyResultPacket = {
     ...identityPacket,
@@ -1152,6 +1206,7 @@ export function ensureProofPacket(
     benchmarkEvidence,
     workflowComparison,
     operatingModel,
+    workflowAsset,
     distributionSurfaceStatus,
     companyReadinessPacket,
     companyNamingPack,
