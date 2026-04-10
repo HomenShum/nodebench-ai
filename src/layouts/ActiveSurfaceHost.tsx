@@ -33,8 +33,8 @@ const CalendarHomeHub = lazy(() =>
 const TimelineRoadmapView = lazy(() =>
   import("@/components/timelineRoadmap/TimelineRoadmapView").then((mod) => ({ default: mod.TimelineRoadmapView })),
 );
-const ControlPlaneLanding = lazy(() =>
-  import("@/features/controlPlane/views/ControlPlaneLanding").then((mod) => ({ default: mod.ControlPlaneLanding })),
+const HomeLanding = lazy(() =>
+  import("@/features/home/views/HomeLanding").then((mod) => ({ default: mod.HomeLanding })),
 );
 const NotFoundPage = lazy(() =>
   import("@/features/controlPlane/views/NotFoundPage").then((mod) => ({ default: mod.NotFoundPage })),
@@ -102,6 +102,15 @@ const ImprovementTimeline = lazy(() =>
 );
 const ChatHome = lazy(() =>
   import("@/features/chat/views/ChatHome").then((mod) => ({ default: mod.ChatHome })),
+);
+const ReportsHome = lazy(() =>
+  import("@/features/reports/views/ReportsHome").then((mod) => ({ default: mod.ReportsHome })),
+);
+const NudgesHome = lazy(() =>
+  import("@/features/nudges/views/NudgesHome").then((mod) => ({ default: mod.NudgesHome })),
+);
+const MeHome = lazy(() =>
+  import("@/features/me/views/MeHome").then((mod) => ({ default: mod.MeHome })),
 );
 const FounderWorkspaceHome = lazy(() =>
   import("@/features/founder/views/FounderWorkspaceHome").then((mod) => ({ default: mod.FounderWorkspaceHome })),
@@ -409,13 +418,7 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
         if (isUnknownRoute) {
           return <NotFoundPage />;
         }
-        return (
-          <ControlPlaneLanding
-            onNavigate={(view) => onNavigateToView(view)}
-            onOpenFastAgent={onOpenFastAgent}
-            onOpenFastAgentWithPrompt={onOpenFastAgentWithPrompt}
-          />
-        );
+        return <HomeLanding />;
       case "memo":
         return <DecisionMemoView />;
       case "research":
@@ -530,11 +533,11 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
       case "workspace":
         return <ChatHome />;
       case "packets":
-        return <FounderPacketsHome />;
+        return <ReportsHome />;
       case "history":
-        return <FounderHistoryHome />;
+        return <NudgesHome />;
       case "connect":
-        return <FounderConnectHome />;
+        return <MeHome />;
       case "library":
         return (
           <LibraryHome
