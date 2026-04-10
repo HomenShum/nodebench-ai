@@ -1,13 +1,50 @@
 /**
- * Retention Bridge API — Integration between NodeBench Delta and retention.sh
+ * Retention Bridge API — Integration between NodeBench Delta and retention.sh / Attrition
  *
  * POST /retention/register  — Register retention.sh team connection
  * POST /retention/sync      — Sync QA findings from retention.sh
  * GET  /retention/status    — Get retention.sh connection status
  * POST /retention/webhook   — Receive retention.sh events
+ * POST /retention/push-packet — Ingest delta packets
+ * GET  /retention/packets   — List ingested packets
+ *
+ * All write endpoints forward a non-blocking copy to the Attrition backend
+ * (Cloud Run) when available. If Attrition is down, NodeBench continues
+ * working normally with its local in-memory state.
  */
 
 import { Router } from "express";
+import type { WorkflowEnvelope } from "../lib/workflowEnvelope.js";
+import { getTrajectoryStats, listTrajectories } from "../lib/trajectoryStore.js";
+
+// ── Attrition backend forwarding ─────────────────────────────────────────────
+
+const ATTRITION_BACKEND =
+  process.env.ATTRITION_URL || "https://attrition-7xtb75zi5q-uc.a.run.app";
+
+/**
+ * Forward a request to the Attrition backend. Non-blocking — returns null on
+ * any failure so NodeBench continues with local handling.
+ */
+async function forwardToAttrition(
+  path: string,
+  method: string,
+  body?: unknown
+): Promise<unknown | null> {
+  try {
+    const resp = await fetch(`${ATTRITION_BACKEND}/api/retention${path}`, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(5000),
+    });
+    if (resp.ok) return resp.json();
+    return null;
+  } catch {
+    // Attrition backend not available — continue with local handling
+    return null;
+  }
+}
 
 // In-memory retention state (production would persist via Convex)
 interface RetentionConnection {
@@ -65,6 +102,9 @@ export function createRetentionBridgeRouter(): Router {
 
       logEvent("registered", { teamCode, peerId: retentionConnection.peerId });
 
+      // Forward to Attrition backend (non-blocking)
+      forwardToAttrition("/register", "POST", req.body).catch(() => {});
+
       res.status(201).json({
         status: "connected",
         sessionId: `rs_${Date.now().toString(36)}`,
@@ -98,6 +138,9 @@ export function createRetentionBridgeRouter(): Router {
 
       const findingCount = qaFindings?.length || 0;
       logEvent("sync", { findingCount, qaScore, tokensSaved });
+
+      // Forward to Attrition backend (non-blocking)
+      forwardToAttrition("/sync", "POST", req.body).catch(() => {});
 
       res.json({
         status: "synced",
@@ -142,6 +185,9 @@ export function createRetentionBridgeRouter(): Router {
 
       logEvent(event, data);
 
+      // Forward to Attrition backend (non-blocking)
+      forwardToAttrition("/webhook", "POST", req.body).catch(() => {});
+
       // Update QA score if it's a crawl_complete event
       if (event === "crawl_complete" && retentionConnection && data) {
         const d = data as Record<string, unknown>;
@@ -182,6 +228,9 @@ export function createRetentionBridgeRouter(): Router {
         confidence: packet.confidence,
       });
 
+      // Forward to Attrition backend (non-blocking)
+      forwardToAttrition("/push-packet", "POST", req.body).catch(() => {});
+
       // Update retention connection stats if present
       if (retentionConnection) {
         retentionConnection.lastSync = new Date().toISOString();
@@ -195,8 +244,10 @@ export function createRetentionBridgeRouter(): Router {
       // - delta.handoff → founder.createTaskPacket
       // - delta.watch → founder.createRelatedEntity
 
-      res.status(201).json({
-        status: "ingested",
+      // HONEST_STATUS: 202 Accepted (event log only, not durably persisted)
+      res.status(202).json({
+        status: "accepted",
+        persisted: false,
         type: packet.type,
         subject: packet.subject,
         hint: "Packet stored in event stream. Dashboard will reflect changes on next refresh.",
@@ -214,6 +265,114 @@ export function createRetentionBridgeRouter(): Router {
       .filter((e) => e.type === "packet_ingested")
       .slice(-20);
     res.json({ packets: packetEvents, count: packetEvents.length });
+  });
+
+  // ── NEW: Accept WorkflowEnvelope (canonical envelope format) ──────────────
+
+  router.post("/push-envelope", (req, res) => {
+    try {
+      const envelope = req.body as WorkflowEnvelope;
+
+      // Validate required fields
+      if (!envelope?.transport?.envelopeId || !envelope?.content?.subject || !envelope?.content?.summary) {
+        res.status(400).json({
+          error: "Invalid envelope: transport.envelopeId, content.subject, and content.summary are required",
+        });
+        return;
+      }
+
+      logEvent("envelope_ingested", {
+        envelopeId: envelope.transport.envelopeId,
+        envelopeType: envelope.transport.envelopeType,
+        subject: envelope.content.subject,
+        entityName: envelope.content.entityName,
+        confidence: envelope.content.confidence,
+        sourceCount: envelope.proof?.sourceRefs?.length ?? 0,
+        traceSteps: envelope.trace?.steps?.length ?? 0,
+      });
+
+      // Forward to Attrition backend (non-blocking)
+      forwardToAttrition("/push-envelope", "POST", req.body).catch(() => {});
+
+      if (retentionConnection) {
+        retentionConnection.lastSync = new Date().toISOString();
+      }
+
+      // HONEST_STATUS: 202 Accepted (event log only)
+      res.status(202).json({
+        status: "accepted",
+        persisted: false,
+        envelopeId: envelope.transport.envelopeId,
+        envelopeType: envelope.transport.envelopeType,
+        hint: "Envelope stored in event stream. Use /retention/savings for cost metrics.",
+      });
+    } catch (err) {
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Envelope ingestion failed", detail: String(err) });
+      }
+    }
+  });
+
+  // ── NEW: Aggregate savings stats from trajectory store ──────────────────
+
+  router.get("/savings", (_req, res) => {
+    try {
+      const stats = getTrajectoryStats();
+
+      // Estimate cost savings (using Claude pricing approximation: $0.000004 per token)
+      const TOKEN_COST_USD = 0.000004;
+      const estimatedCostSavedUsd =
+        stats.totalReplays > 0
+          ? Math.round(stats.totalReplays * (stats.avgTokenSavingsPct / 100) * 31000 * TOKEN_COST_USD * 100) / 100
+          : 0;
+
+      res.json({
+        ...stats,
+        estimatedCostSavedUsd,
+        retentionConnected: !!retentionConnection,
+        hint: stats.totalTrajectories === 0
+          ? "No trajectories recorded yet. Run a search via /api/pipeline/search to start recording."
+          : `${stats.totalTrajectories} trajectories, ${stats.totalReplays} replays. Avg ${stats.avgTokenSavingsPct}% token savings.`,
+      });
+    } catch (err) {
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Savings query failed", detail: String(err) });
+      }
+    }
+  });
+
+  // ── NEW: List stored search trajectories with replay stats ──────────────
+
+  router.get("/trajectories", (req, res) => {
+    try {
+      const entityName = req.query.entityName as string | undefined;
+      const limit = Math.min(Number(req.query.limit) || 50, 100);
+
+      const trajectories = listTrajectories({ entityName, limit });
+
+      res.json({
+        trajectories: trajectories.map((t) => ({
+          trajectoryId: t.trajectoryId,
+          entityName: t.entityName,
+          lens: t.lens,
+          query: t.query,
+          success: t.success,
+          replayCount: t.replayCount,
+          avgTokenSavings: t.avgTokenSavings,
+          avgTimeSavings: t.avgTimeSavings,
+          driftScore: t.driftScore,
+          totalDurationMs: t.totalDurationMs,
+          totalSteps: t.totalSteps,
+          envelopeId: t.envelopeId,
+          createdAt: t.createdAt,
+        })),
+        count: trajectories.length,
+      });
+    } catch (err) {
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Trajectory list failed", detail: String(err) });
+      }
+    }
   });
 
   return router;
