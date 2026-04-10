@@ -63,7 +63,8 @@ export type MainView =
   | "watchlists"
   | "agents"
   | "benchmark-comparison"
-  | "role-lens-output";
+  | "role-lens-output"
+  | "homes-hub-session";
 
 export type ResearchTab = "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
 
@@ -748,6 +749,20 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "control-plane",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+
+  // ── Homes Hub Session Persistence ────────────────────────────────────────
+  {
+    id: "homes-hub-session",
+    title: "Homes Hub",
+    subtitle: "Revisit, refresh, and recompile your research packets — no sign-in required",
+    path: "/homes",
+    aliases: ["/homes-hub", "/sessions"],
+    component: lazyView(() => import("@/features/controlPlane/components/HomesHubSession")),
+    group: "core",
+    navVisible: true,
     surfaceId: "ask",
     commandPaletteVisible: true,
   },

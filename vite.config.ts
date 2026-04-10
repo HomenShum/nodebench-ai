@@ -141,6 +141,14 @@ export default defineConfig(({ mode }) => {
           target: "http://localhost:3100",
           changeOrigin: true,
         },
+        "/api/improvements": {
+          target: "http://localhost:3100",
+          changeOrigin: true,
+        },
+        "/api/retention": {
+          target: "http://localhost:3100",
+          changeOrigin: true,
+        },
         "/voice": {
           target: "http://localhost:3100",
           changeOrigin: true,
