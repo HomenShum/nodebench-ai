@@ -230,12 +230,16 @@ export function extractDCFInputs(result: {
 
 function extractDollarAmount(text: string, keywords: string[]): number | null {
   for (const kw of keywords) {
-    // Match patterns like "$2B", "$26 billion", "$2.5B", "$500M", "$500 million"
+    // Match keyword near dollar amount. Reverse patterns ($ before keyword) are
+    // more reliable because "$2B in annual revenue" keeps the amount closest to
+    // its semantic owner. Forward patterns risk crossing into adjacent clauses.
     const patterns = [
-      new RegExp(`${kw}[^$]*\\$([\\d,.]+)\\s*(billion|B)`, "i"),
-      new RegExp(`${kw}[^$]*\\$([\\d,.]+)\\s*(million|M)`, "i"),
-      new RegExp(`\\$([\\d,.]+)\\s*(billion|B)[^]*?${kw}`, "i"),
-      new RegExp(`\\$([\\d,.]+)\\s*(million|M)[^]*?${kw}`, "i"),
+      // Reverse: $X ... keyword (most reliable — "$2B in annual revenue")
+      new RegExp(`\\$([\\d,.]+)\\s*(billion|B)[^.]{0,15}${kw}`, "i"),
+      new RegExp(`\\$([\\d,.]+)\\s*(million|M)[^.]{0,15}${kw}`, "i"),
+      // Forward: keyword ... $X (tight — "valued at $30B", max 10 chars gap)
+      new RegExp(`${kw}[^.$,]{0,10}\\$([\\d,.]+)\\s*(billion|B)`, "i"),
+      new RegExp(`${kw}[^.$,]{0,10}\\$([\\d,.]+)\\s*(million|M)`, "i"),
     ];
 
     for (const pattern of patterns) {

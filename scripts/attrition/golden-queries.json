@@ -1,0 +1,116 @@
+{
+  "version": "1.0.0",
+  "description": "Golden queries for NodeBench pipeline quality benchmarking via attrition.sh",
+  "queries": [
+    {
+      "id": "anthropic_investor",
+      "query": "Anthropic AI competitive position",
+      "lens": "investor",
+      "expectedEntity": "Anthropic",
+      "minConfidence": 70,
+      "minSignals": 1,
+      "minSources": 5,
+      "expectDCF": true,
+      "tags": ["company_search", "dcf", "tier1"]
+    },
+    {
+      "id": "stripe_founder",
+      "query": "Stripe payments platform strategy",
+      "lens": "founder",
+      "expectedEntity": "Stripe",
+      "minConfidence": 70,
+      "minSignals": 1,
+      "minSources": 5,
+      "expectDCF": false,
+      "tags": ["company_search", "tier1"]
+    },
+    {
+      "id": "cursor_investor",
+      "query": "Cursor AI $2B ARR coding IDE valuation",
+      "lens": "investor",
+      "expectedEntity": "Cursor",
+      "minConfidence": 60,
+      "minSignals": 1,
+      "minSources": 5,
+      "expectDCF": true,
+      "tags": ["company_search", "dcf", "tier1"]
+    },
+    {
+      "id": "openai_investor",
+      "query": "OpenAI $300B valuation enterprise strategy",
+      "lens": "investor",
+      "expectedEntity": "OpenAI",
+      "minConfidence": 70,
+      "minSignals": 1,
+      "minSources": 5,
+      "expectDCF": true,
+      "tags": ["company_search", "dcf", "tier1"]
+    },
+    {
+      "id": "ditto_investor",
+      "query": "Ditto AI agentic social dating platform",
+      "lens": "investor",
+      "expectedEntity": "Ditto",
+      "minConfidence": 60,
+      "minSignals": 1,
+      "minSources": 5,
+      "expectDCF": false,
+      "tags": ["company_search", "tier2"]
+    },
+    {
+      "id": "ai_failure_rates",
+      "query": "Why 80% of AI agent projects fail in production 2026",
+      "lens": "founder",
+      "expectedEntity": null,
+      "minConfidence": 60,
+      "minSignals": 1,
+      "minSources": 3,
+      "expectDCF": false,
+      "tags": ["pain_point", "tier1"]
+    },
+    {
+      "id": "diligence_checklist",
+      "query": "Startup due diligence 7 checks beyond pitch deck",
+      "lens": "banker",
+      "expectedEntity": null,
+      "minConfidence": 70,
+      "minSignals": 1,
+      "minSources": 3,
+      "expectDCF": false,
+      "tags": ["pain_point", "banker", "tier1"]
+    },
+    {
+      "id": "hidden_requirements",
+      "query": "Hidden requirements VCs secretly expect from founders",
+      "lens": "founder",
+      "expectedEntity": null,
+      "minConfidence": 60,
+      "minSignals": 1,
+      "minSources": 3,
+      "expectDCF": false,
+      "tags": ["pain_point", "tier1"]
+    },
+    {
+      "id": "databricks_investor",
+      "query": "Databricks $10B ARR data lakehouse AI platform",
+      "lens": "investor",
+      "expectedEntity": "Databricks",
+      "minConfidence": 70,
+      "minSignals": 1,
+      "minSources": 5,
+      "expectDCF": true,
+      "tags": ["company_search", "dcf", "tier2"]
+    },
+    {
+      "id": "mcp_standard",
+      "query": "MCP Model Context Protocol adoption Linux Foundation",
+      "lens": "founder",
+      "expectedEntity": null,
+      "minConfidence": 80,
+      "minSignals": 1,
+      "minSources": 5,
+      "expectDCF": false,
+      "tags": ["ecosystem", "tier1"]
+    }
+  ]
+}

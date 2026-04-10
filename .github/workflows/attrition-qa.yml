@@ -1,0 +1,104 @@
+name: Attrition QA
+# Runs after every deploy to verify NodeBench quality
+
+on:
+  # After Vercel deploy completes
+  deployment_status:
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: 'NodeBench API URL'
+        default: 'https://www.nodebenchai.com'
+
+jobs:
+  qa-crawl:
+    name: Surface crawl
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.deployment_status.state == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Crawl all surfaces
+        run: |
+          BASE="${{ github.event.inputs.api_url || 'https://www.nodebenchai.com' }}"
+          SURFACES=("ask" "library" "connect" "telemetry")
+          ERRORS=0
+
+          for surface in "${SURFACES[@]}"; do
+            STATUS=$(curl -sS -o /dev/null -w "%{http_code}" "$BASE/?surface=$surface" --max-time 15)
+            if [ "$STATUS" = "200" ]; then
+              echo "✓ $surface: $STATUS"
+            else
+              echo "✗ $surface: $STATUS"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+
+          # Check pipeline health
+          PIPELINE=$(curl -sS "$BASE/api/pipeline/health" --max-time 10 2>/dev/null || echo '{}')
+          echo "Pipeline health: $PIPELINE"
+
+          # Check HyperLoop stats
+          HYPERLOOP=$(curl -sS "$BASE/api/hyperloop/stats" --max-time 10 2>/dev/null || echo '{}')
+          echo "HyperLoop stats: $HYPERLOOP"
+
+          if [ $ERRORS -gt 0 ]; then
+            echo "::error::$ERRORS surface(s) failed health check"
+            exit 1
+          fi
+
+  golden-queries:
+    name: Pipeline quality benchmark
+    runs-on: ubuntu-latest
+    needs: qa-crawl
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run golden queries
+        env:
+          NODEBENCH_API_URL: ${{ github.event.inputs.api_url || 'https://www.nodebenchai.com' }}
+        run: npx tsx scripts/attrition/run-golden-queries.ts
+        continue-on-error: true
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-query-results
+          path: scripts/attrition/golden-results.json
+
+      - name: Comment results on PR (if applicable)
+        if: github.event.pull_request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const results = JSON.parse(fs.readFileSync('scripts/attrition/golden-results.json', 'utf8'));
+            const body = `## NodeBench Quality Benchmark
+
+            **Pass rate:** ${results.passed}/${results.total} (${results.passRate}%)
+            **Avg confidence:** ${results.avgConfidence}%
+            **Avg latency:** ${results.avgLatency}ms
+
+            ${results.results.filter(r => !r.passed).map(r =>
+              `❌ **${r.id}**: ${r.failures.join(', ')}`
+            ).join('\n')}
+
+            ${results.results.filter(r => r.passed).map(r =>
+              `✅ **${r.id}**: ${r.confidence}% conf, ${r.signals} signals, ${r.sources} sources`
+            ).join('\n')}
+            `;
+            if (context.issue?.number) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body,
+              });
+            }
