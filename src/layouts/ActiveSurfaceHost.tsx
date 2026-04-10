@@ -218,15 +218,10 @@ function SurfaceFrame({
 
 const TELEMETRY_TABS = [
   { id: "activity", label: "Activity" },
-  { id: "hyperloop", label: "HyperLoop" },
-  { id: "trajectory", label: "Trajectory" },
-  { id: "compare", label: "Compare" },
-  { id: "judge", label: "Verdicts" },
-  { id: "savings", label: "Savings" },
+  { id: "quality", label: "Quality" },
+  { id: "runs", label: "Runs" },
+  { id: "cost", label: "Cost" },
   { id: "subconscious", label: "Memory" },
-  { id: "health", label: "Health" },
-  { id: "spend", label: "Spend" },
-  { id: "improvements", label: "Improvements" },
 ] as const;
 
 type TelemetryTabId = (typeof TELEMETRY_TABS)[number]["id"];
@@ -330,15 +325,30 @@ function TelemetryStack({ active = true }: { active?: boolean }) {
       {/* Tab content */}
       <div className="mt-4 w-full max-w-3xl rounded-xl border border-white/[0.06] bg-white/[0.02] p-5" role="tabpanel">
         {activeTab === "activity" && <AgentTelemetryDashboard />}
-        {activeTab === "hyperloop" && <HyperLoopDashboard />}
-        {activeTab === "trajectory" && <TrajectoryConsole session={null} />}
-        {activeTab === "compare" && <RunCompareView />}
-        {activeTab === "judge" && <JudgeDashboard />}
-        {activeTab === "savings" && <SavingsDashboard />}
+        {/* Quality: HyperLoop + Improvements + Verdicts */}
+        {activeTab === "quality" && (
+          <div className="space-y-6">
+            <ImprovementTimeline />
+            <HyperLoopDashboard />
+            <JudgeDashboard />
+          </div>
+        )}
+        {/* Runs: Trajectory + Compare */}
+        {activeTab === "runs" && (
+          <div className="space-y-6">
+            <TrajectoryConsole session={null} />
+            <RunCompareView />
+          </div>
+        )}
+        {/* Cost: Savings + Spend + Health */}
+        {activeTab === "cost" && (
+          <div className="space-y-6">
+            <SavingsDashboard />
+            <CostDashboard />
+            <ObservabilityView />
+          </div>
+        )}
         {activeTab === "subconscious" && <SubconsciousDashboard />}
-        {activeTab === "health" && <ObservabilityView />}
-        {activeTab === "spend" && <CostDashboard />}
-        {activeTab === "improvements" && <ImprovementTimeline />}
       </div>
     </div>
   );

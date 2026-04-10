@@ -5,7 +5,7 @@
  * Pinterest-style research tray for the Ask landing page.
  */
 
-import { memo, useState, useCallback, useRef, type DragEvent } from "react";
+import { memo, useState, useCallback, useRef, useMemo, type DragEvent } from "react";
 import { Upload, X, Image, FileText, Link2, Mic, Video, Sparkles } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -181,10 +181,16 @@ export const EvidenceBoard = memo(function EvidenceBoard({ onCompile }: Evidence
     setItems((prev) => prev.filter((i) => i.id !== id));
   }, []);
 
+  const dedupedEntities = useMemo(
+    () => [...new Set(items.flatMap((i) => i.extractedEntities))].slice(0, 8),
+    [items],
+  );
+  const suggested = useMemo(() => suggestQuery(items), [items]);
+
   const handleCompile = useCallback(() => {
     if (items.length === 0) return;
-    onCompile(items, suggestQuery(items));
-  }, [items, onCompile]);
+    onCompile(items, suggested);
+  }, [items, onCompile, suggested]);
 
   if (items.length === 0) {
     // Compact drop zone
@@ -259,11 +265,11 @@ export const EvidenceBoard = memo(function EvidenceBoard({ onCompile }: Evidence
           ))}
         </div>
 
-        {/* Extracted entities summary */}
-        {items.some((i) => i.extractedEntities.length > 0) && (
+        {/* Extracted entities summary (memoized) */}
+        {dedupedEntities.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1">
             <span className="text-[10px] text-content-muted/50 mr-1">Detected:</span>
-            {[...new Set(items.flatMap((i) => i.extractedEntities))].slice(0, 8).map((entity) => (
+            {dedupedEntities.map((entity) => (
               <span key={entity} className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] text-emerald-400">
                 {entity}
               </span>
@@ -271,9 +277,9 @@ export const EvidenceBoard = memo(function EvidenceBoard({ onCompile }: Evidence
           </div>
         )}
 
-        {/* Suggested query */}
+        {/* Suggested query (memoized) */}
         <div className="mt-2 text-[10px] text-content-muted/40">
-          Suggested: "{suggestQuery(items)}"
+          Suggested: &quot;{suggested}&quot;
         </div>
       </div>
 

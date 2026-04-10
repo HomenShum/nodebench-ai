@@ -15,7 +15,7 @@
 
 import { Router } from "express";
 import type { WorkflowEnvelope } from "../lib/workflowEnvelope.js";
-import { getTrajectoryStats, listTrajectories } from "../lib/trajectoryStore.js";
+import { getTrajectoryStats, listTrajectorySummaries, estimateCostSaved } from "../lib/trajectoryStore.js";
 
 // ── Attrition backend forwarding ─────────────────────────────────────────────
 
@@ -319,12 +319,7 @@ export function createRetentionBridgeRouter(): Router {
     try {
       const stats = getTrajectoryStats();
 
-      // Estimate cost savings (using Claude pricing approximation: $0.000004 per token)
-      const TOKEN_COST_USD = 0.000004;
-      const estimatedCostSavedUsd =
-        stats.totalReplays > 0
-          ? Math.round(stats.totalReplays * (stats.avgTokenSavingsPct / 100) * 31000 * TOKEN_COST_USD * 100) / 100
-          : 0;
+      const estimatedCostSavedUsd = estimateCostSaved(stats);
 
       res.json({
         ...stats,
@@ -348,7 +343,7 @@ export function createRetentionBridgeRouter(): Router {
       const entityName = req.query.entityName as string | undefined;
       const limit = Math.min(Number(req.query.limit) || 50, 100);
 
-      const trajectories = listTrajectories({ entityName, limit });
+      const trajectories = listTrajectorySummaries({ entityName, limit });
 
       res.json({
         trajectories: trajectories.map((t) => ({

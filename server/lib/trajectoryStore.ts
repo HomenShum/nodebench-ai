@@ -6,12 +6,8 @@
  * savings measurement.
  */
 
-import Database from "better-sqlite3";
-import { resolve } from "node:path";
-import { homedir } from "node:os";
-import { mkdirSync } from "node:fs";
-import { createHash } from "node:crypto";
 import type { PipelineState } from "../pipeline/searchPipeline.js";
+import { hashContent } from "./workflowEnvelope.js";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -55,24 +51,25 @@ export interface SearchTrajectory {
 
 const MAX_TRAJECTORIES = 300;
 const EVICT_BATCH = 20;
+const AVG_TOKENS_PER_PIPELINE_RUN = 31000;
+export const TOKEN_COST_USD = 0.000004;
 
-// ── DB singleton ─────────────────────────────────────────────────────
+// ── DB (reuse canonical singleton) ───────────────────────────────────
 
-let _db: Database.Database | null = null;
+import { getDb as getCanonicalDb } from "../../packages/mcp-local/src/db.js";
 
-function getDb(): Database.Database {
-  if (_db) return _db;
-  const dir = resolve(homedir(), ".nodebench");
-  mkdirSync(dir, { recursive: true });
-  const dbPath = resolve(dir, "nodebench.db");
-  _db = new Database(dbPath);
-  _db.pragma("journal_mode = WAL");
-  _db.pragma("busy_timeout = 5000");
-  ensureTable(_db);
-  return _db;
+let _tableReady = false;
+
+function getDb() {
+  const db = getCanonicalDb();
+  if (!_tableReady) {
+    ensureTable(db);
+    _tableReady = true;
+  }
+  return db;
 }
 
-function ensureTable(db: Database.Database): void {
+function ensureTable(db: ReturnType<typeof getCanonicalDb>): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS search_trajectories (
       trajectory_id     TEXT PRIMARY KEY,
@@ -114,12 +111,9 @@ function createTrajectoryId(): string {
   return `traj_${ts}_${rand}_${_counter.toString(36)}`;
 }
 
-// ── State hashing ────────────────────────────────────────────────────
+// ── State hashing (reuse deterministic hashContent from workflowEnvelope) ──
 
-function hashState(obj: unknown): string {
-  const sorted = JSON.stringify(obj, Object.keys(obj as Record<string, unknown>).sort());
-  return createHash("sha256").update(sorted).digest("hex").slice(0, 16);
-}
+const hashState = hashContent;
 
 // ── Bounded eviction ─────────────────────────────────────────────────
 
@@ -309,6 +303,35 @@ export function getTrajectoryStats(): {
     avgTokenSavingsPct: Math.round(row.avg_tok * 100) / 100,
     avgTimeSavingsPct: Math.round(row.avg_time * 100) / 100,
   };
+}
+
+// ── Cost estimation (shared, not duplicated across routes) ───────────
+
+export function estimateCostSaved(stats: { totalReplays: number; avgTokenSavingsPct: number }): number {
+  return Math.round(stats.totalReplays * (stats.avgTokenSavingsPct / 100) * AVG_TOKENS_PER_PIPELINE_RUN * TOKEN_COST_USD * 100) / 100;
+}
+
+// ── Summary list (skips JSON.parse of steps_json) ────────────────────
+
+export function listTrajectorySummaries(filters?: {
+  entityName?: string;
+  limit?: number;
+}): Omit<SearchTrajectory, "steps">[] {
+  const db = getDb();
+  const limit = filters?.limit ?? 50;
+  let sql = "SELECT trajectory_id, entity_name, lens, query, classification, envelope_id, total_steps, total_duration_ms, total_tokens, state_hash_before, state_hash_after, success, replay_count, avg_token_savings, avg_time_savings, drift_score, last_validated_at, workspace_id, created_at, updated_at FROM search_trajectories";
+  const params: unknown[] = [];
+  if (filters?.entityName) {
+    sql += " WHERE entity_name = ?";
+    params.push(filters.entityName);
+  }
+  sql += " ORDER BY created_at DESC LIMIT ?";
+  params.push(limit);
+  const rows = db.prepare(sql).all(...params) as Array<Record<string, unknown>>;
+  return rows.map((row) => ({
+    ...rowToTrajectory(row),
+    steps: undefined as never,
+  }));
 }
 
 // ── Row → type conversion ────────────────────────────────────────────

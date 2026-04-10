@@ -7,11 +7,11 @@
  */
 
 import { Router, type Request, type Response } from "express";
-import { getTrajectoryStats, listTrajectories } from "../lib/trajectoryStore.js";
+import { getTrajectoryStats, listTrajectorySummaries, estimateCostSaved } from "../lib/trajectoryStore.js";
 import { getArchiveStats, listTopEntries } from "../../packages/mcp-local/src/sync/hyperloopArchive.js";
 import { listRecentEvaluations } from "../../packages/mcp-local/src/sync/hyperloopEval.js";
 
-const TOKEN_COST_USD = 0.000004;
+// Cost constant moved to trajectoryStore.ts — use estimateCostSaved()
 
 interface TimelineEvent {
   id: string;
@@ -41,7 +41,7 @@ export function createImprovementRouter(): Router {
     try {
       // ── Gather data from all three stores ──────────────────────────
       const trajStats = getTrajectoryStats();
-      const trajectories = listTrajectories({ limit: 100 });
+      const trajectories = listTrajectorySummaries({ limit: 50 });
       const archiveStats = getArchiveStats();
       const archiveEntries = listTopEntries(undefined, 50);
       const recentEvals = listRecentEvaluations(50);
@@ -138,17 +138,19 @@ export function createImprovementRouter(): Router {
       const boundedTimeline = timeline.slice(0, 200);
 
       // ── Quality curve (rolling avg from evals) ─────────────────────
+      // O(n) rolling window — no array allocation per iteration
       const sortedEvals = [...recentEvals].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
       const qualityCurve: Array<{ timestamp: string; avgQuality: number; sampleSize: number }> = [];
-      const window = 5;
+      const w = 5;
+      let runningSum = 0;
       for (let i = 0; i < sortedEvals.length; i++) {
-        const start = Math.max(0, i - window + 1);
-        const slice = sortedEvals.slice(start, i + 1);
-        const avg = slice.reduce((sum, e) => sum + (e.qualityScore ?? 0), 0) / slice.length;
+        runningSum += sortedEvals[i]!.qualityScore ?? 0;
+        if (i >= w) runningSum -= sortedEvals[i - w]!.qualityScore ?? 0;
+        const count = Math.min(i + 1, w);
         qualityCurve.push({
           timestamp: sortedEvals[i]!.timestamp,
-          avgQuality: Math.round(avg * 1000) / 1000,
-          sampleSize: slice.length,
+          avgQuality: Math.round((runningSum / count) * 1000) / 1000,
+          sampleSize: count,
         });
       }
 
@@ -190,7 +192,7 @@ export function createImprovementRouter(): Router {
           totalReplays: trajStats.totalReplays,
           avgTokenSavingsPct: trajStats.avgTokenSavingsPct,
           avgTimeSavingsPct: trajStats.avgTimeSavingsPct,
-          estimatedCostSavedUsd: Math.round(trajStats.totalReplays * (trajStats.avgTokenSavingsPct / 100) * 31000 * TOKEN_COST_USD * 100) / 100,
+          estimatedCostSavedUsd: estimateCostSaved(trajStats),
           avgQualityScore: Math.round(avgQuality * 100) / 100,
           archiveTotal: archiveStats.total,
           promotedCount: byStatus.promoted ?? 0,

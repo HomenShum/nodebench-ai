@@ -44,6 +44,11 @@ const EVENT_COLORS: Record<TimelineEvent["type"], string> = {
   archive_promotion: "bg-[#d97757]",
 };
 
+function fmtDate(ts: string) {
+  try { return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
+  catch { return ts; }
+}
+
 const EVENT_LABELS: Record<TimelineEvent["type"], string> = {
   trajectory_recorded: "Trajectory",
   replay_success: "Replay",
@@ -255,11 +260,6 @@ export const ImprovementTimeline = memo(function ImprovementTimeline() {
 
   const { summary, timeline, qualityCurve, savingsCurve, replayAdoption, promotionFunnel } = data;
   const funnelMax = Math.max(promotionFunnel.candidates, promotionFunnel.validated, promotionFunnel.promoted, 1);
-
-  const fmtDate = (ts: string) => {
-    try { return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
-    catch { return ts; }
-  };
 
   return (
     <div className="space-y-4">
