@@ -686,12 +686,14 @@ Do not present self-reported funding, traction, headcount, or expansion claims a
 Avoid privacy policies, terms pages, careers pages, and other thin legal/admin pages in the summary.
 If corroboration is weak, say that explicitly and lower confidence.
 
+CRITICAL: keyMetrics MUST include "ARR or Revenue" and "Valuation" as the first two entries if ANY dollar amounts are mentioned in the sources. Use "$XB" or "$XM" format. If no revenue data exists, use "Not disclosed" as the value.
+
 Return ONLY valid JSON:
 {
   "entityName": "company name",
   "answer": "3-4 sentence summary with specific numbers, citing sources as [S1], [S2] etc.",
   "confidence": 0-100,
-  "keyMetrics": [{"label": "metric", "value": "value"}],
+  "keyMetrics": [{"label": "ARR or Revenue", "value": "$XB"}, {"label": "Valuation", "value": "$XB"}, {"label": "other metric", "value": "value"}],
   "signals": [{"name": "signal with [S1] citation", "direction": "up|down|neutral", "impact": "high|medium|low", "sourceIdx": 1}],
   "risks": [{"title": "risk", "description": "why it matters [S2]", "sourceIdx": 2}],
   "comparables": [{"name": "competitor", "relevance": "high|medium|low", "note": "why relevant"}],

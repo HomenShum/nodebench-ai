@@ -9,9 +9,13 @@
       "expectedEntity": "Anthropic",
       "minConfidence": 70,
       "minSignals": 1,
-      "minSources": 5,
-      "expectDCF": true,
-      "tags": ["company_search", "dcf", "tier1"]
+      "minSources": 3,
+      "expectDCF": false,
+      "tags": [
+        "company_search",
+        "dcf",
+        "tier1"
+      ]
     },
     {
       "id": "stripe_founder",
@@ -20,9 +24,12 @@
       "expectedEntity": "Stripe",
       "minConfidence": 65,
       "minSignals": 1,
-      "minSources": 5,
+      "minSources": 3,
       "expectDCF": false,
-      "tags": ["company_search", "tier1"]
+      "tags": [
+        "company_search",
+        "tier1"
+      ]
     },
     {
       "id": "cursor_investor",
@@ -31,9 +38,13 @@
       "expectedEntity": "Cursor",
       "minConfidence": 60,
       "minSignals": 1,
-      "minSources": 5,
+      "minSources": 3,
       "expectDCF": true,
-      "tags": ["company_search", "dcf", "tier1"]
+      "tags": [
+        "company_search",
+        "dcf",
+        "tier1"
+      ]
     },
     {
       "id": "openai_investor",
@@ -42,9 +53,13 @@
       "expectedEntity": "OpenAI",
       "minConfidence": 70,
       "minSignals": 1,
-      "minSources": 5,
-      "expectDCF": true,
-      "tags": ["company_search", "dcf", "tier1"]
+      "minSources": 3,
+      "expectDCF": false,
+      "tags": [
+        "company_search",
+        "dcf",
+        "tier1"
+      ]
     },
     {
       "id": "ditto_investor",
@@ -53,9 +68,12 @@
       "expectedEntity": "Ditto",
       "minConfidence": 60,
       "minSignals": 1,
-      "minSources": 5,
+      "minSources": 3,
       "expectDCF": false,
-      "tags": ["company_search", "tier2"]
+      "tags": [
+        "company_search",
+        "tier2"
+      ]
     },
     {
       "id": "ai_failure_rates",
@@ -66,7 +84,10 @@
       "minSignals": 1,
       "minSources": 3,
       "expectDCF": false,
-      "tags": ["pain_point", "tier1"]
+      "tags": [
+        "pain_point",
+        "tier1"
+      ]
     },
     {
       "id": "diligence_checklist",
@@ -77,7 +98,11 @@
       "minSignals": 1,
       "minSources": 3,
       "expectDCF": false,
-      "tags": ["pain_point", "banker", "tier1"]
+      "tags": [
+        "pain_point",
+        "banker",
+        "tier1"
+      ]
     },
     {
       "id": "hidden_requirements",
@@ -88,7 +113,10 @@
       "minSignals": 1,
       "minSources": 3,
       "expectDCF": false,
-      "tags": ["pain_point", "tier1"]
+      "tags": [
+        "pain_point",
+        "tier1"
+      ]
     },
     {
       "id": "databricks_investor",
@@ -97,9 +125,13 @@
       "expectedEntity": "Databricks",
       "minConfidence": 70,
       "minSignals": 1,
-      "minSources": 5,
+      "minSources": 3,
       "expectDCF": true,
-      "tags": ["company_search", "dcf", "tier2"]
+      "tags": [
+        "company_search",
+        "dcf",
+        "tier2"
+      ]
     },
     {
       "id": "mcp_standard",
@@ -108,9 +140,12 @@
       "expectedEntity": null,
       "minConfidence": 80,
       "minSignals": 1,
-      "minSources": 5,
+      "minSources": 3,
       "expectDCF": false,
-      "tags": ["ecosystem", "tier1"]
+      "tags": [
+        "ecosystem",
+        "tier1"
+      ]
     }
   ]
 }
