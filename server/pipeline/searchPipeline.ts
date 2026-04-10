@@ -891,13 +891,21 @@ export async function packageResult(state: PipelineState): Promise<PipelineState
   };
 }
 
+// ─── Progress callback type ──────────────────────────────────────
+
+export interface PipelineProgressEvent {
+  stage: "classify" | "search" | "analyze" | "package";
+  phase: "start" | "done";
+  state: PipelineState;
+  durationMs?: number;
+}
+
+export type OnPipelineProgress = (event: PipelineProgressEvent) => void;
+
 // ─── Run full pipeline ───────────────────────────────────────────
 
-export async function runSearchPipeline(query: string, lens: string): Promise<PipelineState> {
-  const pipelineStart = Date.now();
-
-  // Initialize state
-  let state: PipelineState = {
+export function createInitialPipelineState(query: string, lens: string): PipelineState {
+  return {
     query,
     lens,
     classification: "",
@@ -927,12 +935,39 @@ export async function runSearchPipeline(query: string, lens: string): Promise<Pi
     totalDurationMs: 0,
     error: null,
   };
+}
 
-  // Run pipeline: classify → search → analyze → package
+export async function runSearchPipeline(
+  query: string,
+  lens: string,
+  onProgress?: OnPipelineProgress,
+): Promise<PipelineState> {
+  const pipelineStart = Date.now();
+  let state = createInitialPipelineState(query, lens);
+
+  // classify
+  onProgress?.({ stage: "classify", phase: "start", state });
+  const classifyStart = Date.now();
   state = classify(state);
+  onProgress?.({ stage: "classify", phase: "done", state, durationMs: Date.now() - classifyStart });
+
+  // search
+  onProgress?.({ stage: "search", phase: "start", state });
+  const searchStart = Date.now();
   state = await search(state);
+  onProgress?.({ stage: "search", phase: "done", state, durationMs: Date.now() - searchStart });
+
+  // analyze
+  onProgress?.({ stage: "analyze", phase: "start", state });
+  const analyzeStart = Date.now();
   state = await analyze(state);
+  onProgress?.({ stage: "analyze", phase: "done", state, durationMs: Date.now() - analyzeStart });
+
+  // package
+  onProgress?.({ stage: "package", phase: "start", state });
+  const packageStart = Date.now();
   state = await packageResult(state);
+  onProgress?.({ stage: "package", phase: "done", state, durationMs: Date.now() - packageStart });
 
   state.totalDurationMs = Date.now() - pipelineStart;
 

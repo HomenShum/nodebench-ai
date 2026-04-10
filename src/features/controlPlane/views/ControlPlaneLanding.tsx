@@ -2416,7 +2416,8 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         )}
 
         {/* ── Loading state — live streaming telemetry feed ─────────────── */}
-        {(showSimplifiedLiveLoading || streaming.isStreaming) && (
+        {/* Show telemetry when: SSE is streaming, OR stages arrived (even after Convex resolves), OR Convex is loading */}
+        {(showSimplifiedLiveLoading || streaming.isStreaming || (streaming.stages.length > 0 && !activeResult)) && (
           <div className="mt-6">
             {streaming.stages.length > 0 ? (
               <LiveSearchTelemetry
