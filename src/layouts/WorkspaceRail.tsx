@@ -29,11 +29,11 @@ interface SurfaceShortcut {
 }
 
 const SURFACE_SHORTCUTS: SurfaceShortcut[] = [
-  { id: "ask", label: "Ask", icon: MessageSquare, color: "currentColor" },
-  { id: "workspace", label: "Workspace", icon: FolderKanban, color: "currentColor" },
-  { id: "packets", label: "Packets", icon: FileText, color: "currentColor" },
-  { id: "history", label: "History", icon: History, color: "currentColor" },
-  { id: "connect", label: "Connect", icon: Radio, color: "currentColor" },
+  { id: "ask", label: "Home", icon: MessageSquare, color: "currentColor" },
+  { id: "workspace", label: "Chat", icon: FolderKanban, color: "currentColor" },
+  { id: "packets", label: "Reports", icon: FileText, color: "currentColor" },
+  { id: "history", label: "Nudges", icon: History, color: "currentColor" },
+  { id: "connect", label: "Me", icon: Radio, color: "currentColor" },
 ];
 
 const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);

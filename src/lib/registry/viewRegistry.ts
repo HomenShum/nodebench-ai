@@ -809,7 +809,7 @@ export const SURFACE_DEFAULT_VIEW: Record<CockpitSurfaceId, MainView> = {
 };
 
 export const SURFACE_TITLES: Record<CockpitSurfaceId, string> = {
-  ask: "Ask",
+  ask: "Home",
   memo: "Decision Workbench",
   research: "Research Hub",
   investigate: "Investigation",
@@ -817,12 +817,12 @@ export const SURFACE_TITLES: Record<CockpitSurfaceId, string> = {
   editor: "Documents",
   graph: "Entity Graph",
   trace: "Audit Trail",
-  telemetry: "System",
+  telemetry: "Admin",
   // Canonical founder surfaces
-  workspace: "Workspace",
-  packets: "Packets",
-  history: "History",
-  connect: "Connect",
+  workspace: "Chat",
+  packets: "Reports",
+  history: "Nudges",
+  connect: "Me",
   library: "Library",
 };
 
