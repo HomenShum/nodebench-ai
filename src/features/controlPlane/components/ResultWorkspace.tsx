@@ -19,6 +19,7 @@ import { ensureProofPacket, type ProofReadyResultPacket } from "./proofModel";
 import { SourcesBar } from "./SourcesBar";
 import { DCFCard } from "./DCFCard";
 import { DelegationModal } from "./DelegationModal";
+import { RoleLensOutput, type RoleLensId } from "./RoleLensOutput";
 import type { LensId, ResultPacket } from "./searchTypes";
 
 interface ResultWorkspaceProps {
@@ -385,12 +386,13 @@ function ClaimText({
 }
 
 /* ── Tab IDs ────────────────────────────────────────────────────────── */
-type ResultTab = "overview" | "analysis" | "actions" | "sources";
+type ResultTab = "overview" | "analysis" | "actions" | "lens" | "sources";
 
 const TAB_LABELS: { id: ResultTab; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "analysis", label: "Analysis" },
   { id: "actions", label: "Actions" },
+  { id: "lens", label: "Lens" },
   { id: "sources", label: "Sources" },
 ];
 
@@ -921,6 +923,16 @@ export const ResultWorkspace = memo(function ResultWorkspace({
               <ActionButton onClick={onMonitor}><Bell className="h-3.5 w-3.5" />Monitor</ActionButton>
             </div>
           </section>
+        </div>
+      )}
+
+      {/* ── TAB: Lens ────────────────────────────────────────────────── */}
+      {activeTab === "lens" && (
+        <div className="space-y-3" role="tabpanel" aria-label="Role Lens">
+          <RoleLensOutput
+            lens={(lens as RoleLensId) ?? "investor"}
+            entityName={proofPacket.entityName}
+          />
         </div>
       )}
 

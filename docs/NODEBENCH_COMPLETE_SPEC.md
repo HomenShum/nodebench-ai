@@ -2133,3 +2133,273 @@ npx convex env set VAR value  # Set environment variable
 - **Find a tool:** `packages/mcp-local/src/tools/`
 - **Find a route:** `src/lib/registry/viewRegistry.ts`
 - **Find a style:** `tailwind.config.js` for theme tokens, `src/index.css` for globals
+
+---
+
+# Part 7: New Component Specifications (Shipped)
+
+## Evidence Board
+
+**File:** `src/features/controlPlane/components/EvidenceBoard.tsx`
+**Route:** Ask landing page (inline, between lens selector and example card)
+**Status:** Live, visually verified
+
+Pinterest-style upload zone on the Ask surface. Drop screenshots, audio, video, or notes to build a research packet. Compact dashed-border drop zone with upload icon. Wired into `ControlPlaneLanding.tsx`.
+
+## Conference Capture
+
+**File:** `src/features/controlPlane/components/ConferenceCapture.tsx`
+**Route:** `/capture` (also `/conference`, `/event-capture`)
+**Status:** Live, visually verified, zero console errors
+
+Fast mobile-first capture mode for events and conferences. Features:
+- Entity linking (person, company, event, topic) with chip display
+- Quick text notes with Enter-to-submit
+- Voice memo stub (start/stop recording)
+- Quick tags: Hot lead, Follow-up ASAP, Potential partner, Competitor, Investor interest, Acquisition target
+- CRM-ready summary generation with copy-to-clipboard
+- Clear all with empty state
+
+## Entity Compare
+
+**File:** `src/features/controlPlane/components/EntityCompare.tsx`
+**Route:** `/compare` (also `/entity-compare`, `/compare-entities`)
+**Status:** Live, visually verified, zero console errors
+
+Side-by-side diligence with role-specific framing. Features:
+- 5 role lenses (founder, investor, banker, buyer, operator)
+- Two-entity search inputs
+- Per-entity: confidence bar, what changed, strengths, risks, key people, role-fit scoring
+- Comparison matrix with delta arrows
+- Recommendation engine based on lens-specific scoring
+- Demo: Anthropic vs OpenAI
+
+## Role Lens Output
+
+**File:** `src/features/controlPlane/components/RoleLensOutput.tsx`
+**Route:** `/lens` (also `/role-lens`, `/persona`) + embedded in ResultWorkspace "Lens" tab
+**Status:** Live, visually verified, zero console errors
+
+Same packet, different persona rendering. 6 lenses:
+- **Founder:** Who matters, competitor truth, focus signal
+- **Investor:** Non-obvious value, hidden risks, conviction signal
+- **Banker:** Coverage intel, relationship graph, financing fit
+- **Buyer:** Business quality, acquirability, comparable deals
+- **Operator:** Process-poor but fixable, roll-up logic, EBITDA upside
+- **Student:** Context primer, what to question, what to read next
+
+Each lens outputs: headline, 3 sections with items, next action, watch-for.
+
+Wired into ResultWorkspace as 5th tab ("Lens") — selecting a lens on the Ask bar now changes the Lens tab output.
+
+## Benchmark Comparison
+
+**File:** `src/features/controlPlane/components/BenchmarkComparison.tsx`
+**Route:** `/benchmarks` (also `/benchmark`, `/eval`)
+**Status:** Live, visually verified, zero console errors
+
+5-baseline ladder proving NodeBench structured output vs shallow alternatives:
+1. **Social Baseline** (31 avg): Short thesis + 3 names, no evidence
+2. **Model Only** (40 avg): Same prompt, no tools, free-form
+3. **Model + Browse** (51 avg): Frontier model with basic web search
+4. **NodeBench Frontier** (75 avg): Structured tool plan, evidence ledger, role lens
+5. **NodeBench Distilled** (76 avg): Retained/attrited workflow replay
+
+Features:
+- Gap closure chart: social → frontier (+44), distilled retains 102% of gap at 23% of cost
+- 6-metric drill-down: factual, evidence, completeness, actionability, uncertainty, cost efficiency
+- 10 benchmark task families
+- External benchmark alignment: GAIA, BrowseComp, NodeBench-native
+
+## Delegation Modal
+
+**File:** `src/features/controlPlane/components/DelegationModal.tsx`
+**Route:** Modal triggered from ResultWorkspace Actions tab ("Delegate with scope" button)
+**Status:** Live, visually verified, zero console errors
+
+Handoff from packet to downstream agents. Features:
+- Target selection: Claude Code, OpenClaw, Internal Worker
+- Goal, scope, constraints, success criteria inputs
+- Lineage tracking (parent packet ID, delegation chain depth)
+- Briefing copy-to-clipboard
+- One-click delegate with success/error feedback
+
+## Homes Hub Session
+
+**File:** `src/features/controlPlane/components/HomesHubSession.tsx`
+**Route:** `/homes` (also `/homes-hub`, `/sessions`)
+**Status:** Live, visually verified, zero console errors
+
+Anonymous browser-session persistence. Features:
+- Session list with last-visited timestamps
+- Status badges: Fresh, Drifted, Stale
+- Delta refresh: detects what changed since last visit
+- Recompile: re-runs full pipeline with current data
+- Drift warning: "Data has changed since last compile"
+- Search filter, clear all
+- localStorage persistence (no auth required)
+- Demo seed: Anthropic AI, OpenAI, Stripe, Notion
+
+---
+
+# Part 8: Persona Friction Analysis
+
+## Founder Friction
+
+| Pain | Current workaround | NodeBench fix |
+|------|--------------------|---------------|
+| "I don't know what investors will actually care about" | Guess, ask friends | Role lens shows investor-specific framing of your company |
+| "My positioning feels generic" | Copy competitor copy | Evidence Board + Packet shows what makes you different with sources |
+| "I can't keep track of what changed" | Manual notes | Homes Hub drift detection + delta refresh |
+| "I need to hand this to someone else" | Copy-paste into email | Delegation Modal with scoped briefing |
+
+## Investor Friction
+
+| Pain | Current workaround | NodeBench fix |
+|------|--------------------|---------------|
+| "Decks hide the real risks" | Manual DD, call founders | Entity Compare surfaces hidden risks with evidence |
+| "I can't kill deals fast enough" | Spend weeks on DD | Confidence + proof status lets you kill or convict in minutes |
+| "What changed since I last looked?" | Re-read old notes | Homes Hub drift badge + recompile |
+| "I need to brief my IC" | Write memo from scratch | Packet export + role lens for IC-ready framing |
+
+## Banker Friction
+
+| Pain | Current workaround | NodeBench fix |
+|------|--------------------|---------------|
+| "Raw contact → usable coverage takes too long" | Manual research | Conference Capture → CRM summary in 2 minutes |
+| "Who actually influences the transaction?" | Guess from LinkedIn | Relationship graph in banker lens |
+| "Is this company ready for capital markets?" | Ask the company | Banker lens: financing fit + strategic buyer map |
+
+## Buyer/Acquirer Friction
+
+| Pain | Current workaround | NodeBench fix |
+|------|--------------------|---------------|
+| "Is this business actually good or just well-marketed?" | Trust the seller | Buyer lens: business quality + acquirability scoring |
+| "What will go wrong post-close?" | Hope for the best | Drift detection + risk inventory with evidence |
+| "How does this compare to the other target?" | Two separate DD tracks | Entity Compare side-by-side with buyer framing |
+
+## Operator Friction
+
+| Pain | Current workaround | NodeBench fix |
+|------|--------------------|---------------|
+| "Is this process-poor but fixable?" | Gut feel | Operator lens: EBITDA upside + playbook fit |
+| "Does this niche have roll-up density?" | Manual market map | Roll-up logic section in operator lens |
+| "Can I diligence without sounding naive?" | Hire a consultant | Buyer lens + Entity Compare for comparable deals |
+
+---
+
+# Part 9: Attrition, Retention, HyperAgent & ARE Integration
+
+## Retention
+
+**Definition:** Preserves useful workflow structure and query expansions from prior runs.
+
+**What is retained:**
+- Tool call sequences that produced high-quality outputs
+- Query expansions that surfaced non-obvious sources
+- Evidence ledger patterns that achieved high confidence
+- Role lens configurations that matched user behavior
+
+**How it surfaces:**
+- Homes Hub "Recompile" uses retained workflow structure to produce similar-quality output faster
+- Benchmark "NodeBench Distilled" baseline is the retained/attrited path
+- `workflowAsset.replayReady` flag on packets indicates retention is available
+
+**Current state:** Infrastructure exists (workflowEnvelope, trajectoryStore, replayDetector). Full automatic retention promotion is future.
+
+## Attrition
+
+**Definition:** Compresses workflows by removing redundant steps and enabling delta refresh.
+
+**What is attrited:**
+- Redundant tool calls (same query, same result)
+- Low-signal exploration branches that didn't contribute to the final packet
+- Intermediate state that can be reconstructed from the final packet
+
+**How it surfaces:**
+- Delta refresh in Homes Hub only re-runs attrited portions of the workflow
+- Cost reduction: distilled runs cost 23% of frontier runs while retaining 102% of quality gap
+- `workflowAsset.state` tracks attrition progress
+
+**Current state:** Attrition bridge exists (ta.nodebench.ingest_envelope). Full automatic step elimination is future.
+
+## HyperAgent (Oracle/Flywheel)
+
+**Definition:** Meta-agent that reviews runs to promote reusable workflow assets and improve system quality.
+
+**What it does:**
+- Reviews completed runs for replay candidacy
+- Promotes high-quality tool sequences to workflow assets
+- Identifies patterns across runs (e.g., "banker lens always starts with ownership map")
+- Feeds benchmark improvements back into the pipeline
+
+**How it surfaces:**
+- Improvement Timeline tab in telemetry stack
+- `workflowAsset.assetType` = "promoted" for HyperAgent-promoted assets
+- Benchmark comparison shows quality improvement over time
+
+**Current state:** Improvement Timeline visualization shipped. Automatic promotion is future.
+
+## ARE (Attrition-Retention-Evaluation)
+
+**Definition:** The closed loop connecting attrition, retention, and evaluation into a self-improving cycle.
+
+**The loop:**
+1. **Run** a search → produces packet + trajectory
+2. **Evaluate** the packet against gold standard or user feedback
+3. **Retain** high-quality workflow structures
+4. **Attrit** redundant steps from retained workflows
+5. **Replay** similar tasks through the distilled path
+6. **Benchmark** distilled vs frontier to measure cost/quality tradeoff
+7. **Promote** distilled paths that maintain quality as new defaults
+
+**Current state:** Steps 1-2 and 6 are live. Steps 3-5 and 7 are infrastructure-ready but not yet automatic.
+
+---
+
+# Part 10: Tool-Call Sequences
+
+## Standard Search Sequence
+
+```
+1. receive_query → parse intent, select lens
+2. discover_tools → find relevant tools for this query type
+3. web_search × 3-5 → parallel searches across domains
+4. fetch_url × 5-10 → retrieve promising sources
+5. analyze_content → extract claims, metrics, entities
+6. cross_reference → verify claims against multiple sources
+7. assemble_packet → build structured output with evidence ledger
+8. apply_lens → render per-role framing
+9. prepare_next_move → suggest follow-up, delegation, or export
+```
+
+## Conference Capture Sequence
+
+```
+1. receive_note → parse entity type + content
+2. link_entity → resolve person/company/event to known entities
+3. generate_crm_summary → assemble who/company/context/next action
+4. store_session → persist to Homes Hub for later revisit
+```
+
+## Delta Refresh Sequence
+
+```
+1. load_session → retrieve prior packet + workflow from Homes Hub
+2. detect_drift → compare current source state vs last compile
+3. attrited_search → re-run only changed portions of the workflow
+4. merge_deltas → combine new findings with retained structure
+5. recompile_packet → produce updated packet with change markers
+```
+
+## Delegation Sequence
+
+```
+1. build_briefing → assemble packet context + evidence + constraints
+2. select_target → route to Claude Code / OpenClaw / Internal Worker
+3. scope_task → define goal, constraints, success criteria
+4. track_lineage → record parent packet + delegation chain depth
+5. execute_delegation → send briefing to target agent
+6. monitor_progress → track execution via Actions feed
+```
+
