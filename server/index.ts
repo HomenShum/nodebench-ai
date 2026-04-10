@@ -42,6 +42,7 @@ import { createShareRouter } from "./routes/share.js";
 import { createWatchlistRouter } from "./routes/watchlist.js";
 import { createRetentionBridgeRouter } from "./routes/retentionBridge.js";
 import { createImprovementRouter } from "./routes/improvementRoute.js";
+import { createStreamingSearchRouter } from "./routes/streamingSearch.js";
 import { createHarnessRouter } from "./routes/harness.js";
 import { createWorkspaceSyncRouter } from "./routes/workspaceSync.js";
 import { createExecuteRouter } from "./routes/execute.js";
@@ -300,6 +301,8 @@ async function main(): Promise<void> {
   app.use("/api/retention", createRetentionBridgeRouter());
   app.use("/improvements", createImprovementRouter());
   app.use("/api/improvements", createImprovementRouter());
+  app.use("/search", createStreamingSearchRouter());
+  app.use("/api/search", createStreamingSearchRouter());
   app.use("/workspace", createWorkspaceSyncRouter());
   app.use("/api/workspace", createWorkspaceSyncRouter());
   app.use("/execute", createExecuteRouter());

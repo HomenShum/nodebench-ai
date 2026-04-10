@@ -57,6 +57,8 @@ import {
 import { ensureProofPacket } from "../components/proofModel";
 import { ChatThread } from "../components/ChatThread";
 import { EvidenceBoard, type EvidenceItem } from "../components/EvidenceBoard";
+import { LiveSearchTelemetry } from "../components/LiveSearchTelemetry";
+import { useStreamingSearch } from "@/hooks/useStreamingSearch";
 import type { ChatEntry } from "../components/ChatMessage";
 import { FounderEpisodePanel, type FounderEpisodeRecord, type FounderEpisodeSpan } from "../components/FounderEpisodePanel";
 import { ForecastGateCard } from "../components/ForecastGateCard";
@@ -651,6 +653,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   const latestConversationEntry = conversation.length > 0 ? conversation[conversation.length - 1] : null;
   const hasPendingConversationPacket = isSearching && latestConversationEntry?.packet === null;
   const showSimplifiedLiveLoading = hasPendingConversationPacket;
+  const streaming = useStreamingSearch();
 
   const voice = useVoiceInput({
     onTranscript: useCallback((text: string) => {
@@ -1178,6 +1181,10 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   const handleSubmit = useCallback((queryOverride?: string) => {
     const trimmed = (queryOverride ?? inputRef.current).trim();
     if (!trimmed) return;
+
+    // Start SSE streaming for live telemetry (runs in parallel with Convex path)
+    streaming.startStream(trimmed, activeLens);
+
     const demoKey = findDemoPacket(trimmed);
     const entryId = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const episodeId = `episode:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
@@ -2408,17 +2415,29 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           </div>
         )}
 
-        {/* ── Loading state — progressive skeleton + pipeline progress ─── */}
-        {showSimplifiedLiveLoading && (
-          <div className="mt-6 space-y-4">
-            <LivePipelineProgress
-              currentStep={convexSearch.state.status as PipelineStep ?? (activeTrace ? "searching" : null)}
-              traceSteps={activeTrace?.trace}
-              sourceCount={activeTrace?.trace?.filter((t) => t.step?.includes("search") || t.tool?.includes("search")).length ?? undefined}
-              entityName={submittedQuery.split(/\s+/).slice(0, 3).join(" ") || undefined}
-              elapsedMs={activeSearchRef.current?.startedAt ? Date.now() - activeSearchRef.current.startedAt : undefined}
-            />
-            <ResultWorkspaceSkeleton />
+        {/* ── Loading state — live streaming telemetry feed ─────────────── */}
+        {(showSimplifiedLiveLoading || streaming.isStreaming) && (
+          <div className="mt-6">
+            {streaming.stages.length > 0 ? (
+              <LiveSearchTelemetry
+                stages={streaming.stages}
+                query={submittedQuery}
+                lens={activeLens}
+                isStreaming={streaming.isStreaming}
+                error={streaming.error}
+              />
+            ) : (
+              <div className="mt-6 space-y-4">
+                <LivePipelineProgress
+                  currentStep={convexSearch.state.status as PipelineStep ?? (activeTrace ? "searching" : null)}
+                  traceSteps={activeTrace?.trace}
+                  sourceCount={activeTrace?.trace?.filter((t) => t.step?.includes("search") || t.tool?.includes("search")).length ?? undefined}
+                  entityName={submittedQuery.split(/\s+/).slice(0, 3).join(" ") || undefined}
+                  elapsedMs={activeSearchRef.current?.startedAt ? Date.now() - activeSearchRef.current.startedAt : undefined}
+                />
+                <ResultWorkspaceSkeleton />
+              </div>
+            )}
           </div>
         )}
 
