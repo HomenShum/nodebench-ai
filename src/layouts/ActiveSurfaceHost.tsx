@@ -100,6 +100,9 @@ const HyperLoopDashboard = lazy(() =>
 const ImprovementTimeline = lazy(() =>
   import("@/features/monitoring/views/ImprovementTimeline").then((mod) => ({ default: mod.ImprovementTimeline })),
 );
+const ChatHome = lazy(() =>
+  import("@/features/chat/views/ChatHome").then((mod) => ({ default: mod.ChatHome })),
+);
 const FounderWorkspaceHome = lazy(() =>
   import("@/features/founder/views/FounderWorkspaceHome").then((mod) => ({ default: mod.FounderWorkspaceHome })),
 );
@@ -525,7 +528,7 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
         return <TelemetryStack active={surfaceId === currentSurface} />;
       // ── Canonical founder surfaces ──────────────────────────────────
       case "workspace":
-        return <FounderWorkspaceHome onStartEpisode={(type) => onOpenFastAgentWithPrompt?.(`Start ${type} episode`)} />;
+        return <ChatHome />;
       case "packets":
         return <FounderPacketsHome />;
       case "history":
