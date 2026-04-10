@@ -130,12 +130,29 @@ export function DCFCard({
         )}
       </div>
 
-      {/* Assumptions footer */}
-      <div className="mt-3 flex flex-wrap gap-2 border-t border-white/[0.04] pt-2">
-        <span className="text-[9px] text-content-muted/50">5yr projection</span>
-        <span className="text-[9px] text-content-muted/50">15% FCF margin</span>
-        <span className="text-[9px] text-content-muted/50">12% WACC</span>
-        <span className="text-[9px] text-content-muted/50">3% terminal growth</span>
+      {/* Actions + Assumptions footer */}
+      <div className="mt-3 flex items-center justify-between border-t border-white/[0.04] pt-2">
+        <div className="flex flex-wrap gap-2">
+          <span className="text-[9px] text-content-muted/50">5yr projection</span>
+          <span className="text-[9px] text-content-muted/50">15% FCF margin</span>
+          <span className="text-[9px] text-content-muted/50">12% WACC</span>
+          <span className="text-[9px] text-content-muted/50">3% terminal growth</span>
+        </div>
+        <div className="flex gap-1.5">
+          <button
+            type="button"
+            className="rounded-md bg-accent-primary/10 px-2.5 py-1 text-[10px] font-medium text-accent-primary transition-colors hover:bg-accent-primary/20"
+          >
+            <BarChart3 className="mr-1 inline h-3 w-3" />
+            Open model
+          </button>
+          <button
+            type="button"
+            className="rounded-md bg-white/[0.04] px-2.5 py-1 text-[10px] font-medium text-content-muted transition-colors hover:bg-white/[0.08] hover:text-content"
+          >
+            Export .xlsx
+          </button>
+        </div>
       </div>
     </div>
   );
