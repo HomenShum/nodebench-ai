@@ -61,7 +61,9 @@ export type MainView =
   | "spreadsheets"
   | "world-monitor"
   | "watchlists"
-  | "agents";
+  | "agents"
+  | "benchmark-comparison"
+  | "role-lens-output";
 
 export type ResearchTab = "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
 
@@ -717,6 +719,35 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     component: lazyView(() => import("@/features/controlPlane/components/EntityCompare")),
     group: "core",
     navVisible: true,
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+
+  // ── Benchmark Comparison ────────────────────────────────────────────────
+  {
+    id: "benchmark-comparison",
+    title: "Benchmarks",
+    subtitle: "5-baseline ladder proving NodeBench structured output vs shallow alternatives",
+    path: "/benchmarks",
+    aliases: ["/benchmark", "/eval"],
+    component: lazyView(() => import("@/features/controlPlane/components/BenchmarkComparison")),
+    group: "core",
+    navVisible: true,
+    surfaceId: "telemetry",
+    commandPaletteVisible: true,
+  },
+
+  // ── Role Lens Output ────────────────────────────────────────────────────
+  {
+    id: "role-lens-output",
+    title: "Role Lens",
+    subtitle: "Same packet, different persona — founder, investor, banker, buyer, operator, student",
+    path: "/lens",
+    aliases: ["/role-lens", "/persona"],
+    component: lazyView(() => import("@/features/controlPlane/components/RoleLensOutput")),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
     surfaceId: "ask",
     commandPaletteVisible: true,
   },
