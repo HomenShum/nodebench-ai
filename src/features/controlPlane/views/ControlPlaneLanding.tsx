@@ -42,6 +42,8 @@ import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { type MainView } from "@/lib/registry/viewRegistry";
 import { trackEvent } from "@/lib/analytics";
 import { ResultWorkspace } from "../components/ResultWorkspace";
+import { ResultWorkspaceSkeleton } from "../components/ResultWorkspaceSkeleton";
+import { LivePipelineProgress, type PipelineStep } from "../components/LivePipelineProgress";
 import { PlanProposalPanel } from "@/features/founder/components/PlanProposalPanel";
 import type { FeaturePlan } from "@/features/founder/types/planProposal";
 import { SearchTrace, type TraceStep } from "../components/SearchTrace";
@@ -2123,8 +2125,10 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             className={`group relative rounded-2xl border transition-all duration-200 ${
               isDragging
                 ? "border-white/[0.15] bg-white/[0.04] shadow-lg"
-                : "border-white/[0.06] bg-white/[0.02] shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
-            } focus-within:border-white/[0.12] focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_4px_16px_rgba(0,0,0,0.25)]`}
+                : isSearching
+                  ? "border-[#d97757]/30 bg-white/[0.02] shadow-[0_0_12px_rgba(217,119,87,0.15)] animate-pulse"
+                  : "border-white/[0.06] bg-white/[0.02] shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+            } focus-within:border-white/[0.12] focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_4px_16px_rgba(0,0,0,0.25)] motion-reduce:animate-none`}
           >
             {isDragging && (
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-[#d97757]/[0.08] backdrop-blur-sm">
@@ -2146,7 +2150,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
               onKeyDown={handleKeyDown}
               placeholder="Search a company, describe your startup, upload files, or ask what to do next..."
               rows={1}
-              className="w-full resize-none bg-transparent px-5 py-4 pr-36 text-[15px] text-content placeholder:text-content-muted/60 focus:outline-none"
+              className="w-full resize-none bg-transparent px-5 py-4 pr-36 text-[15px] text-content placeholder:text-content-muted/60 focus:outline-none min-h-[56px]"
               aria-label="Search NodeBench"
               data-testid="landing-search-input"
             />
@@ -2404,9 +2408,18 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           </div>
         )}
 
-        {/* ── Loading state ────────────────────────────────────────────────── */}
+        {/* ── Loading state — progressive skeleton + pipeline progress ─── */}
         {showSimplifiedLiveLoading && (
-          <FounderLiveLoadingCard query={submittedQuery} lens={activeLens} />
+          <div className="mt-6 space-y-4">
+            <LivePipelineProgress
+              currentStep={convexSearch.state.status as PipelineStep ?? (activeTrace ? "searching" : null)}
+              traceSteps={activeTrace?.trace}
+              sourceCount={activeTrace?.trace?.filter((t) => t.step?.includes("search") || t.tool?.includes("search")).length ?? undefined}
+              entityName={submittedQuery.split(/\s+/).slice(0, 3).join(" ") || undefined}
+              elapsedMs={activeSearchRef.current?.startedAt ? Date.now() - activeSearchRef.current.startedAt : undefined}
+            />
+            <ResultWorkspaceSkeleton />
+          </div>
         )}
 
         {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

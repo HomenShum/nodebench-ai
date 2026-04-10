@@ -442,11 +442,11 @@ export const ResultWorkspace = memo(function ResultWorkspace({
   const hasPain = Array.isArray((proofPacket as any).painResolutions) && (proofPacket as any).painResolutions.length > 0;
 
   return (
-    <div className="space-y-3" data-testid="result-workspace">
+    <div className="space-y-3 animate-in fade-in duration-300 motion-reduce:animate-none" data-testid="result-workspace">
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           COMPACT HEADER — always visible, Crunchbase-style entity card
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 animate-in fade-in slide-in-from-top-2 duration-200 motion-reduce:animate-none">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <h2 className="text-lg font-semibold text-content truncate">{proofPacket.entityName}</h2>
@@ -505,7 +505,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
 
       {/* ── TAB: Overview ─────────────────────────────────────────────── */}
       {activeTab === "overview" && (
-        <div className="space-y-3" role="tabpanel" aria-label="Overview">
+        <div className="space-y-3 animate-in fade-in duration-200 motion-reduce:animate-none" role="tabpanel" aria-label="Overview">
           <SourcesBar sources={proofPacket.sourceRefs} />
 
           <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
@@ -730,7 +730,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
 
       {/* ── TAB: Analysis ─────────────────────────────────────────────── */}
       {activeTab === "analysis" && (
-        <div className="space-y-3" role="tabpanel" aria-label="Analysis">
+        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-1 duration-200 motion-reduce:animate-none" role="tabpanel" aria-label="Analysis">
           {/* Founder Truth */}
           <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
             <div className="flex items-center gap-2">
@@ -833,7 +833,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
 
       {/* ── TAB: Actions ──────────────────────────────────────────────── */}
       {activeTab === "actions" && (
-        <div className="space-y-3" role="tabpanel" aria-label="Actions">
+        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-1 duration-200 motion-reduce:animate-none" role="tabpanel" aria-label="Actions">
           {/* Next Move */}
           <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
             <div className="flex items-center gap-2">
@@ -928,7 +928,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
 
       {/* ── TAB: Lens ────────────────────────────────────────────────── */}
       {activeTab === "lens" && (
-        <div className="space-y-3" role="tabpanel" aria-label="Role Lens">
+        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-1 duration-200 motion-reduce:animate-none" role="tabpanel" aria-label="Role Lens">
           <RoleLensOutput
             lens={(lens as RoleLensId) ?? "investor"}
             entityName={proofPacket.entityName}
@@ -938,7 +938,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
 
       {/* ── TAB: Sources ──────────────────────────────────────────────── */}
       {activeTab === "sources" && (
-        <div className="space-y-3" role="tabpanel" aria-label="Sources">
+        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-1 duration-200 motion-reduce:animate-none" role="tabpanel" aria-label="Sources">
           {/* Inline source list — no collapsible wrapper needed */}
           <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
             <div className="flex items-center gap-2 mb-4">
