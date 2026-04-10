@@ -154,6 +154,40 @@ export function createStreamingSearchRouter(): Router {
         saveSearchTrajectory(trajectory);
       } catch { /* best-effort */ }
 
+      // Auto-save report to canonical backend (best-effort)
+      try {
+        const { saveReport, createNudge } = await import("../lib/canonicalModels.js");
+        const reportId = saveReport({
+          title: state.entityName || query,
+          entityName: state.entityName || undefined,
+          type: state.classification || "company",
+          summary: (state.answer ?? "").slice(0, 500),
+          confidence: state.confidence ?? 0,
+          lens,
+          query,
+          packetJson: JSON.stringify(packet).slice(0, 50000),
+          envelopeId: envelope.transport.envelopeId,
+          sourceCount: state.searchSources?.length ?? 0,
+          contradictionCount: state.risks?.length ?? 0,
+          pinned: false,
+          status: "saved",
+        });
+
+        // Create nudge if confidence is low or contradictions are high
+        if ((state.confidence ?? 0) < 50 || (state.risks?.length ?? 0) > 5) {
+          createNudge({
+            type: "follow_up_due",
+            title: `${state.entityName || query} needs deeper review`,
+            summary: `Confidence ${state.confidence}%, ${state.risks?.length ?? 0} contradictions detected. Consider follow-up research.`,
+            priority: (state.confidence ?? 0) < 30 ? "high" : "normal",
+            status: "active",
+            linkedReportId: reportId,
+            actionLabel: "Open in Chat",
+            actionTarget: `/chat?q=${encodeURIComponent(query)}`,
+          });
+        }
+      } catch { /* auto-save is best-effort */ }
+
       // ── Emit complete ──────────────────────────────────────────
       emitSSE(res, "complete", {
         totalDurationMs: Date.now() - startMs,
