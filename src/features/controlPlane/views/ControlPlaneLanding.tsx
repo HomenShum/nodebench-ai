@@ -232,61 +232,60 @@ type SubconsciousPreview = {
   blockIdsUsed: string[];
 };
 
-const FOUNDER_QUICK_ACTIONS: Array<{
+// Persona-aware quick prompts — shown based on active lens
+const LENS_QUICK_PROMPTS: Record<string, Array<{
   id: string;
   label: string;
   description: string;
-  prompt?: string;
-  lens?: LensId;
-  kind?: "prompt" | "connect";
-}> = [
-  {
-    id: "startup_idea",
-    label: "What am I actually building?",
-    description: "Paste your rough idea. Get company truth, hidden requirements, and next 3 moves.",
-    prompt: "Analyze my startup idea and tell me what company I am actually building, what is weak, and what to do next.",
-    lens: "founder",
-    kind: "prompt",
-  },
-  {
-    id: "since_last_session",
-    label: "What changed since last time?",
-    description: "See contradictions, stale packets, and what matters now.",
-    prompt: "What changed since the last meaningful founder session, and what should I update before delegating work?",
-    lens: "founder",
-    kind: "prompt",
-  },
-  {
-    id: "competitors",
-    label: "How do I compare?",
-    description: "Side-by-side competitor brief with cited evidence.",
-    prompt: "Compare the main competitors in this market and tell me where the wedge is strongest.",
-    lens: "investor",
-    kind: "prompt",
-  },
-  {
-    id: "weekly_reset",
-    label: "Refresh my operating context",
-    description: "Surface what drifted, produce a fresh packet.",
-    prompt: "Run my weekly reset — review what changed, surface contradictions, and produce a fresh operating packet.",
-    lens: "founder",
-    kind: "prompt",
-  },
-  {
-    id: "hand_off_agent",
-    label: "Package this for an agent",
-    description: "Context + evidence + guardrails, ready to delegate.",
-    prompt: "Help me prepare a delegation packet for an agent handoff with context, evidence, and guardrails.",
-    lens: "founder",
-    kind: "prompt",
-  },
-  {
-    id: "connect_mcp",
-    label: "Connect NodeBench-MCP",
-    description: "Bring in your codebase, docs, or deck.",
-    kind: "connect",
-  },
-];
+  prompt: string;
+}>> = {
+  founder: [
+    { id: "f1", label: "What am I actually building?", description: "Company truth, hidden requirements, and your next 3 moves.", prompt: "Analyze my startup and tell me what I am actually building, what is weak, and what to do next." },
+    { id: "f2", label: "Who should I talk to first?", description: "Warm paths, decision-makers, and centers of influence.", prompt: "Who are the most important people I should reach out to in this space, and why?" },
+    { id: "f3", label: "What changed recently?", description: "New signals, contradictions, and what matters now.", prompt: "What changed in the last 90 days that affects my company or market position?" },
+    { id: "f4", label: "Compare me vs competitors", description: "Side-by-side brief with cited evidence.", prompt: "Compare my company against the top 3 competitors with evidence and positioning gaps." },
+  ],
+  investor: [
+    { id: "i1", label: "Is this company investable?", description: "Team, traction, market, and hidden risks.", prompt: "Evaluate this company for investment: team quality, traction, market size, and hidden risks." },
+    { id: "i2", label: "What would kill this deal?", description: "Contradictions, founder risks, and market gaps.", prompt: "What are the top reasons this investment could fail? Surface contradictions and hidden risks." },
+    { id: "i3", label: "Find comparable deals", description: "Recent raises, valuations, and relevant exits.", prompt: "Find comparable funding rounds, valuations, and exits in this market segment." },
+    { id: "i4", label: "Diligence this founder", description: "Track record, credibility signals, and red flags.", prompt: "Run diligence on this founder: background, track record, credibility signals, and any red flags." },
+  ],
+  banker: [
+    { id: "b1", label: "Quick company snapshot", description: "2-minute brief for coverage prep.", prompt: "Give me a quick company snapshot: what they do, who matters, recent signals, and whether this is worth a follow-up." },
+    { id: "b2", label: "Who are the decision-makers?", description: "Key people, titles, and relationship map.", prompt: "Who are the key decision-makers at this company and what is the best angle for outreach?" },
+    { id: "b3", label: "CRM-ready meeting notes", description: "Turn this conversation into next steps.", prompt: "Turn my notes into CRM-ready output: who, company, context, why relevant, next action, and follow-up date." },
+    { id: "b4", label: "Strategic buyer map", description: "Who would acquire this and why.", prompt: "Map the most relevant strategic buyers or sponsors for this company and explain the fit." },
+  ],
+  ceo: [
+    { id: "c1", label: "What should I know about this company?", description: "Executive summary with risks and opportunities.", prompt: "Give me an executive summary of this company: what they do, strengths, risks, and why it matters." },
+    { id: "c2", label: "Market landscape", description: "Key players, trends, and positioning.", prompt: "Map the market landscape: key players, recent trends, and where the opportunities are." },
+    { id: "c3", label: "What would a board ask?", description: "The questions your board will have.", prompt: "What questions would a board of directors ask about this company or market?" },
+    { id: "c4", label: "Compare two companies", description: "Side-by-side for decision-making.", prompt: "Compare these two companies head-to-head for a strategic decision." },
+  ],
+  legal: [
+    { id: "l1", label: "Risk and compliance overview", description: "Regulatory exposure and legal signals.", prompt: "What are the key regulatory risks, compliance requirements, and legal signals for this company?" },
+    { id: "l2", label: "Who are the key stakeholders?", description: "Ownership, investors, and governance.", prompt: "Map the ownership structure, key investors, and governance for this entity." },
+    { id: "l3", label: "Recent material changes", description: "Filings, announcements, and legal events.", prompt: "What material changes, filings, or legal events happened recently for this company?" },
+    { id: "l4", label: "Diligence checklist", description: "What to verify before proceeding.", prompt: "Generate a diligence checklist: what should be verified before making a decision on this entity?" },
+  ],
+  student: [
+    { id: "s1", label: "Explain this company simply", description: "What they do, why they matter, in plain English.", prompt: "Explain this company in simple terms: what they do, why they matter, and what makes them interesting." },
+    { id: "s2", label: "How does this industry work?", description: "Business model, value chain, and key players.", prompt: "Explain how this industry works: the business model, value chain, key players, and where the money flows." },
+    { id: "s3", label: "What questions should I ask?", description: "The smart follow-up questions for learning.", prompt: "What are the most important follow-up questions I should ask to deeply understand this company or market?" },
+    { id: "s4", label: "Career paths in this space", description: "Roles, skills, and how to break in.", prompt: "What are the main career paths in this industry and what skills matter most to break in?" },
+  ],
+};
+
+// Fallback for any lens not explicitly mapped
+const DEFAULT_QUICK_PROMPTS = LENS_QUICK_PROMPTS.founder!;
+
+// Legacy type compat
+const FOUNDER_QUICK_ACTIONS = DEFAULT_QUICK_PROMPTS.map((p) => ({
+  ...p,
+  lens: "founder" as LensId,
+  kind: "prompt" as const,
+}));
 
 function buildSearchAbortSignal(controller: AbortController, timeoutMs: number): AbortSignal {
   const timeoutFactory = typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function"
@@ -2095,13 +2094,13 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             style={stagger("0s")}
             className="text-2xl font-semibold tracking-tight text-content sm:text-3xl lg:text-4xl text-balance"
           >
-            Know what you're <span className="text-[#d97757]">building</span>, what's <span className="text-[#d97757]">missing</span>,{"\n"}and what to <span className="text-[#d97757]">do next</span>.
+            Search any <span className="text-[#d97757]">company</span>, <span className="text-[#d97757]">founder</span>,{"\n"}or <span className="text-[#d97757]">market</span>.
           </h1>
           <p
             style={stagger("0.08s")}
             className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-content-secondary"
           >
-            Describe your startup or name a company. NodeBench finds the truth, surfaces what outsiders will care about, and gives you a ready-to-send packet.
+            Get a research packet with evidence, contradictions, and next steps in minutes — not hours.
           </p>
         </div>}
 
@@ -2272,14 +2271,15 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         {/* ── Quick actions ──────────────────────────────────────────────── */}
         {conversation.length === 0 && (
           <div style={stagger("0.18s")} className="mt-4 space-y-4 sm:mt-6">
-            {/* Mobile: compact founder actions */}
+            {/* Mobile: compact lens-aware chips */}
             {isMobileViewport ? <div className="flex flex-wrap gap-2 sm:hidden" data-testid="landing-mobile-chips">
-              {FOUNDER_QUICK_ACTIONS.slice(0, 4).map((chip) => (
+              {(LENS_QUICK_PROMPTS[activeLens] ?? DEFAULT_QUICK_PROMPTS).slice(0, 4).map((chip) => (
                 <button
                   key={chip.id}
                   type="button"
                   onClick={() => {
-                    handleQuickAction(chip);
+                    setInput(chip.prompt);
+                    handleSubmit(chip.prompt);
                   }}
                   className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[12px] text-content-muted transition-all hover:bg-white/[0.06] hover:text-content"
                 >
@@ -2287,13 +2287,16 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
                 </button>
               ))}
             </div> : null}
-            {/* Desktop: full founder action cards */}
+            {/* Desktop: persona-aware prompt cards based on active lens */}
             {!isMobileViewport ? <div className="hidden gap-3 sm:grid sm:grid-cols-2" data-testid="landing-example-prompts">
-              {FOUNDER_QUICK_ACTIONS.map((action) => (
+              {(LENS_QUICK_PROMPTS[activeLens] ?? DEFAULT_QUICK_PROMPTS).map((action) => (
                 <button
                   key={action.id}
                   type="button"
-                  onClick={() => handleQuickAction(action)}
+                  onClick={() => {
+                    setInput(action.prompt);
+                    handleSubmit(action.prompt);
+                  }}
                   className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 text-left transition-all hover:border-white/[0.12] hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
                 >
                   <div className="flex items-start justify-between gap-3">
