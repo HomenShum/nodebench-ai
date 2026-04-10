@@ -177,6 +177,39 @@ export function runReverseDCF(input: ReverseDCFInput): ReverseDCFResult {
 
 // ─── Extract metrics from search result for DCF ──────────────────
 
+/**
+ * Fetch revenue from SEC EDGAR as fallback when Linkup/Gemini don't provide it.
+ * Only works for US public companies. Free, no API key.
+ */
+export async function enrichDCFWithEdgar(
+  entityName: string,
+  dcfInputs: { canRunDCF: boolean; dcfInput?: DCFInput; reverseDCFInput?: ReverseDCFInput; reason?: string },
+): Promise<typeof dcfInputs> {
+  // Only try EDGAR if we couldn't extract revenue from search results
+  if (dcfInputs.canRunDCF) return dcfInputs;
+
+  try {
+    const { fetchEdgarFinancials } = await import("./secEdgar.js");
+    const edgar = await fetchEdgarFinancials(entityName);
+    if (!edgar?.revenue) return dcfInputs;
+
+    return {
+      canRunDCF: true,
+      dcfInput: {
+        revenue: edgar.revenue,
+        growthRate: 0.25,
+        fcfMargin: 0.12,
+        discountRate: 0.10,
+        terminalGrowthRate: 0.03,
+        projectionYears: 5,
+      },
+      // No reverse DCF without market cap from EDGAR (would need a separate source)
+    };
+  } catch {
+    return dcfInputs;
+  }
+}
+
 export function extractDCFInputs(result: {
   entityName: string;
   answer: string;

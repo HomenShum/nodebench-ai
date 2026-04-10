@@ -12,7 +12,7 @@ import { classifySignals, type ClassifiedSignal } from "../lib/signalTaxonomy.js
 import { createEvidenceSpans, type EvidenceManifest } from "../lib/evidenceSpan.js";
 import { computeRoutingHints, formatRoutingHintsForPrompt, type RoutingHint } from "../lib/routingHints.js";
 import { detectPainResolutions, type PainResolution } from "../lib/painMapping.js";
-import { extractDCFInputs, runDCF, runReverseDCF, type DCFResult, type ReverseDCFResult } from "../lib/dcfModel.js";
+import { extractDCFInputs, enrichDCFWithEdgar, runDCF, runReverseDCF, type DCFResult, type ReverseDCFResult } from "../lib/dcfModel.js";
 
 // ─── Pipeline State ──────────────────────────────────────────────
 
@@ -668,25 +668,26 @@ export async function analyze(state: PipelineState): Promise<PipelineState> {
     .join("\n\n");
   const sourceAudit = buildSourceAudit(state.searchSources);
 
-  const prompt = `Analyze this company/topic for a ${state.lens} audience.
+  const prompt = `You are a senior analyst writing a research brief about "${state.entity ?? "unknown"}" for a ${state.lens}.
 
-QUERY: "${state.query}"
 ENTITY: ${state.entity ?? "unknown"}
+QUERY: "${state.query}"
 
-SEARCH RESULTS:
-${state.searchAnswer.slice(0, 1500)}
-
-SOURCES:
+SOURCES (cite as [S1], [S2], etc.):
 ${sourcesContext}
 
-Ignore sources that only overlap on a shared keyword and do not clearly refer to the target entity "${state.entity ?? "unknown"}".
-For company searches, prefer official pages, company profiles, and snippets that explicitly name the entity.
-Treat company-authored pages, blog posts, and press releases as self-reported claims, not independent verification.
-Do not present self-reported funding, traction, headcount, or expansion claims as externally verified unless corroborated by an external source.
-Avoid privacy policies, terms pages, careers pages, and other thin legal/admin pages in the summary.
-If corroboration is weak, say that explicitly and lower confidence.
+ADDITIONAL CONTEXT:
+${state.searchAnswer.slice(0, 800)}
 
-CRITICAL: keyMetrics MUST include "ARR or Revenue" and "Valuation" as the first two entries if ANY dollar amounts are mentioned in the sources. Use "$XB" or "$XM" format. If no revenue data exists, use "Not disclosed" as the value.
+RULES:
+1. Every factual claim MUST cite a source number [S1], [S2], etc.
+2. Do NOT include generic industry commentary — only entity-specific facts.
+3. If a claim appears in only one self-reported source (company blog, press release), label it "(self-reported)".
+4. If corroboration is weak, say so explicitly and lower confidence.
+5. Prefer specific numbers ($, %, dates) over qualitative statements.
+6. Do NOT fabricate metrics. If revenue or valuation is not in the sources, set the value to "Not disclosed".
+
+CRITICAL: keyMetrics MUST include "ARR or Revenue" and "Valuation" as the first two entries. Extract actual dollar amounts from sources if available. Use "$XB" or "$XM" format. If not found, use "Not disclosed".
 
 Return ONLY valid JSON:
 {
@@ -818,7 +819,7 @@ Return ONLY valid JSON:
 
 // ─── Node 4: Package (deterministic) ─────────────────────────────
 
-export function packageResult(state: PipelineState): PipelineState {
+export async function packageResult(state: PipelineState): Promise<PipelineState> {
   const start = Date.now();
 
   // Classify signals into taxonomy
@@ -856,12 +857,16 @@ export function packageResult(state: PipelineState): PipelineState {
   let dcfResult: DCFResult | null = null;
   let reverseDCFResult: ReverseDCFResult | null = null;
   if (state.classification === "company_search" && (state.lens === "investor" || state.lens === "banker")) {
-    const dcfInputs = extractDCFInputs({
+    let dcfInputs = extractDCFInputs({
       entityName: state.entityName,
       answer: state.answer,
       keyMetrics: state.keyMetrics,
       signals: state.signals,
     });
+    // Fallback: try SEC EDGAR for real financial data (US public companies)
+    if (!dcfInputs.canRunDCF) {
+      try { dcfInputs = await enrichDCFWithEdgar(state.entityName, dcfInputs); } catch { /* EDGAR is best-effort */ }
+    }
     if (dcfInputs.canRunDCF && dcfInputs.dcfInput) {
       dcfResult = runDCF(dcfInputs.dcfInput);
     }
@@ -927,7 +932,7 @@ export async function runSearchPipeline(query: string, lens: string): Promise<Pi
   state = classify(state);
   state = await search(state);
   state = await analyze(state);
-  state = packageResult(state);
+  state = await packageResult(state);
 
   state.totalDurationMs = Date.now() - pipelineStart;
 
