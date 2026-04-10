@@ -18,6 +18,7 @@ import { ForecastGateCard } from "./ForecastGateCard";
 import { ensureProofPacket, type ProofReadyResultPacket } from "./proofModel";
 import { SourcesBar } from "./SourcesBar";
 import { DCFCard } from "./DCFCard";
+import { DelegationModal } from "./DelegationModal";
 import type { LensId, ResultPacket } from "./searchTypes";
 
 interface ResultWorkspaceProps {
@@ -407,6 +408,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
   handoffState,
 }: ResultWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<ResultTab>("overview");
+  const [showDelegationModal, setShowDelegationModal] = useState(false);
   const proofPacket = useMemo(() => ensureProofPacket(packet, lens), [packet, lens]);
   const sourceIndex = useMemo(
     () => new Map(proofPacket.sourceRefs.map((source, index) => [source.id, index])),
@@ -915,6 +917,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
               <ActionButton onClick={onExport ? () => onExport("brief") : undefined}><Download className="h-3.5 w-3.5" />Export</ActionButton>
               <ActionButton onClick={onPublishSharedContext} disabled={handoffBusy}><Share2 className="h-3.5 w-3.5" />Publish</ActionButton>
               <ActionButton onClick={onDelegate ? () => onDelegate("openclaw") : undefined} disabled={handoffBusy}><ExternalLink className="h-3.5 w-3.5" />OpenClaw</ActionButton>
+              <ActionButton onClick={() => setShowDelegationModal(true)} disabled={handoffBusy}><ArrowRight className="h-3.5 w-3.5" />Delegate with scope</ActionButton>
               <ActionButton onClick={onMonitor}><Bell className="h-3.5 w-3.5" />Monitor</ActionButton>
             </div>
           </section>
@@ -985,6 +988,14 @@ export const ResultWorkspace = memo(function ResultWorkspace({
           </Section>
         </div>
       )}
+
+      {/* ── Delegation Modal ──────────────────────────────────────────── */}
+      <DelegationModal
+        isOpen={showDelegationModal}
+        onClose={() => setShowDelegationModal(false)}
+        packetId={proofPacket.packetId}
+        packetSummary={headlineClaim?.text ?? proofPacket.answer}
+      />
     </div>
   );
 });
