@@ -939,10 +939,82 @@ export async function runSearchPipeline(query: string, lens: string): Promise<Pi
   return state;
 }
 
+// ─── Envelope-aware pipeline wrapper ──────────────────────────────
+
+import {
+  buildWorkflowAssetFromEnvelope,
+  createEnvelopeFromPipelineState,
+  createEnvelopeFromResultPacket,
+  type WorkflowEnvelope,
+} from "../lib/workflowEnvelope.js";
+import { trajectoryFromPipelineState, saveSearchTrajectory, type SearchTrajectory } from "../lib/trajectoryStore.js";
+import { detectReplayCandidate, type ReplayCandidate } from "../lib/replayDetector.js";
+
+export interface PipelineWithEnvelopeResult {
+  state: PipelineState;
+  envelope: WorkflowEnvelope;
+  trajectory: SearchTrajectory;
+  replayCandidate: ReplayCandidate | null;
+  wasReplay: boolean;
+}
+
+export async function runSearchPipelineWithEnvelope(
+  query: string,
+  lens: string,
+): Promise<PipelineWithEnvelopeResult> {
+  // Pre-pipeline: check for replayable trajectory
+  // Extract entity from query for replay lookup (simple heuristic: first capitalized multi-word)
+  const entityGuess = query.match(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/)?.[1] ?? query.split(/\s+/)[0] ?? "";
+  const replayCandidate = entityGuess ? detectReplayCandidate(entityGuess, lens, query) : null;
+
+  // Run full pipeline (replay short-circuit is future work — for now always run full)
+  const state = await runSearchPipeline(query, lens);
+
+  // Create envelope
+  const packetId = `pkt-${(state.entityName || "unknown").toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now().toString(36)}`;
+  const envelope = createEnvelopeFromPipelineState(state, packetId);
+
+  // Record trajectory for future replay
+  const trajectory = trajectoryFromPipelineState(state, envelope.transport.envelopeId);
+  try {
+    saveSearchTrajectory(trajectory);
+  } catch (err) {
+    console.warn("[pipeline] Failed to save trajectory:", (err as Error).message);
+  }
+
+  return {
+    state,
+    envelope,
+    trajectory,
+    replayCandidate,
+    wasReplay: false,
+  };
+}
+
 // ─── Convert pipeline state to ResultPacket format ────────────────
+
+function slugifyPacketValue(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
+
+function hashPacketValue(value: string): string {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+  }
+  return hash.toString(36);
+}
 
 export function stateToResultPacket(state: PipelineState): Record<string, unknown> {
   const cleanedAnswer = stripInlineSourceCitations(state.answer);
+  const packetId = `pkt-${slugifyPacketValue(state.entityName || "nodebench")}-${hashPacketValue(
+    `${state.query}|${cleanedAnswer}|${state.searchSources.length}`,
+  )}`;
+  const packetType = "company_search_packet";
   const sourceRefs = state.searchSources.map((source, index) => ({
     id: `src_${index + 1}`,
     label: source.name,
@@ -986,12 +1058,15 @@ export function stateToResultPacket(state: PipelineState): Record<string, unknow
     },
   ];
 
-  return {
+  const basePacket = {
     query: state.query,
     entityName: state.entityName,
+    canonicalEntity: state.entityName,
     answer: cleanedAnswer,
     confidence: state.confidence,
     sourceCount: state.searchSources.length,
+    packetId,
+    packetType,
     variables: state.classifiedSignals.slice(0, 5).map((sig, i) => ({
       rank: i + 1,
       name: sig.label,
@@ -1032,9 +1107,42 @@ export function stateToResultPacket(state: PipelineState): Record<string, unknow
     dcf: state.dcf,
     reverseDCF: state.reverseDCF,
     trace: state.trace,
-    packetType: "company_search",
     classification: state.classification,
     routingHints: state.routingHints.slice(0, 3),
     recommendedNextAction: state.nextActions[0]?.action,
+  };
+
+  const envelope = createEnvelopeFromResultPacket({
+    ...basePacket,
+    packetId,
+    packetType,
+    classification: state.classification,
+    lens: state.lens,
+    trace: state.trace,
+  });
+
+  return {
+    ...basePacket,
+    workflowAsset: buildWorkflowAssetFromEnvelope(
+      {
+        ...basePacket,
+        packetId,
+        packetType,
+        classification: state.classification,
+        lens: state.lens,
+        trace: state.trace,
+      },
+      envelope,
+      {
+        assetType: "research_packet",
+        stages: ["pipeline_classify", "pipeline_search", "pipeline_analyze", "pipeline_package"],
+        replayReady: state.trace.length > 0,
+        delegationReady: state.nextActions.length > 0,
+        targetAgents: ["claude_code", "openclaw"],
+        lineage: {
+          sourceRunId: packetId,
+        },
+      },
+    ),
   };
 }

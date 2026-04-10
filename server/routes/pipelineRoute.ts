@@ -10,7 +10,7 @@
  */
 
 import { Router, type Request, type Response } from "express";
-import { runSearchPipeline, stateToResultPacket } from "../pipeline/searchPipeline.js";
+import { runSearchPipelineWithEnvelope, stateToResultPacket } from "../pipeline/searchPipeline.js";
 import { evaluateTask } from "../../packages/mcp-local/src/sync/hyperloopEval.js";
 import { runPromotionCycle } from "../../packages/mcp-local/src/sync/hyperloopArchive.js";
 import { runPreSearchHooks, runPostSearchHooks } from "../pipeline/hooks.js";
@@ -38,8 +38,9 @@ export function createPipelineRouter(): Router {
     }
 
     try {
-      // Run the 4-node pipeline with hook-modified query/lens
-      const state = await runSearchPipeline(preHooks.query, preHooks.lens);
+      // Run the 4-node pipeline with envelope + trajectory recording
+      const result = await runSearchPipelineWithEnvelope(preHooks.query, preHooks.lens);
+      const { state, envelope, trajectory, replayCandidate, wasReplay } = result;
 
       // Convert to ResultPacket format
       const packet = stateToResultPacket(state);
@@ -71,6 +72,7 @@ export function createPipelineRouter(): Router {
       const postHooks = runPostSearchHooks(state);
 
       // Return flat shape matching legacy /api/search so frontend parsers work unchanged
+      // Plus envelope metadata for workflow-learning consumers
       return res.json({
         success: true,
         hooks: { pre: preHooks.hookResults, post: postHooks.hookResults, actions: postHooks.allActions },
@@ -78,6 +80,18 @@ export function createPipelineRouter(): Router {
         durationMs: Date.now() - startMs,
         latencyMs: state.totalDurationMs,
         classification: state.classification,
+        envelope: {
+          envelopeId: envelope.transport.envelopeId,
+          envelopeType: envelope.transport.envelopeType,
+          version: envelope.transport.version,
+          trajectoryId: trajectory.trajectoryId,
+          wasReplay,
+          replayCandidate: replayCandidate ? {
+            verdict: replayCandidate.verdict,
+            reason: replayCandidate.reason,
+            stalenessDays: replayCandidate.stalenessDays,
+          } : null,
+        },
         ...(packet as Record<string, unknown>),
       });
     } catch (err: any) {

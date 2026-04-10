@@ -23,7 +23,6 @@ import {
   getSharedContextPublishUrl,
   getSubconsciousWhisperUrl,
 } from "@/lib/syncBridgeApi";
-import { LiveAgentProgress } from "../components/LiveAgentProgress";
 import {
   ArrowRight,
   ArrowUp,
@@ -55,6 +54,7 @@ import {
 } from "../components/searchTypes";
 import { ensureProofPacket } from "../components/proofModel";
 import { ChatThread } from "../components/ChatThread";
+import { EvidenceBoard, type EvidenceItem } from "../components/EvidenceBoard";
 import type { ChatEntry } from "../components/ChatMessage";
 import { FounderEpisodePanel, type FounderEpisodeRecord, type FounderEpisodeSpan } from "../components/FounderEpisodePanel";
 import { ForecastGateCard } from "../components/ForecastGateCard";
@@ -109,6 +109,68 @@ function shouldPreferDemoPacket(demoKey?: string): boolean {
     window.localStorage.getItem("nodebench-force-demo-packets") === "1";
 
   return isLocalShell || forceDemo;
+}
+
+function FounderLiveLoadingCard({
+  query,
+  lens,
+}: {
+  query: string;
+  lens: LensId;
+}) {
+  const queryLabel = query.trim() || "your company";
+
+  return (
+    <div
+      className="mt-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 shadow-[0_2px_8px_rgba(0,0,0,0.18)]"
+      data-testid="landing-live-loading"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="max-w-2xl">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#d97757]/20 bg-[#d97757]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#f2b49f]">
+            <Search className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+            Founder Research In Progress
+          </div>
+          <h2 className="mt-3 text-lg font-semibold text-content">
+            Building a cited founder packet for {queryLabel}
+          </h2>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-content-secondary">
+            Cross-checking independent sources, separating observed facts from estimates, and preparing a clean next move through the {lens} lens.
+          </p>
+        </div>
+        <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-content-muted">
+          No internal trace clutter while the packet is assembling
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        {[
+          {
+            title: "Truth",
+            detail: "Find the canonical company record and filter out lookalikes or weak matches.",
+          },
+          {
+            title: "Proof",
+            detail: "Prefer external corroboration before promoting a claim into the surfaced packet.",
+          },
+          {
+            title: "Handoff",
+            detail: "Package the result so a founder, operator, or engineer can act on it immediately.",
+          },
+        ].map((step) => (
+          <div
+            key={step.title}
+            className="rounded-xl border border-white/[0.06] bg-black/20 px-4 py-3"
+          >
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-content-muted">
+              {step.title}
+            </div>
+            <div className="mt-2 text-sm leading-relaxed text-content">{step.detail}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function slugifyValue(value: string): string {
@@ -217,6 +279,12 @@ const FOUNDER_QUICK_ACTIONS: Array<{
     prompt: "Help me prepare a delegation packet for an agent handoff with context, evidence, and guardrails.",
     lens: "founder",
     kind: "prompt",
+  },
+  {
+    id: "connect_mcp",
+    label: "Connect NodeBench-MCP",
+    description: "Bring in your codebase, docs, or deck.",
+    kind: "connect",
   },
 ];
 
@@ -579,6 +647,9 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
       ? window.matchMedia("(max-width: 1023px)").matches
       : false,
   );
+  const latestConversationEntry = conversation.length > 0 ? conversation[conversation.length - 1] : null;
+  const hasPendingConversationPacket = isSearching && latestConversationEntry?.packet === null;
+  const showSimplifiedLiveLoading = hasPendingConversationPacket;
 
   const voice = useVoiceInput({
     onTranscript: useCallback((text: string) => {
@@ -722,12 +793,16 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
     submittedQuery,
   ]);
 
+  useEffect(() => {
+    if (!showInstallGuide) return;
+    if (typeof connectCardRef.current?.scrollIntoView === "function") {
+      connectCardRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [showInstallGuide]);
+
   const handleQuickAction = useCallback((action: (typeof FOUNDER_QUICK_ACTIONS)[number]) => {
     if (action.kind === "connect") {
       setShowInstallGuide(true);
-      if (typeof connectCardRef.current?.scrollIntoView === "function") {
-        connectCardRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
       return;
     }
     if (action.prompt) {
@@ -2161,6 +2236,16 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           })}
         </div>
 
+        {/* ── Evidence Board: upload screenshots/media to compile into packet ── */}
+        {conversation.length === 0 && !isSearching && (
+          <EvidenceBoard
+            onCompile={(_items: EvidenceItem[], suggestedQuery: string) => {
+              setInput(suggestedQuery);
+              handleSubmit(suggestedQuery);
+            }}
+          />
+        )}
+
         {/* ── Visible aha: show what you get before you search ──────────── */}
         {conversation.length === 0 && (
           <div style={stagger("0.16s")} className="mx-auto mt-5 hidden max-w-2xl sm:block">
@@ -2317,32 +2402,15 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
         )}
 
         {/* ── Loading state ────────────────────────────────────────────────── */}
-        {isSearching && conversation.length > 0 && conversation[conversation.length - 1]?.packet === null && (
-          <LiveAgentProgress query={submittedQuery} lens={activeLens} trace={activeTrace?.trace ?? []} />
+        {showSimplifiedLiveLoading && (
+          <FounderLiveLoadingCard query={submittedQuery} lens={activeLens} />
         )}
 
         {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             CHAT THREAD — Conversational results
             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        {activeResult && conversation.length > 0 && showFullWorkspace && (
-          <div ref={resultRef} className="mt-6 space-y-3" data-testid="landing-result-workspace">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
-              <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
-                  Current Intelligence Packet
-                </div>
-                <div className="mt-1 text-sm text-content">
-                  {activeResult.entityName || "Current result"} - {activeLens} lens
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowFullWorkspace(false)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content"
-              >
-                Collapse packet
-              </button>
-            </div>
+        {activeResult && conversation.length > 0 && showFullWorkspace && !showSimplifiedLiveLoading && (
+          <div ref={resultRef} className="mt-4" data-testid="landing-result-workspace">
             <ResultWorkspace
               packet={activeResult}
               lens={activeLens}
@@ -2360,71 +2428,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           </div>
         )}
 
-        {activeResult && conversation.length > 0 && !showFullWorkspace && (
-          <div ref={resultRef} className="mt-6 space-y-3" data-testid="landing-result-workspace-collapsed">
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
-                    Founder Workspace Summary
-                  </div>
-                  <div className="mt-1 text-base text-content">
-                    {activeResult.entityName || "Current company"} · {activeLens} lens
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowFullWorkspace(true)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-content-secondary transition hover:border-white/[0.14] hover:text-content"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                  Open full packet
-                </button>
-              </div>
-
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {activeResult.forecastGate ? (
-                  <div className="sm:col-span-2">
-                    <ForecastGateCard gate={activeResult.forecastGate} compact />
-                  </div>
-                ) : null}
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-content-muted">What This Company Is</div>
-                  <div className="mt-2 text-sm leading-relaxed text-content">{activeResult.answer}</div>
-                </div>
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-content-muted">What Changed</div>
-                  <div className="mt-2 text-sm leading-relaxed text-content">
-                    {activeResult.changes?.[0]?.description ?? "No major change has been logged yet for this packet."}
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-content-muted">What Is Contradictory / Weak</div>
-                  <div className="mt-2 text-sm leading-relaxed text-content">
-                    {activeResult.risks?.[0]?.title
-                      ? `${activeResult.risks[0].title}${activeResult.risks[0].description ? ` — ${activeResult.risks[0].description}` : ""}`
-                      : activeResult.uncertaintyBoundary ?? "No contradiction has been highlighted yet."}
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-content-muted">What To Do Next</div>
-                  <div className="mt-2 space-y-2">
-                    {(activeResult.nextActions?.slice(0, 3) ?? []).map((action, index) => (
-                      <div key={`${action.action}:${index}`} className="text-sm leading-relaxed text-content">
-                        {index + 1}. {action.action}
-                      </div>
-                    ))}
-                    {(!activeResult.nextActions || activeResult.nextActions.length === 0) && (
-                      <div className="text-sm leading-relaxed text-content">{activeResult.recommendedNextAction ?? "No next action has been generated yet."}</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {!showFullWorkspace && (
+        {!showFullWorkspace && !showSimplifiedLiveLoading && (
           <div>
             <ChatThread
               entries={conversation}
@@ -2450,37 +2454,11 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           </div>
         )}
 
-        {/* Execution trace — shows how the latest answer was produced */}
-        {activeTrace && conversation.length > 0 && !showFullWorkspace && (
-          <div className="mt-3" data-testid="landing-search-trace">
-            <SearchTrace
-              trace={activeTrace.trace}
-              latencyMs={activeTrace.latencyMs}
-              classification={activeTrace.classification}
-              judgeVerdict={activeTrace.judge}
-              sourceRefs={activeResult?.sourceRefs}
-              mode="user"
-            />
-          </div>
-        )}
-
-        {(activeEpisode || recentEpisodes.length > 0) && conversation.length > 0 && !showFullWorkspace && (
-          <div className="mt-3" data-testid="landing-founder-episode">
-            <FounderEpisodePanel
-              activeEpisode={activeEpisode}
-              recentEpisodes={recentEpisodes}
-              packetLineage={packetLineage}
-              subconsciousPreview={subconsciousPreview}
-              isSubconsciousLoading={isSubconsciousLoading}
-            />
-          </div>
-        )}
-
         {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             BELOW THE FOLD — Trust, Install, Proof
             Hidden when conversation is active (chat takes over the page)
             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        {conversation.length === 0 && showInstallGuide && (<>
+        {conversation.length === 0 && showInstallGuide && (<div ref={connectCardRef}>
         <div className="mt-6 flex justify-center">
           <button
             type="button"
@@ -2631,7 +2609,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             ))}
           </nav>
         </div>
-        </>)}
+        </div>)}
       </div>
     </div>
   );

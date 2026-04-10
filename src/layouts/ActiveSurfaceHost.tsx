@@ -97,6 +97,9 @@ const JudgeDashboard = lazy(() =>
 const HyperLoopDashboard = lazy(() =>
   import("@/features/monitoring/views/HyperLoopDashboard").then((mod) => ({ default: mod.HyperLoopDashboard })),
 );
+const ImprovementTimeline = lazy(() =>
+  import("@/features/monitoring/views/ImprovementTimeline").then((mod) => ({ default: mod.ImprovementTimeline })),
+);
 const FounderWorkspaceHome = lazy(() =>
   import("@/features/founder/views/FounderWorkspaceHome").then((mod) => ({ default: mod.FounderWorkspaceHome })),
 );
@@ -223,6 +226,7 @@ const TELEMETRY_TABS = [
   { id: "subconscious", label: "Memory" },
   { id: "health", label: "Health" },
   { id: "spend", label: "Spend" },
+  { id: "improvements", label: "Improvements" },
 ] as const;
 
 type TelemetryTabId = (typeof TELEMETRY_TABS)[number]["id"];
@@ -334,6 +338,7 @@ function TelemetryStack({ active = true }: { active?: boolean }) {
         {activeTab === "subconscious" && <SubconsciousDashboard />}
         {activeTab === "health" && <ObservabilityView />}
         {activeTab === "spend" && <CostDashboard />}
+        {activeTab === "improvements" && <ImprovementTimeline />}
       </div>
     </div>
   );

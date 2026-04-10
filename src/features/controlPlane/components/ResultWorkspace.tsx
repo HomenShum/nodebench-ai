@@ -383,6 +383,16 @@ function ClaimText({
   );
 }
 
+/* ── Tab IDs ────────────────────────────────────────────────────────── */
+type ResultTab = "overview" | "analysis" | "actions" | "sources";
+
+const TAB_LABELS: { id: ResultTab; label: string }[] = [
+  { id: "overview", label: "Overview" },
+  { id: "analysis", label: "Analysis" },
+  { id: "actions", label: "Actions" },
+  { id: "sources", label: "Sources" },
+];
+
 export const ResultWorkspace = memo(function ResultWorkspace({
   packet,
   lens,
@@ -396,6 +406,7 @@ export const ResultWorkspace = memo(function ResultWorkspace({
   trajectory,
   handoffState,
 }: ResultWorkspaceProps) {
+  const [activeTab, setActiveTab] = useState<ResultTab>("overview");
   const proofPacket = useMemo(() => ensureProofPacket(packet, lens), [packet, lens]);
   const sourceIndex = useMemo(
     () => new Map(proofPacket.sourceRefs.map((source, index) => [source.id, index])),
@@ -423,196 +434,183 @@ export const ResultWorkspace = memo(function ResultWorkspace({
     ? summaryClaims.filter((claim) => claim.text !== headlineClaim.text)
     : summaryClaims
   ).slice(0, 2);
+  const hasDCF = !!(proofPacket as any).dcf || !!(proofPacket as any).reverseDCF;
+  const hasPain = Array.isArray((proofPacket as any).painResolutions) && (proofPacket as any).painResolutions.length > 0;
 
   return (
-    <div className="space-y-4" data-testid="result-workspace">
+    <div className="space-y-3" data-testid="result-workspace">
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          COMPACT HEADER — always visible, Crunchbase-style entity card
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">Founder Read</div>
-            <h2 className="mt-1 text-lg font-semibold text-content">{proofPacket.entityName}</h2>
-            <div className="mt-1 text-xs uppercase tracking-[0.14em] text-content-muted">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg font-semibold text-content truncate">{proofPacket.entityName}</h2>
+            <div className="mt-0.5 text-xs text-content-muted">
               {lens} lens · {proofPacket.packetType.replace(/_/g, " ")}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
             <ConfidenceBadge value={proofPacket.confidence} />
             <ProofBadge value={proofPacket.proofStatus} />
-            <VisibilityBadge value={proofPacket.visibility} />
             <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-content-muted">
               {citedCount}/{exploredCount} cited
             </span>
           </div>
         </div>
         {headlineClaim ? (
-          <div className="mt-4 rounded-xl border border-white/[0.06] bg-black/20 p-4">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-content-muted">Bottom Line</div>
+          <div className="mt-3 rounded-lg border border-white/[0.06] bg-black/20 px-4 py-3">
             <ClaimText
               item={headlineClaim}
               packet={proofPacket}
               sourceIndex={sourceIndex}
-              className="mt-2 text-sm leading-relaxed text-content"
+              className="text-sm leading-relaxed text-content"
             />
           </div>
         ) : null}
-        {supportingClaims.length > 0 ? (
-          <div className="mt-3 grid gap-3 lg:grid-cols-2">
-            {supportingClaims.map((claim) => (
-              <div key={claim.text} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3">
-                <ClaimText
-                  item={claim}
-                  packet={proofPacket}
-                  sourceIndex={sourceIndex}
-                  className="text-sm leading-relaxed text-content-secondary"
-                />
-              </div>
-            ))}
-          </div>
-        ) : null}
-        <div className="mt-4 grid gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Truth Claims</div>
-            <div className="mt-1 text-lg font-semibold text-content">{summaryClaims.length}</div>
-          </div>
-          <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Contradictions</div>
-            <div className="mt-1 text-lg font-semibold text-content">{proofPacket.explorationMemory.contradictionCount}</div>
-          </div>
-          <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Packet Type</div>
-            <div className="mt-1 text-sm font-semibold text-content">{proofPacket.packetType}</div>
-          </div>
-          <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Memory Status</div>
-            <div className="mt-1 text-sm font-semibold text-content">
-              {proofPacket.shareableArtifacts.length > 0 ? "compounding" : "packet only"}
-            </div>
-          </div>
+        {/* Key metrics — compact row */}
+        <div className="mt-3 flex flex-wrap gap-4 text-xs">
+          <div><span className="text-content-muted">Claims </span><span className="font-semibold text-content">{summaryClaims.length}</span></div>
+          <div><span className="text-content-muted">Contradictions </span><span className="font-semibold text-content">{proofPacket.explorationMemory.contradictionCount}</span></div>
+          <div><span className="text-content-muted">Sources </span><span className="font-semibold text-content">{citedCount}</span></div>
+          {hasDCF && <div><span className="text-content-muted">DCF </span><span className="font-semibold text-emerald-400">available</span></div>}
         </div>
       </div>
 
-      <SourcesBar sources={proofPacket.sourceRefs} />
-      <ForecastGateCard gate={proofPacket.forecastGate} />
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          TABS — Crunchbase/PitchBook style, one content area at a time
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1" role="tablist" aria-label="Result sections">
+        {TAB_LABELS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex-1 rounded-lg px-3 py-2 text-[12px] font-medium transition-all ${
+              activeTab === tab.id
+                ? "bg-white/[0.08] text-content shadow-sm"
+                : "text-content-muted hover:text-content-secondary hover:bg-white/[0.03]"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      {/* Pain resolutions — pain → what found → what's ready → action */}
-      {Array.isArray((proofPacket as any).painResolutions) && (proofPacket as any).painResolutions.length > 0 && (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {((proofPacket as any).painResolutions as Array<{ painId: string; painLabel: string; userPain: string; fix: string; proof: string }>).map((pr) => (
-            <div key={pr.painId} className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.04] p-3">
-              <div className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                <span className="text-[11px] font-medium text-emerald-400">{pr.painLabel}</span>
-              </div>
-              <p className="mt-1.5 text-[10px] text-content-muted">{pr.fix}</p>
-              <p className="mt-1 text-[9px] text-content-muted/60">{pr.proof}</p>
-              <div className="mt-2 flex gap-1.5">
-                {pr.painId === "handoff" && (
-                  <button type="button" className="rounded-md bg-accent-primary/10 px-2 py-1 text-[9px] font-medium text-accent-primary transition-colors hover:bg-accent-primary/20">Export memo</button>
-                )}
-                {pr.painId === "duplication" && (
-                  <button type="button" className="rounded-md bg-accent-primary/10 px-2 py-1 text-[9px] font-medium text-accent-primary transition-colors hover:bg-accent-primary/20">Share packet</button>
-                )}
-                {pr.painId === "trust" && (
-                  <button type="button" className="rounded-md bg-accent-primary/10 px-2 py-1 text-[9px] font-medium text-accent-primary transition-colors hover:bg-accent-primary/20">View sources</button>
-                )}
-                {pr.painId === "clarity" && (
-                  <button type="button" className="rounded-md bg-accent-primary/10 px-2 py-1 text-[9px] font-medium text-accent-primary transition-colors hover:bg-accent-primary/20">Save to library</button>
-                )}
-                {pr.painId === "continuity" && (
-                  <button type="button" className="rounded-md bg-accent-primary/10 px-2 py-1 text-[9px] font-medium text-accent-primary transition-colors hover:bg-accent-primary/20">Track changes</button>
-                )}
-              </div>
+      {/* ── TAB: Overview ─────────────────────────────────────────────── */}
+      {activeTab === "overview" && (
+        <div className="space-y-3" role="tabpanel" aria-label="Overview">
+          <SourcesBar sources={proofPacket.sourceRefs} />
+
+          <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-content-muted" />
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Founder Read</h3>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* DCF + Reverse DCF valuation card (banker/investor lenses) */}
-      <DCFCard
-        dcf={(proofPacket as any).dcf ?? null}
-        reverseDCF={(proofPacket as any).reverseDCF ?? null}
-        entityName={proofPacket.entityName}
-      />
-
-      <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
-        <div className="flex items-center gap-2">
-          <BookOpen className="h-4 w-4 text-content-muted" />
-          <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Founder Truth</h3>
-        </div>
-        <ul className="mt-4 space-y-3">
-          {summaryClaims.map((claim) => (
-            <ClaimLine key={claim.text} item={claim} packet={proofPacket} sourceIndex={sourceIndex} />
-          ))}
-        </ul>
-        <div className="mt-5 grid gap-3 lg:grid-cols-3">
-          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
-            <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Observed</div>
-            <ul className="mt-3 space-y-2">
-              {observedLines.map((line) => (
-                <ClaimLine key={line.text} item={line} packet={proofPacket} sourceIndex={sourceIndex} />
-              ))}
-            </ul>
-          </div>
-          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
-            <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Estimated</div>
-            <ul className="mt-3 space-y-2">
-              {(estimatedLines.length > 0 ? estimatedLines : [{ text: "No explicit estimate is strong enough to elevate above the fold yet.", sourceIds: [] }]).map((line) =>
-                line.sourceIds.length > 0 ? (
-                  <ClaimLine key={line.text} item={line} packet={proofPacket} sourceIndex={sourceIndex} />
-                ) : (
-                  <li key={line.text} className="text-sm leading-relaxed text-content-muted">{line.text}</li>
-                ),
+            <div className="mt-4 rounded-xl border border-white/[0.06] bg-black/20 p-4">
+              <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Bottom Line</div>
+              {headlineClaim ? (
+                <ClaimText
+                  item={headlineClaim}
+                  packet={proofPacket}
+                  sourceIndex={sourceIndex}
+                  className="mt-2 text-sm leading-relaxed text-content"
+                />
+              ) : (
+                <p className="mt-2 text-sm leading-relaxed text-content">{proofPacket.answer}</p>
               )}
-            </ul>
-          </div>
-          <div className="rounded-xl border border-[#d97757]/20 bg-[#d97757]/[0.05] p-4">
-            <div className="text-[10px] uppercase tracking-[0.16em] text-[#f2b49f]">Missing To Believe This</div>
-            <ul className="mt-3 space-y-2">
-              {gapLines.map((line) => (
-                <li key={line.text} className="text-sm leading-relaxed text-content">{line.text}</li>
+            </div>
+            {supportingClaims.length > 0 ? (
+              <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                {supportingClaims.map((claim) => (
+                  <div key={claim.text} className="rounded-xl border border-white/[0.06] bg-black/20 px-4 py-3">
+                    <ClaimText
+                      item={claim}
+                      packet={proofPacket}
+                      sourceIndex={sourceIndex}
+                      className="text-sm leading-relaxed text-content-secondary"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </section>
+
+          <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-content-muted" />
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Founder Truth</h3>
+            </div>
+            <ul className="mt-4 space-y-3">
+              {summaryClaims.map((claim) => (
+                <ClaimLine key={claim.text} item={claim} packet={proofPacket} sourceIndex={sourceIndex} />
               ))}
             </ul>
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
-        <div className="flex items-center gap-2">
-          <GitCompare className="h-4 w-4 text-content-muted" />
-          <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Why This Holds / Breaks</h3>
-        </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Supported By</div>
-            <div className="mt-2 text-2xl font-semibold text-content">{citedCount}</div>
-            <p className="mt-2 text-xs leading-relaxed text-content-muted">Cited sources attached to the packet, not just explored in the trace.</p>
-          </div>
-          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Contradicted By</div>
-            <div className="mt-2 text-2xl font-semibold text-content">{proofPacket.explorationMemory.contradictionCount}</div>
-            <p className="mt-2 text-xs leading-relaxed text-content-muted">Tracked contradictions or unresolved conflicts in the retained packet.</p>
-          </div>
-          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Packet Shortcut</div>
-            <p className="mt-2 text-sm leading-relaxed text-content">{proofPacket.workflowComparison.rationale}</p>
-          </div>
-        </div>
-        <div className="mt-4 grid gap-3 lg:grid-cols-[1.3fr_0.7fr]">
-          <div className="space-y-3">
-            {contradictions.map((risk) => (
-              <div key={risk.title} className="rounded-xl border border-rose-500/10 bg-rose-500/[0.04] p-4">
-                <div className="text-sm font-medium text-content">{risk.title}</div>
-                <p className="mt-1 text-sm leading-relaxed text-content-muted">{risk.description}</p>
+            <div className="mt-5 grid gap-3 lg:grid-cols-3">
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Observed</div>
+                <ul className="mt-3 space-y-2">
+                  {observedLines.map((line) => (
+                    <ClaimLine key={line.text} item={line} packet={proofPacket} sourceIndex={sourceIndex} />
+                  ))}
+                </ul>
               </div>
-            ))}
-          </div>
-          <div className="space-y-3">
-            <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
-              <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Uncertainty Boundary</div>
-              <p className="mt-2 text-sm leading-relaxed text-content-muted">{proofPacket.uncertaintyBoundary}</p>
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Estimated</div>
+                <ul className="mt-3 space-y-2">
+                  {(estimatedLines.length > 0 ? estimatedLines : [{ text: "No explicit estimate strong enough yet.", sourceIds: [] }]).map((line) =>
+                    line.sourceIds.length > 0 ? (
+                      <ClaimLine key={line.text} item={line} packet={proofPacket} sourceIndex={sourceIndex} />
+                    ) : (
+                      <li key={line.text} className="text-sm leading-relaxed text-content-muted">{line.text}</li>
+                    ),
+                  )}
+                </ul>
+              </div>
+              <div className="rounded-xl border border-[#d97757]/20 bg-[#d97757]/[0.05] p-4">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-[#f2b49f]">Missing To Believe This</div>
+                <ul className="mt-3 space-y-2">
+                  {gapLines.map((line) => (
+                    <li key={line.text} className="text-sm leading-relaxed text-content">{line.text}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
+          </section>
+
+          <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+            <div className="flex items-center gap-2">
+              <GitCompare className="h-4 w-4 text-content-muted" />
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Why This Holds / Breaks</h3>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Supported By</div>
+                <div className="mt-2 text-2xl font-semibold text-content">{citedCount}</div>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Contradicted By</div>
+                <div className="mt-2 text-2xl font-semibold text-content">{proofPacket.explorationMemory.contradictionCount}</div>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Uncertainty</div>
+                <p className="mt-2 text-sm leading-relaxed text-content-muted">{proofPacket.uncertaintyBoundary}</p>
+              </div>
+            </div>
+            {contradictions.length > 0 ? (
+              <div className="mt-3 space-y-2">
+                {contradictions.map((risk) => (
+                  <div key={risk.title} className="rounded-xl border border-rose-500/10 bg-rose-500/[0.04] p-4">
+                    <div className="text-sm font-medium text-content">{risk.title}</div>
+                    <p className="mt-1 text-sm leading-relaxed text-content-muted">{risk.description}</p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             {proofPacket.strategicAngles.slice(0, 2).map((angle) => (
-              <div key={angle.id} className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+              <div key={angle.id} className="mt-3 rounded-xl border border-white/[0.06] bg-black/20 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="text-sm font-medium text-content">{angle.title}</div>
@@ -627,164 +625,366 @@ export const ResultWorkspace = memo(function ResultWorkspace({
                     <ActionButton onClick={onPublishStrategicAngle ? () => onPublishStrategicAngle(angle.id) : undefined}>
                       Publish issue packet
                     </ActionButton>
-                    <ActionButton
-                      onClick={
-                        onDelegateStrategicAngle
-                          ? () => onDelegateStrategicAngle(angle.id, "claude_code")
-                          : undefined
-                      }
-                    >
+                    <ActionButton onClick={onDelegateStrategicAngle ? () => onDelegateStrategicAngle(angle.id, "claude_code") : undefined}>
                       Delegate issue
                     </ActionButton>
                   </div>
                 )}
               </div>
             ))}
-          </div>
-        </div>
-      </section>
+          </section>
 
-      <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
-        <div className="flex items-center gap-2">
-          <ArrowRight className="h-4 w-4 text-content-muted" />
-          <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Next Move</h3>
-        </div>
-        <div className="mt-4 grid gap-3 lg:grid-cols-3">
-          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
-            <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Founder Move</div>
-            <p className="mt-2 text-sm leading-relaxed text-content">{founderMove}</p>
-          </div>
-          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
-            <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Diligence Move</div>
-            <p className="mt-2 text-sm leading-relaxed text-content">{diligenceMove}</p>
-            <div className="mt-3">
-              <ActionButton onClick={onFollowUp ? () => onFollowUp(diligenceMove) : undefined}>Run follow-up</ActionButton>
+          <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+            <div className="flex items-center gap-2">
+              <ArrowRight className="h-4 w-4 text-content-muted" />
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Next Move</h3>
             </div>
-          </div>
-          <div className="rounded-xl border border-[#d97757]/20 bg-[#d97757]/[0.05] p-4">
-            <div className="text-[10px] uppercase tracking-[0.16em] text-[#f2b49f]">Delegation Move</div>
-            <p className="mt-2 text-sm leading-relaxed text-content">{delegationMove}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <ActionButton onClick={onPublishSharedContext} disabled={handoffBusy}>Publish to shared context</ActionButton>
-              <ActionButton onClick={onDelegate ? () => onDelegate("claude_code") : undefined} disabled={handoffBusy}>
-                Delegate to Claude Code
-              </ActionButton>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
-        <div className="flex items-center gap-2">
-          <Layers3 className="h-4 w-4 text-content-muted" />
-          <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Ready Packet</h3>
-        </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Packet Identity</div>
-            <div className="mt-2 text-sm font-medium text-content">{proofPacket.packetId}</div>
-            <div className="mt-1 text-xs text-content-muted">{proofPacket.packetType}</div>
-          </div>
-          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Shared Context Status</div>
-            <div className="mt-2 text-sm font-medium text-content">{handoffState?.status ?? "idle"}</div>
-            <div className="mt-1 text-xs text-content-muted">{handoffState?.message ?? "Packet has not been published yet."}</div>
-          </div>
-          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Allowed Destinations</div>
-            <div className="mt-2 text-sm font-medium text-content">
-              {(proofPacket.companyReadinessPacket.allowedDestinations ?? []).join(", ") || "No export route defined"}
-            </div>
-          </div>
-          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Compounding Memory</div>
-            <div className="mt-2 text-sm font-medium text-content">
-              {proofPacket.shareableArtifacts.length > 0 ? `${proofPacket.shareableArtifacts.length} reusable artifact(s)` : "No reusable artifact yet"}
-            </div>
-          </div>
-        </div>
-        {(handoffState?.contextId || handoffState?.taskId || handoffState?.handoffPrompt) && (
-          <div className="mt-4 rounded-xl border border-white/[0.06] bg-black/20 p-4">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Handoff Details</div>
-            {handoffState?.contextId ? <div className="mt-2 text-sm text-content">Context {handoffState.contextId}</div> : null}
-            {handoffState?.taskId ? <div className="mt-1 text-sm text-content">Task {handoffState.taskId}</div> : null}
-            {handoffState?.handoffPrompt ? <p className="mt-2 text-xs leading-relaxed text-content-muted">{handoffState.handoffPrompt}</p> : null}
-          </div>
-        )}
-        <div className="mt-4 flex flex-wrap gap-2">
-          <ActionButton onClick={onExport ? () => onExport("brief") : undefined}><Download className="h-3.5 w-3.5" />Export packet</ActionButton>
-          <ActionButton onClick={onPublishSharedContext} disabled={handoffBusy}><Share2 className="h-3.5 w-3.5" />Publish and handoff</ActionButton>
-          <ActionButton onClick={onDelegate ? () => onDelegate("openclaw") : undefined} disabled={handoffBusy}><ExternalLink className="h-3.5 w-3.5" />Delegate to OpenClaw</ActionButton>
-          <ActionButton onClick={onMonitor}><Bell className="h-3.5 w-3.5" />Keep warm / monitor</ActionButton>
-        </div>
-      </section>
-
-      <Section id="sources" title="Inspect Sources" icon={Network}>
-        <div className="space-y-3">
-          {proofPacket.sourceRefs
-            .filter((source) => source.status !== "discarded")
-            .map((source, index) => (
-              <div key={source.id} className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-medium text-content">{source.title ?? source.label}</div>
-                    <div className="mt-1 text-xs text-content-muted">{source.domain ?? source.type ?? "source"}</div>
-                  </div>
-                  <span className="rounded-full bg-[#d97757]/15 px-2 py-0.5 text-[10px] font-bold text-[#d97757]">{index + 1}</span>
-                </div>
-                {source.excerpt ? <p className="mt-2 text-sm leading-relaxed text-content-muted">{source.excerpt}</p> : null}
+            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Founder Move</div>
+                <p className="mt-2 text-sm leading-relaxed text-content">{founderMove}</p>
               </div>
-            ))}
-        </div>
-      </Section>
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Diligence Move</div>
+                <p className="mt-2 text-sm leading-relaxed text-content">{diligenceMove}</p>
+                <div className="mt-3">
+                  <ActionButton onClick={onFollowUp ? () => onFollowUp(diligenceMove) : undefined}>Run follow-up</ActionButton>
+                </div>
+              </div>
+              <div className="rounded-xl border border-[#d97757]/20 bg-[#d97757]/[0.05] p-4">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-[#f2b49f]">Delegation Move</div>
+                <p className="mt-2 text-sm leading-relaxed text-content">{delegationMove}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <ActionButton onClick={onPublishSharedContext} disabled={handoffBusy}>Publish to shared context</ActionButton>
+                  <ActionButton onClick={onDelegate ? () => onDelegate("claude_code") : undefined} disabled={handoffBusy}>
+                    Delegate to Claude Code
+                  </ActionButton>
+                </div>
+              </div>
+            </div>
+          </section>
 
-      <Section id="claims" title="Claim Ledger" icon={BookOpen}>
-        <div className="space-y-3">
-          {proofPacket.claimRefs.slice(0, 12).map((claim) => (
-            <div key={claim.id} className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="text-sm leading-relaxed text-content">{claim.text}</div>
+          <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+            <div className="flex items-center gap-2">
+              <Layers3 className="h-4 w-4 text-content-muted" />
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Ready Packet</h3>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Packet</div>
+                <div className="mt-2 text-sm font-medium text-content">{proofPacket.packetId}</div>
+                <div className="mt-1 text-xs text-content-muted">{proofPacket.packetType} Â· {handoffState?.status ?? "idle"}</div>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Workflow Asset</div>
+                <div className="mt-2 text-sm font-medium text-content">{proofPacket.workflowAsset.assetId}</div>
+                <div className="mt-1 text-xs text-content-muted">
+                  {proofPacket.workflowAsset.assetType} Â· {proofPacket.workflowAsset.state}
+                </div>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Destinations</div>
+                <div className="mt-2 text-sm font-medium text-content">
+                  {(proofPacket.companyReadinessPacket.allowedDestinations ?? []).join(", ") || "No export route defined"}
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 rounded-xl border border-white/[0.06] bg-black/20 p-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Workflow State</span>
                 <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-content-muted">
-                  {claim.status}
+                  {proofPacket.workflowAsset.replayReady ? "replay ready" : "replay pending"}
+                </span>
+                <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-content-muted">
+                  {proofPacket.workflowAsset.delegationReady ? "delegation ready" : "delegation pending"}
                 </span>
               </div>
-              <div className="mt-2 inline-flex items-center">
-                {claim.sourceRefIds.map((sourceId) => {
-                  const index = sourceIndex.get(sourceId);
-                  if (index === undefined) return null;
-                  return <CitationFootnote key={sourceId} index={index} source={proofPacket.sourceRefs[index]} />;
-                })}
+              <div className="mt-2 text-xs leading-relaxed text-content-muted">
+                {proofPacket.workflowAsset.stages.join(" -> ")}
+              </div>
+              {handoffState?.message ? <p className="mt-3 text-sm text-content">{handoffState.message}</p> : null}
+              <div className="mt-3 flex flex-wrap gap-3 text-xs text-content-muted">
+                <span>Context {handoffState?.contextId ?? proofPacket.workflowAsset.currentContextId ?? "pending"}</span>
+                <span>Task {handoffState?.taskId ?? proofPacket.workflowAsset.lastTaskId ?? "pending"}</span>
+              </div>
+              {handoffState?.handoffPrompt ? (
+                <div className="mt-3 rounded-lg border border-white/[0.06] bg-white/[0.03] p-3 text-xs leading-relaxed text-content-muted">
+                  {handoffState.handoffPrompt}
+                </div>
+              ) : null}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <ActionButton onClick={onExport ? () => onExport("brief") : undefined}><Download className="h-3.5 w-3.5" />Export packet</ActionButton>
+              <ActionButton onClick={onPublishSharedContext} disabled={handoffBusy}><Share2 className="h-3.5 w-3.5" />Publish to shared context</ActionButton>
+              <ActionButton onClick={onDelegate ? () => onDelegate("openclaw") : undefined} disabled={handoffBusy}><ExternalLink className="h-3.5 w-3.5" />Delegate to OpenClaw</ActionButton>
+              <ActionButton onClick={() => setActiveTab("sources")}><Network className="h-3.5 w-3.5" />Inspect sources</ActionButton>
+              <ActionButton onClick={onMonitor}><Bell className="h-3.5 w-3.5" />Monitor</ActionButton>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* ── TAB: Analysis ─────────────────────────────────────────────── */}
+      {activeTab === "analysis" && (
+        <div className="space-y-3" role="tabpanel" aria-label="Analysis">
+          {/* Founder Truth */}
+          <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-content-muted" />
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Founder Truth</h3>
+            </div>
+            <ul className="mt-4 space-y-3">
+              {summaryClaims.map((claim) => (
+                <ClaimLine key={claim.text} item={claim} packet={proofPacket} sourceIndex={sourceIndex} />
+              ))}
+            </ul>
+            <div className="mt-5 grid gap-3 lg:grid-cols-3">
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Observed</div>
+                <ul className="mt-3 space-y-2">
+                  {observedLines.map((line) => (
+                    <ClaimLine key={line.text} item={line} packet={proofPacket} sourceIndex={sourceIndex} />
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Estimated</div>
+                <ul className="mt-3 space-y-2">
+                  {(estimatedLines.length > 0 ? estimatedLines : [{ text: "No explicit estimate strong enough yet.", sourceIds: [] }]).map((line) =>
+                    line.sourceIds.length > 0 ? (
+                      <ClaimLine key={line.text} item={line} packet={proofPacket} sourceIndex={sourceIndex} />
+                    ) : (
+                      <li key={line.text} className="text-sm leading-relaxed text-content-muted">{line.text}</li>
+                    ),
+                  )}
+                </ul>
+              </div>
+              <div className="rounded-xl border border-[#d97757]/20 bg-[#d97757]/[0.05] p-4">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-[#f2b49f]">Missing To Believe This</div>
+                <ul className="mt-3 space-y-2">
+                  {gapLines.map((line) => (
+                    <li key={line.text} className="text-sm leading-relaxed text-content">{line.text}</li>
+                  ))}
+                </ul>
               </div>
             </div>
-          ))}
-        </div>
-      </Section>
+          </section>
 
-      <Section id="comparables" title="Comparables" icon={GitCompare}>
-        {comparables.length > 0 ? (
-          <div className="space-y-3">
-            {comparables.map((comparable) => (
-              <div key={`${comparable.name}-${comparable.note}`} className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+          {/* Why This Holds / Breaks */}
+          <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+            <div className="flex items-center gap-2">
+              <GitCompare className="h-4 w-4 text-content-muted" />
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Why This Holds / Breaks</h3>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Supported By</div>
+                <div className="mt-2 text-2xl font-semibold text-content">{citedCount}</div>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Contradicted By</div>
+                <div className="mt-2 text-2xl font-semibold text-content">{proofPacket.explorationMemory.contradictionCount}</div>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Uncertainty</div>
+                <p className="mt-2 text-sm leading-relaxed text-content-muted">{proofPacket.uncertaintyBoundary}</p>
+              </div>
+            </div>
+            {contradictions.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {contradictions.map((risk) => (
+                  <div key={risk.title} className="rounded-xl border border-rose-500/10 bg-rose-500/[0.04] p-4">
+                    <div className="text-sm font-medium text-content">{risk.title}</div>
+                    <p className="mt-1 text-sm leading-relaxed text-content-muted">{risk.description}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {proofPacket.strategicAngles.slice(0, 2).map((angle) => (
+              <div key={angle.id} className="mt-3 rounded-xl border border-white/[0.06] bg-black/20 p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="text-sm font-medium text-content">{comparable.name || "Unnamed comparable"}</div>
+                  <div>
+                    <div className="text-sm font-medium text-content">{angle.title}</div>
+                    <p className="mt-1 text-xs leading-relaxed text-content-muted">{angle.summary}</p>
+                  </div>
                   <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-content-muted">
-                    {comparable.relevance}
+                    {angle.status}
                   </span>
                 </div>
-                <p className="mt-2 text-sm leading-relaxed text-content-muted">{comparable.note}</p>
+                {(onPublishStrategicAngle || onDelegateStrategicAngle) && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <ActionButton onClick={onPublishStrategicAngle ? () => onPublishStrategicAngle(angle.id) : undefined}>
+                      Publish issue
+                    </ActionButton>
+                    <ActionButton onClick={onDelegateStrategicAngle ? () => onDelegateStrategicAngle(angle.id, "claude_code") : undefined}>
+                      Delegate issue
+                    </ActionButton>
+                  </div>
+                )}
               </div>
             ))}
-          </div>
-        ) : (
-          <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4 text-sm text-content-muted">
-            No reliable comparables are strong enough to surface yet.
-          </div>
-        )}
-      </Section>
+          </section>
+        </div>
+      )}
 
-      <Section id="trajectory" title="Agent Trajectory" icon={AlertTriangle}>
-        <TrajectoryPanel data={trajectoryData} defaultCollapsed={false} />
-      </Section>
+      {/* ── TAB: Actions ──────────────────────────────────────────────── */}
+      {activeTab === "actions" && (
+        <div className="space-y-3" role="tabpanel" aria-label="Actions">
+          {/* Next Move */}
+          <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+            <div className="flex items-center gap-2">
+              <ArrowRight className="h-4 w-4 text-content-muted" />
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Next Move</h3>
+            </div>
+            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Founder Move</div>
+                <p className="mt-2 text-sm leading-relaxed text-content">{founderMove}</p>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-content-muted">Diligence Move</div>
+                <p className="mt-2 text-sm leading-relaxed text-content">{diligenceMove}</p>
+                <div className="mt-3">
+                  <ActionButton onClick={onFollowUp ? () => onFollowUp(diligenceMove) : undefined}>Run follow-up</ActionButton>
+                </div>
+              </div>
+              <div className="rounded-xl border border-[#d97757]/20 bg-[#d97757]/[0.05] p-4">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-[#f2b49f]">Delegation Move</div>
+                <p className="mt-2 text-sm leading-relaxed text-content">{delegationMove}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <ActionButton onClick={onPublishSharedContext} disabled={handoffBusy}>Publish context</ActionButton>
+                  <ActionButton onClick={onDelegate ? () => onDelegate("claude_code") : undefined} disabled={handoffBusy}>
+                    Delegate
+                  </ActionButton>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Ready Packet */}
+          <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+            <div className="flex items-center gap-2">
+              <Layers3 className="h-4 w-4 text-content-muted" />
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Ready Packet</h3>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Packet</div>
+                <div className="mt-2 text-sm font-medium text-content">{proofPacket.packetId}</div>
+                <div className="mt-1 text-xs text-content-muted">{proofPacket.packetType} · {handoffState?.status ?? "idle"}</div>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Workflow Asset</div>
+                <div className="mt-2 text-sm font-medium text-content">{proofPacket.workflowAsset.assetId}</div>
+                <div className="mt-1 text-xs text-content-muted">
+                  {proofPacket.workflowAsset.assetType} · {proofPacket.workflowAsset.state}
+                </div>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Destinations</div>
+                <div className="mt-2 text-sm font-medium text-content">
+                  {(proofPacket.companyReadinessPacket.allowedDestinations ?? []).join(", ") || "No export route defined"}
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 rounded-xl border border-white/[0.06] bg-black/20 p-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-[10px] uppercase tracking-[0.14em] text-content-muted">Workflow State</span>
+                <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-content-muted">
+                  {proofPacket.workflowAsset.replayReady ? "replay ready" : "replay pending"}
+                </span>
+                <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-content-muted">
+                  {proofPacket.workflowAsset.delegationReady ? "delegation ready" : "delegation pending"}
+                </span>
+              </div>
+              <div className="mt-2 text-xs leading-relaxed text-content-muted">
+                {proofPacket.workflowAsset.stages.join(" -> ")}
+              </div>
+              {handoffState?.message ? <p className="mt-3 text-sm text-content">{handoffState.message}</p> : null}
+              <div className="mt-3 flex flex-wrap gap-3 text-xs text-content-muted">
+                <span>Context {handoffState?.contextId ?? proofPacket.workflowAsset.currentContextId ?? "pending"}</span>
+                <span>Task {handoffState?.taskId ?? proofPacket.workflowAsset.lastTaskId ?? "pending"}</span>
+              </div>
+              {handoffState?.handoffPrompt ? (
+                <div className="mt-3 rounded-lg border border-white/[0.06] bg-white/[0.03] p-3 text-xs leading-relaxed text-content-muted">
+                  {handoffState.handoffPrompt}
+                </div>
+              ) : null}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <ActionButton onClick={onExport ? () => onExport("brief") : undefined}><Download className="h-3.5 w-3.5" />Export</ActionButton>
+              <ActionButton onClick={onPublishSharedContext} disabled={handoffBusy}><Share2 className="h-3.5 w-3.5" />Publish</ActionButton>
+              <ActionButton onClick={onDelegate ? () => onDelegate("openclaw") : undefined} disabled={handoffBusy}><ExternalLink className="h-3.5 w-3.5" />OpenClaw</ActionButton>
+              <ActionButton onClick={onMonitor}><Bell className="h-3.5 w-3.5" />Monitor</ActionButton>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* ── TAB: Sources ──────────────────────────────────────────────── */}
+      {activeTab === "sources" && (
+        <div className="space-y-3" role="tabpanel" aria-label="Sources">
+          {/* Inline source list — no collapsible wrapper needed */}
+          <section className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Network className="h-4 w-4 text-content-muted" />
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Sources ({proofPacket.sourceRefs.filter((s) => s.status !== "discarded").length})</h3>
+            </div>
+            <div className="space-y-2">
+              {proofPacket.sourceRefs
+                .filter((source) => source.status !== "discarded")
+                .map((source, index) => (
+                  <div key={source.id} className="flex items-start gap-3 rounded-lg border border-white/[0.06] bg-black/20 p-3">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#d97757]/15 text-[10px] font-bold text-[#d97757]">{index + 1}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-content truncate">{source.title ?? source.label}</div>
+                      <div className="text-xs text-content-muted">{source.domain ?? source.type ?? "source"}</div>
+                      {source.excerpt ? <p className="mt-1 text-xs leading-relaxed text-content-muted line-clamp-2">{source.excerpt}</p> : null}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </section>
+
+          {/* Claim Ledger — compact */}
+          <Section id="claims" title={`Claim Ledger (${proofPacket.claimRefs.length})`} icon={BookOpen}>
+            <div className="space-y-2">
+              {proofPacket.claimRefs.slice(0, 12).map((claim) => (
+                <div key={claim.id} className="flex items-start justify-between gap-3 rounded-lg border border-white/[0.06] bg-black/20 p-3">
+                  <div className="text-sm leading-relaxed text-content">{claim.text}</div>
+                  <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-content-muted shrink-0">
+                    {claim.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Section>
+
+          {/* Comparables */}
+          {comparables.length > 0 && (
+            <Section id="comparables" title={`Comparables (${comparables.length})`} icon={GitCompare}>
+              <div className="space-y-2">
+                {comparables.map((comparable) => (
+                  <div key={`${comparable.name}-${comparable.note}`} className="flex items-start justify-between gap-3 rounded-lg border border-white/[0.06] bg-black/20 p-3">
+                    <div>
+                      <div className="text-sm font-medium text-content">{comparable.name || "Unnamed"}</div>
+                      <p className="mt-1 text-xs text-content-muted">{comparable.note}</p>
+                    </div>
+                    <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-content-muted shrink-0">
+                      {comparable.relevance}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {/* Agent Trajectory */}
+          <Section id="trajectory" title="Agent Trajectory" icon={AlertTriangle}>
+            <TrajectoryPanel data={trajectoryData} defaultCollapsed={false} />
+          </Section>
+        </div>
+      )}
     </div>
   );
 });
