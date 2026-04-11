@@ -9,7 +9,6 @@
  */
 
 import { getDb as getCanonicalDb } from "../../packages/mcp-local/src/db.js";
-import { hashContent } from "./workflowEnvelope.js";
 
 // ── DB setup ─────────────────────────────────────────────────────────
 
@@ -297,10 +296,19 @@ export interface MeContextItem {
   updatedAt: string;
 }
 
+const MAX_ME_CONTEXT = 200;
+
 export function saveMeContext(input: { type: string; title: string; summary?: string; entityRef?: string; tags?: string[] }): string {
   const db = getDb();
   const id = genId("ctx");
   const now = new Date().toISOString();
+
+  // BOUND: evict oldest if at capacity
+  const count = (db.prepare("SELECT COUNT(*) as cnt FROM me_context").get() as { cnt: number }).cnt;
+  if (count >= MAX_ME_CONTEXT) {
+    db.prepare("DELETE FROM me_context WHERE context_id IN (SELECT context_id FROM me_context ORDER BY updated_at ASC LIMIT 10)").run();
+  }
+
   db.prepare("INSERT INTO me_context (context_id, type, title, summary, entity_ref, tags, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
     id, input.type, input.title, input.summary ?? "", input.entityRef ?? null, JSON.stringify(input.tags ?? []), now, now,
   );

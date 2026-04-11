@@ -17,6 +17,7 @@ import {
 import { createEnvelopeFromPipelineState } from "../lib/workflowEnvelope.js";
 import { trajectoryFromPipelineState, saveSearchTrajectory } from "../lib/trajectoryStore.js";
 import { detectReplayCandidate } from "../lib/replayDetector.js";
+import { saveReport, createNudge } from "../lib/canonicalModels.js";
 
 // ── SSE helpers ──────────────────────────────────────────────────────
 
@@ -80,6 +81,10 @@ export function createStreamingSearchRouter(): Router {
 
     if (!query) {
       res.status(400).json({ error: "query parameter is required" });
+      return;
+    }
+    if (query.length > 2000) {
+      res.status(400).json({ error: "query too long (max 2000 chars)" });
       return;
     }
 
@@ -156,7 +161,6 @@ export function createStreamingSearchRouter(): Router {
 
       // Auto-save report to canonical backend (best-effort)
       try {
-        const { saveReport, createNudge } = await import("../lib/canonicalModels.js");
         const reportId = saveReport({
           title: state.entityName || query,
           entityName: state.entityName || undefined,

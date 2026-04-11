@@ -30,9 +30,13 @@ export function createProductRouter(): Router {
   });
 
   router.get("/reports/:id", (req: Request, res: Response) => {
-    const report = getReport(req.params.id);
-    if (!report) { res.status(404).json({ error: "Report not found" }); return; }
-    res.json(report);
+    try {
+      const report = getReport(req.params.id);
+      if (!report) { res.status(404).json({ error: "Report not found" }); return; }
+      res.json(report);
+    } catch (err) {
+      if (!res.headersSent) res.status(500).json({ error: String(err) });
+    }
   });
 
   router.post("/reports", (req: Request, res: Response) => {
@@ -40,10 +44,17 @@ export function createProductRouter(): Router {
       const { title, entityName, type, summary, confidence, lens, query, packetJson, envelopeId, sourceCount, contradictionCount } = req.body;
       if (!title || !query) { res.status(400).json({ error: "title and query required" }); return; }
       const id = saveReport({
-        title, entityName, type: type ?? "company", summary: summary ?? "",
-        confidence: confidence ?? 0, lens: lens ?? "founder", query,
-        packetJson: packetJson ?? "{}", envelopeId,
-        sourceCount: sourceCount ?? 0, contradictionCount: contradictionCount ?? 0,
+        title: String(title).slice(0, 200),
+        entityName: entityName ? String(entityName).slice(0, 200) : undefined,
+        type: String(type ?? "company").slice(0, 50),
+        summary: String(summary ?? "").slice(0, 1000),
+        confidence: Math.max(0, Math.min(100, Number(confidence) || 0)),
+        lens: String(lens ?? "founder").slice(0, 20),
+        query: String(query).slice(0, 2000),
+        packetJson: String(packetJson ?? "{}").slice(0, 50000),
+        envelopeId,
+        sourceCount: Math.max(0, Number(sourceCount) || 0),
+        contradictionCount: Math.max(0, Number(contradictionCount) || 0),
         pinned: false, status: "saved",
       });
       res.status(201).json({ reportId: id });
