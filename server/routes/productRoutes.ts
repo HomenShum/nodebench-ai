@@ -8,6 +8,7 @@
  */
 
 import { Router, type Request, type Response } from "express";
+import { wrapRoute } from "../lib/wrapRoute.js";
 import {
   saveReport, listReports, getReport, pinReport,
   createNudge, listNudges, dismissNudge,

@@ -90,11 +90,9 @@ function ensureTables(db: ReturnType<typeof getCanonicalDb>): void {
   `);
 }
 
-// ── ID generation ────────────────────────────────────────────────────
+// ── ID generation (shared) ───────────────────────────────────────────
 
-function genId(prefix: string): string {
-  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
+import { genId } from "./idGen.js";
 
 // ── Report CRUD ──────────────────────────────────────────────────────
 
