@@ -20,6 +20,7 @@ const ATTRITION_BACKEND = process.env.ATTRITION_URL || "https://attrition-7xtb75
 
 /** Non-blocking push of pipeline results to attrition for capture + measurement */
 function pushToAttrition(query: string, durationMs: number, packet: Record<string, unknown>, trace: unknown[]) {
+  console.log(`[attrition] Pushing pipeline result: ${query.substring(0, 60)}... to ${ATTRITION_BACKEND}`);
   // Fire and forget — never block the response
   fetch(`${ATTRITION_BACKEND}/api/retention/push-packet`, {
     method: "POST",
@@ -118,11 +119,20 @@ export function createPipelineRouter(): Router {
 
       // Return flat shape matching legacy /api/search so frontend parsers work unchanged
       // Plus envelope metadata for workflow-learning consumers
-      return res.json({
+      // ── Push to attrition BEFORE returning (non-blocking fire-and-forget) ───
+      const pipelineDuration = Date.now() - startMs;
+      pushToAttrition(
+        query,
+        pipelineDuration,
+        packet as Record<string, unknown>,
+        state.trace ?? [],
+      );
+
+      const responsePayload = {
         success: true,
         hooks: { pre: preHooks.hookResults, post: postHooks.hookResults, actions: postHooks.allActions },
-        pipeline: "v2",
-        durationMs: Date.now() - startMs,
+        pipeline: "v2-attrition-push",
+        durationMs: pipelineDuration,
         latencyMs: state.totalDurationMs,
         classification: state.classification,
         envelope: {
@@ -138,16 +148,35 @@ export function createPipelineRouter(): Router {
           } : null,
         },
         ...(packet as Record<string, unknown>),
-      });
+      };
 
-      // ── Push to attrition (non-blocking, after response sent) ───
-      const pipelineDuration = Date.now() - startMs;
-      pushToAttrition(
-        query,
-        pipelineDuration,
-        packet as Record<string, unknown>,
-        state.trace ?? [],
-      );
+      // Push to attrition INLINE — no separate function, no caching issues
+      try {
+        const attritionUrl = process.env.ATTRITION_URL || "https://attrition-7xtb75zi5q-uc.a.run.app";
+        console.log(`[attrition-push] Pushing to ${attritionUrl}...`);
+        fetch(`${attritionUrl}/api/retention/push-packet`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "delta.pipeline_run",
+            subject: `Pipeline: ${query.substring(0, 80)}`,
+            summary: `Confidence: ${packet.confidence ?? "N/A"}, Sources: ${packet.sourceCount ?? 0}, Duration: ${pipelineDuration}ms`,
+            data: { query, durationMs: pipelineDuration, confidence: packet.confidence, sourceCount: packet.sourceCount, entityName: packet.entityName, traceSteps: (state.trace ?? []).length, timestamp: new Date().toISOString() },
+          }),
+          signal: AbortSignal.timeout(5000),
+        }).then(r => console.log(`[attrition-push] packet: ${r.status}`)).catch(e => console.log(`[attrition-push] error: ${e.message}`));
+
+        fetch(`${attritionUrl}/api/retention/webhook`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ event: "pipeline_complete", data: { query: query.substring(0, 200), durationMs: pipelineDuration, confidence: packet.confidence, sourceCount: packet.sourceCount, entityName: packet.entityName } }),
+          signal: AbortSignal.timeout(5000),
+        }).then(r => console.log(`[attrition-push] webhook: ${r.status}`)).catch(e => console.log(`[attrition-push] webhook error: ${e.message}`));
+      } catch (pushErr) {
+        console.log(`[attrition-push] failed:`, pushErr);
+      }
+
+      return res.json(responsePayload);
     } catch (err: any) {
       if (!res.headersSent) {
         return res.status(500).json({
