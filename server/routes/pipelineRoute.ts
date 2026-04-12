@@ -15,6 +15,51 @@ import { evaluateTask } from "../../packages/mcp-local/src/sync/hyperloopEval.js
 import { runPromotionCycle } from "../../packages/mcp-local/src/sync/hyperloopArchive.js";
 import { runPreSearchHooks, runPostSearchHooks } from "../pipeline/hooks.js";
 
+// ── Attrition retention bridge ─────────────────────────────────
+const ATTRITION_BACKEND = process.env.ATTRITION_URL || "https://attrition-7xtb75zi5q-uc.a.run.app";
+
+/** Non-blocking push of pipeline results to attrition for capture + measurement */
+function pushToAttrition(query: string, durationMs: number, packet: Record<string, unknown>, trace: unknown[]) {
+  // Fire and forget — never block the response
+  fetch(`${ATTRITION_BACKEND}/api/retention/push-packet`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type: "delta.pipeline_run",
+      subject: `Pipeline: ${query.substring(0, 80)}`,
+      summary: `Score: ${packet.confidence ?? "N/A"}, Sources: ${packet.sourceCount ?? 0}, Duration: ${durationMs}ms`,
+      data: {
+        query,
+        durationMs,
+        confidence: packet.confidence,
+        sourceCount: packet.sourceCount,
+        entityName: packet.entityName,
+        traceSteps: Array.isArray(trace) ? trace.length : 0,
+        timestamp: new Date().toISOString(),
+      },
+    }),
+    signal: AbortSignal.timeout(5000),
+  }).catch(() => { /* attrition unavailable — that's fine */ });
+
+  // Also send as a webhook event for the event log
+  fetch(`${ATTRITION_BACKEND}/api/retention/webhook`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      event: "pipeline_complete",
+      data: {
+        query: query.substring(0, 200),
+        durationMs,
+        confidence: packet.confidence,
+        sourceCount: packet.sourceCount,
+        entityName: packet.entityName,
+        traceSteps: Array.isArray(trace) ? trace.length : 0,
+      },
+    }),
+    signal: AbortSignal.timeout(5000),
+  }).catch(() => { /* best-effort */ });
+}
+
 export function createPipelineRouter(): Router {
   const router = Router();
 
@@ -94,6 +139,15 @@ export function createPipelineRouter(): Router {
         },
         ...(packet as Record<string, unknown>),
       });
+
+      // ── Push to attrition (non-blocking, after response sent) ───
+      const pipelineDuration = Date.now() - startMs;
+      pushToAttrition(
+        query,
+        pipelineDuration,
+        packet as Record<string, unknown>,
+        state.trace ?? [],
+      );
     } catch (err: any) {
       if (!res.headersSent) {
         return res.status(500).json({
