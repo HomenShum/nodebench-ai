@@ -545,7 +545,7 @@ function AgentTelemetryDashboardInner() {
           action={<span className="text-xs text-content-muted tabular-nums">{tools.length} tools</span>}
           data-agent-id="tool-breakdown"
         >
-          <SurfaceCard className="overflow-hidden !p-0" data-agent-action="tool-breakdown-table">
+          <SurfaceCard className="!p-0" data-agent-action="tool-breakdown-table">
             <div className="overflow-x-auto">
               <table className="w-full text-sm" role="table" aria-label="Tool call statistics">
                 <thead>

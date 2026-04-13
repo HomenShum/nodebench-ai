@@ -216,30 +216,6 @@ export const VIEW_TOOL_MAP: ViewToolMap = {
     },
   ],
 
-  "deep-sim": [
-    {
-      name: "nb_select_deep_sim_fixture",
-      description: "Switch between the built-in Deep Sim demo fixtures for investor diligence and founder strategy.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          fixture: { type: "string", enum: ["investor", "founder"] },
-        },
-        required: ["fixture"],
-      },
-    },
-    {
-      name: "nb_review_deep_sim_scenarios",
-      description: "Review the three primary Deep Sim scenario branches shown on the current page.",
-      inputSchema: { type: "object", properties: {} },
-    },
-    {
-      name: "nb_review_deep_sim_interventions",
-      description: "Review the ranked intervention ladder shown on the current page.",
-      inputSchema: { type: "object", properties: {} },
-    },
-  ],
-
   "github-explorer": [
     {
       name: "nb_list_repos",

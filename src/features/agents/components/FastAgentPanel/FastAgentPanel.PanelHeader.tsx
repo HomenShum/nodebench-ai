@@ -1,5 +1,6 @@
 import React, { memo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthActions } from "@convex-dev/auth/react";
 import {
   X, Plus, Radio, Bot, ChevronDown, MessageSquare,
   Activity, Minimize2, Maximize2, BookOpen, LogIn,
@@ -107,6 +108,7 @@ export const PanelHeader = memo(function PanelHeader({
   appendToSignalsLog,
 }: PanelHeaderProps) {
   const navigate = useNavigate();
+  const { signIn } = useAuthActions();
   const overflowMenuRef = useRef<HTMLDivElement>(null);
   const currentPersona = personas.find(p => p.id === activePersona) || personas[0];
 
@@ -135,13 +137,18 @@ export const PanelHeader = memo(function PanelHeader({
                     {anonymousSession.remaining}/{anonymousSession.limit}
                   </span>
                 ) : (
-                  <a
-                    href="/sign-in"
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void signIn("google", {
+                        redirectTo: typeof window !== "undefined" ? window.location.href : "/",
+                      })
+                    }
                     className="ml-auto inline-flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 transition-colors hover:bg-amber-100"
                   >
                     <LogIn className="w-3 h-3" />
                     Sign in
-                  </a>
+                  </button>
                 )
               )}
             </div>

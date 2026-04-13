@@ -271,9 +271,18 @@ test.describe('Scenario: Dogfood artifacts ingestion — UI loads screenshots, s
       steps: { image: string; title: string; path: string }[];
     }>('public/dogfood/scribe.json');
 
-    expect(manifest.items.length, 'dogfood screenshot manifest should have items').toBeGreaterThan(10);
-    expect(frames.items.length, 'dogfood frames.json should have items').toBeGreaterThan(10);
-    expect(scribe.steps.length, 'dogfood scribe.json should have steps').toBeGreaterThan(10);
+    expect(
+      manifest.items.length,
+      'dogfood screenshot manifest should include the thin-slice interaction captures',
+    ).toBeGreaterThanOrEqual(3);
+    expect(
+      frames.items.length,
+      'dogfood frames.json should include the walkthrough keyframes for the thin slice',
+    ).toBeGreaterThanOrEqual(6);
+    expect(
+      scribe.steps.length,
+      'dogfood scribe.json should include the thin-slice interaction steps',
+    ).toBeGreaterThanOrEqual(6);
 
     await page.goto('/dogfood', { waitUntil: 'domcontentloaded', timeout: 30_000 });
     await page.getByRole('heading', { name: /quality review/i }).waitFor({ timeout: 30_000 });
@@ -651,14 +660,25 @@ test.describe('Scenario: Long-running session — state accumulation and memory'
    *            but we verify no JS errors and no visible degradation)
    * Edge cases: Routes that were recently dark-mode fixed don't regress after 10+ navigations
    */
-  test('power user navigates 15 routes in sequence — no error accumulation', async ({ page }) => {
+  test('power user navigates 15 thin-slice routes in sequence — no error accumulation', async ({ page }) => {
     await forceDark(page);
 
     const routes = [
-      '/', '/research', '/developers', '/funding',
-      '/analytics/recommendations', '/analytics/components', '/mcp/ledger',
-      '/dogfood', '/research', '/', '/developers', '/funding',
-      '/analytics/recommendations', '/analytics/components', '/mcp/ledger',
+      '/?surface=home',
+      '/?surface=chat&q=ditto%20ai&lens=founder',
+      '/?surface=reports',
+      '/?surface=nudges',
+      '/?surface=me',
+      '/?surface=home',
+      '/?surface=chat&q=use%20my%20private%20context%20first&lens=founder',
+      '/?surface=reports',
+      '/?surface=nudges',
+      '/?surface=me',
+      '/?surface=home',
+      '/?surface=chat&q=what%20changed%20recently&lens=founder',
+      '/?surface=reports',
+      '/?surface=nudges',
+      '/?surface=me',
     ];
 
     const errors: string[] = [];

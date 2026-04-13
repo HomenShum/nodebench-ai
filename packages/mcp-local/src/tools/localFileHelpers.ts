@@ -263,13 +263,59 @@ export function rowMatchesWhere(row: unknown[], where: CompiledWhereClause[]): b
   return true;
 }
 
-export async function getXlsx(): Promise<any> {
+type ParsedA1Range = {
+  startRow: number;
+  endRow: number;
+  startCol: number;
+  endCol: number;
+};
+
+function columnLettersToNumber(value: string): number | null {
+  const normalized = value.trim().toUpperCase();
+  if (!/^[A-Z]+$/.test(normalized)) return null;
+
+  let out = 0;
+  for (const ch of normalized) {
+    out = out * 26 + (ch.charCodeAt(0) - 64);
+  }
+  return out > 0 ? out : null;
+}
+
+function parseA1CellRef(value: string): { row: number; col: number } | null {
+  const match = value.trim().toUpperCase().match(/^([A-Z]+)(\d+)$/);
+  if (!match) return null;
+
+  const col = columnLettersToNumber(match[1]);
+  const row = Number.parseInt(match[2], 10);
+  if (!col || !Number.isFinite(row) || row <= 0) return null;
+
+  return { row, col };
+}
+
+function parseA1Range(value: string): ParsedA1Range | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const [startRaw, endRaw] = trimmed.split(":");
+  const start = parseA1CellRef(startRaw);
+  const end = parseA1CellRef(endRaw ?? startRaw);
+  if (!start || !end) return null;
+
+  return {
+    startRow: Math.min(start.row, end.row),
+    endRow: Math.max(start.row, end.row),
+    startCol: Math.min(start.col, end.col),
+    endCol: Math.max(start.col, end.col),
+  };
+}
+
+export async function getReadExcelFile(): Promise<any> {
   try {
-    const mod = await import("xlsx");
+    const mod = await import("read-excel-file/node");
     return (mod as any).default ?? mod;
   } catch (err: any) {
     throw new Error(
-      "Missing optional dependency: xlsx. Install it (or run npm install in packages/mcp-local) to use XLSX parsing."
+      "Missing optional dependency: read-excel-file. Install it (or run npm install in packages/mcp-local) to use XLSX parsing."
     );
   }
 }
@@ -354,39 +400,60 @@ export async function loadCsvTable(args: any, opts: { filePath: string; maxScanR
 }
 
 export async function loadXlsxTable(args: any, opts: { filePath: string; maxScanRows: number; maxCols: number; maxCellChars: number }) {
-  const XLSX = await getXlsx();
-  const wb = XLSX.readFile(opts.filePath, { cellDates: true, dense: true });
+  const readExcelFile = await getReadExcelFile();
+  const workbook = await readExcelFile(opts.filePath);
+  const workbookSheets = Array.isArray(workbook) ? workbook : [];
 
-  const sheets: string[] = Array.isArray(wb?.SheetNames) ? wb.SheetNames : [];
+  const sheets: string[] = workbookSheets
+    .map((sheet: any) => String(sheet?.sheet ?? "").trim())
+    .filter(Boolean);
   if (sheets.length === 0) throw new Error(`No sheets found in workbook: ${opts.filePath}`);
 
   const requestedSheet = typeof args?.sheetName === "string" ? args.sheetName.trim() : "";
   const sheetName = requestedSheet || sheets[0];
-  const sheet = wb.Sheets?.[sheetName];
-  if (!sheet) {
+  const sheetEntry = workbookSheets.find((sheet: any) => String(sheet?.sheet ?? "").trim() === sheetName);
+  if (!sheetEntry) {
     throw new Error(`Sheet not found: \"${sheetName}\". Available sheets: ${sheets.join(", ")}`);
   }
 
   const headerRow = clampInt(args?.headerRow, 1, 0, 1000);
   const rangeA1 = typeof args?.rangeA1 === "string" ? args.rangeA1.trim() : "";
+  const parsedRange = rangeA1 ? parseA1Range(rangeA1) : null;
+  if (rangeA1 && !parsedRange) {
+    throw new Error(`Unsupported rangeA1 value: "${rangeA1}". Use explicit ranges like A1:D50.`);
+  }
 
-  const table: unknown[][] = XLSX.utils.sheet_to_json(sheet, {
-    header: 1,
-    blankrows: false,
-    defval: "",
-    ...(rangeA1 ? { range: rangeA1 } : {}),
-  });
+  const startRow = parsedRange?.startRow ?? 1;
+  const endRow = parsedRange?.endRow ?? (Array.isArray(sheetEntry.data) ? sheetEntry.data.length : 0);
+  const startCol = parsedRange?.startCol ?? 1;
+  const availableColCount = Array.isArray(sheetEntry.data)
+    ? sheetEntry.data.reduce((max: number, row: unknown) => {
+        if (!Array.isArray(row)) return max;
+        return Math.max(max, (row as unknown[]).length);
+      }, 0)
+    : 0;
+  const availableEndCol = parsedRange?.endCol ?? availableColCount;
+  const boundedEndCol = Math.min(availableEndCol, startCol + opts.maxCols - 1);
 
-  const normalizedAll = table
-    .filter((r) => Array.isArray(r))
-    .map((r) => (r as unknown[]).slice(0, opts.maxCols).map((c) => truncateCell(c, opts.maxCellChars)));
+  const slicedRows = Array.isArray(sheetEntry.data)
+    ? sheetEntry.data.slice(Math.max(0, startRow - 1), Math.max(0, endRow))
+    : [];
+
+  const normalizedAll = slicedRows
+    .filter((row: unknown) => Array.isArray(row))
+    .map((row: unknown) =>
+      (row as unknown[])
+        .slice(Math.max(0, startCol - 1), Math.max(0, boundedEndCol))
+        .map((cell) => truncateCell(cell, opts.maxCellChars))
+    )
+    .filter((row: unknown[]) => row.some((cell) => toText(cell).trim().length > 0));
 
   const headerIdx = headerRow > 0 ? headerRow - 1 : -1;
   const header = headerIdx >= 0 ? (normalizedAll[headerIdx] as any[] | undefined) : undefined;
   const dataRowsAll = headerIdx >= 0 ? normalizedAll.slice(headerIdx + 1) : normalizedAll;
   const dataRows = dataRowsAll.slice(0, opts.maxScanRows);
 
-  const colCount = Math.max(header ? header.length : 0, ...dataRows.map((r) => r.length));
+  const colCount = Math.max(header ? header.length : 0, ...dataRows.map((r: unknown[]) => r.length));
   const headers = header
     ? header.map((h) => String(h ?? "").trim())
     : Array.from({ length: colCount }, (_, i) => `col_${i + 1}`);
@@ -396,6 +463,8 @@ export async function loadXlsxTable(args: any, opts: { filePath: string; maxScan
     sheetName,
     headerRow,
     rangeA1: rangeA1 || null,
+    totalDataRows: dataRowsAll.length,
+    truncated: dataRowsAll.length > dataRows.length || availableEndCol > boundedEndCol,
     headers,
     dataRows,
   };

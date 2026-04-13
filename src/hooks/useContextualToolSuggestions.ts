@@ -3,7 +3,7 @@
  *
  * Given the current view ID + optional buyer preference, returns a ranked
  * list of suggestion chips (label, description, action) that are contextually
- * relevant. Used by ControlPlaneLanding for dynamic chips and by any view
+ * relevant. Used by the Home intake surface for dynamic chips and by any view
  * that wants "you might also..." cards.
  */
 

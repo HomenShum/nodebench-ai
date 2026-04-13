@@ -70,7 +70,7 @@ const DEMO_COMPANY: CompanyProfileData = {
   signals: [
     { title: "MCP adoption accelerating", content: "304 tools across 59 domains, hackathon + delta presets shipped", sourceType: "product", importance: 0.9 },
     { title: "Competitor landscape shifting", content: "Supermemory raised $3M for universal memory substrate. NodeBench positioned above as operating intelligence layer.", sourceType: "market", importance: 0.85 },
-    { title: "Search-first entry validated", content: "ControlPlaneLanding search bar + 6 role lenses showing strong engagement pattern", sourceType: "product", importance: 0.8 },
+    { title: "Search-first entry validated", content: "The Home intake and role-lens entry flow continue to show strong engagement patterns.", sourceType: "product", importance: 0.8 },
     { title: "Distribution layer launching", content: "Public company profiles, shareable memos, embeddable widgets in development", sourceType: "product", importance: 0.75 },
   ],
   risks: [

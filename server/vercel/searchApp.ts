@@ -10,6 +10,7 @@ import { llmTools } from "../../packages/mcp-local/src/tools/llmTools.js";
 import { monteCarloTools } from "../../packages/mcp-local/src/tools/monteCarloTools.js";
 import { initSweepTables, runSweep, computeDelta, getLatestSweep, getPreviousSweep, generateRecommendations } from "../../packages/mcp-local/src/sweep/engine.js";
 import { createSearchRouter } from "../routes/search.js";
+import { createStreamingSearchRouter } from "../routes/streamingSearch.js";
 import { createSharedContextRouter } from "../routes/sharedContext.js";
 import { createHarnessRouter } from "../routes/harness.js";
 import { createSubconsciousRouter } from "../routes/subconscious.js";
@@ -44,6 +45,7 @@ app.use(
 );
 app.use(express.json({ limit: "10mb" }));
 app.use(createSearchRouter(tools));
+app.use(createStreamingSearchRouter());
 app.use("/harness", createHarnessRouter(tools));
 app.use("/api/harness", createHarnessRouter(tools));
 app.use("/shared-context", createSharedContextRouter());

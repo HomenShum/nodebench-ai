@@ -52,7 +52,7 @@
 }
 
 /* Mobile: strip glass blur for GPU performance */
-@media (max-width: 1024px) {
+@media (max-width: 1279px) {
   .hud-glass {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;

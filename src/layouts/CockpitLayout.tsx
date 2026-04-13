@@ -39,11 +39,13 @@ import { useIntentTelemetry } from "@/lib/hooks/useIntentTelemetry";
 import {
   buildCockpitPath,
   buildCockpitPathForView,
+  getDefaultViewForSurface,
   getSurfaceForView,
   SURFACE_TITLES,
   VIEW_MAP,
   type CockpitSurfaceId,
 } from "@/lib/registry/viewRegistry";
+import { cn } from "@/lib/utils";
 
 import { trackEvent } from "@/lib/analytics";
 import { usePathTracking } from "../hooks/usePathTracking";
@@ -55,11 +57,11 @@ import { CommandBar } from "./CommandBar";
 import { ActiveSurfaceHost } from "./ActiveSurfaceHost";
 import { WorkspaceRail } from "./WorkspaceRail";
 import { MobileTabBar } from "./MobileTabBar";
+import { ProductTopNav } from "./ProductTopNav";
 // AgentPresenceRail removed — replaced by floating FAB + slide-over panel
 // FeedbackWidget removed — overlapped FastAgent FAB, localStorage-only
 // useBottomSheet removed — unified panel uses fixed position overlay
 import { useSwipeNavigation } from "@/lib/hooks/useSwipeNavigation";
-import { haptic } from "@/lib/haptics";
 import "./hud.css";
 
 const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);
@@ -107,8 +109,6 @@ export function CockpitLayout({
     setEntityName,
     selectedSpreadsheetId,
     setSelectedSpreadsheetId,
-    showResearchDossier,
-    setShowResearchDossier,
     researchHubInitialTab,
     setResearchHubInitialTab,
     setIsTransitioning,
@@ -137,7 +137,7 @@ export function CockpitLayout({
   const [lastVoiceInstruction, setLastVoiceInstruction] = useState<string | null>(null);
   const [isVoiceListening, setIsVoiceListening] = useState(false);
 
-  // Listen for voice state broadcasts from ControlPlaneLanding
+  // Listen for voice state broadcasts from the home intake surface
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<{ isListening: boolean }>).detail;
@@ -172,19 +172,31 @@ export function CockpitLayout({
 
   // ── R7: Gesture swipe navigation between mobile surfaces ───────────────
   const swipeRef = useRef<HTMLDivElement>(null);
-  const MOBILE_SURFACE_ORDER = useMemo(() => ["/founder", "/", "/founder/entities"], []);
-  const isMobile = typeof window !== "undefined" && window.innerWidth <= 1024;
-  const isMobileAskRoot = isMobile && currentSurface === "ask" && location.pathname === "/";
+  const MOBILE_SURFACE_ORDER = useMemo(
+    () => [
+      buildCockpitPath({ surfaceId: "ask" }),
+      buildCockpitPath({ surfaceId: "workspace" }),
+      buildCockpitPath({ surfaceId: "packets" }),
+      buildCockpitPath({ surfaceId: "history" }),
+      buildCockpitPath({ surfaceId: "connect" }),
+    ],
+    [],
+  );
+  const isCompactLayout = typeof window !== "undefined" && window.innerWidth < 1280;
+  const isDesktopPublicShell =
+    !isCompactLayout &&
+    ["ask", "workspace", "packets", "history", "connect"].includes(currentSurface) &&
+    currentView === getDefaultViewForSurface(currentSurface);
+  const isMobileAskRoot = isCompactLayout && currentSurface === "ask" && location.pathname === "/";
   const shouldHideStatusStrip = isMobileAskRoot;
   useSwipeNavigation({
     ref: swipeRef,
     surfaces: MOBILE_SURFACE_ORDER,
-    currentPath: location.pathname,
+    currentPath: canonicalPath,
     onNavigate: (path) => {
-      haptic("light");
       navigate(path);
     },
-    enabled: isMobile,
+    enabled: isCompactLayout,
   });
 
   const {
@@ -319,15 +331,12 @@ export function CockpitLayout({
     // The trace surface picks up runId from the URL via useCockpitRouting.
     const path = buildCockpitPathForView({
       view,
-      entity: nextSurface === "graph" ? entityName : null,
+      entity: null,
       run: null,
-      doc:
-        nextSurface === "editor"
-          ? documentParam ?? (selectedDocumentId ? String(selectedDocumentId) : null)
-          : null,
-      workspace: nextSurface === "editor" ? workspaceParam : null,
-      panel: view === "delegation" ? "permissions" : nextSurface === "trace" ? panel : null,
-      tab: nextSurface === "research" && view === "research" ? researchHubInitialTab : null,
+      doc: null,
+      workspace: null,
+      panel: view === "delegation" ? "permissions" : null,
+      tab: null,
     });
     const apply = () => {
       startTransition(() => {
@@ -340,7 +349,7 @@ export function CockpitLayout({
     } else {
       apply();
     }
-  }, [documentParam, entityName, navigate, panel, researchHubInitialTab, selectedDocumentId, setCurrentView, workspaceParam]);
+  }, [navigate, setCurrentView]);
 
   const navigateToSurface = useCallback((surfaceId: CockpitSurfaceId) => {
     // NOTE: Always reset to default view when switching surfaces via sidebar.
@@ -351,21 +360,15 @@ export function CockpitLayout({
       buildCockpitPath({
         surfaceId,
         view: null,
-        entity: surfaceId === "graph" ? entityName : null,
+        entity: null,
         run: null,
-        doc:
-          surfaceId === "editor"
-            ? documentParam ?? (selectedDocumentId ? String(selectedDocumentId) : null)
-            : null,
-        workspace: surfaceId === "editor" ? workspaceParam : null,
-        panel: surfaceId === "trace" ? panel : null,
-        tab:
-          surfaceId === "research" && currentSurface === surfaceId && currentView === "research"
-            ? researchHubInitialTab
-            : null,
+        doc: null,
+        workspace: null,
+        panel: null,
+        tab: null,
       }),
     );
-  }, [currentSurface, currentView, documentParam, entityName, navigate, panel, researchHubInitialTab, selectedDocumentId, workspaceParam]);
+  }, [navigate]);
 
   const dispatchDeferred = useCallback((eventName: string, detail?: Record<string, unknown>) => {
     window.setTimeout(() => {
@@ -505,9 +508,8 @@ export function CockpitLayout({
   const currentObjective = useMemo(() => {
     const viewTitle = VIEW_MAP[currentView]?.title ?? SURFACE_TITLES[currentSurface];
     if (entityName) return `${viewTitle}: ${entityName}`;
-    if (runId && currentSurface === "trace") return `${viewTitle}: run ${runId}`;
     return viewTitle;
-  }, [currentSurface, currentView, entityName, runId]);
+  }, [currentSurface, currentView, entityName]);
 
   const trackCommandPaletteExecution = useCallback((command: ExecutedCommand) => {
     const targetView =
@@ -607,13 +609,30 @@ export function CockpitLayout({
   }, [setMode]);
 
   // ── Onboarding wizard (first visit) ──────────────────────────────────────
+  // Only show on main app surfaces (/ or /?surface=...), not on static info pages.
+  const INFO_PAGE_PREFIXES = ["/developers", "/pricing", "/changelog", "/legal", "/about", "/api-docs"];
   const [showOnboarding, setShowOnboarding] = useState(() => {
     try {
+      const isRootPath =
+        typeof window !== "undefined" &&
+        window.location.pathname === "/";
       const isMobileAskEntry =
         typeof window !== "undefined" &&
-        window.innerWidth <= 1024 &&
-        window.location.pathname === "/";
-      return !localStorage.getItem("nodebench-onboarded") && !isMobileAskEntry;
+        window.innerWidth < 1280 &&
+        isRootPath;
+      const hasExplicitProductSurface =
+        typeof window !== "undefined" &&
+        new URLSearchParams(window.location.search).has("surface");
+      const isInfoPage =
+        typeof window !== "undefined" &&
+        INFO_PAGE_PREFIXES.some((prefix) => window.location.pathname.startsWith(prefix));
+      return (
+        Boolean(isRootPath) &&
+        !localStorage.getItem("nodebench-onboarded") &&
+        !isMobileAskEntry &&
+        !isInfoPage &&
+        !hasExplicitProductSurface
+      );
     } catch {
       return false;
     }
@@ -665,6 +684,7 @@ export function CockpitLayout({
       className="h-[100dvh] overflow-hidden bg-surface cockpit-grid"
       data-left-collapsed={leftCollapsed ? "" : undefined}
       data-right-collapsed=""
+      data-public-shell={isDesktopPublicShell ? "" : undefined}
     >
       {/* Offline banner */}
       {isOffline && (
@@ -692,7 +712,7 @@ export function CockpitLayout({
       <AgentMetadata currentView={currentView} currentPath={location.pathname} />
 
       {/* ── Top: Status Strip ─────────────────────────────────────────── */}
-      {!shouldHideStatusStrip ? (
+      {!shouldHideStatusStrip && !isDesktopPublicShell ? (
         <div style={{ gridArea: "status" }}>
           <StatusStrip
             currentView={currentView}
@@ -703,17 +723,19 @@ export function CockpitLayout({
 
       {/* ── Left: WorkspaceRail (replaces ModeRail + CleanSidebar) ──── */}
       <div style={{ gridArea: "left" }}>
-        <WorkspaceRail
-          activeSurface={currentSurface}
-          onSurfaceChange={navigateToSurface}
-          isCollapsed={leftCollapsed}
-          onToggleCollapse={() => setLeftCollapsed((v) => !v)}
-          onOpenSettings={() => openSettings("usage")}
-          onOpenPalette={commandPalette.toggle}
-        />
+        {!isDesktopPublicShell ? (
+          <WorkspaceRail
+            activeSurface={currentSurface}
+            onSurfaceChange={navigateToSurface}
+            isCollapsed={leftCollapsed}
+            onToggleCollapse={() => setLeftCollapsed((v) => !v)}
+            onOpenSettings={() => openSettings("usage")}
+            onOpenPalette={commandPalette.toggle}
+          />
+        ) : null}
       </div>
 
-      {/* ── Mobile: MobileTabBar (visible < 1024px, swaps with WorkspaceRail) ── */}
+      {/* ── Compact: MobileTabBar (visible below xl, swaps with WorkspaceRail) ── */}
       <MobileTabBar
         activeSurface={currentSurface}
         onSurfaceChange={navigateToSurface}
@@ -724,12 +746,20 @@ export function CockpitLayout({
       <div
         ref={swipeRef}
         style={{ gridArea: "center" }}
-        className="relative min-w-0 min-h-0 overflow-hidden flex pb-[calc(56px+env(safe-area-inset-bottom,0px))] lg:pb-0"
+        className={cn(
+          "relative min-w-0 min-h-0 overflow-hidden flex pb-[calc(56px+env(safe-area-inset-bottom,0px))] xl:pb-0",
+          isDesktopPublicShell && "nb-public-stage",
+        )}
         role="main"
         aria-label="Main content"
         data-cockpit-area="center"
       >
-        <div className="flex-1 min-w-0 h-full">
+        <div className="flex min-h-0 h-full min-w-0 flex-1 flex-col">
+          {isDesktopPublicShell ? (
+            <ProductTopNav activeSurface={currentSurface} onSurfaceChange={navigateToSurface} />
+          ) : null}
+
+          <div className="min-h-0 flex-1">
           <ActiveSurfaceHost
             currentSurface={currentSurface}
             currentView={currentView}
@@ -745,8 +775,6 @@ export function CockpitLayout({
             selectedTaskSource={selectedTaskSource}
             onSelectTask={handleSelectTask}
             onClearTaskSelection={clearTaskSelection}
-            showResearchDossier={showResearchDossier}
-            setShowResearchDossier={setShowResearchDossier}
             researchHubInitialTab={researchHubInitialTab}
             setResearchHubInitialTab={setResearchHubInitialTab}
             activeSources={activeSources}
@@ -758,6 +786,7 @@ export function CockpitLayout({
             onOpenFastAgentWithPrompt={handleOpenFastAgentWithPrompt}
             isUnknownRoute={isUnknownRoute}
           />
+          </div>
         </div>
 
       </div>
@@ -765,10 +794,10 @@ export function CockpitLayout({
         {/* ── Bottom: Trace bar — live status (Datadog pattern) ──────── */}
         {/* ── Agent panel — single slide-over for all breakpoints ─── */}
 
-        {!isMobileAskRoot ? (
+        {!isMobileAskRoot && !isDesktopPublicShell ? (
         <div
           style={{ gridArea: "trace" }}
-          className="flex items-center gap-4 border-t border-white/[0.06] bg-white/[0.02] px-4 py-1.5 text-[11px] text-content-muted"
+          className="hidden items-center gap-4 border-t border-white/[0.06] bg-white/[0.02] px-4 py-1.5 text-[11px] text-content-muted xl:flex"
         >
           <span className="flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/60" />
@@ -781,7 +810,7 @@ export function CockpitLayout({
         ) : null}
 
         {/* ── Command Bar — mobile only ── */}
-        <div className={`lg:hidden ${isMobileAskRoot ? "hidden" : ""}`}>
+        <div className={`xl:hidden ${isMobileAskRoot ? "hidden" : ""}`}>
           <CommandBar
             mode={mode}
             currentView={currentView}
@@ -830,7 +859,6 @@ export function CockpitLayout({
           isOpen={commandPalette.isOpen}
           onClose={commandPalette.close}
           onCommandExecuted={trackCommandPaletteExecution}
-          onNavigate={navigateToView}
           onCreateDocument={() => {
             navigateToView("documents");
             onDocumentSelect(null);

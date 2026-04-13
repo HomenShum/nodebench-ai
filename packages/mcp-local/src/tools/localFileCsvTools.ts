@@ -20,7 +20,6 @@ import {
   compileWhere,
   rowMatchesWhere,
   getPapaParse,
-  getXlsx,
   loadCsvTable,
   loadXlsxTable,
 } from "./localFileHelpers.js";
@@ -573,59 +572,18 @@ export const localFileCsvTools: McpTool[] = [
       const filePath = resolveLocalPath(args?.path);
       if (!existsSync(filePath)) throw new Error(`File not found: ${filePath}`);
 
-      const XLSX = await getXlsx();
-      const wb = XLSX.readFile(filePath, {
-        cellDates: true,
-        dense: true,
-      });
-
-      const sheets: string[] = Array.isArray(wb?.SheetNames) ? wb.SheetNames : [];
-      if (sheets.length === 0) throw new Error(`No sheets found in workbook: ${filePath}`);
-
-      const requestedSheet = typeof args?.sheetName === "string" ? args.sheetName.trim() : "";
-      const sheetName = requestedSheet || sheets[0];
-      const sheet = wb.Sheets?.[sheetName];
-      if (!sheet) {
-        throw new Error(
-          `Sheet not found: "${sheetName}". Available sheets: ${sheets.join(", ")}`
-        );
-      }
-
-      const headerRow = clampInt(args?.headerRow, 1, 0, 1000);
       const maxRows = clampInt(args?.maxRows, 200, 1, 5000);
       const maxCols = clampInt(args?.maxCols, 50, 1, 500);
       const maxCellChars = clampInt(args?.maxCellChars, 2000, 20, 20000);
-      const rangeA1 = typeof args?.rangeA1 === "string" ? args.rangeA1.trim() : "";
-
-      const table: unknown[][] = XLSX.utils.sheet_to_json(sheet, {
-        header: 1,
-        blankrows: false,
-        defval: "",
-        ...(rangeA1 ? { range: rangeA1 } : {}),
+      const table = await loadXlsxTable(args, {
+        filePath,
+        maxScanRows: maxRows,
+        maxCols,
+        maxCellChars,
       });
 
-      const normalized = table
-        .filter((r) => Array.isArray(r))
-        .map((r) => (r as unknown[]).slice(0, maxCols).map((c) => truncateCell(c, maxCellChars)));
-
-      const headerIdx = headerRow > 0 ? headerRow - 1 : -1;
-      const header = headerIdx >= 0 ? (normalized[headerIdx] as any[] | undefined) : undefined;
-
-      const dataRows = headerIdx >= 0 ? normalized.slice(headerIdx + 1) : normalized;
-      const limitedRows = dataRows.slice(0, maxRows);
-
-      const colCount = Math.max(header ? header.length : 0, ...limitedRows.map((r) => r.length));
-      const truncated =
-        dataRows.length > limitedRows.length ||
-        normalized.some((r) => r.length > maxCols) ||
-        colCount > maxCols;
-
-      const headers = header
-        ? header.map((h) => String(h ?? "").trim())
-        : Array.from({ length: colCount }, (_, i) => `col_${i + 1}`);
-
-      const outHeaders = headers.slice(0, maxCols);
-      const outRows = limitedRows.map((r) => r.slice(0, maxCols));
+      const outHeaders = table.headers.slice(0, maxCols);
+      const outRows = table.dataRows.map((r: unknown[]) => r.slice(0, maxCols));
       const columnStats = outHeaders.map((column, index) => {
         let nonEmpty = 0;
         let integerCount = 0;
@@ -650,14 +608,14 @@ export const localFileCsvTools: McpTool[] = [
 
       return {
         path: filePath,
-        sheets,
-        sheetName,
-        headerRow,
-        rangeA1: rangeA1 || null,
-        rowCount: dataRows.length,
-        returnedRows: limitedRows.length,
-        colCount,
-        truncated,
+        sheets: table.sheets,
+        sheetName: table.sheetName,
+        headerRow: table.headerRow,
+        rangeA1: table.rangeA1,
+        rowCount: table.totalDataRows,
+        returnedRows: table.dataRows.length,
+        colCount: table.headers.length,
+        truncated: table.truncated,
         headers: outHeaders,
         rows: outRows,
         columnStatsComputedOverRows: outRows.length,

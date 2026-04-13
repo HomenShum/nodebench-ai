@@ -784,12 +784,12 @@ export const DEMO_PACKETS: Record<string, ResultPacket> = {
     variables: [
       { rank: 1, name: "Search-first app redesign shipped", direction: "up", impact: "high" },
       { rank: 2, name: "Public narrative lags internal thesis", direction: "down", impact: "high" },
-      { rank: 3, name: "338 tools with lazy-loading and persona presets", direction: "up", impact: "medium" },
+      { rank: 3, name: "350 tools with lazy-loading and persona presets", direction: "up", impact: "medium" },
       { rank: 4, name: "Dogfood runbook codified (13 scenarios)", direction: "up", impact: "medium" },
       { rank: 5, name: "Supermemory competitor signal in memory/context space", direction: "down", impact: "low" },
     ],
     keyMetrics: [
-      { label: "MCP tools", value: "338" },
+      { label: "MCP tools", value: "350" },
       { label: "Role lenses", value: "6" },
       { label: "Dogfood scenarios", value: "13" },
       { label: "Tests passing", value: "1,510+" },
@@ -803,7 +803,7 @@ export const DEMO_PACKETS: Record<string, ResultPacket> = {
     risks: [
       {
         title: "Surface proliferation before habit proof",
-        description: "13 founder surfaces, 338 tools, 6 lenses — but the 3 core habits (weekly reset, pre-delegation, important-change review) are not yet proven in production use.",
+        description: "13 founder surfaces, 350 tools, 6 lenses — but the 3 core habits (weekly reset, pre-delegation, important-change review) are not yet proven in production use.",
         falsification: "Run 3 complete dogfood cycles. If packet reuse rate < 30% or repeat-question rate > 40%, the habit loop is not working.",
       },
       {

@@ -11,6 +11,7 @@
 import type { McpTool } from "../types.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { NODEBENCH_VERSION } from "../packageInfo.js";
 
 // ── Template content generators ──────────────────────────────────────────
 
@@ -25,11 +26,11 @@ function generatePackageJson(projectName: string, techStack: string): string {
       private: true,
       scripts: {
         "mcp:start": "npx nodebench-mcp",
-        "mcp:lite": "npx nodebench-mcp --preset lite",
+        "mcp:power": "npx nodebench-mcp --preset power",
         "mcp:core": "npx nodebench-mcp --preset core",
       },
       devDependencies: {
-        "nodebench-mcp": "^2.8.0",
+        "nodebench-mcp": `^${NODEBENCH_VERSION}`,
       },
     }, null, 2);
   }
@@ -45,7 +46,7 @@ function generatePackageJson(projectName: string, techStack: string): string {
       "test:watch": "vitest",
       lint: "eslint .",
       "mcp:start": "npx nodebench-mcp",
-      "mcp:lite": "npx nodebench-mcp --preset lite",
+      "mcp:power": "npx nodebench-mcp --preset power",
       "mcp:core": "npx nodebench-mcp --preset core",
       ...(isReact ? { dev: "vite", preview: "vite preview" } : {}),
     },
@@ -55,7 +56,7 @@ function generatePackageJson(projectName: string, techStack: string): string {
     devDependencies: {
       ...(isTypeScript ? { typescript: "^5.7.0", "@types/node": "^22.0.0" } : {}),
       vitest: "^3.2.0",
-      "nodebench-mcp": "^2.8.0",
+      "nodebench-mcp": `^${NODEBENCH_VERSION}`,
     },
   }, null, 2);
 }
@@ -166,9 +167,9 @@ This project is pre-configured for [NodeBench MCP](https://github.com/nodebench/
 See [AGENTS.md](./AGENTS.md) for detailed instructions.
 
 ### Key Commands
-- \`npm run mcp:start\` — Start NodeBench MCP (full toolset)
-- \`npm run mcp:lite\` — Lightweight mode (34 tools)
-- \`npm run mcp:core\` — Core mode (79 tools)
+- \`npm run mcp:start\` — Start NodeBench MCP (default workflow lane)
+- \`npm run mcp:power\` — Extended workflow mode (founder + recon + packets)
+- \`npm run mcp:core\` — Core AI Flywheel mode
 
 ### MCP Configuration
 The \`.mcp.json\` file configures NodeBench MCP for your IDE.
@@ -498,7 +499,7 @@ export const boilerplateTools: McpTool[] = [
       if (fs.existsSync(pkgPath)) {
         try {
           const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
-          hasMcpScripts = !!(pkg.scripts?.["mcp:start"] || pkg.scripts?.["mcp:lite"]);
+          hasMcpScripts = !!(pkg.scripts?.["mcp:start"] || pkg.scripts?.["mcp:power"] || pkg.scripts?.["mcp:core"]);
         } catch { /* ignore */ }
       }
 

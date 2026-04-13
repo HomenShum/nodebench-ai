@@ -6,13 +6,25 @@ startCommand:
   configSchema:
     type: object
     properties:
+      lane:
+        type: string
+        default: core
+        description: "Install lane to start (core, power, admin)"
+        enum:
+          - core
+          - power
+          - admin
       preset:
         type: string
-        default: starter
-        description: "Tool preset to load (starter, founder, web_dev, research, full)"
+        default: default
+        description: "Optional preset override when using the core package lane"
         enum:
-          - starter
+          - default
           - founder
+          - cursor
+          - power
+          - admin
+          - core
           - banker
           - operator
           - researcher
@@ -33,12 +45,27 @@ startCommand:
         description: "GitHub token for repository tools"
     required: []
   commandFunction: |-
-    (config) => ({
-      command: 'npx',
-      args: ['-y', 'nodebench-mcp', '--preset', config.preset || 'starter'],
-      env: {
-        ...(config.geminiApiKey ? { GEMINI_API_KEY: config.geminiApiKey } : {}),
-        ...(config.openaiApiKey ? { OPENAI_API_KEY: config.openaiApiKey } : {}),
-        ...(config.githubToken ? { GITHUB_TOKEN: config.githubToken } : {}),
+    (config) => {
+      const lane = config.lane || 'core';
+      const preset = config.preset || 'default';
+      const command = 'npx';
+      let args;
+      if (lane === 'power') {
+        args = ['-y', 'nodebench-mcp-power'];
+      } else if (lane === 'admin') {
+        args = ['-y', 'nodebench-mcp-admin'];
+      } else {
+        args = preset === 'default'
+          ? ['-y', 'nodebench-mcp']
+          : ['-y', 'nodebench-mcp', '--preset', preset];
       }
-    })
+      return {
+        command,
+        args,
+        env: {
+          ...(config.geminiApiKey ? { GEMINI_API_KEY: config.geminiApiKey } : {}),
+          ...(config.openaiApiKey ? { OPENAI_API_KEY: config.openaiApiKey } : {}),
+          ...(config.githubToken ? { GITHUB_TOKEN: config.githubToken } : {}),
+        }
+      };
+    }

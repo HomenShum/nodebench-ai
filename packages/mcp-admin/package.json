@@ -1,0 +1,41 @@
+{
+  "name": "nodebench-mcp-admin",
+  "version": "3.1.5",
+  "description": "NodeBench MCP admin lane. Profiling, observability, dashboards, eval, and operator workflows on the shared NodeBench runtime.",
+  "type": "module",
+  "bin": {
+    "nodebench-mcp-admin": "index.js"
+  },
+  "files": [
+    "index.js",
+    "README.md",
+    "server.json"
+  ],
+  "scripts": {
+    "test": "node index.js --health",
+    "prepublishOnly": "npm run test"
+  },
+  "keywords": [
+    "mcp",
+    "nodebench",
+    "nodebench-mcp",
+    "admin",
+    "observability",
+    "profiling",
+    "eval",
+    "dashboard"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HomenShum/nodebench-ai.git",
+    "directory": "packages/mcp-admin"
+  },
+  "license": "MIT",
+  "author": "HomenShum",
+  "dependencies": {
+    "nodebench-mcp": "3.1.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

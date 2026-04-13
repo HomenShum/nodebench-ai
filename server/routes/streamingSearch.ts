@@ -47,7 +47,16 @@ function stagePreview(event: PipelineProgressEvent): Record<string, unknown> {
         sourceCount: s.searchSources.length,
         exploredCount: s.searchExploredSourceCount,
         topSource: s.searchSources[0]?.name,
-        answerSnippet: s.searchAnswer.slice(0, 120),
+        topSources: s.searchSources.slice(0, 4).map((source, index) => ({
+          id: `preview-source-${index}`,
+          label: source.name,
+          href: source.url,
+          domain: source.domain,
+        })),
+        answerSnippet:
+          s.searchSources.length > 0
+            ? `The first source sweep is in. ${s.searchSources.length} sources are ready for the report build.`
+            : undefined,
       };
     case "analyze":
       return {

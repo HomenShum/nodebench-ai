@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolvePathToCockpitState, resolvePathToView } from "./viewRegistry";
+import { buildCockpitPath, buildCockpitPathForView, resolvePathToCockpitState, resolvePathToView } from "./viewRegistry";
 
 describe("resolvePathToView", () => {
   it("resolves the world monitor research route as its own view", () => {
@@ -37,6 +37,38 @@ describe("resolvePathToView", () => {
       surfaceId: "trace",
       view: "mcp-ledger",
       isUnknownRoute: false,
+    });
+  });
+
+  it("emits clean public surface params for product routes", () => {
+    expect(buildCockpitPath({ surfaceId: "ask" })).toBe("/?surface=home");
+    expect(buildCockpitPath({ surfaceId: "workspace" })).toBe("/?surface=chat");
+    expect(buildCockpitPath({ surfaceId: "packets" })).toBe("/?surface=reports");
+  });
+
+  it("accepts legacy and canonical public surface params", () => {
+    expect(resolvePathToCockpitState("/", "?surface=ask")).toMatchObject({
+      surfaceId: "ask",
+      canonicalPath: "/?surface=home",
+    });
+    expect(resolvePathToCockpitState("/", "?surface=home")).toMatchObject({
+      surfaceId: "ask",
+      canonicalPath: "/?surface=home",
+    });
+    expect(resolvePathToCockpitState("/", "?surface=chat")).toMatchObject({
+      surfaceId: "workspace",
+      canonicalPath: "/?surface=chat",
+    });
+  });
+
+  it("keeps entity routes canonical on direct slug paths", () => {
+    expect(buildCockpitPathForView({ view: "entity", entity: "ditto-ai" })).toBe("/entity/ditto-ai");
+    expect(resolvePathToCockpitState("/entity/ditto-ai")).toMatchObject({
+      surfaceId: "packets",
+      view: "entity",
+      entityName: "ditto-ai",
+      canonicalPath: "/entity/ditto-ai",
+      isLegacyRedirect: false,
     });
   });
 });

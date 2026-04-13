@@ -1,294 +1,78 @@
 {
-  "capturedAtIso": "2026-03-27T18:58:06.175Z",
+  "capturedAtIso": "2026-04-12T07:12:32.573Z",
   "videoPath": "/dogfood/walkthrough.mp4",
   "items": [
     {
       "index": 1,
       "name": "Home",
-      "path": "/",
+      "path": "/?surface=home",
       "startSec": 0,
       "file": "01-home.jpg",
       "image": "/dogfood/frames/01-home.jpg"
     },
     {
       "index": 2,
-      "name": "Research Hub",
-      "path": "/research",
-      "startSec": 2,
-      "file": "02-research-hub.jpg",
-      "image": "/dogfood/frames/02-research-hub.jpg"
+      "name": "Chat",
+      "path": "/?surface=chat&q=ditto%20ai&lens=founder",
+      "startSec": 2.1,
+      "file": "02-chat.jpg",
+      "image": "/dogfood/frames/02-chat.jpg"
     },
     {
       "index": 3,
-      "name": "Research: Overview",
-      "path": "/research/overview",
-      "startSec": 4.1,
-      "file": "03-research-overview.jpg",
-      "image": "/dogfood/frames/03-research-overview.jpg"
+      "name": "Reports",
+      "path": "/?surface=reports",
+      "startSec": 4.2,
+      "file": "03-reports.jpg",
+      "image": "/dogfood/frames/03-reports.jpg"
     },
     {
       "index": 4,
-      "name": "Research: Signals",
-      "path": "/research/signals",
-      "startSec": 6.2,
-      "file": "04-research-signals.jpg",
-      "image": "/dogfood/frames/04-research-signals.jpg"
+      "name": "Nudges",
+      "path": "/?surface=nudges",
+      "startSec": 6.3,
+      "file": "04-nudges.jpg",
+      "image": "/dogfood/frames/04-nudges.jpg"
     },
     {
       "index": 5,
-      "name": "Research: Briefing",
-      "path": "/research/briefing",
-      "startSec": 8.3,
-      "file": "05-research-briefing.jpg",
-      "image": "/dogfood/frames/05-research-briefing.jpg"
+      "name": "Me",
+      "path": "/?surface=me",
+      "startSec": 8.4,
+      "file": "05-me.jpg",
+      "image": "/dogfood/frames/05-me.jpg"
     },
     {
       "index": 6,
-      "name": "Research: Deals",
-      "path": "/research/deals",
-      "startSec": 10.4,
-      "file": "06-research-deals.jpg",
-      "image": "/dogfood/frames/06-research-deals.jpg"
+      "name": "Interaction: Home to Chat",
+      "path": "(interaction)",
+      "startSec": 10.6,
+      "file": "06-interaction-home-to-chat.jpg",
+      "image": "/dogfood/frames/06-interaction-home-to-chat.jpg"
     },
     {
       "index": 7,
-      "name": "Research: Changes",
-      "path": "/research/changelog",
-      "startSec": 12.6,
-      "file": "07-research-changes.jpg",
-      "image": "/dogfood/frames/07-research-changes.jpg"
+      "name": "Interaction: Theme toggle",
+      "path": "(interaction)",
+      "startSec": 11,
+      "file": "07-interaction-theme-toggle.jpg",
+      "image": "/dogfood/frames/07-interaction-theme-toggle.jpg"
     },
     {
       "index": 8,
-      "name": "Workspace: Documents",
-      "path": "/documents",
-      "startSec": 14.7,
-      "file": "08-workspace-documents.jpg",
-      "image": "/dogfood/frames/08-workspace-documents.jpg"
+      "name": "Interaction: Reports to Chat",
+      "path": "(interaction)",
+      "startSec": 11,
+      "file": "08-interaction-reports-to-chat.jpg",
+      "image": "/dogfood/frames/08-interaction-reports-to-chat.jpg"
     },
     {
       "index": 9,
-      "name": "Workspace: Spreadsheets",
-      "path": "/spreadsheets",
-      "startSec": 16.8,
-      "file": "09-workspace-spreadsheets.jpg",
-      "image": "/dogfood/frames/09-workspace-spreadsheets.jpg"
-    },
-    {
-      "index": 10,
-      "name": "Workspace: Calendar",
-      "path": "/calendar",
-      "startSec": 18.9,
-      "file": "10-workspace-calendar.jpg",
-      "image": "/dogfood/frames/10-workspace-calendar.jpg"
-    },
-    {
-      "index": 11,
-      "name": "Assistants",
-      "path": "/agents",
-      "startSec": 21,
-      "file": "11-assistants.jpg",
-      "image": "/dogfood/frames/11-assistants.jpg"
-    },
-    {
-      "index": 12,
-      "name": "Roadmap",
-      "path": "/roadmap",
-      "startSec": 23.1,
-      "file": "12-roadmap.jpg",
-      "image": "/dogfood/frames/12-roadmap.jpg"
-    },
-    {
-      "index": 13,
-      "name": "Timeline",
-      "path": "/timeline",
-      "startSec": 25.2,
-      "file": "13-timeline.jpg",
-      "image": "/dogfood/frames/13-timeline.jpg"
-    },
-    {
-      "index": 14,
-      "name": "Developers",
-      "path": "/developers",
-      "startSec": 27.3,
-      "file": "14-developers.jpg",
-      "image": "/dogfood/frames/14-developers.jpg"
-    },
-    {
-      "index": 15,
-      "name": "Sources",
-      "path": "/footnotes",
-      "startSec": 29.4,
-      "file": "15-sources.jpg",
-      "image": "/dogfood/frames/15-sources.jpg"
-    },
-    {
-      "index": 16,
-      "name": "Signals Log",
-      "path": "/signals",
-      "startSec": 31.5,
-      "file": "16-signals-log.jpg",
-      "image": "/dogfood/frames/16-signals-log.jpg"
-    },
-    {
-      "index": 17,
-      "name": "Benchmarks",
-      "path": "/benchmarks",
-      "startSec": 33.6,
-      "file": "17-benchmarks.jpg",
-      "image": "/dogfood/frames/17-benchmarks.jpg"
-    },
-    {
-      "index": 18,
-      "name": "Funding Brief",
-      "path": "/funding",
-      "startSec": 35.8,
-      "file": "18-funding-brief.jpg",
-      "image": "/dogfood/frames/18-funding-brief.jpg"
-    },
-    {
-      "index": 19,
-      "name": "Activity",
-      "path": "/activity",
-      "startSec": 37.9,
-      "file": "19-activity.jpg",
-      "image": "/dogfood/frames/19-activity.jpg"
-    },
-    {
-      "index": 20,
-      "name": "Review Queue",
-      "path": "/review-queue",
-      "startSec": 40,
-      "file": "20-review-queue.jpg",
-      "image": "/dogfood/frames/20-review-queue.jpg"
-    },
-    {
-      "index": 21,
-      "name": "Performance Analytics",
-      "path": "/analytics/components",
-      "startSec": 42.1,
-      "file": "21-performance-analytics.jpg",
-      "image": "/dogfood/frames/21-performance-analytics.jpg"
-    },
-    {
-      "index": 22,
-      "name": "Feedback",
-      "path": "/analytics/recommendations",
-      "startSec": 44.2,
-      "file": "22-feedback.jpg",
-      "image": "/dogfood/frames/22-feedback.jpg"
-    },
-    {
-      "index": 23,
-      "name": "Usage & Costs",
-      "path": "/cost",
-      "startSec": 46.3,
-      "file": "23-usage-costs.jpg",
-      "image": "/dogfood/frames/23-usage-costs.jpg"
-    },
-    {
-      "index": 24,
-      "name": "Industry News",
-      "path": "/industry",
-      "startSec": 48.4,
-      "file": "24-industry-news.jpg",
-      "image": "/dogfood/frames/24-industry-news.jpg"
-    },
-    {
-      "index": 25,
-      "name": "For You",
-      "path": "/for-you",
-      "startSec": 50.5,
-      "file": "25-for-you.jpg",
-      "image": "/dogfood/frames/25-for-you.jpg"
-    },
-    {
-      "index": 26,
-      "name": "Recommendations",
-      "path": "/recommendations",
-      "startSec": 52.6,
-      "file": "26-recommendations.jpg",
-      "image": "/dogfood/frames/26-recommendations.jpg"
-    },
-    {
-      "index": 27,
-      "name": "Agent Templates",
-      "path": "/marketplace",
-      "startSec": 54.8,
-      "file": "27-agent-templates.jpg",
-      "image": "/dogfood/frames/27-agent-templates.jpg"
-    },
-    {
-      "index": 28,
-      "name": "GitHub Explorer",
-      "path": "/github",
-      "startSec": 56.9,
-      "file": "28-github-explorer.jpg",
-      "image": "/dogfood/frames/28-github-explorer.jpg"
-    },
-    {
-      "index": 29,
-      "name": "PR Suggestions",
-      "path": "/pr-suggestions",
-      "startSec": 59,
-      "file": "29-pr-suggestions.jpg",
-      "image": "/dogfood/frames/29-pr-suggestions.jpg"
-    },
-    {
-      "index": 30,
-      "name": "LinkedIn Archive",
-      "path": "/linkedin",
-      "startSec": 61.1,
-      "file": "30-linkedin-archive.jpg",
-      "image": "/dogfood/frames/30-linkedin-archive.jpg"
-    },
-    {
-      "index": 31,
-      "name": "Activity Log",
-      "path": "/activity-log",
-      "startSec": 63.2,
-      "file": "31-activity-log.jpg",
-      "image": "/dogfood/frames/31-activity-log.jpg"
-    },
-    {
-      "index": 32,
-      "name": "Quality Review",
-      "path": "/quality-review",
-      "startSec": 65.3,
-      "file": "32-quality-review.jpg",
-      "image": "/dogfood/frames/32-quality-review.jpg"
-    },
-    {
-      "index": 33,
-      "name": "Public Docs",
-      "path": "/public",
-      "startSec": 67.4,
-      "file": "33-public-docs.jpg",
-      "image": "/dogfood/frames/33-public-docs.jpg"
-    },
-    {
-      "index": 34,
-      "name": "Interaction: Command Palette",
-      "path": "(interaction)",
-      "startSec": 69.6,
-      "file": "34-interaction-command-palette.jpg",
-      "image": "/dogfood/frames/34-interaction-command-palette.jpg"
-    },
-    {
-      "index": 35,
-      "name": "Interaction: Settings",
-      "path": "(interaction)",
-      "startSec": 70.9,
-      "file": "35-interaction-settings.jpg",
-      "image": "/dogfood/frames/35-interaction-settings.jpg"
-    },
-    {
-      "index": 36,
       "name": "End",
       "path": "(end)",
-      "startSec": 70.9,
-      "file": "36-end.jpg",
-      "image": "/dogfood/frames/36-end.jpg"
+      "startSec": 11.3,
+      "file": "09-end.jpg",
+      "image": "/dogfood/frames/09-end.jpg"
     }
   ]
 }

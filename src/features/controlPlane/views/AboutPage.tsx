@@ -5,6 +5,9 @@
 
 import { memo } from "react";
 import { ArrowRight, Github, Globe, Package, Shield, Users, Zap } from "lucide-react";
+// MCP package version displayed on the About page. Update when publishing a new release.
+const mcpVersion = "3.1.5";
+import { buildCockpitPath } from "@/lib/registry/viewRegistry";
 
 export const AboutPage = memo(function AboutPage() {
   return (
@@ -99,7 +102,7 @@ export const AboutPage = memo(function AboutPage() {
           <TechRow label="Search" value="Linkup API + Gemini 3.1 extraction" />
           <TechRow label="MCP Server" value="Node.js + TypeScript + SQLite (350+ tools)" />
           <TechRow label="Hosting" value="Vercel (frontend) + Convex Cloud (backend)" />
-          <TechRow label="Package" value="npm: nodebench-mcp (v2.70.0)" />
+          <TechRow label="Package" value={`npm: nodebench-mcp (v${mcpVersion})`} />
         </div>
       </section>
 
@@ -111,7 +114,7 @@ export const AboutPage = memo(function AboutPage() {
             label="Web App"
             description="Search any company right now"
             action="nodebenchai.com"
-            href="https://www.nodebenchai.com/?surface=ask"
+            href={`https://www.nodebenchai.com${buildCockpitPath({ surfaceId: "ask" })}`}
           />
           <StartOption
             label="Claude Code"

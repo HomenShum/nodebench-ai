@@ -22,7 +22,7 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // packages/mcp-local/src/db.ts
 import { createRequire } from "node:module";
 import { join } from "node:path";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, renameSync } from "node:fs";
 function loadDatabaseCtor() {
   if (_databaseCtor !== void 0) return _databaseCtor;
   try {
@@ -68,6 +68,10 @@ function createNoopDb() {
     }
   };
 }
+function isRecoverableSqliteError(error) {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return message.includes("database disk image is malformed") || message.includes("SQLITE_CORRUPT") || message.includes("SQLITE_NOTADB") || message.includes("malformed");
+}
 function getDb() {
   if (_db) return _db;
   const Database2 = loadDatabaseCtor();
@@ -77,8 +81,42 @@ function getDb() {
   }
   const dir = getNodebenchDataDir();
   mkdirSync(dir, { recursive: true });
-  _db = new Database2(join(dir, "nodebench.db"));
-  _db.exec(SCHEMA_SQL);
+  const dbPath = join(dir, "nodebench.db");
+  const openInitializedDatabase = () => {
+    const db = new Database2(dbPath);
+    try {
+      db.exec(SCHEMA_SQL);
+      return db;
+    } catch (error) {
+      try {
+        db.close?.();
+      } catch {
+      }
+      throw error;
+    }
+  };
+  const quarantineCorruptDatabase = () => {
+    const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
+    for (const suffix of ["", "-wal", "-shm"]) {
+      const source = `${dbPath}${suffix}`;
+      if (!existsSync(source)) continue;
+      const target = join(dir, `nodebench.corrupt.${stamp}${suffix || ".db"}`);
+      try {
+        renameSync(source, target);
+      } catch {
+      }
+    }
+  };
+  try {
+    _db = openInitializedDatabase();
+  } catch (error) {
+    if (!isRecoverableSqliteError(error)) {
+      throw error;
+    }
+    console.error(`[nodebench.db] Recovering from local SQLite corruption at ${dbPath}`);
+    quarantineCorruptDatabase();
+    _db = openInitializedDatabase();
+  }
   try {
     const rf = _db.prepare("SELECT COUNT(*) as c FROM recon_findings").get();
     const rfFts = _db.prepare("SELECT COUNT(*) as c FROM recon_findings_fts").get();
@@ -1596,26 +1634,34 @@ async function canImport(pkg) {
     return false;
   }
 }
-async function getCheerio() {
+async function getLinkedom() {
   try {
-    const mod = await import("cheerio");
-    return mod;
+    return await import("linkedom");
   } catch {
     return null;
   }
 }
-function htmlToMarkdown(html, cheerio) {
-  const $ = cheerio.load(html);
-  $("script, style, nav, footer, header, aside, .ad, .advertisement, [role='navigation']").remove();
-  let content = $("main, article, [role='main'], .content, .post-content, .article-content").first();
-  if (content.length === 0) {
-    content = $("body");
+function parseHtmlDocument(html, linkedom) {
+  try {
+    const parsed = linkedom.parseHTML(html);
+    return parsed?.document ?? null;
+  } catch {
+    return null;
   }
+}
+function htmlToMarkdown(html, linkedom) {
+  const document = parseHtmlDocument(html, linkedom);
+  if (!document) return basicHtmlToText(html);
+  for (const node of Array.from(document.querySelectorAll("script, style, nav, footer, header, aside, .ad, .advertisement, [role='navigation']"))) {
+    node.remove();
+  }
+  const content = document.querySelector("main, article, [role='main'], .content, .post-content, .article-content") ?? document.body;
+  if (!content) return basicHtmlToText(html);
   const lines = [];
-  content.find("h1, h2, h3, h4, h5, h6, p, li, td, th, pre, code, blockquote").each((_, el) => {
-    const tag = el.tagName?.toLowerCase() ?? "";
-    const text = $(el).text().trim();
-    if (!text) return;
+  for (const el of Array.from(content.querySelectorAll("h1, h2, h3, h4, h5, h6, p, li, td, th, pre, code, blockquote"))) {
+    const tag = String(el.tagName ?? "").toLowerCase();
+    const text = el.textContent?.trim() ?? "";
+    if (!text) continue;
     switch (tag) {
       case "h1":
         lines.push(`
@@ -1666,7 +1712,7 @@ ${text}
         lines.push(text);
         break;
     }
-  });
+  }
   let result = lines.join("\n");
   result = result.replace(/\n{3,}/g, "\n\n");
   result = result.trim();
@@ -1674,6 +1720,14 @@ ${text}
 }
 function basicHtmlToText(html) {
   return html.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
+function htmlToText(html, linkedom) {
+  const document = parseHtmlDocument(html, linkedom);
+  if (!document) return basicHtmlToText(html);
+  for (const node of Array.from(document.querySelectorAll("script, style"))) {
+    node.remove();
+  }
+  return document.body?.textContent?.replace(/\s+/g, " ").trim() ?? basicHtmlToText(html);
 }
 async function searchWithGemini(query, maxResults) {
   const { GoogleGenAI } = await import("@google/genai");
@@ -1998,7 +2052,7 @@ var init_webTools = __esm({
       },
       {
         name: "fetch_url",
-        description: "Fetch a URL and extract its content as markdown, text, or raw HTML. Useful for reading documentation, blog posts, API references, and web pages. Uses cheerio for HTML parsing when available, with fallback to basic text extraction.",
+        description: "Fetch a URL and extract its content as markdown, text, or raw HTML. Useful for reading documentation, blog posts, API references, and web pages. Uses linkedom for HTML parsing when available, with fallback to basic text extraction.",
         inputSchema: {
           type: "object",
           properties: {
@@ -2065,21 +2119,18 @@ var init_webTools = __esm({
             const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
             const title = titleMatch?.[1]?.trim() ?? parsedUrl.hostname;
             let content;
+            const htmlParser = await getLinkedom();
             if (extractMode === "html") {
               content = html;
             } else if (extractMode === "markdown") {
-              const cheerio = await getCheerio();
-              if (cheerio) {
-                content = htmlToMarkdown(html, cheerio);
+              if (htmlParser) {
+                content = htmlToMarkdown(html, htmlParser);
               } else {
                 content = basicHtmlToText(html);
               }
             } else {
-              const cheerio = await getCheerio();
-              if (cheerio) {
-                const $ = cheerio.load(html);
-                $("script, style").remove();
-                content = $("body").text().replace(/\s+/g, " ").trim();
+              if (htmlParser) {
+                content = htmlToText(html, htmlParser);
               } else {
                 content = basicHtmlToText(html);
               }
@@ -2099,7 +2150,8 @@ var init_webTools = __esm({
               contentLength: content.length,
               truncated,
               fetchedAt: (/* @__PURE__ */ new Date()).toISOString(),
-              cheerioAvailable: !!await getCheerio()
+              htmlParser: htmlParser ? "linkedom" : "basic",
+              htmlParserAvailable: !!htmlParser
             };
           } catch (err) {
             return {
@@ -2670,20 +2722,20 @@ __export(contextInjection_exports, {
   buildContextBundle: () => buildContextBundle,
   contextInjectionTools: () => contextInjectionTools
 });
-import { existsSync as existsSync2, readFileSync as readFileSync2 } from "fs";
+import { existsSync as existsSync3, readFileSync as readFileSync2 } from "fs";
 import { join as join3, resolve as resolve3, dirname as dirname2 } from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
 function findProjectRoot2() {
   let dir = resolve3(__dirname2, "..", "..");
   for (let i = 0; i < 5; i++) {
-    if (existsSync2(join3(dir, "CLAUDE.md"))) return dir;
+    if (existsSync3(join3(dir, "CLAUDE.md"))) return dir;
     dir = resolve3(dir, "..");
   }
   return process.cwd();
 }
 function safeRead2(path2) {
   try {
-    return existsSync2(path2) ? readFileSync2(path2, "utf-8") : null;
+    return existsSync3(path2) ? readFileSync2(path2, "utf-8") : null;
   } catch {
     return null;
   }
@@ -5465,6 +5517,336 @@ var init_llmJudgeLoop = __esm({
   }
 });
 
+// server/lib/secEdgar.ts
+var secEdgar_exports = {};
+__export(secEdgar_exports, {
+  fetchEdgarFinancials: () => fetchEdgarFinancials
+});
+async function loadTickers() {
+  if (tickerCache) return tickerCache;
+  try {
+    const resp = await fetch(TICKER_URL, {
+      headers: { "User-Agent": EDGAR_UA },
+      signal: AbortSignal.timeout(1e4)
+    });
+    if (!resp.ok) throw new Error(`Tickers ${resp.status}`);
+    const data = await resp.json();
+    tickerCache = /* @__PURE__ */ new Map();
+    for (const entry of Object.values(data)) {
+      const key = entry.title.toLowerCase();
+      const cik = String(entry.cik_str).padStart(10, "0");
+      tickerCache.set(key, { cik, ticker: entry.ticker, name: entry.title });
+      tickerCache.set(entry.ticker.toLowerCase(), { cik, ticker: entry.ticker, name: entry.title });
+    }
+    return tickerCache;
+  } catch {
+    tickerCache = /* @__PURE__ */ new Map();
+    return tickerCache;
+  }
+}
+function findCompanyCIK(entityName, tickers) {
+  const lower = entityName.toLowerCase().trim();
+  if (tickers.has(lower)) return tickers.get(lower);
+  for (const [key, val] of tickers) {
+    if (key.includes(lower) || lower.includes(key.split(" ")[0])) {
+      return val;
+    }
+  }
+  return null;
+}
+function extractFact(facts, concepts, unit = "USD") {
+  for (const concept of concepts) {
+    const parts = concept.split(":");
+    const namespace = parts[0];
+    const name = parts[1];
+    const conceptData = facts?.facts?.[namespace]?.[name];
+    if (!conceptData) continue;
+    const units = conceptData?.units?.[unit] ?? conceptData?.units?.["USD/shares"] ?? [];
+    if (!Array.isArray(units) || units.length === 0) continue;
+    const annual = units.filter((u) => u.form === "10-K" || u.form === "10-K/A").sort((a, b) => (b.end ?? "").localeCompare(a.end ?? ""));
+    if (annual.length > 0) {
+      return { value: annual[0].val, date: annual[0].end, fy: annual[0].fy ?? 0 };
+    }
+    const quarterly = units.filter((u) => u.form === "10-Q").sort((a, b) => (b.end ?? "").localeCompare(a.end ?? ""));
+    if (quarterly.length > 0) {
+      return { value: quarterly[0].val * 4, date: quarterly[0].end, fy: quarterly[0].fy ?? 0 };
+    }
+  }
+  return null;
+}
+async function fetchEdgarFinancials(entityName) {
+  try {
+    const tickers = await loadTickers();
+    const company = findCompanyCIK(entityName, tickers);
+    if (!company) return null;
+    const resp = await fetch(`${FACTS_URL}${company.cik}.json`, {
+      headers: { "User-Agent": EDGAR_UA },
+      signal: AbortSignal.timeout(15e3)
+    });
+    if (!resp.ok) return null;
+    const facts = await resp.json();
+    const revenue = extractFact(facts, [
+      "us-gaap:Revenues",
+      "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "us-gaap:SalesRevenueNet",
+      "us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax"
+    ]);
+    const netIncome = extractFact(facts, [
+      "us-gaap:NetIncomeLoss",
+      "us-gaap:ProfitLoss"
+    ]);
+    const totalAssets = extractFact(facts, [
+      "us-gaap:Assets"
+    ]);
+    return {
+      cik: company.cik,
+      entityName: company.name,
+      ticker: company.ticker,
+      revenue: revenue?.value ?? null,
+      netIncome: netIncome?.value ?? null,
+      totalAssets: totalAssets?.value ?? null,
+      filingDate: revenue?.date ?? netIncome?.date ?? null,
+      fiscalYear: revenue?.fy ?? netIncome?.fy ?? null,
+      source: `SEC EDGAR (CIK ${company.cik})`
+    };
+  } catch {
+    return null;
+  }
+}
+var EDGAR_UA, TICKER_URL, FACTS_URL, tickerCache;
+var init_secEdgar = __esm({
+  "server/lib/secEdgar.ts"() {
+    "use strict";
+    EDGAR_UA = "NodeBench/1.0 (nodebench@nodebenchai.com)";
+    TICKER_URL = "https://www.sec.gov/files/company_tickers.json";
+    FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK";
+    tickerCache = null;
+  }
+});
+
+// server/lib/multiSearch.ts
+var multiSearch_exports = {};
+__export(multiSearch_exports, {
+  getConfiguredProviders: () => getConfiguredProviders,
+  multiSearch: () => multiSearch,
+  toSearchSources: () => toSearchSources
+});
+async function searchLinkup(query, signal) {
+  if (!LINKUP_KEY) return [];
+  try {
+    const resp = await fetch("https://api.linkup.so/v1/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${LINKUP_KEY}` },
+      body: JSON.stringify({ q: query, depth: "standard", outputType: "sourcedAnswer" }),
+      signal
+    });
+    if (!resp.ok) return [];
+    const data = await resp.json();
+    return (data.results ?? []).map((r) => ({
+      name: r.name ?? r.url ?? "",
+      url: r.url ?? "",
+      content: (r.content ?? "").slice(0, 2e3),
+      provider: "linkup"
+    }));
+  } catch {
+    return [];
+  }
+}
+async function searchBrave(query, signal) {
+  if (!BRAVE_KEY) return [];
+  try {
+    const resp = await fetch(`https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=10`, {
+      headers: { "X-Subscription-Token": BRAVE_KEY, Accept: "application/json" },
+      signal
+    });
+    if (!resp.ok) return [];
+    const data = await resp.json();
+    return (data.web?.results ?? []).map((r) => ({
+      name: r.title ?? r.url ?? "",
+      url: r.url ?? "",
+      content: (r.description ?? "").slice(0, 2e3),
+      provider: "brave"
+    }));
+  } catch {
+    return [];
+  }
+}
+async function searchSerper(query, signal) {
+  if (!SERPER_KEY) return [];
+  try {
+    const resp = await fetch("https://google.serper.dev/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-API-KEY": SERPER_KEY },
+      body: JSON.stringify({ q: query, num: 10 }),
+      signal
+    });
+    if (!resp.ok) return [];
+    const data = await resp.json();
+    return (data.organic ?? []).map((r) => ({
+      name: r.title ?? r.link ?? "",
+      url: r.link ?? "",
+      content: (r.snippet ?? "").slice(0, 2e3),
+      provider: "serper"
+    }));
+  } catch {
+    return [];
+  }
+}
+async function searchTavily(query, signal) {
+  if (!TAVILY_KEY) return [];
+  try {
+    const resp = await fetch("https://api.tavily.com/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ api_key: TAVILY_KEY, query, search_depth: "basic", max_results: 10 }),
+      signal
+    });
+    if (!resp.ok) return [];
+    const data = await resp.json();
+    return (data.results ?? []).map((r) => ({
+      name: r.title ?? r.url ?? "",
+      url: r.url ?? "",
+      content: (r.content ?? "").slice(0, 2e3),
+      relevanceScore: r.score,
+      provider: "tavily"
+    }));
+  } catch {
+    return [];
+  }
+}
+async function multiSearch(query, timeoutMs = 1e4) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const providers = [];
+  if (LINKUP_KEY) providers.push({ name: "linkup", fn: () => searchLinkup(query, controller.signal) });
+  if (BRAVE_KEY) providers.push({ name: "brave", fn: () => searchBrave(query, controller.signal) });
+  if (SERPER_KEY) providers.push({ name: "serper", fn: () => searchSerper(query, controller.signal) });
+  if (TAVILY_KEY) providers.push({ name: "tavily", fn: () => searchTavily(query, controller.signal) });
+  const results = await Promise.allSettled(providers.map((p) => p.fn()));
+  clearTimeout(timer);
+  const allSources = [];
+  const activeProviders = [];
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    if (result.status === "fulfilled" && result.value.length > 0) {
+      allSources.push(...result.value);
+      activeProviders.push(providers[i].name);
+    }
+  }
+  const totalBeforeDedup = allSources.length;
+  const byDomain = /* @__PURE__ */ new Map();
+  for (const src of allSources) {
+    try {
+      const domain = new URL(src.url).hostname.replace(/^www\./, "");
+      const existing = byDomain.get(domain);
+      if (!existing || src.content.length > existing.content.length) {
+        byDomain.set(domain, src);
+      }
+    } catch {
+      byDomain.set(src.url, src);
+    }
+  }
+  return {
+    sources: [...byDomain.values()].slice(0, 30),
+    providers: activeProviders,
+    totalBeforeDedup
+  };
+}
+function toSearchSources(raw) {
+  return raw.map((r, i) => {
+    let domain = "";
+    try {
+      domain = new URL(r.url).hostname.replace(/^www\./, "");
+    } catch {
+      domain = r.url;
+    }
+    return {
+      name: r.name,
+      url: r.url,
+      content: r.content,
+      relevanceScore: r.relevanceScore ?? 0.5,
+      kind: "general",
+      domain,
+      corroboration: "external",
+      qualityScore: r.relevanceScore ?? 0.5
+    };
+  });
+}
+function getConfiguredProviders() {
+  const providers = [];
+  if (LINKUP_KEY) providers.push("linkup");
+  if (BRAVE_KEY) providers.push("brave");
+  if (SERPER_KEY) providers.push("serper");
+  if (TAVILY_KEY) providers.push("tavily");
+  return providers;
+}
+var LINKUP_KEY, BRAVE_KEY, SERPER_KEY, TAVILY_KEY;
+var init_multiSearch = __esm({
+  "server/lib/multiSearch.ts"() {
+    "use strict";
+    LINKUP_KEY = process.env.LINKUP_API_KEY ?? "";
+    BRAVE_KEY = process.env.BRAVE_SEARCH_API_KEY ?? "";
+    SERPER_KEY = process.env.SERPER_API_KEY ?? "";
+    TAVILY_KEY = process.env.TAVILY_API_KEY ?? "";
+  }
+});
+
+// server/lib/searchContext.ts
+var searchContext_exports = {};
+__export(searchContext_exports, {
+  buildContextPrompt: () => buildContextPrompt,
+  getContextCacheStats: () => getContextCacheStats,
+  getSearchContext: () => getSearchContext,
+  setSearchContext: () => setSearchContext
+});
+function makeKey(entityName, lens) {
+  return `${entityName.toLowerCase().trim()}:${lens}`;
+}
+function setSearchContext(entry) {
+  const key = makeKey(entry.entityName, entry.lens);
+  if (contextCache.size >= MAX_CONTEXTS && !contextCache.has(key)) {
+    const oldest = contextCache.keys().next().value;
+    if (oldest) contextCache.delete(oldest);
+  }
+  contextCache.delete(key);
+  contextCache.set(key, entry);
+}
+function getSearchContext(entityName, lens) {
+  const key = makeKey(entityName, lens);
+  const entry = contextCache.get(key);
+  if (!entry) return null;
+  contextCache.delete(key);
+  contextCache.set(key, entry);
+  return entry;
+}
+function buildContextPrompt(ctx) {
+  const parts = [];
+  parts.push(`Prior research on ${ctx.entityName} (${ctx.lens} lens, ${ctx.confidence}% confidence):`);
+  if (ctx.answer) parts.push(`Summary: ${ctx.answer.slice(0, 300)}`);
+  if (ctx.keyMetrics.length > 0) {
+    parts.push(`Key metrics: ${ctx.keyMetrics.map((m) => `${m.label}: ${m.value}`).join(", ")}`);
+  }
+  if (ctx.signals.length > 0) parts.push(`Known signals: ${ctx.signals.slice(0, 5).join(", ")}`);
+  if (ctx.risks.length > 0) parts.push(`Known risks: ${ctx.risks.slice(0, 3).join(", ")}`);
+  parts.push("Build on this context. Focus on what's NEW or CHANGED.");
+  return parts.join("\n");
+}
+function getContextCacheStats() {
+  return {
+    size: contextCache.size,
+    maxSize: MAX_CONTEXTS,
+    entities: [...contextCache.values()].map((e) => `${e.entityName} (${e.lens})`)
+  };
+}
+var MAX_CONTEXTS, contextCache;
+var init_searchContext = __esm({
+  "server/lib/searchContext.ts"() {
+    "use strict";
+    MAX_CONTEXTS = 50;
+    contextCache = /* @__PURE__ */ new Map();
+  }
+});
+
 // packages/mcp-local/src/profiler/eventCollector.ts
 function estimateEventCost(event) {
   let cost = TOOL_BASE_COST[event.toolName ?? ""] ?? TOOL_BASE_COST._default;
@@ -5966,7 +6348,7 @@ var entityEnrichmentTools = [
 // packages/mcp-local/src/tools/founderLocalPipeline.ts
 init_db();
 import { execSync } from "child_process";
-import { readFileSync, existsSync, readdirSync, statSync } from "fs";
+import { readFileSync, existsSync as existsSync2, readdirSync, statSync } from "fs";
 import { join as join2, resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -6404,7 +6786,7 @@ var __filename = fileURLToPath(import.meta.url);
 var __dirname = dirname(__filename);
 function safeRead(filePath) {
   try {
-    if (!existsSync(filePath)) return null;
+    if (!existsSync2(filePath)) return null;
     return readFileSync(filePath, "utf-8");
   } catch {
     return null;
@@ -6463,7 +6845,7 @@ function resolveWorkspaceCompanyName(ctx) {
 function findProjectRoot() {
   let dir = resolve(__dirname, "..", "..");
   for (let i = 0; i < 5; i++) {
-    if (existsSync(join2(dir, "CLAUDE.md"))) return dir;
+    if (existsSync2(join2(dir, "CLAUDE.md"))) return dir;
     dir = resolve(dir, "..");
   }
   return process.cwd();
@@ -7285,7 +7667,7 @@ function gatherLocalContext(daysBack = 7) {
   let p1Count = 0;
   const dogfoodFindings = [];
   try {
-    const dogfoodFiles = existsSync(docsDir) ? readdirSync(docsDir).filter((f) => f.startsWith("dogfood-findings-") && f.endsWith(".json")).map((f) => join2(docsDir, f)).sort((a, b) => (statSync(b).mtimeMs ?? 0) - (statSync(a).mtimeMs ?? 0)) : [];
+    const dogfoodFiles = existsSync2(docsDir) ? readdirSync(docsDir).filter((f) => f.startsWith("dogfood-findings-") && f.endsWith(".json")).map((f) => join2(docsDir, f)).sort((a, b) => (statSync(b).mtimeMs ?? 0) - (statSync(a).mtimeMs ?? 0)) : [];
     if (dogfoodFiles.length > 0) {
       latestDogfoodFile = dogfoodFiles[0];
       const content = safeRead(dogfoodFiles[0]);
@@ -7305,7 +7687,7 @@ function gatherLocalContext(daysBack = 7) {
   const archDir = join2(root, "docs", "architecture");
   const architectureDocs = [];
   try {
-    const archFiles = existsSync(archDir) ? readdirSync(archDir).filter((f) => f.endsWith(".md")).map((f) => join2(archDir, f)).sort((a, b) => (statSync(b).mtimeMs ?? 0) - (statSync(a).mtimeMs ?? 0)).slice(0, 10) : [];
+    const archFiles = existsSync2(archDir) ? readdirSync(archDir).filter((f) => f.endsWith(".md")).map((f) => join2(archDir, f)).sort((a, b) => (statSync(b).mtimeMs ?? 0) - (statSync(a).mtimeMs ?? 0)).slice(0, 10) : [];
     for (const f of archFiles) {
       const name = f.split(/[/\\]/).pop() ?? f;
       architectureDocs.push(name);
@@ -12001,7 +12383,7 @@ function assessComplexity(prompt, maxTokens) {
 }
 var GEMINI_MODELS = {
   low: {
-    name: "gemini-3.1-flash-lite",
+    name: "gemini-3.1-flash-lite-preview",
     endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent",
     apiKeyEnv: "GEMINI_API_KEY",
     timeoutMs: 15e3,
@@ -12015,7 +12397,7 @@ ${prompt}` : prompt }] }],
     extractResponse: (data) => data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ""
   },
   medium: {
-    name: "gemini-3.1-flash",
+    name: "gemini-3.1-flash-preview",
     endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-preview:generateContent",
     apiKeyEnv: "GEMINI_API_KEY",
     timeoutMs: 25e3,
@@ -12029,7 +12411,7 @@ ${prompt}` : prompt }] }],
     extractResponse: (data) => data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ""
   },
   high: {
-    name: "gemini-3.1-pro",
+    name: "gemini-3.1-pro-preview",
     endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent",
     apiKeyEnv: "GEMINI_API_KEY",
     timeoutMs: 4e4,
@@ -15173,6 +15555,78 @@ function buildWorkflowAssetFromEnvelope(packet, envelope, overrides = {}) {
     envelopeType: existing.envelopeType ?? envelope.transport.envelopeType,
     ...overrides,
     lineage
+  };
+}
+function createEnvelopeFromPipelineState(state, packetId) {
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const sourceRefs = (state.searchSources ?? []).slice(0, 30).map((src, i) => ({
+    id: `src_${i}`,
+    label: src.name ?? src.url ?? `source-${i}`,
+    href: src.url,
+    type: "web",
+    confidence: src.relevanceScore
+  }));
+  const claims = [];
+  for (const sig of state.signals ?? []) {
+    if (sig.name) claims.push(sig.name);
+  }
+  for (const metric of state.keyMetrics ?? []) {
+    if (metric.label && metric.value) claims.push(`${metric.label}: ${metric.value}`);
+  }
+  const tools2 = /* @__PURE__ */ new Set();
+  for (const t of state.trace ?? []) {
+    if (t.tool) tools2.add(t.tool);
+  }
+  const verified = sourceRefs.filter((s) => (s.confidence ?? 0) > 0.5).length;
+  const total = sourceRefs.length;
+  return {
+    transport: {
+      envelopeId: createEnvelopeId(),
+      envelopeType: "search_result",
+      version: 1,
+      createdAt: now
+    },
+    content: {
+      subject: state.query,
+      entityName: state.entityName || state.entity || void 0,
+      summary: (state.answer ?? "").slice(0, 500),
+      confidence: state.confidence ?? 0,
+      classification: state.classification,
+      lens: state.lens
+    },
+    proof: {
+      sourceRefs,
+      claims: claims.slice(0, 20),
+      evidenceRefs: sourceRefs.map((s) => s.id),
+      verificationRate: total > 0 ? verified / total : 0
+    },
+    trace: {
+      steps: (state.trace ?? []).map((t) => ({
+        step: t.step,
+        tool: t.tool,
+        status: t.status,
+        detail: t.detail,
+        durationMs: t.durationMs
+      })),
+      totalDurationMs: state.totalDurationMs ?? 0,
+      toolsInvoked: [...tools2]
+    },
+    lineage: {
+      parentIds: [],
+      sourceRunId: packetId
+    },
+    scope: {
+      visibility: "internal"
+    },
+    payload: {
+      packetId,
+      pipelineType: "search_v2",
+      entityName: state.entityName,
+      confidence: state.confidence,
+      signalCount: (state.signals ?? []).length,
+      riskCount: (state.risks ?? []).length,
+      hasDCF: !!state.dcf
+    }
   };
 }
 
@@ -18387,8 +18841,1640 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
   return router;
 }
 
-// server/routes/sharedContext.ts
+// server/routes/streamingSearch.ts
 import { Router as Router2 } from "express";
+
+// server/lib/dcfModel.ts
+function runDCF(input) {
+  const { revenue, growthRate, fcfMargin, discountRate, terminalGrowthRate, projectionYears } = input;
+  const projectedFCF = [];
+  const discountedFCF = [];
+  let currentRevenue = revenue;
+  for (let year = 1; year <= projectionYears; year++) {
+    currentRevenue *= 1 + growthRate;
+    const fcf = currentRevenue * fcfMargin;
+    const discountFactor = Math.pow(1 + discountRate, year);
+    projectedFCF.push(Math.round(fcf));
+    discountedFCF.push(Math.round(fcf / discountFactor));
+  }
+  const terminalFCF = projectedFCF[projectedFCF.length - 1] * (1 + terminalGrowthRate);
+  const terminalValue = terminalFCF / (discountRate - terminalGrowthRate);
+  const discountedTerminalValue = terminalValue / Math.pow(1 + discountRate, projectionYears);
+  const pvOfFCFs = discountedFCF.reduce((a, b) => a + b, 0);
+  const enterpriseValue = pvOfFCFs + discountedTerminalValue;
+  const evInB = (enterpriseValue / 1e9).toFixed(1);
+  const revInB = (revenue / 1e9).toFixed(1);
+  return {
+    enterpriseValue: Math.round(enterpriseValue),
+    projectedFCF,
+    discountedFCF,
+    terminalValue: Math.round(terminalValue),
+    discountedTerminalValue: Math.round(discountedTerminalValue),
+    pvOfFCFs: Math.round(pvOfFCFs),
+    summary: `DCF valuation: $${evInB}B (${projectionYears}yr, ${(growthRate * 100).toFixed(0)}% growth, ${(fcfMargin * 100).toFixed(0)}% FCF margin, ${(discountRate * 100).toFixed(0)}% WACC on $${revInB}B revenue)`
+  };
+}
+function runReverseDCF(input) {
+  const { marketValue, revenue, fcfMargin, discountRate, terminalGrowthRate, projectionYears } = input;
+  let lo = -0.2;
+  let hi = 2;
+  let impliedGrowthRate = 0;
+  let bestDCF = null;
+  for (let iter = 0; iter < 50; iter++) {
+    const mid = (lo + hi) / 2;
+    const dcf = runDCF({
+      revenue,
+      growthRate: mid,
+      fcfMargin,
+      discountRate,
+      terminalGrowthRate,
+      projectionYears
+    });
+    bestDCF = dcf;
+    impliedGrowthRate = mid;
+    if (Math.abs(dcf.enterpriseValue - marketValue) < marketValue * 0.01) {
+      break;
+    }
+    if (dcf.enterpriseValue < marketValue) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  const pct = impliedGrowthRate * 100;
+  let assessment;
+  let explanation;
+  if (pct < 10) {
+    assessment = "undervalued";
+    explanation = `Market implies only ${pct.toFixed(0)}% annual growth \u2014 below typical inflation-adjusted expectations. The company may be undervalued if it can grow faster.`;
+  } else if (pct < 30) {
+    assessment = "fairly_valued";
+    explanation = `Market implies ${pct.toFixed(0)}% annual growth \u2014 reasonable for a growth-stage company. Valuation appears fair if growth materializes.`;
+  } else if (pct < 60) {
+    assessment = "overvalued";
+    explanation = `Market implies ${pct.toFixed(0)}% annual growth \u2014 aggressive but achievable for high-growth tech. Significant execution risk baked in.`;
+  } else {
+    assessment = "aggressive";
+    explanation = `Market implies ${pct.toFixed(0)}% annual growth \u2014 extremely aggressive. Requires exceptional execution and market expansion to justify.`;
+  }
+  return {
+    impliedGrowthRate: Math.round(impliedGrowthRate * 1e3) / 1e3,
+    assessment,
+    explanation,
+    dcfAtImpliedRate: bestDCF
+  };
+}
+async function enrichDCFWithEdgar(entityName, dcfInputs) {
+  if (dcfInputs.canRunDCF) return dcfInputs;
+  try {
+    const { fetchEdgarFinancials: fetchEdgarFinancials2 } = await Promise.resolve().then(() => (init_secEdgar(), secEdgar_exports));
+    const edgar = await fetchEdgarFinancials2(entityName);
+    if (!edgar?.revenue) return dcfInputs;
+    return {
+      canRunDCF: true,
+      dcfInput: {
+        revenue: edgar.revenue,
+        growthRate: 0.25,
+        fcfMargin: 0.12,
+        discountRate: 0.1,
+        terminalGrowthRate: 0.03,
+        projectionYears: 5
+      }
+      // No reverse DCF without market cap from EDGAR (would need a separate source)
+    };
+  } catch {
+    return dcfInputs;
+  }
+}
+function extractDCFInputs(result) {
+  const text = [
+    result.answer,
+    ...result.keyMetrics.map((m) => `${m.label}: ${m.value}`),
+    ...result.signals.map((s) => s.name ?? "")
+  ].join(" ");
+  let revenue = null;
+  let valuation = null;
+  for (const m of result.keyMetrics) {
+    const label = m.label.toLowerCase();
+    const val = parseDollarValue(m.value);
+    if (val && !revenue && (label.includes("revenue") || label.includes("arr") || label === "mrr")) {
+      revenue = label === "mrr" ? val * 12 : val;
+    }
+    if (val && !valuation && (label.includes("valuation") || label.includes("market cap"))) {
+      valuation = val;
+    }
+  }
+  if (!revenue) {
+    revenue = extractDollarAmount(text, [
+      "revenue",
+      "arr",
+      "annual revenue",
+      "annualized revenue",
+      "revenue of",
+      "arr of",
+      "revenue run rate",
+      "annual run rate",
+      "revenue reaching",
+      "revenue surpass",
+      "revenue hit",
+      "generating",
+      "earned",
+      "brought in"
+    ]);
+  }
+  if (!valuation) {
+    valuation = extractDollarAmount(text, [
+      "valuation",
+      "valued at",
+      "market cap",
+      "worth",
+      "valuation of",
+      "valued",
+      "market capitalization",
+      "valuation reaching",
+      "valuation hit",
+      "valued around"
+    ]);
+  }
+  if (!revenue) {
+    return { canRunDCF: false, reason: "No revenue data found in search results" };
+  }
+  const dcfInput = {
+    revenue,
+    growthRate: 0.3,
+    // 30% default for growth tech
+    fcfMargin: 0.15,
+    // 15% FCF margin
+    discountRate: 0.12,
+    // 12% WACC
+    terminalGrowthRate: 0.03,
+    // 3% terminal
+    projectionYears: 5
+  };
+  const result_obj = {
+    canRunDCF: true,
+    dcfInput
+  };
+  if (valuation) {
+    result_obj.reverseDCFInput = {
+      marketValue: valuation,
+      revenue,
+      fcfMargin: 0.15,
+      discountRate: 0.12,
+      terminalGrowthRate: 0.03,
+      projectionYears: 5
+    };
+  }
+  return result_obj;
+}
+function parseDollarValue(value) {
+  const match = value.match(/\$?([\d,.]+)\s*(billion|B|million|M|trillion|T)?/i);
+  if (!match) return null;
+  const num = parseFloat(match[1].replace(/,/g, ""));
+  if (isNaN(num)) return null;
+  const unit = (match[2] ?? "").toLowerCase();
+  if (unit === "trillion" || unit === "t") return num * 1e12;
+  if (unit === "billion" || unit === "b") return num * 1e9;
+  if (unit === "million" || unit === "m") return num * 1e6;
+  if (num > 1e6) return num;
+  return null;
+}
+function extractDollarAmount(text, keywords) {
+  for (const kw of keywords) {
+    const patterns = [
+      // Reverse: $X ... keyword (most reliable — "$2B in annual revenue")
+      new RegExp(`\\$([\\d,.]+)\\s*(billion|B)[^.]{0,15}${kw}`, "i"),
+      new RegExp(`\\$([\\d,.]+)\\s*(million|M)[^.]{0,15}${kw}`, "i"),
+      // Forward: keyword ... $X (tight — "valued at $30B", max 10 chars gap)
+      new RegExp(`${kw}[^.$,]{0,10}\\$([\\d,.]+)\\s*(billion|B)`, "i"),
+      new RegExp(`${kw}[^.$,]{0,10}\\$([\\d,.]+)\\s*(million|M)`, "i")
+    ];
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match) {
+        const num = parseFloat(match[1].replace(/,/g, ""));
+        const unit = match[2].toLowerCase();
+        if (unit === "billion" || unit === "b") return num * 1e9;
+        if (unit === "million" || unit === "m") return num * 1e6;
+      }
+    }
+  }
+  return null;
+}
+
+// server/lib/trajectoryStore.ts
+init_db();
+var MAX_TRAJECTORIES = 300;
+var EVICT_BATCH = 20;
+var _tableReady = false;
+function getDb2() {
+  const db = getDb();
+  if (!_tableReady) {
+    ensureTable(db);
+    _tableReady = true;
+  }
+  return db;
+}
+function ensureTable(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS search_trajectories (
+      trajectory_id     TEXT PRIMARY KEY,
+      entity_name       TEXT NOT NULL,
+      lens              TEXT NOT NULL,
+      query             TEXT NOT NULL,
+      classification    TEXT,
+      envelope_id       TEXT,
+      steps_json        TEXT NOT NULL DEFAULT '[]',
+      total_steps       INTEGER NOT NULL DEFAULT 0,
+      total_duration_ms INTEGER NOT NULL DEFAULT 0,
+      total_tokens      INTEGER NOT NULL DEFAULT 0,
+      state_hash_before TEXT,
+      state_hash_after  TEXT,
+      success           INTEGER NOT NULL DEFAULT 0,
+      replay_count      INTEGER NOT NULL DEFAULT 0,
+      avg_token_savings REAL NOT NULL DEFAULT 0.0,
+      avg_time_savings  REAL NOT NULL DEFAULT 0.0,
+      drift_score       REAL NOT NULL DEFAULT 0.0,
+      last_validated_at TEXT,
+      workspace_id      TEXT,
+      created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_traj_entity_lens ON search_trajectories(entity_name, lens, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_traj_query ON search_trajectories(query, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_traj_replay ON search_trajectories(replay_count DESC);
+  `);
+}
+var _counter2 = 0;
+function createTrajectoryId() {
+  const ts = Date.now().toString(36);
+  const rand = Math.random().toString(36).slice(2, 8);
+  _counter2 = (_counter2 + 1) % 1e4;
+  return `traj_${ts}_${rand}_${_counter2.toString(36)}`;
+}
+var hashState = hashContent;
+function evictIfNeeded(db) {
+  const count = db.prepare("SELECT COUNT(*) as cnt FROM search_trajectories").get().cnt;
+  if (count >= MAX_TRAJECTORIES) {
+    db.prepare(`
+      DELETE FROM search_trajectories WHERE trajectory_id IN (
+        SELECT trajectory_id FROM search_trajectories
+        ORDER BY replay_count ASC, created_at ASC
+        LIMIT ?
+      )
+    `).run(EVICT_BATCH);
+  }
+}
+function trajectoryFromPipelineState(state, envelopeId) {
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const steps = (state.trace ?? []).map((t, i) => ({
+    stepIndex: i,
+    step: t.step,
+    tool: t.tool,
+    status: t.status,
+    detail: t.detail,
+    durationMs: t.durationMs ?? 0
+  }));
+  const totalTokens = steps.reduce((sum, s) => sum + (s.tokensUsed ?? 0), 0);
+  const stateHashBefore = hashState({ query: state.query, entity: state.entity, lens: state.lens });
+  const stateHashAfter = hashState({
+    entityName: state.entityName,
+    confidence: state.confidence,
+    signalCount: (state.signals ?? []).length,
+    sourceCount: (state.searchSources ?? []).length
+  });
+  return {
+    trajectoryId: createTrajectoryId(),
+    entityName: state.entityName || state.entity || "unknown",
+    lens: state.lens,
+    query: state.query,
+    classification: state.classification,
+    envelopeId,
+    steps,
+    totalSteps: steps.length,
+    totalDurationMs: state.totalDurationMs ?? 0,
+    totalTokens,
+    stateHashBefore,
+    stateHashAfter,
+    success: !state.error && (state.confidence ?? 0) >= 30,
+    replayCount: 0,
+    avgTokenSavings: 0,
+    avgTimeSavings: 0,
+    driftScore: 0,
+    createdAt: now,
+    updatedAt: now
+  };
+}
+function saveSearchTrajectory(trajectory) {
+  const db = getDb2();
+  evictIfNeeded(db);
+  db.prepare(`
+    INSERT OR REPLACE INTO search_trajectories (
+      trajectory_id, entity_name, lens, query, classification, envelope_id,
+      steps_json, total_steps, total_duration_ms, total_tokens,
+      state_hash_before, state_hash_after, success,
+      replay_count, avg_token_savings, avg_time_savings, drift_score,
+      last_validated_at, workspace_id, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    trajectory.trajectoryId,
+    trajectory.entityName,
+    trajectory.lens,
+    trajectory.query,
+    trajectory.classification ?? null,
+    trajectory.envelopeId ?? null,
+    JSON.stringify(trajectory.steps),
+    trajectory.totalSteps,
+    trajectory.totalDurationMs,
+    trajectory.totalTokens,
+    trajectory.stateHashBefore ?? null,
+    trajectory.stateHashAfter ?? null,
+    trajectory.success ? 1 : 0,
+    trajectory.replayCount,
+    trajectory.avgTokenSavings,
+    trajectory.avgTimeSavings,
+    trajectory.driftScore,
+    trajectory.lastValidatedAt ?? null,
+    trajectory.workspaceId ?? null,
+    trajectory.createdAt,
+    trajectory.updatedAt
+  );
+  return trajectory.trajectoryId;
+}
+function findTrajectoryByEntityLens(entityName, lens) {
+  const db = getDb2();
+  const row = db.prepare(
+    "SELECT * FROM search_trajectories WHERE entity_name = ? AND lens = ? AND success = 1 ORDER BY created_at DESC LIMIT 1"
+  ).get(entityName, lens);
+  if (!row) return null;
+  return rowToTrajectory(row);
+}
+function rowToTrajectory(row) {
+  return {
+    trajectoryId: row.trajectory_id,
+    entityName: row.entity_name,
+    lens: row.lens,
+    query: row.query,
+    classification: row.classification ?? void 0,
+    envelopeId: row.envelope_id ?? void 0,
+    steps: JSON.parse(row.steps_json || "[]"),
+    totalSteps: row.total_steps ?? 0,
+    totalDurationMs: row.total_duration_ms ?? 0,
+    totalTokens: row.total_tokens ?? 0,
+    stateHashBefore: row.state_hash_before ?? void 0,
+    stateHashAfter: row.state_hash_after ?? void 0,
+    success: !!row.success,
+    replayCount: row.replay_count ?? 0,
+    avgTokenSavings: row.avg_token_savings ?? 0,
+    avgTimeSavings: row.avg_time_savings ?? 0,
+    driftScore: row.drift_score ?? 0,
+    lastValidatedAt: row.last_validated_at ?? void 0,
+    workspaceId: row.workspace_id ?? void 0,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+// server/lib/replayDetector.ts
+var REPLAY_DRIFT_THRESHOLD = 0.3;
+var FALLBACK_DRIFT_THRESHOLD = 0.6;
+var REPLAY_STALENESS_DAYS = 7;
+var FALLBACK_STALENESS_DAYS = 14;
+function detectReplayCandidate(entityName, lens, _query) {
+  const trajectory = findTrajectoryByEntityLens(entityName, lens);
+  if (!trajectory) return null;
+  const stalenessDays = computeStalenessDays(trajectory.createdAt);
+  const { driftScore, replayCount, avgTokenSavings } = trajectory;
+  let verdict;
+  let reason;
+  if (driftScore < REPLAY_DRIFT_THRESHOLD && stalenessDays < REPLAY_STALENESS_DAYS) {
+    verdict = "replay";
+    reason = `Low drift (${driftScore.toFixed(2)}) and fresh (${stalenessDays.toFixed(1)}d). Safe to replay.`;
+  } else if (driftScore < FALLBACK_DRIFT_THRESHOLD && stalenessDays < FALLBACK_STALENESS_DAYS) {
+    verdict = "replay_with_fallback";
+    reason = `Moderate drift (${driftScore.toFixed(2)}) or aging (${stalenessDays.toFixed(1)}d). Try replay, fall back on divergence.`;
+  } else {
+    verdict = "full_pipeline";
+    reason = driftScore >= FALLBACK_DRIFT_THRESHOLD ? `High drift (${driftScore.toFixed(2)}). Full pipeline needed.` : `Stale trajectory (${stalenessDays.toFixed(1)}d). Full pipeline needed.`;
+  }
+  return {
+    trajectoryId: trajectory.trajectoryId,
+    entityName: trajectory.entityName,
+    lens: trajectory.lens,
+    stalenessDays,
+    replayCount,
+    avgTokenSavings,
+    driftScore,
+    verdict,
+    reason
+  };
+}
+function computeStalenessDays(createdAt) {
+  const created = new Date(createdAt).getTime();
+  const now = Date.now();
+  return (now - created) / (1e3 * 60 * 60 * 24);
+}
+
+// server/pipeline/searchPipeline.ts
+var ENTITY_STOP_WORDS = /* @__PURE__ */ new Set([
+  "inc",
+  "llc",
+  "ltd",
+  "co",
+  "company",
+  "corp",
+  "corporation",
+  "group",
+  "holdings",
+  "technologies",
+  "technology",
+  "systems",
+  "labs",
+  "lab"
+]);
+var HIGH_SIGNAL_EXTERNAL_DOMAINS = /* @__PURE__ */ new Set([
+  "linkedin.com",
+  "crunchbase.com",
+  "glassdoor.com",
+  "businesswire.com",
+  "zoominfo.com",
+  "pitchbook.com",
+  "tracxn.com"
+]);
+var LOW_SIGNAL_SOCIAL_DOMAINS = /* @__PURE__ */ new Set([
+  "instagram.com",
+  "facebook.com",
+  "x.com",
+  "twitter.com",
+  "youtube.com",
+  "tiktok.com"
+]);
+var LOW_SIGNAL_PAGE_PATTERNS = [
+  /\bprivacy\b/i,
+  /\bterms?\b/i,
+  /\bpolicy\b/i,
+  /\bcareers?\b/i,
+  /\bjobs?\b/i,
+  /\bcookies?\b/i,
+  /\blogin\b/i,
+  /\bsign[\s-]?in\b/i
+];
+var PRIMARY_OFFICIAL_PATH_PATTERNS = [
+  /^\/?$/i,
+  /^\/(about|company|services|solutions|products?|platform|partners)\/?$/i
+];
+function stripInlineSourceCitations(value) {
+  return (value ?? "").replace(/\s*\[S\d+\]/gi, "").replace(/\s+,/g, ",").replace(/,\s*,+/g, ",").replace(/,\s*\./g, ".").replace(/\.\s*,/g, ".").replace(/\s{2,}/g, " ").trim();
+}
+function extractSourceIndices(value) {
+  return Array.from((value ?? "").matchAll(/\[S(\d+)\]/gi)).map((match) => Number.parseInt(match[1] ?? "", 10) - 1).filter((index) => Number.isFinite(index) && index >= 0);
+}
+function normalizeSearchText(value) {
+  return (value ?? "").toLowerCase().replace(/https?:\/\//g, " ").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+}
+function tokenizeEntity(value) {
+  return normalizeSearchText(value).split(" ").filter((token) => token.length >= 3 && !ENTITY_STOP_WORDS.has(token));
+}
+function sourceEntityScore(entity, source) {
+  const phrase = normalizeSearchText(entity);
+  const compactPhrase = phrase.replace(/\s+/g, "");
+  const tokens = tokenizeEntity(entity);
+  const titleHaystack = normalizeSearchText(source.name);
+  const urlHaystack = normalizeSearchText(source.url);
+  const snippetHaystack = normalizeSearchText(source.snippet);
+  const combinedHaystack = [titleHaystack, urlHaystack, snippetHaystack].filter(Boolean).join(" ");
+  const titleAndUrlHaystack = [titleHaystack, urlHaystack].filter(Boolean).join(" ");
+  const compactUrl = (source.url ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  let score = 0;
+  if (phrase && combinedHaystack.includes(phrase)) score += 8;
+  if (compactPhrase && compactUrl.includes(compactPhrase)) score += 6;
+  if (tokens.length > 0 && tokens.every((token) => titleAndUrlHaystack.includes(token))) score += 5;
+  if (tokens.length > 0 && tokens.every((token) => snippetHaystack.includes(token))) score += 4;
+  const matchedTokens = tokens.filter((token) => combinedHaystack.includes(token)).length;
+  if (matchedTokens >= 2) {
+    score += matchedTokens;
+  } else if (tokens.length === 1 && matchedTokens === 1) {
+    score += 2;
+  }
+  return { score, matchedTokens };
+}
+function parseSourceLocation(url) {
+  if (!url) return {};
+  try {
+    const parsed = new URL(url);
+    return {
+      domain: parsed.hostname.replace(/^www\./, "").toLowerCase(),
+      path: parsed.pathname || "/"
+    };
+  } catch {
+    return {};
+  }
+}
+function compactEntity(entity) {
+  return normalizeSearchText(entity).replace(/\s+/g, "");
+}
+function inferOfficialDomains(entity, sources) {
+  const phrase = normalizeSearchText(entity);
+  const compactPhrase = compactEntity(entity);
+  const domains = /* @__PURE__ */ new Set();
+  for (const source of sources) {
+    const { domain, path: path2 } = parseSourceLocation(source.url);
+    if (!domain) continue;
+    const title = normalizeSearchText(source.name);
+    const looksOfficial = compactPhrase && domain.replace(/[^a-z0-9]/g, "").includes(compactPhrase) || phrase && title.includes(phrase) && PRIMARY_OFFICIAL_PATH_PATTERNS.some((pattern) => pattern.test(path2 ?? "/"));
+    if (looksOfficial) {
+      domains.add(domain);
+    }
+  }
+  return domains;
+}
+function classifySearchSourceKind(source, officialDomains) {
+  const { domain = "", path: path2 = "/" } = parseSourceLocation(source.url);
+  const title = source.name ?? "";
+  const haystack = `${title} ${path2}`;
+  if (officialDomains.has(domain)) {
+    if (LOW_SIGNAL_PAGE_PATTERNS.some((pattern) => pattern.test(haystack))) {
+      return /\bcareers?\b|\bjobs?\b/i.test(haystack) ? "official_jobs" : "official_legal";
+    }
+    if (PRIMARY_OFFICIAL_PATH_PATTERNS.some((pattern) => pattern.test(path2))) {
+      return "official_root";
+    }
+    return "official_article";
+  }
+  if (domain === "linkedin.com" && /\/company\//i.test(path2)) return "external_profile";
+  if (HIGH_SIGNAL_EXTERNAL_DOMAINS.has(domain)) {
+    return domain === "businesswire.com" ? "external_press" : "external_profile";
+  }
+  if (LOW_SIGNAL_SOCIAL_DOMAINS.has(domain)) return "social";
+  if (/(zoominfo|pitchbook|tracxn|craft\.co|cbinsights)/i.test(domain)) return "directory";
+  return "general";
+}
+function scoreSearchSourceQuality(entity, source, officialDomains) {
+  const { score: entityScore, matchedTokens } = sourceEntityScore(entity, source);
+  const { domain, path: path2 } = parseSourceLocation(source.url);
+  const kind = classifySearchSourceKind(source, officialDomains);
+  const title = normalizeSearchText(source.name);
+  const snippet = normalizeSearchText(source.snippet);
+  const urlText = normalizeSearchText(source.url);
+  const phrase = normalizeSearchText(entity);
+  const compactPhrase = compactEntity(entity);
+  const entityGrounded = Boolean(phrase && (title.includes(phrase) || snippet.includes(phrase) || urlText.includes(phrase))) || Boolean(compactPhrase && (domain ?? "").replace(/[^a-z0-9]/g, "").includes(compactPhrase));
+  let qualityScore = entityScore;
+  if (phrase && title.includes(phrase)) qualityScore += 4;
+  if (phrase && snippet.includes(phrase)) qualityScore += 3;
+  if (compactPhrase && (domain ?? "").replace(/[^a-z0-9]/g, "").includes(compactPhrase)) qualityScore += 3;
+  switch (kind) {
+    case "official_root":
+      qualityScore += 6;
+      break;
+    case "external_profile":
+      qualityScore += 6;
+      break;
+    case "external_press":
+      qualityScore += 5;
+      break;
+    case "official_article":
+      qualityScore += 2;
+      break;
+    case "directory":
+      qualityScore += 2;
+      break;
+    case "social":
+      qualityScore -= 3;
+      break;
+    case "official_jobs":
+    case "official_legal":
+      qualityScore -= 8;
+      break;
+    default:
+      break;
+  }
+  if (LOW_SIGNAL_PAGE_PATTERNS.some((pattern) => pattern.test(`${source.name} ${path2 ?? ""}`))) {
+    qualityScore -= 4;
+  }
+  return {
+    ...source,
+    domain,
+    path: path2,
+    kind,
+    qualityScore,
+    matchedTokens,
+    entityGrounded,
+    corroboration: kind.startsWith("official_") ? "self_reported" : "external"
+  };
+}
+function buildSearchQueries(query, entity, classification) {
+  const baseQuery = query.trim();
+  if (classification !== "company_search" || !entity?.trim()) {
+    return [baseQuery];
+  }
+  return Array.from(/* @__PURE__ */ new Set([
+    baseQuery,
+    `"${entity}" company linkedin crunchbase glassdoor`
+  ]));
+}
+function dedupeSources(sources) {
+  const seen = /* @__PURE__ */ new Set();
+  return sources.filter((source) => {
+    const key = `${source.url}::${source.name}`.trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+function filterSearchSourcesForEntity(entity, sources, classification) {
+  if (classification !== "company_search" || !entity?.trim()) {
+    return sources.map((source) => ({
+      ...source,
+      ...parseSourceLocation(source.url),
+      kind: "general",
+      qualityScore: sourceEntityScore(entity, source).score,
+      corroboration: "external"
+    }));
+  }
+  const dedupedSources = dedupeSources(sources);
+  const tokens = tokenizeEntity(entity);
+  const officialDomains = inferOfficialDomains(entity, dedupedSources);
+  const rankedSources = dedupedSources.map((source) => scoreSearchSourceQuality(entity, source, officialDomains)).filter((source) => {
+    if (source.kind === "official_legal" || source.kind === "official_jobs") {
+      return false;
+    }
+    if (tokens.length >= 2 && !source.entityGrounded) {
+      return false;
+    }
+    return (source.qualityScore ?? 0) >= 8;
+  }).sort((left, right) => (right.qualityScore ?? 0) - (left.qualityScore ?? 0));
+  if (rankedSources.length === 0) {
+    return dedupedSources.slice(0, Math.min(dedupedSources.length, 6)).map((source) => ({
+      ...source,
+      ...parseSourceLocation(source.url),
+      kind: "general",
+      qualityScore: sourceEntityScore(entity, source).score,
+      corroboration: "external"
+    }));
+  }
+  const selected = [];
+  const domainCounts = /* @__PURE__ */ new Map();
+  for (const source of rankedSources) {
+    const domain = source.domain ?? "";
+    const domainCap = officialDomains.has(domain) ? 2 : 1;
+    if ((domainCounts.get(domain) ?? 0) >= domainCap) continue;
+    selected.push(source);
+    domainCounts.set(domain, (domainCounts.get(domain) ?? 0) + 1);
+    if (selected.length >= 6) break;
+  }
+  const hasExternal = selected.some((source) => source.corroboration === "external");
+  if (!hasExternal) {
+    const externalFallback = rankedSources.find((source) => source.corroboration === "external");
+    if (externalFallback) {
+      selected.pop();
+      selected.push(externalFallback);
+    }
+  }
+  return dedupeSources(selected).map((source) => {
+    const ranked = rankedSources.find((candidate) => candidate.url === source.url && candidate.name === source.name);
+    return ranked ?? {
+      ...source,
+      ...parseSourceLocation(source.url),
+      kind: "general",
+      qualityScore: sourceEntityScore(entity, source).score,
+      corroboration: "external"
+    };
+  });
+}
+function buildSearchContextSummary(entity, classification, rawAnswer, sources) {
+  if (classification !== "company_search" || sources.length === 0) {
+    return rawAnswer;
+  }
+  return sources.slice(0, 6).map((source, index) => {
+    const title = source.name || `Source ${index + 1}`;
+    const snippet = source.snippet.trim().slice(0, 240);
+    const sourceTags = [source.kind, source.corroboration].filter(Boolean).join(", ");
+    return `[S${index + 1}] ${title}${sourceTags ? ` (${sourceTags})` : ""}: ${snippet}`;
+  }).join("\n");
+}
+function classify(state) {
+  const start = Date.now();
+  const hints = computeRoutingHints(state.query);
+  const topHint = hints[0];
+  let classification = "company_search";
+  let entity = null;
+  if (topHint?.domain === "founder_ops" && topHint.score > 0.3) {
+    classification = "founder_ops";
+  } else if (topHint?.domain === "competitor_analysis" && topHint.score > 0.2) {
+    classification = "competitor";
+  } else if (topHint?.domain === "idea_validation" && topHint.score > 0.2) {
+    classification = "idea_validation";
+  }
+  const entityMatch = state.query.match(/(?:^|\s)([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+){0,2})/);
+  entity = entityMatch?.[1] ?? state.query.split(/\s+/).slice(0, 3).join(" ");
+  return {
+    ...state,
+    classification,
+    entity,
+    routingHints: hints,
+    trace: [...state.trace, {
+      step: "classify",
+      status: "ok",
+      detail: `${classification}, entity="${entity}", hints: ${formatRoutingHintsForPrompt(hints)}`,
+      durationMs: Date.now() - start
+    }]
+  };
+}
+async function search(state) {
+  const start = Date.now();
+  const linkupKey = process.env.LINKUP_API_KEY;
+  if (!linkupKey) {
+    return {
+      ...state,
+      searchAnswer: "",
+      searchSources: [],
+      searchExploredSourceCount: 0,
+      searchDiscardedSourceCount: 0,
+      searchQueryVariants: [],
+      trace: [...state.trace, { step: "search", tool: "linkup", status: "error", detail: "No LINKUP_API_KEY", durationMs: Date.now() - start }]
+    };
+  }
+  try {
+    const queries = buildSearchQueries(state.query, state.entity, state.classification);
+    const results = await Promise.allSettled(
+      queries.map(async (queryVariant) => {
+        const resp = await fetch("https://api.linkup.so/v1/search", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${linkupKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            q: queryVariant,
+            depth: "standard",
+            outputType: "sourcedAnswer"
+          }),
+          signal: AbortSignal.timeout(3e4)
+        });
+        if (!resp.ok) {
+          throw new Error(`Linkup ${resp.status}`);
+        }
+        const data = await resp.json();
+        return {
+          answer: data?.answer ?? "",
+          sources: (data?.sources ?? []).map((source) => ({
+            name: source.name ?? source.title ?? "",
+            url: source.url ?? "",
+            snippet: source.snippet ?? source.content ?? ""
+          }))
+        };
+      })
+    );
+    const successful = results.filter((result) => result.status === "fulfilled").map((result) => result.value);
+    if (successful.length === 0) {
+      throw new Error("Linkup returned no successful query variants");
+    }
+    const answer = successful.find((result) => result.answer.trim().length > 0)?.answer ?? "";
+    const rawSources = successful.flatMap((result) => result.sources);
+    let secondaryProviders = [];
+    try {
+      const { multiSearch: multiSearch2, toSearchSources: toMultiSources } = await Promise.resolve().then(() => (init_multiSearch(), multiSearch_exports));
+      const multi = await multiSearch2(state.query, 8e3);
+      if (multi.sources.length > 0) {
+        const extraSources = toMultiSources(multi.sources).map((s) => ({
+          name: s.name,
+          url: s.url,
+          snippet: s.content
+        }));
+        rawSources.push(...extraSources);
+        secondaryProviders = multi.providers.filter((p) => p !== "linkup");
+      }
+    } catch {
+    }
+    const filteredSources = filterSearchSourcesForEntity(state.entity, rawSources, state.classification);
+    const filteredAnswer = buildSearchContextSummary(state.entity, state.classification, answer, filteredSources);
+    const exploredSourceCount = dedupeSources(rawSources).length;
+    const providerNote = secondaryProviders.length > 0 ? ` + ${secondaryProviders.join("+")}` : "";
+    return {
+      ...state,
+      searchAnswer: filteredAnswer,
+      searchSources: filteredSources,
+      searchExploredSourceCount: exploredSourceCount,
+      searchDiscardedSourceCount: Math.max(0, exploredSourceCount - filteredSources.length),
+      searchQueryVariants: queries,
+      trace: [...state.trace, {
+        step: "search",
+        tool: `linkup${providerNote}`,
+        status: "ok",
+        detail: `${filteredSources.length}/${exploredSourceCount} retained across ${queries.length} query variants${providerNote}, ${filteredAnswer.length} chars context`,
+        durationMs: Date.now() - start
+      }]
+    };
+  } catch (err) {
+    return {
+      ...state,
+      searchAnswer: "",
+      searchSources: [],
+      searchExploredSourceCount: 0,
+      searchDiscardedSourceCount: 0,
+      searchQueryVariants: [],
+      trace: [...state.trace, {
+        step: "search",
+        tool: "linkup",
+        status: "error",
+        detail: err?.message ?? "search failed",
+        durationMs: Date.now() - start
+      }]
+    };
+  }
+}
+function buildSourceAudit(sources) {
+  return {
+    officialCount: sources.filter((source) => source.corroboration === "self_reported").length,
+    externalCount: sources.filter((source) => source.corroboration === "external").length,
+    selfReportedCount: sources.filter((source) => source.corroboration === "self_reported").length,
+    retainedCount: sources.length
+  };
+}
+function applyConfidenceGuardrails(confidence, audit) {
+  let guarded = confidence;
+  if (audit.externalCount === 0) guarded = Math.min(guarded, 58);
+  else if (audit.externalCount === 1) guarded = Math.min(guarded, 72);
+  if (audit.selfReportedCount >= Math.max(1, audit.retainedCount - 1)) guarded = Math.min(guarded, 68);
+  if (audit.retainedCount < 3) guarded = Math.min(guarded, 65);
+  return Math.max(0, Math.min(100, guarded));
+}
+function normalizeParsedSourceIdx(sourceIdx, citationIndices) {
+  if (citationIndices.length > 0) {
+    return citationIndices[0];
+  }
+  if (typeof sourceIdx === "number" && Number.isFinite(sourceIdx)) {
+    if (sourceIdx <= 0) return 0;
+    return sourceIdx - 1;
+  }
+  return void 0;
+}
+async function analyze(state) {
+  const start = Date.now();
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!geminiKey || !state.searchAnswer && state.searchSources.length === 0) {
+    return {
+      ...state,
+      entityName: state.entity ?? "Unknown",
+      answer: state.searchAnswer || "No search results available.",
+      confidence: 0,
+      signals: [],
+      risks: [],
+      comparables: [],
+      nextActions: [],
+      nextQuestions: [],
+      keyMetrics: [],
+      whyThisTeam: null,
+      trace: [...state.trace, {
+        step: "analyze",
+        tool: "gemini",
+        status: "error",
+        detail: !geminiKey ? "No GEMINI_API_KEY" : "No search data to analyze",
+        durationMs: Date.now() - start
+      }]
+    };
+  }
+  const sourcesContext = state.searchSources.slice(0, 8).map((s, i) => `[S${i + 1}] ${s.name}
+kind=${s.kind ?? "general"} corroboration=${s.corroboration ?? "external"}
+${s.url}
+${s.snippet.slice(0, 300)}`).join("\n\n");
+  const sourceAudit = buildSourceAudit(state.searchSources);
+  let priorContextBlock = "";
+  try {
+    const { getSearchContext: getSearchContext2, buildContextPrompt: buildContextPrompt2 } = await Promise.resolve().then(() => (init_searchContext(), searchContext_exports));
+    const prior = getSearchContext2(state.entity ?? state.query, state.lens);
+    if (prior) {
+      priorContextBlock = `
+PRIOR RESEARCH (build on this, focus on what is NEW or CHANGED):
+${buildContextPrompt2(prior)}
+`;
+    }
+  } catch {
+  }
+  const prompt = `You are a senior analyst writing a research brief about "${state.entity ?? "unknown"}" for a ${state.lens}.
+
+ENTITY: ${state.entity ?? "unknown"}
+QUERY: "${state.query}"
+
+SOURCES (cite as [S1], [S2], etc.):
+${sourcesContext}
+
+ADDITIONAL CONTEXT:
+${state.searchAnswer.slice(0, 800)}
+${priorContextBlock}
+RULES:
+1. Every factual claim MUST cite a source number [S1], [S2], etc.
+2. Do NOT include generic industry commentary \u2014 only entity-specific facts.
+3. If a claim appears in only one self-reported source (company blog, press release), label it "(self-reported)".
+4. If corroboration is weak, say so explicitly and lower confidence.
+5. Prefer specific numbers ($, %, dates) over qualitative statements.
+6. Do NOT fabricate metrics. If revenue or valuation is not in the sources, set the value to "Not disclosed".
+
+CRITICAL: keyMetrics MUST include "ARR or Revenue" and "Valuation" as the first two entries. Extract actual dollar amounts from sources if available. Use "$XB" or "$XM" format. If not found, use "Not disclosed".
+
+Return ONLY valid JSON:
+{
+  "entityName": "company name",
+  "answer": "3-4 sentence summary with specific numbers, citing sources as [S1], [S2] etc.",
+  "confidence": 0-100,
+  "keyMetrics": [{"label": "ARR or Revenue", "value": "$XB"}, {"label": "Valuation", "value": "$XB"}, {"label": "other metric", "value": "value"}],
+  "signals": [{"name": "signal with [S1] citation", "direction": "up|down|neutral", "impact": "high|medium|low", "sourceIdx": 1}],
+  "risks": [{"title": "risk", "description": "why it matters [S2]", "sourceIdx": 2}],
+  "comparables": [{"name": "competitor", "relevance": "high|medium|low", "note": "why relevant"}],
+  "whyThisTeam": {"founderCredibility": "...", "trustSignals": ["..."], "visionMagnitude": "...", "hiddenRequirements": ["..."]},
+  "nextActions": [{"action": "specific step", "impact": "high|medium|low"}],
+  "nextQuestions": ["follow-up question"]
+}`;
+  try {
+    const models = ["gemini-3.1-flash-lite-preview", "gemini-3-flash-preview", "gemini-2.5-flash"];
+    let resp = null;
+    for (const model of models) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
+        resp = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.1, maxOutputTokens: 2200, responseMimeType: "application/json" }
+          }),
+          signal: AbortSignal.timeout(25e3)
+        });
+        if (resp.ok) break;
+      } catch {
+        continue;
+      }
+    }
+    if (!resp) throw new Error("All Gemini models failed");
+    if (!resp.ok) {
+      throw new Error(`Gemini ${resp.status}`);
+    }
+    const data = await resp.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("No JSON in Gemini response");
+    }
+    const parsed = JSON.parse(jsonMatch[0].replace(/,\s*([\]}])/g, "$1"));
+    const normalizedSignals = Array.isArray(parsed.signals) ? parsed.signals.map((signal) => {
+      const citationIndices = extractSourceIndices(signal?.name);
+      return {
+        name: stripInlineSourceCitations(signal?.name ?? ""),
+        direction: signal?.direction ?? "neutral",
+        impact: signal?.impact ?? "medium",
+        sourceIdx: normalizeParsedSourceIdx(signal?.sourceIdx, citationIndices)
+      };
+    }).filter((signal) => signal.name.length > 0) : [];
+    const normalizedRisks = Array.isArray(parsed.risks) ? parsed.risks.map((risk) => {
+      const citationIndices = extractSourceIndices(`${risk?.title ?? ""} ${risk?.description ?? ""}`);
+      return {
+        title: stripInlineSourceCitations(risk?.title ?? "Risk"),
+        description: stripInlineSourceCitations(risk?.description ?? ""),
+        sourceIdx: normalizeParsedSourceIdx(risk?.sourceIdx, citationIndices)
+      };
+    }).filter((risk) => risk.title.length > 0 || risk.description.length > 0) : [];
+    const guardedConfidence = applyConfidenceGuardrails(
+      typeof parsed.confidence === "number" ? parsed.confidence : 50,
+      sourceAudit
+    );
+    const nextQuestions = Array.isArray(parsed.nextQuestions) ? parsed.nextQuestions.filter((question) => typeof question === "string" && question.trim().length > 0) : [];
+    if (sourceAudit.externalCount < 2) {
+      nextQuestions.unshift("What third-party evidence corroborates the company\u2019s core product, traction, or funding claims?");
+    }
+    return {
+      ...state,
+      entityName: parsed.entityName ?? state.entity ?? "Unknown",
+      answer: parsed.answer ?? "",
+      confidence: guardedConfidence,
+      signals: normalizedSignals,
+      risks: normalizedRisks,
+      comparables: Array.isArray(parsed.comparables) ? parsed.comparables : [],
+      nextActions: Array.isArray(parsed.nextActions) ? parsed.nextActions : [],
+      nextQuestions: Array.from(new Set(nextQuestions)),
+      keyMetrics: Array.isArray(parsed.keyMetrics) ? parsed.keyMetrics : [],
+      whyThisTeam: parsed.whyThisTeam ?? null,
+      trace: [...state.trace, {
+        step: "analyze",
+        tool: "gemini",
+        status: "ok",
+        detail: `${normalizedSignals.length} signals, ${normalizedRisks.length} risks, confidence ${guardedConfidence}`,
+        durationMs: Date.now() - start
+      }]
+    };
+  } catch (err) {
+    return {
+      ...state,
+      entityName: state.entity ?? "Unknown",
+      answer: state.searchAnswer || "Analysis failed.",
+      confidence: 20,
+      signals: [],
+      risks: [],
+      comparables: [],
+      nextActions: [],
+      nextQuestions: [],
+      keyMetrics: [],
+      whyThisTeam: null,
+      trace: [...state.trace, {
+        step: "analyze",
+        tool: "gemini",
+        status: "error",
+        detail: err?.message ?? "analysis failed",
+        durationMs: Date.now() - start
+      }]
+    };
+  }
+}
+async function packageResult(state) {
+  const start = Date.now();
+  const classifiedSignals = classifySignals(state.signals);
+  const evidence = createEvidenceSpans(
+    state.searchSources.map((s) => ({
+      url: s.url,
+      title: s.name,
+      snippet: s.snippet,
+      kind: s.kind,
+      corroboration: s.corroboration,
+      qualityScore: s.qualityScore
+    })),
+    state.signals
+  );
+  const painResolutions = detectPainResolutions({
+    query: state.query,
+    classification: state.classification,
+    entityName: state.entityName,
+    answer: state.answer,
+    confidence: state.confidence,
+    signals: state.signals,
+    risks: state.risks,
+    comparables: state.comparables,
+    evidence,
+    sourceRefs: state.searchSources.map((s) => ({ label: s.name, href: s.url, type: "web" })),
+    nextActions: state.nextActions
+  });
+  let dcfResult = null;
+  let reverseDCFResult = null;
+  if (state.classification === "company_search" && (state.lens === "investor" || state.lens === "banker")) {
+    let dcfInputs = extractDCFInputs({
+      entityName: state.entityName,
+      answer: state.answer,
+      keyMetrics: state.keyMetrics,
+      signals: state.signals
+    });
+    if (!dcfInputs.canRunDCF) {
+      try {
+        dcfInputs = await enrichDCFWithEdgar(state.entityName, dcfInputs);
+      } catch {
+      }
+    }
+    if (dcfInputs.canRunDCF && dcfInputs.dcfInput) {
+      dcfResult = runDCF(dcfInputs.dcfInput);
+    }
+    if (dcfInputs.reverseDCFInput) {
+      reverseDCFResult = runReverseDCF(dcfInputs.reverseDCFInput);
+    }
+  }
+  return {
+    ...state,
+    classifiedSignals,
+    evidence,
+    painResolutions,
+    dcf: dcfResult,
+    reverseDCF: reverseDCFResult,
+    trace: [...state.trace, {
+      step: "package",
+      status: "ok",
+      detail: `${classifiedSignals.length} signals, ${evidence.totalSpans} evidence, ${painResolutions.length} pains resolved${dcfResult ? `, DCF: $${(dcfResult.enterpriseValue / 1e9).toFixed(1)}B` : ""}`,
+      durationMs: Date.now() - start
+    }]
+  };
+}
+function createInitialPipelineState(query, lens) {
+  return {
+    query,
+    lens,
+    classification: "",
+    entity: null,
+    routingHints: [],
+    searchAnswer: "",
+    searchSources: [],
+    searchExploredSourceCount: 0,
+    searchDiscardedSourceCount: 0,
+    searchQueryVariants: [],
+    entityName: "",
+    answer: "",
+    confidence: 0,
+    signals: [],
+    risks: [],
+    comparables: [],
+    nextActions: [],
+    nextQuestions: [],
+    keyMetrics: [],
+    whyThisTeam: null,
+    classifiedSignals: [],
+    evidence: { totalSpans: 0, verifiedCount: 0, partialCount: 0, unverifiedCount: 0, contradictedCount: 0, verificationRate: 0, spans: [] },
+    painResolutions: [],
+    dcf: null,
+    reverseDCF: null,
+    trace: [],
+    totalDurationMs: 0,
+    error: null
+  };
+}
+async function runSearchPipeline(query, lens, onProgress) {
+  const pipelineStart = Date.now();
+  let state = createInitialPipelineState(query, lens);
+  onProgress?.({ stage: "classify", phase: "start", state });
+  const classifyStart = Date.now();
+  state = classify(state);
+  onProgress?.({ stage: "classify", phase: "done", state, durationMs: Date.now() - classifyStart });
+  onProgress?.({ stage: "search", phase: "start", state });
+  const searchStart = Date.now();
+  state = await search(state);
+  onProgress?.({ stage: "search", phase: "done", state, durationMs: Date.now() - searchStart });
+  onProgress?.({ stage: "analyze", phase: "start", state });
+  const analyzeStart = Date.now();
+  state = await analyze(state);
+  onProgress?.({ stage: "analyze", phase: "done", state, durationMs: Date.now() - analyzeStart });
+  onProgress?.({ stage: "package", phase: "start", state });
+  const packageStart = Date.now();
+  state = await packageResult(state);
+  onProgress?.({ stage: "package", phase: "done", state, durationMs: Date.now() - packageStart });
+  state.totalDurationMs = Date.now() - pipelineStart;
+  try {
+    const { setSearchContext: setSearchContext2 } = await Promise.resolve().then(() => (init_searchContext(), searchContext_exports));
+    if (state.entityName && state.confidence >= 30) {
+      setSearchContext2({
+        entityName: state.entityName,
+        lens,
+        query,
+        answer: state.answer,
+        confidence: state.confidence,
+        sourceUrls: state.searchSources.map((s) => s.url).slice(0, 10),
+        signals: state.signals.map((s) => s.name).slice(0, 10),
+        risks: state.risks.map((r) => r.title).slice(0, 5),
+        keyMetrics: state.keyMetrics.slice(0, 5),
+        timestamp: Date.now()
+      });
+    }
+  } catch {
+  }
+  return state;
+}
+function slugifyPacketValue(value) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+}
+function hashPacketValue(value) {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = hash * 31 + value.charCodeAt(index) >>> 0;
+  }
+  return hash.toString(36);
+}
+function stateToResultPacket(state) {
+  const cleanedAnswer = stripInlineSourceCitations(state.answer);
+  const packetId = `pkt-${slugifyPacketValue(state.entityName || "nodebench")}-${hashPacketValue(
+    `${state.query}|${cleanedAnswer}|${state.searchSources.length}`
+  )}`;
+  const packetType = "company_search_packet";
+  const sourceRefs = state.searchSources.map((source, index) => ({
+    id: `src_${index + 1}`,
+    label: source.name,
+    title: source.name,
+    href: source.url,
+    type: "web",
+    status: index < 5 ? "cited" : "explored",
+    domain: source.domain,
+    excerpt: source.snippet.slice(0, 280),
+    confidence: Math.max(45, Math.min(95, Math.round(source.qualityScore ?? 60)))
+  }));
+  const claimRefs = state.answer.split(/(?<=[.!?])\s+/).map((sentence) => sentence.trim()).filter((sentence) => sentence.length > 0).slice(0, 4).map((sentence, index) => ({
+    id: `claim_${index + 1}`,
+    text: stripInlineSourceCitations(sentence),
+    sourceRefIds: extractSourceIndices(sentence).map((sourceIndex) => sourceRefs[sourceIndex]?.id).filter((sourceId) => Boolean(sourceId)),
+    answerBlockIds: ["answer_summary"],
+    status: "retained"
+  })).filter((claim) => claim.text.length > 0).map((claim) => ({
+    ...claim,
+    sourceRefIds: claim.sourceRefIds.length > 0 ? claim.sourceRefIds : sourceRefs.slice(0, 2).map((source) => source.id)
+  }));
+  const answerBlocks = [
+    {
+      id: "answer_summary",
+      title: "Executive Summary",
+      text: cleanedAnswer,
+      sourceRefIds: Array.from(new Set(claimRefs.flatMap((claim) => claim.sourceRefIds))).slice(0, 4),
+      claimIds: claimRefs.map((claim) => claim.id),
+      status: "cited"
+    }
+  ];
+  const basePacket = {
+    query: state.query,
+    entityName: state.entityName,
+    canonicalEntity: state.entityName,
+    answer: cleanedAnswer,
+    confidence: state.confidence,
+    sourceCount: state.searchSources.length,
+    packetId,
+    packetType,
+    variables: state.classifiedSignals.slice(0, 5).map((sig, i) => ({
+      rank: i + 1,
+      name: sig.label,
+      category: sig.category,
+      direction: sig.direction,
+      impact: sig.impact,
+      confidence: sig.confidence,
+      rawName: sig.rawName,
+      evidenceRefs: sig.evidenceRefs,
+      needsOntologyReview: sig.needsOntologyReview,
+      sourceIdx: state.signals[i]?.sourceIdx
+    })),
+    keyMetrics: state.keyMetrics.length > 0 ? state.keyMetrics : [
+      { label: "Confidence", value: `${state.confidence}%` },
+      { label: "Retained Sources", value: String(state.searchSources.length) },
+      { label: "Signals", value: String(state.classifiedSignals.length) }
+    ],
+    changes: [],
+    risks: state.risks.slice(0, 3),
+    comparables: state.comparables.slice(0, 4),
+    whyThisTeam: state.whyThisTeam,
+    interventions: state.nextActions,
+    nextActions: state.nextActions,
+    nextQuestions: state.nextQuestions,
+    sourceRefs,
+    claimRefs,
+    answerBlocks,
+    explorationMemory: {
+      exploredSourceCount: state.searchExploredSourceCount || state.searchSources.length,
+      citedSourceCount: sourceRefs.filter((source) => source.status === "cited").length,
+      discardedSourceCount: state.searchDiscardedSourceCount,
+      entityCount: 1,
+      claimCount: claimRefs.length,
+      contradictionCount: state.risks.length
+    },
+    evidence: state.evidence,
+    painResolutions: state.painResolutions,
+    dcf: state.dcf,
+    reverseDCF: state.reverseDCF,
+    trace: state.trace,
+    classification: state.classification,
+    routingHints: state.routingHints.slice(0, 3),
+    recommendedNextAction: state.nextActions[0]?.action
+  };
+  const envelope = createEnvelopeFromResultPacket({
+    ...basePacket,
+    packetId,
+    packetType,
+    classification: state.classification,
+    lens: state.lens,
+    trace: state.trace
+  });
+  return {
+    ...basePacket,
+    workflowAsset: buildWorkflowAssetFromEnvelope(
+      {
+        ...basePacket,
+        packetId,
+        packetType,
+        classification: state.classification,
+        lens: state.lens,
+        trace: state.trace
+      },
+      envelope,
+      {
+        assetType: "research_packet",
+        stages: ["pipeline_classify", "pipeline_search", "pipeline_analyze", "pipeline_package"],
+        replayReady: state.trace.length > 0,
+        delegationReady: state.nextActions.length > 0,
+        targetAgents: ["claude_code", "openclaw"],
+        lineage: {
+          sourceRunId: packetId
+        }
+      }
+    )
+  };
+}
+
+// server/lib/canonicalModels.ts
+init_db();
+
+// server/lib/idGen.ts
+var _counter3 = 0;
+function genId2(prefix) {
+  const ts = Date.now().toString(36);
+  const rand = Math.random().toString(36).slice(2, 8);
+  _counter3 = (_counter3 + 1) % 1e4;
+  return `${prefix}_${ts}_${rand}_${_counter3.toString(36)}`;
+}
+
+// server/lib/canonicalModels.ts
+var _tablesReady = false;
+function getDb3() {
+  const db = getDb();
+  if (!_tablesReady) {
+    ensureTables(db);
+    _tablesReady = true;
+  }
+  return db;
+}
+function ensureTables(db) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS reports (
+      report_id       TEXT PRIMARY KEY,
+      title           TEXT NOT NULL,
+      entity_name     TEXT,
+      type            TEXT NOT NULL DEFAULT 'company',
+      summary         TEXT NOT NULL DEFAULT '',
+      confidence      REAL DEFAULT 0,
+      lens            TEXT DEFAULT 'founder',
+      query           TEXT NOT NULL,
+      packet_json     TEXT NOT NULL DEFAULT '{}',
+      envelope_id     TEXT,
+      source_count    INTEGER DEFAULT 0,
+      contradiction_count INTEGER DEFAULT 0,
+      pinned          INTEGER DEFAULT 0,
+      status          TEXT DEFAULT 'saved',
+      created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_report_entity ON reports(entity_name, updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_report_pinned ON reports(pinned DESC, updated_at DESC);
+
+    CREATE TABLE IF NOT EXISTS nudges (
+      nudge_id        TEXT PRIMARY KEY,
+      type            TEXT NOT NULL,
+      title           TEXT NOT NULL,
+      summary         TEXT NOT NULL DEFAULT '',
+      priority        TEXT DEFAULT 'normal',
+      status          TEXT DEFAULT 'active',
+      linked_report_id TEXT,
+      linked_chat_id  TEXT,
+      linked_connector TEXT,
+      action_label    TEXT,
+      action_target   TEXT,
+      due_at          TEXT,
+      created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_nudge_status ON nudges(status, due_at);
+
+    CREATE TABLE IF NOT EXISTS chat_sessions (
+      chat_id         TEXT PRIMARY KEY,
+      query           TEXT NOT NULL,
+      lens            TEXT DEFAULT 'founder',
+      status          TEXT DEFAULT 'active',
+      linked_report_id TEXT,
+      event_count     INTEGER DEFAULT 0,
+      created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_chat_updated ON chat_sessions(updated_at DESC);
+
+    CREATE TABLE IF NOT EXISTS me_context (
+      context_id      TEXT PRIMARY KEY,
+      user_id         TEXT DEFAULT 'local',
+      type            TEXT NOT NULL,
+      title           TEXT NOT NULL,
+      summary         TEXT DEFAULT '',
+      entity_ref      TEXT,
+      tags            TEXT DEFAULT '[]',
+      created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_me_type ON me_context(type, updated_at DESC);
+  `);
+}
+var MAX_REPORTS = 200;
+function saveReport(input) {
+  const db = getDb3();
+  const id = genId2("rpt");
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const count = db.prepare("SELECT COUNT(*) as cnt FROM reports").get().cnt;
+  if (count >= MAX_REPORTS) {
+    db.prepare("DELETE FROM reports WHERE report_id IN (SELECT report_id FROM reports WHERE pinned = 0 ORDER BY updated_at ASC LIMIT 10)").run();
+  }
+  db.prepare(`INSERT INTO reports (report_id, title, entity_name, type, summary, confidence, lens, query, packet_json, envelope_id, source_count, contradiction_count, pinned, status, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    id,
+    input.title,
+    input.entityName ?? null,
+    input.type,
+    input.summary,
+    input.confidence,
+    input.lens,
+    input.query,
+    input.packetJson,
+    input.envelopeId ?? null,
+    input.sourceCount,
+    input.contradictionCount,
+    input.pinned ? 1 : 0,
+    input.status,
+    now,
+    now
+  );
+  return id;
+}
+var MAX_NUDGES = 100;
+function createNudge(input) {
+  const db = getDb3();
+  const id = genId2("ndg");
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const count = db.prepare("SELECT COUNT(*) as cnt FROM nudges").get().cnt;
+  if (count >= MAX_NUDGES) {
+    db.prepare("DELETE FROM nudges WHERE nudge_id IN (SELECT nudge_id FROM nudges WHERE status = 'done' ORDER BY created_at ASC LIMIT 10)").run();
+  }
+  db.prepare(`INSERT INTO nudges (nudge_id, type, title, summary, priority, status, linked_report_id, linked_chat_id, linked_connector, action_label, action_target, due_at, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    id,
+    input.type,
+    input.title,
+    input.summary,
+    input.priority,
+    input.status,
+    input.linkedReportId ?? null,
+    input.linkedChatId ?? null,
+    input.linkedConnector ?? null,
+    input.actionLabel ?? null,
+    input.actionTarget ?? null,
+    input.dueAt ?? null,
+    now
+  );
+  return id;
+}
+
+// server/routes/streamingSearch.ts
+function emitSSE(res, event, data) {
+  if (res.writableEnded) return;
+  res.write(`event: ${event}
+data: ${JSON.stringify(data)}
+
+`);
+}
+var STAGE_META = {
+  classify: { tool: "classify", provider: "local", reason: "Classify query and detect entity" },
+  search: { tool: "web_search", provider: "linkup", reason: "Search the web for sources" },
+  analyze: { tool: "entity_extract", provider: "google", model: "gemini-3.1-flash-lite", reason: "Extract structured intelligence from sources" },
+  package: { tool: "package", provider: "local", reason: "Build evidence spans, classify signals, run valuation" }
+};
+function stagePreview(event) {
+  const s = event.state;
+  switch (event.stage) {
+    case "classify":
+      return { entity: s.entity, classification: s.classification };
+    case "search":
+      return {
+        sourceCount: s.searchSources.length,
+        exploredCount: s.searchExploredSourceCount,
+        topSource: s.searchSources[0]?.name,
+        topSources: s.searchSources.slice(0, 4).map((source, index) => ({
+          id: `preview-source-${index}`,
+          label: source.name,
+          href: source.url,
+          domain: source.domain
+        })),
+        answerSnippet: s.searchSources.length > 0 ? `The first source sweep is in. ${s.searchSources.length} sources are ready for the report build.` : void 0
+      };
+    case "analyze":
+      return {
+        entityName: s.entityName,
+        confidence: s.confidence,
+        signalCount: s.signals.length,
+        riskCount: s.risks.length,
+        keyMetrics: s.keyMetrics.slice(0, 3)
+      };
+    case "package":
+      return {
+        classifiedSignals: s.classifiedSignals.length,
+        evidenceSpans: s.evidence.totalSpans,
+        verifiedCount: s.evidence.verifiedCount,
+        contradictedCount: s.evidence.contradictedCount,
+        hasDCF: !!s.dcf
+      };
+    default:
+      return {};
+  }
+}
+function createStreamingSearchRouter() {
+  const router = Router2();
+  router.get("/stream", async (req, res) => {
+    const query = String(req.query.query ?? "").trim();
+    const lens = String(req.query.lens ?? "founder");
+    if (!query) {
+      res.status(400).json({ error: "query parameter is required" });
+      return;
+    }
+    if (query.length > 2e3) {
+      res.status(400).json({ error: "query too long (max 2000 chars)" });
+      return;
+    }
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders();
+    const startMs = Date.now();
+    const TOTAL_STAGES = 4;
+    let stepCounter = 0;
+    try {
+      const entityGuess = query.match(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/)?.[1] ?? "";
+      const replayCandidate = entityGuess ? detectReplayCandidate(entityGuess, lens, query) : null;
+      if (replayCandidate) {
+        emitSSE(res, "tool_start", { tool: "replay_check", provider: "local", step: 0, totalPlanned: TOTAL_STAGES, reason: "Check for replayable trajectory" });
+        emitSSE(res, "tool_done", {
+          tool: "replay_check",
+          provider: "local",
+          step: 0,
+          durationMs: 5,
+          preview: { verdict: replayCandidate.verdict, reason: replayCandidate.reason, replayCount: replayCandidate.replayCount }
+        });
+      }
+      emitSSE(res, "plan", {
+        totalTools: TOTAL_STAGES,
+        tools: ["classify", "search", "analyze", "package"].map((stage) => STAGE_META[stage])
+      });
+      const onProgress = (event) => {
+        if (res.writableEnded) return;
+        const meta = STAGE_META[event.stage] ?? { tool: event.stage, provider: "local", reason: event.stage };
+        if (event.phase === "start") {
+          stepCounter++;
+          emitSSE(res, "tool_start", {
+            tool: meta.tool,
+            provider: meta.provider,
+            model: meta.model,
+            step: stepCounter,
+            totalPlanned: TOTAL_STAGES,
+            reason: meta.reason
+          });
+        } else {
+          emitSSE(res, "tool_done", {
+            tool: meta.tool,
+            provider: meta.provider,
+            model: meta.model,
+            step: stepCounter,
+            durationMs: event.durationMs,
+            preview: stagePreview(event)
+          });
+        }
+      };
+      const state = await runSearchPipeline(query, lens, onProgress);
+      const packet = stateToResultPacket(state);
+      const packetId = `pkt-${(state.entityName || "unknown").toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now().toString(36)}`;
+      const envelope = createEnvelopeFromPipelineState(state, packetId);
+      try {
+        const trajectory = trajectoryFromPipelineState(state, envelope.transport.envelopeId);
+        saveSearchTrajectory(trajectory);
+      } catch {
+      }
+      try {
+        const reportId = saveReport({
+          title: state.entityName || query,
+          entityName: state.entityName || void 0,
+          type: state.classification || "company",
+          summary: (state.answer ?? "").slice(0, 500),
+          confidence: state.confidence ?? 0,
+          lens,
+          query,
+          packetJson: JSON.stringify(packet).slice(0, 5e4),
+          envelopeId: envelope.transport.envelopeId,
+          sourceCount: state.searchSources?.length ?? 0,
+          contradictionCount: state.risks?.length ?? 0,
+          pinned: false,
+          status: "saved"
+        });
+        if ((state.confidence ?? 0) < 50 || (state.risks?.length ?? 0) > 5) {
+          createNudge({
+            type: "follow_up_due",
+            title: `${state.entityName || query} needs deeper review`,
+            summary: `Confidence ${state.confidence}%, ${state.risks?.length ?? 0} contradictions detected. Consider follow-up research.`,
+            priority: (state.confidence ?? 0) < 30 ? "high" : "normal",
+            status: "active",
+            linkedReportId: reportId,
+            actionLabel: "Open in Chat",
+            actionTarget: `/chat?q=${encodeURIComponent(query)}`
+          });
+        }
+      } catch {
+      }
+      emitSSE(res, "complete", {
+        totalDurationMs: Date.now() - startMs,
+        toolsUsed: stepCounter,
+        envelope: {
+          envelopeId: envelope.transport.envelopeId,
+          envelopeType: envelope.transport.envelopeType
+        },
+        replayCandidate: replayCandidate ? { verdict: replayCandidate.verdict } : null,
+        packet
+      });
+    } catch (err) {
+      emitSSE(res, "error", { message: err.message ?? "Search failed", step: stepCounter });
+    } finally {
+      if (!res.writableEnded) res.end();
+    }
+  });
+  return router;
+}
+
+// server/routes/sharedContext.ts
+import { Router as Router3 } from "express";
 
 // packages/mcp-local/src/sync/founderEpisodeStore.ts
 init_db();
@@ -19241,7 +21327,7 @@ function buildStrategicIssuePayload(args) {
   };
 }
 function createSharedContextRouter() {
-  const router = Router2();
+  const router = Router3();
   router.get("/episodes", async (req, res) => {
     const sessionKey = firstQueryValue(req.query.sessionKey);
     const workspaceId = firstQueryValue(req.query.workspaceId);
@@ -20228,7 +22314,7 @@ function createSharedContextRouter() {
 }
 
 // server/routes/harness.ts
-import { Router as Router3 } from "express";
+import { Router as Router4 } from "express";
 
 // server/harnessRuntime.ts
 var MODEL_PRICING = {
@@ -20783,10 +22869,10 @@ ${steps.join("\n")}`,
         };
       }
       case "/tools": {
-        const search = parts.slice(1).join(" ").toLowerCase();
-        const matched = this.allTools.filter((t) => !search || t.name.toLowerCase().includes(search) || t.description.toLowerCase().includes(search)).slice(0, 20);
+        const search2 = parts.slice(1).join(" ").toLowerCase();
+        const matched = this.allTools.filter((t) => !search2 || t.name.toLowerCase().includes(search2) || t.description.toLowerCase().includes(search2)).slice(0, 20);
         return {
-          text: `${matched.length} tools${search ? ` matching "${search}"` : ""}:
+          text: `${matched.length} tools${search2 ? ` matching "${search2}"` : ""}:
 ${matched.map((t) => `\u2022 ${t.name}: ${t.description.slice(0, 60)}`).join("\n")}`,
           data: matched.map((t) => ({ name: t.name, description: t.description.slice(0, 100) }))
         };
@@ -20948,7 +23034,7 @@ function getPricingSummary(snapshot) {
 
 // server/routes/harness.ts
 function createHarnessRouter(tools2) {
-  const router = Router3();
+  const router = Router4();
   const runtime = new HarnessRuntime(tools2);
   router.get("/health", (_req, res) => {
     res.json({ ok: true, ...runtime.getHealth() });
@@ -21134,7 +23220,7 @@ data: ${JSON.stringify(data)}
 }
 
 // server/routes/subconscious.ts
-import { Router as Router4 } from "express";
+import { Router as Router5 } from "express";
 
 // packages/mcp-local/src/subconscious/blocks.ts
 init_db();
@@ -21729,7 +23815,7 @@ ${whisperText}
 
 // server/routes/subconscious.ts
 function createSubconsciousRouter() {
-  const router = Router4();
+  const router = Router5();
   router.get("/health", (_req, res) => {
     try {
       ensureBlocksExist();
@@ -21849,9 +23935,9 @@ function createSubconsciousRouter() {
 }
 
 // server/routes/hyperloop.ts
-import { Router as Router5 } from "express";
+import { Router as Router6 } from "express";
 function createHyperloopRouter() {
-  const router = Router5();
+  const router = Router6();
   router.get("/stats", (_req, res) => {
     try {
       const archive = getArchiveStats();
@@ -22178,6 +24264,7 @@ app.use(
 );
 app.use(express.json({ limit: "10mb" }));
 app.use(createSearchRouter(tools));
+app.use(createStreamingSearchRouter());
 app.use("/harness", createHarnessRouter(tools));
 app.use("/api/harness", createHarnessRouter(tools));
 app.use("/shared-context", createSharedContextRouter());

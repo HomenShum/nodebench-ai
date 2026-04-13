@@ -48,6 +48,7 @@
     { "source": "/api/shared-context/episodes/:episodeId/finalize", "destination": "/api/shared-context/snapshot?__nb_shared_context_path=episodes/:episodeId/finalize" },
     { "source": "/api/subconscious/:path*", "destination": "/api/shared-context/snapshot?__nb_passthrough_path=subconscious/:path*" },
     { "source": "/api/sweep/:path*", "destination": "/api/search" },
+    { "source": "/api/search/stream", "destination": "/api/search" },
     { "source": "/api/search/insights", "destination": "/api/search" },
     { "source": "/install.sh", "destination": "https://raw.githubusercontent.com/HomenShum/nodebench-ai/main/packages/mcp-local/scripts/install.sh" },
     { "source": "/(.*)", "destination": "/index.html" }

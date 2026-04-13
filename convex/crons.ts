@@ -918,4 +918,15 @@ crons.daily(
   {}
 );
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Product Nudges — check saved reports for staleness
+// ═══════════════════════════════════════════════════════════════════════════
+
+crons.daily(
+  "check reports for nudges",
+  { hourUTC: 9, minuteUTC: 0 },
+  internal.domains.product.nudges.checkReportsForNudges,
+  {}
+);
+
 export default crons;

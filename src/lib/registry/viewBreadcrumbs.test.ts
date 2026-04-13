@@ -7,7 +7,7 @@ describe("buildViewBreadcrumbs", () => {
       buildViewBreadcrumbs({
         currentView: "control-plane",
         researchHubInitialTab: "overview",
-        showResearchDossier: false,
+
       }),
     ).toEqual([]);
   });
@@ -17,7 +17,7 @@ describe("buildViewBreadcrumbs", () => {
       buildViewBreadcrumbs({
         currentView: "receipts",
         researchHubInitialTab: "overview",
-        showResearchDossier: false,
+
       }),
     ).toEqual([
       {
@@ -42,7 +42,7 @@ describe("buildViewBreadcrumbs", () => {
       buildViewBreadcrumbs({
         currentView: "product-direction",
         researchHubInitialTab: "overview",
-        showResearchDossier: false,
+
       }),
     ).toEqual([
       {
@@ -67,7 +67,7 @@ describe("buildViewBreadcrumbs", () => {
       buildViewBreadcrumbs({
         currentView: "execution-trace",
         researchHubInitialTab: "overview",
-        showResearchDossier: false,
+
       }),
     ).toEqual([
       {
@@ -92,7 +92,7 @@ describe("buildViewBreadcrumbs", () => {
       buildViewBreadcrumbs({
         currentView: "world-monitor",
         researchHubInitialTab: "overview",
-        showResearchDossier: false,
+
       }),
     ).toEqual([
       {
@@ -117,7 +117,7 @@ describe("buildViewBreadcrumbs", () => {
       buildViewBreadcrumbs({
         currentView: "watchlists",
         researchHubInitialTab: "overview",
-        showResearchDossier: false,
+
       }),
     ).toEqual([
       {
@@ -142,7 +142,7 @@ describe("buildViewBreadcrumbs", () => {
       buildViewBreadcrumbs({
         currentView: "research",
         researchHubInitialTab: "briefing",
-        showResearchDossier: true,
+
       }),
     ).toEqual([
       {

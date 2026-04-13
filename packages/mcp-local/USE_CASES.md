@@ -8,6 +8,11 @@
 
 ## Table of Contents
 
+> [!IMPORTANT]
+> This guide is a legacy deep-catalog reference.
+> Current v3 truth: the default install exposes 9 tools and expands via `discover_tools` plus `load_toolset`.
+> Use [README.md](./README.md) for the current preset story and install flow.
+
 - [How to Read This Guide](#how-to-read-this-guide)
 - [PART 1: DEFAULT PRESET (44 tools)](#part-1-default-preset-44-tools)
   - [1. verification (8 tools)](#1-verification-8-tools)

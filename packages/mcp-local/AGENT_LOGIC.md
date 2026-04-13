@@ -2,7 +2,7 @@
 
 > Plain-English guide to NodeBench's agent logic. Read this before the code.
 
-NodeBench is the operating memory and entity-context layer for founders, bankers, researchers, and operators. It ships ~350 tools across 57 domains. You start with a 15-tool starter preset (decision intelligence + progressive discovery) and expand on demand via `discover_tools` and `load_toolset`. No context bloat, no IDE crashes.
+NodeBench is the operating memory and entity-context layer for founders, bankers, researchers, and operators. It now starts with a 9-tool workflow lane and expands on demand via `discover_tools` and `load_toolset`, instead of dropping the whole registry into the initial context.
 
 ---
 
@@ -216,7 +216,7 @@ NodeBench is local-first. Your data stays on your machine unless you explicitly 
 **NodeBench reads:**
 - Local SQLite at `~/.nodebench/nodebench.db` (packets, learnings, sessions, events, causal chains)
 - Environment variables for API keys (never logged, never stored)
-- Files on disk only if the `local_file` toolset is loaded (not in starter preset)
+- Files on disk only if the `local_file` toolset is loaded (not in the default preset)
 
 **NodeBench writes:**
 - Local SQLite at `~/.nodebench/nodebench.db` only
@@ -265,29 +265,25 @@ RESPONSE
 ### Preset Hierarchy
 
 ```
-starter (15 tools)     ← DEFAULT. Decision intelligence + discovery. Enough for 80% of tasks.
+default (9 tools)       ← DEFAULT. One workflow lane: ask → check → write → save
   │
-  ├── founder (40 tools)   ← + company tracking, session memory, local dashboard, weekly reset
-  ├── banker (39 tools)    ← + web research, recon, risk assessment
-  ├── operator (40 tools)  ← + causal memory, action tracing
-  └── researcher (32 tools)← + web search, recon, session memory
-        │
-        ├── core (81 tools)     ← Full verification flywheel
-        ├── web_dev (150 tools) ← + vision, SEO, git workflow, UI capture
-        ├── research (115 tools)← + RSS, email, docs, temporal intelligence
-        └── data (122 tools)    ← + file parsing (CSV, XLSX, PDF, DOCX)
-              │
-              └── full (350+ tools)  ← Everything. All 57 domains.
+  ├── power             ← + founder, recon, web, packets, deeper research lanes
+  ├── founder           ← compatibility preset for existing founder workflows
+  ├── cursor            ← constrained preset for Cursor's tool cap
+  ├── core              ← full verification / eval / learning methodology lane
+  ├── admin             ← profiling, observability, dashboards, and operator tooling
+  └── full              ← everything loaded, only when you explicitly want the warehouse
 ```
 
-### Tool Categories (57 domains, 350+ tools)
+### Representative Tool Categories
 
 | Category | Tools | Purpose |
 |---|---|---|
 | **deep_sim** | 7 | Decision simulation, claim graphs, countermodels, memos |
 | **founder** | 35 | Packets, weekly reset, delegation, entity intelligence |
+| **core_workflow** | 7 | `investigate`, `compare`, `track`, `summarize`, `search`, `report`, `ask_context` |
 | **progressive_discovery** | 4 | `discover_tools`, `get_tool_graph`, `get_tool_quick_ref`, `get_workflow_chain` |
-| **dynamic_loading** | 3 | `load_toolset`, `unload_toolset`, `call_loaded_tool` |
+| **dynamic_loading** | 5 | `load_toolset`, `unload_toolset`, `list_available_toolsets`, `call_loaded_tool`, `get_ab_test_report` |
 | **learning** | 4 | `record_learning`, `search_all_knowledge`, `list_learnings`, `delete_learning` |
 | **session_memory** | 5 | `track_intent`, `save_session_note`, `summarize_session`, `mine_session_patterns`, `judge_session` |
 | **local_file** | 19 | File parsing: CSV, XLSX, PDF, DOCX, JSON, images |
@@ -296,7 +292,7 @@ starter (15 tools)     ← DEFAULT. Decision intelligence + discovery. Enough fo
 | **web** | 2 | `web_search` (Gemini grounding), web scraping |
 | **temporal_intelligence** | 7 | Temporal graphs, causal chains, entity timelines |
 | **observability** | 8 | System pulse, watchdog, execution tracing |
-| *...and 45 more domains* | | |
+| *...plus optional specialist domains loaded on demand* | | |
 
 ### Progressive Discovery Engine
 
@@ -357,22 +353,19 @@ How NodeBench routes a request to the right workflow:
 
 ## 7. Tools the Agent Can Call
 
-### Starter Preset (loaded by default)
+### Default Preset (loaded by default)
 
 | Tool | Input | Output | Purpose |
 |---|---|---|---|
-| `run_deep_sim` | Scenario description, variables, constraints | Simulation result with scored outcomes | Simulate a decision before committing |
-| `extract_variables` | Scenario text | List of decision variables with ranges | Identify what can change in a scenario |
-| `build_claim_graph` | Claims or arguments | Directed graph of claims, supports, contradictions | Map the logic structure of a decision |
-| `generate_countermodels` | Claim graph or thesis | Alternative models that explain the same evidence | Stress-test your assumptions |
-| `rank_interventions` | Variables, constraints, objectives | Ranked list of interventions by expected impact | Decide what to change first |
-| `score_compounding` | Trajectory data, session history | 8-dimension compounding score + label | Measure whether you are improving over time |
-| `render_decision_memo` | Simulation results, context | Formatted decision memo (markdown) | Produce a shareable decision document |
-| `discover_tools` | Natural language query | Ranked tool list with scores, descriptions, categories | Find tools you did not know existed |
-| `get_tool_graph` | Optional filters | Tool graph: nodes, edges, domains, clusters | Visualize the entire tool ecosystem |
-| `get_tool_quick_ref` | Tool name, optional depth (1-3) | Tool details + multi-hop BFS neighbors | Explore tool relationships |
-| `get_workflow_chain` | Workflow name or query | Ordered tool chain with descriptions | Get the exact steps for a workflow |
-| `load_toolset` | Domain name (e.g., "founder") | Confirmation + new tool list | Activate a toolset mid-session |
+| `investigate` | Topic, entity, URL, file path, or messy note | Sourced report artifact | Research a topic and return something reusable |
+| `compare` | 2-4 entities plus optional comparison lens | Side-by-side comparison brief | Compare companies, vendors, products, or people |
+| `track` | Entity plus add/list/check action | Watchlist state + recent status | Track what matters across sessions |
+| `summarize` | Raw notes, links, files, or saved context | Compact brief with key points | Compress messy context fast |
+| `search` | Query string | Web + saved-knowledge search results | Search fresh signals and local memory together |
+| `report` | Topic plus structured or messy context | Human-readable report artifact | Turn findings into a memo or diligence report |
+| `ask_context` | Question against saved context | Grounded answer from saved memory | Reuse previous work without re-deriving it |
+| `discover_tools` | Natural language query | Ranked deeper-tool suggestions | Find a more specialized lane only when needed |
+| `load_toolset` | Domain name (for example `recon`) | Confirmation + newly visible tools | Expand the session deliberately |
 | `unload_toolset` | Domain name | Confirmation | Free context budget |
 | `call_loaded_tool` | Tool name, arguments | Tool result | Fallback for clients without dynamic loading |
 | `list_available_toolsets` | None | All available toolsets with tool counts | See what can be loaded |
@@ -494,7 +487,7 @@ All local-only operations (discovery, memory, Deep Sim, session tracking) cost n
 |---|---|---|
 | **READS** | Local SQLite database | `~/.nodebench/nodebench.db` — packets, learnings, sessions, causal events, tool usage |
 | **READS** | Environment variables | API keys for Gemini, OpenAI, GitHub (never stored, never logged) |
-| **READS** | Local files | Only if `local_file` toolset is explicitly loaded (not in starter) |
+| **READS** | Local files | Only if `local_file` toolset is explicitly loaded (not in the default preset) |
 | **WRITES** | Local SQLite database | Same `~/.nodebench/nodebench.db` — all writes are local |
 | **WRITES** | Stdout (MCP protocol) | Tool results sent to the connected AI client via MCP |
 | **CALLS** | Gemini API | Web search + grounding (only with `GEMINI_API_KEY`) |
@@ -519,6 +512,6 @@ All local-only operations (discovery, memory, Deep Sim, session tracking) cost n
 | "What needs my attention?" | `get_important_changes` → `get_proactive_alerts` → `render_decision_memo` | Prioritized attention report (P0/P1/P2) |
 | "Simulate hiring a CTO" | `run_deep_sim` → `extract_variables` → `generate_countermodels` → `rank_interventions` → `render_decision_memo` | Decision simulation with scored outcomes |
 | "Find tools for SEO" | `discover_tools("SEO")` | Ranked list of SEO tools with load commands |
-| "Show the tool graph" | `get_tool_graph` | 350+ nodes, 57 domains, edge relationships |
+| "Show the tool graph" | `get_tool_graph` | Graph of the registered tool relationships and domain clusters |
 | "What did I learn last week?" | `search_all_knowledge` → `list_learnings` | Prior findings, ranked by relevance |
 | "Score my progress" | `score_compounding` | 8-dimension trajectory score + trend label |

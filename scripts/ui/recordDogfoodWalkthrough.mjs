@@ -224,39 +224,11 @@ async function main() {
   await mkdir(userDataDir, { recursive: true });
 
   const routes = [
-    { path: "/", name: "Home" },
-    { path: "/research", name: "Research Hub" },
-    { path: "/research/overview", name: "Research: Overview" },
-    { path: "/research/signals", name: "Research: Signals" },
-    { path: "/research/briefing", name: "Research: Briefing" },
-    { path: "/research/deals", name: "Research: Deals" },
-    { path: "/research/changelog", name: "Research: Changes" },
-    { path: "/documents", name: "Workspace: Documents" },
-    { path: "/spreadsheets", name: "Workspace: Spreadsheets" },
-    { path: "/calendar", name: "Workspace: Calendar" },
-    { path: "/agents", name: "Assistants" },
-    { path: "/roadmap", name: "Roadmap" },
-    { path: "/timeline", name: "Timeline" },
-    { path: "/developers", name: "Developers" },
-    { path: "/footnotes", name: "Sources" },
-    { path: "/signals", name: "Signals Log" },
-    { path: "/benchmarks", name: "Benchmarks" },
-    { path: "/funding", name: "Funding Brief" },
-    { path: "/activity", name: "Activity" },
-    { path: "/review-queue", name: "Review Queue" },
-    { path: "/analytics/components", name: "Performance Analytics" },
-    { path: "/analytics/recommendations", name: "Feedback" },
-    { path: "/cost", name: "Usage & Costs" },
-    { path: "/industry", name: "Industry News" },
-    { path: "/for-you", name: "For You" },
-    { path: "/recommendations", name: "Recommendations" },
-    { path: "/marketplace", name: "Agent Templates" },
-    { path: "/github", name: "GitHub Explorer" },
-    { path: "/pr-suggestions", name: "PR Suggestions" },
-    { path: "/linkedin", name: "LinkedIn Archive" },
-    { path: "/activity-log", name: "Activity Log" },
-    { path: "/quality-review", name: "Quality Review" },
-    { path: "/public", name: "Public Docs" },
+    { path: "/?surface=home", name: "Home" },
+    { path: "/?surface=chat&q=ditto%20ai&lens=founder", name: "Chat" },
+    { path: "/?surface=reports", name: "Reports" },
+    { path: "/?surface=nudges", name: "Nudges" },
+    { path: "/?surface=me", name: "Me" },
   ];
 
   const context = await chromium.launchPersistentContext(userDataDir, {
@@ -325,43 +297,58 @@ async function main() {
     }
   }
 
-  // Key interactions
+  // Key interactions for the public product loop
   const interactStartMs = Date.now() - startedAt;
   chapters.push({
     index: chapters.length + 1,
-    name: "Interaction: Command Palette",
+    name: "Interaction: Home to Chat",
     path: "(interaction)",
     startSec: msToSec(interactStartMs),
   });
-  if (showOverlay) await setOverlay(page, "Interaction", "Command Palette (Cmd/Ctrl+K)");
-  const isMac = isMacPlatform();
-  await page.keyboard.press(isMac ? "Meta+K" : "Control+K");
-  await page.waitForTimeout(800);
-  await page.keyboard.press("Escape");
-  await page.waitForTimeout(450);
+  if (showOverlay) await setOverlay(page, "Interaction", "Ask from Home and watch Chat open live");
+  await page.goto("/?surface=home", { waitUntil: "domcontentloaded" });
+  await waitForAppReady(page);
+  const homeInput = page.locator('input[aria-label="Ask anything or upload anything"]').first();
+  if (await homeInput.count()) {
+    await homeInput.fill("What does Ditto AI do and what matters most right now?");
+    await page.waitForTimeout(350);
+    const askButton = page.getByRole("button", { name: /^ask$/i }).first();
+    if (await askButton.count()) {
+      await askButton.click();
+      await page.waitForTimeout(2500);
+    }
+  }
 
   const settingsStartMs = Date.now() - startedAt;
   chapters.push({
     index: chapters.length + 1,
-    name: "Interaction: Settings",
+    name: "Interaction: Theme toggle",
     path: "(interaction)",
     startSec: msToSec(settingsStartMs),
   });
-  if (showOverlay) await setOverlay(page, "Interaction", "Settings Modal (tabs)");
-  const settingsTrigger = page.getByTestId("open-settings");
-  if (await settingsTrigger.count()) {
-    await settingsTrigger.click();
-    await page.waitForTimeout(450);
-    const tabs = ["Profile", "Account", "Preferences", "Usage", "Integrations", "Billing", "Reminders", "Channels"];
-    for (const tab of tabs) {
-      const b = page.getByRole("button", { name: tab }).first();
-      if (await b.count()) {
-        await b.click({ force: true });
-        await page.waitForTimeout(500);
-      }
-    }
-    await page.keyboard.press("Escape");
-    await page.waitForTimeout(400);
+  if (showOverlay) await setOverlay(page, "Interaction", "Switch the public shell theme");
+  const themeToggle = page.getByRole("button", { name: /switch to (light|dark) mode/i }).first();
+  if (await themeToggle.count()) {
+    await themeToggle.click();
+    await page.waitForTimeout(800);
+    await themeToggle.click();
+    await page.waitForTimeout(500);
+  }
+
+  const reportsStartMs = Date.now() - startedAt;
+  chapters.push({
+    index: chapters.length + 1,
+    name: "Interaction: Reports to Chat",
+    path: "(interaction)",
+    startSec: msToSec(reportsStartMs),
+  });
+  if (showOverlay) await setOverlay(page, "Interaction", "Reopen saved memory inside Chat");
+  await page.goto("/?surface=reports", { waitUntil: "domcontentloaded" });
+  await waitForAppReady(page);
+  const openInChat = page.getByRole("button", { name: /open in chat/i }).first();
+  if (await openInChat.count()) {
+    await openInChat.click();
+    await page.waitForTimeout(2000);
   }
 
   const doneMs = Date.now() - startedAt;

@@ -5,15 +5,67 @@
  * All data stored locally in SQLite at ~/.nodebench/analytics.db
  */
 
-import Database from 'better-sqlite3';
+import { createRequire } from "node:module";
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
 
+const require = createRequire(import.meta.url);
 const DB_DIR = path.join(os.homedir(), '.nodebench');
 const DB_PATH = path.join(DB_DIR, 'analytics.db');
 
-let _analyticsDb: Database.Database | null = null;
+export type AnalyticsStatementResult = { changes: number; lastInsertRowid: number };
+
+export interface AnalyticsStatement {
+  get: (...args: unknown[]) => Record<string, unknown> | undefined;
+  all: (...args: unknown[]) => unknown[];
+  run: (...args: unknown[]) => AnalyticsStatementResult;
+}
+
+export interface AnalyticsDb {
+  prepare: (sql: string) => AnalyticsStatement;
+  exec: (sql: string) => void;
+  pragma: (sql: string) => void;
+  close: () => void;
+}
+
+let _analyticsDb: AnalyticsDb | null = null;
+let _databaseCtor: any | null | undefined;
+
+function loadDatabaseCtor(): any | null {
+  if (_databaseCtor !== undefined) return _databaseCtor;
+  try {
+    _databaseCtor = require("better-sqlite3");
+  } catch {
+    _databaseCtor = null;
+  }
+  return _databaseCtor;
+}
+
+function createNoopStatement(sql: string): AnalyticsStatement {
+  const normalized = sql.toLowerCase();
+  return {
+    get: () => {
+      if (normalized.includes("count(")) return { count: 0, cnt: 0, c: 0 };
+      if (normalized.includes("sum(")) return { total: 0, count: 0, cnt: 0 };
+      if (normalized.includes("avg(")) return { avg: 0, avgDuration: 0, avg_dur: 0 };
+      return undefined;
+    },
+    all: () => [],
+    run: () => ({ changes: 0, lastInsertRowid: 0 }),
+  };
+}
+
+function createNoopAnalyticsDb(): AnalyticsDb {
+  return {
+    prepare(sql: string) {
+      return createNoopStatement(sql);
+    },
+    exec() {},
+    pragma() {},
+    close() {},
+  };
+}
 
 export interface ToolUsageRecord {
   id?: number;
@@ -60,7 +112,11 @@ export interface UsageStatsCacheRecord {
   ttl: number; // seconds
 }
 
-export function initAnalyticsDb(): Database.Database {
+export function initAnalyticsDb(): AnalyticsDb {
+  const Database = loadDatabaseCtor();
+  if (!Database) {
+    return createNoopAnalyticsDb();
+  }
   fs.mkdirSync(DB_DIR, { recursive: true });
   const db = new Database(DB_PATH);
   
@@ -132,20 +188,20 @@ export function initAnalyticsDb(): Database.Database {
   return db;
 }
 
-export function getAnalyticsDb(): Database.Database {
+export function getAnalyticsDb(): AnalyticsDb {
   if (_analyticsDb) return _analyticsDb;
   _analyticsDb = initAnalyticsDb();
   return _analyticsDb;
 }
 
-export function closeAnalyticsDb(db: Database.Database): void {
+export function closeAnalyticsDb(db: AnalyticsDb): void {
   db.close();
   if (_analyticsDb === db) _analyticsDb = null;
 }
 
 // Helper functions for common queries
 export function recordToolUsage(
-  db: Database.Database,
+  db: AnalyticsDb,
   record: Omit<ToolUsageRecord, 'id'>
 ): void {
   const stmt = db.prepare(`
@@ -169,7 +225,7 @@ export function recordToolUsage(
 }
 
 export function updateProjectContext(
-  db: Database.Database,
+  db: AnalyticsDb,
   context: Omit<ProjectContextRecord, 'id'>
 ): void {
   const stmt = db.prepare(`
@@ -203,7 +259,7 @@ export function updateProjectContext(
 }
 
 export function recordPresetSelection(
-  db: Database.Database,
+  db: AnalyticsDb,
   record: Omit<PresetHistoryRecord, 'id'>
 ): void {
   const stmt = db.prepare(`
@@ -222,7 +278,7 @@ export function recordPresetSelection(
 }
 
 export function getCachedStats(
-  db: Database.Database,
+  db: AnalyticsDb,
   projectPath: string,
   cacheKey: string
 ): string | null {
@@ -239,7 +295,7 @@ export function getCachedStats(
 }
 
 export function setCachedStats(
-  db: Database.Database,
+  db: AnalyticsDb,
   record: Omit<UsageStatsCacheRecord, 'id'>
 ): void {
   const stmt = db.prepare(`
@@ -261,7 +317,7 @@ export function setCachedStats(
   );
 }
 
-export function clearOldRecords(db: Database.Database, daysToKeep: number = 90): void {
+export function clearOldRecords(db: AnalyticsDb, daysToKeep: number = 90): void {
   const cutoff = Date.now() - (daysToKeep * 24 * 60 * 60 * 1000);
   
   db.prepare('DELETE FROM tool_usage WHERE timestamp < ?').run(cutoff);

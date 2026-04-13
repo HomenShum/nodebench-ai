@@ -5,6 +5,7 @@
 import { memo, useCallback, useState } from "react";
 import { ArrowRight, Check, Minus, Sparkles } from "lucide-react";
 import { useRevealOnMount } from "@/hooks/useRevealOnMount";
+import { buildCockpitPath } from "@/lib/registry/viewRegistry";
 
 /* ------------------------------------------------------------------ */
 /*  Tier data                                                          */
@@ -18,7 +19,7 @@ const TIERS = [
     period: "",
     description: "Search any company, get an intelligence packet. No signup required.",
     cta: "Start searching",
-    href: "/?surface=ask",
+    href: buildCockpitPath({ surfaceId: "ask" }),
     highlighted: false,
     features: [
       "5 deep diligence searches per day",
@@ -259,7 +260,8 @@ export const PricingPage = memo(function PricingPage() {
         {/* ---- Comparison table ---- */}
         <div style={stagger("0.5s")} className="mt-20">
           <h2 className="text-center text-2xl font-bold text-content">Compare plans</h2>
-          <div className="mt-8 overflow-x-auto rounded-2xl border border-white/[0.08] bg-white/[0.02]">
+          <div className="mt-8 rounded-2xl border border-white/[0.08] bg-white/[0.02]">
+            <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-white/[0.06]">
@@ -294,6 +296,7 @@ export const PricingPage = memo(function PricingPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
 

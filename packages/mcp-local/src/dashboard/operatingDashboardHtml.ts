@@ -22,6 +22,8 @@
  * No external JS/CSS libraries — inline styles with exact design tokens.
  */
 
+import { NODEBENCH_VERSION } from "../packageInfo.js";
+
 export function getOperatingDashboardHtml(): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -1511,7 +1513,7 @@ export function getOperatingDashboardHtml(): string {
     <!-- 10. Footer -->
     <footer class="footer fade-in fade-in-9">
       <div class="footer-text">
-        <span>NodeBench</span> MCP v2.34.0 &middot; 325 tools &middot; 30 tables &middot; auto-refresh: 10s
+        <span>NodeBench</span> MCP v${NODEBENCH_VERSION} &middot; workflow lanes + operator data &middot; auto-refresh: 10s
       </div>
     </footer>
   </div>

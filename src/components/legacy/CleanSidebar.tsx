@@ -39,7 +39,7 @@ import { SidebarGlobalNav, type ActivePage, type RecentDossier } from "./Sidebar
 import { SidebarButton } from "../ui";
 import { Tooltip } from "../../shared/ui/Tooltip";
 import { sanitizeDocumentTitle } from "@/lib/displayText";
-import { type MainView, WORKSPACE_SURFACE_VIEWS, AGENTS_SURFACE_VIEWS, RESEARCH_SURFACE_VIEWS, GROUP_VIEW_MAP, VIEW_MAP } from "@/lib/registry/viewRegistry";
+import { type MainView, GROUP_VIEW_MAP, VIEW_MAP } from "@/lib/registry/viewRegistry";
 
 type AppMode = 'workspace' | 'fast-agent' | 'deep-agent' | 'dossier';
 
@@ -96,9 +96,9 @@ const moreSectionViews = new Set<string>([
   ...discoveryItems.map((i) => i.view),
 ]);
 
-// Derived from viewRegistry route groups — no more hardcoded view lists
-const researchViews = new Set<string>([...RESEARCH_SURFACE_VIEWS, ...GROUP_VIEW_MAP.internal]);
-const workspaceViews = new Set<string>([...WORKSPACE_SURFACE_VIEWS, ...AGENTS_SURFACE_VIEWS, 'entity']);
+// Derived from viewRegistry route groups
+const researchViews = new Set<string>([...GROUP_VIEW_MAP.internal]);
+const workspaceViews = new Set<string>(['entity']);
 
 export const CleanSidebar = memo(function CleanSidebar({
   appMode,
@@ -110,7 +110,7 @@ export const CleanSidebar = memo(function CleanSidebar({
   onEnterResearchHub,
   selectedDocumentId,
   onDocumentSelect,
-  currentView = 'documents',
+  currentView = 'control-plane',
   onViewChange,
   isCollapsed = false,
   onToggleCollapse,
@@ -184,9 +184,7 @@ export const CleanSidebar = memo(function CleanSidebar({
   };
 
   const getActivePage = (): ActivePage => {
-    if (currentView === 'investigation') return 'investigation';
-    if (currentView === 'agents' || currentView === 'agent-marketplace' || currentView === 'activity' || currentView === 'mcp-ledger') return 'agents';
-    if (currentView === 'research' || researchViews.has(currentView)) return 'research';
+    if (researchViews.has(currentView)) return 'research';
     if (workspaceViews.has(currentView)) return 'workspace';
     if (appMode === 'dossier') return 'saved';
     return 'workspace';

@@ -81,7 +81,7 @@
 
 | Step | Action | Model | Duration |
 |------|--------|-------|----------|
-| 3.1 | Run `screenshotQa` on dark-desktop variant (52 routes) | gemini-3.1-pro | 15 min |
+| 3.1 | Run `screenshotQa` on dark-desktop variant (52 routes) | gemini-3.1-pro-preview | 15 min |
 | 3.2 | Run `screenshotQa` on light-desktop + mobile variants | gemini-3-flash | 15 min |
 | 3.3 | Run `videoQa` on walkthrough.mp4 | gemini-3-flash | 10 min |
 | 3.4 | Score: 100 - (P1×6) - (P2×2) - (P3×1) | computed | 2 min |

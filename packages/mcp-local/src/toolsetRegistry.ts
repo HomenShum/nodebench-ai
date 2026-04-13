@@ -9,6 +9,11 @@
  * as mutable objects that get populated after `loadToolsets()` resolves.
  */
 
+import {
+  ALL_REGISTRY_ENTRIES,
+  TOOL_REGISTRY,
+  type ToolRegistryEntry,
+} from "./tools/toolRegistry.js";
 import type { McpTool } from "./types.js";
 
 // ── Lazy loaders — one per domain key ──────────────────────────────────────
@@ -18,6 +23,10 @@ import type { McpTool } from "./types.js";
  * returns the flat McpTool[] array for that domain.
  */
 export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
+  core_workflow: async () => {
+    const { coreWorkflowTools } = await import("./tools/coreWorkflowTools.js");
+    return coreWorkflowTools;
+  },
   verification: async () => {
     const { verificationTools } = await import("./tools/verificationTools.js");
     return verificationTools;
@@ -282,7 +291,7 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
       import("./tools/founderStrategicOpsTools.js"),
       import("./tools/founderOperatingModelTools.js"),
     ]);
-    return [
+    const combined = [
       ...f.founderTools,
       ...ft.founderTrackingTools,
       ...cm.causalMemoryTools,
@@ -291,6 +300,12 @@ export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
       ...om.founderOperatingModelTools,
       ...ci.contextInjectionTools,
     ];
+    const seen = new Set<string>();
+    return combined.filter((tool) => {
+      if (seen.has(tool.name)) return false;
+      seen.add(tool.name);
+      return true;
+    });
   },
   entity_enrichment: async () => {
     const { entityEnrichmentTools } = await import("./tools/entityEnrichmentTools.js");
@@ -359,6 +374,67 @@ export const TOOLSET_MAP: Record<string, McpTool[]> = {};
 /** Reverse index: tool name → domain key. Populated by `loadToolsets()`. */
 export const TOOL_TO_TOOLSET = new Map<string, string>();
 
+const QUIET_CROSS_DOMAIN_DUPLICATES: Record<string, string> = {
+  detect_contradictions: "entity_enrichment",
+  log_tool_call: "self_eval",
+};
+
+const SYNTHETIC_PHASE_BY_DOMAIN: Partial<Record<string, ToolRegistryEntry["phase"]>> = {
+  core_workflow: "research",
+  shared_context: "utility",
+  workspace: "implement",
+  profiler: "utility",
+  sweep: "research",
+  monte_carlo: "research",
+  entity_lookup: "research",
+  site_map: "research",
+  savings: "research",
+  delta: "research",
+  subconscious: "research",
+  graphify: "research",
+};
+
+function inferSyntheticPhase(domain: string, tool: McpTool): ToolRegistryEntry["phase"] {
+  const explicit = SYNTHETIC_PHASE_BY_DOMAIN[domain];
+  if (explicit) return explicit;
+  if (tool.annotations?.readOnlyHint) return "research";
+  if (/^(create_|write_|save_|record_|upsert_|manage_)/.test(tool.name)) return "implement";
+  if (/^(run_|simulate_|benchmark_)/.test(tool.name)) return "test";
+  if (/^(get_|list_|read_|query_)/.test(tool.name)) return "utility";
+  return "utility";
+}
+
+function buildSyntheticTags(domain: string, tool: McpTool): string[] {
+  const descriptionTokens = tool.description
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= 4)
+    .slice(0, 6);
+  const nameTokens = tool.name.split("_").filter((token) => token.length >= 3);
+  return [...new Set([domain, ...nameTokens, ...descriptionTokens])];
+}
+
+function registerSyntheticRegistryEntries(domain: string, tools: McpTool[]): void {
+  for (const tool of tools) {
+    if (TOOL_REGISTRY.has(tool.name)) continue;
+    const entry: ToolRegistryEntry = {
+      name: tool.name,
+      category: domain,
+      tags: buildSyntheticTags(domain, tool),
+      quickRef: {
+        nextAction: `Use ${tool.name} when you need ${tool.description.toLowerCase()}`,
+        nextTools: ["discover_tools"],
+        methodology: domain,
+        tip: "This is a synthetic registry entry generated from the toolset loader so discovery and coverage stay truthful.",
+      },
+      phase: inferSyntheticPhase(domain, tool),
+      complexity: "medium",
+    };
+    ALL_REGISTRY_ENTRIES.push(entry);
+    TOOL_REGISTRY.set(tool.name, entry);
+  }
+}
+
 // ── Loader ─────────────────────────────────────────────────────────────────
 
 /** Track which domains have already been loaded to avoid redundant imports. */
@@ -390,14 +466,34 @@ export async function loadToolsets(selectedDomains: string[]): Promise<McpTool[]
     );
 
     for (const { domain, tools } of results) {
-      TOOLSET_MAP[domain] = tools;
+      const uniqueTools: McpTool[] = [];
+      const domainSeen = new Set<string>();
+
       for (const tool of tools) {
+        if (domainSeen.has(tool.name)) {
+          console.error(`[toolsetRegistry] Duplicate tool skipped in ${domain}: ${tool.name}`);
+          continue;
+        }
+        if (TOOL_TO_TOOLSET.has(tool.name)) {
+          const firstOwner = TOOL_TO_TOOLSET.get(tool.name);
+          if (firstOwner && QUIET_CROSS_DOMAIN_DUPLICATES[tool.name] === firstOwner) {
+            continue;
+          }
+          console.error(
+            `[toolsetRegistry] Duplicate tool skipped across domains: ${tool.name} (${firstOwner} keeps ownership, ${domain} skipped)`
+          );
+          continue;
+        }
+        domainSeen.add(tool.name);
+        uniqueTools.push(tool);
         TOOL_TO_TOOLSET.set(tool.name, domain);
       }
+      TOOLSET_MAP[domain] = uniqueTools;
+      registerSyntheticRegistryEntries(domain, uniqueTools);
       _loaded.add(domain);
     }
 
-    const totalNew = results.reduce((s, r) => s + r.tools.length, 0);
+    const totalNew = results.reduce((s, r) => s + (TOOLSET_MAP[r.domain]?.length ?? 0), 0);
     console.error(
       `[toolsetRegistry] Loaded ${toLoad.length} domain(s) (${totalNew} tools): ${toLoad.join(", ")}`
     );

@@ -2343,9 +2343,9 @@ function sanitizeExecutiveAnswer(
 // model's context window and summarize overflow.
 
 const MODEL_CONTEXT_LIMITS: Record<string, number> = {
-  "gemini-3.1-flash-lite": 32000,
-  "gemini-3.1-flash": 128000,
-  "gemini-3.1-pro": 128000,
+  "gemini-3.1-flash-lite-preview": 32000,
+  "gemini-3.1-flash-preview": 128000,
+  "gemini-3.1-pro-preview": 128000,
   "claude-sonnet-4-6": 200000,
   "claude-opus-4-6": 200000,
 };
@@ -2402,7 +2402,7 @@ interface ModelConfig {
 
 const GEMINI_MODELS: Record<TaskComplexity, ModelConfig> = {
   low: {
-    name: "gemini-3.1-flash-lite",
+    name: "gemini-3.1-flash-lite-preview",
     endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent",
     apiKeyEnv: "GEMINI_API_KEY",
     timeoutMs: 15000,
@@ -2414,7 +2414,7 @@ const GEMINI_MODELS: Record<TaskComplexity, ModelConfig> = {
     extractResponse: (data) => data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "",
   },
   medium: {
-    name: "gemini-3.1-flash",
+    name: "gemini-3.1-flash-preview",
     endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-preview:generateContent",
     apiKeyEnv: "GEMINI_API_KEY",
     timeoutMs: 25000,
@@ -2426,7 +2426,7 @@ const GEMINI_MODELS: Record<TaskComplexity, ModelConfig> = {
     extractResponse: (data) => data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "",
   },
   high: {
-    name: "gemini-3.1-pro",
+    name: "gemini-3.1-pro-preview",
     endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent",
     apiKeyEnv: "GEMINI_API_KEY",
     timeoutMs: 40000,

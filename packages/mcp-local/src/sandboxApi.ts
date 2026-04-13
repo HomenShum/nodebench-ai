@@ -17,6 +17,7 @@
  */
 
 import { createServer, type IncomingMessage, type ServerResponse } from "http";
+import { NODEBENCH_VERSION } from "./packageInfo.js";
 import { contextSandboxTools } from "./tools/contextSandboxTools.js";
 
 const PORT = parseInt(process.env.NODEBENCH_SANDBOX_PORT || "6277", 10);
@@ -69,7 +70,7 @@ const server = createServer(async (req, res) => {
 
   // Health check
   if (url === "/api/sandbox/health") {
-    sendJson(res, 200, { status: "ok", version: "2.30.0", tools: contextSandboxTools.length });
+    sendJson(res, 200, { status: "ok", version: NODEBENCH_VERSION, tools: contextSandboxTools.length });
     return;
   }
 

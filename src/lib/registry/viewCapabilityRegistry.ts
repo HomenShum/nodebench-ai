@@ -59,9 +59,9 @@ export interface ViewCapability {
 export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
   "control-plane": {
     viewId: "control-plane",
-    title: "Ask",
+    title: "Home",
     description:
-      "Landing surface for the operating intelligence dashboard. Start from analyses, agent oversight, initiatives, and research flows.",
+      "Front door for the product. Start with a question, upload evidence, review quick previews, and launch a live chat run.",
     paths: ["/", "/control-plane", "/home", "/landing"],
     dataEndpoints: [],
     actions: [
@@ -165,24 +165,6 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     ],
     relatedToolCategories: ["research", "verification", "learning"],
     tags: ["strategy", "product-direction", "memo", "credibility", "evidence"],
-    requiresAuth: false,
-  },
-
-  "deep-sim": {
-    viewId: "deep-sim",
-    title: "Decision Workbench",
-    description:
-      "Deep Sim surface for decision memos, variable maps, source packets, scenario comparison, and ranked interventions under uncertainty.",
-    paths: ["/deep-sim"],
-    dataEndpoints: [],
-    actions: [
-      { name: "switchFixture", description: "Switch between the investor diligence and founder strategy golden demo fixtures" },
-      { name: "reviewScenarioSet", description: "Inspect the three primary scenario branches and their assumptions" },
-      { name: "reviewInterventionLadder", description: "Inspect ranked interventions and their expected deltas" },
-      { name: "openEvidenceDrawer", description: "Open the evidence drawer to inspect claim-level support and contradictions" },
-    ],
-    relatedToolCategories: ["deep_sim", "research", "verification"],
-    tags: ["deep-sim", "decision-workbench", "scenarios", "interventions", "variables", "memo"],
     requiresAuth: false,
   },
 
@@ -291,9 +273,9 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
 
   documents: {
     viewId: "documents",
-    title: "Workspace",
+    title: "Files",
     description:
-      "Document management hub — create, browse, search, and organize documents. Supports markdown with tagging.",
+      "Private file and notes surface for browsing, searching, and organizing saved documents and uploads.",
     paths: ["/workspace", "/documents", "/docs"],
     dataEndpoints: [
       { name: "documents", convexQuery: "domains.documents.documentQueries.listDocuments", description: "User's document collection" },
@@ -900,25 +882,6 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     ],
     relatedToolCategories: ["platform", "verification", "eval", "flywheel"],
     tags: ["telemetry", "agent-actions", "tool-calls", "cost", "latency", "errors", "monitoring"],
-    requiresAuth: false,
-  },
-  "coordination-hub": {
-    viewId: "coordination-hub",
-    title: "Coordination Hub",
-    description: "Team coordination — peer presence, task delegation, context packets, and messaging. Wired to shared context API with SSE live streaming.",
-    paths: ["/founder/coordination", "/founder/hub"],
-    dataEndpoints: [
-      { name: "snapshot", convexQuery: "", description: "GET /api/shared-context/snapshot — peers, packets, tasks, messages" },
-      { name: "events", convexQuery: "", description: "GET /api/shared-context/events — SSE stream for real-time updates" },
-    ],
-    actions: [
-      { name: "publishPacket", description: "Publish a context packet to the shared context layer" },
-      { name: "delegateToAgent", description: "Hand off a task to Claude Code or OpenClaw via /delegate" },
-      { name: "sendMessage", description: "Send a message to a connected peer" },
-      { name: "refreshSnapshot", description: "Force-refresh the shared context snapshot" },
-    ],
-    relatedToolCategories: ["shared_context", "sync_bridge", "founder", "autonomous_delivery"],
-    tags: ["coordination", "shared-context", "peers", "tasks", "messages", "delegation", "sse", "live", "team"],
     requiresAuth: false,
   },
 };

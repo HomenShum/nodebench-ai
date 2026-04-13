@@ -12,6 +12,8 @@ export default function handler(req, res) {
   // If this is a rewrite from /api/sweep/*, preserve that path
   if (matched.includes("/sweep/")) {
     req.url = matched;
+  } else if (matched.includes("/search/stream")) {
+    req.url = `/stream${url.search}`;
   } else if (matched.includes("/search/insights")) {
     req.url = "/insights";
   } else {

@@ -2,12 +2,13 @@
 /**
  * NodeBench MCP — Development Methodology Edition
  *
- * Zero-config, fully local MCP server backed by SQLite.
+ * Zero-config, fully local MCP server. Uses native SQLite when available and
+ * falls back to a lightweight local mode when the native addon is absent.
  * Packages the 6-Phase Verification, Eval-Driven Development, AI Flywheel,
  * Quality Gates, and Learnings methodologies as MCP tools that guide agents
  * to work more rigorously.
  *
- * Data stored in ~/.nodebench/nodebench.db
+ * Local runtime data lives under ~/.nodebench/
  *
  * Uses the low-level Server class to register tools with raw JSON Schema
  * (the high-level McpServer.tool() requires Zod schemas in SDK >=1.17).
@@ -25,7 +26,6 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import Database from "better-sqlite3";
 import { getDb, genId } from "./db.js";
 import { redactSecrets, auditLog, SecurityError, flushAuditLog } from "./security/index.js";
 import { startDashboardServer, getDashboardUrl, stopDashboardServer } from "./dashboard/server.js";
@@ -40,6 +40,16 @@ import { initObservability, startWatchdog, stopWatchdog } from "./tools/observab
 import { createMetaTools } from "./tools/metaTools.js";
 import { createProgressiveDiscoveryTools } from "./tools/progressiveDiscoveryTools.js";
 import { getQuickRef, ALL_REGISTRY_ENTRIES, TOOL_REGISTRY, getToolComplexity, getToolAnnotations, toolNameToTitle, _setDbAccessor, hybridSearch, WORKFLOW_CHAINS } from "./tools/toolRegistry.js";
+import { getRequestedPreset, resolveRuntimeFlags } from "./runtimeConfig.js";
+import {
+  NODEBENCH_CLI_COMMAND,
+  NODEBENCH_DISPLAY_NAME,
+  NODEBENCH_NPX_PACKAGE,
+  NODEBENCH_PACKAGE_NAME,
+  NODEBENCH_SERVER_KEY,
+  NODEBENCH_VERSION,
+  comparePackageVersions,
+} from "./packageInfo.js";
 import type { McpTool } from "./types.js";
 
 // TOON format — ~40% token savings on tool responses
@@ -50,7 +60,6 @@ import { initEmbeddingIndex } from "./tools/embeddingProvider.js";
  // ── CLI argument parsing ──────────────────────────────────────────────
  const cliArgs = process.argv.slice(2);
  const useToon = !cliArgs.includes("--no-toon");
- const useEmbedding = !cliArgs.includes("--no-embedding");
  const useSmartPreset = cliArgs.includes("--smart-preset");
  const showStats = cliArgs.includes("--stats");
  const exportStats = cliArgs.includes("--export-stats");
@@ -61,29 +70,53 @@ import { initEmbeddingIndex } from "./tools/embeddingProvider.js";
  const diagnoseFlag = cliArgs.includes("--diagnose");
  const autoPresetFlag = cliArgs.includes("--auto-preset");
  const syncConfigsFlag = cliArgs.includes("--sync-configs");
- const useEngine = cliArgs.includes("--engine");
- const useProfile = cliArgs.includes("--profile");
- const engineSecret = (() => {
-   const idx = cliArgs.indexOf("--engine-secret");
-   return idx >= 0 && idx + 1 < cliArgs.length ? cliArgs[idx + 1] : process.env.ENGINE_SECRET;
- })();
+ const requestedPreset = getRequestedPreset(cliArgs);
+ const runtimeFlags = resolveRuntimeFlags(cliArgs, requestedPreset);
+ const useEmbedding = runtimeFlags.enableEmbedding;
+ const useEngine = runtimeFlags.enableEngine;
+ const useProfile = runtimeFlags.enableProfiling;
+ const DISPLAY_NAME = NODEBENCH_DISPLAY_NAME;
+ const CLI_COMMAND = NODEBENCH_CLI_COMMAND;
+ const NPX_COMMAND = `npx ${NODEBENCH_NPX_PACKAGE}`;
+ const NPX_Y_COMMAND = `npx -y ${NODEBENCH_NPX_PACKAGE}`;
+ const SERVER_KEY = NODEBENCH_SERVER_KEY;
+const engineSecret = (() => {
+  const idx = cliArgs.indexOf("--engine-secret");
+  return idx >= 0 && idx + 1 < cliArgs.length ? cliArgs[idx + 1] : process.env.ENGINE_SECRET;
+})();
+
+async function openOptionalSqlite(dbPath: string, options?: Record<string, unknown>): Promise<any | null> {
+  try {
+    const Database = (await import("better-sqlite3")).default;
+    return new Database(dbPath, options);
+  } catch {
+    return null;
+  }
+}
 
 export { TOOLSET_MAP };
 
-// Starter: ~19 tools. Just decision intelligence + discovery/meta overhead.
-// Users call discover_tools → load_toolset to expand. Under Google's 50-tool IDE limit.
-const STARTER_TOOLSETS = ["deep_sim", "entity_lookup", "site_map", "workspace", "session_memory"];
+// Starter/default: v3 core workflow facade only. Discovery/meta/dynamic tools are added separately.
+const STARTER_TOOLSETS = ["core_workflow"];
 
 // Core: the original default. ~81 tools across 15 domains.
 const CORE_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "autonomous_delivery", "sync_bridge", "shared_context", "recon", "security", "boilerplate", "skill_update", "context_sandbox", "observability", "execution_trace", "mission_harness", "deep_sim", "founder", "scenario_compiler", "packet_compiler", "entity_temporal"];
 
+// Power: extended research + founder intelligence without admin/debug-only runtime surfaces.
+const POWER_TOOLSETS = ["core_workflow", "deep_sim", "founder", "recon", "web", "shared_context", "sync_bridge", "session_memory", "entity_lookup", "delta", "site_map"];
+
+// Admin: profiling, debugging, observability, dashboards, and eval harness domains.
+const ADMIN_TOOLSETS = ["core_workflow", "observability", "profiler", "local_dashboard", "benchmark", "longitudinal_benchmark", "dogfood_judge", "execution_trace", "qa_orchestration", "mission_harness", "quality_gate", "eval", "verification"];
+
 const PRESETS: Record<string, string[]> = {
-  // DEFAULT: starter (~19 tools). Progressive discovery is the gateway to 338.
+  // DEFAULT: v3 core workflow facade. Progressive discovery expands into power/admin domains only when needed.
   default: STARTER_TOOLSETS,
   starter: STARTER_TOOLSETS,
+  power:        POWER_TOOLSETS,
+  admin:        ADMIN_TOOLSETS,
   // Core AI Flywheel — everything from the old default
   core:         CORE_TOOLSETS,
-  // Themed presets — bridge between starter (19 tools) and full (338 tools)
+  // Themed presets — bridge between the core workflow surface and full-domain coverage
   web_dev:      [...CORE_TOOLSETS, "ui_capture", "vision", "web", "seo", "git_workflow", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "qa_orchestration", "visual_qa", "design_governance", "web_scraping", "site_map", "savings"],
   research:     [...CORE_TOOLSETS, "web", "llm", "rss", "email", "docs", "research_optimizer", "web_scraping", "temporal_intelligence", "deep_sim"],
   data:         [...CORE_TOOLSETS, "local_file", "llm", "web", "research_optimizer", "web_scraping", "temporal_intelligence"],
@@ -92,18 +125,18 @@ const PRESETS: Record<string, string[]> = {
   academic:     [...CORE_TOOLSETS, "research_writing", "llm", "web", "local_file"],
   multi_agent:  [...CORE_TOOLSETS, "parallel", "self_eval", "session_memory", "pattern", "toon", "qa_orchestration", "agent_traverse", "engine_context", "research_optimizer", "web_scraping", "deep_sim"],
   content:      [...CORE_TOOLSETS, "llm", "critter", "email", "rss", "platform", "architect", "local_dashboard", "engine_context", "thompson_protocol"],
-  // ── Persona presets (all under 50 tools for IDE compatibility) ──
-  // Founder: decision intelligence + company tracking + session memory + local dashboard (~40 tools)
+  // ── Persona presets (kept for compatibility, but no longer the default entry point) ──
+  // Founder: decision intelligence + company tracking + session memory + local dashboard
   founder:      ["deep_sim", "founder", "learning", "local_dashboard", "autonomous_delivery", "sync_bridge", "shared_context", "site_map", "savings", "profiler", "sweep", "monte_carlo"],
   // Banker/analyst: decision intelligence + company profiling + web research + recon (~39 tools)
   banker:       ["deep_sim", "founder", "web", "recon", "autonomous_delivery", "sync_bridge", "shared_context", "profiler"],
-  // Operator: decision intelligence + company tracking + causal memory + action tracing (~40 tools)
+  // Operator: decision intelligence + company tracking + causal memory + action tracing
   operator:     ["deep_sim", "founder", "causal_memory", "autonomous_delivery", "sync_bridge", "shared_context", "profiler"],
   // Researcher: decision intelligence + web + recon + session memory (~32 tools)
   researcher:   ["deep_sim", "web", "recon", "learning", "autonomous_delivery", "sync_bridge", "shared_context", "profiler"],
   // Cursor IDE has a hard 40-tool limit across ALL MCP servers.
   cursor:       ["deep_sim", "quality_gate", "learning", "session_memory", "web", "toon"],
-  // Hackathon: founder + web intelligence + entity enrichment + shared context (~55 tools)
+  // Hackathon: founder + web intelligence + entity enrichment + shared context
   // Pairs with retention.sh for QA. Install: claude mcp add nodebench -- npx -y nodebench-mcp --preset=hackathon
   hackathon:    ["deep_sim", "founder", "learning", "web", "entity_enrichment", "autonomous_delivery", "sync_bridge", "shared_context", "recon", "local_dashboard", "delta", "profiler", "sweep", "monte_carlo"],
   // Delta: full operating-intelligence preset — all delta.* packet tools + watchlist + entity intel
@@ -112,8 +145,10 @@ const PRESETS: Record<string, string[]> = {
 };
 
 const PRESET_DESCRIPTIONS: Record<string, string> = {
-  default:     "Starter (~19 tools) — decision intelligence + progressive discovery. Use discover_tools → load_toolset to expand.",
-  starter:     "Starter (~19 tools) — decision intelligence + progressive discovery. Use discover_tools → load_toolset to expand.",
+  default:     "Default v3 surface — 7 workflow tools plus discovery/meta helpers. Fast boot, one artifact-shaped workflow.",
+  starter:     "Default v3 surface — 7 workflow tools plus discovery/meta helpers. Fast boot, one artifact-shaped workflow.",
+  power:       "Extended workflow preset — founder + recon + web + packets without admin-only runtime surfaces.",
+  admin:       "Admin/runtime preset — profiling, observability, dashboards, eval, and debug lanes.",
   core:        "Core AI Flywheel (~81 tools) — verification, eval, quality gates, learning, recon, mission harness",
   web_dev:     "Web projects — adds visual QA, SEO audit, git workflow, code architecture",
   research:    "Research workflows — adds web search, LLM calls, RSS feeds, email, docs",
@@ -123,27 +158,31 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
   academic:    "Academic papers — adds polish, review, translate, logic check, data analysis",
   multi_agent: "Multi-agent teams — adds task locking, messaging, roles, oracle testing, frontend traversal",
   content:     "Content & publishing — adds LLM, accountability, email, RSS, platform queue",
-  founder:     "Founder (~40 tools) — decision intelligence, company tracking, session memory, local dashboard",
+  founder:     "Founder decision preset — company tracking, decision intelligence, shared context, local dashboard",
   banker:      "Banker/Analyst (~39 tools) — decision intelligence, company profiling, web research, recon",
-  operator:    "Operator (~40 tools) — decision intelligence, company tracking, causal memory, action tracing",
+  operator:    "Operator — decision intelligence, company tracking, causal memory, action tracing",
   researcher:  "Researcher (~32 tools) — decision intelligence, web search, recon, session memory",
   cursor:      "Cursor IDE (28 tools) — decision intelligence, quality gates, session memory, web, TOON encoding. Leaves 12 slots for other MCP servers.",
-  hackathon:   "Hackathon (~55 tools) — decision intelligence + entity intel + web research + team coordination. Pairs with retention.sh for QA.",
+  hackathon:   "Hackathon — decision intelligence + entity intel + web research + team coordination. Pairs with retention.sh for QA.",
   delta:       "Delta (~65 tools) — full operating-intelligence preset. Entity intel, decision memos, watchlists, agent handoff, execution traces.",
-  full:        "Everything — all 338 tools for maximum coverage",
+  full:        "Everything — all domains for maximum coverage",
 };
+
+function isWorkflowFacadePreset(presetName: string): boolean {
+  return presetName === "default" || presetName === "starter" || presetName === "v3";
+}
 
    async function parseToolsets(): Promise<McpTool[]> {
     if (cliArgs.includes("--help")) {
       const lines = [
-        "nodebench-mcp v2.70.0 — Development Methodology MCP Server",
+        `nodebench-mcp v${NODEBENCH_VERSION} — Development Methodology MCP Server`,
         "",
         "Usage: nodebench-mcp [options]",
         "",
         "Options:",
         "  --toolsets <list>   Comma-separated toolsets to enable (default: default)",
         "  --exclude <list>    Comma-separated toolsets to exclude",
-        "  --preset <name>     Use a preset: default or full",
+        "  --preset <name>     Use a preset: default, power, admin, or full",
         "  --smart-preset      Generate smart preset recommendation based on project type and usage history",
         "  --auto-preset       Detect project type from package.json/pyproject.toml and recommend a preset",
         "  --stats             Show usage statistics for current project",
@@ -151,9 +190,13 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
         "  --reset-stats       Clear all usage analytics data",
         "  --list-presets      List all available presets with descriptions",
         "  --dynamic           Enable dynamic toolset loading (Search+Load pattern from arxiv 2509.20386)",
+        "  --embedding         Enable semantic embedding index on the default preset",
         "  --no-toon           Disable TOON encoding (TOON is on by default for ~40% token savings)",
-        "  --no-embedding      Disable neural embedding search (uses local HuggingFace model or API keys)",
+        "  --no-embedding      Disable neural embedding search",
         "  --profile           Enable profiling proxy — logs every tool call with cost/latency",
+        "  --admin            Enable admin runtime surfaces (dashboards + watchdog)",
+        "  --dashboards       Start local dashboards explicitly",
+        "  --watchdog         Start observability watchdog explicitly",
         "  --engine            Start headless API engine server on port 6276",
         "  --engine-secret <s> Require Bearer token for engine API (or set ENGINE_SECRET env var)",
         "  --explain <tool>    Show plain-English explanation of a tool and exit",
@@ -172,12 +215,14 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
         }),
         "",
         "Examples:",
-        "  npx nodebench-mcp                    # Default (81 tools) - core AI Flywheel",
+        "  npx nodebench-mcp                    # Default v3 core workflow surface",
+        "  npx nodebench-mcp --preset power     # Extended founder/research surface",
+        "  npx nodebench-mcp --preset admin     # Profiling, observability, dashboards",
         "  npx nodebench-mcp --preset web_dev   # Web development (+ vision, SEO, git)",
         "  npx nodebench-mcp --preset research  # Research workflows (+ web, LLM, RSS, email)",
         "  npx nodebench-mcp --preset data      # Data analysis (+ local file parsing, LLM)",
         "  npx nodebench-mcp --preset academic  # Academic writing (+ paper tools, LLM)",
-        "  npx nodebench-mcp --preset full      # All 295 tools",
+        "  npx nodebench-mcp --preset full      # All available domains",
         "  npx nodebench-mcp --smart-preset     # Get AI-powered preset recommendation",
         "  npx nodebench-mcp --stats            # Show usage statistics",
         "  npx nodebench-mcp --toolsets verification,eval,recon",
@@ -224,7 +269,7 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
     return loadToolsets(domainsToLoad);
   }
 
-   // Default to starter preset (~19 tools — decision intelligence + discovery)
+   // Default to the v3 core workflow facade
    return loadToolsets(PRESETS.default);
 }
 
@@ -478,9 +523,11 @@ if (autoPresetFlag) {
   const hasLatex = fs.existsSync(path.join(cwd, "main.tex")) || fs.existsSync(path.join(cwd, "paper.tex"));
   if (hasLatex) { signals.push("academic: LaTeX files found"); recommended = "academic"; }
 
-  // Output — load all toolsets to get accurate counts
-  await loadToolsets(ALL_DOMAIN_KEYS);
+  // Output — only load the recommended preset to keep auto-preset fast
   const presetToolsets = (PRESETS as Record<string, string[]>)[recommended];
+  if (presetToolsets) {
+    await loadToolsets(presetToolsets);
+  }
   const toolCount = presetToolsets
     ? presetToolsets.reduce((s: number, k: string) => s + (TOOLSET_MAP[k]?.length ?? 0), 0) + 12
     : 0;
@@ -518,24 +565,32 @@ if (healthFlag) {
   const fail = `${R}FAIL${X}`;
 
   const lines: string[] = [];
-  lines.push(`${B}NodeBench MCP v2.30.0 — Health Check${X}`);
+  lines.push(`${B}${DISPLAY_NAME} v${NODEBENCH_VERSION} - Health Check${X}`);
   lines.push("");
 
-  // 1. Tool count + preset — load all toolsets to get accurate counts
-  await loadToolsets(ALL_DOMAIN_KEYS);
-  const presetIdx2 = cliArgs.indexOf("--preset");
-  const activePreset = presetIdx2 !== -1 && cliArgs[presetIdx2 + 1] ? cliArgs[presetIdx2 + 1] : "default";
-  const domainCount = Object.keys(TOOLSET_MAP).length;
-  const totalTools = Object.values(TOOLSET_MAP).reduce((s, v) => s + v.length, 0);
+  // 1. Tool count + preset - load only the active preset for a fast health path
+  const activePreset = requestedPreset;
   const presetToolsets = (PRESETS as Record<string, string[]>)[activePreset];
+  const activeDomainSet = new Set(presetToolsets ?? []);
+  if (presetToolsets) {
+    await loadToolsets(presetToolsets);
+  }
   const presetToolCount = presetToolsets
-    ? presetToolsets.reduce((s: number, k: string) => s + (TOOLSET_MAP[k]?.length ?? 0), 0) + 12
-    : totalTools;
-  lines.push(`${C}Tools${X}       ${presetToolCount} loaded (preset: ${activePreset}) | ${totalTools} total across ${domainCount} domains`);
+    ? presetToolsets.reduce((s: number, k: string) => s + (TOOLSET_MAP[k]?.length ?? 0), 0)
+      + (isWorkflowFacadePreset(activePreset) ? 2 : 12)
+    : 12;
+  lines.push(`${C}Tools${X}       ${presetToolCount} visible (preset: ${activePreset}) | ${ALL_DOMAIN_KEYS.length} domains available`);
 
   // 2. TOON + Embedding
   lines.push(`${C}TOON${X}        ${useToon ? ok : `${warn} disabled (--no-toon)`}`);
-  lines.push(`${C}Embedding${X}   ${useEmbedding ? ok : `${warn} disabled (--no-embedding)`}`);
+  lines.push(`${C}Embedding${X}   ${useEmbedding ? ok : `${warn} disabled on default hot path`}`);
+  lines.push(
+    `${C}Runtime${X}     ${
+      runtimeFlags.enableDashboards || runtimeFlags.enableWatchdog
+        ? `${ok} admin surfaces enabled`
+        : `${warn} core-only (pass --admin, --dashboards, or --watchdog to enable admin runtime)`
+    }`,
+  );
 
   // 3. Database
   const os = await import("node:os");
@@ -543,18 +598,34 @@ if (healthFlag) {
   const fs = await import("node:fs");
   const dbDir = path.join(os.homedir(), ".nodebench");
   const dbPath = path.join(dbDir, "nodebench.db");
+  const { createRequire } = await import("node:module");
+  const _require = createRequire(import.meta.url);
+  const _isInstalled = (pkg: string) => { try { _require.resolve(pkg); return true; } catch { return false; } };
+  const sqliteInstalled = _isInstalled("better-sqlite3");
   const dbExists = fs.existsSync(dbPath);
   let dbSize = "";
   if (dbExists) {
     const stat = fs.statSync(dbPath);
     dbSize = ` (${(stat.size / 1024).toFixed(0)} KB)`;
   }
-  lines.push(`${C}Database${X}    ${dbExists ? `${ok}${dbSize}` : `${warn} not initialized (will create on first run)`}`);
+  lines.push(
+    `${C}Database${X}    ${
+      sqliteInstalled
+        ? (dbExists ? `${ok}${dbSize}` : `${warn} not initialized (will create on first run)`)
+        : `${warn} lightweight mode (native SQLite addon not installed)`
+    }`,
+  );
 
   // 4. Analytics DB
   const analyticsPath = path.join(dbDir, "analytics.db");
   const analyticsExists = fs.existsSync(analyticsPath);
-  lines.push(`${C}Analytics${X}   ${analyticsExists ? ok : `${warn} no usage data yet`}`);
+  lines.push(
+    `${C}Analytics${X}   ${
+      sqliteInstalled
+        ? (analyticsExists ? ok : `${warn} no usage data yet`)
+        : `${warn} ephemeral analytics mode`
+    }`,
+  );
 
   // 5. Embedding cache
   const cachePath = path.join(dbDir, "embedding_cache.json");
@@ -586,58 +657,90 @@ if (healthFlag) {
   }
 
   // 7. Optional npm packages
-  lines.push("");
-  lines.push(`${B}Optional Packages${X}`);
-  const { createRequire } = await import("node:module");
-  const _require = createRequire(import.meta.url);
-  const _isInstalled = (pkg: string) => { try { _require.resolve(pkg); return true; } catch { return false; } };
-  const pkgChecks: [string, string][] = [
-    ["playwright", "UI capture + screenshots"],
-    ["sharp", "Image processing"],
-    ["@huggingface/transformers", "Local embeddings (384-dim)"],
-    ["tesseract.js", "OCR text extraction"],
-    ["pdf-parse", "PDF parsing"],
-    ["mammoth", "DOCX parsing"],
-    ["xlsx", "Spreadsheet parsing"],
+  const packageCheckSpecs: Array<{ pkg: string; desc: string; show: boolean }> = [
+    {
+      pkg: "playwright",
+      desc: "UI capture + screenshots",
+      show:
+        activeDomainSet.has("ui_capture")
+        || activeDomainSet.has("qa_orchestration")
+        || activeDomainSet.has("dogfood_judge"),
+    },
+    {
+      pkg: "sharp",
+      desc: "Image processing",
+      show:
+        activeDomainSet.has("ui_capture")
+        || activeDomainSet.has("vision")
+        || activeDomainSet.has("qa_orchestration")
+        || activeDomainSet.has("dogfood_judge"),
+    },
+    {
+      pkg: "@huggingface/transformers",
+      desc: "Local embeddings (384-dim)",
+      show: useEmbedding,
+    },
+    {
+      pkg: "tesseract.js",
+      desc: "OCR text extraction",
+      show: activeDomainSet.has("local_file") || activeDomainSet.has("vision"),
+    },
+    {
+      pkg: "pdf-parse",
+      desc: "PDF parsing",
+      show: activeDomainSet.has("local_file"),
+    },
+    {
+      pkg: "mammoth",
+      desc: "DOCX parsing",
+      show: activeDomainSet.has("local_file"),
+    },
+    {
+      pkg: "read-excel-file",
+      desc: "Spreadsheet parsing",
+      show: activeDomainSet.has("local_file"),
+    },
   ];
-  for (const [pkg, desc] of pkgChecks) {
-    const installed = _isInstalled(pkg);
-    lines.push(`  ${installed ? ok : `${Y}--${X}`}  ${pkg.padEnd(30)} ${desc}`);
+  const pkgChecks = packageCheckSpecs
+    .filter((spec) => spec.show)
+    .map((spec) => [spec.pkg, spec.desc] as [string, string]);
+  if (pkgChecks.length > 0) {
+    lines.push("");
+    lines.push(`${B}Optional Packages${X}`);
+    for (const [pkg, desc] of pkgChecks) {
+      const installed = _isInstalled(pkg);
+      lines.push(`  ${installed ? ok : `${Y}--${X}`}  ${pkg.padEnd(30)} ${desc}`);
+    }
   }
 
   // 8. Python servers
-  lines.push("");
-  lines.push(`${B}Python Servers${X}`);
-  const serverChecks: [string, number][] = [
-    ["Flicker Detection", 8006],
-    ["Figma Flow", 8007],
+  const serverChecks: Array<[string, number]> = [
+    ...(activeDomainSet.has("flicker_detection") ? [["Flicker Detection", 8006] as [string, number]] : []),
+    ...(activeDomainSet.has("figma_flow") ? [["Figma Flow", 8007] as [string, number]] : []),
   ];
-  for (const [name, port] of serverChecks) {
-    let reachable = false;
-    try {
-      const resp = await fetch(`http://127.0.0.1:${port}/health`, { signal: AbortSignal.timeout(2000) });
-      reachable = resp.ok;
-    } catch { /* not running */ }
-    lines.push(`  ${reachable ? ok : `${Y}--${X}`}  ${name.padEnd(22)} :${port}${reachable ? "" : " (not running)"}`);
+  if (serverChecks.length > 0) {
+    lines.push("");
+    lines.push(`${B}Python Servers${X}`);
+    for (const [name, port] of serverChecks) {
+      let reachable = false;
+      try {
+        const resp = await fetch(`http://127.0.0.1:${port}/health`, { signal: AbortSignal.timeout(2000) });
+        reachable = resp.ok;
+      } catch { /* not running */ }
+      lines.push(`  ${reachable ? ok : `${Y}--${X}`}  ${name.padEnd(22)} :${port}${reachable ? "" : " (not running)"}`);
+    }
   }
 
   // 9. Version check (npm registry)
   lines.push("");
   lines.push(`${B}Version${X}`);
-  const { createRequire: cr2 } = await import("node:module");
-  const _req2 = cr2(import.meta.url);
-  let currentVersion = "2.70.0";
-  try {
-    const pkgPath = _req2.resolve("../package.json");
-    const pkgJson = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
-    currentVersion = pkgJson.version || currentVersion;
-  } catch { /* fallback to hardcoded */ }
+  const currentVersion = NODEBENCH_VERSION;
 
   let latestVersion = "";
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3000);
-    const res = await fetch("https://registry.npmjs.org/nodebench-mcp/latest", {
+    const res = await fetch(`https://registry.npmjs.org/${NODEBENCH_PACKAGE_NAME}/latest`, {
       signal: controller.signal,
       headers: { Accept: "application/json" },
     });
@@ -648,11 +751,14 @@ if (healthFlag) {
     }
   } catch { /* offline or timeout */ }
 
-  if (latestVersion && latestVersion !== currentVersion) {
+  const versionDelta = latestVersion ? comparePackageVersions(latestVersion, currentVersion) : 0;
+  if (latestVersion && versionDelta > 0) {
     lines.push(`  ${Y}UPDATE${X}  ${currentVersion} → ${G}${latestVersion}${X}`);
-    lines.push(`          Run: ${C}npm install -g nodebench-mcp@latest${X}`);
-  } else if (latestVersion) {
+    lines.push(`          Run: ${C}npm install -g ${NODEBENCH_PACKAGE_NAME}@latest${X}`);
+  } else if (latestVersion && versionDelta === 0) {
     lines.push(`  ${ok}  v${currentVersion} (up to date)`);
+  } else if (latestVersion) {
+    lines.push(`  ${ok}  v${currentVersion} (ahead of npm latest v${latestVersion})`);
   } else {
     lines.push(`  ${ok}  v${currentVersion} (registry check skipped — offline?)`);
   }
@@ -661,7 +767,11 @@ if (healthFlag) {
   lines.push("");
   const allEnvSet = envChecks.filter(([k]) => !!process.env[k]).length;
   const allPkgSet = pkgChecks.filter(([p]) => _isInstalled(p)).length;
-  lines.push(`${B}Summary${X}  ${allEnvSet}/${envChecks.length} env vars | ${allPkgSet}/${pkgChecks.length} packages | ${dbExists ? "DB ready" : "DB pending"}`);
+  const packageSummary = pkgChecks.length > 0
+    ? `${allPkgSet}/${pkgChecks.length} packages`
+    : "no preset-specific package deps";
+  const dbSummary = sqliteInstalled ? (dbExists ? "DB ready" : "DB pending") : "lightweight DB mode";
+  lines.push(`${B}Summary${X}  ${allEnvSet}/${envChecks.length} env vars | ${packageSummary} | ${dbSummary}`);
 
   console.log(lines.join("\n"));
   process.exit(0);
@@ -689,11 +799,14 @@ if (statusFlag) {
   }
 
   // Open DB directly for status query
-  const Database = (await import("better-sqlite3")).default;
-  const db = new Database(dbPath, { readonly: true });
+  const db = await openOptionalSqlite(dbPath, { readonly: true });
+  if (!db) {
+    console.error("SQLite inspection backend is unavailable in this lightweight install.");
+    process.exit(1);
+  }
 
   const lines: string[] = [];
-  lines.push(`${B}NodeBench MCP — System Status${X}`);
+  lines.push(`${B}${DISPLAY_NAME} - System Status${X}`);
   lines.push("");
 
   // Uptime info from DB (last tool call as proxy for when server was active)
@@ -735,7 +848,7 @@ if (statusFlag) {
       `SELECT COUNT(*) as cnt FROM tool_call_log WHERE result_status='error' AND created_at > datetime('now', '-2 hours') AND created_at <= datetime('now', '-1 hour')`
     ).get() as any;
     const direction = errors1h.cnt > errPrevHour.cnt ? `${R}increasing${X}` : errors1h.cnt < errPrevHour.cnt ? `${G}decreasing${X}` : `${G}stable${X}`;
-    lines.push(`${C}Error Trend${X}  ${direction} (${errPrevHour.cnt} prev hour → ${errors1h.cnt} this hour)`);
+    lines.push(`${C}Error Trend${X}  ${direction} (${errPrevHour.cnt} prev hour -> ${errors1h.cnt} this hour)`);
 
     // Active verification cycles
     const activeCycles = db.prepare(`SELECT COUNT(*) as cnt FROM verification_cycles WHERE status IN ('active', 'in_progress')`).get() as any;
@@ -772,11 +885,14 @@ if (diagnoseFlag) {
     process.exit(1);
   }
 
-  const Database = (await import("better-sqlite3")).default;
-  const db = new Database(dbPath);
+  const db = await openOptionalSqlite(dbPath);
+  if (!db) {
+    console.error("SQLite repair backend is unavailable in this lightweight install.");
+    process.exit(1);
+  }
 
   const lines: string[] = [];
-  lines.push(`${B}NodeBench MCP — Diagnose & Heal${X}`);
+  lines.push(`${B}${DISPLAY_NAME} - Diagnose & Heal${X}`);
   lines.push("");
 
   let issueCount = 0;
@@ -930,11 +1046,26 @@ if (syncConfigsFlag) {
     if (process.env[key]) envObj[key] = process.env[key]!;
   }
 
-  // Build the MCP server config entry
+  // Build the MCP server config entry. Wrapper packages can override this so
+  // sync-configs writes the public lane command instead of an internal entry path.
   const nodePath = process.execPath; // path to node binary
+  const configCommandOverride = process.env.NODEBENCH_CONFIG_COMMAND_OVERRIDE?.trim();
+  let configArgsOverride: string[] | undefined;
+  const rawConfigArgsOverride = process.env.NODEBENCH_CONFIG_ARGS_OVERRIDE;
+  if (rawConfigArgsOverride) {
+    try {
+      const parsed = JSON.parse(rawConfigArgsOverride);
+      if (Array.isArray(parsed) && parsed.every((item) => typeof item === "string")) {
+        configArgsOverride = parsed;
+      }
+    } catch {
+      // Ignore invalid override payloads and fall back to the local entry path.
+    }
+  }
+
   const serverEntry: Record<string, unknown> = {
-    command: nodePath,
-    args: [entryPath, ...forwardArgs],
+    command: configCommandOverride || nodePath,
+    args: configArgsOverride ?? [entryPath, ...forwardArgs],
     ...(Object.keys(envObj).length > 0 ? { env: envObj } : {}),
   };
 
@@ -972,7 +1103,7 @@ if (syncConfigsFlag) {
   }
 
   const lines: string[] = [];
-  lines.push(`${B}NodeBench MCP — Sync IDE Configs${X}`);
+  lines.push(`${B}${DISPLAY_NAME} - Sync IDE Configs${X}`);
   lines.push("");
 
   const results: { name: string; action: string; path: string; error?: string }[] = [];
@@ -980,7 +1111,7 @@ if (syncConfigsFlag) {
   // 1. Claude Code: ~/.claude/claude_desktop_config.json
   try {
     const claudeConfigPath = path.join(os.homedir(), ".claude", "claude_desktop_config.json");
-    const r = mergeConfig(claudeConfigPath, "nodebench-mcp");
+    const r = mergeConfig(claudeConfigPath, SERVER_KEY);
     results.push({ name: "Claude Code", ...r });
   } catch (e: any) {
     results.push({ name: "Claude Code", action: "failed", path: "", error: e.message });
@@ -989,7 +1120,7 @@ if (syncConfigsFlag) {
   // 2. Cursor: <project>/.cursor/mcp.json
   try {
     const cursorConfigPath = path.join(process.cwd(), ".cursor", "mcp.json");
-    const r = mergeConfig(cursorConfigPath, "nodebench-mcp");
+    const r = mergeConfig(cursorConfigPath, SERVER_KEY);
     results.push({ name: "Cursor", ...r });
   } catch (e: any) {
     results.push({ name: "Cursor", action: "failed", path: "", error: e.message });
@@ -998,7 +1129,7 @@ if (syncConfigsFlag) {
   // 3. Windsurf: <project>/.windsurf/mcp.json
   try {
     const windsurfConfigPath = path.join(process.cwd(), ".windsurf", "mcp.json");
-    const r = mergeConfig(windsurfConfigPath, "nodebench-mcp");
+    const r = mergeConfig(windsurfConfigPath, SERVER_KEY);
     results.push({ name: "Windsurf", ...r });
   } catch (e: any) {
     results.push({ name: "Windsurf", action: "failed", path: "", error: e.message });
@@ -1017,8 +1148,8 @@ if (syncConfigsFlag) {
   // Print config summary
   lines.push("");
   lines.push(`${C}Config entry:${X}`);
-  lines.push(`  command: ${nodePath}`);
-  lines.push(`  args:    [${[entryPath, ...forwardArgs].map(a => `"${a}"`).join(", ")}]`);
+  lines.push(`  command: ${String(serverEntry.command)}`);
+  lines.push(`  args:    [${((serverEntry.args as string[]) ?? []).map(a => `"${a}"`).join(", ")}]`);
   if (Object.keys(envObj).length > 0) {
     lines.push(`  env:     ${Object.keys(envObj).join(", ")}`);
   } else {
@@ -1401,10 +1532,10 @@ if (subCmd === "call") {
   const X = USE_COLOR ? "\x1b[0m" : "";
 
   if (!toolName) {
-    console.log(`\n  ${B}Usage:${X} npx nodebench-mcp call <tool_name> [json_args]\n`);
-    console.log(`  ${D}Example:${X} npx nodebench-mcp call founder_deep_context_gather '{"packetType":"weekly_reset"}'`);
-    console.log(`  ${D}Example:${X} npx nodebench-mcp call discover_tools '{"query":"founder"}'`);
-    console.log(`  ${D}Example:${X} npx nodebench-mcp call save_session_note '{"note":"test"}'\n`);
+    console.log(`\n  ${B}Usage:${X} ${NPX_COMMAND} call <tool_name> [json_args]\n`);
+    console.log(`  ${D}Example:${X} ${NPX_COMMAND} call founder_deep_context_gather '{"packetType":"weekly_reset"}'`);
+    console.log(`  ${D}Example:${X} ${NPX_COMMAND} call discover_tools '{"query":"founder"}'`);
+    console.log(`  ${D}Example:${X} ${NPX_COMMAND} call save_session_note '{"note":"test"}'\n`);
     process.exit(0);
   }
 
@@ -1417,7 +1548,7 @@ if (subCmd === "call") {
   const tool = allCallable.find(t => t.name === toolName);
   if (!tool) {
     console.log(`\n  ${R}Tool not found:${X} ${toolName}`);
-    console.log(`  ${D}Run: npx nodebench-mcp discover ${toolName}${X}\n`);
+    console.log(`  ${D}Run: ${NPX_COMMAND} discover ${toolName}${X}\n`);
     process.exit(1);
   }
 
@@ -1459,22 +1590,22 @@ if (subCmd === "setup") {
 
   const lines: string[] = [];
   lines.push("");
-  lines.push(`  ${B}NodeBench MCP — Quick Setup${X}`);
+  lines.push(`  ${B}${DISPLAY_NAME} - Quick Setup${X}`);
   lines.push("");
   lines.push(`  ${G}1.${X} ${B}Claude Code${X}`);
-  lines.push(`     claude mcp add nodebench -- npx -y nodebench-mcp`);
+  lines.push(`     claude mcp add ${SERVER_KEY} -- ${NPX_Y_COMMAND}`);
   lines.push("");
   lines.push(`  ${G}2.${X} ${B}Cursor${X}  ${D}(.cursor/mcp.json)${X}`);
-  lines.push(`     { "mcpServers": { "nodebench": { "command": "npx", "args": ["-y", "nodebench-mcp"] } } }`);
+  lines.push(`     { "mcpServers": { "${SERVER_KEY}": { "command": "npx", "args": ["-y", "${NODEBENCH_NPX_PACKAGE}"] } } }`);
   lines.push("");
   lines.push(`  ${G}3.${X} ${B}Windsurf${X}  ${D}(.windsurf/mcp.json)${X}`);
-  lines.push(`     { "mcpServers": { "nodebench": { "command": "npx", "args": ["-y", "nodebench-mcp"] } } }`);
+  lines.push(`     { "mcpServers": { "${SERVER_KEY}": { "command": "npx", "args": ["-y", "${NODEBENCH_NPX_PACKAGE}"] } } }`);
   lines.push("");
-  lines.push(`  ${C}Verify:${X}  npx nodebench-mcp call discover_tools '{"query":"founder"}'`);
+  lines.push(`  ${C}Verify:${X}  ${NPX_COMMAND} call discover_tools '{"query":"founder"}'`);
   lines.push(`  ${C}Dashboard:${X}  https://www.nodebenchai.com/founder`);
   lines.push(`  ${C}Agent setup:${X}  https://www.nodebenchai.com/agent-setup.txt`);
   lines.push("");
-  lines.push(`  ${Y}Presets:${X}  --preset default (99 tools) | --preset full (313 tools)`);
+  lines.push(`  ${Y}Compatibility presets on core package:${X}  --preset default | --preset power | --preset admin`);
   lines.push(`  ${Y}Founder tools:${X}  founder_deep_context_gather, founder_packet_validate, founder_packet_diff`);
   lines.push("");
   console.log(lines.join("\n"));
@@ -1490,12 +1621,9 @@ _setDbAccessor(getDb);
 // Assemble tools (filtered by --toolsets / --exclude / --preset if provided)
 let domainTools: McpTool[] = await parseToolsets();
 
-// Determine current preset name for analytics
-let currentPreset: string = 'default';
-const presetIdx = cliArgs.indexOf("--preset");
-if (presetIdx !== -1 && cliArgs[presetIdx + 1]) {
-  currentPreset = cliArgs[presetIdx + 1];
-} else if (cliArgs.includes("--toolsets") || cliArgs.includes("--exclude")) {
+// Determine current preset name for analytics/runtime gating
+let currentPreset: string = requestedPreset;
+if (cliArgs.includes("--toolsets") || cliArgs.includes("--exclude")) {
   currentPreset = 'custom';
 }
 
@@ -2020,8 +2148,20 @@ const dynamicLoadingTools: McpTool[] = [
   },
 ];
 
+// v3 preset gate: expose only facade tools + discover_tools + load_toolset
+const isV3Surface = isWorkflowFacadePreset(currentPreset);
+
 // Combine all tools (mutable for dynamic loading)
-let allTools = [...allToolsWithoutDiscovery, ...discoveryTools, ...dynamicLoadingTools];
+let allTools: McpTool[];
+if (isV3Surface) {
+  allTools = [
+    ...domainTools,
+    ...discoveryTools.filter(t => t.name === "discover_tools"),
+    ...dynamicLoadingTools.filter(t => t.name === "load_toolset"),
+  ];
+} else {
+  allTools = [...allToolsWithoutDiscovery, ...discoveryTools, ...dynamicLoadingTools];
+}
 
 // Always initialize profiler tables (lightweight, non-blocking)
 try {
@@ -2098,7 +2238,15 @@ for (const tool of allTools) {
 
 // Rebuild function for dynamic loading — reconstructs allTools + toolMap
 function rebuildAllTools() {
-  allTools = [...allToolsWithoutDiscovery, ...discoveryTools, ...dynamicLoadingTools];
+  if (isV3Surface) {
+    allTools = [
+      ...domainTools,
+      ...discoveryTools.filter(t => t.name === "discover_tools"),
+      ...dynamicLoadingTools.filter(t => t.name === "load_toolset"),
+    ];
+  } else {
+    allTools = [...allToolsWithoutDiscovery, ...discoveryTools, ...dynamicLoadingTools];
+  }
   toolMap = new Map<string, McpTool>();
   for (const tool of allTools) {
     toolMap.set(tool.name, tool);
@@ -2867,7 +3015,7 @@ You are connected to NodeBench MCP. Follow these rules EXACTLY.
 
 ### SELF-SETUP — If a capability is missing
 When discover_tools returns nothing useful, or a tool says "not configured":
-1. Escalate toolset: If started with --preset lite, switch to --preset core or targeted --toolsets
+1. Escalate toolset: If started on the default lane, switch to --preset power, --preset core, or targeted --toolsets
 2. Resolve providers: Configure missing API keys (GEMINI_API_KEY, OPENAI_API_KEY, etc.)
 3. Bootstrap infra: Run scaffold_nodebench_project or bootstrap_parallel_agents if repo lacks infra
 4. Smoke-test: Re-run the first workflow chain step to confirm the capability is available
@@ -3234,7 +3382,7 @@ Use NodeBench tools when you need to:
 Start with discover_tools("<your task>") to find the right tool.`;
 
 const server = new Server(
-  { name: "nodebench-mcp-methodology", version: "2.32.0" },
+  { name: "nodebench-mcp-methodology", version: NODEBENCH_VERSION },
   {
     capabilities: { tools: { listChanged: true }, prompts: {} },
     instructions: SERVER_INSTRUCTIONS,
@@ -3484,18 +3632,21 @@ process.on('exit', () => {
 const transport = new StdioServerTransport();
 await server.connect(transport);
 
-// Start local dashboard servers (non-blocking, best-effort)
-// Operating Dashboard is PRIMARY — shows business intelligence + system data
+// Start local dashboard servers only when explicitly requested.
 let operatingDashboardPort = 0;
-try {
-  operatingDashboardPort = await startOperatingDashboardServer(getDb(), 6274);
-} catch { /* operating dashboard is optional — don't block MCP */ }
+if (runtimeFlags.enableDashboards) {
+  try {
+    operatingDashboardPort = await startOperatingDashboardServer(getDb(), 6274);
+  } catch { /* operating dashboard is optional — don't block MCP */ }
+}
 
-// UI Dive dashboard is secondary — shows UI review sessions
+// UI Dive dashboard is secondary — also admin-only
 let dashboardPort = 0;
-try {
-  dashboardPort = await startDashboardServer(getDb(), 6278);
-} catch { /* dashboard is optional — don't block MCP */ }
+if (runtimeFlags.enableDashboards) {
+  try {
+    dashboardPort = await startDashboardServer(getDb(), 6278);
+  } catch { /* dashboard is optional — don't block MCP */ }
+}
 
 // Start engine API server (non-blocking, best-effort)
 let enginePort = 0;
@@ -3513,11 +3664,13 @@ if (useEngine) {
   } catch { /* engine is optional — don't block MCP */ }
 }
 
-// Start observability watchdog (non-blocking, best-effort)
-try {
-  initObservability(getDb);
-  startWatchdog(getDb());
-} catch { /* observability is optional — don't block MCP */ }
+// Start observability watchdog only when explicitly requested.
+if (runtimeFlags.enableWatchdog) {
+  try {
+    initObservability(getDb);
+    startWatchdog(getDb());
+  } catch { /* observability is optional — don't block MCP */ }
+}
 
 // Graceful shutdown
 process.on("SIGINT", () => { stopWatchdog(); process.exit(0); });
@@ -3529,7 +3682,10 @@ const toolsetInfo = cliArgs.includes("--toolsets") || cliArgs.includes("--exclud
 const dashInfo = operatingDashboardPort ? ` dashboard at http://127.0.0.1:${operatingDashboardPort}` : "";
 const uiDiveInfo = dashboardPort ? ` ui-dive at http://127.0.0.1:${dashboardPort}` : "";
 const engineInfo = enginePort ? ` engine at http://127.0.0.1:${enginePort}` : "";
-console.error(`nodebench-mcp ready (${allTools.length} tools, ${PROMPTS.length} prompts${toolsetInfo}, SQLite at ~/.nodebench/${dashInfo}${uiDiveInfo}${engineInfo})`);
+const runtimeInfo = runtimeFlags.enableDashboards || runtimeFlags.enableWatchdog
+  ? " admin-runtime"
+  : " core-runtime";
+console.error(`${CLI_COMMAND} ready (${allTools.length} tools, ${PROMPTS.length} prompts${toolsetInfo}, SQLite at ~/.nodebench/${dashInfo}${uiDiveInfo}${engineInfo}${runtimeInfo})`);
 
 // ── Auto-brief on first start (delta/hackathon presets) ──────────────
 // When using delta or hackathon preset, auto-run delta_brief on first session

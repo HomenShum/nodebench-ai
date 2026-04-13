@@ -2187,6 +2187,17 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     },
     phase: "meta",
   },
+  {
+    name: "get_tool_graph",
+    category: "progressive_discovery",
+    tags: ["graph", "relationships", "tool-map", "dependencies", "cooccurrence", "neighbors"],
+    quickRef: {
+      nextAction: "Inspect the graph to see which tools cluster together, then use get_tool_quick_ref or discover_tools to keep moving through the workflow.",
+      nextTools: ["get_tool_quick_ref", "discover_tools"],
+      tip: "Start from a root tool when you want a bounded subgraph. Leave rootTool empty only when you need the broad topology.",
+    },
+    phase: "meta",
+  },
 
   // ═══ META ═══
   {

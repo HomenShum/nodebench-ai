@@ -51,7 +51,7 @@ describe("onboardingState", () => {
     expect(
       deriveChecklistCompletionsFromRoute({
         currentView: "mcp-ledger",
-        showResearchDossier: false,
+
         researchHubInitialTab: "overview",
       }),
     ).toEqual(["tool-activity"]);
@@ -59,7 +59,7 @@ describe("onboardingState", () => {
     expect(
       deriveChecklistCompletionsFromRoute({
         currentView: "receipts",
-        showResearchDossier: false,
+
         researchHubInitialTab: "overview",
       }),
     ).toEqual(["receipt"]);

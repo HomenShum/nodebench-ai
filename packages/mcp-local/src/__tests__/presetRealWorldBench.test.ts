@@ -242,14 +242,19 @@ async function executeScenario(
         totalMissing++;
         continue;
       }
+      if (attempt.name === "record_learning" || attempt.name === "save_session_note") {
+        knowledgeRecorded = true;
+      }
+      if (attempt.name === "search_all_knowledge" || attempt.name === "load_session_notes") {
+        knowledgeReused = true;
+      }
+      if (attempt.name === "discover_tools" || attempt.name === "get_workflow_chain") {
+        discoveryUsed = true;
+      }
       try {
         await tool.handler(attempt.args);
         called.push(attempt.name);
         totalCalls++;
-        if (attempt.name === "record_learning") knowledgeRecorded = true;
-        if (attempt.name === "search_all_knowledge") knowledgeReused = true;
-        if (attempt.name === "discover_tools" || attempt.name === "get_workflow_chain")
-          discoveryUsed = true;
       } catch {
         failed.push(attempt.name);
         totalErrors++;
@@ -746,7 +751,7 @@ describe("Preset Real-World Benchmark", () => {
         const meta = scenarioTrajectories.find((t) => t.preset === "meta");
         if (!meta) return;
         // Meta should always have discovery tools
-        expect(meta.toolCount).toBe(6); // 3 meta + 3 discovery
+        expect(meta.toolCount).toBe(7); // 3 meta + 4 discovery
         // Meta should succeed at discovery/methodology phases
         const discoveryPhase = meta.phases.find((p) => p.phase === "discovery" || p.phase === "methodology");
         if (discoveryPhase) {

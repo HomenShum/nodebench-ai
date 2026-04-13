@@ -2,18 +2,18 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.homenshum/nodebench",
   "title": "NodeBench MCP",
-  "description": "Operating intelligence for founders. 350 MCP tools across 57 domains — decision intelligence, entity research, QA automation, and session memory that compounds. Starts with 15 tools, discovers more as needed.",
+  "description": "Turn messy input into a sourced report. NodeBench MCP starts with a 9-tool workflow lane, expands via discover_tools and load_toolset, and keeps heavier power/admin domains off the default hot path.",
   "repository": {
     "url": "https://github.com/HomenShum/nodebench-ai",
     "source": "github",
     "subfolder": "packages/mcp-local"
   },
-  "version": "2.70.0",
+  "version": "3.1.5",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "nodebench-mcp",
-      "version": "2.70.0",
+      "version": "3.1.5",
       "transport": {
         "type": "stdio"
       },

@@ -119,3 +119,4 @@ vendor/claw3d/
 # Competitive intelligence (private)
 docs/architecture/COMPETITIVE_INTEL_*
 .nodebench-ref/
+scripts/career/.env

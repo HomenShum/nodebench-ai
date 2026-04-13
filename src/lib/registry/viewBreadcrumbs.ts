@@ -20,23 +20,10 @@ const RESEARCH_TAB_LABELS: Record<ResearchTab, string> = {
 export function buildViewBreadcrumbs(params: {
   currentView: MainView;
   researchHubInitialTab: ResearchTab;
-  showResearchDossier: boolean;
 }): ViewBreadcrumbItem[] {
-  const { currentView, researchHubInitialTab, showResearchDossier } = params;
+  const { currentView, researchHubInitialTab } = params;
 
   if (currentView === "control-plane") return [];
-
-  if (currentView === "research" && showResearchDossier) {
-    return [
-      { id: "research", label: VIEW_MAP.research.title, view: "research", path: "/research", isCurrent: false },
-      {
-        id: `research-${researchHubInitialTab}`,
-        label: RESEARCH_TAB_LABELS[researchHubInitialTab],
-        path: researchHubInitialTab === "overview" ? "/research/overview" : `/research/${researchHubInitialTab}`,
-        isCurrent: true,
-      },
-    ];
-  }
 
   const current = VIEW_MAP[currentView];
   if (!current?.parentId) return [];

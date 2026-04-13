@@ -2436,9 +2436,9 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
         // ── LOCAL FILE ──
         if (shouldCheck("local_file")) {
           const deps = [
-            { name: "cheerio", use: "HTML parsing" },
+            { name: "linkedom", use: "HTML parsing" },
             { name: "pdf-parse", use: "PDF extraction" },
-            { name: "xlsx", use: "Excel/CSV parsing" },
+            { name: "read-excel-file", use: "Spreadsheet parsing" },
             { name: "sharp", use: "Image processing" },
             { name: "tesseract.js", use: "OCR (text from images)" },
             { name: "yauzl", use: "ZIP extraction" },
@@ -2460,7 +2460,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
               ...deps.filter((d) => !_isInstalled(d.name)).map((d) => `  npm install ${d.name} → ${d.use}`),
               deps.every((d) => _isInstalled(d.name))
                 ? "All optional file deps installed!"
-                : "Install all: npm install cheerio pdf-parse xlsx sharp tesseract.js yauzl papaparse",
+                : "Install all: npm install linkedom pdf-parse read-excel-file sharp tesseract.js yauzl papaparse",
             ],
           });
         }
@@ -2580,12 +2580,12 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
             "",
             "# Step 1: Install required dependencies",
             'echo "→ Installing required npm packages..."',
-            "npm install @modelcontextprotocol/sdk better-sqlite3 @toon-format/toon",
+            "npm install @modelcontextprotocol/sdk @toon-format/toon",
             "",
             "# Step 2: Install optional dependencies for extended capabilities",
             'echo "→ Installing optional dependencies..."',
             'echo "  These unlock: HTML parsing, PDF extraction, Excel/CSV, OCR, images, ZIP, browser screenshots"',
-            "npm install cheerio pdf-parse xlsx sharp tesseract.js yauzl papaparse || true",
+            "npm install linkedom pdf-parse read-excel-file sharp tesseract.js yauzl papaparse || true",
             "",
             "# Step 3: Install embedding provider (local semantic search)",
             'echo "→ Installing local embedding model..."',
@@ -2632,11 +2632,11 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
             "",
             "# Step 1: Required dependencies",
             'Write-Host "-> Installing required npm packages..." -ForegroundColor Yellow',
-            "npm install @modelcontextprotocol/sdk better-sqlite3 @toon-format/toon",
+            "npm install @modelcontextprotocol/sdk @toon-format/toon",
             "",
             "# Step 2: Optional dependencies",
             'Write-Host "-> Installing optional dependencies..." -ForegroundColor Yellow',
-            "npm install cheerio pdf-parse xlsx sharp tesseract.js yauzl papaparse 2>$null",
+            "npm install linkedom pdf-parse read-excel-file sharp tesseract.js yauzl papaparse 2>$null",
             "",
             "# Step 3: Embedding provider",
             'Write-Host "-> Installing local embedding model..." -ForegroundColor Yellow',

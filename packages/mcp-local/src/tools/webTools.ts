@@ -6,7 +6,7 @@
  * - fetch_url: Fetches a URL and extracts content as markdown/text/html
  *
  * Uses Gemini grounding (preferred), OpenAI web search, or Perplexity as providers.
- * Cheerio is optional for HTML parsing.
+ * Linkedom is optional for HTML parsing.
  */
 
 import type { McpTool } from "../types.js";
@@ -23,11 +23,9 @@ async function canImport(pkg: string): Promise<boolean> {
   }
 }
 
-async function getCheerio(): Promise<any | null> {
+async function getLinkedom(): Promise<any | null> {
   try {
-    const mod = await import("cheerio");
-    // cheerio exports load() directly, not as default
-    return mod;
+    return await import("linkedom");
   } catch {
     return null;
   }
@@ -35,26 +33,35 @@ async function getCheerio(): Promise<any | null> {
 
 // ─── HTML to Markdown conversion ─────────────────────────────────────────────
 
-function htmlToMarkdown(html: string, cheerio: any): string {
-  const $ = cheerio.load(html);
-
-  // Remove script, style, nav, footer, header (keep main content)
-  $("script, style, nav, footer, header, aside, .ad, .advertisement, [role='navigation']").remove();
-
-  // Try to find main content area
-  let content = $("main, article, [role='main'], .content, .post-content, .article-content").first();
-  if (content.length === 0) {
-    content = $("body");
+function parseHtmlDocument(html: string, linkedom: any): any | null {
+  try {
+    const parsed = linkedom.parseHTML(html);
+    return parsed?.document ?? null;
+  } catch {
+    return null;
   }
+}
+
+function htmlToMarkdown(html: string, linkedom: any): string {
+  const document = parseHtmlDocument(html, linkedom);
+  if (!document) return basicHtmlToText(html);
+
+  for (const node of Array.from(document.querySelectorAll("script, style, nav, footer, header, aside, .ad, .advertisement, [role='navigation']"))) {
+    (node as any).remove();
+  }
+
+  const content =
+    document.querySelector("main, article, [role='main'], .content, .post-content, .article-content") ??
+    document.body;
+  if (!content) return basicHtmlToText(html);
 
   const lines: string[] = [];
 
-  // Extract text with structure
-  content.find("h1, h2, h3, h4, h5, h6, p, li, td, th, pre, code, blockquote").each((_: any, el: any) => {
-    const tag = el.tagName?.toLowerCase() ?? "";
-    const text = $(el).text().trim();
+  for (const el of Array.from(content.querySelectorAll("h1, h2, h3, h4, h5, h6, p, li, td, th, pre, code, blockquote")) as any[]) {
+    const tag = String((el as any).tagName ?? "").toLowerCase();
+    const text = el.textContent?.trim() ?? "";
 
-    if (!text) return;
+    if (!text) continue;
 
     switch (tag) {
       case "h1":
@@ -88,30 +95,36 @@ function htmlToMarkdown(html: string, cheerio: any): string {
         break;
       case "td":
       case "th":
-        // Tables are complex, just capture cell content
         lines.push(text);
         break;
     }
-  });
+  }
 
-  // Clean up result
   let result = lines.join("\n");
-  // Remove excessive newlines
   result = result.replace(/\n{3,}/g, "\n\n");
-  // Trim leading/trailing whitespace
   result = result.trim();
 
   return result;
 }
 
 function basicHtmlToText(html: string): string {
-  // Fallback when cheerio not available - basic regex extraction
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function htmlToText(html: string, linkedom: any): string {
+  const document = parseHtmlDocument(html, linkedom);
+  if (!document) return basicHtmlToText(html);
+
+  for (const node of Array.from(document.querySelectorAll("script, style"))) {
+    (node as any).remove();
+  }
+
+  return document.body?.textContent?.replace(/\s+/g, " ").trim() ?? basicHtmlToText(html);
 }
 
 // ─── Search provider implementations ─────────────────────────────────────────
@@ -500,7 +513,7 @@ export const webTools: McpTool[] = [
   {
     name: "fetch_url",
     description:
-      "Fetch a URL and extract its content as markdown, text, or raw HTML. Useful for reading documentation, blog posts, API references, and web pages. Uses cheerio for HTML parsing when available, with fallback to basic text extraction.",
+      "Fetch a URL and extract its content as markdown, text, or raw HTML. Useful for reading documentation, blog posts, API references, and web pages. Uses linkedom for HTML parsing when available, with fallback to basic text extraction.",
     inputSchema: {
       type: "object",
       properties: {
@@ -578,24 +591,19 @@ export const webTools: McpTool[] = [
         const title = titleMatch?.[1]?.trim() ?? parsedUrl.hostname;
 
         let content: string;
+        const htmlParser = await getLinkedom();
 
         if (extractMode === "html") {
           content = html;
         } else if (extractMode === "markdown") {
-          const cheerio = await getCheerio();
-          if (cheerio) {
-            content = htmlToMarkdown(html, cheerio);
+          if (htmlParser) {
+            content = htmlToMarkdown(html, htmlParser);
           } else {
-            // Fallback to text extraction
             content = basicHtmlToText(html);
           }
         } else {
-          // text mode
-          const cheerio = await getCheerio();
-          if (cheerio) {
-            const $ = cheerio.load(html);
-            $("script, style").remove();
-            content = $("body").text().replace(/\s+/g, " ").trim();
+          if (htmlParser) {
+            content = htmlToText(html, htmlParser);
           } else {
             content = basicHtmlToText(html);
           }
@@ -617,7 +625,8 @@ export const webTools: McpTool[] = [
           contentLength: content.length,
           truncated,
           fetchedAt: new Date().toISOString(),
-          cheerioAvailable: !!(await getCheerio()),
+          htmlParser: htmlParser ? "linkedom" : "basic",
+          htmlParserAvailable: !!htmlParser,
         };
       } catch (err: any) {
         return {

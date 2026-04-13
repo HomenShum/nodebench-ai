@@ -1,7 +1,7 @@
 /**
  * toolCatalog.ts — Static summary of MCP tool metadata for the frontend API docs page.
  *
- * Source of truth lives in packages/mcp-local/src/tools/toolRegistry.ts (338 tools).
+ * Source of truth for tool definitions (350 tools).
  * This file contains a curated subset of ~55 representative tools for the browseable catalog.
  * The full catalog is accessible at /developers.
  */

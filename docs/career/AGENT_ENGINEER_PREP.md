@@ -239,3 +239,133 @@ Sources:
 - [Top 50 LangChain Interview Questions (Index.dev)](https://www.index.dev/interview-questions/langchain-developer)
 - [GCP Interview Questions (GeeksforGeeks)](https://www.geeksforgeeks.org/devops/google-cloud-platform-interview-questions/)
 - [LangChain Interview Prep (GitHub)](https://github.com/rohanmistry231/Langchain-Interview-Preparation)
+
+---
+
+# PART 6: COINBASE — Sr SWE, AI Applications (HR/Talent/Recruiting)
+
+## Role Summary
+- **Company**: Coinbase (via Magnit, contractor)
+- **Team**: HR, Talent & Recruiting AI automation
+- **Stack**: Golang (preferred), React/TypeScript, Python, LangChain/LangGraph, Temporal workflows
+- **What they want**: Build AI agents and copilots that automate HR workflows (recruiting pipelines, talent management, onboarding)
+
+## Fit Analysis
+
+| JD Requirement | Your Match | Gap? |
+|---|---|---|
+| 5+ yrs SWE, 6mo+ applied AI | 3+ yrs pure eng + 3.5 JPM (hybrid) + shipping AI since Nov 2025 | Stretch on years but AI depth compensates |
+| Golang preferred | No production Go experience | **GAP** -- need to learn basics fast |
+| React/TypeScript | Strong -- entire NodeBench frontend + Meta telemetry inspector | Direct match |
+| Python | Strong -- Meta ML pipeline, JPM ETL, eval harnesses | Direct match |
+| LangChain/LangGraph, agent frameworks | MCP servers are the same concept, JPM agentic RAG | Translate MCP experience to LangChain terms |
+| RAG, agents, fine-tuning | JPM first agentic RAG, 350-tool agent server, eval harnesses | Strong |
+| REST/gRPC APIs, queues, event-driven | MCP WebSocket gateway, rate limiting, Pub/Sub patterns | Strong |
+| Temporal workflows | No direct experience | **GAP** -- similar to workflow orchestration you've done |
+| HR systems (Greenhouse) | You literally filled out a Greenhouse app this week | Mention it casually |
+| Cross-functional with non-eng teams | JPM banking (worked with bankers, credit analysts, compliance) | Very strong |
+| Translate business problems to AI | JPM "automate prospecting" → agentic RAG, Meta "automate QA" → MCP server | Perfect match |
+
+## Golang -- Crash Course (What You Need to Know)
+
+Go is like Python but typed, compiled, and built for concurrency. Coinbase's backend is mostly Go.
+
+**Key differences from Python:**
+```go
+// Variables are typed
+var name string = "Homen"
+age := 30  // shorthand, Go infers the type
+
+// Functions declare return types
+func add(a int, b int) int {
+    return a + b
+}
+
+// No classes -- use structs
+type Employee struct {
+    Name   string
+    Salary int
+}
+
+// Methods attach to structs
+func (e Employee) DisplayName() string {
+    return e.Name
+}
+
+// Error handling -- no try/catch, functions return errors
+result, err := doSomething()
+if err != nil {
+    log.Fatal(err)  // handle the error
+}
+
+// Goroutines -- lightweight concurrent threads
+go func() {
+    // this runs concurrently
+    fmt.Println("running in background")
+}()
+```
+
+**YOUR EXPERIENCE**: "FluencyMed was built in Golang + Pinecone (70K+ CPT codes). I've written production Go before, just not recently."
+
+## Temporal -- What It Is (You'll Get Asked)
+
+Temporal is a workflow orchestration engine. You define workflows as code, and Temporal handles retries, timeouts, and state persistence.
+
+```
+Workflow: Onboard New Hire
+  Step 1: Create accounts (IT) -- if fails, retry 3x
+  Step 2: Assign mentor (HR) -- wait for approval
+  Step 3: Schedule orientation -- after Step 2 completes
+  Step 4: Send welcome email -- after Step 3
+```
+
+Think of it as a state machine that survives crashes. If the server dies at Step 2, Temporal picks up exactly where it left off.
+
+YOUR EXPERIENCE: "Similar to how our eval harness at Meta orchestrates: eval → patch → trace → review → rerun. Each step has retry logic and the pipeline tracks state. We didn't use Temporal specifically but the pattern is the same -- durable execution with checkpoints."
+
+## HR/Recruiting AI Use Cases (What They'll Build)
+
+Think about what a recruiter does manually and how AI automates it:
+
+| Manual Process | AI Automation |
+|---|---|
+| Screen 500 resumes for 1 role | Agent reads resumes, scores fit against JD, ranks top 20 |
+| Schedule 15 interviews | Agent checks calendars, proposes times, sends invites |
+| Write job descriptions | LLM generates JD from role requirements + company tone |
+| Answer candidate questions | Copilot answers from company knowledge base (RAG) |
+| Track hiring pipeline status | Agent pulls data from Greenhouse, summarizes for hiring manager |
+| Onboarding checklist | Temporal workflow: provision accounts → assign mentor → schedule orientation |
+
+YOUR EXPERIENCE: "I built exactly this pattern at JPMorgan for banking workflows. 'Automate prospecting' was the same problem -- take a manual process (PitchBook → CRM → notes), identify the repetitive loop, build an agent that does it. NodeBench's founder intelligence tools do the same thing for company research."
+
+## Behavioral Answers for Coinbase
+
+**"Tell me about translating a business problem into an AI solution"**
+- S: JPMorgan 2024. Bankers spending hours on PitchBook → CRM → notes loop.
+- T: Vague ask to "automate prospecting"
+- A: Interviewed the bankers, found the actual pain, built LLMsuite with agentic RAG
+- R: Firm's first agentic RAG. Productized for prospecting + sector mapping.
+
+**"Experience working with non-engineering teams"**
+- S: JPMorgan, 3.5 years working directly with credit analysts, bankers, compliance, senior stakeholders
+- T: Translate financial workflows into automation
+- A: Built automated scripts, compiled datasets, prepared 270 financial models + credit packages
+- R: 72 deals up to $800M. Promoted from credit analyst to AI automation lead.
+
+**"Why Coinbase?"**
+- Coinbase going "AI-Native by 2028" is the kind of company-wide transformation where one engineer can have outsized impact
+- HR/Recruiting AI is the same "automate a manual workflow" pattern I've done at JPM and Meta
+- I've shipped two production MCP servers -- that's exactly "prototype to production" at scale
+- Crypto is interesting but the real draw is building AI infrastructure that transforms how an entire company operates
+
+## Coinbase-Specific Prep Drill
+
+**5 min -- Golang basics:**
+- Write a struct, a method, and a goroutine from memory
+- Understand error handling (if err != nil)
+
+**5 min -- Explain Temporal:**
+- "Durable workflow engine. Define steps as code. Handles retries, timeouts, state persistence. If server crashes, picks up where it left off."
+
+**5 min -- HR use case:**
+- "Recruiter screens 500 resumes manually. I'd build a RAG agent that reads each resume, scores against the JD requirements, and surfaces the top 20 with reasons. Same pattern as my JPM agentic RAG but applied to recruiting."

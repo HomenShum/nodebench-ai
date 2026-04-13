@@ -6,7 +6,6 @@
  * index.ts calls tracker.record() instead of inline SQL.
  */
 
-import Database from 'better-sqlite3';
 import {
   getAnalyticsDb,
   closeAnalyticsDb,
@@ -15,6 +14,7 @@ import {
   recordPresetSelection,
   clearOldRecords,
 } from './schema.js';
+import type { AnalyticsDb, AnalyticsStatement } from './schema.js';
 import { detectProject } from './projectDetector.js';
 
 // ── Public types ────────────────────────────────────────────────────────
@@ -46,14 +46,14 @@ export interface SessionStats {
 let _instance: AnalyticsTracker | null = null;
 
 export class AnalyticsTracker {
-  private db: Database.Database;
+  private db: AnalyticsDb;
   private projectPath: string;
   private preset: string;
   private toolToToolset: Map<string, string>;
   private skipTools: Set<string>;
   private sessionStart: number;
   private _callCount = 0;
-  private _insertStmt: Database.Statement | null = null;
+  private _insertStmt: AnalyticsStatement | null = null;
 
   private constructor(config: TrackerConfig) {
     this.db = getAnalyticsDb();
@@ -91,7 +91,7 @@ export class AnalyticsTracker {
   }
 
   /** Underlying DB handle (for stats queries that need it) */
-  getDb(): Database.Database {
+  getDb(): AnalyticsDb {
     return this.db;
   }
 
@@ -206,7 +206,7 @@ export class AnalyticsTracker {
 
 /** @deprecated Use AnalyticsTracker.init() instead */
 export function initializeProjectContext(
-  db: Database.Database,
+  db: AnalyticsDb,
   projectPath: string = process.cwd(),
   preset: string,
   toolCount: number = 44

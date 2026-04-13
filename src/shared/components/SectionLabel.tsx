@@ -12,7 +12,7 @@ interface SectionLabelProps {
 
 export const SectionLabel = memo(function SectionLabel({ icon: Icon, children }: SectionLabelProps) {
   return (
-    <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-content-muted">
+    <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
       {Icon && <Icon className="h-4 w-4" />}
       {children}
     </div>

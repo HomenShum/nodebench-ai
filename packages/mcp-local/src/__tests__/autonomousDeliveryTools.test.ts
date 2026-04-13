@@ -1,6 +1,32 @@
-import { describe, expect, it } from "vitest";
+import os from "node:os";
+import path from "node:path";
+import { mkdtempSync, rmSync } from "node:fs";
+import { beforeAll, afterAll, describe, expect, it } from "vitest";
 
 import { autonomousDeliveryTools } from "../tools/autonomousDeliveryTools.js";
+
+const originalDataDir = process.env.NODEBENCH_DATA_DIR;
+let testDataDir = "";
+
+beforeAll(() => {
+  testDataDir = mkdtempSync(path.join(os.tmpdir(), "nodebench-mcp-autonomous-"));
+  process.env.NODEBENCH_DATA_DIR = testDataDir;
+});
+
+afterAll(() => {
+  if (originalDataDir) {
+    process.env.NODEBENCH_DATA_DIR = originalDataDir;
+  } else {
+    delete process.env.NODEBENCH_DATA_DIR;
+  }
+  if (testDataDir) {
+    try {
+      rmSync(testDataDir, { recursive: true, force: true });
+    } catch {
+      // Windows can keep SQLite sidecars briefly locked. Leaving the temp dir behind is fine for CI.
+    }
+  }
+});
 
 function getTool(name: string) {
   const tool = autonomousDeliveryTools.find((entry) => entry.name === name);

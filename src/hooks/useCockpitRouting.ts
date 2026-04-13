@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Id } from "../../convex/_generated/dataModel";
 import {
+  buildCockpitPath,
+  parseCockpitSurfaceParam,
   resolvePathToCockpitState,
   type MainView,
   type ResearchTab,
@@ -19,8 +21,6 @@ interface UseCockpitRoutingReturn {
   setEntityName: (name: string | null) => void;
   selectedSpreadsheetId: Id<"spreadsheets"> | null;
   setSelectedSpreadsheetId: (id: Id<"spreadsheets"> | null) => void;
-  showResearchDossier: boolean;
-  setShowResearchDossier: (show: boolean) => void;
   researchHubInitialTab: ResearchTab;
   setResearchHubInitialTab: (tab: ResearchTab) => void;
   isTransitioning: boolean;
@@ -44,7 +44,6 @@ export function useCockpitRouting(): UseCockpitRoutingReturn {
       surface: resolved.surfaceId,
       entityName: resolved.entityName,
       spreadsheetId: resolved.spreadsheetId,
-      showResearchDossier: resolved.surfaceId === "research",
       researchTab: resolved.researchTab,
       panel: resolved.panel,
       runId: resolved.runId,
@@ -63,13 +62,12 @@ export function useCockpitRouting(): UseCockpitRoutingReturn {
         surface: "ask" as CockpitSurfaceId,
         entityName: null,
         spreadsheetId: null,
-        showResearchDossier: false,
         researchTab: "overview" as ResearchTab,
         panel: null,
         runId: null,
         documentParam: null,
         workspaceParam: null,
-        canonicalPath: "/?surface=ask",
+        canonicalPath: buildCockpitPath({ surfaceId: "ask" }),
         isLegacyRedirect: false,
         isUnknownRoute: false,
       };
@@ -83,7 +81,6 @@ export function useCockpitRouting(): UseCockpitRoutingReturn {
   const [selectedSpreadsheetId, setSelectedSpreadsheetId] = useState<Id<"spreadsheets"> | null>(
     initialRoute.spreadsheetId ? (initialRoute.spreadsheetId as Id<"spreadsheets">) : null,
   );
-  const [showResearchDossier, setShowResearchDossier] = useState<boolean>(initialRoute.showResearchDossier);
   const [researchHubInitialTab, setResearchHubInitialTab] = useState<ResearchTab>(initialRoute.researchTab);
   const [panel, setPanel] = useState<string | null>(initialRoute.panel);
   const [runId, setRunId] = useState<string | null>(initialRoute.runId);
@@ -102,7 +99,6 @@ export function useCockpitRouting(): UseCockpitRoutingReturn {
     setEntityName(next.entityName);
     setSelectedSpreadsheetId(next.spreadsheetId ? (next.spreadsheetId as Id<"spreadsheets">) : null);
     setResearchHubInitialTab(next.researchTab);
-    setShowResearchDossier(next.showResearchDossier);
     setCurrentView(next.view);
     setCurrentSurface(next.surface);
     setPanel(next.panel);
@@ -123,8 +119,6 @@ export function useCockpitRouting(): UseCockpitRoutingReturn {
     setEntityName,
     selectedSpreadsheetId,
     setSelectedSpreadsheetId,
-    showResearchDossier,
-    setShowResearchDossier,
     researchHubInitialTab,
     setResearchHubInitialTab,
     isTransitioning,
@@ -152,7 +146,7 @@ export function useCockpitSurfaceFromUrl(): CockpitSurfaceFromUrl {
   const [state, setState] = useState<CockpitSurfaceFromUrl>(() => {
     const params = new URLSearchParams(location.search);
     return {
-      surfaceId: (params.get("surface") as CockpitSurfaceId) || "ask",
+      surfaceId: parseCockpitSurfaceParam(params.get("surface")) ?? "ask",
       entityName: params.get("entity"),
       documentId: params.get("doc"),
       runId: params.get("run"),
@@ -162,7 +156,7 @@ export function useCockpitSurfaceFromUrl(): CockpitSurfaceFromUrl {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     setState({
-      surfaceId: (params.get("surface") as CockpitSurfaceId) || "ask",
+      surfaceId: parseCockpitSurfaceParam(params.get("surface")) ?? "ask",
       entityName: params.get("entity"),
       documentId: params.get("doc"),
       runId: params.get("run"),

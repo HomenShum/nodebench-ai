@@ -21,24 +21,24 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-Restart Claude Code. 175 tools available immediately.
+Restart Claude Code. The default lane exposes 9 tools immediately.
 
 ### Preset Selection
 
-By default all toolsets are enabled. Use `--preset` to start with a scoped subset:
+By default NodeBench starts in the workflow-first lane. Use `--preset` when you want a deeper or more specialized surface:
 
 ```json
 {
   "mcpServers": {
     "nodebench": {
       "command": "npx",
-      "args": ["-y", "nodebench-mcp", "--preset", "meta"]
+      "args": ["-y", "nodebench-mcp", "--preset", "power"]
     }
   }
 }
 ```
 
-The **meta** preset is the recommended front door for new agents: start with just 5 discovery tools, use `discover_tools` to find what you need, then self-escalate to a larger preset. See [Toolset Gating & Presets](#toolset-gating--presets) for the full breakdown.
+The **default** preset is the recommended front door for new agents: start with the 9-tool workflow lane, use `discover_tools` only when the task needs more, then expand with `load_toolset` or a larger preset. See [Toolset Gating & Presets](#toolset-gating--presets) for the full breakdown.
 
 **→ Quick Refs:** After setup, run `getMethodology("overview")` | First task? See [Verification Cycle](#verification-cycle-workflow) | New to codebase? See [Environment Setup](#environment-setup) | Preset options: See [Toolset Gating & Presets](#toolset-gating--presets)
 
@@ -287,71 +287,78 @@ Use `getMethodology("overview")` to see all available workflows.
 | **Session Memory** | `save_session_note`, `load_session_notes`, `refresh_task_context` | Compaction-resilient notes, attention refresh |
 | **Discovery** | `discover_tools`, `get_tool_quick_ref`, `get_workflow_chain` | Hybrid search, quick refs, workflow chains |
 
-Meta + Discovery tools (5 total) are **always included** regardless of preset. See [Toolset Gating & Presets](#toolset-gating--presets).
+The current front door is the workflow-first default lane. Agents start small, prove value quickly, and only expand into heavier toolsets when the task demands it.
 
-**→ Quick Refs:** Find tools by keyword: `findTools({ query: "verification" })` | Hybrid search: `discover_tools({ query: "security" })` | Get workflow guide: `getMethodology({ topic: "..." })` | See [Methodology Topics](#methodology-topics) for all topics
+**→ Quick Refs:** Start small: `investigate({ topic: "..." })` | Expand only when needed: `discover_tools({ query: "security" })` | Load a deeper lane: `load_toolset({ toolset: "recon" })` | See [Methodology Topics](#methodology-topics) for verification and eval guidance
 
 ---
 
 ## Toolset Gating & Presets
 
-NodeBench MCP supports 4 presets that control which domain toolsets are loaded at startup. Meta + Discovery tools (5 total) are **always included** on top of any preset.
+NodeBench MCP now uses a workflow-first default and keeps the larger surfaces behind explicit presets.
 
 ### Preset Table
 
-| Preset | Domain Toolsets | Domain Tools | Total (with meta+discovery) | Use Case |
-|--------|----------------|-------------|----------------------------|----------|
-| **meta** | 0 | 0 | 5 | Discovery-only front door. Agents start here and self-escalate. |
-| **lite** | 8 | 38 | 43 | Lightweight verification-focused workflows. CI bots, quick checks. |
-| **core** | 23 | 105 | 110 | Full development workflow. Most agent sessions. |
-| **full** | 31 | 170 | 175 | Everything enabled. Benchmarking, exploration, advanced use. |
+| Preset | Surface | Use Case |
+|--------|---------|----------|
+| **default** | 9 visible tools | Workflow-first lane: investigate, compare, track, summarize, search, report, ask_context, discover_tools, load_toolset |
+| **power** | Expanded workflow surface | Founder, recon, packets, and web-heavy research without admin runtime |
+| **admin** | Operator surface | Profiling, observability, dashboards, eval, and debug workflows |
+| **core** | Full methodology lane | Verification, eval, learning, recon, execution trace, mission harness |
+| **founder** | Compatibility preset | Existing founder-oriented setups |
+| **full** | All loaded domains | Maximum coverage when you explicitly want everything |
 
 ### Usage
 
 ```bash
-npx nodebench-mcp --preset meta       # Discovery-only (5 tools)
-npx nodebench-mcp --preset lite       # Verification + eval + recon + security
-npx nodebench-mcp --preset core       # Full dev workflow without vision/parallel
-npx nodebench-mcp --preset full       # All toolsets (default)
+npx nodebench-mcp                       # Default workflow lane
+npx nodebench-mcp --preset power       # Expanded founder / recon / packet workflows
+npx nodebench-mcp --preset admin       # Profiling, dashboards, and operator tooling
+npx nodebench-mcp --preset core        # Full dev workflow without all optional domains
+npx nodebench-mcp --preset full        # All toolsets
 npx nodebench-mcp --toolsets verification,eval,recon   # Custom selection
 npx nodebench-mcp --exclude vision,ui_capture          # Exclude specific toolsets
 ```
 
-### The Meta Preset — Discovery-Only Front Door
+### The Default Lane
 
-The **meta** preset loads zero domain tools. Agents start with only 5 tools:
+The **default** preset is intentionally small:
 
 | Tool | Purpose |
 |------|---------|
-| `findTools` | Keyword search across all registered tools |
-| `getMethodology` | Get workflow guides by topic |
-| `discover_tools` | Hybrid search with relevance scoring (richer than findTools) |
-| `get_tool_quick_ref` | Quick reference card for any specific tool |
-| `get_workflow_chain` | Recommended tool sequence for common workflows |
+| `investigate` | Produce a sourced report on a topic, company, person, link, or messy note |
+| `compare` | Side-by-side compare 2 to 4 entities |
+| `track` | Add, inspect, or list tracked entities |
+| `summarize` | Compress raw context into a compact brief |
+| `search` | Search live web and saved knowledge in one step |
+| `report` | Turn findings into a readable report artifact |
+| `ask_context` | Query saved NodeBench context |
+| `discover_tools` | Find the next deeper lane when the default surface is not enough |
+| `load_toolset` | Expand the session with a specific toolset only when needed |
 
-This is the recommended starting point for autonomous agents. The self-escalation pattern:
+Recommended escalation pattern:
 
 ```
-1. Start with --preset meta (5 tools)
-2. discover_tools({ query: "what I need to do" })    // Find relevant tools
-3. get_workflow_chain({ workflow: "verification" })    // Get the tool sequence
-4. If needed tools are not loaded:
-   → Restart with --preset core or --preset full
-   → Or use --toolsets to add specific domains
-5. Proceed with full workflow
+1. Start with the default workflow lane
+2. Try investigate / compare / search / report first
+3. If the task needs deeper capability, call discover_tools(...)
+4. Load exactly one relevant toolset with load_toolset(...)
+5. Continue the workflow with the newly loaded tools
 ```
 
 ### Preset Domain Breakdown
 
-**meta** (0 domains): No domain tools. Meta + Discovery only.
+**default**: `core_workflow`
 
-**lite** (8 domains): `verification`, `eval`, `quality_gate`, `learning`, `flywheel`, `recon`, `security`, `boilerplate`
+**power**: `core_workflow`, `deep_sim`, `founder`, `recon`, `web`, `shared_context`, `sync_bridge`, `session_memory`, `entity_lookup`, `delta`, `site_map`
 
-**core** (22 domains): Everything in lite plus `bootstrap`, `self_eval`, `llm`, `platform`, `research_writing`, `flicker_detection`, `figma_flow`, `benchmark`, `session_memory`, `toon`, `pattern`, `git_workflow`, `seo`, `voice_bridge`
+**admin**: `core_workflow`, `observability`, `profiler`, `local_dashboard`, `benchmark`, `longitudinal_benchmark`, `dogfood_judge`, `execution_trace`, `qa_orchestration`, `mission_harness`, `quality_gate`, `eval`, `verification`
 
-**full** (30 domains): All toolsets in TOOLSET_MAP including `ui_capture`, `vision`, `local_file`, `web`, `github`, `docs`, `parallel`, `gaia_solvers`, and everything in core.
+**core**: verification, eval, quality_gate, learning, flywheel, autonomous_delivery, sync_bridge, shared_context, recon, security, boilerplate, skill_update, context_sandbox, observability, execution_trace, mission_harness, deep_sim, founder, scenario_compiler, packet_compiler, entity_temporal
 
-**→ Quick Refs:** Check current toolset: `findTools({ query: "*" })` | Self-escalate: restart with `--preset core` | See [MCP Tool Categories](#mcp-tool-categories) | CLI help: `npx nodebench-mcp --help`
+**full**: every registered domain in the package
+
+**→ Quick Refs:** Check current lane with `discover_tools({ query: "..." })` | Self-escalate with `load_toolset({ toolset: "recon" })` or restart with `--preset core` | See [MCP Tool Categories](#mcp-tool-categories) | CLI help: `npx nodebench-mcp --help`
 
 ---
 
@@ -706,12 +713,12 @@ Available via `getMethodology({ topic: "..." })`:
 | `autonomous_maintenance` | Risk-tiered execution | [Autonomous Maintenance](#autonomous-self-maintenance-system) |
 | `parallel_agent_teams` | Multi-agent coordination, task locking, oracle testing | [Parallel Agent Teams](#parallel-agent-teams) |
 | `self_reinforced_learning` | Trajectory analysis, self-eval, improvement recs | [Self-Reinforced Learning](#self-reinforced-learning-loop) |
-| `toolset_gating` | 4 presets (meta, lite, core, full) and self-escalation | [Toolset Gating & Presets](#toolset-gating--presets) |
+| `toolset_gating` | Default, power, admin, core, founder, and full preset strategy | [Toolset Gating & Presets](#toolset-gating--presets) |
 | `toon_format` | TOON encoding — ~40% token savings vs JSON | TOON is on by default since v2.14.1 |
 | `seo_audit` | Full SEO audit workflow (technical + performance + content) | `seo_audit_url`, `check_page_performance`, `analyze_seo_content` |
 | `voice_bridge` | Voice pipeline design, config analysis, scaffolding | `design_voice_pipeline`, `analyze_voice_config` |
 
-**→ Quick Refs:** Find tools: `findTools({ query: "..." })` | Get any methodology: `getMethodology({ topic: "..." })` | See [MCP Tool Categories](#mcp-tool-categories)
+**→ Quick Refs:** Find deeper lanes: `discover_tools({ query: "..." })` | Get any methodology: `getMethodology({ topic: "..." })` | See [MCP Tool Categories](#mcp-tool-categories)
 
 ---
 

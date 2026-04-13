@@ -126,12 +126,12 @@ const RELEASES: Release[] = [
   {
     version: "v2.28.0",
     date: "January 28, 2026",
-    title: "338 MCP Tools",
+    title: "350 MCP Tools",
     bullets: [
-      "338 MCP tools across 55 domains with progressive discovery and lazy-loading",
+      "350 MCP tools across 55 domains with progressive discovery and lazy-loading",
       "Hybrid search with 14 strategies and 8 search modes",
       "Agent-as-a-graph embeddings with weighted RRF fusion",
-      "Persona presets: starter (15), founder, banker, operator, researcher, full (338)",
+      "Persona presets: starter (15), founder, banker, operator, researcher, full (350)",
       "CLI subcommands: discover, setup, workflow, quickref, call, demo",
     ],
   },

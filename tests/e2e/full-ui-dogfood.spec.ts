@@ -1,86 +1,38 @@
 import { expect, test, type Page } from "@playwright/test";
-import { buildCockpitPath, buildCockpitPathForView } from "../../src/lib/registry/viewRegistry";
 
 const ROUTES = [
-  { path: buildCockpitPath({ surfaceId: "ask" }), name: "home" },
-  { path: buildCockpitPathForView({ view: "receipts" }), name: "receipts" },
-  { path: buildCockpitPathForView({ view: "delegation" }), name: "delegation" },
-  { path: buildCockpitPathForView({ view: "investigation" }), name: "investigation" },
-  { path: buildCockpitPathForView({ view: "product-direction", tab: "overview" }), name: "product-direction" },
-  { path: buildCockpitPathForView({ view: "execution-trace" }), name: "execution-trace" },
-  { path: buildCockpitPath({ surfaceId: "research", tab: "overview" }), name: "research-hub" },
-  { path: buildCockpitPath({ surfaceId: "research", tab: "overview" }), name: "research-overview" },
-  { path: buildCockpitPath({ surfaceId: "research", tab: "signals" }), name: "research-signals" },
-  { path: buildCockpitPath({ surfaceId: "research", tab: "briefing" }), name: "research-briefing" },
-  { path: buildCockpitPath({ surfaceId: "research", tab: "deals" }), name: "research-deals" },
-  { path: buildCockpitPath({ surfaceId: "research", tab: "changelog" }), name: "research-changelog" },
-  { path: buildCockpitPathForView({ view: "documents" }), name: "documents" },
-  { path: buildCockpitPathForView({ view: "spreadsheets" }), name: "spreadsheets" },
-  { path: buildCockpitPathForView({ view: "calendar" }), name: "calendar" },
-  { path: buildCockpitPathForView({ view: "agents" }), name: "agents" },
-  { path: buildCockpitPathForView({ view: "roadmap" }), name: "roadmap" },
-  { path: buildCockpitPathForView({ view: "timeline" }), name: "timeline" },
-  { path: buildCockpitPathForView({ view: "developers" }), name: "developers" },
-  { path: buildCockpitPathForView({ view: "footnotes", tab: "overview" }), name: "footnotes" },
-  { path: buildCockpitPathForView({ view: "signals", tab: "overview" }), name: "signals" },
-  { path: buildCockpitPathForView({ view: "benchmarks" }), name: "benchmarks" },
-  { path: buildCockpitPathForView({ view: "funding", tab: "overview" }), name: "funding" },
-  { path: buildCockpitPathForView({ view: "activity" }), name: "activity" },
-  { path: buildCockpitPathForView({ view: "analytics-hitl" }), name: "analytics-hitl" },
-  { path: buildCockpitPathForView({ view: "analytics-components" }), name: "analytics-components" },
-  { path: buildCockpitPathForView({ view: "analytics-recommendations" }), name: "analytics-recommendations" },
-  { path: buildCockpitPathForView({ view: "cost-dashboard" }), name: "cost-dashboard" },
-  { path: buildCockpitPathForView({ view: "industry-updates", tab: "overview" }), name: "industry-updates" },
-  { path: buildCockpitPathForView({ view: "for-you-feed", tab: "overview" }), name: "for-you-feed" },
-  { path: buildCockpitPathForView({ view: "document-recommendations" }), name: "document-recommendations" },
-  { path: buildCockpitPathForView({ view: "agent-marketplace" }), name: "agent-marketplace" },
-  { path: buildCockpitPathForView({ view: "github-explorer" }), name: "github-explorer" },
-  { path: buildCockpitPathForView({ view: "pr-suggestions" }), name: "pr-suggestions" },
-  { path: buildCockpitPathForView({ view: "linkedin-posts" }), name: "linkedin-posts" },
-  { path: buildCockpitPathForView({ view: "mcp-ledger" }), name: "mcp-ledger" },
-  { path: buildCockpitPathForView({ view: "dogfood" }), name: "dogfood" },
-  { path: buildCockpitPathForView({ view: "public" }), name: "public-docs" },
-];
+  {
+    path: "/?surface=home",
+    name: "home",
+    readyText: "One question in. Live report out.",
+  },
+  {
+    path: "/?surface=chat&q=ditto%20ai&lens=founder",
+    name: "chat",
+    readyText: "Answer",
+  },
+  {
+    path: "/?surface=reports",
+    name: "reports",
+    readyText: "Reusable memory",
+  },
+  {
+    path: "/?surface=nudges",
+    name: "nudges",
+    readyText: "Nudges feed",
+  },
+  {
+    path: "/?surface=me",
+    name: "me",
+    readyText: "What improves the next run",
+  },
+] as const;
 
-/** Theme × viewport variants for comprehensive QA coverage */
 const VARIANTS = [
   { theme: "dark", viewport: { width: 1440, height: 900 }, suffix: "" },
   { theme: "light", viewport: { width: 1440, height: 900 }, suffix: "-light" },
   { theme: "dark", viewport: { width: 390, height: 844 }, suffix: "-mobile" },
   { theme: "light", viewport: { width: 390, height: 844 }, suffix: "-mobile-light" },
-] as const;
-
-const PERSONA_LENS_SCENARIOS = [
-  {
-    lens: "founder",
-    query: "Generate my founder weekly reset â€” what changed, main contradiction, next 3 moves",
-    expectedText: "NodeBench",
-  },
-  {
-    lens: "investor",
-    query: "Analyze Anthropic's competitive position in the foundation model market",
-    expectedText: "Anthropic",
-  },
-  {
-    lens: "banker",
-    query: "Build a diligence memo on this Series B startup from these meeting notes",
-    expectedText: "Series B Startup Diligence",
-  },
-  {
-    lens: "ceo",
-    query: "What changed in AI commerce strategy for Shopify, Amazon, and Google this quarter?",
-    expectedText: "Shopify",
-  },
-  {
-    lens: "legal",
-    query: "What legal and data-governance risks matter most for OpenAI enterprise adoption this quarter?",
-    expectedText: "OpenAI Enterprise Risk Review",
-  },
-  {
-    lens: "student",
-    query: "Explain Shopify's AI commerce strategy in plain language and give me a study brief.",
-    expectedText: "Shopify",
-  },
 ] as const;
 
 type BrowserIssueKind = "pageerror" | "console" | "requestfailed" | "response";
@@ -94,16 +46,12 @@ type BrowserIssue = {
 const BENIGN_PAGE_ERROR_PATTERNS = [/ResizeObserver loop limit exceeded/i];
 const BENIGN_CONSOLE_ERROR_PATTERNS = [
   /ResizeObserver loop limit exceeded/i,
-  /^Failed to load resource: the server responded with a status of 404 \(Not Found\)$/i,
+  /unsupported command-line flag: --no-sandbox/i,
 ];
 const BENIGN_REQUEST_FAILURE_PATTERNS = [/ERR_ABORTED/i];
 const BENIGN_RESPONSE_FAILURE_PATTERNS = [
-  /^http:\/\/127\.0\.0\.1:\d+\/(?:\?surface=[^ ]+)? 404$/i,
-  /\/benchmarks\/videos\/enterprise-investigation-eval-stream-latest\.webm$/i,
-  /\/dogfood\/videos\/agentic-session\.webm$/i,
-  /\/dogfood\/videos\/classic-wake-word\.webm$/i,
-  /\/dogfood\/videos\/cockpit-wake-word\.webm$/i,
-  /\/dogfood\/walkthrough\.mp4$/i,
+  /\/favicon\.ico 404$/i,
+  /\/dogfood\/walkthrough\.(?:mp4|webm) 404$/i,
 ];
 
 function isBenignBrowserIssue(kind: BrowserIssueKind, detail: string) {
@@ -212,8 +160,6 @@ async function navigateWithinApp(page: Page, targetPath: string) {
         .isVisible({ timeout: 5_000 })
         .catch(() => false);
 
-      // Keep dogfood stable under preview by falling back to in-app navigation when
-      // a direct document request flakes or returns a transient non-200.
       if (targetPath !== "/" && (!response || response.status() >= 400 || !mainShellVisible)) {
         await page.goto("/", { waitUntil: "domcontentloaded", timeout: 60_000 });
         await page.waitForSelector("#main-content", { state: "visible", timeout: 60_000 });
@@ -221,7 +167,7 @@ async function navigateWithinApp(page: Page, targetPath: string) {
           window.history.pushState({}, "", path);
           window.dispatchEvent(new PopStateEvent("popstate"));
         }, targetPath);
-        await page.waitForURL((url) => url.pathname === targetPath, { timeout: 20_000 });
+        await page.waitForTimeout(1200);
       }
 
       await page.waitForSelector("#main-content", { state: "visible", timeout: 20_000 });
@@ -237,49 +183,18 @@ async function navigateWithinApp(page: Page, targetPath: string) {
   throw lastError;
 }
 
-async function runLandingPersonaLensQuery(
+async function ensureSurfaceReady(
   page: Page,
-  scenario: (typeof PERSONA_LENS_SCENARIOS)[number],
+  route: (typeof ROUTES)[number],
 ) {
-  await navigateWithinApp(page, "/");
-  const lensButton = page.getByTestId(`landing-lens-${scenario.lens}`);
-  await expect(lensButton).toBeVisible({ timeout: 20_000 });
-  await lensButton.click();
-
-  const searchInput = page.getByTestId("landing-search-input");
-  await expect(searchInput).toBeVisible();
-  await searchInput.fill(scenario.query);
-
-  const submitButton = page.getByTestId("landing-search-submit");
-  await submitButton.click();
-
-  const resultWorkspace = page.getByTestId("landing-result-workspace");
-  await expect(resultWorkspace).toBeVisible({ timeout: 35_000 });
-  await expect(resultWorkspace).toContainText(scenario.expectedText, { timeout: 35_000 });
-}
-
-async function ensureNoBlockingModal(page: Page) {
-  const overlay = page.locator("div.fixed.inset-0.z-50");
-  for (let i = 0; i < 6; i++) {
-    if (!(await overlay.count())) return;
-
-    const closeTestId = page.getByTestId("close-settings");
-    if (await closeTestId.count()) {
-      await closeTestId.click({ force: true });
-      await page.waitForTimeout(250);
-      continue;
-    }
-
-    const closeBtn = page.getByRole("button", { name: /close|cancel|dismiss|done/i }).first();
-    if (await closeBtn.count()) {
-      await closeBtn.click({ force: true });
-      await page.waitForTimeout(250);
-      continue;
-    }
-
-    await page.keyboard.press("Escape");
-    await page.waitForTimeout(250);
-  }
+  await expect(page.getByText("Something went wrong")).toHaveCount(0);
+  await expect(page.locator("#main-content")).toBeVisible({ timeout: 20_000 });
+  const desktopNav = page.getByRole("navigation", { name: /primary product navigation/i });
+  const mobileNav = page.getByRole("navigation", { name: /mobile navigation/i });
+  const hasDesktopNav = await desktopNav.count();
+  const hasMobileNav = await mobileNav.count();
+  expect(hasDesktopNav + hasMobileNav).toBeGreaterThan(0);
+  await expect(page.getByText(route.readyText).first()).toBeVisible({ timeout: 20_000 });
 }
 
 async function setTheme(page: Page, theme: "dark" | "light") {
@@ -301,9 +216,9 @@ async function setTheme(page: Page, theme: "dark" | "light") {
 
 test.describe("Full UI Dogfood", () => {
   test.use({ serviceWorkers: "block" });
-  test("dogfood all routes — dark/light × desktop/mobile", async ({ page }) => {
-    // 4 variants × ~37 routes + interactions ≈ 20 min
-    test.setTimeout(30 * 60 * 1000);
+
+  test("dogfood public product routes and interactions", async ({ page }) => {
+    test.setTimeout(25 * 60 * 1000);
     const selectedRoutes = shouldIncludeRoutes() ? getSelectedRoutes() : [];
     const includeInteractions = shouldIncludeInteractions();
 
@@ -314,33 +229,25 @@ test.describe("Full UI Dogfood", () => {
         return;
       }
       browserIssues.push({ kind, route: activeRoute, detail });
+      console.error(`${kind.toUpperCase()}:`, detail);
     };
 
-    // Set initial dark theme via evaluate (not addInitScript — that overrides on every nav)
     page.on("pageerror", (error) => {
-      const detail = error?.message ?? String(error);
-      captureIssue("pageerror", detail);
-      console.error("BROWSER ERROR:", detail);
+      captureIssue("pageerror", error?.message ?? String(error));
     });
     page.on("console", (msg) => {
       if (msg.type() !== "error") return;
-      const detail = msg.text();
-      captureIssue("console", detail);
-      console.error("BROWSER CONSOLE ERROR:", detail);
+      captureIssue("console", msg.text());
     });
     page.on("requestfailed", (request) => {
       const detail = `${request.url()} ${request.failure()?.errorText ?? ""}`.trim();
       captureIssue("requestfailed", detail);
-      console.error("REQUEST FAILED:", detail);
     });
     page.on("response", (response) => {
       if (response.status() < 400) return;
-      const detail = `${response.url()} ${response.status()}`;
-      captureIssue("response", detail);
-      console.error("HTTP RESPONSE ERROR:", detail);
+      captureIssue("response", `${response.url()} ${response.status()}`);
     });
 
-    console.log('Navigating to root...');
     activeRoute = "/";
     await page.goto("/", { waitUntil: "networkidle" });
     await resetBrowserStorage(page);
@@ -363,29 +270,20 @@ test.describe("Full UI Dogfood", () => {
     activeRoute = "/";
     await page.goto("/", { waitUntil: "networkidle" });
     await expect(page.getByText("Convex backend not configured")).toHaveCount(0);
-
-    console.log('Signing in...');
     await signInIfPrompted(page);
-
-    console.log('Waiting for main-content...');
     await expect(page.locator("#main-content")).toBeVisible({ timeout: 60_000 });
 
-    // ─── Capture all routes for each variant ───────────────────────────
     for (const variant of VARIANTS) {
-      console.log(`Testing variant: ${variant.theme}${variant.suffix}`);
       await page.setViewportSize(variant.viewport);
       await setTheme(page, variant.theme);
-      // Reload to apply theme fully
       activeRoute = "/";
       await page.goto("/", { waitUntil: "networkidle" });
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(900);
 
       for (const route of selectedRoutes) {
-        console.log(`  Route: ${route.path}`);
         activeRoute = route.path;
         await navigateWithinApp(page, route.path);
-        await page.waitForTimeout(600); // Wait for animations
-        await expect(page.getByText("Something went wrong")).toHaveCount(0);
+        await ensureSurfaceReady(page, route);
         await page.screenshot({
           path: `test-results/full-ui-dogfood/${route.name}${variant.suffix}.png`,
           fullPage: true,
@@ -393,380 +291,47 @@ test.describe("Full UI Dogfood", () => {
       }
     }
 
-    // ─── Interaction captures (desktop dark only — primary variant) ────
-    if (!includeInteractions) {
-      expect(browserIssues, formatBrowserIssues(browserIssues)).toEqual([]);
-      return;
-    }
+    if (includeInteractions) {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await setTheme(page, "dark");
 
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await setTheme(page, "dark");
-    activeRoute = "/";
-    await navigateWithinApp(page, "/");
-
-    await ensureNoBlockingModal(page);
-
-    const settingsTrigger = page
-      .locator('[data-testid="open-settings"], button[title="Profile"], button[title="Settings"], [aria-label="Settings"]')
-      .first();
-    if (await settingsTrigger.count()) {
-      await expect(settingsTrigger).toBeVisible();
-      await settingsTrigger.click();
-      await page.waitForTimeout(400);
-
-      const tabs = [
-        "Profile",
-        "Account",
-        "Preferences",
-        "Usage",
-        "Integrations",
-        "Billing",
-        "Reminders",
-        "Channels",
-      ];
-
-      for (const tab of tabs) {
-        const tabButton = page.getByRole("button", { name: tab }).first();
-        if (await tabButton.count()) {
-          await tabButton.click({ force: true });
-          await page.waitForTimeout(350);
-          await page.screenshot({
-            path: `test-results/full-ui-dogfood/settings-${tab.toLowerCase()}.png`,
-            fullPage: false,
-          });
-        }
-      }
-    }
-
-    await page.keyboard.press("Escape");
-    await page.waitForTimeout(350);
-    await ensureNoBlockingModal(page);
-
-    // Command palette
-    const openBtn = page.getByTestId("open-command-palette");
-    const dialog = page.getByRole("dialog", { name: "Command palette" });
-    if (await openBtn.count()) {
-      await expect(openBtn).toBeVisible();
-      await openBtn.click();
-    } else {
-      const isMac = await page.evaluate(() => /Mac|iPhone|iPad|iPod/.test(navigator.platform));
-      await page.keyboard.press(isMac ? "Meta+K" : "Control+K");
-    }
-
-    await expect(dialog).toBeVisible();
-    await page.screenshot({
-      path: "test-results/full-ui-dogfood/command-palette.png",
-      fullPage: false,
-    });
-
-    await page.keyboard.press("Escape");
-    await expect(dialog).toHaveCount(0);
-
-    const isMac = await page.evaluate(() => /Mac|iPhone|iPad|iPod/.test(navigator.platform));
-    await page.keyboard.press(isMac ? "Meta+K" : "Control+K");
-    await expect(dialog).toBeVisible();
-    await page.keyboard.press("Escape");
-    await page.waitForTimeout(250);
-
-    // Assistant panel
-    activeRoute = "/";
-    await navigateWithinApp(page, "/");
-    const assistantBtn = page.getByRole("button", { name: "Assistant" }).first();
-    if (await assistantBtn.count()) {
-      await assistantBtn.click({ force: true });
-      await page.waitForTimeout(900);
-      await expect(page.getByText("Something went wrong")).toHaveCount(0);
+      activeRoute = "/?surface=home";
+      await navigateWithinApp(page, "/?surface=home");
+      const homeInput = page.getByLabel("Ask anything or upload anything").first();
+      await expect(homeInput).toBeVisible({ timeout: 20_000 });
+      await homeInput.fill("What does Ditto AI do and what matters most right now?");
+      await page.getByRole("button", { name: /^ask$/i }).first().click();
+      await page.waitForTimeout(2500);
+      await expect(page).toHaveURL(/surface=chat/, { timeout: 20_000 });
+      await expect(page.getByLabel("Continue the live session").first()).toBeVisible({ timeout: 20_000 });
       await page.screenshot({
-        path: "test-results/full-ui-dogfood/assistant-panel.png",
-        fullPage: false,
-      });
-      // Close assistant
-      await page.keyboard.press("Escape");
-      await page.waitForTimeout(300);
-    }
-
-    // ─── Deep interaction captures — real user behavior scenarios ───────
-    // These test popups, drawers, hover states, and input flows
-    // that only surface during actual human interaction depth.
-
-    // 1. Agent panel — open, type a message, capture thread view
-    activeRoute = "/agents";
-    await navigateWithinApp(page, "/agents");
-    await page.waitForTimeout(300);
-    const agentInput = page.locator("input[placeholder*='Ask anything']:visible, textarea[placeholder*='Ask anything']:visible").first();
-    if (await agentInput.count()) {
-      await agentInput.click();
-      await agentInput.fill("Show me the latest research signals");
-      await page.waitForTimeout(400);
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-agent-input.png",
-        fullPage: false,
-      });
-    }
-
-    // 2. Calendar — click a date to open event popover/editor
-    activeRoute = "/calendar";
-    await navigateWithinApp(page, "/calendar");
-    await page.waitForTimeout(300);
-    const calendarDay = page.locator("div[role='button'][aria-pressed]:visible").first();
-    if (await calendarDay.count()) {
-      await calendarDay.click();
-      await page.waitForTimeout(500);
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-calendar-click.png",
-        fullPage: false,
-      });
-      await page.keyboard.press("Escape");
-      await page.waitForTimeout(200);
-    }
-
-    // 3. Research Hub — hover on entity links to trigger hover preview
-    activeRoute = "/research";
-    await navigateWithinApp(page, "/research");
-    await page.waitForTimeout(300);
-    const entityLink = page.locator("button.border-b-2.border-dashed:visible").first();
-    if (await entityLink.count()) {
-      await entityLink.hover();
-      await page.waitForTimeout(600);
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-entity-hover.png",
-        fullPage: false,
-      });
-    }
-
-    // 4. Research Briefing — click a signal card to expand details
-    activeRoute = "/research/briefing";
-    await navigateWithinApp(page, "/research/briefing");
-    await page.waitForTimeout(300);
-    const signalCard = page.locator("button[aria-expanded][type='button']:visible").first();
-    if (await signalCard.count()) {
-      await signalCard.click();
-      await page.waitForTimeout(500);
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-signal-expanded.png",
-        fullPage: false,
-      });
-    }
-
-    // 5. Documents — hover a document card for preview
-    activeRoute = "/documents";
-    await navigateWithinApp(page, "/documents");
-    await page.waitForTimeout(300);
-    const docCard = page.locator("div[draggable='true']:visible").first();
-    if (await docCard.count()) {
-      await docCard.hover();
-      await page.waitForTimeout(500);
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-document-hover.png",
-        fullPage: false,
-      });
-    }
-
-    // 6. GitHub Explorer — click a repo link
-    activeRoute = "/github";
-    await navigateWithinApp(page, "/github");
-    await page.waitForTimeout(300);
-    const repoLink = page.locator("a[href*='github.com'][target='_blank']:visible").first();
-    if (await repoLink.count()) {
-      await repoLink.hover();
-      await page.waitForTimeout(400);
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-github-hover.png",
-        fullPage: false,
-      });
-    }
-
-    // 7. Funding Brief — click a deal entry in list panel
-    activeRoute = "/funding";
-    await navigateWithinApp(page, "/funding");
-    await page.waitForTimeout(300);
-    const dealBtn = page.locator("button[type='button'].w-full.text-left:visible").first();
-    if (await dealBtn.count()) {
-      await dealBtn.click();
-      await page.waitForTimeout(500);
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-funding-deal.png",
-        fullPage: false,
-      });
-    }
-
-    // 8. Search input on home — type and see suggestions
-    for (const scenario of PERSONA_LENS_SCENARIOS) {
-      activeRoute = "/";
-      await runLandingPersonaLensQuery(page, scenario);
-      await page.screenshot({
-        path: `test-results/full-ui-dogfood/persona-lens-${scenario.lens}.png`,
+        path: "test-results/full-ui-dogfood/interaction-home-to-chat.png",
         fullPage: true,
       });
-    }
 
-    // 9. Tooltip / hover state on sidebar nav items
-    const sidebarItem = page.locator("nav button, nav a").nth(2);
-    if (await sidebarItem.count()) {
-      await sidebarItem.hover();
-      await page.waitForTimeout(400);
+      const themeToggle = page.getByRole("button", { name: /switch to (light|dark) mode/i }).first();
+      await expect(themeToggle).toBeVisible({ timeout: 20_000 });
+      await themeToggle.click();
+      await page.waitForTimeout(700);
       await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-sidebar-hover.png",
-        fullPage: false,
+        path: "test-results/full-ui-dogfood/interaction-theme-toggle.png",
+        fullPage: true,
       });
-    }
+      await themeToggle.click();
+      await page.waitForTimeout(500);
 
-    // ─── Deep agent interaction captures ─────────────────────────────────
-    // Real human use scenarios: querying agent, streaming outputs, panels
-
-    // 10. FastAgentPanel — full chat interaction flow
-    activeRoute = "/agents";
-    await navigateWithinApp(page, "/agents");
-    await page.waitForTimeout(400);
-    // Try to open the FastAgent panel via FAB or inline trigger
-    const fabBtn = page.locator("button[aria-label*='Agent']:visible:not([disabled]), button[aria-label*='agent']:visible:not([disabled])").first();
-    if (await fabBtn.count()) {
-      await fabBtn.click();
-      await page.waitForTimeout(800);
-    }
-    // Find the chat input (textarea or input with message placeholder)
-    const chatInput = page.locator("textarea[placeholder*='Message']:visible, textarea[placeholder*='message']:visible, textarea[placeholder*='Ask']:visible, input[placeholder*='Message']:visible").first();
-    if (await chatInput.count()) {
-      await chatInput.click();
-      await chatInput.fill("Analyze the latest AI model benchmarks and compare Claude vs GPT performance");
-      await page.waitForTimeout(300);
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-agent-query-typed.png",
-        fullPage: false,
-      });
-      // Submit the query (press Enter)
-      await chatInput.press("Enter");
+      activeRoute = "/?surface=reports";
+      await navigateWithinApp(page, "/?surface=reports");
+      const openInChat = page.getByRole("button", { name: /open in chat/i }).first();
+      await expect(openInChat).toBeVisible({ timeout: 20_000 });
+      await openInChat.click();
       await page.waitForTimeout(2000);
-      // Capture the streaming/response state
+      await expect(page).toHaveURL(/surface=chat/, { timeout: 20_000 });
+      await expect(page.getByLabel("Continue the live session").first()).toBeVisible({ timeout: 20_000 });
       await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-agent-response-stream.png",
-        fullPage: false,
+        path: "test-results/full-ui-dogfood/interaction-reports-to-chat.png",
+        fullPage: true,
       });
-    }
-
-    // 11. FastAgentPanel — thread management (switch threads, create new)
-    const threadTab = page.locator("[data-thread-id]:visible, .thread-item:visible, [role='tab']:visible").first();
-    if (await threadTab.count()) {
-      await threadTab.click();
-      await page.waitForTimeout(500);
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-agent-thread-switch.png",
-        fullPage: false,
-      });
-    }
-
-    // 12. FastAgentPanel — skills panel / settings
-    const agentSettingsBtn = page.locator("button:has-text('Settings'):visible, button:has-text('Skills'):visible, button[aria-label*='settings']:visible").first();
-    if (await agentSettingsBtn.count()) {
-      await agentSettingsBtn.click();
-      await page.waitForTimeout(500);
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-agent-settings.png",
-        fullPage: false,
-      });
-      await page.keyboard.press("Escape");
-      await page.waitForTimeout(200);
-    }
-
-    // 13. Swarm lanes / live agent lanes — observe multi-agent execution
-    activeRoute = "/agents/live";
-    await navigateWithinApp(page, "/agents/live");
-    await page.waitForTimeout(400);
-    const laneCard = page.locator("[class*='lane']:visible, [class*='agent-card']:visible, [class*='rounded-xl'][class*='border']:visible").first();
-    if (await laneCard.count()) {
-      await laneCard.hover();
-      await page.waitForTimeout(400);
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-swarm-lanes.png",
-        fullPage: false,
-      });
-    }
-
-    // 14. Dogfood review gallery — navigate frames and video
-    activeRoute = "/dogfood";
-    await navigateWithinApp(page, "/dogfood");
-    await page.waitForTimeout(400);
-    // Click a frame thumbnail to select it
-    const frameThumbnail = page.locator("button:has(img):visible, [class*='aspect-'][class*='rounded']:visible").first();
-    if (await frameThumbnail.count()) {
-      await frameThumbnail.click();
-      await page.waitForTimeout(500);
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-dogfood-frame-selected.png",
-        fullPage: false,
-      });
-    }
-
-    // 15. Dogfood QA results panel — check score display and issue list
-    const qaScoreEl = page.locator("[class*='score']:visible").first();
-    if (await qaScoreEl.count()) {
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-dogfood-qa-score.png",
-        fullPage: false,
-      });
-    }
-
-    // 16. Task manager — hover task card for details
-    activeRoute = "/activity";
-    await navigateWithinApp(page, "/activity");
-    await page.waitForTimeout(300);
-    const taskCard = page.locator("[class*='task-card']:visible, [class*='session-card']:visible, div[class*='rounded-lg border'][class*='p-4']:visible").first();
-    if (await taskCard.count()) {
-      await taskCard.hover();
-      await page.waitForTimeout(400);
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-task-hover.png",
-        fullPage: false,
-      });
-      await taskCard.click();
-      await page.waitForTimeout(500);
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-task-expanded.png",
-        fullPage: false,
-      });
-    }
-
-    // 17. Analytics — hover chart data points for tooltips
-    activeRoute = "/analytics/recommendations";
-    await navigateWithinApp(page, "/analytics/recommendations");
-    await page.waitForTimeout(300);
-    const chartArea = page.locator("svg .recharts-bar-rectangle:visible, svg rect[class*='recharts']:visible, svg .recharts-line-dot:visible").first();
-    if (await chartArea.count()) {
-      await chartArea.hover();
-      await page.waitForTimeout(400);
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-analytics-tooltip.png",
-        fullPage: false,
-      });
-    }
-
-    // 18. MCP Ledger — expand a tool row for details
-    activeRoute = "/mcp/ledger";
-    await navigateWithinApp(page, "/mcp/ledger");
-    await page.waitForTimeout(300);
-    const toolRow = page.locator("tr[role='row']:visible, div[role='row']:visible").first();
-    if (await toolRow.count()) {
-      await toolRow.click();
-      await page.waitForTimeout(500);
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-mcp-tool-expanded.png",
-        fullPage: false,
-      });
-    }
-
-    // 19. Keyboard shortcut discovery — press ? to show shortcuts overlay
-    activeRoute = "/";
-    await navigateWithinApp(page, "/");
-    await page.keyboard.press("?");
-    await page.waitForTimeout(500);
-    const shortcutsOverlay = page.locator("[role='dialog']:visible, [class*='shortcuts']:visible, [class*='overlay']:visible").first();
-    if (await shortcutsOverlay.count()) {
-      await page.screenshot({
-        path: "test-results/full-ui-dogfood/interaction-keyboard-shortcuts.png",
-        fullPage: false,
-      });
-      await page.keyboard.press("Escape");
-      await page.waitForTimeout(200);
     }
 
     expect(browserIssues, formatBrowserIssues(browserIssues)).toEqual([]);

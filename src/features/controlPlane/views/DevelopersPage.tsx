@@ -1,6 +1,6 @@
 /**
  * DevelopersPage — Architecture, tools, and integrations under the hood.
- * Houses CAPABILITIES stats, SYSTEM_LAYERS, and TECH_TAGS moved from ControlPlaneLanding.
+ * Houses CAPABILITIES stats, SYSTEM_LAYERS, and TECH_TAGS moved from the old landing shell.
  */
 
 import { memo, useCallback, useState } from "react";
@@ -9,7 +9,7 @@ import { ArrowLeft, Check, Copy, Terminal, Monitor, Wind } from "lucide-react";
 import { VIEW_PATH_MAP, type MainView } from "@/lib/registry/viewRegistry";
 
 const CAPABILITIES = [
-  { value: "338", label: "MCP tools" },
+  { value: "350", label: "MCP tools" },
   { value: "63", label: "Backend domains" },
   { value: "8", label: "Score dimensions" },
   { value: "1,510", label: "Tests passing" },
@@ -287,7 +287,7 @@ export const DevelopersPage = memo(function DevelopersPage({
               code="claude mcp add nodebench -- npx -y nodebench-mcp"
             />
             <p className="mt-2 text-[11px] text-content-muted">
-              Adds NodeBench to your Claude Code environment. 338 tools available instantly.
+              Adds NodeBench to your Claude Code environment. 350 tools available instantly.
             </p>
           </div>
 

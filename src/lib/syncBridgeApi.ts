@@ -1,16 +1,4 @@
 function resolveSyncBridgeApiBase(): string {
-  if (typeof window === "undefined") {
-    return "/api/sync-bridge";
-  }
-
-  const { hostname, protocol, port } = window.location;
-  const isLocalHost = hostname === "127.0.0.1" || hostname === "localhost";
-  const shouldProxyToLocalApi = isLocalHost && port && port !== "3100";
-
-  if (shouldProxyToLocalApi) {
-    return `${protocol}//${hostname}:3100/api/sync-bridge`;
-  }
-
   return "/api/sync-bridge";
 }
 
@@ -30,49 +18,21 @@ export function getSyncBridgePairingUrl(): string {
 
 export function getSyncBridgeWebSocketUrl(): string {
   if (typeof window === "undefined") {
-    return "ws://localhost:3100/sync-bridge";
+    return "ws://localhost/sync-bridge";
   }
 
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const hostname = window.location.hostname;
-  const port = (hostname === "127.0.0.1" || hostname === "localhost") && window.location.port && window.location.port !== "3100"
-    ? "3100"
-    : window.location.port;
-  const host = port ? `${hostname}:${port}` : hostname;
+  const host = window.location.host;
   return `${protocol}//${host}/sync-bridge`;
 }
 
 function resolveSharedContextApiBase(): string {
-  if (typeof window === "undefined") {
-    return "/api/shared-context";
-  }
-
-  const { hostname, protocol, port } = window.location;
-  const isLocalHost = hostname === "127.0.0.1" || hostname === "localhost";
-  const shouldProxyToLocalApi = isLocalHost && port && port !== "3100";
-
-  if (shouldProxyToLocalApi) {
-    return `${protocol}//${hostname}:3100/api/shared-context`;
-  }
-
   return "/api/shared-context";
 }
 
 export const SHARED_CONTEXT_API_BASE = resolveSharedContextApiBase();
 
 function resolveSubconsciousApiBase(): string {
-  if (typeof window === "undefined") {
-    return "/api/subconscious";
-  }
-
-  const { hostname, protocol, port } = window.location;
-  const isLocalHost = hostname === "127.0.0.1" || hostname === "localhost";
-  const shouldProxyToLocalApi = isLocalHost && port && port !== "3100";
-
-  if (shouldProxyToLocalApi) {
-    return `${protocol}//${hostname}:3100/api/subconscious`;
-  }
-
   return "/api/subconscious";
 }
 

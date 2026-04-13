@@ -35,6 +35,11 @@ function isDoNotTrack(): boolean {
 
 function currentSurface(): string {
   try {
+    const params = new URLSearchParams(window.location.search);
+    const querySurface = params.get("surface");
+    if (querySurface && querySurface.trim().length > 0) {
+      return querySurface.trim();
+    }
     const segment = window.location.pathname.split("/").filter(Boolean)[0];
     return segment || "home";
   } catch {

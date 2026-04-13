@@ -1,5 +1,5 @@
 /**
- * MobileTabBar — fixed bottom navigation for < 1024px.
+ * MobileTabBar — fixed bottom navigation for compact layouts below xl.
  *
  * Replaces the hidden WorkspaceRail sidebar on mobile.
  * Mirrors SitFlow's tab bar: 56px height + safe-area padding,
@@ -7,7 +7,7 @@
  */
 
 import { memo } from "react";
-import { FileText, FolderKanban, History, MessageSquare, Radio } from "lucide-react";
+import { Bell, FileText, Home, MessageSquare, User } from "lucide-react";
 import type { CockpitSurfaceId } from "@/lib/registry/viewRegistry";
 import { cn } from "@/lib/utils";
 
@@ -23,22 +23,22 @@ const TABS: readonly {
   label: string;
   icon: typeof MessageSquare;
 }[] = [
-  { id: "ask", label: "Ask", icon: MessageSquare },
-  { id: "workspace", label: "Workspace", icon: FolderKanban },
-  { id: "packets", label: "Packets", icon: FileText },
-  { id: "history", label: "History", icon: History },
-  { id: "connect", label: "Connect", icon: Radio },
+  { id: "ask", label: "Home", icon: Home },
+  { id: "workspace", label: "Chat", icon: MessageSquare },
+  { id: "packets", label: "Reports", icon: FileText },
+  { id: "history", label: "Nudges", icon: Bell },
+  { id: "connect", label: "Me", icon: User },
 ];
 
 export const MobileTabBar = memo(function MobileTabBar({
   activeSurface,
   onSurfaceChange,
-  agentActive = false,
+  agentActive: _agentActive = false,
   unreadBriefCount = 0,
 }: MobileTabBarProps) {
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 flex lg:hidden"
+      className="fixed bottom-0 left-0 right-0 z-50 flex xl:hidden"
       role="navigation"
       aria-label="Mobile navigation"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
@@ -51,8 +51,6 @@ export const MobileTabBar = memo(function MobileTabBar({
           const isActive = activeSurface === tab.id;
           const showBadge =
             tab.id === "ask" && unreadBriefCount > 0 && !isActive;
-          const showDot =
-            tab.id === "telemetry" && agentActive && isActive;
 
           return (
             <button
@@ -60,7 +58,7 @@ export const MobileTabBar = memo(function MobileTabBar({
               type="button"
               onClick={() => {
                 onSurfaceChange(tab.id);
-                if ("vibrate" in navigator) navigator.vibrate(10);
+                if (typeof navigator?.vibrate === "function") navigator.vibrate(10);
               }}
               className={cn(
                 "flex flex-col items-center gap-1 px-3 py-1.5",
@@ -81,9 +79,6 @@ export const MobileTabBar = memo(function MobileTabBar({
                   >
                     {unreadBriefCount > 9 ? "9+" : unreadBriefCount}
                   </span>
-                )}
-                {showDot && (
-                  <span className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full bg-emerald-400" />
                 )}
               </span>
               <span className="text-[10px] font-semibold">{tab.label}</span>

@@ -14,7 +14,7 @@ interface SwipeNavigationOptions {
   ref: RefObject<HTMLElement | null>;
   /** Ordered list of route paths for swipe navigation */
   surfaces: string[];
-  /** Current active surface path (matched against surfaces array) */
+  /** Current active surface route (pathname or full pathname+search) */
   currentPath: string;
   /** Called with the next surface path when a valid swipe is detected */
   onNavigate: (path: string) => void;
@@ -58,6 +58,9 @@ export function useSwipeNavigation({
 
       // Find current index in surfaces array
       const currentIndex = surfaces.findIndex((s) => {
+        if (s.includes("?")) {
+          return currentPath === s;
+        }
         // Match by exact path or by startsWith for nested routes
         if (currentPath === s) return true;
         if (s !== "/" && currentPath.startsWith(s)) return true;

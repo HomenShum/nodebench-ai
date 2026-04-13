@@ -5,15 +5,22 @@ import net from "node:net";
 import { spawn, execSync } from "node:child_process";
 import { chromium } from "playwright";
 
-const GEMINI_QA_MODEL_INTENT = "gemini-3.1-flash";
-const GEMINI_QA_MODEL_PREFERENCES = [
-  "gemini-3.1-flash",
+const DEFAULT_GEMINI_QA_MODEL_INTENT = "gemini-3.1-pro-preview";
+const DEFAULT_GEMINI_QA_MODEL_PREFERENCES = [
+  "gemini-3.1-pro-preview",
+  "gemini-3-pro-preview",
+  "gemini-3.1-flash-lite-preview",
+  "gemini-flash-latest",
+  "gemini-3-flash-preview",
+];
+const PRO_GEMINI_QA_MODEL_PREFERENCES = [
+  "gemini-3.1-pro-preview",
+  "gemini-3-pro-preview",
   "gemini-3.1-flash-lite-preview",
   "gemini-3-flash-preview",
-  "gemini-2.5-flash",
-  "gemini-flash-latest",
-  "gemini-2.0-flash",
 ];
+let GEMINI_QA_MODEL_INTENT = normalizeGeminiModelAlias(process.env.DOGFOOD_GEMINI_MODEL?.trim()) || DEFAULT_GEMINI_QA_MODEL_INTENT;
+let GEMINI_QA_MODEL_PREFERENCES = [...DEFAULT_GEMINI_QA_MODEL_PREFERENCES];
 let GEMINI_QA_MODEL = GEMINI_QA_MODEL_PREFERENCES[0];
 let geminiModelResolution = null;
 
@@ -100,6 +107,42 @@ function sleep(ms) {
 
 function getGeminiApiKey() {
   return process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
+}
+
+function dedupeModels(models) {
+  const seen = new Set();
+  return models.filter((model) => {
+    const normalized = String(model ?? "").trim();
+    if (!normalized || seen.has(normalized)) return false;
+    seen.add(normalized);
+    return true;
+  });
+}
+
+function normalizeGeminiModelAlias(model) {
+  const normalized = String(model ?? "").trim();
+  if (!normalized) return "";
+
+  const aliases = new Map([
+    ["gemini-3.1-pro", "gemini-3.1-pro-preview"],
+    ["gemini-3.1-flash", "gemini-3-flash-preview"],
+  ]);
+
+  return aliases.get(normalized) ?? normalized;
+}
+
+function configureGeminiQaModel({ model, preferPro }) {
+  const requestedModel = normalizeGeminiModelAlias(model ?? process.env.DOGFOOD_GEMINI_MODEL ?? "");
+  const proPreferred = preferPro || /^(1|true|yes)$/i.test(String(process.env.DOGFOOD_GEMINI_PREFER_PRO ?? ""));
+
+  GEMINI_QA_MODEL_INTENT = requestedModel || (proPreferred ? PRO_GEMINI_QA_MODEL_PREFERENCES[0] : DEFAULT_GEMINI_QA_MODEL_INTENT);
+  GEMINI_QA_MODEL_PREFERENCES = dedupeModels([
+    ...(requestedModel ? [requestedModel] : []),
+    ...(proPreferred ? PRO_GEMINI_QA_MODEL_PREFERENCES : []),
+    ...DEFAULT_GEMINI_QA_MODEL_PREFERENCES,
+  ]);
+  GEMINI_QA_MODEL = GEMINI_QA_MODEL_PREFERENCES[0];
+  geminiModelResolution = null;
 }
 
 function isGenerateContentModelNotFound(status, errorText) {
@@ -762,35 +805,15 @@ async function discoverRoutes(page, baseURL) {
   return keep;
 }
 
-// Fallback: minimal routes if dynamic discovery finds nothing (e.g., app fails to load)
-// Comprehensive fallback routes derived from useMainLayoutRouting.ts parsePathname + CleanSidebar nav items.
-// Used when dynamic discovery fails (SPA uses state-based routing, not URL-based nav).
+// Fallback: public product routes if dynamic discovery finds nothing.
+// Used when route discovery fails or when the app is running in the redesigned
+// query-param surface mode rather than the old internal workspace map.
 const FALLBACK_ROUTES = [
-  { path: "/", name: "home" },
-  { path: "/research", name: "research-hub" },
-  { path: "/research/signals", name: "research-signals" },
-  { path: "/research/briefing", name: "research-briefing" },
-  { path: "/research/forecasts", name: "research-forecasts" },
-  { path: "/agents", name: "agents" },
-  { path: "/documents", name: "documents" },
-  { path: "/calendar", name: "calendar" },
-  { path: "/roadmap", name: "roadmap" },
-  { path: "/timeline", name: "timeline" },
-  { path: "/developers", name: "developers" },
-  { path: "/footnotes", name: "sources" },
-  { path: "/benchmarks", name: "workbench" },
-  { path: "/funding", name: "funding" },
-  { path: "/activity", name: "activity" },
-  { path: "/cost", name: "cost-dashboard" },
-  { path: "/industry", name: "industry-news" },
-  { path: "/for-you", name: "for-you-feed" },
-  { path: "/recommendations", name: "recommendations" },
-  { path: "/marketplace", name: "agent-marketplace" },
-  { path: "/github", name: "github-explorer" },
-  { path: "/pr-suggestions", name: "pr-suggestions" },
-  { path: "/linkedin", name: "linkedin-posts" },
-  { path: "/mcp-ledger", name: "mcp-ledger" },
-  { path: "/dogfood", name: "dogfood" },
+  { path: "/?surface=home", name: "home" },
+  { path: "/?surface=chat&q=ditto%20ai&lens=founder", name: "chat" },
+  { path: "/?surface=reports", name: "reports" },
+  { path: "/?surface=nudges", name: "nudges" },
+  { path: "/?surface=me", name: "me" },
 ];
 
 function stripJsonFences(raw) {
@@ -1506,37 +1529,26 @@ Return a JSON array of issues (or [] if none):
 // Design context: tells the judge what this product IS so it can distinguish
 // genuine bugs from subjective opinions about intentional design decisions.
 const DESIGN_CONTEXT = `
-This is NodeBench AI â€” a data-dense research and AI operations platform for technical practitioners (AI engineers, researchers, data scientists). Key design principles:
-- INTENTIONALLY DENSE: Pulse sidebars, metric grids, and feeds are compact by design for power users scanning high volumes.
-- DUAL ENTRY POINTS: Hero search + nav search, FAB + contextual buttons, card header + detail links â€” these serve different contexts, not redundant.
-- DOMAIN TERMINOLOGY: "Swarm", "Pull Request", "Signal Ledger", "Narrative Spine", "Act Coverage", "Uptime", "Alert Rate", "Capability Lift", "Web Lane" are established domain terms for the target audience.
-- MOCK DATA: Preview/demo environment uses placeholder data â€” "just now" timestamps, zero-value metrics, and aggregation count mismatches are data-level, not code bugs.
-- COLOR HIERARCHY: Purple gradient = premium upsell, blue = primary action, outline = secondary. This is intentional SaaS pattern, not inconsistency.
-- COMPACT LAYOUTS: Calendar sidebar, settings modal, benchmark cards use intentionally compact spacing. Touch targets meet minimum standards via Radix/shadcn.
-- DATE FORMATS: Mixed relative ("just now") and absolute ("Feb 20, 2026") dates are intentional â€” relative for recent, absolute for historical.
-- DARK MODE: Background #09090B is the intentional dark theme. Text uses proper contrast ratios (text-muted-foreground passes WCAG AA 4.6:1).
-- EMPTY STATES: Show calm guidance without CTAs â€” data populates automatically from backend sync. Different icons per view are intentional context cues.
-- SCREENSHOT ARTIFACTS: Gemini may misread colors, font weights, or flexbox layouts from compressed screenshots â€” verify claims against actual CSS values.
-- SEARCH PLACEHOLDERS: All search bars use standard "..." ellipsis. Claims about double periods ("..") or trailing punctuation errors are screenshot misreads â€” the codebase contains no such typos.
-- DATA AGGREGATION: "Total Items" vs "Source Performance" counts differ because they use different aggregation scopes (total vs filtered). This is correct behavior with mock/demo data, not a data inconsistency bug.
-- GRAPH LABELS: Charts use Recharts with responsive label positioning. Claims about "overlapping" or "jumbled" text in chart labels are almost always screenshot compression artifacts where flexbox justify-between renders fine at actual resolution.
-- ACTIVITY ICONS: Activity feed uses standard Lucide icons (Lightning=tokens, Wrench=tools, etc.) with contextual meaning from surrounding labels. Icon-only display is intentional for compact feed layout.
-- LIVE/LATEST STATUS: "Live" badges and "Latest" timestamps in preview/demo environment show demo data timing. These are correct in production with live Convex backend.
-- SETTINGS LAYOUT: Settings modal uses max-width container with overflow-y-auto. Content that appears "cut off" at certain viewport heights is scrollable â€” not a bug.
-- PILL/BADGE OVERLAPS: Chart comparison badges ("0% vs prior day", "3x faster") use standard Recharts tooltip positioning with semi-transparency. Data is always accessible on hover.
-- SIDEBAR DENSITY: The sidebar is intentionally navigation-dense with collapsible sections. This is not "overwhelming" â€” it's a power-user tool with 30+ routes.
-- BUTTON HIERARCHY: Primary (blue), premium upsell (purple gradient), secondary (outline), destructive (red text) â€” this is a deliberate 4-tier hierarchy, NOT inconsistency.
-- TEXT WRAPPING: Metric cards like "Gap Width" may wrap text at narrow widths â€” this is responsive behavior, not a typography bug.
-- BREADCRUMBS: The "Pr Suggestions" breadcrumb has been fixed to "PR Suggestions" â€” if the reviewer still flags this, it's from a stale screenshot.
-- ERROR BOUNDARIES: React lazy-loaded views show "[X] failed to load" error boundary text briefly during fast automated navigation â€” this is expected in preview/static builds without live backend. Not a rendering failure.
-- WORKBENCH EMPTY STATES: The /benchmarks (Workbench) page intentionally shows "No benchmark runs yet" and "Not yet run" states â€” the execution engine is Phase 2. Disabled buttons with tooltips are intentional.
-- LOADING SKELETONS: In preview/static builds WITHOUT a live Convex backend, some views show loading skeletons or empty containers indefinitely. This is expected â€” data populates when connected to the backend. Not a rendering bug.
-- DOGFOOD OVERLAY: During automated walkthrough recordings, a semi-transparent scribe overlay may appear in the bottom-left corner. This is a Playwright-injected QA annotation layer, NOT part of the React application. It only exists in recorded videos, never in the live app.
-- GLOBAL CONTRAST: The dark theme uses intentional contrast ratios â€” text-muted (#8A8A97) on bg (#09090B) = 5.84:1 (passes WCAG AA 4.5:1). Claims of "severe global low contrast" are screenshot compression artifacts where the vision model misreads dark-on-darker as illegible.
-- RESEARCH SUB-ROUTES: Routes like /research/deals, /research/changes, /research/changelog are recognized by the router but the tab UI only shows Overview, Signals, Briefing, and Forecasts. Navigating to removed tabs correctly falls back to Overview. This is intentional â€” removed tabs are accessible via Cmd+K command palette.
-- FAB PERSISTENCE: The floating action button (FAB) appears on all screens including modals. This is standard Material Design pattern for primary actions, not an overlap bug.
-- AGENTIC INTERACTION FAILURES: During automated QA, Playwright clicks buttons/cards that require live Convex backend data. Collapse/expand, tab switching, and card interactions may appear "broken" when there's no data to render. These are data-availability issues, not UI bugs.
-- ROUTE TRANSITIONS: Client-side SPA navigation between routes may show brief white frames during React Suspense boundary transitions. This is standard React lazy-loading behavior, not a rendering bug.
+This is NodeBench AI. The public product has five user-facing surfaces:
+- Home = launchpad for ask + upload + starter discovery
+- Chat = the main product, where the answer is primary and the live work stream stays visible
+- Reports = reusable memory that reopens into Chat
+- Nudges = closed-loop reminders that route back into work
+- Me = private context that improves future answers
+
+Key product and design principles:
+- VALUE BEFORE IDENTITY: The product should prove value immediately. Home should launch the workflow, not explain the company.
+- ANSWER FIRST: Chat should read like a focused answer workspace. Sources and activity support trust, but they should not dominate the layout.
+- SPLIT-WORKSPACE DESKTOP: Web uses multi-column workspace layouts. Left and right rails are intentional and should not be called redundant just because the center is primary.
+- OUTPUT AS DISTRIBUTION: Reports are saved, shareable memory. Nudges should route users back into a report or a live chat, not act like a generic notifications center.
+- ME AS LEVERAGE: Me is a private control center, not a social profile page. Empty states that explain future leverage are intentional if they remain actionable and readable.
+- MOCK AND STARTER CONTENT: Preview environments may show starter cards, starter memory, example nudges, or empty-state guidance. That is expected. Judge layout and behavior, not whether the data is live.
+- LIGHT AND DARK MODE: Both modes are real product surfaces. Do not call the existence of a theme toggle or mild palette differences inconsistent by default.
+- SCREENSHOT AND VIDEO ARTIFACTS: Vision models often misread subtle borders, dark-mode contrast, or flex layouts from compressed media. Do not classify perceived overlap or low contrast as a bug unless the issue is obvious and severe.
+- QUERY-PARAM ROUTES: The redesigned app uses query-param surfaces like ?surface=home, ?surface=chat, ?surface=reports, ?surface=nudges, ?surface=me. These are canonical in the current product.
+- EMPTY STATES: Calm empty states are acceptable when they teach the next action or explain the loop. Empty states are only bugs if they are dead ends, unreadable, or misleading.
+- TRANSITIONS: Brief lazy-load transitions during automated capture can happen. Only count them as bugs if users would be blocked or the layout remains visibly broken after settling.
+- DOGFOOD OVERLAYS: During automated walkthrough recordings, a QA overlay can appear. That is not part of the React product UI.
 `.trim();
 
 // Classify a batch of issues using Gemini as a judge.
@@ -1722,7 +1734,6 @@ const HARD_HALLUCINATION_FILTERS = [
   /overlapping.*text.*mini.calendar|mini.calendar.*overlapping.*text|squished.*mini.calendar.*text/i, // Calendar flexbox misread
   /category.*labels.*squished.*together|squished.*together.*unreadable.*string/i, // Flexbox category labels
   /incorrect.*pluraliz.*grammar|pluraliz.*grammar.*error|1 items/i,  // Pluralization already fixed
-  /blank screen on initial load|stuck on loading|loading (video|analytics|personalized morning briefing)/i, // Preview/video lane timing artifact
   /visible internal engineering jargon|dogfood tracker|dogfood \[x\]\/\d+|dogfood.*badge.*visible|badge.*dogfood|internal ['"]?dogfood['"]? overlay visible/i, // QA overlay wording, not product bug
   /dogfood.*toast|toast.*dogfood|p1internal.*dogfood/i, // QA walkthrough overlay misclassified as product toast
   /stuck ['"]?signing in.*toast|signing in.*visible.*guest user/i, // auth transition timing during automated sign-in
@@ -1740,6 +1751,9 @@ function isPreviewArtifactIssue(issue) {
   const isVideoTimestampRange = /^\d+(\.\d+)?s-\d+(\.\d+)?s$/.test(String(issue.route ?? issue.ts ?? "").trim());
   const isAgenticVideo = issue.source === "agentic_video";
   const isAgenticStill = issue.source === "agentic";
+  const isPublicSurfaceRoute =
+    /[?&]surface=(home|chat|reports|nudges|me)/i.test(route) ||
+    /^(home|chat|reports|nudges|me)$/i.test(route);
 
   // NOTE(coworker): Generic hydration heuristic. During rapid route switching in
   // capture videos, Gemini frequently flags transient placeholders as bugs.
@@ -1754,6 +1768,7 @@ function isPreviewArtifactIssue(issue) {
 
   if (
     isAgenticVideo &&
+    !isPublicSurfaceRoute &&
     /(blank screen on initial load|stuck on loading|loading (video|analytics|personalized morning briefing)|sidebar transition jank)/i.test(text)
   ) {
     return true;
@@ -1763,6 +1778,7 @@ function isPreviewArtifactIssue(issue) {
   // while route transitions are still settling. Deterministic checks already gate real failures.
   if (
     isAgenticVideo &&
+    !isPublicSurfaceRoute &&
     /(loading failure:.*not loading|loading indicator.*never resolves|displays a loading indicator that never resolves|section displays.*never resolves)/i.test(text)
   ) {
     return true;
@@ -1814,7 +1830,7 @@ function isPreviewArtifactIssue(issue) {
     return true;
   }
 
-  if (isAgenticVideo && /blank screen|sign in button flash|calendar ui layout shift/i.test(text)) {
+  if (isAgenticVideo && !isPublicSurfaceRoute && /blank screen|sign in button flash|calendar ui layout shift/i.test(text)) {
     return true;
   }
 
@@ -2202,6 +2218,8 @@ async function persistQaScore(repoRoot, videoRuns, screenRuns, deterministicStat
     timestamp: new Date().toISOString(),
     runType: "gemini-qa-rubric",
     model: GEMINI_QA_MODEL,
+    requestedModel: GEMINI_QA_MODEL_INTENT,
+    modelResolution: geminiModelResolution,
     ...qscore,
     videoIssues: videoRuns?.[0]?.issues?.length ?? 0,
     screenshotIssues: screenRuns?.[0]?.issues?.length ?? 0,
@@ -2646,9 +2664,14 @@ async function runDesignCoherenceCheck(outDir) {
   // Pick 6 diverse route screenshots
   const screenshotDir = path.join(process.cwd(), "public", "dogfood", "screenshots");
   const candidates = [
-    "home.png", "research-hub.png", "agents.png",
-    "funding.png", "documents.png", "calendar.png",
-    "benchmarks.png", "dogfood.png",
+    "home.png",
+    "chat.png",
+    "reports.png",
+    "nudges.png",
+    "me.png",
+    "home-light.png",
+    "chat-light.png",
+    "reports-light.png",
   ];
   const available = [];
   for (const name of candidates) {
@@ -3189,6 +3212,13 @@ async function main() {
   const designEdits = args.has("design-edits");
   const targetAspiration = Number(args.get("target-aspiration") ?? 90);
   const layoutMode = args.get("layout") ?? "classic"; // "classic" or "cockpit"
+  const requestedGeminiModel = args.get("model") ?? null;
+  const preferProGemini = args.has("prefer-pro");
+
+  configureGeminiQaModel({
+    model: requestedGeminiModel,
+    preferPro: preferProGemini,
+  });
 
   const repoRoot = process.cwd();
   const nodeCmd = process.execPath;
@@ -3372,17 +3402,37 @@ async function main() {
     files.add(path.join(repoRoot, "src", "main.tsx"));
     files.add(path.join(repoRoot, "src", "components", "MainLayout.tsx"));
 
-    const inferSegment = (route) => {
-      if (!route) return "";
-      const lower = String(route).toLowerCase();
-      if (lower.startsWith("/")) return lower.split("/").filter(Boolean)[0] ?? "";
-      if (/benchmarks|workbench/.test(lower)) return "benchmarks";
-      if (/signals|research/.test(lower)) return "research";
-      if (/activity|task manager/.test(lower)) return "agents";
-      if (/workspace|documents|calendar/.test(lower)) return "documents";
-      if (/pr suggestions|industry|github/.test(lower)) return "monitoring";
-      return "";
-    };
+  const inferSegment = (route) => {
+    if (!route) return "";
+    const lower = String(route).toLowerCase();
+    const directSurfaceMatch = lower.match(/[?&]surface=(home|chat|reports|nudges|me)/);
+    if (directSurfaceMatch) {
+      return directSurfaceMatch[1] === "chat" ? "chat" : directSurfaceMatch[1];
+    }
+    if (lower === "home" || /launchpad|ask anything/.test(lower)) return "home";
+    if (lower === "chat" || /answer|sources|agent activity/.test(lower)) return "chat";
+    if (lower === "reports" || /reusable memory/.test(lower)) return "reports";
+    if (lower === "nudges" || /nudges feed|closed loop/.test(lower)) return "nudges";
+    if (lower === "me" || /private context|next run/.test(lower)) return "me";
+    if (lower.startsWith("/")) {
+      try {
+        const parsed = new URL(`http://nodebench.local${lower}`);
+        const surface = parsed.searchParams.get("surface");
+        if (surface && /^(home|chat|reports|nudges|me)$/.test(surface)) {
+          return surface === "chat" ? "chat" : surface;
+        }
+        return parsed.pathname.split("/").filter(Boolean)[0] ?? "";
+      } catch {
+        return lower.split("/").filter(Boolean)[0] ?? "";
+      }
+    }
+    if (/benchmarks|workbench/.test(lower)) return "benchmarks";
+    if (/signals|research/.test(lower)) return "research";
+    if (/activity|task manager/.test(lower)) return "agents";
+    if (/workspace|documents|calendar/.test(lower)) return "documents";
+    if (/pr suggestions|industry|github/.test(lower)) return "monitoring";
+    return "";
+  };
 
     const issues = Array.isArray(loopContext?.realIssues) ? loopContext.realIssues : [];
     for (const issue of issues.slice(0, 6)) {

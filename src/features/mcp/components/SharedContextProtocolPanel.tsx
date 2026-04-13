@@ -341,6 +341,7 @@ export function SharedContextProtocolPanel() {
     });
     source.onerror = () => {
       if (generation !== generationRef.current) return;
+      source.close();
       setStreamState("fallback");
     };
 

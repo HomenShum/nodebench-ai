@@ -13,8 +13,6 @@ vi.mock("../hooks/useCockpitRouting", () => ({
     setEntityName: vi.fn(),
     selectedSpreadsheetId: null,
     setSelectedSpreadsheetId: vi.fn(),
-    showResearchDossier: false,
-    setShowResearchDossier: vi.fn(),
     researchHubInitialTab: "overview",
     setResearchHubInitialTab: vi.fn(),
     isTransitioning: false,
@@ -45,7 +43,7 @@ describe("useCockpitMode", () => {
     expect(setCurrentView).not.toHaveBeenCalled();
   });
 
-  it("restores the saved cockpit mode on home-like routes", () => {
+  it("does not restore a saved cockpit mode over the clean home route", () => {
     mockCurrentView = "control-plane";
     window.localStorage.setItem("nodebench-cockpit-mode", "system");
 
@@ -53,6 +51,6 @@ describe("useCockpitMode", () => {
       wrapper: ({ children }) => <MemoryRouter initialEntries={["/"]}>{children}</MemoryRouter>,
     });
 
-    expect(setCurrentView).toHaveBeenCalledWith("oracle");
+    expect(setCurrentView).not.toHaveBeenCalled();
   });
 });

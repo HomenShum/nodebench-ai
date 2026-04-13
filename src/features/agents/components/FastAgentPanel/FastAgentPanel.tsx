@@ -3,6 +3,7 @@
 
 import React, { memo, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvex, usePaginatedQuery, useQuery, useMutation, useAction, useConvexAuth } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
@@ -171,6 +172,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
 }: FastAgentPanelProps) {
   // ========== AUTH ==========
   const { isAuthenticated } = useConvexAuth();
+  const { signIn } = useAuthActions();
   const convex = useConvex();
   const navigate = useNavigate();
   const trackIntentEvent = useIntentTelemetry();
@@ -3160,13 +3162,18 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                       </>
                     )}
                   </div>
-                  <a
-                    href="/sign-in"
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void signIn("google", {
+                        redirectTo: typeof window !== "undefined" ? window.location.href : "/",
+                      })
+                    }
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] transition-colors shadow-sm"
                   >
                     <LogIn className="w-3 h-3" />
                     Sign in
-                  </a>
+                  </button>
                 </div>
               </div>
             )}

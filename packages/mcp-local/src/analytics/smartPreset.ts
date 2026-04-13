@@ -16,7 +16,6 @@
  *   confidence = f(history_weight, failure_penalty)
  */
 
-import Database from 'better-sqlite3';
 import { detectProject, type ProjectContext, type ProjectType } from './projectDetector.js';
 import {
   getToolUsageStats,
@@ -24,6 +23,7 @@ import {
   getFrequentlyFailingTools,
   type ToolsetUsageStats,
 } from './usageStats.js';
+import type { AnalyticsDb } from './schema.js';
 import type { McpTool } from '../types.js';
 
 // ── Public types ────────────────────────────────────────────────────────
@@ -170,7 +170,7 @@ function computeHistoryWeight(totalCalls: number): number {
 // ── Core: generate recommendation ───────────────────────────────────────
 
 export function generateSmartPreset(
-  db: Database.Database,
+  db: AnalyticsDb,
   toolsetMap: Record<string, McpTool[]>,
   projectPath: string = process.cwd()
 ): PresetRecommendation {

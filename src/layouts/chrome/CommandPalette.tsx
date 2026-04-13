@@ -1,4 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { DialogOverlay } from "@/shared/components/DialogOverlay";
 import { useQuery} from "convex/react";
 import { useConvexApi } from "@/lib/convexApi";
@@ -6,27 +7,20 @@ import {
     Search,
     Bell,
     FileText,
+    FileSearch,
     CheckSquare,
-    Zap,
     Settings,
     Home,
     MessageSquare,
-    TrendingUp,
     Plus,
     Command,
     ArrowRight,
-    Sparkles,
-    FileSearch,
-    Globe,
-    Orbit,
-    HeartPulse,
-    FlaskConical,
-    Activity,
     User,
 } from 'lucide-react';
 import { sanitizeDocumentTitle } from "@/lib/displayText";
 import { rankCommandPaletteCommands } from "./commandPaletteUtils";
-import type { MainView } from "@/lib/registry/viewRegistry";
+import { buildCockpitPath, type CockpitSurfaceId } from "@/lib/registry/viewRegistry";
+import { getRecentSearches } from "@/features/product/lib/productSession";
 
 export interface CommandAction {
     id: string;
@@ -48,7 +42,6 @@ export interface ExecutedCommand {
 interface CommandPaletteProps {
     isOpen: boolean;
     onClose: () => void;
-    onNavigate?: (view: MainView) => void;
     onCreateDocument?: () => void;
     onCreateTask?: () => void;
     onOpenSettings?: () => void;
@@ -60,7 +53,6 @@ interface CommandPaletteProps {
 export function CommandPalette({
     isOpen,
     onClose,
-    onNavigate,
     onCreateDocument,
     onCreateTask,
     onOpenSettings,
@@ -68,11 +60,16 @@ export function CommandPalette({
     additionalActions,
 }: CommandPaletteProps) {
     const api = useConvexApi();
+    const navigate = useNavigate();
     const [query, setQuery] = useState('');
     const deferredQuery = useDeferredValue(query);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
+    const navigateToSurface = useCallback((surfaceId: CockpitSurfaceId) => {
+        navigate(buildCockpitPath({ surfaceId }));
+        onClose();
+    }, [navigate, onClose]);
 
     const recentDocs = useQuery(
         api?.domains.documents.documents.getSidebar
@@ -85,6 +82,24 @@ export function CommandPalette({
     // Define all available commands
     const allCommands = useMemo<CommandAction[]>(() => {
         const commands: CommandAction[] = [
+            // Quick Search — top action so Cmd+K → Enter immediately focuses search
+            {
+                id: 'quick-search',
+                label: 'Search',
+                description: 'Search any company, market, or question',
+                icon: <Search className="w-4 h-4" />,
+                keywords: ['search', 'ask', 'query', 'find', 'company'],
+                section: 'navigation',
+                shortcut: '/',
+                action: () => {
+                    navigateToSurface('ask');
+                    // Focus the search input after navigation settles
+                    setTimeout(() => {
+                        const input = document.getElementById('home-query');
+                        input?.focus();
+                    }, 300);
+                }
+            },
             // Navigation
             {
                 id: 'nav-home',
@@ -94,8 +109,7 @@ export function CommandPalette({
                 keywords: ['home', 'start', 'ask', 'upload', 'main'],
                 section: 'navigation',
                 action: () => {
-                    onNavigate?.('control-plane');
-                    onClose();
+                    navigateToSurface('ask');
                 }
             },
             {
@@ -106,8 +120,7 @@ export function CommandPalette({
                 keywords: ['chat', 'session', 'live', 'agent', 'tools'],
                 section: 'navigation',
                 action: () => {
-                    onNavigate?.('founder-workspace-home');
-                    onClose();
+                    navigateToSurface('workspace');
                 }
             },
             {
@@ -118,8 +131,7 @@ export function CommandPalette({
                 keywords: ['reports', 'saved', 'exports', 'history', 'packets'],
                 section: 'navigation',
                 action: () => {
-                    onNavigate?.('founder-packets-home');
-                    onClose();
+                    navigateToSurface('packets');
                 }
             },
             {
@@ -130,8 +142,7 @@ export function CommandPalette({
                 keywords: ['nudges', 'changes', 'reminders', 'follow-up', 'alerts'],
                 section: 'navigation',
                 action: () => {
-                    onNavigate?.('founder-history-home');
-                    onClose();
+                    navigateToSurface('history');
                 }
             },
             {
@@ -142,104 +153,7 @@ export function CommandPalette({
                 keywords: ['me', 'profile', 'files', 'settings', 'context'],
                 section: 'navigation',
                 action: () => {
-                    onNavigate?.('founder-connect-home');
-                    onClose();
-                }
-            },
-            {
-                id: 'nav-product-direction',
-                label: 'Open Product Direction Memo',
-                description: 'Review the evidence-bounded in-house product recommendation workflow',
-                icon: <FileSearch className="w-4 h-4" />,
-                keywords: ['strategy', 'product direction', 'memo', 'evidence', 'recommendation'],
-                section: 'ai',
-                action: () => {
-                    onNavigate?.('product-direction');
-                    onClose();
-                }
-            },
-            {
-                id: 'nav-execution-trace',
-                label: 'Open Execution Trace',
-                description: 'Inspect a traceable search, edit, verify, and export workflow',
-                icon: <FileSearch className="w-4 h-4" />,
-                keywords: ['execution trace', 'workflow trace', 'spreadsheet', 'verify', 'export', 'audit'],
-                section: 'ai',
-                action: () => {
-                    onNavigate?.('execution-trace');
-                    onClose();
-                }
-            },
-            {
-                id: 'nav-world-monitor',
-                label: 'Open World Monitor',
-                description: 'Review world events, geography clusters, and causal impact candidates',
-                icon: <Globe className="w-4 h-4" />,
-                keywords: ['world monitor', 'events', 'geopolitics', 'map', 'causal'],
-                section: 'ai',
-                action: () => {
-                    onNavigate?.('world-monitor');
-                    onClose();
-                }
-            },
-            {
-                id: 'nav-watchlists',
-                label: 'Open Watchlists',
-                description: 'Inspect active monitors for companies, sectors, regions, and themes',
-                icon: <Activity className="w-4 h-4" />,
-                keywords: ['watchlists', 'alerts', 'monitoring', 'deeptrace', 'theme'],
-                section: 'ai',
-                action: () => {
-                    onNavigate?.('watchlists');
-                    onClose();
-                }
-            },
-            {
-                id: 'nav-benchmarks',
-                label: 'Open Benchmark Workbench',
-                description: 'Inspect internal benchmark receipts, replay, and published proof',
-                icon: <FlaskConical className="w-4 h-4" />,
-                keywords: ['benchmarks', 'eval', 'receipts', 'proof', 'replay'],
-                section: 'ai',
-                action: () => {
-                    onNavigate?.('benchmarks');
-                    onClose();
-                }
-            },
-            {
-                id: 'nav-agents',
-                label: 'Go to Agent Workflows',
-                description: 'Open active threads, runs, and task sessions',
-                icon: <Zap className="w-4 h-4" />,
-                keywords: ['agents', 'workflows', 'automation', 'tasks'],
-                section: 'navigation',
-                action: () => {
-                    onNavigate?.('agents');
-                    onClose();
-                }
-            },
-            {
-                id: 'nav-health',
-                label: 'Open System Health',
-                description: 'Check observability, maintenance, and recovery loops',
-                icon: <HeartPulse className="w-4 h-4" />,
-                keywords: ['health', 'observability', 'maintenance', 'alerts'],
-                section: 'settings',
-                action: () => {
-                    onNavigate?.('observability');
-                    onClose();
-                }
-            },
-            {
-                id: 'nav-tool-activity',
-                label: 'Open Tool Activity',
-                description: 'Review action receipts and auditable tool calls',
-                icon: <Activity className="w-4 h-4" />,
-                keywords: ['tools', 'activity', 'ledger', 'receipt', 'trace', 'mcp'],
-                section: 'settings',
-                action: () => {
-                    onNavigate?.('mcp-ledger');
-                    onClose();
+                    navigateToSurface('connect');
                 }
             },
 
@@ -270,70 +184,6 @@ export function CommandPalette({
                     onClose();
                 }
             },
-            {
-                id: 'create-event',
-                label: 'Open Receipts Review',
-                description: 'Jump into the receipts stream and inspect the current run',
-                icon: <Orbit className="w-4 h-4" />,
-                keywords: ['receipts', 'review', 'control plane', 'investigation'],
-                section: 'create',
-                action: () => {
-                    onNavigate?.('receipts');
-                    onClose();
-                }
-            },
-
-            // AI Actions
-            {
-                id: 'ai-summarize',
-                label: 'Summarize Current View',
-                description: 'Get an AI summary of what you\'re viewing',
-                icon: <Sparkles className="w-4 h-4" />,
-                keywords: ['ai', 'summarize', 'summary', 'brief'],
-                section: 'ai',
-                action: () => {
-                    onClose();
-                }
-            },
-            {
-                id: 'ai-insights',
-                label: 'Open Investigation Trail',
-                description: 'Trace from receipts to evidence, approval, and replay',
-                icon: <TrendingUp className="w-4 h-4" />,
-                keywords: ['investigation', 'evidence', 'trace', 'approval', 'replay'],
-                section: 'ai',
-                action: () => {
-                    onNavigate?.('investigation');
-                    onClose();
-                }
-            },
-
-            // WebMCP
-            {
-                id: 'ai-webmcp-scan',
-                label: 'Scan for browser tools',
-                description: 'Discover tools from a connected website',
-                icon: <Globe className="w-4 h-4" />,
-                keywords: ['webmcp', 'mcp', 'scan', 'discover', 'tools', 'origin', 'website'],
-                section: 'ai',
-                action: () => {
-                    onOpenSettings?.();
-                    onClose();
-                }
-            },
-            {
-                id: 'ai-webmcp-manage',
-                label: 'Manage browser tool sites',
-                description: 'View and manage approved connected sites',
-                icon: <Globe className="w-4 h-4" />,
-                keywords: ['webmcp', 'mcp', 'origins', 'manage', 'settings', 'approve'],
-                section: 'ai',
-                action: () => {
-                    onOpenSettings?.();
-                    onClose();
-                }
-            },
-
             // Settings
             {
                 id: 'settings-open',
@@ -384,8 +234,25 @@ export function CommandPalette({
             });
         }
 
+        // Add recent searches from localStorage
+        const recentSearches = getRecentSearches();
+        recentSearches.forEach((search) => {
+            commands.push({
+                id: `recent-search-${search.query}`,
+                label: search.query,
+                description: `${search.lens} lens`,
+                icon: <Search className="w-4 h-4" />,
+                keywords: ['recent', 'search', search.query.toLowerCase()],
+                section: 'recent',
+                action: () => {
+                    navigate(`/?surface=chat&q=${encodeURIComponent(search.query)}&lens=${encodeURIComponent(search.lens)}`);
+                    onClose();
+                }
+            });
+        });
+
         return [...(additionalActions ?? []), ...commands];
-    }, [additionalActions, recentDocs, recentTasks, onNavigate, onCreateDocument, onCreateTask, onOpenSettings, onClose]);
+    }, [additionalActions, recentDocs, recentTasks, navigateToSurface, onCreateDocument, onCreateTask, onOpenSettings, onClose]);
 
     // Lightweight fuzzy scorer: returns 0 (no match) or positive score (higher = better)
     const fuzzyScore = useCallback((text: string, term: string): number => {

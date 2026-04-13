@@ -67,6 +67,10 @@ export const PUBLIC_PIPELINE_API_ENDPOINT = PIPELINE_API_BASE
 
 export const PUBLIC_SEARCH_API_ENDPOINT = PUBLIC_SEARCH_API_BASE ?? "/api/search";
 
+export const PUBLIC_SEARCH_STREAM_API_ENDPOINT = PUBLIC_SEARCH_API_BASE
+  ? `${PUBLIC_SEARCH_API_BASE}/stream`
+  : "/api/search/stream";
+
 export const PUBLIC_SEARCH_UPLOAD_API_ENDPOINT = PUBLIC_SEARCH_API_BASE
   ? `${PUBLIC_SEARCH_API_BASE}/upload`
   : "/api/search-upload";

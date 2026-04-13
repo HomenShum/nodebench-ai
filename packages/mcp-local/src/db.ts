@@ -1,6 +1,6 @@
 import { createRequire } from "node:module";
 import { join } from "node:path";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, renameSync } from "node:fs";
 
 type NodebenchDb = any;
 type StatementResult = { changes: number; lastInsertRowid: number };
@@ -85,6 +85,16 @@ function createNoopDb(): NodebenchDb {
       return ((...args: Parameters<T>) => fn(...args)) as T;
     },
   };
+}
+
+function isRecoverableSqliteError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return (
+    message.includes("database disk image is malformed")
+    || message.includes("SQLITE_CORRUPT")
+    || message.includes("SQLITE_NOTADB")
+    || message.includes("malformed")
+  );
 }
 
 const SCHEMA_SQL = `
@@ -1148,8 +1158,47 @@ export function getDb(): NodebenchDb {
   }
   const dir = getNodebenchDataDir();
   mkdirSync(dir, { recursive: true });
-  _db = new Database(join(dir, "nodebench.db"));
-  _db.exec(SCHEMA_SQL);
+  const dbPath = join(dir, "nodebench.db");
+
+  const openInitializedDatabase = (): NodebenchDb => {
+    const db = new Database(dbPath);
+    try {
+      db.exec(SCHEMA_SQL);
+      return db;
+    } catch (error) {
+      try {
+        db.close?.();
+      } catch {
+        // Ignore close failures during recovery.
+      }
+      throw error;
+    }
+  };
+
+  const quarantineCorruptDatabase = () => {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    for (const suffix of ["", "-wal", "-shm"]) {
+      const source = `${dbPath}${suffix}`;
+      if (!existsSync(source)) continue;
+      const target = join(dir, `nodebench.corrupt.${stamp}${suffix || ".db"}`);
+      try {
+        renameSync(source, target);
+      } catch {
+        // Best effort only. The fresh DB creation below can still succeed.
+      }
+    }
+  };
+
+  try {
+    _db = openInitializedDatabase();
+  } catch (error) {
+    if (!isRecoverableSqliteError(error)) {
+      throw error;
+    }
+    console.error(`[nodebench.db] Recovering from local SQLite corruption at ${dbPath}`);
+    quarantineCorruptDatabase();
+    _db = openInitializedDatabase();
+  }
 
   // One-time FTS5 rebuild for existing data (idempotent, skips if already synced)
   try {

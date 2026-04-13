@@ -1,13 +1,13 @@
 {
   "name": "nodebench-mcp",
-  "version": "2.70.0",
+  "version": "3.1.5",
   "mcpName": "io.github.homenshum/nodebench",
-  "description": "NodeBench AI — entity intelligence and deep diligence for founders, investors, and bankers. 350+ MCP tools across 57 domains. Banker-grade company research: people, timeline, financials, competitive landscape, risk flags. Progressive discovery starts with 15 tools. Claude Code plugin with autonomous nudges.",
+  "description": "Turn messy input into a sourced report. 9 default tools in the core lane, with separate power and admin companion packages for deeper workflows.",
   "type": "module",
   "bin": {
-    "nodebench-mcp": "./dist/index.js"
+    "nodebench-mcp": "dist/index.js"
   },
-  "main": "./dist/index.js",
+  "main": "dist/index.js",
   "files": [
     "dist",
     "rules",
@@ -15,12 +15,14 @@
     "LICENSE",
     "README.md",
     "NODEBENCH_AGENTS.md",
-    "STYLE_GUIDE.md"
+    "STYLE_GUIDE.md",
+    "server.json"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && node --max-old-space-size=6144 ../../node_modules/typescript/bin/tsc -p tsconfig.json",
     "dev": "tsx src/index.ts",
-    "test": "vitest run",
+    "test": "node --max-old-space-size=6144 ../../node_modules/vitest/vitest.mjs run src/__tests__/analytics.test.ts src/__tests__/autonomousDeliveryTools.test.ts src/__tests__/dynamicLoading.test.ts src/__tests__/tools.test.ts src/__tests__/presetRealWorldBench.test.ts src/__tests__/runtimeConfig.test.ts src/__tests__/coreWorkflowTools.test.ts src/__tests__/packageInfo.test.ts",
+    "test:full": "node --max-old-space-size=6144 ../../node_modules/vitest/vitest.mjs run --maxWorkers=1",
     "test:delta:dogfood": "vitest run src/__tests__/deltaDogfoodGate.test.ts src/__tests__/deltaTools.test.ts src/__tests__/founderDirectionAssessment.test.ts",
     "test:open-dataset": "vitest run src/__tests__/openDatasetParallelEval.test.ts",
     "test:open-dataset:toolbench": "vitest run src/__tests__/openDatasetParallelEvalToolbench.test.ts",
@@ -81,7 +83,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/HomenShum/nodebench-ai.git",
+    "url": "git+https://github.com/HomenShum/nodebench-ai.git",
     "directory": "packages/mcp-local"
   },
   "homepage": "https://github.com/HomenShum/nodebench-ai/tree/main/packages/mcp-local#readme",
@@ -91,32 +93,39 @@
   "license": "MIT",
   "author": "HomenShum",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@toon-format/toon": "^2.1.0",
-    "better-sqlite3": "^11.0.0",
     "ws": "^8.18.3"
   },
   "optionalDependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
-    "@google/genai": "^1.10.0",
-    "@huggingface/transformers": "^3.8.1",
-    "cheerio": "^1.0.0",
+    "linkedom": "^0.18.12",
     "openai": "^5.8.2",
     "papaparse": "^5.5.3",
     "pdf-parse": "^2.4.5",
     "playwright": "^1.57.0",
+    "read-excel-file": "^8.0.3",
     "sharp": "^0.34.5",
     "tesseract.js": "^7.0.0",
-    "xlsx": "^0.18.5",
     "yauzl": "^2.10.0"
   },
   "devDependencies": {
+    "better-sqlite3": "^11.0.0",
     "@types/better-sqlite3": "^7.6.0",
     "@types/node": "^20.11.0",
     "@types/ws": "^8.18.1",
+    "exceljs": "^4.4.0",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
     "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "@hono/node-server": "^1.19.13",
+    "hono": "^4.12.12",
+    "ajv": "^8.18.0",
+    "minimatch": "^10.2.5",
+    "tar": "^7.5.13",
+    "prebuild-install": "https://registry.npmjs.org/prebuild-install/-/prebuild-install-7.1.3.tgz"
   },
   "engines": {
     "node": ">=18.0.0"

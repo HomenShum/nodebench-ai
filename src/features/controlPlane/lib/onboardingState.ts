@@ -20,7 +20,6 @@ export type BuyerChecklistState = Partial<Record<BuyerChecklistId, boolean>>;
 
 export interface ControlPlaneRouteSnapshot {
   currentView: MainView;
-  showResearchDossier: boolean;
   researchHubInitialTab: ResearchTab;
 }
 

@@ -11,7 +11,7 @@
 | 58 tools = **~55K tokens** consumed before conversation starts | Anthropic internal testing | [anthropic.com/engineering/advanced-tool-use](https://www.anthropic.com/engineering/advanced-tool-use) |
 | 134K tokens consumed by tool definitions alone | Anthropic production | Same |
 | Tool selection accuracy **degrades** as tool count increases | Multiple papers | See references below |
-| NodeBench full preset: **175 tools** | Our measurement | `--preset full` |
+| NodeBench full preset exposes all registered domains | Our measurement | `--preset full` |
 
 **The core insight**: fewer tools visible at once = better selection accuracy. Anthropic measured a **+25 percentage point** accuracy improvement (49% to 74% on Opus 4) by switching from all-tools-upfront to on-demand discovery.
 
@@ -84,7 +84,7 @@ Tested 5 architectures for managing large MCP tool registries:
 Based on the Dynamic ReAct paper's winning architecture, adapted for MCP:
 
 ```
-Agent starts with default preset (50 tools)
+Agent starts with default preset (9 visible tools)
     |
     v
 discover_tools("vision analysis")
@@ -112,7 +112,7 @@ Agent now has vision tools directly bound (best accuracy per research)
 ### How It Works
 
 1. **Agent calls `discover_tools`** with a natural language query
-2. **Search runs against the FULL registry** (all 175 tools, regardless of preset)
+2. **Search runs against the full registry** (including unloaded toolsets)
 3. If results include tools from unloaded toolsets, `_loadSuggestions` tells the agent what to load
 4. **Agent calls `load_toolset("vision")`** to activate the toolset
 5. Server rebuilds the tool list and sends `notifications/tools/list_changed`
@@ -149,7 +149,7 @@ npx nodebench-mcp --preset default
 npx nodebench-mcp --preset default --dynamic
 ```
 
-Both groups start with the same 44 default tools. Group B can dynamically load additional toolsets.
+Both groups start with the same 9-tool default workflow lane. Group B can dynamically load additional toolsets.
 
 ### Metrics Tracked
 
@@ -280,9 +280,9 @@ npx nodebench-mcp --export-stats
 
 | Scenario | Recommendation | Why |
 |---|---|---|
-| New user, exploring | `--dynamic` | Start small, load what you need |
+| New user, exploring | default lane + `load_toolset` when needed | Start small, load what you need |
 | Known project type | `--preset web_dev` etc. | Curated set, no loading overhead |
-| Maximum tools needed | `--preset full` | All 175 tools, no discovery step |
+| Maximum tools needed | `--preset full` | All registered domains, no discovery step |
 | A/B testing | Both `--dynamic` and static | Compare metrics side by side |
 | Production/CI | Themed preset | Deterministic, no runtime changes |
 
@@ -494,7 +494,7 @@ npx tsx scripts/ablation-test.ts --segment power --verbose  # Power users with p
 
 ### Bugs Found and Fixed During Testing
 
-1. **`hybridSearch` results assembly** (Critical) — Results loop iterated over the original `tools` array (loaded only) instead of `searchList` (full registry). Scores computed for all 175 tools but only loaded tools appeared in results.
+1. **`hybridSearch` results assembly** (Critical) — Results loop iterated over the original `tools` array (loaded only) instead of `searchList` (full registry). Scores were computed for the full registry but only loaded tools appeared in results.
 2. **Session counters not persisting** — `process.on('exit')` unreliable on Windows; added inline DB updates every 5 tool calls.
 3. **`getMethodology` parameter name** — Was `methodology`, corrected to `topic`.
 4. **`totalToolsSearched` display** — Reported loaded count instead of actual search scope.
@@ -572,7 +572,7 @@ This means dynamic loading works on **every client**:
 
 ### The Problem
 
-175 tools × ~500 tokens each = **~87K tokens** before any work begins. Research confirms this degrades LLM performance:
+Large flat tool registries can consume tens of thousands of tokens before any work begins. Research confirms this degrades LLM performance:
 
 - **Anthropic**: 58 tools from 5 servers consume ~55K tokens upfront. Tool Search Tool reduces to ~8.7K (85% savings). Accuracy improved from 49% → 74% (Opus 4), 79.5% → 88.1% (Opus 4.5). ([Source](https://www.anthropic.com/engineering/advanced-tool-use))
 - **Microsoft Research**: LLMs "decline to act at all when faced with ambiguous or excessive tool options" and hallucinate tool names when libraries are large. ([Source](https://www.microsoft.com/en-us/research/blog/tool-space-interference-in-the-mcp-era-designing-for-agent-compatibility-at-scale/))
@@ -604,7 +604,7 @@ New `intent` parameter narrows search scope *before* hybrid search runs. The cal
 ```
 > discover_tools({ query: "parse a CSV file", intent: "data_analysis" })
 # Searches only: local_file, llm, benchmark categories
-# Instead of all 175 tools — fewer false positives, faster results
+# Instead of the entire registry — fewer false positives, faster results
 ```
 
 15 intents available: `file_processing`, `web_research`, `code_quality`, `security_audit`, `academic_writing`, `data_analysis`, `llm_interaction`, `visual_qa`, `devops_ci`, `team_coordination`, `communication`, `seo_audit`, `design_review`, `voice_ui`, `project_setup`.
@@ -628,7 +628,7 @@ All tool responses are encoded in TOON format by default, saving ~40% tokens on 
 
 ```
 > smart_select_tools({ task: "I need to parse a PDF, extract tables, and email a summary" })
-# Calls Gemini 3 Flash / GPT-5-mini / Claude Haiku 4.5 with the 175-tool catalog
+# Calls Gemini 3 Flash / GPT-5-mini / Claude Haiku 4.5 with the compact NodeBench catalog
 # Returns: [parse_local_file, extract_structured_data, send_email, ...]
 # Includes _loadSuggestions for any tools in unloaded toolsets
 ```
@@ -639,8 +639,8 @@ This solves the **aggressive-filter problem**: keyword search can't match "call 
 
 #### Tier 3: Protocol-Level (Existing)
 
-- **Dynamic loading** (`--dynamic`): Start with 48 tools, load more on demand
-- **Themed presets** (`--preset web_dev`): Domain-specific tool selections (44-175 tools)
+- **Dynamic loading** (`load_toolset`): Start with the 9-tool default lane, load more on demand
+- **Themed presets** (`--preset web_dev`): Domain-specific tool selections when you already know the lane you need
 - **`--toolsets` / `--exclude`**: Fine-grained CLI control
 - **TOON encoding**: ~40% token savings on all responses
 

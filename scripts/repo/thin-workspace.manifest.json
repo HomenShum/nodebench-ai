@@ -1,0 +1,41 @@
+{
+  "name": "nodebench-ai-thin",
+  "include": [
+    ".env.example",
+    ".gitignore",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "index.html",
+    "postcss.config.cjs",
+    "tailwind.config.js",
+    "tsconfig.app.json",
+    "tsconfig.json",
+    "tsconfig.node.json",
+    "vercel.json",
+    "vite.config.ts",
+    "api",
+    "convex",
+    "public",
+    "server",
+    "services",
+    "shared",
+    "src",
+    "packages/mcp-local/package.json",
+    "packages/mcp-local/README.md",
+    "packages/mcp-local/tsconfig.json",
+    "packages/mcp-local/src",
+    "scripts/patch-crons-exports.mjs"
+  ],
+  "supportedScripts": [
+    "postinstall",
+    "dev",
+    "dev:frontend",
+    "dev:backend",
+    "dev:voice",
+    "build",
+    "build:search-api-bundle",
+    "deploy:convex",
+    "build:voice",
+    "start:voice"
+  ]
+}

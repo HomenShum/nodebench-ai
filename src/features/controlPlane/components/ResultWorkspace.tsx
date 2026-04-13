@@ -14,7 +14,6 @@ import {
 import { TrajectoryPanel } from "@/features/telemetry/TrajectoryPanel";
 import type { TrajectoryData } from "@/features/telemetry/types";
 import { CitationFootnote } from "./CitationFootnote";
-import { ForecastGateCard } from "./ForecastGateCard";
 import { ensureProofPacket, type ProofReadyResultPacket } from "./proofModel";
 import { SourcesBar } from "./SourcesBar";
 import { DCFCard } from "./DCFCard";

@@ -17,6 +17,7 @@
 
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type Database from "better-sqlite3";
+import { NODEBENCH_VERSION } from "../packageInfo.js";
 
 // ── Founder Business Schema ───────────────────────────────────────────
 
@@ -114,7 +115,7 @@ function seedDemoDataIfEmpty(db: Database.Database): void {
   const initiatives = [
     { id: 'init-causal-memory', title: 'Phase 10: Causal Memory', objective: 'Build event-driven causal graph for entity state tracking', status: 'completed', ownerType: 'founder', riskLevel: 'low', priorityScore: 9.2, latestSummary: 'Shipped: causal events, state diffs, path replay, time rollups all live in local SQLite' },
     { id: 'init-ambient-intel', title: 'Phase 11: Ambient Intelligence', objective: 'Session delta, packet readiness, trajectory scoring from local data', status: 'active', ownerType: 'founder', riskLevel: 'medium', priorityScore: 9.0, latestSummary: 'Dashboard live at :6276, auto-refresh working, needs business layer' },
-    { id: 'init-mcp-distribution', title: 'MCP Distribution', objective: 'Publish to npm, MCP Registry, cursor.directory, mcpservers.org', status: 'active', ownerType: 'founder', riskLevel: 'medium', priorityScore: 8.5, latestSummary: 'npm 2.31.0 published, Registry submission pending, SEO infra done' },
+    { id: 'init-mcp-distribution', title: 'MCP Distribution', objective: 'Publish to npm, MCP Registry, cursor.directory, mcpservers.org', status: 'active', ownerType: 'founder', riskLevel: 'medium', priorityScore: 8.5, latestSummary: 'npm distribution lane active, registry submissions pending, SEO infra done' },
     { id: 'init-benchmark-suite', title: 'Benchmark Suite', objective: 'Comprehensive eval harness: SWE-bench, BFCL, GAIA, HumanEval, MCP-AgentBench', status: 'active', ownerType: 'founder', riskLevel: 'low', priorityScore: 7.8, latestSummary: '1510+ tests passing, 5 dataset adapters, comparative bench operational' },
     { id: 'init-dashboard-polish', title: 'Local Dashboard Polish', objective: 'Add business intelligence layer to operating dashboard', status: 'in_progress', ownerType: 'founder', riskLevel: 'low', priorityScore: 7.5, latestSummary: 'System intelligence sections complete, business layer in progress' },
   ];
@@ -849,7 +850,7 @@ function apiStats(db: Database.Database, res: ServerResponse) {
     changes: (changeCount as any)?.count ?? 0,
     pathSteps: (pathCount as any)?.count ?? 0,
     dashboardUrl: getOperatingDashboardUrl(),
-    version: "2.34.0",
+    version: NODEBENCH_VERSION,
     toolCount: 325,
     tableCount: 30,
   });

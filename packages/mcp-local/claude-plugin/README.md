@@ -1,10 +1,10 @@
-# NodeBench — Claude Code Plugin
+# NodeBench - Claude Code Plugin
 
-Operating intelligence for founders. 350 MCP tools across 57 domains.
+NodeBench MCP inside Claude Code. Start with the same 9-tool workflow lane the main package exposes, then load deeper toolsets only when the task actually needs them.
 
 ## What you get
 
-- **MCP Server**: 350 tools for decision intelligence, entity research, QA automation, session memory
+- **MCP Server**: 9-tool default lane for `investigate`, `compare`, `track`, `summarize`, `search`, `report`, `ask_context`, `discover_tools`, and `load_toolset`
 - **Slash Commands**: `/nodebench-qa` (full QA loop), `/agentic-reliability-audit` (8-point infra check)
 - **Rules**: Auto-QA after code changes, analyst diagnostic (5-whys), agentic reliability checklist
 
@@ -20,7 +20,7 @@ Or add to your project's `.mcp.json`:
   "mcpServers": {
     "nodebench": {
       "command": "npx",
-      "args": ["-y", "nodebench-mcp"],
+      "args": ["-y", "nodebench-mcp", "--preset", "default"],
       "env": {}
     }
   }
@@ -29,10 +29,10 @@ Or add to your project's `.mcp.json`:
 
 ## Quick start
 
-1. `discover_tools('analyze a company')` — find relevant tools
-2. `load_toolset('founder')` — activate 40 founder-specific tools
-3. `site_map({ url: 'https://yoursite.com' })` — crawl and inspect interactively
-4. `compare_savings()` — see your ROI
+1. `investigate({ topic: 'analyze a company' })` - get a sourced report first
+2. `compare({ items: ['Competitor A', 'Competitor B'] })` - produce a side-by-side brief
+3. `discover_tools({ query: 'crawl and inspect a site' })` - find the deeper lane only if needed
+4. `load_toolset({ toolset: 'site_map' })` - expand deliberately when the task calls for it
 
 ## Links
 

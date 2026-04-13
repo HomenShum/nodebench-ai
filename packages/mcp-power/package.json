@@ -1,0 +1,41 @@
+{
+  "name": "nodebench-mcp-power",
+  "version": "3.1.5",
+  "description": "NodeBench MCP power lane. Founder, recon, packets, and deeper research workflows on the shared NodeBench runtime.",
+  "type": "module",
+  "bin": {
+    "nodebench-mcp-power": "index.js"
+  },
+  "files": [
+    "index.js",
+    "README.md",
+    "server.json"
+  ],
+  "scripts": {
+    "test": "node index.js --health",
+    "prepublishOnly": "npm run test"
+  },
+  "keywords": [
+    "mcp",
+    "nodebench",
+    "nodebench-mcp",
+    "claude-code",
+    "codex",
+    "cursor",
+    "research",
+    "founder"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HomenShum/nodebench-ai.git",
+    "directory": "packages/mcp-power"
+  },
+  "license": "MIT",
+  "author": "HomenShum",
+  "dependencies": {
+    "nodebench-mcp": "3.1.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

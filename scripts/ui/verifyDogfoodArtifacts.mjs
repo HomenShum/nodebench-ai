@@ -51,16 +51,23 @@ async function main() {
   const scribe = await readJson(scribePath);
   const walkthrough = await readJson(walkthroughPath);
 
-  if (!Array.isArray(manifest.items) || manifest.items.length < 10) {
+  const minimums = {
+    screenshots: 3,
+    frames: 8,
+    scribeSteps: 8,
+    chapters: 8,
+  };
+
+  if (!Array.isArray(manifest.items) || manifest.items.length < minimums.screenshots) {
     throw new Error(`manifest.json has insufficient items: ${manifest.items?.length ?? 0}`);
   }
-  if (!Array.isArray(frames.items) || frames.items.length < 10) {
+  if (!Array.isArray(frames.items) || frames.items.length < minimums.frames) {
     throw new Error(`frames.json has insufficient items: ${frames.items?.length ?? 0}`);
   }
-  if (!Array.isArray(scribe.steps) || scribe.steps.length < 10) {
+  if (!Array.isArray(scribe.steps) || scribe.steps.length < minimums.scribeSteps) {
     throw new Error(`scribe.json has insufficient steps: ${scribe.steps?.length ?? 0}`);
   }
-  if (!Array.isArray(walkthrough.chapters) || walkthrough.chapters.length < 10) {
+  if (!Array.isArray(walkthrough.chapters) || walkthrough.chapters.length < minimums.chapters) {
     throw new Error(`walkthrough.json has insufficient chapters: ${walkthrough.chapters?.length ?? 0}`);
   }
 
@@ -124,4 +131,3 @@ async function main() {
 }
 
 await main();
-

@@ -145,14 +145,14 @@ function describeStep(step) {
   if (step.kind === "route") {
     return `Navigate to ${step.path} to review the ${step.name} screen.`;
   }
-  if (step.kind === "interaction" && /command palette/i.test(step.name)) {
-    return "Open the command palette (Cmd/Ctrl+K) and confirm search + navigation are responsive.";
+  if (step.kind === "interaction" && /home to chat/i.test(step.name)) {
+    return "Start from Home, submit a question, and confirm the live Chat session opens with the answer surface active.";
   }
-  if (step.kind === "interaction" && /settings/i.test(step.name)) {
-    return "Open Settings and click through tabs to confirm layout, copy, and controls are coherent.";
+  if (step.kind === "interaction" && /theme toggle/i.test(step.name)) {
+    return "Toggle the public shell theme to verify readability and surface consistency in both modes.";
   }
-  if (step.kind === "interaction" && /assistant panel/i.test(step.name)) {
-    return "Open the Assistant panel to verify it loads and the chat surface is usable.";
+  if (step.kind === "interaction" && /reports to chat/i.test(step.name)) {
+    return "Open a saved report and route it back into Chat to confirm the memory-to-execution loop works.";
   }
   return "Review the UI and fix any root-cause issues found.";
 }
@@ -172,42 +172,14 @@ async function main() {
   await mkdir(userDataDir, { recursive: true });
 
   const steps = [
-    { kind: "route", path: "/", name: "Home" },
-    { kind: "route", path: "/research", name: "Research Hub" },
-    { kind: "route", path: "/research/overview", name: "Research: Overview" },
-    { kind: "route", path: "/research/signals", name: "Research: Signals" },
-    { kind: "route", path: "/research/briefing", name: "Research: Briefing" },
-    { kind: "route", path: "/research/deals", name: "Research: Deals" },
-    { kind: "route", path: "/research/changelog", name: "Research: Changes" },
-    { kind: "route", path: "/documents", name: "Workspace: Documents" },
-    { kind: "route", path: "/spreadsheets", name: "Workspace: Spreadsheets" },
-    { kind: "route", path: "/calendar", name: "Workspace: Calendar" },
-    { kind: "route", path: "/agents", name: "Assistants" },
-    { kind: "route", path: "/roadmap", name: "Roadmap" },
-    { kind: "route", path: "/timeline", name: "Timeline" },
-    { kind: "route", path: "/developers", name: "Developers" },
-    { kind: "route", path: "/footnotes", name: "Sources" },
-    { kind: "route", path: "/signals", name: "Signals Log" },
-    { kind: "route", path: "/benchmarks", name: "Benchmarks" },
-    { kind: "route", path: "/funding", name: "Funding Brief" },
-    { kind: "route", path: "/activity", name: "Activity" },
-    { kind: "route", path: "/analytics/hitl", name: "Review Queue" },
-    { kind: "route", path: "/analytics/components", name: "Performance Analytics" },
-    { kind: "route", path: "/analytics/recommendations", name: "Feedback" },
-    { kind: "route", path: "/cost", name: "Usage & Costs" },
-    { kind: "route", path: "/industry", name: "Industry News" },
-    { kind: "route", path: "/for-you", name: "For You" },
-    { kind: "route", path: "/recommendations", name: "Recommendations" },
-    { kind: "route", path: "/marketplace", name: "Agent Templates" },
-    { kind: "route", path: "/github", name: "GitHub Explorer" },
-    { kind: "route", path: "/pr-suggestions", name: "PR Suggestions" },
-    { kind: "route", path: "/linkedin", name: "LinkedIn Archive" },
-    { kind: "route", path: "/mcp/ledger", name: "Activity Log" },
-    { kind: "route", path: "/dogfood", name: "Quality Review" },
-    { kind: "route", path: "/public", name: "Public Docs" },
-    { kind: "interaction", path: "(interaction)", name: "Interaction: Command Palette" },
-    { kind: "interaction", path: "(interaction)", name: "Interaction: Settings" },
-    { kind: "interaction", path: "(interaction)", name: "Interaction: Assistant Panel" },
+    { kind: "route", path: "/?surface=home", name: "Home" },
+    { kind: "route", path: "/?surface=chat&q=ditto%20ai&lens=founder", name: "Chat" },
+    { kind: "route", path: "/?surface=reports", name: "Reports" },
+    { kind: "route", path: "/?surface=nudges", name: "Nudges" },
+    { kind: "route", path: "/?surface=me", name: "Me" },
+    { kind: "interaction", path: "(interaction)", name: "Interaction: Home to Chat" },
+    { kind: "interaction", path: "(interaction)", name: "Interaction: Theme toggle" },
+    { kind: "interaction", path: "(interaction)", name: "Interaction: Reports to Chat" },
   ];
 
   const context = await chromium.launchPersistentContext(userDataDir, {
@@ -246,8 +218,8 @@ async function main() {
 
     if (step.kind === "route") {
       await ensureNoModal(page);
-      if (step.path === "/") {
-        await page.goto("/", { waitUntil: "domcontentloaded" });
+      if (step.path === "/?surface=home") {
+        await page.goto(step.path, { waitUntil: "domcontentloaded" });
       } else {
         await page.evaluate((targetPath) => {
           history.pushState({}, "", targetPath);
@@ -256,47 +228,43 @@ async function main() {
       }
       await waitForAppReady(page);
       await page.waitForTimeout(settleMs);
-    } else if (/command palette/i.test(step.name)) {
+    } else if (/home to chat/i.test(step.name)) {
       await ensureNoModal(page);
-      const isMac = isMacPlatform();
-      await page.keyboard.press(isMac ? "Meta+K" : "Control+K");
-      await page.waitForTimeout(800);
-    } else if (/settings/i.test(step.name)) {
-      await ensureNoModal(page);
-      const settingsTrigger = page.getByTestId("open-settings");
-      if (await settingsTrigger.count()) {
-        await settingsTrigger.click();
-        await page.waitForTimeout(450);
-      }
-    } else if (/assistant panel/i.test(step.name)) {
-      await ensureNoModal(page);
-      // Navigate to a stable page first so the header is consistent.
-      await page.goto("/", { waitUntil: "domcontentloaded" });
+      await page.goto("/?surface=home", { waitUntil: "domcontentloaded" });
       await waitForAppReady(page);
-      await page.waitForTimeout(600);
+      const homeInput = page.getByLabel("Ask anything or upload anything").first();
+      if (await homeInput.count()) {
+        await homeInput.fill("What does Ditto AI do and what matters most right now?");
+        await page.waitForTimeout(350);
+        const askButton = page.getByRole("button", { name: /^ask$/i }).first();
+        if (await askButton.count()) {
+          await askButton.click();
+          await page.waitForTimeout(2200);
+        }
+      }
+    } else if (/theme toggle/i.test(step.name)) {
       await ensureNoModal(page);
-      const assistantBtn = page.getByRole("button", { name: "Assistant" }).first();
-      if (await assistantBtn.count()) {
-        await assistantBtn.click({ force: true });
+      const themeToggle = page.getByRole("button", { name: /switch to (light|dark) mode/i }).first();
+      if (await themeToggle.count()) {
+        await themeToggle.click();
         await page.waitForTimeout(800);
+        await themeToggle.click();
+        await page.waitForTimeout(500);
+      }
+    } else if (/reports to chat/i.test(step.name)) {
+      await ensureNoModal(page);
+      await page.goto("/?surface=reports", { waitUntil: "domcontentloaded" });
+      await waitForAppReady(page);
+      const openInChat = page.getByRole("button", { name: /open in chat/i }).first();
+      if (await openInChat.count()) {
+        await openInChat.click();
+        await page.waitForTimeout(2200);
       }
     }
 
     const fileBase = `${String(stepNum).padStart(2, "0")}-${slugify(step.name) || "step"}.png`;
     const absPath = path.join(outRoot, fileBase);
     await page.screenshot({ path: absPath, fullPage: false });
-
-    // Clean up interaction surfaces for the next step.
-    if (/command palette/i.test(step.name)) {
-      await page.keyboard.press("Escape");
-      await page.waitForTimeout(350);
-      await ensureNoModal(page);
-    }
-    if (/settings/i.test(step.name)) {
-      await page.keyboard.press("Escape");
-      await page.waitForTimeout(350);
-      await ensureNoModal(page);
-    }
 
     publishedSteps.push({
       index: stepNum,

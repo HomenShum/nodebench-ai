@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useConvexAuth, useQuery} from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import {
   Bell,
   Bot,
@@ -18,6 +19,8 @@ import type { LucideIcon } from "lucide-react";
 import { useConvexApi } from "@/lib/convexApi";
 import type { CockpitSurfaceId } from "@/lib/registry/viewRegistry";
 import { buildCockpitPath } from "@/lib/registry/viewRegistry";
+import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
+import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
 import { cn } from "@/lib/utils";
 
 interface SurfaceShortcut {
@@ -54,36 +57,30 @@ export const WorkspaceRail = memo(function WorkspaceRail({
   onOpenSettings,
   onOpenPalette,
 }: WorkspaceRailProps) {
+  useProductBootstrap();
+
   const navigate = useNavigate();
   const { isAuthenticated } = useConvexAuth();
+  const { signIn } = useAuthActions();
   const api = useConvexApi();
+  const anonymousSessionId = getAnonymousProductSessionId();
 
-  const recentSessions = useQuery(
-    isAuthenticated && api?.domains.operations.taskManager.queries.getUserTaskSessions
-      ? api.domains.operations.taskManager.queries.getUserTaskSessions
+  const shellSnapshot = useQuery(
+    api?.domains.product.shell.getWorkspaceRailSnapshot
+      ? api.domains.product.shell.getWorkspaceRailSnapshot
       : "skip",
-    isAuthenticated ? { limit: 5 } : "skip",
-  );
-  const recentDocuments = useQuery(
-    isAuthenticated && api?.domains.documents.documents.getSidebar
-      ? api.domains.documents.documents.getSidebar
+    api?.domains.product.shell.getWorkspaceRailSnapshot
+      ? { anonymousSessionId }
       : "skip",
-    isAuthenticated ? {} : "skip",
-  );
-  const watchlistDigest = useQuery(
-    api?.domains.monitoring.worldMonitor.getWatchlistDigest
-      ? api.domains.monitoring.worldMonitor.getWatchlistDigest
-      : "skip",
-    api?.domains.monitoring.worldMonitor.getWatchlistDigest ? {} : "skip",
   );
 
-  const sessionItems = Array.isArray(recentSessions?.sessions) ? recentSessions.sessions.slice(0, 4) : [];
-  const documentItems = Array.isArray(recentDocuments) ? recentDocuments.slice(0, 4) : [];
-  const watchlists = Array.isArray(watchlistDigest?.watchlists) ? watchlistDigest.watchlists.slice(0, 3) : [];
+  const sessionItems = Array.isArray(shellSnapshot?.recentChats) ? shellSnapshot.recentChats : [];
+  const reportItems = Array.isArray(shellSnapshot?.recentReports) ? shellSnapshot.recentReports : [];
+  const nudgeItems = Array.isArray(shellSnapshot?.openNudges) ? shellSnapshot.openNudges : [];
   return (
     <nav
       className={cn(
-        "hidden lg:flex shrink-0 flex-col border-r border-white/[0.06] bg-white/[0.04] backdrop-blur-xl transition-[width] duration-200 ease-in-out",
+        "hidden xl:flex shrink-0 flex-col border-r border-white/[0.06] bg-white/[0.04] backdrop-blur-xl transition-[width] duration-200 ease-in-out",
         isCollapsed ? "w-12" : "w-[240px]",
       )}
       id="main-navigation"
@@ -108,7 +105,7 @@ export const WorkspaceRail = memo(function WorkspaceRail({
         {!isCollapsed ? (
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold text-content">NodeBench</div>
-            <div className="truncate text-[11px] uppercase tracking-[0.16em] text-content-muted">Anything in. Clear report out.</div>
+            <div className="truncate text-[11px] uppercase tracking-[0.18em] text-content-muted">Anything in. Clear report out.</div>
           </div>
         ) : null}
       </div>
@@ -173,39 +170,48 @@ export const WorkspaceRail = memo(function WorkspaceRail({
             collapsed={isCollapsed}
             title="Recent chats"
             items={sessionItems.map((session) => ({
-              id: session._id,
-              label: session.title ?? session.type ?? "Untitled run",
+              id: String(session._id),
+              label: session.title ?? session.query ?? "Untitled chat",
               detail: session.status,
               icon: Bot,
-              onClick: () => navigate(buildCockpitPath({ surfaceId: "trace", run: String(session._id) })),
+              onClick: () =>
+                navigate(
+                  buildCockpitPath({
+                    surfaceId: "workspace",
+                    extra: {
+                      q: session.query ?? null,
+                      lens: session.lens ?? null,
+                    },
+                  }),
+                ),
             }))}
           />
         )}
 
-        {documentItems.length > 0 && (
+        {reportItems.length > 0 && (
           <RailSection
             collapsed={isCollapsed}
-            title="Reports & files"
-            items={documentItems.map((document) => ({
-              id: String(document._id),
-              label: document.title ?? "Untitled document",
-              detail: document.documentType ?? document.fileType ?? "document",
+            title="Recent reports"
+            items={reportItems.map((report) => ({
+              id: String(report._id),
+              label: report.title ?? "Untitled report",
+              detail: report.type ?? "report",
               icon: FileText,
-              onClick: () => navigate(buildCockpitPath({ surfaceId: "editor", doc: String(document._id) })),
+              onClick: () => navigate(buildCockpitPath({ surfaceId: "packets" })),
             }))}
           />
         )}
 
-        {watchlists.length > 0 && (
+        {nudgeItems.length > 0 && (
           <RailSection
             collapsed={isCollapsed}
-            title="Tracked items"
-            items={watchlists.map((watchlist) => ({
-              id: String(watchlist._id),
-              label: watchlist.title ?? watchlist.watchlistKey ?? "Watchlist",
-              detail: `${watchlist.alertEventCount ?? 0} alerts`,
+            title="Open nudges"
+            items={nudgeItems.map((nudge) => ({
+              id: String(nudge._id),
+              label: nudge.title ?? "Nudge",
+              detail: nudge.priority ?? "open",
               icon: Bell,
-              onClick: () => navigate(buildCockpitPath({ surfaceId: "research", tab: "overview" })),
+              onClick: () => navigate(buildCockpitPath({ surfaceId: "history" })),
             }))}
           />
         )}
@@ -247,18 +253,18 @@ export const WorkspaceRail = memo(function WorkspaceRail({
           !isCollapsed ? (
             <button
               type="button"
-              onClick={() => navigate("/sign-in")}
+              onClick={() => void signIn("anonymous")}
               className="flex w-full items-center gap-2 rounded-lg border border-accent-primary/20 bg-accent-primary/[0.06] px-3 py-2 text-xs font-medium text-accent-primary transition-all hover:bg-accent-primary/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/30 active:scale-[0.99]"
             >
               <LogIn className="h-3.5 w-3.5" />
-              <span>Sign in</span>
+              <span>Sign in anonymously</span>
             </button>
           ) : (
             <button
               type="button"
-              onClick={() => navigate("/sign-in")}
+              onClick={() => void signIn("anonymous")}
               className="flex h-9 w-9 items-center justify-center rounded-lg text-accent-primary transition-all hover:bg-accent-primary/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/30 active:scale-[0.96]"
-              aria-label="Sign in"
+              aria-label="Sign in anonymously"
             >
               <LogIn className="h-4 w-4" />
             </button>

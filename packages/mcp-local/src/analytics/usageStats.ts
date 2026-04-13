@@ -4,8 +4,8 @@
  * Aggregates tool usage data to generate insights and recommendations.
  */
 
-import Database from 'better-sqlite3';
 import { getCachedStats, setCachedStats } from './schema.js';
+import type { AnalyticsDb } from './schema.js';
 import type { ToolUsageRecord } from './schema.js';
 
 export interface ToolUsageStats {
@@ -48,7 +48,7 @@ export interface UsageTrend {
 }
 
 export function getToolUsageStats(
-  db: Database.Database,
+  db: AnalyticsDb,
   projectPath: string,
   days: number = 30
 ): ToolUsageStats[] {
@@ -74,7 +74,7 @@ export function getToolUsageStats(
 }
 
 export function getToolsetUsageStats(
-  db: Database.Database,
+  db: AnalyticsDb,
   projectPath: string,
   days: number = 30
 ): ToolsetUsageStats[] {
@@ -101,7 +101,7 @@ export function getToolsetUsageStats(
 }
 
 export function getProjectUsageSummary(
-  db: Database.Database,
+  db: AnalyticsDb,
   projectPath: string,
   days: number = 30
 ): ProjectUsageSummary | null {
@@ -180,7 +180,7 @@ export function getProjectUsageSummary(
 }
 
 export function getUsageTrend(
-  db: Database.Database,
+  db: AnalyticsDb,
   projectPath: string,
   days: number = 30
 ): UsageTrend[] {
@@ -202,7 +202,7 @@ export function getUsageTrend(
 }
 
 export function getUnusedTools(
-  db: Database.Database,
+  db: AnalyticsDb,
   projectPath: string,
   availableTools: string[],
   days: number = 30
@@ -222,7 +222,7 @@ export function getUnusedTools(
 }
 
 export function getFrequentlyFailingTools(
-  db: Database.Database,
+  db: AnalyticsDb,
   projectPath: string,
   days: number = 30,
   minFailures: number = 3
@@ -248,7 +248,7 @@ export function getFrequentlyFailingTools(
   }>;
 }
 
-export function getAllProjects(db: Database.Database): Array<{ projectPath: string; lastSeen: number }> {
+export function getAllProjects(db: AnalyticsDb): Array<{ projectPath: string; lastSeen: number }> {
   const stmt = db.prepare(`
     SELECT DISTINCT project_path as projectPath, MAX(timestamp) as lastSeen
     FROM tool_usage
@@ -260,7 +260,7 @@ export function getAllProjects(db: Database.Database): Array<{ projectPath: stri
 }
 
 export function exportUsageStats(
-  db: Database.Database,
+  db: AnalyticsDb,
   projectPath: string,
   days: number = 30
 ): string {
@@ -287,7 +287,7 @@ export function exportUsageStats(
 const SUMMARY_CACHE_TTL = 300; // 5 minutes in seconds
 
 export function getCachedProjectSummary(
-  db: Database.Database,
+  db: AnalyticsDb,
   projectPath: string,
   days: number = 30
 ): ProjectUsageSummary | null {

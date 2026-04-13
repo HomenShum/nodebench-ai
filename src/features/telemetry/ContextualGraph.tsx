@@ -578,7 +578,6 @@ export const ContextualGraph = memo(function ContextualGraph({
                 fontFamily="Manrope, sans-serif"
                 fontWeight={600}
                 letterSpacing="0.1em"
-                textTransform="uppercase"
                 style={{ textTransform: "uppercase" } as React.CSSProperties}
               >
                 {domain.replace(/_/g, " ")}

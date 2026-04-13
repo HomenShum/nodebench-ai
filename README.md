@@ -3,7 +3,7 @@
 Entity intelligence for any company, market, or question.
 
 **Live:** [nodebenchai.com](https://www.nodebenchai.com)  
-**npm:** `npx nodebench-mcp`  
+**npm:** `npx nodebench-mcp` / `npx nodebench-mcp-power` / `npx nodebench-mcp-admin`  
 **GitHub:** [HomenShum/nodebench-ai](https://github.com/HomenShum/nodebench-ai)
 
 ## Product
@@ -36,13 +36,19 @@ Open [nodebenchai.com](https://www.nodebenchai.com) and start in `Home`.
 
 ```bash
 # Claude Code
-claude mcp add nodebench -- npx -y nodebench-mcp --preset founder
+claude mcp add nodebench -- npx -y nodebench-mcp
+
+# Claude Code power lane
+claude mcp add nodebench-power -- npx -y nodebench-mcp-power
+
+# Claude Code admin lane
+claude mcp add nodebench-admin -- npx -y nodebench-mcp-admin
 
 # Cursor
 npx nodebench-mcp --preset cursor
 
 # Generic MCP client
-npx nodebench-mcp --preset starter
+npx nodebench-mcp
 ```
 
 ### Local development

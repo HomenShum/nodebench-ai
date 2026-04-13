@@ -1,0 +1,46 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.homenshum/nodebench-power",
+  "title": "NodeBench MCP Power",
+  "description": "Extended NodeBench MCP lane for founder, recon, packets, and deeper research workflows on the shared NodeBench runtime.",
+  "repository": {
+    "url": "https://github.com/HomenShum/nodebench-ai",
+    "source": "github",
+    "subfolder": "packages/mcp-power"
+  },
+  "version": "3.1.5",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "nodebench-mcp-power",
+      "version": "3.1.5",
+      "transport": {
+        "type": "stdio"
+      },
+      "arguments": [],
+      "environmentVariables": [
+        {
+          "description": "Gemini API key for web search and entity enrichment",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true,
+          "name": "GEMINI_API_KEY"
+        },
+        {
+          "description": "OpenAI API key for embeddings and LLM tools",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true,
+          "name": "OPENAI_API_KEY"
+        },
+        {
+          "description": "GitHub token for repository tools",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true,
+          "name": "GITHUB_TOKEN"
+        }
+      ]
+    }
+  ]
+}
