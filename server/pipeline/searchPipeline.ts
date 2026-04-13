@@ -738,6 +738,7 @@ Return ONLY valid JSON:
     // Latest models: 3.1 Flash Lite (fastest) → 3 Flash → 2.5 Flash (stable GA)
     const models = ["gemini-3.1-flash-lite-preview", "gemini-3-flash-preview", "gemini-2.5-flash"];
     let resp: Response | null = null;
+    let usedModel = models[0];
     for (const model of models) {
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
@@ -750,7 +751,7 @@ Return ONLY valid JSON:
           }),
           signal: AbortSignal.timeout(25_000),
         });
-        if (resp.ok) break;
+        if (resp.ok) { usedModel = model; break; }
       } catch { continue; }
     }
     if (!resp) throw new Error("All Gemini models failed");
@@ -823,7 +824,7 @@ Return ONLY valid JSON:
       nextQuestions: Array.from(new Set(nextQuestions)),
       keyMetrics: Array.isArray(parsed.keyMetrics) ? parsed.keyMetrics : [],
       whyThisTeam: parsed.whyThisTeam ?? null,
-      tokenUsage: { inputTokens, outputTokens, totalTokens, model },
+      tokenUsage: { inputTokens, outputTokens, totalTokens, model: usedModel },
       trace: [...state.trace, {
         step: "analyze",
         tool: "gemini",
@@ -1203,6 +1204,15 @@ export function stateToResultPacket(state: PipelineState): Record<string, unknow
     classification: state.classification,
     routingHints: state.routingHints.slice(0, 3),
     recommendedNextAction: state.nextActions[0]?.action,
+    tokenUsage: state.tokenUsage ?? null,
+    realCost: state.tokenUsage ? {
+      model: state.tokenUsage.model,
+      inputTokens: state.tokenUsage.inputTokens,
+      outputTokens: state.tokenUsage.outputTokens,
+      inputCostUsd: (state.tokenUsage.inputTokens / 1_000_000) * 0.075,
+      outputCostUsd: (state.tokenUsage.outputTokens / 1_000_000) * 0.30,
+      totalCostUsd: ((state.tokenUsage.inputTokens / 1_000_000) * 0.075) + ((state.tokenUsage.outputTokens / 1_000_000) * 0.30),
+    } : null,
   };
 
   const envelope = createEnvelopeFromResultPacket({
