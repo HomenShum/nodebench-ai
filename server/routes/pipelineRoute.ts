@@ -15,64 +15,7 @@ import { evaluateTask } from "../../packages/mcp-local/src/sync/hyperloopEval.js
 import { runPromotionCycle } from "../../packages/mcp-local/src/sync/hyperloopArchive.js";
 import { runPreSearchHooks, runPostSearchHooks } from "../pipeline/hooks.js";
 
-// ── Attrition retention bridge ─────────────────────────────────
-const ATTRITION_BACKEND = process.env.ATTRITION_URL || "https://attrition-7xtb75zi5q-uc.a.run.app";
-
-/** Non-blocking push of pipeline results to attrition for capture + measurement */
-function pushToAttrition(query: string, durationMs: number, packet: Record<string, unknown>, trace: unknown[], tokenUsage?: { inputTokens: number; outputTokens: number; totalTokens: number; model: string }) {
-  console.log(`[attrition] Pushing pipeline result: ${query.substring(0, 60)}... to ${ATTRITION_BACKEND}`);
-  const realCostStr = tokenUsage
-    ? `, Tokens: ${tokenUsage.totalTokens}, Cost: $${(((tokenUsage.inputTokens / 1_000_000) * 0.075) + ((tokenUsage.outputTokens / 1_000_000) * 0.30)).toFixed(6)}`
-    : "";
-  // Fire and forget — never block the response
-  fetch(`${ATTRITION_BACKEND}/api/retention/push-packet`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      type: "delta.pipeline_run",
-      subject: `Pipeline: ${query.substring(0, 80)}`,
-      summary: `Score: ${packet.confidence ?? "N/A"}, Sources: ${packet.sourceCount ?? 0}, Duration: ${durationMs}ms${realCostStr}`,
-      data: {
-        query,
-        durationMs,
-        confidence: packet.confidence,
-        sourceCount: packet.sourceCount,
-        entityName: packet.entityName,
-        traceSteps: Array.isArray(trace) ? trace.length : 0,
-        timestamp: new Date().toISOString(),
-        tokenUsage: tokenUsage ?? null,
-        realCost: tokenUsage ? {
-          model: tokenUsage.model,
-          inputTokens: tokenUsage.inputTokens,
-          outputTokens: tokenUsage.outputTokens,
-          inputCostUsd: (tokenUsage.inputTokens / 1_000_000) * 0.075,
-          outputCostUsd: (tokenUsage.outputTokens / 1_000_000) * 0.30,
-          totalCostUsd: ((tokenUsage.inputTokens / 1_000_000) * 0.075) + ((tokenUsage.outputTokens / 1_000_000) * 0.30),
-        } : null,
-      },
-    }),
-    signal: AbortSignal.timeout(5000),
-  }).catch(() => { /* attrition unavailable — that's fine */ });
-
-  // Also send as a webhook event for the event log
-  fetch(`${ATTRITION_BACKEND}/api/retention/webhook`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      event: "pipeline_complete",
-      data: {
-        query: query.substring(0, 200),
-        durationMs,
-        confidence: packet.confidence,
-        sourceCount: packet.sourceCount,
-        entityName: packet.entityName,
-        traceSteps: Array.isArray(trace) ? trace.length : 0,
-        tokenUsage: tokenUsage ?? null,
-      },
-    }),
-    signal: AbortSignal.timeout(5000),
-  }).catch(() => { /* best-effort */ });
-}
+// ── Attrition retention bridge (inline push in route handler) ──
 
 export function createPipelineRouter(): Router {
   const router = Router();
@@ -132,15 +75,7 @@ export function createPipelineRouter(): Router {
 
       // Return flat shape matching legacy /api/search so frontend parsers work unchanged
       // Plus envelope metadata for workflow-learning consumers
-      // ── Push to attrition BEFORE returning (non-blocking fire-and-forget) ───
       const pipelineDuration = Date.now() - startMs;
-      pushToAttrition(
-        query,
-        pipelineDuration,
-        packet as Record<string, unknown>,
-        state.trace ?? [],
-        state.tokenUsage,
-      );
 
       const responsePayload = {
         success: true,
