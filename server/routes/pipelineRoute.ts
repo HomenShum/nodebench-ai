@@ -161,7 +161,24 @@ export function createPipelineRouter(): Router {
             type: "delta.pipeline_run",
             subject: `Pipeline: ${query.substring(0, 80)}`,
             summary: `Confidence: ${packet.confidence ?? "N/A"}, Sources: ${packet.sourceCount ?? 0}, Duration: ${pipelineDuration}ms`,
-            data: { query, durationMs: pipelineDuration, confidence: packet.confidence, sourceCount: packet.sourceCount, entityName: packet.entityName, traceSteps: (state.trace ?? []).length, timestamp: new Date().toISOString() },
+            data: {
+              query,
+              durationMs: pipelineDuration,
+              confidence: packet.confidence,
+              sourceCount: packet.sourceCount,
+              entityName: packet.entityName,
+              traceSteps: (state.trace ?? []).length,
+              timestamp: new Date().toISOString(),
+              // FULL TRACE DATA for proof
+              answer: (packet.answer as string)?.substring(0, 500) ?? null,
+              classification: packet.classification ?? null,
+              trace: state.trace ?? [],
+              sourceRefs: ((packet.sourceRefs as Array<{title?: string; url?: string}>) ?? []).slice(0, 10).map((s: {title?: string; url?: string}) => ({ title: s.title?.substring(0, 100), url: s.url?.substring(0, 200) })),
+              nextActions: ((packet.nextActions as Array<unknown>) ?? []).slice(0, 5),
+              answerBlockCount: Array.isArray(packet.answerBlocks) ? (packet.answerBlocks as unknown[]).length : 0,
+              model: "gemini-3.1-flash-lite",
+              tools: ["linkup", "gemini"],
+            },
           }),
           signal: AbortSignal.timeout(5000),
         }).then(r => console.log(`[attrition-push] packet: ${r.status}`)).catch(e => console.log(`[attrition-push] error: ${e.message}`));
@@ -169,7 +186,17 @@ export function createPipelineRouter(): Router {
         fetch(`${attritionUrl}/api/retention/webhook`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ event: "pipeline_complete", data: { query: query.substring(0, 200), durationMs: pipelineDuration, confidence: packet.confidence, sourceCount: packet.sourceCount, entityName: packet.entityName } }),
+          body: JSON.stringify({ event: "pipeline_complete", data: {
+            query: query.substring(0, 200),
+            durationMs: pipelineDuration,
+            confidence: packet.confidence,
+            sourceCount: packet.sourceCount,
+            entityName: packet.entityName,
+            traceSteps: (state.trace ?? []).length,
+            trace: state.trace ?? [],
+            answer: (packet.answer as string)?.substring(0, 300) ?? null,
+            sourceRefs: ((packet.sourceRefs as Array<{title?: string; url?: string}>) ?? []).slice(0, 5).map((s: {title?: string; url?: string}) => ({ title: s.title?.substring(0, 80), url: s.url })),
+          } }),
           signal: AbortSignal.timeout(5000),
         }).then(r => console.log(`[attrition-push] webhook: ${r.status}`)).catch(e => console.log(`[attrition-push] webhook error: ${e.message}`));
       } catch (pushErr) {
