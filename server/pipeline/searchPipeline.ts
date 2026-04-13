@@ -63,6 +63,9 @@ export interface PipelineState {
   trace: Array<{ step: string; tool?: string; status: string; detail?: string; durationMs?: number }>;
   totalDurationMs: number;
   error: string | null;
+
+  // Token usage (from Gemini API response)
+  tokenUsage?: { inputTokens: number; outputTokens: number; totalTokens: number; model: string };
 }
 
 export type SearchSourceKind =
@@ -757,6 +760,13 @@ Return ONLY valid JSON:
     }
 
     const data = (await resp.json()) as any;
+
+    // Extract real token usage from Gemini API response
+    const usageMetadata = data?.usageMetadata ?? {};
+    const inputTokens = usageMetadata.promptTokenCount ?? 0;
+    const outputTokens = usageMetadata.candidatesTokenCount ?? 0;
+    const totalTokens = usageMetadata.totalTokenCount ?? 0;
+
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     const jsonMatch = text.match(/\{[\s\S]*\}/);
 
@@ -813,11 +823,12 @@ Return ONLY valid JSON:
       nextQuestions: Array.from(new Set(nextQuestions)),
       keyMetrics: Array.isArray(parsed.keyMetrics) ? parsed.keyMetrics : [],
       whyThisTeam: parsed.whyThisTeam ?? null,
+      tokenUsage: { inputTokens, outputTokens, totalTokens, model },
       trace: [...state.trace, {
         step: "analyze",
         tool: "gemini",
         status: "ok",
-        detail: `${normalizedSignals.length} signals, ${normalizedRisks.length} risks, confidence ${guardedConfidence}`,
+        detail: `${normalizedSignals.length} signals, ${normalizedRisks.length} risks, confidence ${guardedConfidence}, tokens: ${totalTokens}`,
         durationMs: Date.now() - start,
       }],
     };

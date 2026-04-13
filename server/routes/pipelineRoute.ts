@@ -19,8 +19,11 @@ import { runPreSearchHooks, runPostSearchHooks } from "../pipeline/hooks.js";
 const ATTRITION_BACKEND = process.env.ATTRITION_URL || "https://attrition-7xtb75zi5q-uc.a.run.app";
 
 /** Non-blocking push of pipeline results to attrition for capture + measurement */
-function pushToAttrition(query: string, durationMs: number, packet: Record<string, unknown>, trace: unknown[]) {
+function pushToAttrition(query: string, durationMs: number, packet: Record<string, unknown>, trace: unknown[], tokenUsage?: { inputTokens: number; outputTokens: number; totalTokens: number; model: string }) {
   console.log(`[attrition] Pushing pipeline result: ${query.substring(0, 60)}... to ${ATTRITION_BACKEND}`);
+  const realCostStr = tokenUsage
+    ? `, Tokens: ${tokenUsage.totalTokens}, Cost: $${(((tokenUsage.inputTokens / 1_000_000) * 0.075) + ((tokenUsage.outputTokens / 1_000_000) * 0.30)).toFixed(6)}`
+    : "";
   // Fire and forget — never block the response
   fetch(`${ATTRITION_BACKEND}/api/retention/push-packet`, {
     method: "POST",
@@ -28,7 +31,7 @@ function pushToAttrition(query: string, durationMs: number, packet: Record<strin
     body: JSON.stringify({
       type: "delta.pipeline_run",
       subject: `Pipeline: ${query.substring(0, 80)}`,
-      summary: `Score: ${packet.confidence ?? "N/A"}, Sources: ${packet.sourceCount ?? 0}, Duration: ${durationMs}ms`,
+      summary: `Score: ${packet.confidence ?? "N/A"}, Sources: ${packet.sourceCount ?? 0}, Duration: ${durationMs}ms${realCostStr}`,
       data: {
         query,
         durationMs,
@@ -37,6 +40,15 @@ function pushToAttrition(query: string, durationMs: number, packet: Record<strin
         entityName: packet.entityName,
         traceSteps: Array.isArray(trace) ? trace.length : 0,
         timestamp: new Date().toISOString(),
+        tokenUsage: tokenUsage ?? null,
+        realCost: tokenUsage ? {
+          model: tokenUsage.model,
+          inputTokens: tokenUsage.inputTokens,
+          outputTokens: tokenUsage.outputTokens,
+          inputCostUsd: (tokenUsage.inputTokens / 1_000_000) * 0.075,
+          outputCostUsd: (tokenUsage.outputTokens / 1_000_000) * 0.30,
+          totalCostUsd: ((tokenUsage.inputTokens / 1_000_000) * 0.075) + ((tokenUsage.outputTokens / 1_000_000) * 0.30),
+        } : null,
       },
     }),
     signal: AbortSignal.timeout(5000),
@@ -55,6 +67,7 @@ function pushToAttrition(query: string, durationMs: number, packet: Record<strin
         sourceCount: packet.sourceCount,
         entityName: packet.entityName,
         traceSteps: Array.isArray(trace) ? trace.length : 0,
+        tokenUsage: tokenUsage ?? null,
       },
     }),
     signal: AbortSignal.timeout(5000),
@@ -126,6 +139,7 @@ export function createPipelineRouter(): Router {
         pipelineDuration,
         packet as Record<string, unknown>,
         state.trace ?? [],
+        state.tokenUsage,
       );
 
       const responsePayload = {
@@ -160,7 +174,7 @@ export function createPipelineRouter(): Router {
           body: JSON.stringify({
             type: "delta.pipeline_run",
             subject: `Pipeline: ${query.substring(0, 80)}`,
-            summary: `Confidence: ${packet.confidence ?? "N/A"}, Sources: ${packet.sourceCount ?? 0}, Duration: ${pipelineDuration}ms`,
+            summary: `Confidence: ${packet.confidence ?? "N/A"}, Sources: ${packet.sourceCount ?? 0}, Duration: ${pipelineDuration}ms${state.tokenUsage ? `, Tokens: ${state.tokenUsage.totalTokens}, Cost: $${(((state.tokenUsage.inputTokens / 1_000_000) * 0.075) + ((state.tokenUsage.outputTokens / 1_000_000) * 0.30)).toFixed(6)}` : ""}`,
             data: {
               query,
               durationMs: pipelineDuration,
@@ -173,11 +187,26 @@ export function createPipelineRouter(): Router {
               answer: (packet.answer as string)?.substring(0, 500) ?? null,
               classification: packet.classification ?? null,
               trace: state.trace ?? [],
-              sourceRefs: ((packet.sourceRefs as Array<{title?: string; url?: string}>) ?? []).slice(0, 10).map((s: {title?: string; url?: string}) => ({ title: s.title?.substring(0, 100), url: s.url?.substring(0, 200) })),
+              // sourceRefs from stateToResultPacket use "title" and "href" (not "url")
+              sourceRefs: ((packet.sourceRefs as Array<{title?: string; label?: string; href?: string; url?: string}>) ?? []).slice(0, 10).map((s) => ({
+                title: (s.title ?? s.label ?? "")?.substring(0, 100),
+                url: (s.href ?? s.url ?? "")?.substring(0, 200),
+              })),
               nextActions: ((packet.nextActions as Array<unknown>) ?? []).slice(0, 5),
               answerBlockCount: Array.isArray(packet.answerBlocks) ? (packet.answerBlocks as unknown[]).length : 0,
-              model: "gemini-3.1-flash-lite",
+              model: state.tokenUsage?.model ?? "gemini-3.1-flash-lite",
               tools: ["linkup", "gemini"],
+              // REAL token usage from Gemini API
+              tokenUsage: state.tokenUsage ?? null,
+              realCost: state.tokenUsage ? {
+                model: state.tokenUsage.model,
+                inputTokens: state.tokenUsage.inputTokens,
+                outputTokens: state.tokenUsage.outputTokens,
+                // Gemini 3.1 Flash Lite: $0.075/1M input, $0.30/1M output
+                inputCostUsd: (state.tokenUsage.inputTokens / 1_000_000) * 0.075,
+                outputCostUsd: (state.tokenUsage.outputTokens / 1_000_000) * 0.30,
+                totalCostUsd: ((state.tokenUsage.inputTokens / 1_000_000) * 0.075) + ((state.tokenUsage.outputTokens / 1_000_000) * 0.30),
+              } : null,
             },
           }),
           signal: AbortSignal.timeout(5000),
@@ -195,7 +224,7 @@ export function createPipelineRouter(): Router {
             traceSteps: (state.trace ?? []).length,
             trace: state.trace ?? [],
             answer: (packet.answer as string)?.substring(0, 300) ?? null,
-            sourceRefs: ((packet.sourceRefs as Array<{title?: string; url?: string}>) ?? []).slice(0, 5).map((s: {title?: string; url?: string}) => ({ title: s.title?.substring(0, 80), url: s.url })),
+            sourceRefs: ((packet.sourceRefs as Array<{title?: string; label?: string; href?: string; url?: string}>) ?? []).slice(0, 5).map((s) => ({ title: (s.title ?? s.label ?? "")?.substring(0, 80), url: s.href ?? s.url ?? "" })),
           } }),
           signal: AbortSignal.timeout(5000),
         }).then(r => console.log(`[attrition-push] webhook: ${r.status}`)).catch(e => console.log(`[attrition-push] webhook error: ${e.message}`));
