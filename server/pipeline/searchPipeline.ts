@@ -20,6 +20,7 @@ export interface PipelineState {
   // Input
   query: string;
   lens: string;
+  contextHint?: string;
 
   // Classify
   classification: string;
@@ -83,6 +84,10 @@ export interface SearchSource {
   name: string;
   url: string;
   snippet: string;
+  thumbnailUrl?: string;
+  imageCandidates?: string[];
+  faviconUrl?: string;
+  siteName?: string;
   domain?: string;
   path?: string;
   kind?: SearchSourceKind;
@@ -217,6 +222,22 @@ function parseSourceLocation(url: string | null | undefined): { domain?: string;
   } catch {
     return {};
   }
+}
+
+function normalizeMediaUrl(candidate: unknown): string | undefined {
+  return typeof candidate === "string" && candidate.trim().length > 0 ? candidate.trim() : undefined;
+}
+
+function dedupeMediaUrls(candidates: unknown[]): string[] {
+  const seen = new Set<string>();
+  const urls: string[] = [];
+  for (const candidate of candidates) {
+    const value = normalizeMediaUrl(candidate);
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    urls.push(value);
+  }
+  return urls;
 }
 
 function compactEntity(entity: string | null | undefined): string {
@@ -363,6 +384,50 @@ function dedupeSources(sources: Array<{ name: string; url: string; snippet: stri
     seen.add(key);
     return true;
   });
+}
+
+function resolveSearchThumbnailUrl(source: any): string | undefined {
+  return resolveSearchImageCandidates(source)[0];
+}
+
+function resolveSearchImageCandidates(source: any): string[] {
+  return dedupeMediaUrls([
+    source?.thumbnailUrl,
+    source?.thumbnail,
+    source?.imageUrl,
+    source?.image,
+    source?.ogImageUrl,
+    source?.ogImage,
+    source?.previewImage,
+    source?.previewImageUrl,
+    source?.images?.[0]?.thumbnailUrl,
+    source?.images?.[0]?.thumbnail,
+    source?.images?.[0]?.imageUrl,
+    source?.images?.[0]?.url,
+    ...(Array.isArray(source?.images)
+      ? source.images.flatMap((image: any) => [image?.thumbnailUrl, image?.thumbnail, image?.imageUrl, image?.url])
+      : []),
+    ...(Array.isArray(source?.imageCandidates) ? source.imageCandidates : []),
+  ]).slice(0, 4);
+}
+
+function resolveSearchSiteName(source: any): string | undefined {
+  return normalizeMediaUrl(
+    source?.siteName ??
+      source?.site_name ??
+      source?.publisher ??
+      source?.source ??
+      source?.domain,
+  );
+}
+
+function resolveSearchFaviconUrl(source: any): string | undefined {
+  return normalizeMediaUrl(
+    source?.faviconUrl ??
+      source?.favicon ??
+      source?.siteIcon ??
+      source?.iconUrl,
+  );
 }
 
 export function filterSearchSourcesForEntity(
@@ -544,13 +609,17 @@ export async function search(state: PipelineState): Promise<PipelineState> {
             name: source.name ?? source.title ?? "",
             url: source.url ?? "",
             snippet: source.snippet ?? source.content ?? "",
+            siteName: resolveSearchSiteName(source),
+            faviconUrl: resolveSearchFaviconUrl(source),
+            thumbnailUrl: resolveSearchThumbnailUrl(source),
+            imageCandidates: resolveSearchImageCandidates(source),
           })),
         };
       }),
     );
 
     const successful = results
-      .filter((result): result is PromiseFulfilledResult<{ answer: string; sources: Array<{ name: string; url: string; snippet: string }> }> => result.status === "fulfilled")
+      .filter((result): result is PromiseFulfilledResult<{ answer: string; sources: Array<{ name: string; url: string; snippet: string; thumbnailUrl?: string }> }> => result.status === "fulfilled")
       .map((result) => result.value);
 
     if (successful.length === 0) {
@@ -569,7 +638,8 @@ export async function search(state: PipelineState): Promise<PipelineState> {
         const extraSources = toMultiSources(multi.sources).map((s) => ({
           name: s.name,
           url: s.url,
-          snippet: s.content,
+          snippet: s.snippet,
+          thumbnailUrl: s.thumbnailUrl,
         }));
         rawSources.push(...extraSources);
         secondaryProviders = multi.providers.filter((p) => p !== "linkup");
@@ -699,6 +769,10 @@ export async function analyze(state: PipelineState): Promise<PipelineState> {
     }
   } catch { /* context carry-forward is best-effort */ }
 
+  const operatorContextBlock = state.contextHint?.trim()
+    ? `\nOPERATOR CONTEXT (use this to shape framing, evidence depth, and next steps without changing the facts):\n${state.contextHint.trim()}\n`
+    : "";
+
   const prompt = `You are a senior analyst writing a research brief about "${state.entity ?? "unknown"}" for a ${state.lens}.
 
 ENTITY: ${state.entity ?? "unknown"}
@@ -710,6 +784,7 @@ ${sourcesContext}
 ADDITIONAL CONTEXT:
 ${state.searchAnswer.slice(0, 800)}
 ${priorContextBlock}
+${operatorContextBlock}
 RULES:
 1. Every factual claim MUST cite a source number [S1], [S2], etc.
 2. Do NOT include generic industry commentary — only entity-specific facts.
@@ -944,10 +1019,11 @@ export type OnPipelineProgress = (event: PipelineProgressEvent) => void;
 
 // ─── Run full pipeline ───────────────────────────────────────────
 
-export function createInitialPipelineState(query: string, lens: string): PipelineState {
+export function createInitialPipelineState(query: string, lens: string, contextHint?: string): PipelineState {
   return {
     query,
     lens,
+    contextHint: contextHint?.trim() || undefined,
     classification: "",
     entity: null,
     routingHints: [],
@@ -981,9 +1057,10 @@ export async function runSearchPipeline(
   query: string,
   lens: string,
   onProgress?: OnPipelineProgress,
+  contextHint?: string,
 ): Promise<PipelineState> {
   const pipelineStart = Date.now();
-  let state = createInitialPipelineState(query, lens);
+  let state = createInitialPipelineState(query, lens, contextHint);
 
   // classify
   onProgress?.({ stage: "classify", phase: "start", state });
@@ -1117,6 +1194,10 @@ export function stateToResultPacket(state: PipelineState): Record<string, unknow
     type: "web" as const,
     status: index < 5 ? "cited" as const : "explored" as const,
     domain: source.domain,
+    siteName: source.siteName,
+    faviconUrl: source.faviconUrl,
+    thumbnailUrl: source.thumbnailUrl,
+    imageCandidates: source.imageCandidates,
     excerpt: source.snippet.slice(0, 280),
     confidence: Math.max(45, Math.min(95, Math.round(source.qualityScore ?? 60))),
   }));
