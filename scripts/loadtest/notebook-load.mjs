@@ -24,7 +24,9 @@
  *       --scenario concurrent_insert \
  *       --clients 10 --duration 60
  *
- * Scenarios: concurrent_insert | sustained_append | multi_tab_edit | all
+ * Scenarios:
+ *   concurrent_insert | sustained_append | multi_tab_edit |
+ *   multi_tab_conflict | shared_session_insert | all
  *
  * Requires:
  *   - CONVEX_URL (or VITE_CONVEX_URL) env var, or auto-loaded from .env.local
@@ -88,6 +90,16 @@ function extractErrorCode(err) {
     if (typeof code === "string") return code;
   }
   const msg = err?.message ?? String(err);
+  if (typeof msg === "string" && msg.trim().startsWith("{")) {
+    try {
+      const parsed = JSON.parse(msg);
+      if (parsed && typeof parsed.code === "string") {
+        return parsed.code;
+      }
+    } catch {
+      // ignore JSON parse errors and continue with the fallback mapping
+    }
+  }
   if (msg.includes("Server Error")) return "SERVER_ERROR";
   return "UNKNOWN";
 }
@@ -431,15 +443,72 @@ async function multiTabConflict() {
 }
 
 // ── Orchestrator ─────────────────────────────────────────────────────────
+async function sharedSessionInsert() {
+  const stats = makeStats(
+    "shared_session_insert",
+    `SCENARIO 5 · shared_session_insert · ${CLIENTS} shared-session clients × ${Math.min(DURATION_SEC, 30)}s`,
+  );
+  const anonId = "loadtest-rate-limit-shared";
+  const seed = new ConvexHttpClient(CONVEX_URL);
+  await seed.mutation("domains/product/entities:ensureEntity", {
+    anonymousSessionId: anonId,
+    slug: args.entity,
+    name: args.entity,
+  });
+
+  const scenarioDurationMs = Math.min(DURATION_SEC, 30) * 1000;
+  const deadline = Date.now() + scenarioDurationMs;
+
+  async function clientLoop(clientIdx) {
+    const client = new ConvexHttpClient(CONVEX_URL);
+    let counter = 0;
+    while (Date.now() < deadline) {
+      counter += 1;
+      const t0 = performance.now();
+      try {
+        await client.mutation("domains/product/blocks:appendBlock", {
+          anonymousSessionId: anonId,
+          entitySlug: args.entity,
+          kind: "text",
+          content: [{ type: "text", value: `rate-limit client-${clientIdx} append #${counter}` }],
+          authorKind: "user",
+          authorId: `${anonId}-${clientIdx}`,
+        });
+        stats.latencies.push(performance.now() - t0);
+        stats.success += 1;
+      } catch (err) {
+        stats.errors.push(err?.message ?? String(err));
+        const code = extractErrorCode(err);
+        stats.errorCodes[code] = (stats.errorCodes[code] ?? 0) + 1;
+      }
+      await new Promise((r) => setTimeout(r, 20));
+    }
+  }
+
+  await Promise.all(Array.from({ length: CLIENTS }, (_, i) => clientLoop(i)));
+  report(stats);
+  return stats;
+}
+
 async function main() {
   const scenarios = {
     concurrent_insert: concurrentInsert,
     sustained_append: sustainedAppend,
     multi_tab_edit: multiTabEdit,
     multi_tab_conflict: multiTabConflict,
+    shared_session_insert: sharedSessionInsert,
   };
 
-  const selected = args.scenario === "all" ? Object.keys(scenarios) : [args.scenario];
+  const selected =
+    args.scenario === "all"
+      ? [
+          "concurrent_insert",
+          "sustained_append",
+          "multi_tab_edit",
+          "multi_tab_conflict",
+          "shared_session_insert",
+        ]
+      : [args.scenario];
   const results = [];
   for (const name of selected) {
     const fn = scenarios[name];
@@ -490,7 +559,7 @@ async function main() {
   // retry is invisible to this ratio; a data-loss bug would show up as
   // SERVER_ERROR or UNKNOWN above the threshold.
   const EXPECTED_CODES = new Set(["REVISION_MISMATCH"]);
-  const anyFailed = results.some((s) => {
+  const failingScenarios = results.filter((s) => {
     const total = s.latencies.length + s.errors.length;
     if (total === 0) return false;
     const unexpected = Object.entries(s.errorCodes)
@@ -498,7 +567,41 @@ async function main() {
       .reduce((sum, [, count]) => sum + count, 0);
     return unexpected / total > 0.05;
   });
-  process.exit(anyFailed ? 1 : 0);
+
+  // Real-time alert on CI-gate failure. POST to ntfy so the on-call knows
+  // before the next CI cycle's Slack notification. Set LOAD_TEST_NTFY_URL
+  // in the CI environment (keep distinct from the client-side topic so
+  // load-test noise doesn't pollute user-facing alerts).
+  // Fail-open: ntfy down => exit code is still correct; we just skip paging.
+  if (failingScenarios.length > 0 && process.env.LOAD_TEST_NTFY_URL) {
+    try {
+      const first = failingScenarios[0];
+      const codeSummary = Object.entries(first.errorCodes)
+        .filter(([code]) => !EXPECTED_CODES.has(code))
+        .map(([code, count]) => `${code}:${count}`)
+        .join(", ");
+      const body =
+        `Scenarios failing: ${failingScenarios.length}\n` +
+        `First: ${first.label}\n` +
+        `Unexpected errors: ${codeSummary}\n` +
+        `Convex: ${CONVEX_URL}\n` +
+        `Entity: ${args.entity}`;
+      await fetch(process.env.LOAD_TEST_NTFY_URL, {
+        method: "POST",
+        headers: {
+          Title: `[P0] Notebook load test failed (${failingScenarios.length} scenarios)`,
+          Priority: "5",
+          Tags: "rotating_light,warning",
+        },
+        body,
+      });
+      console.log("[loadtest] ntfy alert sent");
+    } catch (err) {
+      console.warn("[loadtest] ntfy alert failed (fail-open):", err?.message ?? err);
+    }
+  }
+
+  process.exit(failingScenarios.length > 0 ? 1 : 0);
 }
 
 main().catch((err) => {

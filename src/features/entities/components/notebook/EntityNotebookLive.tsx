@@ -20,6 +20,7 @@ import type { Id } from "../../../../../convex/_generated/dataModel";
 import { useConvexApi } from "@/lib/convexApi";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import { useStreamingSearch } from "@/hooks/useStreamingSearch";
+import { publishNotebookAlert } from "@/lib/notebookAlerts";
 import { useToast } from "@/shared/ui";
 import {
   chipsFromMarkup,
@@ -367,9 +368,19 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
     [describeError, toast],
   );
 
+  // Codes we expect and handle gracefully — do NOT alert on these. They
+  // correspond to the `level: "warning"` branch in describeNotebookMutationFailure
+  // plus rate limit, both of which are designed-for states that don't need
+  // a page-the-on-call signal.
+  const EXPECTED_ALERT_CODES = useMemo(
+    () => new Set(["REVISION_MISMATCH", "RATE_LIMITED", "CONTENT_TOO_LARGE"]),
+    [],
+  );
+
   const reportNotebookMutationFailure = useCallback(
     (action: "save" | "mention" | "command", error: unknown) => {
       const failure = describeNotebookMutationFailure(action, error);
+      const parsed = parseNotebookMutationError(error);
       console.warn(`[notebook] ${failure.title}`, error);
       setRuntimeError({ title: failure.title, detail: failure.detail });
       if (failure.level === "warning") {
@@ -377,8 +388,23 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
       } else {
         toast.error(failure.title, failure.detail);
       }
+      // Real-time alert: fire ntfy only on UNEXPECTED failures. Expected
+      // codes (conflict, rate limit, content too large) are designed states
+      // and would otherwise pager-storm on normal usage. Sampling at the
+      // ntfy helper guarantees at most 1 alert per code per 60s per tab.
+      const code = parsed.code ?? "UNKNOWN_ERROR";
+      if (!EXPECTED_ALERT_CODES.has(code)) {
+        publishNotebookAlert({
+          severity: code === "SERVER_ERROR" || code === "UNKNOWN_ERROR" ? "P0" : "P1",
+          code,
+          title: failure.title,
+          detail: failure.detail,
+          requestId: parsed.requestId,
+          context: { action, entitySlug },
+        });
+      }
     },
-    [toast],
+    [EXPECTED_ALERT_CODES, entitySlug, toast],
   );
 
   const notifyReadOnly = useCallback(

@@ -2,6 +2,46 @@
 
 When a user reports a notebook problem, the error toast detail ends with `(ref: <requestId>)`. The steps below map each error code to a 2-minute triage path. If an issue isn't in this doc, the default is: read the Convex log for that Request ID first, then decide.
 
+## Real-time alerting (ntfy)
+
+The notebook publishes structured alerts to ntfy.sh topics. Two independent feeds:
+
+| Feed | Source | Env var | Severity |
+|---|---|---|---|
+| Client errors | browsers (users + agents) | `VITE_NOTEBOOK_ALERT_NTFY_URL` | P0 (SERVER_ERROR / UNKNOWN) · P1 (others) |
+| Load test | CI runs | `LOAD_TEST_NTFY_URL` | P0 on CI-gate failure |
+
+**Recommended topic naming**: keep the feeds separate so filtering by scope works:
+- `https://ntfy.sh/nodebench-client-prod`
+- `https://ntfy.sh/nodebench-loadtest-prod`
+
+### Subscribe
+
+```bash
+# CLI — prints alerts as they arrive
+ntfy sub nodebench-client-prod
+
+# curl — minimal-dep poll (tail-like)
+curl -s https://ntfy.sh/nodebench-client-prod/json | jq -r '.title, .message'
+
+# iOS / Android apps: https://ntfy.sh/app/ — add topic nodebench-client-prod
+# Slack / Discord: use ntfy's webhook forwarder
+```
+
+### Alert format
+Title: `[P0|P1|P2] CODE: human title`
+Body: error detail + `ref: <requestId>` + context (blockId, entitySlug) + user agent.
+
+### Sampling
+Client samples at 1 alert / code / 60s / tab. A flapping bug produces ONE notification, not a storm. If you want to see every occurrence, subscribe to `LOAD_TEST_NTFY_URL` instead — load-test alerts are not sampled because CI runs are bounded.
+
+### Fail-open guarantees
+- If the ntfy URL env var is unset, publish is a silent no-op (no errors in console).
+- If the fetch itself throws (CSP, offline, ntfy.sh down), publish is a silent no-op.
+- URL is validated against an allow-list (https + hostname contains `ntfy`) as a defense-in-depth SSRF check.
+
+---
+
 ## Kill-switch shortcuts (before any triage)
 
 If Live notebook is misbehaving broadly:
