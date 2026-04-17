@@ -2,10 +2,11 @@
  * EntityNotebookLive â€” Phase 3-4 of the Ideaflow/Mew-inspired notebook.
  *
  * Renders the entity as a single flowing document of persisted blocks from
- * productBlocks. Each block now uses a Lexical-backed inline editor for safe
- * chip round-tripping while preserving the existing BlockChip[] persistence
- * contract. Enter appends a block, Backspace at start merges with previous,
- * and `/` opens the slash command palette.
+ * productBlocks. Focused editable blocks use a Tiptap + Convex ProseMirror
+ * sync editor so collaboration happens on maintained OT plumbing while the
+ * notebook keeps its existing BlockChip[] persistence contract and provenance.
+ * Enter appends a block, Backspace at start merges with previous, and `/`
+ * opens the slash command palette.
  *
  * The notebook keeps the backend contract stable and only swaps the editing
  * shell, so report/backfill/query behavior can harden independently from the
@@ -28,9 +29,10 @@ import {
   type BlockChip,
 } from "./BlockChipRenderer";
 import { BlockProvenance } from "./BlockProvenance";
-import { NotebookBlockEditor } from "./NotebookBlockEditor";
+import { NotebookBlockEditor, type NotebookBlockEditorHandle } from "./NotebookBlockEditor";
 import { SlashPalette, type SlashCommand } from "./SlashPalette";
 import { MentionPicker, type EntityMatch } from "./MentionPicker";
+import { buildProductBlockSyncId } from "../../../../../shared/productBlockSync";
 
 type BlockKind =
   | "text"
@@ -102,32 +104,12 @@ function chipsToPlainText(chips: BlockChip[]): string {
     .join("");
 }
 
-function appendMentionChip(chips: BlockChip[], match: EntityMatch): BlockChip[] {
-  const next = chips.map((chip) => ({ ...chip }));
-  const last = next[next.length - 1];
-  if (!last) {
-    next.push({
-      type: "mention",
-      value: match.name,
-      mentionTrigger: "@",
-      mentionTarget: match.slug,
-    });
-    return next;
-  }
-  if (last.type === "text") {
-    if (!last.value.endsWith(" ")) {
-      last.value += " ";
-    }
-  } else {
-    next.push({ type: "text", value: " " });
-  }
-  next.push({
-    type: "mention",
-    value: match.name,
-    mentionTrigger: "@",
-    mentionTarget: match.slug,
-  });
-  return next;
+function chipsEqual(left: BlockChip[] | undefined, right: BlockChip[] | undefined): boolean {
+  return JSON.stringify(left ?? []) === JSON.stringify(right ?? []);
+}
+
+function isSyncEditableBlock(block: Pick<LiveBlock, "kind" | "content">): boolean {
+  return block.kind !== "image" && !block.content.some((chip) => chip.type === "image");
 }
 
 export function shouldRefreshAgentNotebookProjection(
@@ -228,6 +210,17 @@ export function parseNotebookMutationError(error: unknown): ParsedNotebookMutati
   }
 
   if (!message) return { requestId };
+  if (
+    message.includes("OptimisticConcurrencyControlFailure") &&
+    message.includes("productBlockWriteWindows")
+  ) {
+    return {
+      code: "RATE_LIMITED",
+      retryAfterMs: 10_000,
+      message,
+      requestId,
+    };
+  }
   const match = /ConvexError:\s*(\{.*\})/s.exec(message);
   if (!match) {
     return { message, requestId };
@@ -347,9 +340,12 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
   const [innerView, setInnerView] = useState<"document" | "outline" | "review">("document");
   const [runtimeError, setRuntimeError] = useState<{ title: string; detail?: string } | null>(null);
   const [backfillPending, setBackfillPending] = useState(false);
-  const pendingSaveRef = useRef<Map<string, number>>(new Map());
+  const [optimisticBlockContent, setOptimisticBlockContent] = useState<Record<string, BlockChip[]>>(
+    {},
+  );
   const backfillInFlightRef = useRef<Promise<void> | null>(null);
   const syncedProjectionKeyRef = useRef<string | null>(null);
+  const editorHandlesRef = useRef<Map<string, NotebookBlockEditorHandle>>(new Map());
 
   const describeError = useCallback((error: unknown): string | undefined => {
     if (!error) return undefined;
@@ -463,67 +459,38 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
   }, [blocks, projectionSyncKey, runBackfill, snapshot]);
 
   useEffect(() => {
-    return () => {
-      pendingSaveRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
-      pendingSaveRef.current.clear();
-    };
-  }, []);
+    if (!blocks || Object.keys(optimisticBlockContent).length === 0) return;
+    setOptimisticBlockContent((current) => {
+      let changed = false;
+      const next = { ...current };
+      for (const block of blocks) {
+        const key = String(block._id);
+        const optimistic = next[key];
+        if (optimistic && chipsEqual(optimistic, block.content)) {
+          delete next[key];
+          changed = true;
+        }
+      }
+      return changed ? next : current;
+    });
+  }, [blocks, optimisticBlockContent]);
 
-  // Error codes that are PERMANENT — retry is pointless and wastes a cycle.
-  // Anything NOT in this set is presumed transient (network blip, 5xx, Convex
-  // cold start, reconnect) and retried with exponential backoff.
-  const PERMANENT_ERROR_CODES = useMemo(
-    () => new Set(["REVISION_MISMATCH", "CONTENT_TOO_LARGE", "RATE_LIMITED", "BLOCK_NOT_FOUND", "ENTITY_NOT_FOUND"]),
+  const registerEditorHandle = useCallback(
+    (blockId: Id<"productBlocks">, handle: NotebookBlockEditorHandle | null) => {
+      const key = String(blockId);
+      if (handle) {
+        editorHandlesRef.current.set(key, handle);
+      } else {
+        editorHandlesRef.current.delete(key);
+      }
+    },
     [],
   );
 
-  // Debounced save of inline edits. Keyed by blockId.
-  // Transient errors (network, 5xx, cold start) retry up to 3 times with
-  // exponential backoff: 300ms, 900ms, 2700ms. Permanent errors (see set
-  // above) surface immediately to the user via reportNotebookMutationFailure.
-  const scheduleSave = useCallback(
-    (block: LiveBlock, content: BlockChip[]) => {
-      if (block.accessMode !== "edit") return;
-      const blockId = block._id;
-      const prev = pendingSaveRef.current.get(blockId);
-      if (prev) window.clearTimeout(prev);
-
-      const attemptSave = async (attempt: number): Promise<void> => {
-        try {
-          await updateBlock({
-            anonymousSessionId,
-            blockId,
-            content,
-            forkHistory: false, // inline edits don't fork; explicit revert UI later
-            editedByAuthorKind: "user",
-            // Optimistic concurrency: server rejects with REVISION_MISMATCH
-            // if another tab/agent saved first.
-            expectedRevision: block.revision,
-          });
-          setRuntimeError(null);
-        } catch (error) {
-          const parsed = parseNotebookMutationError(error);
-          const isPermanent = parsed.code && PERMANENT_ERROR_CODES.has(parsed.code);
-          if (!isPermanent && attempt < 3) {
-            const backoffMs = 300 * Math.pow(3, attempt); // 300, 900, 2700
-            await new Promise((resolve) => window.setTimeout(resolve, backoffMs));
-            return attemptSave(attempt + 1);
-          }
-          reportNotebookMutationFailure("save", error);
-        } finally {
-          if (attempt === 0 || attempt >= 3) {
-            pendingSaveRef.current.delete(blockId);
-          }
-        }
-      };
-
-      const timeoutId = window.setTimeout(() => {
-        void attemptSave(0);
-      }, 500);
-      pendingSaveRef.current.set(blockId, timeoutId);
-    },
-    [PERMANENT_ERROR_CODES, anonymousSessionId, reportNotebookMutationFailure, updateBlock],
-  );
+  const handleLocalContentChange = useCallback((blockId: Id<"productBlocks">, content: BlockChip[]) => {
+    setOptimisticBlockContent((current) => ({ ...current, [String(blockId)]: content }));
+    setRuntimeError(null);
+  }, []);
 
   const handleEnter = useCallback(
     async (block: LiveBlock, blockIndex: number) => {
@@ -562,12 +529,29 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
         return;
       }
       try {
-        await updateBlock({
-          anonymousSessionId,
-          blockId: targetBlockId,
-          content: appendMentionChip(block.content, match),
-          expectedRevision: block.revision,
-        });
+        const handle = editorHandlesRef.current.get(String(targetBlockId));
+        if (handle) {
+          handle.insertMention(match);
+          handle.focus();
+        } else if (!isSyncEditableBlock(block)) {
+          await updateBlock({
+            anonymousSessionId,
+            blockId: targetBlockId,
+            content: [
+              ...block.content,
+              ...(block.content.length > 0 ? ([{ type: "text", value: " " }] as BlockChip[]) : []),
+              {
+                type: "mention",
+                value: match.name,
+                mentionTrigger: "@",
+                mentionTarget: match.slug,
+              },
+            ],
+            expectedRevision: block.revision,
+          });
+        } else {
+          throw new Error("Focused notebook editor was not available for this mention.");
+        }
         // Record the relation so backlinks work.
         await createBlockRelation({
           anonymousSessionId,
@@ -587,6 +571,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
       anonymousSessionId,
       blocks,
       createBlockRelation,
+      editorHandlesRef,
       mentionFor,
       notifyReadOnly,
       reportNotebookMutationFailure,
@@ -605,15 +590,15 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
       }
 
       if (command.id === "ai" || command.id === "search" || command.id === "deepresearch") {
-        // Insert a "generatingâ€¦" callout block so the user sees progress immediately.
+        // Insert a lightweight progress callout so the user sees work start immediately.
         const progressBlockId = await appendBlock({
           anonymousSessionId,
           entitySlug,
           parentBlockId: block.parentBlockId,
           kind: "callout",
           content: [
-            { type: "text", value: `âœ¨ ${command.label}: ${prompt}` },
-            { type: "text", value: " â€” workingâ€¦" },
+            { type: "text", value: `${command.label}: ${prompt}` },
+            { type: "text", value: " - working..." },
           ],
           authorKind: "agent",
           authorId: `slash:${command.id}`,
@@ -799,7 +784,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
 
       <div className="mb-3 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
         <span>
-          {blocks.length} block{blocks.length === 1 ? "" : "s"} Â· live Â· press <kbd className="rounded border border-gray-200 bg-white px-1 dark:border-white/10 dark:bg-white/[0.05]">/</kbd>{" "}
+          {blocks.length} block{blocks.length === 1 ? "" : "s"} - live - press <kbd className="rounded border border-gray-200 bg-white px-1 dark:border-white/10 dark:bg-white/[0.05]">/</kbd>{" "}
           for commands
         </span>
         <div className="flex items-center gap-2">
@@ -837,15 +822,21 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
             prev={blocks[blockIndex - 1]}
             next={blocks[blockIndex + 1]}
             sourcesById={sourcesById}
+            displayContent={optimisticBlockContent[String(block._id)] ?? block.content}
             isEditable={notebookLoadState.fullyLoaded && block.accessMode === "edit"}
             accessMode={notebookLoadState.fullyLoaded ? (block.accessMode ?? "edit") : "read"}
             isFocused={focusedBlockId === block._id}
             showSlash={slashFor === block._id}
+            syncDocumentId={buildProductBlockSyncId({
+              blockId: String(block._id),
+              anonymousSessionId,
+            })}
             onFocus={() => setFocusedBlockId(block._id)}
             onBlur={() => {
               if (focusedBlockId === block._id) setFocusedBlockId(null);
             }}
-            onChangeContent={(content) => scheduleSave(block, content)}
+            onLocalContentChange={(content) => handleLocalContentChange(block._id, content)}
+            registerEditorHandle={(handle) => registerEditorHandle(block._id, handle)}
             onEnter={() => void handleEnter(block, blockIndex)}
             onBackspaceAtStart={async () => {
               if (blockIndex === 0) return;
@@ -903,7 +894,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
       {backlinks && backlinks.length > 0 ? (
         <div className="mt-10 border-t border-gray-100 pt-6 dark:border-white/[0.06]">
           <h3 className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            Linked from Â· {backlinks.length} place{backlinks.length === 1 ? "" : "s"}
+            Linked from - {backlinks.length} place{backlinks.length === 1 ? "" : "s"}
           </h3>
           <div className="mt-3 space-y-2">
             {backlinks.map((ref) => (
@@ -926,8 +917,8 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// BlockRow â€” per-block inline editor / renderer
+// ---------------------------------------------------------------------------
+// BlockRow - per-block inline editor / renderer
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type BlockRowProps = {
@@ -935,13 +926,18 @@ type BlockRowProps = {
   prev?: LiveBlock;
   next?: LiveBlock;
   sourcesById: Map<string, { id: string; label: string; href?: string; confidence?: number; domain?: string }>;
+  displayContent: BlockChip[];
   isEditable: boolean;
   accessMode: AccessMode;
   isFocused: boolean;
   showSlash: boolean;
+  // Encoded sync id combining anonymousSessionId + blockId; drives
+  // useTiptapSync inside NotebookBlockEditor. Must be stable across renders.
+  syncDocumentId: string;
   onFocus: () => void;
   onBlur: () => void;
-  onChangeContent: (content: BlockChip[]) => void;
+  onLocalContentChange: (content: BlockChip[]) => void;
+  registerEditorHandle: (handle: NotebookBlockEditorHandle | null) => void;
   onEnter: () => void;
   onBackspaceAtStart: () => void;
   onOpenSlash: () => void;
@@ -953,13 +949,16 @@ type BlockRowProps = {
 function BlockRow({
   block,
   sourcesById,
+  displayContent,
   isEditable,
   accessMode,
   isFocused,
   showSlash,
+  syncDocumentId,
   onFocus,
   onBlur,
-  onChangeContent,
+  onLocalContentChange,
+  registerEditorHandle,
   onEnter,
   onBackspaceAtStart,
   onOpenSlash,
@@ -967,10 +966,8 @@ function BlockRow({
   onSlashCommand,
 }: BlockRowProps) {
   const isEvidence = block.kind === "evidence";
-  const supportsLexicalEditing =
-    isEditable &&
-    block.kind !== "image" &&
-    !block.content.some((chip) => chip.type === "image");
+  const supportsSyncEditing = isSyncEditableBlock(block);
+  const shouldMountSyncEditor = supportsSyncEditing && isFocused;
 
   // Render heading/text/bullet/todo/callout/evidence kinds.
   const classesForKind = (): string => {
@@ -997,8 +994,9 @@ function BlockRow({
   };
 
   if (isEvidence) {
-    const href = block.content.find((c) => c.type === "link")?.url ?? block.content[0]?.url;
-    const label = block.content.find((c) => c.type === "link")?.value ?? chipsToPlainText(block.content);
+    const href = displayContent.find((c) => c.type === "link")?.url ?? displayContent[0]?.url;
+    const label =
+      displayContent.find((c) => c.type === "link")?.value ?? chipsToPlainText(displayContent);
     return (
       <div className="group ml-6 py-1">
         <a
@@ -1023,7 +1021,7 @@ function BlockRow({
     >
       <div className="flex items-start justify-center pt-2">
         <span
-          title={`${block.authorKind === "agent" ? "Agent" : block.authorKind === "user" ? "You" : "Anonymous"} Â· rev ${block.revision}`}
+          title={`${block.authorKind === "agent" ? "Agent" : block.authorKind === "user" ? "You" : "Anonymous"} - rev ${block.revision}`}
           className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${authorDotClass(block.authorKind)}`}
         >
           {authorLetter(block.authorKind)}
@@ -1032,16 +1030,18 @@ function BlockRow({
       <div className="relative min-w-0">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            {supportsLexicalEditing ? (
+            {shouldMountSyncEditor ? (
               <NotebookBlockEditor
-                blockId={block._id}
-                chips={block.content}
+                ref={registerEditorHandle}
+                syncDocumentId={syncDocumentId}
+                chips={displayContent}
                 className={classesForKind()}
-                isEditable={true}
-                ariaLabel={`Block Â· ${block.kind}`}
+                isEditable={isEditable}
+                ariaLabel={`Block - ${block.kind}`}
+                autoFocus={isFocused}
                 onFocus={onFocus}
                 onBlur={onBlur}
-                onChangeContent={onChangeContent}
+                onLocalContentChange={onLocalContentChange}
                 onEnter={onEnter}
                 onBackspaceAtStart={onBackspaceAtStart}
                 onOpenSlash={onOpenSlash}
@@ -1050,15 +1050,16 @@ function BlockRow({
             ) : (
               <div
                 className={`outline-none focus-visible:outline-none ${classesForKind()} ${
-                  !isEditable ? "cursor-default opacity-80" : ""
+                  !isEditable ? "cursor-default opacity-80" : supportsSyncEditing ? "cursor-text" : ""
                 }`}
-                onFocus={supportsLexicalEditing ? undefined : onFocus}
-                onBlur={supportsLexicalEditing ? undefined : onBlur}
+                onFocus={shouldMountSyncEditor ? undefined : onFocus}
+                onBlur={shouldMountSyncEditor ? undefined : onBlur}
                 role="textbox"
-                aria-readonly={!supportsLexicalEditing}
-                aria-label={`Block Â· ${block.kind}`}
+                aria-readonly={!isEditable}
+                aria-label={`Block - ${block.kind}`}
+                tabIndex={supportsSyncEditing ? 0 : undefined}
               >
-                <BlockChipRenderer chips={block.content} />
+                <BlockChipRenderer chips={displayContent} />
               </div>
             )}
             {/* Render inline citations (sourceRefIds) after the editable surface */}
@@ -1068,7 +1069,7 @@ function BlockRow({
                   const source = sourcesById.get(refId);
                   const tooltip = source
                     ? `${source.domain ?? source.label}${
-                        source.confidence != null ? ` Â· confidence ${source.confidence.toFixed(2)}` : ""
+                        source.confidence != null ? ` - confidence ${source.confidence.toFixed(2)}` : ""
                       }`
                     : refId;
                   return (
