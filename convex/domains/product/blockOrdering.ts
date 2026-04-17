@@ -92,11 +92,36 @@ export function positionsBetween(
 /**
  * Compare two positions. Returns negative if a<b, 0 if equal, positive if a>b.
  * Callers use this to sort a block list in rendering order.
+ *
+ * NOTE: When two clients insert concurrently between the same pair, they can
+ * produce identical (int, frac). In that case this returns 0 and render order
+ * is UNDEFINED — use comparePositionsWithId for deterministic ordering.
  */
 export function comparePositions(a: BlockPosition, b: BlockPosition): number {
   if (a.int !== b.int) return a.int - b.int;
   if (a.frac < b.frac) return -1;
   if (a.frac > b.frac) return 1;
+  return 0;
+}
+
+/**
+ * Deterministic compare with tiebreaker on a stable id (blockId / authorId).
+ * Used to resolve concurrent-insert collisions. Both clients sorting the same
+ * set with the same comparator always produce the same order.
+ *
+ * Scenario covered: two authors press Enter at the same position simultaneously.
+ * Without the tiebreaker they get identical (int, frac) and render order flips
+ * between refreshes. With the tiebreaker, lexicographic ordering on the id
+ * gives stable output on every client.
+ */
+export function comparePositionsWithId(
+  a: BlockPosition & { id: string },
+  b: BlockPosition & { id: string },
+): number {
+  const primary = comparePositions(a, b);
+  if (primary !== 0) return primary;
+  if (a.id < b.id) return -1;
+  if (a.id > b.id) return 1;
   return 0;
 }
 

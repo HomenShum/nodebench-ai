@@ -17,11 +17,14 @@
  */
 
 import { v } from "convex/values";
+import { paginationOptsValidator } from "convex/server";
 import type { Doc, Id } from "../../_generated/dataModel";
 import { mutation, query } from "../../_generated/server";
 import { resolveProductReadOwnerKeys, requireProductIdentity } from "./helpers";
+import { getSystemEntityNodeBySlug } from "../../../shared/systemIntelligence";
 import {
   comparePositions,
+  comparePositionsWithId,
   initialPosition,
   positionBetween,
   positionsBetween,
@@ -210,6 +213,17 @@ function domainFromHref(href: string | undefined | null): string | undefined {
   }
 }
 
+function sourceLabelFromHref(href: string | undefined | null): string | undefined {
+  const domain = domainFromHref(href);
+  if (!domain) return undefined;
+  return domain
+    .split(".")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => (part.toLowerCase() === "ai" ? "AI" : part.charAt(0).toUpperCase() + part.slice(1)))
+    .join(" ");
+}
+
 // Simple, deterministic mapping of report-section title to block kind.
 function headingKindForSection(title: string): NotebookBlockKind {
   const normalized = title.trim().toLowerCase();
@@ -263,6 +277,65 @@ function clampMilestoneTimestamp(
   return upperBound != null ? Math.min(normalized, upperBound) : normalized;
 }
 
+type FilteredPaginationPage<T> = {
+  page: T[];
+  isDone: boolean;
+  continueCursor: string | null;
+  splitCursor?: string | null;
+  pageStatus?: string;
+};
+
+export async function paginateFilteredRows<T>(
+  fetchPage: (cursor: string | null, numItems: number) => Promise<FilteredPaginationPage<T>>,
+  options: {
+    cursor?: string | null;
+    numItems: number;
+    keepRow: (row: T) => boolean;
+    maxScannedPages?: number;
+  },
+): Promise<FilteredPaginationPage<T>> {
+  const requestedItems = Math.max(options.numItems ?? 0, 0);
+  const maxScannedPages = Math.max(options.maxScannedPages ?? 12, 1);
+  if (requestedItems === 0) {
+    return {
+      page: [],
+      isDone: true,
+      continueCursor: options.cursor ?? null,
+    };
+  }
+
+  let cursor = options.cursor ?? null;
+  let scannedPages = 0;
+  let liveRows: T[] = [];
+  let lastPage: FilteredPaginationPage<T> = {
+    page: [],
+    isDone: true,
+    continueCursor: cursor,
+  };
+
+  while (liveRows.length < requestedItems && scannedPages < maxScannedPages) {
+    const remainingItems = requestedItems - liveRows.length;
+    const previousCursor = cursor;
+    const page = await fetchPage(cursor, remainingItems);
+    lastPage = page;
+    liveRows = liveRows.concat(page.page.filter(options.keepRow));
+    scannedPages += 1;
+    cursor = page.continueCursor;
+
+    if (page.isDone) {
+      break;
+    }
+    if (previousCursor === cursor) {
+      break;
+    }
+  }
+
+  return {
+    ...lastPage,
+    page: liveRows.slice(0, requestedItems),
+  };
+}
+
 const PARALLEL_CANDIDATE_TOOLS = new Set([
   "web_search",
   "linkup_search",
@@ -271,6 +344,20 @@ const PARALLEL_CANDIDATE_TOOLS = new Set([
   "founder_local_synthesize",
   "search_all_knowledge",
 ]);
+
+const SYSTEM_NOTEBOOK_POST_LIMIT = 240;
+const SYSTEM_RELATION_NOISE_PATTERNS = [
+  /^product$/i,
+  /^sources?$/i,
+  /^founder lens/i,
+  /^what(?:'s|\s)/i,
+  /^how\s/i,
+  /^why\s/i,
+  /^this\s/i,
+  /^these\s/i,
+  /industry:/i,
+  /\|/,
+];
 
 function buildSourceSupportCounts(
   sections: Array<{ sourceRefIds?: string[] }>,
@@ -315,6 +402,57 @@ function buildSourceSummary(sources: NotebookSource[]): NotebookSourceSummary {
   };
 }
 
+function buildSystemNotebookSections(args: {
+  entityName: string;
+  summary: string;
+  relatedCount: number;
+  sourceCount: number;
+  systemGroup: string;
+  latestTitle: string;
+  sourceRefIds: string[];
+}) {
+  return [
+    {
+      id: "what-it-is",
+      title: "What it is",
+      body: args.summary,
+      sourceRefIds: args.sourceRefIds,
+    },
+    {
+      id: "why-it-matters",
+      title: "Why it matters",
+      body: `This notebook was projected from archived ${args.systemGroup.toLowerCase()} intelligence and organized into a reusable entity page.`,
+      sourceRefIds: args.sourceRefIds,
+    },
+    {
+      id: "source-trace",
+      title: "Source trace",
+      body: `Latest signal: ${args.latestTitle}. ${args.sourceCount} source${args.sourceCount === 1 ? "" : "s"} linked to ${args.entityName} so far.`,
+      sourceRefIds: args.sourceRefIds,
+    },
+    {
+      id: "what-to-do-next",
+      title: "What to do next",
+      body:
+        args.relatedCount > 0
+          ? `Walk the linked entities next. There are ${args.relatedCount} connected entities already visible from archived intelligence.`
+          : `Open this in Chat and ask what changed, what is missing, or which sources deserve a deeper read.`,
+      sourceRefIds: args.sourceRefIds,
+    },
+  ];
+}
+
+function isCleanSystemNotebookRelation(related: {
+  name: string;
+  entityType: string;
+}) {
+  if (!["company", "person", "market"].includes(related.entityType)) return false;
+  const trimmed = related.name.trim();
+  if (!trimmed || trimmed.length < 2 || trimmed.length > 80) return false;
+  if (/https?:\/\//i.test(trimmed)) return false;
+  return !SYSTEM_RELATION_NOISE_PATTERNS.some((pattern) => pattern.test(trimmed));
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // Main query
 // ────────────────────────────────────────────────────────────────────────────
@@ -337,32 +475,106 @@ export const getEntityNotebook = query({
         .first();
       if (entity) break;
     }
-    if (!entity) return null;
-    const dataOwnerKey = entity.ownerKey;
+    let latestReport: Doc<"productReports"> | null = null;
+    let dataOwnerKey: string | null = entity?.ownerKey ?? null;
+    let systemNode: ReturnType<typeof getSystemEntityNodeBySlug> | null = null;
+
+    if (entity) {
+      latestReport = await ctx.db
+        .query("productReports")
+        .withIndex("by_owner_entity_updated", (q) =>
+          q.eq("ownerKey", entity!.ownerKey).eq("entitySlug", args.entitySlug),
+        )
+        .order("desc")
+        .first();
+      dataOwnerKey = entity.ownerKey;
+    } else {
+      for (const ownerKey of ownerKeys) {
+        latestReport = await ctx.db
+          .query("productReports")
+          .withIndex("by_owner_entity_updated", (q) => q.eq("ownerKey", ownerKey).eq("entitySlug", args.entitySlug))
+          .order("desc")
+          .first();
+        if (latestReport) {
+          dataOwnerKey = ownerKey;
+          break;
+        }
+      }
+    }
+
+    if (!entity && !latestReport) {
+      const archivePosts = await ctx.db
+        .query("linkedinPostArchive")
+        .withIndex("by_postedAt")
+        .order("desc")
+        .take(SYSTEM_NOTEBOOK_POST_LIMIT);
+      systemNode = getSystemEntityNodeBySlug(
+        archivePosts.filter((post) => post.target !== "personal"),
+        args.entitySlug,
+      );
+      if (!systemNode) return null;
+    }
 
     // 2. Latest report (most recent by updatedAt)
-    const latestReport = await ctx.db
-      .query("productReports")
-      .withIndex("by_owner_entity_updated", (q) =>
-        q.eq("ownerKey", dataOwnerKey).eq("entitySlug", args.entitySlug),
-      )
-      .order("desc")
-      .first();
-
     // 3. User notes
-    const note = await ctx.db
-      .query("productEntityNotes")
-      .withIndex("by_entity", (q) => q.eq("entityId", entity._id))
-      .first();
+    const note = entity
+      ? await ctx.db
+          .query("productEntityNotes")
+          .withIndex("by_entity", (q) => q.eq("entityId", entity._id))
+          .first()
+      : null;
     const noteBlockCount = note?.content
       ? splitNoteIntoBlocks(note.content, note.updatedAt, `note-${note._id}`).length
       : 0;
+    const latestSystemTimeline = systemNode?.timeline[0] ?? null;
+    const systemSources = latestSystemTimeline
+      ? latestSystemTimeline.sourceUrls.map((href, index) => ({
+          id: `${latestSystemTimeline.key}-source-${index}`,
+          label: latestSystemTimeline.sourceLabels[index] ?? sourceLabelFromHref(href) ?? `Source ${index + 1}`,
+          href,
+          domain: domainFromHref(href),
+          title: latestSystemTimeline.sourceLabels[index] ?? sourceLabelFromHref(href) ?? `Source ${index + 1}`,
+          publishedAt: latestSystemTimeline.postedAt ? new Date(latestSystemTimeline.postedAt).toISOString() : undefined,
+          confidence: 0.72,
+        }))
+      : [];
+    const systemSections = systemNode
+      ? buildSystemNotebookSections({
+          entityName: systemNode.name,
+          summary: latestSystemTimeline?.summary ?? systemNode.summary,
+          relatedCount: systemNode.relatedEntities.filter(isCleanSystemNotebookRelation).length,
+          sourceCount: systemSources.length,
+          systemGroup: systemNode.systemGroup,
+          latestTitle: latestSystemTimeline?.title ?? systemNode.name,
+          sourceRefIds: systemSources.map((source) => source.id),
+        })
+      : [];
+    const reportSections = latestReport?.sections ?? systemSections;
+    const reportSources = latestReport?.sources ?? systemSources;
+    const reportTitle =
+      latestReport?.title ??
+      latestSystemTimeline?.title ??
+      systemNode?.name ??
+      "Prep brief";
+    const reportRevision = latestReport?.revision ?? systemNode?.latestRevision;
+    const reportUpdatedAt = latestReport?.updatedAt ?? latestSystemTimeline?.postedAt;
+    const entityName =
+      entity?.name ??
+      latestReport?.primaryEntity ??
+      systemNode?.name ??
+      latestReport?.title ??
+      args.entitySlug.replace(/[-_]+/g, " ");
+    const entityType = entity?.entityType ?? latestReport?.type ?? systemNode?.entityType ?? "entity";
+    const entityFirstSeenAt =
+      entity?.createdAt ?? latestReport?.createdAt ?? systemNode?.timeline.at(-1)?.postedAt;
 
     // 4. Evidence for this entity (dedupe with reports later)
-    const entityEvidence = await ctx.db
-      .query("productEvidenceItems")
-      .withIndex("by_owner_entity", (q) => q.eq("ownerKey", dataOwnerKey).eq("entityId", entity._id))
-      .collect();
+    const entityEvidence = entity
+      ? await ctx.db
+          .query("productEvidenceItems")
+          .withIndex("by_owner_entity", (q) => q.eq("ownerKey", dataOwnerKey ?? entity.ownerKey).eq("entityId", entity._id))
+          .collect()
+      : [];
 
     // 5. Tool events + source events scoped to the latest session (if we have one)
     const sessionId = latestReport?.sessionId ?? null;
@@ -381,31 +593,39 @@ export const getEntityNotebook = query({
     const session = sessionId
       ? await ctx.db.get(sessionId as Id<"productChatSessions">)
       : null;
-    const [outgoingRelations, incomingRelations] = await Promise.all([
-      ctx.db
-        .query("productEntityRelations")
-        .withIndex("by_owner_from", (q) => q.eq("ownerKey", dataOwnerKey).eq("fromEntitySlug", entity!.slug))
-        .collect(),
-      ctx.db
-        .query("productEntityRelations")
-        .withIndex("by_owner_to", (q) => q.eq("ownerKey", dataOwnerKey).eq("toEntitySlug", entity!.slug))
-        .collect(),
-    ]);
+    const [outgoingRelations, incomingRelations] = dataOwnerKey
+      ? await Promise.all([
+          ctx.db
+            .query("productEntityRelations")
+            .withIndex("by_owner_from", (q) => q.eq("ownerKey", dataOwnerKey!).eq("fromEntitySlug", args.entitySlug))
+            .collect(),
+          ctx.db
+            .query("productEntityRelations")
+            .withIndex("by_owner_to", (q) => q.eq("ownerKey", dataOwnerKey!).eq("toEntitySlug", args.entitySlug))
+            .collect(),
+        ])
+      : [[], []];
 
     // ──────────────────────────────────────────────────────────────────────
     // Build routing block
     // ──────────────────────────────────────────────────────────────────────
     const routing: NotebookRouting = {
-      mode: latestReport?.routing?.routingMode,
-      reason: latestReport?.routing?.routingReason,
-      source: latestReport?.routing?.routingSource,
-      plannerModel: latestReport?.routing?.plannerModel,
-      executionModel: latestReport?.routing?.executionModel,
-      reasoningEffort: latestReport?.routing?.reasoningEffort,
+      mode: latestReport?.routing?.routingMode ?? (systemNode ? "advisor" : undefined),
+      reason:
+        latestReport?.routing?.routingReason ??
+        (systemNode ? "Projected from archived system intelligence." : undefined),
+      source: latestReport?.routing?.routingSource ?? (systemNode ? "automatic" : undefined),
+      plannerModel: latestReport?.routing?.plannerModel ?? (systemNode ? "system-archive" : undefined),
+      executionModel: latestReport?.routing?.executionModel ?? (systemNode ? "system-archive" : undefined),
+      reasoningEffort: latestReport?.routing?.reasoningEffort ?? (systemNode ? "medium" : undefined),
       operatorLabel:
-        latestReport?.operatorContext?.label ?? session?.operatorContext?.label,
+        latestReport?.operatorContext?.label ??
+        session?.operatorContext?.label ??
+        (systemNode ? "System intelligence" : undefined),
       operatorHint:
-        latestReport?.operatorContext?.hint ?? session?.operatorContext?.hint,
+        latestReport?.operatorContext?.hint ??
+        session?.operatorContext?.hint ??
+        systemNode?.systemGroup,
     };
 
     // ──────────────────────────────────────────────────────────────────────
@@ -433,27 +653,41 @@ export const getEntityNotebook = query({
       totalDurationMs,
     );
 
-    const planSteps: NotebookPlanStep[] = sortedToolEvents.map((event) => {
-      const costUsd = Number(
-        estimatedCost(event.tool, event.durationMs, event.tokensIn, event.tokensOut).toFixed(4),
-      );
-      const parallel = PARALLEL_CANDIDATE_TOOLS.has(event.tool) && parallelGroupSize > 1;
-      return {
-        step: event.step,
-        tool: event.tool,
-        provider: event.provider,
-        model: event.model,
-        reason: event.reason,
-        status: mapStatus(event.status),
-        durationMs: event.durationMs,
-        tokensIn: event.tokensIn,
-        tokensOut: event.tokensOut,
-        preview: event.preview ? truncate(event.preview, 140) : undefined,
-        costUsd,
-        parallel,
-        parallelGroupSize: parallel ? parallelGroupSize : undefined,
-      };
-    });
+    const planSteps: NotebookPlanStep[] =
+      sortedToolEvents.length > 0
+        ? sortedToolEvents.map((event) => {
+            const costUsd = Number(
+              estimatedCost(event.tool, event.durationMs, event.tokensIn, event.tokensOut).toFixed(4),
+            );
+            const parallel = PARALLEL_CANDIDATE_TOOLS.has(event.tool) && parallelGroupSize > 1;
+            return {
+              step: event.step,
+              tool: event.tool,
+              provider: event.provider,
+              model: event.model,
+              reason: event.reason,
+              status: mapStatus(event.status),
+              durationMs: event.durationMs,
+              tokensIn: event.tokensIn,
+              tokensOut: event.tokensOut,
+              preview: event.preview ? truncate(event.preview, 140) : undefined,
+              costUsd,
+              parallel,
+              parallelGroupSize: parallel ? parallelGroupSize : undefined,
+            };
+          })
+        : systemNode
+          ? [
+              {
+                step: 1,
+                tool: "project_system_intelligence",
+                model: "system-archive",
+                reason: "Projected archived LinkedIn organization posts into a reusable notebook snapshot.",
+                status: "done",
+                preview: latestSystemTimeline?.title ?? systemNode.name,
+              },
+            ]
+          : [];
 
     const totalCostUsd = planSteps.reduce(
       (acc, step) => acc + estimatedCost(step.tool, step.durationMs, step.tokensIn, step.tokensOut),
@@ -478,7 +712,7 @@ export const getEntityNotebook = query({
     // Prefer sourceEvents (richer, with confidence) and fall back to the
     // sources embedded in the report.
     const sourceMap = new Map<string, NotebookSource>();
-    for (const reportSource of latestReport?.sources ?? []) {
+    for (const reportSource of reportSources) {
       sourceMap.set(reportSource.id, {
         id: reportSource.id,
         label: reportSource.label,
@@ -531,7 +765,7 @@ export const getEntityNotebook = query({
         imageCandidates: sourceEvent.imageCandidates?.slice(0, 4),
       });
     }
-    const sourceSupportCounts = buildSourceSupportCounts(latestReport?.sections ?? [], Array.from(sourceMap.values()));
+    const sourceSupportCounts = buildSourceSupportCounts(reportSections, Array.from(sourceMap.values()));
     const sources = Array.from(sourceMap.values()).map((source) => ({
       ...source,
       supportCount: sourceSupportCounts.get(source.id) ?? sourceSupportCounts.get(source.label) ?? 0,
@@ -548,57 +782,72 @@ export const getEntityNotebook = query({
       [...planSteps].reverse().find((step) => step.tool === "synthesize_packet") ??
       planSteps[planSteps.length - 1];
 
-    if (latestReport) {
+    if (latestReport || systemNode) {
+      const briefParentId = latestReport
+        ? `brief-heading-${latestReport._id}`
+        : `brief-heading-system-${args.entitySlug}`;
       blocks.push({
-        id: `brief-heading-${latestReport._id}`,
+        id: briefParentId,
         kind: "heading-2",
         author: "agent",
         authorLabel: routing.executionModel
           ? `${routing.executionModel} · synthesize`
           : "agent · synthesize",
-        body: latestReport.title || "Prep brief",
+        body: reportTitle,
         modelUsed: routing.executionModel,
         step: finalSynthesizeStep?.step,
-        updatedAt: latestReport.updatedAt,
+        updatedAt: reportUpdatedAt,
       });
 
       // (b) Each report section becomes a heading block + a body block.
-      for (const section of latestReport.sections ?? []) {
+      for (const section of reportSections) {
+        const sectionKey = latestReport
+          ? `${latestReport._id}-${section.id}`
+          : `system-${args.entitySlug}-${section.id}`;
         blocks.push({
-          id: `section-h-${latestReport._id}-${section.id}`,
+          id: `section-h-${sectionKey}`,
           kind: headingKindForSection(section.title),
           author: "agent",
           authorLabel: routing.executionModel ?? "agent",
           body: section.title,
-          parentBlockId: `brief-heading-${latestReport._id}`,
+          parentBlockId: briefParentId,
           step: finalSynthesizeStep?.step,
-          updatedAt: latestReport.updatedAt,
+          updatedAt: reportUpdatedAt,
         });
         blocks.push({
-          id: `section-b-${latestReport._id}-${section.id}`,
+          id: `section-b-${sectionKey}`,
           kind: "text",
           author: "agent",
           authorLabel: routing.executionModel
-            ? `${routing.executionModel} · ${latestReport.updatedAt ? "rev " + (latestReport.revision ?? 1) : "synthesize"}`
+            ? `${routing.executionModel} · ${reportUpdatedAt ? "rev " + (reportRevision ?? 1) : "synthesize"}`
             : "agent",
           body: section.body,
           sourceRefIds: section.sourceRefIds,
           modelUsed: routing.executionModel,
-          costUsd: planSteps.length > 0 ? Number((totalCostUsd / Math.max(1, (latestReport.sections ?? []).length)).toFixed(4)) : undefined,
+          costUsd: planSteps.length > 0 ? Number((totalCostUsd / Math.max(1, reportSections.length)).toFixed(4)) : undefined,
           confidence: computeSectionConfidence(section.sourceRefIds, sources),
           step: finalSynthesizeStep?.step,
           revisionLabel:
-            (latestReport.revision ?? 1) > 1
-              ? `rev ${latestReport.revision ?? 1}${latestReport.previousReportId ? " (was AI)" : ""}`
+            (reportRevision ?? 1) > 1
+              ? `rev ${reportRevision ?? 1}${latestReport?.previousReportId ? " (was AI)" : ""}`
               : undefined,
-          parentBlockId: `section-h-${latestReport._id}-${section.id}`,
-          updatedAt: latestReport.updatedAt,
+          parentBlockId: `section-h-${sectionKey}`,
+          updatedAt: reportUpdatedAt,
         });
       }
     }
 
     // (c) Evidence blocks — indented after the brief
-    for (const item of entityEvidence) {
+    const fallbackEvidence =
+      entityEvidence.length === 0 && systemNode
+        ? systemSources.map((source, index) => ({
+            _id: (`system-evidence-${args.entitySlug}-${index}` as unknown) as Id<"productEvidenceItems">,
+            label: source.label,
+            sourceUrl: source.href,
+            updatedAt: reportUpdatedAt ?? Date.now(),
+          }))
+        : [];
+    for (const item of entityEvidence.length > 0 ? entityEvidence : fallbackEvidence) {
       if (!item.sourceUrl && !item.label) continue;
       blocks.push({
         id: `evidence-${item._id}`,
@@ -632,19 +881,21 @@ export const getEntityNotebook = query({
     const relationTargets = Array.from(
       new Set(
         [...outgoingRelations.map((relation) => relation.toEntitySlug), ...incomingRelations.map((relation) => relation.fromEntitySlug)].filter(
-          (slug) => slug && slug !== entity.slug,
+          (slug) => slug && slug !== args.entitySlug,
         ),
       ),
     );
-    await Promise.all(
-      relationTargets.map(async (slug) => {
-        const related = await ctx.db
-          .query("productEntities")
-          .withIndex("by_owner_slug", (q) => q.eq("ownerKey", dataOwnerKey).eq("slug", slug))
-          .first();
-        relatedEntityLookups.set(slug, related);
-      }),
-    );
+    if (dataOwnerKey) {
+      await Promise.all(
+        relationTargets.map(async (slug) => {
+          const related = await ctx.db
+            .query("productEntities")
+            .withIndex("by_owner_slug", (q) => q.eq("ownerKey", dataOwnerKey!).eq("slug", slug))
+            .first();
+          relatedEntityLookups.set(slug, related);
+        }),
+      );
+    }
 
     const relatedEntities = outgoingRelations.reduce<NotebookEntityLink[]>((acc, relation) => {
       const related = relatedEntityLookups.get(relation.toEntitySlug);
@@ -661,7 +912,17 @@ export const getEntityNotebook = query({
             : relation.relation,
       });
       return acc;
-    }, []);
+    }, systemNode
+      ? systemNode.relatedEntities
+          .filter(isCleanSystemNotebookRelation)
+          .map((related) => ({
+            slug: related.slug,
+            name: related.name,
+            entityType: related.entityType,
+            relation: "related",
+            reason: related.reason,
+          }))
+      : []);
 
     const linkedFrom = incomingRelations.reduce<NotebookEntityLink[]>((acc, relation) => {
       const related = relatedEntityLookups.get(relation.fromEntitySlug);
@@ -681,20 +942,20 @@ export const getEntityNotebook = query({
     }, []);
 
     return {
-      entitySlug: entity.slug,
-      entityName: entity.name,
-      entityType: entity.entityType,
-      firstSeenAt: entity.createdAt,
+      entitySlug: args.entitySlug,
+      entityName,
+      entityType,
+      firstSeenAt: entityFirstSeenAt,
       sessionStartedAt: session?.createdAt,
-      reportCount: entity.reportCount ?? (latestReport ? 1 : 0),
+      reportCount: entity?.reportCount ?? systemNode?.reportCount ?? (latestReport ? 1 : 0),
       noteCount: noteBlockCount,
       routing,
       planTrace,
       sources,
       sourceSummary,
       blocks,
-      revision: latestReport?.revision ?? undefined,
-      reportUpdatedAt: latestReport?.updatedAt,
+      revision: reportRevision ?? undefined,
+      reportUpdatedAt,
       lastError: session?.lastError,
       linkedFrom,
       relatedEntities,
@@ -763,17 +1024,104 @@ export const listEntityBlocks = query({
 
     const rows = await ctx.db
       .query("productBlocks")
-      .withIndex("by_owner_entity", (q) => q.eq("ownerKey", entity.ownerKey).eq("entityId", entity._id))
+      .withIndex("by_owner_entity_position", (q) =>
+        q.eq("ownerKey", entity.ownerKey).eq("entityId", entity._id),
+      )
       .collect();
 
-    return rows
-      .filter((row) => !row.deletedAt)
-      .sort((a, b) =>
-        comparePositions(
-          { int: a.positionInt, frac: a.positionFrac },
-          { int: b.positionInt, frac: b.positionFrac },
-        ),
-      );
+    return rows.filter((row) => !row.deletedAt);
+  },
+});
+
+export const listEntityBlocksPaginated = (query as any)({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+    entitySlug: v.string(),
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx: any, args: any): Promise<any> => {
+    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
+    if (ownerKeys.length === 0) {
+      return { page: [], isDone: true, continueCursor: null };
+    }
+
+    let entity: Doc<"productEntities"> | null = null;
+    for (const ownerKey of ownerKeys) {
+      entity = await ctx.db
+        .query("productEntities")
+        .withIndex("by_owner_slug", (q: any) => q.eq("ownerKey", ownerKey).eq("slug", args.entitySlug))
+        .first();
+      if (entity) break;
+    }
+    if (!entity) {
+      return { page: [], isDone: true, continueCursor: null };
+    }
+
+    return paginateFilteredRows<Doc<"productBlocks">>(
+      (cursor, numItems) =>
+        ctx.db
+          .query("productBlocks")
+          .withIndex("by_owner_entity_position", (q: any) =>
+            q.eq("ownerKey", entity!.ownerKey).eq("entityId", entity!._id),
+          )
+          .paginate({ cursor, numItems }),
+      {
+        cursor: args.paginationOpts.cursor ?? null,
+        numItems: args.paginationOpts.numItems,
+        keepRow: (row) => !row.deletedAt,
+      },
+    );
+  },
+});
+
+export const getEntityBlockSummary = query({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+    entitySlug: v.string(),
+  },
+  handler: async (
+    ctx,
+    args,
+  ): Promise<
+    | null
+    | {
+        blockCount: number;
+        userEditedCount: number;
+        latestUpdatedAt?: number;
+        latestUserEditAt?: number;
+      }
+  > => {
+    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
+    if (ownerKeys.length === 0) return null;
+
+    let entity: Doc<"productEntities"> | null = null;
+    for (const ownerKey of ownerKeys) {
+      entity = await ctx.db
+        .query("productEntities")
+        .withIndex("by_owner_slug", (q) => q.eq("ownerKey", ownerKey).eq("slug", args.entitySlug))
+        .first();
+      if (entity) break;
+    }
+    if (!entity) return null;
+
+    const rows = await ctx.db
+      .query("productBlocks")
+      .withIndex("by_owner_entity", (q) => q.eq("ownerKey", entity.ownerKey).eq("entityId", entity._id))
+      .collect();
+    const liveRows = rows.filter((row) => !row.deletedAt);
+    const userRows = liveRows.filter((row) => row.authorKind === "user");
+    return {
+      blockCount: liveRows.length,
+      userEditedCount: userRows.length,
+      latestUpdatedAt: liveRows.reduce<number | undefined>(
+        (latest, row) => (latest == null || row.updatedAt > latest ? row.updatedAt : latest),
+        undefined,
+      ),
+      latestUserEditAt: userRows.reduce<number | undefined>(
+        (latest, row) => (latest == null || row.updatedAt > latest ? row.updatedAt : latest),
+        undefined,
+      ),
+    };
   },
 });
 
@@ -811,9 +1159,9 @@ export const appendBlock = mutation({
     const siblings = existing
       .filter((b) => !b.deletedAt && (b.parentBlockId ?? null) === (args.parentBlockId ?? null))
       .sort((a, b) =>
-        comparePositions(
-          { int: a.positionInt, frac: a.positionFrac },
-          { int: b.positionInt, frac: b.positionFrac },
+        comparePositionsWithId(
+          { int: a.positionInt, frac: a.positionFrac, id: a._id },
+          { int: b.positionInt, frac: b.positionFrac, id: b._id },
         ),
       );
     const last = siblings[siblings.length - 1] ?? null;
@@ -1181,9 +1529,9 @@ export const promoteLinkToEvidence = mutation({
     const sorted = siblings
       .filter((b) => !b.deletedAt && (b.parentBlockId ?? null) === (citing.parentBlockId ?? null))
       .sort((a, b) =>
-        comparePositions(
-          { int: a.positionInt, frac: a.positionFrac },
-          { int: b.positionInt, frac: b.positionFrac },
+        comparePositionsWithId(
+          { int: a.positionInt, frac: a.positionFrac, id: a._id },
+          { int: b.positionInt, frac: b.positionFrac, id: b._id },
         ),
       );
     const citingIdx = sorted.findIndex((b) => b._id === citing._id);
