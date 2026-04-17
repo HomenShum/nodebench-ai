@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NodeBench Entity Page — Current vs Hybrid (w/ Full Harness Provenance)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg:       #0e0e0f;
+    --panel:    #141416;
+    --line:     rgba(255,255,255,0.06);
+    --line-strong: rgba(255,255,255,0.10);
+    --text:     #e6e6e6;
+    --muted:    #8a8a8e;
+    --dim:      #5c5c61;
+    --blue:     #3b82f6;
+    --blue-soft: rgba(59,130,246,0.15);
+    --agent:    #a78bfa;
+    --agent-soft: rgba(167,139,250,0.18);
+    --user:     #4ade80;
+    --user-soft: rgba(74,222,128,0.18);
+    --danger:   #f87171;
+    --amber:    #fbbf24;
+    --amber-soft: rgba(251,191,36,0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .frame-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 16px;
+    backdrop-filter: blur(8px);
+  }
+  .frame-title { font-weight: 600; font-size: 15px; }
+  .frame-sub { color: var(--muted); font-size: 12px; }
+  .legend { margin-left: auto; display: flex; gap: 10px; font-size: 11px; color: var(--muted); }
+  .legend .dot { display:inline-block; width:8px; height:8px; border-radius:50%; vertical-align:middle; margin-right: 4px; }
+
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--line);
+    min-height: calc(100vh - 64px);
+  }
+  .pane {
+    background: var(--bg);
+    padding: 32px 28px 80px;
+    overflow-y: auto;
+  }
+  .pane-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--dim);
+    margin-bottom: 24px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .pane-label.old { color: var(--danger); }
+  .pane-label.new { color: var(--user); }
+
+  /* Shared */
+  .breadcrumb {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .breadcrumb a { color: var(--muted); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--text); }
+  .breadcrumb .sep { color: var(--dim); }
+
+  .entity-type {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .entity-type svg { width: 12px; height: 12px; }
+  .entity-title {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+  }
+  .entity-summary {
+    font-size: 14px;
+    color: var(--muted);
+    max-width: 680px;
+    margin-bottom: 16px;
+  }
+  .actions {
+    display: flex; gap: 8px; margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--line-strong);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn.primary {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: #fff;
+  }
+  .btn:hover { background: rgba(255,255,255,0.04); }
+  .btn.primary:hover { background: #2563eb; }
+
+  .meta-row {
+    display: flex; flex-wrap: wrap; gap: 4px 16px;
+    font-size: 12px; color: var(--muted);
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .context-strip {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    display: flex; justify-content: space-between; gap: 12px;
+    font-size: 13px;
+  }
+  .context-strip .key {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--dim);
+    margin-right: 10px;
+  }
+  .activity-ribbon {
+    display: flex; flex-wrap: wrap; gap: 14px;
+    font-size: 12px; color: var(--muted);
+    margin-bottom: 28px;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .chip-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    font-size: 9px; font-weight: 600;
+  }
+  .chip-badge.ai   { background: var(--agent-soft); color: var(--agent); }
+  .chip-badge.user { background: var(--user-soft); color: var(--user); }
+
+  /* LEFT PANE — CURRENT */
+  .section {
+    margin-top: 36px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+  }
+  .section:first-of-type { border-top: none; padding-top: 0; margin-top: 20px; }
+  .section-h2 {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .section-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .subsection {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+  .subsection:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+  .subsection-h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .subsection-body {
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: #c8c8cc;
+  }
+  .inspect-sources {
+    font-size: 11px;
+    color: var(--blue);
+    margin-top: 10px;
+  }
+  .evidence-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    font-size: 11px;
+    color: var(--muted);
+    margin-right: 6px; margin-bottom: 6px;
+  }
+  .working-notes-box {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 20px;
+    min-height: 140px;
+    background: rgba(255,255,255,0.01);
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 12px;
+  }
+  .timeline-item {
+    display: flex; justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+
+  /* Notebook */
+  .notebook-divider {
+    margin: 20px 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--dim);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .notebook-divider .view-toggle-inline {
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .block {
+    position: relative;
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    gap: 8px;
+    padding: 3px 0;
+    border-radius: 4px;
+    transition: background 0.08s;
+  }
+  .block:hover { background: rgba(255,255,255,0.015); }
+  .block:hover .block-provenance { opacity: 1; }
+  .block.focused { background: rgba(59,130,246,0.06); }
+
+  .block-gutter {
+    display: flex; justify-content: center; align-items: flex-start;
+    padding-top: 4px;
+  }
+  .author-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    font-size: 8px;
+    font-weight: 700;
+    color: #0e0e0f;
+    display: flex; align-items: center; justify-content: center;
+    cursor: help;
+  }
+  .author-dot.ai   { background: var(--agent); }
+  .author-dot.user { background: var(--user); }
+  .author-dot.anon { background: var(--dim); color: #fff; }
+
+  .block-body {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #e0e0e4;
+    padding: 2px 0;
+  }
+  .block-body.with-provenance { display: flex; justify-content: space-between; gap: 12px; }
+  .block-body.with-provenance > .main { flex: 1; min-width: 0; }
+
+  /* Tiny provenance pill attached to block (hover to reveal) */
+  .block-provenance {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--dim);
+    font-family: ui-monospace, monospace;
+    opacity: 0;
+    transition: opacity 0.12s;
+    flex-shrink: 0;
+    padding-top: 5px;
+  }
+  .block.focused .block-provenance,
+  .block:hover .block-provenance { opacity: 0.85; }
+  .block-provenance .p-item {
+    padding: 1px 5px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 3px;
+    cursor: help;
+  }
+  .block-provenance .p-cost { color: var(--amber); background: var(--amber-soft); }
+  .block-provenance .p-model { color: var(--agent); background: var(--agent-soft); }
+  .block-provenance .p-conf { color: var(--user); background: var(--user-soft); }
+
+  /* Source citation chip inline */
+  .cite {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 10px;
+    padding: 0 4px;
+    border-radius: 3px;
+    background: rgba(59,130,246,0.15);
+    color: var(--blue);
+    margin: 0 1px;
+    vertical-align: super;
+    cursor: pointer;
+    text-decoration: none;
+    line-height: 1.4;
+  }
+  .cite:hover { background: rgba(59,130,246,0.28); }
+
+  /* Block kinds */
+  .block.kind-h1 .block-body { font-size: 22px; font-weight: 600; margin-top: 18px; margin-bottom: 4px; }
+  .block.kind-h2 .block-body { font-size: 17px; font-weight: 600; margin-top: 16px; margin-bottom: 2px; }
+  .block.kind-h3 .block-body { font-size: 14px; font-weight: 600; margin-top: 12px; }
+  .block.kind-bullet .block-body::before { content: "•"; color: var(--dim); margin-right: 8px; }
+  .block.kind-todo .block-body::before { content: "☐"; color: var(--dim); margin-right: 8px; }
+  .block.kind-callout {
+    background: rgba(59,130,246,0.05);
+    border-left: 2px solid var(--blue);
+    padding-left: 12px;
+    margin: 8px 0;
+  }
+  .block.kind-evidence { margin-left: 24px; font-size: 12.5px; }
+  .block.kind-evidence .block-body {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--muted);
+    padding: 5px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: rgba(255,255,255,0.02);
+  }
+  .block.kind-evidence .conf-badge {
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--user-soft);
+    color: var(--user);
+    margin-left: auto;
+  }
+  .block.kind-evidence .conf-badge.low { background: rgba(248,113,113,0.15); color: var(--danger); }
+  .block.kind-evidence .conf-badge.med { background: var(--amber-soft); color: var(--amber); }
+
+  .mention {
+    display: inline-flex; align-items: baseline; gap: 2px;
+    color: var(--blue);
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 0 2px;
+  }
+  .mention:hover { background: var(--blue-soft); }
+  .hashtag { color: #fbbf24; cursor: pointer; }
+  .link-chip {
+    color: var(--blue);
+    text-decoration: underline;
+    text-decoration-color: rgba(59,130,246,0.4);
+    text-underline-offset: 2px;
+  }
+  .slash {
+    color: var(--agent);
+    font-family: ui-monospace, monospace;
+    font-size: 12.5px;
+  }
+
+  /* Collapsible provenance sections */
+  .prov-panel {
+    margin: 14px 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .prov-panel summary {
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.02);
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--muted);
+    list-style: none;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .prov-panel summary::-webkit-details-marker { display: none; }
+  .prov-panel summary::before {
+    content: "▸"; margin-right: 6px; font-size: 9px; color: var(--dim);
+    transition: transform 0.15s;
+  }
+  .prov-panel[open] summary::before { transform: rotate(90deg); display: inline-block; }
+  .prov-panel summary strong { color: var(--text); font-weight: 500; }
+  .prov-body {
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--muted);
+    background: rgba(0,0,0,0.15);
+    font-family: ui-monospace, SFMono-Regular, monospace;
+  }
+  .prov-body .row {
+    display: grid; grid-template-columns: 130px 1fr auto;
+    gap: 12px;
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--line);
+    align-items: baseline;
+  }
+  .prov-body .row:last-child { border-bottom: 0; }
+  .prov-body .k { color: var(--dim); font-size: 11px; }
+  .prov-body .v { color: var(--text); word-break: break-word; }
+  .prov-body .v.num { color: var(--amber); }
+  .prov-body .v.ok  { color: var(--user); }
+  .prov-body .v.warn { color: var(--danger); }
+
+  /* Plan trace (at top of notebook) */
+  .plan-step {
+    display: grid;
+    grid-template-columns: 22px 160px 1fr auto;
+    gap: 10px;
+    padding: 5px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 12px;
+    font-family: ui-monospace, monospace;
+    align-items: baseline;
+  }
+  .plan-step:last-child { border-bottom: 0; }
+  .plan-step .pnum { color: var(--dim); text-align: right; }
+  .plan-step .ptool { color: var(--agent); }
+  .plan-step .pargs { color: var(--muted); font-size: 11px; }
+  .plan-step .pstatus.done   { color: var(--user); }
+  .plan-step .pstatus.running { color: var(--blue); }
+  .plan-step .pstatus.error  { color: var(--danger); }
+  .plan-parallel-badge {
+    display: inline-block;
+    font-size: 9px;
+    padding: 0 4px;
+    background: var(--agent-soft);
+    color: var(--agent);
+    border-radius: 3px;
+    margin-left: 4px;
+  }
+
+  /* Slash palette */
+  .slash-palette {
+    position: relative;
+    margin-left: 30px;
+    margin-top: 4px;
+    margin-bottom: 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    background: rgba(20,20,22,0.95);
+    padding: 6px;
+    max-width: 340px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+  }
+  .slash-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .slash-item:hover, .slash-item.active { background: rgba(255,255,255,0.05); }
+  .slash-icon { font-size: 11px; color: var(--agent); width: 50px; font-family: ui-monospace, monospace; }
+  .slash-label { flex: 1; color: var(--text); }
+  .slash-desc { font-size: 11px; color: var(--muted); }
+
+  .append-block {
+    margin-top: 12px;
+    padding: 10px 14px;
+    color: var(--dim);
+    font-size: 13px;
+    border: 1px dashed var(--line-strong);
+    border-radius: 6px;
+    cursor: text;
+  }
+  .append-block:hover { color: var(--muted); border-color: var(--muted); }
+
+  .backlinks {
+    margin-top: 36px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 12px;
+  }
+  .backlinks-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--dim);
+    margin-bottom: 10px;
+  }
+  .backlinks .ref {
+    padding: 8px 0;
+    color: var(--muted);
+    border-bottom: 1px solid var(--line);
+  }
+  .backlinks .ref strong { color: var(--text); font-weight: 500; }
+
+  .view-toggle {
+    display: flex; gap: 2px;
+    padding: 2px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 6px;
+    width: fit-content;
+  }
+  .view-toggle button {
+    background: transparent;
+    border: 0;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .view-toggle button.active { background: rgba(255,255,255,0.08); color: var(--text); }
+
+  .annotation {
+    position: absolute;
+    font-size: 10px;
+    color: var(--danger);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    pointer-events: none;
+    padding: 2px 5px;
+    background: rgba(248,113,113,0.08);
+    border-radius: 3px;
+    z-index: 2;
+  }
+  .ok-annotation {
+    color: var(--user);
+    background: rgba(74,222,128,0.08);
+  }
+
+  .callout-hero {
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: linear-gradient(90deg, rgba(74,222,128,0.08), rgba(167,139,250,0.06));
+    border: 1px solid rgba(74,222,128,0.18);
+    border-radius: 8px;
+    font-size: 13px;
+    color: #d0d0d4;
+  }
+  .callout-hero strong { color: var(--user); }
+
+  .routing-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px;
+    padding: 3px 8px;
+    background: rgba(167,139,250,0.1);
+    border: 1px solid rgba(167,139,250,0.25);
+    border-radius: 4px;
+    color: var(--agent);
+    font-family: ui-monospace, monospace;
+  }
+
+  @media (max-width: 900px) {
+    .compare { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="frame-header">
+  <div>
+    <div class="frame-title">Entity page prototype — Cliffside Ventures</div>
+    <div class="frame-sub">Side-by-side with the full harness provenance chain surfaced in the notebook</div>
+  </div>
+  <div class="legend">
+    <span><span class="dot" style="background:var(--agent)"></span>AI</span>
+    <span><span class="dot" style="background:var(--user)"></span>You</span>
+    <span><span class="dot" style="background:var(--dim)"></span>Anonymous</span>
+    <span>·</span>
+    <span>🕐 duration</span>
+    <span>💰 cost</span>
+    <span>📊 confidence</span>
+  </div>
+</div>
+
+<div class="compare">
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- LEFT PANE — CURRENT UI                          -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="pane">
+    <div class="pane-label old">◀  CURRENT  —  shows content but hides harness telemetry</div>
+
+    <nav class="breadcrumb">
+      <a href="#">← Reports</a>
+      <span class="sep">›</span>
+      <span style="color:var(--text);">Cliffside Ventures</span>
+    </nav>
+
+    <div class="entity-type">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+      Company · Saved because: job target
+    </div>
+    <h1 class="entity-title">Cliffside Ventures</h1>
+    <p class="entity-summary">Cliffside Ventures is a multi-strategy investment firm founded by Dirk Xu in 2025, focusing on both private and public markets with a strong emphasis on crypto.</p>
+
+    <div class="actions">
+      <button class="btn primary">💬 Reopen in Chat</button>
+      <button class="btn">✨ Prep brief</button>
+      <button class="btn">↻ Refresh</button>
+      <button class="btn">⋯</button>
+    </div>
+
+    <div class="meta-row">
+      <span>🕐 First seen Apr 16, 2026</span>
+      <span>1 report</span>
+      <span style="color:var(--blue);cursor:pointer;text-decoration:underline">64 sources</span>
+      <span>1 note</span>
+      <span style="margin-left:auto">Updated 2h ago</span>
+    </div>
+
+    <section class="section" style="position:relative">
+      <div class="annotation" style="top:-10px;right:0">No cost · model · tokens · routing</div>
+      <h2 class="section-h2">Current brief</h2>
+      <p class="section-sub">Open this first.</p>
+
+      <div class="subsection">
+        <h3 class="subsection-h3">What it is</h3>
+        <p class="subsection-body">Cliffside Ventures is a multi-strategy investment firm founded by Dirk Xu in 2025...</p>
+      </div>
+
+      <div class="subsection" style="position:relative">
+        <div class="annotation" style="top:6px;right:0">"Inspect sources" exists but no confidence / excerpt</div>
+        <h3 class="subsection-h3">Why they'll care</h3>
+        <p class="subsection-body">Top signals: Recent transition from operator roles to founding a firm...</p>
+        <div class="inspect-sources">Inspect sources ›</div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-h3">Likely questions or objections</h3>
+        <p class="subsection-body">Concentrated capital base...</p>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-h3">What to do next</h3>
+        <p class="subsection-body">Verify the current LP composition...</p>
+      </div>
+    </section>
+
+    <section class="section" style="position:relative">
+      <div class="annotation" style="top:-10px;right:0">Tool events, plan, adaptations hidden</div>
+      <h2 class="section-h2">Working notes</h2>
+      <p class="section-sub">Keep your live read and follow-up questions here.</p>
+      <div class="working-notes-box"><strong>Cliffside Ventures</strong><br>Capture working notes...</div>
+    </section>
+
+    <section class="section" style="position:relative">
+      <div class="annotation" style="top:-10px;right:0">Evidence pills · no confidence score</div>
+      <h2 class="section-h2">Workspace rail</h2>
+      <p class="section-sub">Secondary context lives here.</p>
+      <div style="margin-top:10px">
+        <span class="evidence-pill">📎 linkedin.com · Dirk R.</span>
+        <span class="evidence-pill">📎 linkedin.com · Zhiling Xu</span>
+        <span class="evidence-pill">📎 cliffside.ventures</span>
+        <span class="evidence-pill">+3</span>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-h2">Research timeline</h2>
+      <p class="section-sub">Full revision history.</p>
+      <div style="margin-top:12px">
+        <div class="timeline-item"><span>Rev 1 · investor brief</span><span style="color:var(--muted)">2h ago</span></div>
+      </div>
+    </section>
+
+    <section class="section" style="position:relative">
+      <div class="annotation" style="top:-10px;right:0">Missing: plan · tool events · source events</div>
+      <h2 class="section-h2" style="color:var(--danger)">What the current UI does NOT show</h2>
+      <p class="section-sub">All of this is persisted but invisible to the user:</p>
+      <ul style="list-style: none; padding-left: 0; font-size: 13px; color: var(--muted); line-height: 1.9">
+        <li>❌ Routing decision (plannerModel / executionModel / reasoningEffort)</li>
+        <li>❌ Operator context snapshot (lens + style + tone applied at generation)</li>
+        <li>❌ The plan — what tools were called, in what order, parallel groups</li>
+        <li>❌ Per-tool telemetry (model, tokens in/out, duration, cost)</li>
+        <li>❌ Per-source confidence (0.0–1.0), excerpt, publishedAt, favicon</li>
+        <li>❌ Per-section status (pending/building/complete) + sourceRefIds linking claims to sources</li>
+        <li>❌ Adaptations (how many times the plan was re-planned on failure)</li>
+        <li>❌ Total duration / total cost / token budget consumed</li>
+        <li>❌ Refresh triggered by (user / nudge / system)</li>
+        <li>❌ Streamed milestones (firstStageAt / firstSourceAt / firstPartialAnswerAt)</li>
+        <li>❌ Related entities surfaced by the harness</li>
+        <li>❌ Evidence metadata.imageCandidates, thumbnail selection logic</li>
+      </ul>
+    </section>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- RIGHT PANE — HYBRID w/ FULL PROVENANCE          -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="pane">
+    <div class="pane-label new">▶  HYBRID + FULL PROVENANCE  —  every block carries its harness lineage</div>
+
+    <div class="callout-hero">
+      <strong>What changed from the previous mockup:</strong> every block now carries inline provenance (model · tokens · duration · cost · confidence) on hover/focus. Three new collapsible sections surface the full harness chain: <em>Routing & operator context</em>, <em>Execution plan trace</em>, and <em>Sources with confidence</em>.
+    </div>
+
+    <!-- Header (unchanged from current) -->
+    <nav class="breadcrumb">
+      <a href="#">← Reports</a>
+      <span class="sep">›</span>
+      <span style="color:var(--text);">Cliffside Ventures</span>
+    </nav>
+
+    <div class="entity-type">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+      Company · Saved because: job target
+    </div>
+    <h1 class="entity-title">Cliffside Ventures</h1>
+    <p class="entity-summary">Cliffside Ventures is a multi-strategy investment firm founded by Dirk Xu in 2025, focusing on both private and public markets with a strong emphasis on crypto.</p>
+
+    <div class="actions">
+      <button class="btn primary">💬 Reopen in Chat</button>
+      <button class="btn">✨ Prep brief</button>
+      <button class="btn">↻ Refresh</button>
+      <button class="btn">⋯</button>
+    </div>
+
+    <div class="meta-row">
+      <span>🕐 First seen Apr 16, 2026</span>
+      <span>1 report · rev 1</span>
+      <span style="color:var(--blue);cursor:pointer;text-decoration:underline">64 sources</span>
+      <span>1 note</span>
+      <span>🤖 gemini-3.1-flash (advisor) · 2.7s · $0.008</span>
+      <span style="margin-left:auto">Updated 2h ago</span>
+    </div>
+
+    <div class="context-strip">
+      <div><span class="key">Since last visit</span>No new changes · 2h ago</div>
+      <div><span class="key">🔖 Saved because</span>job target</div>
+    </div>
+
+    <div class="activity-ribbon">
+      <span style="color:var(--muted)">Recent edits:</span>
+      <span class="chip"><span class="chip-badge ai">AI</span>investor brief rev 1 · 2h ago</span>
+      <span class="chip"><span class="chip-badge user">YO</span>working notes · 14h ago</span>
+    </div>
+
+    <!-- ═══ PROVENANCE PANELS (collapsed by default, one click to expand) ═══ -->
+
+    <details class="prov-panel" open>
+      <summary>
+        <span><strong>Routing &amp; operator context</strong> — how this brief was generated</span>
+        <span class="routing-badge">advisor · high reasoning</span>
+      </summary>
+      <div class="prov-body">
+        <div class="row"><span class="k">routingMode</span><span class="v">advisor</span><span class="v">productReports.routing.routingMode</span></div>
+        <div class="row"><span class="k">routingReason</span><span class="v">multi_entity comparison + founder lens → deep reasoning required</span><span class="v">routingReason</span></div>
+        <div class="row"><span class="k">routingSource</span><span class="v">automatic</span><span class="v">routingSource</span></div>
+        <div class="row"><span class="k">plannerModel</span><span class="v">gemini-3.1-flash-lite-preview</span><span class="v">routing.plannerModel</span></div>
+        <div class="row"><span class="k">executionModel</span><span class="v">gemini-3.1-flash-preview</span><span class="v">routing.executionModel</span></div>
+        <div class="row"><span class="k">reasoningEffort</span><span class="v">high</span><span class="v">routing.reasoningEffort</span></div>
+        <div class="row"><span class="k">operator.lens</span><span class="v">investor</span><span class="v">operatorContext.label</span></div>
+        <div class="row"><span class="k">operator.hint</span><span class="v">Concise, citation-heavy, avoid corporate tone</span><span class="v">operatorContext.hint</span></div>
+      </div>
+    </details>
+
+    <details class="prov-panel" open>
+      <summary>
+        <span><strong>Execution plan trace</strong> — what tools ran, in what order</span>
+        <span style="color:var(--muted)">5 steps · 2.7s total · $0.008 · 0 adaptations</span>
+      </summary>
+      <div class="prov-body">
+        <div class="plan-step">
+          <span class="pnum">1</span>
+          <span class="ptool">classify_query</span>
+          <span class="pargs">intent=multi_entity · entities=[Cliffside Ventures, Dirk Xu] · lens=investor</span>
+          <span class="pstatus done">done · 0.12s · 180 tok · $0.0001</span>
+        </div>
+        <div class="plan-step">
+          <span class="pnum">2</span>
+          <span class="ptool">web_search <span class="plan-parallel-badge">parallel</span></span>
+          <span class="pargs">query="Cliffside Ventures Dirk Xu fund 2025" · maxResults=5</span>
+          <span class="pstatus done">done · 1.24s · $0.002</span>
+        </div>
+        <div class="plan-step">
+          <span class="pnum">3</span>
+          <span class="ptool">founder_local_gather <span class="plan-parallel-badge">parallel</span></span>
+          <span class="pargs">entitySlug=cliffside-ventures · depth=shallow</span>
+          <span class="pstatus done">done · 0.31s · $0.0003</span>
+        </div>
+        <div class="plan-step">
+          <span class="pnum">4</span>
+          <span class="ptool">run_recon</span>
+          <span class="pargs">dependsOn=step 2, step 3 · sources=8 → filter=5</span>
+          <span class="pstatus done">done · 0.82s · 2400 tok in · 480 tok out · $0.003</span>
+        </div>
+        <div class="plan-step">
+          <span class="pnum">5</span>
+          <span class="ptool">synthesize_packet</span>
+          <span class="pargs">sections=4 · sourceRefIds=[s1,s2,s3,s4,s5]</span>
+          <span class="pstatus done">done · 0.61s · 1800 tok in · 620 tok out · $0.003</span>
+        </div>
+        <div style="padding-top: 10px; font-size: 11px; color: var(--dim);">
+          Milestones: firstStageAt 120ms · firstSourceAt 1360ms · firstPartialAnswerAt 2480ms · totalDurationMs 2705ms
+        </div>
+      </div>
+    </details>
+
+    <details class="prov-panel">
+      <summary>
+        <span><strong>Sources with confidence</strong> — all 5 web sources graded</span>
+        <span style="color:var(--muted)">confidence avg 0.79 · 2 corroborated · 0 unverified</span>
+      </summary>
+      <div class="prov-body">
+        <div class="row"><span class="k">s1 · linkedin.com</span><span class="v">Dirk R. — Care.com | LinkedIn (pub 2024-08)</span><span class="v ok">0.92</span></div>
+        <div class="row"><span class="k">s2 · linkedin.com</span><span class="v">Zhiling (Dirk) Xu — Consensys | LinkedIn</span><span class="v ok">0.88</span></div>
+        <div class="row"><span class="k">s3 · cliffside.ventures</span><span class="v">Official site (self-reported)</span><span class="v num">0.72</span></div>
+        <div class="row"><span class="k">s4 · crunchbase.com</span><span class="v">Cliffside Ventures profile · $100M AUM claim</span><span class="v num">0.76</span></div>
+        <div class="row"><span class="k">s5 · twitter.com</span><span class="v">@dirkxu launch announcement · Apr 2025</span><span class="v warn">0.55</span></div>
+      </div>
+    </details>
+
+    <!-- Notebook divider -->
+    <div class="notebook-divider">
+      <span>Notebook</span>
+      <div class="view-toggle view-toggle-inline">
+        <button class="active">Document</button>
+        <button>Outline</button>
+        <button>Graph</button>
+        <button>Review</button>
+      </div>
+    </div>
+
+    <!-- Prep brief H2 -->
+    <div class="block kind-h2">
+      <div class="block-gutter"><span class="author-dot ai" title="Agent — gemini-3.1-flash (synthesize step)">A</span></div>
+      <div class="block-body with-provenance">
+        <span class="main">Prep brief</span>
+        <span class="block-provenance">
+          <span class="p-item p-model" title="Model used">gemini-3.1-flash</span>
+          <span class="p-item" title="Tool step">step 5</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- What it is -->
+    <div class="block kind-h3">
+      <div class="block-gutter"><span class="author-dot ai">A</span></div>
+      <div class="block-body"><span class="main">What it is</span></div>
+    </div>
+    <div class="block">
+      <div class="block-gutter"><span class="author-dot ai" title="Agent · 2h ago">A</span></div>
+      <div class="block-body with-provenance">
+        <span class="main">
+          <span class="mention">@Cliffside Ventures</span> is a multi-strategy investment firm founded by <span class="mention">@Dirk Xu</span> in 2025, focusing on both private and public markets with approximately <strong>$100M in AUM</strong><a class="cite" title="linkedin.com · confidence 0.92">[s1]</a><a class="cite" title="crunchbase.com · confidence 0.76">[s4]</a>, primarily consisting of the founder's own capital supplemented by select LPs<a class="cite" title="cliffside.ventures · confidence 0.72">[s3]</a>.
+        </span>
+        <span class="block-provenance">
+          <span class="p-item p-conf" title="Section confidence (weighted average of sources)">conf 0.83</span>
+          <span class="p-item p-model">gemini-3.1-flash</span>
+          <span class="p-item p-cost">$0.001</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- User inserts -->
+    <div class="block focused" style="position:relative">
+      <div class="annotation ok-annotation" style="top:-4px;right:0">↑ User thought · inserted between AI blocks</div>
+      <div class="block-gutter"><span class="author-dot user" title="You — just now">Y</span></div>
+      <div class="block-body" style="color:var(--user)">↳ <em>my note:</em> worth asking Dirk about LP breakdown — how much is external vs his own capital? <span class="hashtag">#question</span></div>
+    </div>
+
+    <!-- Why they'll care -->
+    <div class="block kind-h3">
+      <div class="block-gutter"><span class="author-dot ai">A</span></div>
+      <div class="block-body">Why they'll care</div>
+    </div>
+    <div class="block">
+      <div class="block-gutter"><span class="author-dot ai">A</span></div>
+      <div class="block-body with-provenance">
+        <span class="main">Recent transition from operator roles to founding a firm<a class="cite" title="linkedin.com · 0.92">[s1]</a>; institutional pedigree at <span class="mention">@Binance</span> and <span class="mention">@Bain Capital</span><a class="cite" title="linkedin.com · 0.88">[s2]</a>.</span>
+        <span class="block-provenance">
+          <span class="p-item p-conf">conf 0.90</span>
+          <span class="p-item p-model">gemini-3.1-flash</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Evidence blocks with confidence -->
+    <div class="block kind-evidence">
+      <div class="block-gutter"></div>
+      <div class="block-body">
+        <span style="color:var(--blue)">🔗</span>
+        <span class="link-chip">Dirk R. — Care.com | LinkedIn</span>
+        <span style="color:var(--dim); font-size: 11px">linkedin.com · Aug 2024</span>
+        <span class="conf-badge" title="Quality score from retrieval confidence + corroboration + grounding">0.92</span>
+      </div>
+    </div>
+    <div class="block kind-evidence">
+      <div class="block-gutter"></div>
+      <div class="block-body">
+        <span style="color:var(--blue)">🔗</span>
+        <span class="link-chip">Zhiling (Dirk) Xu — Consensys | LinkedIn</span>
+        <span style="color:var(--dim); font-size: 11px">linkedin.com</span>
+        <span class="conf-badge">0.88</span>
+      </div>
+    </div>
+    <div class="block kind-evidence">
+      <div class="block-gutter"></div>
+      <div class="block-body">
+        <span style="color:var(--blue)">🔗</span>
+        <span class="link-chip">@dirkxu launch announcement</span>
+        <span style="color:var(--dim); font-size: 11px">twitter.com · Apr 2025</span>
+        <span class="conf-badge med" title="Single source, self-reported, no corroboration">0.55</span>
+      </div>
+    </div>
+
+    <!-- Likely questions -->
+    <div class="block kind-h3">
+      <div class="block-gutter"><span class="author-dot ai">A</span></div>
+      <div class="block-body">Likely questions or objections</div>
+    </div>
+    <div class="block" style="position:relative">
+      <div class="annotation ok-annotation" style="top:-4px;right:0">↑ User edited · original preserved via previousBlockId</div>
+      <div class="block-gutter"><span class="author-dot user" title="You edited · 14h ago">Y</span></div>
+      <div class="block-body with-provenance">
+        <span class="main"><strong>Concentrated capital base.</strong> The firm relies heavily on the founder's personal capital, which may limit long-term scalability compared to institutional funds<a class="cite" title="crunchbase.com · 0.76">[s4]</a>.</span>
+        <span class="block-provenance">
+          <span class="p-item p-conf">conf 0.76</span>
+          <span class="p-item" title="Block has version history — click to see prior agent version">rev 2 (was AI)</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- What to do next -->
+    <div class="block kind-h3">
+      <div class="block-gutter"><span class="author-dot ai">A</span></div>
+      <div class="block-body">What to do next</div>
+    </div>
+    <div class="block kind-todo">
+      <div class="block-gutter"><span class="author-dot ai">A</span></div>
+      <div class="block-body">Verify the current LP composition and fund structure during the meeting</div>
+    </div>
+    <div class="block kind-todo">
+      <div class="block-gutter"><span class="author-dot ai">A</span></div>
+      <div class="block-body">Request a track record summary of private market investments</div>
+    </div>
+    <div class="block kind-todo">
+      <div class="block-gutter"><span class="author-dot user" title="You added · just now">Y</span></div>
+      <div class="block-body">Ask about geographic/regulatory exposure in Hong Kong SAR</div>
+    </div>
+
+    <!-- Working notes flow -->
+    <div class="block kind-h2">
+      <div class="block-gutter"><span class="author-dot user">Y</span></div>
+      <div class="block-body">My working notes</div>
+    </div>
+    <div class="block">
+      <div class="block-gutter"><span class="author-dot user" title="You · 14h ago">Y</span></div>
+      <div class="block-body">
+        First call with <span class="mention">@Dirk</span> scheduled next Tuesday. Agenda: LP composition, crypto thesis depth, any overlap with <span class="mention">@Paradigm</span> or <span class="mention">@Multicoin Capital</span>.
+      </div>
+    </div>
+    <div class="block kind-bullet">
+      <div class="block-gutter"><span class="author-dot user">Y</span></div>
+      <div class="block-body">Background check: confirm Binance tenure dates, role, and scope</div>
+    </div>
+
+    <!-- Slash command demo -->
+    <div class="block" style="position:relative">
+      <div class="annotation ok-annotation" style="top:-4px;right:0">↑ Inline AI will inherit routing + operator context</div>
+      <div class="block-gutter"><span class="author-dot user">Y</span></div>
+      <div class="block-body"><span class="slash">/ai summarize the risks</span><span style="opacity:0.4">|</span></div>
+    </div>
+    <div class="slash-palette">
+      <div class="slash-item active">
+        <span class="slash-icon">/ai</span>
+        <span class="slash-label">Generate</span>
+        <span class="slash-desc">write blocks from prompt</span>
+      </div>
+      <div class="slash-item">
+        <span class="slash-icon">/search</span>
+        <span class="slash-label">Web search</span>
+        <span class="slash-desc">pull fresh sources</span>
+      </div>
+      <div class="slash-item">
+        <span class="slash-icon">/deepresearch</span>
+        <span class="slash-label">Deep research</span>
+        <span class="slash-desc">multi-step investigation</span>
+      </div>
+      <div class="slash-item">
+        <span class="slash-icon">@</span>
+        <span class="slash-label">Mention entity</span>
+        <span class="slash-desc">link to another page</span>
+      </div>
+    </div>
+
+    <div class="append-block">Press Enter or click to add a block...</div>
+
+    <!-- Backlinks + related entities from harness -->
+    <div class="backlinks">
+      <div class="backlinks-label">Linked from · 3 places</div>
+      <div class="ref">In <strong>Founder targets Q2</strong> · <em>"...worth revisiting Cliffside given their capital base concerns..."</em></div>
+      <div class="ref">In <strong>Weekly reset · Apr 12</strong> · <em>"...Dirk's new firm Cliffside came up in two unrelated convos..."</em></div>
+      <div class="ref">In <strong>@Dirk Xu</strong> · <em>mentioned by name</em></div>
+    </div>
+
+    <div class="backlinks">
+      <div class="backlinks-label">Related entities (harness-suggested · from run_recon)</div>
+      <div class="ref"><strong>@Paradigm</strong> · peer crypto-native fund · cited in s4</div>
+      <div class="ref"><strong>@Multicoin Capital</strong> · peer · cited in s4</div>
+      <div class="ref"><strong>@Binance</strong> · founder's prior affiliation · cited in s1</div>
+      <div class="ref"><strong>@Bain Capital</strong> · founder's prior affiliation · cited in s2</div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  document.querySelectorAll('.slash-item').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.slash-item').forEach(e => e.classList.remove('active'));
+      el.classList.add('active');
+    });
+  });
+  document.querySelectorAll('.view-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -7,13 +7,15 @@
  * Route: /entity/:slug (via viewRegistry "entity" entry)
  */
 
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "convex/react";
 import {
   ArrowLeft,
   Check,
+  ChevronRight,
   Clock,
+  Ellipsis,
   ExternalLink,
   FileText,
   Link2,
@@ -25,13 +27,28 @@ import {
   TrendingUp,
   StickyNote,
   Upload,
+  Sparkles,
+  Bookmark,
+  RefreshCw,
 } from "lucide-react";
 import { useConvexApi } from "@/lib/convexApi";
 import { buildCockpitPath } from "@/lib/registry/viewRegistry";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
 import { ProductWorkspaceHeader } from "@/features/product/components/ProductWorkspaceHeader";
-import { buildCrmSummary, buildEntityMarkdown, buildEntityShareUrl, buildOutreachDraft } from "@/features/entities/lib/entityExport";
+import { ProductSourceIdentity } from "@/features/product/components/ProductSourceIdentity";
+import {
+  buildPrepBriefPrompt,
+  getReportArtifactLabel,
+  isPrepBriefType,
+} from "../../../../shared/reportArtifacts";
+import {
+  buildCrmSummary,
+  buildEntityExecutiveBrief,
+  buildEntityMarkdown,
+  buildEntityShareUrl,
+  buildOutreachDraft,
+} from "@/features/entities/lib/entityExport";
 import { EntityMemoryGraph } from "@/features/entities/components/EntityMemoryGraph";
 import { EntityNotebookMeta } from "@/features/entities/components/EntityNotebookMeta";
 import { EntityActionPanel } from "@/features/entities/components/EntityActionPanel";
@@ -44,6 +61,24 @@ import {
 import { getStarterEntityWorkspace } from "@/features/entities/lib/starterEntityWorkspaces";
 
 const EntityNoteEditor = lazy(() => import("@/features/entities/components/EntityNoteEditor"));
+const EntityNotebookView = lazy(() =>
+  import("@/features/entities/components/EntityNotebookView").then((mod) => ({
+    default: mod.EntityNotebookView,
+  })),
+);
+const EntityNotebookLive = lazy(() =>
+  import("@/features/entities/components/notebook/EntityNotebookLive").then((mod) => ({
+    default: mod.EntityNotebookLive,
+  })),
+);
+
+const ENTITY_VIEW_MODE_STORAGE_PREFIX = "nodebench.entityViewMode:";
+
+function readInitialEntityViewMode(entitySlug: string): "classic" | "notebook" | "live" {
+  if (typeof window === "undefined") return "notebook";
+  const stored = window.localStorage.getItem(`${ENTITY_VIEW_MODE_STORAGE_PREFIX}${entitySlug}`);
+  return stored === "classic" || stored === "notebook" || stored === "live" ? stored : "notebook";
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -52,6 +87,7 @@ type ReportSection = {
   title: string;
   body: string;
   status?: string;
+  sourceRefIds?: string[];
 };
 
 type ReportSource = {
@@ -77,6 +113,16 @@ type TimelineReport = {
   summary: string;
   query: string;
   lens: string;
+  routing?: {
+    routingMode: "executive" | "advisor";
+    routingReason?: string;
+    plannerModel?: string;
+    executionModel?: string;
+  };
+  operatorContext?: {
+    label?: string;
+    hint?: string;
+  };
   sections: ReportSection[];
   sources: ReportSource[];
   diffs: SectionDiff[];
@@ -93,6 +139,7 @@ type EntityWorkspace = {
     slug: string;
     entityType: string;
     summary: string;
+    savedBecause?: string;
     reportCount: number;
     createdAt: number;
     updatedAt: number;
@@ -103,6 +150,14 @@ type EntityWorkspace = {
   timeline: TimelineReport[];
   evidence: Array<{ _id: string; label: string; type: string; sourceUrl?: string; entityId?: string }>;
   relatedEntities?: Array<{ slug: string; name: string; entityType: string; summary: string; reason?: string }>;
+};
+
+type ReportRefreshResult = {
+  reportId?: string | null;
+  entitySlug?: string | null;
+  query?: string | null;
+  lens?: string | null;
+  refreshPrompt?: string | null;
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -129,6 +184,56 @@ function formatRelative(ts: number | undefined | null): string {
   const days = Math.round(hours / 24);
   if (days < 30) return `${days}d ago`;
   return formatDate(ts);
+}
+
+export function buildEntityReopenChatPath(
+  report: Pick<TimelineReport, "query" | "lens"> | null | undefined,
+  entity: { slug?: string | null; name?: string | null },
+): string {
+  return buildCockpitPath({
+    surfaceId: "workspace",
+    entity: entity.slug ?? undefined,
+    extra: {
+      q: report?.query?.trim() || `Update ${entity.name ?? "this entity"} and show me what changed.`,
+      lens: report?.lens ?? "founder",
+    },
+  });
+}
+
+export function buildEntityRefreshChatPath(
+  refresh: ReportRefreshResult | null | undefined,
+  fallbackReport: Pick<TimelineReport, "_id" | "query" | "lens"> | null | undefined,
+  entity: { slug?: string | null; name?: string | null },
+): string {
+  const subject = entity.name ?? entity.slug ?? "this entity";
+  return buildCockpitPath({
+    surfaceId: "workspace",
+    entity: refresh?.entitySlug ?? entity.slug ?? undefined,
+    extra: {
+      q:
+        refresh?.refreshPrompt?.trim() ||
+        `Update ${subject} and show me what changed from the saved report.`,
+      lens: refresh?.lens ?? fallbackReport?.lens ?? "founder",
+      report: refresh?.reportId ?? fallbackReport?._id ?? null,
+    },
+  });
+}
+
+export function buildEntityPrepChatPath(
+  report: Pick<TimelineReport, "query" | "lens"> | null | undefined,
+  entity: { slug?: string | null; name?: string | null },
+): string {
+  return buildCockpitPath({
+    surfaceId: "workspace",
+    entity: entity.slug ?? undefined,
+    extra: {
+      q: buildPrepBriefPrompt({
+        entityName: entity.name ?? undefined,
+        fallbackQuery: report?.query ?? undefined,
+      }),
+      lens: report?.lens ?? "founder",
+    },
+  });
 }
 
 function entityTypeIcon(type: string) {
@@ -168,6 +273,58 @@ function computeDiffSummary(diffs: SectionDiff[]): string {
   return parts.join(" · ");
 }
 
+function routingToneLabel(report: TimelineReport | null | undefined): string | null {
+  if (!report?.routing?.routingMode) return null;
+  return report.routing.routingMode === "advisor" ? "Deep reasoning" : "Fast path";
+}
+
+const SECTION_PRIORITY = [
+  "what-it-is",
+  "why-it-matters",
+  "signals",
+  "what-changed",
+  "what-to-do-next",
+] as const;
+
+function normalizeSectionKey(section: Pick<ReportSection, "id" | "title">) {
+  const id = section.id?.trim().toLowerCase();
+  if (id) return id;
+  return section.title.trim().toLowerCase().replace(/\s+/g, "-");
+}
+
+function orderReportSections(sections: ReportSection[]) {
+  return [...sections].sort((left, right) => {
+    const leftIndex = SECTION_PRIORITY.indexOf(normalizeSectionKey(left) as (typeof SECTION_PRIORITY)[number]);
+    const rightIndex = SECTION_PRIORITY.indexOf(normalizeSectionKey(right) as (typeof SECTION_PRIORITY)[number]);
+    const resolvedLeft = leftIndex === -1 ? SECTION_PRIORITY.length : leftIndex;
+    const resolvedRight = rightIndex === -1 ? SECTION_PRIORITY.length : rightIndex;
+    if (resolvedLeft !== resolvedRight) return resolvedLeft - resolvedRight;
+    return left.title.localeCompare(right.title);
+  });
+}
+
+function getSourceKey(source: Pick<ReportSource, "id" | "label">) {
+  return source.id?.trim() || source.label.trim();
+}
+
+export function getSectionSources(section: ReportSection, sources: ReportSource[], maxItems?: number) {
+  const refs = new Set((section.sourceRefIds ?? []).map((ref) => ref.trim()).filter(Boolean));
+  if (!refs.size) return [];
+  const matches = sources.filter((source) => refs.has(source.id) || refs.has(source.label));
+  return typeof maxItems === "number" ? matches.slice(0, maxItems) : matches;
+}
+
+export function getSourceSupportingSections(source: ReportSource, sections: ReportSection[]) {
+  const sourceKey = getSourceKey(source);
+  const sourceLabel = source.label.trim();
+  return sections
+    .filter((section) => {
+      const refs = new Set((section.sourceRefIds ?? []).map((ref) => ref.trim()).filter(Boolean));
+      return refs.has(sourceKey) || refs.has(sourceLabel);
+    })
+    .map((section) => section.title);
+}
+
 function totalSources(timeline: TimelineReport[]): number {
   const seen = new Set<string>();
   for (const report of timeline) {
@@ -176,6 +333,118 @@ function totalSources(timeline: TimelineReport[]): number {
     }
   }
   return seen.size;
+}
+
+function collectAllSources(timeline: TimelineReport[]): ReportSource[] {
+  const seen = new Map<string, ReportSource>();
+  for (const report of timeline) {
+    for (const source of report.sources ?? []) {
+      const key = source.id || source.label;
+      if (!seen.has(key)) seen.set(key, source);
+    }
+  }
+  return Array.from(seen.values());
+}
+
+function extractDomain(href: string | undefined): string | null {
+  if (!href) return null;
+  try {
+    return new URL(href).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+function getSavedBecausePlaceholder(entityType: string) {
+  const normalized = entityType.toLowerCase();
+  if (normalized === "job") return "job target";
+  if (normalized === "market") return "market watch";
+  if (normalized === "person") return "people research";
+  return "company briefing";
+}
+
+function getEntityVisitStorageKey(slug: string) {
+  return `nodebench:entity:last-visited:${slug}`;
+}
+
+function readPreviousEntityVisit(slug: string) {
+  if (typeof window === "undefined") return null;
+  const raw = window.localStorage.getItem(getEntityVisitStorageKey(slug));
+  const parsed = raw ? Number(raw) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+type VisitBriefItem = {
+  label: string;
+  value: string;
+  icon: "refresh" | "source" | "delta" | "time";
+};
+
+function buildVisitBrief(timeline: TimelineReport[], previousVisitedAt: number | null): {
+  title: string;
+  summary: string;
+  items: VisitBriefItem[];
+} {
+  const latestReport = timeline[0] ?? null;
+  if (!latestReport) {
+    return {
+      title: "No report history yet",
+      summary: "The first saved run will turn this into a revisitable briefing.",
+      items: [],
+    };
+  }
+
+  if (!previousVisitedAt) {
+    return {
+      title: "First visit",
+      summary: "This page now acts like a living briefing, not a one-off answer.",
+      items: [
+        { label: "Revisions", value: String(timeline.length), icon: "refresh" },
+        { label: "Sources", value: String(totalSources(timeline)), icon: "source" },
+        { label: "Latest", value: formatRelative(latestReport.updatedAt), icon: "time" },
+      ],
+    };
+  }
+
+  const changedReports = timeline.filter((report) => (report.updatedAt ?? report.createdAt) > previousVisitedAt);
+  const newSources = new Set<string>();
+  let updatedSections = 0;
+  for (const report of changedReports) {
+    for (const source of report.sources ?? []) {
+      newSources.add(source.id || source.label);
+    }
+    updatedSections += report.diffs?.length ?? 0;
+  }
+
+  if (!changedReports.length) {
+    return {
+      title: "No new changes since your last visit",
+      summary: `Last refreshed ${formatRelative(latestReport.updatedAt)}. The briefing is stable for now.`,
+      items: [
+        { label: "Revisions", value: String(timeline.length), icon: "refresh" },
+        { label: "Sources", value: String(totalSources(timeline)), icon: "source" },
+        { label: "Latest", value: formatRelative(latestReport.updatedAt), icon: "time" },
+      ],
+    };
+  }
+
+  return {
+    title: `${changedReports.length} update${changedReports.length > 1 ? "s" : ""} since your last visit`,
+    summary: "Open the latest revision, skim the delta, then decide whether this needs follow-up.",
+    items: [
+      { label: "New revisions", value: String(changedReports.length), icon: "refresh" },
+      { label: "New sources", value: String(newSources.size), icon: "source" },
+      { label: "Updated sections", value: String(updatedSections), icon: "delta" },
+      { label: "Latest", value: formatRelative(latestReport.updatedAt), icon: "time" },
+    ],
+  };
+}
+
+function visitBriefIcon(icon: VisitBriefItem["icon"]) {
+  if (icon === "refresh") return <RefreshCw className="h-3.5 w-3.5" />;
+  if (icon === "source") return <Sparkles className="h-3.5 w-3.5" />;
+  if (icon === "delta") return <Bookmark className="h-3.5 w-3.5" />;
+  return <Clock className="h-3.5 w-3.5" />;
 }
 
 // ── Entity Index (no entity selected) ────────────────────────────────────────
@@ -214,91 +483,116 @@ function EntityIndex() {
   );
 
   const displayEntities = entities?.length ? entities : starterEntities;
+  const totalCount = displayEntities.length;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <ProductWorkspaceHeader
-        kicker="Entities"
-        title="Every company, person, and topic you have researched."
-        description="Each entity page compounds searches, notes, evidence, and follow-on work over time."
-      />
+    <div className="mx-auto max-w-[960px] px-4 py-6 sm:px-6 sm:py-8">
+      {/* ── Header ── */}
+      <div className="mb-6 flex items-baseline justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Entities</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {totalCount} {totalCount === 1 ? "entity" : "entities"}
+          </p>
+        </div>
 
-      {/* Search + Filter */}
-      <div className="mt-6 flex items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-content-muted" />
+        {/* Search */}
+        <div className="relative w-full max-w-[280px]">
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
+            id="entity-search"
+            name="entitySearch"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search entities..."
-            className="w-full rounded-lg border border-white/6 bg-transparent py-2.5 pl-10 pr-4 text-sm text-content placeholder:text-content-muted/60 focus:outline-none focus:ring-1 focus:ring-[#d97757]/50"
+            placeholder="Search..."
+            aria-label="Search entities"
+            className="w-full rounded-md border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:border-white/10 dark:bg-white/[0.02] dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-white/20"
           />
         </div>
       </div>
 
-      {/* Filter pills */}
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => setActiveFilter(f)}
-            className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${
-              activeFilter === f
-                ? "bg-[#d97757] text-white"
-                : "bg-white/[0.04] text-content-muted hover:bg-white/[0.08]"
-            }`}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
+      {/* ── Filter tabs ── */}
+      <nav
+        className="mb-4 flex items-center gap-1 overflow-x-auto border-b border-gray-100 dark:border-white/[0.06]"
+        aria-label="Filter entities"
+      >
+        {FILTERS.map((f) => {
+          const isActive = activeFilter === f;
+          return (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setActiveFilter(f)}
+              className={`relative whitespace-nowrap px-3 py-2 text-sm transition-colors ${
+                isActive
+                  ? "text-gray-900 dark:text-gray-100"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              }`}
+              aria-pressed={isActive}
+            >
+              {f}
+              {isActive && (
+                <span className="absolute inset-x-0 bottom-[-1px] h-[2px] bg-gray-900 dark:bg-gray-100" />
+              )}
+            </button>
+          );
+        })}
+      </nav>
 
-      {/* Entity cards */}
-      <div className="mt-6 space-y-2">
-        {displayEntities.map((entity: any) => (
-          <button
-            key={entity._id}
-            type="button"
-            onClick={() => {
-              if (entity.starter) {
-                navigate(buildCockpitPath({ surfaceId: "workspace" }));
-              } else {
-                navigate(`/entity/${encodeURIComponent(entity.slug ?? entity.name)}`);
-              }
-            }}
-            className="group flex w-full items-start gap-4 rounded-lg border border-white/6 bg-white/[0.02] px-4 py-3.5 text-left transition hover:border-white/10 hover:bg-white/[0.04]"
-          >
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-content-muted">
-              {entityTypeIcon(entity.entityType)}
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="truncate text-sm font-semibold text-content group-hover:text-[#d97757] transition">
+      {/* ── List ── */}
+      {displayEntities.length > 0 ? (
+        <div className="overflow-hidden rounded-lg border border-gray-100 bg-white dark:border-white/[0.06] dark:bg-white/[0.01]">
+          {displayEntities.map((entity: any, idx: number) => (
+            <button
+              key={entity._id}
+              type="button"
+              onClick={() => {
+                if (entity.starter) {
+                  navigate(buildCockpitPath({ surfaceId: "workspace" }));
+                } else {
+                  navigate(`/entity/${encodeURIComponent(entity.slug ?? entity.name)}`);
+                }
+              }}
+              className={`group flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.02] ${
+                idx < displayEntities.length - 1 ? "border-b border-gray-100 dark:border-white/[0.04]" : ""
+              }`}
+            >
+              {/* Icon */}
+              <span className="flex-shrink-0 text-gray-500 dark:text-gray-400">
+                {entityTypeIcon(entity.entityType)}
+              </span>
+
+              {/* Title + summary (inline) */}
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <span className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                   {entity.name}
                 </span>
+                <span className="hidden truncate text-sm text-gray-500 dark:text-gray-400 md:block">
+                  {entity.summary}
+                </span>
+              </div>
+
+              {/* Metadata */}
+              <div className="flex flex-shrink-0 items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
                 {entity.reportCount > 0 && (
-                  <span className="shrink-0 rounded-full bg-white/[0.04] px-2 py-0.5 text-[10px] text-content-muted">
-                    {entity.reportCount} {entity.reportCount === 1 ? "search" : "searches"}
+                  <span className="hidden tabular-nums sm:inline">
+                    {entity.reportCount} brief{entity.reportCount === 1 ? "" : "s"}
                   </span>
                 )}
+                <span className="tabular-nums">
+                  {entity.updatedLabel ?? formatRelative(entity.updatedAt)}
+                </span>
+                <ChevronRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-60" />
               </div>
-              <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-content-muted">
-                {entity.summary}
-              </p>
-            </div>
-            <span className="shrink-0 pt-1 text-[10px] text-content-muted">
-              {entity.updatedLabel ?? formatRelative(entity.updatedAt)}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* Empty state */}
-      {entities !== undefined && entities.length === 0 && search && (
-        <div className="mt-12 text-center text-sm text-content-muted">
-          No entities matching &ldquo;{search}&rdquo;
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-gray-100 bg-white py-16 text-center dark:border-white/[0.06] dark:bg-white/[0.01]">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {search ? `No entities matching "${search}"` : "No entities yet."}
+          </p>
         </div>
       )}
     </div>
@@ -309,6 +603,7 @@ function EntityIndex() {
 
 export function EntityPage({ entitySlug }: { entitySlug?: string }) {
   useProductBootstrap();
+  const api = useConvexApi();
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
@@ -323,11 +618,30 @@ export function EntityPage({ entitySlug }: { entitySlug?: string }) {
   // If no entity, show the index
   if (!slug) return <EntityIndex />;
 
-  return <EntityWorkspaceView slug={slug} />;
+  if (!api) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-8">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 w-24 rounded bg-white/[0.06]" />
+          <div className="h-8 w-64 rounded bg-white/[0.06]" />
+          <div className="h-4 w-48 rounded bg-white/[0.06]" />
+          <div className="mt-8 h-32 rounded-lg bg-white/[0.03]" />
+          <div className="mt-4 h-48 rounded-lg bg-white/[0.03]" />
+        </div>
+      </div>
+    );
+  }
+
+  return <EntityWorkspaceView slug={slug} api={api} />;
 }
 
-function EntityWorkspaceView({ slug }: { slug: string }) {
-  const api = useConvexApi();
+function EntityWorkspaceView({
+  slug,
+  api,
+}: {
+  slug: string;
+  api: NonNullable<ReturnType<typeof useConvexApi>>;
+}) {
   const navigate = useNavigate();
   const anonymousSessionId = getAnonymousProductSessionId();
   const generateUploadUrl = useMutation(api?.domains.product.me.generateUploadUrl ?? ("skip" as any));
@@ -340,9 +654,21 @@ function EntityWorkspaceView({ slug }: { slug: string }) {
       ? { anonymousSessionId, entitySlug: slug }
       : "skip",
   ) as EntityWorkspace | null | undefined;
+  const systemWorkspace = useQuery(
+    api?.domains?.product?.systemIntelligence?.getSystemEntityWorkspace ?? ("skip" as any),
+    api?.domains?.product?.systemIntelligence?.getSystemEntityWorkspace
+      ? { entitySlug: slug }
+      : "skip",
+  ) as EntityWorkspace | null | undefined;
 
   const saveNoteDocument = useMutation(
     api?.domains.product.documents.saveEntityNoteDocument ?? ("skip" as any),
+  );
+  const requestRefresh = useMutation(
+    api?.domains.product.reports.requestRefresh ?? ("skip" as any),
+  );
+  const updateSavedBecause = useMutation(
+    api?.domains.product.entities.updateEntitySavedBecause ?? ("skip" as any),
   );
   const ensureNoteDocumentBackfill = useMutation(
     api?.domains.product.documents.ensureEntityNoteDocumentBackfill ?? ("skip" as any),
@@ -356,9 +682,21 @@ function EntityWorkspaceView({ slug }: { slug: string }) {
 
   const [noteDocumentDraft, setNoteDocumentDraft] = useState<EntityNoteDocument>(createEmptyEntityNoteDocument());
   const [noteSaving, setNoteSaving] = useState(false);
-  const [copyState, setCopyState] = useState<string | null>(null);
+  const [copyState, setCopyState] = useState<"link" | "brief" | "markdown" | "outreach" | "crm" | null>(null);
+  const [showActions, setShowActions] = useState(false);
+  const [savedBecauseDraft, setSavedBecauseDraft] = useState("");
+  const [savingSavedBecause, setSavingSavedBecause] = useState(false);
+  const [refreshingReport, setRefreshingReport] = useState(false);
   const [uploadingEvidence, setUploadingEvidence] = useState(false);
   const [attachingEvidenceId, setAttachingEvidenceId] = useState<string | null>(null);
+  const [workspaceRailView, setWorkspaceRailView] = useState<"evidence" | "context">("evidence");
+  const [showContextGraph, setShowContextGraph] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
+  const [showSources, setShowSources] = useState(false);
+  const [entityViewMode, setEntityViewMode] = useState<"classic" | "notebook" | "live">(() =>
+    readInitialEntityViewMode(slug),
+  );
+  const savedBecauseInputId = useId();
 
   const starterWorkspace = useMemo<EntityWorkspace | null>(() => {
     const starter = getStarterEntityWorkspace(slug);
@@ -410,13 +748,27 @@ function EntityWorkspaceView({ slug }: { slug: string }) {
     };
   }, [slug]);
 
-  const workspace = liveWorkspace ?? starterWorkspace;
+  const workspace = liveWorkspace ?? systemWorkspace ?? starterWorkspace;
   const hasLiveEntity = Boolean(liveWorkspace?.entity?._id);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(`${ENTITY_VIEW_MODE_STORAGE_PREFIX}${slug}`, entityViewMode);
+  }, [entityViewMode, slug]);
+
+  useEffect(() => {
+    if (starterWorkspace && !liveWorkspace && !systemWorkspace && entityViewMode !== "classic") {
+      setEntityViewMode("classic");
+    }
+  }, [entityViewMode, liveWorkspace, starterWorkspace, systemWorkspace]);
 
   useEffect(() => {
     if (!workspace) return;
     setNoteDocumentDraft(
       buildEntityNoteDocumentDraft(workspace.entity.name, workspace.noteDocument ?? null, workspace.note),
+    );
+    setSavedBecauseDraft(
+      workspace.entity.savedBecause?.trim() || getSavedBecausePlaceholder(workspace.entity.entityType),
     );
   }, [workspace]);
 
@@ -450,11 +802,13 @@ function EntityWorkspaceView({ slug }: { slug: string }) {
     }
   }, [anonymousSessionId, liveWorkspace?.entity?._id, noteDocumentDraft, saveNoteDocument]);
 
-  const copyPayload = useCallback(async (kind: "link" | "markdown" | "outreach" | "crm") => {
+  const copyPayload = useCallback(async (kind: "link" | "brief" | "markdown" | "outreach" | "crm") => {
     if (!workspace) return;
     const payload =
       kind === "link"
         ? buildEntityShareUrl(workspace.entity.slug)
+        : kind === "brief"
+          ? buildEntityExecutiveBrief(workspace)
         : kind === "markdown"
           ? buildEntityMarkdown(workspace)
           : kind === "outreach"
@@ -489,13 +843,115 @@ function EntityWorkspaceView({ slug }: { slug: string }) {
     }
   }, [anonymousSessionId, api, generateUploadUrl, liveWorkspace?.entity?._id, saveFileMutation, workspace]);
 
+  const handleSaveSavedBecause = useCallback(async () => {
+    if (!liveWorkspace?.entity?._id || !updateSavedBecause) return;
+    const nextValue = savedBecauseDraft.trim();
+    if (!nextValue) return;
+    setSavingSavedBecause(true);
+    try {
+      await updateSavedBecause({
+        anonymousSessionId,
+        entityId: liveWorkspace.entity._id as any,
+        savedBecause: nextValue,
+      });
+    } catch (error) {
+      console.error("[entity] Failed to save savedBecause:", error);
+    } finally {
+      setSavingSavedBecause(false);
+    }
+  }, [anonymousSessionId, liveWorkspace?.entity?._id, savedBecauseDraft, updateSavedBecause]);
+
+  const handleRefreshLatestReport = useCallback(async () => {
+    const latestReport = liveWorkspace?.latest;
+    if (!latestReport?._id || !requestRefresh) return;
+    setRefreshingReport(true);
+    try {
+      const result = await requestRefresh({
+        anonymousSessionId,
+        reportId: latestReport._id as any,
+        triggeredBy: "user",
+      });
+      navigate(
+        buildEntityRefreshChatPath(
+          result as ReportRefreshResult,
+          latestReport,
+          liveWorkspace.entity,
+        ),
+      );
+    } catch (error) {
+      console.error("[entity] Failed to queue report refresh:", error);
+    } finally {
+      setRefreshingReport(false);
+    }
+  }, [anonymousSessionId, liveWorkspace?.entity, liveWorkspace?.latest, navigate, requestRefresh]);
+
   const sourceCount = useMemo(
     () => totalSources(workspace?.timeline ?? []),
     [workspace?.timeline],
   );
+  const allSources = useMemo(
+    () => collectAllSources(workspace?.timeline ?? []),
+    [workspace?.timeline],
+  );
+
+  // Close sources modal on Escape
+  useEffect(() => {
+    if (!showSources) return;
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setShowSources(false);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [showSources]);
+  const latestBriefReport = useMemo(
+    () => workspace?.latest ?? workspace?.timeline?.[0] ?? null,
+    [workspace?.latest, workspace?.timeline],
+  );
+  const latestBriefSections = useMemo(
+    () =>
+      orderReportSections(
+        (latestBriefReport?.sections ?? []).filter((section) => section.body.trim().length > 0),
+      ),
+    [latestBriefReport],
+  );
+  const latestBriefSources = latestBriefReport?.sources ?? [];
+  const evidenceSections = useMemo(
+    () =>
+      latestBriefSections.filter((section) => getSectionSources(section, latestBriefSources).length > 0),
+    [latestBriefSections, latestBriefSources],
+  );
+  const previousVisitedAt = useMemo(() => readPreviousEntityVisit(slug), [slug]);
+  const visitBrief = useMemo(
+    () => buildVisitBrief(workspace?.timeline ?? [], previousVisitedAt),
+    [previousVisitedAt, workspace?.timeline],
+  );
+  const [selectedEvidenceSectionId, setSelectedEvidenceSectionId] = useState<string | null>(null);
+  const [selectedEvidenceSourceKey, setSelectedEvidenceSourceKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(getEntityVisitStorageKey(slug), String(Date.now()));
+  }, [slug, workspace?.entity?.updatedAt]);
+
+  useEffect(() => {
+    const nextSection =
+      evidenceSections.find((section) => section.id === selectedEvidenceSectionId) ?? evidenceSections[0] ?? null;
+    const nextSources = nextSection ? getSectionSources(nextSection, latestBriefSources) : [];
+    const nextSource =
+      nextSources.find((source) => getSourceKey(source) === selectedEvidenceSourceKey) ?? nextSources[0] ?? null;
+    const nextSectionId = nextSection?.id ?? null;
+    const nextSourceKey = nextSource ? getSourceKey(nextSource) : null;
+
+    if (nextSectionId !== selectedEvidenceSectionId) {
+      setSelectedEvidenceSectionId(nextSectionId);
+    }
+    if (nextSourceKey !== selectedEvidenceSourceKey) {
+      setSelectedEvidenceSourceKey(nextSourceKey);
+    }
+  }, [evidenceSections, latestBriefSources, selectedEvidenceSectionId, selectedEvidenceSourceKey]);
 
   // Loading state
-  if (liveWorkspace === undefined && !starterWorkspace) {
+  if (liveWorkspace === undefined && systemWorkspace === undefined && !starterWorkspace) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-8">
         <div className="animate-pulse space-y-4">
@@ -535,121 +991,1081 @@ function EntityWorkspaceView({ slug }: { slug: string }) {
   }
 
   const { entity, note, timeline, evidence } = workspace;
+  const latestReport = latestBriefReport;
+  const latestDiffSummary = latestReport ? computeDiffSummary(latestReport.diffs ?? []) : "";
+  const latestSections = latestBriefSections;
+  const latestWhatItIs =
+    latestSections.find((section) => normalizeSectionKey(section) === "what-it-is")?.body ??
+    latestReport?.summary ??
+    entity.summary;
+  const latestNextStep =
+    latestSections.find((section) => normalizeSectionKey(section) === "what-to-do-next")?.body ?? "";
+  const supportingSections = latestSections.filter((section) => {
+    const normalized = normalizeSectionKey(section);
+    return normalized !== "what-it-is" && normalized !== "what-to-do-next";
+  });
+  const spotlightSections = supportingSections.slice(0, 3);
+  const hiddenSupportingSectionCount = Math.max(0, supportingSections.length - spotlightSections.length);
+  const latestSourcePreview = latestBriefSources;
+  const selectedEvidenceSection =
+    evidenceSections.find((section) => section.id === selectedEvidenceSectionId) ?? evidenceSections[0] ?? null;
+  const selectedEvidenceSources = selectedEvidenceSection
+    ? getSectionSources(selectedEvidenceSection, latestSourcePreview)
+    : [];
+  const selectedEvidenceSource =
+    selectedEvidenceSources.find((source) => getSourceKey(source) === selectedEvidenceSourceKey) ??
+    selectedEvidenceSources[0] ??
+    null;
+  const selectedEvidenceSupportTitles = selectedEvidenceSource
+    ? getSourceSupportingSections(selectedEvidenceSource, latestSections)
+    : [];
+  const relatedEntityCount = workspace.relatedEntities?.length ?? 0;
+  const noteDocument = workspace.noteDocument ?? noteDocumentDraft;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      {/* Back nav */}
-      <button
-        type="button"
-        onClick={() => navigate("/entity")}
-        className="mb-6 flex items-center gap-1.5 text-sm text-content-muted hover:text-content transition"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        All entities
-      </button>
+    <div className="mx-auto max-w-[1100px] px-4 py-6 pb-16 sm:px-6 sm:py-8">
+      {/* ── Breadcrumb ── */}
+      <nav className="mb-4 flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400" aria-label="Breadcrumb">
+        <button
+          type="button"
+          onClick={() => navigate(buildCockpitPath({ surfaceId: "packets" }))}
+          className="flex items-center gap-1 transition-colors hover:text-gray-700 dark:hover:text-gray-200"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Reports
+        </button>
+        <ChevronRight className="h-3 w-3 text-gray-300 dark:text-gray-600" />
+        <span className="truncate text-gray-700 dark:text-gray-300">{entity.name}</span>
+      </nav>
 
-      {/* ── Entity Header ──────────────────────────────────────────────── */}
-      <header className="pb-6 border-b border-white/6">
-        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
-          {entityTypeIcon(entity.entityType)}
-          <span>{entity.entityType}</span>
+      {/* ── Entity Header (Linear-style) ── */}
+      <header className="mb-6 border-b border-gray-100 pb-5 dark:border-white/[0.06]">
+        {/* Type + badges row */}
+        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <span className="flex items-center gap-1.5 capitalize">
+            {entityTypeIcon(entity.entityType)}
+            {entity.entityType}
+          </span>
+          {entity.savedBecause ? (
+            <>
+              <span className="text-gray-300 dark:text-gray-600">·</span>
+              <span className="truncate">Saved because: {entity.savedBecause}</span>
+            </>
+          ) : null}
         </div>
-        <h1 className="mt-1 text-3xl font-bold tracking-tight text-content">
-          {entity.name}
-        </h1>
-        <p className="mt-2 text-sm leading-6 text-content-muted">{entity.summary}</p>
-        <div className="mt-3 flex flex-wrap gap-4 text-sm text-content-muted">
-          <span className="flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5" />
+
+        {/* Title + actions row */}
+        <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+              {entity.name}
+            </h1>
+            <p className="mt-2 max-w-[720px] text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+              {entity.summary}
+            </p>
+          </div>
+
+          {/* Action cluster */}
+          <div className="flex flex-shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate(buildEntityReopenChatPath(timeline[0] ?? null, entity))}
+              className="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-primary)] px-3 py-1.5 text-sm font-medium text-white transition hover:bg-[var(--accent-primary-hover)]"
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              Reopen in Chat
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(buildEntityPrepChatPath(timeline[0] ?? null, entity))}
+              className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06]"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Prep brief
+            </button>
+            {hasLiveEntity && latestReport?._id ? (
+              <button
+                type="button"
+                onClick={() => void handleRefreshLatestReport()}
+                disabled={refreshingReport}
+                className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06]"
+                aria-label="Refresh report"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${refreshingReport ? "animate-spin" : ""}`} />
+                {refreshingReport ? "Refreshing..." : "Refresh"}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              aria-expanded={showActions}
+              aria-label={showActions ? "Close actions menu" : "Open actions menu"}
+              onClick={() => setShowActions((current) => !current)}
+              className="inline-flex items-center justify-center rounded-md border border-gray-200 bg-white p-1.5 text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06]"
+            >
+              <Ellipsis className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Metadata row (Linear-style inline chips) */}
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-500 dark:text-gray-400">
+          <span className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
             First seen {formatDate(entity.createdAt)}
           </span>
-          <span>
-            {entity.reportCount} {entity.reportCount === 1 ? "search" : "searches"}
+          <span className="tabular-nums">
+            {entity.reportCount} {entity.reportCount === 1 ? "report" : "reports"}
           </span>
-          <span>{sourceCount} sources</span>
-          {note && <span>1 note</span>}
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() =>
-              navigate(
-                buildCockpitPath({
-                  surfaceId: "workspace",
-                  entity: entity.slug,
-                  extra: {
-                    q: timeline[0]?.query ?? `Update ${entity.name} and show me what changed.`,
-                    lens: timeline[0]?.lens ?? "founder",
-                  },
-                }),
-              )
-            }
-            className="rounded-full bg-[#d97757] px-4 py-2 text-xs font-medium text-white transition hover:bg-[#c4684a]"
+            onClick={() => sourceCount > 0 && setShowSources(true)}
+            disabled={sourceCount === 0}
+            className="tabular-nums underline-offset-2 transition-colors hover:text-gray-700 hover:underline disabled:cursor-default disabled:no-underline disabled:hover:text-inherit dark:hover:text-gray-200"
+            aria-label={`View all ${sourceCount} sources`}
           >
-            Reopen in Chat
+            {sourceCount} source{sourceCount === 1 ? "" : "s"}
           </button>
-          <button
-            type="button"
-            onClick={() => void copyPayload("link")}
-            className="rounded-full border border-white/8 bg-white/[0.03] px-4 py-2 text-xs text-content-muted transition hover:bg-white/[0.06]"
-          >
-            <span className="inline-flex items-center gap-1.5">
-              <Link2 className="h-3 w-3" />
-              {copyState === "link" ? "Copied link" : "Copy link"}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => void copyPayload("markdown")}
-            className="rounded-full border border-white/8 bg-white/[0.03] px-4 py-2 text-xs text-content-muted transition hover:bg-white/[0.06]"
-          >
-            {copyState === "markdown" ? "Copied markdown" : "Copy markdown"}
-          </button>
-          <button
-            type="button"
-            onClick={() => void copyPayload("outreach")}
-            className="rounded-full border border-white/8 bg-white/[0.03] px-4 py-2 text-xs text-content-muted transition hover:bg-white/[0.06]"
-          >
-            {copyState === "outreach" ? "Copied outreach" : "Copy outreach"}
-          </button>
-          <button
-            type="button"
-            onClick={() => void copyPayload("crm")}
-            className="rounded-full border border-white/8 bg-white/[0.03] px-4 py-2 text-xs text-content-muted transition hover:bg-white/[0.06]"
-          >
-            {copyState === "crm" ? "Copied CRM block" : "Copy CRM block"}
-          </button>
+          {note ? <span>1 note</span> : null}
+          <span className="ml-auto tabular-nums">
+            Updated {formatRelative(latestReport?.updatedAt ?? entity.updatedAt)}
+          </span>
         </div>
       </header>
 
-      {/* ── User Notes (editable, Obsidian-like) ───────────────────────── */}
-      <section className="py-6 border-b border-white/6">
-        <EntityActionPanel
-          anonymousSessionId={anonymousSessionId}
-          entitySlug={entity.slug}
-          revisionId={workspace.latest?._id ?? null}
-        />
+      {/* ── Sources modal ── */}
+      {showSources ? (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-sm sm:p-8"
+          onClick={() => setShowSources(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Sources for ${entity.name}`}
+        >
+          <div
+            className="relative w-full max-w-[720px] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-white/[0.1] dark:bg-[#1a1a1b]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-3 dark:border-white/[0.06]">
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {sourceCount} source{sourceCount === 1 ? "" : "s"}
+                </h2>
+                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  Across all saved revisions of {entity.name}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSources(false)}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/[0.06] dark:hover:text-gray-300"
+                aria-label="Close sources"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Source list */}
+            <div className="max-h-[60vh] overflow-y-auto">
+              {allSources.length === 0 ? (
+                <div className="px-5 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+                  No sources yet.
+                </div>
+              ) : (
+                <ul className="divide-y divide-gray-100 dark:divide-white/[0.04]">
+                  {allSources.map((source, idx) => {
+                    const domain = source.domain ?? extractDomain(source.href);
+                    const hasLink = Boolean(source.href);
+                    const content = (
+                      <>
+                        <span className="w-6 flex-shrink-0 text-xs tabular-nums text-gray-400 dark:text-gray-500">
+                          {idx + 1}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {source.label}
+                          </div>
+                          {domain ? (
+                            <div className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
+                              {domain}
+                            </div>
+                          ) : null}
+                        </div>
+                        {source.type ? (
+                          <span className="flex-shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[11px] uppercase tracking-wide text-gray-500 dark:bg-white/[0.05] dark:text-gray-400">
+                            {source.type}
+                          </span>
+                        ) : null}
+                        {hasLink ? (
+                          <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 text-gray-400 dark:text-gray-500" />
+                        ) : null}
+                      </>
+                    );
+                    return (
+                      <li key={source.id || source.label}>
+                        {hasLink ? (
+                          <a
+                            href={source.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 px-5 py-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.02]"
+                          >
+                            {content}
+                          </a>
+                        ) : (
+                          <div className="flex items-center gap-3 px-5 py-2.5">{content}</div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* ── Inline context strip (replaces right sidebar, Linear-style) ── */}
+      <div className="mb-4 flex flex-col gap-3 rounded-lg border border-gray-100 bg-gray-50/40 px-4 py-3 text-sm dark:border-white/[0.06] dark:bg-white/[0.015] sm:flex-row sm:items-center sm:justify-between">
+        {/* Since last visit — compact */}
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex-shrink-0 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Since last visit
+          </span>
+          <span className="truncate text-gray-700 dark:text-gray-300">{visitBrief.title}</span>
+          {visitBrief.items.find((item) => item.icon === "time") ? (
+            <span className="flex-shrink-0 text-xs text-gray-400 dark:text-gray-500">
+              {visitBrief.items.find((item) => item.icon === "time")?.value}
+            </span>
+          ) : null}
+        </div>
+
+        {/* Saved because — compact inline editor */}
+        <div className="flex flex-shrink-0 items-center gap-2">
+          <Bookmark className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
+          <input
+            type="text"
+            id={savedBecauseInputId}
+            name="entitySavedBecause"
+            value={savedBecauseDraft}
+            onChange={(event) => setSavedBecauseDraft(event.target.value)}
+            onBlur={() => {
+              if (
+                hasLiveEntity &&
+                savedBecauseDraft.trim() &&
+                savedBecauseDraft.trim() !== (entity.savedBecause ?? "").trim()
+              ) {
+                void handleSaveSavedBecause();
+              }
+            }}
+            placeholder={getSavedBecausePlaceholder(entity.entityType)}
+            aria-label="Saved because"
+            className="w-full max-w-[300px] rounded-md border border-gray-200 bg-white px-2.5 py-1 text-sm text-gray-700 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300 dark:placeholder:text-gray-500"
+          />
+          {savingSavedBecause ? (
+            <span className="text-xs text-gray-400 dark:text-gray-500">Saving...</span>
+          ) : null}
+        </div>
+      </div>
+
+      {/* ── Activity ribbon (Google Doc-style: who touched what) ── */}
+      {(timeline.length > 0 || note) && (
+        <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+          <span className="font-medium text-gray-600 dark:text-gray-400">Recent edits:</span>
+          {timeline.slice(0, 3).map((report) => (
+            <span key={report._id} className="inline-flex items-center gap-1.5">
+              <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[var(--accent-primary)]/15 text-[9px] font-semibold text-[var(--accent-primary)]">
+                AI
+              </span>
+              <span>{report.lens ? `${report.lens} brief` : "brief"} rev {report.revision ?? "—"}</span>
+              <span className="text-gray-400 dark:text-gray-500">· {formatRelative(report.updatedAt ?? report.createdAt)}</span>
+            </span>
+          ))}
+          {note?.updatedAt ? (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-gray-200 text-[9px] font-semibold text-gray-700 dark:bg-white/[0.1] dark:text-gray-300">
+                YO
+              </span>
+              <span>working notes</span>
+              <span className="text-gray-400 dark:text-gray-500">· {formatRelative(note.updatedAt)}</span>
+            </span>
+          ) : null}
+        </div>
+      )}
+
+      {/* ── View toggle: Classic / Notebook (derived, read-only) / Live (persisted blocks, editable) ── */}
+      <div className="mt-6 flex items-center justify-between gap-3">
+        <div className="text-xs text-gray-500 dark:text-gray-400">
+          {entityViewMode === "live"
+            ? "Live notebook — blocks are persisted, inline-editable, slash commands active."
+            : entityViewMode === "notebook"
+              ? "Notebook view — read-only derivation with full harness lineage."
+              : "Classic view — sections rendered as stacked panels."}
+        </div>
+        <div className="flex gap-1 rounded-md border border-gray-200 bg-gray-50/60 p-0.5 dark:border-white/10 dark:bg-white/[0.02]">
+          <button
+            type="button"
+            onClick={() => setEntityViewMode("classic")}
+            className={`rounded px-2.5 py-1 text-xs transition-colors ${
+              entityViewMode === "classic"
+                ? "bg-white text-gray-900 shadow-sm dark:bg-white/10 dark:text-gray-100"
+                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            }`}
+          >
+            Classic
+          </button>
+          <button
+            type="button"
+            onClick={() => setEntityViewMode("notebook")}
+            className={`rounded px-2.5 py-1 text-xs transition-colors ${
+              entityViewMode === "notebook"
+                ? "bg-white text-gray-900 shadow-sm dark:bg-white/10 dark:text-gray-100"
+                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            }`}
+          >
+            Notebook
+          </button>
+          <button
+            type="button"
+            onClick={() => setEntityViewMode("live")}
+            className={`rounded px-2.5 py-1 text-xs transition-colors ${
+              entityViewMode === "live"
+                ? "bg-white text-gray-900 shadow-sm dark:bg-white/10 dark:text-gray-100"
+                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            }`}
+          >
+            Live ✨
+          </button>
+        </div>
+      </div>
+
+      {entityViewMode === "notebook" ? (
+        <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading notebook…</div>}>
+          <EntityNotebookView entitySlug={entity.slug} />
+        </Suspense>
+      ) : null}
+
+      {entityViewMode === "live" ? (
+        <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading live notebook…</div>}>
+          <EntityNotebookLive entitySlug={entity.slug} />
+        </Suspense>
+      ) : null}
+
+      {/* ── Notebook flow (Roam/Notion-style: one continuous page) ── */}
+      <section className={`mt-6 ${entityViewMode !== "classic" ? "hidden" : ""}`}>
+        <article>
+          <div className="flex flex-col gap-4 pb-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Current brief</h2>
+              <div className="mt-1.5 text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+                {latestReport?.title ?? `Saved ${entity.entityType} memory`}
+              </div>
+              <p className="mt-1.5 max-w-[720px] text-sm leading-6 text-gray-500 dark:text-gray-400">
+                Open this first. The latest read should come before the graph, notes, and full history.
+              </p>
+              {latestReport?.operatorContext?.label ? (
+                <p className="mt-3 text-xs leading-6 text-content-muted">
+                  Saved with your context: {latestReport.operatorContext.label}
+                </p>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {isPrepBriefType(latestReport?.type) ? (
+                <span className="nb-chip text-[10px] uppercase tracking-[0.18em]">
+                  {getReportArtifactLabel(latestReport.type)}
+                </span>
+              ) : null}
+              <span className="nb-chip text-[10px] uppercase tracking-[0.18em]">
+                {latestReport?.lens ?? "founder"}
+              </span>
+              {routingToneLabel(latestReport) ? (
+                <span className="nb-chip text-[10px] uppercase tracking-[0.18em]">
+                  {routingToneLabel(latestReport)}
+                </span>
+              ) : null}
+              {latestReport?.revision ? (
+                <span className="nb-chip text-[10px] uppercase tracking-[0.18em]">
+                  Rev {latestReport.revision}
+                </span>
+              ) : null}
+              <span className="nb-chip text-[10px] uppercase tracking-[0.18em]">
+                {latestSourcePreview.length} sources
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-4">
+            <div className="border-t border-gray-100 pt-4 dark:border-white/[0.06]">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                What it is
+              </div>
+              <p className="mt-3 text-sm leading-7 text-content">{latestWhatItIs}</p>
+            </div>
+
+            {spotlightSections.map((section) => {
+              const sectionSources = getSectionSources(section, latestSourcePreview, 2);
+              return (
+                <div
+                  key={section.id}
+                  className="border-t border-gray-100 pt-4 dark:border-white/[0.06]"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                      {section.title}
+                    </h3>
+                    {section.status ? (
+                      <span className="text-[11px] text-gray-400 dark:text-gray-500">
+                        {section.status}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-2 text-sm leading-7 text-gray-700 dark:text-gray-300">{section.body}</p>
+                  {sectionSources.length > 0 ? (
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                      <ProductSourceIdentity
+                        sourceUrls={sectionSources
+                          .map((source) => source.href)
+                          .filter((href): href is string => typeof href === "string" && href.trim().length > 0)}
+                        sourceLabels={sectionSources.map((source) => source.label)}
+                        maxItems={2}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedEvidenceSectionId(section.id);
+                          setSelectedEvidenceSourceKey(getSourceKey(sectionSources[0]));
+                        }}
+                        className="text-xs font-medium text-[#d97757] transition hover:text-[#c9684a]"
+                      >
+                        Inspect sources
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+
+            {hiddenSupportingSectionCount > 0 ? (
+              <div className="text-sm text-content-muted">
+                + {hiddenSupportingSectionCount} more section{hiddenSupportingSectionCount === 1 ? "" : "s"} in the
+                timeline below
+              </div>
+            ) : null}
+
+            {evidenceSections.length > 0 ? (
+              <div className="border-t border-gray-100 pt-4 dark:border-white/[0.06]">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                      Source trail
+                    </div>
+                    <p className="mt-2 max-w-[640px] text-sm leading-6 text-content-muted">
+                      Open one section at a time and inspect the exact supporting sources before reopening the run.
+                    </p>
+                  </div>
+                  <div className="text-xs text-content-muted">
+                    {evidenceSections.length} section{evidenceSections.length === 1 ? "" : "s"} linked to evidence
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {evidenceSections.map((section) => {
+                    const isActive = section.id === selectedEvidenceSection?.id;
+                    const linkedCount = getSectionSources(section, latestSourcePreview).length;
+                    return (
+                      <button
+                        key={section.id}
+                        type="button"
+                        onClick={() => {
+                          const firstSource = getSectionSources(section, latestSourcePreview)[0] ?? null;
+                          setSelectedEvidenceSectionId(section.id);
+                          setSelectedEvidenceSourceKey(firstSource ? getSourceKey(firstSource) : null);
+                        }}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                          isActive
+                            ? "border-[#d97757]/30 bg-[#d97757]/10 text-[#d97757]"
+                            : "border-black/8 bg-black/[0.03] text-content-muted hover:border-[#d97757]/20 hover:text-content dark:border-white/10 dark:bg-white/[0.03]"
+                        }`}
+                      >
+                        {section.title}
+                        <span className="ml-1.5 text-[10px] uppercase tracking-[0.16em] opacity-75">
+                          {linkedCount}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {selectedEvidenceSection ? (
+                  <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+                    <div className="space-y-2">
+                      {selectedEvidenceSources.map((source) => {
+                        const isActive = getSourceKey(source) === (selectedEvidenceSource ? getSourceKey(selectedEvidenceSource) : null);
+                        return (
+                          <button
+                            key={getSourceKey(source)}
+                            type="button"
+                            onClick={() => setSelectedEvidenceSourceKey(getSourceKey(source))}
+                            className={`w-full rounded-md border px-3 py-2 text-left transition ${
+                              isActive
+                                ? "border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/5"
+                                : "border-gray-100 hover:border-gray-200 dark:border-white/[0.06] dark:hover:border-white/[0.12]"
+                            }`}
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="text-sm font-medium text-content">{source.label}</div>
+                              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                                {source.type ?? "source"}
+                              </div>
+                            </div>
+                            <div className="mt-2 text-xs leading-6 text-content-muted">
+                              {(source.domain || source.href || "No linked URL").replace(/^https?:\/\//, "")}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="border-t border-gray-100 pt-4 dark:border-white/[0.06]">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                        Selected source
+                      </div>
+                      {selectedEvidenceSource ? (
+                        <>
+                          <div className="mt-3 text-base font-semibold tracking-tight text-content">
+                            {selectedEvidenceSource.label}
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.18em] text-content-muted">
+                            {selectedEvidenceSource.type ? (
+                              <span className="nb-chip text-[10px] uppercase tracking-[0.16em]">
+                                {selectedEvidenceSource.type}
+                              </span>
+                            ) : null}
+                            {selectedEvidenceSource.domain ? (
+                              <span className="nb-chip text-[10px] normal-case tracking-normal">
+                                {selectedEvidenceSource.domain}
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="mt-3 text-sm leading-6 text-content-muted">
+                            Supports <span className="font-medium text-content">{selectedEvidenceSection.title}</span>
+                            {selectedEvidenceSupportTitles.length > 1
+                              ? ` and ${selectedEvidenceSupportTitles.length - 1} more saved section${
+                                  selectedEvidenceSupportTitles.length - 1 === 1 ? "" : "s"
+                                }`
+                              : ""}.
+                          </p>
+                          {selectedEvidenceSource.href ? (
+                            <a
+                              href={selectedEvidenceSource.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-[#d97757] transition hover:text-[#c9684a]"
+                            >
+                              Open source
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          ) : (
+                            <p className="mt-4 text-sm leading-6 text-content-muted">
+                              This source is saved as a label only. Reopen the run if you need a live link or fresher evidence.
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <p className="mt-3 text-sm leading-6 text-content-muted">
+                          Pick a source to inspect the supporting evidence for this section.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {relatedEntityCount > 0 ? (
+              <div className="border-t border-gray-100 pt-4 dark:border-white/[0.06]">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                      Graph walk
+                    </div>
+                    <p className="mt-2 max-w-[640px] text-sm leading-6 text-content-muted">
+                      Step into related entities without rebuilding the search from scratch.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowContextGraph(true)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-black/[0.03] px-3 py-1.5 text-xs font-medium text-content-muted transition hover:border-[#d97757]/20 hover:text-content dark:border-white/10 dark:bg-white/[0.03]"
+                  >
+                    <Link2 className="h-3.5 w-3.5" />
+                    Open graph
+                  </button>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {(workspace.relatedEntities ?? []).slice(0, 6).map((related) => (
+                    <button
+                      key={related.slug}
+                      type="button"
+                      onClick={() => navigate(`/entity/${encodeURIComponent(related.slug)}`)}
+                      className="inline-flex max-w-full items-center gap-2 rounded-full border border-black/8 bg-black/[0.03] px-3 py-1.5 text-left text-sm text-content transition hover:border-[#d97757]/20 hover:bg-[#d97757]/5 dark:border-white/10 dark:bg-white/[0.03]"
+                    >
+                      <span className="truncate">{related.name}</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-content-muted">
+                        {related.entityType}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className={`mt-5 grid gap-4 ${latestNextStep ? "lg:grid-cols-[minmax(0,1fr)_280px]" : ""}`}>
+            {latestNextStep ? (
+              <div className="border-t border-gray-100 pt-4 dark:border-white/[0.06]">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                  What to do next
+                </div>
+                <p className="mt-3 text-sm leading-7 text-content">{latestNextStep}</p>
+              </div>
+            ) : null}
+
+            <div className="border-t border-gray-100 pt-4 dark:border-white/[0.06]">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                How this brief was built
+              </div>
+              <div className="mt-3 space-y-2">
+                <div className="rounded-md border border-gray-100 dark:border-white/[0.06] px-3 py-3">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                    Original ask
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-content">
+                    {latestReport?.query?.trim() || `Update ${entity.name} and show me what changed.`}
+                  </p>
+                </div>
+                <div className="rounded-md border border-gray-100 dark:border-white/[0.06] flex items-center justify-between gap-3 px-3 py-3">
+                  <span className="text-sm text-content-muted">Lens</span>
+                  <span className="text-sm font-medium text-content">{latestReport?.lens ?? "founder"}</span>
+                </div>
+                <div className="rounded-md border border-gray-100 dark:border-white/[0.06] flex items-center justify-between gap-3 px-3 py-3">
+                  <span className="text-sm text-content-muted">Reasoning lane</span>
+                  <span className="text-sm font-medium text-content">{routingToneLabel(latestReport) ?? "Default"}</span>
+                </div>
+                {latestReport?.operatorContext?.label ? (
+                  <div className="rounded-md border border-gray-100 dark:border-white/[0.06] flex items-center justify-between gap-3 px-3 py-3">
+                    <span className="text-sm text-content-muted">Saved context</span>
+                    <span className="text-right text-sm font-medium text-content">
+                      {latestReport.operatorContext.label}
+                    </span>
+                  </div>
+                ) : null}
+                {latestReport?.routing?.routingReason ? (
+                  <div className="rounded-md border border-gray-100 dark:border-white/[0.06] px-3 py-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                      Router note
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-content-muted">
+                      {latestReport.routing.routingReason}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+              <div className="mt-3 text-[11px] text-content-muted">
+                {sourceCount} total sources across {timeline.length} saved revision{timeline.length === 1 ? "" : "s"}.
+              </div>
+            </div>
+          </div>
+
+          {latestDiffSummary ? (
+            <div className="mt-4 border-l-2 border-[var(--accent-primary)] pl-3">
+              <div className="text-xs font-medium uppercase tracking-wide text-[var(--accent-primary)]">
+                What changed
+              </div>
+              <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">{latestDiffSummary}</p>
+            </div>
+          ) : null}
+        </article>
+
       </section>
 
-      <section className="py-6 border-b border-white/6">
+      {showActions ? (
+        <section className="mt-4">
+          <EntityActionPanel
+            anonymousSessionId={anonymousSessionId}
+            entitySlug={entity.slug}
+            revisionId={workspace.latest?._id ?? null}
+            copyState={copyState}
+            onCopyAction={copyPayload}
+          />
+        </section>
+      ) : null}
+
+      <section className={`mt-10 space-y-6 pt-8 ${entityViewMode !== "classic" ? "hidden" : ""}`}>
+        <section>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Working notes</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Keep your live read and follow-up questions here.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void handleSaveNote()}
+              disabled={noteSaving || !hasLiveEntity}
+              className="nb-primary-button rounded-full px-4 py-2 text-sm"
+            >
+              {noteSaving ? "Saving..." : "Save notes"}
+            </button>
+          </div>
+
+          <div className="mt-5">
+            <Suspense
+              fallback={
+                <div className="rounded-md border border-gray-100 dark:border-white/[0.06] p-6 text-sm text-content-muted">
+                  Loading entity notebook...
+                </div>
+              }
+            >
+              <EntityNoteEditor
+                document={noteDocumentDraft}
+                onChange={setNoteDocumentDraft}
+                toolbarPreset="compact"
+                showStats={false}
+                statusLabel={
+                  !hasLiveEntity
+                    ? "Starter memory"
+                    : noteSaving
+                      ? "Saving..."
+                      : workspace.noteDocument?.updatedAt
+                        ? `Saved ${formatRelative(workspace.noteDocument.updatedAt)}`
+                        : note?.updatedAt
+                          ? `Saved ${formatRelative(note.updatedAt)}`
+                          : "Editable"
+                }
+              />
+            </Suspense>
+          </div>
+          {workspace.noteDocument?.snapshots?.length ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {workspace.noteDocument.snapshots.slice(0, 4).map((snapshot) => (
+                <span
+                  key={snapshot._id ?? `snapshot-${snapshot.revision}`}
+                  className="nb-chip text-xs normal-case tracking-normal"
+                >
+                  Notebook rev {snapshot.revision}
+                  <span className="normal-case tracking-normal">{formatRelative(snapshot.createdAt)}</span>
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </section>
+
+        <aside className="space-y-4">
+          <section className="mt-10 pt-8">
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Workspace rail</h2>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Secondary context lives here.
+                  </p>
+                </div>
+                <div className="inline-flex rounded-full border border-black/8 bg-black/[0.03] p-1 dark:border-white/10 dark:bg-white/[0.03]">
+                  <button
+                    type="button"
+                    onClick={() => setWorkspaceRailView("evidence")}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                      workspaceRailView === "evidence"
+                        ? "bg-[#d97757] text-white"
+                        : "text-content-muted hover:text-content"
+                    }`}
+                  >
+                    Evidence
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWorkspaceRailView("context")}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                      workspaceRailView === "context"
+                        ? "bg-[#d97757] text-white"
+                        : "text-content-muted hover:text-content"
+                    }`}
+                  >
+                    Context
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 text-xs text-content-muted">
+                <span className="nb-chip normal-case tracking-normal">{entity.reportCount} saved</span>
+                <span className="nb-chip normal-case tracking-normal">{evidence.length} evidence</span>
+                <span className="nb-chip normal-case tracking-normal">{relatedEntityCount} linked</span>
+              </div>
+            </div>
+
+            {workspaceRailView === "evidence" ? (
+              <div className="mt-5 space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                      Attached evidence
+                    </div>
+                  </div>
+                  <label
+                    className={`nb-secondary-button rounded-full px-3 py-2 text-xs ${
+                      hasLiveEntity ? "cursor-pointer" : "cursor-not-allowed opacity-50"
+                    }`}
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                    {!hasLiveEntity ? "Live entity only" : uploadingEvidence ? "Uploading..." : "Attach file"}
+                    <input
+                      type="file"
+                      name="entityEvidenceUpload"
+                      className="hidden"
+                      disabled={!hasLiveEntity}
+                      onChange={async (event) => {
+                        const input = event.currentTarget;
+                        const file = event.target.files?.[0];
+                        if (!file) return;
+                        await handleAttachFile(file);
+                        input.value = "";
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {attachableEvidence && attachableEvidence.length > 0 ? (
+                  <div className="space-y-2">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                      Ready to attach
+                    </div>
+                    {attachableEvidence.slice(0, 3).map((item: any) => (
+                      <div key={String(item._id)} className="rounded-md border border-gray-100 dark:border-white/[0.06] flex items-center justify-between gap-3 px-4 py-3">
+                        <div className="min-w-0">
+                          <div className="text-sm text-content">{item.label}</div>
+                          <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-content-muted">
+                            {item.type ?? "file"}
+                          </div>
+                        </div>
+                        {item.entityId ? (
+                          <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] text-content-muted">
+                            <Check className="h-3 w-3" />
+                            Attached
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              setAttachingEvidenceId(String(item._id));
+                              try {
+                                await attachEvidence({
+                                  anonymousSessionId,
+                                  entityId: entity._id as any,
+                                  evidenceId: item._id as any,
+                                });
+                              } finally {
+                                setAttachingEvidenceId(null);
+                              }
+                            }}
+                            className="nb-secondary-button px-3 py-1.5 text-xs"
+                          >
+                            {attachingEvidenceId === String(item._id) ? "Attaching..." : "Attach"}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                {evidence.length > 0 ? (
+                  <div className="space-y-2">
+                    {evidence.map((item) => (
+                      <div key={item._id} className="rounded-md border border-gray-100 dark:border-white/[0.06] flex items-center justify-between gap-3 px-4 py-3">
+                        <div className="min-w-0">
+                          <div className="text-sm text-content">{item.label}</div>
+                          <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-content-muted">
+                            {item.type ?? "file"}
+                          </div>
+                        </div>
+                        {item.sourceUrl ? (
+                          <a
+                            href={item.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#d97757] transition hover:text-[#c9684a]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Source
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        ) : (
+                          <span className="text-xs text-content-muted">Attached</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-4 text-sm leading-6 text-gray-500 dark:text-gray-400">
+                    Attach files that should persist into the next run.
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="mt-5 space-y-4">
+                <div className="border-t border-gray-100 pt-4 dark:border-white/[0.06]">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                    Notebook metadata
+                  </div>
+                  <div className="mt-3">
+                    <EntityNotebookMeta
+                      document={noteDocument}
+                      onOpenEntity={(nextSlug) => navigate(`/entity/${encodeURIComponent(nextSlug)}`)}
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-100 pt-4 dark:border-white/[0.06]">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                      Relationship graph
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowContextGraph((current) => !current)}
+                      className="nb-secondary-button rounded-full px-3 py-1.5 text-xs"
+                    >
+                      {showContextGraph ? "Hide graph" : "Show graph"}
+                    </button>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-content-muted">
+                    Open this only when you want the relationship view.
+                  </p>
+                  {showContextGraph ? (
+                    <div className="mt-4">
+                      <EntityMemoryGraph
+                        entityName={entity.name}
+                        relatedEntities={workspace.relatedEntities}
+                        evidence={workspace.evidence}
+                        onOpenEntity={(nextSlug) => navigate(`/entity/${encodeURIComponent(nextSlug)}`)}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="border-t border-gray-100 pt-4 dark:border-white/[0.06]">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                    Linked reports
+                  </div>
+                  {workspace.relatedEntities && workspace.relatedEntities.length > 0 ? (
+                    <div className="mt-3 space-y-3">
+                      {workspace.relatedEntities.map((related) => (
+                        <button
+                          key={related.slug}
+                          type="button"
+                          onClick={() => navigate(`/entity/${encodeURIComponent(related.slug)}`)}
+                          className="rounded-md border border-gray-100 dark:border-white/[0.06] w-full px-4 py-3 text-left transition hover:bg-white/[0.04]"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="text-sm font-medium text-content">{related.name}</div>
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                              {related.entityType}
+                            </div>
+                          </div>
+                          <p className="mt-2 text-sm leading-6 text-content-muted">{related.summary}</p>
+                          {related.reason ? (
+                            <div className="mt-2 text-[11px] uppercase tracking-[0.18em] text-content-muted">
+                              {related.reason}
+                            </div>
+                          ) : null}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm leading-6 text-content-muted">
+                      Linked reports appear here as this entity connects to more saved work.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </section>
+        </aside>
+      </section>
+
+      {/* ── User Notes (editable, Obsidian-like) ───────────────────────── */}
+      {false ? (
+      <>
+      <section className={`mt-10 pt-8 ${entityViewMode !== "classic" ? "hidden" : ""}`}>
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Connected node</h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Related entities and attached evidence make this report compound like a real notebook page instead of a one-off answer.
+          </p>
+        </div>
+        <EntityMemoryGraph
+          entityName={entity.name}
+          relatedEntities={workspace.relatedEntities}
+          evidence={workspace.evidence}
+          onOpenEntity={(nextSlug) => navigate(`/entity/${encodeURIComponent(nextSlug)}`)}
+        />
+
+        {workspace.relatedEntities && workspace.relatedEntities.length > 0 ? (
+          <div className="mt-4 space-y-3">
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+              Linked reports
+            </h2>
+            {workspace.relatedEntities.map((related) => (
+              <button
+                key={related.slug}
+                type="button"
+                onClick={() => navigate(`/entity/${encodeURIComponent(related.slug)}`)}
+                className="rounded-md border border-gray-100 dark:border-white/[0.06] w-full px-4 py-3 text-left transition hover:bg-white/[0.04]"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-sm font-medium text-content">{related.name}</div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                    {related.entityType}
+                  </div>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-content-muted">{related.summary}</p>
+                {related.reason ? (
+                  <div className="mt-2 text-[11px] uppercase tracking-[0.18em] text-content-muted">
+                    {related.reason}
+                  </div>
+                ) : null}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </section>
+
+      <section className="mt-6 hidden rounded-lg border border-gray-100 bg-white p-5 dark:border-white/[0.06] dark:bg-white/[0.01] sm:p-6">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
-            Working notes
-          </h2>
+          <div>
+            <h2 className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Working notes</h2>
+            <p className="mt-2 text-sm leading-6 text-content-muted">
+              Keep your live read, follow-up questions, and internal conclusions here. This notebook compounds across every report update.
+            </p>
+          </div>
           <button
             type="button"
             onClick={() => void handleSaveNote()}
             disabled={noteSaving || !hasLiveEntity}
-            className="rounded-lg bg-[#d97757] px-4 py-1.5 text-xs font-medium text-white disabled:opacity-40 transition hover:bg-[#c4684a]"
+            className="nb-primary-button rounded-full px-4 py-2 text-sm"
           >
             {noteSaving ? "Saving..." : "Save notes"}
           </button>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-5">
           <Suspense
             fallback={
-              <div className="rounded-[26px] border border-white/8 bg-white/[0.03] p-6 text-sm text-content-muted">
+              <div className="rounded-md border border-gray-100 dark:border-white/[0.06] p-6 text-sm text-content-muted">
                 Loading entity notebook...
               </div>
             }
@@ -668,7 +2084,7 @@ function EntityWorkspaceView({ slug }: { slug: string }) {
                       ? `Saved ${formatRelative(note.updatedAt)}`
                       : "Editable"
               }
-              helperText="This is the canonical notebook for the entity. Rich mode runs on Lexical, Markdown mode runs on CodeMirror, and saves normalize into Convex blocks so future runs can compound instead of replacing context."
+              helperText="This notebook stays attached to the entity, so later runs add context instead of replacing it."
             />
           </Suspense>
         </div>
@@ -677,7 +2093,7 @@ function EntityWorkspaceView({ slug }: { slug: string }) {
             {workspace.noteDocument.snapshots.slice(0, 4).map((snapshot) => (
               <span
                 key={snapshot._id ?? `snapshot-${snapshot.revision}`}
-                className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-content-muted"
+                className="nb-chip text-[11px] uppercase tracking-[0.16em]"
               >
                 Notebook rev {snapshot.revision}
                 <span className="normal-case tracking-normal">{formatRelative(snapshot.createdAt)}</span>
@@ -688,28 +2104,33 @@ function EntityWorkspaceView({ slug }: { slug: string }) {
       </section>
 
       {/* ── Evidence / Sources ──────────────────────────────────────────── */}
-      <section className="py-6 border-b border-white/6">
-        <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
-          Notebook graph
-        </h2>
+      <section className="mt-6 hidden rounded-lg border border-gray-100 bg-white p-5 dark:border-white/[0.06] dark:bg-white/[0.01] sm:p-6">
+        <div className="mb-4">
+          <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+            Notebook graph
+          </h2>
+        </div>
         <EntityNotebookMeta
-          document={workspace.noteDocument ?? noteDocumentDraft}
+          document={noteDocument}
           onOpenEntity={(nextSlug) => navigate(`/entity/${encodeURIComponent(nextSlug)}`)}
         />
       </section>
 
-      <section className="py-6 border-b border-white/6">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted mb-3">
-          Evidence
-        </h2>
-        <div className="mb-3 flex flex-wrap gap-2">
+      <section className="mt-6 hidden rounded-lg border border-gray-100 bg-white p-5 dark:border-white/[0.06] dark:bg-white/[0.01] sm:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Evidence</h2>
+            <p className="mt-2 text-sm leading-6 text-content-muted">
+              Keep the screenshots, files, and source artifacts that should stay attached to this memory.
+            </p>
+          </div>
           <label
-            className={`inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[11px] text-content-muted transition ${
-              hasLiveEntity ? "cursor-pointer hover:bg-white/[0.06]" : "cursor-not-allowed opacity-50"
+            className={`nb-secondary-button rounded-full px-3 py-2 text-xs ${
+              hasLiveEntity ? "cursor-pointer" : "cursor-not-allowed opacity-50"
             }`}
           >
-            <Upload className="h-3 w-3" />
-            {!hasLiveEntity ? "Attach file in a live entity" : uploadingEvidence ? "Uploading..." : "Attach file"}
+            <Upload className="h-3.5 w-3.5" />
+            {!hasLiveEntity ? "Live entity only" : uploadingEvidence ? "Uploading..." : "Attach file"}
             <input
               type="file"
               className="hidden"
@@ -725,17 +2146,17 @@ function EntityWorkspaceView({ slug }: { slug: string }) {
           </label>
         </div>
         {attachableEvidence && attachableEvidence.length > 0 && (
-          <div className="mb-4 space-y-2">
+          <div className="mt-4 space-y-2">
             {attachableEvidence.slice(0, 4).map((item: any) => (
-              <div key={String(item._id)} className="flex items-center justify-between gap-3 rounded-lg border border-white/6 bg-white/[0.02] px-4 py-3">
-                <div>
+              <div key={String(item._id)} className="rounded-md border border-gray-100 dark:border-white/[0.06] flex items-center justify-between gap-3 px-4 py-3">
+                <div className="min-w-0">
                   <div className="text-sm text-content">{item.label}</div>
                   <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-content-muted">{item.type ?? "file"}</div>
                 </div>
                 {item.entityId ? (
                   <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] text-content-muted">
                     <Check className="h-3 w-3" />
-                    attached
+                    Attached
                   </span>
                 ) : (
                   <button
@@ -752,7 +2173,7 @@ function EntityWorkspaceView({ slug }: { slug: string }) {
                         setAttachingEvidenceId(null);
                       }
                     }}
-                    className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[11px] text-content-muted transition hover:bg-white/[0.06]"
+                    className="nb-secondary-button px-3 py-1.5 text-xs"
                   >
                     {attachingEvidenceId === String(item._id) ? "Attaching..." : "Attach"}
                   </button>
@@ -762,11 +2183,11 @@ function EntityWorkspaceView({ slug }: { slug: string }) {
           </div>
         )}
         {evidence.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             {evidence.map((item) => (
               <span
                 key={item._id}
-                className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.04] px-3 py-1 text-[11px] text-content-muted"
+                className="nb-chip inline-flex items-center gap-1.5"
               >
                 <FileText className="h-3 w-3" />
                 {item.label}
@@ -785,51 +2206,38 @@ function EntityWorkspaceView({ slug }: { slug: string }) {
             ))}
           </div>
         ) : (
-          <div className="rounded-lg border border-white/6 bg-white/[0.02] px-6 py-6 text-sm text-content-muted">
-            Attach screenshots, notes, PDFs, and other artifacts here so they stay on this entity across future runs.
+          <div className="mt-4 py-4 text-sm leading-6 text-gray-500 dark:text-gray-400">
+            Attach screenshots, PDFs, links, and notes here so the next run starts from the same evidence base.
           </div>
         )}
       </section>
 
-      <section className="py-6 border-b border-white/6">
-        <EntityMemoryGraph
-          entityName={entity.name}
-          relatedEntities={workspace.relatedEntities}
-          evidence={workspace.evidence}
-          onOpenEntity={(nextSlug) => navigate(`/entity/${encodeURIComponent(nextSlug)}`)}
-        />
 
-        {workspace.relatedEntities && workspace.relatedEntities.length > 0 ? (
-          <div className="mt-4 space-y-3">
-            <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
-              Linked memories
-            </h2>
-            {workspace.relatedEntities.map((related) => (
-              <button
-                key={related.slug}
-                type="button"
-                onClick={() => navigate(`/entity/${encodeURIComponent(related.slug)}`)}
-                className="w-full rounded-lg border border-white/6 bg-white/[0.02] px-4 py-3 text-left transition hover:bg-white/[0.04]"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-medium text-content">{related.name}</div>
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">{related.entityType}</div>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-content-muted">{related.summary}</p>
-                {related.reason ? (
-                  <div className="mt-2 text-[11px] uppercase tracking-[0.18em] text-content-muted">{related.reason}</div>
-                ) : null}
-              </button>
-            ))}
-          </div>
-        ) : null}
-      </section>
 
       {/* ── Research Timeline ──────────────────────────────────────────── */}
-      <section className="py-6">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted mb-4">
-          Research timeline
-        </h2>
+      </>
+      ) : null}
+
+      <section className={`mt-10 pt-8 ${entityViewMode !== "classic" ? "hidden" : ""}`}>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Research timeline
+            </h2>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Google Docs-style history. Each revision shows who edited (agent, you, collaborators) and when.
+            </p>
+          </div>
+          {timeline.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setShowTimeline((current) => !current)}
+              className="nb-secondary-button rounded-full px-3 py-1.5 text-xs"
+            >
+              {showTimeline ? "Hide history" : `Show ${timeline.length} revision${timeline.length === 1 ? "" : "s"}`}
+            </button>
+          ) : null}
+        </div>
 
         {timeline.length === 0 && (
           <div className="rounded-lg border border-white/6 bg-white/[0.02] px-6 py-10 text-center">
@@ -841,8 +2249,15 @@ function EntityWorkspaceView({ slug }: { slug: string }) {
           </div>
         )}
 
+        {timeline.length > 0 && !showTimeline ? (
+          <div className="border-t border-gray-100 pt-4 dark:border-white/[0.06] text-sm leading-6 text-content-muted">
+            The current brief already reflects the latest revision. Open the timeline when you need older sections, prior wording, or change history.
+          </div>
+        ) : null}
+
+        {showTimeline ? (
         <div className="space-y-6">
-          {timeline.map((report, idx) => {
+          {timeline.map((report) => {
             const diffSummary = computeDiffSummary(report.diffs);
             return (
               <article
@@ -862,11 +2277,21 @@ function EntityWorkspaceView({ slug }: { slug: string }) {
                   <span className="rounded-full bg-white/[0.04] px-2 py-0.5">
                     {report.lens}
                   </span>
+                  {routingToneLabel(report) ? (
+                    <span className="rounded-full bg-white/[0.04] px-2 py-0.5">
+                      {routingToneLabel(report)}
+                    </span>
+                  ) : null}
                   {report.revision && (
                     <span className="text-content-muted/60">rev {report.revision}</span>
                   )}
                   <span>{(report.sources ?? []).length} sources</span>
                 </div>
+                {report.operatorContext?.label ? (
+                  <div className="mt-1 text-xs text-content-muted/70">
+                    Context: {report.operatorContext.label}
+                  </div>
+                ) : null}
 
                 {/* Report sections (show first 4) */}
                 <div className="mt-3 space-y-3">
@@ -902,13 +2327,7 @@ function EntityWorkspaceView({ slug }: { slug: string }) {
                 {/* Actions */}
                 <div className="mt-3 flex gap-2">
                   <a
-                    href={buildCockpitPath({
-                      surfaceId: "workspace",
-                      extra: {
-                        q: report.query,
-                        lens: report.lens,
-                      },
-                    })}
+                    href={buildEntityReopenChatPath(report, entity)}
                     className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.04] px-3 py-1 text-[11px] text-content-muted hover:bg-white/[0.08] transition"
                   >
                     <MessageSquare className="h-3 w-3" /> Reopen in Chat
@@ -918,6 +2337,7 @@ function EntityWorkspaceView({ slug }: { slug: string }) {
             );
           })}
         </div>
+        ) : null}
       </section>
     </div>
   );

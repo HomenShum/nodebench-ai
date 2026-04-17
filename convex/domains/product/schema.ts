@@ -31,6 +31,26 @@ export const productReportSectionValidator = v.object({
   title: v.string(),
   body: v.string(),
   status: productSectionStatusValidator,
+  sourceRefIds: v.optional(v.array(v.string())),
+});
+
+export const productRoutingModeValidator = v.union(
+  v.literal("executive"),
+  v.literal("advisor"),
+);
+
+export const productRoutingDecisionValidator = v.object({
+  routingMode: productRoutingModeValidator,
+  routingReason: v.optional(v.string()),
+  routingSource: v.optional(v.union(v.literal("automatic"), v.literal("user_forced"))),
+  plannerModel: v.optional(v.string()),
+  executionModel: v.optional(v.string()),
+  reasoningEffort: v.optional(v.union(v.literal("medium"), v.literal("high"))),
+});
+
+export const productOperatorContextSnapshotValidator = v.object({
+  label: v.optional(v.string()),
+  hint: v.optional(v.string()),
 });
 
 export const productNoteBlockKindValidator = v.union(
@@ -82,7 +102,11 @@ export const productSourceValidator = v.object({
   status: v.optional(v.string()),
   title: v.optional(v.string()),
   domain: v.optional(v.string()),
+  siteName: v.optional(v.string()),
+  faviconUrl: v.optional(v.string()),
   publishedAt: v.optional(v.string()),
+  thumbnailUrl: v.optional(v.string()),
+  imageCandidates: v.optional(v.array(v.string())),
   excerpt: v.optional(v.string()),
   confidence: v.optional(v.number()),
 });
@@ -107,6 +131,7 @@ export const productMigrationState = defineTable({
   ownerKey: v.string(),
   schemaVersion: v.string(),
   bootstrappedAt: v.number(),
+  claimedAnonymousRows: v.optional(v.number()),
   migratedFiles: v.number(),
   migratedDocuments: v.number(),
   migratedReports: v.number(),
@@ -196,6 +221,8 @@ export const productChatSessions = defineTable({
   latestSummary: v.optional(v.string()),
   lastError: v.optional(v.string()),
   totalDurationMs: v.optional(v.number()),
+  routing: v.optional(productRoutingDecisionValidator),
+  operatorContext: v.optional(productOperatorContextSnapshotValidator),
   autoSavedReportId: v.optional(v.id("productReports")),
   createdAt: v.number(),
   updatedAt: v.number(),
@@ -254,7 +281,11 @@ export const productSourceEvents = defineTable({
   status: v.optional(v.string()),
   title: v.optional(v.string()),
   domain: v.optional(v.string()),
+  siteName: v.optional(v.string()),
+  faviconUrl: v.optional(v.string()),
   publishedAt: v.optional(v.string()),
+  thumbnailUrl: v.optional(v.string()),
+  imageCandidates: v.optional(v.array(v.string())),
   excerpt: v.optional(v.string()),
   confidence: v.optional(v.number()),
   createdAt: v.number(),
@@ -284,6 +315,7 @@ export const productEntities = defineTable({
   name: v.string(),
   entityType: v.string(),
   summary: v.string(),
+  savedBecause: v.optional(v.string()),
   latestReportId: v.optional(v.id("productReports")),
   latestReportUpdatedAt: v.optional(v.number()),
   latestRevision: v.number(),
@@ -305,6 +337,19 @@ export const productEntityNotes = defineTable({
 })
   .index("by_entity", ["entityId"])
   .index("by_owner_updated", ["ownerKey", "updatedAt"]);
+
+export const productEntityRelations = defineTable({
+  ownerKey: v.string(),
+  fromEntitySlug: v.string(),
+  toEntitySlug: v.string(),
+  relation: v.string(),
+  summary: v.optional(v.string()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_owner_from", ["ownerKey", "fromEntitySlug"])
+  .index("by_owner_to", ["ownerKey", "toEntitySlug"])
+  .index("by_owner_pair", ["ownerKey", "fromEntitySlug", "toEntitySlug"]);
 
 export const productDocuments = defineTable({
   ownerKey: v.string(),
@@ -415,6 +460,8 @@ export const productReports = defineTable({
   primaryEntity: v.optional(v.string()),
   lens: productLensValidator,
   query: v.string(),
+  routing: v.optional(productRoutingDecisionValidator),
+  operatorContext: v.optional(productOperatorContextSnapshotValidator),
   sections: v.array(productReportSectionValidator),
   sources: v.array(productSourceValidator),
   evidenceItemIds: v.array(v.id("productEvidenceItems")),
@@ -544,3 +591,111 @@ export const productContextItems = defineTable({
   .index("by_owner_legacy_file", ["ownerKey", "legacyFileId"])
   .index("by_owner_legacy_document", ["ownerKey", "legacyDocumentId"])
   .index("by_owner_linked_report", ["ownerKey", "linkedReportId"]);
+
+// ──────────────────────────────────────────────────────────────────────────
+// Block model (Phase 1 of Ideaflow/Mew-inspired notebook)
+// Inspired by Mew's graph_node + relation_lists with fractional indexing.
+// See docs/architecture/IDEAFLOW_BLOCK_NOTEBOOK_ULTRAPLAN.md
+// ──────────────────────────────────────────────────────────────────────────
+
+export const productBlockKindValidator = v.union(
+  v.literal("text"),
+  v.literal("heading_1"),
+  v.literal("heading_2"),
+  v.literal("heading_3"),
+  v.literal("bullet"),
+  v.literal("todo"),
+  v.literal("quote"),
+  v.literal("callout"),
+  v.literal("code"),
+  v.literal("image"),
+  v.literal("evidence"),
+  v.literal("mention"),
+  v.literal("generated_marker"),
+);
+
+export const productBlockChipValidator = v.object({
+  type: v.union(
+    v.literal("text"),
+    v.literal("mention"),
+    v.literal("link"),
+    v.literal("linebreak"),
+    v.literal("image"),
+  ),
+  value: v.string(),
+  url: v.optional(v.string()),
+  // Bitmap: 1=bold, 2=italic, 4=underline, 8=strike, 16=code. Combinable.
+  styles: v.optional(v.number()),
+  mentionTrigger: v.optional(v.string()), // "@", "#", "<>", "/ai", etc.
+  mentionTarget: v.optional(v.string()),
+});
+
+export const productBlockAuthorKindValidator = v.union(
+  v.literal("user"),
+  v.literal("agent"),
+  v.literal("anonymous"),
+);
+
+export const productBlockAccessValidator = v.union(
+  v.literal("read"),
+  v.literal("append"),
+  v.literal("edit"),
+);
+
+export const productBlocks = defineTable({
+  ownerKey: v.string(),
+  entityId: v.id("productEntities"),
+  parentBlockId: v.optional(v.id("productBlocks")),
+  kind: productBlockKindValidator,
+  authorKind: productBlockAuthorKindValidator,
+  authorId: v.optional(v.string()),
+  content: v.array(productBlockChipValidator),
+  // Fractional indexing — never re-indexed; inserts use generateKeyBetween.
+  positionInt: v.number(),
+  positionFrac: v.string(),
+  isChecked: v.optional(v.boolean()),
+  accessMode: productBlockAccessValidator,
+  isPublic: v.boolean(),
+  // Link back to the agent run that produced this block (if agent-authored).
+  sourceSessionId: v.optional(v.id("productChatSessions")),
+  sourceToolStep: v.optional(v.number()),
+  sourceRefIds: v.optional(v.array(v.string())),
+  attributes: v.optional(v.any()),
+  // Google Docs-style revision chain — previous incarnation if this block was rewritten.
+  previousBlockId: v.optional(v.id("productBlocks")),
+  revision: v.number(),
+  deletedAt: v.optional(v.number()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_entity_position", ["entityId", "parentBlockId", "positionInt", "positionFrac"])
+  .index("by_owner_entity", ["ownerKey", "entityId"])
+  .index("by_entity_author_updated", ["entityId", "authorKind", "updatedAt"])
+  .index("by_session_step", ["sourceSessionId", "sourceToolStep"])
+  .index("by_previous", ["previousBlockId"]);
+
+export const productBlockRelationKindValidator = v.union(
+  v.literal("mention"),
+  v.literal("tag"),
+  v.literal("evidence"),
+  v.literal("derived_from"),
+  v.literal("response_to"),
+  v.literal("custom"),
+);
+
+export const productBlockRelations = defineTable({
+  ownerKey: v.string(),
+  fromBlockId: v.id("productBlocks"),
+  toEntityId: v.optional(v.id("productEntities")),
+  toBlockId: v.optional(v.id("productBlocks")),
+  toUrl: v.optional(v.string()),
+  relationKind: productBlockRelationKindValidator,
+  relationLabel: v.optional(v.string()),
+  authorKind: productBlockAuthorKindValidator,
+  authorId: v.optional(v.string()),
+  createdAt: v.number(),
+})
+  .index("by_owner_from", ["ownerKey", "fromBlockId"])
+  .index("by_owner_entity", ["ownerKey", "toEntityId"])
+  .index("by_owner_block", ["ownerKey", "toBlockId"])
+  .index("by_owner_url", ["ownerKey", "toUrl"]);

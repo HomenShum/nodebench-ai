@@ -212,6 +212,7 @@ import {
   productReportDrafts,
   productEntities,
   productEntityNotes,
+  productEntityRelations,
   productDocuments,
   productDocumentBlocks,
   productDocumentEntityLinks,
@@ -223,6 +224,8 @@ import {
   productNudges,
   productProfileSummaries,
   productContextItems,
+  productBlocks,
+  productBlockRelations,
 } from "./domains/product/schema";
 
 /* ------------------------------------------------------------------ */
@@ -3559,6 +3562,7 @@ export default defineSchema({
   productReportDrafts,
   productEntities,
   productEntityNotes,
+  productEntityRelations,
   productDocuments,
   productDocumentBlocks,
   productDocumentEntityLinks,
@@ -3570,6 +3574,8 @@ export default defineSchema({
   productNudges,
   productProfileSummaries,
   productContextItems,
+  productBlocks,
+  productBlockRelations,
 
   /* ------------------------------------------------------------------ */
   /* ENTITY PROFILES - Cached Wikidata entity resolutions               */

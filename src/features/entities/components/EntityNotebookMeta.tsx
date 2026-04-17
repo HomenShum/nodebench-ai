@@ -47,7 +47,7 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-[22px] border border-[rgba(15,23,42,0.08)] bg-white/74 p-4 dark:border-white/10 dark:bg-black/18">
+    <section className="nb-panel-inset p-4">
       <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
         {icon}
         <span>{title}</span>
@@ -132,14 +132,14 @@ export function EntityNotebookMeta({
                   key={link._id ?? `${link.entitySlug}-${link.blockId ?? "document"}`}
                   type="button"
                   onClick={() => onOpenEntity(link.entitySlug)}
-                  className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-3 py-1.5 text-[11px] text-content-muted transition hover:bg-[rgba(15,23,42,0.04)] hover:text-content dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]"
+                  className="nb-chip px-3 py-1.5 text-[11px]"
                 >
                   {link.entityName ?? link.entitySlug}
                 </button>
               ) : (
                 <span
                   key={link._id ?? `${link.entitySlug}-${link.blockId ?? "document"}`}
-                  className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-3 py-1.5 text-[11px] text-content-muted dark:border-white/10 dark:bg-white/[0.04]"
+                  className="nb-chip px-3 py-1.5 text-[11px]"
                 >
                   {link.entityName ?? link.entitySlug}
                 </span>
