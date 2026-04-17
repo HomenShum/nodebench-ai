@@ -122,6 +122,17 @@ async function concurrentInsert() {
   async function clientLoop(clientIdx) {
     const client = new ConvexHttpClient(CONVEX_URL);
     const anonId = `loadtest-client-${clientIdx}`;
+    // Seed the target entity for this client's session (idempotent).
+    try {
+      await client.mutation("domains/product/entities:ensureEntity", {
+        anonymousSessionId: anonId,
+        slug: args.entity,
+        name: args.entity,
+      });
+    } catch (err) {
+      stats.errors.push(`seed:${err?.message ?? String(err)}`);
+      return;
+    }
     let counter = 0;
     while (Date.now() < deadline) {
       counter += 1;
@@ -155,6 +166,11 @@ async function sustainedAppend() {
   const stats = makeStats(`SCENARIO 2 · sustained_append · 500 blocks from 1 client`);
   const client = new ConvexHttpClient(CONVEX_URL);
   const anonId = `loadtest-sustained`;
+  await client.mutation("domains/product/entities:ensureEntity", {
+    anonymousSessionId: anonId,
+    slug: args.entity,
+    name: args.entity,
+  });
   for (let i = 0; i < 500; i++) {
     await timed(
       () =>
@@ -209,6 +225,12 @@ async function multiTabEdit() {
   const blockIds = [];
   for (let i = 0; i < CLIENTS; i++) {
     const anonId = `loadtest-editor-${i}`;
+    // Ensure the entity exists for this client's session first.
+    await seedClient.mutation("domains/product/entities:ensureEntity", {
+      anonymousSessionId: anonId,
+      slug: args.entity,
+      name: args.entity,
+    });
     const id = await seedClient.mutation("domains/product/blocks:appendBlock", {
       anonymousSessionId: anonId,
       entitySlug: args.entity,

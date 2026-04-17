@@ -1,9 +1,23 @@
 import { mutation, query } from "../../_generated/server";
 import type { Doc, Id } from "../../_generated/dataModel";
 import { v } from "convex/values";
-import { requireProductIdentity, resolveProductIdentitySafely, summarizeText } from "./helpers";
+import {
+  requireProductIdentity,
+  resolveProductIdentitySafely,
+  resolveProductReadOwnerKeys,
+  resolveProductThumbnailUrls,
+  summarizeText,
+} from "./helpers";
 import { productNoteBlockValidator } from "./schema";
 import { getEntityMemoryDocumentWorkspace } from "./documents";
+import {
+  buildEntityAliasKey,
+  chooseEntityDisplayName,
+  deriveCanonicalEntityName,
+  isLegacyPromptArtifact,
+  isPlaceholderPrepEntity,
+  isPrepBriefType,
+} from "../../../shared/reportArtifacts";
 
 const TOKEN_STOPWORDS = new Set([
   "the",
@@ -30,6 +44,37 @@ const TOKEN_STOPWORDS = new Set([
   "entity",
 ]);
 
+const COMPANY_NAME_MARKERS = [
+  "ai",
+  "capital",
+  "cliffside",
+  "company",
+  "corp",
+  "corporation",
+  "crypto",
+  "fund",
+  "foundation",
+  "group",
+  "holdings",
+  "inc",
+  "labs",
+  "lab",
+  "llc",
+  "l.p",
+  "lp",
+  "partners",
+  "platform",
+  "protocol",
+  "software",
+  "studio",
+  "systems",
+  "technologies",
+  "technology",
+  "ventures",
+];
+
+const PERSON_RELATION_WORDS = ["founder", "co-founder", "cofounder", "partner", "advisor", "recruiter", "hiring manager"];
+
 function slugifySegment(value: string) {
   return value
     .toLowerCase()
@@ -45,26 +90,166 @@ export function slugifyProductEntityName(value: string) {
   return slug || "untitled-entity";
 }
 
+function normalizeNameToken(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+export function looksLikeCompanyName(value?: string | null) {
+  const normalized = normalizeNameToken(value ?? "");
+  if (!normalized) return false;
+  const tokens = normalized.split(/\s+/g).filter(Boolean);
+  return tokens.some((token) => COMPANY_NAME_MARKERS.includes(token));
+}
+
+export function looksLikePersonName(value?: string | null) {
+  const raw = String(value ?? "").trim();
+  if (!raw || looksLikeCompanyName(raw)) return false;
+  const tokens = raw
+    .split(/\s+/g)
+    .map((token) => token.replace(/[^A-Za-z'-]/g, ""))
+    .filter(Boolean);
+  if (tokens.length < 2 || tokens.length > 4) return false;
+  return tokens.every((token) => /^[A-Z][a-z'’-]+$/.test(token));
+}
+
+function toSentenceCase(value: string) {
+  return value
+    .split(/[\s-]+/g)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function trimLinkedInLabel(value?: string | null) {
+  const label = String(value ?? "").trim();
+  if (!label) return "";
+  return label
+    .replace(/\s+\|\s+LinkedIn$/i, "")
+    .replace(/\s+LinkedIn Profile$/i, "")
+    .replace(/\s+-\s+[A-Z][^|]+$/u, "")
+    .trim();
+}
+
+function extractUrlsFromText(value?: string | null) {
+  return [...String(value ?? "").matchAll(/https?:\/\/[^\s)]+/g)].map((match) => match[0]);
+}
+
+function normalizeComparableUrl(url: string) {
+  return url.replace(/\/+$/, "").trim();
+}
+
+function inferRelationFromText(value?: string | null) {
+  const normalized = String(value ?? "").toLowerCase();
+  if (/(co-founder|cofounder)/.test(normalized)) return "cofounder";
+  if (/founder/.test(normalized)) return "founder";
+  if (/advisor/.test(normalized)) return "advisor";
+  if (/recruiter|hiring/.test(normalized)) return "hiring";
+  return "mentioned";
+}
+
+function extractLinkedInPublicIdentifier(url?: string | null) {
+  if (!url) return null;
+  const match = url.match(/linkedin\.com\/(?:in|company)\/([^/?#]+)/i);
+  return match?.[1] ? decodeURIComponent(match[1]).trim() : null;
+}
+
+function extractDomainSlug(url?: string | null) {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+    if (!host) return null;
+    const pieces = host.split(".");
+    return pieces.length >= 2 ? pieces[0] : host;
+  } catch {
+    return null;
+  }
+}
+
 export function pickProductEntityName({
   primaryEntity,
   title,
   query,
+  type,
 }: {
   primaryEntity?: string | null;
   title: string;
   query: string;
+  type?: string | null;
 }) {
-  const candidate = primaryEntity?.trim() || title.trim() || query.trim();
+  const candidate =
+    deriveCanonicalEntityName({
+      primaryEntity,
+      title,
+      query,
+      type,
+    }) ||
+    primaryEntity?.trim() ||
+    title.trim() ||
+    query.trim();
   return summarizeText(candidate, "Untitled entity");
 }
 
-export function inferProductEntityType(type?: string | null, title?: string | null) {
-  const normalized = `${type ?? ""} ${title ?? ""}`.toLowerCase();
+function isLinkedInPersonUrl(url: string) {
+  return /linkedin\.com\/(?:in|pub)\//i.test(url);
+}
+
+function normalizeSourceUrls(urls: Array<string | null | undefined> | undefined) {
+  return (urls ?? []).filter((url): url is string => typeof url === "string" && url.trim().length > 0);
+}
+
+export function inferProductEntityType(args: {
+  type?: string | null;
+  entityName?: string | null;
+  title?: string | null;
+  query?: string | null;
+  sourceUrls?: Array<string | null | undefined>;
+}) {
+  const normalized = `${args.type ?? ""} ${args.title ?? ""} ${args.query ?? ""}`.toLowerCase();
+  const sourceUrls = normalizeSourceUrls(args.sourceUrls);
+  if (looksLikeCompanyName(args.entityName)) return "company";
+  if (looksLikePersonName(args.entityName) && sourceUrls.some((url) => isLinkedInPersonUrl(url))) return "person";
+  if (looksLikePersonName(args.entityName)) return "person";
+  if (looksLikeCompanyName(args.title)) return "company";
   if (normalized.includes("person") || normalized.includes("founder")) return "person";
+  if (/(profile|co-founder|cofounder|candidate|recruiter|hiring team|linkedin profile|founder linkedin|speaker)/.test(normalized)) return "person";
   if (normalized.includes("job") || normalized.includes("role")) return "job";
+  if (/(job description|job post|interview process|compensation package|candidate profile|offer package|role fit)/.test(normalized)) return "job";
   if (normalized.includes("market")) return "market";
   if (normalized.includes("note")) return "note";
+  if (sourceUrls.some((url) => isLinkedInPersonUrl(url))) return "person";
   return "company";
+}
+
+export function inferProductSavedBecause(args: {
+  entityType: string;
+  lens?: string | null;
+  query?: string | null;
+  title?: string | null;
+}) {
+  const haystack = `${args.query ?? ""} ${args.title ?? ""}`.toLowerCase();
+  if (/(conference|event|booth|business card|met at|met with|lead)/.test(haystack)) {
+    return "conference lead";
+  }
+  if (/(job|role|resume|recruiter|interview|hiring|offer)/.test(haystack)) {
+    return "job target";
+  }
+  if (/(competitor|compare|vs\\.?|versus|peer)/.test(haystack)) {
+    return "competitor watch";
+  }
+  if (/(portfolio|thesis|market|trend|watch)/.test(haystack) || args.lens === "investor") {
+    return "market watch";
+  }
+
+  const normalizedType = args.entityType.toLowerCase();
+  if (normalizedType === "job") return "job target";
+  if (normalizedType === "market") return "market watch";
+  if (normalizedType === "person") return "people research";
+  if (normalizedType === "note") return "working note";
+  return "company briefing";
 }
 
 function toContextType(entityType: string): "company" | "person" | "role" | "note" {
@@ -153,9 +338,12 @@ export async function ensureEntityForReport(
   args: {
     ownerKey: string;
     primaryEntity?: string | null;
+    entitySlugHint?: string | null;
     title: string;
     query: string;
     type?: string | null;
+    sourceUrls?: Array<string | null | undefined>;
+    lens?: string | null;
     summary: string;
     now: number;
   },
@@ -169,18 +357,29 @@ export async function ensureEntityForReport(
   previousReport: Doc<"productReports"> | null;
   reportCount: number;
 }> {
-  const entityName = pickProductEntityName({
+  const derivedEntityName = pickProductEntityName({
     primaryEntity: args.primaryEntity,
     title: args.title,
     query: args.query,
+    type: args.type,
   });
-  const entitySlug = slugifyProductEntityName(entityName);
-  const entityType = inferProductEntityType(args.type, entityName);
+  const entitySlugHint = args.entitySlugHint?.trim() || null;
+  const lookupSlug = entitySlugHint || slugifyProductEntityName(derivedEntityName);
 
   let entity = await ctx.db
     .query("productEntities")
-    .withIndex("by_owner_slug", (q: any) => q.eq("ownerKey", args.ownerKey).eq("slug", entitySlug))
+    .withIndex("by_owner_slug", (q: any) => q.eq("ownerKey", args.ownerKey).eq("slug", lookupSlug))
     .first();
+
+  const entityName = entity?.name || derivedEntityName;
+  const entitySlug = entity?.slug || lookupSlug;
+  const entityType = inferProductEntityType({
+    type: args.type,
+    entityName,
+    title: entityName,
+    query: args.query,
+    sourceUrls: args.sourceUrls,
+  });
 
   if (!entity) {
     const entityId = await ctx.db.insert("productEntities", {
@@ -189,6 +388,12 @@ export async function ensureEntityForReport(
       name: entityName,
       entityType,
       summary: summarizeText(args.summary, `${entityName} memory workspace`),
+      savedBecause: inferProductSavedBecause({
+        entityType,
+        title: args.title,
+        query: args.query,
+        lens: args.lens,
+      }),
       latestRevision: 0,
       reportCount: 0,
       createdAt: args.now,
@@ -215,6 +420,307 @@ export async function ensureEntityForReport(
     previousReport,
     reportCount: Math.max(entity.reportCount ?? 0, revision),
   };
+}
+
+type RelatedEntityCandidate = {
+  name: string;
+  slug: string;
+  entityType: string;
+  relation: string;
+  summary: string;
+};
+
+type EntityBrowseCard = {
+  _id: Id<"productEntities">;
+  ownerKey: string;
+  slug: string;
+  name: string;
+  entityType: string;
+  summary: string;
+  savedBecause?: string;
+  latestRevision: number;
+  reportCount: number;
+  createdAt: number;
+  updatedAt: number;
+  latestReportId?: Id<"productReports">;
+  latestReportType?: string;
+  latestReportRouting?: Doc<"productReports">["routing"];
+  latestReportOperatorContext?: Doc<"productReports">["operatorContext"];
+  latestReportUpdatedAt?: number;
+  thumbnailUrl?: string;
+  thumbnailUrls?: string[];
+  sourceUrls?: string[];
+  sourceLabels?: string[];
+  canonicalAliasKey: string;
+  canonicalDisplayName: string;
+};
+
+function choosePreferredEntityBrowseCard(
+  cards: EntityBrowseCard[],
+  displayName: string,
+): EntityBrowseCard {
+  const displaySlug = slugifyProductEntityName(displayName);
+  return [...cards].sort((left, right) => {
+    const leftMatchesDisplaySlug = Number(left.slug === displaySlug);
+    const rightMatchesDisplaySlug = Number(right.slug === displaySlug);
+    if (leftMatchesDisplaySlug !== rightMatchesDisplaySlug) {
+      return rightMatchesDisplaySlug - leftMatchesDisplaySlug;
+    }
+    if ((left.latestReportUpdatedAt ?? 0) !== (right.latestReportUpdatedAt ?? 0)) {
+      return (right.latestReportUpdatedAt ?? 0) - (left.latestReportUpdatedAt ?? 0);
+    }
+    if ((left.reportCount ?? 0) !== (right.reportCount ?? 0)) {
+      return (right.reportCount ?? 0) - (left.reportCount ?? 0);
+    }
+    return (right.updatedAt ?? 0) - (left.updatedAt ?? 0);
+  })[0]!;
+}
+
+export function mergeEntityBrowseCards(cards: EntityBrowseCard[]): EntityBrowseCard[] {
+  const grouped = new Map<string, EntityBrowseCard[]>();
+  for (const card of cards) {
+    const groupKey = `${card.ownerKey}:${card.entityType}:${card.canonicalAliasKey}`;
+    const existing = grouped.get(groupKey) ?? [];
+    existing.push(card);
+    grouped.set(groupKey, existing);
+  }
+
+  return [...grouped.values()]
+    .map((group) => {
+      if (group.length === 1) {
+        return group[0]!;
+      }
+
+      const displayName =
+        chooseEntityDisplayName(
+          group.flatMap((card) => [card.canonicalDisplayName, card.name]),
+          group[0]?.entityType,
+        ) ?? group[0]!.name;
+      const preferred = choosePreferredEntityBrowseCard(group, displayName);
+
+      const thumbnailUrls = [...new Set(group.flatMap((card) => card.thumbnailUrls ?? []))].slice(0, 4);
+      const sourceUrls = [...new Set(group.flatMap((card) => card.sourceUrls ?? []))].slice(0, 4);
+      const sourceLabels = [...new Set(group.flatMap((card) => card.sourceLabels ?? []))].slice(0, 4);
+
+      return {
+        ...preferred,
+        name: displayName,
+        summary: preferred.summary,
+        latestRevision: Math.max(...group.map((card) => card.latestRevision ?? 0)),
+        reportCount: group.reduce((sum, card) => sum + Math.max(card.reportCount ?? 0, 0), 0),
+        updatedAt: Math.max(...group.map((card) => card.updatedAt ?? 0)),
+        latestReportUpdatedAt: Math.max(...group.map((card) => card.latestReportUpdatedAt ?? 0)),
+        thumbnailUrl: thumbnailUrls[0] ?? preferred.thumbnailUrl,
+        thumbnailUrls,
+        sourceUrls,
+        sourceLabels,
+        canonicalDisplayName: displayName,
+      };
+    })
+    .sort((left, right) => (right.latestReportUpdatedAt ?? right.updatedAt) - (left.latestReportUpdatedAt ?? left.updatedAt));
+}
+
+function inferEntityNameFromUrl(url: string, sourceLabel?: string | null) {
+  const linkedInId = extractLinkedInPublicIdentifier(url);
+  if (linkedInId) {
+    const fromLabel = trimLinkedInLabel(sourceLabel);
+    if (fromLabel && fromLabel.toLowerCase() !== "linkedin") {
+      return fromLabel;
+    }
+    return toSentenceCase(linkedInId.replace(/[-_]+/g, " "));
+  }
+
+  const domainSlug = extractDomainSlug(url);
+  if (!domainSlug) return null;
+  const fromLabel = trimLinkedInLabel(sourceLabel);
+  if (fromLabel && fromLabel.toLowerCase() !== "linkedin") return fromLabel;
+  return toSentenceCase(domainSlug.replace(/[-_]+/g, " "));
+}
+
+function buildRelatedEntityCandidates(args: {
+  primaryEntitySlug: string;
+  query: string;
+  sources?: Array<{ href?: string; label?: string; title?: string; siteName?: string; domain?: string }>;
+}) {
+  const queryLines = String(args.query ?? "")
+    .split(/\r?\n/g)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const lineByUrl = new Map<string, string>();
+  for (const line of queryLines) {
+    for (const url of extractUrlsFromText(line)) {
+      lineByUrl.set(normalizeComparableUrl(url), line);
+    }
+  }
+  const explicitUrls = new Set(lineByUrl.keys());
+
+  const candidates = new Map<string, RelatedEntityCandidate>();
+  for (const source of args.sources ?? []) {
+    const href = typeof source.href === "string" ? source.href : undefined;
+    if (!href) continue;
+    const comparableHref = normalizeComparableUrl(href);
+    if (explicitUrls.size > 0 && !explicitUrls.has(comparableHref)) continue;
+    const sourceLabel = source.siteName || source.title || source.label || null;
+    const name = inferEntityNameFromUrl(href, sourceLabel);
+    if (!name) continue;
+    const slug = slugifyProductEntityName(name);
+    if (!slug || slug === args.primaryEntitySlug) continue;
+
+    const lineHint = lineByUrl.get(comparableHref);
+    const explicitRelation = inferRelationFromText(lineHint ?? sourceLabel);
+    const entityType =
+      isLinkedInPersonUrl(href) || looksLikePersonName(name)
+        ? "person"
+        : looksLikeCompanyName(name)
+          ? "company"
+          : source.domain && !/linkedin\.com$/i.test(source.domain)
+            ? "company"
+            : "person";
+    const summary =
+      lineHint?.replace(href, "").replace(/\s+/g, " ").trim() ||
+      sourceLabel ||
+      `Linked from ${args.primaryEntitySlug.replace(/[-_]+/g, " ")}`;
+
+    if (!candidates.has(slug)) {
+      candidates.set(slug, {
+        name,
+        slug,
+        entityType,
+        relation: explicitRelation,
+        summary,
+      });
+    }
+  }
+
+  return [...candidates.values()];
+}
+
+async function upsertStandaloneEntity(
+  ctx: any,
+  args: {
+    ownerKey: string;
+    name: string;
+    slug: string;
+    entityType: string;
+    summary: string;
+    now: number;
+  },
+) {
+  const existing = await ctx.db
+    .query("productEntities")
+    .withIndex("by_owner_slug", (q: any) => q.eq("ownerKey", args.ownerKey).eq("slug", args.slug))
+    .first();
+
+  if (existing) {
+    await ctx.db.patch(existing._id, {
+      name: args.name,
+      entityType: args.entityType,
+      summary: summarizeText(args.summary, existing.summary || `${args.name} related entity`),
+      updatedAt: args.now,
+    });
+    return existing;
+  }
+
+  const entityId = await ctx.db.insert("productEntities", {
+    ownerKey: args.ownerKey,
+    slug: args.slug,
+    name: args.name,
+    entityType: args.entityType,
+    summary: summarizeText(args.summary, `${args.name} related entity`),
+    savedBecause: args.entityType === "person" ? "people research" : "company briefing",
+    latestRevision: 0,
+    reportCount: 0,
+    createdAt: args.now,
+    updatedAt: args.now,
+  });
+
+  return await ctx.db.get(entityId);
+}
+
+async function upsertEntityRelation(
+  ctx: any,
+  args: {
+    ownerKey: string;
+    fromEntitySlug: string;
+    toEntitySlug: string;
+    relation: string;
+    summary?: string;
+    now: number;
+  },
+) {
+  const existing = await ctx.db
+    .query("productEntityRelations")
+    .withIndex("by_owner_pair", (q: any) =>
+      q.eq("ownerKey", args.ownerKey).eq("fromEntitySlug", args.fromEntitySlug).eq("toEntitySlug", args.toEntitySlug),
+    )
+    .first();
+
+  if (existing) {
+    await ctx.db.patch(existing._id, {
+      relation: args.relation,
+      summary: args.summary,
+      updatedAt: args.now,
+    });
+    return existing._id;
+  }
+
+  return await ctx.db.insert("productEntityRelations", {
+    ownerKey: args.ownerKey,
+    fromEntitySlug: args.fromEntitySlug,
+    toEntitySlug: args.toEntitySlug,
+    relation: args.relation,
+    summary: args.summary,
+    createdAt: args.now,
+    updatedAt: args.now,
+  });
+}
+
+function reverseRelation(relation: string, entityType: string) {
+  if (relation === "founder" || relation === "cofounder") return "company";
+  if (relation === "advisor") return "advisor_to";
+  if (relation === "hiring") return "hiring_team";
+  return entityType === "person" ? "mentioned_in_packet" : "related_company";
+}
+
+export async function upsertExplicitRelatedEntitiesForReport(
+  ctx: any,
+  args: {
+    ownerKey: string;
+    primaryEntitySlug: string;
+    query: string;
+    sources?: Array<{ href?: string; label?: string; title?: string; siteName?: string; domain?: string }>;
+    now: number;
+  },
+) {
+  const candidates = buildRelatedEntityCandidates(args);
+  for (const candidate of candidates) {
+    await upsertStandaloneEntity(ctx, {
+      ownerKey: args.ownerKey,
+      name: candidate.name,
+      slug: candidate.slug,
+      entityType: candidate.entityType,
+      summary: candidate.summary,
+      now: args.now,
+    });
+
+    await upsertEntityRelation(ctx, {
+      ownerKey: args.ownerKey,
+      fromEntitySlug: args.primaryEntitySlug,
+      toEntitySlug: candidate.slug,
+      relation: candidate.relation,
+      summary: candidate.summary,
+      now: args.now,
+    });
+
+    await upsertEntityRelation(ctx, {
+      ownerKey: args.ownerKey,
+      fromEntitySlug: candidate.slug,
+      toEntitySlug: args.primaryEntitySlug,
+      relation: reverseRelation(candidate.relation, candidate.entityType),
+      summary: `Linked from ${args.primaryEntitySlug.replace(/[-_]+/g, " ")}`,
+      now: args.now,
+    });
+  }
 }
 
 function matchesFilter(entity: {
@@ -338,6 +844,17 @@ async function buildRelatedEntities(
     latestReport: Doc<"productReports"> | null;
   },
 ) {
+  const explicitRelations = await Promise.all([
+    ctx.db
+      .query("productEntityRelations")
+      .withIndex("by_owner_from", (q: any) => q.eq("ownerKey", args.ownerKey).eq("fromEntitySlug", args.entity.slug))
+      .collect(),
+    ctx.db
+      .query("productEntityRelations")
+      .withIndex("by_owner_to", (q: any) => q.eq("ownerKey", args.ownerKey).eq("toEntitySlug", args.entity.slug))
+      .collect(),
+  ]).then(([fromRelations, toRelations]) => [...fromRelations, ...toRelations]);
+
   const candidates = await ctx.db
     .query("productEntities")
     .withIndex("by_owner_updated", (q: any) => q.eq("ownerKey", args.ownerKey))
@@ -346,6 +863,17 @@ async function buildRelatedEntities(
 
   const currentDomains = collectReportDomains(args.latestReport);
   const currentTokens = collectReportTokens(args.latestReport);
+  const explicitRelationMap = new Map<string, { relation: string; summary?: string }>();
+  for (const relation of explicitRelations) {
+    const otherSlug =
+      relation.fromEntitySlug === args.entity.slug ? relation.toEntitySlug : relation.fromEntitySlug;
+    if (!otherSlug || otherSlug === args.entity.slug) continue;
+    explicitRelationMap.set(otherSlug, {
+      relation: relation.relation,
+      summary: relation.summary,
+    });
+  }
+
   const related = await Promise.all(
     candidates
       .filter((candidate: Doc<"productEntities">) => candidate._id !== args.entity._id)
@@ -353,9 +881,16 @@ async function buildRelatedEntities(
         const latestReport = candidate.latestReportId ? await ctx.db.get(candidate.latestReportId) : null;
         const candidateDomains = collectReportDomains(latestReport);
         const candidateTokens = collectReportTokens(latestReport);
+        const currentText = `${args.latestReport?.title ?? ""} ${args.latestReport?.summary ?? ""} ${args.latestReport?.query ?? ""}`.toLowerCase();
+        const candidateText = `${latestReport?.title ?? ""} ${latestReport?.summary ?? ""} ${latestReport?.query ?? ""}`.toLowerCase();
 
         let score = 0;
         const reasons: string[] = [];
+        const explicitRelation = explicitRelationMap.get(candidate.slug);
+        if (explicitRelation) {
+          score += 12;
+          reasons.push(explicitRelation.summary || explicitRelation.relation.replace(/_/g, " "));
+        }
 
         const sharedDomains = [...candidateDomains].filter((domain) => currentDomains.has(domain));
         if (sharedDomains.length > 0) {
@@ -367,6 +902,14 @@ async function buildRelatedEntities(
         if (sharedTokens.length > 0) {
           score += Math.min(sharedTokens.length, 4);
           reasons.push(`overlapping themes: ${sharedTokens.slice(0, 3).join(", ")}`);
+        }
+
+        if (
+          currentText.includes(candidate.name.toLowerCase()) ||
+          candidateText.includes(args.entity.name.toLowerCase())
+        ) {
+          score += 6;
+          reasons.push("mentioned together");
         }
 
         if (candidate.entityType === args.entity.entityType) {
@@ -401,25 +944,151 @@ export const listEntities = query({
     filter: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await resolveProductIdentitySafely(ctx, args.anonymousSessionId);
-    if (!identity.ownerKey) return [];
+    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
+    if (ownerKeys.length === 0) return [];
 
-    const entities = await ctx.db
-      .query("productEntities")
-      .withIndex("by_owner_updated", (q) => q.eq("ownerKey", identity.ownerKey!))
-      .order("desc")
-      .take(80);
+    const entityGroups = await Promise.all(
+      ownerKeys.map((ownerKey) =>
+        ctx.db
+          .query("productEntities")
+          .withIndex("by_owner_updated", (q) => q.eq("ownerKey", ownerKey))
+          .order("desc")
+          .take(80),
+      ),
+    );
+    const entities = entityGroups
+      .flat()
+      .sort((left, right) => right.updatedAt - left.updatedAt)
+      .reduce<Array<(typeof entityGroups)[number][number]>>((acc, entity) => {
+        if (acc.some((existing) => existing.slug === entity.slug)) {
+          return acc;
+        }
+        acc.push(entity);
+        return acc;
+      }, []);
 
     const search = args.search?.trim().toLowerCase() ?? "";
 
-    return entities
-      .filter((entity) => {
+    const filteredEntities = entities.filter((entity) => {
+        if (!entity.latestReportId && (entity.reportCount ?? 0) <= 0) return false;
         const matchesSearch =
           !search ||
           entity.name.toLowerCase().includes(search) ||
           entity.summary.toLowerCase().includes(search);
         return matchesSearch && matchesFilter(entity, args.filter);
       });
+
+    const cards = await Promise.all(
+      filteredEntities.map(async (entity) => {
+        const recentReports = await ctx.db
+          .query("productReports")
+          .withIndex("by_owner_entity_updated", (q) =>
+            q.eq("ownerKey", entity.ownerKey).eq("entitySlug", entity.slug),
+          )
+          .order("desc")
+          .take(4);
+
+        const latestReport = recentReports[0] ?? null;
+        const thumbnailSeen = new Set<string>();
+        const thumbnailUrls: string[] = [];
+        const sourceUrlSeen = new Set<string>();
+        const sourceUrls: string[] = [];
+        const sourceLabelSeen = new Set<string>();
+        const sourceLabels: string[] = [];
+
+        for (const report of recentReports) {
+          const reportThumbnailUrls = await resolveProductThumbnailUrls(ctx, {
+            evidenceItemIds: report.evidenceItemIds,
+            sources: report.sources,
+          });
+          for (const url of reportThumbnailUrls) {
+            if (thumbnailSeen.has(url) || thumbnailUrls.length >= 4) continue;
+            thumbnailSeen.add(url);
+            thumbnailUrls.push(url);
+          }
+
+          for (const source of report.sources ?? []) {
+            const href = typeof source?.href === "string" ? source.href : null;
+            if (href && !sourceUrlSeen.has(href) && sourceUrls.length < 4) {
+              sourceUrlSeen.add(href);
+              sourceUrls.push(href);
+            }
+
+            const label = source?.siteName || source?.label || source?.title || source?.domain || null;
+            if (
+              typeof label === "string" &&
+              label.trim() &&
+              !sourceLabelSeen.has(label) &&
+              sourceLabels.length < 4
+            ) {
+              sourceLabelSeen.add(label);
+              sourceLabels.push(label);
+            }
+          }
+        }
+
+        const latestReportType = latestReport?.type;
+        if (
+          isPrepBriefType(latestReportType) &&
+          isPlaceholderPrepEntity(entity.name)
+        ) {
+          return null;
+        }
+        if (
+          isLegacyPromptArtifact({
+            type: latestReportType,
+            entitySlug: entity.slug,
+            primaryEntity: entity.name,
+            title: latestReport?.title,
+            query: latestReport?.query,
+          })
+        ) {
+          return null;
+        }
+
+        const canonicalDisplayName =
+          chooseEntityDisplayName(
+            [
+              latestReport?.primaryEntity,
+              deriveCanonicalEntityName({
+                primaryEntity: latestReport?.primaryEntity ?? entity.name,
+                title: latestReport?.title,
+                query: latestReport?.query,
+                type: latestReportType,
+              }),
+              entity.name,
+            ],
+            entity.entityType,
+          ) ?? entity.name;
+        const canonicalAliasKey =
+          buildEntityAliasKey({
+            primaryEntity: latestReport?.primaryEntity ?? entity.name,
+            title: latestReport?.title,
+            query: latestReport?.query,
+            type: latestReportType,
+            entityType: entity.entityType,
+            slug: entity.slug,
+          }) ?? entity.slug;
+
+        return {
+          ...entity,
+          latestReportType,
+          latestReportRouting: latestReport?.routing,
+          latestReportOperatorContext: latestReport?.operatorContext,
+          latestReportUpdatedAt: latestReport?.updatedAt,
+          thumbnailUrl: thumbnailUrls[0],
+          thumbnailUrls,
+          sourceUrls,
+          sourceLabels,
+          canonicalAliasKey,
+          canonicalDisplayName,
+        };
+      }),
+    ).then((items) => items.filter((item): item is NonNullable<typeof items[number]> => Boolean(item)));
+
+    return mergeEntityBrowseCards(cards as EntityBrowseCard[]).map(
+      ({ canonicalAliasKey: _canonicalAliasKey, canonicalDisplayName: _canonicalDisplayName, ...card }) => card,
+    );
   },
 });
 
@@ -429,19 +1098,25 @@ export const getEntityWorkspace = query({
     entitySlug: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await resolveProductIdentitySafely(ctx, args.anonymousSessionId);
-    if (!identity.ownerKey) return null;
+    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
+    if (ownerKeys.length === 0) return null;
 
-    const entity = await ctx.db
-      .query("productEntities")
-      .withIndex("by_owner_slug", (q) => q.eq("ownerKey", identity.ownerKey!).eq("slug", args.entitySlug))
-      .first();
+    let entity: Doc<"productEntities"> | null = null;
+    for (const ownerKey of ownerKeys) {
+      entity = await ctx.db
+        .query("productEntities")
+        .withIndex("by_owner_slug", (q) => q.eq("ownerKey", ownerKey).eq("slug", args.entitySlug))
+        .first();
+      if (entity) break;
+    }
     if (!entity) return null;
+
+    const dataOwnerKey = entity.ownerKey;
 
     const timeline = await ctx.db
       .query("productReports")
       .withIndex("by_owner_entity_updated", (q) =>
-        q.eq("ownerKey", identity.ownerKey!).eq("entitySlug", args.entitySlug),
+        q.eq("ownerKey", dataOwnerKey).eq("entitySlug", args.entitySlug),
       )
       .order("desc")
       .take(12);
@@ -450,18 +1125,18 @@ export const getEntityWorkspace = query({
       .query("productEntityNotes")
       .withIndex("by_entity", (q) => q.eq("entityId", entity._id))
       .first();
-    const noteDocument = await getEntityMemoryDocumentWorkspace(ctx, identity.ownerKey!, args.entitySlug);
+    const noteDocument = await getEntityMemoryDocumentWorkspace(ctx, dataOwnerKey, args.entitySlug);
 
     const entityEvidence = await ctx.db
       .query("productEvidenceItems")
-      .withIndex("by_owner_entity", (q: any) => q.eq("ownerKey", identity.ownerKey!).eq("entityId", entity._id))
+      .withIndex("by_owner_entity", (q: any) => q.eq("ownerKey", dataOwnerKey).eq("entityId", entity._id))
       .collect();
 
     const reportEvidenceLists = await Promise.all(
       timeline.slice(0, 5).map((report) =>
         ctx.db
           .query("productEvidenceItems")
-          .withIndex("by_owner_report", (q: any) => q.eq("ownerKey", identity.ownerKey!).eq("reportId", report._id))
+          .withIndex("by_owner_report", (q: any) => q.eq("ownerKey", dataOwnerKey).eq("reportId", report._id))
           .collect(),
       ),
     );
@@ -481,13 +1156,13 @@ export const getEntityWorkspace = query({
 
     const latest = timelineWithDiffs[0] ?? null;
     const relatedEntities = await buildRelatedEntities(ctx, {
-      ownerKey: identity.ownerKey!,
+      ownerKey: dataOwnerKey,
       entity,
       latestReport: latest,
     });
     const contextItems = await ctx.db
       .query("productContextItems")
-      .withIndex("by_owner_entity", (q) => q.eq("ownerKey", identity.ownerKey!).eq("entity", args.entitySlug))
+      .withIndex("by_owner_entity", (q) => q.eq("ownerKey", dataOwnerKey).eq("entity", args.entitySlug))
       .collect();
     const normalizedNoteBlocks = normalizeNoteBlocks(note);
 
@@ -513,6 +1188,65 @@ export const getEntityWorkspace = query({
       contextItems,
       relatedEntities,
     };
+  },
+});
+
+export const recallEntityMemory = query({
+  args: {
+    ownerKey: v.string(),
+    entityTargets: v.array(v.string()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const normalizedTargets = [...new Set<string>(
+      args.entityTargets
+        .map((target) => target.trim().toLowerCase())
+        .filter((target) => target.length > 0),
+    )].slice(0, 8);
+
+    if (normalizedTargets.length === 0) return [];
+
+    const candidateEntities = await ctx.db
+      .query("productEntities")
+      .withIndex("by_owner_updated", (q) => q.eq("ownerKey", args.ownerKey))
+      .order("desc")
+      .take(48);
+
+    const matched = candidateEntities.filter((entity) => {
+      const normalizedName = entity.name.trim().toLowerCase();
+      const normalizedSlug = entity.slug.trim().toLowerCase();
+      return normalizedTargets.some((target) =>
+        target === normalizedName
+        || target === normalizedSlug
+        || normalizedName.includes(target)
+        || target.includes(normalizedName),
+      );
+    });
+
+    const limited = matched.slice(0, Math.max(1, Math.min(args.limit ?? 3, 6)));
+
+    return await Promise.all(
+      limited.map(async (entity) => {
+        const latestReport = entity.latestReportId ? await ctx.db.get(entity.latestReportId) : null;
+        const note = await ctx.db
+          .query("productEntityNotes")
+          .withIndex("by_entity", (q) => q.eq("entityId", entity._id))
+          .first();
+
+        return {
+          entitySlug: entity.slug,
+          entityName: entity.name,
+          entityType: entity.entityType,
+          summary: entity.summary,
+          savedBecause: entity.savedBecause ?? null,
+          latestRevision: entity.latestRevision,
+          updatedAt: entity.updatedAt,
+          latestReportTitle: latestReport?.title ?? null,
+          latestReportSummary: latestReport?.summary ?? null,
+          noteSnippet: note?.content?.slice(0, 280) ?? null,
+        };
+      }),
+    );
   },
 });
 
@@ -579,24 +1313,51 @@ export const saveEntityNotes = mutation({
   },
 });
 
+export const updateEntitySavedBecause = mutation({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+    entityId: v.id("productEntities"),
+    savedBecause: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const entity = await ctx.db.get(args.entityId);
+    if (!entity || entity.ownerKey !== identity.ownerKey) {
+      throw new Error("Entity not found");
+    }
+
+    const nextValue = args.savedBecause.trim().slice(0, 120);
+    await ctx.db.patch(entity._id, {
+      savedBecause: nextValue,
+      updatedAt: Date.now(),
+    });
+
+    return { ok: true, savedBecause: nextValue };
+  },
+});
+
 export const listAttachableEvidence = query({
   args: {
     anonymousSessionId: v.optional(v.string()),
     entitySlug: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await resolveProductIdentitySafely(ctx, args.anonymousSessionId);
-    if (!identity.ownerKey) return [];
+    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
+    if (ownerKeys.length === 0) return [];
 
-    const entity = await ctx.db
-      .query("productEntities")
-      .withIndex("by_owner_slug", (q) => q.eq("ownerKey", identity.ownerKey!).eq("slug", args.entitySlug))
-      .first();
+    let entity: Doc<"productEntities"> | null = null;
+    for (const ownerKey of ownerKeys) {
+      entity = await ctx.db
+        .query("productEntities")
+        .withIndex("by_owner_slug", (q) => q.eq("ownerKey", ownerKey).eq("slug", args.entitySlug))
+        .first();
+      if (entity) break;
+    }
     if (!entity) return [];
 
     const evidence = await ctx.db
       .query("productEvidenceItems")
-      .withIndex("by_owner_updated", (q) => q.eq("ownerKey", identity.ownerKey!))
+      .withIndex("by_owner_updated", (q) => q.eq("ownerKey", entity.ownerKey))
       .order("desc")
       .take(30);
 
@@ -682,6 +1443,7 @@ export const ensureEntityBackfill = mutation({
         title: report.title,
         query: report.query,
         type: report.type,
+        lens: report.lens,
         summary: report.summary,
         now: report.updatedAt,
       });
@@ -693,10 +1455,19 @@ export const ensureEntityBackfill = mutation({
         previousReportId: entityMeta.previousReportId ?? undefined,
       });
 
+      const existingEntity = await ctx.db.get(entityMeta.entityId);
       await ctx.db.patch(entityMeta.entityId, {
         name: entityMeta.entityName,
         entityType: entityMeta.entityType,
         summary: summarizeText(report.summary, entityMeta.entityName),
+        savedBecause:
+          existingEntity?.savedBecause ??
+          inferProductSavedBecause({
+            entityType: entityMeta.entityType,
+            title: report.title,
+            query: report.query,
+            lens: report.lens,
+          }),
         latestReportId: report._id,
         latestReportUpdatedAt: report.updatedAt,
         latestRevision: entityMeta.revision,
@@ -712,6 +1483,13 @@ export const ensureEntityBackfill = mutation({
         linkedReportId: report._id,
         now: report.updatedAt,
       });
+      await upsertExplicitRelatedEntitiesForReport(ctx, {
+        ownerKey,
+        primaryEntitySlug: entityMeta.entitySlug,
+        query: report.query,
+        sources: report.sources,
+        now: report.updatedAt,
+      });
       for (const evidenceId of report.evidenceItemIds ?? []) {
         await ctx.db.patch(evidenceId, {
           entityId: entityMeta.entityId,
@@ -723,5 +1501,130 @@ export const ensureEntityBackfill = mutation({
     }
 
     return { linked };
+  },
+});
+
+export const repairEntityModelBackfill = mutation({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const ownerKey = identity.ownerKey!;
+    const reports = await ctx.db
+      .query("productReports")
+      .withIndex("by_owner_updated", (q) => q.eq("ownerKey", ownerKey))
+      .collect();
+
+    let repairedEntities = 0;
+    let relationUpdates = 0;
+    for (const report of reports) {
+      if (!report.entityId || !report.entitySlug) continue;
+      const entity = await ctx.db.get(report.entityId);
+      if (!entity || entity.ownerKey !== ownerKey) continue;
+
+      const nextName = pickProductEntityName({
+        primaryEntity: report.primaryEntity,
+        title: report.title,
+        query: report.query,
+        type: report.type,
+      });
+      const nextType = inferProductEntityType({
+        type: report.type,
+        entityName: nextName,
+        title: report.title,
+        query: report.query,
+        sourceUrls: report.sources?.map((source: any) => source?.href),
+      });
+
+      if (entity.name !== nextName || entity.entityType !== nextType) {
+        await ctx.db.patch(entity._id, {
+          name: nextName,
+          entityType: nextType,
+          summary: entity.summary || report.summary,
+          updatedAt: Date.now(),
+        });
+        repairedEntities += 1;
+      }
+
+      await upsertEntityContextItem(ctx, {
+        ownerKey,
+        entitySlug: report.entitySlug,
+        entityName: nextName,
+        entityType: nextType,
+        summary: report.summary,
+        linkedReportId: report._id,
+        now: report.updatedAt,
+      });
+
+      const beforeRelations = await ctx.db
+        .query("productEntityRelations")
+        .withIndex("by_owner_from", (q: any) => q.eq("ownerKey", ownerKey).eq("fromEntitySlug", report.entitySlug!))
+        .collect();
+      await upsertExplicitRelatedEntitiesForReport(ctx, {
+        ownerKey,
+        primaryEntitySlug: report.entitySlug,
+        query: report.query,
+        sources: report.sources,
+        now: report.updatedAt,
+      });
+      const afterRelations = await ctx.db
+        .query("productEntityRelations")
+        .withIndex("by_owner_from", (q: any) => q.eq("ownerKey", ownerKey).eq("fromEntitySlug", report.entitySlug!))
+        .collect();
+      relationUpdates += Math.max(0, afterRelations.length - beforeRelations.length);
+    }
+
+    return {
+      repairedEntities,
+      relationUpdates,
+    };
+  },
+});
+
+/**
+ * ensureEntity — minimal entity creation for load testing and direct API use.
+ *
+ * Creates a bare productEntities row under the caller's ownerKey if one with
+ * the given slug doesn't already exist. Idempotent: if the entity exists,
+ * returns it unchanged.
+ *
+ * Used by scripts/loadtest/notebook-load.mjs to seed the target entity before
+ * running block-append scenarios (without going through a full chat session).
+ */
+export const ensureEntity = mutation({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+    slug: v.string(),
+    name: v.optional(v.string()),
+    entityType: v.optional(v.string()),
+    summary: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const ownerKey = identity.ownerKey!;
+
+    const existing = await ctx.db
+      .query("productEntities")
+      .withIndex("by_owner_slug", (q) => q.eq("ownerKey", ownerKey).eq("slug", args.slug))
+      .first();
+    if (existing) {
+      return { entityId: existing._id, slug: existing.slug, created: false };
+    }
+
+    const now = Date.now();
+    const entityId = await ctx.db.insert("productEntities", {
+      ownerKey,
+      slug: args.slug,
+      name: args.name ?? args.slug,
+      entityType: args.entityType ?? "company",
+      summary: summarizeText(args.summary ?? `${args.name ?? args.slug} workspace`, `${args.slug} workspace`),
+      savedBecause: "load-test-seed",
+      latestRevision: 0,
+      reportCount: 0,
+      createdAt: now,
+      updatedAt: now,
+    });
+    return { entityId, slug: args.slug, created: true };
   },
 });
