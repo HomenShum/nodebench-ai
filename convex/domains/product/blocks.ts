@@ -19,6 +19,7 @@
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import type { Doc, Id } from "../../_generated/dataModel";
+import type { MutationCtx } from "../../_generated/server";
 import { mutation, query } from "../../_generated/server";
 import { resolveProductReadOwnerKeys, requireProductIdentity } from "./helpers";
 import { getSystemEntityNodeBySlug } from "../../../shared/systemIntelligence";
@@ -36,6 +37,126 @@ import {
   productBlockKindValidator,
   productBlockRelationKindValidator,
 } from "./schema";
+
+// ────────────────────────────────────────────────────────────────────────────
+// Input-size guard — prevent a single oversized block from OOMing the function
+// runtime or bloating the document. 50 KB is ~10x a typical paragraph and still
+// roundtrips cleanly through Convex's 1 MB mutation limit.
+// Agentic reliability checklist: BOUND_READ. Agents can paste huge payloads
+// from prior tool output; we want a loud ConvexError, not a silent truncation.
+const MAX_BLOCK_CONTENT_BYTES = 50_000;
+const NOTEBOOK_WRITE_BUCKET_MS = 10_000;
+const NOTEBOOK_WRITE_WINDOW_MS = 60_000;
+const NOTEBOOK_WRITE_BURST_LIMIT = 300;
+const NOTEBOOK_WRITE_LIMIT_PER_MINUTE = 1_200;
+
+class ProductConvexError<T extends Record<string, unknown>> extends Error {
+  name = "ConvexError";
+  data: T;
+  [Symbol.for("ConvexError")] = true;
+
+  constructor(data: T) {
+    super(JSON.stringify(data));
+    this.data = data;
+  }
+}
+
+function convexError<T extends Record<string, unknown>>(data: T): ProductConvexError<T> {
+  return new ProductConvexError(data);
+}
+
+function assertBlockContentSize(
+  content: unknown,
+  context: { blockId?: Id<"productBlocks">; kind?: string },
+): void {
+  if (content == null) return;
+  const serialized = JSON.stringify(content);
+  // UTF-8 byte length. Convex functions run in a V8 isolate without Node's
+  // `Buffer`, so use `TextEncoder` (which V8 isolates expose natively).
+  const bytes = new TextEncoder().encode(serialized).length;
+  if (bytes > MAX_BLOCK_CONTENT_BYTES) {
+    throw convexError({
+      code: "CONTENT_TOO_LARGE",
+      bytes,
+      max: MAX_BLOCK_CONTENT_BYTES,
+      blockId: context.blockId,
+      kind: context.kind,
+    });
+  }
+}
+
+function notebookWriteSessionKey(identity: Awaited<ReturnType<typeof requireProductIdentity>>): string {
+  // requireProductIdentity throws when ownerKey is null, so at runtime the
+  // value is always a string. TS doesn't narrow across throw, so we coerce.
+  return identity.anonymousSessionId ?? (identity.ownerKey as string);
+}
+
+async function assertNotebookWriteRateLimit(
+  ctx: MutationCtx,
+  args: {
+    ownerKey: string;
+    sessionKey: string;
+    operation: string;
+  },
+): Promise<void> {
+  const now = Date.now();
+  const currentBucketStartMs =
+    Math.floor(now / NOTEBOOK_WRITE_BUCKET_MS) * NOTEBOOK_WRITE_BUCKET_MS;
+  const oldestBucketStartMs =
+    currentBucketStartMs - NOTEBOOK_WRITE_WINDOW_MS + NOTEBOOK_WRITE_BUCKET_MS;
+
+  const recentBuckets = await ctx.db
+    .query("productBlockWriteWindows")
+    .withIndex("by_owner_session_bucket", (q) =>
+      q
+        .eq("ownerKey", args.ownerKey)
+        .eq("sessionKey", args.sessionKey)
+        .gte("bucketStartMs", oldestBucketStartMs),
+    )
+    .collect();
+
+  const totalWritesInWindow = recentBuckets.reduce(
+    (sum, bucket) => sum + Math.max(bucket.writeCount ?? 0, 0),
+    0,
+  );
+  const currentBucket =
+    recentBuckets.find((bucket) => bucket.bucketStartMs === currentBucketStartMs) ?? null;
+  const currentBucketWrites = currentBucket?.writeCount ?? 0;
+
+  if (
+    currentBucketWrites >= NOTEBOOK_WRITE_BURST_LIMIT ||
+    totalWritesInWindow >= NOTEBOOK_WRITE_LIMIT_PER_MINUTE
+  ) {
+    throw convexError({
+      code: "RATE_LIMITED",
+      operation: args.operation,
+      bucketMs: NOTEBOOK_WRITE_BUCKET_MS,
+      windowMs: NOTEBOOK_WRITE_WINDOW_MS,
+      burstLimit: NOTEBOOK_WRITE_BURST_LIMIT,
+      maxWritesPerWindow: NOTEBOOK_WRITE_LIMIT_PER_MINUTE,
+      currentBucketWrites,
+      totalWritesInWindow,
+      retryAfterMs: currentBucketStartMs + NOTEBOOK_WRITE_BUCKET_MS - now,
+    });
+  }
+
+  if (currentBucket) {
+    await ctx.db.patch(currentBucket._id, {
+      writeCount: currentBucket.writeCount + 1,
+      updatedAt: now,
+    });
+    return;
+  }
+
+  await ctx.db.insert("productBlockWriteWindows", {
+    ownerKey: args.ownerKey,
+    sessionKey: args.sessionKey,
+    bucketStartMs: currentBucketStartMs,
+    writeCount: 1,
+    createdAt: now,
+    updatedAt: now,
+  });
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 // Types shared with the frontend
@@ -285,55 +406,8 @@ type FilteredPaginationPage<T> = {
   pageStatus?: string;
 };
 
-export async function paginateFilteredRows<T>(
-  fetchPage: (cursor: string | null, numItems: number) => Promise<FilteredPaginationPage<T>>,
-  options: {
-    cursor?: string | null;
-    numItems: number;
-    keepRow: (row: T) => boolean;
-    maxScannedPages?: number;
-  },
-): Promise<FilteredPaginationPage<T>> {
-  const requestedItems = Math.max(options.numItems ?? 0, 0);
-  const maxScannedPages = Math.max(options.maxScannedPages ?? 12, 1);
-  if (requestedItems === 0) {
-    return {
-      page: [],
-      isDone: true,
-      continueCursor: options.cursor ?? null,
-    };
-  }
-
-  let cursor = options.cursor ?? null;
-  let scannedPages = 0;
-  let liveRows: T[] = [];
-  let lastPage: FilteredPaginationPage<T> = {
-    page: [],
-    isDone: true,
-    continueCursor: cursor,
-  };
-
-  while (liveRows.length < requestedItems && scannedPages < maxScannedPages) {
-    const remainingItems = requestedItems - liveRows.length;
-    const previousCursor = cursor;
-    const page = await fetchPage(cursor, remainingItems);
-    lastPage = page;
-    liveRows = liveRows.concat(page.page.filter(options.keepRow));
-    scannedPages += 1;
-    cursor = page.continueCursor;
-
-    if (page.isDone) {
-      break;
-    }
-    if (previousCursor === cursor) {
-      break;
-    }
-  }
-
-  return {
-    ...lastPage,
-    page: liveRows.slice(0, requestedItems),
-  };
+export function liveRowsOnly<T extends { deletedAt?: number | null }>(rows: T[]): T[] {
+  return rows.filter((row) => row.deletedAt == null);
 }
 
 const PARALLEL_CANDIDATE_TOOLS = new Set([
@@ -1029,7 +1103,7 @@ export const listEntityBlocks = query({
       )
       .collect();
 
-    return rows.filter((row) => !row.deletedAt);
+    return liveRowsOnly(rows);
   },
 });
 
@@ -1042,7 +1116,7 @@ export const listEntityBlocksPaginated = (query as any)({
   handler: async (ctx: any, args: any): Promise<any> => {
     const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
     if (ownerKeys.length === 0) {
-      return { page: [], isDone: true, continueCursor: null };
+      return { page: [], isDone: true, continueCursor: "" };
     }
 
     let entity: Doc<"productEntities"> | null = null;
@@ -1054,23 +1128,28 @@ export const listEntityBlocksPaginated = (query as any)({
       if (entity) break;
     }
     if (!entity) {
-      return { page: [], isDone: true, continueCursor: null };
+      return { page: [], isDone: true, continueCursor: "" };
     }
 
-    return paginateFilteredRows<Doc<"productBlocks">>(
-      (cursor, numItems) =>
-        ctx.db
-          .query("productBlocks")
-          .withIndex("by_owner_entity_position", (q: any) =>
-            q.eq("ownerKey", entity!.ownerKey).eq("entityId", entity!._id),
-          )
-          .paginate({ cursor, numItems }),
-      {
-        cursor: args.paginationOpts.cursor ?? null,
-        numItems: args.paginationOpts.numItems,
-        keepRow: (row) => !row.deletedAt,
-      },
-    );
+    const page = await ctx.db
+      .query("productBlocks")
+      .withIndex("by_owner_entity_position", (q: any) =>
+        q.eq("ownerKey", entity!.ownerKey).eq("entityId", entity!._id),
+      )
+      .filter((q: any) => q.eq(q.field("deletedAt"), undefined))
+      .paginate(args.paginationOpts);
+
+    return {
+      page: page.page,
+      isDone: Boolean(page.isDone),
+      continueCursor: typeof page.continueCursor === "string" ? page.continueCursor : "",
+      splitCursor:
+        typeof page.splitCursor === "string" || page.splitCursor === null ? page.splitCursor : null,
+      pageStatus:
+        page.pageStatus === "SplitRecommended" || page.pageStatus === "SplitRequired"
+          ? page.pageStatus
+          : null,
+    };
   },
 });
 
@@ -1108,7 +1187,7 @@ export const getEntityBlockSummary = query({
       .query("productBlocks")
       .withIndex("by_owner_entity", (q) => q.eq("ownerKey", entity.ownerKey).eq("entityId", entity._id))
       .collect();
-    const liveRows = rows.filter((row) => !row.deletedAt);
+    const liveRows = liveRowsOnly(rows);
     const userRows = liveRows.filter((row) => row.authorKind === "user");
     return {
       blockCount: liveRows.length,
@@ -1144,12 +1223,20 @@ export const appendBlock = mutation({
     accessMode: v.optional(productBlockAccessValidator),
   },
   handler: async (ctx, args): Promise<Id<"productBlocks">> => {
+    assertBlockContentSize(args.content, { kind: args.kind });
     const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    await assertNotebookWriteRateLimit(ctx, {
+      ownerKey: identity.ownerKey,
+      sessionKey: notebookWriteSessionKey(identity),
+      operation: "appendBlock",
+    });
     const entity = await ctx.db
       .query("productEntities")
       .withIndex("by_owner_slug", (q) => q.eq("ownerKey", identity.ownerKey).eq("slug", args.entitySlug))
       .first();
-    if (!entity) throw new Error(`Entity not found: ${args.entitySlug}`);
+    if (!entity) {
+      throw convexError({ code: "ENTITY_NOT_FOUND", slug: args.entitySlug });
+    }
 
     // Find the last block at the same parent level so we can position after it.
     const existing = await ctx.db
@@ -1210,12 +1297,20 @@ export const insertBlockBetween = mutation({
     authorId: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<Id<"productBlocks">> => {
+    assertBlockContentSize(args.content, { kind: args.kind });
     const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    await assertNotebookWriteRateLimit(ctx, {
+      ownerKey: identity.ownerKey,
+      sessionKey: notebookWriteSessionKey(identity),
+      operation: "insertBlockBetween",
+    });
     const entity = await ctx.db
       .query("productEntities")
       .withIndex("by_owner_slug", (q) => q.eq("ownerKey", identity.ownerKey).eq("slug", args.entitySlug))
       .first();
-    if (!entity) throw new Error(`Entity not found: ${args.entitySlug}`);
+    if (!entity) {
+      throw convexError({ code: "ENTITY_NOT_FOUND", slug: args.entitySlug });
+    }
 
     const before = args.beforeBlockId ? await ctx.db.get(args.beforeBlockId) : null;
     const after = args.afterBlockId ? await ctx.db.get(args.afterBlockId) : null;
@@ -1260,12 +1355,34 @@ export const updateBlock = mutation({
     forkHistory: v.optional(v.boolean()),
     editedByAuthorKind: v.optional(productBlockAuthorKindValidator),
     editedByAuthorId: v.optional(v.string()),
+    // Optimistic concurrency: if provided, reject the write when the stored
+    // revision has moved past this value (another tab/agent won the race).
+    // Clients pass the `revision` they last read. See REVISION_MISMATCH
+    // handling in src/features/entities/components/notebook/EntityNotebookLive.
+    expectedRevision: v.optional(v.number()),
   },
   handler: async (ctx, args): Promise<Id<"productBlocks">> => {
+    assertBlockContentSize(args.content, { blockId: args.blockId, kind: args.kind });
     const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    await assertNotebookWriteRateLimit(ctx, {
+      ownerKey: identity.ownerKey,
+      sessionKey: notebookWriteSessionKey(identity),
+      operation: "updateBlock",
+    });
     const existing = await ctx.db.get(args.blockId);
     if (!existing || existing.ownerKey !== identity.ownerKey) {
-      throw new Error("Block not found");
+      throw convexError({ code: "BLOCK_NOT_FOUND", blockId: args.blockId });
+    }
+    if (
+      typeof args.expectedRevision === "number" &&
+      args.expectedRevision !== existing.revision
+    ) {
+      throw convexError({
+        code: "REVISION_MISMATCH",
+        blockId: args.blockId,
+        current: existing.revision,
+        expected: args.expectedRevision,
+      });
     }
 
     const now = Date.now();
@@ -1324,6 +1441,11 @@ export const deleteBlock = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    await assertNotebookWriteRateLimit(ctx, {
+      ownerKey: identity.ownerKey,
+      sessionKey: notebookWriteSessionKey(identity),
+      operation: "deleteBlock",
+    });
     const existing = await ctx.db.get(args.blockId);
     if (!existing || existing.ownerKey !== identity.ownerKey) return;
     await ctx.db.patch(args.blockId, { deletedAt: Date.now(), updatedAt: Date.now() });
@@ -1344,6 +1466,11 @@ export const moveBlock = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    await assertNotebookWriteRateLimit(ctx, {
+      ownerKey: identity.ownerKey,
+      sessionKey: notebookWriteSessionKey(identity),
+      operation: "moveBlock",
+    });
     const existing = await ctx.db.get(args.blockId);
     if (!existing || existing.ownerKey !== identity.ownerKey) {
       throw new Error("Block not found");
@@ -1381,6 +1508,11 @@ export const createBlockRelation = mutation({
   },
   handler: async (ctx, args): Promise<Id<"productBlockRelations">> => {
     const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    await assertNotebookWriteRateLimit(ctx, {
+      ownerKey: identity.ownerKey,
+      sessionKey: notebookWriteSessionKey(identity),
+      operation: "createBlockRelation",
+    });
     return ctx.db.insert("productBlockRelations", {
       ownerKey: identity.ownerKey,
       fromBlockId: args.fromBlockId,
@@ -1494,6 +1626,11 @@ export const setBlockAccessMode = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    await assertNotebookWriteRateLimit(ctx, {
+      ownerKey: identity.ownerKey,
+      sessionKey: notebookWriteSessionKey(identity),
+      operation: "setBlockAccessMode",
+    });
     const row = await ctx.db.get(args.blockId);
     if (!row || row.ownerKey !== identity.ownerKey) throw new Error("Block not found");
     await ctx.db.patch(args.blockId, {
@@ -1518,6 +1655,11 @@ export const promoteLinkToEvidence = mutation({
   },
   handler: async (ctx, args): Promise<Id<"productBlocks">> => {
     const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    await assertNotebookWriteRateLimit(ctx, {
+      ownerKey: identity.ownerKey,
+      sessionKey: notebookWriteSessionKey(identity),
+      operation: "promoteLinkToEvidence",
+    });
     const citing = await ctx.db.get(args.fromBlockId);
     if (!citing || citing.ownerKey !== identity.ownerKey) {
       throw new Error("Citing block not found");
@@ -1619,11 +1761,18 @@ export const backfillEntityBlocks = mutation({
   },
   handler: async (ctx, args): Promise<{ inserted: number; cleared: number }> => {
     const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    await assertNotebookWriteRateLimit(ctx, {
+      ownerKey: identity.ownerKey,
+      sessionKey: notebookWriteSessionKey(identity),
+      operation: "backfillEntityBlocks",
+    });
     const entity = await ctx.db
       .query("productEntities")
       .withIndex("by_owner_slug", (q) => q.eq("ownerKey", identity.ownerKey).eq("slug", args.entitySlug))
       .first();
-    if (!entity) throw new Error(`Entity not found: ${args.entitySlug}`);
+    if (!entity) {
+      throw convexError({ code: "ENTITY_NOT_FOUND", slug: args.entitySlug });
+    }
 
     // Clear agent-authored blocks so we don't accumulate duplicates across runs.
     const existing = await ctx.db

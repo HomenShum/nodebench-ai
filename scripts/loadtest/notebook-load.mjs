@@ -32,7 +32,7 @@
  */
 
 import { ConvexHttpClient } from "convex/browser";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -44,6 +44,7 @@ const { values: args } = parseArgs({
     clients: { type: "string", default: "10" },
     duration: { type: "string", default: "30" },
     url: { type: "string" },
+    jsonOut: { type: "string" },
   },
 });
 
@@ -74,8 +75,30 @@ console.log(`[loadtest] clients: ${CLIENTS}, duration: ${DURATION_SEC}s`);
 console.log("");
 
 // ── Per-client stats ─────────────────────────────────────────────────────
-function makeStats(label) {
-  return { label, latencies: [], errors: [], success: 0 };
+function makeStats(scenarioId, label) {
+  return { scenarioId, label, latencies: [], errors: [], success: 0, errorCodes: {} };
+}
+
+// Extract the structured `code` from a ConvexError. The ConvexHttpClient
+// preserves the payload on err.data (not in the message — message is just
+// "[Request ID: ...] Server Error"). Constructor name is "ConvexError".
+function extractErrorCode(err) {
+  if (err?.constructor?.name === "ConvexError" && err.data && typeof err.data === "object") {
+    const code = err.data.code;
+    if (typeof code === "string") return code;
+  }
+  const msg = err?.message ?? String(err);
+  if (msg.includes("Server Error")) return "SERVER_ERROR";
+  return "UNKNOWN";
+}
+
+// Read structured ConvexError payload, used by multi_tab_conflict to recover
+// the current revision after a REVISION_MISMATCH rejection.
+function extractErrorData(err) {
+  if (err?.constructor?.name === "ConvexError" && err.data && typeof err.data === "object") {
+    return err.data;
+  }
+  return null;
 }
 
 function report(stats) {
@@ -94,9 +117,35 @@ function report(stats) {
     const uniq = [...new Set(stats.errors.slice(0, 5))];
     console.log(`│  sample errs:`);
     for (const e of uniq) console.log(`│    · ${String(e).slice(0, 120)}`);
+    const codeEntries = Object.entries(stats.errorCodes).sort((a, b) => b[1] - a[1]);
+    if (codeEntries.length > 0) {
+      console.log(`│  error codes:`);
+      for (const [code, count] of codeEntries) {
+        console.log(`│    · ${code}: ${count}`);
+      }
+    }
   }
   console.log("└──");
   console.log("");
+}
+
+function summarizeStats(stats) {
+  const sorted = [...stats.latencies].sort((a, b) => a - b);
+  const pct = (p) => (sorted.length ? sorted[Math.floor(sorted.length * p)] : null);
+  const total = stats.success + stats.errors.length;
+  const errRate = total > 0 ? (stats.errors.length / total) * 100 : 0;
+  return {
+    scenario: stats.scenarioId,
+    label: stats.label,
+    ok: stats.success,
+    total,
+    errors: stats.errors.length,
+    errorRatePct: Number(errRate.toFixed(2)),
+    p50: pct(0.5) ? Math.round(pct(0.5)) : null,
+    p95: pct(0.95) ? Math.round(pct(0.95)) : null,
+    p99: pct(0.99) ? Math.round(pct(0.99)) : null,
+    errorCodes: stats.errorCodes,
+  };
 }
 
 async function timed(fn, stats) {
@@ -108,6 +157,8 @@ async function timed(fn, stats) {
     return result;
   } catch (err) {
     stats.errors.push(err?.message ?? String(err));
+    const code = extractErrorCode(err);
+    stats.errorCodes[code] = (stats.errorCodes[code] ?? 0) + 1;
     return null;
   }
 }
@@ -115,6 +166,7 @@ async function timed(fn, stats) {
 // ── Scenario 1: concurrent insert ────────────────────────────────────────
 async function concurrentInsert() {
   const stats = makeStats(
+    "concurrent_insert",
     `SCENARIO 1 · concurrent_insert · ${CLIENTS} clients × ${DURATION_SEC}s`,
   );
   const deadline = Date.now() + DURATION_SEC * 1000;
@@ -163,7 +215,7 @@ async function concurrentInsert() {
 
 // ── Scenario 2: sustained append ─────────────────────────────────────────
 async function sustainedAppend() {
-  const stats = makeStats(`SCENARIO 2 · sustained_append · 500 blocks from 1 client`);
+  const stats = makeStats("sustained_append", `SCENARIO 2 · sustained_append · 500 blocks from 1 client`);
   const client = new ConvexHttpClient(CONVEX_URL);
   const anonId = `loadtest-sustained`;
   await client.mutation("domains/product/entities:ensureEntity", {
@@ -187,7 +239,7 @@ async function sustainedAppend() {
   }
 
   // After appending, read with pagination and check we can walk the whole list.
-  const paginatedStats = makeStats(`SCENARIO 2b · paginated read across 500 blocks`);
+  const paginatedStats = makeStats("paginated_read", `SCENARIO 2b · paginated read across 500 blocks`);
   let cursor = null;
   let pages = 0;
   let totalRead = 0;
@@ -211,12 +263,13 @@ async function sustainedAppend() {
   console.log(`[loadtest] paginated read: ${pages} pages, ${totalRead} blocks total`);
   report(stats);
   report(paginatedStats);
-  return stats;
+  return [stats, paginatedStats];
 }
 
 // ── Scenario 3: multi-tab edit ───────────────────────────────────────────
 async function multiTabEdit() {
   const stats = makeStats(
+    "multi_tab_edit",
     `SCENARIO 3 · multi_tab_edit · ${CLIENTS} clients × 500ms cadence × ${DURATION_SEC}s`,
   );
 
@@ -271,12 +324,119 @@ async function multiTabEdit() {
   return stats;
 }
 
+// ── Scenario 4: multi-tab conflict (revision guard exercise) ─────────────
+// Two tabs share an anonymous session and both edit THE SAME block at high
+// cadence. Each passes its last-seen `revision` as `expectedRevision`. The
+// server accepts the first and rejects the stale second with
+// `REVISION_MISMATCH`. The losing tab re-fetches and retries. A healthy
+// result is:
+//   - non-zero REVISION_MISMATCH count (the guard actually fires),
+//   - zero non-conflict errors,
+//   - successful writes > rejected writes by a wide margin (retries work).
+async function multiTabConflict() {
+  const stats = makeStats(
+    "multi_tab_conflict",
+    `SCENARIO 4 · multi_tab_conflict · 2 tabs × 1 block × ${DURATION_SEC}s`,
+  );
+  const anonId = `loadtest-conflict-shared`;
+  const seed = new ConvexHttpClient(CONVEX_URL);
+  await seed.mutation("domains/product/entities:ensureEntity", {
+    anonymousSessionId: anonId,
+    slug: args.entity,
+    name: args.entity,
+  });
+  const blockId = await seed.mutation("domains/product/blocks:appendBlock", {
+    anonymousSessionId: anonId,
+    entitySlug: args.entity,
+    kind: "text",
+    content: [{ type: "text", value: "conflict-target seed" }],
+    authorKind: "user",
+    authorId: anonId,
+  });
+
+  const deadline = Date.now() + DURATION_SEC * 1000;
+  let acceptedWrites = 0;
+  let conflictRejects = 0;
+  let retriesThatSucceeded = 0;
+
+  async function tabLoop(tabIdx) {
+    const client = new ConvexHttpClient(CONVEX_URL);
+    // Each tab keeps a local guess of the current revision. It will drift
+    // when the other tab wins a race; we resync on conflict.
+    let knownRevision = 1;
+    let localRev = 0;
+    while (Date.now() < deadline) {
+      localRev += 1;
+      const content = [
+        { type: "text", value: `tab-${tabIdx} local rev ${localRev} @ ${Date.now()}` },
+      ];
+      const t0 = performance.now();
+      try {
+        await client.mutation("domains/product/blocks:updateBlock", {
+          anonymousSessionId: anonId,
+          blockId,
+          content,
+          expectedRevision: knownRevision,
+          editedByAuthorKind: "user",
+          editedByAuthorId: `${anonId}-tab-${tabIdx}`,
+        });
+        stats.latencies.push(performance.now() - t0);
+        stats.success += 1;
+        acceptedWrites += 1;
+        // The server just incremented revision; our next write assumes this.
+        knownRevision += 1;
+      } catch (err) {
+        stats.errors.push(err?.message ?? String(err));
+        const code = extractErrorCode(err);
+        stats.errorCodes[code] = (stats.errorCodes[code] ?? 0) + 1;
+        if (code === "REVISION_MISMATCH") {
+          conflictRejects += 1;
+          // Resync from the structured payload and retry once.
+          const data = extractErrorData(err);
+          if (data && typeof data.current === "number") {
+            knownRevision = data.current;
+          } else {
+            knownRevision += 1;
+          }
+          try {
+            await client.mutation("domains/product/blocks:updateBlock", {
+              anonymousSessionId: anonId,
+              blockId,
+              content,
+              expectedRevision: knownRevision,
+              editedByAuthorKind: "user",
+              editedByAuthorId: `${anonId}-tab-${tabIdx}-retry`,
+            });
+            knownRevision += 1;
+            retriesThatSucceeded += 1;
+          } catch {
+            // A second mismatch is possible under extreme load; we just drop
+            // this iteration. The invariant we care about is that the server
+            // never loses data, not that every retry wins.
+          }
+        }
+      }
+      // Slight jitter so both tabs don't move in lockstep.
+      await new Promise((r) => setTimeout(r, 50 + Math.random() * 50));
+    }
+  }
+
+  await Promise.all([tabLoop(0), tabLoop(1)]);
+  console.log(
+    `[loadtest] multi_tab_conflict breakdown: accepted=${acceptedWrites}, ` +
+      `rejected_revision=${conflictRejects}, retries_recovered=${retriesThatSucceeded}`,
+  );
+  report(stats);
+  return stats;
+}
+
 // ── Orchestrator ─────────────────────────────────────────────────────────
 async function main() {
   const scenarios = {
     concurrent_insert: concurrentInsert,
     sustained_append: sustainedAppend,
     multi_tab_edit: multiTabEdit,
+    multi_tab_conflict: multiTabConflict,
   };
 
   const selected = args.scenario === "all" ? Object.keys(scenarios) : [args.scenario];
@@ -287,24 +447,57 @@ async function main() {
       console.error(`Unknown scenario: ${name}`);
       process.exit(2);
     }
-    const stats = await fn();
-    results.push(stats);
+    const outcome = await fn();
+    if (Array.isArray(outcome)) {
+      results.push(...outcome);
+    } else {
+      results.push(outcome);
+    }
   }
 
   console.log("=== SUMMARY ===");
-  for (const s of results) {
-    const errRate =
-      s.latencies.length + s.errors.length > 0
-        ? (s.errors.length / (s.latencies.length + s.errors.length)) * 100
-        : 0;
+  const summary = results.map(summarizeStats);
+  console.log("scenario\tok/total\tp50\tp95\tp99\terror%");
+  for (const row of summary) {
     console.log(
-      `${s.label}: ${s.success} ok, ${s.errors.length} err (${errRate.toFixed(1)}%)`,
+      `${row.scenario}\t${row.ok}/${row.total}\t${row.p50 ?? "-"}ms\t${row.p95 ?? "-"}ms\t${row.p99 ?? "-"}ms\t${row.errorRatePct.toFixed(2)}%`,
     );
   }
 
-  const anyFailed = results.some(
-    (s) => s.errors.length > 0 && s.errors.length / (s.latencies.length + s.errors.length) > 0.05,
-  );
+  if (args.jsonOut) {
+    writeFileSync(
+      args.jsonOut,
+      JSON.stringify(
+        {
+          convexUrl: CONVEX_URL,
+          entitySlug: args.entity,
+          clients: CLIENTS,
+          durationSec: DURATION_SEC,
+          generatedAt: new Date().toISOString(),
+          summary,
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+    console.log(`[loadtest] wrote JSON summary to ${args.jsonOut}`);
+  }
+
+  // CI gate: >5% *unexpected* error rate fails the build. We do NOT count
+  // REVISION_MISMATCH as a failure — the multi_tab_conflict scenario
+  // deliberately causes them to prove the revision guard holds. A successful
+  // retry is invisible to this ratio; a data-loss bug would show up as
+  // SERVER_ERROR or UNKNOWN above the threshold.
+  const EXPECTED_CODES = new Set(["REVISION_MISMATCH"]);
+  const anyFailed = results.some((s) => {
+    const total = s.latencies.length + s.errors.length;
+    if (total === 0) return false;
+    const unexpected = Object.entries(s.errorCodes)
+      .filter(([code]) => !EXPECTED_CODES.has(code))
+      .reduce((sum, [, count]) => sum + count, 0);
+    return unexpected / total > 0.05;
+  });
   process.exit(anyFailed ? 1 : 0);
 }
 
