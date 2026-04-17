@@ -749,7 +749,12 @@ function EntityWorkspaceView({
   }, [slug]);
 
   const workspace = liveWorkspace ?? systemWorkspace ?? starterWorkspace;
+  const liveWorkspaceResolved = liveWorkspace !== undefined;
   const hasLiveEntity = Boolean(liveWorkspace?.entity?._id);
+
+  useEffect(() => {
+    setEntityViewMode(readInitialEntityViewMode(slug));
+  }, [slug]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -757,10 +762,11 @@ function EntityWorkspaceView({
   }, [entityViewMode, slug]);
 
   useEffect(() => {
-    if (starterWorkspace && !liveWorkspace && !systemWorkspace && entityViewMode !== "classic") {
+    if (!liveWorkspaceResolved) return;
+    if (!hasLiveEntity && entityViewMode !== "classic") {
       setEntityViewMode("classic");
     }
-  }, [entityViewMode, liveWorkspace, starterWorkspace, systemWorkspace]);
+  }, [entityViewMode, hasLiveEntity, liveWorkspaceResolved]);
 
   useEffect(() => {
     if (!workspace) return;

@@ -223,6 +223,46 @@ function truncate(value: string, max: number): string {
   return `${value.slice(0, max - 1)}…`;
 }
 
+function normalizeConfidence(confidence: number | undefined): number | undefined {
+  if (confidence == null || !Number.isFinite(confidence)) return undefined;
+  if (confidence > 1 && confidence <= 100) {
+    return Number((confidence / 100).toFixed(2));
+  }
+  return Number(confidence.toFixed(2));
+}
+
+function sanitizeRelationSummary(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const cleaned = value
+    .replace(/https?:\/\/\S+/g, "")
+    .replace(/\b(?:Recruiter notes(?: for due diligence)?|Firm site|Co-founders?|Goal|Need)\b:?/gi, "")
+    .replace(/\b(?:Additional Context|confirmed|unconfirmed claims?)\b/gi, "")
+    .replace(/[()[\]{}]/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/\b(?:and|or|with)\s*$/i, "")
+    .replace(/\s+:\s*$/, "")
+    .replace(/[:;,.\-–—]+$/g, "")
+    .trim();
+  if (!cleaned || cleaned.length < 3) return undefined;
+  if (/^(?:and|or|with|goal|need|firm site|co-?founders?)$/i.test(cleaned)) return undefined;
+  return cleaned.slice(0, 120);
+}
+
+function clampMilestoneTimestamp(
+  timestamp: number | undefined,
+  sessionStartedAt: number | undefined,
+  totalDurationMs: number | undefined,
+): number | undefined {
+  if (timestamp == null || sessionStartedAt == null) return timestamp;
+  const lowerBound = sessionStartedAt;
+  const upperBound =
+    totalDurationMs != null && Number.isFinite(totalDurationMs)
+      ? sessionStartedAt + Math.max(totalDurationMs, 0)
+      : undefined;
+  const normalized = Math.max(timestamp, lowerBound);
+  return upperBound != null ? Math.min(normalized, upperBound) : normalized;
+}
+
 const PARALLEL_CANDIDATE_TOOLS = new Set([
   "web_search",
   "linkup_search",
@@ -373,12 +413,25 @@ export const getEntityNotebook = query({
     // ──────────────────────────────────────────────────────────────────────
     const sortedToolEvents = toolEvents.slice().sort((a, b) => a.step - b.step);
     const parallelGroupSize = sortedToolEvents.filter((event) => PARALLEL_CANDIDATE_TOOLS.has(event.tool)).length;
-    const firstStageAt = sortedToolEvents[0]?.startedAt ?? session?.createdAt;
-    const firstSourceAt = sourceEvents.slice().sort((a, b) => a.createdAt - b.createdAt)[0]?.createdAt;
-    const firstPartialAnswerAt =
-      sortedToolEvents.find((event) => event.tool === "synthesize_packet")?.updatedAt ??
-      latestReport?.updatedAt ??
-      session?.updatedAt;
+    const sessionStartedAt = session?.createdAt;
+    const totalDurationMs = session?.totalDurationMs;
+    const firstStageAt = clampMilestoneTimestamp(
+      sortedToolEvents[0]?.startedAt ?? sessionStartedAt,
+      sessionStartedAt,
+      totalDurationMs,
+    );
+    const firstSourceAt = clampMilestoneTimestamp(
+      sourceEvents.slice().sort((a, b) => a.createdAt - b.createdAt)[0]?.createdAt,
+      sessionStartedAt,
+      totalDurationMs,
+    );
+    const firstPartialAnswerAt = clampMilestoneTimestamp(
+      sortedToolEvents.find((event) => event.tool === "synthesize_packet" || event.tool === "package")?.updatedAt ??
+        sortedToolEvents[sortedToolEvents.length - 1]?.updatedAt ??
+        session?.updatedAt,
+      sessionStartedAt,
+      totalDurationMs,
+    );
 
     const planSteps: NotebookPlanStep[] = sortedToolEvents.map((event) => {
       const costUsd = Number(
@@ -409,7 +462,7 @@ export const getEntityNotebook = query({
 
     const planTrace: NotebookPlanTrace = {
       steps: planSteps,
-      totalDurationMs: session?.totalDurationMs,
+      totalDurationMs,
       totalCostUsd: planSteps.length > 0 ? Number(totalCostUsd.toFixed(4)) : undefined,
       adaptationCount: 0, // Not persisted yet — placeholder, comes from harness execution.adaptations
       milestones: {
@@ -435,7 +488,7 @@ export const getEntityNotebook = query({
         title: reportSource.title ?? reportSource.label,
         publishedAt: reportSource.publishedAt,
         excerpt: reportSource.excerpt,
-        confidence: reportSource.confidence,
+        confidence: normalizeConfidence(reportSource.confidence),
         faviconUrl: reportSource.faviconUrl,
         thumbnailUrl: reportSource.thumbnailUrl,
         imageCandidates: reportSource.imageCandidates,
@@ -447,7 +500,7 @@ export const getEntityNotebook = query({
       const existing = sourceMap.get(sourceEvent.sourceKey);
       if (existing) {
         if (existing.confidence == null && sourceEvent.confidence != null) {
-          existing.confidence = sourceEvent.confidence;
+          existing.confidence = normalizeConfidence(sourceEvent.confidence);
         }
         if (!existing.excerpt && sourceEvent.excerpt) {
           existing.excerpt = sourceEvent.excerpt;
@@ -472,7 +525,7 @@ export const getEntityNotebook = query({
         title: sourceEvent.title ?? sourceEvent.label,
         publishedAt: sourceEvent.publishedAt,
         excerpt: sourceEvent.excerpt,
-        confidence: sourceEvent.confidence,
+        confidence: normalizeConfidence(sourceEvent.confidence),
         faviconUrl: sourceEvent.faviconUrl,
         thumbnailUrl: sourceEvent.thumbnailUrl,
         imageCandidates: sourceEvent.imageCandidates?.slice(0, 4),
@@ -596,12 +649,16 @@ export const getEntityNotebook = query({
     const relatedEntities = outgoingRelations.reduce<NotebookEntityLink[]>((acc, relation) => {
       const related = relatedEntityLookups.get(relation.toEntitySlug);
       if (!related) return acc;
+      const summary = sanitizeRelationSummary(relation.summary);
       acc.push({
         slug: related.slug,
         name: related.name,
         entityType: related.entityType,
         relation: relation.relation,
-        reason: relation.summary,
+        reason:
+          summary && summary.toLowerCase() !== related.name.toLowerCase()
+            ? summary
+            : relation.relation,
       });
       return acc;
     }, []);
@@ -609,12 +666,16 @@ export const getEntityNotebook = query({
     const linkedFrom = incomingRelations.reduce<NotebookEntityLink[]>((acc, relation) => {
       const related = relatedEntityLookups.get(relation.fromEntitySlug);
       if (!related) return acc;
+      const summary = sanitizeRelationSummary(relation.summary);
       acc.push({
         slug: related.slug,
         name: related.name,
         entityType: related.entityType,
         relation: relation.relation,
-        reason: relation.summary,
+        reason:
+          summary && summary.toLowerCase() !== related.name.toLowerCase()
+            ? summary
+            : relation.relation,
       });
       return acc;
     }, []);
