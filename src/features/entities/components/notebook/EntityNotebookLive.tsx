@@ -16,11 +16,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { useNavigate } from "react-router-dom";
-import { ExternalLink, Link2, Sparkles } from "lucide-react";
+import { AlertTriangle, ExternalLink, Link2, Lock, Sparkles } from "lucide-react";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { useConvexApi } from "@/lib/convexApi";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import { useStreamingSearch } from "@/hooks/useStreamingSearch";
+import { useToast } from "@/shared/ui";
 import { chipsFromMarkup, type BlockChip } from "./BlockChipRenderer";
 import { BlockProvenance } from "./BlockProvenance";
 import { SlashPalette, type SlashCommand } from "./SlashPalette";
@@ -42,6 +43,7 @@ type BlockKind =
   | "generated_marker";
 
 type AuthorKind = "user" | "agent" | "anonymous";
+type AccessMode = "read" | "append" | "edit";
 
 type LiveBlock = {
   _id: Id<"productBlocks">;
@@ -58,6 +60,8 @@ type LiveBlock = {
   sourceToolStep?: number;
   sourceRefIds?: string[];
   revision: number;
+  accessMode?: AccessMode;
+  isPublic?: boolean;
   updatedAt: number;
 };
 
@@ -97,6 +101,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
   const api = useConvexApi();
   const navigate = useNavigate();
   const anonymousSessionId = getAnonymousProductSessionId();
+  const toast = useToast();
 
   const blocks = useQuery(
     api?.domains.product.blocks.listEntityBlocks ?? "skip",
@@ -130,7 +135,58 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
   const [mentionFor, setMentionFor] = useState<{ blockId: Id<"productBlocks">; initial: string } | null>(null);
   const [focusedBlockId, setFocusedBlockId] = useState<Id<"productBlocks"> | null>(null);
   const [innerView, setInnerView] = useState<"document" | "outline" | "review">("document");
+  const [runtimeError, setRuntimeError] = useState<{ title: string; detail?: string } | null>(null);
+  const [backfillPending, setBackfillPending] = useState(false);
   const pendingSaveRef = useRef<Map<string, number>>(new Map());
+  const backfillInFlightRef = useRef<Promise<void> | null>(null);
+
+  const describeError = useCallback((error: unknown): string | undefined => {
+    if (!error) return undefined;
+    if (error instanceof Error) return error.message;
+    if (typeof error === "string") return error;
+    return undefined;
+  }, []);
+
+  const reportNotebookError = useCallback(
+    (title: string, error: unknown) => {
+      const detail = describeError(error);
+      console.warn(`[notebook] ${title}`, error);
+      setRuntimeError({ title, detail });
+      toast.error(title, detail);
+    },
+    [describeError, toast],
+  );
+
+  const notifyReadOnly = useCallback(
+    (action: string) => {
+      const title = "Block is read-only";
+      const detail = `You cannot ${action} this block until its access mode is set to edit.`;
+      setRuntimeError({ title, detail });
+      toast.warning(title, detail);
+    },
+    [toast],
+  );
+
+  const runBackfill = useCallback(async () => {
+    if (backfillInFlightRef.current) {
+      return backfillInFlightRef.current;
+    }
+    setBackfillPending(true);
+    const run = backfillEntityBlocks({ anonymousSessionId, entitySlug })
+      .then(() => {
+        setRuntimeError(null);
+        onBackfillNeeded?.();
+      })
+      .catch((error: unknown) => {
+        reportNotebookError("Failed to seed notebook blocks", error);
+      })
+      .finally(() => {
+        setBackfillPending(false);
+        backfillInFlightRef.current = null;
+      });
+    backfillInFlightRef.current = run;
+    return run;
+  }, [anonymousSessionId, backfillEntityBlocks, entitySlug, onBackfillNeeded, reportNotebookError]);
 
   // Auto-backfill on first render if no blocks exist yet but the entity has a report.
   const backfillAttempted = useRef(false);
@@ -139,15 +195,21 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
     if (!blocks || blocks.length > 0) return;
     if (!snapshot || snapshot.blocks.length === 0) return;
     backfillAttempted.current = true;
-    onBackfillNeeded?.();
-    backfillEntityBlocks({ anonymousSessionId, entitySlug }).catch((err: unknown) => {
-      console.warn("[notebook] backfill failed", err);
-    });
-  }, [blocks, snapshot, backfillEntityBlocks, anonymousSessionId, entitySlug, onBackfillNeeded]);
+    void runBackfill();
+  }, [blocks, snapshot, runBackfill]);
+
+  useEffect(() => {
+    return () => {
+      pendingSaveRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+      pendingSaveRef.current.clear();
+    };
+  }, []);
 
   // Debounced save of inline edits. Keyed by blockId.
   const scheduleSave = useCallback(
-    (blockId: Id<"productBlocks">, text: string) => {
+    (block: LiveBlock, text: string) => {
+      if (block.accessMode !== "edit") return;
+      const blockId = block._id;
       const prev = pendingSaveRef.current.get(blockId);
       if (prev) window.clearTimeout(prev);
       const timeoutId = window.setTimeout(() => {
@@ -157,17 +219,29 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
           content: chipsFromMarkup(text),
           forkHistory: false, // inline edits don't fork the whole block; explicit revert UI later
           editedByAuthorKind: "user",
-        }).catch((err) => console.warn("[notebook] save failed", err));
-        pendingSaveRef.current.delete(blockId);
+        })
+          .then(() => {
+            setRuntimeError(null);
+          })
+          .catch((error) => {
+            reportNotebookError("Failed to save notebook block", error);
+          })
+          .finally(() => {
+            pendingSaveRef.current.delete(blockId);
+          });
       }, 500);
       pendingSaveRef.current.set(blockId, timeoutId);
     },
-    [anonymousSessionId, updateBlock],
+    [anonymousSessionId, reportNotebookError, updateBlock],
   );
 
   const handleEnter = useCallback(
     async (block: LiveBlock, blockIndex: number) => {
       if (!blocks) return;
+      if (block.accessMode === "read") {
+        notifyReadOnly("insert after");
+        return;
+      }
       const next = blocks[blockIndex + 1];
       await insertBlockBetween({
         anonymousSessionId,
@@ -180,7 +254,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
         authorKind: "user",
       });
     },
-    [blocks, insertBlockBetween, anonymousSessionId, entitySlug],
+    [blocks, insertBlockBetween, anonymousSessionId, entitySlug, notifyReadOnly],
   );
 
   const streaming = useStreamingSearch();
@@ -193,6 +267,10 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
       // Find the current block to append a mention chip inline.
       const block = blocks?.find((b) => b._id === targetBlockId);
       if (!block) return;
+      if (block.accessMode !== "edit") {
+        notifyReadOnly("add mentions to");
+        return;
+      }
       await updateBlock({
         anonymousSessionId,
         blockId: targetBlockId,
@@ -219,10 +297,10 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
           authorKind: "user",
         });
       } catch (err) {
-        console.warn("[notebook] mention relation failed", err);
+        reportNotebookError("Failed to attach mention relation", err);
       }
     },
-    [anonymousSessionId, blocks, createBlockRelation, mentionFor, updateBlock],
+    [anonymousSessionId, blocks, createBlockRelation, mentionFor, notifyReadOnly, reportNotebookError, updateBlock],
   );
 
   const runSlashCommand = useCallback(
@@ -230,6 +308,10 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
       setSlashFor(null);
       const prompt = command.prompt ?? "";
       if (!prompt.trim() && command.id !== "mention") return;
+      if (block.accessMode === "read") {
+        notifyReadOnly("run notebook commands from");
+        return;
+      }
 
       if (command.id === "ai" || command.id === "search" || command.id === "deepresearch") {
         // Insert a "generating…" callout block so the user sees progress immediately.
@@ -303,7 +385,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
                 content: [{ type: "text", value: `✨ ${command.label}: ${prompt} — done` }],
               });
             } catch (err) {
-              console.warn("[notebook] stream persist failed", err);
+              reportNotebookError("Failed to persist generated notebook output", err);
             }
           },
           onError: (message) => {
@@ -311,7 +393,9 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
               anonymousSessionId,
               blockId: progressBlockId,
               content: [{ type: "text", value: `⚠ ${command.label}: ${prompt} — ${message}` }],
-            }).catch((err) => console.warn("[notebook] error persist failed", err));
+            }).catch((err) => reportNotebookError("Failed to record notebook command error", err));
+            setRuntimeError({ title: `Notebook command failed`, detail: message });
+            toast.error("Notebook command failed", message);
           },
         });
       } else if (command.id === "mention") {
@@ -319,7 +403,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
         setMentionFor({ blockId: block._id, initial: prompt });
       }
     },
-    [anonymousSessionId, appendBlock, entitySlug, streaming, updateBlock],
+    [anonymousSessionId, appendBlock, entitySlug, notifyReadOnly, reportNotebookError, streaming, toast, updateBlock],
   );
 
   const sourcesById = useMemo(() => {
@@ -342,14 +426,11 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
         <p>No persisted blocks yet.</p>
         <button
           type="button"
-          onClick={() =>
-            backfillEntityBlocks({ anonymousSessionId, entitySlug }).catch((err: unknown) =>
-              console.warn("[notebook] backfill failed", err),
-            )
-          }
+          onClick={() => void runBackfill()}
+          disabled={backfillPending}
           className="mt-3 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 transition-colors hover:border-gray-300 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300"
         >
-          Seed blocks from latest report
+          {backfillPending ? "Seeding..." : "Seed blocks from latest report"}
         </button>
       </div>
     );
@@ -357,6 +438,25 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
 
   return (
     <div className="mt-6">
+      {runtimeError ? (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="font-medium">{runtimeError.title}</div>
+              {runtimeError.detail ? <div className="mt-1 text-xs opacity-80">{runtimeError.detail}</div> : null}
+            </div>
+            <button
+              type="button"
+              onClick={() => setRuntimeError(null)}
+              className="rounded border border-amber-300/70 px-2 py-1 text-[11px] transition-colors hover:bg-amber-100/70 dark:border-amber-400/30 dark:hover:bg-amber-400/10"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <div className="mb-3 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
         <span>
           {blocks.length} block{blocks.length === 1 ? "" : "s"} · live · press <kbd className="rounded border border-gray-200 bg-white px-1 dark:border-white/10 dark:bg-white/[0.05]">/</kbd>{" "}
@@ -397,16 +497,22 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
             prev={blocks[blockIndex - 1]}
             next={blocks[blockIndex + 1]}
             sourcesById={sourcesById}
+            isEditable={block.accessMode === "edit"}
+            accessMode={block.accessMode ?? "edit"}
             isFocused={focusedBlockId === block._id}
             showSlash={slashFor === block._id}
             onFocus={() => setFocusedBlockId(block._id)}
             onBlur={() => {
               if (focusedBlockId === block._id) setFocusedBlockId(null);
             }}
-            onChangeText={(text) => scheduleSave(block._id, text)}
+            onChangeText={(text) => scheduleSave(block, text)}
             onEnter={() => void handleEnter(block, blockIndex)}
             onBackspaceAtStart={async () => {
               if (blockIndex === 0) return;
+              if (block.accessMode !== "edit") {
+                notifyReadOnly("delete");
+                return;
+              }
               await deleteBlock({ anonymousSessionId, blockId: block._id });
             }}
             onOpenSlash={() => setSlashFor(block._id)}
@@ -472,6 +578,8 @@ type BlockRowProps = {
   prev?: LiveBlock;
   next?: LiveBlock;
   sourcesById: Map<string, { id: string; label: string; href?: string; confidence?: number; domain?: string }>;
+  isEditable: boolean;
+  accessMode: AccessMode;
   isFocused: boolean;
   showSlash: boolean;
   onFocus: () => void;
@@ -488,6 +596,8 @@ type BlockRowProps = {
 function BlockRow({
   block,
   sourcesById,
+  isEditable,
+  accessMode,
   isFocused,
   showSlash,
   onFocus,
@@ -515,6 +625,13 @@ function BlockRow({
   const isEvidence = block.kind === "evidence";
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (!isEditable) {
+      if (e.key === "Escape") onCloseSlash();
+      if (e.key === "/" || e.key === "Enter" || e.key === "Backspace" || e.key.length === 1) {
+        e.preventDefault();
+      }
+      return;
+    }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       onEnter();
@@ -544,6 +661,7 @@ function BlockRow({
   };
 
   const handleInput = () => {
+    if (!isEditable) return;
     const text = ref.current?.textContent ?? "";
     lastRenderedText.current = text;
     onChangeText(text);
@@ -611,14 +729,17 @@ function BlockRow({
           <div className="min-w-0 flex-1">
             <div
               ref={ref}
-              contentEditable
+              contentEditable={isEditable}
               suppressContentEditableWarning
               onFocus={onFocus}
               onBlur={onBlur}
               onInput={handleInput}
               onKeyDown={handleKeyDown}
-              className={`outline-none focus-visible:outline-none ${classesForKind()}`}
+              className={`outline-none focus-visible:outline-none ${classesForKind()} ${
+                !isEditable ? "cursor-default opacity-80" : ""
+              }`}
               role="textbox"
+              aria-readonly={!isEditable}
               aria-label={`Block · ${block.kind}`}
             >
               {/* Initial text rendered here; subsequent updates managed via lastRenderedText ref */}
@@ -650,7 +771,18 @@ function BlockRow({
               </span>
             ) : null}
           </div>
-          <BlockProvenance block={block} />
+          <div className="flex shrink-0 items-start gap-2">
+            {accessMode !== "edit" ? (
+              <span
+                className="mt-2 inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] text-amber-600 bg-amber-500/10"
+                title={accessMode === "read" ? "Read-only block" : "Append-only block"}
+              >
+                <Lock className="h-2.5 w-2.5" />
+                {accessMode}
+              </span>
+            ) : null}
+            <BlockProvenance block={block} />
+          </div>
         </div>
 
         {showSlash ? (

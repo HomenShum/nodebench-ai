@@ -37,6 +37,7 @@ import { getAnonymousProductSessionId } from "@/features/product/lib/productIden
 import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
 import { ProductWorkspaceHeader } from "@/features/product/components/ProductWorkspaceHeader";
 import { ProductSourceIdentity } from "@/features/product/components/ProductSourceIdentity";
+import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import {
   buildPrepBriefPrompt,
   getReportArtifactLabel,
@@ -763,7 +764,7 @@ function EntityWorkspaceView({
 
   useEffect(() => {
     if (!liveWorkspaceResolved) return;
-    if (!hasLiveEntity && entityViewMode !== "classic") {
+    if (!hasLiveEntity && entityViewMode === "live") {
       setEntityViewMode("classic");
     }
   }, [entityViewMode, hasLiveEntity, liveWorkspaceResolved]);
@@ -1336,10 +1337,12 @@ function EntityWorkspaceView({
           <button
             type="button"
             onClick={() => setEntityViewMode("live")}
+            disabled={!hasLiveEntity}
+            title={!hasLiveEntity ? "Live notebook requires a saved entity workspace." : undefined}
             className={`rounded px-2.5 py-1 text-xs transition-colors ${
               entityViewMode === "live"
                 ? "bg-white text-gray-900 shadow-sm dark:bg-white/10 dark:text-gray-100"
-                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                : "text-gray-500 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:text-gray-200"
             }`}
           >
             Live ✨
@@ -1348,15 +1351,19 @@ function EntityWorkspaceView({
       </div>
 
       {entityViewMode === "notebook" ? (
-        <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading notebook…</div>}>
-          <EntityNotebookView entitySlug={entity.slug} />
-        </Suspense>
+        <ErrorBoundary section="Entity notebook">
+          <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading notebook…</div>}>
+            <EntityNotebookView entitySlug={entity.slug} />
+          </Suspense>
+        </ErrorBoundary>
       ) : null}
 
       {entityViewMode === "live" ? (
-        <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading live notebook…</div>}>
-          <EntityNotebookLive entitySlug={entity.slug} />
-        </Suspense>
+        <ErrorBoundary section="Live notebook">
+          <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading live notebook…</div>}>
+            <EntityNotebookLive entitySlug={entity.slug} />
+          </Suspense>
+        </ErrorBoundary>
       ) : null}
 
       {/* ── Notebook flow (Roam/Notion-style: one continuous page) ── */}
