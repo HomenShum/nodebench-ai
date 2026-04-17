@@ -869,6 +869,7 @@ import type * as domains_proactive_recommendations_index from "../domains/proact
 import type * as domains_proactive_recommendations_recommendationEngine from "../domains/proactive/recommendations/recommendationEngine.js";
 import type * as domains_proactive_seedAdmins from "../domains/proactive/seedAdmins.js";
 import type * as domains_product_blockOrdering from "../domains/product/blockOrdering.js";
+import type * as domains_product_blockProsemirror from "../domains/product/blockProsemirror.js";
 import type * as domains_product_blocks from "../domains/product/blocks.js";
 import type * as domains_product_bootstrap from "../domains/product/bootstrap.js";
 import type * as domains_product_chat from "../domains/product/chat.js";
@@ -2232,6 +2233,7 @@ declare const fullApi: ApiFromModules<{
   "domains/proactive/recommendations/recommendationEngine": typeof domains_proactive_recommendations_recommendationEngine;
   "domains/proactive/seedAdmins": typeof domains_proactive_seedAdmins;
   "domains/product/blockOrdering": typeof domains_product_blockOrdering;
+  "domains/product/blockProsemirror": typeof domains_product_blockProsemirror;
   "domains/product/blocks": typeof domains_product_blocks;
   "domains/product/bootstrap": typeof domains_product_bootstrap;
   "domains/product/chat": typeof domains_product_chat;
