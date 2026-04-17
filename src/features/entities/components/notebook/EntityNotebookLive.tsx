@@ -185,7 +185,20 @@ type ParsedNotebookMutationError = {
   expected?: number;
   retryAfterMs?: number;
   message?: string;
+  // Convex Request ID — the HTTP client puts this in err.message as
+  // "[Request ID: <hex>] Server Error". Surfacing it in the client toast
+  // + console lets support correlate user reports to `npx convex logs`
+  // entries in seconds instead of minutes.
+  requestId?: string;
 };
+
+// Pull the Convex Request ID out of a thrown error's message string.
+// Returns null if no ID present (e.g. purely client-side error).
+export function extractConvexRequestId(error: unknown): string | null {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  const match = /\[Request ID:\s*([a-f0-9]+)\]/i.exec(message);
+  return match ? match[1] : null;
+}
 
 export function parseNotebookMutationError(error: unknown): ParsedNotebookMutationError {
   const message =
@@ -197,6 +210,8 @@ export function parseNotebookMutationError(error: unknown): ParsedNotebookMutati
           ? undefined
           : String(error);
 
+  const requestId = extractConvexRequestId(error) ?? undefined;
+
   // ConvexError surfaces structured payload on `err.data` (the HTTP client
   // replaces `err.message` with "[Request ID: ...] Server Error"). Prefer
   // reading err.data directly; fall back to regex for legacy serializations.
@@ -207,23 +222,24 @@ export function parseNotebookMutationError(error: unknown): ParsedNotebookMutati
   ) {
     const data = (error as { data?: unknown }).data;
     if (data && typeof data === "object") {
-      return { ...(data as ParsedNotebookMutationError), message };
+      return { ...(data as ParsedNotebookMutationError), message, requestId };
     }
   }
 
-  if (!message) return {};
+  if (!message) return { requestId };
   const match = /ConvexError:\s*(\{.*\})/s.exec(message);
   if (!match) {
-    return { message };
+    return { message, requestId };
   }
   try {
     const parsed = JSON.parse(match[1]) as ParsedNotebookMutationError;
     return {
       ...parsed,
       message,
+      requestId,
     };
   } catch {
-    return { message };
+    return { message, requestId };
   }
 }
 
@@ -269,9 +285,14 @@ export function describeNotebookMutationFailure(
       : action === "command"
         ? "finish the notebook command"
         : "save the notebook block";
+  // Tail the Convex Request ID onto the detail so support can jump to the
+  // exact log line with `npx convex logs --prod | grep <id>`.
+  const detailWithId = parsed.requestId
+    ? `${parsed.message ?? "Unknown error"} (ref: ${parsed.requestId})`
+    : parsed.message;
   return {
     title: `Failed to ${actionLabel}`,
-    detail: parsed.message,
+    detail: detailWithId,
     level: "error",
   };
 }
@@ -422,37 +443,60 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
     };
   }, []);
 
+  // Error codes that are PERMANENT — retry is pointless and wastes a cycle.
+  // Anything NOT in this set is presumed transient (network blip, 5xx, Convex
+  // cold start, reconnect) and retried with exponential backoff.
+  const PERMANENT_ERROR_CODES = useMemo(
+    () => new Set(["REVISION_MISMATCH", "CONTENT_TOO_LARGE", "RATE_LIMITED", "BLOCK_NOT_FOUND", "ENTITY_NOT_FOUND"]),
+    [],
+  );
+
   // Debounced save of inline edits. Keyed by blockId.
+  // Transient errors (network, 5xx, cold start) retry up to 3 times with
+  // exponential backoff: 300ms, 900ms, 2700ms. Permanent errors (see set
+  // above) surface immediately to the user via reportNotebookMutationFailure.
   const scheduleSave = useCallback(
     (block: LiveBlock, content: BlockChip[]) => {
       if (block.accessMode !== "edit") return;
       const blockId = block._id;
       const prev = pendingSaveRef.current.get(blockId);
       if (prev) window.clearTimeout(prev);
-      const timeoutId = window.setTimeout(() => {
-        void updateBlock({
-          anonymousSessionId,
-          blockId,
-          content,
-          forkHistory: false, // inline edits don't fork the whole block; explicit revert UI later
-          editedByAuthorKind: "user",
-          // Optimistic concurrency: the server rejects with REVISION_MISMATCH
-          // if another tab/agent saved first.
-          expectedRevision: block.revision,
-        })
-          .then(() => {
-            setRuntimeError(null);
-          })
-          .catch((error) => {
-            reportNotebookMutationFailure("save", error);
-          })
-          .finally(() => {
-            pendingSaveRef.current.delete(blockId);
+
+      const attemptSave = async (attempt: number): Promise<void> => {
+        try {
+          await updateBlock({
+            anonymousSessionId,
+            blockId,
+            content,
+            forkHistory: false, // inline edits don't fork; explicit revert UI later
+            editedByAuthorKind: "user",
+            // Optimistic concurrency: server rejects with REVISION_MISMATCH
+            // if another tab/agent saved first.
+            expectedRevision: block.revision,
           });
+          setRuntimeError(null);
+        } catch (error) {
+          const parsed = parseNotebookMutationError(error);
+          const isPermanent = parsed.code && PERMANENT_ERROR_CODES.has(parsed.code);
+          if (!isPermanent && attempt < 3) {
+            const backoffMs = 300 * Math.pow(3, attempt); // 300, 900, 2700
+            await new Promise((resolve) => window.setTimeout(resolve, backoffMs));
+            return attemptSave(attempt + 1);
+          }
+          reportNotebookMutationFailure("save", error);
+        } finally {
+          if (attempt === 0 || attempt >= 3) {
+            pendingSaveRef.current.delete(blockId);
+          }
+        }
+      };
+
+      const timeoutId = window.setTimeout(() => {
+        void attemptSave(0);
       }, 500);
       pendingSaveRef.current.set(blockId, timeoutId);
     },
-    [anonymousSessionId, reportNotebookMutationFailure, updateBlock],
+    [PERMANENT_ERROR_CODES, anonymousSessionId, reportNotebookMutationFailure, updateBlock],
   );
 
   const handleEnter = useCallback(

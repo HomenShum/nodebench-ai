@@ -74,11 +74,34 @@ const EntityNotebookLive = lazy(() =>
 );
 
 const ENTITY_VIEW_MODE_STORAGE_PREFIX = "nodebench.entityViewMode:";
+const LIVE_NOTEBOOK_DISABLE_KEY = "nodebench.liveNotebookDisabled";
+
+// Feature flag / kill switch for the Lexical-backed Live notebook. Two layers:
+//   1. Build-time env var — `VITE_NOTEBOOK_LIVE_ENABLED=false` hides the
+//      button for all users without a redeploy of the feature itself.
+//   2. Runtime localStorage override — a user or on-call engineer can set
+//      `nodebench.liveNotebookDisabled=1` in devtools to fall back to
+//      Classic view for that specific browser/tab instance.
+// If a regression ships, either knob recovers without pushing a new build.
+export function isLiveNotebookEnabled(): boolean {
+  if (typeof window === "undefined") return true;
+  if (window.localStorage.getItem(LIVE_NOTEBOOK_DISABLE_KEY) === "1") return false;
+  const envFlag = (import.meta as { env?: { VITE_NOTEBOOK_LIVE_ENABLED?: string } }).env
+    ?.VITE_NOTEBOOK_LIVE_ENABLED;
+  if (envFlag === "false" || envFlag === "0") return false;
+  return true;
+}
 
 function readInitialEntityViewMode(entitySlug: string): "classic" | "notebook" | "live" {
   if (typeof window === "undefined") return "notebook";
   const stored = window.localStorage.getItem(`${ENTITY_VIEW_MODE_STORAGE_PREFIX}${entitySlug}`);
-  return stored === "classic" || stored === "notebook" || stored === "live" ? stored : "notebook";
+  const candidate =
+    stored === "classic" || stored === "notebook" || stored === "live" ? stored : "notebook";
+  // Kill-switch fallback: if a user has Live selected but the flag is off
+  // (new build, or they flipped the local override), downgrade to Classic
+  // without losing any data — blocks remain intact in the database.
+  if (candidate === "live" && !isLiveNotebookEnabled()) return "classic";
+  return candidate;
 }
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -153,6 +176,13 @@ type EntityWorkspace = {
   relatedEntities?: Array<{ slug: string; name: string; entityType: string; summary: string; reason?: string }>;
 };
 
+type EntityBlockSummary = {
+  blockCount: number;
+  userEditedCount: number;
+  latestUpdatedAt?: number;
+  latestUserEditAt?: number;
+};
+
 type ReportRefreshResult = {
   reportId?: string | null;
   entitySlug?: string | null;
@@ -160,6 +190,20 @@ type ReportRefreshResult = {
   lens?: string | null;
   refreshPrompt?: string | null;
 };
+
+export function getNotebookDriftSummary(
+  blockSummary: EntityBlockSummary | null | undefined,
+  latestReport: TimelineReport | null | undefined,
+): { updatedAt: number; message: string } | null {
+  if (!blockSummary || blockSummary.blockCount === 0) return null;
+  const latestUserEditAt = blockSummary.latestUserEditAt;
+  if (latestUserEditAt == null) return null;
+  if (latestUserEditAt <= (latestReport?.updatedAt ?? 0)) return null;
+  return {
+    updatedAt: latestUserEditAt,
+    message: `${blockSummary.userEditedCount} live notebook edits are newer than the saved report. Classic may lag behind Live ✨.`,
+  };
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -661,6 +705,12 @@ function EntityWorkspaceView({
       ? { entitySlug: slug }
       : "skip",
   ) as EntityWorkspace | null | undefined;
+  const blockSummary = useQuery(
+    api?.domains.product.blocks.getEntityBlockSummary ?? ("skip" as any),
+    api?.domains.product.blocks.getEntityBlockSummary
+      ? { anonymousSessionId, entitySlug: slug }
+      : "skip",
+  ) as EntityBlockSummary | null | undefined;
 
   const saveNoteDocument = useMutation(
     api?.domains.product.documents.saveEntityNoteDocument ?? ("skip" as any),
@@ -752,6 +802,10 @@ function EntityWorkspaceView({
   const workspace = liveWorkspace ?? systemWorkspace ?? starterWorkspace;
   const liveWorkspaceResolved = liveWorkspace !== undefined;
   const hasLiveEntity = Boolean(liveWorkspace?.entity?._id);
+  const notebookDrift = useMemo(
+    () => getNotebookDriftSummary(blockSummary, liveWorkspace?.latest ?? null),
+    [blockSummary, liveWorkspace?.latest],
+  );
 
   useEffect(() => {
     setEntityViewMode(readInitialEntityViewMode(slug));
@@ -1302,6 +1356,16 @@ function EntityWorkspaceView({
         </div>
       )}
 
+      {notebookDrift ? (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-100">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-medium">Live notebook ahead</span>
+            <span className="text-xs opacity-80">{formatRelative(notebookDrift.updatedAt)}</span>
+          </div>
+          <p className="mt-1.5 leading-6">{notebookDrift.message}</p>
+        </div>
+      ) : null}
+
       {/* ── View toggle: Classic / Notebook (derived, read-only) / Live (persisted blocks, editable) ── */}
       <div className="mt-6 flex items-center justify-between gap-3">
         <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -1334,19 +1398,21 @@ function EntityWorkspaceView({
           >
             Notebook
           </button>
-          <button
-            type="button"
-            onClick={() => setEntityViewMode("live")}
-            disabled={!hasLiveEntity}
-            title={!hasLiveEntity ? "Live notebook requires a saved entity workspace." : undefined}
-            className={`rounded px-2.5 py-1 text-xs transition-colors ${
-              entityViewMode === "live"
-                ? "bg-white text-gray-900 shadow-sm dark:bg-white/10 dark:text-gray-100"
-                : "text-gray-500 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:text-gray-200"
-            }`}
-          >
-            Live ✨
-          </button>
+          {isLiveNotebookEnabled() ? (
+            <button
+              type="button"
+              onClick={() => setEntityViewMode("live")}
+              disabled={!hasLiveEntity}
+              title={!hasLiveEntity ? "Live notebook requires a saved entity workspace." : undefined}
+              className={`rounded px-2.5 py-1 text-xs transition-colors ${
+                entityViewMode === "live"
+                  ? "bg-white text-gray-900 shadow-sm dark:bg-white/10 dark:text-gray-100"
+                  : "text-gray-500 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:text-gray-200"
+              }`}
+            >
+              Live ✨
+            </button>
+          ) : null}
         </div>
       </div>
 
