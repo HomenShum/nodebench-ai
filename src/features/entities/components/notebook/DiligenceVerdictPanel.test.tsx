@@ -15,7 +15,14 @@
 import { describe, it, expect } from "vitest";
 import { __test } from "./DiligenceVerdictPanel";
 
-const { parseGates, dominantFailureHint, joinVerdictsWithTelemetry } = __test;
+const {
+  parseGates,
+  dominantFailureHint,
+  joinVerdictsWithTelemetry,
+  latestLlmRunByVerdict,
+  parseStringList,
+  llmScoreTone,
+} = __test;
 
 describe("parseGates — resilience (operator scrolls stale data)", () => {
   it("happy path: well-formed JSON array yields typed gates", () => {
@@ -157,5 +164,84 @@ describe("joinVerdictsWithTelemetry — late-arriving telemetry scenarios", () =
     const verdictsOnly = joinVerdictsWithTelemetry([mkVerdict("t1")], []);
     expect(verdictsOnly).toHaveLength(1);
     expect(verdictsOnly[0].telemetry).toBeUndefined();
+  });
+});
+
+describe("latestLlmRunByVerdict — operator sees newest rerun", () => {
+  const mkRun = (
+    verdictId: string,
+    judgedAt: number,
+    status = "scored",
+  ) =>
+    ({
+      _id: `llm_${verdictId}_${judgedAt}` as never,
+      verdictId: verdictId as never,
+      status,
+      modelName: "gemini-2.5-flash",
+      judgedAt,
+    }) as never;
+
+  it("single run per verdict → returned directly", () => {
+    const runs = [mkRun("v1", 100), mkRun("v2", 100)];
+    const map = latestLlmRunByVerdict(runs);
+    expect(map.size).toBe(2);
+    expect(map.get("v1")).toBe(runs[0]);
+  });
+
+  it("multiple reruns → latest by judgedAt wins", () => {
+    const runs = [
+      mkRun("v1", 100),
+      mkRun("v1", 300), // winner
+      mkRun("v1", 200),
+    ];
+    const map = latestLlmRunByVerdict(runs);
+    expect(map.get("v1")?.judgedAt).toBe(300);
+  });
+
+  it("parse_error run still returned if it's the latest (operator sees the failure)", () => {
+    const runs = [mkRun("v1", 100, "scored"), mkRun("v1", 200, "parse_error")];
+    const map = latestLlmRunByVerdict(runs);
+    expect(map.get("v1")?.status).toBe("parse_error");
+  });
+
+  it("empty input → empty map", () => {
+    expect(latestLlmRunByVerdict([]).size).toBe(0);
+  });
+});
+
+describe("parseStringList — defensive JSON decode", () => {
+  it("happy: valid JSON array of strings → returned", () => {
+    expect(parseStringList('["a", "b", "c"]')).toEqual(["a", "b", "c"]);
+  });
+  it("junk items filtered (type mismatch from old stored rows)", () => {
+    expect(parseStringList('["a", 42, null, "b"]')).toEqual(["a", "b"]);
+  });
+  it("undefined / empty → empty array (no crash)", () => {
+    expect(parseStringList(undefined)).toEqual([]);
+    expect(parseStringList("")).toEqual([]);
+  });
+  it("malformed JSON → empty array, no throw", () => {
+    expect(parseStringList("[a,")).toEqual([]);
+  });
+  it("non-array JSON → empty", () => {
+    expect(parseStringList('{"x":1}')).toEqual([]);
+  });
+});
+
+describe("llmScoreTone — consistent color mapping (no bandaid color choices)", () => {
+  it("0.8+ → emerald", () => {
+    expect(llmScoreTone(0.8)).toMatch(/emerald/);
+    expect(llmScoreTone(1.0)).toMatch(/emerald/);
+  });
+  it("0.6–0.79 → sky", () => {
+    expect(llmScoreTone(0.6)).toMatch(/sky/);
+    expect(llmScoreTone(0.75)).toMatch(/sky/);
+  });
+  it("0.4–0.59 → amber", () => {
+    expect(llmScoreTone(0.4)).toMatch(/amber/);
+  });
+  it("< 0.4 → rose", () => {
+    expect(llmScoreTone(0)).toMatch(/rose/);
+    expect(llmScoreTone(0.3)).toMatch(/rose/);
   });
 });

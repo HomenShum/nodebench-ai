@@ -13501,6 +13501,61 @@ export default defineSchema({
     .index("by_verdict", ["verdict"])
     .index("by_judged_at", ["judgedAt"]),
 
+  /* ------------------------------------------------------------------ */
+  /* diligenceLlmJudgeRuns — non-deterministic LLM annotations on top of */
+  /*                         a verdict row.                              */
+  /*                                                                     */
+  /* The deterministic judge (server/pipeline/diligenceJudge.ts) handles */
+  /* the boolean gates. This table captures the stochastic dimensions —  */
+  /* prose quality, citation coherence, source credibility,             */
+  /* tier-appropriateness — via an LLM call.                            */
+  /*                                                                     */
+  /* Why a separate table (not a column on diligenceJudgeVerdicts):     */
+  /*   - LLM runs are rerunnable; we keep history per verdict           */
+  /*   - Prompt version / model version varies; dashboards need to      */
+  /*     separate cohorts                                                */
+  /*   - A parse failure should not taint the deterministic verdict     */
+  /*                                                                     */
+  /* HONEST_SCORES — scores are parsed directly from the model; on parse*/
+  /*                 failure, status="parse_error" and scores stay null */
+  /*                 rather than defaulting to 0.5.                      */
+  /* HONEST_STATUS — status is a bounded enum:                          */
+  /*   "pending" | "scored" | "parse_error" | "request_failed"          */
+  /* ------------------------------------------------------------------ */
+  diligenceLlmJudgeRuns: defineTable({
+    verdictId: v.id("diligenceJudgeVerdicts"),
+    telemetryId: v.id("diligenceRunTelemetry"),
+    entitySlug: v.string(),
+    blockType: v.string(),
+    status: v.string(), // "pending" | "scored" | "parse_error" | "request_failed"
+    /** Fingerprint of the exact prompt sent — lets replays detect prompt drift. */
+    promptHash: v.string(),
+    /** Prompt schema version (from JUDGE_PROMPT_VERSION). */
+    promptVersion: v.string(),
+    modelName: v.string(),
+    /** Optional per-field scores (null until status="scored"). */
+    proseQuality: v.optional(v.number()),
+    citationCoherence: v.optional(v.number()),
+    sourceCredibility: v.optional(v.number()),
+    tierAppropriate: v.optional(v.number()),
+    overallSemantic: v.optional(v.number()),
+    /** JSON-encoded string[], BOUND at 5 items x 240 chars each. */
+    strengthsJson: v.optional(v.string()),
+    concernsJson: v.optional(v.string()),
+    proposedNextStep: v.optional(v.string()),
+    reason: v.optional(v.string()),
+    /** Populated on request_failed OR parse_error. */
+    errorMessage: v.optional(v.string()),
+    /** Latency of the LLM call itself (ms). */
+    latencyMs: v.number(),
+    judgedAt: v.number(),
+  })
+    .index("by_verdict", ["verdictId"])
+    .index("by_telemetry", ["telemetryId"])
+    .index("by_entity", ["entitySlug"])
+    .index("by_status", ["status"])
+    .index("by_judged_at", ["judgedAt"]),
+
   hyperloopVariants,
   hyperloopEvaluationRuns,
   hyperloopPromotions,

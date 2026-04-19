@@ -29,8 +29,8 @@
  *   - Vercel deploy log header (verdict pill + dominant-failure reason)
  */
 
-import { useMemo } from "react";
-import { useQuery } from "convex/react";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 
@@ -76,6 +76,24 @@ type VerdictRow = {
   gatesJson: string;
   judgedAt: number;
   judgeVersion?: string;
+};
+
+type LlmJudgeRunRow = {
+  _id: Id<"diligenceLlmJudgeRuns">;
+  verdictId: Id<"diligenceJudgeVerdicts">;
+  status: string;
+  modelName: string;
+  overallSemantic?: number;
+  proseQuality?: number;
+  citationCoherence?: number;
+  sourceCredibility?: number;
+  tierAppropriate?: number;
+  strengthsJson?: string;
+  concernsJson?: string;
+  proposedNextStep?: string;
+  reason?: string;
+  errorMessage?: string;
+  judgedAt: number;
 };
 
 export type DiligenceVerdictPanelProps = {
@@ -164,6 +182,37 @@ function joinVerdictsWithTelemetry(
   }));
 }
 
+/** Pick the most recent LLM run per verdictId — dashboards show the latest. */
+function latestLlmRunByVerdict(
+  runs: ReadonlyArray<LlmJudgeRunRow>,
+): Map<string, LlmJudgeRunRow> {
+  const byVerdict = new Map<string, LlmJudgeRunRow>();
+  for (const r of runs) {
+    const prior = byVerdict.get(r.verdictId);
+    if (!prior || r.judgedAt > prior.judgedAt) {
+      byVerdict.set(r.verdictId, r);
+    }
+  }
+  return byVerdict;
+}
+
+function parseStringList(json: string | undefined): ReadonlyArray<string> {
+  if (!json) return [];
+  try {
+    const v = JSON.parse(json);
+    return Array.isArray(v) ? v.filter((s) => typeof s === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function llmScoreTone(score: number): string {
+  if (score >= 0.8) return "border-emerald-500/30 bg-emerald-500/10 text-emerald-200";
+  if (score >= 0.6) return "border-sky-500/30 bg-sky-500/10 text-sky-200";
+  if (score >= 0.4) return "border-amber-500/30 bg-amber-500/10 text-amber-200";
+  return "border-rose-500/30 bg-rose-500/10 text-rose-200";
+}
+
 export function DiligenceVerdictPanel({
   entitySlug,
   limit = 8,
@@ -180,6 +229,22 @@ export function DiligenceVerdictPanel({
     api.domains.product.diligenceRunTelemetry.listForEntity,
     { entitySlug, limit: cappedLimit * 2 }, // oversample so joins don't drop rows
   ) as ReadonlyArray<TelemetryRow> | undefined;
+
+  const llmRuns = useQuery(
+    api.domains.product.diligenceLlmJudgeRuns.listForEntity,
+    { entitySlug, limit: cappedLimit * 2 },
+  ) as ReadonlyArray<LlmJudgeRunRow> | undefined;
+
+  const requestLlmJudge = useMutation(
+    api.domains.product.diligenceLlmJudgeRuns.requestLlmJudge,
+  );
+  const [queueingVerdictId, setQueueingVerdictId] = useState<string | null>(null);
+  const [queueError, setQueueError] = useState<string | null>(null);
+
+  const latestLlmByVerdict = useMemo(
+    () => latestLlmRunByVerdict(llmRuns ?? []),
+    [llmRuns],
+  );
 
   const rows = useMemo(() => {
     if (!verdicts || !telemetry) return null;
@@ -251,6 +316,22 @@ export function DiligenceVerdictPanel({
   const latestTone = VERDICT_TONES[latestVerdict] ?? VERDICT_TONES.needs_review;
   const latestGates = parseGates(latest.verdict.gatesJson);
   const hint = dominantFailureHint(latestGates);
+  const latestLlm = latestLlmByVerdict.get(latest.verdict._id);
+  const llmStrengths = parseStringList(latestLlm?.strengthsJson);
+  const llmConcerns = parseStringList(latestLlm?.concernsJson);
+
+  async function handleRequestLlm() {
+    setQueueError(null);
+    setQueueingVerdictId(latest.verdict._id);
+    try {
+      await requestLlmJudge({ verdictId: latest.verdict._id });
+    } catch (err) {
+      setQueueError(err instanceof Error ? err.message : String(err));
+    } finally {
+      // Clear the busy state on the next tick so the UI shows "Queued" briefly.
+      setTimeout(() => setQueueingVerdictId(null), 600);
+    }
+  }
 
   return (
     <section
@@ -325,6 +406,94 @@ export function DiligenceVerdictPanel({
           </p>
         ) : null}
 
+        {/* LLM semantic score chip */}
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {latestLlm && latestLlm.status === "scored" && latestLlm.overallSemantic !== undefined ? (
+            <span
+              className={
+                "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] " +
+                llmScoreTone(latestLlm.overallSemantic)
+              }
+              title={latestLlm.reason || "LLM semantic score"}
+              aria-label={`LLM semantic score ${Math.round(latestLlm.overallSemantic * 100)} percent via ${latestLlm.modelName}`}
+            >
+              <span className="font-mono">
+                LLM {Math.round(latestLlm.overallSemantic * 100)}%
+              </span>
+              <span className="text-white/50">· {latestLlm.modelName}</span>
+            </span>
+          ) : latestLlm && latestLlm.status === "parse_error" ? (
+            <span
+              className="inline-flex items-center gap-1 rounded border border-rose-500/30 bg-rose-500/10 px-1.5 py-0.5 text-[11px] text-rose-200"
+              title={latestLlm.errorMessage ?? "LLM parse error"}
+            >
+              LLM parse error
+            </span>
+          ) : latestLlm && latestLlm.status === "request_failed" ? (
+            <span
+              className="inline-flex items-center gap-1 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[11px] text-amber-200"
+              title={latestLlm.errorMessage ?? "LLM request failed"}
+            >
+              LLM unavailable
+            </span>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={handleRequestLlm}
+            disabled={queueingVerdictId === latest.verdict._id}
+            className="inline-flex items-center rounded border border-white/[0.08] bg-white/[0.02] px-2 py-0.5 text-[11px] text-white/70 transition hover:border-white/20 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d97757] disabled:opacity-50"
+            aria-label="Queue LLM semantic judge run"
+          >
+            {queueingVerdictId === latest.verdict._id
+              ? "Queued…"
+              : latestLlm
+                ? "Re-score with LLM"
+                : "Score with LLM"}
+          </button>
+
+          {queueError ? (
+            <span className="text-[11px] text-rose-200" role="alert">
+              {queueError}
+            </span>
+          ) : null}
+        </div>
+
+        {/* LLM strengths / concerns — progressive disclosure */}
+        {latestLlm && latestLlm.status === "scored" && (llmStrengths.length > 0 || llmConcerns.length > 0) ? (
+          <details className="mt-2">
+            <summary className="cursor-pointer text-[11px] uppercase tracking-[0.12em] text-white/50 hover:text-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d97757]">
+              LLM review
+            </summary>
+            <div className="mt-1.5 space-y-1.5">
+              {llmStrengths.length > 0 ? (
+                <ul className="space-y-0.5" aria-label="LLM strengths">
+                  {llmStrengths.map((s, i) => (
+                    <li key={i} className="text-xs text-emerald-200/80">
+                      + {s}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {llmConcerns.length > 0 ? (
+                <ul className="space-y-0.5" aria-label="LLM concerns">
+                  {llmConcerns.map((c, i) => (
+                    <li key={i} className="text-xs text-amber-200/80">
+                      − {c}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {latestLlm.proposedNextStep ? (
+                <p className="text-xs text-sky-200/80">
+                  <span className="font-medium">Next step:</span>{" "}
+                  {latestLlm.proposedNextStep}
+                </p>
+              ) : null}
+            </div>
+          </details>
+        ) : null}
+
         {/* Latency + token line */}
         {latest.telemetry ? (
           <p className="mt-1 font-mono text-[10px] text-white/40">
@@ -386,4 +555,7 @@ export const __test = {
   dominantFailureHint,
   formatRelative,
   joinVerdictsWithTelemetry,
+  latestLlmRunByVerdict,
+  parseStringList,
+  llmScoreTone,
 };
