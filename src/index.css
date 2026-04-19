@@ -2422,3 +2422,201 @@ select:focus-visible,
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   DILIGENCE DECORATIONS — prose-native overlay styling
+   Live agent output rendered as ProseMirror widget decorations. Stays
+   quiet by default so it feels like part of the notebook reading flow,
+   not like pasted-in database cards.
+   See: src/features/entities/components/notebook/DiligenceDecorationPlugin.ts
+        src/features/entities/components/notebook/renderers/FounderRenderer.tsx
+   ═══════════════════════════════════════════════════════════════ */
+
+.diligence-decoration {
+  border-left: 2px solid rgb(209 213 219 / 0.5);
+  padding: 0.5rem 0 0.5rem 0.75rem;
+  margin: 1rem 0;
+  user-select: text;
+}
+
+.dark .diligence-decoration {
+  border-left-color: rgb(255 255 255 / 0.1);
+}
+
+.diligence-decoration-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+
+.diligence-decoration-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(17 24 39);
+  margin: 0;
+}
+
+.dark .diligence-decoration-title {
+  color: rgb(243 244 246);
+}
+
+.diligence-decoration-updated {
+  font-size: 0.6875rem;
+  color: rgb(156 163 175);
+}
+
+.dark .diligence-decoration-updated {
+  color: rgb(107 114 128);
+}
+
+.diligence-decoration-body {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: rgb(55 65 81);
+}
+
+.dark .diligence-decoration-body {
+  color: rgb(209 213 219);
+}
+
+.diligence-decoration-body p {
+  margin: 0 0 0.5rem;
+}
+
+.diligence-decoration-body p:last-child {
+  margin-bottom: 0;
+}
+
+.diligence-decoration-empty {
+  font-style: italic;
+  color: rgb(107 114 128);
+}
+
+.dark .diligence-decoration-empty {
+  color: rgb(156 163 175);
+}
+
+/* Tier chip — matches EvidenceChip tone + dot pattern */
+.diligence-tier {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  font-size: 0.625rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.diligence-tier-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.diligence-tier-verified {
+  border-color: rgb(110 231 183 / 0.4);
+  background: rgb(236 253 245 / 0.7);
+  color: rgb(6 95 70);
+}
+.diligence-tier-verified .diligence-tier-dot { background: rgb(5 150 105); }
+.dark .diligence-tier-verified {
+  border-color: rgb(52 211 153 / 0.25);
+  background: rgb(16 185 129 / 0.1);
+  color: rgb(110 231 183);
+}
+.dark .diligence-tier-verified .diligence-tier-dot { background: rgb(110 231 183); }
+
+.diligence-tier-corroborated {
+  border-color: rgb(125 211 252 / 0.4);
+  background: rgb(240 249 255 / 0.7);
+  color: rgb(7 89 133);
+}
+.diligence-tier-corroborated .diligence-tier-dot { background: rgb(14 165 233); }
+.dark .diligence-tier-corroborated {
+  border-color: rgb(56 189 248 / 0.25);
+  background: rgb(14 165 233 / 0.1);
+  color: rgb(125 211 252);
+}
+.dark .diligence-tier-corroborated .diligence-tier-dot { background: rgb(125 211 252); }
+
+.diligence-tier-single {
+  border-color: rgb(252 211 77 / 0.4);
+  background: rgb(255 251 235 / 0.7);
+  color: rgb(146 64 14);
+}
+.diligence-tier-single .diligence-tier-dot { background: rgb(217 119 6); }
+.dark .diligence-tier-single {
+  border-color: rgb(251 191 36 / 0.25);
+  background: rgb(245 158 11 / 0.1);
+  color: rgb(252 211 77);
+}
+.dark .diligence-tier-single .diligence-tier-dot { background: rgb(252 211 77); }
+
+.diligence-tier-unverified {
+  border-color: rgb(203 213 225 / 0.6);
+  background: rgb(248 250 252 / 0.6);
+  color: rgb(71 85 105);
+}
+.diligence-tier-unverified .diligence-tier-dot { background: rgb(100 116 139); }
+.dark .diligence-tier-unverified {
+  border-color: rgb(148 163 184 / 0.25);
+  background: rgb(100 116 139 / 0.1);
+  color: rgb(203 213 225);
+}
+.dark .diligence-tier-unverified .diligence-tier-dot { background: rgb(148 163 184); }
+
+/* Actions — muted by default, only light up on hover/focus */
+.diligence-decoration-actions {
+  display: flex;
+  gap: 0.375rem;
+  margin-top: 0.625rem;
+}
+
+.diligence-decoration-action {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  border: 1px solid rgb(229 231 235);
+  background: rgb(249 250 251 / 0.8);
+  color: rgb(55 65 81);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.diligence-decoration-action:hover {
+  background: rgb(243 244 246);
+  border-color: rgb(209 213 219);
+}
+
+.diligence-decoration-action:focus-visible {
+  outline: 2px solid var(--accent-primary, #d97757);
+  outline-offset: 2px;
+}
+
+.dark .diligence-decoration-action {
+  border-color: rgb(255 255 255 / 0.12);
+  background: rgb(255 255 255 / 0.04);
+  color: rgb(209 213 219);
+}
+.dark .diligence-decoration-action:hover {
+  background: rgb(255 255 255 / 0.08);
+  border-color: rgb(255 255 255 / 0.2);
+}
+
+.diligence-decoration-action-muted {
+  opacity: 0.7;
+}
+
+/* Reduced motion: never animate anything on these decorations */
+@media (prefers-reduced-motion: reduce) {
+  .diligence-decoration,
+  .diligence-decoration-action {
+    transition: none !important;
+  }
+}
+

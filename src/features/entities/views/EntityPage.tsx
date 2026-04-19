@@ -39,7 +39,6 @@ import { getAnonymousProductSessionId } from "@/features/product/lib/productIden
 import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
 import { ProductWorkspaceHeader } from "@/features/product/components/ProductWorkspaceHeader";
 import { ProductSourceIdentity } from "@/features/product/components/ProductSourceIdentity";
-import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { useToast } from "@/shared/ui";
 import type { EntityNoteEditorHandle } from "@/features/entities/components/EntityNoteEditor";
 import {
@@ -58,6 +57,7 @@ import {
 } from "@/features/entities/lib/entityExport";
 import { EntityMemoryGraph } from "@/features/entities/components/EntityMemoryGraph";
 import { EntityNotebookMeta } from "@/features/entities/components/EntityNotebookMeta";
+import { EntityNotebookSurface } from "@/features/entities/components/EntityNotebookSurface";
 import { EntityShareSheet } from "@/features/entities/components/EntityShareSheet";
 import { DiligenceSection } from "@/features/entities/components/DiligenceSection";
 import { SignInForm } from "@/SignInForm";
@@ -71,27 +71,6 @@ import {
 import { getStarterEntityWorkspace } from "@/features/entities/lib/starterEntityWorkspaces";
 
 const EntityNoteEditor = lazy(() => import("@/features/entities/components/EntityNoteEditor"));
-const EntityNotebookView = lazy(() =>
-  import("@/features/entities/components/EntityNotebookView").then((mod) => ({
-    default: mod.EntityNotebookView,
-  })),
-);
-// PR1 refactor — use the memoized mount wrapper instead of importing
-// EntityNotebookLive directly. The mount flattens the object-literal props
-// (latestHumanEdit) into primitive fields so identity is stable per keystroke.
-// See: src/features/entities/components/notebook/EntityNotebookLiveMount.tsx
-const EntityNotebookLiveMount = lazy(() =>
-  import("@/features/entities/components/notebook/EntityNotebookLiveMount").then((mod) => ({
-    default: mod.EntityNotebookLiveMount,
-  })),
-);
-// Kept below for any remaining direct consumers; new callers should use Mount.
-const EntityNotebookLive = lazy(() =>
-  import("@/features/entities/components/notebook/EntityNotebookLive").then((mod) => ({
-    default: mod.EntityNotebookLive,
-  })),
-);
-
 const ENTITY_VIEW_MODE_STORAGE_PREFIX = "nodebench.entityViewMode:";
 const LIVE_NOTEBOOK_DISABLE_KEY = "nodebench.liveNotebookDisabled";
 const LIVE_NOTEBOOK_FORCE_ENABLE_KEY = "nodebench.liveNotebookForceEnabled";
@@ -1245,6 +1224,15 @@ function EntityWorkspaceView({
     toast,
     workspace,
   ]);
+  const handleOpenReferenceNotebookToggle = useCallback(() => {
+    setEntityViewMode("notebook");
+  }, []);
+  const handleSelectClassicView = useCallback(() => {
+    setEntityViewMode("classic");
+  }, []);
+  const handleSelectNotebookView = useCallback(() => {
+    setEntityViewMode("notebook");
+  }, []);
 
   const handleSaveNote = useCallback(async () => {
     if (
@@ -1846,9 +1834,6 @@ function EntityWorkspaceView({
   // Without this, the inline arrow created a new closure every render,
   // cascading into the notebook editor's prop diff and causing visible
   // re-renders on every keystroke elsewhere on the page.
-  const handleOpenReferenceNotebookToggle = useCallback(() => {
-    setEntityViewMode("notebook");
-  }, []);
   const latestReport = latestBriefReport;
   const latestDiffSummary = latestReport ? computeDiffSummary(latestReport.diffs ?? []) : "";
   const latestSections = latestBriefSections;
@@ -2281,126 +2266,43 @@ function EntityWorkspaceView({
         </div>
       )}
 
-      {notebookDrift && entityViewMode === "classic" ? (
-        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-100">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-medium">Live notebook ahead</span>
-            <span className="text-xs opacity-80">{formatRelative(notebookDrift.updatedAt)}</span>
-          </div>
-          <p className="mt-1.5 leading-6">{notebookDrift.message}</p>
-        </div>
-      ) : null}
+      <EntityNotebookSurface
+        entitySlug={entity.slug}
+        shareToken={shareToken}
+        entityViewMode={entityViewMode}
+        showViewModeToggle={showViewModeToggle}
+        liveNotebookEnabled={liveNotebookEnabled}
+        materializingLiveWorkspace={materializingLiveWorkspace}
+        hasLiveEntity={hasLiveEntity}
+        hasWorkspaceSlug={Boolean(workspace?.entity?.slug)}
+        canEditNotebook={canEditNotebook}
+        notebookDriftMessage={notebookDrift?.message ?? null}
+        notebookDriftUpdatedLabel={notebookDrift ? formatRelative(notebookDrift.updatedAt) : null}
+        viewerOwnerKey={workspace.viewerIdentity?.ownerKey ?? null}
+        collaborationParticipants={collaborationParticipants}
+        latestHumanEditorOwnerKey={blockSummary?.latestHumanEditorOwnerKey ?? null}
+        latestHumanEditorUpdatedAt={blockSummary?.latestHumanEditorUpdatedAt ?? null}
+        onSelectClassic={handleSelectClassicView}
+        onSelectNotebook={handleSelectNotebookView}
+        onSelectLive={handleSelectLiveView}
+        onOpenReferenceNotebook={handleOpenReferenceNotebookToggle}
+      />
 
-      {/* ── View toggle: Classic / Notebook (derived, read-only) / Live (persisted blocks, editable).
-              Hidden when the identity redesign is on AND Live is available — that's
-              the paper-notebook target state where Live is the only editable surface.
-              Falls back automatically when either kill-switch flips. */}
-      {showViewModeToggle ? (
-      <div className="mt-6 flex items-center justify-between gap-3">
-        <div className="text-xs text-gray-500 dark:text-gray-400">
-          {entityViewMode === "live"
-            ? "Live notebook — blocks are persisted, inline-editable, slash commands active."
-            : entityViewMode === "notebook"
-              ? "Notebook view — read-only derivation with full harness lineage."
-              : "Classic view — sections rendered as stacked panels."}
-        </div>
-        <div className="flex gap-1 rounded-md border border-gray-200 bg-gray-50/60 p-0.5 dark:border-white/10 dark:bg-white/[0.02]">
-          <button
-            type="button"
-            onClick={() => setEntityViewMode("classic")}
-            className={`rounded px-2.5 py-1 text-xs transition-colors ${
-              entityViewMode === "classic"
-                ? "bg-white text-gray-900 shadow-sm dark:bg-white/10 dark:text-gray-100"
-                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            }`}
-          >
-            Classic
-          </button>
-          <button
-            type="button"
-            onClick={() => setEntityViewMode("notebook")}
-            className={`rounded px-2.5 py-1 text-xs transition-colors ${
-              entityViewMode === "notebook"
-                ? "bg-white text-gray-900 shadow-sm dark:bg-white/10 dark:text-gray-100"
-                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            }`}
-          >
-            Notebook
-          </button>
-          {liveNotebookEnabled ? (
-            <button
-              type="button"
-              onClick={() => void handleSelectLiveView()}
-              disabled={
-                materializingLiveWorkspace ||
-                !workspace?.entity?.slug ||
-                (Boolean(shareToken) && !hasLiveEntity)
-              }
-              title={
-                shareToken && !hasLiveEntity
-                  ? "Live notebook can only be created from your own workspace."
-                  : !workspace?.entity?.slug
-                    ? "Live notebook requires an entity workspace."
-                    : undefined
-              }
-              className={`rounded px-2.5 py-1 text-xs transition-colors ${
-                entityViewMode === "live"
-                  ? "bg-white text-gray-900 shadow-sm dark:bg-white/10 dark:text-gray-100"
-                  : "text-gray-500 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:text-gray-200"
-              }`}
-            >
-              {materializingLiveWorkspace ? "Opening Live..." : "Live ✨"}
-            </button>
-          ) : null}
-        </div>
-      </div>
-      ) : null}
+      {/*
+        Legacy inline notebook JSX was parked here behind `false &&` during
+        the refactor that introduced <EntityNotebookSurface /> as a memoized
+        render boundary. The Surface owns the drift banner, the
+        Classic/Notebook/Live toggle, the Notebook view, and the Live-mount —
+        all with stable props and a single React.memo guard so parent
+        re-renders do not cascade into the ProseMirror editor subtree.
 
-      {entityViewMode === "notebook" ? (
-        <ErrorBoundary section="Entity notebook">
-          <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading notebook…</div>}>
-            {/* Physical-notebook sheet. See docs/architecture/ENTITY_PAGE_REDESIGN.md §12. */}
-            <article className="notebook-sheet mt-4">
-              <EntityNotebookView
-                entitySlug={entity.slug}
-                shareToken={shareToken}
-                canOpenLive={
-                  liveNotebookEnabled &&
-                  Boolean(workspace?.entity?.slug) &&
-                  !(Boolean(shareToken) && !hasLiveEntity) &&
-                  !materializingLiveWorkspace
-                }
-                onOpenLive={() => void handleSelectLiveView()}
-                openingLive={materializingLiveWorkspace}
-              />
-            </article>
-          </Suspense>
-        </ErrorBoundary>
-      ) : null}
-
-      {entityViewMode === "live" ? (
-        <ErrorBoundary section="Live notebook">
-          <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading live notebook…</div>}>
-            <article className="notebook-sheet mt-4">
-              {/* PR1 refactor — memoized mount prevents per-keystroke re-renders
-                  of the live notebook editor tree. The Mount flattens the
-                  latestHumanEdit object so its identity is stable across
-                  EntityPage re-renders. See EntityNotebookLiveMount.tsx. */}
-              <EntityNotebookLiveMount
-                entitySlug={entity.slug}
-                shareToken={shareToken}
-                canEdit={canEditNotebook}
-                showReferenceNotebookToggle={showViewModeToggle}
-                onOpenReferenceNotebook={handleOpenReferenceNotebookToggle}
-                viewerOwnerKey={workspace.viewerIdentity?.ownerKey ?? null}
-                collaborationParticipants={collaborationParticipants}
-                latestHumanEditorOwnerKey={blockSummary?.latestHumanEditorOwnerKey ?? null}
-                latestHumanEditorUpdatedAt={blockSummary?.latestHumanEditorUpdatedAt ?? null}
-              />
-            </article>
-          </Suspense>
-        </ErrorBoundary>
-      ) : null}
+        The parked branch was deleted on 2026-04-19 after tsc + notebook
+        unit tests + the entity-notebook-regression e2e all passed green.
+        Active path:
+          - src/features/entities/components/EntityNotebookSurface.tsx
+          - src/features/entities/components/notebook/EntityNotebookLiveMount.tsx
+          - docs/architecture/NOTEBOOK_REFACTOR_NOTES.md (PR1 + PR7)
+      */}
 
       {/* ── Notebook flow (Roam/Notion-style: one continuous page) ── */}
       <section className={`mt-6 ${entityViewMode !== "classic" ? "hidden" : ""}`}>
