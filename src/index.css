@@ -1298,6 +1298,20 @@ html[data-density='spacious'] {
   animation: notebook-wet-ink 800ms ease-out 1;
 }
 
+/* Placeholder ghost-text for the Tiptap block editor. Tiptap's Placeholder
+   extension tags empty paragraphs with .is-empty; we hang a ::before on
+   the first such paragraph so the hint reads like pencil text on the
+   same ruled line the user is about to write on. */
+.notebook-sheet .ProseMirror p.is-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--text-placeholder, #9CA3AF);
+  opacity: 0.5;
+  font-style: italic;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .notebook-block-wet-ink {
     animation: none;
