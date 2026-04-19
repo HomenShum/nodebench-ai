@@ -13314,6 +13314,72 @@ export default defineSchema({
   })
     .index("by_status", ["status"])
     .index("by_type", ["episodeType", "startedAt"]),
+  /* ------------------------------------------------------------------ */
+  /* DILIGENCE PROJECTIONS - Structured output per diligence block       */
+  /*                                                                     */
+  /* One row per (entitySlug, blockType, scratchpadRunId) projection.    */
+  /* The orchestrator emits these after the structuring pass. The UI     */
+  /* reads them via useDiligenceBlocks → useDiligenceDecorations →        */
+  /* DiligenceDecorationPlugin (ProseMirror widget overlay).             */
+  /*                                                                     */
+  /* 2026-04-19: stub table registered to land the contract. Orchestrator */
+  /* write path ships in a follow-up slice. Until then the query returns  */
+  /* [] and decorations render only from the snapshot-derived projections */
+  /* in useDiligenceBlocks.ts.                                            */
+  /*                                                                     */
+  /* Pattern: scratchpad-first → structure → deterministic merge         */
+  /* See: .claude/rules/scratchpad_first.md                              */
+  /*      .claude/rules/orchestrator_workers.md                          */
+  /*      docs/architecture/AGENT_PIPELINE.md                            */
+  /*      src/features/entities/components/notebook/DiligenceDecorationPlugin.ts */
+  /* ------------------------------------------------------------------ */
+  diligenceProjections: defineTable({
+    /** Canonical entity this projection belongs to. */
+    entitySlug: v.string(),
+    /** One of the 10 diligence block types + "projection" fallback. */
+    blockType: v.union(
+      v.literal("projection"),
+      v.literal("founder"),
+      v.literal("product"),
+      v.literal("funding"),
+      v.literal("news"),
+      v.literal("hiring"),
+      v.literal("patent"),
+      v.literal("publicOpinion"),
+      v.literal("competitor"),
+      v.literal("regulatory"),
+      v.literal("financial"),
+    ),
+    /** Scratchpad run that produced this projection. */
+    scratchpadRunId: v.string(),
+    /**
+     * Monotonic version — bumped whenever a structuring pass re-derives
+     * this block. Used by the decoration plugin to memoize rebuilds.
+     */
+    version: v.number(),
+    /** Overall evidence tier (computed from verification gates). */
+    overallTier: v.union(
+      v.literal("verified"),
+      v.literal("corroborated"),
+      v.literal("single-source"),
+      v.literal("unverified"),
+    ),
+    /** Short header text rendered at the top of the decoration. */
+    headerText: v.string(),
+    /** Prose body (paragraphs joined with blank lines). Optional. */
+    bodyProse: v.optional(v.string()),
+    /** Block-specific candidate payload (e.g., FounderCandidate[]). */
+    payload: v.optional(v.any()),
+    /** Scratchpad section id this projection was derived from. */
+    sourceSectionId: v.optional(v.string()),
+    /** Epoch ms — when the structuring pass last updated this projection. */
+    updatedAt: v.number(),
+  })
+    .index("by_entity", ["entitySlug"])
+    .index("by_entity_block", ["entitySlug", "blockType"])
+    .index("by_scratchpad", ["scratchpadRunId"])
+    .index("by_entity_block_run", ["entitySlug", "blockType", "scratchpadRunId"]),
+
   hyperloopVariants,
   hyperloopEvaluationRuns,
   hyperloopPromotions,

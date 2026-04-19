@@ -7,7 +7,7 @@ import {
   useRef,
 } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
-import { Mark, mergeAttributes } from "@tiptap/core";
+import { Extension, Mark, mergeAttributes } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Mention from "@tiptap/extension-mention";
@@ -19,6 +19,13 @@ import { useConvexApi } from "@/lib/convexApi";
 import type { EntityMatch } from "./MentionPicker";
 import type { BlockChip } from "./BlockChipRenderer";
 import { chipsToProsemirrorDoc, prosemirrorDocToChips } from "../../../../../shared/notebookBlockProsemirror";
+import {
+  createDiligenceDecorationPlugin,
+  diligenceDecorationPluginKey,
+  type DiligenceDecorationData,
+  type DecorationRendererRegistry,
+} from "./DiligenceDecorationPlugin";
+import { FounderRenderer } from "./renderers/FounderRenderer";
 
 type Props = {
   syncDocumentId: string;
@@ -34,6 +41,19 @@ type Props = {
   onBackspaceAtStart: () => void;
   onOpenSlash: () => void;
   onCloseSlash: () => void;
+  diligenceDecorations?: readonly DiligenceDecorationData[];
+  onAcceptDecoration?: (
+    scratchpadRunId: string,
+    blockType: DiligenceDecorationData["blockType"],
+  ) => void;
+  onDismissDecoration?: (
+    scratchpadRunId: string,
+    blockType: DiligenceDecorationData["blockType"],
+  ) => void;
+  onRefreshDecoration?: (
+    scratchpadRunId: string,
+    blockType: DiligenceDecorationData["blockType"],
+  ) => void;
 };
 
 export type NotebookBlockEditorHandle = {
@@ -118,6 +138,10 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
       onBackspaceAtStart,
       onOpenSlash,
       onCloseSlash,
+      diligenceDecorations = [],
+      onAcceptDecoration,
+      onDismissDecoration,
+      onRefreshDecoration,
     },
     ref,
   ) {
@@ -132,6 +156,51 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
     const onBackspaceAtStartRef = useRef(onBackspaceAtStart);
     const onOpenSlashRef = useRef(onOpenSlash);
     const onCloseSlashRef = useRef(onCloseSlash);
+    const diligenceDecorationsRef = useRef<readonly DiligenceDecorationData[]>(diligenceDecorations);
+    const onAcceptDecorationRef = useRef(onAcceptDecoration);
+    const onDismissDecorationRef = useRef(onDismissDecoration);
+    const onRefreshDecorationRef = useRef(onRefreshDecoration);
+
+    /**
+     * Slice C.1 — register the block-specific renderer registry.
+     *
+     * The plugin falls back to the generic renderer when no block-specific
+     * renderer is registered, so adding one entry at a time is safe.
+     * Pattern PR9 (generic renderer contract) — adding Product/Funding/News
+     * renderers later is a one-line change each.
+     *
+     * Prior art: Notion AI blocks (per-block rendering), Arc Boosts.
+     * See: .claude/rules/reference_attribution.md
+     */
+    const diligenceRenderers = useMemo<DecorationRendererRegistry>(
+      () => ({
+        founder: FounderRenderer,
+      }),
+      [],
+    );
+
+    const diligenceExtension = useMemo(
+      () =>
+        Extension.create({
+          name: "nodebenchDiligenceDecorations",
+          addProseMirrorPlugins() {
+            return [
+              createDiligenceDecorationPlugin({
+                getDecorations: () => diligenceDecorationsRef.current,
+                anchors: [{ kind: "top" }],
+                renderers: diligenceRenderers,
+                onAcceptDecoration: (runId, blockType) =>
+                  onAcceptDecorationRef.current?.(runId, blockType),
+                onDismissDecoration: (runId, blockType) =>
+                  onDismissDecorationRef.current?.(runId, blockType),
+                onRefreshDecoration: (runId, blockType) =>
+                  onRefreshDecorationRef.current?.(runId, blockType),
+              }),
+            ];
+          },
+        }),
+      [diligenceRenderers],
+    );
     const baseExtensions = useMemo(
       () => [
         StarterKit.configure({
@@ -167,8 +236,9 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
             items: () => [],
           },
         }),
+        diligenceExtension,
       ],
-      [],
+      [diligenceExtension],
     );
 
     const syncApi = useMemo(
@@ -219,7 +289,21 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
       onBackspaceAtStartRef.current = onBackspaceAtStart;
       onOpenSlashRef.current = onOpenSlash;
       onCloseSlashRef.current = onCloseSlash;
-    }, [onBackspaceAtStart, onBlur, onCloseSlash, onEnter, onFocus, onLocalContentChange, onOpenSlash]);
+      onAcceptDecorationRef.current = onAcceptDecoration;
+      onDismissDecorationRef.current = onDismissDecoration;
+      onRefreshDecorationRef.current = onRefreshDecoration;
+    }, [
+      onAcceptDecoration,
+      onBackspaceAtStart,
+      onBlur,
+      onCloseSlash,
+      onDismissDecoration,
+      onEnter,
+      onFocus,
+      onLocalContentChange,
+      onOpenSlash,
+      onRefreshDecoration,
+    ]);
 
     const editorOptions = useMemo(
       () => ({
@@ -307,6 +391,12 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
       [syncDocumentId, sync.extension, sync.initialContent],
     );
 
+    useEffect(() => {
+      diligenceDecorationsRef.current = diligenceDecorations;
+      if (!editor || editor.isDestroyed) return;
+      editor.view.dispatch(editor.state.tr.setMeta(diligenceDecorationPluginKey, true));
+    }, [diligenceDecorations, editor]);
+
     const focusEditorSafely = useCallback(() => {
       if (typeof window === "undefined") return;
       window.requestAnimationFrame(() => {
@@ -375,6 +465,28 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
       );
     }
 
+    /**
+     * Slice C.2 — delegated click routing for decoration action buttons.
+     *
+     * The FounderRenderer (and future block renderers) emit <button> elements
+     * with `data-action`, `data-block`, and `data-run-id` attributes. A single
+     * capture-level click handler on the editor wrapper routes them to
+     * parent-supplied callbacks without requiring renderers to manage React
+     * refs directly.
+     *
+     * Actions route via the refs (so handler identity stays stable):
+     *   - accept   → onAcceptDecoration(runId, blockType)
+     *   - refresh  → onRefreshDecoration(runId, blockType)
+     *   - dismiss  → onDismissDecoration(runId, blockType)
+     *
+     * The parent (EntityNotebookLive) wires those to the Phase 2 runtime:
+     *   - acceptDecorationIntoNotebook() / ProseMirror frozen-snapshot insert
+     *   - re-run this block's sub-agent
+     *   - sessionArtifacts.dismissArtifact + decoration plugin flush
+     *
+     * Event delegation keeps the editor render tree unchanged when new block
+     * types or new renderers arrive.
+     */
     return <EditorContent editor={editor} />;
   },
 );

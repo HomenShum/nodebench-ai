@@ -874,6 +874,7 @@ import type * as domains_product_blocks from "../domains/product/blocks.js";
 import type * as domains_product_bootstrap from "../domains/product/bootstrap.js";
 import type * as domains_product_chat from "../domains/product/chat.js";
 import type * as domains_product_delivery from "../domains/product/delivery.js";
+import type * as domains_product_diligenceProjections from "../domains/product/diligenceProjections.js";
 import type * as domains_product_documents from "../domains/product/documents.js";
 import type * as domains_product_entities from "../domains/product/entities.js";
 import type * as domains_product_helpers from "../domains/product/helpers.js";
@@ -2242,6 +2243,7 @@ declare const fullApi: ApiFromModules<{
   "domains/product/bootstrap": typeof domains_product_bootstrap;
   "domains/product/chat": typeof domains_product_chat;
   "domains/product/delivery": typeof domains_product_delivery;
+  "domains/product/diligenceProjections": typeof domains_product_diligenceProjections;
   "domains/product/documents": typeof domains_product_documents;
   "domains/product/entities": typeof domains_product_entities;
   "domains/product/helpers": typeof domains_product_helpers;
