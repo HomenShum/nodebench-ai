@@ -30,6 +30,8 @@ import {
   Sparkles,
   Bookmark,
   RefreshCw,
+  Bell,
+  BellRing,
 } from "lucide-react";
 import { useConvexApi } from "@/lib/convexApi";
 import { buildCockpitPath } from "@/lib/registry/viewRegistry";
@@ -831,6 +833,48 @@ function EntityWorkspaceView({
   const attachEvidence = useMutation(api?.domains.product.entities.attachEvidenceToEntity ?? ("skip" as any));
   const loggedInUser = useQuery(api?.domains.auth.auth.loggedInUser ?? "skip");
 
+  // Entity tracking — framework audit #5 (Report → Nudge transition).
+  // Queries the current subscription state; mutations toggle it. All three
+  // gracefully no-op while Convex codegen is behind (the `?? "skip"` guard).
+  const subscriptionState = useQuery(
+    api?.domains.product.notebookTracking?.isSubscribedToEntity ?? "skip",
+    api?.domains.product.notebookTracking?.isSubscribedToEntity
+      ? { anonymousSessionId, entitySlug: slug }
+      : "skip",
+  );
+  const subscribeToEntityMut = useMutation(
+    api?.domains.product.notebookTracking?.subscribeToEntity ?? ("skip" as any),
+  );
+  const unsubscribeFromEntityMut = useMutation(
+    api?.domains.product.notebookTracking?.unsubscribeFromEntity ?? ("skip" as any),
+  );
+  const isTracked = subscriptionState?.subscribed ?? false;
+  const [trackPending, setTrackPending] = useState(false);
+  const handleToggleTrack = useCallback(async () => {
+    if (trackPending || !api?.domains.product.notebookTracking) return;
+    setTrackPending(true);
+    try {
+      if (isTracked) {
+        await unsubscribeFromEntityMut({ anonymousSessionId, entitySlug: slug });
+      } else {
+        await subscribeToEntityMut({ anonymousSessionId, entitySlug: slug });
+      }
+    } catch (err) {
+      // Fail-open; the next useQuery tick will reconcile the button state.
+      console.warn("[entity] track toggle failed:", err);
+    } finally {
+      setTrackPending(false);
+    }
+  }, [
+    api?.domains.product.notebookTracking,
+    anonymousSessionId,
+    isTracked,
+    slug,
+    subscribeToEntityMut,
+    trackPending,
+    unsubscribeFromEntityMut,
+  ]);
+
   const liveWorkspace = useQuery(
     api?.domains.product.entities.getEntityWorkspace ?? ("skip" as any),
     api?.domains.product.entities.getEntityWorkspace
@@ -986,9 +1030,11 @@ function EntityWorkspaceView({
     };
   }, [shareToken, slug]);
 
-  const workspace = shareToken
+  const workspace = inviteToken
     ? (liveWorkspace ?? null)
-    : (liveWorkspace ?? systemWorkspace ?? starterWorkspace);
+    : shareToken
+      ? (liveWorkspace ?? null)
+      : (liveWorkspace ?? systemWorkspace ?? starterWorkspace);
   const liveWorkspaceResolved = liveWorkspace !== undefined;
   const hasLiveEntity = Boolean(liveWorkspace?.entity?._id);
   const notebookDrift = useMemo(
@@ -1752,6 +1798,33 @@ function EntityWorkspaceView({
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   Prep brief
+                </button>
+                {/* Track this entity (framework audit #5).
+                    Visible only for non-shared workspace (your own page).
+                    Optimistic-but-safe: button disables during mutation,
+                    reactive query pulls the real state after ack. */}
+                <button
+                  type="button"
+                  onClick={handleToggleTrack}
+                  disabled={trackPending}
+                  aria-pressed={isTracked}
+                  title={
+                    isTracked
+                      ? "Stop notifying me when an agent updates this entity"
+                      : "Notify me when an agent updates this entity"
+                  }
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition disabled:opacity-60 ${
+                    isTracked
+                      ? "border border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/[0.08] text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/[0.12]"
+                      : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06]"
+                  }`}
+                >
+                  {isTracked ? (
+                    <BellRing className="h-3.5 w-3.5" />
+                  ) : (
+                    <Bell className="h-3.5 w-3.5" />
+                  )}
+                  {isTracked ? "Tracking" : "Track"}
                 </button>
               </>
             ) : null}

@@ -880,6 +880,7 @@ import type * as domains_product_helpers from "../domains/product/helpers.js";
 import type * as domains_product_home from "../domains/product/home.js";
 import type * as domains_product_me from "../domains/product/me.js";
 import type * as domains_product_notebookPresence from "../domains/product/notebookPresence.js";
+import type * as domains_product_notebookTracking from "../domains/product/notebookTracking.js";
 import type * as domains_product_nudgeHelpers from "../domains/product/nudgeHelpers.js";
 import type * as domains_product_nudges from "../domains/product/nudges.js";
 import type * as domains_product_reports from "../domains/product/reports.js";
@@ -2246,6 +2247,7 @@ declare const fullApi: ApiFromModules<{
   "domains/product/home": typeof domains_product_home;
   "domains/product/me": typeof domains_product_me;
   "domains/product/notebookPresence": typeof domains_product_notebookPresence;
+  "domains/product/notebookTracking": typeof domains_product_notebookTracking;
   "domains/product/nudgeHelpers": typeof domains_product_nudgeHelpers;
   "domains/product/nudges": typeof domains_product_nudges;
   "domains/product/reports": typeof domains_product_reports;

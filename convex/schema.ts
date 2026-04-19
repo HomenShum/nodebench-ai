@@ -212,6 +212,9 @@ import {
   productReportDrafts,
   productEntities,
   productEntityNotes,
+  productWorkspaceShares,
+  productEntityWorkspaceMembers,
+  productEntityWorkspaceInvites,
   productEntityRelations,
   productDocuments,
   productDocumentBlocks,
@@ -226,6 +229,8 @@ import {
   productContextItems,
   productBlocks,
   productBlockRelations,
+  productBlockWriteWindows,
+  productNudgeSubscriptions,
 } from "./domains/product/schema";
 
 /* ------------------------------------------------------------------ */
@@ -3562,6 +3567,9 @@ export default defineSchema({
   productReportDrafts,
   productEntities,
   productEntityNotes,
+  productWorkspaceShares,
+  productEntityWorkspaceMembers,
+  productEntityWorkspaceInvites,
   productEntityRelations,
   productDocuments,
   productDocumentBlocks,
@@ -3576,6 +3584,8 @@ export default defineSchema({
   productContextItems,
   productBlocks,
   productBlockRelations,
+  productBlockWriteWindows,
+  productNudgeSubscriptions,
 
   /* ------------------------------------------------------------------ */
   /* ENTITY PROFILES - Cached Wikidata entity resolutions               */

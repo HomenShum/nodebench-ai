@@ -338,6 +338,76 @@ export const productEntityNotes = defineTable({
   .index("by_entity", ["entityId"])
   .index("by_owner_updated", ["ownerKey", "updatedAt"]);
 
+export const productWorkspaceShareAccessValidator = v.union(
+  v.literal("view"),
+  v.literal("edit"),
+);
+
+export const productWorkspaceShareResourceValidator = v.literal("entity_workspace");
+
+export const productWorkspaceInviteStatusValidator = v.union(
+  v.literal("pending"),
+  v.literal("accepted"),
+);
+
+export const productWorkspaceShares = defineTable({
+  ownerKey: v.string(),
+  resourceType: productWorkspaceShareResourceValidator,
+  entityId: v.id("productEntities"),
+  entitySlug: v.string(),
+  token: v.string(),
+  access: productWorkspaceShareAccessValidator,
+  revokedAt: v.optional(v.number()),
+  expiresAt: v.optional(v.number()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_token", ["token"])
+  .index("by_owner_entity", ["ownerKey", "entityId", "updatedAt"])
+  .index("by_owner_entity_access", ["ownerKey", "entityId", "access", "updatedAt"])
+  .index("by_owner_updated", ["ownerKey", "updatedAt"]);
+
+export const productEntityWorkspaceMembers = defineTable({
+  ownerKey: v.string(),
+  entityId: v.id("productEntities"),
+  entitySlug: v.string(),
+  userId: v.id("users"),
+  userEmail: v.string(),
+  userName: v.optional(v.string()),
+  userImage: v.optional(v.string()),
+  token: v.string(),
+  access: productWorkspaceShareAccessValidator,
+  invitedByUserId: v.optional(v.id("users")),
+  revokedAt: v.optional(v.number()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_token", ["token"])
+  .index("by_owner_entity_user", ["ownerKey", "entityId", "userId"])
+  .index("by_owner_entity_updated", ["ownerKey", "entityId", "updatedAt"])
+  .index("by_user_updated", ["userId", "updatedAt"]);
+
+export const productEntityWorkspaceInvites = defineTable({
+  ownerKey: v.string(),
+  entityId: v.id("productEntities"),
+  entitySlug: v.string(),
+  email: v.string(),
+  normalizedEmail: v.string(),
+  token: v.string(),
+  access: productWorkspaceShareAccessValidator,
+  status: productWorkspaceInviteStatusValidator,
+  invitedByUserId: v.optional(v.id("users")),
+  acceptedByUserId: v.optional(v.id("users")),
+  revokedAt: v.optional(v.number()),
+  expiresAt: v.optional(v.number()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+  acceptedAt: v.optional(v.number()),
+})
+  .index("by_token", ["token"])
+  .index("by_owner_entity_email", ["ownerKey", "entityId", "normalizedEmail", "updatedAt"])
+  .index("by_owner_entity_updated", ["ownerKey", "entityId", "updatedAt"]);
+
 export const productEntityRelations = defineTable({
   ownerKey: v.string(),
   fromEntitySlug: v.string(),
@@ -670,6 +740,8 @@ export const productBlocks = defineTable({
 })
   .index("by_entity_position", ["entityId", "parentBlockId", "positionInt", "positionFrac"])
   .index("by_owner_entity", ["ownerKey", "entityId"])
+  .index("by_owner_entity_position", ["ownerKey", "entityId", "positionInt", "positionFrac"])
+  .index("by_owner_entity_parent_position", ["ownerKey", "entityId", "parentBlockId", "positionInt", "positionFrac"])
   .index("by_entity_author_updated", ["entityId", "authorKind", "updatedAt"])
   .index("by_session_step", ["sourceSessionId", "sourceToolStep"])
   .index("by_previous", ["previousBlockId"]);
@@ -699,3 +771,57 @@ export const productBlockRelations = defineTable({
   .index("by_owner_entity", ["ownerKey", "toEntityId"])
   .index("by_owner_block", ["ownerKey", "toBlockId"])
   .index("by_owner_url", ["ownerKey", "toUrl"]);
+
+export const productBlockWriteWindows = defineTable({
+  ownerKey: v.string(),
+  sessionKey: v.string(),
+  actorKey: v.optional(v.string()),
+  bucketStartMs: v.number(),
+  shard: v.optional(v.number()),
+  writeCount: v.number(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_owner_session_bucket", ["ownerKey", "sessionKey", "bucketStartMs"])
+  .index("by_owner_session_actor_bucket", ["ownerKey", "sessionKey", "actorKey", "bucketStartMs"]);
+
+/**
+ * productNudgeSubscriptions — "track this entity" subscriptions.
+ *
+ * Closes framework audit violation #5 (TRANSITION Report → Nudge).
+ * One row per (ownerKey, entityId) subscription. A Convex cron scans
+ * subscriptions every N minutes, diffs the entity's most-recent block
+ * updatedAt against `lastNotifiedAt`, and when newer agent-authored
+ * content exists, dispatches a single ntfy message and updates the
+ * timestamp. No duplicate dispatch without new content.
+ *
+ * Per-user rate limit lives on the subscription row (minIntervalMs)
+ * so an aggressive writer never storms a subscriber.
+ */
+export const productNudgeSubscriptions = defineTable({
+  ownerKey: v.string(),
+  entityId: v.id("productEntities"),
+  entitySlug: v.string(),
+  entityName: v.string(),
+  // "ntfy" today; extensible to email / slack / webhook later. Dispatch
+  // path resolves the destination from productProfileSummaries.
+  channel: v.union(v.literal("ntfy"), v.literal("email"), v.literal("slack")),
+  // When the user last reset their subscription (used for "since when").
+  createdAt: v.number(),
+  updatedAt: v.number(),
+  // Last time the dispatcher fired for this subscription. Initialized to
+  // createdAt so the first run doesn't replay every pre-subscription edit.
+  lastNotifiedAt: v.number(),
+  // Minimum gap between dispatches for THIS subscription. Prevents a
+  // prolific agent from paging the subscriber more than once per window.
+  minIntervalMs: v.optional(v.number()),
+  // Optional dispatch target override (e.g. a per-user ntfy topic).
+  // When null, dispatcher falls back to the system OPS_NTFY_URL env.
+  ntfyUrl: v.optional(v.string()),
+})
+  // Primary lookup: "is this user subscribed to this entity?"
+  .index("by_owner_entity", ["ownerKey", "entityId"])
+  // Secondary lookup: "list all my subscriptions" — sorted by updatedAt.
+  .index("by_owner_updated", ["ownerKey", "updatedAt"])
+  // Dispatcher lookup: "which subscriptions haven't been checked recently?"
+  .index("by_last_notified", ["lastNotifiedAt"]);

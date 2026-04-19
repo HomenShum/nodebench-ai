@@ -929,4 +929,17 @@ crons.daily(
   {}
 );
 
+// Entity tracking dispatcher. Walks productNudgeSubscriptions every
+// 5 minutes, posts one ntfy per subscription whose entity has been
+// touched by an agent since lastNotifiedAt. Idle subscriptions cost
+// a single indexed read per tick. See docs/architecture/ENTITY_PAGE_
+// FRAMEWORK_AUDIT.md violation #5 + docs/architecture/NOTEBOOK_
+// HARDENING_CHANGELOG.md row for this feature.
+crons.interval(
+  "dispatch entity tracking notifications",
+  { minutes: 5 },
+  internal.domains.product.notebookTracking.scanAndDispatch,
+  { batchSize: 50 }
+);
+
 export default crons;
