@@ -8,23 +8,245 @@ Entity intelligence for any company, market, or question.
 
 ## Product
 
-NodeBench is a research and reporting product built around five user-facing surfaces:
+NodeBench is a research and reporting product built around five user-facing
+surfaces:
 
-- `Home` = discovery and intake
-- `Chat` = live agent execution
-- `Reports` = saved memory
-- `Nudges` = follow-ups and action
-- `Me` = private context
+- `Home` = start quickly
+- `Chat` = do the work
+- `Reports` = reusable memory
+- `Nudges` = return at the right moment
+- `Me` = operator context and control
 
-Current strengths already in the repo:
+The core idea is simple:
 
-- typed research pipeline
-- packet-first runtime
-- live SSE streaming
-- shared-context handoff and delegation
-- builder-facing Oracle and flywheel infrastructure
+users do not just need a chatbot that answers once.
 
-The main product problem is not missing infrastructure. It is product behavior and surface consolidation.
+They need a system that can:
+
+- take a question, file, URL, or prior thread
+- search and synthesize with sources
+- turn the run into a reusable artifact
+- watch for meaningful change later
+- improve the next run from what it learned
+
+## What Shipped
+
+- five-surface web app across `Home`, `Chat`, `Reports`, `Nudges`, and `Me`
+- typed search and reporting pipeline
+- live SSE streaming with saved runtime state
+- Convex-backed product state for sessions, reports, entities, nudges, files,
+  and related objects
+- shared-context handoff and delegation plumbing
+- local and deployed server runtime for search, streaming, voice, and shared
+  context routes
+- `nodebench-mcp`, `nodebench-mcp-power`, and `nodebench-mcp-admin`
+  distribution lanes
+- builder-facing Oracle, dogfood, eval, replay, and control-plane
+  infrastructure
+
+## Product At A Glance
+
+```text
+USER SURFACES
+-------------
+Home      -> start quickly
+Chat      -> answer, sources, trace, follow-ups
+Reports   -> reusable report memory
+Nudges    -> return loop
+Me        -> operator context, permissions, controls
+
+BACKEND
+-------
+Convex tables and product state for sessions, reports, entities, nudges,
+files, shared context, and evaluation artifacts
+
+RUNTIME
+-------
+search pipeline
+  -> answer packet
+  -> saved report
+  -> tracked entity / tracked theme / follow-up task
+  -> nudge or prep brief
+  -> resumed chat or reopened report
+
+COMPOUNDING LOOP
+----------------
+question
+  -> answer
+  -> saved report
+  -> watch item
+  -> useful nudge
+  -> better next run
+
+DISTRIBUTION
+------------
+nodebenchai.com
+nodebench-mcp
+nodebench-mcp-power
+nodebench-mcp-admin
+```
+
+## Why This Design
+
+NodeBench is designed around a few product realities:
+
+1. A useful answer should not disappear after one chat turn.
+2. Saved work should become reusable memory, not a dead archive row.
+3. The product should bring the user back only when something meaningful
+   changes.
+4. The system should gradually learn how the user works without forcing a heavy
+   onboarding flow.
+5. Operator context should improve future runs without turning the system into
+   corporate-speak or fake-agreeable sludge.
+
+That drives the current design:
+
+- answer-first execution
+- advisor mode by design via dynamic routing:
+  - fast executive lane for routine work
+  - deeper advisor lane for ambiguity, planning, and harder reasoning
+  - similar in spirit to Claude Code's official `opusplan` split:
+    stronger planning lane, cheaper execution lane
+- saved artifacts as first-class objects
+- visible sources and traceability
+- a five-page loop instead of five unrelated tabs
+- future `Harness v2` work focused on specification, operator context, and
+  compounding behavior
+
+Plain English:
+
+```text
+NodeBench should not spend the most expensive reasoning path on every request.
+It should move fast by default, then go deeper when the task, evidence, or user
+request justifies it.
+```
+
+The detailed implementation, verification, and evaluation plan for this mode
+lives in:
+
+- [HARNESS_V2_PROPOSAL.md](./docs/architecture/HARNESS_V2_PROPOSAL.md)
+- [HARNESS_V2_BUILD_PLAN.md](./docs/architecture/HARNESS_V2_BUILD_PLAN.md)
+
+## How The Five Pages Compound
+
+NodeBench should not feel like five separate destinations.
+
+The intended product behavior is:
+
+```text
+Home
+  -> start quickly
+
+Chat
+  -> do the work
+  -> create the first useful artifact
+
+Reports
+  -> turn that artifact into reusable memory
+
+Nudges
+  -> bring the user back when something important changes
+
+Me
+  -> improve how the next run is handled
+
+Next Home or Chat run
+  -> starts with more context than before
+```
+
+The shortest version of the compounding loop is:
+
+```text
+question
+  -> answer
+  -> saved report
+  -> watch item
+  -> useful nudge
+  -> better next run
+```
+
+Plain-English artifact flow:
+
+```text
+input
+  -> answer packet
+  -> saved report
+  -> tracked entity / tracked theme / follow-up task
+  -> nudge or prep brief
+  -> resumed report or resumed chat
+  -> user correction or confirmation
+  -> updated operator context
+  -> better next run
+```
+
+What each page contributes:
+
+- `Home` starts the run with the least friction possible
+- `Chat` creates the answer, sources, trace, entities, and next actions
+- `Reports` turns those into a durable report the user can reopen, refresh, and
+  reuse
+- `Nudges` watches that report or entity and decides when it matters again
+- `Me` stores the operator context that improves the next answer
+
+## Current Legacy Infrastructure
+
+NodeBench is not starting from zero. The repo already contains a substantial
+legacy stack that works today.
+
+Current legacy foundation:
+
+- five-surface web product
+- Convex-backed canonical data layer
+- local and deployed server runtime
+- harness v1 planning and execution path
+- shared-context handoff and delegation support
+- MCP distribution lanes
+- builder-facing evaluation and control-plane systems
+
+What that means:
+
+- the problem is not missing architecture
+- the problem is product behavior, workflow compression, and clearer
+  cross-surface compounding
+
+## Roadmap
+
+The near-term goal is:
+
+```text
+keep the working legacy foundation
+remove accidental complexity
+add specification-aware operator context
+ship one clear compounding workflow
+```
+
+Main tasks still to finish:
+
+- [ ] make `Home -> Chat -> Reports -> Nudges -> Me` behave like one continuous
+      workflow instead of five adjacent surfaces
+- [ ] turn harness v1 into the clearer v2 shape described in
+      [HARNESS_V2_PROPOSAL](docs/architecture/HARNESS_V2_PROPOSAL.md)
+- [ ] ship `Layer 0` operator context so the system can learn useful workflow
+      patterns without forcing a heavy onboarding flow
+- [ ] support permissioned transcript ingestion from NodeBench chats first, then
+      optional external logs such as Claude Code JSONL transcripts for
+      `nodebench-mcp`
+- [ ] add style-drift guardrails so the system learns judgment and workflow
+      without overfitting to corporate voice, filler, or sycophancy
+- [ ] add anticipatory prep behavior so the system can prepare the user before
+      important interactions, not only answer after the fact
+- [ ] make saved reports behave like reusable memory, not storage
+- [ ] make `Nudges` a real return loop with at least one working daily trigger
+- [ ] make `Me` clearly improve future runs by exposing what context is being
+      used and why
+- [ ] finish the `nodebench-mcp` v3 cut-and-split plan so default runtime,
+      power runtime, and admin runtime are clearly separated
+- [ ] instrument real latency, real cost, real artifact completion, and real
+      reuse across both web and MCP flows
+- [ ] keep README, runtime behavior, and exposed tool counts in sync so the
+      public story matches the actual system
+- [ ] keep dogfood, eval, and builder-control infrastructure as internal
+      leverage instead of letting it leak into the main user-facing product
 
 ## Quick Start
 
@@ -66,479 +288,22 @@ npm run dev
 npm run build
 ```
 
-## RETHINK REDESIGN APR 2026
-
-The key shift is: stop treating this as a visual polish problem and treat it as a product-behavior problem.
-
-### The five principles
-
-- value before identity
-- speed as product behavior
-- output as distribution
-- meeting users where they are
-- visible compounding over time
-
-### The six current gaps
-
-- `Home` is still page-shaped
-- `Chat` still over-explains before proving value
-- `Reports` still feels archival
-- `Nudges` is not yet a closed loop
-- `Me` still feels like settings
-- there is no real quality operating system yet
-
-That diagnosis matches current repo reality. NodeBench already has a typed pipeline, a packet-first Ask surface, shared-context handoff, delegation, and builder-facing evaluation infrastructure. What it does not yet have is one canonical workflow backbone across the user surfaces, nor a mature `Retention` / `Attrition` runtime path exposed in a product-ready way.
-
-### Ruthless execution board
-
-#### 1. Home is still explaining the product instead of launching the product
-
-Symptom in NodeBench:
-- the user sees framing, cards, and side surfaces before the first useful run starts
-
-What to change:
-- ask bar first
-- upload second
-- one example result below fold
-- no explanatory chrome before the first action
-
-Targets:
-- `Home` route shell
-- ask composer
-- upload entry
-- any discovery wall above the first fold
-
-Metric:
-- `landing_to_first_run_start < 5s`
-- `first_input_visible_on_first_paint`
-
-Ship order:
-- `1`
-
-#### 2. Chat is not yet the product
-
-Symptom in NodeBench:
-- the answer does not dominate enough
-- the user still works too hard to understand what is happening
-
-What to change:
-- every ask routes into one persistent live session
-- answer stays central
-- sources attach to answer blocks
-- activity rail supports trust without dominating
-- follow-ups continue the same session
-
-Targets:
-- `ResultWorkspace.tsx`
-- live search / SSE render path
-- answer block renderer
-- inline sources
-- session persistence layer
-
-Metric:
-- `first_partial_answer_at < 800ms`
-- `first_source_at < 2s`
-- `first_completed_section_at < 5s`
-
-Ship order:
-- `2`
-
-#### 3. Speed is not yet expressed as product behavior
-
-Symptom in NodeBench:
-- the frontend still feels like it waits and then reveals
-
-What to change:
-- classify result paints immediately
-- source chips appear while search is still running
-- answer blocks stream progressively
-- skeletons hold layout stable
-- no large layout jumps after first paint
-
-Targets:
-- SSE event mapping
-- partial answer renderer
-- source chip renderer
-- loading skeletons for `Home`, `Chat`, and `Reports`
-
-Metric:
-- no layout jump larger than one component height
-- `chat_stage_visible_progressively = true`
-
-Ship order:
-- `3`
-
-#### 4. Reports is shaped like storage, not reusable memory
-
-Symptom in NodeBench:
-- saved work still feels archival rather than compounding
-
-What to change:
-- clean reusable report pages
-- first render already useful
-- each report shows:
-  - what it is
-  - why it matters
-  - what is missing
-  - what could break
-  - what to do next
-- every report reopens directly into `Chat`
-
-Targets:
-- report grid
-- report detail page
-- saved report object
-- report refresh flow
-- report-to-chat action
-
-Metric:
-- `first_saved_report_at`
-- `first_return_visit_to_report_at`
-- `report_to_chat_reentry_rate`
-
-Ship order:
-- `4`
-
-#### 5. Nudges is still a promise, not a loop
-
-Symptom in NodeBench:
-- there is no concrete daily closed-loop behavior yet
-
-What to change:
-- start with one real loop only:
-  - report changed
-  - reply draft ready
-  - follow-up due
-
-Targets:
-- nudge feed
-- one nudge generator
-- one action path back into `Chat` or `Reports`
-- connector status cards
-
-Metric:
-- `nudge_open_rate`
-- `nudge_to_action_rate`
-- `nudge_to_chat_or_report_return_rate`
-
-Ship order:
-- `5`
-
-#### 6. Me still looks like settings instead of leverage
-
-Symptom in NodeBench:
-- users cannot feel that private context improves future runs
-
-What to change:
-- show what context exists
-- show what will improve the next run
-- show what files / reports / entities are being used
-
-Targets:
-- saved files
-- saved entities
-- profile summary
-- visible "using your context" chips in `Chat`
-
-Metric:
-- `runs_using_me_context`
-- `me_context_improves_completion_rate`
-- `visible_context_usage_rate`
-
-Ship order:
-- `6`
-
-#### 7. There is no permanent quality operating system yet
-
-Symptom in NodeBench:
-- good improvements can drift without a standing quality lane
-
-What to change:
-- weekly papercut pass
-- no bug backlog dumping
-- every release reviewed for:
-  - spacing
-  - loading
-  - empty states
-  - hover / focus
-  - motion
-  - source visibility
-  - layout stability
-
-Targets:
-- release checklist
-- bug triage rules
-- perf dashboard
-- UX quality review checklist
-
-Metric:
-- bug age
-- papercut count shipped weekly
-- regressions in time-to-value
-- layout shift incidents
-
-Ship order:
-- `parallel from day 1`
-
-### What to strip immediately
-
-Remove or hide from the main user surface:
-
-- `Compare` as a top-level workflow
-- builder-only eval surfaces
-- `Improvements` as user-facing product
-- raw workflow / replay / trajectory terminology
-- any page that is mainly about internal system state rather than user value
-
-### What to keep and lean into
-
-Keep these because they are real strengths:
-
-- typed pipeline
-- packet-first runtime
-- shared-context handoff
-- real streaming
-- bounded delegation targets
-- early replay/template substrate
-- builder-facing evaluation loop
-
-### Correct product hierarchy
-
-User sees:
-
-```text
-Home -> Chat -> Reports -> Nudges -> Me
-```
-
-System does:
-
-```text
-typed pipeline -> packet/report -> shared context -> save -> nudge
-                         |
-                         +-> Retention remembers useful patterns
-                         +-> Attrition trims future reruns
-                         +-> Hyperagent reviews quality
-                         +-> ARE tests robustness
-```
-
-### Top 3 to ship first
-
-1. `Home` becomes launchpad only
-2. `Chat` becomes the dominant product surface
-3. one real nudge loop
-
-### nodebench-mcp v3: Cut, Split, Measure
-
-The MCP server problem is not "needs cleanup." It is: **tool platform pretending to be a simple MCP.**
-
-README and runtime tool counts do not match. Presets are much larger than they appear from the docs. The boot path is overloaded. Cost is estimated, not truly measured. Performance testing is mostly harness-overhead oriented, not outcome-oriented.
-
-The next move is a **v3 cut + split + measure** reset.
-
-#### v3 package split
-
-```text
-nodebench-mcp        -> tiny default install (core 8 tools, fast boot, measurable cost)
-nodebench-mcp-power  -> optional extended tool packs (extra domains, specialist flows)
-nodebench-mcp-admin  -> profiling / eval / debug / dashboards (internal only)
-```
-
-#### Cut from default runtime
-
-These should not load in the main happy path:
-
-- dashboard launchers
-- profiling proxies
-- A/B harnesses
-- embedding bootloaders
-- benchmark runners
-- admin analytics tools
-- debug-only discovery helpers
-- giant preset/domain catalogs
-- anything that exists mainly to inspect the platform rather than complete user work
-
-#### Cut from default messaging
-
-Delete from the front-door pitch:
-
-- "350+ tools"
-- giant preset menus
-- domain-count flexing
-- meta-discovery as the primary experience
-
-Replace with: one wedge, one workflow, one artifact, one measurable outcome.
-
-#### Default tools (6-8, not 418)
-
-```text
-1. investigate(entity)     — deep research on a company/person/topic
-2. compare(entities[])     — side-by-side analysis
-3. track(entity)           — watch for changes, get nudges
-4. summarize(context)      — synthesize any input into structured brief
-5. search(query)           — web + entity + knowledge search
-6. report(topic)           — generate shareable markdown report
-7. ask_context(question)   — query against saved private context
-8. discover_tools()        — power users: unlock extended tool packs
-```
-
-#### Every default tool must return
-
-```text
-- structured data       (for agent consumption)
-- readable markdown     (for human reading)
-- sources used          (for trust)
-- actual latency        (measured, not estimated)
-- actual cost           (measured, not hardcoded)
-- artifact id           (shareable handle or URL)
-```
-
-#### Canonical workflow
-
-Not "discover tools." Do the job.
-
-```text
-ASK -> CHECK -> WRITE -> SAVE
-```
-
-An agent should begin with "do the job," not "discover tools."
-
-#### Package promise (12 words or less)
-
-```text
-Investigate a topic and return a sourced report fast.
-```
-
-#### Measurement reset
-
-##### Startup targets
-
-| Metric | Target |
-|--------|--------|
-| `stdio ready` p50 | < 500ms warm |
-| `--health` p50 | < 300ms warm |
-| `tools/list` payload | < 25 tools |
-| Default install visible tools | <= 8 core |
-
-##### Per-tool targets
-
-| Metric | Target |
-|--------|--------|
-| Latency p50 / p95 | Measured and logged |
-| Real provider cost | Measured, not hardcoded |
-| Error rate | Tracked per tool |
-| Artifact completion rate | Tracked |
-
-##### Per-workflow targets
-
-| Metric | Target |
-|--------|--------|
-| Time to first useful artifact | < 10s happy path |
-| Cost per artifact | Shown on every workflow |
-| Artifact quality score | Tracked |
-| Reuse rate | Tracked |
-| Follow-up success rate | Tracked |
-
-#### Hard latency budgets
-
-| Event | Target |
-|-------|--------|
-| First visible response in Chat | < 800ms |
-| First source visible | < 2s |
-| First section completed | < 5s |
-| No layout jump > 1 component height after first paint | Always |
-| MCP tool boot | < 1.5s |
-| MCP tool response p95 | < 2s |
-| Embedding search p95 | < 500ms |
-
-#### CI guardrails (add immediately)
-
-```text
-1. preset count check           — runtime matches README
-2. tools/list snapshot check    — no accidental tool creep
-3. startup latency budget check — boot stays under 1.5s
-4. README/runtime truth check   — published claims match reality
-5. cost instrumentation gate    — provider-backed tools must log real cost
-```
-
-#### Every workflow must end in a human artifact
-
-Not a JSON blob. One of:
-
-- memo
-- report
-- comparison brief
-- watch item
-- follow-up summary
-
-That is how output becomes distribution.
-
-#### Ship order for v3
-
-**Week 1 — Cut and simplify**
-- Freeze new MCP tools
-- Inventory every exposed tool
-- Define core 8
-- Hide or remove everything else from default
-- Rewrite README to match truth
-- Remove huge preset-first messaging
-
-**Week 2 — Split the package**
-- `nodebench-mcp` (core)
-- `nodebench-mcp-power` (extended)
-- `nodebench-mcp-admin` (internal)
-- Move optional systems out of default boot path
-
-**Week 3 — Instrument reality**
-- Real cost logging per tool call
-- Real latency logging per tool call
-- Real workflow success metrics
-- Preset count verification in CI
-
-**Week 4 — Workflow-first release**
-- Ship one canonical workflow end-to-end
-- One artifact type done really well
-- One shareable output path
-- One benchmark based on actual artifact quality
-
-#### The hard question
-
-> If you deleted 350 of the 418 tools, which 68 would an agent actually miss?
-
-If you can't answer that from usage data, that's the problem.
-
-#### The reframe
-
-```text
-NodeBench MCP should not be a monolithic tool warehouse.
-It should be a small number of opinionated workflow products
-backed by a measurable runtime.
-```
-
-#### References
-
-- [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) — 12.6k stars, 0 tools, pure workflow
-- [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) — 83.5k stars, 7 reference servers
-- [Speakeasy: Playwright cut from 70+ to 8 tools](https://www.speakeasy.com/blog/playwright-tool-proliferation)
-- [Progressive disclosure MCP: 85x token savings](https://matthewkruczek.ai/blog/progressive-disclosure-mcp-servers.html)
-- [Evil Martians: 6 principles for developer tools](https://evilmartians.com/chronicles/six-things-developer-tools-must-have-to-earn-trust-and-adoption)
-- [Linear: Quality Wednesdays + Zero-bugs policy](https://linear.app/blog)
-- Unified workflow spec: [`docs/architecture/UNIFIED_WORKFLOW_SPEC.md`](docs/architecture/UNIFIED_WORKFLOW_SPEC.md)
-- Full analysis: [`docs/architecture/MCP_BEHAVIORAL_REEXAMINATION.md`](docs/architecture/MCP_BEHAVIORAL_REEXAMINATION.md)
-
----
-
 ## Architecture
 
 ```text
 nodebenchai.com (React + Vite + Tailwind)
     |
-Convex Cloud (realtime DB + actions + workflows)
+Convex Cloud (sessions, reports, entities, nudges, files, product state)
     |
-Typed search pipeline
+server runtime + search pipeline + SSE
     |
-Packet / report output
+answer packet
     |
-Shared context + nudges + future learning loops
+saved report
+    |
+tracked entities / watch conditions / nudges
+    |
+future runs with better operator context
 ```
 
 ### Key tech
@@ -551,7 +316,8 @@ Shared context + nudges + future learning loops
 
 ## API Keys
 
-Set these in `.env.local` for local work or in Convex / Vercel for deployed environments.
+Set these in `.env.local` for local work or in Convex / Vercel for deployed
+environments.
 
 | Key | Required | Purpose |
 | --- | --- | --- |
@@ -559,45 +325,96 @@ Set these in `.env.local` for local work or in Convex / Vercel for deployed envi
 | `LINKUP_API_KEY` | Recommended | web search and sourced answers |
 | `VITE_CONVEX_URL` | Yes | Convex deployment URL |
 
-## Project Structure
+## Codebase map
+
+Top-3 levels, annotated. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the
+pipeline diagram and [`docs/architecture/README.md`](docs/architecture/README.md)
+for the 13 canonical architecture docs.
 
 ```text
 nodebench-ai/
-├── src/                      # React frontend
-│   ├── features/             # Home, Chat, Reports, Nudges, Me, controlPlane
-│   ├── hooks/                # Streaming and UI hooks
-│   └── layouts/              # Public shell and route host
-├── convex/                   # Convex backend
-│   ├── domains/product/      # Canonical product objects and queries
-│   ├── domains/search/       # Search pipeline
-│   └── schema.ts             # Database schema
-├── server/                   # Local / Vercel server runtime
-├── packages/mcp-local/       # MCP server package
-└── docs/architecture/        # Specs, audits, and redesign notes
+├── README.md                   ← you are here
+├── ARCHITECTURE.md             ← top-level pipeline diagram
+├── CONTRIBUTING.md             ← contribution bar
+├── CLAUDE.md                   ← Claude Code conventions for this repo
+├── AGENTS.md                   ← agent methodology + eval bench
+├── LICENSE                     ← MIT
+│
+├── src/                        ← React frontend (Vite)
+│   ├── features/               ← feature-first, 30 folders (Home · Chat · Reports · Nudges · Me · entities · agents · …)
+│   │   └── <feature>/          ← views · components · hooks · lib · __tests__ (colocated)
+│   ├── shared/                 ← shared UI primitives, hooks, utils
+│   ├── lib/                    ← registry, analytics, error reporting
+│   └── layouts/                ← shell + cockpit + public
+│
+├── server/                     ← Node runtime (Express + MCP gateway)
+│   ├── pipeline/               ← agent harness runtime + diligence blocks
+│   ├── routes/                 ← HTTP routes (search, harness, founder episodes)
+│   ├── mcpGateway.ts           ← WebSocket MCP gateway
+│   └── services/               ← shared services
+│
+├── convex/                     ← Convex backend
+│   ├── domains/                ← 19 domain folders (agents · product · research · founder · search · …)
+│   ├── schema.ts               ← database schema (includes agentScratchpads)
+│   └── crons.ts                ← scheduled jobs
+│
+├── packages/
+│   ├── mcp-local/              ← the published nodebench-mcp npm package (MIT)
+│   ├── mcp-client/             ← typed client SDK
+│   └── convex-mcp-nodebench/   ← Convex-side MCP auditor
+│
+├── .claude/
+│   ├── README.md               ← map of the .claude/ layout
+│   ├── rules/                  ← 31 modular rules with related_ cross-refs
+│   ├── skills/                 ← reusable how-to procedures
+│   ├── agents/                 ← subagent configs
+│   └── commands/               ← custom slash commands
+│
+├── docs/
+│   ├── README.md               ← docs tree map
+│   ├── ONBOARDING.md           ← 30-minute new-contributor path
+│   ├── architecture/           ← 13 canonical specs + plans/ + README index
+│   ├── agents/                 ← agent docs + bootstrap configs
+│   ├── guides/                 ← how-to for builders
+│   ├── decisions/              ← ADRs
+│   ├── changelog/              ← release notes
+│   ├── product/                ← product decisions
+│   ├── qa/                     ← QA protocols
+│   └── archive/                ← superseded content, provenance-only
+│
+├── tests/
+│   ├── e2e/                    ← Playwright end-to-end
+│   └── fixtures/               ← shared fixtures
+│
+├── scripts/                    ← dogfood, eval harness, one-offs
+├── public/                     ← static assets served by Vite + Vercel
+└── vendor/                     ← third-party references
 ```
 
 ## Related Docs
 
-- [ATTRITION_REDESIGN_SPEC](docs/architecture/ATTRITION_REDESIGN_SPEC.md)
-- [MCP_BEHAVIORAL_REEXAMINATION](docs/architecture/MCP_BEHAVIORAL_REEXAMINATION.md)
-- [UNIFIED_WEB_MCP_PRODUCTION_SPEC](docs/architecture/UNIFIED_WEB_MCP_PRODUCTION_SPEC.md)
-- [APP_SCORING_AND_DOGFOOD_INSTRUCTIONS](docs/architecture/APP_SCORING_AND_DOGFOOD_INSTRUCTIONS.md)
-- [ORACLE_VISION](docs/architecture/ORACLE_VISION.md)
-- [ORACLE_STATE](docs/architecture/ORACLE_STATE.md)
-- [ORACLE_LOOP](docs/architecture/ORACLE_LOOP.md)
+**Start here:** [`docs/ONBOARDING.md`](docs/ONBOARDING.md) · [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`docs/architecture/README.md`](docs/architecture/README.md)
+
+The 13 canonical architecture docs are organized in 4 tiers. See [`docs/architecture/README.md`](docs/architecture/README.md) for the indexed map:
+
+- **Tier 1 (core pipeline):** [`AGENT_PIPELINE`](docs/architecture/AGENT_PIPELINE.md) · [`DILIGENCE_BLOCKS`](docs/architecture/DILIGENCE_BLOCKS.md) · [`USER_FEEDBACK_SECURITY`](docs/architecture/USER_FEEDBACK_SECURITY.md)
+- **Tier 2 (sub-patterns):** [`SCRATCHPAD_PATTERN`](docs/architecture/SCRATCHPAD_PATTERN.md) · [`PROSEMIRROR_DECORATIONS`](docs/architecture/PROSEMIRROR_DECORATIONS.md) · [`AGENT_OBSERVABILITY`](docs/architecture/AGENT_OBSERVABILITY.md) · [`SESSION_ARTIFACTS`](docs/architecture/SESSION_ARTIFACTS.md)
+- **Tier 3 (features):** [`FOUNDER_FEATURE`](docs/architecture/FOUNDER_FEATURE.md) · [`REPORTS_AND_ENTITIES`](docs/architecture/REPORTS_AND_ENTITIES.md) · [`AUTH_AND_SHARING`](docs/architecture/AUTH_AND_SHARING.md)
+- **Tier 4 (cross-cutting):** [`MCP_INTEGRATION`](docs/architecture/MCP_INTEGRATION.md) · [`EVAL_AND_FLYWHEEL`](docs/architecture/EVAL_AND_FLYWHEEL.md) · [`DESIGN_SYSTEM`](docs/architecture/DESIGN_SYSTEM.md)
+
+Historical specs are preserved in [`docs/archive/2026-q1/`](docs/archive/2026-q1/INDEX.md).
+
+## Product Suite
+
+```text
+NodeBench AI   = flagship user surface
+nodebench-mcp  = workflow lane
+Attrition.sh   = measured replay + optimization lane
+```
+
+Attrition is not a third flagship. It is the measurable optimization lane for
+the same NodeBench workflow.
 
 ## License
 
 MIT
-
-### Three-Product Stack (Apr 2026)
-
-```
-NodeBench AI   = flagship user surface
-nodebench-mcp  = embedded workflow lane
-Attrition.sh   = measured replay + optimization lane
-```
-
-Attrition is NOT a third flagship. It is the measurable optimization lane for the same NodeBench workflow. One job: capture, measure, compress, replay, prove savings.
-
-Full spec: see attrition repo `docs/THREE_PRODUCT_STACK_SPEC.md`

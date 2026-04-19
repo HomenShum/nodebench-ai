@@ -4873,6 +4873,13 @@ export default defineSchema({
 
   /* ------------------------------------------------------------------ */
   /* AGENT SCRATCHPADS - Persistent scratchpad per agent thread         */
+  /*                                                                     */
+  /* Pattern: scratchpad-first (see .claude/rules/scratchpad_first.md)   */
+  /* Prior art: Anthropic Claude Code CLAUDE.md · Manus virtual workspace */
+  /*                                                                     */
+  /* 2026-04-19: extended with drift + status + idempotency fields to    */
+  /* support the diligence-block pipeline. All new fields optional so    */
+  /* existing callers remain backward-compatible.                        */
   /* ------------------------------------------------------------------ */
   agentScratchpads: defineTable({
     agentThreadId: v.string(),
@@ -4880,9 +4887,68 @@ export default defineSchema({
     scratchpad: v.any(),
     createdAt: v.number(),
     updatedAt: v.number(),
+
+    // ── Phase 1 extensions (all optional for backward compatibility) ──
+
+    /** Canonical entity this scratchpad enriches (e.g., company slug). */
+    entitySlug: v.optional(v.string()),
+
+    /**
+     * Entity version observed when this scratchpad was created. Used by
+     * the compaction pass to detect drift — if the entity has advanced
+     * past this version, structuring must re-run against current state.
+     */
+    entityVersionAtStart: v.optional(v.number()),
+
+    /**
+     * Run lifecycle status. Drives UI subscription (streaming vs final)
+     * and the orphan-run janitor cron.
+     *   streaming    — sub-agents still writing
+     *   structuring  — structuring LLM pass in progress
+     *   merged       — attribution complete, structured output persisted
+     *   drifted      — entity advanced during structuring; needs re-merge
+     *   failed       — permanent failure; details in failureReason
+     *   skipped      — user abandoned (wrap-up dismissed)
+     */
+    status: v.optional(
+      v.union(
+        v.literal("streaming"),
+        v.literal("structuring"),
+        v.literal("merged"),
+        v.literal("drifted"),
+        v.literal("failed"),
+        v.literal("skipped"),
+      ),
+    ),
+
+    /**
+     * Deterministic idempotency key: sha256(entitySlug + ingestHash + userId).
+     * Duplicate submits collide on this key and return the existing runId
+     * rather than double-processing. See .claude/rules/async_reliability.md.
+     */
+    idempotencyKey: v.optional(v.string()),
+
+    /**
+     * Markdown body schema version. Lets readers handle multiple shapes
+     * as we evolve the scratchpad template over time.
+     */
+    schemaVersion: v.optional(v.number()),
+
+    /**
+     * Mode the run was submitted in — drives UI subscription model.
+     * Live runs stream the scratchpad to the chat UI; background runs
+     * post a notification on completion.
+     */
+    mode: v.optional(v.union(v.literal("live"), v.literal("background"))),
+
+    /** Reason recorded when status transitions to "failed". */
+    failureReason: v.optional(v.string()),
   })
     .index("by_agent_thread", ["agentThreadId"])
-    .index("by_user", ["userId"]),
+    .index("by_user", ["userId"])
+    .index("by_entity", ["entitySlug"])
+    .index("by_idempotency", ["idempotencyKey"])
+    .index("by_status", ["status"]),
 
   /* ------------------------------------------------------------------ */
   /* AGENT EPISODIC MEMORY - Per-run chronological memory               */

@@ -120,3 +120,29 @@ vendor/claw3d/
 docs/architecture/COMPETITIVE_INTEL_*
 .nodebench-ref/
 scripts/career/.env
+
+# ── Phase 0 repo hygiene (2026-04-19) ───────────────────────────────
+# Stray root artifacts that should never be committed
+NUL
+eng.traineddata
+tmp-*.txt
+tmp-*.js
+tmp-*.png
+tmp-*.jpg
+tmp-*.log
+vite-*.log
+vite-*.error.log
+test-output.log
+test-results.json
+
+# DeepTrace dev payloads (belong in scripts/deeptrace/ if kept)
+dt-*.json
+dt-*.bat
+
+# Generated structure snapshots
+CODEBASE_STRUCTURE.json
+
+# Logs + test outputs anywhere in the tree
+*.log
+**/.tmp-*
+
