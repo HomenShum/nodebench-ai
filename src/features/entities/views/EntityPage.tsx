@@ -7,7 +7,7 @@
  * Route: /entity/:slug (via viewRegistry "entity" entry)
  */
 
-import { Suspense, lazy, useCallback, useEffect, useId, useMemo, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "convex/react";
 import {
@@ -38,12 +38,14 @@ import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap"
 import { ProductWorkspaceHeader } from "@/features/product/components/ProductWorkspaceHeader";
 import { ProductSourceIdentity } from "@/features/product/components/ProductSourceIdentity";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
+import type { EntityNoteEditorHandle } from "@/features/entities/components/EntityNoteEditor";
 import {
   buildPrepBriefPrompt,
   getReportArtifactLabel,
   isPrepBriefType,
 } from "../../../../shared/reportArtifacts";
 import {
+  buildEntityPath,
   buildCrmSummary,
   buildEntityExecutiveBrief,
   buildEntityMarkdown,
@@ -52,7 +54,7 @@ import {
 } from "@/features/entities/lib/entityExport";
 import { EntityMemoryGraph } from "@/features/entities/components/EntityMemoryGraph";
 import { EntityNotebookMeta } from "@/features/entities/components/EntityNotebookMeta";
-import { EntityActionPanel } from "@/features/entities/components/EntityActionPanel";
+import { EntityShareSheet } from "@/features/entities/components/EntityShareSheet";
 import {
   buildEntityNoteDocumentDraft,
   createEmptyEntityNoteDocument,
@@ -75,6 +77,8 @@ const EntityNotebookLive = lazy(() =>
 
 const ENTITY_VIEW_MODE_STORAGE_PREFIX = "nodebench.entityViewMode:";
 const LIVE_NOTEBOOK_DISABLE_KEY = "nodebench.liveNotebookDisabled";
+const LIVE_NOTEBOOK_FORCE_ENABLE_KEY = "nodebench.liveNotebookForceEnabled";
+const DEFAULT_LIVE_NOTEBOOK_ROLLOUT_PERCENT = 100;
 
 // Feature flag / kill switch for the Lexical-backed Live notebook. Two layers:
 //   1. Build-time env var — `VITE_NOTEBOOK_LIVE_ENABLED=false` hides the
@@ -83,13 +87,53 @@ const LIVE_NOTEBOOK_DISABLE_KEY = "nodebench.liveNotebookDisabled";
 //      `nodebench.liveNotebookDisabled=1` in devtools to fall back to
 //      Classic view for that specific browser/tab instance.
 // If a regression ships, either knob recovers without pushing a new build.
-export function isLiveNotebookEnabled(): boolean {
+export function normalizeLiveNotebookRolloutPercent(value: string | undefined): number {
+  const parsed = Number.parseInt(value ?? "", 10);
+  if (!Number.isFinite(parsed)) return DEFAULT_LIVE_NOTEBOOK_ROLLOUT_PERCENT;
+  return Math.min(100, Math.max(0, parsed));
+}
+
+export function stableLiveNotebookBucket(seed: string): number {
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
+  }
+  return hash % 100;
+}
+
+export function isLiveNotebookInRolloutCohort(
+  rolloutPercent: number,
+  sessionId: string,
+  entitySlug?: string,
+): boolean {
+  if (rolloutPercent >= 100) return true;
+  if (rolloutPercent <= 0) return false;
+  const rolloutSeed = `${sessionId}:${entitySlug ?? "global"}`;
+  return stableLiveNotebookBucket(rolloutSeed) < rolloutPercent;
+}
+
+export function isLiveNotebookEnabled(entitySlug?: string): boolean {
   if (typeof window === "undefined") return true;
-  if (window.localStorage.getItem(LIVE_NOTEBOOK_DISABLE_KEY) === "1") return false;
-  const envFlag = (import.meta as { env?: { VITE_NOTEBOOK_LIVE_ENABLED?: string } }).env
-    ?.VITE_NOTEBOOK_LIVE_ENABLED;
+  const env = (
+    import.meta as {
+      env?: {
+        VITE_NOTEBOOK_LIVE_ENABLED?: string;
+        VITE_NOTEBOOK_LIVE_ROLLOUT_PERCENT?: string;
+      };
+    }
+  ).env;
+  const envFlag = env?.VITE_NOTEBOOK_LIVE_ENABLED;
   if (envFlag === "false" || envFlag === "0") return false;
-  return true;
+  if (window.localStorage.getItem(LIVE_NOTEBOOK_DISABLE_KEY) === "1") return false;
+  if (window.localStorage.getItem(LIVE_NOTEBOOK_FORCE_ENABLE_KEY) === "1") return true;
+  const rolloutPercent = normalizeLiveNotebookRolloutPercent(
+    env?.VITE_NOTEBOOK_LIVE_ROLLOUT_PERCENT,
+  );
+  return isLiveNotebookInRolloutCohort(
+    rolloutPercent,
+    getAnonymousProductSessionId(),
+    entitySlug,
+  );
 }
 
 function readInitialEntityViewMode(entitySlug: string): "classic" | "notebook" | "live" {
@@ -100,7 +144,7 @@ function readInitialEntityViewMode(entitySlug: string): "classic" | "notebook" |
   // Kill-switch fallback: if a user has Live selected but the flag is off
   // (new build, or they flipped the local override), downgrade to Classic
   // without losing any data — blocks remain intact in the database.
-  if (candidate === "live" && !isLiveNotebookEnabled()) return "classic";
+  if (candidate === "live" && !isLiveNotebookEnabled(entitySlug)) return "classic";
   return candidate;
 }
 
@@ -174,6 +218,17 @@ type EntityWorkspace = {
   timeline: TimelineReport[];
   evidence: Array<{ _id: string; label: string; type: string; sourceUrl?: string; entityId?: string }>;
   relatedEntities?: Array<{ slug: string; name: string; entityType: string; summary: string; reason?: string }>;
+  viewerAccess?: {
+    mode: "owner" | "share";
+    access: "view" | "edit";
+    canEditNotes: boolean;
+    canEditNotebook: boolean;
+    canManageShare: boolean;
+  } | null;
+  shareLinks?: {
+    view?: { token: string; access: "view" | "edit" } | null;
+    edit?: { token: string; access: "view" | "edit" } | null;
+  } | null;
 };
 
 type EntityBlockSummary = {
@@ -419,6 +474,16 @@ function readPreviousEntityVisit(slug: string) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
+function waitForEditorFlush() {
+  return new Promise<void>((resolve) => {
+    if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
+      resolve();
+      return;
+    }
+    window.requestAnimationFrame(() => resolve());
+  });
+}
+
 type VisitBriefItem = {
   label: string;
   value: string;
@@ -596,7 +661,7 @@ function EntityIndex() {
                 if (entity.starter) {
                   navigate(buildCockpitPath({ surfaceId: "workspace" }));
                 } else {
-                  navigate(`/entity/${encodeURIComponent(entity.slug ?? entity.name)}`);
+                  navigate(buildEntityPath(entity.slug ?? entity.name, shareToken));
                 }
               }}
               className={`group flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.02] ${
@@ -659,6 +724,7 @@ export function EntityPage({ entitySlug }: { entitySlug?: string }) {
   }, [location.pathname]);
 
   const slug = entitySlug || slugFromPath || searchParams.get("entity") || "";
+  const shareToken = searchParams.get("share")?.trim() || undefined;
 
   // If no entity, show the index
   if (!slug) return <EntityIndex />;
@@ -677,14 +743,16 @@ export function EntityPage({ entitySlug }: { entitySlug?: string }) {
     );
   }
 
-  return <EntityWorkspaceView slug={slug} api={api} />;
+  return <EntityWorkspaceView slug={slug} shareToken={shareToken} api={api} />;
 }
 
 function EntityWorkspaceView({
   slug,
+  shareToken,
   api,
 }: {
   slug: string;
+  shareToken?: string;
   api: NonNullable<ReturnType<typeof useConvexApi>>;
 }) {
   const navigate = useNavigate();
@@ -696,24 +764,30 @@ function EntityWorkspaceView({
   const liveWorkspace = useQuery(
     api?.domains.product.entities.getEntityWorkspace ?? ("skip" as any),
     api?.domains.product.entities.getEntityWorkspace
-      ? { anonymousSessionId, entitySlug: slug }
+      ? { anonymousSessionId, shareToken, entitySlug: slug }
       : "skip",
   ) as EntityWorkspace | null | undefined;
   const systemWorkspace = useQuery(
     api?.domains?.product?.systemIntelligence?.getSystemEntityWorkspace ?? ("skip" as any),
-    api?.domains?.product?.systemIntelligence?.getSystemEntityWorkspace
+    !shareToken && api?.domains?.product?.systemIntelligence?.getSystemEntityWorkspace
       ? { entitySlug: slug }
       : "skip",
   ) as EntityWorkspace | null | undefined;
   const blockSummary = useQuery(
     api?.domains.product.blocks.getEntityBlockSummary ?? ("skip" as any),
     api?.domains.product.blocks.getEntityBlockSummary
-      ? { anonymousSessionId, entitySlug: slug }
+      ? { anonymousSessionId, shareToken, entitySlug: slug }
       : "skip",
   ) as EntityBlockSummary | null | undefined;
 
   const saveNoteDocument = useMutation(
     api?.domains.product.documents.saveEntityNoteDocument ?? ("skip" as any),
+  );
+  const ensureEntityWorkspaceShare = useMutation(
+    api?.domains.product.shares.ensureEntityWorkspaceShare ?? ("skip" as any),
+  );
+  const revokeEntityWorkspaceShare = useMutation(
+    api?.domains.product.shares.revokeEntityWorkspaceShare ?? ("skip" as any),
   );
   const requestRefresh = useMutation(
     api?.domains.product.reports.requestRefresh ?? ("skip" as any),
@@ -726,15 +800,20 @@ function EntityWorkspaceView({
   );
   const attachableEvidence = useQuery(
     api?.domains.product.entities.listAttachableEvidence ?? ("skip" as any),
-    api?.domains.product.entities.listAttachableEvidence
+    !shareToken && api?.domains.product.entities.listAttachableEvidence
       ? { anonymousSessionId, entitySlug: slug }
       : "skip",
   );
 
   const [noteDocumentDraft, setNoteDocumentDraft] = useState<EntityNoteDocument>(createEmptyEntityNoteDocument());
+  const noteDocumentDraftRef = useRef(noteDocumentDraft);
+  const noteEditorRef = useRef<EntityNoteEditorHandle | null>(null);
   const [noteSaving, setNoteSaving] = useState(false);
   const [copyState, setCopyState] = useState<"link" | "brief" | "markdown" | "outreach" | "crm" | null>(null);
   const [showActions, setShowActions] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
+  const [shareBusyAccess, setShareBusyAccess] = useState<"view" | "edit" | null>(null);
+  const [shareCopyState, setShareCopyState] = useState<"view" | "edit" | null>(null);
   const [savedBecauseDraft, setSavedBecauseDraft] = useState("");
   const [savingSavedBecause, setSavingSavedBecause] = useState(false);
   const [refreshingReport, setRefreshingReport] = useState(false);
@@ -750,6 +829,7 @@ function EntityWorkspaceView({
   const savedBecauseInputId = useId();
 
   const starterWorkspace = useMemo<EntityWorkspace | null>(() => {
+    if (shareToken) return null;
     const starter = getStarterEntityWorkspace(slug);
     if (!starter) return null;
     const starterSources = starter.evidence.map((item, index) => ({
@@ -796,10 +876,14 @@ function EntityWorkspaceView({
         entityId: undefined,
       })),
       relatedEntities: starter.relatedEntities,
+      viewerAccess: null,
+      shareLinks: null,
     };
-  }, [slug]);
+  }, [shareToken, slug]);
 
-  const workspace = liveWorkspace ?? systemWorkspace ?? starterWorkspace;
+  const workspace = shareToken
+    ? (liveWorkspace ?? null)
+    : (liveWorkspace ?? systemWorkspace ?? starterWorkspace);
   const liveWorkspaceResolved = liveWorkspace !== undefined;
   const hasLiveEntity = Boolean(liveWorkspace?.entity?._id);
   const notebookDrift = useMemo(
@@ -825,60 +909,136 @@ function EntityWorkspaceView({
 
   useEffect(() => {
     if (!workspace) return;
-    setNoteDocumentDraft(
-      buildEntityNoteDocumentDraft(workspace.entity.name, workspace.noteDocument ?? null, workspace.note),
+    const nextDraft = buildEntityNoteDocumentDraft(
+      workspace.entity.name,
+      workspace.noteDocument ?? null,
+      workspace.note,
     );
+    noteDocumentDraftRef.current = nextDraft;
+    setNoteDocumentDraft(nextDraft);
     setSavedBecauseDraft(
       workspace.entity.savedBecause?.trim() || getSavedBecausePlaceholder(workspace.entity.entityType),
     );
   }, [workspace]);
 
+  const handleNoteDocumentDraftChange = useCallback((nextDraft: EntityNoteDocument) => {
+    noteDocumentDraftRef.current = nextDraft;
+    setNoteDocumentDraft(nextDraft);
+  }, []);
+
   useEffect(() => {
-    if (!liveWorkspace?.entity?._id || liveWorkspace.noteDocument || !ensureNoteDocumentBackfill) return;
+    if (
+      !liveWorkspace?.entity?._id ||
+      liveWorkspace.noteDocument ||
+      !ensureNoteDocumentBackfill ||
+      liveWorkspace.viewerAccess?.canEditNotes === false
+    ) {
+      return;
+    }
     void ensureNoteDocumentBackfill({
       anonymousSessionId,
+      shareToken,
       entityId: liveWorkspace.entity._id as any,
     }).catch((error: unknown) => {
       console.error("[entity] Failed to ensure notebook backfill:", error);
     });
-  }, [anonymousSessionId, ensureNoteDocumentBackfill, liveWorkspace]);
+  }, [anonymousSessionId, ensureNoteDocumentBackfill, liveWorkspace, shareToken]);
 
   const handleSaveNote = useCallback(async () => {
-    if (!saveNoteDocument || !liveWorkspace?.entity?._id) return;
+    if (
+      !saveNoteDocument ||
+      !liveWorkspace?.entity?._id ||
+      liveWorkspace.viewerAccess?.canEditNotes === false
+    ) {
+      return;
+    }
     setNoteSaving(true);
     try {
+      await waitForEditorFlush();
+      const latestDraft = noteEditorRef.current?.getCurrentDocument() ?? noteDocumentDraftRef.current;
       await saveNoteDocument({
         anonymousSessionId,
+        shareToken,
         entityId: liveWorkspace.entity._id as any,
-        title: noteDocumentDraft.title,
-        markdown: noteDocumentDraft.markdown,
-        plainText: noteDocumentDraft.plainText,
-        lexicalState: noteDocumentDraft.lexicalState,
-        blocks: noteDocumentDraft.blocks,
+        title: latestDraft.title,
+        markdown: latestDraft.markdown,
+        plainText: latestDraft.plainText,
+        lexicalState: latestDraft.lexicalState,
+        blocks: latestDraft.blocks,
       });
     } catch (err) {
       console.error("[entity] Failed to save note:", err);
     } finally {
       setNoteSaving(false);
     }
-  }, [anonymousSessionId, liveWorkspace?.entity?._id, noteDocumentDraft, saveNoteDocument]);
+  }, [anonymousSessionId, liveWorkspace?.entity?._id, saveNoteDocument, shareToken]);
 
   const copyPayload = useCallback(async (kind: "link" | "brief" | "markdown" | "outreach" | "crm") => {
     if (!workspace) return;
+    const exportShareToken = shareToken ?? workspace.shareLinks?.view?.token ?? undefined;
     const payload =
       kind === "link"
-        ? buildEntityShareUrl(workspace.entity.slug)
+        ? buildEntityShareUrl(workspace.entity.slug, exportShareToken)
         : kind === "brief"
-          ? buildEntityExecutiveBrief(workspace)
+          ? buildEntityExecutiveBrief(workspace, undefined, exportShareToken)
         : kind === "markdown"
-          ? buildEntityMarkdown(workspace)
+          ? buildEntityMarkdown(workspace, undefined, exportShareToken)
           : kind === "outreach"
-            ? buildOutreachDraft(workspace)
-            : buildCrmSummary(workspace);
+            ? buildOutreachDraft(workspace, undefined, exportShareToken)
+            : buildCrmSummary(workspace, undefined, exportShareToken);
     await navigator.clipboard.writeText(payload);
     setCopyState(kind);
     window.setTimeout(() => setCopyState(null), 1500);
-  }, [workspace]);
+  }, [shareToken, workspace]);
+
+  const handleShareCopy = useCallback(
+    async (access: "view" | "edit") => {
+      if (!workspace?.entity?.slug || !ensureEntityWorkspaceShare) return;
+      setShareBusyAccess(access);
+      try {
+        const existingToken = workspace.shareLinks?.[access]?.token;
+        const token =
+          existingToken ||
+          (
+            (await ensureEntityWorkspaceShare({
+              anonymousSessionId,
+              entitySlug: workspace.entity.slug,
+              access,
+            })) as { token?: string | null }
+          )?.token;
+        if (!token) {
+          throw new Error("Share link could not be created.");
+        }
+        await navigator.clipboard.writeText(buildEntityShareUrl(workspace.entity.slug, token));
+        setShareCopyState(access);
+        window.setTimeout(() => setShareCopyState(null), 1500);
+      } catch (error) {
+        console.error("[entity] Failed to copy share link:", error);
+      } finally {
+        setShareBusyAccess(null);
+      }
+    },
+    [anonymousSessionId, ensureEntityWorkspaceShare, workspace],
+  );
+
+  const handleRevokeShare = useCallback(
+    async (access: "view" | "edit") => {
+      if (!workspace?.entity?.slug || !revokeEntityWorkspaceShare) return;
+      setShareBusyAccess(access);
+      try {
+        await revokeEntityWorkspaceShare({
+          anonymousSessionId,
+          entitySlug: workspace.entity.slug,
+          access,
+        });
+      } catch (error) {
+        console.error("[entity] Failed to revoke share link:", error);
+      } finally {
+        setShareBusyAccess(null);
+      }
+    },
+    [anonymousSessionId, revokeEntityWorkspaceShare, workspace],
+  );
 
   const handleAttachFile = useCallback(async (file: File) => {
     if (!workspace || !liveWorkspace?.entity?._id || !api) return;
@@ -1041,10 +1201,14 @@ function EntityWorkspaceView({
         <div className="rounded-lg border border-white/6 bg-white/[0.02] px-6 py-12 text-center">
           <FileText className="mx-auto h-8 w-8 text-content-muted/40" />
           <p className="mt-3 text-sm text-content-muted">
-            No entity found for &ldquo;{slug}&rdquo;
+            {shareToken
+              ? "This share link is unavailable."
+              : `No entity found for “${slug}”`}
           </p>
           <p className="mt-1 text-xs text-content-muted/60">
-            Search something in Chat to create an entity page.
+            {shareToken
+              ? "It may have been revoked, expired, or moved."
+              : "Search something in Chat to create an entity page."}
           </p>
         </div>
       </div>
@@ -1052,6 +1216,25 @@ function EntityWorkspaceView({
   }
 
   const { entity, note, timeline, evidence } = workspace;
+  const viewerAccess = workspace.viewerAccess ?? {
+    mode: "owner" as const,
+    access: hasLiveEntity ? ("edit" as const) : ("view" as const),
+    canEditNotes: hasLiveEntity,
+    canEditNotebook: hasLiveEntity,
+    canManageShare: hasLiveEntity && !shareToken,
+  };
+  const isSharedWorkspace = viewerAccess.mode === "share";
+  const canEditNotes = hasLiveEntity && viewerAccess.canEditNotes;
+  const canEditNotebook = hasLiveEntity && viewerAccess.canEditNotebook;
+  const canManageShare = hasLiveEntity && viewerAccess.canManageShare;
+  const shareAccessLabel = isSharedWorkspace
+    ? viewerAccess.access === "edit"
+      ? "Shared edit"
+      : "Shared view"
+    : null;
+  const buildEntityPathWithShare = (nextSlug: string) => buildEntityPath(nextSlug, shareToken);
+  const canTraverseLinkedEntities = !shareToken;
+  const liveNotebookEnabled = isLiveNotebookEnabled(workspace.entity.slug);
   const latestReport = latestBriefReport;
   const latestDiffSummary = latestReport ? computeDiffSummary(latestReport.diffs ?? []) : "";
   const latestSections = latestBriefSections;
@@ -1084,7 +1267,7 @@ function EntityWorkspaceView({
   const noteDocument = workspace.noteDocument ?? noteDocumentDraft;
 
   return (
-    <div className="mx-auto max-w-[1100px] px-4 py-6 pb-16 sm:px-6 sm:py-8">
+    <div className="mx-auto w-full max-w-[min(1760px,95vw)] px-4 py-6 pb-16 sm:px-6 sm:py-8">
       {/* ── Breadcrumb ── */}
       <nav className="mb-4 flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400" aria-label="Breadcrumb">
         <button
@@ -1113,6 +1296,14 @@ function EntityWorkspaceView({
               <span className="truncate">Saved because: {entity.savedBecause}</span>
             </>
           ) : null}
+          {shareAccessLabel ? (
+            <>
+              <span className="text-gray-300 dark:text-gray-600">·</span>
+              <span className="rounded-full border border-black/8 bg-black/[0.03] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-content-muted dark:border-white/10 dark:bg-white/[0.04]">
+                {shareAccessLabel}
+              </span>
+            </>
+          ) : null}
         </div>
 
         {/* Title + actions row */}
@@ -1128,23 +1319,37 @@ function EntityWorkspaceView({
 
           {/* Action cluster */}
           <div className="flex flex-shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={() => navigate(buildEntityReopenChatPath(timeline[0] ?? null, entity))}
-              className="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-primary)] px-3 py-1.5 text-sm font-medium text-white transition hover:bg-[var(--accent-primary-hover)]"
-            >
-              <MessageSquare className="h-3.5 w-3.5" />
-              Reopen in Chat
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(buildEntityPrepChatPath(timeline[0] ?? null, entity))}
-              className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06]"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              Prep brief
-            </button>
-            {hasLiveEntity && latestReport?._id ? (
+            {!isSharedWorkspace ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => navigate(buildEntityReopenChatPath(timeline[0] ?? null, entity))}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-primary)] px-3 py-1.5 text-sm font-medium text-white transition hover:bg-[var(--accent-primary-hover)]"
+                >
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  Reopen in Chat
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate(buildEntityPrepChatPath(timeline[0] ?? null, entity))}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06]"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Prep brief
+                </button>
+              </>
+            ) : null}
+            {canManageShare ? (
+              <button
+                type="button"
+                onClick={() => setShowShareSheet((current) => !current)}
+                className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06]"
+              >
+                <Link2 className="h-3.5 w-3.5" />
+                Share
+              </button>
+            ) : null}
+            {!isSharedWorkspace && hasLiveEntity && latestReport?._id ? (
               <button
                 type="button"
                 onClick={() => void handleRefreshLatestReport()}
@@ -1187,11 +1392,26 @@ function EntityWorkspaceView({
             {sourceCount} source{sourceCount === 1 ? "" : "s"}
           </button>
           {note ? <span>1 note</span> : null}
+          {shareAccessLabel ? (
+            <span className="tabular-nums">{shareAccessLabel.toLowerCase()}</span>
+          ) : null}
           <span className="ml-auto tabular-nums">
             Updated {formatRelative(latestReport?.updatedAt ?? entity.updatedAt)}
           </span>
         </div>
       </header>
+
+      {showShareSheet && canManageShare ? (
+        <EntityShareSheet
+          entitySlug={entity.slug}
+          viewLink={workspace.shareLinks?.view}
+          editLink={workspace.shareLinks?.edit}
+          busyAccess={shareBusyAccess}
+          copyState={shareCopyState}
+          onCopyOrCreate={(access) => void handleShareCopy(access)}
+          onRevoke={(access) => void handleRevokeShare(access)}
+        />
+      ) : null}
 
       {/* ── Sources modal ── */}
       {showSources ? (
@@ -1304,31 +1524,38 @@ function EntityWorkspaceView({
         </div>
 
         {/* Saved because — compact inline editor */}
-        <div className="flex flex-shrink-0 items-center gap-2">
-          <Bookmark className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
-          <input
-            type="text"
-            id={savedBecauseInputId}
-            name="entitySavedBecause"
-            value={savedBecauseDraft}
-            onChange={(event) => setSavedBecauseDraft(event.target.value)}
-            onBlur={() => {
-              if (
-                hasLiveEntity &&
-                savedBecauseDraft.trim() &&
-                savedBecauseDraft.trim() !== (entity.savedBecause ?? "").trim()
-              ) {
-                void handleSaveSavedBecause();
-              }
-            }}
-            placeholder={getSavedBecausePlaceholder(entity.entityType)}
-            aria-label="Saved because"
-            className="w-full max-w-[300px] rounded-md border border-gray-200 bg-white px-2.5 py-1 text-sm text-gray-700 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300 dark:placeholder:text-gray-500"
-          />
-          {savingSavedBecause ? (
-            <span className="text-xs text-gray-400 dark:text-gray-500">Saving...</span>
-          ) : null}
-        </div>
+        {isSharedWorkspace ? (
+          <div className="flex flex-shrink-0 items-center gap-2 text-xs text-content-muted">
+            <Bookmark className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
+            <span>{viewerAccess.access === "edit" ? "Shared editor" : "Read-only viewer"}</span>
+          </div>
+        ) : (
+          <div className="flex flex-shrink-0 items-center gap-2">
+            <Bookmark className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
+            <input
+              type="text"
+              id={savedBecauseInputId}
+              name="entitySavedBecause"
+              value={savedBecauseDraft}
+              onChange={(event) => setSavedBecauseDraft(event.target.value)}
+              onBlur={() => {
+                if (
+                  hasLiveEntity &&
+                  savedBecauseDraft.trim() &&
+                  savedBecauseDraft.trim() !== (entity.savedBecause ?? "").trim()
+                ) {
+                  void handleSaveSavedBecause();
+                }
+              }}
+              placeholder={getSavedBecausePlaceholder(entity.entityType)}
+              aria-label="Saved because"
+              className="w-full max-w-[300px] rounded-md border border-gray-200 bg-white px-2.5 py-1 text-sm text-gray-700 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300 dark:placeholder:text-gray-500"
+            />
+            {savingSavedBecause ? (
+              <span className="text-xs text-gray-400 dark:text-gray-500">Saving...</span>
+            ) : null}
+          </div>
+        )}
       </div>
 
       {/* ── Activity ribbon (Google Doc-style: who touched what) ── */}
@@ -1398,7 +1625,7 @@ function EntityWorkspaceView({
           >
             Notebook
           </button>
-          {isLiveNotebookEnabled() ? (
+          {liveNotebookEnabled ? (
             <button
               type="button"
               onClick={() => setEntityViewMode("live")}
@@ -1419,7 +1646,7 @@ function EntityWorkspaceView({
       {entityViewMode === "notebook" ? (
         <ErrorBoundary section="Entity notebook">
           <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading notebook…</div>}>
-            <EntityNotebookView entitySlug={entity.slug} />
+            <EntityNotebookView entitySlug={entity.slug} shareToken={shareToken} />
           </Suspense>
         </ErrorBoundary>
       ) : null}
@@ -1427,7 +1654,11 @@ function EntityWorkspaceView({
       {entityViewMode === "live" ? (
         <ErrorBoundary section="Live notebook">
           <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading live notebook…</div>}>
-            <EntityNotebookLive entitySlug={entity.slug} />
+            <EntityNotebookLive
+              entitySlug={entity.slug}
+              shareToken={shareToken}
+              canEdit={canEditNotebook}
+            />
           </Suspense>
         </ErrorBoundary>
       ) : null}
@@ -1671,33 +1902,49 @@ function EntityWorkspaceView({
                       Graph walk
                     </div>
                     <p className="mt-2 max-w-[640px] text-sm leading-6 text-content-muted">
-                      Step into related entities without rebuilding the search from scratch.
+                      {canTraverseLinkedEntities
+                        ? "Step into related entities without rebuilding the search from scratch."
+                        : "Shared links keep the current workspace focused. Related entities stay visible here as context only."}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowContextGraph(true)}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-black/[0.03] px-3 py-1.5 text-xs font-medium text-content-muted transition hover:border-[#d97757]/20 hover:text-content dark:border-white/10 dark:bg-white/[0.03]"
-                  >
-                    <Link2 className="h-3.5 w-3.5" />
-                    Open graph
-                  </button>
+                  {canTraverseLinkedEntities ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowContextGraph(true)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-black/[0.03] px-3 py-1.5 text-xs font-medium text-content-muted transition hover:border-[#d97757]/20 hover:text-content dark:border-white/10 dark:bg-white/[0.03]"
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                      Open graph
+                    </button>
+                  ) : null}
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {(workspace.relatedEntities ?? []).slice(0, 6).map((related) => (
-                    <button
-                      key={related.slug}
-                      type="button"
-                      onClick={() => navigate(`/entity/${encodeURIComponent(related.slug)}`)}
-                      className="inline-flex max-w-full items-center gap-2 rounded-full border border-black/8 bg-black/[0.03] px-3 py-1.5 text-left text-sm text-content transition hover:border-[#d97757]/20 hover:bg-[#d97757]/5 dark:border-white/10 dark:bg-white/[0.03]"
-                    >
-                      <span className="truncate">{related.name}</span>
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-content-muted">
-                        {related.entityType}
-                      </span>
-                    </button>
-                  ))}
+                  {(workspace.relatedEntities ?? []).slice(0, 6).map((related) =>
+                    canTraverseLinkedEntities ? (
+                      <button
+                        key={related.slug}
+                        type="button"
+                        onClick={() => navigate(buildEntityPathWithShare(related.slug))}
+                        className="inline-flex max-w-full items-center gap-2 rounded-full border border-black/8 bg-black/[0.03] px-3 py-1.5 text-left text-sm text-content transition hover:border-[#d97757]/20 hover:bg-[#d97757]/5 dark:border-white/10 dark:bg-white/[0.03]"
+                      >
+                        <span className="truncate">{related.name}</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-content-muted">
+                          {related.entityType}
+                        </span>
+                      </button>
+                    ) : (
+                      <div
+                        key={related.slug}
+                        className="inline-flex max-w-full items-center gap-2 rounded-full border border-black/8 bg-black/[0.03] px-3 py-1.5 text-left text-sm text-content dark:border-white/10 dark:bg-white/[0.03]"
+                      >
+                        <span className="truncate">{related.name}</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-content-muted">
+                          {related.entityType}
+                        </span>
+                      </div>
+                    ),
+                  )}
                 </div>
               </div>
             ) : null}
@@ -1772,37 +2019,55 @@ function EntityWorkspaceView({
       </section>
 
       {showActions ? (
-        <section className="mt-4">
-          <EntityActionPanel
-            anonymousSessionId={anonymousSessionId}
-            entitySlug={entity.slug}
-            revisionId={workspace.latest?._id ?? null}
-            copyState={copyState}
-            onCopyAction={copyPayload}
-          />
+        <section className="mt-4 rounded-3xl border border-black/8 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-[#111214]/90">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+            Export
+          </div>
+          <p className="mt-2 text-sm leading-6 text-content-muted">
+            Copy exactly what you need and leave the workspace alone.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {([
+              ["brief", "Executive brief"],
+              ["outreach", "Outreach memo"],
+              ["crm", "CRM block"],
+              ["markdown", "Markdown"],
+              ["link", "Copy link"],
+            ] as const).map(([kind, label]) => (
+              <button
+                key={kind}
+                type="button"
+                onClick={() => void copyPayload(kind)}
+                className="nb-secondary-button rounded-full px-3 py-1.5 text-xs"
+              >
+                {copyState === kind ? "Copied" : label}
+              </button>
+            ))}
+          </div>
         </section>
       ) : null}
 
-      <section className={`mt-10 space-y-6 pt-8 ${entityViewMode !== "classic" ? "hidden" : ""}`}>
-        <section>
+      <section className={`mt-10 pt-8 ${entityViewMode !== "classic" ? "hidden" : ""}`}>
+        <div className="grid gap-8 2xl:grid-cols-[minmax(0,3fr)_minmax(280px,0.7fr)] 2xl:items-start">
+        <section data-testid="entity-working-notes" className="min-w-0">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Working notes</h2>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Keep your live read and follow-up questions here.
+                Use this as the primary working surface for the entity. Keep your live read, synthesis, and follow-up questions here.
               </p>
             </div>
             <button
               type="button"
               onClick={() => void handleSaveNote()}
-              disabled={noteSaving || !hasLiveEntity}
+              disabled={noteSaving || !canEditNotes}
               className="nb-primary-button rounded-full px-4 py-2 text-sm"
             >
-              {noteSaving ? "Saving..." : "Save notes"}
+              {!canEditNotes ? "Read-only" : noteSaving ? "Saving..." : "Save notes"}
             </button>
           </div>
 
-          <div className="mt-5">
+          <div className="mt-5" data-testid="entity-note-editor-shell">
             <Suspense
               fallback={
                 <div className="rounded-md border border-gray-100 dark:border-white/[0.06] p-6 text-sm text-content-muted">
@@ -1811,13 +2076,17 @@ function EntityWorkspaceView({
               }
             >
               <EntityNoteEditor
+                ref={noteEditorRef}
                 document={noteDocumentDraft}
-                onChange={setNoteDocumentDraft}
+                onChange={handleNoteDocumentDraftChange}
+                readOnly={!canEditNotes}
                 toolbarPreset="compact"
                 showStats={false}
                 statusLabel={
                   !hasLiveEntity
                     ? "Starter memory"
+                    : !canEditNotes
+                      ? "Read-only shared note"
                     : noteSaving
                       ? "Saving..."
                       : workspace.noteDocument?.updatedAt
@@ -1844,8 +2113,8 @@ function EntityWorkspaceView({
           ) : null}
         </section>
 
-        <aside className="space-y-4">
-          <section className="mt-10 pt-8">
+        <aside data-testid="entity-workspace-rail" className="space-y-4 xl:sticky xl:top-24">
+          <section className="pt-2 xl:pt-0">
             <div className="flex flex-col gap-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -1895,30 +2164,32 @@ function EntityWorkspaceView({
                       Attached evidence
                     </div>
                   </div>
-                  <label
-                    className={`nb-secondary-button rounded-full px-3 py-2 text-xs ${
-                      hasLiveEntity ? "cursor-pointer" : "cursor-not-allowed opacity-50"
-                    }`}
-                  >
-                    <Upload className="h-3.5 w-3.5" />
-                    {!hasLiveEntity ? "Live entity only" : uploadingEvidence ? "Uploading..." : "Attach file"}
-                    <input
-                      type="file"
-                      name="entityEvidenceUpload"
-                      className="hidden"
-                      disabled={!hasLiveEntity}
-                      onChange={async (event) => {
-                        const input = event.currentTarget;
-                        const file = event.target.files?.[0];
-                        if (!file) return;
-                        await handleAttachFile(file);
-                        input.value = "";
-                      }}
-                    />
-                  </label>
+                  {!isSharedWorkspace ? (
+                    <label
+                      className={`nb-secondary-button rounded-full px-3 py-2 text-xs ${
+                        hasLiveEntity ? "cursor-pointer" : "cursor-not-allowed opacity-50"
+                      }`}
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                      {!hasLiveEntity ? "Live entity only" : uploadingEvidence ? "Uploading..." : "Attach file"}
+                      <input
+                        type="file"
+                        name="entityEvidenceUpload"
+                        className="hidden"
+                        disabled={!hasLiveEntity}
+                        onChange={async (event) => {
+                          const input = event.currentTarget;
+                          const file = event.target.files?.[0];
+                          if (!file) return;
+                          await handleAttachFile(file);
+                          input.value = "";
+                        }}
+                      />
+                    </label>
+                  ) : null}
                 </div>
 
-                {attachableEvidence && attachableEvidence.length > 0 ? (
+                {!isSharedWorkspace && attachableEvidence && attachableEvidence.length > 0 ? (
                   <div className="space-y-2">
                     <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
                       Ready to attach
@@ -2003,7 +2274,11 @@ function EntityWorkspaceView({
                   <div className="mt-3">
                     <EntityNotebookMeta
                       document={noteDocument}
-                      onOpenEntity={(nextSlug) => navigate(`/entity/${encodeURIComponent(nextSlug)}`)}
+                      onOpenEntity={
+                        canTraverseLinkedEntities
+                          ? (nextSlug) => navigate(buildEntityPathWithShare(nextSlug))
+                          : undefined
+                      }
                     />
                   </div>
                 </div>
@@ -2030,7 +2305,11 @@ function EntityWorkspaceView({
                         entityName={entity.name}
                         relatedEntities={workspace.relatedEntities}
                         evidence={workspace.evidence}
-                        onOpenEntity={(nextSlug) => navigate(`/entity/${encodeURIComponent(nextSlug)}`)}
+                        onOpenEntity={
+                          canTraverseLinkedEntities
+                            ? (nextSlug) => navigate(buildEntityPathWithShare(nextSlug))
+                            : undefined
+                        }
                       />
                     </div>
                   ) : null}
@@ -2042,27 +2321,47 @@ function EntityWorkspaceView({
                   </div>
                   {workspace.relatedEntities && workspace.relatedEntities.length > 0 ? (
                     <div className="mt-3 space-y-3">
-                      {workspace.relatedEntities.map((related) => (
-                        <button
-                          key={related.slug}
-                          type="button"
-                          onClick={() => navigate(`/entity/${encodeURIComponent(related.slug)}`)}
-                          className="rounded-md border border-gray-100 dark:border-white/[0.06] w-full px-4 py-3 text-left transition hover:bg-white/[0.04]"
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="text-sm font-medium text-content">{related.name}</div>
-                            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
-                              {related.entityType}
+                      {workspace.relatedEntities.map((related) =>
+                        canTraverseLinkedEntities ? (
+                          <button
+                            key={related.slug}
+                            type="button"
+                            onClick={() => navigate(buildEntityPathWithShare(related.slug))}
+                            className="rounded-md border border-gray-100 dark:border-white/[0.06] w-full px-4 py-3 text-left transition hover:bg-white/[0.04]"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="text-sm font-medium text-content">{related.name}</div>
+                              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                                {related.entityType}
+                              </div>
                             </div>
+                            <p className="mt-2 text-sm leading-6 text-content-muted">{related.summary}</p>
+                            {related.reason ? (
+                              <div className="mt-2 text-[11px] uppercase tracking-[0.18em] text-content-muted">
+                                {related.reason}
+                              </div>
+                            ) : null}
+                          </button>
+                        ) : (
+                          <div
+                            key={related.slug}
+                            className="rounded-md border border-gray-100 dark:border-white/[0.06] w-full px-4 py-3 text-left"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="text-sm font-medium text-content">{related.name}</div>
+                              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                                {related.entityType}
+                              </div>
+                            </div>
+                            <p className="mt-2 text-sm leading-6 text-content-muted">{related.summary}</p>
+                            {related.reason ? (
+                              <div className="mt-2 text-[11px] uppercase tracking-[0.18em] text-content-muted">
+                                {related.reason}
+                              </div>
+                            ) : null}
                           </div>
-                          <p className="mt-2 text-sm leading-6 text-content-muted">{related.summary}</p>
-                          {related.reason ? (
-                            <div className="mt-2 text-[11px] uppercase tracking-[0.18em] text-content-muted">
-                              {related.reason}
-                            </div>
-                          ) : null}
-                        </button>
-                      ))}
+                        ),
+                      )}
                     </div>
                   ) : (
                     <p className="mt-3 text-sm leading-6 text-content-muted">
@@ -2074,6 +2373,7 @@ function EntityWorkspaceView({
             )}
           </section>
         </aside>
+        </div>
       </section>
 
       {/* ── User Notes (editable, Obsidian-like) ───────────────────────── */}
@@ -2090,7 +2390,7 @@ function EntityWorkspaceView({
           entityName={entity.name}
           relatedEntities={workspace.relatedEntities}
           evidence={workspace.evidence}
-          onOpenEntity={(nextSlug) => navigate(`/entity/${encodeURIComponent(nextSlug)}`)}
+          onOpenEntity={(nextSlug) => navigate(buildEntityPathWithShare(nextSlug))}
         />
 
         {workspace.relatedEntities && workspace.relatedEntities.length > 0 ? (
@@ -2102,7 +2402,7 @@ function EntityWorkspaceView({
               <button
                 key={related.slug}
                 type="button"
-                onClick={() => navigate(`/entity/${encodeURIComponent(related.slug)}`)}
+                onClick={() => navigate(buildEntityPathWithShare(related.slug))}
                 className="rounded-md border border-gray-100 dark:border-white/[0.06] w-full px-4 py-3 text-left transition hover:bg-white/[0.04]"
               >
                 <div className="flex items-center justify-between gap-3">
@@ -2150,8 +2450,9 @@ function EntityWorkspaceView({
             }
           >
             <EntityNoteEditor
+              ref={noteEditorRef}
               document={noteDocumentDraft}
-              onChange={setNoteDocumentDraft}
+              onChange={handleNoteDocumentDraftChange}
               statusLabel={
                 !hasLiveEntity
                   ? "Starter memory"
@@ -2191,7 +2492,7 @@ function EntityWorkspaceView({
         </div>
         <EntityNotebookMeta
           document={noteDocument}
-          onOpenEntity={(nextSlug) => navigate(`/entity/${encodeURIComponent(nextSlug)}`)}
+          onOpenEntity={(nextSlug) => navigate(buildEntityPathWithShare(nextSlug))}
         />
       </section>
 
@@ -2423,3 +2724,4 @@ function EntityWorkspaceView({
 }
 
 export default EntityPage;
+
