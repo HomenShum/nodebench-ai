@@ -9,7 +9,7 @@
 
 import { Suspense, lazy, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import {
   ArrowLeft,
   Check,
@@ -48,6 +48,7 @@ import {
   buildEntityPath,
   buildCrmSummary,
   buildEntityExecutiveBrief,
+  buildEntityInviteUrl,
   buildEntityMarkdown,
   buildEntityShareUrl,
   buildOutreachDraft,
@@ -55,6 +56,8 @@ import {
 import { EntityMemoryGraph } from "@/features/entities/components/EntityMemoryGraph";
 import { EntityNotebookMeta } from "@/features/entities/components/EntityNotebookMeta";
 import { EntityShareSheet } from "@/features/entities/components/EntityShareSheet";
+import { SignInForm } from "@/SignInForm";
+import { SignOutButton } from "@/SignOutButton";
 import {
   buildEntityNoteDocumentDraft,
   createEmptyEntityNoteDocument,
@@ -134,6 +137,29 @@ export function isLiveNotebookEnabled(entitySlug?: string): boolean {
     getAnonymousProductSessionId(),
     entitySlug,
   );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Identity redesign flag (PR-C of ENTITY_PAGE_REDESIGN.md).
+// When ON (the default), the entity page hides the Classic/Notebook/Live
+// three-way toggle and makes Live the only user-facing editable surface.
+// Kill switches still work: VITE_NOTEBOOK_LIVE_ENABLED=false forces
+// Classic, as before.
+// Two-layer override identical to the other notebook flags:
+//   - VITE_NOTEBOOK_IDENTITY_REDESIGN_ENABLED=false  (build-time)
+//   - localStorage nodebench.notebookIdentityRedesignDisabled=1  (per-browser)
+// ───────────────────────────────────────────────────────────────────────────
+const IDENTITY_REDESIGN_DISABLE_KEY = "nodebench.notebookIdentityRedesignDisabled";
+
+export function isNotebookIdentityRedesignEnabled(): boolean {
+  if (typeof window === "undefined") return true;
+  if (window.localStorage.getItem(IDENTITY_REDESIGN_DISABLE_KEY) === "1") return false;
+  const env = (
+    import.meta as { env?: { VITE_NOTEBOOK_IDENTITY_REDESIGN_ENABLED?: string } }
+  ).env;
+  const flag = env?.VITE_NOTEBOOK_IDENTITY_REDESIGN_ENABLED;
+  if (flag === "false" || flag === "0") return false;
+  return true;
 }
 
 function readInitialEntityViewMode(entitySlug: string): "classic" | "notebook" | "live" {
@@ -219,17 +245,52 @@ type EntityWorkspace = {
   evidence: Array<{ _id: string; label: string; type: string; sourceUrl?: string; entityId?: string }>;
   relatedEntities?: Array<{ slug: string; name: string; entityType: string; summary: string; reason?: string }>;
   viewerAccess?: {
-    mode: "owner" | "share";
+    mode: "owner" | "share" | "member";
     access: "view" | "edit";
     canEditNotes: boolean;
     canEditNotebook: boolean;
     canManageShare: boolean;
+    canManageMembers: boolean;
   } | null;
   shareLinks?: {
     view?: { token: string; access: "view" | "edit" } | null;
     edit?: { token: string; access: "view" | "edit" } | null;
   } | null;
+  collaborators?: {
+    members: Array<{
+      _id: string;
+      userId: string;
+      email: string;
+      name?: string;
+      image?: string;
+      access: "view" | "edit";
+      token: string;
+      updatedAt: number;
+    }>;
+    invites: Array<{
+      _id: string;
+      email: string;
+      access: "view" | "edit";
+      token: string;
+      updatedAt: number;
+    }>;
+  } | null;
 };
+
+type WorkspaceInvitePreview = {
+  entitySlug: string;
+  entityName: string;
+  email: string;
+  access: "view" | "edit";
+} | null;
+
+type WorkspaceAccessPreview = {
+  kind: "share" | "member";
+  entitySlug: string;
+  entityName: string;
+  access: "view" | "edit";
+  email?: string;
+} | null;
 
 type EntityBlockSummary = {
   blockCount: number;
@@ -284,6 +345,10 @@ function formatRelative(ts: number | undefined | null): string {
   const days = Math.round(hours / 24);
   if (days < 30) return `${days}d ago`;
   return formatDate(ts);
+}
+
+function normalizeWorkspaceEmail(value?: string | null) {
+  return String(value ?? "").trim().toLowerCase();
 }
 
 export function buildEntityReopenChatPath(
@@ -725,6 +790,7 @@ export function EntityPage({ entitySlug }: { entitySlug?: string }) {
 
   const slug = entitySlug || slugFromPath || searchParams.get("entity") || "";
   const shareToken = searchParams.get("share")?.trim() || undefined;
+  const inviteToken = searchParams.get("invite")?.trim() || undefined;
 
   // If no entity, show the index
   if (!slug) return <EntityIndex />;
@@ -743,23 +809,27 @@ export function EntityPage({ entitySlug }: { entitySlug?: string }) {
     );
   }
 
-  return <EntityWorkspaceView slug={slug} shareToken={shareToken} api={api} />;
+  return <EntityWorkspaceView slug={slug} shareToken={shareToken} inviteToken={inviteToken} api={api} />;
 }
 
 function EntityWorkspaceView({
   slug,
   shareToken,
+  inviteToken,
   api,
 }: {
   slug: string;
   shareToken?: string;
+  inviteToken?: string;
   api: NonNullable<ReturnType<typeof useConvexApi>>;
 }) {
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
   const anonymousSessionId = getAnonymousProductSessionId();
   const generateUploadUrl = useMutation(api?.domains.product.me.generateUploadUrl ?? ("skip" as any));
   const saveFileMutation = useMutation(api?.domains.product.me.saveFile ?? ("skip" as any));
   const attachEvidence = useMutation(api?.domains.product.entities.attachEvidenceToEntity ?? ("skip" as any));
+  const loggedInUser = useQuery(api?.domains.auth.auth.loggedInUser ?? "skip");
 
   const liveWorkspace = useQuery(
     api?.domains.product.entities.getEntityWorkspace ?? ("skip" as any),
@@ -786,9 +856,39 @@ function EntityWorkspaceView({
   const ensureEntityWorkspaceShare = useMutation(
     api?.domains.product.shares.ensureEntityWorkspaceShare ?? ("skip" as any),
   );
+  const inviteEntityWorkspaceCollaborator = useMutation(
+    api?.domains.product.shares.inviteEntityWorkspaceCollaborator ?? ("skip" as any),
+  );
+  const acceptEntityWorkspaceInvite = useMutation(
+    api?.domains.product.shares.acceptEntityWorkspaceInvite ?? ("skip" as any),
+  );
+  const updateEntityWorkspaceMemberAccess = useMutation(
+    api?.domains.product.shares.updateEntityWorkspaceMemberAccess ?? ("skip" as any),
+  );
+  const updateEntityWorkspaceInviteAccess = useMutation(
+    api?.domains.product.shares.updateEntityWorkspaceInviteAccess ?? ("skip" as any),
+  );
+  const revokeEntityWorkspaceMember = useMutation(
+    api?.domains.product.shares.revokeEntityWorkspaceMember ?? ("skip" as any),
+  );
+  const revokeEntityWorkspaceInvite = useMutation(
+    api?.domains.product.shares.revokeEntityWorkspaceInvite ?? ("skip" as any),
+  );
   const revokeEntityWorkspaceShare = useMutation(
     api?.domains.product.shares.revokeEntityWorkspaceShare ?? ("skip" as any),
   );
+  const invitePreview = useQuery(
+    api?.domains.product.shares.previewEntityWorkspaceInvite ?? "skip",
+    inviteToken && api?.domains.product.shares.previewEntityWorkspaceInvite
+      ? { inviteToken, entitySlug: slug }
+      : "skip",
+  ) as WorkspaceInvitePreview | undefined;
+  const accessTokenPreview = useQuery(
+    api?.domains.product.shares.previewEntityWorkspaceAccessToken ?? "skip",
+    shareToken && api?.domains.product.shares.previewEntityWorkspaceAccessToken
+      ? { shareToken, entitySlug: slug }
+      : "skip",
+  ) as WorkspaceAccessPreview | undefined;
   const requestRefresh = useMutation(
     api?.domains.product.reports.requestRefresh ?? ("skip" as any),
   );
@@ -814,6 +914,11 @@ function EntityWorkspaceView({
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [shareBusyAccess, setShareBusyAccess] = useState<"view" | "edit" | null>(null);
   const [shareCopyState, setShareCopyState] = useState<"view" | "edit" | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteAccess, setInviteAccess] = useState<"view" | "edit">("view");
+  const [inviteBusy, setInviteBusy] = useState(false);
+  const [collaboratorCopyKey, setCollaboratorCopyKey] = useState<string | null>(null);
+  const [acceptingInvite, setAcceptingInvite] = useState(false);
   const [savedBecauseDraft, setSavedBecauseDraft] = useState("");
   const [savingSavedBecause, setSavingSavedBecause] = useState(false);
   const [refreshingReport, setRefreshingReport] = useState(false);
@@ -892,6 +997,12 @@ function EntityWorkspaceView({
   );
 
   useEffect(() => {
+    if (invitePreview?.email) {
+      setInviteEmail((current) => current || invitePreview.email);
+    }
+  }, [invitePreview?.email]);
+
+  useEffect(() => {
     setEntityViewMode(readInitialEntityViewMode(slug));
   }, [slug]);
 
@@ -906,6 +1017,17 @@ function EntityWorkspaceView({
       setEntityViewMode("classic");
     }
   }, [entityViewMode, hasLiveEntity, liveWorkspaceResolved]);
+
+  // Identity redesign: when ON and Live is available, promote Live as the
+  // only editable surface. The kill-switch branch above still downgrades
+  // to classic when Live is unavailable, so we don't fight it here.
+  useEffect(() => {
+    if (!liveWorkspaceResolved) return;
+    if (!isNotebookIdentityRedesignEnabled()) return;
+    if (!isLiveNotebookEnabled(workspace?.entity?.slug)) return;
+    if (!hasLiveEntity) return;
+    if (entityViewMode !== "live") setEntityViewMode("live");
+  }, [entityViewMode, hasLiveEntity, liveWorkspaceResolved, workspace?.entity?.slug]);
 
   useEffect(() => {
     if (!workspace) return;
@@ -1039,6 +1161,126 @@ function EntityWorkspaceView({
     },
     [anonymousSessionId, revokeEntityWorkspaceShare, workspace],
   );
+
+  const handleInviteCollaborator = useCallback(async () => {
+    if (!workspace?.entity?.slug || !inviteEntityWorkspaceCollaborator) return;
+    const email = inviteEmail.trim();
+    if (!email) return;
+    setInviteBusy(true);
+    try {
+      const result = (await inviteEntityWorkspaceCollaborator({
+        anonymousSessionId,
+        entitySlug: workspace.entity.slug,
+        email,
+        access: inviteAccess,
+      })) as { kind: "member" | "invite"; token: string };
+      const nextUrl =
+        result.kind === "invite"
+          ? buildEntityInviteUrl(workspace.entity.slug, result.token)
+          : buildEntityShareUrl(workspace.entity.slug, result.token);
+      await navigator.clipboard.writeText(nextUrl);
+      setCollaboratorCopyKey(`${result.kind}:${email.toLowerCase()}`);
+      setInviteEmail("");
+      window.setTimeout(() => setCollaboratorCopyKey(null), 1500);
+    } catch (error) {
+      console.error("[entity] Failed to invite collaborator:", error);
+    } finally {
+      setInviteBusy(false);
+    }
+  }, [
+    anonymousSessionId,
+    inviteAccess,
+    inviteEmail,
+    inviteEntityWorkspaceCollaborator,
+    workspace?.entity?.slug,
+  ]);
+
+  const handleCopyMemberLink = useCallback(async (userId: string) => {
+    const member = workspace?.collaborators?.members.find((item) => item.userId === userId);
+    if (!workspace?.entity?.slug || !member) return;
+    await navigator.clipboard.writeText(buildEntityShareUrl(workspace.entity.slug, member.token));
+    setCollaboratorCopyKey(`member:${userId}`);
+    window.setTimeout(() => setCollaboratorCopyKey(null), 1500);
+  }, [workspace]);
+
+  const handleCopyInviteLink = useCallback(async (inviteId: string) => {
+    const invite = workspace?.collaborators?.invites.find((item) => item._id === inviteId);
+    if (!workspace?.entity?.slug || !invite) return;
+    await navigator.clipboard.writeText(buildEntityInviteUrl(workspace.entity.slug, invite.token));
+    setCollaboratorCopyKey(`invite:${inviteId}`);
+    window.setTimeout(() => setCollaboratorCopyKey(null), 1500);
+  }, [workspace]);
+
+  const handleUpdateMemberPermission = useCallback(async (userId: string, access: "view" | "edit") => {
+    if (!workspace?.entity?.slug || !updateEntityWorkspaceMemberAccess) return;
+    try {
+      await updateEntityWorkspaceMemberAccess({
+        anonymousSessionId,
+        entitySlug: workspace.entity.slug,
+        userId: userId as any,
+        access,
+      });
+    } catch (error) {
+      console.error("[entity] Failed to update member access:", error);
+    }
+  }, [anonymousSessionId, updateEntityWorkspaceMemberAccess, workspace?.entity?.slug]);
+
+  const handleUpdateInvitePermission = useCallback(async (inviteId: string, access: "view" | "edit") => {
+    if (!workspace?.entity?.slug || !updateEntityWorkspaceInviteAccess) return;
+    try {
+      await updateEntityWorkspaceInviteAccess({
+        anonymousSessionId,
+        entitySlug: workspace.entity.slug,
+        inviteId: inviteId as any,
+        access,
+      });
+    } catch (error) {
+      console.error("[entity] Failed to update invite access:", error);
+    }
+  }, [anonymousSessionId, updateEntityWorkspaceInviteAccess, workspace?.entity?.slug]);
+
+  const handleRevokeMember = useCallback(async (userId: string) => {
+    if (!workspace?.entity?.slug || !revokeEntityWorkspaceMember) return;
+    try {
+      await revokeEntityWorkspaceMember({
+        anonymousSessionId,
+        entitySlug: workspace.entity.slug,
+        userId: userId as any,
+      });
+    } catch (error) {
+      console.error("[entity] Failed to remove collaborator:", error);
+    }
+  }, [anonymousSessionId, revokeEntityWorkspaceMember, workspace?.entity?.slug]);
+
+  const handleRevokeInvite = useCallback(async (inviteId: string) => {
+    if (!workspace?.entity?.slug || !revokeEntityWorkspaceInvite) return;
+    try {
+      await revokeEntityWorkspaceInvite({
+        anonymousSessionId,
+        entitySlug: workspace.entity.slug,
+        inviteId: inviteId as any,
+      });
+    } catch (error) {
+      console.error("[entity] Failed to revoke invite:", error);
+    }
+  }, [anonymousSessionId, revokeEntityWorkspaceInvite, workspace?.entity?.slug]);
+
+  const handleAcceptInvite = useCallback(async () => {
+    if (!inviteToken || !acceptEntityWorkspaceInvite) return;
+    setAcceptingInvite(true);
+    try {
+      const result = (await acceptEntityWorkspaceInvite({
+        anonymousSessionId,
+        inviteToken,
+        entitySlug: slug,
+      })) as { shareToken: string; entitySlug: string };
+      navigate(buildEntityPath(result.entitySlug, result.shareToken), { replace: true });
+    } catch (error) {
+      console.error("[entity] Failed to accept invite:", error);
+    } finally {
+      setAcceptingInvite(false);
+    }
+  }, [acceptEntityWorkspaceInvite, anonymousSessionId, inviteToken, navigate, slug]);
 
   const handleAttachFile = useCallback(async (file: File) => {
     if (!workspace || !liveWorkspace?.entity?._id || !api) return;
@@ -1186,6 +1428,153 @@ function EntityWorkspaceView({
     );
   }
 
+  const currentUserEmail = normalizeWorkspaceEmail(
+    typeof loggedInUser?.email === "string" ? loggedInUser.email : null,
+  );
+  const inviteTargetEmail = normalizeWorkspaceEmail(invitePreview?.email);
+  const memberTargetEmail = normalizeWorkspaceEmail(accessTokenPreview?.email);
+
+  if (inviteToken) {
+    if (invitePreview === undefined || authLoading || (isAuthenticated && loggedInUser === undefined)) {
+      return (
+        <div className="mx-auto max-w-3xl px-4 py-8">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 w-24 rounded bg-white/[0.06]" />
+            <div className="h-8 w-64 rounded bg-white/[0.06]" />
+            <div className="h-24 rounded-lg bg-white/[0.03]" />
+          </div>
+        </div>
+      );
+    }
+
+    if (!invitePreview) {
+      return (
+        <div className="mx-auto max-w-3xl px-4 py-8">
+          <button
+            type="button"
+            onClick={() => navigate("/entity")}
+            className="mb-6 flex items-center gap-1.5 text-sm text-content-muted transition hover:text-content"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            All entities
+          </button>
+          <div className="rounded-3xl border border-white/6 bg-white/[0.02] px-6 py-12 text-center">
+            <Users className="mx-auto h-8 w-8 text-content-muted/40" />
+            <p className="mt-3 text-sm text-content-muted">This invite is unavailable.</p>
+            <p className="mt-1 text-xs text-content-muted/60">
+              It may have been accepted, revoked, or expired.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!currentUserEmail) {
+      return (
+        <div className="mx-auto max-w-3xl px-4 py-8">
+          <div className="rounded-3xl border border-white/6 bg-white/[0.02] px-6 py-8">
+            <div className="text-sm font-semibold text-content">Join {invitePreview.entityName}</div>
+            <p className="mt-2 text-sm text-content-muted">
+              Sign in with <span className="font-medium text-content">{invitePreview.email}</span> to{" "}
+              {invitePreview.access === "edit" ? "edit" : "view"} this workspace.
+            </p>
+            <div className="mt-5">
+              <SignInForm initialEmail={invitePreview.email} allowAnonymous={false} />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (currentUserEmail !== inviteTargetEmail) {
+      return (
+        <div className="mx-auto max-w-3xl px-4 py-8">
+          <div className="rounded-3xl border border-white/6 bg-white/[0.02] px-6 py-8">
+            <div className="text-sm font-semibold text-content">Wrong account</div>
+            <p className="mt-2 text-sm text-content-muted">
+              This invite was sent to <span className="font-medium text-content">{invitePreview.email}</span>, but you are signed in as{" "}
+              <span className="font-medium text-content">{loggedInUser?.email}</span>.
+            </p>
+            <div className="mt-4">
+              <SignOutButton />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (!workspace) {
+      return (
+        <div className="mx-auto max-w-3xl px-4 py-8">
+          <div className="rounded-3xl border border-white/6 bg-white/[0.02] px-6 py-8">
+            <div className="text-sm font-semibold text-content">Join workspace</div>
+            <p className="mt-2 text-sm text-content-muted">
+              You have been invited to {invitePreview.access === "edit" ? "edit" : "view"} {invitePreview.entityName}.
+            </p>
+            <button
+              type="button"
+              onClick={() => void handleAcceptInvite()}
+              disabled={acceptingInvite}
+              className="nb-primary-button mt-5 rounded-full px-4 py-2 text-sm"
+            >
+              {acceptingInvite ? "Joining..." : "Join workspace"}
+            </button>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  if (shareToken && !workspace && accessTokenPreview?.kind === "member") {
+    if (authLoading || (isAuthenticated && loggedInUser === undefined)) {
+      return (
+        <div className="mx-auto max-w-3xl px-4 py-8">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 w-24 rounded bg-white/[0.06]" />
+            <div className="h-8 w-64 rounded bg-white/[0.06]" />
+            <div className="h-24 rounded-lg bg-white/[0.03]" />
+          </div>
+        </div>
+      );
+    }
+
+    if (!currentUserEmail) {
+      return (
+        <div className="mx-auto max-w-3xl px-4 py-8">
+          <div className="rounded-3xl border border-white/6 bg-white/[0.02] px-6 py-8">
+            <div className="text-sm font-semibold text-content">
+              Sign in to open {accessTokenPreview.entityName}
+            </div>
+            <p className="mt-2 text-sm text-content-muted">
+              This workspace is shared with a named account. Sign in with{" "}
+              <span className="font-medium text-content">{accessTokenPreview.email}</span> to continue.
+            </p>
+            <div className="mt-5">
+              <SignInForm initialEmail={accessTokenPreview.email} allowAnonymous={false} />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (memberTargetEmail && currentUserEmail !== memberTargetEmail) {
+      return (
+        <div className="mx-auto max-w-3xl px-4 py-8">
+          <div className="rounded-3xl border border-white/6 bg-white/[0.02] px-6 py-8">
+            <div className="text-sm font-semibold text-content">Wrong account</div>
+            <p className="mt-2 text-sm text-content-muted">
+              This workspace is for <span className="font-medium text-content">{accessTokenPreview.email}</span>, but you are signed in as{" "}
+              <span className="font-medium text-content">{loggedInUser?.email}</span>.
+            </p>
+            <div className="mt-4">
+              <SignOutButton />
+            </div>
+          </div>
+        </div>
+      );
+    }
+  }
+
   // Entity not found
   if (!workspace) {
     return (
@@ -1222,19 +1611,31 @@ function EntityWorkspaceView({
     canEditNotes: hasLiveEntity,
     canEditNotebook: hasLiveEntity,
     canManageShare: hasLiveEntity && !shareToken,
+    canManageMembers: false,
   };
-  const isSharedWorkspace = viewerAccess.mode === "share";
+  const isSharedWorkspace = viewerAccess.mode === "share" || viewerAccess.mode === "member";
   const canEditNotes = hasLiveEntity && viewerAccess.canEditNotes;
   const canEditNotebook = hasLiveEntity && viewerAccess.canEditNotebook;
   const canManageShare = hasLiveEntity && viewerAccess.canManageShare;
+  const canManageMembers = hasLiveEntity && viewerAccess.canManageMembers;
   const shareAccessLabel = isSharedWorkspace
     ? viewerAccess.access === "edit"
-      ? "Shared edit"
-      : "Shared view"
+      ? viewerAccess.mode === "member"
+        ? "Member edit"
+        : "Shared edit"
+      : viewerAccess.mode === "member"
+        ? "Member view"
+        : "Shared view"
     : null;
   const buildEntityPathWithShare = (nextSlug: string) => buildEntityPath(nextSlug, shareToken);
   const canTraverseLinkedEntities = !shareToken;
   const liveNotebookEnabled = isLiveNotebookEnabled(workspace.entity.slug);
+  const identityRedesignEnabled = isNotebookIdentityRedesignEnabled();
+  // When the identity redesign is on AND Live is available, the three-way
+  // Classic/Notebook/Live toggle is hidden — Live becomes the only user-
+  // facing editable surface. The toggle re-appears automatically when
+  // either flag is off (kill-switch / fallback path).
+  const showViewModeToggle = !(identityRedesignEnabled && liveNotebookEnabled && hasLiveEntity);
   const latestReport = latestBriefReport;
   const latestDiffSummary = latestReport ? computeDiffSummary(latestReport.diffs ?? []) : "";
   const latestSections = latestBriefSections;
@@ -1408,6 +1809,37 @@ function EntityWorkspaceView({
           editLink={workspace.shareLinks?.edit}
           busyAccess={shareBusyAccess}
           copyState={shareCopyState}
+          canManageMembers={canManageMembers}
+          peopleAuthSlot={
+            !canManageMembers ? (
+              <div className="space-y-3">
+                <p className="text-sm text-content-muted">
+                  Invite by email requires a signed-in account so access stays attached to a real person.
+                </p>
+                <SignInForm allowAnonymous={false} />
+              </div>
+            ) : null
+          }
+          inviteEmail={inviteEmail}
+          inviteAccess={inviteAccess}
+          inviteBusy={inviteBusy}
+          collaboratorCopyKey={collaboratorCopyKey}
+          onInviteEmailChange={setInviteEmail}
+          onInviteAccessChange={setInviteAccess}
+          onInvite={() => void handleInviteCollaborator()}
+          members={workspace.collaborators?.members ?? []}
+          invites={(workspace.collaborators?.invites ?? []).map((invite) => ({
+            id: invite._id,
+            email: invite.email,
+            access: invite.access,
+            token: invite.token,
+          }))}
+          onCopyMemberLink={(userId) => void handleCopyMemberLink(userId)}
+          onCopyInviteLink={(inviteId) => void handleCopyInviteLink(inviteId)}
+          onUpdateMemberAccess={(userId, access) => void handleUpdateMemberPermission(userId, access)}
+          onUpdateInviteAccess={(inviteId, access) => void handleUpdateInvitePermission(inviteId, access)}
+          onRevokeMember={(userId) => void handleRevokeMember(userId)}
+          onRevokeInvite={(inviteId) => void handleRevokeInvite(inviteId)}
           onCopyOrCreate={(access) => void handleShareCopy(access)}
           onRevoke={(access) => void handleRevokeShare(access)}
         />
@@ -1593,7 +2025,11 @@ function EntityWorkspaceView({
         </div>
       ) : null}
 
-      {/* ── View toggle: Classic / Notebook (derived, read-only) / Live (persisted blocks, editable) ── */}
+      {/* ── View toggle: Classic / Notebook (derived, read-only) / Live (persisted blocks, editable).
+              Hidden when the identity redesign is on AND Live is available — that's
+              the paper-notebook target state where Live is the only editable surface.
+              Falls back automatically when either kill-switch flips. */}
+      {showViewModeToggle ? (
       <div className="mt-6 flex items-center justify-between gap-3">
         <div className="text-xs text-gray-500 dark:text-gray-400">
           {entityViewMode === "live"
@@ -1642,6 +2078,7 @@ function EntityWorkspaceView({
           ) : null}
         </div>
       </div>
+      ) : null}
 
       {entityViewMode === "notebook" ? (
         <ErrorBoundary section="Entity notebook">
@@ -2563,4 +3000,3 @@ function EntityWorkspaceView({
 }
 
 export default EntityPage;
-
