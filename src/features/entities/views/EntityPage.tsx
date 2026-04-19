@@ -2654,28 +2654,41 @@ function EntityWorkspaceView({
                     Companion
                   </h2>
                 </div>
-                <div className="inline-flex rounded-full border border-black/8 bg-black/[0.03] p-1 dark:border-white/10 dark:bg-white/[0.03]">
+                {/* Framework audit §2: the internal names "evidence" and
+                    "context" are engineering labels. Users see "Sources"
+                    and "Related" — plain product language. The storage
+                    key stays "evidence"/"context" so existing persisted
+                    preferences don't get migrated. */}
+                <div
+                  role="tablist"
+                  aria-label="Companion panel"
+                  className="inline-flex rounded-full border border-black/8 bg-black/[0.03] p-1 dark:border-white/10 dark:bg-white/[0.03]"
+                >
                   <button
                     type="button"
+                    role="tab"
+                    aria-selected={workspaceRailView === "evidence"}
                     onClick={() => setWorkspaceRailView("evidence")}
                     className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
                       workspaceRailView === "evidence"
-                        ? "bg-[#d97757] text-white"
+                        ? "bg-[var(--accent-primary)] text-white"
                         : "text-content-muted hover:text-content"
                     }`}
                   >
-                    Evidence
+                    Sources
                   </button>
                   <button
                     type="button"
+                    role="tab"
+                    aria-selected={workspaceRailView === "context"}
                     onClick={() => setWorkspaceRailView("context")}
                     className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
                       workspaceRailView === "context"
-                        ? "bg-[#d97757] text-white"
+                        ? "bg-[var(--accent-primary)] text-white"
                         : "text-content-muted hover:text-content"
                     }`}
                   >
-                    Context
+                    Related
                   </button>
                 </div>
               </div>

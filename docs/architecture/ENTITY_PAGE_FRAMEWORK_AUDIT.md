@@ -169,8 +169,26 @@ Wire `.notebook-block-agent` + `.notebook-block-agent-mark` inside `EntityNotebo
 - A grep of `convex/domains/` + `src/features/` found **no existing entity-subscribe mutation**. Wiring a Track button now would be pure UI-theater without the backend. Requires: new `productNudgeSubscriptions` table, `subscribeToEntity`/`unsubscribeFromEntity` mutations, cron tick that emits on `productBlocks.updatedAt > lastNotifiedAt`, and a dispatch path into the existing ntfy/Slack/email plumbing. That's its own PR, not a wire.
 - Framework status: violation #5 stands. The TRANSITION Report→Nudge is still broken.
 
-### 5. First-time slash hint (fixes violation #6) — DEFERRED
-- Cleanest path is `@tiptap/extension-placeholder` + one CSS rule. Adds one dependency to package.json. Low risk but belongs in its own PR so the dep bump is reviewable separately. Framework violation #6 stands.
+### 5. First-time slash hint (fixes violation #6) — SHIPPED (commit 94cad61d)
+- `@tiptap/extension-placeholder` wired with "Type / for commands…" hint. Fades on first keystroke. Violation #6 CLOSED.
+
+### 7. Track-this-entity (fixes violation #5) — SHIPPED (commit 8a837d84)
+- `productNudgeSubscriptions` table + 4 mutations/queries + 5-minute cron dispatcher + Bell/BellRing toggle button in top strip. Violation #5 CLOSED.
+
+### 8. Rail tab naming + color normalization — SHIPPED (this PR)
+- "Evidence" → "Sources" · "Context" → "Related" (user language, not engineering labels).
+- Hardcoded `#d97757` → `var(--accent-primary)` so theme-switch stays consistent.
+- `role="tablist"` + `role="tab"` + `aria-selected` for accessibility.
+- Internal storage keys remain `"evidence" | "context"` so persisted user prefs don't need migration.
+
+### 9. Full rail destructuring (Sources/Mentions/History/Actions 4-tab) — DEFERRED
+- Sub-sections are stacked INSIDE each of the two current tabs ("Attached evidence", "Related entities", etc. all inside "Sources" today). A full 4-tab restructure requires threading the Mentions data (`relatedEntityCount`, mention provenance) into a separate tab query and extracting the History panel from `productBlocks` revision chain. That's an 800+ line refactor and warrants its own PR with real-usage telemetry first. Framework violation #2's "5 stacked jobs" critique is partially addressed (renaming reduces the jargon-load-on-brain, accent-primary tint unifies the visual weight) but the structural destack stands.
+
+### 10. Agent-ink margin dot + second-ink tone — SHIPPED (commit 04366789)
+- Violation #1 CLOSED in the framework-audit fix PR.
+
+### 11. "Updated N ago" chip — SHIPPED (commit 04366789)
+- Violation #3 / #4 (chronological signal for the "what-changed" persona) CLOSED.
 
 ### 6. Wet-ink on mount (fixes violation #8)
 - On first render, if `block.updatedAt > now - 5 min` AND `authorKind === "agent"`, apply `.notebook-block-wet-ink` for one animation tick. Respects `prefers-reduced-motion`.
