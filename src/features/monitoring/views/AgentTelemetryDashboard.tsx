@@ -40,6 +40,7 @@ import { EvalScorecard, createDemoEvalData } from "@/features/telemetry/EvalScor
 import { ToolCoverageProof } from "@/features/telemetry/ToolCoverageProof";
 import { ContextualGraph } from "@/features/telemetry/ContextualGraph";
 import { LiveDataBanner } from "@/features/telemetry/LiveDataBanner";
+import { PipelineRollupPanel } from "@/features/monitoring/components/PipelineRollupPanel";
 import { JudgeHeatmap, createDemoJudgeHeatmapData } from "@/features/telemetry/JudgeHeatmap";
 import { CostWaterfall } from "@/features/telemetry/CostWaterfall";
 import { FailureClusters, createDemoFailureClusters } from "@/features/telemetry/FailureClusters";
@@ -494,6 +495,12 @@ function AgentTelemetryDashboardInner() {
             </div>
           }
         />
+
+        {/* Pipeline rollup hero — structuring pass telemetry + verdicts + LLM.
+            Sits right under the page header so operators see pipeline health
+            before drilling into tool-level breakdowns. Live data from Convex;
+            renders a "No runs yet" label when the tables are empty. */}
+        <PipelineRollupPanel limit={200} />
 
         {/* Summary stat cards */}
         <SurfaceGrid cols={4} data-agent-section="summary-metrics">
