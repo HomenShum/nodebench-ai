@@ -22,6 +22,7 @@ import { initErrorReporting } from "@/lib/errorReporting";
 const ShareableMemoView = lazy(() => import("@/features/founder/views/ShareableMemoView"));
 const PublicCompanyProfileView = lazy(() => import("@/features/founder/views/PublicCompanyProfileView"));
 const EmbedView = lazy(() => import("@/features/founder/views/EmbedView"));
+const FounderRouteResolver = lazy(() => import("@/features/founder/views/FounderRouteResolver"));
 
 const FastAgentPanel = lazy(() =>
   import("@/features/agents/components/FastAgentPanel/FastAgentPanel").then((mod) => ({
@@ -151,6 +152,24 @@ function App() {
         <ErrorBoundary title="Something went wrong">
           <Suspense fallback={<ViewSkeleton />}>
             <EmbedView />
+          </Suspense>
+        </ErrorBoundary>
+      </ThemeProvider>
+    );
+  }
+
+  // Smart /founder route — promised in agent-setup.txt + pitch copy.
+  // Resolves to a useful destination based on session state.
+  // See: src/features/founder/views/FounderRouteResolver.tsx
+  //      docs/architecture/FOUNDER_FEATURE.md
+  const isFounderRoute =
+    location.pathname === "/founder" || location.pathname.startsWith("/founder/");
+  if (isFounderRoute) {
+    return (
+      <ThemeProvider>
+        <ErrorBoundary title="Something went wrong">
+          <Suspense fallback={<ViewSkeleton />}>
+            <FounderRouteResolver />
           </Suspense>
         </ErrorBoundary>
       </ThemeProvider>

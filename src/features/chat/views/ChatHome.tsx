@@ -1,24 +1,32 @@
 /**
- * ChatHome - the live agent workspace.
+ * ChatHome -- Perplexity-style answer page.
  *
- * Shows the active query, live stage progress, tool/source activity,
- * evidence cards, and a plain-English report build as the run completes.
+ * Answer first. Sources next. Trace later.
+ * Single centered column, clean typography, inline citations.
  */
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useConvex } from "convex/react";
-import { ArrowUp, ChevronDown, ChevronUp, ExternalLink, Link2, Search } from "lucide-react";
+import { useConvex, useMutation, useQuery } from "convex/react";
+import { ArrowUp, ChevronDown, ChevronUp, Link2, Search } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { buildCockpitPath } from "@/lib/registry/viewRegistry";
 import { LENSES, type LensId, type ResultPacket } from "@/features/controlPlane/components/searchTypes";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
-import { loadProductDraft, saveProductDraft } from "@/features/product/lib/productSession";
+import { loadProductDraft, saveProductDraft, shouldPersistDraftQueryInUrl } from "@/features/product/lib/productSession";
 import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
-import { ProductWorkspaceHeader } from "@/features/product/components/ProductWorkspaceHeader";
 import { useStreamingSearch, type ToolStage } from "@/hooks/useStreamingSearch";
 import { useConvexApi } from "@/lib/convexApi";
-import { SkeletonText } from "@/components/skeletons/Skeleton";
+import { buildOperatorContextHint, buildOperatorContextLabel } from "@/features/product/lib/operatorContext";
+import { ProductIntakeComposer } from "@/features/product/components/ProductIntakeComposer";
+import { SessionArtifactsPanel } from "@/features/chat/components/SessionArtifactsPanel";
+import { uploadProductDraftFiles } from "@/features/product/lib/uploadDraftFiles";
+import { deriveReportArtifactMode, getReportArtifactLabel, type ReportArtifactMode } from "../../../../shared/reportArtifacts";
+import { deriveCanonicalReportSections } from "../../../../shared/reportSections";
+
+/* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
 
 type ReportSection = {
   id: string;
@@ -28,42 +36,58 @@ type ReportSection = {
   sourceRefIds?: string[];
 };
 
-function formatLensLabel(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
+type ReportSectionWithSkeleton = ReportSection & { skeleton?: boolean };
 
-function formatToolLabel(value?: string) {
-  const normalized = value?.toLowerCase();
-  switch (normalized) {
-    case "classify":
-      return "Classify request";
-    case "web_search":
-      return "Gather sources";
-    case "entity_extract":
-      return "Read evidence";
-    case "package":
-      return "Build report";
-    case "replay_check":
-      return "Check prior runs";
-    default:
-      if (!value) return "Working";
-      return value.replaceAll("_", " ").replace(/\b\w/g, (match) => match.toUpperCase());
-  }
-}
+const DEFAULT_LENS: LensId = "founder";
+const STARTER_PROMPTS = [
+  "What does this company actually do, and why does it matter now?",
+  "Turn this job post into a role-fit report with risks and gaps.",
+  "Summarize this company from my notes, screenshots, and saved context.",
+  "Stripe prep brief for tomorrow's call.",
+] as const;
+
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
 
 function normalizePacket(packet: Record<string, unknown> | null): ResultPacket | null {
   if (!packet) return null;
   return packet as unknown as ResultPacket;
 }
 
-/** Map stage index to the number of report sections visible (progressive reveal). */
+function isLensId(value: string | null | undefined): value is LensId {
+  return Boolean(value && LENSES.some((option) => option.id === value));
+}
+
+function resolvePreferredLens(args: {
+  lensParam?: string | null;
+  draftQuery?: string | null;
+  draftLens?: string | null;
+  preferredLens?: string | null;
+}): LensId {
+  if (isLensId(args.lensParam)) return args.lensParam;
+  if (args.draftQuery?.trim() && isLensId(args.draftLens)) return args.draftLens;
+  if (isLensId(args.preferredLens)) return args.preferredLens;
+  if (isLensId(args.draftLens)) return args.draftLens;
+  return DEFAULT_LENS;
+}
+
+function humanizeEntitySlug(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const normalized = value
+    .trim()
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ");
+  if (!normalized) return null;
+  return normalized.replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
 function stageVisibility(stages: ToolStage[]): number {
   const doneTools = new Set(stages.filter((s) => s.status === "done").map((s) => s.tool?.toLowerCase()));
   if (doneTools.has("package")) return 4;
   if (doneTools.has("analyze")) return 4;
   if (doneTools.has("search")) return 2;
   if (doneTools.has("classify")) return 1;
-  // Fallback: count done stages
   const doneCount = stages.filter((s) => s.status === "done").length;
   if (doneCount >= 3) return 4;
   if (doneCount >= 2) return 2;
@@ -71,72 +95,61 @@ function stageVisibility(stages: ToolStage[]): number {
   return 0;
 }
 
-type ReportSectionWithSkeleton = ReportSection & { skeleton?: boolean };
-
 function deriveReportSections(
   packet: ResultPacket | null,
   isStreaming: boolean,
   stages: ToolStage[] = [],
   liveAnswerPreview: string | null = null,
+  mode: ReportArtifactMode = "report",
 ): ReportSectionWithSkeleton[] {
+  const sectionTitles =
+    mode === "prep_brief"
+      ? {
+          whatItIs: "What to walk in knowing",
+          whyItMatters: "Why they'll care",
+          whatIsMissing: "Likely questions or objections",
+          whatToDoNext: "Talk track and next move",
+        }
+      : {
+          whatItIs: "What it is",
+          whyItMatters: "Why it matters",
+          whatIsMissing: "What is missing",
+          whatToDoNext: "What to do next",
+        };
+
   if (packet) {
-    return [
-      {
-        id: "what-it-is",
-        title: "What it is",
-        body: packet.answerBlocks?.[0]?.text || packet.answer || "No clear summary was returned.",
-        status: "complete",
-        sourceRefIds: packet.answerBlocks?.[0]?.sourceRefIds ?? [],
-      },
-      {
-        id: "why-it-matters",
-        title: "Why it matters",
-        body:
-          packet.changes?.[0]?.description ||
-          packet.variables?.[0]?.name ||
-          "The agent did not return a distinct why-this-matters section.",
-        status: "complete",
-      },
-      {
-        id: "what-is-missing",
-        title: "What is missing",
-        body:
-          packet.risks?.[0]?.description ||
-          packet.nextQuestions?.[0] ||
-          packet.uncertaintyBoundary ||
-          "No explicit gap was returned.",
-        status: "complete",
-      },
-      {
-        id: "what-to-do-next",
-        title: "What to do next",
-        body:
-          packet.recommendedNextAction ||
-          packet.interventions?.[0]?.action ||
-          packet.nextQuestions?.[0] ||
-          "No next action was returned.",
-        status: "complete",
-      },
-    ];
+    return deriveCanonicalReportSections(packet, { mode }).map((section) => ({
+      id: section.id,
+      title: section.title,
+      body:
+        section.body ||
+        (section.id === "what-it-is"
+          ? packet.answer || "No clear summary was returned."
+          : section.id === "why-it-matters"
+            ? "The agent did not return a distinct why-this-matters section."
+            : section.id === "what-is-missing"
+              ? "No explicit gap was returned."
+              : "No next action was returned."),
+      status: "complete",
+      sourceRefIds: section.sourceRefIds,
+    }));
   }
 
-  // Not streaming and no packet — idle state
   if (!isStreaming) {
     return [
-      { id: "what-it-is", title: "What it is", body: "Ask a question to start the report.", status: "pending" },
-      { id: "why-it-matters", title: "Why it matters", body: "The report will explain why this matters once the run starts.", status: "pending" },
-      { id: "what-is-missing", title: "What is missing", body: "Missing evidence and open questions will appear here.", status: "pending" },
-      { id: "what-to-do-next", title: "What to do next", body: "A concrete next move will appear here.", status: "pending" },
+      { id: "what-it-is", title: sectionTitles.whatItIs, body: "Ask a question to start the report.", status: "pending" },
+      { id: "why-it-matters", title: sectionTitles.whyItMatters, body: "The report will explain why this matters once the run starts.", status: "pending" },
+      { id: "what-is-missing", title: sectionTitles.whatIsMissing, body: "Missing evidence and open questions will appear here.", status: "pending" },
+      { id: "what-to-do-next", title: sectionTitles.whatToDoNext, body: "A concrete next move will appear here.", status: "pending" },
     ];
   }
 
-  // Streaming: progressive reveal based on completed stages
   const visible = stageVisibility(stages);
   const templates: { id: string; title: string; buildingBody: string }[] = [
-    { id: "what-it-is", title: "What it is", buildingBody: "The agent is classifying the request and gathering first sources." },
-    { id: "why-it-matters", title: "Why it matters", buildingBody: "This section fills in after the agent has enough signal." },
-    { id: "what-is-missing", title: "What is missing", buildingBody: "Gaps and uncertainties appear once the source sweep finishes." },
-    { id: "what-to-do-next", title: "What to do next", buildingBody: "The recommended next move is being assembled from the evidence." },
+    { id: "what-it-is", title: sectionTitles.whatItIs, buildingBody: "The agent is classifying the request and gathering first sources." },
+    { id: "why-it-matters", title: sectionTitles.whyItMatters, buildingBody: "This section fills in after the agent has enough signal." },
+    { id: "what-is-missing", title: sectionTitles.whatIsMissing, buildingBody: "Gaps and uncertainties appear once the source sweep finishes." },
+    { id: "what-to-do-next", title: sectionTitles.whatToDoNext, buildingBody: "The recommended next move is being assembled from the evidence." },
   ];
 
   return templates.map((t, i) => {
@@ -148,10 +161,32 @@ function deriveReportSections(
         status: "building" as const,
       };
     }
-    // Not yet visible — show skeleton placeholder
     return { id: t.id, title: t.title, body: "", status: "pending" as const, skeleton: true };
   });
 }
+
+/* ------------------------------------------------------------------ */
+/*  Citation chip                                                      */
+/* ------------------------------------------------------------------ */
+
+function CitationChip({ index, label, href }: { index: number; label: string; href?: string }) {
+  if (!href) return null;
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1 rounded-md bg-blue-500/10 px-1.5 py-0.5 text-xs font-medium text-blue-400 transition hover:bg-blue-500/20"
+    >
+      [{index}]
+      <span className="max-w-[100px] truncate">{label}</span>
+    </a>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
 
 export const ChatHome = memo(function ChatHome() {
   useProductBootstrap();
@@ -160,10 +195,43 @@ export const ChatHome = memo(function ChatHome() {
   const convex = useConvex();
   const api = useConvexApi();
   const [searchParams] = useSearchParams();
+  const queryParam = searchParams.get("q");
+  const lensParam = searchParams.get("lens");
+  const entityParam = searchParams.get("entity");
   const anonymousSessionId = getAnonymousProductSessionId();
   const draft = useMemo(() => loadProductDraft(), []);
-  const initialQuery = searchParams.get("q") ?? draft?.query ?? "";
-  const initialLens = (searchParams.get("lens") ?? draft?.lens ?? "founder") as LensId;
+  const meSnapshot = useQuery(
+    api?.domains.product.me.getMeSnapshot ?? "skip",
+    api?.domains.product.me.getMeSnapshot
+      ? { anonymousSessionId }
+      : "skip",
+  );
+  const generateUploadUrl = useMutation(
+    api?.domains.product.me.generateUploadUrl ?? ("skip" as any),
+  );
+  const saveFileMutation = useMutation(
+    api?.domains.product.me.saveFile ?? ("skip" as any),
+  );
+  const operatorProfile = meSnapshot?.profile ?? null;
+  const operatorContextHint = useMemo(() => buildOperatorContextHint(operatorProfile), [operatorProfile]);
+  const operatorContextLabel = useMemo(() => buildOperatorContextLabel(operatorProfile), [operatorProfile]);
+  const entityContextHint = useMemo(() => {
+    const entityName = humanizeEntitySlug(entityParam);
+    return entityName
+      ? `Primary entity for this run: ${entityName}. Keep the brief anchored on this subject unless the user explicitly changes it.`
+      : null;
+  }, [entityParam]);
+  const runtimeContextHint = useMemo(
+    () => [entityContextHint, operatorContextHint].filter(Boolean).join("\n\n") || null,
+    [entityContextHint, operatorContextHint],
+  );
+  const initialQuery = queryParam ?? draft?.query ?? "";
+  const initialLens = resolvePreferredLens({
+    lensParam,
+    draftQuery: draft?.query,
+    draftLens: draft?.lens,
+    preferredLens: operatorProfile?.preferredLens,
+  });
 
   const [input, setInput] = useState(initialQuery);
   const [lens, setLens] = useState<LensId>(initialLens);
@@ -173,9 +241,12 @@ export const ChatHome = memo(function ChatHome() {
   const [reportPinned, setReportPinned] = useState(false);
   const [persistenceMessage, setPersistenceMessage] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
-  const [traceExpanded, setTraceExpanded] = useState(false);
+  const [traceOpen, setTraceOpen] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [draftFiles, setDraftFiles] = useState(() => draft?.files ?? []);
   const streaming = useStreamingSearch();
   const startedQueryRef = useRef<string | null>(null);
+  const routingRef = useRef<typeof streaming.routing>(null);
   const recordedMilestonesRef = useRef({
     firstSignal: false,
     firstSource: false,
@@ -183,33 +254,38 @@ export const ChatHome = memo(function ChatHome() {
     reportSaved: false,
   });
 
+  useEffect(() => {
+    routingRef.current = streaming.routing;
+  }, [streaming.routing]);
+
+  /* ---- begin run ---- */
+
   const beginRun = useCallback(
     async (nextQuery: string, nextLens: LensId) => {
       const trimmed = nextQuery.trim();
       if (!trimmed) return;
 
       startedQueryRef.current = trimmed;
-      recordedMilestonesRef.current = {
-        firstSignal: false,
-        firstSource: false,
-        firstPartialAnswer: false,
-        reportSaved: false,
-      };
+      recordedMilestonesRef.current = { firstSignal: false, firstSource: false, firstPartialAnswer: false, reportSaved: false };
       setSavedReportId(null);
       setSavedEntitySlug(null);
       setReportPinned(false);
       setPersistenceMessage(null);
 
-      saveProductDraft({
-        query: trimmed,
-        lens: nextLens,
-        files: draft?.files ?? [],
-      });
-      trackEvent("chat_run_started", {
-        queryLength: trimmed.length,
-        uploads: draft?.files?.length ?? 0,
-        lens: nextLens,
-      });
+      saveProductDraft({ query: trimmed, lens: nextLens, files: draftFiles });
+      const nextSearch = new URLSearchParams();
+      nextSearch.set("surface", "chat");
+      nextSearch.set("lens", nextLens);
+      if (shouldPersistDraftQueryInUrl(trimmed)) {
+        nextSearch.set("q", trimmed);
+      } else {
+        nextSearch.set("draft", "1");
+      }
+      if (entityParam?.trim()) nextSearch.set("entity", entityParam.trim());
+      if (window.location.search !== `?${nextSearch.toString()}`) {
+        navigate(`/?${nextSearch.toString()}`, { replace: true });
+      }
+      trackEvent("chat_run_started", { queryLength: trimmed.length, uploads: draft?.files?.length ?? 0, lens: nextLens });
 
       let sessionId: string | null = null;
       if (api?.domains.product.chat.startSession) {
@@ -218,7 +294,9 @@ export const ChatHome = memo(function ChatHome() {
             anonymousSessionId,
             query: trimmed,
             lens: nextLens,
-            files: draft?.files ?? [],
+            files: draftFiles,
+            contextHint: runtimeContextHint ?? undefined,
+            contextLabel: operatorContextLabel ?? undefined,
           });
           sessionId = result?.sessionId ?? null;
           setActiveSessionId(sessionId);
@@ -255,14 +333,14 @@ export const ChatHome = memo(function ChatHome() {
           });
         },
         onComplete: (payload) => {
-          if (!sessionId || !api?.domains.product.chat.completeSession) {
-            return;
-          }
+          if (!sessionId || !api?.domains.product.chat.completeSession) return;
           void convex
             .mutation(api.domains.product.chat.completeSession, {
               anonymousSessionId,
               sessionId: sessionId as any,
               packet: payload.packet ?? payload,
+              entitySlugHint: entityParam?.trim() || undefined,
+              routing: routingRef.current ?? undefined,
               totalDurationMs: payload.totalDurationMs,
             })
             .then((result: any) => {
@@ -276,482 +354,500 @@ export const ChatHome = memo(function ChatHome() {
         },
         onError: (message) => {
           setPersistenceMessage(message);
-          if (!sessionId || !api?.domains.product.chat.completeSession) {
-            return;
-          }
+          if (!sessionId || !api?.domains.product.chat.completeSession) return;
           void convex.mutation(api.domains.product.chat.completeSession, {
             anonymousSessionId,
             sessionId: sessionId as any,
-            packet: {
-              answer: "",
-              sourceRefs: [],
-            },
+            packet: { answer: "", sourceRefs: [] },
+            entitySlugHint: entityParam?.trim() || undefined,
+            routing: routingRef.current ?? undefined,
             error: message,
           });
         },
-      });
+      }, { contextHint: runtimeContextHint ?? undefined });
     },
-    [anonymousSessionId, api, convex, draft?.files, streaming],
+    [anonymousSessionId, api, convex, draftFiles, entityParam, navigate, operatorContextLabel, runtimeContextHint, streaming.startStream],
   );
 
-  useEffect(() => {
-    const nextQuery = searchParams.get("q");
-    const nextLens = searchParams.get("lens");
-    if (nextQuery) setInput(nextQuery);
-    if (nextLens && LENSES.some((option) => option.id === nextLens)) {
-      setLens(nextLens as LensId);
-    }
-  }, [searchParams]);
+  /* ---- search-param sync ---- */
 
   useEffect(() => {
-    const nextQuery = searchParams.get("q") ?? draft?.query ?? "";
-    const nextLens = (searchParams.get("lens") ?? draft?.lens ?? lens) as LensId;
+    const nextQuery = queryParam;
+    const nextLens = lensParam;
+    if (nextQuery) setInput(nextQuery);
+    if (isLensId(nextLens)) setLens(nextLens);
+  }, [lensParam, queryParam]);
+
+  useEffect(() => {
+    const nextLens = resolvePreferredLens({
+      lensParam,
+      draftQuery: draft?.query,
+      draftLens: draft?.lens,
+      preferredLens: operatorProfile?.preferredLens,
+    });
+    if (lens !== nextLens) {
+      setLens(nextLens);
+    }
+  }, [draft?.lens, draft?.query, lens, lensParam, operatorProfile?.preferredLens]);
+
+  useEffect(() => {
+    const nextQuery = queryParam ?? draft?.query ?? "";
+    const nextLens = resolvePreferredLens({
+      lensParam,
+      draftQuery: draft?.query,
+      draftLens: draft?.lens,
+      preferredLens: operatorProfile?.preferredLens,
+    });
     if (!nextQuery.trim()) return;
     if (startedQueryRef.current === nextQuery.trim()) return;
     setInput(nextQuery);
     setLens(nextLens);
     void beginRun(nextQuery, nextLens);
-  }, [beginRun, draft?.lens, draft?.query, lens, searchParams]);
+  }, [beginRun, draft?.lens, draft?.query, lensParam, operatorProfile?.preferredLens, queryParam]);
 
-  const handleSubmit = useCallback(() => {
-    void beginRun(input, lens);
-  }, [beginRun, input, lens]);
-
+  const handleSubmit = useCallback(() => { void beginRun(input, lens); }, [beginRun, input, lens]);
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        handleSubmit();
-      }
+      if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); handleSubmit(); }
     },
     [handleSubmit],
   );
 
+  const pendingFiles = draftFiles;
+
+  const handleFilesSelected = useCallback(
+    async (files: File[]) => {
+      if (!files.length || !api) return;
+      setUploadingFiles(true);
+      try {
+        const uploaded = await uploadProductDraftFiles({
+          files,
+          anonymousSessionId,
+          generateUploadUrl,
+          saveFileMutation,
+        });
+        const nextFiles = [...pendingFiles, ...uploaded];
+        setDraftFiles(nextFiles);
+        saveProductDraft({
+          query: input,
+          lens,
+          files: nextFiles,
+        });
+      } finally {
+        setUploadingFiles(false);
+      }
+    },
+    [anonymousSessionId, api, generateUploadUrl, input, lens, pendingFiles, saveFileMutation],
+  );
+
+  /* ---- derived state (must be before effects that reference them) ---- */
+
   const packet = normalizePacket(streaming.result);
-  const reportSections = deriveReportSections(packet, streaming.isStreaming, streaming.stages, streaming.liveAnswerPreview);
+  const artifactMode = deriveReportArtifactMode(startedQueryRef.current ?? input);
+  const reportSections = deriveReportSections(
+    packet,
+    streaming.isStreaming,
+    streaming.stages,
+    streaming.liveAnswerPreview,
+    artifactMode,
+  );
   const sources = packet?.sourceRefs?.length ? packet.sourceRefs : streaming.sourcePreview;
+  const routing = streaming.routing;
   const hasRun = Boolean(startedQueryRef.current?.trim() || streaming.milestones.startedAt || packet);
-  const pendingFiles = draft?.files ?? [];
   const followUps = ["Go deeper", "Show risks", "Draft reply", "What changed?"];
-  const primaryCitations = packet?.answerBlocks?.[0]?.sourceRefIds?.length
-    ? packet.answerBlocks[0].sourceRefIds
-        .map((sourceId) => packet.sourceRefs?.find((source) => source.id === sourceId))
-        .filter(Boolean)
-    : sources.slice(0, 3);
+  const showLaunchState = !hasRun && !streaming.isStreaming;
+
+  const buildFollowUpQuery = useCallback((label: string) => {
+    const baseQuery = startedQueryRef.current?.trim();
+    if (!baseQuery) return label;
+    switch (label) {
+      case "Go deeper":
+        return `${baseQuery}\n\nGo deeper. Show tradeoffs, contradictions, and what would change the conclusion.`;
+      case "Show risks":
+        return `${baseQuery}\n\nFocus on the main risks, failure modes, and unresolved questions.`;
+      case "Draft reply":
+        return `${baseQuery}\n\nDraft a reply or follow-up message using the current findings.`;
+      case "What changed?":
+        return `${baseQuery}\n\nWhat changed recently, and what matters most now?`;
+      default:
+        return label;
+    }
+  }, []);
+
+  /* ---- milestone tracking ---- */
+
   useEffect(() => {
     if (!streaming.milestones.startedAt) return;
-
     if (streaming.milestones.firstStageAt && !recordedMilestonesRef.current.firstSignal) {
       recordedMilestonesRef.current.firstSignal = true;
-      trackEvent("first_partial_signal_ms", {
-        durationMs: Math.max(0, streaming.milestones.firstStageAt - streaming.milestones.startedAt),
-      });
+      trackEvent("first_partial_signal_ms", { durationMs: Math.max(0, streaming.milestones.firstStageAt - streaming.milestones.startedAt) });
     }
-
     if (streaming.milestones.firstSourceAt && !recordedMilestonesRef.current.firstSource) {
       recordedMilestonesRef.current.firstSource = true;
-      trackEvent("first_source_ms", {
-        durationMs: Math.max(0, streaming.milestones.firstSourceAt - streaming.milestones.startedAt),
-      });
+      trackEvent("first_source_ms", { durationMs: Math.max(0, streaming.milestones.firstSourceAt - streaming.milestones.startedAt) });
     }
-
     if (streaming.milestones.firstPartialAnswerAt && !recordedMilestonesRef.current.firstPartialAnswer) {
       recordedMilestonesRef.current.firstPartialAnswer = true;
-      trackEvent("first_partial_answer_ms", {
-        durationMs: Math.max(0, streaming.milestones.firstPartialAnswerAt - streaming.milestones.startedAt),
-      });
+      trackEvent("first_partial_answer_ms", { durationMs: Math.max(0, streaming.milestones.firstPartialAnswerAt - streaming.milestones.startedAt) });
     }
   }, [streaming.milestones.firstPartialAnswerAt, streaming.milestones.firstSourceAt, streaming.milestones.firstStageAt, streaming.milestones.startedAt]);
 
   useEffect(() => {
     if (!savedReportId || recordedMilestonesRef.current.reportSaved) return;
     recordedMilestonesRef.current.reportSaved = true;
-    trackEvent("report_saved", {
-      hasSources: sources.length,
-      hasUploads: pendingFiles.length,
-    });
+    trackEvent("report_saved", { reportId: savedReportId, sources: sources.length, uploads: pendingFiles.length });
   }, [pendingFiles.length, savedReportId, sources.length]);
 
+  /* ---- share link ---- */
+
+  const copyShareLink = useCallback(() => {
+    const url = savedEntitySlug
+      ? new URL(`${window.location.origin}/entity/${encodeURIComponent(savedEntitySlug)}`)
+      : new URL(window.location.href);
+    if (!savedEntitySlug && startedQueryRef.current) url.searchParams.set("q", startedQueryRef.current);
+    if (!savedEntitySlug) url.searchParams.set("lens", lens);
+    void navigator.clipboard.writeText(url.toString());
+    trackEvent("chat_share_link", { hasReport: savedReportId ? 1 : 0, hasSources: sources.length });
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  }, [lens, savedEntitySlug, savedReportId, sources.length]);
+
+  /* ---- pin report ---- */
+
+  const pinReport = useCallback(async () => {
+    if (!savedReportId || !api?.domains.product.chat.pinReport) {
+      navigate(buildCockpitPath({ surfaceId: "packets" }));
+      return;
+    }
+    try {
+      await convex.mutation(api.domains.product.chat.pinReport, { reportId: savedReportId as any });
+      setReportPinned(true);
+      setPersistenceMessage("Report pinned to your workspace.");
+    } catch {
+      navigate(buildCockpitPath({ surfaceId: "packets" }));
+    }
+  }, [api, convex, navigate, savedReportId]);
+
+  /* ================================================================ */
+  /*  Render                                                           */
+  /* ================================================================ */
+
   return (
-    <div className="nb-public-shell mx-auto flex w-full max-w-[1400px] flex-col gap-5 px-6 py-8 xl:px-8 xl:py-10">
-      <ProductWorkspaceHeader
-        kicker="Chat"
-        title={startedQueryRef.current || input || "Start a live session"}
-        description="The answer stays primary. Sources and live activity stay visible as support, not as competing panels."
-        aside={
-          <div className="nb-panel-soft flex items-center gap-3 px-4 py-3 text-sm text-content-muted">
-            <span className={`nb-status-dot ${streaming.isStreaming ? "bg-[#d97757]" : packet ? "bg-emerald-400" : "bg-white/35"}`} />
-            {streaming.isStreaming ? "Searching live" : packet ? "Run complete" : "Ready"}
-          </div>
-        }
-      />
-
-      <section className="nb-enter grid gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
-        <main className="order-1 space-y-4 xl:order-none">
-          <article className="px-5 py-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="nb-section-kicker">Answer</div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <div className="nb-chip nb-chip-active">{formatLensLabel(lens)} lens</div>
-                  {activeSessionId ? <div className="nb-chip">Run {activeSessionId.slice(0, 8)}</div> : null}
-                  {pendingFiles.length > 0 ? (
-                    <div className="nb-chip">{pendingFiles.length} upload{pendingFiles.length === 1 ? "" : "s"} attached</div>
-                  ) : null}
-                </div>
-              </div>
+    <div className="mx-auto flex min-h-screen w-full max-w-[720px] flex-col px-4 py-6 pb-24 md:px-0 md:py-10">
+      {showLaunchState ? (
+        <section className="flex flex-1 flex-col items-center justify-start pb-10 pt-10 text-center sm:justify-center sm:pb-20 sm:pt-6">
+          <div className="w-full max-w-[680px]">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-gray-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#d97757]" aria-hidden="true" />
+              New conversation
             </div>
-
-            {persistenceMessage ? (
-              <div className="nb-panel-soft mt-4 rounded-2xl px-4 py-3 text-sm text-content-muted">
-                {persistenceMessage}
+            <h1 className="mt-4 text-[1.5rem] font-semibold leading-[1.15] tracking-tight text-gray-900 dark:text-gray-100 md:text-[1.75rem]">
+              Start a conversation.
+            </h1>
+            <p className="mx-auto mt-2 max-w-[520px] text-sm leading-6 text-gray-500 dark:text-gray-400">
+              Ask anything. Follow up with more questions. Save the result as a report when it's useful.
+            </p>
+            {operatorContextLabel ? (
+              <div className="mt-4 inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300">
+                <span className="font-medium">Saved context ready</span>
+                <span className="text-gray-400 dark:text-gray-500">{operatorContextLabel}</span>
               </div>
             ) : null}
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              <div className="nb-chip nb-chip-active">{startedQueryRef.current || input || "Waiting for a question"}</div>
-              {sources.slice(0, 4).map((source) => (
-                <a
-                  key={`inline-${source.id}`}
-                  href={source.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="nb-chip nb-hover-lift inline-flex items-center gap-2 text-content-muted"
+            <div className="mt-6 sm:mt-8">
+              <ProductIntakeComposer
+                value={input}
+                onChange={setInput}
+                onSubmit={handleSubmit}
+                onFilesSelected={handleFilesSelected}
+                files={pendingFiles}
+                lens={lens}
+                onLensChange={setLens}
+                operatorContextLabel={operatorContextLabel}
+                operatorContextHint={operatorContextHint}
+                uploadingFiles={uploadingFiles}
+                disabled={streaming.isStreaming}
+                placeholder="Ask anything. Paste notes, URLs, or files to ground the answer."
+                helperText="Your lens and saved context shape how NodeBench answers."
+                submitLabel="Run advisor"
+              />
+            </div>
+
+            <div className="mt-5 grid grid-cols-1 gap-2 sm:mt-6 sm:flex sm:flex-wrap sm:justify-center">
+              {STARTER_PROMPTS.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => {
+                    setInput(prompt);
+                    void beginRun(prompt, lens);
+                  }}
+                  className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 transition hover:border-gray-300 hover:text-gray-900 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300 dark:hover:border-white/[0.2] dark:hover:bg-[#20262d] dark:hover:text-white"
                 >
-                  <span className="truncate">{source.label}</span>
-                  <ExternalLink className="h-3 w-3 shrink-0" />
-                </a>
+                  {prompt}
+                </button>
               ))}
             </div>
+          </div>
+        </section>
+      ) : (
+        <>
+          {/* ---- Query heading ---- */}
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            {startedQueryRef.current || input || "Ask anything"}
+          </h1>
 
-            <div className="mt-4 space-y-3">
-              {reportSections[0] && !reportSections[0].skeleton ? (
-                <section
-                  className={`nb-answer-surface relative overflow-hidden rounded-[22px] p-5 ${
-                    reportSections[0].status === "building" ? "nb-loading-sheen" : ""
+          {(routing || operatorContextLabel || artifactMode === "prep_brief") && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {artifactMode === "prep_brief" ? (
+                <span className="rounded-full border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/8 px-2.5 py-1 text-xs font-medium text-[var(--accent-primary)]">
+                  {getReportArtifactLabel(artifactMode)}
+                </span>
+              ) : null}
+              {routing ? (
+                <span
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                    routing.routingMode === "advisor"
+                      ? "bg-[var(--accent-primary)]/12 text-[var(--accent-primary)]"
+                      : "bg-gray-100 text-gray-600 dark:bg-[#171c22] dark:text-gray-300"
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="text-sm font-semibold text-content">{reportSections[0].title}</h3>
-                    <span className="text-[11px] uppercase tracking-[0.18em] text-content-muted">{reportSections[0].status}</span>
-                  </div>
-                  <p className="mt-3 max-w-none text-[15px] leading-7 text-content">
-                    {reportSections[0].body}
-                  </p>
-                  {primaryCitations.length > 0 ? (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {primaryCitations.slice(0, 4).map((source, idx) => (
-                        <a
-                          key={`primary-${source?.id ?? source?.label}`}
-                          href={source?.href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 rounded-full bg-white/[0.04] px-2 py-0.5 text-[10px] text-content-muted transition hover:bg-white/[0.08] hover:text-content"
-                        >
-                          <span className="font-mono text-[#d97757]">[{idx + 1}]</span>
-                          <span className="max-w-[120px] truncate">{source?.label || source?.domain || "Source"}</span>
-                        </a>
-                      ))}
-                    </div>
-                  ) : null}
-                  {streaming.isStreaming && reportSections[0].status === "building" && streaming.sourcePreview.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1.5 animate-in fade-in">
-                      {streaming.sourcePreview.slice(0, 3).map((sp, idx) => (
-                        <span key={idx} className="inline-flex items-center gap-1 rounded-full bg-[#d97757]/10 px-2 py-0.5 text-[10px] text-[#d97757]">
-                          <span className="h-1 w-1 animate-pulse rounded-full bg-[#d97757]" />
-                          {sp.tool || "Searching..."}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </section>
-              ) : reportSections[0]?.skeleton ? (
-                <section className="nb-answer-surface relative overflow-hidden rounded-[22px] p-5 opacity-50">
-                  <SkeletonText lines={2} />
-                </section>
+                  {routing.routingMode === "advisor" ? "Deep reasoning" : "Fast path"}
+                </span>
               ) : null}
-
-              <div className="grid gap-3 xl:grid-cols-2">
-                {reportSections.slice(1).map((section) =>
-                  section.skeleton ? (
-                    <section key={section.id} className="nb-panel-inset p-4 opacity-50">
-                      <div className="mb-2 text-sm font-semibold text-content-muted">{section.title}</div>
-                      <SkeletonText lines={2} />
-                    </section>
-                  ) : (
-                    <section
-                      key={section.id}
-                      className={`nb-panel-inset p-4 ${section.status === "building" ? "nb-loading-sheen" : ""}`}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <h3 className="text-sm font-semibold text-content">{section.title}</h3>
-                        <span className="text-[11px] uppercase tracking-[0.18em] text-content-muted">{section.status}</span>
-                      </div>
-                      <p className="mt-2 text-sm leading-6 text-content-muted">{section.body}</p>
-                      {section.sourceRefIds && section.sourceRefIds.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {section.sourceRefIds
-                            .map((id) => sources.find((s) => s.id === id))
-                            .filter(Boolean)
-                            .slice(0, 3)
-                            .map((source, idx) => (
-                              <a
-                                key={source!.id || idx}
-                                href={source!.href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 rounded-full bg-white/[0.04] px-2 py-0.5 text-[10px] text-content-muted transition hover:bg-white/[0.08] hover:text-content"
-                              >
-                                <span className="font-mono text-[#d97757]">[{idx + 1}]</span>
-                                <span className="max-w-[120px] truncate">{source!.label || source!.domain || "Source"}</span>
-                              </a>
-                            ))}
-                        </div>
-                      )}
-                      {streaming.isStreaming && section.status === "building" && streaming.sourcePreview.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1.5 animate-in fade-in">
-                          {streaming.sourcePreview.slice(0, 3).map((sp, idx) => (
-                            <span key={idx} className="inline-flex items-center gap-1 rounded-full bg-[#d97757]/10 px-2 py-0.5 text-[10px] text-[#d97757]">
-                              <span className="h-1 w-1 animate-pulse rounded-full bg-[#d97757]" />
-                              {sp.tool || "Searching..."}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </section>
-                  ),
-                )}
-              </div>
+              {operatorContextLabel ? (
+                <span className="rounded-full border border-gray-200 px-2.5 py-1 text-xs text-gray-600 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300">
+                  Using your context: {operatorContextLabel}
+                </span>
+              ) : null}
+              {routing?.routingReason ? (
+                <span className="text-xs text-gray-500 dark:text-gray-400">{routing.routingReason}</span>
+              ) : null}
             </div>
+          )}
 
-            <div className="mt-5 flex flex-wrap gap-2">
+          {/* ---- Source cards row ---- */}
+          {sources.length > 0 && (
+            <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
+              {sources.slice(0, 5).map((s, i) => (
+                <a
+                  key={s.id ?? i}
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex min-w-[180px] items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm transition hover:border-[var(--accent-primary)] dark:border-white/[0.12] dark:bg-[#171c22] dark:hover:bg-[#1d232a]"
+                >
+                  <span className="text-xs text-gray-400">{i + 1}</span>
+                  <span className="truncate font-medium text-gray-700 dark:text-gray-300">
+                    {s.label || s.domain || "Source"}
+                  </span>
+                </a>
+              ))}
+              {sources.length > 5 && (
+                <span className="self-center whitespace-nowrap text-sm text-gray-400">+{sources.length - 5} more</span>
+              )}
+            </div>
+          )}
+
+          {/* ---- Searching indicator ---- */}
+          {streaming.isStreaming && !packet && (
+            <p className="mt-6 animate-pulse text-sm text-gray-500 dark:text-gray-400">Searching...</p>
+          )}
+
+          {/* ---- Persistence message ---- */}
+          {persistenceMessage && (
+            <p className="mt-4 rounded-lg border border-gray-200 bg-gray-100 px-4 py-2 text-sm text-gray-600 dark:border-white/[0.08] dark:bg-[#171c22] dark:text-gray-300">
+              {persistenceMessage}
+            </p>
+          )}
+
+          {/* ---- Answer sections ---- */}
+          {hasRun && (
+            <div className="mt-6 space-y-8">
+              {reportSections.map((section) =>
+                section.skeleton ? null : (
+                  <div key={section.id} className={`${section.status === "building" ? "animate-pulse" : ""}`}>
+                    <h2 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      {section.title}
+                    </h2>
+                    <div className="text-base leading-relaxed text-gray-700 dark:text-gray-300">
+                      {section.body}
+                    </div>
+                    {section.sourceRefIds && section.sourceRefIds.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {section.sourceRefIds
+                          .map((id) => sources.find((s) => s.id === id))
+                          .filter(Boolean)
+                          .slice(0, 4)
+                          .map((source, idx) => (
+                            <CitationChip
+                              key={source!.id ?? idx}
+                              index={idx + 1}
+                              label={source!.label || source!.domain || "Source"}
+                              href={source!.href}
+                            />
+                          ))}
+                      </div>
+                    )}
+                    {streaming.isStreaming && section.status === "building" && streaming.sourcePreview.length > 0 && section.id === "what-it-is" && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {streaming.sourcePreview.slice(0, 3).map((sp, idx) => (
+                          <span key={idx} className="inline-flex items-center gap-1 rounded-md bg-[var(--accent-primary)]/10 px-2 py-0.5 text-xs text-[var(--accent-primary)]">
+                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--accent-primary)]" />
+                            {sp.label || sp.domain || "Searching..."}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ),
+              )}
+            </div>
+          )}
+
+          {/* ---- Follow-up chips ---- */}
+          {hasRun && !streaming.isStreaming && (
+            <div className="mt-8 flex flex-wrap gap-2">
               {followUps.map((item) => (
                 <button
                   key={item}
                   type="button"
-                  onClick={() => setInput(item === "Go deeper" ? `Go deeper on ${startedQueryRef.current || "this report"}.` : item)}
-                  className="nb-secondary-button px-3 py-1.5 text-xs"
+                  onClick={() => {
+                    const nextQuery = buildFollowUpQuery(item);
+                    setInput(nextQuery);
+                    void beginRun(nextQuery, lens);
+                  }}
+                  className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300 dark:hover:border-[var(--accent-primary)] dark:hover:bg-[#1d232a]"
                 >
                   {item}
                 </button>
               ))}
             </div>
+          )}
 
-            <div className="sticky bottom-0 z-10 border-t border-white/6 bg-[var(--bg-primary)] pt-3 pb-2">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                <div className="nb-input-shell flex min-w-0 flex-1 items-center gap-3 rounded-[18px] px-4 py-3">
-                  <Search className="h-4 w-4 shrink-0 text-content-muted" />
-                  <input
-                    id="chat-query"
-                    name="chatQuery"
-                    aria-label="Continue the live session"
-                    type="text"
-                    value={input}
-                    onChange={(event) => setInput(event.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Continue the live session..."
-                    className="w-full bg-transparent text-base text-content placeholder:text-content-muted/55 focus:outline-none"
-                    disabled={streaming.isStreaming}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={!input.trim() || streaming.isStreaming}
-                  className="nb-primary-button min-h-14 md:min-w-[140px]"
-                >
-                  {streaming.isStreaming ? "Running" : "Send"}
-                  <ArrowUp className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="mt-4 flex gap-1.5 overflow-x-auto pb-1">
-                {LENSES.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => setLens(option.id)}
-                    className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
-                      lens === option.id
-                        ? "nb-chip nb-chip-active"
-                        : "nb-chip"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-2 sm:grid-cols-3">
+          {/* ---- Action bar (save / open / share) ---- */}
+          {hasRun && !streaming.isStreaming && packet && (
+            <div className="mt-6 flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={async () => {
-                  if (!savedReportId || !api?.domains.product.chat.pinReport) {
-                    navigate(buildCockpitPath({ surfaceId: "packets" }));
-                    return;
-                  }
-                  await convex.mutation(api.domains.product.chat.pinReport, {
-                    anonymousSessionId,
-                    reportId: savedReportId as any,
-                    pinned: true,
-                  });
-                  setReportPinned(true);
-                }}
-                className="nb-secondary-button px-4 py-2 text-sm"
+                onClick={pinReport}
+                className="rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--accent-primary-hover)]"
               >
-                {reportPinned ? "Saved report" : "Save report"}
+                {reportPinned ? "Pinned" : "Save to workspace"}
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  if (savedEntitySlug) {
-                    navigate(`/entity/${encodeURIComponent(savedEntitySlug)}`);
-                    return;
-                  }
-                  navigate(
-                    buildCockpitPath({
-                      surfaceId: "packets",
-                      entity: savedEntitySlug,
-                      extra: savedReportId ? { report: savedReportId } : undefined,
-                    }),
-                  );
+                  if (savedEntitySlug) { navigate(`/entity/${encodeURIComponent(savedEntitySlug)}`); return; }
+                  navigate(buildCockpitPath({ surfaceId: "packets", extra: savedReportId ? { report: savedReportId } : undefined }));
                 }}
-                className="nb-secondary-button px-4 py-2 text-sm"
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:border-gray-400 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300 dark:hover:border-white/[0.24] dark:hover:bg-[#1d232a]"
               >
                 Open full report
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  const url = savedEntitySlug
-                    ? new URL(`${window.location.origin}/entity/${encodeURIComponent(savedEntitySlug)}`)
-                    : new URL(window.location.href);
-                  if (!savedEntitySlug && startedQueryRef.current) url.searchParams.set("q", startedQueryRef.current);
-                  if (!savedEntitySlug) url.searchParams.set("lens", lens);
-                  void navigator.clipboard.writeText(url.toString());
-                  trackEvent("chat_share_link", {
-                    hasReport: savedReportId ? 1 : 0,
-                    hasSources: sources.length,
-                  });
-                  setCopiedLink(true);
-                  setTimeout(() => setCopiedLink(false), 2000);
-                }}
-                className="nb-secondary-button flex items-center justify-center gap-2 px-4 py-2 text-sm"
+                onClick={copyShareLink}
+                className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:border-gray-400 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300 dark:hover:border-white/[0.24] dark:hover:bg-[#1d232a]"
               >
                 <Link2 className="h-4 w-4" />
                 {copiedLink ? "Copied!" : "Share link"}
               </button>
             </div>
-          </article>
-        </main>
+          )}
 
-        <aside className="order-3 space-y-8 xl:order-none xl:sticky xl:top-24 xl:self-start">
-          <article className="px-5 py-6">
-            <div className="nb-section-kicker">Sources</div>
-            <div className="mt-4 space-y-2 xl:max-h-[380px] xl:overflow-y-auto xl:pr-1">
-              {sources.length > 0 ? (
-                sources.map((source) => (
-                  <a
-                    key={source.id}
-                    href={source.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="nb-panel-inset nb-hover-lift flex items-center justify-between gap-3 px-4 py-3"
-                  >
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium text-content">{source.label}</div>
-                      <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-content-muted">
-                        {source.domain || source.type || "Source"}
-                      </div>
-                    </div>
-                    <ExternalLink className="h-3.5 w-3.5 shrink-0 text-content-muted" />
-                  </a>
-                ))
-              ) : hasRun ? (
-                <div className="nb-empty-blueprint rounded-2xl px-4 py-5">
-                  <div className="text-sm font-medium text-content">Sources land here as evidence arrives</div>
-                  <p className="mt-2 text-sm leading-6 text-content-muted">
-                    Expect company sites, uploaded files, screenshots, and saved reports to show up here without switching tabs.
-                  </p>
-                </div>
-              ) : (
-                <p className="text-sm leading-6 text-content-muted">
-                  Start a run and the cited sources will collect here while the answer builds in the center.
-                </p>
-              )}
-            </div>
-          </article>
-
-          {hasRun ? (
-          <article className="px-5 py-6">
-            <div className="flex items-center justify-between gap-3">
-              <div className="nb-section-kicker">Work stream</div>
+          {/* ---- Collapsible trace ---- */}
+          {hasRun && streaming.stages.length > 0 && (
+            <div className="mt-8 border-t border-gray-200 pt-4 dark:border-white/[0.1]">
               <button
                 type="button"
-                onClick={() => setTraceExpanded((current) => !current)}
-                className="nb-secondary-button px-3 py-1.5 text-[11px]"
-                data-density="compact"
-                aria-expanded={traceExpanded}
+                onClick={() => setTraceOpen((o) => !o)}
+                className="flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               >
-                {traceExpanded ? "Less detail" : "More detail"}
-                {traceExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                {traceOpen ? "Hide trace" : "Show trace"}
+                {traceOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
               </button>
-            </div>
-            <div className="mt-4 space-y-3 xl:max-h-[420px] xl:overflow-y-auto xl:pr-1">
-              {streaming.stages.length > 0 ? (
-                streaming.stages.map((stage, index) => (
-                  <div key={`${stage.tool}-${stage.step}-${index}`} className="nb-panel-inset p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className={`nb-status-dot ${stage.status === "done" ? "bg-emerald-400" : stage.status === "running" ? "bg-[#d97757]" : "bg-red-400"}`} />
-                          <div className="text-sm font-medium text-content">{formatToolLabel(stage.tool)}</div>
-                        </div>
-                        <div className="mt-1 text-xs uppercase tracking-[0.18em] text-content-muted">
-                          Step {stage.step}{stage.totalPlanned ? ` of ${stage.totalPlanned}` : ""}
-                        </div>
-                      </div>
-                      <div className={`nb-status-badge ${stage.status === "done" ? "nb-status-badge-success" : stage.status === "running" ? "nb-status-badge-accent" : ""}`}>{stage.status}</div>
+              {traceOpen && (
+                <div className="mt-3 space-y-2">
+                  {streaming.stages.map((stage, i) => (
+                    <div key={`${stage.tool}-${stage.step}-${i}`} className="flex items-center gap-3 rounded-lg border border-gray-100 px-3 py-2 text-sm dark:border-white/[0.08] dark:bg-[#171c22]">
+                      <span
+                        className={`h-2 w-2 rounded-full ${
+                          stage.status === "done" ? "bg-emerald-400" : stage.status === "running" ? "bg-[var(--accent-primary)]" : "bg-red-400"
+                        }`}
+                      />
+                      <span className="text-gray-700 dark:text-gray-300">
+                        {stage.tool?.replaceAll("_", " ").replace(/\b\w/g, (m) => m.toUpperCase()) || "Working"}
+                      </span>
+                      <span className="ml-auto text-xs text-gray-400">
+                        Step {stage.step}{stage.totalPlanned ? ` / ${stage.totalPlanned}` : ""}
+                      </span>
+                      <span className={`text-xs font-medium ${stage.status === "done" ? "text-emerald-500" : stage.status === "running" ? "text-[var(--accent-primary)]" : "text-gray-400"}`}>
+                        {stage.status}
+                      </span>
                     </div>
-                    <p className="mt-2 text-sm leading-6 text-content-muted">
-                      {stage.preview || stage.reason || "Waiting for the next useful signal."}
-                    </p>
-                    {traceExpanded ? (
-                      <div className="mt-3 grid gap-2 text-[11px] text-content-muted">
-                        <div className="flex items-center justify-between gap-3">
-                          <span>Provider</span>
-                          <span className="font-medium text-content">{stage.provider || "local"}</span>
-                        </div>
-                        {stage.model ? (
-                          <div className="flex items-center justify-between gap-3">
-                            <span>Model</span>
-                            <span className="font-medium text-content">{stage.model}</span>
-                          </div>
-                        ) : null}
-                        {stage.reason ? (
-                          <div className="nb-panel-soft rounded-2xl px-3 py-2">
-                            <span className="text-[10px] uppercase tracking-[0.18em] text-content-muted">Why this step ran</span>
-                            <div className="mt-1 text-sm leading-6 text-content-muted">{stage.reason}</div>
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
-                ))
-              ) : (
-                <div className="nb-empty-blueprint rounded-2xl px-4 py-5">
-                  <div className="text-sm font-medium text-content">This rail shows how the answer is being built</div>
-                  <p className="mt-2 text-sm leading-6 text-content-muted">
-                    Source gathering, reading, and packaging land here live so you can judge trust without leaving Chat.
-                  </p>
+                  ))}
                 </div>
               )}
             </div>
-          </article>
+          )}
+
+          {/* ---- Session artifacts panel ----
+               Ambient review rail for agent-generated candidates. Renders only
+               once the run has an active session id so the panel isn't
+               orphaned. See docs/architecture/AGENT_PIPELINE.md + Session
+               Artifacts section. Backend: convex/domains/product/sessionArtifacts.ts */}
+          {activeSessionId ? (
+            <div className="mt-6">
+              <SessionArtifactsPanel sessionId={activeSessionId} defaultCollapsed />
+            </div>
           ) : null}
-        </aside>
-      </section>
+
+          {/* ---- Sticky bottom composer ---- */}
+          <div className="sticky bottom-0 z-10 mt-8 border-t border-gray-200 bg-[var(--bg-primary,#fff)] pb-4 pt-4 dark:border-white/[0.1] dark:bg-[var(--bg-primary,#111418)]">
+            <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 dark:border-white/[0.1] dark:bg-[#171c22]">
+              <Search className="h-4 w-4 shrink-0 text-gray-400" />
+              <input
+                id="chat-query"
+                name="chatQuery"
+                aria-label="Ask a follow-up"
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={hasRun ? "Ask a follow-up..." : "Ask anything..."}
+                className="w-full bg-transparent text-base text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder:text-gray-500"
+                disabled={streaming.isStreaming}
+              />
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={streaming.isStreaming || !input.trim()}
+                aria-label="Submit"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent-primary)] text-white transition hover:bg-[var(--accent-primary-hover)] disabled:opacity-40"
+              >
+                <ArrowUp className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto pb-1">
+              {LENSES.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setLens(option.id)}
+                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
+                    lens === option.id
+                      ? "bg-[var(--accent-primary)] text-white"
+                      : "border border-gray-200 text-gray-500 hover:border-gray-400 dark:border-white/[0.12] dark:bg-[#161b20] dark:text-gray-300 dark:hover:border-white/[0.24] dark:hover:bg-[#20262d]"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 });

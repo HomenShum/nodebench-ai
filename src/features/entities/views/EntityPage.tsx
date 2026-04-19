@@ -9,7 +9,7 @@
 
 import { Suspense, lazy, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import {
   ArrowLeft,
   Check,
@@ -40,6 +40,7 @@ import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap"
 import { ProductWorkspaceHeader } from "@/features/product/components/ProductWorkspaceHeader";
 import { ProductSourceIdentity } from "@/features/product/components/ProductSourceIdentity";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
+import { useToast } from "@/shared/ui";
 import type { EntityNoteEditorHandle } from "@/features/entities/components/EntityNoteEditor";
 import {
   buildPrepBriefPrompt,
@@ -58,6 +59,7 @@ import {
 import { EntityMemoryGraph } from "@/features/entities/components/EntityMemoryGraph";
 import { EntityNotebookMeta } from "@/features/entities/components/EntityNotebookMeta";
 import { EntityShareSheet } from "@/features/entities/components/EntityShareSheet";
+import { DiligenceSection } from "@/features/entities/components/DiligenceSection";
 import { SignInForm } from "@/SignInForm";
 import { SignOutButton } from "@/SignOutButton";
 import {
@@ -254,6 +256,16 @@ type EntityWorkspace = {
     canManageShare: boolean;
     canManageMembers: boolean;
   } | null;
+  viewerIdentity?: {
+    ownerKey: string | null;
+  } | null;
+  ownerProfile?: {
+    ownerKey: string;
+    userId?: string;
+    email?: string;
+    name?: string;
+    image?: string;
+  } | null;
   shareLinks?: {
     view?: { token: string; access: "view" | "edit" } | null;
     edit?: { token: string; access: "view" | "edit" } | null;
@@ -267,6 +279,9 @@ type EntityWorkspace = {
       image?: string;
       access: "view" | "edit";
       token: string;
+      notificationStatus?: "sent" | "link_only";
+      notificationUpdatedAt?: number;
+      notificationError?: string;
       updatedAt: number;
     }>;
     invites: Array<{
@@ -274,6 +289,9 @@ type EntityWorkspace = {
       email: string;
       access: "view" | "edit";
       token: string;
+      notificationStatus?: "sent" | "link_only";
+      notificationUpdatedAt?: number;
+      notificationError?: string;
       updatedAt: number;
     }>;
   } | null;
@@ -299,6 +317,8 @@ type EntityBlockSummary = {
   userEditedCount: number;
   latestUpdatedAt?: number;
   latestUserEditAt?: number;
+  latestHumanEditorOwnerKey?: string;
+  latestHumanEditorUpdatedAt?: number;
 };
 
 type ReportRefreshResult = {
@@ -351,6 +371,23 @@ function formatRelative(ts: number | undefined | null): string {
 
 function normalizeWorkspaceEmail(value?: string | null) {
   return String(value ?? "").trim().toLowerCase();
+}
+
+function getCollaborationParticipantLabel(args: {
+  ownerProfile?: EntityWorkspace["ownerProfile"];
+  members?: EntityWorkspace["collaborators"] extends { members: infer T } ? T : never;
+  ownerKey?: string | null;
+}) {
+  if (!args.ownerKey) return null;
+  if (args.ownerProfile?.ownerKey === args.ownerKey) {
+    return args.ownerProfile.name?.trim() || args.ownerProfile.email?.trim() || "Workspace owner";
+  }
+  const member = (args.members ?? []).find((candidate: any) => `user:${candidate.userId}` === args.ownerKey);
+  if (member) {
+    return member.name?.trim() || member.email;
+  }
+  if (args.ownerKey.startsWith("anon:")) return "Anonymous workspace";
+  return "Someone";
 }
 
 export function buildEntityReopenChatPath(
@@ -828,6 +865,7 @@ function EntityWorkspaceView({
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
   const anonymousSessionId = getAnonymousProductSessionId();
+  const toast = useToast();
   const generateUploadUrl = useMutation(api?.domains.product.me.generateUploadUrl ?? ("skip" as any));
   const saveFileMutation = useMutation(api?.domains.product.me.saveFile ?? ("skip" as any));
   const attachEvidence = useMutation(api?.domains.product.entities.attachEvidenceToEntity ?? ("skip" as any));
@@ -897,10 +935,13 @@ function EntityWorkspaceView({
   const saveNoteDocument = useMutation(
     api?.domains.product.documents.saveEntityNoteDocument ?? ("skip" as any),
   );
+  const ensureLiveEntityWorkspace = useMutation(
+    api?.domains.product.entities.ensureEntity ?? ("skip" as any),
+  );
   const ensureEntityWorkspaceShare = useMutation(
     api?.domains.product.shares.ensureEntityWorkspaceShare ?? ("skip" as any),
   );
-  const inviteEntityWorkspaceCollaborator = useMutation(
+  const inviteEntityWorkspaceCollaborator = useAction(
     api?.domains.product.shares.inviteEntityWorkspaceCollaborator ?? ("skip" as any),
   );
   const acceptEntityWorkspaceInvite = useMutation(
@@ -965,6 +1006,8 @@ function EntityWorkspaceView({
   const [acceptingInvite, setAcceptingInvite] = useState(false);
   const [savedBecauseDraft, setSavedBecauseDraft] = useState("");
   const [savingSavedBecause, setSavingSavedBecause] = useState(false);
+  const [materializingLiveWorkspace, setMaterializingLiveWorkspace] = useState(false);
+  const [pendingLiveWorkspaceOpen, setPendingLiveWorkspaceOpen] = useState(false);
   const [refreshingReport, setRefreshingReport] = useState(false);
   const [uploadingEvidence, setUploadingEvidence] = useState(false);
   const [attachingEvidenceId, setAttachingEvidenceId] = useState<string | null>(null);
@@ -1041,6 +1084,43 @@ function EntityWorkspaceView({
     () => getNotebookDriftSummary(blockSummary, liveWorkspace?.latest ?? null),
     [blockSummary, liveWorkspace?.latest],
   );
+  const collaborationParticipants = useMemo(() => {
+    const members = workspace?.collaborators?.members ?? [];
+    const ownerProfile = workspace?.ownerProfile ?? null;
+    const participants = [
+      ownerProfile
+        ? {
+            ownerKey: ownerProfile.ownerKey,
+            label:
+              ownerProfile.name?.trim() ||
+              ownerProfile.email?.trim() ||
+              "Workspace owner",
+            email: ownerProfile.email,
+          }
+        : null,
+      ...members.map((member) => ({
+        ownerKey: `user:${member.userId}`,
+        label: member.name?.trim() || member.email,
+        email: member.email,
+      })),
+    ].filter(Boolean) as Array<{ ownerKey: string; label: string; email?: string }>;
+    return participants;
+  }, [workspace?.collaborators?.members, workspace?.ownerProfile]);
+  const latestCollaborationStatus = useMemo(() => {
+    if (!blockSummary?.latestHumanEditorUpdatedAt) return null;
+    const label = getCollaborationParticipantLabel({
+      ownerProfile: workspace?.ownerProfile,
+      members: workspace?.collaborators?.members,
+      ownerKey: blockSummary.latestHumanEditorOwnerKey,
+    });
+    if (!label) return null;
+    return `Last edited by ${label} ${formatRelative(blockSummary.latestHumanEditorUpdatedAt)}`;
+  }, [
+    blockSummary?.latestHumanEditorOwnerKey,
+    blockSummary?.latestHumanEditorUpdatedAt,
+    workspace?.collaborators?.members,
+    workspace?.ownerProfile,
+  ]);
 
   useEffect(() => {
     if (invitePreview?.email) {
@@ -1063,6 +1143,12 @@ function EntityWorkspaceView({
       setEntityViewMode("classic");
     }
   }, [entityViewMode, hasLiveEntity, liveWorkspaceResolved]);
+
+  useEffect(() => {
+    if (!pendingLiveWorkspaceOpen || !hasLiveEntity) return;
+    setEntityViewMode("live");
+    setPendingLiveWorkspaceOpen(false);
+  }, [hasLiveEntity, pendingLiveWorkspaceOpen]);
 
   // Identity redesign: when ON and Live is available, promote Live as the
   // only editable surface. The kill-switch branch above still downgrades
@@ -1111,6 +1197,44 @@ function EntityWorkspaceView({
       console.error("[entity] Failed to ensure notebook backfill:", error);
     });
   }, [anonymousSessionId, ensureNoteDocumentBackfill, liveWorkspace, shareToken]);
+
+  const handleSelectLiveView = useCallback(async () => {
+    if (hasLiveEntity) {
+      setEntityViewMode("live");
+      return;
+    }
+    if (!workspace?.entity?.slug || shareToken || !ensureLiveEntityWorkspace) {
+      return;
+    }
+
+    setMaterializingLiveWorkspace(true);
+    setPendingLiveWorkspaceOpen(true);
+    try {
+      await ensureLiveEntityWorkspace({
+        anonymousSessionId,
+        slug: workspace.entity.slug,
+        name: workspace.entity.name,
+        entityType: workspace.entity.entityType,
+        summary: workspace.entity.summary,
+        savedBecause: workspace.entity.savedBecause,
+      });
+    } catch (error) {
+      setPendingLiveWorkspaceOpen(false);
+      toast.error(
+        "Failed to open Live notebook",
+        error instanceof Error ? error.message : String(error ?? "Unknown error"),
+      );
+    } finally {
+      setMaterializingLiveWorkspace(false);
+    }
+  }, [
+    anonymousSessionId,
+    ensureLiveEntityWorkspace,
+    hasLiveEntity,
+    shareToken,
+    toast,
+    workspace,
+  ]);
 
   const handleSaveNote = useCallback(async () => {
     if (
@@ -1219,17 +1343,41 @@ function EntityWorkspaceView({
         entitySlug: workspace.entity.slug,
         email,
         access: inviteAccess,
-      })) as { kind: "member" | "invite"; token: string };
+      })) as {
+        kind: "member" | "invite";
+        token: string;
+        delivery?: {
+          status: "sent" | "link_only";
+          copiedFallbackLink: boolean;
+          error?: string;
+        };
+      };
       const nextUrl =
         result.kind === "invite"
           ? buildEntityInviteUrl(workspace.entity.slug, result.token)
           : buildEntityShareUrl(workspace.entity.slug, result.token);
-      await navigator.clipboard.writeText(nextUrl);
-      setCollaboratorCopyKey(`${result.kind}:${email.toLowerCase()}`);
+      const deliveryStatus = result.delivery?.status ?? "link_only";
+      if (deliveryStatus !== "sent") {
+        await navigator.clipboard.writeText(nextUrl);
+        setCollaboratorCopyKey(`${result.kind}:${email.toLowerCase()}`);
+        toast.warning(
+          "Invite link copied",
+          "Email delivery was unavailable for this address, so the secure link is on your clipboard.",
+        );
+      } else {
+        toast.success(
+          "Invite sent",
+          `NodeBench emailed ${email} with ${inviteAccess === "edit" ? "edit" : "view"} access.`,
+        );
+      }
       setInviteEmail("");
       window.setTimeout(() => setCollaboratorCopyKey(null), 1500);
     } catch (error) {
       console.error("[entity] Failed to invite collaborator:", error);
+      toast.error(
+        "Failed to invite collaborator",
+        error instanceof Error ? error.message : "The workspace invite could not be created.",
+      );
     } finally {
       setInviteBusy(false);
     }
@@ -1238,6 +1386,7 @@ function EntityWorkspaceView({
     inviteAccess,
     inviteEmail,
     inviteEntityWorkspaceCollaborator,
+    toast,
     workspace?.entity?.slug,
   ]);
 
@@ -1884,6 +2033,9 @@ function EntityWorkspaceView({
           {shareAccessLabel ? (
             <span className="tabular-nums">{shareAccessLabel.toLowerCase()}</span>
           ) : null}
+          {latestCollaborationStatus ? (
+            <span data-testid="entity-collaboration-status">{latestCollaborationStatus}</span>
+          ) : null}
           <span className="ml-auto tabular-nums">
             Updated {formatRelative(latestReport?.updatedAt ?? entity.updatedAt)}
           </span>
@@ -1915,12 +2067,20 @@ function EntityWorkspaceView({
           onInviteEmailChange={setInviteEmail}
           onInviteAccessChange={setInviteAccess}
           onInvite={() => void handleInviteCollaborator()}
-          members={workspace.collaborators?.members ?? []}
+          members={(workspace.collaborators?.members ?? []).map((member) => ({
+            ...member,
+            notificationStatus: member.notificationStatus,
+            notificationUpdatedAt: member.notificationUpdatedAt,
+            notificationError: member.notificationError,
+          }))}
           invites={(workspace.collaborators?.invites ?? []).map((invite) => ({
             id: invite._id,
             email: invite.email,
             access: invite.access,
             token: invite.token,
+            notificationStatus: invite.notificationStatus,
+            notificationUpdatedAt: invite.notificationUpdatedAt,
+            notificationError: invite.notificationError,
           }))}
           onCopyMemberLink={(userId) => void handleCopyMemberLink(userId)}
           onCopyInviteLink={(inviteId) => void handleCopyInviteLink(inviteId)}
@@ -2103,7 +2263,7 @@ function EntityWorkspaceView({
         </div>
       )}
 
-      {notebookDrift ? (
+      {notebookDrift && entityViewMode === "classic" ? (
         <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-100">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium">Live notebook ahead</span>
@@ -2152,16 +2312,26 @@ function EntityWorkspaceView({
           {liveNotebookEnabled ? (
             <button
               type="button"
-              onClick={() => setEntityViewMode("live")}
-              disabled={!hasLiveEntity}
-              title={!hasLiveEntity ? "Live notebook requires a saved entity workspace." : undefined}
+              onClick={() => void handleSelectLiveView()}
+              disabled={
+                materializingLiveWorkspace ||
+                !workspace?.entity?.slug ||
+                (Boolean(shareToken) && !hasLiveEntity)
+              }
+              title={
+                shareToken && !hasLiveEntity
+                  ? "Live notebook can only be created from your own workspace."
+                  : !workspace?.entity?.slug
+                    ? "Live notebook requires an entity workspace."
+                    : undefined
+              }
               className={`rounded px-2.5 py-1 text-xs transition-colors ${
                 entityViewMode === "live"
                   ? "bg-white text-gray-900 shadow-sm dark:bg-white/10 dark:text-gray-100"
                   : "text-gray-500 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:text-gray-200"
               }`}
             >
-              Live ✨
+              {materializingLiveWorkspace ? "Opening Live..." : "Live ✨"}
             </button>
           ) : null}
         </div>
@@ -2173,7 +2343,18 @@ function EntityWorkspaceView({
           <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading notebook…</div>}>
             {/* Physical-notebook sheet. See docs/architecture/ENTITY_PAGE_REDESIGN.md §12. */}
             <article className="notebook-sheet mt-4">
-              <EntityNotebookView entitySlug={entity.slug} shareToken={shareToken} />
+              <EntityNotebookView
+                entitySlug={entity.slug}
+                shareToken={shareToken}
+                canOpenLive={
+                  liveNotebookEnabled &&
+                  Boolean(workspace?.entity?.slug) &&
+                  !(Boolean(shareToken) && !hasLiveEntity) &&
+                  !materializingLiveWorkspace
+                }
+                onOpenLive={() => void handleSelectLiveView()}
+                openingLive={materializingLiveWorkspace}
+              />
             </article>
           </Suspense>
         </ErrorBoundary>
@@ -2187,6 +2368,13 @@ function EntityWorkspaceView({
                 entitySlug={entity.slug}
                 shareToken={shareToken}
                 canEdit={canEditNotebook}
+                onOpenReferenceNotebook={showViewModeToggle ? () => setEntityViewMode("notebook") : undefined}
+                viewerOwnerKey={workspace.viewerIdentity?.ownerKey ?? null}
+                collaborationParticipants={collaborationParticipants}
+                latestHumanEdit={{
+                  ownerKey: blockSummary?.latestHumanEditorOwnerKey ?? null,
+                  updatedAt: blockSummary?.latestHumanEditorUpdatedAt ?? null,
+                }}
               />
             </article>
           </Suspense>
@@ -2547,6 +2735,50 @@ function EntityWorkspaceView({
         </article>
 
       </section>
+
+      {/*
+        ── Diligence blocks ────────────────────────────────────────────
+        Pipeline output lives here — one DiligenceSection per block type.
+        In Phase 1, the pipeline is wired at the contract level
+        (server/pipeline/blocks/founder.ts) but the runtime is still
+        behind agentHarness; until the v1 orchestrator emits structured
+        output, sections render with empty state + actionable copy.
+        See: docs/architecture/AGENT_PIPELINE.md
+        ───────────────────────────────────────────────────────────── */}
+      {entityViewMode === "classic" ? (
+        <section className="mt-8 flex flex-col gap-3" data-testid="entity-diligence-blocks">
+          <DiligenceSection<never>
+            block="founder"
+            title="Founders"
+            description="Identified founders, co-founders, and key operators. Verified against official bios and corroborated by reputable press where possible."
+            overallTier="unverified"
+            candidates={[]}
+            emptyLabel="We haven't identified founders for this entity yet. Run a diligence pass or upload a team bio to populate this block."
+            renderer={() => null}
+            defaultCollapsed={false}
+          />
+          <DiligenceSection<never>
+            block="product"
+            title="Products"
+            description="Products this company offers — features, pricing, launch dates."
+            overallTier="unverified"
+            candidates={[]}
+            emptyLabel="No products identified. Try adding the company homepage or a product-page URL to the ingest."
+            renderer={() => null}
+            defaultCollapsed
+          />
+          <DiligenceSection<never>
+            block="funding"
+            title="Funding"
+            description="Funding rounds, investors, valuation hints — grounded in SEC EDGAR and company press releases where available."
+            overallTier="unverified"
+            candidates={[]}
+            emptyLabel="No funding signals found. Add a press release or SEC filing to seed this block."
+            renderer={() => null}
+            defaultCollapsed
+          />
+        </section>
+      ) : null}
 
       {showActions ? (
         <section className="mt-4 rounded-3xl border border-black/8 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-[#111214]/90">

@@ -4951,6 +4951,94 @@ export default defineSchema({
     .index("by_status", ["status"]),
 
   /* ------------------------------------------------------------------ */
+  /* SESSION ARTIFACTS - Per-session agent-generated candidates          */
+  /*                                                                     */
+  /* Pattern: batched end-of-session review (like Claude Code files-     */
+  /* changed summary + Perplexity Lab artifacts rail).                   */
+  /*                                                                     */
+  /* Every agent-generated candidate (company mention, founder, product, */
+  /* funding round, news item, memo) goes into this table in a "pending" */
+  /* state. The user reviews at wrap-up:                                 */
+  /*   keep     → promotes to a standalone entity Report                 */
+  /*   dismiss  → stays in session context, doesn't become standalone    */
+  /*   skip     → pending bucket, decided later                          */
+  /*                                                                     */
+  /* See: docs/archive/2026-q1/architecture-superseded/                   */
+  /*      (earlier drafts of SESSION_ARTIFACTS.md)                       */
+  /*      .claude/rules/scratchpad_first.md                              */
+  /* ------------------------------------------------------------------ */
+  sessionArtifacts: defineTable({
+    /** Owning chat session. Matches agentThreadId from agentScratchpads. */
+    sessionId: v.string(),
+    userId: v.optional(v.id("users")),
+    /** Anonymous session fallback for pre-auth users. */
+    anonymousSessionId: v.optional(v.string()),
+
+    /** Artifact kind — mirrors the 10 diligence blocks + extras. */
+    artifactKind: v.union(
+      v.literal("company"),
+      v.literal("founder"),
+      v.literal("product"),
+      v.literal("funding"),
+      v.literal("news"),
+      v.literal("hiring"),
+      v.literal("patent"),
+      v.literal("publicOpinion"),
+      v.literal("competitor"),
+      v.literal("regulatory"),
+      v.literal("memo"),
+    ),
+
+    /** Human-readable display name shown in the panel (e.g. "Jane Doe"). */
+    displayName: v.string(),
+    /** 1-line summary shown under the name. */
+    summary: v.optional(v.string()),
+
+    /** Evidence tier from the verification judge — drives default toggle. */
+    confidenceTier: v.optional(
+      v.union(
+        v.literal("verified"),
+        v.literal("corroborated"),
+        v.literal("single-source"),
+        v.literal("unverified"),
+      ),
+    ),
+
+    /** Source count for the confidence chip. */
+    sourceCount: v.optional(v.number()),
+    /** Optional short source label (e.g. "LinkedIn · TechCrunch"). */
+    sourceLabel: v.optional(v.string()),
+
+    /** Review state. */
+    status: v.union(
+      v.literal("pending"),   // awaiting user review (wrap-up)
+      v.literal("kept"),      // promoted to a standalone entity Report
+      v.literal("dismissed"), // explicitly rejected by user
+      v.literal("auto"),      // auto-kept (verified tier, user didn't intervene)
+    ),
+
+    /** Slug of the entity Report this artifact promoted to, after `status = kept`. */
+    promotedEntitySlug: v.optional(v.string()),
+
+    /** Reference to the scratchpad run that produced this artifact. */
+    scratchpadRunId: v.optional(v.string()),
+
+    /** Free-form extra data (block-specific candidate shape). Keep small. */
+    payload: v.optional(v.any()),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    /** Set when status transitions from pending. */
+    reviewedAt: v.optional(v.number()),
+  })
+    .index("by_session", ["sessionId"])
+    .index("by_session_status", ["sessionId", "status"])
+    .index("by_user", ["userId"])
+    .index("by_anonymous", ["anonymousSessionId"])
+    .index("by_status", ["status"])
+    .index("by_promoted_entity", ["promotedEntitySlug"]),
+
+  /* ------------------------------------------------------------------ */
   /* AGENT EPISODIC MEMORY - Per-run chronological memory               */
   /* ------------------------------------------------------------------ */
   agentEpisodicMemory: defineTable({
