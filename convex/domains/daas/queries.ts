@@ -34,7 +34,8 @@ export const listRuns = query({
       latestReplayCostUsd: v.optional(v.number()),
       latestReplayTokens: v.optional(v.number()),
       latestVerdict: v.optional(v.string()),
-      latestSimilarity: v.optional(v.number()),
+      latestPassedCount: v.optional(v.number()),
+      latestTotalCount: v.optional(v.number()),
       latestCostDeltaPct: v.optional(v.number()),
     }),
   ),
@@ -83,7 +84,8 @@ export const listRuns = query({
         latestReplayCostUsd: replay?.replayCostUsd,
         latestReplayTokens: replay?.replayTokens,
         latestVerdict: judgment?.verdict,
-        latestSimilarity: judgment?.outputSimilarity,
+        latestPassedCount: judgment?.passedCount,
+        latestTotalCount: judgment?.totalCount,
         latestCostDeltaPct: judgment?.costDeltaPct,
       });
     }
@@ -143,12 +145,15 @@ export const getRun = query({
             v.null(),
             v.object({
               _id: v.id("daasJudgments"),
-              outputSimilarity: v.number(),
+              passedCount: v.number(),
+              totalCount: v.number(),
               costDeltaPct: v.number(),
-              toolParity: v.number(),
-              qualityScore: v.number(),
               verdict: v.string(),
-              detailsJson: v.string(),
+              checksJson: v.string(),
+              judgeModel: v.optional(v.string()),
+              rubricId: v.optional(v.string()),
+              rubricVersion: v.optional(v.string()),
+              detailsJson: v.optional(v.string()),
               judgedAt: v.number(),
             }),
           ),
@@ -196,11 +201,14 @@ export const getRun = query({
         judgment: j
           ? {
               _id: j._id,
-              outputSimilarity: j.outputSimilarity,
+              passedCount: j.passedCount ?? 0,
+              totalCount: j.totalCount ?? 0,
               costDeltaPct: j.costDeltaPct,
-              toolParity: j.toolParity,
-              qualityScore: j.qualityScore,
               verdict: j.verdict,
+              checksJson: j.checksJson ?? "[]",
+              judgeModel: j.judgeModel,
+              rubricId: j.rubricId,
+              rubricVersion: j.rubricVersion,
               detailsJson: j.detailsJson,
               judgedAt: j.judgedAt,
             }
@@ -250,7 +258,9 @@ export const getAggregateStats = query({
     totalReplays: v.number(),
     totalJudgments: v.number(),
     avgCostDeltaPct: v.number(),
-    avgSimilarity: v.number(),
+    // New: aggregate pass rate across all boolean checks
+    totalChecksPassed: v.number(),
+    totalChecksEvaluated: v.number(),
     passCount: v.number(),
     partialCount: v.number(),
     failCount: v.number(),
@@ -261,13 +271,15 @@ export const getAggregateStats = query({
     const judgments = await ctx.db.query("daasJudgments").take(MAX_ROWS);
 
     let totalCostDelta = 0;
-    let totalSimilarity = 0;
+    let totalChecksPassed = 0;
+    let totalChecksEvaluated = 0;
     let pass = 0;
     let partial = 0;
     let fail = 0;
     for (const j of judgments) {
       totalCostDelta += j.costDeltaPct;
-      totalSimilarity += j.outputSimilarity;
+      totalChecksPassed += j.passedCount ?? 0;
+      totalChecksEvaluated += j.totalCount ?? 0;
       if (j.verdict === "pass") pass++;
       else if (j.verdict === "partial") partial++;
       else if (j.verdict === "fail") fail++;
@@ -279,7 +291,8 @@ export const getAggregateStats = query({
       totalReplays: replays.length,
       totalJudgments: judgments.length,
       avgCostDeltaPct: totalCostDelta / n,
-      avgSimilarity: totalSimilarity / n,
+      totalChecksPassed,
+      totalChecksEvaluated,
       passCount: pass,
       partialCount: partial,
       failCount: fail,

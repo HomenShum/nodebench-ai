@@ -317,7 +317,9 @@ import type * as domains_canonicalization_duplicateDetection from "../domains/ca
 import type * as domains_channels_channelIntelligence from "../domains/channels/channelIntelligence.js";
 import type * as domains_channels_engagementOptimizer from "../domains/channels/engagementOptimizer.js";
 import type * as domains_channels_index from "../domains/channels/index.js";
+import type * as domains_daas_actions from "../domains/daas/actions.js";
 import type * as domains_daas_admin from "../domains/daas/admin.js";
+import type * as domains_daas_http from "../domains/daas/http.js";
 import type * as domains_daas_mutations from "../domains/daas/mutations.js";
 import type * as domains_daas_queries from "../domains/daas/queries.js";
 import type * as domains_deepTrace_causalChainEngine from "../domains/deepTrace/causalChainEngine.js";
@@ -879,6 +881,7 @@ import type * as domains_product_chat from "../domains/product/chat.js";
 import type * as domains_product_delivery from "../domains/product/delivery.js";
 import type * as domains_product_diligenceCheckpointStructuring from "../domains/product/diligenceCheckpointStructuring.js";
 import type * as domains_product_diligenceJudge from "../domains/product/diligenceJudge.js";
+import type * as domains_product_diligenceLlmJudgeRuns from "../domains/product/diligenceLlmJudgeRuns.js";
 import type * as domains_product_diligenceProjectionRuntime from "../domains/product/diligenceProjectionRuntime.js";
 import type * as domains_product_diligenceProjections from "../domains/product/diligenceProjections.js";
 import type * as domains_product_diligenceRunTelemetry from "../domains/product/diligenceRunTelemetry.js";
@@ -1694,7 +1697,9 @@ declare const fullApi: ApiFromModules<{
   "domains/channels/channelIntelligence": typeof domains_channels_channelIntelligence;
   "domains/channels/engagementOptimizer": typeof domains_channels_engagementOptimizer;
   "domains/channels/index": typeof domains_channels_index;
+  "domains/daas/actions": typeof domains_daas_actions;
   "domains/daas/admin": typeof domains_daas_admin;
+  "domains/daas/http": typeof domains_daas_http;
   "domains/daas/mutations": typeof domains_daas_mutations;
   "domains/daas/queries": typeof domains_daas_queries;
   "domains/deepTrace/causalChainEngine": typeof domains_deepTrace_causalChainEngine;
@@ -2256,6 +2261,7 @@ declare const fullApi: ApiFromModules<{
   "domains/product/delivery": typeof domains_product_delivery;
   "domains/product/diligenceCheckpointStructuring": typeof domains_product_diligenceCheckpointStructuring;
   "domains/product/diligenceJudge": typeof domains_product_diligenceJudge;
+  "domains/product/diligenceLlmJudgeRuns": typeof domains_product_diligenceLlmJudgeRuns;
   "domains/product/diligenceProjectionRuntime": typeof domains_product_diligenceProjectionRuntime;
   "domains/product/diligenceProjections": typeof domains_product_diligenceProjections;
   "domains/product/diligenceRunTelemetry": typeof domains_product_diligenceRunTelemetry;

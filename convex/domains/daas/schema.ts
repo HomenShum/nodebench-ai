@@ -102,21 +102,54 @@ export const daasReplays = defineTable({
   .index("by_createdAt", ["createdAt"]);
 
 /**
- * daasJudgments — one row per deterministic judge pass.
+ * daasJudgments — one row per judge pass.
  *
- * Every score here is computed (entity overlap, structural parity, cost delta)
- * — no LLM-judge floors. `verdict` is bounded to DAAS_VERDICTS.
+ * Judge produces a bounded set of BOOLEAN CHECKS, each with an explainable
+ * reason. No arbitrary floats. `checksJson` is the source of truth; every
+ * other numeric field is derived:
+ *   passedCount / totalCount            = aggregate pass rate
+ *   costDeltaPct                        = measured from token counts (real)
+ *   verdict                             = derived from pass rate thresholds
+ *
+ * This matches the user directive: "score should not be arbitrary numbers,
+ * instead, it should be llm judged boolean explainable reasons."
+ *
+ * checksJson shape (validated at mutation boundary):
+ *   [{ "name": string, "passed": boolean, "reason": string }]
+ *
+ * The judge model + rubric hash is recorded so dashboards can filter to
+ * apples-to-apples comparisons across judge revisions.
  */
 export const daasJudgments = defineTable({
   traceId: v.string(), // daasTraces.sessionId
   replayId: v.id("daasReplays"),
-  outputSimilarity: v.number(), // 0..1
-  costDeltaPct: v.number(), // negative = cheaper than original
-  toolParity: v.number(), // 0..1
-  qualityScore: v.number(), // 0..10
-  verdict: v.string(), // one of DAAS_VERDICTS (validated in mutation)
-  detailsJson: v.string(), // full breakdown
+
+  // Real measured cost delta (kept because it's a MEASUREMENT, not a score)
+  costDeltaPct: v.number(),
+
+  // Bounded verdict derived from pass rate (see DAAS_VERDICTS)
+  verdict: v.string(),
+
   judgedAt: v.number(),
+
+  // ─── Boolean-rubric (new shape, required going forward) ──────────────
+  // checksJson is the source of truth: [{ name, passed, reason }, ...]
+  passedCount: v.optional(v.number()),
+  totalCount: v.optional(v.number()),
+  checksJson: v.optional(v.string()),
+  judgeModel: v.optional(v.string()),
+  rubricId: v.optional(v.string()),
+  rubricVersion: v.optional(v.string()),
+
+  // Optional free-form rationale
+  detailsJson: v.optional(v.string()),
+
+  // ─── Legacy arbitrary-score fields (DEPRECATED) ──────────────────────
+  // Kept as optional so existing rows validate until migration completes.
+  // Deleted in favor of checksJson going forward.
+  outputSimilarity: v.optional(v.number()),
+  toolParity: v.optional(v.number()),
+  qualityScore: v.optional(v.number()),
 })
   .index("by_traceId", ["traceId"])
   .index("by_replayId", ["replayId"])

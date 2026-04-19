@@ -258,14 +258,23 @@ function RunDetail({ sessionId }: { sessionId: string }) {
             </div>
             <div style={{ fontSize: 11, display: "grid", gap: 8 }}>
               <div>
-                <div style={{ color: "#9a9590", fontSize: 10, marginBottom: 2 }}>Similarity</div>
-                <Bar value={(latestReplay.judgment?.outputSimilarity ?? 0) * 100} max={100} color="#d97757" />
-                <div style={{ fontSize: 10, color: "#e8e6e3", fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
-                  {latestReplay.judgment ? latestReplay.judgment.outputSimilarity.toFixed(3) : "—"}
+                <div style={{ color: "#9a9590", fontSize: 10, marginBottom: 2 }}>Checks passed</div>
+                <div style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  color: "#22c55e",
+                }}>
+                  {latestReplay.judgment
+                    ? `${latestReplay.judgment.passedCount}/${latestReplay.judgment.totalCount}`
+                    : "—"}
+                </div>
+                <div style={{ fontSize: 10, color: "#9a9590" }}>
+                  rubric: {latestReplay.judgment?.rubricId ?? "—"}{latestReplay.judgment?.rubricVersion ? ` @ ${latestReplay.judgment.rubricVersion}` : ""}
                 </div>
               </div>
               <div>
-                <div style={{ color: "#9a9590", fontSize: 10, marginBottom: 2 }}>Cost delta</div>
+                <div style={{ color: "#9a9590", fontSize: 10, marginBottom: 2 }}>Measured cost delta</div>
                 <div style={{
                   fontSize: 14,
                   fontFamily: "'JetBrains Mono', monospace",
@@ -274,17 +283,81 @@ function RunDetail({ sessionId }: { sessionId: string }) {
                   {formatPct(latestReplay.judgment?.costDeltaPct)}
                 </div>
               </div>
-              <div>
-                <div style={{ color: "#9a9590", fontSize: 10, marginBottom: 2 }}>Quality score</div>
-                <Bar value={(latestReplay.judgment?.qualityScore ?? 0) * 10} max={100} color="#60a5fa" />
-                <div style={{ fontSize: 10, color: "#e8e6e3", fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
-                  {latestReplay.judgment ? `${latestReplay.judgment.qualityScore.toFixed(2)}/10` : "—"}
-                </div>
-              </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Boolean rubric breakdown — source of truth */}
+      {latestReplay?.judgment && (() => {
+        let checks: Array<{ name: string; passed: boolean; reason: string }> = [];
+        try {
+          const parsed = JSON.parse(latestReplay.judgment.checksJson);
+          if (Array.isArray(parsed)) checks = parsed;
+        } catch { /* noop */ }
+        if (checks.length === 0) return null;
+        return (
+          <div style={{
+            marginTop: 12,
+            padding: 12,
+            background: "rgba(255,255,255,0.02)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            borderRadius: 8,
+          }}>
+            <div style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: "#9a9590",
+              textTransform: "uppercase",
+              letterSpacing: "0.12em",
+              marginBottom: 8,
+            }}>
+              Boolean rubric · {checks.filter((c) => c.passed).length}/{checks.length} passed
+            </div>
+            <div style={{ display: "grid", gap: 4 }}>
+              {checks.map((c, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "16px 220px 1fr",
+                    gap: 10,
+                    alignItems: "start",
+                    padding: "6px 8px",
+                    borderRadius: 4,
+                    background: c.passed ? "rgba(34,197,94,0.04)" : "rgba(239,68,68,0.04)",
+                    fontSize: 11,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <span
+                    aria-label={c.passed ? "passed" : "failed"}
+                    style={{
+                      color: c.passed ? "#22c55e" : "#ef4444",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {c.passed ? "✓" : "✗"}
+                  </span>
+                  <span style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    color: "#e8e6e3",
+                    fontSize: 10,
+                  }}>
+                    {c.name}
+                  </span>
+                  <span style={{ color: "#9a9590" }}>{c.reason}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 8, fontSize: 10, color: "#5d5854" }}>
+              Every check is produced by an LLM judge applying a bounded rubric.
+              Pass/fail booleans replace arbitrary scores; each comes with its evidence sentence.
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -362,16 +435,20 @@ export function DaasPage() {
           <Stat label="Runs ingested" value={stats?.totalRuns.toString() ?? "—"} color="#e8e6e3" />
           <Stat label="Replays executed" value={stats?.totalReplays.toString() ?? "—"} color="#60a5fa" />
           <Stat
-            label="Avg similarity"
-            value={stats ? stats.avgSimilarity.toFixed(3) : "—"}
+            label="Boolean checks passed"
+            value={
+              stats
+                ? `${stats.totalChecksPassed}/${stats.totalChecksEvaluated}`
+                : "—"
+            }
             color="#d97757"
-            sub="0-1 entity + structural overlap"
+            sub="LLM-judged rubric (no arbitrary scores)"
           />
           <Stat
             label="Avg cost delta"
             value={stats ? formatPct(stats.avgCostDeltaPct) : "—"}
             color={(stats?.avgCostDeltaPct ?? 0) < 0 ? "#22c55e" : "#ef4444"}
-            sub="replay vs original"
+            sub="measured from real API tokens"
           />
           <Stat
             label="Verdicts"
@@ -484,7 +561,9 @@ export function DaasPage() {
                         {formatPct(run.latestCostDeltaPct)}
                       </div>
                       <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: "#d97757" }}>
-                        sim {run.latestSimilarity?.toFixed(2) ?? "—"}
+                        {run.latestPassedCount !== undefined && run.latestTotalCount !== undefined
+                          ? `${run.latestPassedCount}/${run.latestTotalCount}`
+                          : "—"}
                       </div>
                       <VerdictBadge verdict={run.latestVerdict} />
                     </button>

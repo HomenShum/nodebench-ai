@@ -167,17 +167,31 @@ export const storeReplay = mutation({
 });
 
 // ── Judgment persist ─────────────────────────────────────────────────────────
+//
+// Boolean-rubric judgment: checksJson is the source of truth.
+// Each check = { name: string, passed: boolean, reason: string }
+// No arbitrary scores. costDeltaPct stays because it's a MEASUREMENT
+// (derived from real token counts), not a score.
 
 export const storeJudgment = mutation({
   args: {
     traceId: v.string(),
     replayId: v.id("daasReplays"),
-    outputSimilarity: v.number(),
+    // Source of truth — array of boolean checks with explanations
+    checksJson: v.string(),
+    // Measured cost delta (real API tokens, NOT a score)
     costDeltaPct: v.number(),
-    toolParity: v.number(),
-    qualityScore: v.number(),
+    // Aggregate (derivable from checksJson but stored for fast queries)
+    passedCount: v.number(),
+    totalCount: v.number(),
+    // Bounded verdict derived from pass rate
     verdict: v.string(),
-    detailsJson: v.string(),
+    // Judge provenance — enables apples-to-apples rollouts
+    judgeModel: v.optional(v.string()),
+    rubricId: v.optional(v.string()),
+    rubricVersion: v.optional(v.string()),
+    // Optional extra rationale
+    detailsJson: v.optional(v.string()),
   },
   returns: v.id("daasJudgments"),
   handler: async (ctx, args) => {
@@ -185,25 +199,55 @@ export const storeJudgment = mutation({
     if (!allowed.has(args.verdict)) {
       throw new Error(`verdict must be one of ${[...allowed].join(", ")}`);
     }
-    if (args.outputSimilarity < 0 || args.outputSimilarity > 1) {
-      throw new Error("outputSimilarity must be in [0,1]");
+    if (args.passedCount < 0 || args.totalCount < 0) {
+      throw new Error("passedCount/totalCount must be >= 0");
     }
-    if (args.toolParity < 0 || args.toolParity > 1) {
-      throw new Error("toolParity must be in [0,1]");
+    if (args.passedCount > args.totalCount) {
+      throw new Error("passedCount cannot exceed totalCount");
     }
-    if (args.qualityScore < 0 || args.qualityScore > 10) {
-      throw new Error("qualityScore must be in [0,10]");
+    // Validate checksJson shape (early fail = HONEST_STATUS).
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(args.checksJson);
+    } catch (e) {
+      throw new Error(`checksJson is not valid JSON: ${String(e)}`);
+    }
+    if (!Array.isArray(parsed)) {
+      throw new Error("checksJson must be a JSON array");
+    }
+    for (const [i, c] of parsed.entries()) {
+      if (!c || typeof c !== "object") {
+        throw new Error(`checksJson[${i}] must be an object`);
+      }
+      const obj = c as Record<string, unknown>;
+      if (typeof obj.name !== "string" || obj.name.length === 0) {
+        throw new Error(`checksJson[${i}].name must be non-empty string`);
+      }
+      if (typeof obj.passed !== "boolean") {
+        throw new Error(`checksJson[${i}].passed must be boolean`);
+      }
+      if (typeof obj.reason !== "string") {
+        throw new Error(`checksJson[${i}].reason must be string`);
+      }
+    }
+    if (parsed.length !== args.totalCount) {
+      throw new Error(
+        `totalCount (${args.totalCount}) must equal checksJson length (${parsed.length})`,
+      );
     }
 
     return await ctx.db.insert("daasJudgments", {
       traceId: args.traceId,
       replayId: args.replayId,
-      outputSimilarity: args.outputSimilarity,
+      passedCount: args.passedCount,
+      totalCount: args.totalCount,
       costDeltaPct: args.costDeltaPct,
-      toolParity: args.toolParity,
-      qualityScore: args.qualityScore,
       verdict: args.verdict,
-      detailsJson: clampJson(args.detailsJson, "detailsJson")!,
+      checksJson: clampJson(args.checksJson, "checksJson")!,
+      judgeModel: args.judgeModel,
+      rubricId: args.rubricId,
+      rubricVersion: args.rubricVersion,
+      detailsJson: clampJson(args.detailsJson, "detailsJson"),
       judgedAt: Date.now(),
     });
   },

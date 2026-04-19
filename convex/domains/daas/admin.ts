@@ -33,3 +33,24 @@ export const deleteTracesByPrefix = mutation({
     return deleted;
   },
 });
+
+/**
+ * Nuke all judgment rows. Used during schema migration from the
+ * arbitrary-score shape to the boolean-rubric shape.
+ *
+ * SAFETY: does not touch traces, specs, or replays. The replays stay
+ * and will be re-judged by judgeReplay with the new rubric.
+ */
+export const deleteAllJudgments = mutation({
+  args: {},
+  returns: v.number(),
+  handler: async (ctx) => {
+    const rows = await ctx.db.query("daasJudgments").take(MAX_DELETE);
+    let deleted = 0;
+    for (const j of rows) {
+      await ctx.db.delete(j._id);
+      deleted += 1;
+    }
+    return deleted;
+  },
+});
