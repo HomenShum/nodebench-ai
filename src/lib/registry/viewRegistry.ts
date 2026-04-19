@@ -33,7 +33,8 @@ export type MainView =
   | "entity-compare"
   | "benchmark-comparison"
   | "role-lens-output"
-  | "homes-hub-session";
+  | "homes-hub-session"
+  | "daas";
 
 export type ResearchTab = "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
 
@@ -223,6 +224,20 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     surfaceId: "ask",
     commandPaletteVisible: false,
+  },
+
+  // ── Distillation-as-a-Service ────────────────────────────────────────────
+  {
+    id: "daas",
+    title: "Distillation-as-a-Service",
+    subtitle: "Ingest expert traces, distill workflows, replay with cheap models, measure savings",
+    path: "/daas",
+    aliases: ["/distill"],
+    component: lazyNamed(() => import("@/features/daas/views/DaasPage"), "DaasPage"),
+    group: "nested",
+    navVisible: false,
+    surfaceId: "ask",
+    commandPaletteVisible: true,
   },
 
 
@@ -551,6 +566,15 @@ export function buildCockpitPathForView({
   });
 }
 
+function buildPassthroughExtraParams(params: URLSearchParams) {
+  return {
+    join: params.get("join"),
+    room: params.get("room"),
+    share: params.get("share"),
+    invite: params.get("invite"),
+  };
+}
+
 export function resolvePathToCockpitState(rawPathname: string, rawSearch = ""): CockpitState {
   const params = new URLSearchParams(rawSearch || "");
   const requestedSurface = parseCockpitSurfaceParam(params.get("surface"));
@@ -579,7 +603,7 @@ export function resolvePathToCockpitState(rawPathname: string, rawSearch = ""): 
       workspace: params.get("workspace"),
       panel: params.get("panel"),
       tab: params.get("tab"),
-      extra: { join: params.get("join"), room: params.get("room") },
+      extra: buildPassthroughExtraParams(params),
     });
 
     return {
@@ -609,7 +633,7 @@ export function resolvePathToCockpitState(rawPathname: string, rawSearch = ""): 
     workspace: params.get("workspace"),
     panel: null,
     tab: params.get("tab"),
-    extra: { join: params.get("join"), room: params.get("room") },
+    extra: buildPassthroughExtraParams(params),
   });
 
   return {
