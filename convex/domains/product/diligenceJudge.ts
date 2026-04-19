@@ -25,6 +25,7 @@
 
 import { v } from "convex/values";
 import { mutation, query } from "../../_generated/server";
+import { internal } from "../../_generated/api";
 
 const MAX_VERDICTS = 200;
 const JUDGE_VERSION = "v1";
@@ -58,6 +59,19 @@ export const recordVerdict = mutation({
     /** JSON-encoded GateResult[] from server/pipeline/diligenceJudge.ts */
     gatesJson: v.string(),
     judgeVersion: v.optional(v.string()),
+    /**
+     * When true (default), schedule the non-deterministic LLM semantic
+     * judge to score this verdict in the background. Callers can opt out
+     * by passing false — useful for:
+     *   - back-fill jobs that replay historical verdicts (would spam the
+     *     LLM with cold reruns)
+     *   - cost-sensitive dev environments where GEMINI_API_KEY isn't set
+     *
+     * A second safety net lives in the action itself: if the API key is
+     * missing, the run persists with status="request_failed" and an
+     * errorMessage, so auto-scheduling is never a crash risk (HONEST_STATUS).
+     */
+    autoScore: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     // Basic sanity: counts must not exceed total gates (10 canonical).
@@ -82,6 +96,24 @@ export const recordVerdict = mutation({
       judgedAt: Date.now(),
       judgeVersion: args.judgeVersion ?? JUDGE_VERSION,
     });
+
+    // Auto-schedule LLM semantic judge. Non-blocking — the deterministic
+    // verdict is the source of truth; LLM scores hang off it as an
+    // auxiliary annotation (see docs/architecture/PIPELINE_OPERATIONAL_STANDARD.md §7).
+    const autoScore = args.autoScore !== false; // default true
+    if (autoScore) {
+      try {
+        await ctx.scheduler.runAfter(
+          0,
+          internal.domains.product.diligenceLlmJudgeRuns.scoreVerdictWithLlm,
+          { verdictId: id },
+        );
+      } catch {
+        // ERROR_BOUNDARY: a scheduler failure must not break the verdict
+        // write path. The deterministic row has already committed.
+      }
+    }
+
     return { id };
   },
 });
