@@ -1,0 +1,36 @@
+/**
+ * diligenceRenderers — single-source registry of block-specific renderers.
+ *
+ * Pattern: generic renderer contract (PR9 from the notebook refactor).
+ *          The plugin shell stays block-agnostic; adding a new block type
+ *          is a one-line change here plus a new renderer file under
+ *          `renderers/`.
+ *
+ * Missing block types are handled by the plugin's built-in default
+ * renderer, so shipping renderers incrementally is safe.
+ *
+ * See: src/features/entities/components/notebook/DiligenceDecorationPlugin.ts
+ *      src/features/entities/components/notebook/renderers/*.tsx
+ *      docs/architecture/DILIGENCE_BLOCKS.md
+ */
+
+import type { DecorationRendererRegistry } from "./DiligenceDecorationPlugin";
+import { FounderRenderer } from "./renderers/FounderRenderer";
+import { ProductRenderer } from "./renderers/ProductRenderer";
+import { FundingRenderer } from "./renderers/FundingRenderer";
+import { NewsRenderer } from "./renderers/NewsRenderer";
+import { HiringRenderer } from "./renderers/HiringRenderer";
+
+export const diligenceRenderers: DecorationRendererRegistry = {
+  founder: FounderRenderer,
+  product: ProductRenderer,
+  funding: FundingRenderer,
+  news: NewsRenderer,
+  hiring: HiringRenderer,
+  // Remaining block types (patent, publicOpinion, competitor, regulatory,
+  // financial) fall back to the plugin's built-in default renderer until
+  // their own renderer files land. Legal-fenced blocks (parts of
+  // publicOpinion, all of financial until paid APIs are licensed) stay
+  // deferred by design. See server/pipeline/authority/defaultTiers.ts.
+};
+

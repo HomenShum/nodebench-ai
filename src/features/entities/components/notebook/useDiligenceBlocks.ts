@@ -205,6 +205,11 @@ export function useDiligenceBlocks(
         overallTier: EvidenceTier;
         headerText: string;
         bodyProse?: string;
+        sourceRefIds?: string[];
+        sourceCount?: number;
+        sourceLabel?: string;
+        sourceTokens?: string[];
+        payload?: unknown;
         sourceSectionId?: string;
         updatedAt: number;
       }>
@@ -227,6 +232,11 @@ export function useDiligenceBlocks(
         overallTier: row.overallTier,
         headerText: row.headerText,
         bodyProse: row.bodyProse,
+        sourceRefIds: row.sourceRefIds,
+        sourceCount: row.sourceCount,
+        sourceLabel: row.sourceLabel,
+        sourceTokens: row.sourceTokens,
+        payload: row.payload,
         scratchpadRunId: row.scratchpadRunId,
         version: row.version,
         updatedAt: row.updatedAt,
