@@ -76,6 +76,16 @@ const EntityNotebookView = lazy(() =>
     default: mod.EntityNotebookView,
   })),
 );
+// PR1 refactor — use the memoized mount wrapper instead of importing
+// EntityNotebookLive directly. The mount flattens the object-literal props
+// (latestHumanEdit) into primitive fields so identity is stable per keystroke.
+// See: src/features/entities/components/notebook/EntityNotebookLiveMount.tsx
+const EntityNotebookLiveMount = lazy(() =>
+  import("@/features/entities/components/notebook/EntityNotebookLiveMount").then((mod) => ({
+    default: mod.EntityNotebookLiveMount,
+  })),
+);
+// Kept below for any remaining direct consumers; new callers should use Mount.
 const EntityNotebookLive = lazy(() =>
   import("@/features/entities/components/notebook/EntityNotebookLive").then((mod) => ({
     default: mod.EntityNotebookLive,
@@ -1831,6 +1841,14 @@ function EntityWorkspaceView({
   // facing editable surface. The toggle re-appears automatically when
   // either flag is off (kill-switch / fallback path).
   const showViewModeToggle = !(identityRedesignEnabled && liveNotebookEnabled && hasLiveEntity);
+
+  // PR1 refactor — stable callback identity for EntityNotebookLiveMount.
+  // Without this, the inline arrow created a new closure every render,
+  // cascading into the notebook editor's prop diff and causing visible
+  // re-renders on every keystroke elsewhere on the page.
+  const handleOpenReferenceNotebookToggle = useCallback(() => {
+    setEntityViewMode("notebook");
+  }, []);
   const latestReport = latestBriefReport;
   const latestDiffSummary = latestReport ? computeDiffSummary(latestReport.diffs ?? []) : "";
   const latestSections = latestBriefSections;
@@ -2364,17 +2382,20 @@ function EntityWorkspaceView({
         <ErrorBoundary section="Live notebook">
           <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading live notebook…</div>}>
             <article className="notebook-sheet mt-4">
-              <EntityNotebookLive
+              {/* PR1 refactor — memoized mount prevents per-keystroke re-renders
+                  of the live notebook editor tree. The Mount flattens the
+                  latestHumanEdit object so its identity is stable across
+                  EntityPage re-renders. See EntityNotebookLiveMount.tsx. */}
+              <EntityNotebookLiveMount
                 entitySlug={entity.slug}
                 shareToken={shareToken}
                 canEdit={canEditNotebook}
-                onOpenReferenceNotebook={showViewModeToggle ? () => setEntityViewMode("notebook") : undefined}
+                showReferenceNotebookToggle={showViewModeToggle}
+                onOpenReferenceNotebook={handleOpenReferenceNotebookToggle}
                 viewerOwnerKey={workspace.viewerIdentity?.ownerKey ?? null}
                 collaborationParticipants={collaborationParticipants}
-                latestHumanEdit={{
-                  ownerKey: blockSummary?.latestHumanEditorOwnerKey ?? null,
-                  updatedAt: blockSummary?.latestHumanEditorUpdatedAt ?? null,
-                }}
+                latestHumanEditorOwnerKey={blockSummary?.latestHumanEditorOwnerKey ?? null}
+                latestHumanEditorUpdatedAt={blockSummary?.latestHumanEditorUpdatedAt ?? null}
               />
             </article>
           </Suspense>
