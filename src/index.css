@@ -112,20 +112,33 @@
     --text-primary: #111827;
     --text-secondary: #374151;
     --text-muted: #6B7280;
-    --bg-primary: #FAFAFA;
+    --bg-primary: #FFFFFF;
     --bg-secondary: #F3F4F6;
     --bg-hover: #E5E7EB;
     --bg-tertiary: #F3F4F6;
     --border-color: rgba(0, 0, 0, 0.06);
-    --accent-primary: #d97757;
-    --accent-secondary: #e08a6c;
-    --accent-primary-bg: rgba(217, 119, 87, 0.08);
-    --accent-primary-hover: #c96a4d;
+    --accent-primary: #1B7AE0;
+    --accent-secondary: #4A9EF0;
+    --accent-primary-bg: rgba(27, 122, 224, 0.08);
+    --accent-primary-hover: #1567C0;
     --text-disabled: #9CA3AF;
     --text-tertiary: #9CA3AF;
     --text-placeholder: #9CA3AF;
     --font-ui: "Manrope", system-ui, sans-serif;
     --font-display: "Manrope", system-ui, sans-serif;
+
+    /* Physical-notebook tokens (entity page paper aesthetic).
+       The notebook is a physical sheet the user scrolls and edits,
+       co-authored with agents. Warm off-white beats pure white, and
+       agent ink is a second grayscale tone. See
+       docs/architecture/ENTITY_PAGE_REDESIGN.md §12. */
+    --paper-bg: #fbf8f2;
+    --paper-rule: rgba(217, 119, 87, 0.06);
+    --paper-margin: rgba(217, 119, 87, 0.10);
+    --paper-shadow: 0 12px 40px -24px rgba(40, 30, 20, 0.18), 0 2px 4px rgba(40, 30, 20, 0.04);
+    --ink-user: #1a1918;
+    --ink-agent: #6a6763;
+    --ink-agent-bg: rgba(106, 103, 99, 0.06);
 
     /* frontend-slides easing tokens */
     --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -136,46 +149,51 @@
   }
 
   .dark {
-    /* Warm charcoal palette — CLUI CC inspired */
-    --background: 40 4% 8%;
-    /* #151413 - warm near-black */
-    --foreground: 40 8% 85%;
-    --card: 40 3% 13%;
-    /* #222120 - warm dark surface */
-    --card-foreground: 40 8% 85%;
-    --popover: 40 3% 11%;
-    --popover-foreground: 40 8% 85%;
+    /* Neutral dark palette — cleaner than the old warm charcoal layer */
+    --background: 220 12% 9%;
+    --foreground: 220 18% 94%;
+    --card: 220 12% 13%;
+    --card-foreground: 220 18% 94%;
+    --popover: 220 12% 12%;
+    --popover-foreground: 220 18% 94%;
     --primary: 18 60% 55%;
-    /* Warm terracotta accent */
     --primary-foreground: 0 0% 100%;
-    --secondary: 40 3% 17%;
-    /* #2c2b28 */
-    --secondary-foreground: 40 8% 85%;
-    --muted: 40 3% 17%;
-    --muted-foreground: 40 4% 55%;
-    --accent: 40 3% 17%;
+    --secondary: 220 11% 16%;
+    --secondary-foreground: 220 18% 90%;
+    --muted: 220 11% 15%;
+    --muted-foreground: 220 10% 65%;
+    --accent: 220 11% 15%;
     --accent-foreground: 18 60% 55%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 100%;
-    --border: 40 4% 18%;
-    --input: 40 3% 17%;
+    --border: 220 10% 21%;
+    --input: 220 11% 16%;
     --ring: 18 60% 55%;
 
-    --text-primary: #d4d0c8;
-    --text-secondary: #a8a49a;
-    --text-muted: #908d85;
-    --bg-primary: #151413;
-    --bg-secondary: #1e1d1b;
-    --bg-hover: #2a2926;
-    --bg-tertiary: #222120;
-    --border-color: rgba(255, 248, 230, 0.08);
-    --accent-primary: #d97757;
-    --accent-secondary: #e08a6c;
-    --accent-primary-bg: rgba(217, 119, 87, 0.1);
-    --accent-primary-hover: #c96a4d;
-    --text-disabled: #5a5750;
-    --text-tertiary: #a8a49a;
-    --text-placeholder: #5a5750;
+    --text-primary: #f2f4f7;
+    --text-secondary: #c6ccd4;
+    --text-muted: #99a3ae;
+    --bg-primary: #111418;
+    --bg-secondary: #171b20;
+    --bg-hover: #20262d;
+    --bg-tertiary: #1b2027;
+    --border-color: rgba(255, 255, 255, 0.10);
+    --accent-primary: #1B7AE0;
+    --accent-secondary: #4A9EF0;
+    --accent-primary-bg: rgba(27, 122, 224, 0.1);
+    --accent-primary-hover: #1567C0;
+    --text-disabled: #66717c;
+    --text-tertiary: #aeb6bf;
+    --text-placeholder: #66717c;
+
+    /* Physical-notebook tokens — dark mode (graphite paper). */
+    --paper-bg: #1b1a18;
+    --paper-rule: rgba(255, 255, 255, 0.04);
+    --paper-margin: rgba(217, 119, 87, 0.18);
+    --paper-shadow: 0 24px 80px -48px rgba(0, 0, 0, 0.9), 0 1px 2px rgba(0, 0, 0, 0.4);
+    --ink-user: #f3efe7;
+    --ink-agent: #c3bfb5;
+    --ink-agent-bg: rgba(195, 191, 181, 0.06);
   }
 }
 
@@ -184,16 +202,15 @@
     @apply border-border;
   }
 
-  /* High-visibility focus rings — 2px solid accent + outer glow for keyboard nav */
+  /* Subtle focus rings — Linear-style thin neutral outline */
   :focus-visible {
-    outline: 2px solid hsl(var(--ring));
+    outline: 1px solid rgba(15, 23, 42, 0.25);
     outline-offset: 2px;
   }
 
   .dark :focus-visible {
-    outline: 2px solid var(--accent-primary);
+    outline: 1px solid rgba(255, 255, 255, 0.2);
     outline-offset: 2px;
-    box-shadow: 0 0 0 4px var(--accent-primary-bg);
   }
 
   body {
@@ -207,6 +224,13 @@
     background-image:
       radial-gradient(circle at top, rgba(67, 97, 238, 0.08), transparent 28%),
       radial-gradient(circle at bottom right, rgba(255, 87, 34, 0.06), transparent 22%);
+  }
+
+  .dark body {
+    background-image:
+      radial-gradient(circle at 18% 12%, rgba(27, 122, 224, 0.09), transparent 22%),
+      radial-gradient(circle at 78% 0%, rgba(217, 119, 87, 0.12), transparent 24%),
+      linear-gradient(180deg, #101317, #111419 32%, #111419);
   }
 
   h1,
@@ -405,8 +429,8 @@ html[data-density='spacious'] {
 
   .dark .nb-public-shell::before {
     background:
-      radial-gradient(circle at top, rgba(217, 119, 87, 0.08), transparent 24%),
-      radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.04), transparent 18%);
+      radial-gradient(circle at top, rgba(217, 119, 87, 0.10), transparent 24%),
+      radial-gradient(circle at 82% 18%, rgba(27, 122, 224, 0.08), transparent 18%);
   }
 
   .nb-public-stage {
@@ -417,22 +441,22 @@ html[data-density='spacious'] {
 
   .dark .nb-public-stage {
     background:
-      radial-gradient(circle at top, rgba(217, 119, 87, 0.08), transparent 28%),
-      linear-gradient(180deg, #0f0e0d, #121110 35%, #11100f);
+      radial-gradient(circle at top, rgba(217, 119, 87, 0.12), transparent 28%),
+      radial-gradient(circle at 75% 0%, rgba(27, 122, 224, 0.08), transparent 24%),
+      linear-gradient(180deg, #101317, #11151a 36%, #111419);
   }
 
   .nb-panel {
-    @apply rounded-[24px];
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    background: rgba(255, 255, 255, 0.82);
-    box-shadow: 0 16px 44px rgba(15, 23, 42, 0.08);
-    backdrop-filter: blur(16px);
+    @apply rounded-xl;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    background: #FFFFFF;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   }
 
   .dark .nb-panel {
-    border-color: rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.028);
-    box-shadow: 0 10px 36px rgba(0, 0, 0, 0.16);
+    border-color: rgba(255, 255, 255, 0.10);
+    background: #171b20;
+    box-shadow: 0 24px 64px -44px rgba(0, 0, 0, 0.72);
   }
 
   .nb-panel-soft {
@@ -442,8 +466,9 @@ html[data-density='spacious'] {
   }
 
   .dark .nb-panel-soft {
-    border-color: rgba(255, 255, 255, 0.07);
-    background: rgba(0, 0, 0, 0.15);
+    border-color: rgba(255, 255, 255, 0.09);
+    background: rgba(23, 27, 32, 0.92);
+    box-shadow: 0 24px 72px -54px rgba(0, 0, 0, 0.78);
   }
 
   .nb-panel-inset {
@@ -453,8 +478,8 @@ html[data-density='spacious'] {
   }
 
   .dark .nb-panel-inset {
-    border-color: rgba(255, 255, 255, 0.07);
-    background: rgba(0, 0, 0, 0.22);
+    border-color: rgba(255, 255, 255, 0.09);
+    background: #1a1f26;
   }
 
   .nb-toolbar-pill {
@@ -480,12 +505,12 @@ html[data-density='spacious'] {
   }
 
   .dark .nb-chip {
-    border-color: rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.09);
+    background: rgba(255, 255, 255, 0.035);
   }
 
   .dark .nb-chip:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.075);
     color: var(--text-primary);
   }
 
@@ -496,9 +521,61 @@ html[data-density='spacious'] {
   }
 
   .dark .nb-chip-active {
-    border-color: rgba(217, 119, 87, 0.28);
-    background: rgba(217, 119, 87, 0.14);
-    color: #f5c1ae;
+    border-color: rgba(217, 119, 87, 0.34);
+    background: rgba(217, 119, 87, 0.16);
+    color: #ffd7ca;
+  }
+
+  .nb-filter-tab {
+    display: inline-flex;
+    min-height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.875rem;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition:
+      background-color 160ms var(--ease-out-expo),
+      border-color 160ms var(--ease-out-expo),
+      color 160ms var(--ease-out-expo),
+      box-shadow 160ms var(--ease-out-expo);
+  }
+
+  .nb-filter-tab:hover {
+    background: rgba(15, 23, 42, 0.04);
+    color: var(--text-primary);
+  }
+
+  .nb-filter-tab:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(217, 119, 87, 0.18);
+  }
+
+  .nb-filter-tab-active {
+    border-color: rgba(15, 23, 42, 0.08);
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text-primary);
+    box-shadow: 0 12px 28px -22px rgba(15, 23, 42, 0.36);
+  }
+
+  .dark .nb-filter-tab {
+    color: rgba(230, 235, 243, 0.72);
+  }
+
+  .dark .nb-filter-tab:hover {
+    background: rgba(255, 255, 255, 0.055);
+    color: var(--text-primary);
+  }
+
+  .dark .nb-filter-tab-active {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    box-shadow: 0 18px 36px -28px rgba(0, 0, 0, 0.9);
   }
 
   .nb-hover-lift {
@@ -515,12 +592,11 @@ html[data-density='spacious'] {
   }
 
   .nb-enter {
-    animation: nb-enter 360ms var(--ease-out-expo) both;
+    animation: nb-enter 200ms ease-out both;
   }
 
   .nb-enter-delayed {
-    animation: nb-enter 420ms var(--ease-out-expo) both;
-    animation-delay: 60ms;
+    animation: nb-enter 200ms ease-out both;
   }
 
   .nb-status-dot {
@@ -560,8 +636,8 @@ html[data-density='spacious'] {
   }
 
   .dark .nb-topnav-surface {
-    border-bottom-color: rgba(255, 255, 255, 0.06);
-    background: rgba(12, 11, 10, 0.82);
+    border-bottom-color: rgba(255, 255, 255, 0.07);
+    background: rgba(13, 16, 20, 0.82);
   }
 
   .nb-topnav-nav {
@@ -570,8 +646,8 @@ html[data-density='spacious'] {
   }
 
   .dark .nb-topnav-nav {
-    border-color: rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.09);
+    background: rgba(255, 255, 255, 0.035);
   }
 
   .nb-topnav-button {
@@ -584,7 +660,7 @@ html[data-density='spacious'] {
   }
 
   .dark .nb-topnav-button:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.07);
     color: var(--text-primary);
   }
 
@@ -595,7 +671,7 @@ html[data-density='spacious'] {
   }
 
   .dark .nb-topnav-button-active {
-    background: #f3ece7;
+    background: #f5efe9;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
   }
 
@@ -617,13 +693,13 @@ html[data-density='spacious'] {
   }
 
   .dark .nb-icon-button {
-    border-color: rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.09);
+    background: rgba(255, 255, 255, 0.05);
     color: var(--text-primary);
   }
 
   .dark .nb-icon-button:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.09);
   }
 
   .nb-topnav-action {
@@ -664,19 +740,19 @@ html[data-density='spacious'] {
 
   .dark .nb-topnav-action {
     border-color: rgba(217, 119, 87, 0.3);
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
   }
 
   .nb-input-shell {
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    background: rgba(255, 255, 255, 0.78);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.64);
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    background: #FFFFFF;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   }
 
   .dark .nb-input-shell {
-    border-color: rgba(255, 255, 255, 0.05);
-    background: rgba(0, 0, 0, 0.24);
-    box-shadow: none;
+    border-color: rgba(255, 255, 255, 0.09);
+    background: #171b20;
+    box-shadow: 0 24px 72px -54px rgba(0, 0, 0, 0.72);
   }
 
   .nb-lexical-editor {
@@ -1002,7 +1078,8 @@ html[data-density='spacious'] {
 
   /* Floating action button safe-area anchor */
   .nb-fab-safe {
-    bottom: max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem));
+    /* Keep the FAB above the fixed mobile tab bar so it never steals nav taps. */
+    bottom: max(4.75rem, calc(env(safe-area-inset-bottom, 0px) + 4.75rem));
     right: max(0.75rem, calc(env(safe-area-inset-right, 0px) + 0.75rem));
   }
   @media (min-width: 640px) {
@@ -1150,6 +1227,81 @@ html[data-density='spacious'] {
   /* IE and Edge */
   scrollbar-width: none;
   /* Firefox */
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   Physical-notebook surface — §12 of docs/architecture/ENTITY_PAGE_REDESIGN.md
+   Use `.notebook-sheet` on the entity-page article; margin/rule helpers
+   attach to individual blocks. No nested cards inside the sheet.
+   ─────────────────────────────────────────────────────────────────────── */
+.notebook-sheet {
+  background: var(--paper-bg);
+  color: var(--ink-user);
+  border-radius: 18px;
+  box-shadow: var(--paper-shadow);
+  padding: 48px 56px 64px;
+  position: relative;
+  /* The left binding/margin — subtle terracotta guide a notebook would have. */
+}
+
+.notebook-sheet::before {
+  content: "";
+  position: absolute;
+  left: 48px;
+  top: 32px;
+  bottom: 32px;
+  width: 1px;
+  background: var(--paper-margin);
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .notebook-sheet {
+    padding: 28px 20px 40px;
+    border-radius: 12px;
+  }
+  .notebook-sheet::before {
+    left: 20px;
+  }
+}
+
+/* A block authored (or touched) by an agent is drawn in a slightly
+   different ink tone and carries a left-edge tick in the margin.
+   Reduced-motion-safe: no animation, just color. */
+.notebook-block-agent {
+  color: var(--ink-agent);
+}
+
+.notebook-block-agent-mark {
+  /* 8px dot in the left margin, anchored at the block's baseline. */
+  position: absolute;
+  left: -28px;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--accent-primary);
+  opacity: 0.65;
+}
+
+/* Wet-ink pulse — fires once on the most recently edited block. */
+@keyframes notebook-wet-ink {
+  0% {
+    background-color: var(--ink-agent-bg);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.notebook-block-wet-ink {
+  animation: notebook-wet-ink 800ms ease-out 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notebook-block-wet-ink {
+    animation: none;
+  }
 }
 
 @keyframes blink {
@@ -2185,8 +2337,25 @@ textarea:focus-visible,
 select:focus-visible,
 [role="button"]:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid rgba(217, 119, 87, 0.5);
+  outline: 1px solid rgba(15, 23, 42, 0.25);
   outline-offset: 2px;
+}
+
+.dark button:focus-visible,
+.dark a:focus-visible,
+.dark input:focus-visible,
+.dark textarea:focus-visible,
+.dark select:focus-visible,
+.dark [role="button"]:focus-visible,
+.dark [tabindex]:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.2);
+  outline-offset: 2px;
+}
+
+/* Contenteditable (Lexical editor) — no ring on focus, subtle border is enough from parent */
+[contenteditable="true"]:focus-visible,
+[contenteditable="true"]:focus {
+  outline: none;
 }
 
 /* ═══════════════════════════════════════════════════════════════

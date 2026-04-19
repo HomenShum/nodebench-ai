@@ -2,6 +2,10 @@ import { mutation, query } from "../../_generated/server";
 import type { Doc, Id } from "../../_generated/dataModel";
 import { v } from "convex/values";
 import {
+  listActiveEntityWorkspaceInvites,
+  listActiveEntityWorkspaceMembers,
+  listActiveEntityWorkspaceShares,
+  resolveEntityWorkspaceAccess,
   requireProductIdentity,
   resolveProductIdentitySafely,
   resolveProductReadOwnerKeys,
@@ -1095,22 +1099,14 @@ export const listEntities = query({
 export const getEntityWorkspace = query({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     entitySlug: v.string(),
   },
   handler: async (ctx, args) => {
-    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
-    if (ownerKeys.length === 0) return null;
+    const workspaceAccess = await resolveEntityWorkspaceAccess(ctx, args);
+    if (!workspaceAccess) return null;
 
-    let entity: Doc<"productEntities"> | null = null;
-    for (const ownerKey of ownerKeys) {
-      entity = await ctx.db
-        .query("productEntities")
-        .withIndex("by_owner_slug", (q) => q.eq("ownerKey", ownerKey).eq("slug", args.entitySlug))
-        .first();
-      if (entity) break;
-    }
-    if (!entity) return null;
-
+    const { entity } = workspaceAccess;
     const dataOwnerKey = entity.ownerKey;
 
     const timeline = await ctx.db
@@ -1165,6 +1161,17 @@ export const getEntityWorkspace = query({
       .withIndex("by_owner_entity", (q) => q.eq("ownerKey", dataOwnerKey).eq("entity", args.entitySlug))
       .collect();
     const normalizedNoteBlocks = normalizeNoteBlocks(note);
+    const activeShares = workspaceAccess.canManageShare
+      ? await listActiveEntityWorkspaceShares(ctx, dataOwnerKey, entity._id)
+      : [];
+    const activeMembers = workspaceAccess.canManageMembers
+      ? await listActiveEntityWorkspaceMembers(ctx, dataOwnerKey, entity._id)
+      : [];
+    const activeInvites = workspaceAccess.canManageMembers
+      ? await listActiveEntityWorkspaceInvites(ctx, dataOwnerKey, entity._id)
+      : [];
+    const viewShare = activeShares.find((share) => share.access === "view") ?? null;
+    const editShare = activeShares.find((share) => share.access === "edit") ?? null;
 
     return {
       entity,
@@ -1187,6 +1194,51 @@ export const getEntityWorkspace = query({
       evidence,
       contextItems,
       relatedEntities,
+      viewerAccess: {
+        mode: workspaceAccess.mode,
+        access: workspaceAccess.access,
+        canEditNotes: workspaceAccess.canEditNotes,
+        canEditNotebook: workspaceAccess.canEditNotebook,
+        canManageShare: workspaceAccess.canManageShare,
+        canManageMembers: workspaceAccess.canManageMembers,
+      },
+      shareLinks: workspaceAccess.canManageShare
+        ? {
+            view: viewShare
+              ? {
+                  token: viewShare.token,
+                  access: viewShare.access,
+                }
+              : null,
+            edit: editShare
+              ? {
+                  token: editShare.token,
+                  access: editShare.access,
+                }
+              : null,
+          }
+        : null,
+      collaborators: workspaceAccess.canManageShare || workspaceAccess.canManageMembers
+        ? {
+            members: activeMembers.map((member) => ({
+              _id: member._id,
+              userId: member.userId,
+              email: member.userEmail,
+              name: member.userName,
+              image: member.userImage,
+              access: member.access,
+              token: member.token,
+              updatedAt: member.updatedAt,
+            })),
+            invites: activeInvites.map((invite) => ({
+              _id: invite._id,
+              email: invite.email,
+              access: invite.access,
+              token: invite.token,
+              updatedAt: invite.updatedAt,
+            })),
+          }
+        : null,
     };
   },
 });

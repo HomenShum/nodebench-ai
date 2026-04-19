@@ -1646,7 +1646,10 @@ function EntityWorkspaceView({
       {entityViewMode === "notebook" ? (
         <ErrorBoundary section="Entity notebook">
           <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading notebook…</div>}>
-            <EntityNotebookView entitySlug={entity.slug} shareToken={shareToken} />
+            {/* Physical-notebook sheet. See docs/architecture/ENTITY_PAGE_REDESIGN.md §12. */}
+            <article className="notebook-sheet mt-4">
+              <EntityNotebookView entitySlug={entity.slug} shareToken={shareToken} />
+            </article>
           </Suspense>
         </ErrorBoundary>
       ) : null}
@@ -1654,11 +1657,13 @@ function EntityWorkspaceView({
       {entityViewMode === "live" ? (
         <ErrorBoundary section="Live notebook">
           <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading live notebook…</div>}>
-            <EntityNotebookLive
-              entitySlug={entity.slug}
-              shareToken={shareToken}
-              canEdit={canEditNotebook}
-            />
+            <article className="notebook-sheet mt-4">
+              <EntityNotebookLive
+                entitySlug={entity.slug}
+                shareToken={shareToken}
+                canEdit={canEditNotebook}
+              />
+            </article>
           </Suspense>
         </ErrorBoundary>
       ) : null}
@@ -2423,174 +2428,8 @@ function EntityWorkspaceView({
         ) : null}
       </section>
 
-      <section className="mt-6 hidden rounded-lg border border-gray-100 bg-white p-5 dark:border-white/[0.06] dark:bg-white/[0.01] sm:p-6">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Working notes</h2>
-            <p className="mt-2 text-sm leading-6 text-content-muted">
-              Keep your live read, follow-up questions, and internal conclusions here. This notebook compounds across every report update.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => void handleSaveNote()}
-            disabled={noteSaving || !hasLiveEntity}
-            className="nb-primary-button rounded-full px-4 py-2 text-sm"
-          >
-            {noteSaving ? "Saving..." : "Save notes"}
-          </button>
-        </div>
-
-        <div className="mt-5">
-          <Suspense
-            fallback={
-              <div className="rounded-md border border-gray-100 dark:border-white/[0.06] p-6 text-sm text-content-muted">
-                Loading entity notebook...
-              </div>
-            }
-          >
-            <EntityNoteEditor
-              ref={noteEditorRef}
-              document={noteDocumentDraft}
-              onChange={handleNoteDocumentDraftChange}
-              statusLabel={
-                !hasLiveEntity
-                  ? "Starter memory"
-                  : noteSaving
-                  ? "Saving..."
-                  : workspace.noteDocument?.updatedAt
-                    ? `Saved ${formatRelative(workspace.noteDocument.updatedAt)}`
-                    : note?.updatedAt
-                      ? `Saved ${formatRelative(note.updatedAt)}`
-                      : "Editable"
-              }
-              helperText="This notebook stays attached to the entity, so later runs add context instead of replacing it."
-            />
-          </Suspense>
-        </div>
-        {workspace.noteDocument?.snapshots?.length ? (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {workspace.noteDocument.snapshots.slice(0, 4).map((snapshot) => (
-              <span
-                key={snapshot._id ?? `snapshot-${snapshot.revision}`}
-                className="nb-chip text-[11px] uppercase tracking-[0.16em]"
-              >
-                Notebook rev {snapshot.revision}
-                <span className="normal-case tracking-normal">{formatRelative(snapshot.createdAt)}</span>
-              </span>
-            ))}
-          </div>
-        ) : null}
-      </section>
-
       {/* ── Evidence / Sources ──────────────────────────────────────────── */}
-      <section className="mt-6 hidden rounded-lg border border-gray-100 bg-white p-5 dark:border-white/[0.06] dark:bg-white/[0.01] sm:p-6">
-        <div className="mb-4">
-          <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
-            Notebook graph
-          </h2>
-        </div>
-        <EntityNotebookMeta
-          document={noteDocument}
-          onOpenEntity={(nextSlug) => navigate(buildEntityPathWithShare(nextSlug))}
-        />
-      </section>
 
-      <section className="mt-6 hidden rounded-lg border border-gray-100 bg-white p-5 dark:border-white/[0.06] dark:bg-white/[0.01] sm:p-6">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Evidence</h2>
-            <p className="mt-2 text-sm leading-6 text-content-muted">
-              Keep the screenshots, files, and source artifacts that should stay attached to this memory.
-            </p>
-          </div>
-          <label
-            className={`nb-secondary-button rounded-full px-3 py-2 text-xs ${
-              hasLiveEntity ? "cursor-pointer" : "cursor-not-allowed opacity-50"
-            }`}
-          >
-            <Upload className="h-3.5 w-3.5" />
-            {!hasLiveEntity ? "Live entity only" : uploadingEvidence ? "Uploading..." : "Attach file"}
-            <input
-              type="file"
-              className="hidden"
-              disabled={!hasLiveEntity}
-              onChange={async (event) => {
-                const input = event.currentTarget;
-                const file = event.target.files?.[0];
-                if (!file) return;
-                await handleAttachFile(file);
-                input.value = "";
-              }}
-            />
-          </label>
-        </div>
-        {attachableEvidence && attachableEvidence.length > 0 && (
-          <div className="mt-4 space-y-2">
-            {attachableEvidence.slice(0, 4).map((item: any) => (
-              <div key={String(item._id)} className="rounded-md border border-gray-100 dark:border-white/[0.06] flex items-center justify-between gap-3 px-4 py-3">
-                <div className="min-w-0">
-                  <div className="text-sm text-content">{item.label}</div>
-                  <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-content-muted">{item.type ?? "file"}</div>
-                </div>
-                {item.entityId ? (
-                  <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] text-content-muted">
-                    <Check className="h-3 w-3" />
-                    Attached
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setAttachingEvidenceId(String(item._id));
-                      try {
-                        await attachEvidence({
-                          anonymousSessionId,
-                          entityId: entity._id as any,
-                          evidenceId: item._id as any,
-                        });
-                      } finally {
-                        setAttachingEvidenceId(null);
-                      }
-                    }}
-                    className="nb-secondary-button px-3 py-1.5 text-xs"
-                  >
-                    {attachingEvidenceId === String(item._id) ? "Attaching..." : "Attach"}
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-        {evidence.length > 0 ? (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {evidence.map((item) => (
-              <span
-                key={item._id}
-                className="nb-chip inline-flex items-center gap-1.5"
-              >
-                <FileText className="h-3 w-3" />
-                {item.label}
-                {item.sourceUrl && (
-                  <a
-                    href={item.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-[#d97757] transition"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-4 py-4 text-sm leading-6 text-gray-500 dark:text-gray-400">
-            Attach screenshots, PDFs, links, and notes here so the next run starts from the same evidence base.
-          </div>
-        )}
-      </section>
 
 
 

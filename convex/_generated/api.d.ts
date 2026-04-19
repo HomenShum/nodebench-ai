@@ -883,6 +883,7 @@ import type * as domains_product_notebookPresence from "../domains/product/noteb
 import type * as domains_product_nudgeHelpers from "../domains/product/nudgeHelpers.js";
 import type * as domains_product_nudges from "../domains/product/nudges.js";
 import type * as domains_product_reports from "../domains/product/reports.js";
+import type * as domains_product_shares from "../domains/product/shares.js";
 import type * as domains_product_shell from "../domains/product/shell.js";
 import type * as domains_product_systemIntelligence from "../domains/product/systemIntelligence.js";
 import type * as domains_profiler_mutations from "../domains/profiler/mutations.js";
@@ -2248,6 +2249,7 @@ declare const fullApi: ApiFromModules<{
   "domains/product/nudgeHelpers": typeof domains_product_nudgeHelpers;
   "domains/product/nudges": typeof domains_product_nudges;
   "domains/product/reports": typeof domains_product_reports;
+  "domains/product/shares": typeof domains_product_shares;
   "domains/product/shell": typeof domains_product_shell;
   "domains/product/systemIntelligence": typeof domains_product_systemIntelligence;
   "domains/profiler/mutations": typeof domains_profiler_mutations;
