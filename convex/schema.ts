@@ -13322,10 +13322,10 @@ export default defineSchema({
   /* reads them via useDiligenceBlocks → useDiligenceDecorations →        */
   /* DiligenceDecorationPlugin (ProseMirror widget overlay).             */
   /*                                                                     */
-  /* 2026-04-19: stub table registered to land the contract. Orchestrator */
-  /* write path ships in a follow-up slice. Until then the query returns  */
-  /* [] and decorations render only from the snapshot-derived projections */
-  /* in useDiligenceBlocks.ts.                                            */
+  /* 2026-04-19: generic projection orchestrator now materializes rows    */
+  /* from saved report sections. Older entities can still fall back to    */
+  /* snapshot-derived projections until the notebook surface backfills     */
+  /* them via domains/product/diligenceProjections.materializeForEntity.  */
   /*                                                                     */
   /* Pattern: scratchpad-first → structure → deterministic merge         */
   /* See: .claude/rules/scratchpad_first.md                              */
@@ -13396,6 +13396,102 @@ export default defineSchema({
     .index("by_scratchpad", ["scratchpadRunId"])
     .index("by_entity_block_run", ["entitySlug", "blockType", "scratchpadRunId"])
     .index("by_refresh_requested", ["refreshRequestedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* diligenceRunTelemetry — one row per orchestrator projection emit.  */
+  /*                                                                     */
+  /* This is the measurement ledger for the real-time chat + report     */
+  /* generator pipeline. Every call to emitDiligenceProjectionInstrumented */
+  /* (server/pipeline/diligenceProjectionWriter.ts) should land one row  */
+  /* here via recordTelemetry so we can replay the judge retroactively   */
+  /* and chart the pipeline's health over time.                          */
+  /*                                                                     */
+  /* BOUND: rows are write-once. Downstream maintenance deletes old      */
+  /*        rows (>90 days) via a scheduled job — not modeled here.     */
+  /* HONEST_STATUS: errorMessage is populated on failed emits so the    */
+  /*                judge can evaluate the failure path.                */
+  /* DETERMINISTIC: replaying a telemetry row through the judge must    */
+  /*                produce the same verdict byte-for-byte.             */
+  /* ------------------------------------------------------------------ */
+  diligenceRunTelemetry: defineTable({
+    /** Canonical entity this projection belonged to. */
+    entitySlug: v.string(),
+    /** One of the 10 canonical block types or "projection". */
+    blockType: v.string(),
+    /** Stable id for the scratchpad run that emitted this projection. */
+    scratchpadRunId: v.string(),
+    /** Version passed to the upsert mutation. */
+    version: v.number(),
+    /** Overall tier at time of emit. */
+    overallTier: v.string(),
+    /** Mirror of args.headerText — handy for human review. */
+    headerText: v.string(),
+    /** Emit outcome: "created" | "updated" | "stale" | "error" (no result). */
+    status: v.string(),
+    /** ms since epoch. */
+    startedAt: v.number(),
+    endedAt: v.number(),
+    /** Derived convenience: endedAt - startedAt. Indexed so dashboards can sort. */
+    elapsedMs: v.number(),
+    /** Optional instrumentation — undefined means "not reported", not "zero". */
+    toolCalls: v.optional(v.number()),
+    tokensIn: v.optional(v.number()),
+    tokensOut: v.optional(v.number()),
+    sourceCount: v.optional(v.number()),
+    /** Populated when the emit errored. */
+    errorMessage: v.optional(v.string()),
+    /** Schema bump — increment when RunTelemetry shape changes. */
+    schemaVersion: v.optional(v.number()),
+  })
+    .index("by_entity", ["entitySlug"])
+    .index("by_entity_block", ["entitySlug", "blockType"])
+    .index("by_scratchpad", ["scratchpadRunId"])
+    .index("by_status", ["status"])
+    .index("by_started", ["startedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* diligenceJudgeVerdicts — boolean-gate verdicts over a telemetry row. */
+  /*                                                                     */
+  /* The judge in server/pipeline/diligenceJudge.ts runs inline on every */
+  /* emit AND can be replayed from stored telemetry. We persist verdicts */
+  /* here so the operator UI can chart gate-level pass/fail trends       */
+  /* without re-running the judge on every page load.                    */
+  /*                                                                     */
+  /* HONEST_SCORES: score is stored as passCount / (pass + fail) — no    */
+  /*                hardcoded floors. `gatesJson` carries the full gate   */
+  /*                breakdown so dashboards can drill in without another */
+  /*                table join.                                           */
+  /* ------------------------------------------------------------------ */
+  diligenceJudgeVerdicts: defineTable({
+    /** Link back to the telemetry row that was judged. */
+    telemetryId: v.id("diligenceRunTelemetry"),
+    /** Denormalized for index-only queries. */
+    entitySlug: v.string(),
+    blockType: v.string(),
+    scratchpadRunId: v.string(),
+    /** Bounded enum (mirrors AGENT_RUN_VERDICT_WORKFLOW.md). */
+    verdict: v.string(),
+    passCount: v.number(),
+    failCount: v.number(),
+    skipCount: v.number(),
+    /** 0..1, skipped gates excluded from denominator. */
+    score: v.number(),
+    latencyBudgetMs: v.number(),
+    /**
+     * JSON-encoded GateResult[] — keeps the table shape small while
+     * preserving the full per-gate breakdown. Dashboards decode on read.
+     */
+    gatesJson: v.string(),
+    /** ms since epoch when this verdict was recorded. */
+    judgedAt: v.number(),
+    /** Which judge revision produced this verdict — enables apples-to-apples rollouts. */
+    judgeVersion: v.optional(v.string()),
+  })
+    .index("by_telemetry", ["telemetryId"])
+    .index("by_entity", ["entitySlug"])
+    .index("by_entity_block", ["entitySlug", "blockType"])
+    .index("by_verdict", ["verdict"])
+    .index("by_judged_at", ["judgedAt"]),
 
   hyperloopVariants,
   hyperloopEvaluationRuns,

@@ -18,10 +18,14 @@ import { describe, it, expect, vi } from "vitest";
 import {
   emitDiligenceProjection,
   emitDiligenceProjectionBatch,
+  emitDiligenceProjectionInstrumented,
+  emitDiligenceProjectionBatchInstrumented,
   validateEmitArgs,
   type EmitProjectionArgs,
+  type InstrumentedRunTelemetry,
   type UpsertProjectionMutation,
 } from "./diligenceProjectionWriter";
+import { judgeDiligenceRun } from "./diligenceJudge";
 
 function baseArgs(overrides: Partial<EmitProjectionArgs> = {}): EmitProjectionArgs {
   return {
@@ -239,5 +243,159 @@ describe("emitDiligenceProjectionBatch", () => {
     await emitDiligenceProjection(mutation as UpsertProjectionMutation, args);
     expect(mutation).toHaveBeenCalledTimes(2);
     expect(mutation.mock.calls[0][0]).toEqual(mutation.mock.calls[1][0]);
+  });
+});
+
+/* ============================================================================
+ * Instrumented write path — telemetry capture + judge hook
+ *
+ * Scenario: orchestrator emits a projection AND wants the emit bracketed by
+ *           wall-clock so the judge can score latency. The instrumented
+ *           emitter must:
+ *             - always return an outcome envelope (never throw)
+ *             - capture startedAt/endedAt via the injected clock (deterministic
+ *               in tests)
+ *             - merge seedTelemetry (token counts, source counts the caller
+ *               already knows) with the bracketed timings
+ *             - fire onTelemetry once per emit, success or failure, but never
+ *               let a telemetry error propagate
+ *             - feed cleanly into judgeDiligenceRun (contract integration)
+ * ========================================================================== */
+
+describe("emitDiligenceProjectionInstrumented — telemetry capture", () => {
+  it("success path: captures startedAt/endedAt from injected clock, merges seed telemetry", async () => {
+    const mutation = vi.fn().mockResolvedValue({ status: "created" });
+    let tick = 0;
+    const now = vi.fn(() => {
+      tick += 1;
+      return tick * 100; // first call 100, second 200
+    });
+    const onTelemetry = vi.fn();
+    const outcome = await emitDiligenceProjectionInstrumented(
+      mutation as UpsertProjectionMutation,
+      baseArgs(),
+      {
+        now,
+        seedTelemetry: { toolCalls: 3, tokensIn: 1500, tokensOut: 420, sourceCount: 4 },
+        onTelemetry,
+      },
+    );
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) throw new Error("unreachable");
+    expect(outcome.telemetry).toEqual({
+      toolCalls: 3,
+      tokensIn: 1500,
+      tokensOut: 420,
+      sourceCount: 4,
+      startedAt: 100,
+      endedAt: 200,
+    });
+    expect(onTelemetry).toHaveBeenCalledTimes(1);
+    expect(onTelemetry).toHaveBeenCalledWith(outcome.telemetry, expect.objectContaining({ entitySlug: "acme-ai" }));
+  });
+
+  it("failure path: mutation throws → outcome.ok=false + errorMessage captured in telemetry", async () => {
+    const mutation = vi.fn().mockRejectedValue(new Error("convex 502"));
+    const onTelemetry = vi.fn();
+    const outcome = await emitDiligenceProjectionInstrumented(
+      mutation as UpsertProjectionMutation,
+      baseArgs(),
+      { now: () => 500, onTelemetry },
+    );
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) throw new Error("unreachable");
+    expect(outcome.telemetry.errorMessage).toBe("convex 502");
+    expect(outcome.telemetry.startedAt).toBe(500);
+    expect(outcome.telemetry.endedAt).toBe(500);
+    expect(onTelemetry).toHaveBeenCalledTimes(1);
+    // The telemetry handed to onTelemetry is the SAME envelope returned.
+    const handed = onTelemetry.mock.calls[0][0] as InstrumentedRunTelemetry;
+    expect(handed.errorMessage).toBe("convex 502");
+  });
+
+  it("validation failure: still surfaces as outcome.ok=false, mutation not called", async () => {
+    const mutation = vi.fn();
+    const outcome = await emitDiligenceProjectionInstrumented(
+      mutation as UpsertProjectionMutation,
+      baseArgs({ entitySlug: "" }),
+    );
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) throw new Error("unreachable");
+    expect(outcome.error.message).toMatch(/entitySlug/);
+    expect(mutation).not.toHaveBeenCalled();
+  });
+
+  it("onTelemetry error is swallowed (BOUND: telemetry failure must not break write path)", async () => {
+    const mutation = vi.fn().mockResolvedValue({ status: "created" });
+    const onTelemetry = vi.fn().mockRejectedValue(new Error("sqlite readonly"));
+    const outcome = await emitDiligenceProjectionInstrumented(
+      mutation as UpsertProjectionMutation,
+      baseArgs(),
+      { onTelemetry },
+    );
+    // Write path success despite telemetry failure.
+    expect(outcome.ok).toBe(true);
+    expect(onTelemetry).toHaveBeenCalledTimes(1);
+  });
+
+  it("contract integration: instrumented telemetry is directly feedable to judgeDiligenceRun", async () => {
+    const mutation = vi.fn().mockResolvedValue({ status: "created" });
+    let tick = 0;
+    const now = () => {
+      tick += 1;
+      return tick === 1 ? 1000 : 1500;
+    };
+    const outcome = await emitDiligenceProjectionInstrumented(
+      mutation as UpsertProjectionMutation,
+      baseArgs({
+        bodyProse:
+          "Jane Doe is CEO. John Smith is CTO. Prior art: both ex-Google Brain staff engineers.",
+      }),
+      {
+        now,
+        seedTelemetry: { toolCalls: 2, tokensIn: 1200, tokensOut: 300, sourceCount: 3 },
+      },
+    );
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) throw new Error("unreachable");
+    const verdict = judgeDiligenceRun({
+      args: baseArgs({
+        bodyProse:
+          "Jane Doe is CEO. John Smith is CTO. Prior art: both ex-Google Brain staff engineers.",
+      }),
+      result: outcome.result,
+      telemetry: outcome.telemetry,
+    });
+    expect(verdict.verdict).toBe("verified");
+    expect(verdict.failCount).toBe(0);
+  });
+});
+
+describe("emitDiligenceProjectionBatchInstrumented — resilience at scale", () => {
+  it("burst: 20 parallel emits, one bad row, telemetry fires for every row including failures", async () => {
+    const mutation = vi.fn().mockImplementation(async (args: { scratchpadRunId: string }) => {
+      if (args.scratchpadRunId === "r_bad") throw new Error("network blip");
+      return { status: "created" } as const;
+    });
+    const telemetrySeen: InstrumentedRunTelemetry[] = [];
+    const batch: EmitProjectionArgs[] = Array.from({ length: 20 }, (_, i) =>
+      baseArgs({ scratchpadRunId: i === 10 ? "r_bad" : `r_${i}` }),
+    );
+    const outcomes = await emitDiligenceProjectionBatchInstrumented(
+      mutation as UpsertProjectionMutation,
+      batch,
+      {
+        seedTelemetry: { toolCalls: 1, tokensIn: 100, tokensOut: 50, sourceCount: 1 },
+        onTelemetry: (t) => {
+          telemetrySeen.push(t);
+        },
+      },
+    );
+    expect(outcomes.length).toBe(20);
+    expect(outcomes.filter((o) => o.ok).length).toBe(19);
+    expect(outcomes.filter((o) => !o.ok).length).toBe(1);
+    // Telemetry fired once per row — success AND failure.
+    expect(telemetrySeen.length).toBe(20);
+    expect(telemetrySeen.filter((t) => t.errorMessage).length).toBe(1);
   });
 });

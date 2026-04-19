@@ -230,3 +230,102 @@ export async function emitDiligenceProjectionBatch(
     }),
   );
 }
+
+/* --------------------------------------------------------------------------
+ * Instrumented write path — wraps emitDiligenceProjection with telemetry
+ * capture and an optional judge hook. Used by the orchestrator runtime so
+ * every real projection emission produces a RunTelemetry row that can be
+ * judged deterministically (server/pipeline/diligenceJudge.ts) and
+ * persisted to Convex (convex/domains/product/diligenceRunTelemetry.ts).
+ *
+ * Kept as a separate function (not a default wrapper) so existing callers
+ * that don't care about telemetry keep their terse signature + test shape.
+ * ------------------------------------------------------------------------ */
+
+/** Shape kept in sync with server/pipeline/diligenceJudge.ts RunTelemetry. */
+export type InstrumentedRunTelemetry = {
+  startedAt: number;
+  endedAt: number;
+  toolCalls?: number;
+  tokensIn?: number;
+  tokensOut?: number;
+  sourceCount?: number;
+  errorMessage?: string;
+};
+
+export type InstrumentOptions = {
+  /** Wall-clock source — injected so tests can use a fake clock. Defaults to Date.now. */
+  now?: () => number;
+  /**
+   * Optional pre-populated telemetry fields (e.g., tokensIn/Out, toolCalls,
+   * sourceCount) the caller already knows from the structuring pass. The
+   * writer fills in startedAt/endedAt and errorMessage on top of this.
+   */
+  seedTelemetry?: Omit<InstrumentedRunTelemetry, "startedAt" | "endedAt" | "errorMessage">;
+  /**
+   * Called with the final telemetry once the emit settles (success OR
+   * failure). Intended for fire-and-forget persistence to Convex. Any error
+   * thrown here is swallowed — telemetry must never break the write path.
+   */
+  onTelemetry?: (telemetry: InstrumentedRunTelemetry, args: EmitProjectionArgs) => void | Promise<void>;
+};
+
+export type InstrumentedEmitOutcome =
+  | { ok: true; result: EmitProjectionResult; telemetry: InstrumentedRunTelemetry }
+  | { ok: false; error: Error; args: EmitProjectionArgs; telemetry: InstrumentedRunTelemetry };
+
+/**
+ * Emit one projection AND capture telemetry around the mutation call.
+ * Always returns an outcome envelope — never throws — so the orchestrator
+ * can triage judge verdicts without a surrounding try/catch.
+ */
+export async function emitDiligenceProjectionInstrumented(
+  mutation: UpsertProjectionMutation,
+  args: EmitProjectionArgs,
+  options: InstrumentOptions = {},
+): Promise<InstrumentedEmitOutcome> {
+  const now = options.now ?? (() => Date.now());
+  const startedAt = now();
+  try {
+    const result = await emitDiligenceProjection(mutation, args);
+    const telemetry: InstrumentedRunTelemetry = {
+      ...(options.seedTelemetry ?? {}),
+      startedAt,
+      endedAt: now(),
+    };
+    // Fire-and-forget: telemetry persistence must never break the write path.
+    if (options.onTelemetry) {
+      try {
+        await options.onTelemetry(telemetry, args);
+      } catch {
+        /* swallow — telemetry failures are P2, not P0 */
+      }
+    }
+    return { ok: true, result, telemetry };
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    const telemetry: InstrumentedRunTelemetry = {
+      ...(options.seedTelemetry ?? {}),
+      startedAt,
+      endedAt: now(),
+      errorMessage: error.message,
+    };
+    if (options.onTelemetry) {
+      try {
+        await options.onTelemetry(telemetry, args);
+      } catch {
+        /* swallow */
+      }
+    }
+    return { ok: false, error, args, telemetry };
+  }
+}
+
+/** Batch version of the instrumented emitter. Settled — one failure does not discard the rest. */
+export async function emitDiligenceProjectionBatchInstrumented(
+  mutation: UpsertProjectionMutation,
+  batch: readonly EmitProjectionArgs[],
+  options: InstrumentOptions = {},
+): Promise<ReadonlyArray<InstrumentedEmitOutcome>> {
+  return Promise.all(batch.map((args) => emitDiligenceProjectionInstrumented(mutation, args, options)));
+}
