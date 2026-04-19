@@ -1011,6 +1011,7 @@ export function EntityNotebookLive({
   const focusedBlock = blocks?.find((block) => block._id === focusedBlockId);
   const showReferenceOverlayStrip =
     visibleDiligenceDecorations.length > 0 && (blocks?.length ?? 0) > 0;
+  const canUseOverlayActions = canEdit && notebookLoadState.fullyLoaded;
 
   const handleDismissDecoration = useCallback((scratchpadRunId: string) => {
     setHiddenDecorationRunIds((current) =>
@@ -1019,33 +1020,75 @@ export function EntityNotebookLive({
   }, []);
 
   /**
-   * Slice D.1 — Refresh handler.
+   * Refresh handler — requests a re-run of a specific decoration's block.
    *
-   * Phase 1 UX contract (industry-standard refresh affordance):
-   *   - User clicks a decoration's "Refresh" button
-   *   - Show an honest "Refreshing…" toast so the click feels acknowledged
-   *     immediately (Linear / Figma / Notion all do this for async actions)
-   *   - useQuery reactivity already refreshes Convex-side projections on its
-   *     own, so the visible decoration updates when the orchestrator emits
-   *     a new version. No imperative re-fetch is needed here.
+   * UX contract (industry-standard async acknowledgement, Linear / Figma /
+   * Notion pattern):
+   *   1. Click acknowledged instantly with a toast so the button doesn't
+   *      feel dead while the mutation round-trips.
+   *   2. requestRefresh mutation idempotently flags the projection row.
+   *      Returns HONEST_STATUS so we differentiate queued vs already-queued
+   *      vs not-found.
+   *   3. useQuery reactivity picks up the new version automatically when the
+   *      orchestrator finishes its re-run and calls upsertFromStructuringPass.
+   *      No imperative re-fetch is needed here.
    *
-   * Phase 2 will call a mutation that triggers a re-run of this block's
-   * sub-agent in the orchestrator. The wiring will replace the placeholder
-   * toast without changing this handler's shape.
+   * Snapshot-derived synthetic projections (scratchpadRunId starts with
+   * "projection:") live client-side only — the refresh RPC is skipped for
+   * those since there's no server row to flag.
    */
+  const requestProjectionRefresh = useMutation(
+    api?.domains.product.diligenceProjections?.requestRefresh as never,
+  );
   const handleRefreshDecoration = useCallback(
-    (scratchpadRunId: string, blockType: DiligenceDecorationData["blockType"]) => {
+    async (
+      scratchpadRunId: string,
+      blockType: DiligenceDecorationData["blockType"],
+    ) => {
       const decoration = visibleDiligenceDecorations.find(
         (candidate) =>
           candidate.scratchpadRunId === scratchpadRunId && candidate.blockType === blockType,
       );
       if (!decoration) return;
+
       toast.info(
         "Refreshing live intelligence…",
         `Queued a refresh for this ${blockType} block. New data appears when the orchestrator emits a newer version.`,
       );
+
+      if (scratchpadRunId.startsWith("projection:")) return;
+
+      try {
+        const result = (await requestProjectionRefresh({
+          entitySlug,
+          blockType,
+          scratchpadRunId,
+        } as never)) as
+          | { status: "queued"; queuedAt: number }
+          | { status: "already-queued"; queuedAt: number }
+          | { status: "not-found" }
+          | undefined;
+
+        if (!result) return;
+        if (result.status === "already-queued") {
+          toast.info(
+            "Already refreshing",
+            "The orchestrator is still processing your previous refresh request.",
+          );
+        } else if (result.status === "not-found") {
+          toast.error(
+            "Could not refresh",
+            "That projection is no longer on the server — try reopening the notebook.",
+          );
+        }
+      } catch (err) {
+        toast.error(
+          "Refresh failed",
+          err instanceof Error ? err.message : "Unknown error while requesting a refresh.",
+        );
+      }
     },
-    [visibleDiligenceDecorations, toast],
+    [visibleDiligenceDecorations, toast, requestProjectionRefresh, entitySlug],
   );
 
   const handleAcceptDecoration = useCallback(
@@ -1249,11 +1292,17 @@ export function EntityNotebookLive({
       {visibleDiligenceDecorations.length > 0 ? (
         <NotebookDiligenceOverlayHost
           decorations={visibleDiligenceDecorations}
-          onAcceptDecoration={(runId, blockType) =>
-            void handleAcceptDecoration(runId, blockType)
+          onAcceptDecoration={
+            canUseOverlayActions
+              ? (runId, blockType) => void handleAcceptDecoration(runId, blockType)
+              : undefined
           }
-          onDismissDecoration={(runId, _blockType) => handleDismissDecoration(runId)}
-          onRefreshDecoration={handleRefreshDecoration}
+          onDismissDecoration={
+            canUseOverlayActions
+              ? (runId, _blockType) => handleDismissDecoration(runId)
+              : undefined
+          }
+          onRefreshDecoration={canEdit ? handleRefreshDecoration : undefined}
         />
       ) : null}
 

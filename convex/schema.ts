@@ -13368,17 +13368,34 @@ export default defineSchema({
     headerText: v.string(),
     /** Prose body (paragraphs joined with blank lines). Optional. */
     bodyProse: v.optional(v.string()),
+    /** Source refs that ground this projection. */
+    sourceRefIds: v.optional(v.array(v.string())),
+    /** Source count surfaced directly in the overlay footer. */
+    sourceCount: v.optional(v.number()),
+    /** Short human label for the source set (e.g. "linkedin.com · sec.gov"). */
+    sourceLabel: v.optional(v.string()),
+    /** Notebook-style source tokens (e.g. [s1], [s2]). */
+    sourceTokens: v.optional(v.array(v.string())),
     /** Block-specific candidate payload (e.g., FounderCandidate[]). */
     payload: v.optional(v.any()),
     /** Scratchpad section id this projection was derived from. */
     sourceSectionId: v.optional(v.string()),
     /** Epoch ms — when the structuring pass last updated this projection. */
     updatedAt: v.number(),
+    /**
+     * Epoch ms — set when the user clicks "Refresh" on the decoration.
+     * The orchestrator picks up any projection where
+     * refreshRequestedAt > updatedAt and re-runs the block's sub-agent.
+     * Cleared implicitly when the next upsertFromStructuringPass bumps
+     * updatedAt past this timestamp.
+     */
+    refreshRequestedAt: v.optional(v.number()),
   })
     .index("by_entity", ["entitySlug"])
     .index("by_entity_block", ["entitySlug", "blockType"])
     .index("by_scratchpad", ["scratchpadRunId"])
-    .index("by_entity_block_run", ["entitySlug", "blockType", "scratchpadRunId"]),
+    .index("by_entity_block_run", ["entitySlug", "blockType", "scratchpadRunId"])
+    .index("by_refresh_requested", ["refreshRequestedAt"]),
 
   hyperloopVariants,
   hyperloopEvaluationRuns,

@@ -20,17 +20,30 @@ import { ProductRenderer } from "./renderers/ProductRenderer";
 import { FundingRenderer } from "./renderers/FundingRenderer";
 import { NewsRenderer } from "./renderers/NewsRenderer";
 import { HiringRenderer } from "./renderers/HiringRenderer";
+import { PatentRenderer } from "./renderers/PatentRenderer";
+import { PublicOpinionRenderer } from "./renderers/PublicOpinionRenderer";
+import { CompetitorRenderer } from "./renderers/CompetitorRenderer";
+import { RegulatoryRenderer } from "./renderers/RegulatoryRenderer";
+import { FinancialRenderer } from "./renderers/FinancialRenderer";
 
+/**
+ * Full registry — all 10 canonical diligence blocks have explicit renderers.
+ * Legal-fenced blocks (parts of publicOpinion, all of financial until paid
+ * APIs are licensed) render their own empty state that names the fence, so
+ * users never wonder why a block is quiet. See
+ * server/pipeline/authority/defaultTiers.ts for the authoritative allowlist
+ * and denylist per block.
+ */
 export const diligenceRenderers: DecorationRendererRegistry = {
   founder: FounderRenderer,
   product: ProductRenderer,
   funding: FundingRenderer,
   news: NewsRenderer,
   hiring: HiringRenderer,
-  // Remaining block types (patent, publicOpinion, competitor, regulatory,
-  // financial) fall back to the plugin's built-in default renderer until
-  // their own renderer files land. Legal-fenced blocks (parts of
-  // publicOpinion, all of financial until paid APIs are licensed) stay
-  // deferred by design. See server/pipeline/authority/defaultTiers.ts.
+  patent: PatentRenderer,
+  publicOpinion: PublicOpinionRenderer,
+  competitor: CompetitorRenderer,
+  regulatory: RegulatoryRenderer,
+  financial: FinancialRenderer,
 };
 

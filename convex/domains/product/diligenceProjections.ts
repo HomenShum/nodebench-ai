@@ -196,6 +196,71 @@ export const upsertFromStructuringPass = mutation({
 });
 
 /**
+ * Request a refresh for a specific projection. Called when the user clicks
+ * the "Refresh" button on a live decoration.
+ *
+ * Phase 1 behavior: idempotently marks the projection's `refreshRequestedAt`
+ * so the next orchestrator pass knows to re-run this block's sub-agent.
+ * The orchestrator is then responsible for:
+ *   1. Reading projections with refreshRequestedAt > lastProcessedAt
+ *   2. Running the block's sub-agent
+ *   3. Calling upsertFromStructuringPass with a bumped version
+ *   4. The row's refreshRequestedAt is cleared implicitly via the version bump
+ *
+ * UX contract (industry-standard async acknowledgement):
+ *   - Returns HONEST_STATUS: "queued" (newly flagged) / "already-queued"
+ *     (user clicked twice) / "not-found" (stale runId from a deleted row)
+ *   - Caller can surface the status as a toast; "already-queued" tells the
+ *     user their prior click is still pending
+ */
+export const requestRefresh = mutation({
+  args: {
+    entitySlug: v.string(),
+    blockType: v.union(
+      v.literal("projection"),
+      v.literal("founder"),
+      v.literal("product"),
+      v.literal("funding"),
+      v.literal("news"),
+      v.literal("hiring"),
+      v.literal("patent"),
+      v.literal("publicOpinion"),
+      v.literal("competitor"),
+      v.literal("regulatory"),
+      v.literal("financial"),
+    ),
+    scratchpadRunId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("diligenceProjections")
+      .withIndex("by_entity_block_run", (q) =>
+        q
+          .eq("entitySlug", args.entitySlug)
+          .eq("blockType", args.blockType)
+          .eq("scratchpadRunId", args.scratchpadRunId),
+      )
+      .first();
+
+    if (!existing) {
+      return { status: "not-found" as const };
+    }
+
+    const now = Date.now();
+    const alreadyQueued =
+      typeof existing.refreshRequestedAt === "number" &&
+      existing.refreshRequestedAt > (existing.updatedAt ?? 0);
+
+    if (alreadyQueued) {
+      return { status: "already-queued" as const, queuedAt: existing.refreshRequestedAt! };
+    }
+
+    await ctx.db.patch(existing._id, { refreshRequestedAt: now });
+    return { status: "queued" as const, queuedAt: now };
+  },
+});
+
+/**
  * Remove all projections for an entity — used when the entity is deleted
  * or when a power user wants to wipe the live intelligence layer.
  *

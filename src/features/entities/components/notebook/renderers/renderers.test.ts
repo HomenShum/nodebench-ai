@@ -23,6 +23,23 @@ import { ProductRenderer, renderProductDecoration } from "./ProductRenderer";
 import { FundingRenderer, renderFundingDecoration } from "./FundingRenderer";
 import { NewsRenderer, renderNewsDecoration } from "./NewsRenderer";
 import { HiringRenderer, renderHiringDecoration } from "./HiringRenderer";
+import { PatentRenderer, renderPatentDecoration } from "./PatentRenderer";
+import {
+  PublicOpinionRenderer,
+  renderPublicOpinionDecoration,
+} from "./PublicOpinionRenderer";
+import {
+  CompetitorRenderer,
+  renderCompetitorDecoration,
+} from "./CompetitorRenderer";
+import {
+  RegulatoryRenderer,
+  renderRegulatoryDecoration,
+} from "./RegulatoryRenderer";
+import {
+  FinancialRenderer,
+  renderFinancialDecoration,
+} from "./FinancialRenderer";
 
 type Case = {
   name: string;
@@ -65,6 +82,46 @@ const CASES: Case[] = [
     expectedClass: "diligence-decoration-hiring",
     expectedHeaderText: "Hiring",
     emptyStatePattern: /never from Glassdoor scraping/i,
+  },
+  {
+    name: "PatentRenderer",
+    blockType: "patent",
+    render: renderPatentDecoration,
+    expectedClass: "diligence-decoration-patent",
+    expectedHeaderText: "Patents",
+    emptyStatePattern: /USPTO, EPO, and Google Patents/i,
+  },
+  {
+    name: "PublicOpinionRenderer",
+    blockType: "publicOpinion",
+    render: renderPublicOpinionDecoration,
+    expectedClass: "diligence-decoration-public-opinion",
+    expectedHeaderText: "Public opinion",
+    emptyStatePattern: /X\/Twitter and Glassdoor are excluded/i,
+  },
+  {
+    name: "CompetitorRenderer",
+    blockType: "competitor",
+    render: renderCompetitorDecoration,
+    expectedClass: "diligence-decoration-competitor",
+    expectedHeaderText: "Competitors",
+    emptyStatePattern: /G2, Capterra, Crunchbase, and ProductHunt/i,
+  },
+  {
+    name: "RegulatoryRenderer",
+    blockType: "regulatory",
+    render: renderRegulatoryDecoration,
+    expectedClass: "diligence-decoration-regulatory",
+    expectedHeaderText: "Regulatory",
+    emptyStatePattern: /no paid PACER page-by-page billing/i,
+  },
+  {
+    name: "FinancialRenderer",
+    blockType: "financial",
+    render: renderFinancialDecoration,
+    expectedClass: "diligence-decoration-financial",
+    expectedHeaderText: "Financials",
+    emptyStatePattern: /SEC EDGAR filings only/i,
   },
 ];
 
@@ -148,6 +205,11 @@ describe.each(CASES)("$name", (c) => {
       funding: FundingRenderer,
       news: NewsRenderer,
       hiring: HiringRenderer,
+      patent: PatentRenderer,
+      publicOpinion: PublicOpinionRenderer,
+      competitor: CompetitorRenderer,
+      regulatory: RegulatoryRenderer,
+      financial: FinancialRenderer,
     };
     const renderer = renderers[c.blockType as keyof typeof renderers];
     expect(typeof renderer.render).toBe("function");
