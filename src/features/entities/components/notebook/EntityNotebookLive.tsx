@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { AlertTriangle, ExternalLink, Link2, Lock, Sparkles } from "lucide-react";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { useConvexApi } from "@/lib/convexApi";
+import { buildEntityPath } from "@/features/entities/lib/entityExport";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import { useStreamingSearch } from "@/hooks/useStreamingSearch";
 import { publishNotebookAlert } from "@/lib/notebookAlerts";
@@ -32,6 +33,13 @@ import { BlockProvenance } from "./BlockProvenance";
 import { NotebookBlockEditor, type NotebookBlockEditorHandle } from "./NotebookBlockEditor";
 import { SlashPalette, type SlashCommand } from "./SlashPalette";
 import { MentionPicker, type EntityMatch } from "./MentionPicker";
+import { BlockStatusBar } from "./BlockStatusBar";
+import {
+  enqueue as enqueueOfflineEdit,
+  makeEditId,
+  readQueue,
+  removeById as removeOfflineEdit,
+} from "./notebookOfflineQueue";
 import { buildProductBlockSyncId } from "../../../../../shared/productBlockSync";
 
 type BlockKind =
@@ -74,6 +82,8 @@ type LiveBlock = {
 
 type Props = {
   entitySlug: string;
+  shareToken?: string;
+  canEdit?: boolean;
   onBackfillNeeded?: () => void;
 };
 
@@ -110,6 +120,13 @@ function chipsEqual(left: BlockChip[] | undefined, right: BlockChip[] | undefine
 
 function isSyncEditableBlock(block: Pick<LiveBlock, "kind" | "content">): boolean {
   return block.kind !== "image" && !block.content.some((chip) => chip.type === "image");
+}
+
+function presenceSelfUserIdForAnonymousSession(
+  anonymousSessionId?: string | null,
+): string | null {
+  const trimmed = anonymousSessionId?.trim();
+  return trimmed ? `anon:${trimmed}` : null;
 }
 
 export function shouldRefreshAgentNotebookProjection(
@@ -291,16 +308,25 @@ export function describeNotebookMutationFailure(
   };
 }
 
-export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
+export function EntityNotebookLive({
+  entitySlug,
+  shareToken,
+  canEdit = true,
+  onBackfillNeeded,
+}: Props) {
   const api = useConvexApi();
   const navigate = useNavigate();
+  const buildEntityPathWithShare = useCallback(
+    (nextSlug: string) => buildEntityPath(nextSlug, shareToken),
+    [shareToken],
+  );
   const anonymousSessionId = getAnonymousProductSessionId();
   const toast = useToast();
 
   const blocksPagination = usePaginatedQuery(
     api?.domains.product.blocks.listEntityBlocksPaginated ?? ("skip" as any),
     api?.domains.product.blocks.listEntityBlocksPaginated
-      ? { anonymousSessionId, entitySlug }
+      ? { anonymousSessionId, shareToken, entitySlug }
       : "skip",
     { initialNumItems: 150 },
   );
@@ -308,17 +334,23 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
 
   const snapshot = useQuery(
     api?.domains.product.blocks.getEntityNotebook ?? "skip",
-    api?.domains.product.blocks.getEntityNotebook ? { anonymousSessionId, entitySlug } : "skip",
+    api?.domains.product.blocks.getEntityNotebook
+      ? { anonymousSessionId, shareToken, entitySlug }
+      : "skip",
   );
 
   const blockSummary = useQuery(
     api?.domains.product.blocks.getEntityBlockSummary ?? "skip",
-    api?.domains.product.blocks.getEntityBlockSummary ? { anonymousSessionId, entitySlug } : "skip",
+    api?.domains.product.blocks.getEntityBlockSummary
+      ? { anonymousSessionId, shareToken, entitySlug }
+      : "skip",
   );
 
   const backlinks = useQuery(
     api?.domains.product.blocks.listBacklinksForEntity ?? "skip",
-    api?.domains.product.blocks.listBacklinksForEntity ? { anonymousSessionId, entitySlug } : "skip",
+    api?.domains.product.blocks.listBacklinksForEntity
+      ? { anonymousSessionId, shareToken, entitySlug }
+      : "skip",
   );
 
   const appendBlock = useMutation(api?.domains.product.blocks.appendBlock ?? ("skip" as any));
@@ -333,6 +365,15 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
   const createBlockRelation = useMutation(
     api?.domains.product.blocks.createBlockRelation ?? ("skip" as any),
   );
+  const notebookHeartbeat = useMutation(
+    api?.domains.product.notebookPresence.notebookHeartbeat ?? ("skip" as any),
+  );
+  const notebookPresenceDisconnect = useMutation(
+    api?.domains.product.notebookPresence.notebookPresenceDisconnect ?? ("skip" as any),
+  );
+  const submitOfflineSnapshot = useMutation(
+    api?.domains.product.blockProsemirror.submitOfflineSnapshot ?? ("skip" as any),
+  );
 
   const [slashFor, setSlashFor] = useState<Id<"productBlocks"> | null>(null);
   const [mentionFor, setMentionFor] = useState<{ blockId: Id<"productBlocks">; initial: string } | null>(null);
@@ -343,9 +384,27 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
   const [optimisticBlockContent, setOptimisticBlockContent] = useState<Record<string, BlockChip[]>>(
     {},
   );
+  const [presenceRoomToken, setPresenceRoomToken] = useState<string | null>(null);
+  const [presenceSessionToken, setPresenceSessionToken] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+  const [isOffline, setIsOffline] = useState<boolean>(
+    typeof navigator !== "undefined" ? navigator.onLine === false : false,
+  );
+  const [offlineQueueLength, setOfflineQueueLength] = useState(0);
+  const [rateLimited, setRateLimited] = useState(false);
   const backfillInFlightRef = useRef<Promise<void> | null>(null);
   const syncedProjectionKeyRef = useRef<string | null>(null);
   const editorHandlesRef = useRef<Map<string, NotebookBlockEditorHandle>>(new Map());
+  const presenceClientSessionIdRef = useRef(
+    `nb-live-${entitySlug}-${Math.random().toString(36).slice(2, 10)}`,
+  );
+
+  const presence = useQuery(
+    api?.domains.product.notebookPresence.notebookPresenceList ?? "skip",
+    api?.domains.product.notebookPresence.notebookPresenceList && presenceRoomToken
+      ? { roomToken: presenceRoomToken }
+      : "skip",
+  ) as Array<{ userId: string; online: boolean; lastDisconnected: number }> | undefined;
 
   const describeError = useCallback((error: unknown): string | undefined => {
     if (!error) return undefined;
@@ -389,6 +448,15 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
       // and would otherwise pager-storm on normal usage. Sampling at the
       // ntfy helper guarantees at most 1 alert per code per 60s per tab.
       const code = parsed.code ?? "UNKNOWN_ERROR";
+      if (code === "RATE_LIMITED") {
+        setRateLimited(true);
+        window.setTimeout(
+          () => setRateLimited(false),
+          typeof parsed.retryAfterMs === "number" && parsed.retryAfterMs > 0
+            ? parsed.retryAfterMs
+            : 3_000,
+        );
+      }
       if (!EXPECTED_ALERT_CODES.has(code)) {
         publishNotebookAlert({
           severity: code === "SERVER_ERROR" || code === "UNKNOWN_ERROR" ? "P0" : "P1",
@@ -419,7 +487,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
       return true;
     }
     setBackfillPending(true);
-    const run = backfillEntityBlocks({ anonymousSessionId, entitySlug })
+    const run = backfillEntityBlocks({ anonymousSessionId, shareToken, entitySlug })
       .then(() => {
         setRuntimeError(null);
         onBackfillNeeded?.();
@@ -435,7 +503,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
       });
     backfillInFlightRef.current = run;
     return run;
-  }, [anonymousSessionId, backfillEntityBlocks, entitySlug, onBackfillNeeded, reportNotebookError]);
+  }, [anonymousSessionId, backfillEntityBlocks, entitySlug, onBackfillNeeded, reportNotebookError, shareToken]);
 
   const projectionSyncKey = useMemo(
     () =>
@@ -471,6 +539,9 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
           changed = true;
         }
       }
+      if (changed) {
+        setLastSyncedAt(Date.now());
+      }
       return changed ? next : current;
     });
   }, [blocks, optimisticBlockContent]);
@@ -487,21 +558,157 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
     [],
   );
 
+  const refreshOfflineQueueLength = useCallback(() => {
+    setOfflineQueueLength(readQueue(entitySlug).length);
+  }, [entitySlug]);
+
   const handleLocalContentChange = useCallback((blockId: Id<"productBlocks">, content: BlockChip[]) => {
     setOptimisticBlockContent((current) => ({ ...current, [String(blockId)]: content }));
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      enqueueOfflineEdit({
+        id: makeEditId(),
+        blockId: String(blockId),
+        entitySlug,
+        kind: "content",
+        payload: content,
+        queuedAt: Date.now(),
+      });
+      refreshOfflineQueueLength();
+    }
     setRuntimeError(null);
-  }, []);
+  }, [entitySlug, refreshOfflineQueueLength]);
+
+  useEffect(() => {
+    refreshOfflineQueueLength();
+    const handleOnline = () => {
+      setIsOffline(false);
+      refreshOfflineQueueLength();
+    };
+    const handleOffline = () => {
+      setIsOffline(true);
+      refreshOfflineQueueLength();
+    };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [refreshOfflineQueueLength]);
+
+  useEffect(() => {
+    if (!blocks || blocks.length === 0) return;
+    if (lastSyncedAt == null) {
+      setLastSyncedAt(Date.now());
+    }
+  }, [blocks, lastSyncedAt]);
+
+  useEffect(() => {
+    if (!api?.domains.product.notebookPresence?.notebookHeartbeat) return;
+    const sessionId = presenceClientSessionIdRef.current;
+    let disposed = false;
+    let intervalId: number | null = null;
+
+    const beat = async () => {
+      try {
+        const result = await notebookHeartbeat({
+          anonymousSessionId,
+          shareToken,
+          entitySlug,
+          sessionId,
+          interval: 30_000,
+        });
+        if (disposed) return;
+        setPresenceRoomToken(result.roomToken || null);
+        setPresenceSessionToken(result.sessionToken || null);
+      } catch {
+        if (!disposed) {
+          setPresenceRoomToken(null);
+          setPresenceSessionToken(null);
+        }
+      }
+    };
+
+    void beat();
+    intervalId = window.setInterval(() => {
+      void beat();
+    }, 25_000);
+
+    return () => {
+      disposed = true;
+      if (intervalId != null) window.clearInterval(intervalId);
+      const token = presenceSessionToken;
+      if (token) {
+        void notebookPresenceDisconnect({ sessionToken: token }).catch(() => undefined);
+      }
+    };
+  }, [
+    anonymousSessionId,
+    api,
+    entitySlug,
+    notebookHeartbeat,
+    notebookPresenceDisconnect,
+    presenceSessionToken,
+    shareToken,
+  ]);
+
+  useEffect(() => {
+    if (isOffline || !api?.domains.product.blockProsemirror?.submitOfflineSnapshot) return;
+    const queued = readQueue(entitySlug);
+    if (queued.length === 0) return;
+
+    let cancelled = false;
+    const replay = async () => {
+      for (const entry of queued) {
+        if (cancelled) break;
+        if (!Array.isArray(entry.payload)) continue;
+        try {
+          await submitOfflineSnapshot({
+            anonymousSessionId,
+            shareToken,
+            id: buildProductBlockSyncId({
+              anonymousSessionId,
+              shareToken,
+              blockId: entry.blockId,
+            }),
+            chips: entry.payload as BlockChip[],
+          });
+          removeOfflineEdit(entitySlug, entry.id);
+          setLastSyncedAt(Date.now());
+        } catch {
+          break;
+        }
+      }
+      if (!cancelled) {
+        refreshOfflineQueueLength();
+      }
+    };
+
+    void replay();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    anonymousSessionId,
+    api,
+    entitySlug,
+    isOffline,
+    refreshOfflineQueueLength,
+    shareToken,
+    submitOfflineSnapshot,
+  ]);
 
   const handleEnter = useCallback(
     async (block: LiveBlock, blockIndex: number) => {
       if (!blocks) return;
-      if (block.accessMode === "read") {
+      if (!canEdit || block.accessMode === "read") {
         notifyReadOnly("insert after");
         return;
       }
       const next = blocks[blockIndex + 1];
       await insertBlockBetween({
         anonymousSessionId,
+        shareToken,
         entitySlug,
         beforeBlockId: block._id,
         afterBlockId: next?._id,
@@ -511,7 +718,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
         authorKind: "user",
       });
     },
-    [blocks, insertBlockBetween, anonymousSessionId, entitySlug, notifyReadOnly],
+    [blocks, canEdit, insertBlockBetween, anonymousSessionId, entitySlug, notifyReadOnly, shareToken],
   );
 
   const streaming = useStreamingSearch();
@@ -524,7 +731,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
       // Find the current block to append a mention chip inline.
       const block = blocks?.find((b) => b._id === targetBlockId);
       if (!block) return;
-      if (block.accessMode !== "edit") {
+      if (!canEdit || block.accessMode !== "edit") {
         notifyReadOnly("add mentions to");
         return;
       }
@@ -536,6 +743,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
         } else if (!isSyncEditableBlock(block)) {
           await updateBlock({
             anonymousSessionId,
+            shareToken,
             blockId: targetBlockId,
             content: [
               ...block.content,
@@ -555,6 +763,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
         // Record the relation so backlinks work.
         await createBlockRelation({
           anonymousSessionId,
+          shareToken,
           fromBlockId: targetBlockId,
           toEntityId: undefined,
           toBlockId: undefined,
@@ -569,12 +778,14 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
     },
     [
       anonymousSessionId,
+      canEdit,
       blocks,
       createBlockRelation,
       editorHandlesRef,
       mentionFor,
       notifyReadOnly,
       reportNotebookMutationFailure,
+      shareToken,
       updateBlock,
     ],
   );
@@ -584,7 +795,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
       setSlashFor(null);
       const prompt = command.prompt ?? "";
       if (!prompt.trim() && command.id !== "mention") return;
-      if (block.accessMode === "read") {
+      if (!canEdit || block.accessMode === "read") {
         notifyReadOnly("run notebook commands from");
         return;
       }
@@ -593,6 +804,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
         // Insert a lightweight progress callout so the user sees work start immediately.
         const progressBlockId = await appendBlock({
           anonymousSessionId,
+          shareToken,
           entitySlug,
           parentBlockId: block.parentBlockId,
           kind: "callout",
@@ -622,6 +834,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
                   if (!text.trim()) continue;
                   await appendBlock({
                     anonymousSessionId,
+                    shareToken,
                     entitySlug,
                     parentBlockId: block.parentBlockId,
                     kind: ab.title ? "heading_3" : "text",
@@ -633,6 +846,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
                   if (ab.title && ab.text) {
                     await appendBlock({
                       anonymousSessionId,
+                      shareToken,
                       entitySlug,
                       parentBlockId: block.parentBlockId,
                       kind: "text",
@@ -646,6 +860,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
               } else if (packet.answer) {
                 await appendBlock({
                   anonymousSessionId,
+                  shareToken,
                   entitySlug,
                   parentBlockId: block.parentBlockId,
                   kind: "text",
@@ -657,6 +872,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
               // Mark the progress block as complete.
               await updateBlock({
                 anonymousSessionId,
+                shareToken,
                 blockId: progressBlockId,
                 content: [{ type: "text", value: `[done] ${command.label}: ${prompt}` }],
                 expectedRevision: 1,
@@ -668,6 +884,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
           onError: (message) => {
             updateBlock({
               anonymousSessionId,
+              shareToken,
               blockId: progressBlockId,
               content: [{ type: "text", value: `[error] ${command.label}: ${prompt} - ${message}` }],
               expectedRevision: 1,
@@ -684,9 +901,11 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
     [
       anonymousSessionId,
       appendBlock,
+      canEdit,
       entitySlug,
       notifyReadOnly,
       reportNotebookMutationFailure,
+      shareToken,
       streaming,
       toast,
       updateBlock,
@@ -708,6 +927,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
     totalCount: blockSummary?.blockCount,
     paginationStatus: blocksPagination.status,
   });
+  const focusedBlock = blocks?.find((block) => block._id === focusedBlockId);
 
   if (blocksPagination.status === "LoadingFirstPage" || blocks === undefined || snapshot === undefined) {
     return <div className="py-16 text-center text-sm text-gray-500">Loading notebookâ€¦</div>;
@@ -730,7 +950,7 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
   }
 
   return (
-    <div className="mt-6">
+    <div className="mt-6" data-testid="entity-live-notebook">
       {runtimeError ? (
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
           <div className="flex items-start gap-3">
@@ -823,13 +1043,16 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
             next={blocks[blockIndex + 1]}
             sourcesById={sourcesById}
             displayContent={optimisticBlockContent[String(block._id)] ?? block.content}
-            isEditable={notebookLoadState.fullyLoaded && block.accessMode === "edit"}
-            accessMode={notebookLoadState.fullyLoaded ? (block.accessMode ?? "edit") : "read"}
+            isEditable={canEdit && notebookLoadState.fullyLoaded && block.accessMode === "edit"}
+            accessMode={
+              canEdit && notebookLoadState.fullyLoaded ? (block.accessMode ?? "edit") : "read"
+            }
             isFocused={focusedBlockId === block._id}
             showSlash={slashFor === block._id}
             syncDocumentId={buildProductBlockSyncId({
               blockId: String(block._id),
               anonymousSessionId,
+              shareToken,
             })}
             onFocus={() => setFocusedBlockId(block._id)}
             onBlur={() => {
@@ -840,11 +1063,11 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
             onEnter={() => void handleEnter(block, blockIndex)}
             onBackspaceAtStart={async () => {
               if (blockIndex === 0) return;
-              if (block.accessMode !== "edit") {
+              if (!canEdit || block.accessMode !== "edit") {
                 notifyReadOnly("delete");
                 return;
               }
-              await deleteBlock({ anonymousSessionId, blockId: block._id });
+              await deleteBlock({ anonymousSessionId, shareToken, blockId: block._id });
             }}
             onOpenSlash={() => setSlashFor(block._id)}
             onCloseSlash={() => setSlashFor(null)}
@@ -871,6 +1094,20 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
         </div>
       ) : null}
 
+      <BlockStatusBar
+        presence={presence ?? []}
+        selfUserId={presenceSelfUserIdForAnonymousSession(anonymousSessionId)}
+        lastSyncedAt={lastSyncedAt}
+        offlineQueueLength={offlineQueueLength}
+        isOffline={isOffline}
+        rateLimited={rateLimited}
+        readOnly={
+          !canEdit ||
+          !notebookLoadState.fullyLoaded ||
+          (!!focusedBlock && (focusedBlock.accessMode ?? "edit") !== "edit")
+        }
+      />
+
       {/* Backlinks */}
       {/* Mention picker â€” modal overlay when active */}
       {mentionFor ? (
@@ -883,6 +1120,8 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
             className="relative"
           >
             <MentionPicker
+              entitySlug={entitySlug}
+              shareToken={shareToken}
               initialQuery={mentionFor.initial}
               onSelect={(match) => void handleMentionPick(match)}
               onClose={() => setMentionFor(null)}
@@ -897,19 +1136,31 @@ export function EntityNotebookLive({ entitySlug, onBackfillNeeded }: Props) {
             Linked from - {backlinks.length} place{backlinks.length === 1 ? "" : "s"}
           </h3>
           <div className="mt-3 space-y-2">
-            {backlinks.map((ref) => (
-              <button
-                key={ref.relationId}
-                type="button"
-                onClick={() => navigate(`/entity/${encodeURIComponent(ref.fromEntitySlug)}`)}
-                className="block w-full rounded-md border border-gray-100 px-3 py-2 text-left text-sm transition-colors hover:border-gray-200 hover:bg-gray-50 dark:border-white/[0.06] dark:hover:bg-white/[0.02]"
-              >
-                <div className="font-medium text-gray-900 dark:text-gray-100">{ref.fromEntityName}</div>
-                <div className="mt-0.5 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
-                  {ref.snippet || <em className="opacity-60">(empty block)</em>}
+            {backlinks.map((ref) =>
+              shareToken ? (
+                <div
+                  key={ref.relationId}
+                  className="block w-full rounded-md border border-gray-100 px-3 py-2 text-left text-sm dark:border-white/[0.06]"
+                >
+                  <div className="font-medium text-gray-900 dark:text-gray-100">{ref.fromEntityName}</div>
+                  <div className="mt-0.5 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
+                    {ref.snippet || <em className="opacity-60">(empty block)</em>}
+                  </div>
                 </div>
-              </button>
-            ))}
+              ) : (
+                <button
+                  key={ref.relationId}
+                  type="button"
+                  onClick={() => navigate(buildEntityPathWithShare(ref.fromEntitySlug))}
+                  className="block w-full rounded-md border border-gray-100 px-3 py-2 text-left text-sm transition-colors hover:border-gray-200 hover:bg-gray-50 dark:border-white/[0.06] dark:hover:bg-white/[0.02]"
+                >
+                  <div className="font-medium text-gray-900 dark:text-gray-100">{ref.fromEntityName}</div>
+                  <div className="mt-0.5 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
+                    {ref.snippet || <em className="opacity-60">(empty block)</em>}
+                  </div>
+                </button>
+              ),
+            )}
           </div>
         </div>
       ) : null}
@@ -1013,12 +1264,36 @@ function BlockRow({
     );
   }
 
+  // Co-author visual signal (ENTITY_PAGE_FRAMEWORK_AUDIT.md violation #1).
+  // Agent-authored blocks get a second ink tone + a left-margin dot so the
+  // invariant "this page is co-authored" is visible at a glance.
+  const isAgentAuthored = block.authorKind === "agent";
+  // Wet-ink pulse on mount if this is a recent agent edit (violation #8).
+  // 5-minute window is long enough to see the ink but short enough that
+  // scrolling back through an old page doesn't strobe.
+  const isRecentAgentEdit =
+    isAgentAuthored && Date.now() - block.updatedAt < 5 * 60 * 1000;
+
   return (
     <div
+      data-testid="notebook-block"
+      data-block-id={String(block._id)}
+      data-block-kind={block.kind}
+      data-block-focused={String(isFocused)}
+      data-author-kind={block.authorKind}
       className={`group relative grid grid-cols-[22px_1fr] gap-2 rounded px-1 transition-colors ${
+        isAgentAuthored ? "notebook-block-agent" : ""
+      } ${isRecentAgentEdit ? "notebook-block-wet-ink" : ""} ${
         isFocused ? "bg-[var(--accent-primary)]/[0.03]" : "hover:bg-gray-50 dark:hover:bg-white/[0.015]"
       }`}
     >
+      {isAgentAuthored ? (
+        <span
+          aria-hidden="true"
+          className="notebook-block-agent-mark"
+          title="Written by an agent"
+        />
+      ) : null}
       <div className="flex items-start justify-center pt-2">
         <span
           title={`${block.authorKind === "agent" ? "Agent" : block.authorKind === "user" ? "You" : "Anonymous"} - rev ${block.revision}`}

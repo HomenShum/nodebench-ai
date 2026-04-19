@@ -1713,6 +1713,21 @@ function EntityWorkspaceView({
             <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
               {entity.name}
             </h1>
+            {/* Framework audit §3: last-changed chip so the "what-changed"
+                persona doesn't have to re-scan the whole page. One chip,
+                muted, above the summary so it reads like a date-stamp
+                on the top-right of a physical page. */}
+            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-content-muted">
+              <span>{entity.entityType ?? "entity"}</span>
+              {entity.updatedAt ? (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span title={new Date(entity.updatedAt).toLocaleString()}>
+                    updated {formatRelative(entity.updatedAt)}
+                  </span>
+                </>
+              ) : null}
+            </div>
             <p className="mt-2 max-w-[720px] text-sm leading-relaxed text-gray-600 dark:text-gray-400">
               {entity.summary}
             </p>
@@ -2560,10 +2575,11 @@ function EntityWorkspaceView({
             <div className="flex flex-col gap-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Workspace rail</h2>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Secondary context lives here.
-                  </p>
+                  {/* Framework audit §2: "Workspace rail" is jargon. The
+                      panel sells itself by the tabs below, not a label. */}
+                  <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                    Companion
+                  </h2>
                 </div>
                 <div className="inline-flex rounded-full border border-black/8 bg-black/[0.03] p-1 dark:border-white/10 dark:bg-white/[0.03]">
                   <button
