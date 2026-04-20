@@ -28,11 +28,15 @@ const RATE_WINDOW_MS = 60_000;
 const RATE_LIMIT_UNAUTHED = 10; // per minute per IP
 const RATE_LIMIT_AUTHED = 120; // per minute per API key
 
-function deriveClientKey(req: Request): { key: string; authed: boolean } {
+function deriveClientKey(req: Request): { key: string; authed: boolean; rawApiKey: string | null } {
   // Prefer explicit API key header — authed callers get higher quota.
   const apiKey = req.headers.get("x-daas-api-key");
   if (apiKey && apiKey.length >= 16) {
-    return { key: `key:${apiKey.slice(0, 48)}`, authed: true };
+    return {
+      key: `key:${apiKey.slice(0, 48)}`,
+      authed: true,
+      rawApiKey: apiKey,
+    };
   }
   // Fall back to forwarded-for IP, with explicit fallback marker so we
   // never collapse every request into a single shared bucket.
@@ -42,7 +46,68 @@ function deriveClientKey(req: Request): { key: string; authed: boolean } {
     req.headers.get("x-real-ip") ||
     "";
   const ip = xff.split(",")[0].trim();
-  return { key: ip ? `ip:${ip}` : "ip:unknown", authed: false };
+  return { key: ip ? `ip:${ip}` : "ip:unknown", authed: false, rawApiKey: null };
+}
+
+/** Verify x-daas-signature HMAC-SHA256 header if a webhookSecret is registered.
+ *  Returns null if verification OK (or no secret registered), else a Response. */
+async function verifyHmacIfConfigured(
+  req: Request,
+  body: string,
+  webhookSecret: string | null,
+): Promise<Response | null> {
+  if (!webhookSecret) return null; // no secret on file → skip verification
+  const provided = req.headers.get("x-daas-signature");
+  if (!provided) {
+    return new Response(
+      JSON.stringify({ error: "signature_missing", hint: "x-daas-signature header required" }),
+      { status: 401, headers: { "Content-Type": "application/json" } },
+    );
+  }
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cryptoObj: any = (globalThis as any).crypto;
+    if (!cryptoObj || !cryptoObj.subtle) {
+      return new Response(
+        JSON.stringify({ error: "crypto_unavailable" }),
+        { status: 500, headers: { "Content-Type": "application/json" } },
+      );
+    }
+    const key = await cryptoObj.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(webhookSecret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const sig = await cryptoObj.subtle.sign("HMAC", key, new TextEncoder().encode(body));
+    const computed = Array.from(new Uint8Array(sig))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    // Constant-time comparison
+    if (computed.length !== provided.length) {
+      return new Response(
+        JSON.stringify({ error: "signature_mismatch" }),
+        { status: 401, headers: { "Content-Type": "application/json" } },
+      );
+    }
+    let diff = 0;
+    for (let i = 0; i < computed.length; i++) {
+      diff |= computed.charCodeAt(i) ^ provided.charCodeAt(i);
+    }
+    if (diff !== 0) {
+      return new Response(
+        JSON.stringify({ error: "signature_mismatch" }),
+        { status: 401, headers: { "Content-Type": "application/json" } },
+      );
+    }
+    return null;
+  } catch (e) {
+    return new Response(
+      JSON.stringify({ error: "signature_verify_failed", detail: String(e) }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
+  }
 }
 
 function assertApiKeyIfRequired(req: Request): Response | null {
@@ -112,11 +177,43 @@ export const ingestHttp = httpAction(async (ctx, req) => {
   // DB-backed via checkAndIncrementRateBucket mutation so the limit
   // holds across serverless containers (in-memory state doesn't).
   const client = deriveClientKey(req);
-  const limit = client.authed ? RATE_LIMIT_AUTHED : RATE_LIMIT_UNAUTHED;
+
+  // If caller provided an API key, look it up in daasApiKeys. A registered
+  // key may override the default authed quota AND may require HMAC signing.
+  let effectiveLimit = client.authed ? RATE_LIMIT_AUTHED : RATE_LIMIT_UNAUTHED;
+  let registeredKey: {
+    owner: string;
+    rateLimitPerMinute?: number;
+    webhookSecret?: string;
+    enabled: boolean;
+  } | null = null;
+  if (client.rawApiKey) {
+    try {
+      registeredKey = await ctx.runMutation(
+        internal.domains.daas.mutations.lookupApiKey,
+        { rawKey: client.rawApiKey },
+      );
+    } catch {
+      /* lookup failure absorbed — fall back to default authed quota */
+    }
+    if (registeredKey) {
+      if (!registeredKey.enabled) {
+        return jsonResponse(401, { error: "api_key_disabled", owner: registeredKey.owner });
+      }
+      if (
+        typeof registeredKey.rateLimitPerMinute === "number" &&
+        registeredKey.rateLimitPerMinute > 0
+      ) {
+        effectiveLimit = registeredKey.rateLimitPerMinute;
+      }
+    }
+  }
+
   const rate = await ctx.runMutation(
     internal.domains.daas.mutations.checkAndIncrementRateBucket,
-    { bucketKey: client.key, limit, windowMs: RATE_WINDOW_MS },
+    { bucketKey: client.key, limit: effectiveLimit, windowMs: RATE_WINDOW_MS },
   );
+  const limit = effectiveLimit;
   const rateHeaders = {
     "X-RateLimit-Limit": String(limit),
     "X-RateLimit-Remaining": String(rate.remaining),
@@ -157,6 +254,18 @@ export const ingestHttp = httpAction(async (ctx, req) => {
       received: rawText.length,
     });
   }
+
+  // HMAC signature verification — only enforced when this key has a
+  // webhookSecret on file. Keys without a secret continue to work
+  // unsigned (backwards-compatible). Runs AFTER rawText is read (needs
+  // the body) and AFTER rate limit (prevents draining compute via bad
+  // sigs), but BEFORE JSON parse (no reason to parse before verifying).
+  const sigFail = await verifyHmacIfConfigured(
+    req,
+    rawText,
+    registeredKey?.webhookSecret ?? null,
+  );
+  if (sigFail) return sigFail;
 
   let body: any;
   try {

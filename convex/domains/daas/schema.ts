@@ -153,6 +153,38 @@ export const daasJudgments = defineTable({
   .index("by_judgedAt", ["judgedAt"]);
 
 /**
+ * daasApiKeys — authenticated ingest callers.
+ *
+ * Each row has a hashed key prefix (first 12 chars of sha256 hex for
+ * index lookup — the raw key is never stored), owner label, optional
+ * per-key rate-limit override, and enable flag. Admin action rotates
+ * keys by toggling enabled=false and inserting a new row.
+ *
+ * NB: the raw key never touches Convex storage. The ingest path hashes
+ * the provided header and looks up by prefix. This means a leaked DB
+ * dump cannot be used to forge valid keys.
+ */
+export const daasApiKeys = defineTable({
+  /** First 12 chars of sha256(rawKey) — enough to collision-avoid at scale we care about */
+  keyHashPrefix: v.string(),
+  /** Human-readable label (team name, integration name) */
+  owner: v.string(),
+  /** Optional per-key rate limit override. If null, falls back to global authed default */
+  rateLimitPerMinute: v.optional(v.number()),
+  /** When false, ingest requests with this key are rejected as if key was missing */
+  enabled: v.boolean(),
+  /** Optional HMAC secret for signed webhooks (see verifyIngestSignature) */
+  webhookSecret: v.optional(v.string()),
+  /** Last use timestamp for stale-key cleanup */
+  lastUsedAt: v.optional(v.number()),
+  createdAt: v.number(),
+  notes: v.optional(v.string()),
+})
+  .index("by_keyHashPrefix", ["keyHashPrefix"])
+  .index("by_owner", ["owner"])
+  .index("by_createdAt", ["createdAt"]);
+
+/**
  * daasAuditLog — append-only audit trail for every DaaS operation that
  * mutates or judges data. Every row has an actor (who), an operation
  * (what), a bounded status (ok | error | denied), and structured

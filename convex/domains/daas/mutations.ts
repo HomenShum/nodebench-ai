@@ -327,6 +327,104 @@ export const checkAndIncrementRateBucket = internalMutation({
   },
 });
 
+// ── API key management ──────────────────────────────────────────────────────
+//
+// Raw keys never leave the admin path. Storage is keyHashPrefix (first 12
+// chars of sha256 hex). Ingest path hashes the provided header + looks up
+// by prefix. If a match is found and enabled=true, the per-key quota
+// override (if any) is applied; otherwise the global authed default.
+
+async function sha256HexPrefix(input: string, n: number = 12): Promise<string> {
+  const buf = new TextEncoder().encode(input);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cryptoObj: any = (globalThis as any).crypto;
+  if (!cryptoObj || !cryptoObj.subtle) {
+    throw new Error("Web Crypto not available in this runtime");
+  }
+  const digest = await cryptoObj.subtle.digest("SHA-256", buf);
+  const bytes = new Uint8Array(digest);
+  const hex = Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return hex.slice(0, n);
+}
+
+export const lookupApiKey = internalMutation({
+  args: { rawKey: v.string() },
+  returns: v.union(
+    v.null(),
+    v.object({
+      _id: v.id("daasApiKeys"),
+      owner: v.string(),
+      rateLimitPerMinute: v.optional(v.number()),
+      webhookSecret: v.optional(v.string()),
+      enabled: v.boolean(),
+    }),
+  ),
+  handler: async (ctx, { rawKey }) => {
+    if (!rawKey || rawKey.length < 16) return null;
+    const prefix = await sha256HexPrefix(rawKey, 12);
+    const row = await ctx.db
+      .query("daasApiKeys")
+      .withIndex("by_keyHashPrefix", (q) => q.eq("keyHashPrefix", prefix))
+      .first();
+    if (!row) return null;
+    // Touch lastUsedAt (best-effort)
+    await ctx.db.patch(row._id, { lastUsedAt: Date.now() });
+    return {
+      _id: row._id,
+      owner: row.owner,
+      rateLimitPerMinute: row.rateLimitPerMinute,
+      webhookSecret: row.webhookSecret,
+      enabled: row.enabled,
+    };
+  },
+});
+
+export const registerApiKey = internalMutation({
+  args: {
+    rawKey: v.string(),
+    owner: v.string(),
+    rateLimitPerMinute: v.optional(v.number()),
+    webhookSecret: v.optional(v.string()),
+    notes: v.optional(v.string()),
+  },
+  returns: v.id("daasApiKeys"),
+  handler: async (ctx, args) => {
+    if (!args.rawKey || args.rawKey.length < 32) {
+      throw new Error("rawKey must be at least 32 chars");
+    }
+    if (!args.owner || args.owner.length < 2 || args.owner.length > 128) {
+      throw new Error("owner must be 2-128 chars");
+    }
+    const prefix = await sha256HexPrefix(args.rawKey, 12);
+    // Reject collisions (should be astronomically rare but HONEST_STATUS)
+    const existing = await ctx.db
+      .query("daasApiKeys")
+      .withIndex("by_keyHashPrefix", (q) => q.eq("keyHashPrefix", prefix))
+      .first();
+    if (existing) {
+      throw new Error("keyHashPrefix collision — generate a new rawKey");
+    }
+    return await ctx.db.insert("daasApiKeys", {
+      keyHashPrefix: prefix,
+      owner: args.owner,
+      rateLimitPerMinute: args.rateLimitPerMinute,
+      webhookSecret: args.webhookSecret,
+      enabled: true,
+      notes: args.notes,
+      createdAt: Date.now(),
+    });
+  },
+});
+
+export const setApiKeyEnabled = internalMutation({
+  args: { id: v.id("daasApiKeys"), enabled: v.boolean() },
+  returns: v.null(),
+  handler: async (ctx, { id, enabled }) => {
+    await ctx.db.patch(id, { enabled });
+    return null;
+  },
+});
+
 // ── Audit log ───────────────────────────────────────────────────────────────
 //
 // Internal-only. Called from mutations / actions / http handlers to record

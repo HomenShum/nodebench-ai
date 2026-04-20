@@ -82,15 +82,28 @@ export const _deleteAllJudgments = internalMutation({
  */
 export const runAdminOp = action({
   args: {
-    op: v.string(), // "deleteTracesByPrefix" | "deleteAllJudgments"
+    op: v.string(),
     sessionIdPrefix: v.optional(v.string()),
     adminKey: v.optional(v.string()),
+    // Args for registerApiKey / setApiKeyEnabled ops:
+    rawKey: v.optional(v.string()),
+    owner: v.optional(v.string()),
+    rateLimitPerMinute: v.optional(v.number()),
+    webhookSecret: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    apiKeyId: v.optional(v.id("daasApiKeys")),
+    enabled: v.optional(v.boolean()),
   },
   returns: v.object({
     op: v.string(),
-    deleted: v.number(),
+    deleted: v.optional(v.number()),
+    apiKeyId: v.optional(v.id("daasApiKeys")),
   }),
-  handler: async (ctx, args): Promise<{ op: string; deleted: number }> => {
+  handler: async (ctx, args): Promise<{
+    op: string;
+    deleted?: number;
+    apiKeyId?: any;
+  }> => {
     const startTime = Date.now();
     const actorId = args.adminKey ? `key:${args.adminKey.slice(0, 8)}...` : "cli";
 
@@ -145,6 +158,41 @@ export const runAdminOp = action({
         );
         await audit("ok", { op: args.op, deleted });
         return { op: args.op, deleted };
+      }
+      if (args.op === "registerApiKey") {
+        if (!args.rawKey || !args.owner) {
+          await audit("error", { error: "missing_args", op: args.op });
+          throw new Error("registerApiKey requires rawKey + owner");
+        }
+        const apiKeyId: any = await ctx.runMutation(
+          internal.domains.daas.mutations.registerApiKey,
+          {
+            rawKey: args.rawKey,
+            owner: args.owner,
+            rateLimitPerMinute: args.rateLimitPerMinute,
+            webhookSecret: args.webhookSecret,
+            notes: args.notes,
+          },
+        );
+        await audit("ok", {
+          op: args.op,
+          owner: args.owner,
+          hasWebhookSecret: Boolean(args.webhookSecret),
+          rateLimitPerMinute: args.rateLimitPerMinute,
+        });
+        return { op: args.op, apiKeyId };
+      }
+      if (args.op === "setApiKeyEnabled") {
+        if (!args.apiKeyId || args.enabled === undefined) {
+          await audit("error", { error: "missing_args", op: args.op });
+          throw new Error("setApiKeyEnabled requires apiKeyId + enabled");
+        }
+        await ctx.runMutation(
+          internal.domains.daas.mutations.setApiKeyEnabled,
+          { id: args.apiKeyId, enabled: args.enabled },
+        );
+        await audit("ok", { op: args.op, enabled: args.enabled });
+        return { op: args.op };
       }
       await audit("error", { error: "unknown_op", op: args.op });
       throw new Error(`unknown op: ${args.op}`);
