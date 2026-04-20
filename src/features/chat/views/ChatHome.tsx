@@ -10,6 +10,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useConvex, useMutation, useQuery } from "convex/react";
 import { ArrowUp, ChevronDown, ChevronUp, Link2, Search } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { staggerDelay } from "@/lib/ui/stagger";
 import { buildCockpitPath } from "@/lib/registry/viewRegistry";
 import { LENSES, type LensId, type ResultPacket } from "@/features/controlPlane/components/searchTypes";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
@@ -669,23 +670,13 @@ export const ChatHome = memo(function ChatHome() {
                   <div
                     key={section.id}
                     className={`starting-point-card ${section.status === "building" ? "animate-pulse motion-reduce:animate-none" : ""}`}
-                    style={{
-                      // Reuse the Home stagger keyframe — sections land
-                      // in sequence (60ms apart, max 240ms) instead of
-                      // flashing simultaneously once the stream resolves.
-                      animationDelay: `${Math.min(sectionIndex * 60, 240)}ms`,
-                    }}
+                    style={staggerDelay(sectionIndex)}
                   >
                     <h2 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
                       {section.title}
                     </h2>
                     <div
                       className={`text-base leading-relaxed text-gray-700 dark:text-gray-300 ${
-                        /* Stream caret — blinks at the tail of the
-                           actively-building section so the user sees
-                           "still typing" feedback, same cadence as the
-                           ChatGPT / Claude cursor. Hidden under
-                           prefers-reduced-motion. */
                         streaming.isStreaming && section.status === "building"
                           ? "stream-caret"
                           : ""

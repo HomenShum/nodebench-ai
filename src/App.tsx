@@ -124,10 +124,7 @@ function App() {
       <ThemeProvider>
         <ErrorBoundary title="Something went wrong">
           <Suspense fallback={<ViewSkeleton />}>
-            {/* route-fade-in: 220ms fade + translate on mount so
-                navigations INTO this surface feel continuous. Safe
-                on standalone routes because they always remount. */}
-            <div key={location.pathname} className="route-fade-in">
+            <div key="memo" className="route-fade-in">
               <ShareableMemoView />
             </div>
           </Suspense>
@@ -144,7 +141,7 @@ function App() {
       <ThemeProvider>
         <ErrorBoundary title="Something went wrong">
           <Suspense fallback={<ViewSkeleton />}>
-            <div key={location.pathname} className="route-fade-in">
+            <div key="share" className="route-fade-in">
               <PublicEntityShareView />
             </div>
           </Suspense>
@@ -160,7 +157,7 @@ function App() {
       <ThemeProvider>
         <ErrorBoundary title="Something went wrong">
           <Suspense fallback={<ViewSkeleton />}>
-            <div key={location.pathname} className="route-fade-in">
+            <div key="company" className="route-fade-in">
               <PublicCompanyProfileView />
             </div>
           </Suspense>
@@ -176,7 +173,7 @@ function App() {
       <ThemeProvider>
         <ErrorBoundary title="Something went wrong">
           <Suspense fallback={<ViewSkeleton />}>
-            <div key={location.pathname} className="route-fade-in">
+            <div key="embed" className="route-fade-in">
               <EmbedView />
             </div>
           </Suspense>
@@ -196,7 +193,7 @@ function App() {
       <ThemeProvider>
         <ErrorBoundary title="Something went wrong">
           <Suspense fallback={<ViewSkeleton />}>
-            <div key={location.pathname} className="route-fade-in">
+            <div key="founder" className="route-fade-in">
               <FounderRouteResolver />
             </div>
           </Suspense>

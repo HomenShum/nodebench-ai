@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
-import { ArrowUp, Paperclip, Sparkles } from "lucide-react";
+import { ArrowUp, Loader2, Paperclip, Sparkles } from "lucide-react";
 
 import { LENSES, type LensId } from "@/features/controlPlane/components/searchTypes";
 import type { ProductDraftFile } from "@/features/product/lib/productSession";
@@ -145,20 +145,8 @@ export function ProductIntakeComposer({
               aria-label={submitPending ? `${submitLabel} (running)` : submitLabel}
             >
               <span>{submitPending ? "Running…" : submitLabel}</span>
-              {/* Three-state trailing glyph:
-                    submitPending → inline spinner (mutation in flight)
-                    value present → ⌘↵ hint (keyboard shortcut available)
-                    else           → ArrowUp (neutral "submit" icon) */}
               {submitPending ? (
-                <svg
-                  className="h-4 w-4 animate-spin motion-reduce:animate-none"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  aria-hidden="true"
-                >
-                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
-                  <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                </svg>
+                <Loader2 className="h-4 w-4 motion-safe:animate-spin" aria-hidden="true" />
               ) : value.trim() ? (
                 <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-medium leading-none">
                   ⌘↵
