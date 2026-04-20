@@ -95,7 +95,10 @@ export const QuickCommandChips = memo(function QuickCommandChips({
                 text-[12px] font-medium text-white/60
                 hover:bg-white/[0.06] hover:text-white/80
                 active:scale-[0.97]
-                transition-all duration-100
+                focus-visible:outline-none focus-visible:ring-2
+                focus-visible:ring-[var(--accent-primary)]/40
+                transition-all duration-100 ease-out
+                motion-reduce:transform-none motion-reduce:transition-none
               "
             >
               <Icon className="h-3.5 w-3.5 text-[#d97757]/70" />

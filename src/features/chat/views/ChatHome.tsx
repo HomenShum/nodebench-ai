@@ -679,7 +679,18 @@ export const ChatHome = memo(function ChatHome() {
                     <h2 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
                       {section.title}
                     </h2>
-                    <div className="text-base leading-relaxed text-gray-700 dark:text-gray-300">
+                    <div
+                      className={`text-base leading-relaxed text-gray-700 dark:text-gray-300 ${
+                        /* Stream caret — blinks at the tail of the
+                           actively-building section so the user sees
+                           "still typing" feedback, same cadence as the
+                           ChatGPT / Claude cursor. Hidden under
+                           prefers-reduced-motion. */
+                        streaming.isStreaming && section.status === "building"
+                          ? "stream-caret"
+                          : ""
+                      }`}
+                    >
                       {section.body}
                     </div>
                     {section.sourceRefIds && section.sourceRefIds.length > 0 && (

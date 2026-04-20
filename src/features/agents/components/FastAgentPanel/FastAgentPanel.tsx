@@ -150,7 +150,7 @@ function MobileCommandChips({ onSelect }: { onSelect: (message: string) => void 
           type="button"
           onClick={() => onSelect(c.message)}
           aria-label={`Send command: ${c.label}`}
-          className="rounded-full border border-white/[0.15] bg-white/[0.06] px-3 py-1.5 text-[11px] font-medium text-white/60 transition-colors hover:bg-white/[0.10] hover:text-white/80"
+          className="rounded-full border border-white/[0.15] bg-white/[0.06] px-3 py-1.5 text-[11px] font-medium text-white/60 transition-all duration-150 ease-out hover:bg-white/[0.10] hover:text-white/80 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 motion-reduce:transform-none motion-reduce:transition-none"
         >
           {c.label}
         </button>

@@ -124,7 +124,12 @@ function App() {
       <ThemeProvider>
         <ErrorBoundary title="Something went wrong">
           <Suspense fallback={<ViewSkeleton />}>
-            <ShareableMemoView />
+            {/* route-fade-in: 220ms fade + translate on mount so
+                navigations INTO this surface feel continuous. Safe
+                on standalone routes because they always remount. */}
+            <div key={location.pathname} className="route-fade-in">
+              <ShareableMemoView />
+            </div>
           </Suspense>
         </ErrorBoundary>
       </ThemeProvider>
@@ -139,7 +144,9 @@ function App() {
       <ThemeProvider>
         <ErrorBoundary title="Something went wrong">
           <Suspense fallback={<ViewSkeleton />}>
-            <PublicEntityShareView />
+            <div key={location.pathname} className="route-fade-in">
+              <PublicEntityShareView />
+            </div>
           </Suspense>
         </ErrorBoundary>
       </ThemeProvider>
@@ -153,7 +160,9 @@ function App() {
       <ThemeProvider>
         <ErrorBoundary title="Something went wrong">
           <Suspense fallback={<ViewSkeleton />}>
-            <PublicCompanyProfileView />
+            <div key={location.pathname} className="route-fade-in">
+              <PublicCompanyProfileView />
+            </div>
           </Suspense>
         </ErrorBoundary>
       </ThemeProvider>
@@ -167,7 +176,9 @@ function App() {
       <ThemeProvider>
         <ErrorBoundary title="Something went wrong">
           <Suspense fallback={<ViewSkeleton />}>
-            <EmbedView />
+            <div key={location.pathname} className="route-fade-in">
+              <EmbedView />
+            </div>
           </Suspense>
         </ErrorBoundary>
       </ThemeProvider>
@@ -185,7 +196,9 @@ function App() {
       <ThemeProvider>
         <ErrorBoundary title="Something went wrong">
           <Suspense fallback={<ViewSkeleton />}>
-            <FounderRouteResolver />
+            <div key={location.pathname} className="route-fade-in">
+              <FounderRouteResolver />
+            </div>
           </Suspense>
         </ErrorBoundary>
       </ThemeProvider>

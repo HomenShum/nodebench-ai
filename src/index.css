@@ -1263,6 +1263,58 @@ html[data-density='spacious'] {
   50%      { opacity: 0.7; }
 }
 
+/* Streaming caret — a 2px bar that follows the end of the text
+   stream while the agent is typing. Applied to the content block via
+   `.stream-caret` so the caret sits right after the last glyph,
+   matches the surrounding text color, and blinks at the same cadence
+   as the ChatGPT / Claude cursor. */
+@keyframes stream-caret-blink {
+  0%, 55%   { opacity: 1; }
+  60%, 100% { opacity: 0; }
+}
+
+.stream-caret::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background: currentColor;
+  animation: stream-caret-blink 1.05s steps(2, end) infinite;
+  border-radius: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stream-caret::after {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/* Route-change micro-transition — 220ms fade-in on route mount so
+   navigating between surfaces feels continuous rather than a cut. */
+@keyframes route-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.route-fade-in {
+  animation: route-fade-in 220ms var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-fade-in {
+    animation: none;
+  }
+}
+
 .starting-point-skeleton {
   animation: starting-point-skeleton-pulse 1.4s ease-in-out infinite;
 }
