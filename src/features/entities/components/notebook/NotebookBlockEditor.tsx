@@ -7,9 +7,10 @@ import {
   useRef,
 } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
-import { Extension, Mark, mergeAttributes } from "@tiptap/core";
+import { Extension, mergeAttributes } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
+import Underline from "@tiptap/extension-underline";
 import Mention from "@tiptap/extension-mention";
 import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -23,9 +24,8 @@ import {
   createDiligenceDecorationPlugin,
   diligenceDecorationPluginKey,
   type DiligenceDecorationData,
-  type DecorationRendererRegistry,
 } from "./DiligenceDecorationPlugin";
-import { FounderRenderer } from "./renderers/FounderRenderer";
+import { diligenceRenderers } from "./diligenceRenderers";
 
 type Props = {
   syncDocumentId: string;
@@ -60,16 +60,6 @@ export type NotebookBlockEditorHandle = {
   insertMention: (match: EntityMatch) => void;
   focus: () => void;
 };
-
-const Underline = Mark.create({
-  name: "underline",
-  parseHTML() {
-    return [{ tag: "u" }];
-  },
-  renderHTML({ HTMLAttributes }) {
-    return ["u", HTMLAttributes, 0];
-  },
-});
 
 const NotebookMention = Mention.extend({
   addAttributes() {
@@ -161,24 +151,6 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
     const onDismissDecorationRef = useRef(onDismissDecoration);
     const onRefreshDecorationRef = useRef(onRefreshDecoration);
 
-    /**
-     * Slice C.1 — register the block-specific renderer registry.
-     *
-     * The plugin falls back to the generic renderer when no block-specific
-     * renderer is registered, so adding one entry at a time is safe.
-     * Pattern PR9 (generic renderer contract) — adding Product/Funding/News
-     * renderers later is a one-line change each.
-     *
-     * Prior art: Notion AI blocks (per-block rendering), Arc Boosts.
-     * See: .claude/rules/reference_attribution.md
-     */
-    const diligenceRenderers = useMemo<DecorationRendererRegistry>(
-      () => ({
-        founder: FounderRenderer,
-      }),
-      [],
-    );
-
     const diligenceExtension = useMemo(
       () =>
         Extension.create({
@@ -211,6 +183,8 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
           orderedList: false,
           listItem: false,
           horizontalRule: false,
+          link: false,
+          underline: false,
         }),
         Underline,
         // Framework audit §6 / violation #6: first-time users had no hint

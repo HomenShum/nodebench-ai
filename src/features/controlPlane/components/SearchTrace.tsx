@@ -27,7 +27,7 @@ export interface TraceStep {
   step: string;
   tool?: string;
   durationMs: number;
-  status: "ok" | "error" | "skip";
+  status: "ok" | "error" | "skip" | "adapting";
   detail?: string;
   traceId?: string;
   isRunning?: boolean;
@@ -53,6 +53,8 @@ function StepIcon({ step, status }: { step: string; status: string }) {
 
   if (step === "classify_query") return <Search className={`h-3.5 w-3.5 ${color}`} />;
   if (step === "build_context_bundle") return <Cpu className={`h-3.5 w-3.5 ${color}`} />;
+  if (step === "step_start") return <Zap className={`h-3.5 w-3.5 ${color}`} />;
+  if (step === "step_done") return <CheckCircle2 className={`h-3.5 w-3.5 ${color}`} />;
   if (step === "tool_call") return <Zap className={`h-3.5 w-3.5 ${color}`} />;
   if (step === "judge") return <Shield className={`h-3.5 w-3.5 ${color}`} />;
   if (step === "assemble_response") return <CheckCircle2 className={`h-3.5 w-3.5 ${color}`} />;
@@ -81,6 +83,8 @@ function stepLabel(step: TraceStep, mode: "dev" | "user"): string {
       };
       return toolMap[step.tool ?? ""] ?? `Analyzed ${step.tool?.replace(/_/g, " ") ?? "data"}`;
     }
+    if (step.step === "step_start") return `Started ${step.tool?.replace(/_/g, " ") ?? "tool"}`;
+    if (step.step === "step_done") return `Finished ${step.tool?.replace(/_/g, " ") ?? "tool"}`;
     if (step.step === "judge") return "Quality checked";
     if (step.step === "assemble_response") return "Built your result";
     if (step.step === "agent_plan") return "Planned research strategy";

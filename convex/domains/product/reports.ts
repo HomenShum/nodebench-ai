@@ -1,6 +1,252 @@
-import { mutation, query, internalQuery } from "../../_generated/server";
+import { action, mutation, query, internalAction, internalMutation, internalQuery } from "../../_generated/server";
 import { v } from "convex/values";
-import { resolveProductIdentitySafely, requireProductIdentity } from "./helpers";
+import { internal } from "../../_generated/api";
+import type { Doc } from "../../_generated/dataModel";
+import {
+  resolveProductIdentitySafely,
+  resolveProductReadOwnerKeys,
+  requireProductIdentity,
+  resolveProductThumbnailUrl,
+  resolveProductThumbnailUrls,
+} from "./helpers";
+import { upsertOpenProductNudge } from "./nudgeHelpers";
+import {
+  buildEntityAliasKey,
+  chooseEntityDisplayName,
+  isLegacyPromptArtifact,
+  isPlaceholderPrepEntity,
+  isPrepBriefType,
+} from "../../../shared/reportArtifacts";
+
+function buildReportRefreshPrompt(report: {
+  title: string;
+  query?: string;
+  entitySlug?: string;
+}): string {
+  const subject = report.entitySlug
+    ? report.entitySlug.replace(/[-_]+/g, " ")
+    : report.title;
+  const base = `Update ${subject} and show me what changed from the saved report.`;
+  if (!report.query?.trim()) return base;
+  return `${base} Keep the original focus on: ${report.query.trim()}`;
+}
+
+function isPlaceholderPrepReport(report: {
+  type?: string;
+  entitySlug?: string;
+  primaryEntity?: string;
+  title?: string;
+}) {
+  if (!isPrepBriefType(report.type)) return false;
+  return (
+    isPlaceholderPrepEntity(report.entitySlug) ||
+    isPlaceholderPrepEntity(report.primaryEntity) ||
+    isPlaceholderPrepEntity(report.title?.replace(/^Prep brief\s+[—-]\s+/i, ""))
+  );
+}
+
+function isLegacyFilteredReport(report: {
+  type?: string;
+  entitySlug?: string;
+  primaryEntity?: string;
+  title?: string;
+  query?: string;
+}) {
+  return isPlaceholderPrepReport(report) || isLegacyPromptArtifact(report);
+}
+
+function decodeHtmlEntities(value: string): string {
+  return value
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, "\"")
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">");
+}
+
+function extractMetaContent(html: string, selectors: string[]): string | undefined {
+  for (const selector of selectors) {
+    const pattern = new RegExp(
+      `<meta[^>]+(?:property|name)=["']${selector}["'][^>]+content=["']([^"']+)["'][^>]*>`,
+      "i",
+    );
+    const match = html.match(pattern) ?? html.match(
+      new RegExp(
+        `<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${selector}["'][^>]*>`,
+        "i",
+      ),
+    );
+    if (match?.[1]) {
+      return decodeHtmlEntities(match[1]);
+    }
+  }
+  return undefined;
+}
+
+function extractLinkHref(html: string, selectors: string[]): string | undefined {
+  for (const selector of selectors) {
+    const pattern = new RegExp(
+      `<link[^>]+(?:rel)=["'][^"']*${selector}[^"']*["'][^>]+href=["']([^"']+)["'][^>]*>`,
+      "i",
+    );
+    const match = html.match(pattern) ?? html.match(
+      new RegExp(
+        `<link[^>]+href=["']([^"']+)["'][^>]+(?:rel)=["'][^"']*${selector}[^"']*["'][^>]*>`,
+        "i",
+      ),
+    );
+    if (match?.[1]) {
+      return decodeHtmlEntities(match[1]);
+    }
+  }
+  return undefined;
+}
+
+function extractTitle(html: string): string | undefined {
+  const match = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  if (!match?.[1]) return undefined;
+  const title = decodeHtmlEntities(match[1]).replace(/\s+/g, " ").trim();
+  return title || undefined;
+}
+
+function resolveAbsoluteUrl(baseUrl: string, candidate?: string): string | undefined {
+  if (!candidate) return undefined;
+  try {
+    return new URL(candidate, baseUrl).toString();
+  } catch {
+    return undefined;
+  }
+}
+
+async function fetchSourceMediaFromUrl(href: string): Promise<{
+  siteName?: string;
+  faviconUrl?: string;
+  thumbnailUrl?: string;
+  imageCandidates?: string[];
+}> {
+  try {
+    const response = await fetch(href, {
+      redirect: "follow",
+      signal: AbortSignal.timeout(8000),
+      headers: {
+        "User-Agent": "NodeBenchThumbnailBackfill/1.0",
+      },
+    });
+    if (!response.ok) return {};
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.startsWith("image/")) {
+      return {
+        thumbnailUrl: href,
+        imageCandidates: [href],
+      };
+    }
+    if (!contentType.includes("text/html")) {
+      return {};
+    }
+    const html = await response.text();
+    const imageCandidates = [
+      extractMetaContent(html, ["og:image"]),
+      extractMetaContent(html, ["twitter:image", "twitter:image:src"]),
+      extractMetaContent(html, ["og:image:url"]),
+      extractMetaContent(html, ["og:image:secure_url"]),
+    ]
+      .map((candidate) => resolveAbsoluteUrl(response.url || href, candidate))
+      .filter((candidate, index, values): candidate is string => Boolean(candidate) && values.indexOf(candidate) === index)
+      .slice(0, 4);
+    const faviconUrl = resolveAbsoluteUrl(
+      response.url || href,
+      extractLinkHref(html, ["apple-touch-icon", "icon", "shortcut icon"]),
+    ) ?? resolveAbsoluteUrl(response.url || href, "/favicon.ico");
+    const siteName =
+      extractMetaContent(html, ["og:site_name", "application-name"]) ??
+      extractTitle(html);
+
+    return {
+      siteName,
+      faviconUrl,
+      thumbnailUrl: imageCandidates[0],
+      imageCandidates,
+    };
+  } catch {
+    return {};
+  }
+}
+
+type SourceMediaBackfillItem = {
+  href: string;
+  thumbnailUrl?: string;
+  siteName?: string;
+  faviconUrl?: string;
+  imageCandidates?: string[];
+};
+
+type HomeReportListItem = Doc<"productReports"> & {
+  thumbnailUrl?: string;
+  thumbnailUrls?: string[];
+  sourceUrls?: string[];
+  sourceLabels?: string[];
+  canonicalAliasKey?: string;
+  canonicalDisplayName?: string;
+};
+
+export function mergeReportCardsForHome(reports: HomeReportListItem[]) {
+  const grouped = new Map<string, HomeReportListItem[]>();
+  for (const report of reports) {
+    const groupKey = `${report.ownerKey}:${report.canonicalAliasKey ?? report.entitySlug ?? report._id}`;
+    const existing = grouped.get(groupKey) ?? [];
+    existing.push(report);
+    grouped.set(groupKey, existing);
+  }
+
+  return [...grouped.values()]
+    .map((group) => {
+      if (group.length === 1) {
+        const item = group[0]!;
+        return {
+          ...item,
+          title: item.canonicalDisplayName ?? item.title,
+        };
+      }
+
+      const displayName =
+        chooseEntityDisplayName(
+          group.flatMap((report) => [
+            report.canonicalDisplayName,
+            report.primaryEntity,
+            report.title,
+          ]),
+          "company",
+        ) ?? group[0]!.title;
+      const displaySlug = displayName
+        .toLowerCase()
+        .trim()
+        .replace(/['".,()[\]{}]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      const preferred = [...group].sort((left, right) => {
+        const leftMatchesDisplaySlug = Number(left.entitySlug === displaySlug);
+        const rightMatchesDisplaySlug = Number(right.entitySlug === displaySlug);
+        if (leftMatchesDisplaySlug !== rightMatchesDisplaySlug) {
+          return rightMatchesDisplaySlug - leftMatchesDisplaySlug;
+        }
+        return right.updatedAt - left.updatedAt;
+      })[0]!;
+
+      return {
+        ...preferred,
+        title: displayName,
+        primaryEntity: displayName,
+        entitySlug:
+          group.find((report) => report.entitySlug === displaySlug)?.entitySlug ??
+          preferred.entitySlug,
+        thumbnailUrl: preferred.thumbnailUrl,
+        thumbnailUrls: [...new Set(group.flatMap((report) => report.thumbnailUrls ?? []))].slice(0, 4),
+        sourceUrls: [...new Set(group.flatMap((report) => report.sourceUrls ?? []))].slice(0, 4),
+        sourceLabels: [...new Set(group.flatMap((report) => report.sourceLabels ?? []))].slice(0, 4),
+      };
+    })
+    .sort((left, right) => right.updatedAt - left.updatedAt);
+}
 
 export const listReports = query({
   args: {
@@ -9,21 +255,35 @@ export const listReports = query({
     filter: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await resolveProductIdentitySafely(ctx, args.anonymousSessionId);
-    if (!identity.ownerKey) {
+    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
+    if (ownerKeys.length === 0) {
       return [];
     }
 
     let reports;
     try {
-      reports = await ctx.db
-        .query("productReports")
-        .withIndex("by_owner_updated", (q) => q.eq("ownerKey", identity.ownerKey!))
-        .order("desc")
-        .take(60);
+      const reportGroups = await Promise.all(
+        ownerKeys.map((ownerKey) =>
+          ctx.db
+            .query("productReports")
+            .withIndex("by_owner_updated", (q) => q.eq("ownerKey", ownerKey))
+            .order("desc")
+            .take(60),
+        ),
+      );
+      reports = reportGroups
+        .flat()
+        .sort((left, right) => right.updatedAt - left.updatedAt)
+        .reduce<Array<(typeof reportGroups)[number][number]>>((acc, report) => {
+          if (acc.some((existing) => existing._id === report._id)) {
+            return acc;
+          }
+          acc.push(report);
+          return acc;
+        }, []);
     } catch (error) {
       console.error("[product] listReports failed", {
-        ownerKey: identity.ownerKey,
+        ownerKeys,
         error,
       });
       return [];
@@ -32,7 +292,8 @@ export const listReports = query({
     const search = args.search?.trim().toLowerCase() ?? "";
     const filter = args.filter ?? "All";
 
-    return reports.filter((report) => {
+    const filteredReports = reports.filter((report) => {
+      if (isLegacyFilteredReport(report)) return false;
       const matchesSearch =
         !search ||
         report.title.toLowerCase().includes(search) ||
@@ -52,6 +313,48 @@ export const listReports = query({
       if (filter === "Notes") return type.includes("note") || type.includes("document");
       return true;
     });
+
+    const cards = await Promise.all(
+      filteredReports.map(async (report) => {
+        const thumbnailUrls = await resolveProductThumbnailUrls(ctx, {
+          evidenceItemIds: report.evidenceItemIds,
+          sources: report.sources,
+        });
+        const sourceUrls = (report.sources ?? [])
+          .map((source) => (typeof source?.href === "string" ? source.href : null))
+          .filter((href): href is string => Boolean(href))
+          .slice(0, 4);
+        const sourceLabels = (report.sources ?? [])
+          .map((source) => source?.siteName || source?.label || source?.title || source?.domain || null)
+          .filter((label): label is string => typeof label === "string" && label.trim().length > 0)
+          .slice(0, 4);
+        const canonicalDisplayName =
+          chooseEntityDisplayName(
+            [report.primaryEntity, report.title, report.entitySlug?.replace(/[-_]+/g, " ")],
+            report.type,
+          ) ?? report.title;
+        return {
+          ...report,
+          thumbnailUrl: thumbnailUrls[0],
+          thumbnailUrls,
+          sourceUrls,
+          sourceLabels,
+          canonicalAliasKey: buildEntityAliasKey({
+            primaryEntity: report.primaryEntity ?? report.title,
+            title: report.title,
+            query: report.query,
+            type: report.type,
+            entityType: report.type,
+            slug: report.entitySlug,
+          }),
+          canonicalDisplayName,
+        };
+      }),
+    );
+
+    return mergeReportCardsForHome(cards).map(
+      ({ canonicalAliasKey: _canonicalAliasKey, canonicalDisplayName: _canonicalDisplayName, ...card }) => card,
+    );
   },
 });
 
@@ -61,20 +364,20 @@ export const getReport = query({
     reportId: v.id("productReports"),
   },
   handler: async (ctx, args) => {
-    const identity = await resolveProductIdentitySafely(ctx, args.anonymousSessionId);
-    if (!identity.ownerKey) return null;
+    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
+    if (ownerKeys.length === 0) return null;
     let report: any = null;
     try {
       report = await ctx.db.get(args.reportId);
     } catch (error) {
       console.error("[product] getReport failed", {
-        ownerKey: identity.ownerKey,
+        ownerKeys,
         reportId: args.reportId,
         error,
       });
       return null;
     }
-    if (!report || report.ownerKey !== identity.ownerKey) {
+    if (!report || !ownerKeys.includes(report.ownerKey)) {
       return null;
     }
     return report;
@@ -89,8 +392,9 @@ export const setPinned = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const ownerKey = identity.ownerKey!;
     const report = await ctx.db.get(args.reportId);
-    if (!report || report.ownerKey !== identity.ownerKey) {
+    if (!report || report.ownerKey !== ownerKey) {
       throw new Error("Report not found");
     }
     await ctx.db.patch(args.reportId, {
@@ -109,14 +413,15 @@ export const requestRefresh = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const ownerKey = identity.ownerKey!;
     const report = await ctx.db.get(args.reportId);
-    if (!report || report.ownerKey !== identity.ownerKey) {
+    if (!report || report.ownerKey !== ownerKey) {
       throw new Error("Report not found");
     }
 
     const now = Date.now();
     const refreshId = await ctx.db.insert("productReportRefreshes", {
-      ownerKey: identity.ownerKey,
+      ownerKey,
       reportId: args.reportId,
       status: "queued",
       triggeredBy: args.triggeredBy ?? "user",
@@ -125,13 +430,12 @@ export const requestRefresh = mutation({
       updatedAt: now,
     });
 
-    await ctx.db.insert("productNudges", {
-      ownerKey: identity.ownerKey,
+    await upsertOpenProductNudge(ctx, {
+      ownerKey,
       type: "report_changed",
       title: `${report.title} needs a refresh`,
       summary: "A refresh was queued from Reports. Open Chat to run it live.",
       linkedReportId: report._id,
-      status: "open",
       priority: "medium",
       actionLabel: "Open in Chat",
       actionTargetSurface: "chat",
@@ -142,8 +446,95 @@ export const requestRefresh = mutation({
 
     return {
       refreshId,
+      reportId: report._id,
+      entitySlug: report.entitySlug,
       query: report.query,
       lens: report.lens,
+      refreshPrompt: buildReportRefreshPrompt(report),
+    };
+  },
+});
+
+export const cleanupLegacyPlaceholderPrepArtifacts = mutation({
+  args: {
+    anonymousSessionId: v.optional(v.string()),
+    dryRun: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const ownerKey = identity.ownerKey!;
+    const dryRun = args.dryRun ?? true;
+
+    const reports = await ctx.db
+      .query("productReports")
+      .withIndex("by_owner_updated", (q) => q.eq("ownerKey", ownerKey))
+      .collect();
+    const targetReports = reports.filter((report) => isLegacyFilteredReport(report));
+    const targetReportIds = new Set(targetReports.map((report) => String(report._id)));
+    const targetEntitySlugs = Array.from(
+      new Set(
+        targetReports
+          .map((report) => report.entitySlug)
+          .filter((slug): slug is string => typeof slug === "string" && slug.trim().length > 0),
+      ),
+    );
+
+    const entities = await ctx.db
+      .query("productEntities")
+      .withIndex("by_owner_updated", (q) => q.eq("ownerKey", ownerKey))
+      .collect();
+    const targetEntities = entities.filter(
+      (entity) =>
+        targetEntitySlugs.includes(entity.slug) ||
+        isPlaceholderPrepEntity(entity.slug) ||
+        isPlaceholderPrepEntity(entity.name),
+    );
+
+    const nudges = await ctx.db
+      .query("productNudges")
+      .withIndex("by_owner_status_updated", (q) => q.eq("ownerKey", ownerKey).eq("status", "open"))
+      .collect();
+    const targetNudges = nudges.filter(
+      (nudge) =>
+        (nudge.linkedReportId && targetReportIds.has(String(nudge.linkedReportId))) ||
+        (typeof nudge.actionTargetId === "string" && targetEntitySlugs.includes(nudge.actionTargetId)),
+    );
+
+    const contextItems = await ctx.db
+      .query("productContextItems")
+      .withIndex("by_owner_updated", (q) => q.eq("ownerKey", ownerKey))
+      .collect();
+    const targetContextItems = contextItems.filter(
+      (item) =>
+        (typeof item.entity === "string" && targetEntitySlugs.includes(item.entity)) ||
+        (item.linkedReportId && targetReportIds.has(String(item.linkedReportId))),
+    );
+
+    if (!dryRun) {
+      for (const nudge of targetNudges) {
+        await ctx.db.delete(nudge._id);
+      }
+      for (const contextItem of targetContextItems) {
+        await ctx.db.delete(contextItem._id);
+      }
+      for (const report of targetReports) {
+        await ctx.db.delete(report._id);
+      }
+      for (const entity of targetEntities) {
+        await ctx.db.delete(entity._id);
+      }
+    }
+
+    return {
+      dryRun,
+      deletedReportIds: targetReports.map((report) => String(report._id)),
+      deletedEntitySlugs: targetEntities.map((entity) => entity.slug),
+      deletedNudgeIds: targetNudges.map((nudge) => String(nudge._id)),
+      deletedContextItemIds: targetContextItems.map((item) => String(item._id)),
+      reportCount: targetReports.length,
+      entityCount: targetEntities.length,
+      nudgeCount: targetNudges.length,
+      contextItemCount: targetContextItems.length,
     };
   },
 });
@@ -167,7 +558,302 @@ export const listAllReportsInternal = internalQuery({
       title: r.title,
       query: r.query,
       lens: r.lens,
+      entitySlug: r.entitySlug,
       updatedAt: r.updatedAt,
-    }));
+    })).filter((report) => !isLegacyFilteredReport(report));
+  },
+});
+
+export const listReportsMissingSourceMediaInternal = internalQuery({
+  args: {
+    limit: v.optional(v.number()),
+    reportId: v.optional(v.id("productReports")),
+  },
+  handler: async (ctx, args) => {
+    let reports = await ctx.db
+      .query("productReports")
+      .filter((q) => q.eq(q.field("status"), "saved"))
+      .order("desc")
+      .take(Math.min(args.limit ?? 50, 200));
+
+    if (args.reportId) {
+      reports = reports.filter((report) => report._id === args.reportId);
+    }
+
+    return reports
+      .filter((report) =>
+        (report.sources ?? []).some(
+          (source) =>
+            source.href &&
+            (!source.thumbnailUrl ||
+              !source.siteName ||
+              !source.faviconUrl ||
+              !Array.isArray(source.imageCandidates) ||
+              source.imageCandidates.length === 0),
+        ),
+      )
+      .map((report) => ({
+        reportId: report._id,
+        sessionId: report.sessionId,
+        title: report.title,
+        sources: report.sources,
+      }));
+  },
+});
+
+export const applySourceMediaBackfillInternal = internalMutation({
+  args: {
+    reportId: v.id("productReports"),
+    mediaBySource: v.array(
+      v.object({
+        href: v.string(),
+        thumbnailUrl: v.optional(v.string()),
+        siteName: v.optional(v.string()),
+        faviconUrl: v.optional(v.string()),
+        imageCandidates: v.optional(v.array(v.string())),
+      }),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const report = await ctx.db.get(args.reportId);
+    if (!report) return { updated: false, count: 0 };
+
+    const mediaMap = new Map<string, SourceMediaBackfillItem>(
+      args.mediaBySource.map((item) => [item.href, item]),
+    );
+
+    let count = 0;
+    const nextSources = (report.sources ?? []).map((source) => {
+      const media = source.href ? mediaMap.get(source.href) : undefined;
+      if (!media) {
+        return source;
+      }
+
+      const nextThumbnailUrl = media.thumbnailUrl ?? source.thumbnailUrl;
+      const nextSiteName = media.siteName ?? source.siteName;
+      const nextFaviconUrl = media.faviconUrl ?? source.faviconUrl;
+      const nextImageCandidates =
+        Array.isArray(media.imageCandidates) && media.imageCandidates.length > 0
+          ? media.imageCandidates
+          : source.imageCandidates;
+
+      const didChange =
+        nextThumbnailUrl !== source.thumbnailUrl ||
+        nextSiteName !== source.siteName ||
+        nextFaviconUrl !== source.faviconUrl ||
+        JSON.stringify(nextImageCandidates ?? []) !== JSON.stringify(source.imageCandidates ?? []);
+
+      if (!didChange) return source;
+
+      count += 1;
+      return {
+        ...source,
+        thumbnailUrl: nextThumbnailUrl,
+        siteName: nextSiteName,
+        faviconUrl: nextFaviconUrl,
+        imageCandidates: nextImageCandidates,
+      };
+    });
+
+    if (count === 0) {
+      return { updated: false, count: 0 };
+    }
+
+    await ctx.db.patch(args.reportId, {
+      sources: nextSources,
+      updatedAt: Date.now(),
+    });
+
+    if (report.sessionId) {
+      const sourceEvents = await ctx.db
+        .query("productSourceEvents")
+        .withIndex("by_session_created", (q) => q.eq("sessionId", report.sessionId!))
+        .collect();
+
+      for (const event of sourceEvents) {
+        const media = event.href ? mediaMap.get(event.href) : undefined;
+        if (!media) continue;
+        const nextThumbnailUrl = media.thumbnailUrl ?? event.thumbnailUrl;
+        const nextSiteName = media.siteName ?? event.siteName;
+        const nextFaviconUrl = media.faviconUrl ?? event.faviconUrl;
+        const nextImageCandidates =
+          Array.isArray(media.imageCandidates) && media.imageCandidates.length > 0
+            ? media.imageCandidates
+            : event.imageCandidates;
+        const didChange =
+          nextThumbnailUrl !== event.thumbnailUrl ||
+          nextSiteName !== event.siteName ||
+          nextFaviconUrl !== event.faviconUrl ||
+          JSON.stringify(nextImageCandidates ?? []) !== JSON.stringify(event.imageCandidates ?? []);
+        if (!didChange) continue;
+        await ctx.db.patch(event._id, {
+          thumbnailUrl: nextThumbnailUrl,
+          siteName: nextSiteName,
+          faviconUrl: nextFaviconUrl,
+          imageCandidates: nextImageCandidates,
+        });
+      }
+    }
+
+    return { updated: true, count };
+  },
+});
+
+export const hydrateReportSourceMediaInternal = internalAction({
+  args: {
+    reportId: v.id("productReports"),
+  },
+  handler: async (ctx, args) => {
+    const candidates = await ctx.runQuery(
+      internal.domains.product.reports.listReportsMissingSourceMediaInternal,
+      { limit: 1, reportId: args.reportId },
+    );
+
+    const report = candidates[0];
+    if (!report) {
+      return { scanned: 0, updatedReports: 0, patchedSources: 0 };
+    }
+
+    const discovered: Array<{
+      href: string;
+      thumbnailUrl?: string;
+      siteName?: string;
+      faviconUrl?: string;
+      imageCandidates?: string[];
+    }> = [];
+    for (const source of report.sources ?? []) {
+      if (
+        !source.href ||
+        (source.thumbnailUrl &&
+          source.siteName &&
+          source.faviconUrl &&
+          Array.isArray(source.imageCandidates) &&
+          source.imageCandidates.length > 0)
+      ) {
+        continue;
+      }
+      const media = await fetchSourceMediaFromUrl(source.href);
+      if (!media.thumbnailUrl && !media.siteName && !media.faviconUrl && !(media.imageCandidates?.length)) {
+        continue;
+      }
+      discovered.push({
+        href: source.href,
+        thumbnailUrl: media.thumbnailUrl,
+        siteName: media.siteName,
+        faviconUrl: media.faviconUrl,
+        imageCandidates: media.imageCandidates,
+      });
+    }
+
+    if (discovered.length === 0) {
+      return { scanned: 1, updatedReports: 0, patchedSources: 0 };
+    }
+
+    const result = await ctx.runMutation(
+      internal.domains.product.reports.applySourceMediaBackfillInternal,
+      {
+        reportId: report.reportId,
+        mediaBySource: discovered,
+      },
+    );
+
+    return {
+      scanned: 1,
+      updatedReports: result.updated ? 1 : 0,
+      patchedSources: result.count,
+    };
+  },
+});
+
+export const backfillMissingReportThumbnails = internalAction({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const candidates = await ctx.runQuery(
+      internal.domains.product.reports.listReportsMissingSourceMediaInternal,
+      { limit: args.limit ?? 50 },
+    );
+
+    let scanned = 0;
+    let updatedReports = 0;
+    let patchedSources = 0;
+
+    for (const report of candidates) {
+      scanned += 1;
+      const discovered: Array<{
+        href: string;
+        thumbnailUrl?: string;
+        siteName?: string;
+        faviconUrl?: string;
+        imageCandidates?: string[];
+      }> = [];
+      for (const source of report.sources ?? []) {
+        if (
+          !source.href ||
+          (source.thumbnailUrl &&
+            source.siteName &&
+            source.faviconUrl &&
+            Array.isArray(source.imageCandidates) &&
+            source.imageCandidates.length > 0)
+        ) {
+          continue;
+        }
+        const media = await fetchSourceMediaFromUrl(source.href);
+        if (!media.thumbnailUrl && !media.siteName && !media.faviconUrl && !(media.imageCandidates?.length)) continue;
+        discovered.push({
+          href: source.href,
+          thumbnailUrl: media.thumbnailUrl,
+          siteName: media.siteName,
+          faviconUrl: media.faviconUrl,
+          imageCandidates: media.imageCandidates,
+        });
+      }
+
+      if (discovered.length === 0) continue;
+
+      const result = await ctx.runMutation(
+        internal.domains.product.reports.applySourceMediaBackfillInternal,
+        {
+          reportId: report.reportId,
+          mediaBySource: discovered,
+        },
+      );
+
+      if (result.updated) {
+        updatedReports += 1;
+        patchedSources += result.count;
+      }
+    }
+
+    return {
+      scanned,
+      updatedReports,
+      patchedSources,
+    };
+  },
+});
+
+export const runSourceMediaBackfillMaintenance = action({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.runAction(
+      internal.domains.product.reports.backfillMissingReportThumbnails,
+      { limit: args.limit ?? 50 },
+    );
+  },
+});
+
+export const runThumbnailBackfillMaintenance = action({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.runAction(
+      internal.domains.product.reports.backfillMissingReportThumbnails,
+      { limit: args.limit ?? 50 },
+    );
   },
 });

@@ -434,6 +434,7 @@ describe("createSearchRouter", () => {
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     LINKUP_API_KEY: process.env.LINKUP_API_KEY,
+    NODEBENCH_ALLOW_EXTERNAL_LLM_FALLBACK_IN_TESTS: process.env.NODEBENCH_ALLOW_EXTERNAL_LLM_FALLBACK_IN_TESTS,
   };
 
   beforeAll(async () => {
@@ -445,6 +446,7 @@ describe("createSearchRouter", () => {
     delete process.env.OPENROUTER_API_KEY;
     delete process.env.ANTHROPIC_API_KEY;
     delete process.env.LINKUP_API_KEY;
+    delete process.env.NODEBENCH_ALLOW_EXTERNAL_LLM_FALLBACK_IN_TESTS;
 
     const app = express();
     app.use(express.json());
@@ -477,6 +479,7 @@ describe("createSearchRouter", () => {
     process.env.OPENROUTER_API_KEY = savedEnv.OPENROUTER_API_KEY;
     process.env.ANTHROPIC_API_KEY = savedEnv.ANTHROPIC_API_KEY;
     process.env.LINKUP_API_KEY = savedEnv.LINKUP_API_KEY;
+    process.env.NODEBENCH_ALLOW_EXTERNAL_LLM_FALLBACK_IN_TESTS = savedEnv.NODEBENCH_ALLOW_EXTERNAL_LLM_FALLBACK_IN_TESTS;
 
     await new Promise<void>((resolve, reject) => {
       server.close((error) => {
@@ -515,10 +518,18 @@ describe("createSearchRouter", () => {
     expect(postResponse.status).toBe(200);
     expect(getResponse.headers.get("content-type")).toContain("text/event-stream");
     expect(postResponse.headers.get("content-type")).toContain("text/event-stream");
+    expect(getText).toContain('"type":"plan"');
+    expect(getText).toContain('"routingMode":"executive"');
+    expect(getText).toContain('"type":"step_start"');
+    expect(getText).toContain('"type":"step_done"');
     expect(getText).toContain('"type":"trace"');
     expect(getText).toContain('"type":"result"');
     expect(getText).toContain('"classification":"weekly_reset"');
     expect(getText).toContain('"strategicAngles"');
+    expect(postText).toContain('"type":"plan"');
+    expect(postText).toContain('"routingMode":"executive"');
+    expect(postText).toContain('"type":"step_start"');
+    expect(postText).toContain('"type":"step_done"');
     expect(postText).toContain('"type":"trace"');
     expect(postText).toContain('"type":"result"');
     expect(postText).toContain('"classification":"weekly_reset"');
@@ -748,6 +759,7 @@ describe("createSearchRouter", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/event-stream");
     expect(text).toContain('"type":"result"');
+    expect(text).toContain('"routingMode":"advisor"');
     expect(text).toContain('"classification":"multi_entity"');
     expect(text).toContain('"packetType":"multi_entity_packet"');
     expect(text).toContain('"title":"Bottom line"');
@@ -787,7 +799,9 @@ describe("createSearchRouter", () => {
   it("sanitizes production-style noisy llm synthesis before packaging banker-grade output", async () => {
     const originalFetch = global.fetch;
     const originalOpenAiKey = process.env.OPENAI_API_KEY;
+    const originalExternalFallback = process.env.NODEBENCH_ALLOW_EXTERNAL_LLM_FALLBACK_IN_TESTS;
     process.env.OPENAI_API_KEY = "test-openai-key";
+    process.env.NODEBENCH_ALLOW_EXTERNAL_LLM_FALLBACK_IN_TESTS = "1";
 
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
@@ -916,6 +930,7 @@ describe("createSearchRouter", () => {
     } finally {
       vi.stubGlobal("fetch", originalFetch);
       process.env.OPENAI_API_KEY = originalOpenAiKey;
+      process.env.NODEBENCH_ALLOW_EXTERNAL_LLM_FALLBACK_IN_TESTS = originalExternalFallback;
     }
   });
 

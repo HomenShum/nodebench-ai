@@ -1,10 +1,19 @@
 import type { McpTool } from "../types.js";
-import { genId } from "../db.js";
+import { genId, getDb } from "../db.js";
 import { entityLookupTools } from "./entityLookupTools.js";
 import { webTools } from "./webTools.js";
 import { reconTools } from "./reconTools.js";
 import { sessionMemoryTools } from "./sessionMemoryTools.js";
 import { createDeltaTools } from "./deltaTools.js";
+import {
+  upsertDurableObject,
+  recordLocalArtifact,
+  registerSharedContextPeer,
+  publishSharedContextPacket,
+  pullSharedContextPackets,
+  enqueueSyncOperation,
+  getActiveAccountBinding,
+} from "../sync/store.js";
 
 type WorkflowCost = {
   measured: boolean;
@@ -648,6 +657,401 @@ export const coreWorkflowTools: McpTool[] = [
         markdown,
         { notes, knowledge },
         toStringArray(reconFindings.map((entry) => entry.sourceUrl as string | undefined)),
+        Date.now() - startedAt,
+      );
+    },
+  },
+];
+
+// ── Bidirectional Sync Tools ───────────────────────────────────────────────
+// These connect Claude Code <-> nodebench-mcp <-> NodeBench AI.
+// They use the existing sync bridge and shared-context infrastructure.
+
+const MCP_PEER_ID = "peer:local:mcp_core_workflow";
+
+function ensurePeer(): string {
+  try {
+    registerSharedContextPeer({
+      peerId: MCP_PEER_ID,
+      product: "nodebench",
+      surface: "local_runtime" as any,
+      role: "researcher" as any,
+      capabilities: ["sync_company", "pull_profile", "sync_report", "pull_report"],
+      contextScopes: ["company", "profile", "report"],
+    });
+  } catch { /* peer may already exist — idempotent */ }
+  return MCP_PEER_ID;
+}
+
+function getBinding(): { userId: string; workspaceId?: string } | null {
+  const binding = getActiveAccountBinding();
+  if (!binding) return null;
+  return { userId: binding.userId, workspaceId: binding.workspaceId ?? undefined };
+}
+
+export const coreSyncTools: McpTool[] = [
+  {
+    name: "sync_company",
+    description:
+      "Push a company profile into NodeBench AI from Claude Code. Extracts company truth from a summary you provide (codebase analysis, docs, notes) and publishes it as a shared-context packet that NodeBench AI can consume.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Company name." },
+        summary: { type: "string", description: "Company summary or profile text to sync." },
+        products: { type: "array", items: { type: "string" }, description: "Products or features." },
+        capabilities: { type: "array", items: { type: "string" }, description: "Technical capabilities." },
+        signals: { type: "array", items: { type: "string" }, description: "Recent signals or changes." },
+        contradictions: { type: "array", items: { type: "string" }, description: "Internal inconsistencies found." },
+        sources: { type: "array", items: { type: "string" }, description: "Source file paths or URLs." },
+      },
+      required: ["name", "summary"],
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+    handler: async (args: {
+      name: string;
+      summary: string;
+      products?: string[];
+      capabilities?: string[];
+      signals?: string[];
+      contradictions?: string[];
+      sources?: string[];
+    }) => {
+      const startedAt = Date.now();
+      const peerId = ensurePeer();
+      const slug = args.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+      // 1. Upsert durable object in local spine
+      const { objectId } = upsertDurableObject({
+        kind: "company",
+        label: args.name,
+        source: "mcp_sync",
+        status: "active",
+        metadata: {
+          slug,
+          products: args.products ?? [],
+          capabilities: args.capabilities ?? [],
+          signals: args.signals ?? [],
+          contradictions: args.contradictions ?? [],
+        },
+      });
+
+      // 2. Record as local artifact
+      const profileData = {
+        name: args.name,
+        slug,
+        summary: args.summary,
+        products: args.products ?? [],
+        capabilities: args.capabilities ?? [],
+        signals: args.signals ?? [],
+        contradictions: args.contradictions ?? [],
+        sources: args.sources ?? [],
+        syncedAt: new Date().toISOString(),
+      };
+
+      const { artifactId } = recordLocalArtifact({
+        kind: "company_profile",
+        objectId,
+        summary: `Company profile: ${args.name}`,
+        verificationStatus: "pending_manual_review",
+        content: JSON.stringify(profileData),
+        queueForSync: true,
+      });
+
+      // 3. Publish as shared-context packet for web app consumption
+      const { contextId } = publishSharedContextPacket({
+        contextType: "entity_packet",
+        producerPeerId: peerId,
+        subject: args.name,
+        summary: args.summary,
+        claims: [
+          ...(args.products ?? []).map(p => `Product: ${p}`),
+          ...(args.capabilities ?? []).map(c => `Capability: ${c}`),
+          ...(args.signals ?? []).map(s => `Signal: ${s}`),
+        ],
+        evidenceRefs: args.sources ?? [],
+        confidence: args.contradictions && args.contradictions.length > 0 ? 0.7 : 0.85,
+        nextActions: ["review_profile", "run_investigation"],
+        queueForSync: true,
+      });
+
+      const markdown = [
+        `# Sync Company: ${args.name}`,
+        "",
+        "## Summary",
+        args.summary,
+        "",
+        args.products && args.products.length > 0 ? `## Products\n${args.products.map(p => `- ${p}`).join("\n")}` : "",
+        args.capabilities && args.capabilities.length > 0 ? `## Capabilities\n${args.capabilities.map(c => `- ${c}`).join("\n")}` : "",
+        args.signals && args.signals.length > 0 ? `## Signals\n${args.signals.map(s => `- ${s}`).join("\n")}` : "",
+        args.contradictions && args.contradictions.length > 0 ? `## Contradictions\n${args.contradictions.map(c => `- ${c}`).join("\n")}` : "",
+        "",
+        "## Sync Status",
+        `- Object ID: ${objectId}`,
+        `- Artifact ID: ${artifactId}`,
+        `- Context ID: ${contextId}`,
+        `- Queued for sync: yes`,
+      ].filter(Boolean).join("\n");
+
+      return createEnvelope(
+        "sync_company",
+        objectId,
+        markdown,
+        { objectId, artifactId, contextId, profile: profileData },
+        args.sources ?? [],
+        Date.now() - startedAt,
+      );
+    },
+  },
+  {
+    name: "pull_profile",
+    description:
+      "Pull the current company profile and saved context from NodeBench AI into Claude Code. Returns the latest shared-context packets, saved reports, and entity data for a company.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        entity: { type: "string", description: "Company or entity name to pull." },
+        includeReports: { type: "boolean", description: "Include saved reports. Defaults to true." },
+        limit: { type: "number", description: "Max items to return. Defaults to 10." },
+      },
+      required: ["entity"],
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+    handler: async (args: { entity: string; includeReports?: boolean; limit?: number }) => {
+      const startedAt = Date.now();
+      const limit = args.limit ?? 10;
+
+      // 1. Pull shared-context packets for this entity
+      const packets = pullSharedContextPackets({
+        contextType: "entity_packet",
+        subjectIncludes: args.entity,
+        limit,
+      });
+
+      // 2. Pull from local knowledge base
+      const knowledgeRaw = await callTool(reconTools, "search_all_knowledge", {
+        query: args.entity,
+        limit,
+      });
+      const knowledge = unwrapToolResult(knowledgeRaw);
+
+      // 3. Pull saved reports if requested
+      // Pull report-type packets from shared-context (bidirectional bridge)
+      const reportPackets = args.includeReports !== false
+        ? pullSharedContextPackets({ contextType: "workflow_packet", subjectIncludes: args.entity, limit })
+        : [];
+      const reports = reportPackets.map((p: any) => ({
+        reportId: p.contextId,
+        title: p.subject,
+        summary: p.summary,
+        status: "synced",
+        updatedAt: p.updatedAt ?? p.createdAt,
+      }));
+
+      const learnings = Array.isArray(knowledge.learnings) ? knowledge.learnings as Array<Record<string, any>> : [];
+      const reconFindings = Array.isArray(knowledge.reconFindings) ? knowledge.reconFindings as Array<Record<string, any>> : [];
+
+      const latestPacket = packets.length > 0 ? packets[0] : null;
+      const markdown = [
+        `# Pull Profile: ${args.entity}`,
+        "",
+        "## Latest Sync",
+        latestPacket
+          ? `- Subject: ${latestPacket.subject}\n- Summary: ${latestPacket.summary}\n- Confidence: ${latestPacket.confidence}\n- Version: ${latestPacket.version}`
+          : "- No synced company profile found.",
+        "",
+        "## Saved Reports",
+        reports.length > 0
+          ? reports.map(r => `- [${r.reportId}] ${r.title} (${r.status})`).join("\n")
+          : "- No saved reports for this entity.",
+        "",
+        "## Knowledge Base",
+        `- Learnings: ${learnings.length}`,
+        `- Recon findings: ${reconFindings.length}`,
+        "",
+        "## Shared Context Packets",
+        `- Total packets: ${packets.length}`,
+      ].join("\n");
+
+      return createEnvelope(
+        "pull_profile",
+        genId("profile"),
+        markdown,
+        {
+          packets,
+          reports,
+          knowledge,
+          binding: getBinding(),
+        },
+        toStringArray(reconFindings.map((e: Record<string, any>) => e.sourceUrl as string | undefined)),
+        Date.now() - startedAt,
+      );
+    },
+  },
+  {
+    name: "sync_report",
+    description:
+      "Push a report artifact from Claude Code into NodeBench AI. The report is saved locally and published as a shared-context packet for the web app to consume.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Report title." },
+        entity: { type: "string", description: "Primary entity the report covers." },
+        summary: { type: "string", description: "Report summary." },
+        sections: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              heading: { type: "string" },
+              content: { type: "string" },
+              confidence: { type: "string", enum: ["high", "medium", "low"] },
+            },
+            required: ["heading", "content"],
+          },
+        },
+        sources: { type: "array", items: { type: "string" } },
+        nextActions: { type: "array", items: { type: "string" } },
+        risks: { type: "array", items: { type: "string" } },
+        lens: { type: "string", enum: ["founder", "investor", "banker", "operator", "researcher", "ceo"] },
+      },
+      required: ["title", "summary"],
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+    handler: async (args: {
+      title: string;
+      entity?: string;
+      summary: string;
+      sections?: Array<{ heading: string; content: string; confidence?: string }>;
+      sources?: string[];
+      nextActions?: string[];
+      risks?: string[];
+      lens?: string;
+    }) => {
+      const startedAt = Date.now();
+      const peerId = ensurePeer();
+      const reportId = genId("report");
+
+      // 1. Record as sync artifact (canonical models are in the server package, not reachable here)
+      const { artifactId } = recordLocalArtifact({
+        kind: "report",
+        summary: `Report: ${args.title}`,
+        verificationStatus: "pending_manual_review",
+        content: JSON.stringify({
+          reportId,
+          title: args.title,
+          entity: args.entity,
+          summary: args.summary,
+          sections: args.sections ?? [],
+          sources: args.sources ?? [],
+          nextActions: args.nextActions ?? [],
+          risks: args.risks ?? [],
+          lens: args.lens ?? "founder",
+        }),
+        queueForSync: true,
+      });
+
+      // 3. Publish as shared-context packet
+      const { contextId } = publishSharedContextPacket({
+        contextType: "workflow_packet",
+        producerPeerId: peerId,
+        subject: args.title,
+        summary: args.summary,
+        claims: args.sections?.map(s => `${s.heading}: ${s.content.slice(0, 100)}`) ?? [],
+        evidenceRefs: args.sources ?? [],
+        nextActions: args.nextActions ?? [],
+        confidence: 0.8,
+        queueForSync: true,
+      });
+
+      const markdown = [
+        `# Sync Report: ${args.title}`,
+        args.entity ? `Entity: ${args.entity}` : "",
+        "",
+        "## Summary",
+        args.summary,
+        "",
+        ...(args.sections ?? []).map(s => `## ${s.heading}\n${s.content}`),
+        "",
+        args.nextActions && args.nextActions.length > 0 ? `## Next Actions\n${args.nextActions.map(a => `- ${a}`).join("\n")}` : "",
+        args.risks && args.risks.length > 0 ? `## Risks\n${args.risks.map(r => `- ${r}`).join("\n")}` : "",
+        "",
+        "## Sync Status",
+        `- Report ID: ${reportId}`,
+        `- Artifact ID: ${artifactId}`,
+        `- Context ID: ${contextId}`,
+        `- Queued for sync: yes`,
+      ].filter(Boolean).join("\n");
+
+      return createEnvelope(
+        "sync_report",
+        reportId,
+        markdown,
+        { reportId, artifactId, contextId },
+        args.sources ?? [],
+        Date.now() - startedAt,
+      );
+    },
+  },
+  {
+    name: "pull_report",
+    description:
+      "Pull a saved report from NodeBench AI into Claude Code. Returns the full report with sections, sources, and next actions.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        reportId: { type: "string", description: "Report ID to pull. Omit to list recent reports." },
+        entity: { type: "string", description: "Filter reports by entity name." },
+        limit: { type: "number", description: "Max reports to return when listing. Defaults to 5." },
+      },
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+    handler: async (args: { reportId?: string; entity?: string; limit?: number }) => {
+      const startedAt = Date.now();
+      const limit = args.limit ?? 5;
+
+      // Pull from shared-context packets (bidirectional bridge)
+      const packets = pullSharedContextPackets({
+        contextType: "workflow_packet",
+        subjectIncludes: args.entity,
+        limit,
+      });
+
+      // Match specific packet if reportId provided
+      let matchedPacket: any = null;
+      if (args.reportId) {
+        matchedPacket = packets.find((p: any) => p.contextId === args.reportId) ?? null;
+      }
+
+      let markdown: string;
+
+      if (matchedPacket) {
+        markdown = [
+          `# Report: ${matchedPacket.subject}`,
+          `Confidence: ${matchedPacket.confidence}`,
+          "",
+          "## Summary",
+          matchedPacket.summary,
+          "",
+          matchedPacket.claims?.length > 0 ? `## Sections\n${matchedPacket.claims.map((c: string) => `- ${c}`).join("\n")}` : "",
+          matchedPacket.nextActions?.length > 0 ? `## Next Actions\n${matchedPacket.nextActions.map((a: string) => `- ${a}`).join("\n")}` : "",
+        ].filter(Boolean).join("\n");
+      } else if (packets.length > 0) {
+        markdown = [
+          `# Reports${args.entity ? ` for ${args.entity}` : ""}`,
+          "",
+          ...packets.map((p: any) => `- **${p.subject}** [${p.contextId}] — ${p.summary?.slice(0, 80)}...`),
+        ].join("\n");
+      } else {
+        markdown = `# No Reports Found\n\nNo saved reports${args.entity ? ` for "${args.entity}"` : ""}. Use \`investigate\` or \`report\` to create one, then \`sync_report\` to save it.`;
+      }
+
+      return createEnvelope(
+        "pull_report",
+        args.reportId ?? genId("pull"),
+        markdown,
+        { matchedPacket, packets, binding: getBinding() },
+        [],
         Date.now() - startedAt,
       );
     },

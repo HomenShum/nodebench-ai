@@ -21,7 +21,14 @@ import { paginationOptsValidator } from "convex/server";
 import type { Doc, Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { mutation, query } from "../../_generated/server";
-import { resolveProductReadOwnerKeys, requireProductIdentity } from "./helpers";
+import {
+  resolveEntityWorkspaceAccess,
+  requireEntityWorkspaceWriteAccessBySlug,
+  requireBlockReadAccessById,
+  requireBlockWriteAccessById,
+  resolveProductReadOwnerKeys,
+  requireProductIdentity,
+} from "./helpers";
 import { getSystemEntityNodeBySlug } from "../../../shared/systemIntelligence";
 import {
   comparePositions,
@@ -49,20 +56,37 @@ const NOTEBOOK_WRITE_BUCKET_MS = 10_000;
 const NOTEBOOK_WRITE_WINDOW_MS = 60_000;
 const NOTEBOOK_WRITE_BURST_LIMIT = 300;
 const NOTEBOOK_WRITE_LIMIT_PER_MINUTE = 1_200;
+const NOTEBOOK_WRITE_SHARDS = 16;
+const NOTEBOOK_WRITE_KEY_MAX_LENGTH = 96;
 
 class ProductConvexError<T extends Record<string, unknown>> extends Error {
   name = "ConvexError";
   data: T;
-  [Symbol.for("ConvexError")] = true;
 
   constructor(data: T) {
     super(JSON.stringify(data));
     this.data = data;
+    (this as Record<PropertyKey, unknown>)[Symbol.for("ConvexError")] = true;
   }
 }
 
 function convexError<T extends Record<string, unknown>>(data: T): ProductConvexError<T> {
   return new ProductConvexError(data);
+}
+
+function isConvexErrorLike(error: unknown): boolean {
+  return (
+    !!error &&
+    typeof error === "object" &&
+    (Symbol.for("ConvexError") in error ||
+      ((error as { name?: unknown }).name === "ConvexError" &&
+        "data" in (error as Record<string, unknown>)))
+  );
+}
+
+function isWriteWindowOccFailure(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return message.includes("OptimisticConcurrencyControlFailure");
 }
 
 function assertBlockContentSize(
@@ -91,12 +115,46 @@ function notebookWriteSessionKey(identity: Awaited<ReturnType<typeof requireProd
   return identity.anonymousSessionId ?? (identity.ownerKey as string);
 }
 
+function notebookWriteShard(shardHint: string): number {
+  let hash = 0;
+  for (let index = 0; index < shardHint.length; index += 1) {
+    hash = (hash * 31 + shardHint.charCodeAt(index)) >>> 0;
+  }
+  return hash % NOTEBOOK_WRITE_SHARDS;
+}
+
+function normalizeNotebookWriteActorKey(value: string, prefix: "actor" | "session"): string {
+  const compact = value.trim().replace(/\s+/g, " ");
+  const clipped =
+    compact.length > NOTEBOOK_WRITE_KEY_MAX_LENGTH
+      ? compact.slice(0, NOTEBOOK_WRITE_KEY_MAX_LENGTH)
+      : compact;
+  return `${prefix}:${clipped || "default"}`;
+}
+
+function notebookWriteActorKey(sessionKey: string, actorId?: string): string {
+  if (actorId?.trim()) {
+    return normalizeNotebookWriteActorKey(actorId, "actor");
+  }
+  return normalizeNotebookWriteActorKey(sessionKey, "session");
+}
+
+function nextAppendPosition(now: number): { int: number; frac: string } {
+  // Appends do not need to read sibling ranges. Using a time-based key keeps
+  // the path OCC-light under collaboration load, and comparePositionsWithId
+  // already provides a deterministic tie-break when two inserts share a
+  // millisecond.
+  return { int: now * 1000, frac: initialPosition().frac };
+}
+
 async function assertNotebookWriteRateLimit(
   ctx: MutationCtx,
   args: {
     ownerKey: string;
     sessionKey: string;
+    actorKey?: string;
     operation: string;
+    shardHint?: string;
   },
 ): Promise<void> {
   const now = Date.now();
@@ -104,58 +162,83 @@ async function assertNotebookWriteRateLimit(
     Math.floor(now / NOTEBOOK_WRITE_BUCKET_MS) * NOTEBOOK_WRITE_BUCKET_MS;
   const oldestBucketStartMs =
     currentBucketStartMs - NOTEBOOK_WRITE_WINDOW_MS + NOTEBOOK_WRITE_BUCKET_MS;
+  const actorKey = notebookWriteActorKey(args.sessionKey, args.actorKey);
 
-  const recentBuckets = await ctx.db
+  const recentActorBuckets = await ctx.db
     .query("productBlockWriteWindows")
-    .withIndex("by_owner_session_bucket", (q) =>
+    .withIndex("by_owner_session_actor_bucket", (q) =>
       q
         .eq("ownerKey", args.ownerKey)
         .eq("sessionKey", args.sessionKey)
+        .eq("actorKey", actorKey)
         .gte("bucketStartMs", oldestBucketStartMs),
     )
     .collect();
 
-  const totalWritesInWindow = recentBuckets.reduce(
+  const actorTotalWrites = recentActorBuckets.reduce(
     (sum, bucket) => sum + Math.max(bucket.writeCount ?? 0, 0),
     0,
   );
-  const currentBucket =
-    recentBuckets.find((bucket) => bucket.bucketStartMs === currentBucketStartMs) ?? null;
-  const currentBucketWrites = currentBucket?.writeCount ?? 0;
-
+  const actorBucketWrites = recentActorBuckets.reduce(
+    (sum, bucket) =>
+      bucket.bucketStartMs === currentBucketStartMs
+        ? sum + Math.max(bucket.writeCount ?? 0, 0)
+        : sum,
+    0,
+  );
   if (
-    currentBucketWrites >= NOTEBOOK_WRITE_BURST_LIMIT ||
-    totalWritesInWindow >= NOTEBOOK_WRITE_LIMIT_PER_MINUTE
+    actorBucketWrites >= NOTEBOOK_WRITE_BURST_LIMIT ||
+    actorTotalWrites >= NOTEBOOK_WRITE_LIMIT_PER_MINUTE
   ) {
     throw convexError({
       code: "RATE_LIMITED",
+      scope: "actor",
+      actorKey,
       operation: args.operation,
       bucketMs: NOTEBOOK_WRITE_BUCKET_MS,
       windowMs: NOTEBOOK_WRITE_WINDOW_MS,
       burstLimit: NOTEBOOK_WRITE_BURST_LIMIT,
       maxWritesPerWindow: NOTEBOOK_WRITE_LIMIT_PER_MINUTE,
-      currentBucketWrites,
-      totalWritesInWindow,
+      currentBucketWrites: actorBucketWrites,
+      totalWritesInWindow: actorTotalWrites,
       retryAfterMs: currentBucketStartMs + NOTEBOOK_WRITE_BUCKET_MS - now,
     });
   }
 
-  if (currentBucket) {
-    await ctx.db.patch(currentBucket._id, {
-      writeCount: currentBucket.writeCount + 1,
+  const actorShard = notebookWriteShard(
+    `${args.sessionKey}:${actorKey}:${args.operation}:${args.shardHint ?? "default"}`,
+  );
+
+  try {
+    await ctx.db.insert("productBlockWriteWindows", {
+      ownerKey: args.ownerKey,
+      sessionKey: args.sessionKey,
+      actorKey,
+      bucketStartMs: currentBucketStartMs,
+      shard: actorShard,
+      writeCount: 1,
+      createdAt: now,
       updatedAt: now,
     });
-    return;
+  } catch (error) {
+    if (isWriteWindowOccFailure(error)) {
+      throw convexError({
+        code: "RATE_LIMITED",
+        scope: "actor",
+        actorKey,
+        operation: args.operation,
+        bucketMs: NOTEBOOK_WRITE_BUCKET_MS,
+        windowMs: NOTEBOOK_WRITE_WINDOW_MS,
+        burstLimit: NOTEBOOK_WRITE_BURST_LIMIT,
+        maxWritesPerWindow: NOTEBOOK_WRITE_LIMIT_PER_MINUTE,
+        currentBucketWrites: actorBucketWrites,
+        totalWritesInWindow: actorTotalWrites,
+        retryAfterMs: NOTEBOOK_WRITE_BUCKET_MS,
+        reason: "write_window_conflict",
+      });
+    }
+    throw error;
   }
-
-  await ctx.db.insert("productBlockWriteWindows", {
-    ownerKey: args.ownerKey,
-    sessionKey: args.sessionKey,
-    bucketStartMs: currentBucketStartMs,
-    writeCount: 1,
-    createdAt: now,
-    updatedAt: now,
-  });
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -534,21 +617,18 @@ function isCleanSystemNotebookRelation(related: {
 export const getEntityNotebook = query({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     entitySlug: v.string(),
   },
   handler: async (ctx, args): Promise<NotebookSnapshot | null> => {
-    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
+    const workspaceAccess = await resolveEntityWorkspaceAccess(ctx, args);
+    const ownerKeys = workspaceAccess
+      ? [workspaceAccess.entity.ownerKey]
+      : await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
     if (ownerKeys.length === 0) return null;
 
     // 1. Resolve the entity
-    let entity: Doc<"productEntities"> | null = null;
-    for (const ownerKey of ownerKeys) {
-      entity = await ctx.db
-        .query("productEntities")
-        .withIndex("by_owner_slug", (q) => q.eq("ownerKey", ownerKey).eq("slug", args.entitySlug))
-        .first();
-      if (entity) break;
-    }
+    let entity: Doc<"productEntities"> | null = workspaceAccess?.entity ?? null;
     let latestReport: Doc<"productReports"> | null = null;
     let dataOwnerKey: string | null = entity?.ownerKey ?? null;
     let systemNode: ReturnType<typeof getSystemEntityNodeBySlug> | null = null;
@@ -1080,20 +1160,12 @@ function confidenceFromEvidence(
 export const listEntityBlocks = query({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     entitySlug: v.string(),
   },
   handler: async (ctx, args): Promise<Doc<"productBlocks">[]> => {
-    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
-    if (ownerKeys.length === 0) return [];
-
-    let entity: Doc<"productEntities"> | null = null;
-    for (const ownerKey of ownerKeys) {
-      entity = await ctx.db
-        .query("productEntities")
-        .withIndex("by_owner_slug", (q) => q.eq("ownerKey", ownerKey).eq("slug", args.entitySlug))
-        .first();
-      if (entity) break;
-    }
+    const workspaceAccess = await resolveEntityWorkspaceAccess(ctx, args);
+    const entity = workspaceAccess?.entity ?? null;
     if (!entity) return [];
 
     const rows = await ctx.db
@@ -1110,23 +1182,13 @@ export const listEntityBlocks = query({
 export const listEntityBlocksPaginated = (query as any)({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     entitySlug: v.string(),
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx: any, args: any): Promise<any> => {
-    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
-    if (ownerKeys.length === 0) {
-      return { page: [], isDone: true, continueCursor: "" };
-    }
-
-    let entity: Doc<"productEntities"> | null = null;
-    for (const ownerKey of ownerKeys) {
-      entity = await ctx.db
-        .query("productEntities")
-        .withIndex("by_owner_slug", (q: any) => q.eq("ownerKey", ownerKey).eq("slug", args.entitySlug))
-        .first();
-      if (entity) break;
-    }
+    const workspaceAccess = await resolveEntityWorkspaceAccess(ctx, args);
+    const entity = workspaceAccess?.entity ?? null;
     if (!entity) {
       return { page: [], isDone: true, continueCursor: "" };
     }
@@ -1156,6 +1218,7 @@ export const listEntityBlocksPaginated = (query as any)({
 export const getEntityBlockSummary = query({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     entitySlug: v.string(),
   },
   handler: async (
@@ -1168,19 +1231,12 @@ export const getEntityBlockSummary = query({
         userEditedCount: number;
         latestUpdatedAt?: number;
         latestUserEditAt?: number;
+        latestHumanEditorOwnerKey?: string;
+        latestHumanEditorUpdatedAt?: number;
       }
   > => {
-    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
-    if (ownerKeys.length === 0) return null;
-
-    let entity: Doc<"productEntities"> | null = null;
-    for (const ownerKey of ownerKeys) {
-      entity = await ctx.db
-        .query("productEntities")
-        .withIndex("by_owner_slug", (q) => q.eq("ownerKey", ownerKey).eq("slug", args.entitySlug))
-        .first();
-      if (entity) break;
-    }
+    const workspaceAccess = await resolveEntityWorkspaceAccess(ctx, args);
+    const entity = workspaceAccess?.entity ?? null;
     if (!entity) return null;
 
     const rows = await ctx.db
@@ -1189,6 +1245,19 @@ export const getEntityBlockSummary = query({
       .collect();
     const liveRows = liveRowsOnly(rows);
     const userRows = liveRows.filter((row) => row.authorKind === "user");
+    const humanRows = liveRows.filter(
+      (row) => row.authorKind === "user" || row.authorKind === "anonymous",
+    );
+    const latestHumanRow = humanRows.reduce<(typeof humanRows)[number] | undefined>(
+      (latest, row) => (latest == null || row.updatedAt > latest.updatedAt ? row : latest),
+      undefined,
+    );
+    const latestHumanEditorOwnerKey =
+      latestHumanRow?.authorKind === "user" && latestHumanRow.authorId
+        ? `user:${latestHumanRow.authorId}`
+        : latestHumanRow?.authorKind === "anonymous" && latestHumanRow.authorId
+          ? `anon:${latestHumanRow.authorId}`
+          : undefined;
     return {
       blockCount: liveRows.length,
       userEditedCount: userRows.length,
@@ -1200,6 +1269,8 @@ export const getEntityBlockSummary = query({
         (latest, row) => (latest == null || row.updatedAt > latest ? row.updatedAt : latest),
         undefined,
       ),
+      latestHumanEditorOwnerKey,
+      latestHumanEditorUpdatedAt: latestHumanRow?.updatedAt,
     };
   },
 });
@@ -1211,6 +1282,7 @@ export const getEntityBlockSummary = query({
 export const appendBlock = mutation({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     entitySlug: v.string(),
     parentBlockId: v.optional(v.id("productBlocks")),
     kind: productBlockKindValidator,
@@ -1221,61 +1293,67 @@ export const appendBlock = mutation({
     sourceToolStep: v.optional(v.number()),
     sourceRefIds: v.optional(v.array(v.string())),
     accessMode: v.optional(productBlockAccessValidator),
+    attributes: v.optional(v.any()),
   },
   handler: async (ctx, args): Promise<Id<"productBlocks">> => {
     assertBlockContentSize(args.content, { kind: args.kind });
-    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
-    await assertNotebookWriteRateLimit(ctx, {
-      ownerKey: identity.ownerKey,
-      sessionKey: notebookWriteSessionKey(identity),
-      operation: "appendBlock",
-    });
-    const entity = await ctx.db
-      .query("productEntities")
-      .withIndex("by_owner_slug", (q) => q.eq("ownerKey", identity.ownerKey).eq("slug", args.entitySlug))
-      .first();
-    if (!entity) {
-      throw convexError({ code: "ENTITY_NOT_FOUND", slug: args.entitySlug });
+    const access = await requireEntityWorkspaceWriteAccessBySlug(ctx, args);
+    const { entity, identity } = access;
+    const sessionKey = notebookWriteSessionKey(identity);
+    const actorKey = notebookWriteActorKey(sessionKey, args.authorId);
+    let id: Id<"productBlocks">;
+    try {
+      await assertNotebookWriteRateLimit(ctx, {
+        ownerKey: identity.ownerKey,
+        sessionKey,
+        actorKey: args.authorId,
+        operation: "appendBlock",
+        shardHint: `${args.authorId ?? "anon"}:${args.parentBlockId ?? "root"}`,
+      });
+      const now = Date.now();
+      const nextPos = nextAppendPosition(now);
+      id = await ctx.db.insert("productBlocks", {
+        ownerKey: entity.ownerKey,
+        entityId: entity._id,
+        parentBlockId: args.parentBlockId,
+        kind: args.kind,
+        authorKind: args.authorKind,
+        authorId: args.authorId,
+        content: args.content,
+        positionInt: nextPos.int,
+        positionFrac: nextPos.frac,
+        accessMode: args.accessMode ?? "edit",
+        isPublic: false,
+        sourceSessionId: args.sourceSessionId,
+        sourceToolStep: args.sourceToolStep,
+        sourceRefIds: args.sourceRefIds,
+        attributes: args.attributes,
+        revision: 1,
+        createdAt: now,
+        updatedAt: now,
+      });
+    } catch (error) {
+      if (isWriteWindowOccFailure(error)) {
+        throw convexError({
+          code: "RATE_LIMITED",
+          scope: "actor",
+          actorKey,
+          operation: "appendBlock",
+          bucketMs: NOTEBOOK_WRITE_BUCKET_MS,
+          windowMs: NOTEBOOK_WRITE_WINDOW_MS,
+          burstLimit: NOTEBOOK_WRITE_BURST_LIMIT,
+          maxWritesPerWindow: NOTEBOOK_WRITE_LIMIT_PER_MINUTE,
+          retryAfterMs: NOTEBOOK_WRITE_BUCKET_MS,
+          reason: "write_window_conflict",
+        });
+      }
+      if (isConvexErrorLike(error)) throw error;
+      throw convexError({
+        code: "APPEND_BLOCK_INSERT_ERROR",
+        stage: "insert",
+        message: error instanceof Error ? error.message : String(error),
+      });
     }
-
-    // Find the last block at the same parent level so we can position after it.
-    const existing = await ctx.db
-      .query("productBlocks")
-      .withIndex("by_owner_entity", (q) => q.eq("ownerKey", identity.ownerKey).eq("entityId", entity._id))
-      .collect();
-    const siblings = existing
-      .filter((b) => !b.deletedAt && (b.parentBlockId ?? null) === (args.parentBlockId ?? null))
-      .sort((a, b) =>
-        comparePositionsWithId(
-          { int: a.positionInt, frac: a.positionFrac, id: a._id },
-          { int: b.positionInt, frac: b.positionFrac, id: b._id },
-        ),
-      );
-    const last = siblings[siblings.length - 1] ?? null;
-    const nextPos = last
-      ? positionBetween({ int: last.positionInt, frac: last.positionFrac }, null)
-      : initialPosition();
-
-    const now = Date.now();
-    const id = await ctx.db.insert("productBlocks", {
-      ownerKey: identity.ownerKey,
-      entityId: entity._id,
-      parentBlockId: args.parentBlockId,
-      kind: args.kind,
-      authorKind: args.authorKind,
-      authorId: args.authorId,
-      content: args.content,
-      positionInt: nextPos.int,
-      positionFrac: nextPos.frac,
-      accessMode: args.accessMode ?? "edit",
-      isPublic: false,
-      sourceSessionId: args.sourceSessionId,
-      sourceToolStep: args.sourceToolStep,
-      sourceRefIds: args.sourceRefIds,
-      revision: 1,
-      createdAt: now,
-      updatedAt: now,
-    });
     return id;
   },
 });
@@ -1287,6 +1365,7 @@ export const appendBlock = mutation({
 export const insertBlockBetween = mutation({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     entitySlug: v.string(),
     beforeBlockId: v.optional(v.id("productBlocks")),
     afterBlockId: v.optional(v.id("productBlocks")),
@@ -1295,22 +1374,20 @@ export const insertBlockBetween = mutation({
     content: v.array(productBlockChipValidator),
     authorKind: productBlockAuthorKindValidator,
     authorId: v.optional(v.string()),
+    sourceRefIds: v.optional(v.array(v.string())),
+    attributes: v.optional(v.any()),
   },
   handler: async (ctx, args): Promise<Id<"productBlocks">> => {
     assertBlockContentSize(args.content, { kind: args.kind });
-    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const access = await requireEntityWorkspaceWriteAccessBySlug(ctx, args);
+    const { entity, identity } = access;
     await assertNotebookWriteRateLimit(ctx, {
       ownerKey: identity.ownerKey,
       sessionKey: notebookWriteSessionKey(identity),
+      actorKey: args.authorId,
       operation: "insertBlockBetween",
+      shardHint: `${args.authorId ?? "anon"}:${args.beforeBlockId ?? "none"}:${args.afterBlockId ?? "none"}`,
     });
-    const entity = await ctx.db
-      .query("productEntities")
-      .withIndex("by_owner_slug", (q) => q.eq("ownerKey", identity.ownerKey).eq("slug", args.entitySlug))
-      .first();
-    if (!entity) {
-      throw convexError({ code: "ENTITY_NOT_FOUND", slug: args.entitySlug });
-    }
 
     const before = args.beforeBlockId ? await ctx.db.get(args.beforeBlockId) : null;
     const after = args.afterBlockId ? await ctx.db.get(args.afterBlockId) : null;
@@ -1320,7 +1397,7 @@ export const insertBlockBetween = mutation({
 
     const now = Date.now();
     return ctx.db.insert("productBlocks", {
-      ownerKey: identity.ownerKey,
+      ownerKey: entity.ownerKey,
       entityId: entity._id,
       parentBlockId: args.parentBlockId,
       kind: args.kind,
@@ -1331,6 +1408,8 @@ export const insertBlockBetween = mutation({
       positionFrac: nextPos.frac,
       accessMode: "edit",
       isPublic: false,
+      sourceRefIds: args.sourceRefIds,
+      attributes: args.attributes,
       revision: 1,
       createdAt: now,
       updatedAt: now,
@@ -1345,11 +1424,13 @@ export const insertBlockBetween = mutation({
 export const updateBlock = mutation({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     blockId: v.id("productBlocks"),
     content: v.optional(v.array(productBlockChipValidator)),
     kind: v.optional(productBlockKindValidator),
     isChecked: v.optional(v.boolean()),
     sourceRefIds: v.optional(v.array(v.string())),
+    attributes: v.optional(v.any()),
     // When true, we fork the prior version into previousBlockId so we don't lose
     // the original content (Google Docs-style per-block history).
     forkHistory: v.optional(v.boolean()),
@@ -1363,15 +1444,16 @@ export const updateBlock = mutation({
   },
   handler: async (ctx, args): Promise<Id<"productBlocks">> => {
     assertBlockContentSize(args.content, { blockId: args.blockId, kind: args.kind });
-    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const { block: existing, identity } = await requireBlockWriteAccessById(ctx, args);
     await assertNotebookWriteRateLimit(ctx, {
       ownerKey: identity.ownerKey,
       sessionKey: notebookWriteSessionKey(identity),
+      actorKey: args.editedByAuthorId,
       operation: "updateBlock",
+      shardHint: `${args.editedByAuthorId ?? "anon"}:${args.blockId}`,
     });
-    const existing = await ctx.db.get(args.blockId);
-    if (!existing || existing.ownerKey !== identity.ownerKey) {
-      throw convexError({ code: "BLOCK_NOT_FOUND", blockId: args.blockId });
+    if (existing.accessMode !== "edit") {
+      throw convexError({ code: "BLOCK_READ_ONLY", blockId: args.blockId });
     }
     if (
       typeof args.expectedRevision === "number" &&
@@ -1420,6 +1502,7 @@ export const updateBlock = mutation({
       kind: args.kind ?? existing.kind,
       isChecked: args.isChecked ?? existing.isChecked,
       sourceRefIds: args.sourceRefIds ?? existing.sourceRefIds,
+      attributes: args.attributes ?? existing.attributes,
       previousBlockId: previousBlockId ?? existing.previousBlockId,
       revision: existing.revision + 1,
       authorKind: args.editedByAuthorKind ?? existing.authorKind,
@@ -1437,17 +1520,20 @@ export const updateBlock = mutation({
 export const deleteBlock = mutation({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     blockId: v.id("productBlocks"),
   },
   handler: async (ctx, args) => {
-    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const { block: existing, identity } = await requireBlockWriteAccessById(ctx, args);
     await assertNotebookWriteRateLimit(ctx, {
       ownerKey: identity.ownerKey,
       sessionKey: notebookWriteSessionKey(identity),
       operation: "deleteBlock",
+      shardHint: String(args.blockId),
     });
-    const existing = await ctx.db.get(args.blockId);
-    if (!existing || existing.ownerKey !== identity.ownerKey) return;
+    if (existing.accessMode !== "edit") {
+      throw convexError({ code: "BLOCK_READ_ONLY", blockId: args.blockId });
+    }
     await ctx.db.patch(args.blockId, { deletedAt: Date.now(), updatedAt: Date.now() });
   },
 });
@@ -1459,21 +1545,22 @@ export const deleteBlock = mutation({
 export const moveBlock = mutation({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     blockId: v.id("productBlocks"),
     beforeBlockId: v.optional(v.id("productBlocks")),
     afterBlockId: v.optional(v.id("productBlocks")),
     parentBlockId: v.optional(v.id("productBlocks")),
   },
   handler: async (ctx, args) => {
-    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const { block: existing, identity } = await requireBlockWriteAccessById(ctx, args);
     await assertNotebookWriteRateLimit(ctx, {
       ownerKey: identity.ownerKey,
       sessionKey: notebookWriteSessionKey(identity),
       operation: "moveBlock",
+      shardHint: `${args.blockId}:${args.parentBlockId ?? "root"}`,
     });
-    const existing = await ctx.db.get(args.blockId);
-    if (!existing || existing.ownerKey !== identity.ownerKey) {
-      throw new Error("Block not found");
+    if (existing.accessMode !== "edit") {
+      throw convexError({ code: "BLOCK_READ_ONLY", blockId: args.blockId });
     }
     const before = args.beforeBlockId ? await ctx.db.get(args.beforeBlockId) : null;
     const after = args.afterBlockId ? await ctx.db.get(args.afterBlockId) : null;
@@ -1497,6 +1584,7 @@ export const moveBlock = mutation({
 export const createBlockRelation = mutation({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     fromBlockId: v.id("productBlocks"),
     toEntityId: v.optional(v.id("productEntities")),
     toBlockId: v.optional(v.id("productBlocks")),
@@ -1507,14 +1595,23 @@ export const createBlockRelation = mutation({
     authorId: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<Id<"productBlockRelations">> => {
-    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const { block, identity } = await requireBlockWriteAccessById(ctx, {
+      anonymousSessionId: args.anonymousSessionId,
+      shareToken: args.shareToken,
+      blockId: args.fromBlockId,
+    });
     await assertNotebookWriteRateLimit(ctx, {
       ownerKey: identity.ownerKey,
       sessionKey: notebookWriteSessionKey(identity),
+      actorKey: args.authorId,
       operation: "createBlockRelation",
+      shardHint: `${args.fromBlockId}:${args.authorId ?? "anon"}`,
     });
+    if (block.accessMode !== "edit") {
+      throw convexError({ code: "BLOCK_READ_ONLY", blockId: args.fromBlockId });
+    }
     return ctx.db.insert("productBlockRelations", {
-      ownerKey: identity.ownerKey,
+      ownerKey: block.ownerKey,
       fromBlockId: args.fromBlockId,
       toEntityId: args.toEntityId,
       toBlockId: args.toBlockId,
@@ -1535,20 +1632,12 @@ export const createBlockRelation = mutation({
 export const listBacklinksForEntity = query({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     entitySlug: v.string(),
   },
   handler: async (ctx, args) => {
-    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
-    if (ownerKeys.length === 0) return [];
-
-    let entity: Doc<"productEntities"> | null = null;
-    for (const ownerKey of ownerKeys) {
-      entity = await ctx.db
-        .query("productEntities")
-        .withIndex("by_owner_slug", (q) => q.eq("ownerKey", ownerKey).eq("slug", args.entitySlug))
-        .first();
-      if (entity) break;
-    }
+    const workspaceAccess = await resolveEntityWorkspaceAccess(ctx, args);
+    const entity = workspaceAccess?.entity ?? null;
     if (!entity) return [];
 
     const relations = await ctx.db
@@ -1593,11 +1682,17 @@ export const listBacklinksForEntity = query({
 export const listBlockRevisions = query({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     blockId: v.id("productBlocks"),
   },
   handler: async (ctx, args): Promise<Doc<"productBlocks">[]> => {
-    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
-    if (ownerKeys.length === 0) return [];
+    let access: Awaited<ReturnType<typeof requireBlockReadAccessById>> | null = null;
+    try {
+      access = await requireBlockReadAccessById(ctx, args);
+    } catch {
+      return [];
+    }
+    const ownerKeys = [access.block.ownerKey];
     const chain: Doc<"productBlocks">[] = [];
     let cursor: Id<"productBlocks"> | undefined = args.blockId;
     const seen = new Set<string>();
@@ -1630,6 +1725,7 @@ export const setBlockAccessMode = mutation({
       ownerKey: identity.ownerKey,
       sessionKey: notebookWriteSessionKey(identity),
       operation: "setBlockAccessMode",
+      shardHint: `${args.blockId}:${args.accessMode}`,
     });
     const row = await ctx.db.get(args.blockId);
     if (!row || row.ownerKey !== identity.ownerKey) throw new Error("Block not found");
@@ -1649,27 +1745,37 @@ export const setBlockAccessMode = mutation({
 export const promoteLinkToEvidence = mutation({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     fromBlockId: v.id("productBlocks"),
     url: v.string(),
     label: v.string(),
   },
   handler: async (ctx, args): Promise<Id<"productBlocks">> => {
-    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const { block: citing, identity } = await requireBlockWriteAccessById(ctx, {
+      anonymousSessionId: args.anonymousSessionId,
+      shareToken: args.shareToken,
+      blockId: args.fromBlockId,
+    });
     await assertNotebookWriteRateLimit(ctx, {
       ownerKey: identity.ownerKey,
       sessionKey: notebookWriteSessionKey(identity),
       operation: "promoteLinkToEvidence",
+      shardHint: `${args.fromBlockId}:${args.url}`,
     });
-    const citing = await ctx.db.get(args.fromBlockId);
-    if (!citing || citing.ownerKey !== identity.ownerKey) {
-      throw new Error("Citing block not found");
+    if (citing.accessMode !== "edit") {
+      throw convexError({ code: "BLOCK_READ_ONLY", blockId: args.fromBlockId });
     }
     const siblings = await ctx.db
       .query("productBlocks")
-      .withIndex("by_owner_entity", (q) => q.eq("ownerKey", citing.ownerKey).eq("entityId", citing.entityId))
+      .withIndex("by_owner_entity_parent_position", (q) =>
+        q
+          .eq("ownerKey", citing.ownerKey)
+          .eq("entityId", citing.entityId)
+          .eq("parentBlockId", citing.parentBlockId),
+      )
       .collect();
     const sorted = siblings
-      .filter((b) => !b.deletedAt && (b.parentBlockId ?? null) === (citing.parentBlockId ?? null))
+      .filter((b) => !b.deletedAt)
       .sort((a, b) =>
         comparePositionsWithId(
           { int: a.positionInt, frac: a.positionFrac, id: a._id },
@@ -1685,7 +1791,7 @@ export const promoteLinkToEvidence = mutation({
 
     const now = Date.now();
     const evidenceBlockId = await ctx.db.insert("productBlocks", {
-      ownerKey: identity.ownerKey,
+      ownerKey: citing.ownerKey,
       entityId: citing.entityId,
       parentBlockId: citing._id,
       kind: "evidence",
@@ -1701,7 +1807,7 @@ export const promoteLinkToEvidence = mutation({
       updatedAt: now,
     });
     await ctx.db.insert("productBlockRelations", {
-      ownerKey: identity.ownerKey,
+      ownerKey: citing.ownerKey,
       fromBlockId: citing._id,
       toBlockId: evidenceBlockId,
       toUrl: args.url,
@@ -1720,13 +1826,27 @@ export const promoteLinkToEvidence = mutation({
 export const searchEntitiesForMention = query({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
+    entitySlug: v.optional(v.string()),
     prefix: v.string(),
   },
   handler: async (
     ctx,
     args,
   ): Promise<Array<{ slug: string; name: string; entityType: string }>> => {
-    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
+    let ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
+    if (args.entitySlug) {
+      const workspaceAccess = await resolveEntityWorkspaceAccess(ctx, {
+        anonymousSessionId: args.anonymousSessionId,
+        shareToken: args.shareToken,
+        entitySlug: args.entitySlug,
+      });
+      if (workspaceAccess) {
+        ownerKeys = [workspaceAccess.entity.ownerKey];
+      } else if (args.shareToken) {
+        return [];
+      }
+    }
     if (ownerKeys.length === 0) return [];
     const needle = args.prefix.trim().toLowerCase();
     if (!needle) return [];
@@ -1757,27 +1877,23 @@ export const searchEntitiesForMention = query({
 export const backfillEntityBlocks = mutation({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     entitySlug: v.string(),
   },
   handler: async (ctx, args): Promise<{ inserted: number; cleared: number }> => {
-    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const access = await requireEntityWorkspaceWriteAccessBySlug(ctx, args);
+    const { entity, identity } = access;
     await assertNotebookWriteRateLimit(ctx, {
       ownerKey: identity.ownerKey,
       sessionKey: notebookWriteSessionKey(identity),
       operation: "backfillEntityBlocks",
+      shardHint: args.entitySlug,
     });
-    const entity = await ctx.db
-      .query("productEntities")
-      .withIndex("by_owner_slug", (q) => q.eq("ownerKey", identity.ownerKey).eq("slug", args.entitySlug))
-      .first();
-    if (!entity) {
-      throw convexError({ code: "ENTITY_NOT_FOUND", slug: args.entitySlug });
-    }
 
     // Clear agent-authored blocks so we don't accumulate duplicates across runs.
     const existing = await ctx.db
       .query("productBlocks")
-      .withIndex("by_owner_entity", (q) => q.eq("ownerKey", identity.ownerKey).eq("entityId", entity._id))
+      .withIndex("by_owner_entity", (q) => q.eq("ownerKey", entity.ownerKey).eq("entityId", entity._id))
       .collect();
     let cleared = 0;
     for (const block of existing) {
@@ -1791,7 +1907,7 @@ export const backfillEntityBlocks = mutation({
     const latestReport = await ctx.db
       .query("productReports")
       .withIndex("by_owner_entity_updated", (q) =>
-        q.eq("ownerKey", identity.ownerKey).eq("entitySlug", args.entitySlug),
+        q.eq("ownerKey", entity.ownerKey).eq("entitySlug", args.entitySlug),
       )
       .order("desc")
       .first();
@@ -1799,25 +1915,84 @@ export const backfillEntityBlocks = mutation({
     const now = Date.now();
     let inserted = 0;
 
+    let seedTitle: string | null = null;
+    let seedSections:
+      | Array<{
+          title: string;
+          body: string;
+          sourceRefIds?: string[];
+        }>
+      | null = null;
+    let seedAuthorId: string | undefined;
+    let seedSessionId: Id<"productChatSessions"> | undefined;
+
     if (latestReport) {
-      const sectionCount = (latestReport.sections ?? []).length;
+      seedTitle = latestReport.title || "Prep brief";
+      seedSections = (latestReport.sections ?? []).map((section) => ({
+        title: section.title,
+        body: section.body,
+        sourceRefIds: section.sourceRefIds,
+      }));
+      seedAuthorId = latestReport.routing?.executionModel ?? "agent";
+      seedSessionId = latestReport.sessionId ?? undefined;
+    } else {
+      const archivePosts = await ctx.db
+        .query("linkedinPostArchive")
+        .withIndex("by_postedAt")
+        .order("desc")
+        .take(SYSTEM_NOTEBOOK_POST_LIMIT);
+      const systemNode = getSystemEntityNodeBySlug(
+        archivePosts.filter((post) => post.target !== "personal"),
+        args.entitySlug,
+      );
+      const latestSystemTimeline = systemNode?.timeline[0] ?? null;
+      const systemSources = latestSystemTimeline
+        ? latestSystemTimeline.sourceUrls.map((href, index) => ({
+            id: `${latestSystemTimeline.key}-source-${index}`,
+            label:
+              latestSystemTimeline.sourceLabels[index] ??
+              sourceLabelFromHref(href) ??
+              `Source ${index + 1}`,
+          }))
+        : [];
+      if (systemNode) {
+        seedTitle = latestSystemTimeline?.title ?? systemNode.name ?? entity.name;
+        seedSections = buildSystemNotebookSections({
+          entityName: systemNode.name,
+          summary: latestSystemTimeline?.summary ?? systemNode.summary,
+          relatedCount: systemNode.relatedEntities.filter(isCleanSystemNotebookRelation).length,
+          sourceCount: systemSources.length,
+          systemGroup: systemNode.systemGroup,
+          latestTitle: latestSystemTimeline?.title ?? systemNode.name,
+          sourceRefIds: systemSources.map((source) => source.id),
+        }).map((section) => ({
+          title: section.title,
+          body: section.body,
+          sourceRefIds: section.sourceRefIds,
+        }));
+        seedAuthorId = "system-archive";
+      }
+    }
+
+    if (seedTitle && seedSections && seedSections.length > 0) {
+      const sectionCount = seedSections.length;
       // One heading block for the report itself + heading + body per section.
       const positions = positionsBetween(null, null, 1 + sectionCount * 2);
       let posIdx = 0;
 
       const briefHeadingId = await ctx.db.insert("productBlocks", {
-        ownerKey: identity.ownerKey,
+        ownerKey: entity.ownerKey,
         entityId: entity._id,
         parentBlockId: undefined,
         kind: "heading_2",
         authorKind: "agent",
-        authorId: latestReport.routing?.executionModel ?? "agent",
-        content: [{ type: "text", value: latestReport.title || "Prep brief" }],
+        authorId: seedAuthorId,
+        content: [{ type: "text", value: seedTitle }],
         positionInt: positions[posIdx].int,
         positionFrac: positions[posIdx].frac,
         accessMode: "edit",
         isPublic: false,
-        sourceSessionId: latestReport.sessionId,
+        sourceSessionId: seedSessionId,
         revision: 1,
         createdAt: now,
         updatedAt: now,
@@ -1825,20 +2000,20 @@ export const backfillEntityBlocks = mutation({
       posIdx += 1;
       inserted += 1;
 
-      for (const section of latestReport.sections ?? []) {
+      for (const section of seedSections) {
         const headingId = await ctx.db.insert("productBlocks", {
-          ownerKey: identity.ownerKey,
+          ownerKey: entity.ownerKey,
           entityId: entity._id,
           parentBlockId: briefHeadingId,
           kind: "heading_3",
           authorKind: "agent",
-          authorId: latestReport.routing?.executionModel ?? "agent",
+          authorId: seedAuthorId,
           content: [{ type: "text", value: section.title }],
           positionInt: positions[posIdx].int,
           positionFrac: positions[posIdx].frac,
           accessMode: "edit",
           isPublic: false,
-          sourceSessionId: latestReport.sessionId,
+          sourceSessionId: seedSessionId,
           revision: 1,
           createdAt: now,
           updatedAt: now,
@@ -1847,18 +2022,18 @@ export const backfillEntityBlocks = mutation({
         inserted += 1;
 
         await ctx.db.insert("productBlocks", {
-          ownerKey: identity.ownerKey,
+          ownerKey: entity.ownerKey,
           entityId: entity._id,
           parentBlockId: headingId,
           kind: "text",
           authorKind: "agent",
-          authorId: latestReport.routing?.executionModel ?? "agent",
+          authorId: seedAuthorId,
           content: [{ type: "text", value: section.body }],
           positionInt: positions[posIdx].int,
           positionFrac: positions[posIdx].frac,
           accessMode: "edit",
           isPublic: false,
-          sourceSessionId: latestReport.sessionId,
+          sourceSessionId: seedSessionId,
           sourceRefIds: section.sourceRefIds,
           revision: 1,
           createdAt: now,
@@ -1872,14 +2047,14 @@ export const backfillEntityBlocks = mutation({
     // Evidence blocks (attached to this entity)
     const evidenceItems = await ctx.db
       .query("productEvidenceItems")
-      .withIndex("by_owner_entity", (q) => q.eq("ownerKey", identity.ownerKey).eq("entityId", entity._id))
+      .withIndex("by_owner_entity", (q) => q.eq("ownerKey", entity.ownerKey).eq("entityId", entity._id))
       .collect();
     if (evidenceItems.length > 0) {
       const positions = positionsBetween(null, null, evidenceItems.length);
       for (let i = 0; i < evidenceItems.length; i++) {
         const item = evidenceItems[i];
         await ctx.db.insert("productBlocks", {
-          ownerKey: identity.ownerKey,
+          ownerKey: entity.ownerKey,
           entityId: entity._id,
           kind: "evidence",
           authorKind: "agent",

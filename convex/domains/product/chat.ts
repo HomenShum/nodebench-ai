@@ -1,7 +1,13 @@
 import { mutation, query } from "../../_generated/server";
 import { v } from "convex/values";
+import { internal } from "../../_generated/api";
 import { buildPreviewText, deriveDomainFromUrl, requireProductIdentity, summarizeText } from "./helpers";
-import { ensureEntityForReport, upsertEntityContextItem } from "./entities";
+import { ensureEntityForReport, upsertEntityContextItem, upsertExplicitRelatedEntitiesForReport } from "./entities";
+import { productRoutingDecisionValidator } from "./schema";
+import { deriveCanonicalReportSections } from "../../../shared/reportSections";
+import { buildPrepBriefTitle, deriveReportArtifactMode, type ReportArtifactMode } from "../../../shared/reportArtifacts";
+import { upsertOpenProductNudge } from "./nudgeHelpers";
+import { syncGenericDiligenceProjectionDrafts, buildGenericDiligenceProjectionDrafts } from "./diligenceProjectionRuntime";
 
 const draftSections = [
   {
@@ -30,42 +36,23 @@ const draftSections = [
   },
 ];
 
-function deriveSectionsFromPacket(packet: any) {
-  return [
-    {
-      id: "what-it-is",
-      title: "What it is",
-      body: summarizeText(packet?.answer, "No clear summary was returned."),
-      status: "complete" as const,
-    },
-    {
-      id: "why-it-matters",
-      title: "Why it matters",
-      body: summarizeText(
-        packet?.changes?.[0]?.description ?? packet?.variables?.[0]?.name,
-        "The agent did not return a distinct why-this-matters section.",
-      ),
-      status: "complete" as const,
-    },
-    {
-      id: "what-is-missing",
-      title: "What is missing",
-      body: summarizeText(
-        packet?.risks?.[0]?.description ?? packet?.nextQuestions?.[0] ?? packet?.uncertaintyBoundary,
-        "No explicit gap was returned.",
-      ),
-      status: "complete" as const,
-    },
-    {
-      id: "what-to-do-next",
-      title: "What to do next",
-      body: summarizeText(
-        packet?.recommendedNextAction ?? packet?.interventions?.[0]?.action ?? packet?.nextQuestions?.[0],
-        "No next action was returned.",
-      ),
-      status: "complete" as const,
-    },
-  ];
+function deriveSectionsFromPacket(packet: any, mode: ReportArtifactMode) {
+  return deriveCanonicalReportSections(packet, { mode }).map((section) => ({
+    id: section.id,
+    title: section.title,
+    body: summarizeText(
+      section.body,
+      section.id === "what-it-is"
+        ? "No clear summary was returned."
+        : section.id === "why-it-matters"
+          ? "The agent did not return a distinct why-this-matters section."
+          : section.id === "what-is-missing"
+            ? "No explicit gap was returned."
+            : "No next action was returned.",
+    ),
+    status: "complete" as const,
+    sourceRefIds: section.sourceRefIds,
+  }));
 }
 
 function normalizeSources(packet: any) {
@@ -78,7 +65,13 @@ function normalizeSources(packet: any) {
     status: typeof source?.status === "string" ? source.status : undefined,
     title: typeof source?.title === "string" ? source.title : undefined,
     domain: deriveDomainFromUrl(source?.href),
+    siteName: typeof source?.siteName === "string" ? source.siteName : undefined,
+    faviconUrl: typeof source?.faviconUrl === "string" ? source.faviconUrl : undefined,
     publishedAt: typeof source?.publishedAt === "string" ? source.publishedAt : undefined,
+    thumbnailUrl: typeof source?.thumbnailUrl === "string" ? source.thumbnailUrl : undefined,
+    imageCandidates: Array.isArray(source?.imageCandidates)
+      ? source.imageCandidates.filter((candidate: unknown): candidate is string => typeof candidate === "string" && candidate.trim().length > 0).slice(0, 4)
+      : undefined,
     excerpt: typeof source?.excerpt === "string" ? source.excerpt : undefined,
     confidence: typeof source?.confidence === "number" ? source.confidence : undefined,
   }));
@@ -106,6 +99,8 @@ export const startSession = mutation({
         }),
       ),
     ),
+    contextHint: v.optional(v.string()),
+    contextLabel: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
@@ -129,6 +124,12 @@ export const startSession = mutation({
       lens: args.lens,
       title: args.query,
       status: "streaming",
+      operatorContext: args.contextHint?.trim()
+        ? {
+            hint: args.contextHint.trim(),
+            label: args.contextLabel?.trim() || undefined,
+          }
+        : undefined,
       createdAt: now,
       updatedAt: now,
     });
@@ -141,6 +142,23 @@ export const startSession = mutation({
       body: args.query,
       createdAt: now,
     });
+
+    if (args.contextHint?.trim()) {
+      await ctx.db.insert("productChatEvents", {
+        ownerKey: identity.ownerKey,
+        sessionId,
+        type: "system",
+        label: "Operator context applied",
+        body: args.contextLabel?.trim()
+          ? `Applied saved context: ${args.contextLabel.trim()}`
+          : "Applied saved operator context from Me.",
+        payload: {
+          contextHint: args.contextHint.trim(),
+          contextLabel: args.contextLabel?.trim() || null,
+        },
+        createdAt: now,
+      });
+    }
 
     await ctx.db.insert("productReportDrafts", {
       ownerKey: identity.ownerKey,
@@ -273,6 +291,8 @@ export const completeSession = mutation({
     anonymousSessionId: v.optional(v.string()),
     sessionId: v.id("productChatSessions"),
     packet: v.any(),
+    entitySlugHint: v.optional(v.string()),
+    routing: v.optional(productRoutingDecisionValidator),
     totalDurationMs: v.optional(v.number()),
     error: v.optional(v.string()),
   },
@@ -285,16 +305,27 @@ export const completeSession = mutation({
     }
 
     const now = Date.now();
-    const sections = deriveSectionsFromPacket(args.packet);
+    const artifactMode = deriveReportArtifactMode(session.query);
+    const sections = deriveSectionsFromPacket(args.packet, artifactMode);
     const sources = normalizeSources(args.packet);
-    const reportTitle = summarizeText(args.packet?.entityName ?? session.query, session.query);
+    const routing = args.routing ?? undefined;
+    const reportTitle =
+      artifactMode === "prep_brief"
+        ? buildPrepBriefTitle({
+            entityName: typeof args.packet?.entityName === "string" ? args.packet.entityName : undefined,
+            fallbackQuery: session.query,
+          })
+        : summarizeText(args.packet?.entityName ?? session.query, session.query);
     const reportSummary = summarizeText(args.packet?.answer, "No clear summary was returned.");
     const entityMeta = await ensureEntityForReport(ctx, {
       ownerKey,
       primaryEntity: typeof args.packet?.entityName === "string" ? args.packet.entityName : undefined,
+      entitySlugHint: args.entitySlugHint,
       title: reportTitle,
       query: session.query,
-      type: "report",
+      type: typeof args.packet?.classification === "string" ? args.packet.classification : artifactMode,
+      sourceUrls: sources.map((source) => source.href),
+      lens: session.lens,
       summary: reportSummary,
       now,
     });
@@ -320,6 +351,20 @@ export const completeSession = mutation({
       )
       .collect();
 
+    const toolEvents = await ctx.db
+      .query("productToolEvents")
+      .withIndex("by_session_step", (q) => q.eq("sessionId", args.sessionId))
+      .collect();
+
+    for (const event of toolEvents) {
+      if (event.status !== "running") continue;
+      await ctx.db.patch(event._id, {
+        status: args.error ? "error" : "done",
+        durationMs: event.durationMs ?? Math.max(0, now - event.startedAt),
+        updatedAt: now,
+      });
+    }
+
     for (const source of sources) {
       const alreadyStored = await ctx.db
         .query("productSourceEvents")
@@ -339,7 +384,11 @@ export const completeSession = mutation({
           status: source.status,
           title: source.title,
           domain: source.domain,
+          siteName: source.siteName,
+          faviconUrl: source.faviconUrl,
           publishedAt: source.publishedAt,
+          thumbnailUrl: source.thumbnailUrl,
+          imageCandidates: source.imageCandidates,
           excerpt: source.excerpt,
           confidence: source.confidence,
           createdAt: now,
@@ -354,12 +403,14 @@ export const completeSession = mutation({
       entityId: entityMeta.entityId,
       entitySlug: entityMeta.entitySlug,
       title: reportTitle,
-      type: "report",
+      type: artifactMode,
       summary: reportSummary,
       status: "saved",
       primaryEntity: typeof args.packet?.entityName === "string" ? args.packet.entityName : undefined,
       lens: session.lens,
       query: session.query,
+      routing,
+      operatorContext: session.operatorContext ?? undefined,
       sections,
       sources,
       evidenceItemIds: existingEvidence.map((item) => item._id),
@@ -371,6 +422,43 @@ export const completeSession = mutation({
       createdAt: now,
       updatedAt: now,
     });
+
+    await syncGenericDiligenceProjectionDrafts(ctx, {
+      entitySlug: entityMeta.entitySlug,
+      drafts: buildGenericDiligenceProjectionDrafts({
+        entitySlug: entityMeta.entitySlug,
+        title: reportTitle,
+        primaryEntity:
+          typeof args.packet?.entityName === "string" ? args.packet.entityName : entityMeta.entityName,
+        sections,
+        sources,
+        updatedAt: now,
+        revision: entityMeta.revision,
+      }),
+    });
+
+    await ctx.scheduler.runAfter(
+      0,
+      internal.domains.product.diligenceProjections.runScratchpadProjectionPass,
+      {
+        workflowId: `scratchpad:${entityMeta.entitySlug}:${now}:session_complete:all`,
+        reason: "session_complete",
+        userId: identity.rawUserId ?? undefined,
+        idempotencyKey: `overlay:${entityMeta.entitySlug}:${now}:all`,
+        report: {
+          entitySlug: entityMeta.entitySlug,
+          title: reportTitle,
+          primaryEntity:
+            typeof args.packet?.entityName === "string"
+              ? args.packet.entityName
+              : entityMeta.entityName,
+          sections,
+          sources,
+          updatedAt: now,
+          revision: entityMeta.revision,
+        },
+      },
+    );
 
     for (const evidence of existingEvidence) {
       await ctx.db.patch(evidence._id, {
@@ -402,12 +490,21 @@ export const completeSession = mutation({
       now,
     });
 
+    await upsertExplicitRelatedEntitiesForReport(ctx, {
+      ownerKey,
+      primaryEntitySlug: entityMeta.entitySlug,
+      query: session.query,
+      sources,
+      now,
+    });
+
     await ctx.db.patch(args.sessionId, {
       status: args.error ? "error" : "complete",
       autoSavedReportId: reportId,
       latestSummary: reportSummary,
       lastError: args.error,
       totalDurationMs: args.totalDurationMs,
+      routing,
       updatedAt: now,
     });
 
@@ -426,35 +523,32 @@ export const completeSession = mutation({
       body: args.error ?? "The report was saved to Reports automatically.",
       payload: {
         reportId,
+        routingMode: routing?.routingMode,
       },
       createdAt: now,
     });
 
-    const existingNudge = await ctx.db
-      .query("productNudges")
-      .withIndex("by_owner_report", (q) =>
-        q.eq("ownerKey", ownerKey).eq("linkedReportId", reportId),
-      )
-      .first();
+    await upsertOpenProductNudge(ctx, {
+      ownerKey,
+      type: "refresh_recommended",
+      title: `Revisit ${entityMeta.entityName}`,
+      summary: "This report was saved automatically and can be refreshed later if the underlying facts change.",
+      linkedReportId: reportId,
+      linkedChatSessionId: args.sessionId,
+      priority: "medium",
+      dueAt: now + 24 * 60 * 60 * 1000,
+      actionLabel: "Open report",
+      actionTargetSurface: "reports",
+      actionTargetId: entityMeta.entitySlug,
+      createdAt: now,
+      updatedAt: now,
+    });
 
-    if (!existingNudge) {
-      await ctx.db.insert("productNudges", {
-        ownerKey,
-        type: "refresh_recommended",
-        title: `Revisit ${entityMeta.entityName}`,
-        summary: "This report was saved automatically and can be refreshed later if the underlying facts change.",
-        linkedReportId: reportId,
-        linkedChatSessionId: args.sessionId,
-        status: "open",
-        priority: "medium",
-        dueAt: now + 24 * 60 * 60 * 1000,
-        actionLabel: "Open report",
-        actionTargetSurface: "reports",
-        actionTargetId: entityMeta.entitySlug,
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
+    await ctx.scheduler.runAfter(
+      0,
+      internal.domains.product.reports.hydrateReportSourceMediaInternal,
+      { reportId },
+    );
 
     return {
       reportId,

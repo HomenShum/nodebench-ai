@@ -4,15 +4,20 @@ import type { Doc, Id } from "../../_generated/dataModel";
 import { query, mutation, type MutationCtx, type QueryCtx } from "../../_generated/server";
 import { v } from "convex/values";
 
-import { requireProductIdentity } from "./helpers";
+import { requireBlockReadAccessById, requireBlockWriteAccessById, requireProductIdentity } from "./helpers";
 import { parseProductBlockSyncId } from "../../../shared/productBlockSync";
-import { prosemirrorDocToChips } from "../../../shared/notebookBlockProsemirror";
+import {
+  chipsToProsemirrorDoc,
+  prosemirrorDocToChips,
+} from "../../../shared/notebookBlockProsemirror";
+import { productBlockChipValidator } from "./schema";
 
 const prosemirrorSync = new ProsemirrorSync(components.prosemirrorSync);
 
 type BlockLookup = {
   block: Doc<"productBlocks">;
   anonymousSessionId: string | null;
+  shareToken: string | null;
 };
 
 function parseSyncIdentityOrThrow(id: string) {
@@ -25,27 +30,29 @@ function parseSyncIdentityOrThrow(id: string) {
 
 async function getBlockForRead(ctx: QueryCtx, syncId: string): Promise<BlockLookup> {
   const parsed = parseSyncIdentityOrThrow(syncId);
-  const identity = await requireProductIdentity(ctx, parsed.anonymousSessionId);
-  const block = await ctx.db.get(parsed.blockId as Id<"productBlocks">);
-  if (!block || block.ownerKey !== identity.ownerKey || block.deletedAt) {
-    throw new Error("Notebook block not found");
-  }
+  const { block } = await requireBlockReadAccessById(ctx, {
+    anonymousSessionId: parsed.anonymousSessionId,
+    shareToken: parsed.shareToken,
+    blockId: parsed.blockId as Id<"productBlocks">,
+  });
   return {
     block,
     anonymousSessionId: parsed.anonymousSessionId,
+    shareToken: parsed.shareToken,
   };
 }
 
 async function getBlockForWrite(ctx: MutationCtx, syncId: string): Promise<BlockLookup> {
   const parsed = parseSyncIdentityOrThrow(syncId);
-  const identity = await requireProductIdentity(ctx, parsed.anonymousSessionId);
-  const block = await ctx.db.get(parsed.blockId as Id<"productBlocks">);
-  if (!block || block.ownerKey !== identity.ownerKey || block.deletedAt) {
-    throw new Error("Notebook block not found");
-  }
+  const { block } = await requireBlockWriteAccessById(ctx, {
+    anonymousSessionId: parsed.anonymousSessionId,
+    shareToken: parsed.shareToken,
+    blockId: parsed.blockId as Id<"productBlocks">,
+  });
   return {
     block,
     anonymousSessionId: parsed.anonymousSessionId,
+    shareToken: parsed.shareToken,
   };
 }
 
@@ -63,7 +70,7 @@ export async function mirrorNotebookSnapshotIntoBlock(
   await ctx.db.patch(block._id, {
     content: chips,
     revision: block.revision + 1,
-    authorKind: "user",
+    authorKind: typeof identity.rawUserId === "string" ? "user" : "anonymous",
     authorId:
       typeof identity.rawUserId === "string"
         ? identity.rawUserId
@@ -109,5 +116,37 @@ export const getBlockSyncSeed = query({
       revision: block.revision,
       updatedAt: block.updatedAt,
     };
+  },
+});
+
+export const submitOfflineSnapshot = mutation({
+  args: {
+    id: v.string(),
+    anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
+    chips: v.array(productBlockChipValidator),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const { anonymousSessionId, shareToken } = await getBlockForWrite(ctx, args.id);
+    await requireBlockWriteAccessById(ctx, {
+      anonymousSessionId: args.anonymousSessionId ?? anonymousSessionId,
+      shareToken: args.shareToken ?? shareToken,
+      blockId: parseSyncIdentityOrThrow(args.id).blockId as Id<"productBlocks">,
+    });
+
+    const latest = await ctx.runQuery(components.prosemirrorSync.lib.latestVersion, {
+      id: args.id,
+    });
+    const nextVersion = (typeof latest === "number" ? latest : 0) + 1;
+    const snapshot = JSON.stringify(chipsToProsemirrorDoc(args.chips));
+    await ctx.runMutation(components.prosemirrorSync.lib.submitSnapshot, {
+      id: args.id,
+      version: nextVersion,
+      content: snapshot,
+      pruneSnapshots: true,
+    });
+    await mirrorNotebookSnapshotIntoBlock(ctx, args.id, snapshot);
+    return null;
   },
 });

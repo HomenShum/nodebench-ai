@@ -107,6 +107,7 @@ export function createHarnessRouter(tools: McpTool[]): Router {
       messageCount: session.messages.length,
       totalCostUsd: session.totalCostUsd,
       adaptationCount: session.adaptationCount,
+      pendingSteeringCount: session.pendingSteering.length,
       compactions: session.compactions.length,
       createdAt: session.createdAt,
       lastActivityAt: session.lastActivityAt,
@@ -188,7 +189,12 @@ export function createHarnessRouter(tools: McpTool[]): Router {
       const result = await runtime.run(req.params.id, query.trim(), {
         maxAdaptations,
         timeoutMs,
+        onPlan: (plan) => {
+          send("plan", { sessionId: req.params.id, plan });
+        },
         onTrace: (event: TraceEvent) => {
+          if (event.type === "step_start") send("step_start", event);
+          if (event.type === "step_done") send("step_done", event);
           send("trace", event);
         },
       });
@@ -249,6 +255,29 @@ export function createHarnessRouter(tools: McpTool[]): Router {
     const cost = runtime.getSessionCost(req.params.id);
     if (!cost) return res.status(404).json({ ok: false, error: "Session not found" });
     res.json({ ok: true, ...cost });
+  });
+
+  router.post("/sessions/:id/steering", (req: Request, res: Response) => {
+    const { input, source } = req.body as {
+      input?: Record<string, unknown> | string;
+      source?: string;
+    };
+
+    if (
+      input == null
+      || (typeof input !== "string" && (typeof input !== "object" || Array.isArray(input)))
+    ) {
+      return res.status(400).json({ ok: false, error: "input must be a string or object" });
+    }
+
+    const queued = runtime.queueSteering(req.params.id, input, source);
+    if (!queued) return res.status(404).json({ ok: false, error: "Session not found" });
+
+    return res.status(202).json({
+      ok: true,
+      queued,
+      pendingSteeringCount: runtime.getPendingSteeringCount(req.params.id) ?? 0,
+    });
   });
 
   // ── Compact Session ───────────────────────────────────────────

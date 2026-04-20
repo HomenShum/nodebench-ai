@@ -1,6 +1,6 @@
 import { query } from "../../_generated/server";
 import { v } from "convex/values";
-import { resolveProductIdentitySafely } from "./helpers";
+import { resolveProductReadOwnerKeys } from "./helpers";
 
 const EMPTY_HOME_SNAPSHOT = {
   evidenceCards: [],
@@ -13,7 +13,7 @@ export const getHomeSnapshot = query({
     anonymousSessionId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await resolveProductIdentitySafely(ctx, args.anonymousSessionId);
+    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
     let publicCards: any[] = [];
     try {
       publicCards = await ctx.db
@@ -25,7 +25,7 @@ export const getHomeSnapshot = query({
       console.error("[product] getHomeSnapshot publicCards failed", error);
     }
 
-    if (!identity.ownerKey) {
+    if (ownerKeys.length === 0) {
       return {
         evidenceCards: EMPTY_HOME_SNAPSHOT.evidenceCards,
         recentReports: EMPTY_HOME_SNAPSHOT.recentReports,
@@ -34,18 +34,46 @@ export const getHomeSnapshot = query({
     }
 
     try {
-      const [evidenceCards, recentReports] = await Promise.all([
-        ctx.db
-          .query("productEvidenceItems")
-          .withIndex("by_owner_updated", (q) => q.eq("ownerKey", identity.ownerKey!))
-          .order("desc")
-          .take(6),
-        ctx.db
-          .query("productReports")
-          .withIndex("by_owner_updated", (q) => q.eq("ownerKey", identity.ownerKey!))
-          .order("desc")
-          .take(3),
+      const [evidenceGroups, reportGroups] = await Promise.all([
+        Promise.all(
+          ownerKeys.map((ownerKey) =>
+            ctx.db
+              .query("productEvidenceItems")
+              .withIndex("by_owner_updated", (q) => q.eq("ownerKey", ownerKey))
+              .order("desc")
+              .take(6),
+          ),
+        ),
+        Promise.all(
+          ownerKeys.map((ownerKey) =>
+            ctx.db
+              .query("productReports")
+              .withIndex("by_owner_updated", (q) => q.eq("ownerKey", ownerKey))
+              .order("desc")
+              .take(3),
+          ),
+        ),
       ]);
+
+      const evidenceCards = evidenceGroups
+        .flat()
+        .sort((left, right) => right.updatedAt - left.updatedAt)
+        .reduce<Array<(typeof evidenceGroups)[number][number]>>((acc, evidence) => {
+          if (acc.some((existing) => existing._id === evidence._id)) return acc;
+          acc.push(evidence);
+          return acc;
+        }, [])
+        .slice(0, 6);
+
+      const recentReports = reportGroups
+        .flat()
+        .sort((left, right) => right.updatedAt - left.updatedAt)
+        .reduce<Array<(typeof reportGroups)[number][number]>>((acc, report) => {
+          if (acc.some((existing) => existing._id === report._id)) return acc;
+          acc.push(report);
+          return acc;
+        }, [])
+        .slice(0, 3);
 
       return {
         evidenceCards,
@@ -54,7 +82,7 @@ export const getHomeSnapshot = query({
       };
     } catch (error) {
       console.error("[product] getHomeSnapshot owner data failed", {
-        ownerKey: identity.ownerKey,
+        ownerKeys,
         error,
       });
       return {

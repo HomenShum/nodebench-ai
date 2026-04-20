@@ -22,6 +22,11 @@
  */
 
 import { recordAction, recordFailure, getReflectionPrompt, recordRecoveryOutcome, initSessionMemoryTables } from "../packages/mcp-local/src/sync/sessionMemory.js";
+import {
+  formatEntityMemoryRecallForPrompt,
+  MEMORY_CONTEXT_STEP_ID,
+  type EntityMemoryRecallEntry,
+} from "./lib/entityMemoryRecall.js";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -30,8 +35,14 @@ export interface HarnessStep {
   toolName: string;
   args: Record<string, unknown>;
   purpose: string;
+  stepIndex?: number;
+  groupId?: string;
   parallel?: boolean;  // Can run alongside other parallel steps
-  dependsOn?: string;  // Wait for this step ID first
+  dependsOn?: string | string[];  // Backward-compatible input, normalized to string[]
+  model?: string;
+  complexity?: TaskComplexity;
+  injectPriorResults?: string[];
+  acceptsSteering?: boolean;
 }
 
 export interface HarnessPlan {
@@ -49,7 +60,22 @@ export interface HarnessStepResult {
   success: boolean;
   durationMs: number;
   error?: string;
+  model?: string;
+  tokensIn?: number;
+  tokensOut?: number;
+  costUsd?: number;
+  groupId?: string;
+  stepIndex?: number;
+  startedAt?: number;
+  completedAt?: number;
+  injectedContext?: string[];
+  steeringApplied?: boolean;
+  preview?: string;
 }
+
+export type HarnessStepV2 = HarnessStep;
+export type HarnessPlanV2 = HarnessPlan;
+export type HarnessStepResultV2 = HarnessStepResult;
 
 export interface HarnessExecution {
   plan: HarnessPlan;
@@ -59,7 +85,39 @@ export interface HarnessExecution {
   adaptations: number;  // How many times the plan was revised
 }
 
-export type TraceCallback = (step: { step: string; tool?: string; status: string; detail?: string }) => void;
+export type HarnessTraceEvent =
+  | { type: "trace"; step: string; tool?: string; status: "ok" | "error" | "skip" | "adapting"; detail?: string }
+  | {
+      type: "step_start";
+      stepId: string;
+      toolName: string;
+      stepIndex?: number;
+      groupId?: string;
+      model?: string;
+      purpose?: string;
+      startedAt: number;
+    }
+  | {
+      type: "step_done";
+      stepId: string;
+      toolName: string;
+      stepIndex?: number;
+      groupId?: string;
+      model?: string;
+      durationMs: number;
+      startedAt: number;
+      completedAt: number;
+      success: boolean;
+      error?: string;
+      preview?: string;
+      tokensIn?: number;
+      tokensOut?: number;
+      costUsd?: number;
+      injectedContext?: string[];
+      steeringApplied?: boolean;
+    };
+
+export type TraceCallback = (event: HarnessTraceEvent) => void;
 
 type ToolCaller = (name: string, args: Record<string, unknown>) => Promise<unknown>;
 
@@ -2374,6 +2432,24 @@ const LATEST_MODELS = {
   openai: { nano: "gpt-5.4-nano", mini: "gpt-5.4-mini", standard: "gpt-5.4", pro: "gpt-5.4-pro" },
 } as const;
 
+const MODEL_PRICING: Record<string, { input: number; output: number }> = {
+  "gemini-3.1-flash-lite-preview": { input: 0.075, output: 0.30 },
+  "gemini-3.1-flash-preview": { input: 0.15, output: 0.60 },
+  "gemini-3.1-pro-preview": { input: 1.25, output: 5.00 },
+  "gpt-5.4-nano": { input: 0.05, output: 0.20 },
+  "gpt-5.4-mini": { input: 0.20, output: 0.80 },
+  "gpt-5.4": { input: 1.25, output: 5.00 },
+  "gpt-5.4-pro": { input: 15.00, output: 60.00 },
+  "claude-haiku-4-5-20251001": { input: 1.00, output: 5.00 },
+  "claude-sonnet-4-6": { input: 3.00, output: 15.00 },
+  "claude-opus-4-6": { input: 15.00, output: 75.00 },
+};
+
+function estimateModelCost(model: string, inputTokens: number, outputTokens: number): number {
+  const pricing = MODEL_PRICING[model] ?? MODEL_PRICING["gemini-3.1-flash-preview"];
+  return (inputTokens * pricing.input + outputTokens * pricing.output) / 1_000_000;
+}
+
 // ── Kilo Code-style auto model routing ───────────────────────────────
 // Pattern from Kilo Code: detect task complexity, route to optimal model.
 // - Classification/extraction → Flash Lite (cheapest, fastest)
@@ -2493,6 +2569,46 @@ const OPENAI_MODELS: Record<TaskComplexity, ModelConfig> = {
   },
 };
 
+function isHarnessDebugEnabled(): boolean {
+  return process.env.NODEBENCH_DEBUG_HARNESS === "1";
+}
+
+function logHarnessDebug(...args: unknown[]): void {
+  if (!isHarnessDebugEnabled()) return;
+  console.info(...args);
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error ?? "");
+}
+
+function isExpectedMissingLlmError(error: unknown): boolean {
+  const message = getErrorMessage(error).toLowerCase();
+  return message.includes("call_llm tool unavailable in this test")
+    || message.includes("call_llm unavailable in this test");
+}
+
+function isMissingApiKeyError(error: unknown): boolean {
+  return /^No [A-Z0-9_]+$/.test(getErrorMessage(error));
+}
+
+function hasConfiguredApiKey(envName: string): boolean {
+  return Boolean(process.env[envName]);
+}
+
+function isAutomatedTestRuntime(): boolean {
+  return process.env.NODE_ENV === "test"
+    || process.env.VITEST === "1"
+    || process.env.VITEST === "true"
+    || Boolean(process.env.VITEST_WORKER_ID);
+}
+
+function shouldAllowExternalLlmFallback(): boolean {
+  if (process.env.NODEBENCH_ALLOW_EXTERNAL_LLM_FALLBACK_IN_TESTS === "1") return true;
+  return !isAutomatedTestRuntime();
+}
+
 async function callModel(config: ModelConfig, prompt: string, system: string | undefined, maxTokens: number): Promise<string> {
   const apiKey = process.env[config.apiKeyEnv];
   if (!apiKey) throw new Error(`No ${config.apiKeyEnv}`);
@@ -2522,6 +2638,9 @@ async function callLLM(
   maxTokens?: number,
 ): Promise<string> {
   const tokens = maxTokens ?? 1000;
+  let sawExpectedMissingLlm = false;
+  let sawConfiguredModelPath = false;
+  const unexpectedFailures: string[] = [];
 
   // Path 1: MCP tool bus
   try {
@@ -2538,13 +2657,27 @@ async function callLLM(
           ? ""
           : String(toolResult?.response ?? toolResult?.output ?? toolResult?.content ?? "");
     if (text.length > 10) return text;
-  } catch (toolErr: any) {
-    console.error("[callLLM] tool bus failed:", toolErr?.message?.slice(0, 80));
+  } catch (toolErr: unknown) {
+    if (isExpectedMissingLlmError(toolErr)) {
+      sawExpectedMissingLlm = true;
+    } else {
+      const message = getErrorMessage(toolErr).slice(0, 80);
+      unexpectedFailures.push(`tool bus: ${message}`);
+      console.error("[callLLM] tool bus failed:", message);
+    }
   }
 
   // Path 2: Direct Gemini API (most reliable — always try this)
+  if (!shouldAllowExternalLlmFallback()) {
+    if (!sawExpectedMissingLlm && unexpectedFailures.length === 0) {
+      logHarnessDebug("[callLLM] Skipping external fallback in automated test runtime.");
+    }
+    return "";
+  }
+
   const geminiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
   if (geminiKey) {
+    sawConfiguredModelPath = true;
     try {
       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${geminiKey}`;
       const body = {
@@ -2561,14 +2694,17 @@ async function callLLM(
         const data = (await resp.json()) as any;
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
         if (text.length > 10) {
-          console.error("[callLLM] Gemini direct succeeded:", text.length, "chars");
+          logHarnessDebug("[callLLM] Gemini direct succeeded:", text.length, "chars");
           return text;
         }
       } else {
-        console.error("[callLLM] Gemini direct failed:", resp.status);
+        unexpectedFailures.push(`Gemini direct ${resp.status}`);
+        logHarnessDebug("[callLLM] Gemini direct failed:", resp.status);
       }
-    } catch (geminiErr: any) {
-      console.error("[callLLM] Gemini direct error:", geminiErr?.message?.slice(0, 80));
+    } catch (geminiErr: unknown) {
+      const message = getErrorMessage(geminiErr).slice(0, 80);
+      unexpectedFailures.push(`Gemini direct error: ${message}`);
+      logHarnessDebug("[callLLM] Gemini direct error:", message);
     }
   }
 
@@ -2581,14 +2717,32 @@ async function callLLM(
   if (complexity !== "low") chain.push(GEMINI_MODELS.low);
   if (complexity !== "low") chain.push(OPENAI_MODELS.low);
 
-  for (const model of chain) {
+  const seenModelNames = new Set<string>();
+  const eligibleChain = chain.filter((model) => {
+    if (seenModelNames.has(model.name)) return false;
+    seenModelNames.add(model.name);
+    return hasConfiguredApiKey(model.apiKeyEnv);
+  });
+
+  for (const model of eligibleChain) {
+    sawConfiguredModelPath = true;
     try {
       const result = await callModel(model, prompt, system, tokens);
       if (result && result.length > 10) return result;
-    } catch { continue; }
+    } catch (modelErr: unknown) {
+      if (!isMissingApiKeyError(modelErr)) {
+        unexpectedFailures.push(`${model.name}: ${getErrorMessage(modelErr).slice(0, 80)}`);
+      }
+    }
   }
 
-  console.error("[callLLM] ALL paths failed. Returning empty.");
+  if (unexpectedFailures.length > 0) {
+    console.error("[callLLM] ALL paths failed. Returning empty.", unexpectedFailures.join(" | "));
+  } else if (sawConfiguredModelPath) {
+    logHarnessDebug("[callLLM] Configured model paths returned no usable text.");
+  } else if (!sawExpectedMissingLlm) {
+    logHarnessDebug("[callLLM] No configured LLM path available.");
+  }
   return "";
 }
 
@@ -2614,19 +2768,141 @@ Return ONLY valid JSON:
 {
   "objective": "what this plan accomplishes",
   "steps": [
-    {"id": "s1", "toolName": "tool_name", "args": {...}, "purpose": "why this step", "parallel": false},
-    {"id": "s2", "toolName": "tool_name", "args": {...}, "purpose": "why this step", "parallel": true, "dependsOn": "s1"}
+    {"id": "s1", "stepIndex": 0, "groupId": "discover", "toolName": "tool_name", "args": {...}, "purpose": "why this step"},
+    {"id": "s2", "stepIndex": 1, "groupId": "analyze", "toolName": "tool_name", "args": {...}, "purpose": "why this step", "dependsOn": ["s1"], "injectPriorResults": ["s1"], "model": "gemini-3.1-flash-lite-preview"}
   ],
   "synthesisPrompt": "how to combine results into a final answer"
 }
 
 Rules:
 - Use 2-5 steps. Don't over-plan.
-- Mark steps as parallel:true when they don't depend on each other.
+- Steps in the same tier should share the same stepIndex.
+- Steps that run together should share a groupId.
+- dependsOn must be an array of step IDs, never a single string.
 - For company searches: web_search + run_recon in parallel, then synthesize.
 - For founder questions: founder_local_gather first, then direction_assessment or synthesize.
 - For comparisons: web_search per entity in parallel, then compare.
 - Always include at least one intelligence-gathering step.`;
+
+function normalizeDependsOn(dependsOn?: string | string[]): string[] | undefined {
+  if (!dependsOn) return undefined;
+  const normalized = (Array.isArray(dependsOn) ? dependsOn : [dependsOn])
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function summarizeResultPreview(result: unknown, error?: string): string | undefined {
+  if (error) return error;
+  if (result == null) return undefined;
+  if (typeof result === "string") return result.replace(/\s+/g, " ").trim().slice(0, 120);
+  if (typeof result === "number" || typeof result === "boolean") return String(result);
+  if (typeof result === "object") {
+    try {
+      const json = JSON.stringify(result);
+      return json.replace(/\s+/g, " ").trim().slice(0, 160);
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
+function estimateTokenCount(value: unknown): number {
+  try {
+    return Math.max(1, Math.ceil(JSON.stringify(value ?? "").length / 4));
+  } catch {
+    return 1;
+  }
+}
+
+function resolveStepModel(step: HarnessStep): string | undefined {
+  if (step.model) return step.model;
+  if (step.complexity) {
+    return GEMINI_MODELS[step.complexity]?.name;
+  }
+  return undefined;
+}
+
+function inferStepIndex(
+  step: HarnessStep,
+  stepMap: Map<string, HarnessStep>,
+  memo: Map<string, number>,
+  visiting = new Set<string>(),
+): number {
+  if (typeof step.stepIndex === "number") return step.stepIndex;
+  const cached = memo.get(step.id);
+  if (cached != null) return cached;
+  if (visiting.has(step.id)) return 0;
+  visiting.add(step.id);
+  const dependsOn = normalizeDependsOn(step.dependsOn);
+  if (!dependsOn?.length) {
+    memo.set(step.id, 0);
+    visiting.delete(step.id);
+    return 0;
+  }
+  const index = Math.max(
+    ...dependsOn.map((depId) => {
+      const depStep = stepMap.get(depId);
+      return depStep ? inferStepIndex(depStep, stepMap, memo, visiting) + 1 : 0;
+    }),
+  );
+  memo.set(step.id, index);
+  visiting.delete(step.id);
+  return index;
+}
+
+function normalizeHarnessPlan(plan: HarnessPlan): HarnessPlan {
+  const draftSteps = plan.steps.map((step, index) => ({
+    ...step,
+    id: step.id ?? `step_${index}`,
+  }));
+  const stepMap = new Map(draftSteps.map((step) => [step.id, step]));
+  const memo = new Map<string, number>();
+
+  const steps = draftSteps.map((step) => {
+    const dependsOn = normalizeDependsOn(step.dependsOn);
+    const stepIndex = inferStepIndex(step, stepMap, memo);
+    return {
+      ...step,
+      dependsOn,
+      stepIndex,
+      groupId: step.groupId ?? (step.parallel ? `tier_${stepIndex}` : `${step.id}`),
+      model: resolveStepModel(step),
+      injectPriorResults: step.injectPriorResults ?? dependsOn,
+    };
+  });
+
+  return {
+    ...plan,
+    steps: steps.sort((left, right) => {
+      const leftIndex = typeof left.stepIndex === "number" ? left.stepIndex : Number.MAX_SAFE_INTEGER;
+      const rightIndex = typeof right.stepIndex === "number" ? right.stepIndex : Number.MAX_SAFE_INTEGER;
+      if (leftIndex !== rightIndex) return leftIndex - rightIndex;
+      return left.id.localeCompare(right.id);
+    }),
+  };
+}
+
+function uniqueStepRefs(values: Array<string | undefined>): string[] | undefined {
+  const deduped = [...new Set(values.filter((value): value is string => typeof value === "string" && value.trim().length > 0))];
+  return deduped.length > 0 ? deduped : undefined;
+}
+
+function applyRecalledMemoryToPlan(
+  plan: HarnessPlan,
+  recalledMemory: EntityMemoryRecallEntry[] | null | undefined,
+): HarnessPlan {
+  if (!recalledMemory?.length) return plan;
+
+  return {
+    ...plan,
+    synthesisPrompt: `${plan.synthesisPrompt}\n\nCarry-forward memory is injected under _priorResults.${MEMORY_CONTEXT_STEP_ID}. Use it to preserve continuity, saved-because context, and delta framing without rediscovering the same entity from scratch.`,
+    steps: plan.steps.map((step) => ({
+      ...step,
+      injectPriorResults: uniqueStepRefs([...(step.injectPriorResults ?? []), MEMORY_CONTEXT_STEP_ID]),
+    })),
+  };
+}
 
 export async function generatePlan(
   query: string,
@@ -2634,7 +2910,11 @@ export async function generatePlan(
   entityTargets: string[],
   lens: string,
   callTool: ToolCaller,
+  options?: {
+    recalledMemory?: EntityMemoryRecallEntry[] | null;
+  },
 ): Promise<HarnessPlan> {
+  const recalledMemoryPrompt = formatEntityMemoryRecallForPrompt(options?.recalledMemory);
   // Multi-entity and weekly_reset: always use deterministic fallback plan.
   // LLM plans often drop the second entity or miss weekly_reset web fallbacks.
   if (
@@ -2643,13 +2923,16 @@ export async function generatePlan(
     classification === "company_search" ||
     classification === "competitor"
   ) {
-    return buildFallbackPlan(query, classification, entityTargets, lens);
+    return applyRecalledMemoryToPlan(
+      normalizeHarnessPlan(buildFallbackPlan(query, classification, entityTargets, lens)),
+      options?.recalledMemory,
+    );
   }
 
   try {
     const text = await callLLM(
       callTool,
-      `${PLAN_PROMPT}\n\nQuery: "${query}"\nClassification: ${classification}\nEntities: ${entityTargets.join(", ") || "none"}\nLens: ${lens}`,
+      `${PLAN_PROMPT}\n\nQuery: "${query}"\nClassification: ${classification}\nEntities: ${entityTargets.join(", ") || "none"}\nLens: ${lens}${recalledMemoryPrompt ? `\n\nCarry-forward entity memory:\n${recalledMemoryPrompt}` : ""}`,
       undefined,
       500,
     );
@@ -2657,23 +2940,32 @@ export async function generatePlan(
     if (!jsonMatch) throw new Error("No JSON in response");
 
     const parsed = JSON.parse(jsonMatch[0]);
-    return {
+    return applyRecalledMemoryToPlan(normalizeHarnessPlan({
       objective: parsed.objective ?? query,
       classification,
       entityTargets,
       steps: (parsed.steps ?? []).map((s: any, i: number) => ({
         id: s.id ?? `step_${i}`,
+        stepIndex: typeof s.stepIndex === "number" ? s.stepIndex : undefined,
+        groupId: typeof s.groupId === "string" ? s.groupId : undefined,
         toolName: s.toolName ?? "web_search",
         args: s.args ?? {},
         purpose: s.purpose ?? "",
         parallel: s.parallel ?? false,
         dependsOn: s.dependsOn,
+        model: typeof s.model === "string" ? s.model : undefined,
+        complexity: typeof s.complexity === "string" ? s.complexity : undefined,
+        injectPriorResults: Array.isArray(s.injectPriorResults) ? s.injectPriorResults : undefined,
+        acceptsSteering: Boolean(s.acceptsSteering),
       })),
       synthesisPrompt: parsed.synthesisPrompt ?? "Synthesize results into a structured intelligence packet.",
-    };
+    }), options?.recalledMemory);
   } catch {
     // Fallback: deterministic plan based on classification
-    return buildFallbackPlan(query, classification, entityTargets, lens);
+    return applyRecalledMemoryToPlan(
+      normalizeHarnessPlan(buildFallbackPlan(query, classification, entityTargets, lens)),
+      options?.recalledMemory,
+    );
   }
 }
 
@@ -2723,9 +3015,9 @@ function buildFallbackPlan(query: string, classification: string, entityTargets:
         objective: "Generate founder weekly reset with latest market signals",
         classification, entityTargets,
         steps: [
-          { id: "s1", toolName: "founder_local_weekly_reset", args: { daysBack: 7 }, purpose: "Get weekly reset packet", parallel: true },
-          { id: "s2", toolName: "web_search", args: { query: `AI startup ecosystem latest news changes this week ${year}`, maxResults: 5 }, purpose: "Latest market signals (fallback for serverless)", parallel: true },
-          { id: "s3", toolName: "linkup_search", args: { query: `top AI and tech changes this week ${year}`, maxResults: 3 }, purpose: "Deep intelligence on weekly changes", parallel: true },
+          { id: "s1", stepIndex: 0, groupId: "discover", toolName: "founder_local_weekly_reset", args: { daysBack: 7 }, purpose: "Get weekly reset packet", parallel: true },
+          { id: "s2", stepIndex: 0, groupId: "discover", toolName: "web_search", args: { query: `AI startup ecosystem latest news changes this week ${year}`, maxResults: 5 }, purpose: "Latest market signals (fallback for serverless)", parallel: true },
+          { id: "s3", stepIndex: 0, groupId: "discover", toolName: "linkup_search", args: { query: `top AI and tech changes this week ${year}`, maxResults: 3 }, purpose: "Deep intelligence on weekly changes", parallel: true },
         ],
         synthesisPrompt: "Format as a weekly founder reset: what changed, biggest risks, and next 3 moves. Use web intelligence when local context is unavailable.",
       };
@@ -2736,7 +3028,7 @@ function buildFallbackPlan(query: string, classification: string, entityTargets:
         objective: `Synthesize ${classification} packet`,
         classification, entityTargets,
         steps: [
-          { id: "s1", toolName: "founder_local_synthesize", args: { query, packetType: classification, daysBack: 7 }, purpose: "Synthesize packet", parallel: false },
+          { id: "s1", stepIndex: 0, groupId: "packet", toolName: "founder_local_synthesize", args: { query, packetType: classification, daysBack: 7 }, purpose: "Synthesize packet", parallel: false },
         ],
         synthesisPrompt: "Format as a structured founder packet.",
       };
@@ -2790,11 +3082,11 @@ function buildFallbackPlan(query: string, classification: string, entityTargets:
         objective: `Analyze ${entity}`,
         classification, entityTargets,
         steps: [
-          { id: "s1", toolName: "linkup_search", args: { query: `${entity} revenue valuation funding enterprise customers market share ${year}`, maxResults: 5 }, purpose: "Deep entity, financial, and market-share intelligence", parallel: true },
-          { id: "s2", toolName: "web_search", args: { query: `${entity} competitors enterprise market share pricing risks ${year}`, maxResults: 5 }, purpose: "Competitive map, pricing pressure, and core risks", parallel: true },
-          { id: "s3", toolName: "web_search", args: { query: `${entity} revenue valuation funding growth enterprise customers ${year}`, maxResults: 5 }, purpose: "Financial and operating evidence", parallel: true },
-          { id: "s4", toolName: "run_recon", args: { target: entity, focus: query }, purpose: "Structured recon for positioning and diligence gaps", parallel: true },
-          { id: "s5", toolName: "enrich_entity", args: { query: `${entity} strategic position and competitive moat`, entityName: entity, lens }, purpose: "Structured lens-specific synthesis", parallel: true },
+          { id: "s1", stepIndex: 0, groupId: "discover", toolName: "linkup_search", args: { query: `${entity} revenue valuation funding enterprise customers market share ${year}`, maxResults: 5 }, purpose: "Deep entity, financial, and market-share intelligence", parallel: true },
+          { id: "s2", stepIndex: 0, groupId: "discover", toolName: "web_search", args: { query: `${entity} competitors enterprise market share pricing risks ${year}`, maxResults: 5 }, purpose: "Competitive map, pricing pressure, and core risks", parallel: true },
+          { id: "s3", stepIndex: 0, groupId: "discover", toolName: "web_search", args: { query: `${entity} revenue valuation funding growth enterprise customers ${year}`, maxResults: 5 }, purpose: "Financial and operating evidence", parallel: true },
+          { id: "s4", stepIndex: 1, groupId: "analyze", toolName: "run_recon", args: { target: entity, focus: query }, purpose: "Structured recon for positioning and diligence gaps", dependsOn: ["s1", "s2", "s3"], injectPriorResults: ["s1", "s2", "s3"], acceptsSteering: true, model: "gemini-3.1-flash-lite-preview" },
+          { id: "s5", stepIndex: 1, groupId: "analyze", toolName: "enrich_entity", args: { query: `${entity} strategic position and competitive moat`, entityName: entity, lens }, purpose: "Structured lens-specific synthesis", dependsOn: ["s1", "s2", "s3"], injectPriorResults: ["s1", "s2", "s3"], acceptsSteering: true },
           // NOTE: founder_local_gather EXCLUDED from external entity searches.
         ],
         synthesisPrompt: `Synthesize intelligence about ${entity} for a ${lens} audience. Include financial facts, competitive set, diligence flags, and concrete next actions.`,
@@ -2805,8 +3097,8 @@ function buildFallbackPlan(query: string, classification: string, entityTargets:
         objective: `Plan: ${query}`,
         classification, entityTargets,
         steps: [
-          { id: "s1", toolName: "founder_local_gather", args: { daysBack: 7 }, purpose: "Understand current context", parallel: false },
-          { id: "s2", toolName: "web_search", args: { query: `${query} best practices ${year}`, maxResults: 3 }, purpose: "Research approaches", parallel: false },
+          { id: "s1", stepIndex: 0, groupId: "context", toolName: "founder_local_gather", args: { daysBack: 7 }, purpose: "Understand current context", parallel: false },
+          { id: "s2", stepIndex: 1, groupId: "discover", toolName: "web_search", args: { query: `${query} best practices ${year}`, maxResults: 3 }, purpose: "Research approaches", parallel: false, dependsOn: ["s1"], injectPriorResults: ["s1"], acceptsSteering: true },
         ],
         synthesisPrompt: "Generate a structured feature plan with phases, risks, and next steps.",
       };
@@ -2831,110 +3123,278 @@ export async function executeHarness(
   plan: HarnessPlan,
   callTool: ToolCaller,
   onTrace?: TraceCallback,
-  options?: { toolTimeoutMs?: number; episodeId?: string },
+  options?: {
+    toolTimeoutMs?: number;
+    episodeId?: string;
+    pendingUserSteering?: Record<string, unknown> | string | null;
+    consumeUserSteering?: (step: HarnessStep) => Record<string, unknown> | string | null | undefined;
+    seedContext?: Record<string, unknown>;
+  },
 ): Promise<HarnessExecution> {
+  const normalizedPlan = normalizeHarnessPlan(plan);
   const startMs = Date.now();
   const stepResults: HarnessStepResult[] = [];
   const completedSteps = new Set<string>();
+  const runContext = new Map<string, unknown>();
   const toolTimeoutMs = options?.toolTimeoutMs ?? 12_000;
   const episodeId = options?.episodeId ?? `harness_${Date.now()}`;
+  const staticSteeringPayload = options?.pendingUserSteering;
 
   // Initialize session memory tables (safe if already exists)
   try { initSessionMemoryTables(); } catch { /* SQLite may not be available in all envs */ }
 
-  // Group steps by dependency level
-  const readySteps = plan.steps.filter(s => !s.dependsOn);
-  const dependentSteps = plan.steps.filter(s => s.dependsOn);
+  const seedEntries = Object.entries(options?.seedContext ?? {}).filter(([, value]) => value !== undefined);
+  for (const [seedId, value] of seedEntries) {
+    runContext.set(seedId, value);
+  }
+  if (seedEntries.length > 0) {
+    onTrace?.({
+      type: "trace",
+      step: "seed_context",
+      status: "ok",
+      detail: `Injected seed context: ${seedEntries.map(([seedId]) => seedId).join(", ")}`,
+    });
+  }
 
-  // Execute ready steps (parallel where marked)
-  const parallelBatch = readySteps.filter(s => s.parallel);
-  const serialSteps = readySteps.filter(s => !s.parallel);
+  const runStep = async (step: HarnessStep): Promise<HarnessStepResult> => {
+    const startedAt = Date.now();
+    const model = resolveStepModel(step);
+    const dependsOn = normalizeDependsOn(step.dependsOn) ?? [];
+    const unmetDependencies = dependsOn.filter((dependency) => !completedSteps.has(dependency));
+    const injectedContext = (step.injectPriorResults ?? []).filter((dependency) => runContext.has(dependency));
+    const steeringPayload = step.acceptsSteering
+      ? (options?.consumeUserSteering?.(step) ?? staticSteeringPayload)
+      : null;
+    const steeringApplied = Boolean(step.acceptsSteering && steeringPayload != null);
 
-  // Run parallel batch
-  if (parallelBatch.length > 0) {
-    onTrace?.({ step: "parallel_dispatch", tool: parallelBatch.map(s => s.toolName).join(", "), status: "ok", detail: `${parallelBatch.length} parallel steps` });
+    if (unmetDependencies.length > 0) {
+      onTrace?.({
+        type: "trace",
+        step: "skip_step",
+        tool: step.toolName,
+        status: "skip",
+        detail: `${step.id} waiting on ${unmetDependencies.join(", ")}`,
+      });
+      return {
+        stepId: step.id,
+        toolName: step.toolName,
+        result: null,
+        success: false,
+        durationMs: 0,
+        error: `blocked: unmet dependencies ${unmetDependencies.join(", ")}`,
+        model,
+        groupId: step.groupId,
+        stepIndex: step.stepIndex,
+        startedAt,
+        completedAt: startedAt,
+        injectedContext,
+        steeringApplied,
+      };
+    }
 
-    const parallelResults = await Promise.all(
-      parallelBatch.map(async (step) => {
-        const stepStart = Date.now();
-        onTrace?.({ step: "tool_call", tool: step.toolName, status: "ok", detail: step.purpose });
-        try {
-          const result = await Promise.race([
-            callTool(step.toolName, step.args),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), toolTimeoutMs)),
-          ]);
-          const duration = Date.now() - stepStart;
-          completedSteps.add(step.id);
-          return { stepId: step.id, toolName: step.toolName, result, success: true, durationMs: duration };
-        } catch (err: any) {
-          return { stepId: step.id, toolName: step.toolName, result: null, success: false, durationMs: Date.now() - stepStart, error: err?.message };
+    const enrichedArgs: Record<string, unknown> = { ...step.args };
+    if (injectedContext.length > 0) {
+      enrichedArgs._priorResults = Object.fromEntries(injectedContext.map((id) => [id, runContext.get(id)]));
+    }
+    if (steeringApplied) {
+      enrichedArgs._steering = steeringPayload;
+      onTrace?.({
+        type: "trace",
+        step: "steering_applied",
+        tool: step.toolName,
+        status: "ok",
+        detail: `${step.id} received queued steering`,
+      });
+    }
+    if (model && enrichedArgs.model == null && step.toolName === "call_llm") {
+      enrichedArgs.model = model;
+    }
+
+    onTrace?.({
+      type: "step_start",
+      stepId: step.id,
+      toolName: step.toolName,
+      stepIndex: step.stepIndex,
+      groupId: step.groupId,
+      model,
+      purpose: step.purpose,
+      startedAt,
+    });
+
+    try {
+      const result = await Promise.race([
+        callTool(step.toolName, enrichedArgs),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), toolTimeoutMs)),
+      ]);
+      const completedAt = Date.now();
+      const durationMs = completedAt - startedAt;
+      const tokensIn = estimateTokenCount(enrichedArgs);
+      const tokensOut = estimateTokenCount(result);
+      const costUsd = model ? estimateModelCost(model, tokensIn, tokensOut) : 0;
+      const stepResult: HarnessStepResult = {
+        stepId: step.id,
+        toolName: step.toolName,
+        result,
+        success: true,
+        durationMs,
+        model,
+        tokensIn,
+        tokensOut,
+        costUsd,
+        groupId: step.groupId,
+        stepIndex: step.stepIndex,
+        startedAt,
+        completedAt,
+        injectedContext,
+        steeringApplied,
+        preview: summarizeResultPreview(result),
+      };
+      completedSteps.add(step.id);
+      runContext.set(step.id, result);
+      onTrace?.({
+        type: "step_done",
+        stepId: step.id,
+        toolName: step.toolName,
+        stepIndex: step.stepIndex,
+        groupId: step.groupId,
+        model,
+        durationMs,
+        startedAt,
+        completedAt,
+        success: true,
+        preview: stepResult.preview,
+        tokensIn,
+        tokensOut,
+        costUsd,
+        injectedContext,
+        steeringApplied,
+      });
+      return stepResult;
+    } catch (err: any) {
+      const completedAt = Date.now();
+      const durationMs = completedAt - startedAt;
+      const tokensIn = estimateTokenCount(enrichedArgs);
+      const stepResult: HarnessStepResult = {
+        stepId: step.id,
+        toolName: step.toolName,
+        result: null,
+        success: false,
+        durationMs,
+        error: err?.message,
+        model,
+        tokensIn,
+        tokensOut: 0,
+        costUsd: 0,
+        groupId: step.groupId,
+        stepIndex: step.stepIndex,
+        startedAt,
+        completedAt,
+        injectedContext,
+        steeringApplied,
+        preview: summarizeResultPreview(null, err?.message),
+      };
+      onTrace?.({
+        type: "step_done",
+        stepId: step.id,
+        toolName: step.toolName,
+        stepIndex: step.stepIndex,
+        groupId: step.groupId,
+        model,
+        durationMs,
+        startedAt,
+        completedAt,
+        success: false,
+        error: err?.message,
+        tokensIn,
+        tokensOut: 0,
+        costUsd: 0,
+        injectedContext,
+        steeringApplied,
+      });
+      return stepResult;
+    }
+  };
+
+  const tiers = new Map<number, HarnessStep[]>();
+  for (const step of normalizedPlan.steps) {
+    const tier = step.stepIndex ?? 0;
+    const existing = tiers.get(tier) ?? [];
+    existing.push(step);
+    tiers.set(tier, existing);
+  }
+
+  for (const tier of [...tiers.keys()].sort((left, right) => left - right)) {
+    const steps = tiers.get(tier) ?? [];
+    const groups = new Map<string, HarnessStep[]>();
+    for (const step of steps) {
+      const key = step.groupId ?? step.id;
+      const existing = groups.get(key) ?? [];
+      existing.push(step);
+      groups.set(key, existing);
+    }
+
+    const tierGroupResults = await Promise.all(
+      [...groups.entries()].map(async ([groupId, groupSteps]) => {
+        if (groupSteps.length > 1) {
+          onTrace?.({
+            type: "trace",
+            step: "parallel_dispatch",
+            tool: groupSteps.map((step) => step.toolName).join(", "),
+            status: "ok",
+            detail: `tier=${tier} group=${groupId} count=${groupSteps.length}`,
+          });
         }
-      })
+
+        const groupResults = groupSteps.length > 1
+          ? await Promise.all(groupSteps.map((step) => runStep(step)))
+          : [await runStep(groupSteps[0]!)];
+
+        return { groupSteps, groupResults };
+      }),
     );
-    // Record parallel results in session memory
-    for (const pr of parallelResults) {
-      try {
-        recordAction({ episodeId, stepIndex: parallelBatch.findIndex(s => s.id === pr.stepId), toolName: pr.toolName, input: JSON.stringify(parallelBatch.find(s => s.id === pr.stepId)?.args ?? {}).slice(0, 2048), output: JSON.stringify(pr.result ?? pr.error ?? "").slice(0, 2048), success: pr.success, durationMs: pr.durationMs, timestamp: new Date().toISOString() });
-        if (!pr.success && pr.error) {
-          const failureType = pr.error.includes("timeout") ? "timeout" : "error";
-          const reflection = getReflectionPrompt(failureType, pr.toolName);
-          recordFailure({ episodeId, stepIndex: parallelBatch.findIndex(s => s.id === pr.stepId), toolName: pr.toolName, failureType, rootCause: pr.error, recoveryStrategy: reflection, recoverySuccessful: null, timestamp: new Date().toISOString() });
+
+    for (const { groupSteps, groupResults } of tierGroupResults) {
+      stepResults.push(...groupResults);
+      for (const result of groupResults) {
+        try {
+          recordAction({
+            episodeId,
+            stepIndex: result.stepIndex ?? tier,
+            toolName: result.toolName,
+            input: JSON.stringify(groupSteps.find((step) => step.id === result.stepId)?.args ?? {}).slice(0, 2048),
+            output: JSON.stringify(result.result ?? result.error ?? "").slice(0, 2048),
+            success: result.success,
+            durationMs: result.durationMs,
+            timestamp: new Date().toISOString(),
+          });
+          if (!result.success && result.error) {
+            const failureType = result.error.includes("timeout") ? "timeout" : "error";
+            const reflection = getReflectionPrompt(failureType, result.toolName);
+            recordFailure({
+              episodeId,
+              stepIndex: result.stepIndex ?? tier,
+              toolName: result.toolName,
+              failureType,
+              rootCause: result.error,
+              recoveryStrategy: reflection,
+              recoverySuccessful: null,
+              timestamp: new Date().toISOString(),
+            });
+          }
+        } catch {
+          /* session memory is best-effort */
         }
-      } catch { /* session memory is best-effort */ }
-    }
-    stepResults.push(...parallelResults);
-  }
-
-  // Run serial steps
-  for (let si = 0; si < serialSteps.length; si++) {
-    const step = serialSteps[si];
-    const stepStart = Date.now();
-    onTrace?.({ step: "tool_call", tool: step.toolName, status: "ok", detail: step.purpose });
-    try {
-      const result = await Promise.race([
-        callTool(step.toolName, step.args),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), toolTimeoutMs)),
-      ]);
-      completedSteps.add(step.id);
-      const dur = Date.now() - stepStart;
-      stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: dur });
-      try { recordAction({ episodeId, stepIndex: si, toolName: step.toolName, input: JSON.stringify(step.args).slice(0, 2048), output: JSON.stringify(result ?? "").slice(0, 2048), success: true, durationMs: dur, timestamp: new Date().toISOString() }); } catch { /* best-effort */ }
-    } catch (err: any) {
-      const dur = Date.now() - stepStart;
-      stepResults.push({ stepId: step.id, toolName: step.toolName, result: null, success: false, durationMs: dur, error: err?.message });
-      try {
-        const failureType = err?.message?.includes("timeout") ? "timeout" : "error";
-        recordAction({ episodeId, stepIndex: si, toolName: step.toolName, input: JSON.stringify(step.args).slice(0, 2048), output: err?.message ?? "unknown", success: false, durationMs: dur, timestamp: new Date().toISOString() });
-        const reflection = getReflectionPrompt(failureType, step.toolName);
-        recordFailure({ episodeId, stepIndex: si, toolName: step.toolName, failureType, rootCause: err?.message ?? "unknown", recoveryStrategy: reflection, recoverySuccessful: null, timestamp: new Date().toISOString() });
-      } catch { /* best-effort */ }
+      }
     }
   }
 
-  // Run dependent steps (if their dependency completed)
-  for (const step of dependentSteps) {
-    if (step.dependsOn && !completedSteps.has(step.dependsOn)) continue;
-    const stepStart = Date.now();
-    onTrace?.({ step: "tool_call", tool: step.toolName, status: "ok", detail: step.purpose });
-    try {
-      const result = await Promise.race([
-        callTool(step.toolName, step.args),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), toolTimeoutMs)),
-      ]);
-      completedSteps.add(step.id);
-      stepResults.push({ stepId: step.id, toolName: step.toolName, result, success: true, durationMs: Date.now() - stepStart });
-    } catch (err: any) {
-      stepResults.push({ stepId: step.id, toolName: step.toolName, result: null, success: false, durationMs: Date.now() - stepStart, error: err?.message });
-    }
-  }
-
-  onTrace?.({ step: "assemble_response", status: "ok", detail: `${stepResults.length} steps completed` });
+  onTrace?.({ type: "trace", step: "assemble_response", status: "ok", detail: `${stepResults.length} steps completed` });
 
   return {
-    plan,
+    plan: normalizedPlan,
     stepResults,
     totalDurationMs: Date.now() - startMs,
-    totalCostUsd: stepResults.reduce((s, r) => s + (r.success ? 0.005 : 0), 0),
+    totalCostUsd: stepResults.reduce((sum, result) => sum + (result.costUsd ?? 0), 0),
     adaptations: 0,
   };
 }
@@ -3043,11 +3503,11 @@ Return ONLY valid JSON with ALL fields populated:
       );
 
       const jsonMatch = text.match(/\{[\s\S]*\}/);
-      console.error("[synthesis] LLM returned", text.length, "chars. jsonMatch:", jsonMatch ? jsonMatch[0].length + " chars" : "null", "first 100:", text.slice(0, 100));
+      logHarnessDebug("[synthesis] LLM returned", text.length, "chars. jsonMatch:", jsonMatch ? jsonMatch[0].length + " chars" : "null", "first 100:", text.slice(0, 100));
       if (jsonMatch) {
         const cleaned = jsonMatch[0].replace(/,\s*([\]}])/g, "$1"); // strip trailing commas
         const parsed = JSON.parse(cleaned);
-        console.error("[synthesis] Parsed OK. entityName:", parsed.entityName, "signals:", parsed.signals?.length, "risks:", parsed.risks?.length);
+        logHarnessDebug("[synthesis] Parsed OK. entityName:", parsed.entityName, "signals:", parsed.signals?.length, "risks:", parsed.risks?.length);
         const signalContext = {
           entityName,
           classification: execution.plan.classification,

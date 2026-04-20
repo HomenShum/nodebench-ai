@@ -4,9 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { ChevronRight, ExternalLink, Link2, Network, Sparkles } from "lucide-react";
 import { useConvexApi } from "@/lib/convexApi";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
+import { buildEntityPath } from "@/features/entities/lib/entityExport";
 
 type Props = {
   entitySlug: string;
+  shareToken?: string;
+  canOpenLive?: boolean;
+  onOpenLive?: () => void;
+  openingLive?: boolean;
 };
 
 type AuthorKind = "user" | "agent" | "anonymous";
@@ -100,18 +105,24 @@ function formatMilestoneOffset(timestamp: number | undefined, baseTimestamp: num
   return `${(delta / 1000).toFixed(2)}s`;
 }
 
-export function EntityNotebookView({ entitySlug }: Props) {
+export function EntityNotebookView({ entitySlug, shareToken, canOpenLive = false, onOpenLive, openingLive = false }: Props) {
   const api = useConvexApi();
   const navigate = useNavigate();
   const anonymousSessionId = getAnonymousProductSessionId();
   const snapshot = useQuery(
     api?.domains.product.blocks.getEntityNotebook ?? "skip",
-    api?.domains.product.blocks.getEntityNotebook ? { anonymousSessionId, entitySlug } : "skip",
+    api?.domains.product.blocks.getEntityNotebook
+      ? { anonymousSessionId, shareToken, entitySlug }
+      : "skip",
   );
   const backlinks = useQuery(
     api?.domains.product.blocks.listBacklinksForEntity ?? "skip",
-    api?.domains.product.blocks.listBacklinksForEntity ? { anonymousSessionId, entitySlug } : "skip",
+    api?.domains.product.blocks.listBacklinksForEntity
+      ? { anonymousSessionId, shareToken, entitySlug }
+      : "skip",
   );
+  const buildEntityPathWithShare = (nextSlug: string) => buildEntityPath(nextSlug, shareToken);
+  const canTraverseLinkedEntities = !shareToken;
 
   const [routingOpen, setRoutingOpen] = useState(true);
   const [planOpen, setPlanOpen] = useState(true);
@@ -147,8 +158,28 @@ export function EntityNotebookView({ entitySlug }: Props) {
 
   if (snapshot === null) {
     return (
-      <div className="py-16 text-center text-sm text-gray-500">
-        No notebook data for this entity yet.
+      <div className="flex min-h-[240px] flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+        <div className="text-sm font-medium text-gray-300">No notebook data for this entity yet.</div>
+        {canOpenLive && onOpenLive ? (
+          <>
+            <p className="max-w-md text-sm leading-6 text-gray-500">
+              This tab only shows the read-only derivation. Open Live to start writing.
+            </p>
+            <button
+              type="button"
+              onClick={onOpenLive}
+              disabled={openingLive}
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/10 px-4 py-2 text-sm font-medium text-[var(--accent-primary)] transition-colors hover:bg-[var(--accent-primary)]/15 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Sparkles className="h-4 w-4" />
+              {openingLive ? "Opening Live..." : "Open Live notebook"}
+            </button>
+          </>
+        ) : (
+          <p className="max-w-md text-sm leading-6 text-gray-500">
+            This tab is read-only. Use Live to create the first editable notebook block.
+          </p>
+        )}
       </div>
     );
   }
@@ -387,19 +418,31 @@ export function EntityNotebookView({ entitySlug }: Props) {
             Linked from · {backlinks.length} place{backlinks.length === 1 ? "" : "s"}
           </div>
           <div className="mt-3 space-y-2">
-            {backlinks.map((ref) => (
-              <button
-                key={ref.relationId}
-                type="button"
-                onClick={() => navigate(`/entity/${encodeURIComponent(ref.fromEntitySlug)}`)}
-                className="block w-full rounded-lg border border-gray-200 px-3 py-2 text-left transition-colors hover:border-gray-300 hover:bg-gray-50 dark:border-white/10 dark:hover:bg-white/[0.03]"
-              >
-                <div className="font-medium text-gray-900 dark:text-gray-100">{ref.fromEntityName}</div>
-                <div className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-                  {ref.snippet || "Linked through notebook content."}
+            {backlinks.map((ref) =>
+              canTraverseLinkedEntities ? (
+                <button
+                  key={ref.relationId}
+                  type="button"
+                  onClick={() => navigate(buildEntityPathWithShare(ref.fromEntitySlug))}
+                  className="block w-full rounded-lg border border-gray-200 px-3 py-2 text-left transition-colors hover:border-gray-300 hover:bg-gray-50 dark:border-white/10 dark:hover:bg-white/[0.03]"
+                >
+                  <div className="font-medium text-gray-900 dark:text-gray-100">{ref.fromEntityName}</div>
+                  <div className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+                    {ref.snippet || "Linked through notebook content."}
+                  </div>
+                </button>
+              ) : (
+                <div
+                  key={ref.relationId}
+                  className="block w-full rounded-lg border border-gray-200 px-3 py-2 text-left dark:border-white/10"
+                >
+                  <div className="font-medium text-gray-900 dark:text-gray-100">{ref.fromEntityName}</div>
+                  <div className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+                    {ref.snippet || "Linked through notebook content."}
+                  </div>
                 </div>
-              </button>
-            ))}
+              ),
+            )}
           </div>
         </section>
       ) : null}
@@ -410,18 +453,29 @@ export function EntityNotebookView({ entitySlug }: Props) {
             Linked entities
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            {snapshot.linkedFrom.map((item) => (
+            {snapshot.linkedFrom.map((item) =>
+              canTraverseLinkedEntities ? (
               <button
                 key={`linked-${item.slug}`}
                 type="button"
-                onClick={() => navigate(`/entity/${encodeURIComponent(item.slug)}`)}
+                onClick={() => navigate(buildEntityPathWithShare(item.slug))}
                 className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/[0.03]"
               >
                 <Network className="h-3.5 w-3.5 text-[var(--accent-primary)]" />
                 <span>{item.name}</span>
-                {item.relation ? <span className="text-xs text-gray-400">· {item.relation}</span> : null}
+                {item.reason ? <span className="text-xs text-gray-400">· {item.reason}</span> : null}
               </button>
-            ))}
+              ) : (
+                <div
+                  key={`linked-${item.slug}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-1.5 text-sm text-gray-700 dark:border-white/10 dark:text-gray-300"
+                >
+                  <Network className="h-3.5 w-3.5 text-[var(--accent-primary)]" />
+                  <span>{item.name}</span>
+                  {item.reason ? <span className="text-xs text-gray-400">Â· {item.reason}</span> : null}
+                </div>
+              )
+            )}
           </div>
         </section>
       ) : null}
@@ -432,11 +486,12 @@ export function EntityNotebookView({ entitySlug }: Props) {
             Related entities (harness-suggested)
           </div>
           <div className="mt-3 space-y-2">
-            {snapshot.relatedEntities.map((item) => (
+            {snapshot.relatedEntities.map((item) =>
+              canTraverseLinkedEntities ? (
               <button
                 key={`related-${item.slug}`}
                 type="button"
-                onClick={() => navigate(`/entity/${encodeURIComponent(item.slug)}`)}
+                onClick={() => navigate(buildEntityPathWithShare(item.slug))}
                 className="flex w-full items-start justify-between rounded-lg border border-gray-200 px-3 py-2 text-left transition-colors hover:border-gray-300 hover:bg-gray-50 dark:border-white/10 dark:hover:bg-white/[0.03]"
               >
                 <div>
@@ -447,7 +502,21 @@ export function EntityNotebookView({ entitySlug }: Props) {
                 </div>
                 <Sparkles className="mt-0.5 h-4 w-4 text-[var(--accent-primary)]" />
               </button>
-            ))}
+              ) : (
+                <div
+                  key={`related-${item.slug}`}
+                  className="flex w-full items-start justify-between rounded-lg border border-gray-200 px-3 py-2 text-left dark:border-white/10"
+                >
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-gray-100">{item.name}</div>
+                    <div className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+                      {item.reason ?? item.relation ?? item.entityType}
+                    </div>
+                  </div>
+                  <Sparkles className="mt-0.5 h-4 w-4 text-[var(--accent-primary)]" />
+                </div>
+              )
+            )}
           </div>
         </section>
       ) : null}

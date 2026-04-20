@@ -1,10 +1,43 @@
 import { mutation } from "../../_generated/server";
+import type { MutationCtx } from "../../_generated/server";
 import { v } from "convex/values";
 import type { Doc } from "../../_generated/dataModel";
 import { requireProductIdentity } from "./helpers";
 import { ensureEntityForReport, upsertEntityContextItem } from "./entities";
+import { upsertOpenProductNudge } from "./nudgeHelpers";
 
 const PRODUCT_SCHEMA_VERSION = "2026-04-12-entity-v3";
+
+const PRODUCT_OWNED_TABLES = [
+  { table: "productMigrationState", ownerIndex: "by_owner" },
+  { table: "productInputBundles", ownerIndex: "by_owner_updated" },
+  { table: "productEvidenceItems", ownerIndex: "by_owner_updated" },
+  { table: "productChatSessions", ownerIndex: "by_owner_updated" },
+  { table: "productChatEvents", ownerIndex: "by_owner_created" },
+  { table: "productToolEvents", ownerIndex: "by_owner_updated" },
+  { table: "productSourceEvents", ownerIndex: "by_owner_created" },
+  { table: "productReportDrafts", ownerIndex: "by_owner_updated" },
+  { table: "productEntities", ownerIndex: "by_owner_updated" },
+  { table: "productEntityNotes", ownerIndex: "by_owner_updated" },
+  { table: "productDocuments", ownerIndex: "by_owner_updated" },
+  { table: "productDocumentBlocks", ownerIndex: "by_owner_document" },
+  { table: "productDocumentEntityLinks", ownerIndex: null },
+  { table: "productDocumentSourceLinks", ownerIndex: null },
+  { table: "productDocumentEvents", ownerIndex: "by_owner_created" },
+  { table: "productDocumentSnapshots", ownerIndex: "by_owner_created" },
+  { table: "productReports", ownerIndex: "by_owner_updated" },
+  { table: "productReportRefreshes", ownerIndex: "by_owner_created" },
+  { table: "productNudges", ownerIndex: "by_owner_status_updated" },
+  { table: "productProfileSummaries", ownerIndex: "by_owner" },
+  { table: "productContextItems", ownerIndex: "by_owner_updated" },
+  { table: "productWorkspaceShares", ownerIndex: "by_owner_updated" },
+  { table: "productEntityWorkspaceMembers", ownerIndex: "by_owner_entity_updated" },
+  { table: "productEntityWorkspaceInvites", ownerIndex: "by_owner_entity_updated" },
+  { table: "productEntityRelations", ownerIndex: null },
+  { table: "productBlocks", ownerIndex: "by_owner_entity_position" },
+  { table: "productBlockRelations", ownerIndex: null },
+  { table: "productBlockWriteWindows", ownerIndex: "by_owner_session_bucket" },
+] as const;
 
 const DEFAULT_PUBLIC_CARDS = [
   {
@@ -80,6 +113,40 @@ function buildReportSections(title: string, summary: string) {
   ];
 }
 
+async function claimAnonymousProductWorkspace(
+  ctx: MutationCtx,
+  args: {
+    anonymousSessionId?: string | null;
+    ownerKey: string;
+  },
+) {
+  const anonymousSessionId = args.anonymousSessionId?.trim();
+  if (!anonymousSessionId) return 0;
+
+  const anonymousOwnerKey = `anon:${anonymousSessionId}`;
+  if (anonymousOwnerKey === args.ownerKey) return 0;
+
+  let claimedRows = 0;
+
+  for (const tableConfig of PRODUCT_OWNED_TABLES) {
+    const records = tableConfig.ownerIndex
+      ? await ctx.db
+          .query(tableConfig.table)
+          .withIndex(tableConfig.ownerIndex, (q: any) => q.eq("ownerKey", anonymousOwnerKey))
+          .collect()
+      : (await ctx.db.query(tableConfig.table).collect()).filter(
+          (record: { ownerKey?: string }) => record.ownerKey === anonymousOwnerKey,
+        );
+
+    for (const record of records) {
+      await ctx.db.patch(record._id, { ownerKey: args.ownerKey });
+      claimedRows += 1;
+    }
+  }
+
+  return claimedRows;
+}
+
 export const ensureCanonicalProductBootstrap = mutation({
   args: {
     anonymousSessionId: v.optional(v.string()),
@@ -88,6 +155,10 @@ export const ensureCanonicalProductBootstrap = mutation({
     const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
     const ownerKey = identity.ownerKey!;
     const now = Date.now();
+    const claimedAnonymousRows = await claimAnonymousProductWorkspace(ctx, {
+      anonymousSessionId: args.anonymousSessionId,
+      ownerKey,
+    });
 
     const existingCards = await ctx.db
       .query("productPublicCards")
@@ -110,6 +181,13 @@ export const ensureCanonicalProductBootstrap = mutation({
       .first();
 
     if (existingState?.schemaVersion === PRODUCT_SCHEMA_VERSION) {
+      if (claimedAnonymousRows > 0) {
+        await ctx.db.patch(existingState._id, {
+          claimedAnonymousRows: (existingState.claimedAnonymousRows ?? 0) + claimedAnonymousRows,
+          updatedAt: now,
+        });
+        return await ctx.db.get(existingState._id);
+      }
       return existingState;
     }
 
@@ -320,30 +398,20 @@ export const ensureCanonicalProductBootstrap = mutation({
         .take(3);
 
       for (const report of latestReports) {
-        const existingNudge = await ctx.db
-          .query("productNudges")
-          .withIndex("by_owner_report", (q) =>
-            q.eq("ownerKey", ownerKey).eq("linkedReportId", report._id),
-          )
-          .first();
-
-        if (!existingNudge) {
-          await ctx.db.insert("productNudges", {
-            ownerKey,
-            type: "refresh_recommended",
-            title: `${report.title} is worth revisiting`,
-            summary: "A migrated report is ready to be refreshed through the new Chat flow.",
-            linkedReportId: report._id,
-            status: "open",
-            priority: "medium",
-            dueAt: now + 24 * 60 * 60 * 1000,
-            actionLabel: "Refresh report",
-            actionTargetSurface: "reports",
-            actionTargetId: report.entitySlug ?? String(report._id),
-            createdAt: now,
-            updatedAt: now,
-          });
-        }
+        await upsertOpenProductNudge(ctx, {
+          ownerKey,
+          type: "refresh_recommended",
+          title: `${report.title} is worth revisiting`,
+          summary: "A migrated report is ready to be refreshed through the new Chat flow.",
+          linkedReportId: report._id,
+          priority: "medium",
+          dueAt: now + 24 * 60 * 60 * 1000,
+          actionLabel: "Refresh report",
+          actionTargetSurface: "reports",
+          actionTargetId: report.entitySlug ?? String(report._id),
+          createdAt: now,
+          updatedAt: now,
+        });
       }
 
       const allReports = await ctx.db
@@ -412,6 +480,7 @@ export const ensureCanonicalProductBootstrap = mutation({
       await ctx.db.patch(existingState._id, {
         schemaVersion: PRODUCT_SCHEMA_VERSION,
         bootstrappedAt: now,
+        claimedAnonymousRows: (existingState.claimedAnonymousRows ?? 0) + claimedAnonymousRows,
         migratedFiles,
         migratedDocuments,
         migratedReports,
@@ -424,6 +493,7 @@ export const ensureCanonicalProductBootstrap = mutation({
       ownerKey,
       schemaVersion: PRODUCT_SCHEMA_VERSION,
       bootstrappedAt: now,
+      claimedAnonymousRows,
       migratedFiles,
       migratedDocuments,
       migratedReports,

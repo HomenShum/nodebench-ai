@@ -58,12 +58,12 @@ export function EntityMemoryGraph({
   const nodes = [centerNode, ...relatedNodes, ...evidenceNodes];
 
   return (
-    <div className="relative overflow-hidden rounded-[24px] border border-white/6 bg-white/[0.02] p-4">
+    <div className="nb-panel-inset relative overflow-hidden p-4">
       <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
         Memory graph
       </div>
 
-      <div className="relative h-[320px] rounded-[20px] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]">
+      <div className="relative h-[320px] rounded-[20px] bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))]">
         <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
           {relatedNodes.map((node) => (
             <line
@@ -100,8 +100,8 @@ export function EntityMemoryGraph({
             node.type === "entity"
               ? "border-[#d97757]/35 bg-[#d97757]/10 text-content"
               : node.type === "related"
-                ? "border-white/10 bg-white/[0.05] text-content"
-                : "border-white/8 bg-white/[0.03] text-content-muted";
+                ? "border-white/10 bg-[#1d232b] text-content"
+                : "border-white/8 bg-[#171c23] text-content-muted";
 
           const inner = (
             <div className={`max-w-[180px] rounded-2xl border px-3 py-2 text-left shadow-[0_10px_30px_rgba(15,23,42,0.18)] ${nodeClass}`}>

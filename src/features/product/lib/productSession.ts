@@ -13,6 +13,7 @@ export interface ProductDraftSession {
 }
 
 const PRODUCT_DRAFT_KEY = "nodebench:product-draft";
+const PRODUCT_SHAREABLE_QUERY_MAX = 280;
 
 function canUseStorage() {
   return typeof window !== "undefined" && !!window.sessionStorage;
@@ -67,6 +68,13 @@ export function saveProductDraft(input: {
   }
 }
 
+export function shouldPersistDraftQueryInUrl(query: string) {
+  const trimmed = query.trim();
+  if (!trimmed) return false;
+  if (trimmed.length > PRODUCT_SHAREABLE_QUERY_MAX) return false;
+  return !/[\r\n]/.test(trimmed);
+}
+
 export function clearProductDraft() {
   if (!canUseStorage()) return;
 
@@ -77,7 +85,7 @@ export function clearProductDraft() {
   }
 }
 
-/* ── Recent searches (localStorage, persists across sessions) ── */
+/* Recent searches (localStorage, persists across sessions) */
 
 const RECENT_KEY = "nb:product:recent";
 const MAX_RECENT = 5;
@@ -86,6 +94,13 @@ export interface RecentSearch {
   query: string;
   lens: string;
   ts: number;
+}
+
+export function formatRecentSearchLabel(query: string, maxLength = 140) {
+  const normalized = query.replace(/\s+/g, " ").trim();
+  if (normalized.length <= maxLength) return normalized;
+  const suffix = "...";
+  return `${normalized.slice(0, Math.max(0, maxLength - suffix.length)).trimEnd()}${suffix}`;
 }
 
 export function getRecentSearches(): RecentSearch[] {

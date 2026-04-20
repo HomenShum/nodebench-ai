@@ -71,4 +71,5 @@ describe("resolvePathToView", () => {
       isLegacyRedirect: false,
     });
   });
+
 });

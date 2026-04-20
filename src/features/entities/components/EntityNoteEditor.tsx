@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { forwardRef, lazy, Suspense, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import {
   Code2,
   Heading2,
@@ -54,6 +54,13 @@ type EntityNoteEditorProps = {
   onChange: (document: EntityNoteDocument) => void;
   statusLabel?: string;
   helperText?: string;
+  toolbarPreset?: "full" | "compact";
+  showStats?: boolean;
+  readOnly?: boolean;
+};
+
+export type EntityNoteEditorHandle = {
+  getCurrentDocument: () => EntityNoteDocument;
 };
 
 type ToolbarButtonProps = {
@@ -222,7 +229,11 @@ function ToolbarButton({ label, onClick, icon }: ToolbarButtonProps) {
   );
 }
 
-function LexicalToolbar() {
+function LexicalToolbar({
+  preset = "full",
+}: {
+  preset?: "full" | "compact";
+}) {
   const [editor] = useLexicalComposerContext();
 
   const formatHeading = () => {
@@ -254,50 +265,72 @@ function LexicalToolbar() {
 
   return (
     <div className="flex flex-wrap gap-2 border-b border-[rgba(15,23,42,0.08)] px-4 py-3 dark:border-white/10">
-      <ToolbarButton label="Body" icon={<Type className="h-3.5 w-3.5" />} onClick={formatParagraph} />
-      <ToolbarButton label="Heading" icon={<Heading2 className="h-3.5 w-3.5" />} onClick={formatHeading} />
-      <ToolbarButton
-        label="Bullet"
-        icon={<List className="h-3.5 w-3.5" />}
-        onClick={() => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined)}
-      />
-      <ToolbarButton
-        label="Checklist"
-        icon={<Sparkles className="h-3.5 w-3.5" />}
-        onClick={() => editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined)}
-      />
-      <ToolbarButton label="Quote" icon={<MessageSquareQuote className="h-3.5 w-3.5" />} onClick={formatQuote} />
-      <ToolbarButton
-        label="Code"
-        icon={<Code2 className="h-3.5 w-3.5" />}
-        onClick={() => editor.update(() => {
-          const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            const codeNode = $createCodeNode();
-            selection.insertNodes([codeNode]);
-          }
-        })}
-      />
-      <ToolbarButton
-        label="Remove list"
-        icon={<List className="h-3.5 w-3.5" />}
-        onClick={() => editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined)}
-      />
-      <ToolbarButton
-        label="Undo"
-        icon={<RotateCcw className="h-3.5 w-3.5" />}
-        onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
-      />
-      <ToolbarButton
-        label="Redo"
-        icon={<RotateCw className="h-3.5 w-3.5" />}
-        onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
-      />
-      <ToolbarButton
-        label="Bold"
-        icon={<Type className="h-3.5 w-3.5" />}
-        onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold")}
-      />
+      {preset === "compact" ? (
+        <>
+          <ToolbarButton label="Heading" icon={<Heading2 className="h-3.5 w-3.5" />} onClick={formatHeading} />
+          <ToolbarButton
+            label="List"
+            icon={<List className="h-3.5 w-3.5" />}
+            onClick={() => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined)}
+          />
+          <ToolbarButton
+            label="Bold"
+            icon={<Type className="h-3.5 w-3.5" />}
+            onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold")}
+          />
+        </>
+      ) : (
+        <>
+          <ToolbarButton label="Body" icon={<Type className="h-3.5 w-3.5" />} onClick={formatParagraph} />
+          <ToolbarButton label="Heading" icon={<Heading2 className="h-3.5 w-3.5" />} onClick={formatHeading} />
+          <ToolbarButton
+            label="Bullet"
+            icon={<List className="h-3.5 w-3.5" />}
+            onClick={() => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined)}
+          />
+          <ToolbarButton
+            label="Checklist"
+            icon={<Sparkles className="h-3.5 w-3.5" />}
+            onClick={() => editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined)}
+          />
+          <ToolbarButton label="Quote" icon={<MessageSquareQuote className="h-3.5 w-3.5" />} onClick={formatQuote} />
+          <ToolbarButton
+            label="Bold"
+            icon={<Type className="h-3.5 w-3.5" />}
+            onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold")}
+          />
+        </>
+      )}
+      {preset === "full" ? (
+        <>
+          <ToolbarButton
+            label="Code"
+            icon={<Code2 className="h-3.5 w-3.5" />}
+            onClick={() => editor.update(() => {
+              const selection = $getSelection();
+              if ($isRangeSelection(selection)) {
+                const codeNode = $createCodeNode();
+                selection.insertNodes([codeNode]);
+              }
+            })}
+          />
+          <ToolbarButton
+            label="Remove list"
+            icon={<List className="h-3.5 w-3.5" />}
+            onClick={() => editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined)}
+          />
+          <ToolbarButton
+            label="Undo"
+            icon={<RotateCcw className="h-3.5 w-3.5" />}
+            onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
+          />
+          <ToolbarButton
+            label="Redo"
+            icon={<RotateCw className="h-3.5 w-3.5" />}
+            onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
+          />
+        </>
+      ) : null}
     </div>
   );
 }
@@ -318,16 +351,31 @@ function LexicalSeed({
   return null;
 }
 
+function LexicalEditableState({ readOnly }: { readOnly: boolean }) {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    editor.setEditable(!readOnly);
+  }, [editor, readOnly]);
+
+  return null;
+}
+
 function LexicalDocumentEditor({
   document,
   onChange,
+  toolbarPreset = "full",
+  readOnly = false,
 }: {
   document: EntityNoteDocument;
   onChange: (document: EntityNoteDocument) => void;
+  toolbarPreset?: "full" | "compact";
+  readOnly?: boolean;
 }) {
   const initialConfig = useMemo(
     () => ({
       namespace: `entity-note-${document._id ?? "draft"}-${document.latestRevision}`,
+      editable: !readOnly,
       onError(error: Error) {
         throw error;
       },
@@ -359,56 +407,80 @@ function LexicalDocumentEditor({
         ? JSON.stringify(document.lexicalState)
         : undefined,
     }),
-    [document._id, document.latestRevision, document.lexicalState],
+    [document._id, document.latestRevision, document.lexicalState, readOnly],
   );
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
       {!document.lexicalState ? <LexicalSeed markdown={document.markdown} /> : null}
-      <div className="overflow-hidden rounded-[26px] border border-[rgba(15,23,42,0.08)] bg-white/88 dark:border-white/10 dark:bg-black/22">
-        <LexicalToolbar />
+      <LexicalEditableState readOnly={readOnly} />
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white transition-colors focus-within:border-gray-300 dark:border-white/10 dark:bg-white/[0.02] dark:focus-within:border-white/20">
+        {!readOnly ? <LexicalToolbar preset={toolbarPreset} /> : null}
         <div className="px-5 py-5">
           <RichTextPlugin
             contentEditable={
               <ContentEditable
-                className="nb-lexical-editor min-h-[300px] outline-none"
-                aria-placeholder="Write notes that compound with future runs..."
+                data-testid="entity-note-rich-input"
+                className={`nb-lexical-editor min-h-[360px] sm:min-h-[420px] xl:min-h-[520px] outline-none ${
+                  readOnly ? "cursor-default" : ""
+                }`}
+                aria-readonly={readOnly}
+                aria-placeholder={
+                  readOnly
+                    ? "Shared note"
+                    : "Write notes that compound with future runs..."
+                }
                 placeholder={
                   <div className="pointer-events-none absolute text-sm text-content-muted/60">
-                    Write notes that compound with future runs...
+                    {readOnly ? "Shared note" : "Write notes that compound with future runs..."}
                   </div>
                 }
               />
             }
             ErrorBoundary={LexicalErrorBoundary}
           />
-          <HistoryPlugin />
+          {!readOnly ? <HistoryPlugin /> : null}
           <ListPlugin />
           <LinkPlugin />
-          <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
-          <OnChangePlugin
-            onChange={(editorState: EditorState) => {
-              onChange(lexicalStateToDocument(editorState, document));
-            }}
-          />
+          {!readOnly ? <MarkdownShortcutPlugin transformers={TRANSFORMERS} /> : null}
+          {!readOnly ? (
+            <OnChangePlugin
+              onChange={(editorState: EditorState) => {
+                onChange(lexicalStateToDocument(editorState, document));
+              }}
+            />
+          ) : null}
         </div>
       </div>
     </LexicalComposer>
   );
 }
 
-export function EntityNoteEditor({
+export const EntityNoteEditor = forwardRef<EntityNoteEditorHandle, EntityNoteEditorProps>(function EntityNoteEditor({
   document,
   onChange,
   statusLabel,
   helperText,
-}: EntityNoteEditorProps) {
+  toolbarPreset = "full",
+  showStats = true,
+  readOnly = false,
+}, ref) {
   const [mode, setMode] = useState<"rich" | "markdown">("rich");
   const [markdownDraft, setMarkdownDraft] = useState(document.markdown);
+  const latestDocumentRef = useRef(document);
 
   useEffect(() => {
     setMarkdownDraft(document.markdown);
+    latestDocumentRef.current = document;
   }, [document._id, document.latestRevision, document.markdown]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      getCurrentDocument: () => latestDocumentRef.current,
+    }),
+    [],
+  );
 
   const stats = useMemo(() => {
     const deferredBlocks = document.blocks?.length ?? 0;
@@ -419,47 +491,54 @@ export function EntityNoteEditor({
   }, [document.blocks, document.plainText]);
 
   const handleMarkdownChange = (value: string) => {
+    if (readOnly) return;
     setMarkdownDraft(value);
-    onChange({
+    const nextDocument = {
       ...document,
       markdown: value,
       plainText: stripMarkdown(value),
       lexicalState: undefined,
       blocks: markdownToBlocks(value),
-    });
+    };
+    latestDocumentRef.current = nextDocument;
+    onChange(nextDocument);
   };
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
+        <div className="inline-flex rounded-full border border-[rgba(15,23,42,0.08)] bg-white/80 p-1 dark:border-white/10 dark:bg-white/[0.04]">
           <button
             type="button"
             onClick={() => setMode("rich")}
-            className={`rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] transition ${
+            className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
               mode === "rich"
-                ? "bg-[#d97757]/12 text-[#ad5f45] dark:text-[#f5c1ae]"
-                : "bg-white/[0.04] text-content-muted hover:bg-white/[0.08]"
+                ? "bg-[#d97757] text-white"
+                : "text-content-muted hover:text-content"
             }`}
           >
-            Rich editor
+            Editor
           </button>
           <button
             type="button"
             onClick={() => setMode("markdown")}
-            className={`rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] transition ${
+            className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
               mode === "markdown"
-                ? "bg-[#d97757]/12 text-[#ad5f45] dark:text-[#f5c1ae]"
-                : "bg-white/[0.04] text-content-muted hover:bg-white/[0.08]"
+                ? "bg-[#d97757] text-white"
+                : "text-content-muted hover:text-content"
             }`}
           >
             Markdown
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-content-muted">
-          <span>{stats.blocks} blocks</span>
-          <span>{stats.words} words</span>
+        <div className="flex flex-wrap items-center gap-3 text-xs text-content-muted">
+          {showStats ? (
+            <>
+              <span>{stats.blocks} blocks</span>
+              <span>{stats.words} words</span>
+            </>
+          ) : null}
           {statusLabel ? <span>{statusLabel}</span> : null}
         </div>
       </div>
@@ -472,28 +551,35 @@ export function EntityNoteEditor({
             markdown: markdownDraft,
             lexicalState: document.lexicalState,
           }}
+          readOnly={readOnly}
+          toolbarPreset={toolbarPreset}
           onChange={(nextDocument) => {
             setMarkdownDraft(nextDocument.markdown);
+            latestDocumentRef.current = nextDocument;
             onChange(nextDocument);
           }}
         />
       ) : (
         <Suspense
           fallback={
-            <div className="overflow-hidden rounded-[26px] border border-[rgba(15,23,42,0.08)] bg-white/88 dark:border-white/10 dark:bg-black/22">
+            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white transition-colors focus-within:border-gray-300 dark:border-white/10 dark:bg-white/[0.02] dark:focus-within:border-white/20">
               <div className="flex min-h-[360px] items-center justify-center text-sm text-content-muted">
                 Loading markdown editor...
               </div>
             </div>
           }
         >
-          <EntityMarkdownEditor value={markdownDraft} onChange={handleMarkdownChange} />
+          <EntityMarkdownEditor
+            value={markdownDraft}
+            onChange={handleMarkdownChange}
+            readOnly={readOnly}
+          />
         </Suspense>
       )}
 
       {helperText ? <p className="text-sm leading-6 text-content-muted">{helperText}</p> : null}
     </div>
   );
-}
+});
 
 export default EntityNoteEditor;

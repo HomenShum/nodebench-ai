@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useRef, useState } from "react";
-import { PUBLIC_SEARCH_STREAM_API_ENDPOINT } from "../lib/searchApi";
+import { PUBLIC_SEARCH_API_ENDPOINT, PUBLIC_SEARCH_STREAM_API_ENDPOINT } from "../lib/searchApi";
 
 export interface ToolStage {
   tool: string;
@@ -38,9 +38,19 @@ export interface StreamingMilestones {
   completedAt: number | null;
 }
 
+export interface StreamingRoutingState {
+  routingMode: "executive" | "advisor";
+  routingReason?: string;
+  routingSource?: "automatic" | "user_forced";
+  plannerModel?: string;
+  executionModel?: string;
+  reasoningEffort?: "medium" | "high";
+}
+
 export interface StreamingSearchState {
   stages: ToolStage[];
   plan: Array<{ tool: string; provider: string; model?: string; reason: string }> | null;
+  routing: StreamingRoutingState | null;
   result: Record<string, unknown> | null;
   isStreaming: boolean;
   error: string | null;
@@ -71,6 +81,12 @@ export interface StreamingToolDonePayload {
 export interface StreamingCompletePayload {
   packet?: Record<string, unknown>;
   totalDurationMs?: number;
+  routingMode?: StreamingRoutingState["routingMode"];
+  routingReason?: string;
+  routingSource?: StreamingRoutingState["routingSource"];
+  plannerModel?: string;
+  executionModel?: string;
+  reasoningEffort?: StreamingRoutingState["reasoningEffort"];
   [key: string]: unknown;
 }
 
@@ -80,6 +96,17 @@ interface StreamingCallbacks {
   onComplete?: (payload: StreamingCompletePayload) => void;
   onError?: (message: string) => void;
 }
+
+interface StreamingRunOptions {
+  contextHint?: string;
+}
+
+type ParsedSseEvent = {
+  event: string;
+  data: string;
+};
+
+type FallbackSearchResponse = Record<string, unknown>;
 
 function formatList(items: Array<string | null | undefined>) {
   return items.filter(Boolean).join(" ");
@@ -203,12 +230,103 @@ function parsePacketSourcePreview(packet: Record<string, unknown> | null | undef
     .filter((item): item is StreamingSourcePreview => Boolean(item));
 }
 
+function flushSseBuffer(
+  buffer: string,
+  onEvent: (event: ParsedSseEvent) => void,
+): string {
+  let working = buffer.replace(/\r\n/g, "\n");
+  while (true) {
+    const boundaryIndex = working.indexOf("\n\n");
+    if (boundaryIndex === -1) break;
+    const block = working.slice(0, boundaryIndex);
+    working = working.slice(boundaryIndex + 2);
+
+    const lines = block.split(/\r?\n/);
+    let eventName = "message";
+    const dataLines: string[] = [];
+    for (const line of lines) {
+      if (line.startsWith("event:")) {
+        eventName = line.slice("event:".length).trim() || "message";
+        continue;
+      }
+      if (line.startsWith("data:")) {
+        dataLines.push(line.slice("data:".length).trim());
+      }
+    }
+    if (dataLines.length === 0) continue;
+    onEvent({ event: eventName, data: dataLines.join("\n") });
+  }
+  return working;
+}
+
+function safelyInvokeCallback<TPayload>(
+  callback: ((payload: TPayload) => void) | undefined,
+  payload: TPayload,
+) {
+  if (!callback) return;
+  try {
+    callback(payload);
+  } catch (error) {
+    console.warn("[useStreamingSearch] callback failed", error);
+  }
+}
+
+function mapFallbackSearchResponse(
+  data: FallbackSearchResponse,
+): StreamingCompletePayload | null {
+  const resultRecord =
+    data.result && typeof data.result === "object"
+      ? (data.result as Record<string, unknown>)
+      : null;
+
+  const packet =
+    data.resultPacket && typeof data.resultPacket === "object"
+      ? (data.resultPacket as Record<string, unknown>)
+      : data.packet && typeof data.packet === "object"
+        ? (data.packet as Record<string, unknown>)
+        : resultRecord?.resultPacket && typeof resultRecord.resultPacket === "object"
+          ? (resultRecord.resultPacket as Record<string, unknown>)
+          : typeof data.answer === "string" || Array.isArray(data.sourceRefs)
+            ? data
+            : null;
+
+  if (!packet) return null;
+
+  return {
+    packet,
+    totalDurationMs:
+      typeof data.latencyMs === "number"
+        ? data.latencyMs
+        : typeof data.durationMs === "number"
+          ? data.durationMs
+          : typeof resultRecord?.latencyMs === "number"
+            ? resultRecord.latencyMs
+            : undefined,
+    routingMode:
+      data.routingMode === "advisor" || data.routingMode === "executive"
+        ? data.routingMode
+        : undefined,
+    routingReason: typeof data.routingReason === "string" ? data.routingReason : undefined,
+    routingSource:
+      data.routingSource === "automatic" || data.routingSource === "user_forced"
+        ? data.routingSource
+        : undefined,
+    plannerModel: typeof data.plannerModel === "string" ? data.plannerModel : undefined,
+    executionModel: typeof data.executionModel === "string" ? data.executionModel : undefined,
+    reasoningEffort:
+      data.reasoningEffort === "medium" || data.reasoningEffort === "high"
+        ? data.reasoningEffort
+        : undefined,
+  };
+}
+
 export function useStreamingSearch(): StreamingSearchState & {
-  startStream: (query: string, lens: string, callbacks?: StreamingCallbacks) => void;
+  startStream: (query: string, lens: string, callbacks?: StreamingCallbacks, options?: StreamingRunOptions) => void;
   stopStream: () => void;
 } {
   const [stages, setStages] = useState<ToolStage[]>([]);
   const [plan, setPlan] = useState<StreamingSearchState["plan"]>(null);
+  const [routing, setRouting] = useState<StreamingRoutingState | null>(null);
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -222,21 +340,25 @@ export function useStreamingSearch(): StreamingSearchState & {
     firstPartialAnswerAt: null,
     completedAt: null,
   });
-  const eventSourceRef = useRef<EventSource | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const runIdRef = useRef(0);
 
   const stopStream = useCallback(() => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
+    runIdRef.current += 1;
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
     }
     setIsStreaming(false);
   }, []);
 
   const startStream = useCallback(
-    (query: string, lens: string, callbacks?: StreamingCallbacks) => {
+    (query: string, lens: string, callbacks?: StreamingCallbacks, options?: StreamingRunOptions) => {
       stopStream();
+      const runId = runIdRef.current;
       setStages([]);
       setPlan(null);
+      setRouting(null);
       setResult(null);
       setError(null);
       setIsStreaming(true);
@@ -251,12 +373,16 @@ export function useStreamingSearch(): StreamingSearchState & {
         completedAt: null,
       });
 
-      const url = `${PUBLIC_SEARCH_STREAM_API_ENDPOINT}?query=${encodeURIComponent(query)}&lens=${encodeURIComponent(lens)}`;
-      const es = new EventSource(url);
-      eventSourceRef.current = es;
+      const contextHint = options?.contextHint?.trim();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      let didComplete = false;
+      let recoveryAttempted = false;
+      const isActiveRun = () =>
+        abortControllerRef.current === controller && runIdRef.current === runId;
 
-      es.addEventListener("tool_start", (event) => {
-        const data = JSON.parse(event.data) as StreamingToolStartPayload;
+      const handleToolStart = (data: StreamingToolStartPayload) => {
+        if (!isActiveRun()) return;
         const now = Date.now();
         setStages((prev) => [
           ...prev,
@@ -275,11 +401,11 @@ export function useStreamingSearch(): StreamingSearchState & {
           ...prev,
           firstStageAt: prev.firstStageAt ?? now,
         }));
-        callbacks?.onToolStart?.(data);
-      });
+        safelyInvokeCallback(callbacks?.onToolStart, data);
+      };
 
-      es.addEventListener("tool_done", (event) => {
-        const data = JSON.parse(event.data) as StreamingToolDonePayload;
+      const handleToolDone = (data: StreamingToolDonePayload) => {
+        if (!isActiveRun()) return;
         const now = Date.now();
         const previewSources = parseSourcePreview(data.preview);
         const answerPreview = parseAnswerPreview(data.preview);
@@ -311,26 +437,58 @@ export function useStreamingSearch(): StreamingSearchState & {
             firstPartialAnswerAt: prev.firstPartialAnswerAt ?? now,
           }));
         }
-        callbacks?.onToolDone?.(data);
-      });
+        safelyInvokeCallback(callbacks?.onToolDone, data);
+      };
 
-      es.addEventListener("plan", (event) => {
-        const data = JSON.parse(event.data) as {
+      const handlePlan = (
+        data: {
           tools: Array<{ tool: string; provider: string; model?: string; reason: string }>;
           totalTools: number;
-        };
+          routingMode?: StreamingRoutingState["routingMode"];
+          routingReason?: string;
+          routingSource?: StreamingRoutingState["routingSource"];
+          plannerModel?: string;
+          executionModel?: string;
+          reasoningEffort?: StreamingRoutingState["reasoningEffort"];
+        },
+      ) => {
+        if (!isActiveRun()) return;
         setPlan(data.tools);
+        setRouting(
+          data.routingMode
+            ? {
+                routingMode: data.routingMode,
+                routingReason: data.routingReason,
+                routingSource: data.routingSource,
+                plannerModel: data.plannerModel,
+                executionModel: data.executionModel,
+                reasoningEffort: data.reasoningEffort,
+              }
+            : null,
+        );
         setStages((prev) => prev.map((stage) => ({ ...stage, totalPlanned: data.totalTools })));
-      });
+      };
 
-      es.addEventListener("complete", (event) => {
-        const data = JSON.parse(event.data) as StreamingCompletePayload;
+      const handleComplete = (data: StreamingCompletePayload) => {
+        if (!isActiveRun()) return;
         const packet = (data.packet ?? data) as Record<string, unknown>;
         const now = Date.now();
         const packetSources = parsePacketSourcePreview(packet);
         const packetAnswer = typeof packet.answer === "string" ? packet.answer.trim() : "";
 
         setResult(packet);
+        if (data.routingMode) {
+          setRouting((prev) =>
+            prev ?? {
+              routingMode: data.routingMode!,
+              routingReason: data.routingReason,
+              routingSource: data.routingSource,
+              plannerModel: data.plannerModel,
+              executionModel: data.executionModel,
+              reasoningEffort: data.reasoningEffort,
+            },
+          );
+        }
         setTotalDurationMs(data.totalDurationMs ?? 0);
         setIsStreaming(false);
         if (packetSources.length > 0) {
@@ -345,41 +503,153 @@ export function useStreamingSearch(): StreamingSearchState & {
           firstPartialAnswerAt: prev.firstPartialAnswerAt ?? (packetAnswer ? now : null),
           completedAt: now,
         }));
-        callbacks?.onComplete?.(data);
-        es.close();
-        eventSourceRef.current = null;
-      });
+        abortControllerRef.current = null;
+        safelyInvokeCallback(callbacks?.onComplete, data);
+      };
 
-      es.addEventListener("error", (event) => {
-        let message = "Connection to search server failed. Is the server running?";
-        if (event instanceof MessageEvent) {
-          try {
-            const data = JSON.parse(event.data) as { message?: string };
-            message = data.message ?? "Search failed";
-          } catch {
-            message = "Connection lost";
-          }
-        }
-
+      const handleError = (message: string) => {
+        if (!isActiveRun()) return;
         setError(message);
         setIsStreaming(false);
-        callbacks?.onError?.(message);
-        es.close();
-        eventSourceRef.current = null;
-      });
+        abortControllerRef.current = null;
+        safelyInvokeCallback(callbacks?.onError, message);
+      };
+
+      const recoverFromTerminalStreamFailure = async (): Promise<boolean> => {
+        if (recoveryAttempted || controller.signal.aborted || !isActiveRun()) return false;
+        recoveryAttempted = true;
+
+        try {
+          const response = await fetch(PUBLIC_SEARCH_API_ENDPOINT, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({
+              query,
+              lens,
+              contextHint,
+            }),
+            signal: controller.signal,
+          });
+
+          if (!response.ok) return false;
+
+          const raw = (await response.json()) as FallbackSearchResponse;
+          const completion = mapFallbackSearchResponse(raw);
+          if (!completion) return false;
+          if (!isActiveRun()) return false;
+
+          clearTimeout(timeout);
+          didComplete = true;
+          handleComplete(completion);
+          return true;
+        } catch {
+          return false;
+        }
+      };
 
       const timeout = setTimeout(() => {
-        if (eventSourceRef.current === es) {
-          const message = "Search timed out after 60 seconds";
-          es.close();
-          eventSourceRef.current = null;
-          setIsStreaming(false);
-          setError(message);
-          callbacks?.onError?.(message);
+        if (isActiveRun()) {
+          controller.abort("timeout");
+          handleError("Search timed out after 60 seconds");
         }
       }, 60000);
 
-      es.addEventListener("complete", () => clearTimeout(timeout));
+      void (async () => {
+        try {
+          const response = await fetch(PUBLIC_SEARCH_STREAM_API_ENDPOINT, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "text/event-stream",
+            },
+            body: JSON.stringify({
+              query,
+              lens,
+              contextHint,
+            }),
+            signal: controller.signal,
+          });
+
+          if (!response.ok || !response.body) {
+            throw new Error(`Search failed (${response.status})`);
+          }
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            if (!isActiveRun()) {
+              await reader.cancel().catch(() => undefined);
+              return;
+            }
+            buffer += decoder.decode(value, { stream: true });
+            buffer = flushSseBuffer(buffer, ({ event, data }) => {
+              try {
+                if (event === "tool_start") handleToolStart(JSON.parse(data) as StreamingToolStartPayload);
+                else if (event === "tool_done") handleToolDone(JSON.parse(data) as StreamingToolDonePayload);
+                else if (event === "plan") {
+                  handlePlan(JSON.parse(data) as {
+                    tools: Array<{ tool: string; provider: string; model?: string; reason: string }>;
+                    totalTools: number;
+                    routingMode?: StreamingRoutingState["routingMode"];
+                    routingReason?: string;
+                    routingSource?: StreamingRoutingState["routingSource"];
+                    plannerModel?: string;
+                    executionModel?: string;
+                    reasoningEffort?: StreamingRoutingState["reasoningEffort"];
+                  });
+                } else if (event === "complete") {
+                  clearTimeout(timeout);
+                  didComplete = true;
+                  handleComplete(JSON.parse(data) as StreamingCompletePayload);
+                } else if (event === "error") {
+                  clearTimeout(timeout);
+                  const parsed = JSON.parse(data) as { message?: string };
+                  handleError(parsed.message ?? "Search failed");
+                }
+              } catch (error) {
+                handleError(error instanceof Error ? error.message : "Search failed");
+              }
+            });
+            if (didComplete) {
+              await reader.cancel().catch(() => undefined);
+              break;
+            }
+          }
+
+          if (!isActiveRun()) return;
+          buffer += decoder.decode();
+          if (!didComplete && buffer.trim().length > 0) {
+            flushSseBuffer(`${buffer}\n\n`, ({ event, data }) => {
+              if (event === "complete") {
+                if (!isActiveRun()) return;
+                clearTimeout(timeout);
+                didComplete = true;
+                handleComplete(JSON.parse(data) as StreamingCompletePayload);
+              }
+            });
+          }
+
+          if (!didComplete && !controller.signal.aborted && isActiveRun()) {
+            const recovered = await recoverFromTerminalStreamFailure();
+            if (!recovered) {
+              handleError("Search stream ended before completion.");
+            }
+          }
+        } catch (error) {
+          clearTimeout(timeout);
+          if (controller.signal.aborted || didComplete || !isActiveRun()) return;
+          const recovered = await recoverFromTerminalStreamFailure();
+          if (recovered) return;
+          handleError(error instanceof Error ? error.message : "Connection to search server failed. Is the server running?");
+        }
+      })();
     },
     [stopStream],
   );
@@ -387,6 +657,7 @@ export function useStreamingSearch(): StreamingSearchState & {
   return {
     stages,
     plan,
+    routing,
     result,
     isStreaming,
     error,

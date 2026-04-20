@@ -24,8 +24,8 @@ import type { McpTool } from "./types.js";
  */
 export const TOOLSET_LOADERS: Record<string, () => Promise<McpTool[]>> = {
   core_workflow: async () => {
-    const { coreWorkflowTools } = await import("./tools/coreWorkflowTools.js");
-    return coreWorkflowTools;
+    const { coreWorkflowTools, coreSyncTools } = await import("./tools/coreWorkflowTools.js");
+    return [...coreWorkflowTools, ...coreSyncTools];
   },
   verification: async () => {
     const { verificationTools } = await import("./tools/verificationTools.js");

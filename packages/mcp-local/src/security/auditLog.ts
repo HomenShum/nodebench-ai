@@ -9,6 +9,7 @@ import * as path from "node:path";
 import * as os from "node:os";
 import * as fs from "node:fs";
 import { getSecurityConfig } from "./config.js";
+import { openOptionalSqliteDatabase } from "../db.js";
 
 export interface AuditEntry {
   id: string;
@@ -41,13 +42,15 @@ function getDb(): any {
   if (_db) return _db;
 
   try {
-    // Try to use better-sqlite3 if available
-    const Database = require("better-sqlite3");
     const dbPath = getAuditDbPath();
     const dir = path.dirname(dbPath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-    _db = new Database(dbPath);
+    _db = openOptionalSqliteDatabase(dbPath);
+    if (!_db) {
+      _initialized = false;
+      return null;
+    }
     _db.pragma("journal_mode = WAL");
 
     _db.exec(`
@@ -76,7 +79,7 @@ function getDb(): any {
     _initialized = true;
     return _db;
   } catch {
-    // better-sqlite3 not available — use in-memory only
+    // SQLite unavailable — use in-memory only
     _initialized = false;
     return null;
   }

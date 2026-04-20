@@ -22,17 +22,16 @@ export type BlockChip = {
   mentionTarget?: string;
 };
 
+export const STYLE_BOLD = 1;
+export const STYLE_ITALIC = 2;
+export const STYLE_UNDERLINE = 4;
+export const STYLE_STRIKE = 8;
+export const STYLE_CODE = 16;
+
 type Props = {
   chips: BlockChip[];
   className?: string;
 };
-
-// Bit masks for style bitmap
-const STYLE_BOLD = 1;
-const STYLE_ITALIC = 2;
-const STYLE_UNDERLINE = 4;
-const STYLE_STRIKE = 8;
-const STYLE_CODE = 16;
 
 function styleClass(styles: number | undefined): string {
   if (!styles) return "";
@@ -43,6 +42,165 @@ function styleClass(styles: number | undefined): string {
   if (styles & STYLE_STRIKE) classes.push("line-through");
   if (styles & STYLE_CODE) classes.push("font-mono text-[0.9em] bg-gray-100 dark:bg-white/[0.06] px-1 rounded");
   return classes.join(" ");
+}
+
+function createEditableChipNode(doc: Document, chip: BlockChip): Node {
+  if (chip.type === "linebreak") {
+    const br = doc.createElement("br");
+    br.dataset.chipType = "linebreak";
+    return br;
+  }
+  if (chip.type === "image") {
+    const img = doc.createElement("img");
+    img.dataset.chipType = "image";
+    img.dataset.value = chip.value;
+    if (chip.url) img.dataset.url = chip.url;
+    img.src = chip.url ?? chip.value;
+    img.alt = "";
+    img.contentEditable = "false";
+    img.className = "my-2 inline-block max-h-64 rounded border border-gray-200 dark:border-white/10";
+    return img;
+  }
+  if (chip.type === "link") {
+    const link = doc.createElement("a");
+    link.dataset.chipType = "link";
+    link.dataset.value = chip.value;
+    if (chip.url) {
+      link.dataset.url = chip.url;
+      link.href = chip.url;
+    }
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.contentEditable = "false";
+    link.className =
+      "text-[var(--accent-primary)] underline decoration-[var(--accent-primary)]/40 underline-offset-2 hover:decoration-[var(--accent-primary)]";
+    link.textContent = chip.value;
+    return link;
+  }
+  if (chip.type === "mention") {
+    const mention = doc.createElement("span");
+    mention.dataset.chipType = "mention";
+    mention.dataset.value = chip.value;
+    if (chip.mentionTrigger) mention.dataset.mentionTrigger = chip.mentionTrigger;
+    if (chip.mentionTarget) mention.dataset.mentionTarget = chip.mentionTarget;
+    mention.contentEditable = "false";
+    mention.className = "rounded px-1 text-[var(--accent-primary)] bg-[var(--accent-primary)]/10";
+    mention.textContent = `${chip.mentionTrigger ?? "@"}${chip.value}`;
+    return mention;
+  }
+  if (!chip.styles) {
+    return doc.createTextNode(chip.value);
+  }
+  const span = doc.createElement("span");
+  span.dataset.chipType = "text";
+  span.dataset.styles = String(chip.styles);
+  span.className = styleClass(chip.styles);
+  span.textContent = chip.value;
+  return span;
+}
+
+export function renderEditableChipContent(root: HTMLElement, chips: BlockChip[]): void {
+  const doc = root.ownerDocument ?? document;
+  root.replaceChildren(...chips.map((chip) => createEditableChipNode(doc, chip)));
+}
+
+function styleBitsFromElement(element: HTMLElement): number {
+  const datasetStyles = Number.parseInt(element.dataset.styles ?? "0", 10) || 0;
+  switch (element.tagName) {
+    case "B":
+    case "STRONG":
+      return datasetStyles | STYLE_BOLD;
+    case "I":
+    case "EM":
+      return datasetStyles | STYLE_ITALIC;
+    case "U":
+      return datasetStyles | STYLE_UNDERLINE;
+    case "S":
+    case "STRIKE":
+    case "DEL":
+      return datasetStyles | STYLE_STRIKE;
+    case "CODE":
+      return datasetStyles | STYLE_CODE;
+    default:
+      return datasetStyles;
+  }
+}
+
+function pushTextChip(target: BlockChip[], value: string, styles: number): void {
+  if (!value) return;
+  const normalizedStyles = styles > 0 ? styles : undefined;
+  const previous = target[target.length - 1];
+  if (previous?.type === "text" && (previous.styles ?? 0) === (normalizedStyles ?? 0)) {
+    previous.value += value;
+    return;
+  }
+  target.push({
+    type: "text",
+    value,
+    styles: normalizedStyles,
+  });
+}
+
+function visitEditableNode(node: Node, inheritedStyles: number, target: BlockChip[]): void {
+  if (node.nodeType === Node.TEXT_NODE) {
+    pushTextChip(target, node.textContent ?? "", inheritedStyles);
+    return;
+  }
+  if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+  const element = node as HTMLElement;
+  const chipType = element.dataset.chipType;
+
+  if (chipType === "mention") {
+    target.push({
+      type: "mention",
+      value: element.dataset.value ?? element.textContent?.replace(/^[@#<>]+/, "") ?? "",
+      mentionTrigger: element.dataset.mentionTrigger ?? "@",
+      mentionTarget: element.dataset.mentionTarget ?? element.dataset.value,
+    });
+    return;
+  }
+
+  if (chipType === "link" || element.tagName === "A") {
+    const href = (element as HTMLAnchorElement).href || element.dataset.url;
+    target.push({
+      type: "link",
+      value: element.dataset.value ?? element.textContent ?? href ?? "",
+      url: element.dataset.url ?? href,
+    });
+    return;
+  }
+
+  if (chipType === "image" || element.tagName === "IMG") {
+    const image = element as HTMLImageElement;
+    target.push({
+      type: "image",
+      value: element.dataset.value ?? image.currentSrc ?? image.src,
+      url: element.dataset.url ?? image.currentSrc ?? image.src,
+    });
+    return;
+  }
+
+  if (chipType === "linebreak" || element.tagName === "BR") {
+    target.push({ type: "linebreak", value: "\n" });
+    return;
+  }
+
+  const nextStyles = inheritedStyles | styleBitsFromElement(element);
+  for (const child of Array.from(element.childNodes)) {
+    visitEditableNode(child, nextStyles, target);
+  }
+}
+
+export function chipsFromEditableRoot(root: HTMLElement): BlockChip[] {
+  const chips: BlockChip[] = [];
+  for (const child of Array.from(root.childNodes)) {
+    visitEditableNode(child, 0, chips);
+  }
+  if (chips.length === 0) {
+    return [{ type: "text", value: "" }];
+  }
+  return chips;
 }
 
 export function BlockChipRenderer({ chips, className = "" }: Props) {

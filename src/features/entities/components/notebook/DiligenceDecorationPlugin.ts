@@ -35,9 +35,11 @@ export type DiligenceDecorationData = {
   version: number;
   updatedAt: number;
   sourceSectionId?: string;
+  sourceRefIds?: string[];
   sourceCount?: number;
   sourceLabel?: string;
   sourceTokens?: string[];
+  payload?: unknown;
 };
 
 export type AnchorStrategy =
@@ -166,6 +168,44 @@ function attachAction(
     event.stopPropagation();
     callback();
   });
+}
+
+function attachRendererActions(
+  root: HTMLElement,
+  data: DiligenceDecorationData,
+  config: DiligenceDecorationPluginConfig,
+): void {
+  for (const button of Array.from(root.querySelectorAll<HTMLButtonElement>('[data-action="accept"]'))) {
+    attachAction(button, () =>
+      config.onAcceptDecoration?.(data.scratchpadRunId, data.blockType),
+    );
+  }
+
+  for (const button of Array.from(root.querySelectorAll<HTMLButtonElement>('[data-action="refresh"]'))) {
+    attachAction(button, () =>
+      config.onRefreshDecoration?.(data.scratchpadRunId, data.blockType),
+    );
+  }
+
+  for (const button of Array.from(root.querySelectorAll<HTMLButtonElement>('[data-action="dismiss"]'))) {
+    attachAction(button, () =>
+      config.onDismissDecoration?.(data.scratchpadRunId, data.blockType),
+    );
+  }
+}
+
+export function renderDiligenceDecorationElement(
+  data: DiligenceDecorationData,
+  config: DiligenceDecorationPluginConfig,
+): HTMLElement {
+  const renderer = config.renderers?.[data.blockType];
+  const node = renderer
+    ? renderer.render(data)
+    : renderDefaultDecoration(data, config);
+  if (renderer) {
+    attachRendererActions(node, data, config);
+  }
+  return node;
 }
 
 function renderDefaultDecoration(
@@ -348,12 +388,11 @@ function buildDecorationSet(
       wrapper.dataset.testid = "diligence-decoration-overlay";
 
       for (const item of decorations) {
-        const renderer = registry[item.blockType];
-        wrapper.appendChild(
-          renderer
-            ? renderer.render(item)
-            : renderDefaultDecoration(item, config),
-        );
+        const node = renderDiligenceDecorationElement(item, {
+          ...config,
+          renderers: registry,
+        });
+        wrapper.appendChild(node);
       }
 
       return wrapper;

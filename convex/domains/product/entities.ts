@@ -1170,6 +1170,10 @@ export const getEntityWorkspace = query({
     const activeInvites = workspaceAccess.canManageMembers
       ? await listActiveEntityWorkspaceInvites(ctx, dataOwnerKey, entity._id)
       : [];
+    const ownerUserId = entity.ownerKey.startsWith("user:")
+      ? (entity.ownerKey.slice("user:".length) as Id<"users">)
+      : null;
+    const ownerUser = ownerUserId ? await ctx.db.get(ownerUserId) : null;
     const viewShare = activeShares.find((share) => share.access === "view") ?? null;
     const editShare = activeShares.find((share) => share.access === "edit") ?? null;
 
@@ -1202,6 +1206,24 @@ export const getEntityWorkspace = query({
         canManageShare: workspaceAccess.canManageShare,
         canManageMembers: workspaceAccess.canManageMembers,
       },
+      viewerIdentity: {
+        ownerKey: workspaceAccess.identity.ownerKey ?? null,
+      },
+      ownerProfile: ownerUser
+        ? {
+            ownerKey: entity.ownerKey,
+            userId: ownerUser._id,
+            email: typeof ownerUser.email === "string" ? ownerUser.email : undefined,
+            name: typeof ownerUser.name === "string" ? ownerUser.name : undefined,
+            image: typeof ownerUser.image === "string" ? ownerUser.image : undefined,
+          }
+        : {
+            ownerKey: entity.ownerKey,
+            userId: undefined,
+            email: undefined,
+            name: undefined,
+            image: undefined,
+          },
       shareLinks: workspaceAccess.canManageShare
         ? {
             view: viewShare
@@ -1228,6 +1250,9 @@ export const getEntityWorkspace = query({
               image: member.userImage,
               access: member.access,
               token: member.token,
+              notificationStatus: member.notificationStatus,
+              notificationUpdatedAt: member.notificationUpdatedAt,
+              notificationError: member.notificationError,
               updatedAt: member.updatedAt,
             })),
             invites: activeInvites.map((invite) => ({
@@ -1235,6 +1260,9 @@ export const getEntityWorkspace = query({
               email: invite.email,
               access: invite.access,
               token: invite.token,
+              notificationStatus: invite.notificationStatus,
+              notificationUpdatedAt: invite.notificationUpdatedAt,
+              notificationError: invite.notificationError,
               updatedAt: invite.updatedAt,
             })),
           }
@@ -1651,6 +1679,7 @@ export const ensureEntity = mutation({
     name: v.optional(v.string()),
     entityType: v.optional(v.string()),
     summary: v.optional(v.string()),
+    savedBecause: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
@@ -1671,7 +1700,7 @@ export const ensureEntity = mutation({
       name: args.name ?? args.slug,
       entityType: args.entityType ?? "company",
       summary: summarizeText(args.summary ?? `${args.name ?? args.slug} workspace`, `${args.slug} workspace`),
-      savedBecause: "load-test-seed",
+      savedBecause: args.savedBecause?.trim() || "load-test-seed",
       latestRevision: 0,
       reportCount: 0,
       createdAt: now,

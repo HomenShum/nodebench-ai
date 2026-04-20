@@ -1,6 +1,6 @@
 import { mutation, query } from "../../_generated/server";
 import { v } from "convex/values";
-import { resolveProductIdentitySafely, requireProductIdentity } from "./helpers";
+import { resolveProductReadOwnerKeys, resolveProductIdentitySafely, requireProductIdentity } from "./helpers";
 import { slugifyProductEntityName } from "./entities";
 
 const PLACEHOLDER_PROFILE_SUMMARIES = new Set([
@@ -22,7 +22,8 @@ export const getMeSnapshot = query({
   },
   handler: async (ctx, args) => {
     const identity = await resolveProductIdentitySafely(ctx, args.anonymousSessionId);
-    if (!identity.ownerKey) {
+    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
+    if (ownerKeys.length === 0) {
       return {
         profile: null,
         files: [],
@@ -35,25 +36,57 @@ export const getMeSnapshot = query({
     let files: any[] = [];
     let contextItems: any[] = [];
     try {
-      [profile, files, contextItems] = await Promise.all([
-        ctx.db
-          .query("productProfileSummaries")
-          .withIndex("by_owner", (q) => q.eq("ownerKey", identity.ownerKey!))
-          .first(),
-        ctx.db
-          .query("productEvidenceItems")
-          .withIndex("by_owner_updated", (q) => q.eq("ownerKey", identity.ownerKey!))
-          .order("desc")
-          .take(8),
-        ctx.db
-          .query("productContextItems")
-          .withIndex("by_owner_updated", (q) => q.eq("ownerKey", identity.ownerKey!))
-          .order("desc")
-          .take(24),
+      const [profileCandidates, fileGroups, contextGroups] = await Promise.all([
+        Promise.all(
+          ownerKeys.map((ownerKey) =>
+            ctx.db
+              .query("productProfileSummaries")
+              .withIndex("by_owner", (q) => q.eq("ownerKey", ownerKey))
+              .first(),
+          ),
+        ),
+        Promise.all(
+          ownerKeys.map((ownerKey) =>
+            ctx.db
+              .query("productEvidenceItems")
+              .withIndex("by_owner_updated", (q) => q.eq("ownerKey", ownerKey))
+              .order("desc")
+              .take(8),
+          ),
+        ),
+        Promise.all(
+          ownerKeys.map((ownerKey) =>
+            ctx.db
+              .query("productContextItems")
+              .withIndex("by_owner_updated", (q) => q.eq("ownerKey", ownerKey))
+              .order("desc")
+              .take(24),
+          ),
+        ),
       ]);
+
+      profile = profileCandidates.find(Boolean) ?? null;
+      files = fileGroups
+        .flat()
+        .sort((left, right) => right.updatedAt - left.updatedAt)
+        .reduce<Array<(typeof fileGroups)[number][number]>>((acc, file) => {
+          if (acc.some((existing) => existing._id === file._id)) return acc;
+          acc.push(file);
+          return acc;
+        }, [])
+        .slice(0, 8);
+      contextItems = contextGroups
+        .flat()
+        .sort((left, right) => right.updatedAt - left.updatedAt)
+        .reduce<Array<(typeof contextGroups)[number][number]>>((acc, item) => {
+          if (acc.some((existing) => existing._id === item._id)) return acc;
+          acc.push(item);
+          return acc;
+        }, [])
+        .slice(0, 24);
     } catch (error) {
       console.error("[product] getMeSnapshot failed", {
-        ownerKey: identity.ownerKey,
+        ownerKeys,
         error,
       });
       return {
@@ -237,6 +270,18 @@ export const updateProfile = mutation({
         v.literal("student"),
       ),
     ),
+    rolesOfInterest: v.optional(v.array(v.string())),
+    preferences: v.optional(
+      v.object({
+        communicationStyle: v.optional(
+          v.union(v.literal("concise"), v.literal("balanced"), v.literal("detailed")),
+        ),
+        evidenceStyle: v.optional(
+          v.union(v.literal("balanced"), v.literal("citation_heavy"), v.literal("fast")),
+        ),
+        avoidCorporateTone: v.optional(v.boolean()),
+      }),
+    ),
   },
   handler: async (ctx, args) => {
     const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
@@ -250,6 +295,8 @@ export const updateProfile = mutation({
       await ctx.db.patch(existing._id, {
         backgroundSummary: args.backgroundSummary ?? existing.backgroundSummary,
         preferredLens: args.preferredLens ?? existing.preferredLens,
+        rolesOfInterest: args.rolesOfInterest ?? existing.rolesOfInterest,
+        preferences: args.preferences ?? existing.preferences,
         updatedAt: now,
       });
       return await ctx.db.get(existing._id);
@@ -257,9 +304,10 @@ export const updateProfile = mutation({
 
     const profileId = await ctx.db.insert("productProfileSummaries", {
       ownerKey: identity.ownerKey,
-        backgroundSummary: args.backgroundSummary ?? "",
-        preferredLens: args.preferredLens ?? "founder",
-        rolesOfInterest: [],
+      backgroundSummary: args.backgroundSummary ?? "",
+      preferredLens: args.preferredLens ?? "founder",
+      rolesOfInterest: args.rolesOfInterest ?? [],
+      preferences: args.preferences,
       createdAt: now,
       updatedAt: now,
     });

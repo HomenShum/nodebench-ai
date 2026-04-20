@@ -20,7 +20,18 @@ import { getDb, genId } from "../../packages/mcp-local/src/db.js";
 import { initBehaviorTables, logSession, logQuery, logToolCall, findSimilarPriorQuery } from "../../packages/mcp-local/src/profiler/behaviorStore.js";
 import { ConvexHttpClient } from "convex/browser";
 import { anyApi } from "convex/server";
-import { generatePlan, executeHarness, synthesizeResults } from "../agentHarness.js";
+import {
+  generatePlan,
+  executeHarness,
+  synthesizeResults,
+  type HarnessTraceEvent,
+} from "../agentHarness.js";
+import {
+  buildMemorySeedContext,
+  recallEntityMemory,
+  type EntityMemoryRecallEntry,
+} from "../lib/entityMemoryRecall.js";
+import { buildRoutingGuidance, decideHarnessRouting } from "../harnessRuntime.js";
 import type { McpTool } from "../../packages/mcp-local/src/types.js";
 import {
   detectFounderCompanyMode,
@@ -1890,6 +1901,7 @@ export function createSearchRouter(tools: McpTool[]) {
   // like "Go deeper on the risks" or "Now compare that to Google" resolve context.
   // Keyed by sessionId (from request body) or IP as fallback. TTL 30min.
   const sessionCache = new Map<string, { entity: string; classification: string; result: any; ts: number }>();
+  const steeringQueue = new Map<string, Array<{ payload: Record<string, unknown> | string; createdAt: number; source?: string }>>();
   const SESSION_TTL = 30 * 60 * 1000; // 30 minutes
   const MAX_SESSIONS = 500;
 
@@ -1911,6 +1923,21 @@ export function createSearchRouter(tools: McpTool[]) {
       if (oldest) sessionCache.delete(oldest[0]);
     }
     sessionCache.set(key, { entity, classification, result, ts: Date.now() });
+  }
+
+  function queueSessionSteering(key: string, payload: Record<string, unknown> | string, source?: string) {
+    const existing = steeringQueue.get(key) ?? [];
+    existing.push({ payload, createdAt: Date.now(), source });
+    steeringQueue.set(key, existing.slice(-10));
+    return existing.length;
+  }
+
+  function consumeSessionSteering(key: string) {
+    const queue = steeringQueue.get(key);
+    if (!queue?.length) return null;
+    const next = queue.shift() ?? null;
+    if (queue.length === 0) steeringQueue.delete(key);
+    return next?.payload ?? null;
   }
 
   // Find a tool by name from the loaded tool set
@@ -2391,10 +2418,16 @@ Entity extraction rules:
     };
   }
 
-  const parseSearchInput = (req: Request): { query?: string; lens?: string; daysBack?: number } => {
+  const parseSearchInput = (req: Request): { query?: string; lens?: string; daysBack?: number; ownerKey?: string; contextHint?: string } => {
     if (req.method === "GET") {
       const query = typeof req.query.query === "string" ? req.query.query : undefined;
       const lens = typeof req.query.lens === "string" ? req.query.lens : undefined;
+      const contextHint = typeof req.query.contextHint === "string" ? req.query.contextHint : undefined;
+      const ownerKey = typeof req.query.ownerKey === "string"
+        ? req.query.ownerKey
+        : typeof req.headers["x-owner-key"] === "string"
+          ? req.headers["x-owner-key"]
+          : undefined;
       const parsedDaysBack =
         typeof req.query.daysBack === "string" ? Number.parseInt(req.query.daysBack, 10) : undefined;
 
@@ -2402,16 +2435,20 @@ Entity extraction rules:
         query,
         lens,
         daysBack: Number.isFinite(parsedDaysBack) ? parsedDaysBack : undefined,
+        ownerKey,
+        contextHint,
       };
     }
 
-    const { query, lens, daysBack } = req.body as {
+    const { query, lens, daysBack, ownerKey, contextHint } = req.body as {
       query?: string;
       lens?: string;
       daysBack?: number;
+      ownerKey?: string;
+      contextHint?: string;
     };
 
-    return { query, lens, daysBack };
+    return { query, lens, daysBack, ownerKey, contextHint };
   };
 
   const handleSearch = async (req: Request, res: Response) => {
@@ -2426,7 +2463,7 @@ Entity extraction rules:
       if (Date.now() >= requestDeadline) throw new Error("Request budget exceeded");
     };
 
-    const { query, lens, daysBack } = parseSearchInput(req);
+    const { query, lens, daysBack, ownerKey, contextHint } = parseSearchInput(req);
 
     if (!query || typeof query !== "string" || query.trim().length === 0) {
       clearTimeout(budgetTimer);
@@ -2443,6 +2480,22 @@ Entity extraction rules:
       lens && !(lens === "founder" && inferredLens && inferredLens !== "founder")
         ? lens
         : inferredLens ?? classification.lens;
+    const normalizedContextHint =
+      typeof contextHint === "string" && contextHint.trim().length > 0
+        ? contextHint.trim().replace(/\s+/g, " ").slice(0, 400)
+        : "";
+    let recalledMemory: EntityMemoryRecallEntry[] = [];
+    if (ownerKey && classification.entities?.length) {
+      try {
+        recalledMemory = await recallEntityMemory({
+          ownerKey,
+          entityTargets: classification.entities,
+          limit: 3,
+        });
+      } catch {
+        recalledMemory = [];
+      }
+    }
 
     const isStream = req.query.stream === "true";
     if (isStream) {
@@ -2453,31 +2506,144 @@ Entity extraction rules:
     }
 
     // Execution trace — records every step for trajectory visualization
-    const trace: Array<{ step: string; tool?: string; startMs: number; endMs?: number; status: "ok" | "error" | "skip"; detail?: string }> = [];
+    const trace: Array<{
+      step: string;
+      tool?: string;
+      startMs: number;
+      endMs?: number;
+      durationMs?: number;
+      status: "ok" | "error" | "skip" | "adapting";
+      detail?: string;
+      stepId?: string;
+      stepIndex?: number;
+      groupId?: string;
+      model?: string;
+      tokensIn?: number;
+      tokensOut?: number;
+      costUsd?: number;
+      preview?: string;
+      injectedContext?: string[];
+      steeringApplied?: boolean;
+    }> = [];
+    const emitStreamPayload = (payload: Record<string, unknown>) => {
+      if (isStream) {
+        res.write(`data: ${JSON.stringify(payload)}\n\n`);
+      }
+    };
     function traceStep(step: string, tool?: string) {
       const entry = { step, tool, startMs: Date.now(), status: "ok" as const, detail: undefined as string | undefined };
       trace.push(entry);
-      if (isStream) {
-        res.write(`data: ${JSON.stringify({ type: "trace", entry })}\n\n`);
-      }
+      emitStreamPayload({ type: "trace", entry });
       return {
         ok(detail?: string) { 
           entry.endMs = Date.now(); entry.status = "ok"; entry.detail = detail; 
-          if (isStream) res.write(`data: ${JSON.stringify({ type: "trace", entry })}\n\n`);
+          emitStreamPayload({ type: "trace", entry });
         },
         error(detail?: string) { 
           entry.endMs = Date.now(); entry.status = "error"; entry.detail = detail; 
-          if (isStream) res.write(`data: ${JSON.stringify({ type: "trace", entry })}\n\n`);
+          emitStreamPayload({ type: "trace", entry });
         },
         skip(detail?: string) { 
           entry.endMs = Date.now(); entry.status = "skip"; entry.detail = detail; 
-          if (isStream) res.write(`data: ${JSON.stringify({ type: "trace", entry })}\n\n`);
+          emitStreamPayload({ type: "trace", entry });
         },
       };
     }
 
+    function handleHarnessTraceEvent(event: HarnessTraceEvent) {
+      if (event.type === "trace") {
+        const entry = {
+          step: event.step,
+          tool: event.tool,
+          startMs: Date.now(),
+          endMs: Date.now(),
+          durationMs: 0,
+          status: event.status,
+          detail: event.detail,
+        };
+        trace.push(entry);
+        emitStreamPayload({ type: "trace", entry });
+        return;
+      }
+
+      if (event.type === "step_start") {
+        emitStreamPayload({
+          type: "step_start",
+          entry: {
+            stepId: event.stepId,
+            toolName: event.toolName,
+            stepIndex: event.stepIndex,
+            groupId: event.groupId,
+            model: event.model,
+            purpose: event.purpose,
+            startedAt: event.startedAt,
+          },
+        });
+        return;
+      }
+
+      const entry = {
+        step: "tool_call",
+        tool: event.toolName,
+        startMs: event.startedAt,
+        endMs: event.completedAt,
+        durationMs: event.durationMs,
+        status: event.success ? "ok" as const : "error" as const,
+        detail: event.error ?? event.preview,
+        stepId: event.stepId,
+        stepIndex: event.stepIndex,
+        groupId: event.groupId,
+        model: event.model,
+        tokensIn: event.tokensIn,
+        tokensOut: event.tokensOut,
+        costUsd: event.costUsd,
+        preview: event.preview,
+        injectedContext: event.injectedContext,
+        steeringApplied: event.steeringApplied,
+      };
+      trace.push(entry);
+      emitStreamPayload({
+        type: "step_done",
+        entry: {
+          stepId: event.stepId,
+          toolName: event.toolName,
+          stepIndex: event.stepIndex,
+          groupId: event.groupId,
+          model: event.model,
+          durationMs: event.durationMs,
+          startedAt: event.startedAt,
+          completedAt: event.completedAt,
+          success: event.success,
+          error: event.error,
+          preview: event.preview,
+          tokensIn: event.tokensIn,
+          tokensOut: event.tokensOut,
+          costUsd: event.costUsd,
+          injectedContext: event.injectedContext,
+          steeringApplied: event.steeringApplied,
+        },
+      });
+      emitStreamPayload({ type: "trace", entry });
+    }
+
     const classifyTrace = traceStep("classify_query");
     classifyTrace.ok(`type=${classification.type}, entity=${classification.entity ?? "none"}`);
+    const operatorContextTrace = traceStep("operator_context");
+    if (normalizedContextHint) {
+      operatorContextTrace.ok(normalizedContextHint);
+    } else {
+      operatorContextTrace.skip("no operator context supplied");
+    }
+    const memoryRecallTrace = traceStep("memory_recall");
+    if (ownerKey && classification.entities?.length) {
+      memoryRecallTrace.ok(
+        recalledMemory.length > 0
+          ? `loaded ${recalledMemory.length} entity memory entr${recalledMemory.length === 1 ? "y" : "ies"}`
+          : "no stored entity memory matched",
+      );
+    } else {
+      memoryRecallTrace.skip(ownerKey ? "no entities extracted for recall" : "no ownerKey supplied");
+    }
 
     // ── Behavioral profiling: log session + query ──
     let behaviorSessionId: string | undefined;
@@ -2538,11 +2704,24 @@ Entity extraction rules:
           // Compute deterministic routing hints (TA Studio pattern)
           const routingHints = computeRoutingHints(query.trim());
           const routingHintText = formatRoutingHintsForPrompt(routingHints);
-          const queryWithHints = routingHintText
-            ? `${query.trim()}\n\n[${routingHintText}]`
-            : query.trim();
+          const routingDecision = decideHarnessRouting({
+            query: query.trim(),
+            classification: classification.type,
+            entities: classification.entities ?? (classification.entity ? [classification.entity] : []),
+          });
+          const routingGuidance = buildRoutingGuidance(routingDecision);
+          const queryWithHints = [
+            query.trim(),
+            normalizedContextHint ? `Operator context:\n${normalizedContextHint}` : null,
+            routingHintText ? `[${routingHintText}]` : null,
+            `[${routingGuidance}]`,
+          ]
+            .filter((value): value is string => Boolean(value))
+            .join("\n\n");
 
-          const planTrace = traceStep("agent_plan", "gemini-3.1-flash-lite");
+          const routingTrace = traceStep("routing_mode", routingDecision.plannerModel);
+          routingTrace.ok(`${routingDecision.routingMode}: ${routingDecision.routingReason}`);
+          const planTrace = traceStep("agent_plan", routingDecision.plannerModel);
           if (routingHintText) {
             trace.push({ step: "routing_hints", tool: "token_overlap", status: "ok" as const, detail: routingHintText });
           }
@@ -2552,17 +2731,43 @@ Entity extraction rules:
             classification.entities ?? (classification.entity ? [classification.entity] : []),
             resolvedLens,
             callTool,
+            {
+              recalledMemory,
+            },
           );
-          planTrace.ok(`${plan.steps.length} steps planned`);
+          planTrace.ok(`${routingDecision.routingMode} lane, ${plan.steps.length} steps planned`);
+          emitStreamPayload({
+            type: "plan",
+            plan,
+            routingMode: routingDecision.routingMode,
+            routingReason: routingDecision.routingReason,
+            routingSource: routingDecision.routingSource,
+            plannerModel: routingDecision.plannerModel,
+            executionModel: routingDecision.executionModel,
+            reasoningEffort: routingDecision.reasoningEffort,
+            tools: plan.steps.map((step, index) => ({
+              tool: step.toolName,
+              provider: step.model?.startsWith("gpt-") ? "openai" : "gemini",
+              model: step.model,
+              reason: step.purpose,
+              stepId: step.id,
+              stepIndex: step.stepIndex ?? index,
+              groupId: step.groupId,
+            })),
+            totalTools: plan.steps.length,
+          });
 
           const execTrace = traceStep("agent_execute");
-          const execution = await executeHarness(plan, callTool, (step) => {
-            // Stream each harness step to the frontend trace
-            const entry = { step: step.step, tool: step.tool, startMs: Date.now(), status: step.status as "ok", detail: step.detail };
-            trace.push(entry);
-            if (isStream) {
-              res.write(`data: ${JSON.stringify({ type: "trace", entry: { ...entry, endMs: Date.now(), durationMs: 0 } })}\n\n`);
-            }
+          const execution = await executeHarness(plan, callTool, handleHarnessTraceEvent, {
+            seedContext: buildMemorySeedContext(recalledMemory),
+            consumeUserSteering: (step) => {
+              const payload = step.acceptsSteering ? consumeSessionSteering(sessionKey) : null;
+              if (payload != null) {
+                const steeringTrace = traceStep("steering_dequeued", step.toolName);
+                steeringTrace.ok(`${step.id} consumed queued steering`);
+              }
+              return payload;
+            },
           });
           execTrace.ok(`${execution.stepResults.length} steps, ${execution.totalDurationMs}ms`);
 
@@ -2570,7 +2775,14 @@ Entity extraction rules:
           checkBudget();
           const synthTrace = traceStep("agent_synthesize", "gemini-3.1-flash-lite");
           const synthesized = await Promise.race([
-            synthesizeResults(execution, query.trim(), resolvedLens, callTool),
+            synthesizeResults(
+              execution,
+              normalizedContextHint
+                ? `${query.trim()}\n\nOperator context:\n${normalizedContextHint}`
+                : query.trim(),
+              resolvedLens,
+              callTool,
+            ),
             new Promise<never>((_, reject) => {
               const remaining = requestDeadline - Date.now() - 1000; // leave 1s for response
               if (remaining <= 0) reject(new Error("Request budget exceeded"));
@@ -2711,7 +2923,9 @@ Entity extraction rules:
           }
 
           // Build result in the format the rest of the route expects
-          console.error("[harness] Building result from synthesized:", synthesized.entityName, "signals:", synthesized.signals?.length);
+          if (process.env.NODEBENCH_DEBUG_HARNESS === "1") {
+            console.info("[harness] Building result from synthesized:", synthesized.entityName, "signals:", synthesized.signals?.length);
+          }
           const synthesizedSourceRefs = synthesized.sources.map((s, i) => ({
             id: `src:${i}`,
             label: s.label,
@@ -3754,6 +3968,27 @@ RULES: Only include facts grounded in the web data. If data is thin, return fewe
 
   router.get("/", handleSearch);
   router.post("/", handleSearch);
+  router.post("/steering", (req, res) => {
+    const sessionKey = typeof req.body?.sessionId === "string" && req.body.sessionId.trim().length > 0
+      ? req.body.sessionId
+      : getSessionKey(req);
+    const input = req.body?.input as Record<string, unknown> | string | undefined;
+    const source = typeof req.body?.source === "string" ? req.body.source : undefined;
+
+    if (
+      input == null
+      || (typeof input !== "string" && (typeof input !== "object" || Array.isArray(input)))
+    ) {
+      return res.status(400).json({ error: true, message: "input must be a string or object" });
+    }
+
+    const pendingCount = queueSessionSteering(sessionKey, input, source);
+    return res.status(202).json({
+      success: true,
+      sessionKey,
+      pendingCount,
+    });
+  });
 
   // ── POST /search/upload — Ingest uploaded file content ────────────
   router.post("/upload", async (req, res) => {

@@ -9,6 +9,7 @@
  */
 
 import type { McpTool } from "../types.js";
+import { openOptionalSqliteDatabase } from "../db.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -19,8 +20,7 @@ async function getAnalyticsDbSafe(): Promise<any | null> {
     const fs = await import("node:fs");
     const dbPath = path.join(os.homedir(), ".nodebench", "analytics.db");
     if (!fs.existsSync(dbPath)) return null;
-    const Database = (await import("better-sqlite3")).default;
-    return new Database(dbPath, { readonly: true });
+    return openOptionalSqliteDatabase(dbPath, { readonly: true });
   } catch {
     return null;
   }

@@ -5,10 +5,11 @@ import { existsSync, mkdirSync, renameSync } from "node:fs";
 type NodebenchDb = any;
 type StatementResult = { changes: number; lastInsertRowid: number };
 
-const require = createRequire(import.meta.url);
+const packageRequire = createRequire(import.meta.url);
 
 let _db: NodebenchDb | null = null;
 let _databaseCtor: any | null | undefined;
+let _databaseCtorSource: string | null = null;
 
 const OBJECT_NODES_FTS_SQL = `
 CREATE VIRTUAL TABLE IF NOT EXISTS object_nodes_fts USING fts5(
@@ -38,14 +39,84 @@ CREATE TRIGGER IF NOT EXISTS object_nodes_fts_update AFTER UPDATE ON object_node
 END;
 `;
 
+type DatabaseRequireCandidate = {
+  label: string;
+  requireFn: NodeRequire;
+};
+
+function getDatabaseRequireCandidates(): DatabaseRequireCandidate[] {
+  const candidates = new Map<string, DatabaseRequireCandidate>();
+
+  const addCandidate = (label: string, requireFn: NodeRequire) => {
+    try {
+      const resolved = requireFn.resolve("better-sqlite3");
+      if (!candidates.has(resolved)) {
+        candidates.set(resolved, { label, requireFn });
+      }
+    } catch {
+      // Ignore missing candidates.
+    }
+  };
+
+  addCandidate("package-local", packageRequire);
+
+  const workspacePackageJson = join(process.cwd(), "package.json");
+  if (existsSync(workspacePackageJson)) {
+    addCandidate("workspace-root", createRequire(workspacePackageJson));
+  }
+
+  return [...candidates.values()];
+}
+
+function canInstantiateDatabase(Database: any): boolean {
+  try {
+    const db = new Database(":memory:");
+    db.prepare("SELECT 1 AS ok").get();
+    db.close?.();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function loadDatabaseCtor(): any | null {
   if (_databaseCtor !== undefined) return _databaseCtor;
-  try {
-    _databaseCtor = require("better-sqlite3");
-  } catch {
-    _databaseCtor = null;
+
+  for (const candidate of getDatabaseRequireCandidates()) {
+    try {
+      const loaded = candidate.requireFn("better-sqlite3");
+      const Database = loaded?.default ?? loaded;
+      if (typeof Database !== "function") continue;
+      if (!canInstantiateDatabase(Database)) continue;
+      _databaseCtor = Database;
+      _databaseCtorSource = candidate.label;
+      return _databaseCtor;
+    } catch {
+      // Try the next candidate.
+    }
   }
+
+  _databaseCtor = null;
+  _databaseCtorSource = null;
   return _databaseCtor;
+}
+
+export function getOptionalDatabaseCtor(): any | null {
+  return loadDatabaseCtor();
+}
+
+export function getOptionalDatabaseCtorSource(): string | null {
+  return _databaseCtorSource;
+}
+
+export function openOptionalSqliteDatabase(dbPath: string, options?: Record<string, unknown>): NodebenchDb | null {
+  const Database = loadDatabaseCtor();
+  if (!Database) return null;
+  try {
+    return new Database(dbPath, options);
+  } catch {
+    return null;
+  }
 }
 
 function getNodebenchDataDir(): string {
@@ -95,6 +166,12 @@ function isRecoverableSqliteError(error: unknown): boolean {
     || message.includes("SQLITE_NOTADB")
     || message.includes("malformed")
   );
+}
+
+function isNativeSqliteAddonError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  const code = typeof error === "object" && error && "code" in error ? String((error as { code?: unknown }).code ?? "") : "";
+  return code === "ERR_DLOPEN_FAILED" || message.includes("NODE_MODULE_VERSION");
 }
 
 const SCHEMA_SQL = `
@@ -1192,6 +1269,10 @@ export function getDb(): NodebenchDb {
   try {
     _db = openInitializedDatabase();
   } catch (error) {
+    if (isNativeSqliteAddonError(error)) {
+      _db = createNoopDb();
+      return _db;
+    }
     if (!isRecoverableSqliteError(error)) {
       throw error;
     }

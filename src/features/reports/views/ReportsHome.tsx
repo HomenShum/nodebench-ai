@@ -1,26 +1,19 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useMutation, useQuery } from "convex/react";
-import { ArrowUpRight, Check, Clock3, Filter, Link2, Search, Sparkles, Upload } from "lucide-react";
+import { useQuery } from "convex/react";
+import { Check, Link2, Search, Building2, User, Briefcase, TrendingUp, FileText } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { useConvexApi } from "@/lib/convexApi";
-import { buildCockpitPath } from "@/lib/registry/viewRegistry";
+import { cn } from "@/lib/utils";
+import { ProductThumbnail } from "@/features/product/components/ProductThumbnail";
+import { buildEntityShareUrl } from "@/features/entities/lib/entityExport";
+import { STARTER_ENTITY_WORKSPACES } from "@/features/entities/lib/starterEntityWorkspaces";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
-import { ProductWorkspaceHeader } from "@/features/product/components/ProductWorkspaceHeader";
-import { ProductThumbnail } from "@/features/product/components/ProductThumbnail";
-import { buildCrmSummary, buildEntityMarkdown, buildEntityShareUrl, buildOutreachDraft } from "@/features/entities/lib/entityExport";
-import { EntityMemoryGraph } from "@/features/entities/components/EntityMemoryGraph";
-import { EntityNotebookMeta } from "@/features/entities/components/EntityNotebookMeta";
-import {
-  buildEntityNoteDocumentDraft,
-  createEmptyEntityNoteDocument,
-  type EntityNoteDocument,
-  type LegacyEntityNoteBlock,
-} from "@/features/entities/lib/entityNoteDocument";
-import { STARTER_ENTITY_WORKSPACES } from "@/features/entities/lib/starterEntityWorkspaces";
 
-const EntityNoteEditor = lazy(() => import("@/features/entities/components/EntityNoteEditor"));
+/* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
 
 type EntityCard = {
   _id?: string;
@@ -28,61 +21,164 @@ type EntityCard = {
   name: string;
   summary: string;
   entityType: string;
+  latestReportType?: string;
   latestRevision: number;
   reportCount: number;
   updatedAt?: number;
   updatedLabel: string;
+  thumbnailUrl?: string;
+  thumbnailUrls?: string[];
+  sourceUrls?: string[];
+  sourceLabels?: string[];
+  origin?: "user" | "system";
+  originLabel?: string;
+  systemGroup?: string;
+  relatedEntities?: Array<{ slug: string; name: string; entityType: string; reason?: string }>;
 };
 
-type EntityTimelineItem = {
-  _id?: string;
-  title: string;
-  summary: string;
-  query: string;
-  lens: string;
-  revision?: number;
-  updatedAt?: number;
-  updatedLabel?: string;
-  sections: Array<{ id: string; title: string; body: string }>;
-  diffs: Array<{ id: string; title: string; status: "new" | "changed"; previousBody: string; currentBody: string }>;
-  isLatest?: boolean;
+const FILTERS = [
+  { id: "all", label: "All" },
+  { id: "companies", label: "Companies", type: "company" },
+  { id: "people", label: "People", type: "person" },
+  { id: "jobs", label: "Jobs", type: "job" },
+  { id: "markets", label: "Markets", type: "market" },
+  { id: "notes", label: "Notes", type: "note" },
+] as const;
+
+type FilterId = (typeof FILTERS)[number]["id"];
+type ReportGroupBy = "entityType" | "updatedAt" | "origin";
+type ReportGroup = {
+  label: string;
+  cards: EntityCard[];
 };
 
-type EntityWorkspace = {
-  entity: {
-    _id?: string;
-    slug: string;
-    name: string;
-    summary: string;
-    entityType: string;
-    reportCount: number;
-    latestRevision: number;
-  };
-  note: { content: string; blocks?: LegacyEntityNoteBlock[] } | null;
-  noteDocument?: EntityNoteDocument | null;
-  timeline: EntityTimelineItem[];
-  latest: EntityTimelineItem | null;
-  evidence: Array<{ _id?: string; label: string; type?: string; sourceUrl?: string }>;
-  relatedEntities?: Array<{ slug: string; name: string; entityType: string; summary: string; reason?: string }>;
-};
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
 
-const FILTERS = ["All", "Companies", "People", "Jobs", "Markets", "Notes", "Recent"] as const;
-
-function formatUpdatedLabel(timestamp?: number) {
-  if (!timestamp) return "Recently";
+function formatRelative(timestamp?: number) {
+  if (!timestamp) return "—";
   const minutes = Math.max(1, Math.round((Date.now() - timestamp) / 60000));
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.round(minutes / 60);
   if (hours < 24) return `${hours}h ago`;
-  return `${Math.round(hours / 24)}d ago`;
+  const days = Math.round(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.round(days / 30);
+  return `${months}mo ago`;
 }
 
-const STARTER_WORKSPACES: EntityWorkspace[] = STARTER_ENTITY_WORKSPACES.map((workspace) => ({
-  ...workspace,
-  noteDocument: null,
-}));
+export type FreshnessTier = "fresh" | "recent" | "stale" | "unknown";
 
-const STARTER_CARDS: EntityCard[] = STARTER_WORKSPACES.map((workspace, index) => ({
+export function getFreshness(timestamp?: number, now: number = Date.now()): FreshnessTier {
+  if (!timestamp) return "unknown";
+  const ageMs = now - timestamp;
+  if (ageMs < 0) return "fresh"; // future timestamp treated as fresh, not negative-age
+  if (ageMs < 24 * 60 * 60 * 1000) return "fresh";
+  if (ageMs < 7 * 24 * 60 * 60 * 1000) return "recent";
+  return "stale";
+}
+
+function freshnessPillClass(tier: FreshnessTier) {
+  switch (tier) {
+    case "fresh":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300";
+    case "recent":
+      return "border-gray-200 bg-gray-50 text-gray-600 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-gray-300";
+    case "stale":
+      return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300";
+    default:
+      return "border-gray-200 bg-gray-50 text-gray-500 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-gray-400";
+  }
+}
+
+function getDateGroup(timestamp?: number): string {
+  if (!timestamp) return "Earlier";
+  const ageMs = Date.now() - timestamp;
+  if (ageMs < 24 * 60 * 60 * 1000) return "Today";
+  if (ageMs < 7 * 24 * 60 * 60 * 1000) return "This week";
+  if (ageMs < 30 * 24 * 60 * 60 * 1000) return "This month";
+  return "Earlier";
+}
+
+function getEntityTypeGroup(entityType: string) {
+  const normalized = entityType.trim().toLowerCase();
+  if (normalized === "person") return "People";
+  if (normalized === "company") return "Companies";
+  if (normalized === "job") return "Roles";
+  if (normalized === "market") return "Markets";
+  if (normalized === "note") return "Notes";
+  return "Other";
+}
+
+export function filterReportCards(cards: EntityCard[], filterId: FilterId): EntityCard[] {
+  const activeFilterDef = FILTERS.find((filter) => filter.id === filterId);
+  const typeFilter =
+    activeFilterDef && "type" in activeFilterDef ? activeFilterDef.type : undefined;
+  if (!typeFilter) return cards;
+  return cards.filter((card) => card.entityType.toLowerCase() === typeFilter);
+}
+
+export function buildReportGroups(cards: EntityCard[], groupBy: ReportGroupBy): ReportGroup[] {
+  const groups = new Map<string, EntityCard[]>();
+  for (const card of cards) {
+    const group =
+      groupBy === "entityType"
+        ? getEntityTypeGroup(card.entityType)
+        : groupBy === "origin"
+          ? card.origin === "system"
+            ? "System intelligence"
+            : "Your workspace"
+          : getDateGroup(card.updatedAt);
+    const list = groups.get(group) ?? [];
+    list.push(card);
+    groups.set(group, list);
+  }
+
+  const order =
+    groupBy === "entityType"
+      ? ["People", "Companies", "Roles", "Markets", "Notes", "Other"]
+      : groupBy === "origin"
+        ? ["Your workspace", "System intelligence"]
+      : ["Today", "This week", "This month", "Earlier"];
+
+  return order
+    .map((label) => ({ label, cards: groups.get(label) ?? [] }))
+    .filter((group) => group.cards.length > 0);
+}
+
+function EntityIcon({ type, className = "h-3.5 w-3.5" }: { type: string; className?: string }) {
+  const normalized = type.toLowerCase();
+  if (normalized === "company") return <Building2 className={className} />;
+  if (normalized === "person") return <User className={className} />;
+  if (normalized === "job") return <Briefcase className={className} />;
+  if (normalized === "market") return <TrendingUp className={className} />;
+  return <FileText className={className} />;
+}
+
+function entityTypeColor(type: string) {
+  const normalized = type.toLowerCase();
+  if (normalized === "company") return "text-blue-600 dark:text-blue-400";
+  if (normalized === "person") return "text-violet-600 dark:text-violet-400";
+  if (normalized === "job") return "text-amber-600 dark:text-amber-400";
+  if (normalized === "market") return "text-emerald-600 dark:text-emerald-400";
+  return "text-gray-500 dark:text-gray-400";
+}
+
+function getEntityThumbnailTone(entityType: string, index: number) {
+  const normalized = entityType.toLowerCase();
+  if (normalized === "company") return 1;
+  if (normalized === "person") return 3;
+  if (normalized === "job") return 4;
+  if (normalized === "market") return 2;
+  return index % 6;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Starter cards                                                      */
+/* ------------------------------------------------------------------ */
+
+const STARTER_CARDS: EntityCard[] = STARTER_ENTITY_WORKSPACES.map((workspace, index) => ({
   slug: workspace.entity.slug,
   name: workspace.entity.name,
   summary: workspace.entity.summary,
@@ -91,113 +187,138 @@ const STARTER_CARDS: EntityCard[] = STARTER_WORKSPACES.map((workspace, index) =>
   reportCount: workspace.entity.reportCount,
   updatedAt: Date.now() - index * 60 * 60 * 1000,
   updatedLabel: workspace.latest?.updatedLabel ?? "Starter",
+  sourceUrls: workspace.evidence
+    .map((item) => item.sourceUrl)
+    .filter((url): url is string => typeof url === "string" && url.trim().length > 0),
+  sourceLabels: workspace.evidence.map((item) => item.label),
 }));
 
-function toEntityWorkspace(raw: any): EntityWorkspace | null {
-  if (!raw?.entity) return null;
-  return {
-    entity: {
-      _id: String(raw.entity._id),
-      slug: raw.entity.slug,
-      name: raw.entity.name,
-      summary: raw.entity.summary,
-      entityType: raw.entity.entityType,
-      reportCount: raw.entity.reportCount,
-      latestRevision: raw.entity.latestRevision,
-    },
-    note: raw.note
-      ? {
-          content: raw.note.content ?? "",
-          blocks: Array.isArray(raw.note.blocks) ? raw.note.blocks : undefined,
-        }
-      : null,
-    noteDocument: raw.noteDocument
-      ? {
-          _id: String(raw.noteDocument._id),
-          title: raw.noteDocument.title,
-          markdown: raw.noteDocument.markdown ?? "",
-          plainText: raw.noteDocument.plainText ?? "",
-          lexicalState: raw.noteDocument.lexicalState,
-          latestRevision: raw.noteDocument.latestRevision ?? 0,
-          updatedAt: raw.noteDocument.updatedAt,
-          blocks: Array.isArray(raw.noteDocument.blocks) ? raw.noteDocument.blocks : [],
-          snapshots: Array.isArray(raw.noteDocument.snapshots)
-            ? raw.noteDocument.snapshots.map((snapshot: any) => ({
-                _id: String(snapshot._id),
-                revision: snapshot.revision,
-                markdown: snapshot.markdown,
-                plainText: snapshot.plainText,
-                createdAt: snapshot.createdAt,
-              }))
-            : [],
-          outline: Array.isArray(raw.noteDocument.outline)
-            ? raw.noteDocument.outline.map((item: any) => ({
-                blockId: item.blockId,
-                title: item.title,
-                order: item.order,
-                depth: item.depth,
-              }))
-            : [],
-          entityLinks: Array.isArray(raw.noteDocument.entityLinks)
-            ? raw.noteDocument.entityLinks.map((link: any) => ({
-                _id: String(link._id),
-                blockId: link.blockId,
-                entitySlug: link.entitySlug,
-                relation: link.relation,
-                entityName: link.entityName,
-                entityType: link.entityType,
-                createdAt: link.createdAt,
-              }))
-            : [],
-          sourceLinks: Array.isArray(raw.noteDocument.sourceLinks)
-            ? raw.noteDocument.sourceLinks.map((link: any) => ({
-                _id: String(link._id),
-                blockId: link.blockId,
-                evidenceId: link.evidenceId,
-                label: link.label,
-                type: link.type,
-                sourceUrl: link.sourceUrl,
-                createdAt: link.createdAt,
-              }))
-            : [],
-          events: Array.isArray(raw.noteDocument.events)
-            ? raw.noteDocument.events.map((event: any) => ({
-                _id: String(event._id),
-                type: event.type,
-                label: event.label,
-                summary: event.summary,
-                createdAt: event.createdAt,
-              }))
-            : [],
-        }
-      : null,
-    latest: raw.latest
-      ? {
-          ...raw.latest,
-          _id: String(raw.latest._id),
-          updatedLabel: formatUpdatedLabel(raw.latest.updatedAt),
-        }
-      : null,
-    timeline: (raw.timeline ?? []).map((item: any) => ({
-      ...item,
-      _id: String(item._id),
-      updatedLabel: formatUpdatedLabel(item.updatedAt),
-    })),
-    evidence: (raw.evidence ?? []).map((item: any) => ({
-      _id: String(item._id),
-      label: item.label,
-      type: item.type,
-      sourceUrl: item.sourceUrl,
-    })),
-    relatedEntities: (raw.relatedEntities ?? []).map((item: any) => ({
-      slug: item.slug,
-      name: item.name,
-      entityType: item.entityType,
-      summary: item.summary,
-      reason: item.reason,
-    })),
-  };
+/* ------------------------------------------------------------------ */
+/*  Report Card (Linear-inspired)                                      */
+/* ------------------------------------------------------------------ */
+
+function ReportCard({
+  card,
+  index,
+  copiedSlug,
+  onShare,
+  onClick,
+}: {
+  card: EntityCard;
+  index: number;
+  copiedSlug: string | null;
+  onShare: (slug: string) => void;
+  onClick: (slug: string) => void;
+}) {
+  const iconColor = entityTypeColor(card.entityType);
+  const sourceCount = card.sourceUrls?.length ?? 0;
+  const relatedPreview = card.relatedEntities?.slice(0, 2) ?? [];
+
+  return (
+    <article className="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white transition-all hover:border-gray-300 hover:shadow-sm dark:border-white/[0.08] dark:bg-white/[0.02] dark:hover:border-white/[0.15] dark:hover:bg-white/[0.03]">
+      {/* Main clickable area */}
+      <button
+        type="button"
+        onClick={() => onClick(card.slug)}
+        className="flex h-full w-full flex-col text-left"
+      >
+        {/* Thumbnail — no meta prop to avoid top-right collision with share button */}
+        <div aria-hidden="true" className="relative border-b border-gray-100 dark:border-white/[0.06]">
+          <ProductThumbnail
+            className="aspect-[16/10]"
+            title={card.name}
+            summary={card.summary}
+            type={card.entityType}
+            imageUrl={card.thumbnailUrl}
+            imageUrls={card.thumbnailUrls}
+            sourceUrls={card.sourceUrls}
+            sourceLabels={card.sourceLabels}
+            tone={getEntityThumbnailTone(card.entityType, index)}
+            compact
+          />
+        </div>
+
+        {/* Content */}
+        <div className="flex flex-1 flex-col gap-2 px-4 py-3">
+          {/* Title + type icon */}
+          <div className="flex items-center gap-2">
+            <span className={iconColor}>
+              <EntityIcon type={card.entityType} />
+            </span>
+            <h3 className="flex-1 truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+              {card.name}
+            </h3>
+          </div>
+
+          {/* Summary */}
+          <p className="line-clamp-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+            {card.summary}
+          </p>
+
+          {relatedPreview.length > 0 ? (
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {relatedPreview.map((related) => (
+                <span
+                  key={`${card.slug}-${related.slug}`}
+                  className="rounded-full border border-gray-200 px-2 py-0.5 text-[11px] text-gray-500 dark:border-white/[0.08] dark:text-gray-400"
+                >
+                  {related.name}
+                </span>
+              ))}
+            </div>
+          ) : null}
+
+          {/* Metadata footer */}
+          <div className="mt-auto flex items-center justify-between gap-2 pt-2 text-xs text-gray-400 dark:text-gray-500">
+            <div className="flex items-center gap-3">
+              <span>{card.originLabel ?? (card.origin === "system" ? "System" : "Workspace")}</span>
+              <span className="capitalize">{card.entityType}</span>
+              {card.reportCount > 0 && (
+                <span className="tabular-nums">
+                  {card.reportCount} brief{card.reportCount === 1 ? "" : "s"}
+                </span>
+              )}
+              {sourceCount > 0 && (
+                <span className="hidden tabular-nums sm:inline">
+                  {sourceCount} source{sourceCount === 1 ? "" : "s"}
+                </span>
+              )}
+            </div>
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium tabular-nums",
+                freshnessPillClass(getFreshness(card.updatedAt)),
+              )}
+            >
+              {formatRelative(card.updatedAt)}
+            </span>
+          </div>
+        </div>
+      </button>
+
+      {/* Share button — overlay on top-right, appears on hover. Placed AFTER main button so it sits above. */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onShare(card.slug);
+        }}
+        className={`absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-md border bg-white/95 shadow-sm backdrop-blur transition-all dark:bg-gray-900/90 ${
+          copiedSlug === card.slug
+            ? "border-green-400 text-green-500 opacity-100 dark:border-green-500/40"
+            : "border-gray-200 text-gray-400 opacity-0 hover:text-gray-600 group-hover:opacity-100 dark:border-white/10 dark:hover:text-gray-300"
+        }`}
+        aria-label={`Share ${card.name}`}
+      >
+        {copiedSlug === card.slug ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
+      </button>
+    </article>
+  );
 }
+
+/* ------------------------------------------------------------------ */
+/*  Main component                                                     */
+/* ------------------------------------------------------------------ */
 
 export function ReportsHome() {
   useProductBootstrap();
@@ -208,26 +329,14 @@ export function ReportsHome() {
   const anonymousSessionId = getAnonymousProductSessionId();
 
   const [query, setQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<(typeof FILTERS)[number]>("All");
-  const [selectedEntitySlug, setSelectedEntitySlug] = useState<string | null>(null);
-  const [selectedRevisionId, setSelectedRevisionId] = useState<string | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<FilterId>("all");
   const [copiedEntitySlug, setCopiedEntitySlug] = useState<string | null>(null);
-  const [copiedExport, setCopiedExport] = useState<string | null>(null);
-  const [noteDocumentDraft, setNoteDocumentDraft] = useState<EntityNoteDocument>(createEmptyEntityNoteDocument());
-  const [noteStatus, setNoteStatus] = useState<"idle" | "saving" | "saved">("idle");
-  const [uploadingEvidence, setUploadingEvidence] = useState(false);
-  const [attachingEvidenceId, setAttachingEvidenceId] = useState<string | null>(null);
-  const generateUploadUrl = useMutation(api?.domains.product.me.generateUploadUrl ?? ("skip" as any));
-  const saveFileMutation = useMutation(api?.domains.product.me.saveFile ?? ("skip" as any));
-  const attachEvidence = useMutation(api?.domains.product.entities.attachEvidenceToEntity ?? ("skip" as any));
-  const saveNoteDocument = useMutation(api?.domains.product.documents.saveEntityNoteDocument ?? ("skip" as any));
-  const ensureNoteDocumentBackfill = useMutation(api?.domains.product.documents.ensureEntityNoteDocumentBackfill ?? ("skip" as any));
+  const [groupBy, setGroupBy] = useState<ReportGroupBy>("updatedAt");
 
   const entities = useQuery(
     api?.domains.product.entities.listEntities ?? "skip",
     api?.domains.product.entities.listEntities
-      ? { anonymousSessionId, search: query, filter: activeFilter }
+      ? { anonymousSessionId, search: query, filter: "All" }
       : "skip",
   );
 
@@ -239,600 +348,276 @@ export function ReportsHome() {
         name: entity.name,
         summary: entity.summary,
         entityType: entity.entityType,
+        latestReportType: typeof entity.latestReportType === "string" ? entity.latestReportType : undefined,
         latestRevision: entity.latestRevision,
         reportCount: entity.reportCount,
         updatedAt: entity.latestReportUpdatedAt,
-        updatedLabel: formatUpdatedLabel(entity.latestReportUpdatedAt),
+        updatedLabel: formatRelative(entity.latestReportUpdatedAt),
+        thumbnailUrl: typeof entity.thumbnailUrl === "string" ? entity.thumbnailUrl : undefined,
+        thumbnailUrls: Array.isArray(entity.thumbnailUrls)
+          ? entity.thumbnailUrls.filter((url: unknown): url is string => typeof url === "string")
+          : undefined,
+        sourceUrls: Array.isArray(entity.sourceUrls)
+          ? entity.sourceUrls.filter((url: unknown): url is string => typeof url === "string")
+          : undefined,
+        sourceLabels: Array.isArray(entity.sourceLabels)
+          ? entity.sourceLabels.filter((label: unknown): label is string => typeof label === "string")
+          : undefined,
+        origin: "user",
+        originLabel: "Workspace",
       })),
     [entities],
   );
-
-  const hasLiveEntities = liveCards.length > 0;
-  const cards = hasLiveEntities ? liveCards : STARTER_CARDS;
-
-  useEffect(() => {
-    const fromUrl = searchParams.get("entity");
-    if (fromUrl && cards.some((card) => card.slug === fromUrl)) {
-      setSelectedEntitySlug(fromUrl);
-      return;
-    }
-    if (!selectedEntitySlug || !cards.some((card) => card.slug === selectedEntitySlug)) {
-      setSelectedEntitySlug(cards[0]?.slug ?? null);
-    }
-  }, [cards, searchParams, selectedEntitySlug]);
-
-  const liveWorkspace = useQuery(
-    api?.domains.product.entities.getEntityWorkspace ?? "skip",
-    api?.domains.product.entities.getEntityWorkspace && hasLiveEntities && selectedEntitySlug
-      ? { anonymousSessionId, entitySlug: selectedEntitySlug }
-      : "skip",
-  );
-  const attachableEvidence = useQuery(
-    api?.domains.product.entities.listAttachableEvidence ?? "skip",
-    api?.domains.product.entities.listAttachableEvidence && hasLiveEntities && selectedEntitySlug
-      ? { anonymousSessionId, entitySlug: selectedEntitySlug }
+  const systemEntities = useQuery(
+    api?.domains?.product?.systemIntelligence?.listSystemReportCards ?? "skip",
+    api?.domains?.product?.systemIntelligence?.listSystemReportCards
+      ? { search: query, filter: "All" }
       : "skip",
   );
 
-  const workspace = useMemo(() => {
-    if (hasLiveEntities) return toEntityWorkspace(liveWorkspace);
-    return STARTER_WORKSPACES.find((item) => item.entity.slug === selectedEntitySlug) ?? STARTER_WORKSPACES[0] ?? null;
-  }, [hasLiveEntities, liveWorkspace, selectedEntitySlug]);
+  const systemCards = useMemo<EntityCard[]>(
+    () =>
+      (systemEntities ?? []).map((entity: any) => ({
+        slug: entity.slug,
+        name: entity.name,
+        summary: entity.summary,
+        entityType: entity.entityType,
+        latestReportType: typeof entity.latestReportType === "string" ? entity.latestReportType : "system_intelligence",
+        latestRevision: entity.latestRevision,
+        reportCount: entity.reportCount,
+        updatedAt: entity.latestReportUpdatedAt,
+        updatedLabel: formatRelative(entity.latestReportUpdatedAt),
+        thumbnailUrl: typeof entity.thumbnailUrl === "string" ? entity.thumbnailUrl : undefined,
+        thumbnailUrls: Array.isArray(entity.thumbnailUrls)
+          ? entity.thumbnailUrls.filter((url: unknown): url is string => typeof url === "string")
+          : undefined,
+        sourceUrls: Array.isArray(entity.sourceUrls)
+          ? entity.sourceUrls.filter((url: unknown): url is string => typeof url === "string")
+          : undefined,
+        sourceLabels: Array.isArray(entity.sourceLabels)
+          ? entity.sourceLabels.filter((label: unknown): label is string => typeof label === "string")
+          : undefined,
+        origin: "system",
+        originLabel: typeof entity.originLabel === "string" ? entity.originLabel : "System intelligence",
+        systemGroup: typeof entity.systemGroup === "string" ? entity.systemGroup : undefined,
+        relatedEntities: Array.isArray(entity.relatedEntities)
+          ? entity.relatedEntities.filter(
+              (related: unknown): related is { slug: string; name: string; entityType: string; reason?: string } =>
+                Boolean(related) &&
+                typeof (related as any).slug === "string" &&
+                typeof (related as any).name === "string" &&
+                typeof (related as any).entityType === "string",
+            )
+          : undefined,
+      })),
+    [systemEntities],
+  );
 
-  const selectedTimelineItem = useMemo(() => {
-    if (!workspace) return null;
-    if (selectedRevisionId) {
-      return workspace.timeline.find((item) => item._id === selectedRevisionId) ?? workspace.latest;
+  const cards = useMemo(() => {
+    const merged = [...liveCards, ...systemCards];
+    if (merged.length === 0) return STARTER_CARDS;
+    const seen = new Set<string>();
+    const deduped: EntityCard[] = [];
+    for (const card of merged) {
+      const key = card.slug.trim().toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(card);
     }
-    return workspace.latest;
-  }, [selectedRevisionId, workspace]);
+    return deduped;
+  }, [liveCards, systemCards]);
 
-  useEffect(() => {
-    if (!workspace) return;
-    setSelectedRevisionId(workspace.latest?._id ?? null);
-    setNoteDocumentDraft(
-      buildEntityNoteDocumentDraft(workspace.entity.name, workspace.noteDocument ?? null, workspace.note),
-    );
-    setNoteStatus("idle");
-  }, [workspace?.entity.slug, workspace]);
+  const filteredCards = useMemo(() => {
+    return filterReportCards(cards, activeFilter);
+  }, [cards, activeFilter]);
 
-  useEffect(() => {
-    if (!hasLiveEntities || !workspace?.entity._id || workspace.noteDocument || !ensureNoteDocumentBackfill) return;
-    void ensureNoteDocumentBackfill({
-      anonymousSessionId,
-      entityId: workspace.entity._id as any,
-    }).catch((error: unknown) => {
-      console.error("[reports] Failed to ensure notebook backfill:", error);
-    });
-  }, [anonymousSessionId, ensureNoteDocumentBackfill, hasLiveEntities, workspace]);
+  const groupedCards = useMemo(() => {
+    return buildReportGroups(filteredCards, groupBy);
+  }, [filteredCards, groupBy]);
 
-  const handleSaveNotes = useCallback(async () => {
-    if (!hasLiveEntities || !workspace?.entity._id || !saveNoteDocument) return;
-    setNoteStatus("saving");
-    try {
-      await saveNoteDocument({
-        anonymousSessionId,
-        entityId: workspace.entity._id as any,
-        title: noteDocumentDraft.title,
-        markdown: noteDocumentDraft.markdown,
-        plainText: noteDocumentDraft.plainText,
-        lexicalState: noteDocumentDraft.lexicalState,
-        blocks: noteDocumentDraft.blocks,
-      });
-      setNoteStatus("saved");
-      trackEvent("entity_notes_saved", { entity: workspace.entity.slug, length: noteDocumentDraft.plainText.length });
-      window.setTimeout(() => setNoteStatus("idle"), 1500);
-    } catch {
-      setNoteStatus("idle");
-    }
-  }, [anonymousSessionId, hasLiveEntities, noteDocumentDraft, saveNoteDocument, workspace]);
-
-  const shareEntity = (entitySlug: string) => {
-    void navigator.clipboard.writeText(buildEntityShareUrl(entitySlug));
-    setCopiedEntitySlug(entitySlug);
+  const shareEntity = useCallback((slug: string) => {
+    void navigator.clipboard.writeText(buildEntityShareUrl(slug));
+    setCopiedEntitySlug(slug);
     setTimeout(() => setCopiedEntitySlug(null), 1500);
-    trackEvent("entity_link_shared", { entity: entitySlug });
-  };
+    trackEvent("entity_link_shared", { entity: slug });
+  }, []);
 
-  const copyExport = async (kind: "markdown" | "outreach" | "crm") => {
-    if (!workspace) return;
-    const payload =
-      kind === "markdown"
-        ? buildEntityMarkdown(workspace, selectedTimelineItem)
-        : kind === "outreach"
-          ? buildOutreachDraft(workspace, selectedTimelineItem)
-          : buildCrmSummary(workspace, selectedTimelineItem);
-    await navigator.clipboard.writeText(payload);
-    setCopiedExport(kind);
-    window.setTimeout(() => setCopiedExport(null), 1500);
-    trackEvent("entity_export_copied", { entity: workspace.entity.slug, kind });
-  };
+  const openEntity = useCallback(
+    (slug: string) => {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set("surface", "reports");
+      nextParams.set("entity", slug);
+      setSearchParams(nextParams, { replace: true });
+      trackEvent("entity_workspace_opened", { entity: slug });
+      navigate(`/entity/${encodeURIComponent(slug)}`);
+    },
+    [navigate, searchParams, setSearchParams],
+  );
 
-  const openEntityInChat = () => {
-    if (!selectedTimelineItem || !workspace) return;
-    trackEvent("report_to_chat_reentry", {
-      entity: workspace.entity.slug,
-      revision: selectedTimelineItem.revision ?? 0,
-    });
-    navigate(
-      buildCockpitPath({
-        surfaceId: "workspace",
-        entity: workspace.entity.slug,
-        extra: { q: selectedTimelineItem.query, lens: selectedTimelineItem.lens },
-      }),
-    );
-  };
-
-  const openFullPage = () => {
-    if (!workspace) return;
-    navigate(`/entity/${encodeURIComponent(workspace.entity.slug)}`);
-  };
-
-  const attachFileToEntity = async (file: File) => {
-    if (!workspace || !api) return;
-    setUploadingEvidence(true);
-    try {
-      const uploadUrl = await generateUploadUrl();
-      const uploadResponse = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": file.type || "application/octet-stream" },
-        body: file,
-      });
-      const { storageId } = await uploadResponse.json();
-      await saveFileMutation({
-        anonymousSessionId,
-        storageId,
-        name: file.name,
-        mimeType: file.type || "application/octet-stream",
-        size: file.size,
-        entitySlug: workspace.entity.slug,
-      });
-      trackEvent("entity_evidence_uploaded", { entity: workspace.entity.slug, fileType: file.type || "upload" });
-    } finally {
-      setUploadingEvidence(false);
-    }
-  };
+  const totalCount = filteredCards.length;
+  const freshCount = useMemo(
+    () => filteredCards.filter((c) => getFreshness(c.updatedAt) === "fresh").length,
+    [filteredCards],
+  );
+  const staleCount = useMemo(
+    () => filteredCards.filter((c) => getFreshness(c.updatedAt) === "stale").length,
+    [filteredCards],
+  );
 
   return (
-    <div className="nb-public-shell mx-auto flex w-full max-w-[1480px] flex-col gap-5 px-6 py-8 xl:px-8 xl:py-10">
-      <ProductWorkspaceHeader
-        kicker="Reports"
-        title="Entity memory that compounds over time."
-        description="One page per company, person, market, or role. Revisions stack over time, notes stay editable, and the next live Chat run reopens the same memory instead of starting from zero."
-        aside={
-          <>
-            <span className="nb-chip nb-chip-active">{hasLiveEntities ? `${cards.length} entities` : "Starter compound"}</span>
-            <span className="nb-chip">{workspace?.entity.reportCount ?? 0} runs on current entity</span>
-            <span className="nb-chip">Revision-aware memory</span>
-          </>
-        }
-      />
-
-      <button
-        type="button"
-        className="nb-secondary-button mb-1 flex items-center gap-2 px-4 py-2 text-sm xl:hidden"
-        onClick={() => setShowFilters((value) => !value)}
-      >
-        <Filter className="h-4 w-4" />
-        Filters
-      </button>
-
-      <section className="grid gap-6 xl:grid-cols-[240px_minmax(0,1fr)_420px]">
-        <aside className={`space-y-8 xl:sticky xl:top-24 xl:self-start ${showFilters ? "" : "hidden xl:block"}`}>
-          <article className="px-5 py-6">
-            <div className="nb-section-kicker">Find entity memory</div>
-            <div className="nb-input-shell mt-4 flex items-center gap-3 rounded-[18px] px-4 py-3">
-              <Search className="h-4 w-4 shrink-0 text-content-muted" />
-              <input
-                id="entity-search"
-                name="entitySearch"
-                aria-label="Search entities"
-                type="text"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search entities..."
-                className="w-full bg-transparent text-sm text-content placeholder:text-content-muted/55 focus:outline-none"
-              />
-            </div>
-            <div className="mt-5 space-y-1">
-              {FILTERS.map((filter) => (
-                <button
-                  key={filter}
-                  type="button"
-                  onClick={() => setActiveFilter(filter)}
-                  className={`flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-medium transition ${
-                    activeFilter === filter
-                      ? "bg-[#d97757]/12 text-[#ad5f45] dark:text-[#f5c1ae]"
-                      : "text-content-muted hover:bg-[rgba(15,23,42,0.04)] hover:text-content dark:hover:bg-white/[0.05]"
-                  }`}
-                >
-                  <span>{filter}</span>
-                  {activeFilter === filter ? <span className="text-[11px] uppercase tracking-[0.18em]">On</span> : null}
-                </button>
-              ))}
-            </div>
-          </article>
-
-          <article className="px-5 py-6">
-            <div className="nb-section-kicker">Compound rule</div>
-            <div className="mt-4 space-y-3">
-              {[
-                ["Capture once", "A screenshot, note, link, or message should route into one entity memory instead of another isolated chat."],
-                ["Accumulate revisions", "New runs should stack onto the same entity and make changes visible over time."],
-                ["Work from memory", "Outreach, diligence, and follow-ups should reopen this page and continue in Chat."],
-              ].map(([title, body]) => (
-                <div key={title} className="nb-panel-inset p-4">
-                  <div className="text-sm font-medium text-content">{title}</div>
-                  <p className="mt-2 text-sm leading-6 text-content-muted">{body}</p>
-                </div>
-              ))}
-            </div>
-          </article>
-        </aside>
-
-        <main className="px-5 py-6 xl:px-6 xl:py-7">
-          <div className="nb-section-kicker">Entity cards</div>
-          <p className="mt-2 text-sm leading-6 text-content-muted">
-            Each card is the current state of one memory object. Click or hover to inspect the entity workspace on the right.
+    <div className="mx-auto max-w-[1120px] px-4 py-6 sm:px-6 sm:py-8">
+      {/* ── Header ── */}
+      <div className="mb-6 flex items-baseline justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Reports</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {totalCount} {totalCount === 1 ? "report" : "reports"}
+            {freshCount > 0 ? (
+              <span className="ml-2 text-emerald-600 dark:text-emerald-400">
+                · {freshCount} updated today
+              </span>
+            ) : null}
+            {staleCount > 0 ? (
+              <span className="ml-2 text-amber-600 dark:text-amber-400">
+                · {staleCount} stale
+              </span>
+            ) : null}
           </p>
+        </div>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {cards.map((card, index) => (
-              <article
-                key={card.slug}
-                onMouseEnter={() => setSelectedEntitySlug(card.slug)}
-                onFocus={() => setSelectedEntitySlug(card.slug)}
-                className={`group nb-hover-lift relative rounded-[22px] border p-3 transition ${
-                  selectedEntitySlug === card.slug
-                    ? "border-[#d97757]/[0.3] bg-[#d97757]/[0.05]"
-                    : "border-[rgba(15,23,42,0.08)] bg-white/74 hover:border-[rgba(15,23,42,0.12)] hover:bg-white/92 dark:border-white/10 dark:bg-black/18 dark:hover:border-white/14 dark:hover:bg-black/24"
-                }`}
+        {/* Search */}
+        <div className="relative w-full max-w-[280px]">
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            id="reports-search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search..."
+            aria-label="Search reports"
+            className="w-full rounded-md border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:border-white/10 dark:bg-white/[0.02] dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-white/20"
+          />
+        </div>
+      </div>
+
+      <div className="mb-4 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <span>Group by</span>
+        {[
+          { id: "origin" as const, label: "Origin" },
+          { id: "updatedAt" as const, label: "Date" },
+          { id: "entityType" as const, label: "Type" },
+        ].map((option) => {
+          const active = groupBy === option.id;
+          return (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => setGroupBy(option.id)}
+              className={cn(
+                "rounded-full border px-2.5 py-1 transition-colors",
+                active
+                  ? "border-gray-300 bg-gray-100 text-gray-900 dark:border-white/[0.16] dark:bg-white/[0.08] dark:text-gray-100"
+                  : "border-gray-200 text-gray-500 hover:text-gray-800 dark:border-white/[0.08] dark:text-gray-400 dark:hover:text-gray-200",
+              )}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Filter tabs ── */}
+      <nav
+        className="mb-6 flex items-center gap-1 overflow-x-auto border-b border-gray-100 dark:border-white/[0.06]"
+        aria-label="Filter reports"
+      >
+        {FILTERS.map((f) => {
+          const isActive = activeFilter === f.id;
+          const count = f.id === "all"
+            ? cards.length
+            : "type" in f
+              ? cards.filter((c) => c.entityType.toLowerCase() === f.type).length
+              : 0;
+          return (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setActiveFilter(f.id)}
+              className={`relative flex items-center gap-1.5 whitespace-nowrap px-3 py-2 text-sm transition-colors ${
+                isActive
+                  ? "text-gray-900 dark:text-gray-100"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              }`}
+              aria-pressed={isActive}
+            >
+              {f.label}
+              {count > 0 && (
+                <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] tabular-nums text-gray-600 dark:bg-white/[0.05] dark:text-gray-400">
+                  {count}
+                </span>
+              )}
+              {isActive && (
+                <span className="absolute inset-x-0 bottom-[-1px] h-[2px] bg-gray-900 dark:bg-gray-100" />
+              )}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* ── Grouped card grid ── */}
+      {groupedCards.length > 0 ? (
+        <div className="space-y-8">
+          {groupedCards.map((group) => (
+            <section key={group.label}>
+              {/* Group header — subtle */}
+              <div className="mb-3 flex items-baseline gap-2">
+                <h2 className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  {group.label}
+                </h2>
+                <span className="text-xs tabular-nums text-gray-400 dark:text-gray-500">
+                  {group.cards.length}
+                </span>
+              </div>
+
+              {/* Card grid */}
+              <div
+                className={cn(
+                  "grid gap-3",
+                  group.cards.length === 1
+                    ? "max-w-[28rem] grid-cols-1"
+                    : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+                )}
               >
-                <button
-                  type="button"
-                  onClick={() => shareEntity(card.slug)}
-                  className={`absolute right-3 top-3 z-10 rounded-full border p-2 transition ${
-                    copiedEntitySlug === card.slug
-                      ? "border-green-400/30 bg-green-400/10 text-green-400"
-                      : "border-[rgba(15,23,42,0.08)] bg-white/82 text-content-muted opacity-0 hover:text-content group-hover:opacity-100 dark:border-white/10 dark:bg-black/20"
-                  }`}
-                  aria-label={`Share ${card.name}`}
-                >
-                  {copiedEntitySlug === card.slug ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedEntitySlug(card.slug);
-                    const nextParams = new URLSearchParams(searchParams);
-                    nextParams.set("surface", "reports");
-                    nextParams.set("entity", card.slug);
-                    setSearchParams(nextParams, { replace: true });
-                    trackEvent("entity_workspace_opened", { entity: card.slug, reportCount: card.reportCount });
-                  }}
-                  className="w-full cursor-pointer text-left"
-                >
-                  <ProductThumbnail
-                    title={card.name}
-                    summary={card.summary}
-                    type={card.entityType}
-                    meta={`${card.reportCount} run${card.reportCount === 1 ? "" : "s"}`}
-                    tone={index}
+                {group.cards.map((card, index) => (
+                  <ReportCard
+                    key={card.slug}
+                    card={card}
+                    index={index}
+                    copiedSlug={copiedEntitySlug}
+                    onShare={shareEntity}
+                    onClick={openEntity}
                   />
-                  <div className="mt-3 flex items-center justify-between gap-3 px-1">
-                    <div>
-                      <div className="text-sm font-semibold text-content">{card.name}</div>
-                      <div className="mt-1 text-xs text-content-muted">
-                        Rev {card.latestRevision} • {card.updatedLabel}
-                      </div>
-                    </div>
-                    <div className="inline-flex items-center gap-1 rounded-full border border-[rgba(15,23,42,0.08)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted dark:border-white/10">
-                      {card.entityType}
-                    </div>
-                  </div>
-                </button>
-              </article>
-            ))}
-          </div>
-        </main>
-
-        <aside className="space-y-6 xl:sticky xl:top-24 xl:self-start">
-          {workspace ? (
-            <>
-              <article className="px-5 py-6 xl:px-6 xl:py-7">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="nb-section-kicker">Entity workspace</div>
-                    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-content">{workspace.entity.name}</h2>
-                    <p className="mt-2 text-sm leading-6 text-content-muted">{workspace.entity.summary}</p>
-                  </div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(15,23,42,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-content-muted dark:border-white/10">
-                    <Clock3 className="h-3.5 w-3.5" />
-                    Rev {selectedTimelineItem?.revision ?? workspace.entity.latestRevision}
-                  </div>
-                </div>
-
-                <div className="mt-5 flex flex-wrap gap-2">
-                  <button type="button" onClick={openEntityInChat} className="nb-primary-button px-4 py-2 text-sm">
-                    Open in Chat
-                    <ArrowUpRight className="h-4 w-4" />
-                  </button>
-                  <button type="button" onClick={openFullPage} className="nb-secondary-button px-4 py-2 text-sm">
-                    Open full page
-                  </button>
-                  <button type="button" onClick={() => shareEntity(workspace.entity.slug)} className="nb-secondary-button px-4 py-2 text-sm">
-                    {copiedEntitySlug === workspace.entity.slug ? "Copied link" : "Copy link"}
-                  </button>
-                  <button type="button" onClick={() => void copyExport("markdown")} className="nb-secondary-button px-4 py-2 text-sm">
-                    {copiedExport === "markdown" ? "Copied markdown" : "Copy markdown"}
-                  </button>
-                  <button type="button" onClick={() => void copyExport("outreach")} className="nb-secondary-button px-4 py-2 text-sm">
-                    {copiedExport === "outreach" ? "Copied outreach" : "Copy outreach"}
-                  </button>
-                  <button type="button" onClick={() => void copyExport("crm")} className="nb-secondary-button px-4 py-2 text-sm">
-                    {copiedExport === "crm" ? "Copied CRM block" : "Copy CRM block"}
-                  </button>
-                </div>
-              </article>
-
-              <article className="px-5 py-6 xl:px-6 xl:py-7">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="nb-section-kicker">Working notes</h3>
-                  <button
-                    type="button"
-                    onClick={() => void handleSaveNotes()}
-                    className="nb-secondary-button px-3 py-1.5 text-xs"
-                    data-density="compact"
-                    disabled={!hasLiveEntities || noteStatus === "saving"}
-                  >
-                    {noteStatus === "saving" ? "Saving..." : noteStatus === "saved" ? "Saved" : "Save notes"}
-                  </button>
-                </div>
-                <div className="mt-4">
-                  <Suspense
-                    fallback={
-                      <div className="rounded-[26px] border border-[rgba(15,23,42,0.08)] bg-white/72 p-6 text-sm text-content-muted dark:border-white/10 dark:bg-white/[0.03]">
-                        Loading entity notebook...
-                      </div>
-                    }
-                  >
-                    <EntityNoteEditor
-                      document={noteDocumentDraft}
-                      onChange={setNoteDocumentDraft}
-                      statusLabel={noteStatus === "saving" ? "Saving..." : noteStatus === "saved" ? "Saved" : "Editable"}
-                      helperText="This notebook is the canonical memory surface for the entity. Rich mode runs on Lexical, Markdown mode runs on CodeMirror, and saves normalize into Convex document blocks instead of a single blob."
-                    />
-                  </Suspense>
-                </div>
-                {workspace.noteDocument?.snapshots?.length ? (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {workspace.noteDocument.snapshots.slice(0, 4).map((snapshot) => (
-                      <span
-                        key={snapshot._id ?? `snapshot-${snapshot.revision}`}
-                        className="inline-flex items-center gap-2 rounded-full border border-[rgba(15,23,42,0.08)] bg-white/72 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-content-muted dark:border-white/10 dark:bg-white/[0.03]"
-                      >
-                        Notebook rev {snapshot.revision}
-                        <span className="normal-case tracking-normal">{formatUpdatedLabel(snapshot.createdAt)}</span>
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-              </article>
-
-              <article className="px-5 py-6 xl:px-6 xl:py-7">
-                <h3 className="nb-section-kicker">Notebook graph</h3>
-                <div className="mt-4">
-                  <EntityNotebookMeta
-                    document={workspace.noteDocument ?? noteDocumentDraft}
-                    onOpenEntity={(nextSlug) => {
-                      setSelectedEntitySlug(nextSlug);
-                      const nextParams = new URLSearchParams(searchParams);
-                      nextParams.set("surface", "reports");
-                      nextParams.set("entity", nextSlug);
-                      setSearchParams(nextParams, { replace: true });
-                    }}
-                  />
-                </div>
-              </article>
-
-              <article className="px-5 py-6 xl:px-6 xl:py-7">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="nb-section-kicker">Current revision</h3>
-                  <span className="nb-status-badge nb-status-badge-accent px-3 py-1 text-[11px] uppercase tracking-[0.18em]">
-                    {selectedTimelineItem?.updatedLabel ?? "Latest"}
-                  </span>
-                </div>
-                <div className="mt-4 space-y-3">
-                  {selectedTimelineItem?.sections.map((section) => (
-                    <div key={section.id} className="nb-panel-inset p-4">
-                      <div className="text-[10px] uppercase tracking-[0.18em] text-content-muted">{section.title}</div>
-                      <p className="mt-2 text-sm leading-6 text-content-muted">{section.body}</p>
-                    </div>
-                  ))}
-                </div>
-              </article>
-
-              <article className="px-5 py-6 xl:px-6 xl:py-7">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-content-muted" />
-                  <h3 className="nb-section-kicker">What changed</h3>
-                </div>
-                <div className="mt-4 space-y-3">
-                  {selectedTimelineItem?.diffs?.length ? (
-                    selectedTimelineItem.diffs.map((diff) => (
-                      <div key={diff.id} className="nb-panel-inset p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="text-sm font-medium text-content">{diff.title}</div>
-                          <span className="text-[10px] uppercase tracking-[0.18em] text-content-muted">{diff.status}</span>
-                        </div>
-                        {diff.previousBody ? <p className="mt-2 text-sm leading-6 text-content-muted">Before: {diff.previousBody}</p> : null}
-                        <p className="mt-2 text-sm leading-6 text-content">Now: {diff.currentBody}</p>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="nb-panel-inset p-4 text-sm leading-6 text-content-muted">
-                      No structural changes yet. The next run on this entity will show a revision diff here instead of replacing the prior memory.
-                    </div>
-                  )}
-                </div>
-              </article>
-
-              <article className="px-5 py-6 xl:px-6 xl:py-7">
-                <h3 className="nb-section-kicker">Revision timeline</h3>
-                <div className="mt-4 space-y-3">
-                  {workspace.timeline.map((item) => (
-                    <button
-                      key={item._id ?? `${workspace.entity.slug}-${item.revision}`}
-                      type="button"
-                      onClick={() => {
-                        setSelectedRevisionId(item._id ?? null);
-                        trackEvent("entity_revision_opened", { entity: workspace.entity.slug, revision: item.revision ?? 0 });
-                      }}
-                      className={`w-full rounded-[20px] border px-4 py-3 text-left transition ${
-                        selectedTimelineItem?._id === item._id
-                          ? "border-[#d97757]/[0.3] bg-[#d97757]/[0.05]"
-                          : "border-[rgba(15,23,42,0.08)] bg-white/66 dark:border-white/10 dark:bg-black/18"
-                      }`}
-                    >
-                      <div className="text-sm font-medium text-content">{item.title}</div>
-                      <div className="mt-1 text-xs text-content-muted">
-                        Rev {item.revision ?? "?"} • {item.updatedLabel}
-                      </div>
-                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-content-muted">{item.summary}</p>
-                    </button>
-                  ))}
-                </div>
-              </article>
-
-              <article className="px-5 py-6 xl:px-6 xl:py-7">
-                <h3 className="nb-section-kicker">Evidence</h3>
-                <div className="mt-4 space-y-3">
-                  <div className="flex flex-wrap gap-2">
-                    <label className="nb-secondary-button inline-flex cursor-pointer items-center gap-2 px-4 py-2 text-sm">
-                      <Upload className="h-4 w-4" />
-                      {uploadingEvidence ? "Uploading..." : "Attach file"}
-                      <input
-                        type="file"
-                        className="hidden"
-                        onChange={async (event) => {
-                          const input = event.currentTarget;
-                          const file = event.target.files?.[0];
-                          if (!file) return;
-                          await attachFileToEntity(file);
-                          input.value = "";
-                        }}
-                      />
-                    </label>
-                  </div>
-                  {attachableEvidence && attachableEvidence.length > 0 ? (
-                    <div className="grid gap-2">
-                      {attachableEvidence.slice(0, 4).map((item: any) => (
-                        <div key={String(item._id)} className="nb-panel-inset flex items-center justify-between gap-3 px-4 py-3">
-                          <div>
-                            <div className="text-sm font-medium text-content">{item.label}</div>
-                            <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-content-muted">{item.type ?? "file"}</div>
-                          </div>
-                          {item.entityId ? (
-                            <span className="text-[11px] uppercase tracking-[0.18em] text-content-muted">Attached</span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                if (!workspace?.entity._id) return;
-                                setAttachingEvidenceId(String(item._id));
-                                try {
-                                  await attachEvidence({
-                                    anonymousSessionId,
-                                    entityId: workspace.entity._id as any,
-                                    evidenceId: item._id as any,
-                                  });
-                                  trackEvent("entity_evidence_attached", { entity: workspace.entity.slug, evidenceId: String(item._id) });
-                                } finally {
-                                  setAttachingEvidenceId(null);
-                                }
-                              }}
-                              className="nb-secondary-button px-3 py-1.5 text-xs"
-                              data-density="compact"
-                              disabled={attachingEvidenceId === String(item._id)}
-                            >
-                              {attachingEvidenceId === String(item._id) ? "Attaching..." : "Attach"}
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                  <div className="flex flex-wrap gap-2">
-                  {workspace.evidence.length ? (
-                    workspace.evidence.map((item) => (
-                      <div key={item._id ?? item.label} className="nb-panel-inset px-3 py-2">
-                        <div className="text-xs font-medium text-content">{item.label}</div>
-                        <div className="mt-1 text-[11px] text-content-muted">{item.type ?? "evidence"}</div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="nb-panel-inset px-4 py-3 text-sm leading-6 text-content-muted">
-                      New uploads tied to this entity will appear here and stay attached to the memory over time.
-                    </div>
-                  )}
-                  </div>
-                </div>
-              </article>
-
-              <article className="px-5 py-6 xl:px-6 xl:py-7">
-                <h3 className="nb-section-kicker">Linked memories</h3>
-                <div className="mt-4 space-y-3">
-                  {workspace.relatedEntities?.length ? (
-                    workspace.relatedEntities.map((item) => (
-                      <button
-                        key={item.slug}
-                        type="button"
-                        onClick={() => {
-                          setSelectedEntitySlug(item.slug);
-                          const nextParams = new URLSearchParams(searchParams);
-                          nextParams.set("surface", "reports");
-                          nextParams.set("entity", item.slug);
-                          setSearchParams(nextParams, { replace: true });
-                        }}
-                        className="nb-panel-inset w-full px-4 py-3 text-left transition hover:bg-white/[0.05]"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="text-sm font-medium text-content">{item.name}</div>
-                          <span className="text-[10px] uppercase tracking-[0.18em] text-content-muted">{item.entityType}</span>
-                        </div>
-                        <p className="mt-2 text-sm leading-6 text-content-muted">{item.summary}</p>
-                        {item.reason ? (
-                          <div className="mt-2 text-[11px] uppercase tracking-[0.18em] text-content-muted">{item.reason}</div>
-                        ) : null}
-                      </button>
-                    ))
-                  ) : (
-                    <div className="nb-panel-inset px-4 py-3 text-sm leading-6 text-content-muted">
-                      Backlinks and related memories will show up here as NodeBench sees overlapping sources, themes, and follow-on work across entities.
-                    </div>
-                  )}
-                </div>
-              </article>
-
-              <article className="px-5 py-6 xl:px-6 xl:py-7">
-                <EntityMemoryGraph
-                  entityName={workspace.entity.name}
-                  relatedEntities={workspace.relatedEntities}
-                  evidence={workspace.evidence}
-                  onOpenEntity={(nextSlug) => {
-                    setSelectedEntitySlug(nextSlug);
-                    const nextParams = new URLSearchParams(searchParams);
-                    nextParams.set("surface", "reports");
-                    nextParams.set("entity", nextSlug);
-                    setSearchParams(nextParams, { replace: true });
-                  }}
-                />
-              </article>
-            </>
-          ) : null}
-        </aside>
-      </section>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-gray-100 bg-white py-16 text-center dark:border-white/[0.06] dark:bg-white/[0.01]">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            No reports match your search.
+          </p>
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="mt-2 text-sm text-[var(--accent-primary)] hover:underline"
+            >
+              Clear search
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

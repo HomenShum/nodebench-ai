@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useThemeSafe } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
 
@@ -7,6 +7,10 @@ type ProductThumbnailProps = {
   summary: string;
   type: string;
   meta?: string;
+  imageUrl?: string;
+  imageUrls?: string[];
+  sourceUrls?: string[];
+  sourceLabels?: string[];
   tone?: number;
   className?: string;
   compact?: boolean;
@@ -39,30 +43,232 @@ function getInitials(title: string) {
     .join("");
 }
 
+function deriveSourceTokens(sourceUrls?: string[], sourceLabels?: string[]) {
+  const seen = new Set<string>();
+  const tokens: string[] = [];
+
+  for (const href of sourceUrls ?? []) {
+    try {
+      const hostname = new URL(href).hostname.replace(/^www\./, "");
+      if (!hostname || seen.has(hostname)) continue;
+      seen.add(hostname);
+      tokens.push(hostname);
+    } catch {
+      continue;
+    }
+  }
+
+  if (tokens.length > 0) return tokens.slice(0, 4);
+
+  for (const label of sourceLabels ?? []) {
+    const next = label.trim();
+    if (!next || seen.has(next)) continue;
+    seen.add(next);
+    tokens.push(next);
+  }
+
+  return tokens.slice(0, 4);
+}
+
+function getTokenBadge(value: string) {
+  const core = value
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/\.[^.]+$/, "")
+    .replace(/[^a-z0-9]/gi, "");
+  return core.slice(0, 2).toUpperCase() || value.slice(0, 1).toUpperCase();
+}
+
+function getTokenLabel(value: string) {
+  return value.replace(/^https?:\/\//, "").replace(/^www\./, "");
+}
+
+function getPosterLabel(type: string) {
+  switch (type.toLowerCase()) {
+    case "company":
+      return "Company memory";
+    case "person":
+      return "Founder brief";
+    case "job":
+      return "Role fit";
+    case "market":
+      return "Market watch";
+    case "note":
+      return "Working note";
+    case "prep_brief":
+      return "Prep brief";
+    default:
+      return "Saved report";
+  }
+}
+
+function getTypeBadgeLabel(type: string) {
+  const normalized = type.trim().toLowerCase();
+  switch (normalized) {
+    case "prep_brief":
+      return "Prep brief";
+    case "company":
+      return "Company";
+    case "person":
+      return "Person";
+    case "job":
+      return "Job";
+    case "market":
+      return "Market";
+    case "note":
+      return "Note";
+    default:
+      return type.replace(/[_-]+/g, " ").trim() || "Report";
+  }
+}
+
+function getFallbackSubline(type: string) {
+  switch (type.toLowerCase()) {
+    case "company":
+      return "Main takeaways, sources, and what changed.";
+    case "person":
+      return "Background, links, and the right next questions.";
+    case "job":
+      return "Role read, fit gaps, and interview prep.";
+    case "market":
+      return "Signals, risks, and the next watch items.";
+    case "prep_brief":
+      return "Meeting prep with clear follow-through.";
+    default:
+      return "Saved with sources, notes, and the next step.";
+  }
+}
+
 export function ProductThumbnail({
   title,
   summary,
   type,
   meta,
+  imageUrl,
+  imageUrls,
+  sourceUrls,
+  sourceLabels,
   tone = 0,
   className,
   compact = false,
 }: ProductThumbnailProps) {
   const { resolvedMode } = useThemeSafe();
+  const [failedImages, setFailedImages] = useState<string[]>([]);
   const palette = useMemo(
     () => (resolvedMode === "dark" ? DARK_TONES : LIGHT_TONES)[tone % LIGHT_TONES.length],
     [resolvedMode, tone],
   );
-  const footerChips = [
-    { label: "State", value: meta ?? "Ready" },
-    { label: "Proof", value: "Source-led" },
-    { label: "Use", value: "Reopen" },
-  ];
+  const mergedImageUrls = useMemo(() => {
+    const seen = new Set<string>();
+    const merged: string[] = [];
+    for (const candidate of [...(imageUrls ?? []), imageUrl]) {
+      const next = candidate?.trim();
+      if (!next || seen.has(next)) continue;
+      seen.add(next);
+      merged.push(next);
+    }
+    return merged;
+  }, [imageUrl, imageUrls]);
+  const visibleImageUrls = mergedImageUrls.filter((url) => !failedImages.includes(url));
+  const sourceTokens = useMemo(
+    () => deriveSourceTokens(sourceUrls, sourceLabels),
+    [sourceLabels, sourceUrls],
+  );
+  const shouldRenderImage = visibleImageUrls.length > 0;
+  const topSourceToken = sourceTokens[0];
+  const topSourceLabel = topSourceToken ? getTokenLabel(topSourceToken) : null;
+  const extraSourceCount = Math.max(0, sourceTokens.length - (topSourceLabel ? 1 : 0));
+  const extraImageCount = Math.max(0, mergedImageUrls.length - 1);
+
+  const handleImageError = (url: string) => {
+    setFailedImages((current) => (current.includes(url) ? current : [...current, url]));
+  };
+
+  if (shouldRenderImage) {
+    const primaryImage = visibleImageUrls[0];
+
+    return (
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-[22px] border",
+          resolvedMode === "dark"
+            ? "border-white/8 bg-[#14181d]"
+            : "border-[rgba(15,23,42,0.08)] bg-white",
+          className,
+        )}
+      >
+        <img
+          src={primaryImage}
+          alt={title}
+          className="h-full w-full object-cover"
+          loading="lazy"
+          onError={() => handleImageError(primaryImage)}
+        />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.04)_0%,rgba(15,23,42,0.14)_48%,rgba(15,23,42,0.56)_100%)] dark:bg-[linear-gradient(180deg,rgba(0,0,0,0.04)_0%,rgba(0,0,0,0.2)_48%,rgba(0,0,0,0.62)_100%)]" />
+
+        <div className="pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between gap-3">
+          <div
+            className={cn(
+              "inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em]",
+              "bg-white/88 text-slate-800 dark:bg-black/34 dark:text-white/90",
+            )}
+          >
+            {getTypeBadgeLabel(type)}
+          </div>
+          {meta ? (
+            <div
+              className={cn(
+                "inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-medium",
+                "bg-black/28 text-white/86 dark:bg-black/40 dark:text-white/84",
+              )}
+            >
+              {meta}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-end justify-between gap-3">
+          <div
+            className={cn(
+              "inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-medium backdrop-blur-md",
+              resolvedMode === "dark"
+                ? "border-white/10 bg-black/34 text-white/86"
+                : "border-white/60 bg-white/82 text-slate-800",
+            )}
+          >
+            <span
+              className={cn(
+                "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-lg text-[9px] font-semibold tracking-[0.12em]",
+                resolvedMode === "dark"
+                  ? "bg-white/10 text-white/86"
+                  : "bg-slate-900/6 text-slate-700",
+              )}
+            >
+              {topSourceToken ? getTokenBadge(topSourceToken) : getInitials(title)}
+            </span>
+            <span className="truncate">
+              {topSourceLabel ?? getPosterLabel(type)}
+            </span>
+          </div>
+          {extraImageCount > 0 || extraSourceCount > 0 ? (
+            <div
+              className={cn(
+                "inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-medium",
+                "bg-black/28 text-white/86 dark:bg-black/40 dark:text-white/84",
+              )}
+            >
+              +{Math.max(extraImageCount, extraSourceCount)}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-[18px] border p-4",
+        "relative overflow-hidden rounded-[22px] border p-4",
         resolvedMode === "dark"
           ? "border-white/8 text-white"
           : "border-[rgba(15,23,42,0.08)] text-slate-900",
@@ -74,98 +280,80 @@ export function ProductThumbnail({
         className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full blur-2xl"
         style={{ backgroundColor: palette.glow }}
       />
-      <div
-        className={cn(
-          "relative flex h-full flex-col justify-between",
-          compact ? "gap-3" : "gap-4",
-        )}
-      >
+
+      <div className={cn("relative flex h-full flex-col justify-between", compact ? "gap-4" : "gap-5")}>
         <div className="flex items-start justify-between gap-3">
           <div
             className={cn(
               "inline-flex max-w-[70%] items-center rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em]",
-              resolvedMode === "dark" ? "bg-white/8 text-white/82" : "bg-white/70 text-slate-700",
+              resolvedMode === "dark" ? "bg-white/8 text-white/82" : "bg-white/78 text-slate-700",
             )}
           >
-            {type}
+            {getTypeBadgeLabel(type)}
           </div>
-          <div
-            className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xs font-semibold",
-              resolvedMode === "dark" ? "bg-black/18 text-white/88" : "bg-white/82 text-slate-800",
-            )}
-            style={{ boxShadow: `inset 0 0 0 1px ${palette.glow}` }}
-          >
-            {getInitials(title)}
-          </div>
-        </div>
-
-        <div>
-          <div className={cn("line-clamp-2 font-semibold tracking-tight", compact ? "text-sm leading-5" : "text-[15px] leading-5")}>
-            {title}
-          </div>
-          <div
-            className={cn(
-              "mt-2 line-clamp-2 text-xs leading-5",
-              resolvedMode === "dark" ? "text-white/72" : "text-slate-600",
-            )}
-          >
-            {summary}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="grid grid-cols-[1.3fr_0.9fr] gap-2">
+          {meta ? (
             <div
               className={cn(
-                "rounded-2xl px-3 py-2",
-                resolvedMode === "dark" ? "bg-black/16" : "bg-white/74",
+                "text-[10px] font-medium uppercase tracking-[0.16em]",
+                resolvedMode === "dark" ? "text-white/58" : "text-slate-500",
               )}
             >
-              <div className={cn("text-[10px] uppercase tracking-[0.16em]", resolvedMode === "dark" ? "text-white/56" : "text-slate-500")}>
-                What it is
-              </div>
-              <div className={cn("mt-1 line-clamp-2 text-[11px] leading-4.5", resolvedMode === "dark" ? "text-white/72" : "text-slate-600")}>
-                {summary}
-              </div>
+              {meta}
             </div>
-            <div className="grid gap-2">
-              <div
-                className={cn(
-                  "rounded-2xl px-3 py-2 text-[10px] uppercase tracking-[0.16em]",
-                  resolvedMode === "dark" ? "bg-black/16 text-white/56" : "bg-white/74 text-slate-500",
-                )}
-              >
-                {meta ?? "Ready"}
-              </div>
-              <div
-                className={cn(
-                  "rounded-2xl px-3 py-2 text-[10px] uppercase tracking-[0.16em]",
-                  resolvedMode === "dark" ? "bg-black/16 text-white/56" : "bg-white/74 text-slate-500",
-                )}
-              >
-                Source-led
-              </div>
-            </div>
-          </div>
+          ) : null}
+        </div>
 
-          <div className="grid grid-cols-3 gap-2">
-            {footerChips.map((item) => (
-              <div
-                key={`${title}-${item.label}`}
-                className={cn(
-                  "rounded-2xl px-3 py-2",
-                  resolvedMode === "dark" ? "bg-black/16" : "bg-white/74",
-                )}
-              >
-                <div className={cn("text-[9px] uppercase tracking-[0.16em]", resolvedMode === "dark" ? "text-white/56" : "text-slate-500")}>
-                  {item.label}
-                </div>
-                <div className={cn("mt-1 truncate text-[11px] font-medium", resolvedMode === "dark" ? "text-white/78" : "text-slate-700")}>
-                  {item.value}
-                </div>
-              </div>
-            ))}
+        <div className="flex flex-1 flex-col justify-end">
+          <div
+            className={cn(
+              compact ? "text-xl" : "text-2xl",
+              "max-w-[12rem] font-semibold tracking-tight line-clamp-2",
+              resolvedMode === "dark" ? "text-white/92" : "text-slate-900",
+            )}
+          >
+            {title?.trim() ? title : getPosterLabel(type)}
+          </div>
+          {!compact ? (
+            <div
+              className={cn(
+                "mt-3 max-w-[15rem] text-xs leading-5",
+                resolvedMode === "dark" ? "text-white/64" : "text-slate-600",
+              )}
+            >
+              {summary || getFallbackSubline(type)}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex items-center justify-between gap-3">
+          <div
+            className={cn(
+              "inline-flex min-w-0 max-w-full items-center gap-2 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em]",
+              resolvedMode === "dark"
+                ? "bg-black/16 text-white/68"
+                : "bg-white/82 text-slate-600",
+            )}
+          >
+            <span
+              className={cn(
+                "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-lg text-[9px] font-semibold tracking-[0.12em]",
+                resolvedMode === "dark"
+                  ? "bg-white/10 text-white/86"
+                  : "bg-slate-900/6 text-slate-700",
+              )}
+              style={{ boxShadow: `inset 0 0 0 1px ${palette.glow}` }}
+            >
+              {topSourceToken ? getTokenBadge(topSourceToken) : getInitials(title)}
+            </span>
+            <span className="truncate">{topSourceLabel ?? "Source-led"}</span>
+          </div>
+          <div
+            className={cn(
+              "text-[10px] font-medium uppercase tracking-[0.16em]",
+              resolvedMode === "dark" ? "text-white/58" : "text-slate-500",
+            )}
+          >
+            {sourceTokens.length > 0 ? `${sourceTokens.length} source${sourceTokens.length === 1 ? "" : "s"}` : "Ready"}
           </div>
         </div>
       </div>

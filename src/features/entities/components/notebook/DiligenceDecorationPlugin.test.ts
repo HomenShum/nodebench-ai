@@ -211,6 +211,53 @@ describe("createDiligenceDecorationPlugin", () => {
     expect(renderFn).toHaveBeenCalled();
   });
 
+  it("attaches accept and dismiss callbacks to custom renderer action buttons", () => {
+    const onAcceptDecoration = vi.fn();
+    const onDismissDecoration = vi.fn();
+    const plugin = createDiligenceDecorationPlugin({
+      getDecorations: () => [makeFounder()],
+      anchors: [{ kind: "top" }],
+      renderers: {
+        founder: {
+          render: (data) => {
+            const root = document.createElement("div");
+            const accept = document.createElement("button");
+            accept.type = "button";
+            accept.setAttribute("data-action", "accept");
+            accept.textContent = "Accept";
+            root.appendChild(accept);
+            const dismiss = document.createElement("button");
+            dismiss.type = "button";
+            dismiss.setAttribute("data-action", "dismiss");
+            dismiss.textContent = "Dismiss";
+            root.appendChild(dismiss);
+            root.dataset.block = data.blockType;
+            return root;
+          },
+        },
+      },
+      onAcceptDecoration,
+      onDismissDecoration,
+    });
+    const state = EditorState.create({
+      doc: doc(para("body")),
+      plugins: [plugin],
+    });
+    const widget = pluginState(state).find()[0] as unknown as {
+      type?: { toDOM?: (view: unknown, pos: number) => HTMLElement };
+    };
+    const node = widget.type?.toDOM?.({} as unknown, 0);
+    expect(node).toBeTruthy();
+    const buttons = node ? Array.from(node.querySelectorAll("button")) : [];
+    expect(buttons).toHaveLength(2);
+
+    buttons[0]?.click();
+    buttons[1]?.click();
+
+    expect(onAcceptDecoration).toHaveBeenCalledWith("run_001", "founder");
+    expect(onDismissDecoration).toHaveBeenCalledWith("run_001", "founder");
+  });
+
   it("empty decorations produce an empty set (fast path)", () => {
     const plugin = createDiligenceDecorationPlugin({
       getDecorations: () => [],

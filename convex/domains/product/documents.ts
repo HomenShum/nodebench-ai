@@ -1,7 +1,13 @@
 import { v } from "convex/values";
 import type { Doc, Id } from "../../_generated/dataModel";
 import { mutation, query } from "../../_generated/server";
-import { requireProductIdentity, resolveProductIdentitySafely, summarizeText } from "./helpers";
+import {
+  requireEntityWorkspaceWriteAccessByEntityId,
+  resolveEntityWorkspaceAccess,
+  requireProductIdentity,
+  resolveProductIdentitySafely,
+  summarizeText,
+} from "./helpers";
 import { productDocumentBlockValidator } from "./schema";
 
 type DocumentBlockInput = {
@@ -589,27 +595,26 @@ async function saveEntityMemoryDocumentInternal(
 export const getEntityNoteDocument = query({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     entitySlug: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await resolveProductIdentitySafely(ctx, args.anonymousSessionId);
-    if (!identity.ownerKey) return null;
-    return await getEntityMemoryDocumentWorkspace(ctx, identity.ownerKey, args.entitySlug);
+    const access = await resolveEntityWorkspaceAccess(ctx, args);
+    if (!access) return null;
+    return await getEntityMemoryDocumentWorkspace(ctx, access.entity.ownerKey, args.entitySlug);
   },
 });
 
 export const ensureEntityNoteDocumentBackfill = mutation({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     entityId: v.id("productEntities"),
   },
   handler: async (ctx, args) => {
-    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
-    const ownerKey = identity.ownerKey!;
-    const entity = await ctx.db.get(args.entityId);
-    if (!entity || entity.ownerKey !== ownerKey) {
-      throw new Error("Entity not found");
-    }
+    const access = await requireEntityWorkspaceWriteAccessByEntityId(ctx, args);
+    const ownerKey = access.entity.ownerKey;
+    const entity = access.entity;
 
     const existing = await getEntityMemoryDocumentRecord(ctx, ownerKey, entity.slug);
     if (existing) {
@@ -664,6 +669,7 @@ export const ensureEntityNoteDocumentBackfill = mutation({
 export const saveEntityNoteDocument = mutation({
   args: {
     anonymousSessionId: v.optional(v.string()),
+    shareToken: v.optional(v.string()),
     entityId: v.id("productEntities"),
     title: v.optional(v.string()),
     markdown: v.string(),
@@ -672,12 +678,9 @@ export const saveEntityNoteDocument = mutation({
     blocks: v.array(productDocumentBlockValidator),
   },
   handler: async (ctx, args) => {
-    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
-    const ownerKey = identity.ownerKey!;
-    const entity = await ctx.db.get(args.entityId);
-    if (!entity || entity.ownerKey !== ownerKey) {
-      throw new Error("Entity not found");
-    }
+    const access = await requireEntityWorkspaceWriteAccessByEntityId(ctx, args);
+    const ownerKey = access.entity.ownerKey;
+    const entity = access.entity;
 
     return await saveEntityMemoryDocumentInternal(ctx, {
       ownerKey,

@@ -35,6 +35,8 @@ import { SlashPalette, type SlashCommand } from "./SlashPalette";
 import { MentionPicker, type EntityMatch } from "./MentionPicker";
 import { BlockStatusBar } from "./BlockStatusBar";
 import { NotebookDiligenceOverlayHost } from "./NotebookDiligenceOverlayHost";
+import { NotebookRightRail } from "./NotebookRightRail";
+import { NotebookScratchpadTracePanel } from "./NotebookScratchpadTracePanel";
 import {
   enqueue as enqueueOfflineEdit,
   makeEditId,
@@ -370,6 +372,34 @@ export function EntityNotebookLive({
       : "skip",
   );
 
+  const latestScratchpadRun = useQuery(
+    api?.domains.product.diligenceScratchpads?.getLatestForEntity as never,
+    canEdit && api?.domains.product.diligenceScratchpads?.getLatestForEntity
+      ? { anonymousSessionId, shareToken, entitySlug, checkpointLimit: 8 }
+      : "skip",
+  ) as
+    | {
+        runId: string;
+        status: "streaming" | "structuring" | "merged" | "failed";
+        markdownSource: string | null;
+        version: number;
+        updatedAt: number;
+        checkpointCount: number;
+        latestBlockType?: string | null;
+        latestHeaderText?: string | null;
+        checkpoints: Array<{
+          checkpointId: string;
+          checkpointNumber: number;
+          currentStep: string;
+          status: "active" | "paused" | "completed" | "error" | "waiting_approval";
+          progress: number;
+          createdAt: number;
+          error?: string;
+        }>;
+      }
+    | null
+    | undefined;
+
   const backlinks = useQuery(
     api?.domains.product.blocks.listBacklinksForEntity ?? "skip",
     api?.domains.product.blocks.listBacklinksForEntity
@@ -394,6 +424,12 @@ export function EntityNotebookLive({
   );
   const submitOfflineSnapshot = useMutation(
     api?.domains.product.blockProsemirror.submitOfflineSnapshot ?? ("skip" as any),
+  );
+  const materializeProjectionOverlays = useMutation(
+    api?.domains.product.diligenceProjections?.materializeForEntity as never,
+  );
+  const requestProjectionRefreshAndRun = useMutation(
+    api?.domains.product.diligenceProjections?.requestRefreshAndRun as never,
   );
 
   const [slashFor, setSlashFor] = useState<Id<"productBlocks"> | null>(null);
@@ -421,6 +457,7 @@ export function EntityNotebookLive({
   const presenceClientSessionIdRef = useRef(
     `nb-live-${entitySlug}-${Math.random().toString(36).slice(2, 10)}`,
   );
+  const materializedProjectionVersionKeyRef = useRef<string | null>(null);
 
   const presence = useQuery(
     api?.domains.product.notebookPresence.notebookPresenceList ?? "skip",
@@ -1008,10 +1045,55 @@ export function EntityNotebookLive({
     totalCount: blockSummary?.blockCount,
     paginationStatus: blocksPagination.status,
   });
+  const scratchpadRailSlot = useMemo(() => {
+    if (!canEdit) return undefined;
+    return (
+      <NotebookScratchpadTracePanel
+        markdownSource={latestScratchpadRun?.markdownSource}
+        runLabel={
+          latestScratchpadRun
+            ? `${snapshot?.entityName ?? entitySlug} · ${latestScratchpadRun.status}`
+            : `${snapshot?.entityName ?? entitySlug} · no active run`
+        }
+        version={latestScratchpadRun?.version}
+        updatedAt={latestScratchpadRun?.updatedAt}
+        checkpoints={latestScratchpadRun?.checkpoints}
+      />
+    );
+  }, [canEdit, entitySlug, latestScratchpadRun, snapshot?.entityName]);
   const focusedBlock = blocks?.find((block) => block._id === focusedBlockId);
   const showReferenceOverlayStrip =
     visibleDiligenceDecorations.length > 0 && (blocks?.length ?? 0) > 0;
   const canUseOverlayActions = canEdit && notebookLoadState.fullyLoaded;
+
+  useEffect(() => {
+    const reportUpdatedAt = snapshot?.reportUpdatedAt;
+    const reportBlockCount = snapshot?.blocks?.length ?? 0;
+    if (!canEdit) return;
+    if (!entitySlug) return;
+    if (!reportUpdatedAt || reportBlockCount === 0) return;
+
+    const versionKey = `${entitySlug}:${reportUpdatedAt}:${reportBlockCount}`;
+    if (materializedProjectionVersionKeyRef.current === versionKey) return;
+    materializedProjectionVersionKeyRef.current = versionKey;
+
+    void materializeProjectionOverlays({
+      anonymousSessionId,
+      shareToken,
+      entitySlug,
+    } as never).catch((error: unknown) => {
+      materializedProjectionVersionKeyRef.current = null;
+      console.warn("[notebook] failed to materialize diligence overlays", error);
+    });
+  }, [
+    anonymousSessionId,
+    canEdit,
+    entitySlug,
+    materializeProjectionOverlays,
+    shareToken,
+    snapshot?.blocks?.length,
+    snapshot?.reportUpdatedAt,
+  ]);
 
   const handleDismissDecoration = useCallback((scratchpadRunId: string) => {
     setHiddenDecorationRunIds((current) =>
@@ -1026,20 +1108,14 @@ export function EntityNotebookLive({
    * Notion pattern):
    *   1. Click acknowledged instantly with a toast so the button doesn't
    *      feel dead while the mutation round-trips.
-   *   2. requestRefresh mutation idempotently flags the projection row.
-   *      Returns HONEST_STATUS so we differentiate queued vs already-queued
-   *      vs not-found.
-   *   3. useQuery reactivity picks up the new version automatically when the
-   *      orchestrator finishes its re-run and calls upsertFromStructuringPass.
-   *      No imperative re-fetch is needed here.
-   *
-   * Snapshot-derived synthetic projections (scratchpadRunId starts with
-   * "projection:") live client-side only — the refresh RPC is skipped for
-   * those since there's no server row to flag.
+   *   2. requestRefreshAndRun flags the row when it exists, then re-runs the
+   *      same generic projection orchestrator that writes authoritative
+   *      overlay rows from saved report sections.
+   *   3. useQuery reactivity picks up the newer version automatically when
+   *      the rerun finishes. No imperative re-fetch is needed here.
+   *   4. Snapshot-only fallback overlays also converge because the mutation
+   *      materializes server rows when the old client-only row is missing.
    */
-  const requestProjectionRefresh = useMutation(
-    api?.domains.product.diligenceProjections?.requestRefresh as never,
-  );
   const handleRefreshDecoration = useCallback(
     async (
       scratchpadRunId: string,
@@ -1053,32 +1129,50 @@ export function EntityNotebookLive({
 
       toast.info(
         "Refreshing live intelligence…",
-        `Queued a refresh for this ${blockType} block. New data appears when the orchestrator emits a newer version.`,
+        `Queued a refresh for this ${blockType} block. The overlay will update when the orchestrator emits a newer version.`,
       );
 
-      if (scratchpadRunId.startsWith("projection:")) return;
-
       try {
-        const result = (await requestProjectionRefresh({
+        const result = (await requestProjectionRefreshAndRun({
+          anonymousSessionId,
+          shareToken,
           entitySlug,
           blockType,
           scratchpadRunId,
         } as never)) as
-          | { status: "queued"; queuedAt: number }
-          | { status: "already-queued"; queuedAt: number }
-          | { status: "not-found" }
+          | {
+              refreshStatus: "queued" | "already-queued" | "not-found";
+              queuedAt?: number;
+              rerun?: {
+                status: "materialized" | "noop";
+                total: number;
+                created: number;
+                updated: number;
+                stale: number;
+                deleted: number;
+              };
+            }
           | undefined;
 
         if (!result) return;
-        if (result.status === "already-queued") {
+        if (result.refreshStatus === "already-queued") {
           toast.info(
             "Already refreshing",
             "The orchestrator is still processing your previous refresh request.",
           );
-        } else if (result.status === "not-found") {
-          toast.error(
-            "Could not refresh",
-            "That projection is no longer on the server — try reopening the notebook.",
+          return;
+        }
+        if (result.rerun?.status === "materialized") {
+          toast.success(
+            "Live intelligence refreshed",
+            result.rerun.updated + result.rerun.created > 0
+              ? "The overlay now reflects the latest structured diligence projection."
+              : "The overlay was re-run but no newer structured output was produced.",
+          );
+        } else if (result.refreshStatus === "not-found") {
+          toast.info(
+            "Overlay resynced",
+            "The overlay was rebuilt from the latest saved report for this entity.",
           );
         }
       } catch (err) {
@@ -1088,7 +1182,14 @@ export function EntityNotebookLive({
         );
       }
     },
-    [visibleDiligenceDecorations, toast, requestProjectionRefresh, entitySlug],
+    [
+      anonymousSessionId,
+      entitySlug,
+      requestProjectionRefreshAndRun,
+      shareToken,
+      toast,
+      visibleDiligenceDecorations,
+    ],
   );
 
   const handleAcceptDecoration = useCallback(
@@ -1338,89 +1439,97 @@ export function EntityNotebookLive({
         </div>
       ) : null}
 
-      <div className="space-y-0">
-        {blocks.map((block, blockIndex) => (
-          <BlockRow
-            key={block._id}
-            block={block}
-            prev={blocks[blockIndex - 1]}
-            sourcesById={sourcesById}
-            citationLabelsById={citationLabelsById}
-            displayContent={optimisticBlockContent[String(block._id)] ?? block.content}
-            isEditable={canEdit && notebookLoadState.fullyLoaded && block.accessMode === "edit"}
-            accessMode={
-              canEdit && notebookLoadState.fullyLoaded ? (block.accessMode ?? "edit") : "read"
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
+        <div className="min-w-0">
+          <div className="space-y-0">
+            {blocks.map((block, blockIndex) => (
+              <BlockRow
+                key={block._id}
+                block={block}
+                prev={blocks[blockIndex - 1]}
+                sourcesById={sourcesById}
+                citationLabelsById={citationLabelsById}
+                displayContent={optimisticBlockContent[String(block._id)] ?? block.content}
+                isEditable={canEdit && notebookLoadState.fullyLoaded && block.accessMode === "edit"}
+                accessMode={
+                  canEdit && notebookLoadState.fullyLoaded ? (block.accessMode ?? "edit") : "read"
+                }
+                isFocused={focusedBlockId === block._id}
+                showSlash={slashFor === block._id}
+                syncDocumentId={buildProductBlockSyncId({
+                  blockId: String(block._id),
+                  anonymousSessionId,
+                  shareToken,
+                })}
+                onFocus={() => setFocusedBlockId(block._id)}
+                onBlur={() => {
+                  flushOptimisticBlockContent(block._id);
+                  setFocusedBlockId((current) => (current === block._id ? null : current));
+                }}
+                onLocalContentChange={(content) => handleLocalContentChange(block._id, content)}
+                registerEditorHandle={(handle) => registerEditorHandle(block._id, handle)}
+                onEnter={() => void handleEnter(block, blockIndex)}
+                onBackspaceAtStart={async () => {
+                  if (blockIndex === 0) return;
+                  if (!canEdit || block.accessMode !== "edit") {
+                    notifyReadOnly("delete");
+                    return;
+                  }
+                  await deleteBlock({ anonymousSessionId, shareToken, blockId: block._id });
+                }}
+                onOpenSlash={() => setSlashFor(block._id)}
+                onCloseSlash={() => setSlashFor(null)}
+                onSlashCommand={(cmd) => void runSlashCommand(cmd, block)}
+                onAcceptDecoration={(runId, blockType) =>
+                  void handleAcceptDecoration(runId, blockType)
+                }
+                onDismissDecoration={(runId, _blockType) => handleDismissDecoration(runId)}
+                onRefreshDecoration={(runId, blockType) =>
+                  handleRefreshDecoration(runId, blockType)
+                }
+                navigate={navigate}
+              />
+            ))}
+          </div>
+
+          {notebookLoadState.canLoadMore ? (
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={() =>
+                  blocksPagination.loadMore(Math.min(Math.max(notebookLoadState.remainingCount, 1), 150))
+                }
+                disabled={notebookLoadState.isLoadingMore}
+                className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 transition-colors hover:border-gray-300 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300"
+              >
+                {notebookLoadState.isLoadingMore
+                  ? "Loading more blocks..."
+                  : `Load ${Math.min(notebookLoadState.remainingCount, 150)} more block${Math.min(notebookLoadState.remainingCount, 150) === 1 ? "" : "s"}`}
+              </button>
+            </div>
+          ) : null}
+
+          <BlockStatusBar
+            presence={presence ?? []}
+            selfUserId={resolvePresenceSelfUserId(viewerOwnerKey, anonymousSessionId)}
+            participantDirectory={participantDirectory}
+            latestHumanEdit={latestHumanEdit}
+            lastSyncedAt={lastSyncedAt}
+            offlineQueueLength={offlineQueueLength}
+            isOffline={isOffline}
+            rateLimited={rateLimited}
+            readOnly={
+              !canEdit ||
+              !notebookLoadState.fullyLoaded ||
+              (!!focusedBlock && (focusedBlock.accessMode ?? "edit") !== "edit")
             }
-            isFocused={focusedBlockId === block._id}
-            showSlash={slashFor === block._id}
-            syncDocumentId={buildProductBlockSyncId({
-              blockId: String(block._id),
-              anonymousSessionId,
-              shareToken,
-            })}
-            onFocus={() => setFocusedBlockId(block._id)}
-            onBlur={() => {
-              flushOptimisticBlockContent(block._id);
-              setFocusedBlockId((current) => (current === block._id ? null : current));
-            }}
-            onLocalContentChange={(content) => handleLocalContentChange(block._id, content)}
-            registerEditorHandle={(handle) => registerEditorHandle(block._id, handle)}
-            onEnter={() => void handleEnter(block, blockIndex)}
-            onBackspaceAtStart={async () => {
-              if (blockIndex === 0) return;
-              if (!canEdit || block.accessMode !== "edit") {
-                notifyReadOnly("delete");
-                return;
-              }
-              await deleteBlock({ anonymousSessionId, shareToken, blockId: block._id });
-            }}
-            onOpenSlash={() => setSlashFor(block._id)}
-            onCloseSlash={() => setSlashFor(null)}
-            onSlashCommand={(cmd) => void runSlashCommand(cmd, block)}
-            onAcceptDecoration={(runId, blockType) =>
-              void handleAcceptDecoration(runId, blockType)
-            }
-            onDismissDecoration={(runId, _blockType) => handleDismissDecoration(runId)}
-            onRefreshDecoration={(runId, blockType) =>
-              handleRefreshDecoration(runId, blockType)
-            }
-            navigate={navigate}
           />
-        ))}
-      </div>
-
-      {notebookLoadState.canLoadMore ? (
-        <div className="mt-4 flex justify-center">
-          <button
-            type="button"
-            onClick={() =>
-              blocksPagination.loadMore(Math.min(Math.max(notebookLoadState.remainingCount, 1), 150))
-            }
-            disabled={notebookLoadState.isLoadingMore}
-            className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 transition-colors hover:border-gray-300 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300"
-          >
-            {notebookLoadState.isLoadingMore
-              ? "Loading more blocks..."
-              : `Load ${Math.min(notebookLoadState.remainingCount, 150)} more block${Math.min(notebookLoadState.remainingCount, 150) === 1 ? "" : "s"}`}
-          </button>
         </div>
-      ) : null}
 
-      <BlockStatusBar
-        presence={presence ?? []}
-        selfUserId={resolvePresenceSelfUserId(viewerOwnerKey, anonymousSessionId)}
-        participantDirectory={participantDirectory}
-        latestHumanEdit={latestHumanEdit}
-        lastSyncedAt={lastSyncedAt}
-        offlineQueueLength={offlineQueueLength}
-        isOffline={isOffline}
-        rateLimited={rateLimited}
-        readOnly={
-          !canEdit ||
-          !notebookLoadState.fullyLoaded ||
-          (!!focusedBlock && (focusedBlock.accessMode ?? "edit") !== "edit")
-        }
-      />
+        <div className="mt-6 lg:mt-0">
+          <NotebookRightRail scratchpadSlot={scratchpadRailSlot} />
+        </div>
+      </div>
 
       {/* Backlinks */}
       {/* Mention picker â€” modal overlay when active */}

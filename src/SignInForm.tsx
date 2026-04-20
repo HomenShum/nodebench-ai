@@ -1,16 +1,41 @@
 "use client";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export function SignInForm() {
+type SignInFormProps = {
+  initialEmail?: string;
+  allowAnonymous?: boolean;
+  onSuccess?: () => void | Promise<void>;
+};
+
+export function SignInForm({
+  initialEmail = "",
+  allowAnonymous = true,
+  onSuccess,
+}: SignInFormProps = {}) {
   const { signIn } = useAuthActions();
   const [flow, setFlow] = useState<"signIn" | "signUp">("signIn");
   const [submitting, setSubmitting] = useState(false);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [sendingLink, setSendingLink] = useState(false);
   const isValidEmail = (s: string) => /[^\s@]+@[^\s@]+\.[^\s@]+/.test(s.trim());
+
+  useEffect(() => {
+    if (!initialEmail) return;
+    setEmail(initialEmail);
+  }, [initialEmail]);
+
+  const handleSuccess = async () => {
+    if (onSuccess) {
+      await onSuccess();
+      return;
+    }
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
+  };
 
   return (
     <div className="w-full">
@@ -21,19 +46,21 @@ export function SignInForm() {
           setSubmitting(true);
           const formData = new FormData(e.target as HTMLFormElement);
           formData.set("flow", flow);
-          void signIn("password", formData).catch((error) => {
-            let toastTitle = "";
-            if (error.message.includes("Invalid password")) {
-              toastTitle = "Invalid password. Please try again.";
-            } else {
-              toastTitle =
-                flow === "signIn"
-                  ? "Could not sign in, did you mean to sign up?"
-                  : "Could not sign up, did you mean to sign in?";
-            }
-            toast.error(toastTitle);
-            setSubmitting(false);
-          });
+          void signIn("password", formData)
+            .then(() => handleSuccess())
+            .catch((error) => {
+              let toastTitle = "";
+              if (error.message.includes("Invalid password")) {
+                toastTitle = "Invalid password. Please try again.";
+              } else {
+                toastTitle =
+                  flow === "signIn"
+                    ? "Could not sign in, did you mean to sign up?"
+                    : "Could not sign up, did you mean to sign in?";
+              }
+              toast.error(toastTitle);
+              setSubmitting(false);
+            });
         }}
       >
         <input
@@ -123,9 +150,14 @@ export function SignInForm() {
         >
           {sendingLink ? "Sending..." : "Email me a sign-in link"}
         </button>
-        <button className="auth-button" onClick={() => void signIn("anonymous")}>
-          Sign in anonymously
-        </button>
+        {allowAnonymous ? (
+          <button
+            className="auth-button"
+            onClick={() => void signIn("anonymous").then(() => handleSuccess())}
+          >
+            Sign in anonymously
+          </button>
+        ) : null}
       </div>
     </div>
   );

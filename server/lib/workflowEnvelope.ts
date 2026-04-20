@@ -46,6 +46,12 @@ export interface EnvelopeSourceRef {
   href?: string;
   type: "web" | "local" | "doc" | "trace" | "mcp_tool";
   confidence?: number;
+  domain?: string;
+  siteName?: string;
+  faviconUrl?: string;
+  thumbnailUrl?: string;
+  imageCandidates?: string[];
+  publishedAt?: string;
 }
 
 export interface WorkflowEnvelopeProof {
@@ -145,6 +151,12 @@ export interface ResultPacketLike {
     href?: string;
     type?: "web" | "local" | "doc" | "trace" | "mcp_tool";
     confidence?: number;
+    domain?: string;
+    siteName?: string;
+    faviconUrl?: string;
+    thumbnailUrl?: string;
+    imageCandidates?: string[];
+    publishedAt?: string;
   }>;
   claimRefs?: Array<{ text?: string }>;
   answerBlocks?: Array<{ text?: string; title?: string }>;
@@ -221,6 +233,12 @@ export function createEnvelopeFromResultPacket(packet: ResultPacketLike): Workfl
     href: source.href,
     type: source.type ?? (source.href ? "web" : "doc"),
     confidence: source.confidence,
+    domain: source.domain,
+    siteName: source.siteName,
+    faviconUrl: source.faviconUrl,
+    thumbnailUrl: source.thumbnailUrl,
+    imageCandidates: source.imageCandidates,
+    publishedAt: source.publishedAt,
   }));
   const claims = (packet.claimRefs ?? [])
     .map((claim) => (typeof claim.text === "string" ? claim.text.trim() : ""))
@@ -342,6 +360,11 @@ export function createEnvelopeFromPipelineState(
     href: src.url,
     type: "web" as const,
     confidence: src.relevanceScore,
+    domain: src.domain,
+    siteName: src.siteName,
+    faviconUrl: src.faviconUrl,
+    thumbnailUrl: src.thumbnailUrl,
+    imageCandidates: src.imageCandidates,
   }));
 
   const claims: string[] = [];

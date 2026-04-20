@@ -136,6 +136,7 @@ describe("shared/productBlockSync id encoding", () => {
     const encoded = buildProductBlockSyncId({
       blockId: "blk_ABC123" as unknown as string,
       anonymousSessionId: "anon-session-XYZ",
+      shareToken: "ews_demo",
     });
     expect(typeof encoded).toBe("string");
     expect(encoded.startsWith("nbb")).toBe(true);
@@ -144,16 +145,19 @@ describe("shared/productBlockSync id encoding", () => {
     expect(parsed).not.toBeNull();
     expect(parsed?.blockId).toBe("blk_ABC123");
     expect(parsed?.anonymousSessionId).toBe("anon-session-XYZ");
+    expect(parsed?.shareToken).toBe("ews_demo");
   });
 
   it("roundtrips authenticated (null anonymousSessionId) shape", () => {
     const encoded = buildProductBlockSyncId({
       blockId: "blk_456" as unknown as string,
       anonymousSessionId: null,
+      shareToken: null,
     });
     const parsed = parseProductBlockSyncId(encoded);
     expect(parsed?.blockId).toBe("blk_456");
     expect(parsed?.anonymousSessionId).toBeNull();
+    expect(parsed?.shareToken).toBeNull();
   });
 
   it("rejects malformed ids without throwing", () => {

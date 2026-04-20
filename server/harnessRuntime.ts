@@ -24,8 +24,24 @@
  *   create → run (repeatable) → compact (when context grows) → end
  */
 
-import { generatePlan, executeHarness, synthesizeResults, type HarnessPlan, type HarnessExecution, type HarnessStepResult } from "./agentHarness.js";
+import {
+  generatePlan,
+  executeHarness,
+  synthesizeResults,
+  type HarnessPlan,
+  type HarnessExecution,
+  type HarnessStepResult,
+  type HarnessTraceEvent,
+} from "./agentHarness.js";
+import {
+  buildMemorySeedContext,
+  recallEntityMemory,
+  type EntityMemoryRecallEntry,
+} from "./lib/entityMemoryRecall.js";
+import { saveExtractedSkillTemplate, shouldExtractSkillTemplate } from "./lib/skillExtractor.js";
+import { saveHarnessTraceDistillation } from "./lib/traceDistillation.js";
 import type { McpTool } from "../packages/mcp-local/src/types.js";
+import { deriveReportArtifactMode } from "../shared/reportArtifacts.js";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -69,6 +85,25 @@ export interface HarnessMessage {
   turnIndex: number;
 }
 
+export interface SteeringEntry {
+  id: string;
+  payload: Record<string, unknown> | string;
+  createdAt: number;
+  source?: string;
+}
+
+export type HarnessRoutingMode = "executive" | "advisor";
+export type HarnessRoutingSource = "automatic" | "user_forced";
+
+export interface HarnessRoutingDecision {
+  routingMode: HarnessRoutingMode;
+  routingReason: string;
+  routingSource: HarnessRoutingSource;
+  plannerModel: string;
+  executionModel: string;
+  reasoningEffort: "medium" | "high";
+}
+
 export interface HarnessSessionState {
   id: string;
   createdAt: number;
@@ -85,6 +120,7 @@ export interface HarnessSessionState {
   permissionPolicy: PermissionPolicy;
   entityContext: Record<string, unknown>;
   adaptationCount: number;
+  pendingSteering: SteeringEntry[];
 }
 
 export interface TurnRecord {
@@ -92,6 +128,7 @@ export interface TurnRecord {
   query: string;
   classification: string;
   entities: string[];
+  routing: HarnessRoutingDecision;
   plan: HarnessPlan | null;
   stepResults: HarnessStepResult[];
   synthesizedResult: unknown;
@@ -102,11 +139,24 @@ export interface TurnRecord {
 }
 
 export interface TraceEvent {
+  type?: HarnessTraceEvent["type"];
   step: string;
   tool?: string;
-  status: "ok" | "error" | "adapting";
+  status: "ok" | "error" | "adapting" | "skip";
   detail?: string;
   durationMs?: number;
+  stepId?: string;
+  stepIndex?: number;
+  groupId?: string;
+  model?: string;
+  tokensIn?: number;
+  tokensOut?: number;
+  costUsd?: number;
+  preview?: string;
+  startedAt?: number;
+  completedAt?: number;
+  injectedContext?: string[];
+  steeringApplied?: boolean;
   timestamp: number;
 }
 
@@ -119,6 +169,7 @@ export interface HarnessRunResult {
   costUsd: number;
   classification: string;
   entities: string[];
+  routing: HarnessRoutingDecision;
   planSteps: number;
   adaptations: number;
   sessionTotalCostUsd: number;
@@ -135,9 +186,178 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   "claude-opus-4-6": { input: 15.00, output: 75.00 },
 };
 
+const EXECUTIVE_PLANNER_MODEL = "gemini-3.1-flash-lite-preview";
+const EXECUTIVE_EXECUTION_MODEL = "gemini-3.1-flash-lite-preview";
+const ADVISOR_PLANNER_MODEL = "gemini-3.1-pro-preview";
+const ADVISOR_EXECUTION_MODEL = "gemini-3.1-flash-preview";
+
+function hasAdvisorOverride(query: string): boolean {
+  return /\b(go deeper|deeper reasoning|think harder|show (?:the )?reasoning|show tradeoffs|pressure test|stress test|advisor mode|use advisor|opusplan)\b/i.test(query);
+}
+
+function looksHighStakes(query: string): boolean {
+  return /\b(board|investor|fundraise|fundraising|acquisition|m&a|due diligence|legal|compliance|security incident|outage|negotiation)\b/i.test(query);
+}
+
+export function buildRoutingGuidance(decision: HarnessRoutingDecision): string {
+  if (decision.routingMode === "advisor") {
+    return "ADVISOR MODE: plan more explicitly, surface tradeoffs, and prefer stronger cross-checks before synthesis.";
+  }
+  return "EXECUTIVE MODE: keep the plan lean, fast, and evidence-first unless new ambiguity appears.";
+}
+
+export function decideHarnessRouting(args: {
+  query: string;
+  classification: string;
+  entities?: string[];
+  userForcedAdvisor?: boolean;
+  evidenceConflict?: boolean;
+  priorFailure?: boolean;
+  highStakes?: boolean;
+}): HarnessRoutingDecision {
+  const entities = args.entities ?? [];
+  const forcedAdvisor = args.userForcedAdvisor ?? hasAdvisorOverride(args.query);
+  const highStakes = args.highStakes ?? looksHighStakes(args.query);
+  const artifactMode = deriveReportArtifactMode(args.query);
+
+  if (forcedAdvisor) {
+    return {
+      routingMode: "advisor",
+      routingReason: "User explicitly asked for deeper reasoning.",
+      routingSource: "user_forced",
+      plannerModel: ADVISOR_PLANNER_MODEL,
+      executionModel: ADVISOR_EXECUTION_MODEL,
+      reasoningEffort: "high",
+    };
+  }
+
+  if (args.priorFailure) {
+    return {
+      routingMode: "advisor",
+      routingReason: "Prior execution failed and needs a deeper retry.",
+      routingSource: "automatic",
+      plannerModel: ADVISOR_PLANNER_MODEL,
+      executionModel: ADVISOR_EXECUTION_MODEL,
+      reasoningEffort: "high",
+    };
+  }
+
+  if (args.evidenceConflict) {
+    return {
+      routingMode: "advisor",
+      routingReason: "Conflicting evidence requires a stronger planning pass.",
+      routingSource: "automatic",
+      plannerModel: ADVISOR_PLANNER_MODEL,
+      executionModel: ADVISOR_EXECUTION_MODEL,
+      reasoningEffort: "high",
+    };
+  }
+
+  if (args.classification === "plan_proposal") {
+    return {
+      routingMode: "advisor",
+      routingReason: "Planning requests need deeper upfront reasoning.",
+      routingSource: "automatic",
+      plannerModel: ADVISOR_PLANNER_MODEL,
+      executionModel: ADVISOR_EXECUTION_MODEL,
+      reasoningEffort: "high",
+    };
+  }
+
+  if (artifactMode === "prep_brief") {
+    return {
+      routingMode: "advisor",
+      routingReason: "Prep briefs need stronger synthesis before the handoff-ready brief is saved.",
+      routingSource: "automatic",
+      plannerModel: ADVISOR_PLANNER_MODEL,
+      executionModel: ADVISOR_EXECUTION_MODEL,
+      reasoningEffort: "high",
+    };
+  }
+
+  if (args.classification === "multi_entity" && entities.length >= 3) {
+    return {
+      routingMode: "advisor",
+      routingReason: "Multi-entity comparison increases cross-check and synthesis complexity.",
+      routingSource: "automatic",
+      plannerModel: ADVISOR_PLANNER_MODEL,
+      executionModel: ADVISOR_EXECUTION_MODEL,
+      reasoningEffort: "high",
+    };
+  }
+
+  if (highStakes) {
+    return {
+      routingMode: "advisor",
+      routingReason: "High-stakes requests should bias toward deeper verification.",
+      routingSource: "automatic",
+      plannerModel: ADVISOR_PLANNER_MODEL,
+      executionModel: ADVISOR_EXECUTION_MODEL,
+      reasoningEffort: "high",
+    };
+  }
+
+  return {
+    routingMode: "executive",
+    routingReason: "Routine request fits the fast execution lane.",
+    routingSource: "automatic",
+    plannerModel: EXECUTIVE_PLANNER_MODEL,
+    executionModel: EXECUTIVE_EXECUTION_MODEL,
+    reasoningEffort: "medium",
+  };
+}
+
 function estimateCost(model: string, inputTokens: number, outputTokens: number): number {
   const pricing = MODEL_PRICING[model] ?? { input: 0.15, output: 0.60 };
   return (inputTokens * pricing.input + outputTokens * pricing.output) / 1_000_000;
+}
+
+function toRuntimeTraceEvent(event: HarnessTraceEvent): Omit<TraceEvent, "timestamp"> {
+  if (event.type === "trace") {
+    return {
+      type: event.type,
+      step: event.step,
+      tool: event.tool,
+      status: event.status,
+      detail: event.detail,
+    };
+  }
+
+  if (event.type === "step_start") {
+    return {
+      type: event.type,
+      step: "step_start",
+      stepId: event.stepId,
+      stepIndex: event.stepIndex,
+      groupId: event.groupId,
+      tool: event.toolName,
+      model: event.model,
+      status: "ok",
+      detail: event.purpose,
+      startedAt: event.startedAt,
+    };
+  }
+
+  return {
+    type: event.type,
+    step: "step_done",
+    stepId: event.stepId,
+    stepIndex: event.stepIndex,
+    groupId: event.groupId,
+    tool: event.toolName,
+    model: event.model,
+    status: event.success ? "ok" : "error",
+    detail: event.error ?? event.preview ?? `${event.toolName} completed`,
+    durationMs: event.durationMs,
+    tokensIn: event.tokensIn,
+    tokensOut: event.tokensOut,
+    costUsd: event.costUsd,
+    preview: event.preview,
+    startedAt: event.startedAt,
+    completedAt: event.completedAt,
+    injectedContext: event.injectedContext,
+    steeringApplied: event.steeringApplied,
+  };
 }
 
 // ── Session store ────────────────────────────────────────────────────
@@ -283,6 +503,7 @@ export class HarnessRuntime {
       },
       entityContext: options.entityContext ?? {},
       adaptationCount: 0,
+      pendingSteering: [],
     };
 
     sessions.set(session.id, session);
@@ -333,16 +554,59 @@ export class HarnessRuntime {
     return compactSession(s);
   }
 
+  queueSteering(
+    id: string,
+    payload: Record<string, unknown> | string,
+    source?: string,
+  ): SteeringEntry | null {
+    const session = sessions.get(id);
+    if (!session) return null;
+
+    const entry: SteeringEntry = {
+      id: `steer_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      payload,
+      createdAt: Date.now(),
+      source,
+    };
+    session.pendingSteering.push(entry);
+    session.lastActivityAt = Date.now();
+    return entry;
+  }
+
+  getPendingSteeringCount(id: string): number | null {
+    const session = sessions.get(id);
+    if (!session) return null;
+    return session.pendingSteering.length;
+  }
+
+  private consumePendingSteering(session: HarnessSessionState): Record<string, unknown> | string | null {
+    const next = session.pendingSteering.shift();
+    return next?.payload ?? null;
+  }
+
   getSessionTrace(id: string): TraceEvent[] | null {
     const s = sessions.get(id);
     if (!s) return null;
     return s.turns.flatMap(t =>
       t.stepResults.map(sr => ({
+        type: "step_done" as const,
         step: "tool_call",
         tool: sr.toolName,
         status: sr.success ? "ok" as const : "error" as const,
         detail: sr.error ?? `${sr.toolName} completed`,
         durationMs: sr.durationMs,
+        stepId: sr.stepId,
+        stepIndex: sr.stepIndex,
+        groupId: sr.groupId,
+        model: sr.model,
+        tokensIn: sr.tokensIn,
+        tokensOut: sr.tokensOut,
+        costUsd: sr.costUsd,
+        preview: sr.preview,
+        startedAt: sr.startedAt,
+        completedAt: sr.completedAt,
+        injectedContext: sr.injectedContext,
+        steeringApplied: sr.steeringApplied,
         timestamp: t.timestamp,
       }))
     );
@@ -370,6 +634,7 @@ export class HarnessRuntime {
     query: string,
     options: {
       onTrace?: (event: TraceEvent) => void;
+      onPlan?: (plan: HarnessPlan) => void;
       maxAdaptations?: number;
       timeoutMs?: number;
     } = {},
@@ -497,17 +762,64 @@ export class HarnessRuntime {
     }
 
     // ── Step 3: Generate plan ───────────────────────────────────
+    let recalledMemory: EntityMemoryRecallEntry[] = [];
+    const ownerKey = typeof session.entityContext.ownerKey === "string" ? session.entityContext.ownerKey : null;
+    if (ownerKey && classification.entities.length > 0) {
+      try {
+        recalledMemory = await recallEntityMemory({
+          ownerKey,
+          entityTargets: classification.entities,
+          limit: 3,
+        });
+        emitTrace({
+          step: "memory_recall",
+          status: "ok",
+          detail: recalledMemory.length > 0
+            ? `Loaded ${recalledMemory.length} entity memory entr${recalledMemory.length === 1 ? "y" : "ies"}`
+            : "No stored entity memory matched",
+        });
+      } catch (err: any) {
+        emitTrace({
+          step: "memory_recall",
+          status: "error",
+          detail: err?.message ?? "Entity memory recall failed",
+        });
+      }
+    } else {
+      emitTrace({
+        step: "memory_recall",
+        status: "skip",
+        detail: ownerKey ? "No entities extracted for recall" : "No ownerKey available for scoped recall",
+      });
+    }
+
     let plan: HarnessPlan | null = null;
+    const routing = decideHarnessRouting({
+      query,
+      classification: classification.type,
+      entities: classification.entities,
+    });
+    const planningQuery = `${query.trim()}\n\n[${buildRoutingGuidance(routing)}]`;
+    emitTrace({
+      step: "routing_mode",
+      tool: routing.plannerModel,
+      status: "ok",
+      detail: `${routing.routingMode}: ${routing.routingReason}`,
+    });
     if (hasLLM) {
       try {
         emitTrace({ step: "plan_generate", tool: "call_llm", status: "ok" });
         plan = await generatePlan(
-          query.trim(),
+          planningQuery,
           classification.type,
           classification.entities,
           session.lens,
           callTool,
+          {
+            recalledMemory,
+          },
         );
+        options.onPlan?.(plan);
         emitTrace({ step: "plan_ready", status: "ok", detail: `${plan.steps.length} steps: ${plan.steps.map(s => s.toolName).join(" → ")}` });
       } catch (err: any) {
         emitTrace({ step: "plan_generate", status: "error", detail: err?.message });
@@ -516,15 +828,33 @@ export class HarnessRuntime {
 
     // Fallback: deterministic plan
     if (!plan) {
-      plan = this.buildFallbackPlan(query, classification.type, classification.entities, session.lens);
+      plan = await generatePlan(planningQuery, classification.type, classification.entities, session.lens, callTool, {
+        recalledMemory,
+      });
       emitTrace({ step: "plan_fallback", status: "ok", detail: `Deterministic: ${plan.steps.length} steps` });
+      options.onPlan?.(plan);
     }
 
     // ── Step 4: Execute plan ────────────────────────────────────
     emitTrace({ step: "execute_plan", status: "ok", detail: `Executing ${plan.steps.length} steps` });
 
-    const execution = await executeHarness(plan, callTool, (step) => {
-      emitTrace({ step: step.step, tool: step.tool, status: step.status as "ok" | "error", detail: step.detail });
+    const memorySeedContext = buildMemorySeedContext(recalledMemory);
+    const execution = await executeHarness(plan, callTool, (event) => {
+      emitTrace(toRuntimeTraceEvent(event));
+    }, {
+      seedContext: memorySeedContext,
+      consumeUserSteering: (step) => {
+        const payload = step.acceptsSteering ? this.consumePendingSteering(session) : null;
+        if (payload != null) {
+          emitTrace({
+            step: "steering_dequeued",
+            tool: step.toolName,
+            status: "ok",
+            detail: `${step.id} consumed queued steering`,
+          });
+        }
+        return payload;
+      },
     });
 
     // ── Step 5: Adaptation — re-plan on significant failures ────
@@ -538,11 +868,31 @@ export class HarnessRuntime {
       const failedTools = failedSteps.map(s => s.toolName);
       const recoveryQuery = `${query} (retry: ${failedTools.join(", ")} failed)`;
       try {
-        const recoveryPlan = await generatePlan(recoveryQuery, classification.type, classification.entities, session.lens, callTool);
+        const recoveryPlan = await generatePlan(recoveryQuery, classification.type, classification.entities, session.lens, callTool, {
+          recalledMemory,
+        });
         recoveryPlan.steps = recoveryPlan.steps.filter(s => !failedTools.includes(s.toolName));
         if (recoveryPlan.steps.length > 0) {
-          const recoveryExec = await executeHarness(recoveryPlan, callTool, (step) => {
-            emitTrace({ step: step.step, tool: step.tool, status: step.status as "ok" | "error", detail: `[recovery] ${step.detail}` });
+          const recoveryExec = await executeHarness(recoveryPlan, callTool, (event) => {
+            const traceEvent = toRuntimeTraceEvent(event);
+            emitTrace({
+              ...traceEvent,
+              detail: traceEvent.detail ? `[recovery] ${traceEvent.detail}` : "[recovery]",
+            });
+          }, {
+            seedContext: memorySeedContext,
+            consumeUserSteering: (step) => {
+              const payload = step.acceptsSteering ? this.consumePendingSteering(session) : null;
+              if (payload != null) {
+                emitTrace({
+                  step: "steering_dequeued",
+                  tool: step.toolName,
+                  status: "ok",
+                  detail: `[recovery] ${step.id} consumed queued steering`,
+                });
+              }
+              return payload;
+            },
           });
           execution.stepResults.push(...recoveryExec.stepResults);
         }
@@ -596,6 +946,7 @@ export class HarnessRuntime {
       query,
       classification: classification.type,
       entities: classification.entities,
+      routing,
       plan,
       stepResults: execution.stepResults,
       synthesizedResult: synthesized,
@@ -605,6 +956,71 @@ export class HarnessRuntime {
       timestamp: Date.now(),
     };
     session.turns.push(turn);
+
+    const skillQualityPassed = shouldExtractSkillTemplate({
+      plan,
+      stepResults: execution.stepResults,
+      synthesizedResult: synthesized,
+    });
+    if (skillQualityPassed) {
+      try {
+        const extractedSkill = saveExtractedSkillTemplate({
+          source: "harness_runtime",
+          sessionId: session.id,
+          turnIndex,
+          query,
+          classification: classification.type,
+          lens: session.lens,
+          entities: classification.entities,
+          plan,
+          stepResults: execution.stepResults,
+          synthesizedResult: synthesized,
+        });
+        emitTrace({
+          step: "skill_extract",
+          status: "ok",
+          detail: `Extracted reusable skill ${extractedSkill.signature}`,
+        });
+      } catch (err: any) {
+        emitTrace({
+          step: "skill_extract",
+          status: "error",
+          detail: err?.message ?? "Skill extraction failed",
+        });
+      }
+    } else {
+      emitTrace({
+        step: "skill_extract",
+        status: "skip",
+        detail: "Skipped skill extraction because the run did not meet the quality gate",
+      });
+    }
+
+    try {
+      const distillationRecord = saveHarnessTraceDistillation({
+        source: "harness_runtime",
+        sessionId: session.id,
+        turnIndex,
+        query,
+        classification: classification.type,
+        lens: session.lens,
+        entities: classification.entities,
+        plan,
+        stepResults: execution.stepResults,
+        synthesizedResult: synthesized,
+      });
+      emitTrace({
+        step: "distill_export",
+        status: "ok",
+        detail: `Exported trace distillation ${distillationRecord.distillationId}`,
+      });
+    } catch (err: any) {
+      emitTrace({
+        step: "distill_export",
+        status: "error",
+        detail: err?.message ?? "Trace distillation export failed",
+      });
+    }
 
     emitTrace({ step: "turn_complete", status: "ok", detail: `${durationMs}ms, $${turnCostEstimate.toFixed(4)}, ${adaptations} adaptations`, durationMs });
 
@@ -617,6 +1033,7 @@ export class HarnessRuntime {
       costUsd: turnCostEstimate,
       classification: classification.type,
       entities: classification.entities,
+      routing,
       planSteps: plan.steps.length,
       adaptations,
       sessionTotalCostUsd: session.totalCostUsd,

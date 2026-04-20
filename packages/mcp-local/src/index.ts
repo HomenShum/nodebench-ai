@@ -26,7 +26,7 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { getDb, genId } from "./db.js";
+import { getDb, genId, openOptionalSqliteDatabase } from "./db.js";
 import { redactSecrets, auditLog, SecurityError, flushAuditLog } from "./security/index.js";
 import { startDashboardServer, getDashboardUrl, stopDashboardServer } from "./dashboard/server.js";
 import { startOperatingDashboardServer, getOperatingDashboardUrl, stopOperatingDashboardServer } from "./dashboard/operatingServer.js";
@@ -86,12 +86,7 @@ const engineSecret = (() => {
 })();
 
 async function openOptionalSqlite(dbPath: string, options?: Record<string, unknown>): Promise<any | null> {
-  try {
-    const Database = (await import("better-sqlite3")).default;
-    return new Database(dbPath, options);
-  } catch {
-    return null;
-  }
+  return openOptionalSqliteDatabase(dbPath, options);
 }
 
 export { TOOLSET_MAP };

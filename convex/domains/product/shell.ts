@@ -1,6 +1,6 @@
 import { query } from "../../_generated/server";
 import { v } from "convex/values";
-import { resolveProductIdentitySafely } from "./helpers";
+import { resolveProductReadOwnerKeys } from "./helpers";
 
 const EMPTY_SHELL_SNAPSHOT = {
   recentChats: [],
@@ -13,32 +13,72 @@ export const getWorkspaceRailSnapshot = query({
     anonymousSessionId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await resolveProductIdentitySafely(ctx, args.anonymousSessionId);
+    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
 
-    if (!identity.ownerKey) {
+    if (ownerKeys.length === 0) {
       return EMPTY_SHELL_SNAPSHOT;
     }
 
     try {
-      const [recentChats, recentReports, openNudges] = await Promise.all([
-        ctx.db
-          .query("productChatSessions")
-          .withIndex("by_owner_updated", (q) => q.eq("ownerKey", identity.ownerKey!))
-          .order("desc")
-          .take(4),
-        ctx.db
-          .query("productReports")
-          .withIndex("by_owner_updated", (q) => q.eq("ownerKey", identity.ownerKey!))
-          .order("desc")
-          .take(4),
-        ctx.db
-          .query("productNudges")
-          .withIndex("by_owner_status_updated", (q) =>
-            q.eq("ownerKey", identity.ownerKey!).eq("status", "open"),
-          )
-          .order("desc")
-          .take(3),
+      const [chatGroups, reportGroups, nudgeGroups] = await Promise.all([
+        Promise.all(
+          ownerKeys.map((ownerKey) =>
+            ctx.db
+              .query("productChatSessions")
+              .withIndex("by_owner_updated", (q) => q.eq("ownerKey", ownerKey))
+              .order("desc")
+              .take(4),
+          ),
+        ),
+        Promise.all(
+          ownerKeys.map((ownerKey) =>
+            ctx.db
+              .query("productReports")
+              .withIndex("by_owner_updated", (q) => q.eq("ownerKey", ownerKey))
+              .order("desc")
+              .take(4),
+          ),
+        ),
+        Promise.all(
+          ownerKeys.map((ownerKey) =>
+            ctx.db
+              .query("productNudges")
+              .withIndex("by_owner_status_updated", (q) => q.eq("ownerKey", ownerKey).eq("status", "open"))
+              .order("desc")
+              .take(3),
+          ),
+        ),
       ]);
+
+      const recentChats = chatGroups
+        .flat()
+        .sort((left, right) => right.updatedAt - left.updatedAt)
+        .reduce<Array<(typeof chatGroups)[number][number]>>((acc, chat) => {
+          if (acc.some((existing) => existing._id === chat._id)) return acc;
+          acc.push(chat);
+          return acc;
+        }, [])
+        .slice(0, 4);
+
+      const recentReports = reportGroups
+        .flat()
+        .sort((left, right) => right.updatedAt - left.updatedAt)
+        .reduce<Array<(typeof reportGroups)[number][number]>>((acc, report) => {
+          if (acc.some((existing) => existing._id === report._id)) return acc;
+          acc.push(report);
+          return acc;
+        }, [])
+        .slice(0, 4);
+
+      const openNudges = nudgeGroups
+        .flat()
+        .sort((left, right) => right.updatedAt - left.updatedAt)
+        .reduce<Array<(typeof nudgeGroups)[number][number]>>((acc, nudge) => {
+          if (acc.some((existing) => existing._id === nudge._id)) return acc;
+          acc.push(nudge);
+          return acc;
+        }, [])
+        .slice(0, 3);
 
       return {
         recentChats,
@@ -47,7 +87,7 @@ export const getWorkspaceRailSnapshot = query({
       };
     } catch (error) {
       console.error("[product] getWorkspaceRailSnapshot failed", {
-        ownerKey: identity.ownerKey,
+        ownerKeys,
         error,
       });
       return EMPTY_SHELL_SNAPSHOT;

@@ -15,10 +15,10 @@
  */
 
 import { Presence } from "@convex-dev/presence";
-import { ConvexError, v } from "convex/values";
+import { v } from "convex/values";
 import { components } from "../../_generated/api";
 import { mutation, query } from "../../_generated/server";
-import { requireProductIdentity } from "./helpers";
+import { resolveEntityWorkspaceAccess } from "./helpers";
 
 const presence = new Presence(components.presence);
 
@@ -38,7 +38,8 @@ function presenceUserIdFromOwnerKey(ownerKey: string): string {
 export const notebookHeartbeat = mutation({
   args: {
     anonymousSessionId: v.optional(v.string()),
-    roomId: v.string(),
+    shareToken: v.optional(v.string()),
+    entitySlug: v.string(),
     sessionId: v.string(),
     interval: v.number(),
   },
@@ -51,11 +52,19 @@ export const notebookHeartbeat = mutation({
       // Return empty tokens so the client treats presence as disabled.
       return { roomToken: "", sessionToken: "" };
     }
-    const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
-    const userId = presenceUserIdFromOwnerKey(identity.ownerKey!);
+    const workspaceAccess = await resolveEntityWorkspaceAccess(ctx, {
+      anonymousSessionId: args.anonymousSessionId,
+      shareToken: args.shareToken,
+      entitySlug: args.entitySlug,
+    });
+    if (!workspaceAccess?.identity.ownerKey) {
+      return { roomToken: "", sessionToken: "" };
+    }
+    const userId = presenceUserIdFromOwnerKey(workspaceAccess.identity.ownerKey);
+    const roomId = `notebook:${workspaceAccess.entity.ownerKey}:${workspaceAccess.entity.slug}`;
     return await presence.heartbeat(
       ctx,
-      args.roomId,
+      roomId,
       userId,
       args.sessionId,
       args.interval,

@@ -5,12 +5,10 @@
  * All data stored locally in SQLite at ~/.nodebench/analytics.db
  */
 
-import { createRequire } from "node:module";
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
-
-const require = createRequire(import.meta.url);
+import { getOptionalDatabaseCtor, openOptionalSqliteDatabase } from "../db.js";
 const DB_DIR = path.join(os.homedir(), '.nodebench');
 const DB_PATH = path.join(DB_DIR, 'analytics.db');
 
@@ -30,17 +28,6 @@ export interface AnalyticsDb {
 }
 
 let _analyticsDb: AnalyticsDb | null = null;
-let _databaseCtor: any | null | undefined;
-
-function loadDatabaseCtor(): any | null {
-  if (_databaseCtor !== undefined) return _databaseCtor;
-  try {
-    _databaseCtor = require("better-sqlite3");
-  } catch {
-    _databaseCtor = null;
-  }
-  return _databaseCtor;
-}
 
 function createNoopStatement(sql: string): AnalyticsStatement {
   const normalized = sql.toLowerCase();
@@ -113,12 +100,15 @@ export interface UsageStatsCacheRecord {
 }
 
 export function initAnalyticsDb(): AnalyticsDb {
-  const Database = loadDatabaseCtor();
+  const Database = getOptionalDatabaseCtor();
   if (!Database) {
     return createNoopAnalyticsDb();
   }
   fs.mkdirSync(DB_DIR, { recursive: true });
-  const db = new Database(DB_PATH);
+  const db = openOptionalSqliteDatabase(DB_PATH);
+  if (!db) {
+    return createNoopAnalyticsDb();
+  }
   
   // Enable WAL mode for better concurrency
   db.pragma('journal_mode = WAL');

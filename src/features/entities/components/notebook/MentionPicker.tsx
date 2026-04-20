@@ -20,9 +20,17 @@ type Props = {
   onSelect: (match: EntityMatch) => void;
   onClose: () => void;
   initialQuery?: string;
+  entitySlug?: string;
+  shareToken?: string;
 };
 
-export function MentionPicker({ onSelect, onClose, initialQuery = "" }: Props) {
+export function MentionPicker({
+  onSelect,
+  onClose,
+  initialQuery = "",
+  entitySlug,
+  shareToken,
+}: Props) {
   const api = useConvexApi();
   const anonymousSessionId = getAnonymousProductSessionId();
   const [query, setQuery] = useState(initialQuery);
@@ -32,7 +40,7 @@ export function MentionPicker({ onSelect, onClose, initialQuery = "" }: Props) {
   const matches = useQuery(
     api?.domains.product.blocks.searchEntitiesForMention ?? "skip",
     api?.domains.product.blocks.searchEntitiesForMention
-      ? { anonymousSessionId, prefix: query }
+      ? { anonymousSessionId, shareToken, entitySlug, prefix: query }
       : "skip",
   ) as EntityMatch[] | undefined;
 

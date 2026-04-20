@@ -8,8 +8,10 @@
  * emitted between actual pipeline stages — not retrospectively.
  */
 
-import { Router, type Request, type Response } from "express";
+import express, { Router, type Request, type Response } from "express";
 import {
+  classify,
+  createInitialPipelineState,
   runSearchPipeline,
   stateToResultPacket,
   type PipelineProgressEvent,
@@ -18,6 +20,7 @@ import { createEnvelopeFromPipelineState } from "../lib/workflowEnvelope.js";
 import { trajectoryFromPipelineState, saveSearchTrajectory } from "../lib/trajectoryStore.js";
 import { detectReplayCandidate } from "../lib/replayDetector.js";
 import { saveReport, createNudge } from "../lib/canonicalModels.js";
+import { decideHarnessRouting } from "../harnessRuntime.js";
 
 // ── SSE helpers ──────────────────────────────────────────────────────
 
@@ -83,17 +86,25 @@ function stagePreview(event: PipelineProgressEvent): Record<string, unknown> {
 
 export function createStreamingSearchRouter(): Router {
   const router = Router();
+  router.use(express.json({ limit: "1mb" }));
 
-  router.get("/stream", async (req: Request, res: Response) => {
-    const query = String(req.query.query ?? "").trim();
-    const lens = String(req.query.lens ?? "founder");
+  const handleStream = async (
+    req: Request,
+    res: Response,
+    input: { query: string; lens: string; contextHint?: string },
+  ) => {
+    const query = input.query.trim();
+    const lens = input.lens.trim() || "founder";
+    const contextHint = input.contextHint?.trim()
+      ? input.contextHint.trim().replace(/\s+/g, " ").slice(0, 400)
+      : undefined;
 
     if (!query) {
       res.status(400).json({ error: "query parameter is required" });
       return;
     }
-    if (query.length > 2000) {
-      res.status(400).json({ error: "query too long (max 2000 chars)" });
+    if (query.length > 12000) {
+      res.status(400).json({ error: "query too long (max 12000 chars)" });
       return;
     }
 
@@ -122,9 +133,22 @@ export function createStreamingSearchRouter(): Router {
       }
 
       // ── Emit plan event ────────────────────────────────────────
+      const classifiedPreview = classify(createInitialPipelineState(query, lens, contextHint));
+      const routingDecision = decideHarnessRouting({
+        query,
+        classification: classifiedPreview.classification || "company_search",
+        entities: classifiedPreview.entity ? [classifiedPreview.entity] : [],
+      });
+
       emitSSE(res, "plan", {
         totalTools: TOTAL_STAGES,
         tools: ["classify", "search", "analyze", "package"].map((stage) => STAGE_META[stage]),
+        routingMode: routingDecision.routingMode,
+        routingReason: routingDecision.routingReason,
+        routingSource: routingDecision.routingSource,
+        plannerModel: routingDecision.plannerModel,
+        executionModel: routingDecision.executionModel,
+        reasoningEffort: routingDecision.reasoningEffort,
       });
 
       // ── Run pipeline with real-time progress callback ──────────
@@ -155,7 +179,7 @@ export function createStreamingSearchRouter(): Router {
         }
       };
 
-      const state = await runSearchPipeline(query, lens, onProgress);
+      const state = await runSearchPipeline(query, lens, onProgress, contextHint);
 
       // ── Assemble result packet ─────────────────────────────────
       const packet = stateToResultPacket(state);
@@ -205,6 +229,12 @@ export function createStreamingSearchRouter(): Router {
       emitSSE(res, "complete", {
         totalDurationMs: Date.now() - startMs,
         toolsUsed: stepCounter,
+        routingMode: routingDecision.routingMode,
+        routingReason: routingDecision.routingReason,
+        routingSource: routingDecision.routingSource,
+        plannerModel: routingDecision.plannerModel,
+        executionModel: routingDecision.executionModel,
+        reasoningEffort: routingDecision.reasoningEffort,
         envelope: {
           envelopeId: envelope.transport.envelopeId,
           envelopeType: envelope.transport.envelopeType,
@@ -213,11 +243,34 @@ export function createStreamingSearchRouter(): Router {
         packet,
       });
 
+      // Give Chromium a brief drain window so the final SSE chunk is delivered
+      // before the socket closes. Without this, local dev occasionally surfaces
+      // ERR_CONNECTION_RESET after the response has logically completed.
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
     } catch (err) {
       emitSSE(res, "error", { message: (err as Error).message ?? "Search failed", step: stepCounter });
     } finally {
       if (!res.writableEnded) res.end();
     }
+  };
+
+  router.get("/stream", async (req: Request, res: Response) => {
+    await handleStream(req, res, {
+      query: String(req.query.query ?? ""),
+      lens: String(req.query.lens ?? "founder"),
+      contextHint:
+        typeof req.query.contextHint === "string" ? req.query.contextHint : undefined,
+    });
+  });
+
+  router.post("/stream", async (req: Request, res: Response) => {
+    const body = typeof req.body === "object" && req.body ? req.body : {};
+    await handleStream(req, res, {
+      query: typeof body.query === "string" ? body.query : "",
+      lens: typeof body.lens === "string" ? body.lens : "founder",
+      contextHint: typeof body.contextHint === "string" ? body.contextHint : undefined,
+    });
   });
 
   return router;

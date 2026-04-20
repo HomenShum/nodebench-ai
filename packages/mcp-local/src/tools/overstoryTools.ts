@@ -14,6 +14,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { McpTool } from "../types.js";
+import { openOptionalSqliteDatabase } from "../db.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -33,13 +34,7 @@ function findOverstoryRoot(): string | null {
 function readOverstoryDb(overstoryDir: string): any {
   const dbPath = join(overstoryDir, "overstory.db");
   if (!existsSync(dbPath)) return null;
-  try {
-    // Dynamic import to avoid hard dep on better-sqlite3
-    const Database = require("better-sqlite3");
-    return new Database(dbPath, { readonly: true });
-  } catch {
-    return null;
-  }
+  return openOptionalSqliteDatabase(dbPath, { readonly: true });
 }
 
 function readManifest(overstoryDir: string): any {
@@ -164,36 +159,40 @@ const overstoryQaSummary: McpTool = {
     );
 
     if (existsSync(nodebenchDbPath)) {
-      try {
-        const Database = require("better-sqlite3");
-        const db = new Database(nodebenchDbPath, { readonly: true });
-        const routes = db
-          .prepare(
-            `SELECT url, stability_grade, stability_score, mean_ssim, jank_count, effective_fps, created_at
-             FROM visual_qa_runs
-             WHERE created_at > datetime('now', '-${hours} hours')
-             ORDER BY created_at DESC`
-          )
-          .all();
-        db.close();
+      const db = openOptionalSqliteDatabase(nodebenchDbPath, { readonly: true });
+      if (db) {
+        try {
+          const routes = db
+            .prepare(
+              `SELECT url, stability_grade, stability_score, mean_ssim, jank_count, effective_fps, created_at
+               FROM visual_qa_runs
+               WHERE created_at > datetime('now', '-${hours} hours')
+               ORDER BY created_at DESC`
+            )
+            .all();
 
-        result.stabilityRoutes = routes;
-        result.routeCount = routes.length;
+          result.stabilityRoutes = routes;
+          result.routeCount = routes.length;
 
-        // Grade distribution
-        const grades: Record<string, number> = {};
-        for (const r of routes as any[]) {
-          grades[r.stability_grade] = (grades[r.stability_grade] || 0) + 1;
+          // Grade distribution
+          const grades: Record<string, number> = {};
+          for (const r of routes as any[]) {
+            grades[r.stability_grade] = (grades[r.stability_grade] || 0) + 1;
+          }
+          result.gradeDistribution = grades;
+
+          // Failing routes (grade < B)
+          const failing = (routes as any[]).filter(
+            (r) => !["A", "B"].includes(r.stability_grade)
+          );
+          result.failingRoutes = failing;
+          result.failingCount = failing.length;
+        } catch {
+          result.stabilityNote = "Could not read visual_qa_runs table";
+        } finally {
+          db.close();
         }
-        result.gradeDistribution = grades;
-
-        // Failing routes (grade < B)
-        const failing = (routes as any[]).filter(
-          (r) => !["A", "B"].includes(r.stability_grade)
-        );
-        result.failingRoutes = failing;
-        result.failingCount = failing.length;
-      } catch {
+      } else {
         result.stabilityNote = "Could not read visual_qa_runs table";
       }
     } else {

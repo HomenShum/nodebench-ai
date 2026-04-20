@@ -21,6 +21,7 @@ export type ExportEntityWorkspace = {
     name: string;
     entityType: string;
     summary: string;
+    savedBecause?: string;
     reportCount: number;
     latestRevision: number;
   };
@@ -31,12 +32,33 @@ export type ExportEntityWorkspace = {
   evidence?: Array<{ label: string; type?: string }>;
 };
 
-export function buildEntityShareUrl(entitySlug: string) {
-  if (typeof window === "undefined") return `/entity/${encodeURIComponent(entitySlug)}`;
-  return `${window.location.origin}/entity/${encodeURIComponent(entitySlug)}`;
+export function buildEntityPath(entitySlug: string, shareToken?: string) {
+  const pathname = `/entity/${encodeURIComponent(entitySlug)}`;
+  return shareToken ? `${pathname}?share=${encodeURIComponent(shareToken)}` : pathname;
 }
 
-export function buildEntityMarkdown(workspace: ExportEntityWorkspace, selected?: ExportTimelineItem | null) {
+export function buildEntityInvitePath(entitySlug: string, inviteToken?: string) {
+  const pathname = `/entity/${encodeURIComponent(entitySlug)}`;
+  return inviteToken ? `${pathname}?invite=${encodeURIComponent(inviteToken)}` : pathname;
+}
+
+export function buildEntityShareUrl(entitySlug: string, shareToken?: string) {
+  const path = buildEntityPath(entitySlug, shareToken);
+  if (typeof window === "undefined") return path;
+  return `${window.location.origin}${path}`;
+}
+
+export function buildEntityInviteUrl(entitySlug: string, inviteToken?: string) {
+  const path = buildEntityInvitePath(entitySlug, inviteToken);
+  if (typeof window === "undefined") return path;
+  return `${window.location.origin}${path}`;
+}
+
+export function buildEntityMarkdown(
+  workspace: ExportEntityWorkspace,
+  selected?: ExportTimelineItem | null,
+  shareToken?: string,
+) {
   const current = selected ?? workspace.latest ?? workspace.timeline[0] ?? null;
   const sections = current?.sections ?? [];
   const evidence = workspace.evidence ?? [];
@@ -58,13 +80,17 @@ export function buildEntityMarkdown(workspace: ExportEntityWorkspace, selected?:
     evidence.length ? "## Evidence" : "",
     ...evidence.map((item) => `- ${item.label}${item.type ? ` (${item.type})` : ""}`),
     "",
-    `Share: ${buildEntityShareUrl(workspace.entity.slug)}`,
+    `Share: ${buildEntityShareUrl(workspace.entity.slug, shareToken)}`,
   ]
     .filter(Boolean)
     .join("\n");
 }
 
-export function buildOutreachDraft(workspace: ExportEntityWorkspace, selected?: ExportTimelineItem | null) {
+export function buildOutreachDraft(
+  workspace: ExportEntityWorkspace,
+  selected?: ExportTimelineItem | null,
+  shareToken?: string,
+) {
   const current = selected ?? workspace.latest ?? workspace.timeline[0] ?? null;
   const why = current?.sections.find((section) => section.id === "why-it-matters")?.body ?? current?.summary ?? workspace.entity.summary;
   const next = current?.sections.find((section) => section.id === "what-to-do-next")?.body ?? "Would like to compare notes and understand what changed most recently.";
@@ -78,13 +104,52 @@ export function buildOutreachDraft(workspace: ExportEntityWorkspace, selected?: 
     "",
     `The next step I am focused on is: ${next}`,
     "",
-    `If useful, I can share the full report page here: ${buildEntityShareUrl(workspace.entity.slug)}`,
+    `If useful, I can share the full report page here: ${buildEntityShareUrl(workspace.entity.slug, shareToken)}`,
     "",
     `Best,`,
   ].join("\n");
 }
 
-export function buildCrmSummary(workspace: ExportEntityWorkspace, selected?: ExportTimelineItem | null) {
+export function buildEntityExecutiveBrief(
+  workspace: ExportEntityWorkspace,
+  selected?: ExportTimelineItem | null,
+  shareToken?: string,
+) {
+  const current = selected ?? workspace.latest ?? workspace.timeline[0] ?? null;
+  const what = current?.sections.find((section) => section.id === "what-it-is")?.body ?? workspace.entity.summary;
+  const why = current?.sections.find((section) => section.id === "why-it-matters")?.body ?? current?.summary ?? workspace.entity.summary;
+  const changed = current?.diffs?.length
+    ? current.diffs.map((diff) => diff.title).join(", ")
+    : "No material changes captured yet.";
+  const next = current?.sections.find((section) => section.id === "what-to-do-next")?.body ?? "Reopen in Chat and refresh this report.";
+
+  return [
+    `${workspace.entity.name} executive brief`,
+    "",
+    `Saved because: ${workspace.entity.savedBecause ?? "ongoing research"}`,
+    `Revision: ${current?.revision ?? workspace.entity.latestRevision}`,
+    "",
+    `What it is`,
+    what,
+    "",
+    `Why it matters`,
+    why,
+    "",
+    `What changed`,
+    changed,
+    "",
+    `What to do next`,
+    next,
+    "",
+    `Share: ${buildEntityShareUrl(workspace.entity.slug, shareToken)}`,
+  ].join("\n");
+}
+
+export function buildCrmSummary(
+  workspace: ExportEntityWorkspace,
+  selected?: ExportTimelineItem | null,
+  shareToken?: string,
+) {
   const current = selected ?? workspace.latest ?? workspace.timeline[0] ?? null;
   const what = current?.sections.find((section) => section.id === "what-it-is")?.body ?? workspace.entity.summary;
   const risks = current?.sections.find((section) => section.id === "what-is-missing")?.body ?? "";
@@ -100,7 +165,7 @@ export function buildCrmSummary(workspace: ExportEntityWorkspace, selected?: Exp
       risks,
       nextAction: next,
       notes: workspace.noteDocument?.plainText ?? workspace.note?.content ?? "",
-      shareUrl: buildEntityShareUrl(workspace.entity.slug),
+      shareUrl: buildEntityShareUrl(workspace.entity.slug, shareToken),
     },
     null,
     2,

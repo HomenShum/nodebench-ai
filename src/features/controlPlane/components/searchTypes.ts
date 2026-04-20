@@ -65,6 +65,7 @@ export interface ResultVariable {
   impact: "high" | "medium" | "low";
   /** Index into sourceRefs[] for citation linkage */
   sourceIdx?: number;
+  sourceRefIds?: string[];
 }
 
 export interface ResultChange {
@@ -72,6 +73,7 @@ export interface ResultChange {
   date?: string;
   /** Index into sourceRefs[] for citation linkage */
   sourceIdx?: number;
+  sourceRefIds?: string[];
 }
 
 export interface ResultRisk {
@@ -80,6 +82,7 @@ export interface ResultRisk {
   falsification?: string;
   /** Index into sourceRefs[] for citation linkage */
   sourceIdx?: number;
+  sourceRefIds?: string[];
 }
 
 export interface ResultComparable {
@@ -102,6 +105,7 @@ export interface ResultScenario {
 export interface ResultIntervention {
   action: string;
   impact: "high" | "medium" | "low";
+  sourceRefIds?: string[];
 }
 
 export type ProofStatus =

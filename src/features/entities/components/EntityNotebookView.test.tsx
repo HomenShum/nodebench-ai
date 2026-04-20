@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { EntityNotebookView } from "./EntityNotebookView";
@@ -182,5 +182,26 @@ describe("EntityNotebookView", () => {
     expect(screen.getByText("[s1]")).toBeInTheDocument();
     expect(screen.getByText("rev 2 (was AI)")).toBeInTheDocument();
     expect(screen.getByText("step 5")).toBeInTheDocument();
+  });
+
+  it("turns the empty read-only notebook state into a direct Live handoff", () => {
+    useQueryMock.mockImplementation((query: unknown) => {
+      if (query === "product.blocks.getEntityNotebook") {
+        return null;
+      }
+      if (query === "product.blocks.listBacklinksForEntity") {
+        return [];
+      }
+      return undefined;
+    });
+
+    const onOpenLive = vi.fn();
+    render(<EntityNotebookView entitySlug="cliffside-ventures" canOpenLive onOpenLive={onOpenLive} />);
+
+    expect(screen.getByText("No notebook data for this entity yet.")).toBeInTheDocument();
+    expect(screen.getByText("This tab only shows the read-only derivation. Open Live to start writing.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Live notebook" }));
+    expect(onOpenLive).toHaveBeenCalledTimes(1);
   });
 });

@@ -124,6 +124,35 @@ const HIGH_SIGNAL_EXTERNAL_DOMAINS = new Set([
   "tracxn.com",
 ]);
 
+const QUESTION_OPENERS = new Set(["what", "why", "how", "who", "when", "where", "which"]);
+
+function extractPrimaryEntityFromContextHint(contextHint?: string): string | null {
+  const trimmed = contextHint?.trim();
+  if (!trimmed) return null;
+  const match = trimmed.match(/Primary entity for this run:\s*([^.\n]+?)(?:\.|\n|$)/i);
+  const entity = match?.[1]?.trim();
+  return entity || null;
+}
+
+function extractEntityFromQuery(query: string): string {
+  const explicitAboutMatch = query.match(/\babout\s+([A-Z][a-zA-Z0-9&.'’-]+(?:\s+[A-Z][a-zA-Z0-9&.'’-]+){0,2})/);
+  if (explicitAboutMatch?.[1]) {
+    return explicitAboutMatch[1].trim();
+  }
+
+  const capitalizedMatches = [...query.matchAll(/\b([A-Z][a-zA-Z0-9&.'’-]+(?:\s+[A-Z][a-zA-Z0-9&.'’-]+){0,2})\b/g)]
+    .map((match) => match[1]?.trim())
+    .filter((candidate): candidate is string => Boolean(candidate));
+
+  const firstGrounded = capitalizedMatches.find((candidate) => {
+    const firstToken = candidate.split(/\s+/)[0]?.toLowerCase();
+    return firstToken ? !QUESTION_OPENERS.has(firstToken) : false;
+  });
+  if (firstGrounded) return firstGrounded;
+
+  return query.split(/\s+/).slice(0, 3).join(" ");
+}
+
 const LOW_SIGNAL_SOCIAL_DOMAINS = new Set([
   "instagram.com",
   "facebook.com",
@@ -179,6 +208,32 @@ function tokenizeEntity(value: string | null | undefined): string[] {
   return normalizeSearchText(value)
     .split(" ")
     .filter((token) => token.length >= 3 && !ENTITY_STOP_WORDS.has(token));
+}
+
+function extractExplicitUrls(query: string): string[] {
+  return Array.from(query.matchAll(/https?:\/\/[^\s<>"')]+/gi))
+    .map((match) => match[0]?.trim())
+    .filter((value): value is string => Boolean(value));
+}
+
+function extractExplicitDomains(query: string): string[] {
+  return Array.from(
+    new Set(
+      extractExplicitUrls(query)
+        .map((value) => {
+          try {
+            return new URL(value).hostname.replace(/^www\./, "").toLowerCase();
+          } catch {
+            return null;
+          }
+        })
+        .filter((value): value is string => Boolean(value)),
+    ),
+  ).slice(0, 3);
+}
+
+function stripExplicitUrls(query: string): string {
+  return query.replace(/https?:\/\/[^\s<>"')]+/gi, " ").replace(/\s+/g, " ").trim();
 }
 
 function sourceEntityScore(
@@ -370,9 +425,22 @@ export function buildSearchQueries(
     return [baseQuery];
   }
 
+  const urlDomains = extractExplicitDomains(query);
+  const cleanedQuery = stripExplicitUrls(baseQuery) || baseQuery;
+  const entityPrompt = `"${entity}"`;
+  const recruiterScenario = /\b(recruiter|hiring|candidate|resume|interview|co[- ]founder|meeting|role)\b/i.test(query);
+
   return Array.from(new Set([
     baseQuery,
-    `"${entity}" company linkedin crunchbase glassdoor`,
+    cleanedQuery,
+    `${entityPrompt} company linkedin crunchbase glassdoor`,
+    ...urlDomains.map((domain) => `${entityPrompt} site:${domain}`),
+    ...(recruiterScenario
+      ? [
+          `${entityPrompt} founder profile linkedin`,
+          `${entityPrompt} hiring role expectations`,
+        ]
+      : []),
   ]));
 }
 
@@ -544,9 +612,7 @@ export function classify(state: PipelineState): PipelineState {
     classification = "idea_validation";
   }
 
-  // Extract entity name: first capitalized multi-word or proper noun
-  const entityMatch = state.query.match(/(?:^|\s)([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+){0,2})/);
-  entity = entityMatch?.[1] ?? state.query.split(/\s+/).slice(0, 3).join(" ");
+  entity = extractPrimaryEntityFromContextHint(state.contextHint) ?? extractEntityFromQuery(state.query);
 
   return {
     ...state,
@@ -1180,6 +1246,31 @@ function hashPacketValue(value: string): string {
   return hash.toString(36);
 }
 
+function uniquePacketSourceIds(values: Array<string | undefined | null>, limit = 4): string[] {
+  return Array.from(
+    new Set(values.filter((value): value is string => typeof value === "string" && value.trim().length > 0)),
+  ).slice(0, limit);
+}
+
+function sourceIdsFromIndices(
+  sourceRefs: Array<{ id: string }>,
+  indices: Array<number | undefined>,
+  limit = 4,
+): string[] {
+  return uniquePacketSourceIds(
+    indices.map((index) => (typeof index === "number" && Number.isFinite(index) && index >= 0 ? sourceRefs[index]?.id : undefined)),
+    limit,
+  );
+}
+
+function joinReadableParts(parts: Array<string | undefined | null>): string {
+  return parts
+    .filter((part): part is string => typeof part === "string" && part.trim().length > 0)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function stateToResultPacket(state: PipelineState): Record<string, unknown> {
   const cleanedAnswer = stripInlineSourceCitations(state.answer);
   const packetId = `pkt-${slugifyPacketValue(state.entityName || "nodebench")}-${hashPacketValue(
@@ -1201,6 +1292,15 @@ export function stateToResultPacket(state: PipelineState): Record<string, unknow
     excerpt: source.snippet.slice(0, 280),
     confidence: Math.max(45, Math.min(95, Math.round(source.qualityScore ?? 60))),
   }));
+  const topSourceIds = sourceRefs.slice(0, 2).map((source) => source.id);
+  const signalSourceIds = sourceIdsFromIndices(
+    sourceRefs,
+    state.signals.slice(0, 4).map((signal) => signal.sourceIdx),
+  );
+  const riskSourceIds = sourceIdsFromIndices(
+    sourceRefs,
+    state.risks.slice(0, 4).map((risk) => risk.sourceIdx),
+  );
 
   const claimRefs = state.answer
     .split(/(?<=[.!?])\s+/)
@@ -1213,7 +1313,7 @@ export function stateToResultPacket(state: PipelineState): Record<string, unknow
       sourceRefIds: extractSourceIndices(sentence)
         .map((sourceIndex) => sourceRefs[sourceIndex]?.id)
         .filter((sourceId): sourceId is string => Boolean(sourceId)),
-      answerBlockIds: ["answer_summary"],
+      answerBlockIds: ["answer:block:summary"],
       status: "retained" as const,
     }))
     .filter((claim) => claim.text.length > 0)
@@ -1222,16 +1322,101 @@ export function stateToResultPacket(state: PipelineState): Record<string, unknow
       sourceRefIds: claim.sourceRefIds.length > 0 ? claim.sourceRefIds : sourceRefs.slice(0, 2).map((source) => source.id),
     }));
 
+  const whyText = joinReadableParts([
+    state.classifiedSignals.length > 0
+      ? `Top signals: ${state.classifiedSignals
+          .slice(0, 3)
+          .map((signal) => signal.summary || signal.rawName || signal.label)
+          .join("; ")}.`
+      : undefined,
+    state.keyMetrics.length > 0
+      ? `Key metrics: ${state.keyMetrics
+          .slice(0, 2)
+          .map((metric) => `${metric.label} ${metric.value}`)
+          .join("; ")}.`
+      : undefined,
+  ]);
+  const missingText = joinReadableParts([
+    state.risks.length > 0
+      ? state.risks
+          .slice(0, 2)
+          .map((risk) => `${risk.title}: ${risk.description}`.trim())
+          .join(" ")
+      : undefined,
+    state.risks.length === 0 && state.nextQuestions[0]
+      ? `Open question: ${state.nextQuestions[0]}`
+      : undefined,
+    state.risks.length === 0 && !state.nextQuestions[0] && state.confidence < 75
+      ? `Confidence is ${state.confidence}%, so the brief still needs more corroboration.`
+      : undefined,
+  ]);
+  const nextActionText = joinReadableParts([
+    state.nextActions.length > 0
+      ? state.nextActions
+          .slice(0, 2)
+          .map((next) => `${next.action}${next.impact ? ` (${next.impact} impact)` : ""}.`)
+          .join(" ")
+      : undefined,
+    state.nextActions.length === 0 && state.nextQuestions[0]
+      ? `Resolve this next: ${state.nextQuestions[0]}`
+      : undefined,
+  ]);
+
   const answerBlocks = [
     {
-      id: "answer_summary",
-      title: "Executive Summary",
+      id: "answer:block:summary",
+      title: "What it is",
       text: cleanedAnswer,
       sourceRefIds: Array.from(new Set(claimRefs.flatMap((claim) => claim.sourceRefIds))).slice(0, 4),
       claimIds: claimRefs.map((claim) => claim.id),
       status: "cited" as const,
     },
+    {
+      id: "answer:block:why",
+      title: "Why it matters",
+      text:
+        whyText ||
+        "The packet did not surface a distinct why-this-matters read yet.",
+      sourceRefIds: signalSourceIds.length > 0 ? signalSourceIds : topSourceIds,
+      claimIds: [],
+      status: "cited" as const,
+    },
+    {
+      id: "answer:block:gaps",
+      title: "What is missing",
+      text:
+        missingText ||
+        "No explicit gaps were called out, but additional corroboration would strengthen the brief.",
+      sourceRefIds: riskSourceIds.length > 0 ? riskSourceIds : topSourceIds,
+      claimIds: [],
+      status: state.risks.length > 0 || state.confidence < 75 ? "uncertain" as const : "cited" as const,
+    },
+    {
+      id: "answer:block:next",
+      title: "What to do next",
+      text:
+        nextActionText ||
+        "No explicit next move was returned.",
+      sourceRefIds: uniquePacketSourceIds([...signalSourceIds, ...riskSourceIds, ...topSourceIds], 4),
+      claimIds: [],
+      status: "cited" as const,
+    },
   ];
+
+  const enrichedChanges = state.signals.slice(0, 3).map((signal, index) => ({
+    description: `${signal.name} is ${signal.direction} with ${signal.impact} impact.`,
+    sourceIdx: signal.sourceIdx,
+    sourceRefIds: sourceIdsFromIndices(sourceRefs, [signal.sourceIdx], 2),
+    date: index === 0 ? new Date().toISOString().slice(0, 10) : undefined,
+  }));
+  const enrichedRisks = state.risks.slice(0, 3).map((risk) => ({
+    ...risk,
+    sourceRefIds: sourceIdsFromIndices(sourceRefs, [risk.sourceIdx], 2),
+  }));
+  const enrichedNextActions = state.nextActions.slice(0, 3).map((action) => ({
+    ...action,
+    sourceRefIds: uniquePacketSourceIds([...signalSourceIds, ...riskSourceIds, ...topSourceIds], 2),
+  }));
 
   const basePacket = {
     query: state.query,
@@ -1253,18 +1438,19 @@ export function stateToResultPacket(state: PipelineState): Record<string, unknow
       evidenceRefs: sig.evidenceRefs,
       needsOntologyReview: sig.needsOntologyReview,
       sourceIdx: state.signals[i]?.sourceIdx,
+      sourceRefIds: sourceIdsFromIndices(sourceRefs, [state.signals[i]?.sourceIdx], 2),
     })),
     keyMetrics: state.keyMetrics.length > 0 ? state.keyMetrics : [
       { label: "Confidence", value: `${state.confidence}%` },
       { label: "Retained Sources", value: String(state.searchSources.length) },
       { label: "Signals", value: String(state.classifiedSignals.length) },
     ],
-    changes: [],
-    risks: state.risks.slice(0, 3),
+    changes: enrichedChanges,
+    risks: enrichedRisks,
     comparables: state.comparables.slice(0, 4),
     whyThisTeam: state.whyThisTeam,
-    interventions: state.nextActions,
-    nextActions: state.nextActions,
+    interventions: enrichedNextActions,
+    nextActions: enrichedNextActions,
     nextQuestions: state.nextQuestions,
     sourceRefs,
     claimRefs,
@@ -1284,7 +1470,7 @@ export function stateToResultPacket(state: PipelineState): Record<string, unknow
     trace: state.trace,
     classification: state.classification,
     routingHints: state.routingHints.slice(0, 3),
-    recommendedNextAction: state.nextActions[0]?.action,
+    recommendedNextAction: enrichedNextActions[0]?.action,
     tokenUsage: state.tokenUsage ?? null,
     realCost: state.tokenUsage ? {
       model: state.tokenUsage.model,

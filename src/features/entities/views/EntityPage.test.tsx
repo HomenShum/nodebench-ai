@@ -1,15 +1,30 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildCockpitPath } from "@/lib/registry/viewRegistry";
 import {
   buildEntityPrepChatPath,
   buildEntityRefreshChatPath,
   buildEntityReopenChatPath,
+  getNotebookDriftSummary,
   getSectionSources,
   getSourceSupportingSections,
+  isLiveNotebookInRolloutCohort,
+  isLiveNotebookEnabled,
+  normalizeLiveNotebookRolloutPercent,
+  stableLiveNotebookBucket,
 } from "./EntityPage";
 
 describe("EntityPage route helpers", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+    vi.unstubAllEnvs();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("builds a deterministic reopen path from the saved report query and lens", () => {
     expect(
       buildEntityReopenChatPath(
@@ -143,5 +158,89 @@ describe("EntityPage route helpers", () => {
         ],
       ),
     ).toEqual(["Signals", "Why it matters"]);
+  });
+
+  it("reports when live notebook edits are newer than the saved report", () => {
+    expect(
+      getNotebookDriftSummary(
+        {
+          blockCount: 4,
+          userEditedCount: 2,
+          latestUpdatedAt: 300,
+          latestUserEditAt: 300,
+        },
+        {
+          _id: "report_1",
+          title: "Ramp",
+          type: "company",
+          summary: "summary",
+          query: "query",
+          lens: "founder",
+          sections: [],
+          sources: [],
+          diffs: [],
+          isLatest: true,
+          createdAt: 100,
+          updatedAt: 200,
+        },
+      ),
+    ).toEqual({
+      updatedAt: 300,
+      message: "2 live notebook edits are newer than the saved report. Classic may lag behind Live ✨.",
+    });
+  });
+  it("does not report drift when only agent notebook blocks are newer than the saved report", () => {
+    expect(
+      getNotebookDriftSummary(
+        {
+          blockCount: 4,
+          userEditedCount: 0,
+          latestUpdatedAt: 300,
+          latestUserEditAt: undefined,
+        },
+        {
+          _id: "report_1",
+          title: "Ramp",
+          type: "company",
+          summary: "summary",
+          query: "query",
+          lens: "founder",
+          sections: [],
+          sources: [],
+          diffs: [],
+          isLatest: true,
+          createdAt: 100,
+          updatedAt: 200,
+        },
+      ),
+    ).toBeNull();
+  });
+
+  it("normalizes rollout percentages into a stable 0-100 range", () => {
+    expect(normalizeLiveNotebookRolloutPercent(undefined)).toBe(100);
+    expect(normalizeLiveNotebookRolloutPercent("250")).toBe(100);
+    expect(normalizeLiveNotebookRolloutPercent("-5")).toBe(0);
+    expect(normalizeLiveNotebookRolloutPercent("35")).toBe(35);
+  });
+
+  it("uses a deterministic rollout bucket per seed", () => {
+    expect(stableLiveNotebookBucket("session-a:ramp")).toBe(stableLiveNotebookBucket("session-a:ramp"));
+    expect(stableLiveNotebookBucket("session-a:ramp")).not.toBe(stableLiveNotebookBucket("session-b:ramp"));
+  });
+
+  it("supports staged rollout by session and entity slug", () => {
+    expect(
+      isLiveNotebookInRolloutCohort(
+        normalizeLiveNotebookRolloutPercent("50"),
+        "session-a",
+        "ramp",
+      ),
+    ).toBe(stableLiveNotebookBucket("session-a:ramp") < 50);
+  });
+
+  it("lets the local disable override beat rollout eligibility", () => {
+    vi.stubEnv("VITE_NOTEBOOK_LIVE_ROLLOUT_PERCENT", "100");
+    window.localStorage.setItem("nodebench.liveNotebookDisabled", "1");
+    expect(isLiveNotebookEnabled("ramp")).toBe(false);
   });
 });

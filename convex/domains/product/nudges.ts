@@ -1,7 +1,24 @@
 import { mutation, query, internalMutation, internalAction, internalQuery } from "../../_generated/server";
 import { v } from "convex/values";
 import { internal } from "../../_generated/api";
-import { resolveProductIdentitySafely, requireProductIdentity } from "./helpers";
+import { resolveProductIdentitySafely, resolveProductReadOwnerKeys, requireProductIdentity } from "./helpers";
+import { listOpenProductNudgesInGroup, upsertOpenProductNudge } from "./nudgeHelpers";
+import { collapseNudgesIntoGroups } from "../../../shared/nudges";
+import { isLegacyPromptArtifact, isPlaceholderPrepEntity } from "../../../shared/reportArtifacts";
+
+function buildSuggestedActions(nudges: Array<{ actionLabel?: string; type?: string }>): string[] {
+  const suggestions = new Set<string>();
+  for (const nudge of nudges) {
+    if (typeof nudge.actionLabel === "string" && nudge.actionLabel.trim()) {
+      suggestions.add(nudge.actionLabel.trim());
+      continue;
+    }
+    if (nudge.type === "follow_up_due") suggestions.add("Follow up");
+    else if (nudge.type === "refresh_recommended" || nudge.type === "report_changed") suggestions.add("Refresh report");
+    else if (nudge.type === "reply_draft_ready") suggestions.add("Reply draft ready");
+  }
+  return Array.from(suggestions).slice(0, 4);
+}
 
 export const getNudgesSnapshot = query({
   args: {
@@ -9,6 +26,7 @@ export const getNudgesSnapshot = query({
   },
   handler: async (ctx, args) => {
     const identity = await resolveProductIdentitySafely(ctx, args.anonymousSessionId);
+    const ownerKeys = await resolveProductReadOwnerKeys(ctx, args.anonymousSessionId);
     const publicSnapshot = {
       nudges: [],
       channels: [
@@ -22,22 +40,33 @@ export const getNudgesSnapshot = query({
       suggestedActions: ["Reply draft ready", "Refresh report", "Follow up"],
     };
 
-    if (!identity.ownerKey) {
+    if (ownerKeys.length === 0) {
       return publicSnapshot;
     }
 
     let nudges: any[] = [];
     try {
-      nudges = await ctx.db
-        .query("productNudges")
-        .withIndex("by_owner_status_updated", (q) =>
-          q.eq("ownerKey", identity.ownerKey!).eq("status", "open"),
-        )
-        .order("desc")
-        .take(12);
+      const nudgeGroups = await Promise.all(
+        ownerKeys.map((ownerKey) =>
+          ctx.db
+            .query("productNudges")
+            .withIndex("by_owner_status_updated", (q) => q.eq("ownerKey", ownerKey).eq("status", "open"))
+            .order("desc")
+            .take(12),
+        ),
+      );
+      nudges = nudgeGroups
+        .flat()
+        .sort((left, right) => right.updatedAt - left.updatedAt)
+        .reduce<Array<(typeof nudgeGroups)[number][number]>>((acc, nudge) => {
+          if (acc.some((existing) => existing._id === nudge._id)) return acc;
+          acc.push(nudge);
+          return acc;
+        }, [])
+        .slice(0, 12);
     } catch (error) {
       console.error("[product] getNudgesSnapshot nudges failed", {
-        ownerKey: identity.ownerKey,
+        ownerKeys,
         error,
       });
       return publicSnapshot;
@@ -64,8 +93,41 @@ export const getNudgesSnapshot = query({
         ])
       : [null, null, null];
 
+    const reportIds = [...new Set(
+      nudges
+        .map((nudge) => nudge.linkedReportId ?? null)
+        .filter((reportId): reportId is NonNullable<typeof nudges[number]["linkedReportId"]> => Boolean(reportId)),
+    )];
+
+    const linkedReports = await Promise.all(reportIds.map((reportId) => ctx.db.get(reportId)));
+    const reportById = new Map(
+      linkedReports
+        .filter((report): report is NonNullable<typeof linkedReports[number]> => Boolean(report))
+        .map((report) => [String(report._id), report]),
+    );
+
+    const enrichedNudges = nudges.map((nudge) => {
+      const linkedReport = nudge.linkedReportId ? reportById.get(String(nudge.linkedReportId)) : null;
+      return {
+        ...nudge,
+        linkedEntitySlug: linkedReport?.entitySlug,
+        linkedReportQuery: linkedReport?.query,
+        linkedReportLens: linkedReport?.lens,
+        linkedReportTitle: linkedReport?.title,
+        linkedReportRoutingMode: linkedReport?.routing?.routingMode,
+      };
+    }).filter((nudge) => {
+      if (isPlaceholderPrepEntity(nudge.linkedEntitySlug ?? undefined)) return false;
+      return !isLegacyPromptArtifact({
+        entitySlug: nudge.linkedEntitySlug,
+        title: nudge.linkedReportTitle,
+        query: nudge.linkedReportQuery,
+      });
+    });
+    const groupedNudges = collapseNudgesIntoGroups(enrichedNudges);
+
     return {
-      nudges,
+      nudges: groupedNudges,
       channels: [
         { label: "Slack", status: slack ? "Connected" : "Not connected" },
         { label: "Gmail", status: google ? "Connected" : "Not connected" },
@@ -74,7 +136,7 @@ export const getNudgesSnapshot = query({
         { label: "Discord", status: "Not connected" },
         { label: "Telegram", status: "Not connected" },
       ],
-      suggestedActions: ["Reply draft ready", "Refresh report", "Follow up"],
+      suggestedActions: buildSuggestedActions(groupedNudges),
     };
   },
 });
@@ -86,16 +148,26 @@ export const snoozeNudge = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const ownerKey = identity.ownerKey!;
     const nudge = await ctx.db.get(args.nudgeId);
-    if (!nudge || nudge.ownerKey !== identity.ownerKey) {
+    if (!nudge || nudge.ownerKey !== ownerKey) {
       throw new Error("Nudge not found");
     }
-    await ctx.db.patch(args.nudgeId, {
-      status: "snoozed",
-      dueAt: Date.now() + 24 * 60 * 60 * 1000,
-      updatedAt: Date.now(),
+    const now = Date.now();
+    const grouped = await listOpenProductNudgesInGroup(ctx, {
+      ownerKey,
+      seedNudge: nudge,
     });
-    return { ok: true };
+
+    for (const current of grouped) {
+      await ctx.db.patch(current._id, {
+        status: "snoozed",
+        dueAt: now + 24 * 60 * 60 * 1000,
+        updatedAt: now,
+      });
+    }
+
+    return { ok: true, affected: grouped.length || 1 };
   },
 });
 
@@ -106,15 +178,25 @@ export const completeNudge = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await requireProductIdentity(ctx, args.anonymousSessionId);
+    const ownerKey = identity.ownerKey!;
     const nudge = await ctx.db.get(args.nudgeId);
-    if (!nudge || nudge.ownerKey !== identity.ownerKey) {
+    if (!nudge || nudge.ownerKey !== ownerKey) {
       throw new Error("Nudge not found");
     }
-    await ctx.db.patch(args.nudgeId, {
-      status: "done",
-      updatedAt: Date.now(),
+    const now = Date.now();
+    const grouped = await listOpenProductNudgesInGroup(ctx, {
+      ownerKey,
+      seedNudge: nudge,
     });
-    return { ok: true };
+
+    for (const current of grouped) {
+      await ctx.db.patch(current._id, {
+        status: "done",
+        updatedAt: now,
+      });
+    }
+
+    return { ok: true, affected: grouped.length || 1 };
   },
 });
 
@@ -143,17 +225,16 @@ export const createNudge = internalMutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    return await ctx.db.insert("productNudges", {
+    return await upsertOpenProductNudge(ctx, {
       ownerKey: args.ownerKey,
       type: args.type,
       title: args.title,
       summary: args.summary,
       linkedReportId: args.linkedReportId,
-      status: "open",
-      priority: "medium",
       actionLabel: args.actionLabel ?? "Open in Chat",
       actionTargetSurface: args.actionTargetSurface ?? "chat",
       actionTargetId: args.actionTargetId,
+      priority: "medium",
       createdAt: now,
       updatedAt: now,
     });
@@ -189,15 +270,19 @@ export const checkReportsForNudges = internalAction({
         (Date.now() - report.updatedAt) / (24 * 60 * 60 * 1000),
       );
 
+      const opensReportSurface = Boolean(report.entitySlug);
+
       await ctx.runMutation(internal.domains.product.nudges.createNudge, {
         ownerKey: report.ownerKey,
         type: "refresh_recommended",
         title: `"${report.title}" may have new information`,
-        summary: `This report was last updated ${daysSinceUpdate} day${daysSinceUpdate === 1 ? "" : "s"} ago. Reopen in Chat to pull fresh sources.`,
+        summary: opensReportSurface
+          ? `This report was last updated ${daysSinceUpdate} day${daysSinceUpdate === 1 ? "" : "s"} ago. Open the saved report to review it, then refresh in Chat if the facts changed.`
+          : `This report was last updated ${daysSinceUpdate} day${daysSinceUpdate === 1 ? "" : "s"} ago. Reopen in Chat to pull fresh sources.`,
         linkedReportId: report._id,
-        actionLabel: "Open in Chat",
-        actionTargetSurface: "chat",
-        actionTargetId: String(report._id),
+        actionLabel: opensReportSurface ? "Open report" : "Open in Chat",
+        actionTargetSurface: opensReportSurface ? "reports" : "chat",
+        actionTargetId: opensReportSurface ? report.entitySlug : String(report._id),
       });
       created++;
     }

@@ -26,6 +26,7 @@ import { createHash } from "node:crypto";
 import { resolve, relative } from "node:path";
 import { getDb, genId } from "../db.js";
 import type { McpTool } from "../types.js";
+import { listExtractedSkillTemplates } from "../../../../server/lib/skillExtractor.js";
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
@@ -562,6 +563,32 @@ export const skillUpdateTools: McpTool[] = [
           : result.length > 0
             ? "All skills are fresh."
             : "No skills registered. Use register_skill to start tracking your rule files.",
+      };
+    },
+  },
+
+  {
+    name: "list_extracted_skill_templates",
+    description:
+      "List reusable skill templates automatically extracted from successful harness runs. " +
+      "Use this to inspect which tool chains are compounding into reusable patterns.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        limit: {
+          type: "number",
+          description: "Maximum number of extracted templates to return (default: 20)",
+        },
+      },
+    },
+    handler: async (args: { limit?: number }) => {
+      const skills = listExtractedSkillTemplates(args.limit ?? 20);
+      return {
+        count: skills.length,
+        skills,
+        _hint: skills.length > 0
+          ? "These templates were extracted from successful harness runs and can be reviewed for future codification."
+          : "No extracted skill templates recorded yet.",
       };
     },
   },

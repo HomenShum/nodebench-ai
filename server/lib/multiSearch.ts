@@ -22,6 +22,10 @@ interface RawSource {
   name: string;
   url: string;
   content: string;
+  thumbnailUrl?: string;
+  imageCandidates?: string[];
+  faviconUrl?: string;
+  siteName?: string;
   relevanceScore?: number;
   provider: string;
 }
@@ -38,11 +42,38 @@ async function searchLinkup(query: string, signal: AbortSignal): Promise<RawSour
       signal,
     });
     if (!resp.ok) return [];
-    const data = await resp.json() as { results?: Array<{ name?: string; url?: string; content?: string }> };
+    const data = await resp.json() as {
+      results?: Array<{
+        name?: string;
+        title?: string;
+        url?: string;
+      content?: string;
+      snippet?: string;
+      thumbnailUrl?: string;
+      thumbnail?: string;
+      imageUrl?: string;
+      image?: string;
+      faviconUrl?: string;
+      favicon?: string;
+      siteName?: string;
+      site_name?: string;
+      images?: Array<{ thumbnailUrl?: string; thumbnail?: string; imageUrl?: string; url?: string }>;
+    }>;
+  };
     return (data.results ?? []).map((r) => ({
-      name: r.name ?? r.url ?? "",
+      name: r.name ?? r.title ?? r.url ?? "",
       url: r.url ?? "",
-      content: (r.content ?? "").slice(0, 2000),
+      content: (r.content ?? r.snippet ?? "").slice(0, 2000),
+      thumbnailUrl: r.thumbnailUrl ?? r.thumbnail ?? r.imageUrl ?? r.image,
+      imageCandidates: [
+        r.thumbnailUrl,
+        r.thumbnail,
+        r.imageUrl,
+        r.image,
+        ...(Array.isArray(r.images) ? r.images.flatMap((image) => [image?.thumbnailUrl, image?.thumbnail, image?.imageUrl, image?.url]) : []),
+      ].filter((value): value is string => typeof value === "string" && value.trim().length > 0).slice(0, 4),
+      faviconUrl: r.faviconUrl ?? r.favicon,
+      siteName: r.siteName ?? r.site_name,
       provider: "linkup",
     }));
   } catch { return []; }
@@ -184,7 +215,11 @@ export function toSearchSources(raw: RawSource[]): SearchSource[] {
     return {
       name: r.name,
       url: r.url,
-      content: r.content,
+      snippet: r.content,
+      thumbnailUrl: r.thumbnailUrl,
+      imageCandidates: r.imageCandidates,
+      faviconUrl: r.faviconUrl,
+      siteName: r.siteName,
       relevanceScore: r.relevanceScore ?? 0.5,
       kind: "general" as const,
       domain,

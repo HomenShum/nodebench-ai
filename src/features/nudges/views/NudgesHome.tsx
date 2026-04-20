@@ -1,4 +1,5 @@
-import { ArrowUpRight, Bell, CheckCircle2, Mail, RefreshCw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowUpRight, Bell, Clock3 } from "lucide-react";
 import { useConvex, useQuery } from "convex/react";
 import { useNavigate } from "react-router-dom";
 import { useConvexApi } from "@/lib/convexApi";
@@ -6,6 +7,25 @@ import { buildCockpitPath } from "@/lib/registry/viewRegistry";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
 import { ProductWorkspaceHeader } from "@/features/product/components/ProductWorkspaceHeader";
+
+type NudgeRecord = {
+  _id: string;
+  type?: string;
+  title?: string;
+  summary?: string;
+  actionLabel?: string;
+  actionTargetSurface?: string;
+  actionTargetId?: string;
+  linkedEntitySlug?: string;
+  linkedReportQuery?: string;
+  linkedReportLens?: string;
+  linkedReportTitle?: string;
+  linkedReportRoutingMode?: "executive" | "advisor";
+  groupedCount?: number;
+  groupedTypes?: string[];
+};
+
+type NudgeFilter = "priority" | "watch" | "all";
 
 const EXAMPLE_NUDGES = [
   {
@@ -34,22 +54,121 @@ const EXAMPLE_NUDGES = [
   },
 ];
 
-function getSurfacePath(nudge: { actionTargetSurface?: string; actionTargetId?: string; type?: string; title?: string }) {
-  if (nudge.actionTargetSurface === "chat") {
-    // Use the nudge title to build a contextual query for Chat
-    const reportName = nudge.title ?? "";
-    const q =
-      nudge.type === "report_changed" || nudge.type === "refresh_recommended"
-        ? `Refresh the saved report ${reportName} and tell me what changed.`
-        : nudge.type === "follow_up_due"
-          ? "Use the saved context and draft the follow-up I should send."
-          : "Open the connected thread and tell me what action to take next.";
-    return buildCockpitPath({ surfaceId: "workspace", extra: { q, lens: "founder" } });
+function formatNudgeType(value?: string): string {
+  return String(value ?? "nudge").replaceAll("_", " ");
+}
+
+function humanizeSlug(value?: string | null): string {
+  return String(value ?? "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function getRoutingLabel(mode?: "executive" | "advisor") {
+  if (!mode) return null;
+  return mode === "advisor" ? "Deep reasoning" : "Fast path";
+}
+
+function getNudgeBucket(nudge: NudgeRecord): Exclude<NudgeFilter, "all"> {
+  if (nudge.type === "connector_follow_up") return "watch";
+  return "priority";
+}
+
+function getNudgeObjectLabel(nudge: NudgeRecord): string {
+  if (nudge.linkedReportTitle?.trim()) return nudge.linkedReportTitle.trim();
+  if (nudge.linkedEntitySlug?.trim()) return `${humanizeSlug(nudge.linkedEntitySlug)} report`;
+  if (nudge.actionTargetSurface === "reports") return "Saved report";
+  return "Saved context";
+}
+
+function getNudgeWhyNow(nudge: NudgeRecord): string {
+  if (nudge.type === "report_changed") {
+    return "A saved report changed after the last time you looked at it. Reopen it before you reuse the old read.";
   }
+  if (nudge.type === "refresh_recommended") {
+    return "This report is old enough that the underlying facts may have shifted. Refresh it before you rely on it.";
+  }
+  if (nudge.type === "follow_up_due") {
+    return "A follow-up is due and the saved report already has the working context you need.";
+  }
+  if (nudge.type === "connector_follow_up") {
+    return "A connected workflow or watch item needs a real next step instead of sitting in memory.";
+  }
+  return nudge.summary?.trim() || "This saved context needs another pass.";
+}
+
+function getNudgeNextStep(nudge: NudgeRecord): string {
   if (nudge.actionTargetSurface === "reports") {
-    return nudge.actionTargetId
-      ? `/entity/${encodeURIComponent(nudge.actionTargetId)}`
+    return "Open the saved report, inspect what changed, then decide whether to continue in chat.";
+  }
+  if (nudge.type === "follow_up_due") {
+    return "Continue in chat and draft the follow-up from the saved report instead of starting over.";
+  }
+  return "Continue in chat with the saved context already attached.";
+}
+
+function getNudgeActionLabel(nudge: NudgeRecord): string {
+  return nudge.actionLabel?.trim() || (nudge.actionTargetSurface === "reports" ? "Open report" : "Open in Chat");
+}
+
+function getGroupedSignalLabel(nudge: NudgeRecord): string | null {
+  const count = nudge.groupedCount ?? 1;
+  if (count <= 1) return null;
+  return `${count} signals grouped`;
+}
+
+function formatGroupedTypes(nudge: NudgeRecord): string | null {
+  const groupedTypes = Array.isArray(nudge.groupedTypes)
+    ? nudge.groupedTypes
+        .map((value) => formatNudgeType(value))
+        .filter((value, index, values) => value && values.indexOf(value) === index)
+    : [];
+
+  if (groupedTypes.length <= 1) return null;
+  return groupedTypes.join(", ");
+}
+
+export function buildNudgeChatQuery(nudge: NudgeRecord): string {
+  const reportTitle = nudge.linkedReportTitle ?? nudge.title ?? "the saved report";
+  const subject = nudge.linkedEntitySlug
+    ? nudge.linkedEntitySlug.replace(/[-_]+/g, " ")
+    : reportTitle;
+  const originalFocus = nudge.linkedReportQuery?.trim();
+
+  if (nudge.type === "report_changed" || nudge.type === "refresh_recommended") {
+    return originalFocus
+      ? `Update ${subject} and show me what changed from the saved report. Keep the original focus on: ${originalFocus}`
+      : `Update ${subject} and show me what changed from the saved report.`;
+  }
+
+  if (nudge.type === "follow_up_due") {
+    return originalFocus
+      ? `Use the saved report on ${subject} and draft the follow-up I should send. Keep the original focus on: ${originalFocus}`
+      : `Use the saved report on ${subject} and draft the follow-up I should send.`;
+  }
+
+  if (originalFocus) return originalFocus;
+  return `Open the saved context for ${subject} and tell me the best next step.`;
+}
+
+export function getSurfacePath(nudge: NudgeRecord) {
+  const linkedEntitySlug = nudge.linkedEntitySlug ?? nudge.actionTargetId;
+  if (nudge.actionTargetSurface === "reports") {
+    return linkedEntitySlug
+      ? `/entity/${encodeURIComponent(linkedEntitySlug)}`
       : buildCockpitPath({ surfaceId: "packets" });
+  }
+  if (nudge.actionTargetSurface === "chat") {
+    return buildCockpitPath({
+      surfaceId: "workspace",
+      entity: nudge.linkedEntitySlug ?? undefined,
+      extra: {
+        q: buildNudgeChatQuery(nudge),
+        lens: nudge.linkedReportLens ?? "founder",
+      },
+    });
   }
   return buildCockpitPath({ surfaceId: "history" });
 }
@@ -69,180 +188,343 @@ export function NudgesHome() {
       : "skip",
   );
 
-  const nudges = snapshot?.nudges ?? [];
+  const nudges = (snapshot?.nudges ?? []) as NudgeRecord[];
   const channels = snapshot?.channels ?? [];
-  const suggestedActions = snapshot?.suggestedActions ?? [];
   const hasLiveNudges = nudges.length > 0;
-  const displayNudges = hasLiveNudges ? nudges : EXAMPLE_NUDGES;
-  const nextNudge = displayNudges[0] ?? null;
   const connectedCount = channels.filter((channel: any) => channel.status === "Connected").length;
+  const openLoopLabel = hasLiveNudges ? `${nudges.length} open loops` : "No open loops";
+
+  const [activeFilter, setActiveFilter] = useState<NudgeFilter>("priority");
+  const [selectedNudgeId, setSelectedNudgeId] = useState<string | null>(null);
+
+  const filterCounts = useMemo(
+    () => ({
+      priority: nudges.filter((nudge) => getNudgeBucket(nudge) === "priority").length,
+      watch: nudges.filter((nudge) => getNudgeBucket(nudge) === "watch").length,
+      all: nudges.length,
+    }),
+    [nudges],
+  );
+
+  const filteredNudges = useMemo(() => {
+    if (!hasLiveNudges) return [] as NudgeRecord[];
+    if (activeFilter === "all") return nudges;
+    return nudges.filter((nudge) => getNudgeBucket(nudge) === activeFilter);
+  }, [activeFilter, hasLiveNudges, nudges]);
+
+  useEffect(() => {
+    if (!filteredNudges.length) {
+      setSelectedNudgeId(null);
+      return;
+    }
+    if (!selectedNudgeId || !filteredNudges.some((nudge) => nudge._id === selectedNudgeId)) {
+      setSelectedNudgeId(filteredNudges[0]._id);
+    }
+  }, [filteredNudges, selectedNudgeId]);
+
+  const selectedNudge =
+    filteredNudges.find((nudge) => nudge._id === selectedNudgeId) ??
+    filteredNudges[0] ??
+    null;
 
   return (
-    <div className="nb-public-shell mx-auto flex w-full max-w-[1400px] flex-col gap-5 px-6 py-8 xl:px-8 xl:py-10">
+    <div className="nb-public-shell mx-auto flex w-full max-w-[1280px] flex-col gap-4 px-4 py-6 pb-24 sm:gap-5 sm:px-6 sm:py-8 xl:px-8 xl:py-10">
       <ProductWorkspaceHeader
         kicker="Nudges"
         title="What changed, and where to act next."
-        description="Open loops from saved reports, follow-ups, and connected channels."
+        description="Saved reports and follow-ups should return here as a calm queue, not a dashboard."
         aside={
           <>
-            <span className="nb-chip nb-chip-active">{hasLiveNudges ? `${nudges.length} active` : "Closed-loop examples"}</span>
+            <span className="nb-chip nb-chip-active">{openLoopLabel}</span>
             <span className="nb-chip">{connectedCount} connected</span>
-            <span className="nb-chip">{suggestedActions.length} suggested actions</span>
           </>
         }
       />
 
-      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <article className="px-5 py-6 xl:px-6 xl:py-7">
-          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+      <section className="grid gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <article className="px-4 py-5 sm:px-5 sm:py-6 xl:px-6 xl:py-7">
+          <div className="flex flex-col gap-4 border-b border-black/5 pb-4 dark:border-white/8">
             <h2 className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
               <Bell className="h-4 w-4" />
-              Nudges feed
+              Triage queue
             </h2>
-            <div className="text-sm text-content-muted">
-              {hasLiveNudges ? "Open loops waiting on you" : "What one real loop should look like"}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="text-sm text-content-muted">
+                {hasLiveNudges
+                  ? "One row should equal one decision. Open the item, act on it, then move on."
+                  : "When saved work changes or a follow-up comes due, the queue should bring you back here."}
+              </div>
+              {hasLiveNudges ? (
+                <div className="inline-flex rounded-full border border-black/8 bg-black/[0.03] p-1 text-xs dark:border-white/10 dark:bg-white/[0.03]">
+                  {([
+                    ["priority", `Priority ${filterCounts.priority}`],
+                    ["watch", `Watchlist ${filterCounts.watch}`],
+                    ["all", `All ${filterCounts.all}`],
+                  ] as Array<[NudgeFilter, string]>).map(([filter, label]) => (
+                    <button
+                      key={filter}
+                      type="button"
+                      onClick={() => setActiveFilter(filter)}
+                      className={`rounded-full px-3 py-1.5 font-medium transition ${
+                        activeFilter === filter
+                          ? "bg-[#d97757] text-white"
+                          : "text-content-muted hover:text-content"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
 
-          <div className="mt-4 space-y-3">
-            {displayNudges.map((nudge: any, index: number) => (
-              <div key={String(nudge._id)} className="nb-panel-inset p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="text-sm font-semibold text-content">{nudge.title}</div>
-                      {!hasLiveNudges ? (
-                        <span className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white/82 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted dark:border-white/10 dark:bg-black/20">
-                          Example
+          {hasLiveNudges ? (
+            <div className="mt-4 space-y-2.5">
+              {filteredNudges.length > 0 ? (
+                filteredNudges.map((nudge) => {
+                  const isSelected = nudge._id === selectedNudge?._id;
+                  const routingLabel = getRoutingLabel(nudge.linkedReportRoutingMode);
+                  const groupedSignalLabel = getGroupedSignalLabel(nudge);
+                  return (
+                    <div
+                      key={String(nudge._id)}
+                      className={`rounded-[22px] border px-4 py-4 transition ${
+                        isSelected
+                          ? "border-[rgba(217,119,87,0.36)] bg-[rgba(217,119,87,0.07)]"
+                          : "border-black/6 bg-white/[0.02] hover:border-black/10 dark:border-white/8 dark:hover:border-white/14"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedNudgeId(nudge._id)}
+                          className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                        >
+                          <div
+                            className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${
+                              isSelected ? "bg-[var(--accent-primary)]" : "bg-black/15 dark:bg-white/20"
+                            }`}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <div className="text-sm font-semibold text-content">{nudge.title}</div>
+                              {groupedSignalLabel ? (
+                                <span className="nb-chip text-[10px] uppercase tracking-[0.18em]">
+                                  {groupedSignalLabel}
+                                </span>
+                              ) : null}
+                              {routingLabel ? (
+                                <span className="nb-chip text-[10px] uppercase tracking-[0.18em]">
+                                  {routingLabel}
+                                </span>
+                              ) : null}
+                            </div>
+                            <p className="mt-1.5 text-sm leading-6 text-content-muted">
+                              {getNudgeWhyNow(nudge)}
+                            </p>
+                            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-content-muted">
+                              <span>{getNudgeObjectLabel(nudge)}</span>
+                              <span className="text-content-muted/40">•</span>
+                              <span>{nudge.actionTargetSurface === "chat" ? "Continue in chat" : "Open saved report"}</span>
+                              <span className="text-content-muted/40">•</span>
+                              <span className="capitalize">{formatNudgeType(nudge.type)}</span>
+                            </div>
+                          </div>
+                        </button>
+                        <div className="ml-auto shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => navigate(getSurfacePath(nudge))}
+                            className="nb-primary-button rounded-full px-3 py-1.5 text-xs"
+                          >
+                            {getNudgeActionLabel(nudge)}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="rounded-[20px] border border-dashed border-black/10 px-4 py-5 text-sm leading-6 text-content-muted dark:border-white/12">
+                  Nothing is sitting in this bucket right now. Switch filters or wait for the next saved report update.
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-[22px] border border-black/8 bg-black/[0.015] px-5 py-6 dark:border-white/8 dark:bg-white/[0.02] sm:px-6 sm:py-8">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-white/60 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-content-muted dark:border-white/10 dark:bg-white/[0.04]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#d97757]" aria-hidden="true" />
+                All quiet
+              </div>
+              <h3 className="mt-3 text-lg font-semibold text-content">
+                Create your first report. We'll watch it for you.
+              </h3>
+              <p className="mt-2 max-w-[52ch] text-sm leading-6 text-content-muted">
+                When a saved report picks up new data, a follow-up comes due, or a connected tool has something worth your attention, it returns here as one concrete next step — never a dashboard to scan.
+              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => navigate(buildCockpitPath({ surfaceId: "ask" }))}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#d97757] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#c56545] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d97757]"
+                >
+                  Start a run
+                  <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate(buildCockpitPath({ surfaceId: "packets" }))}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white/60 px-4 py-2 text-sm font-medium text-content transition hover:border-black/20 dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-white/20"
+                >
+                  Open a saved report
+                </button>
+              </div>
+            </div>
+          )}
+        </article>
+
+        <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+          <article className="px-4 py-5 sm:px-5 sm:py-6">
+            <div className="nb-section-kicker">Selected loop</div>
+            {selectedNudge ? (
+              <>
+                <h2 className="mt-3 text-lg font-semibold text-content">{selectedNudge.title}</h2>
+                <p className="mt-2 text-sm leading-6 text-content-muted">{selectedNudge.summary}</p>
+
+                <div className="mt-5 space-y-4 border-t border-black/5 pt-4 dark:border-white/8">
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                      Why now
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-content-muted">{getNudgeWhyNow(selectedNudge)}</p>
+                  </div>
+
+                  {getGroupedSignalLabel(selectedNudge) ? (
+                    <div>
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                        Grouped signals
+                      </div>
+                      <p className="mt-2 text-sm leading-6 text-content-muted">
+                        {getGroupedSignalLabel(selectedNudge)}
+                        {formatGroupedTypes(selectedNudge) ? `, ${formatGroupedTypes(selectedNudge)}` : ""}
+                      </p>
+                    </div>
+                  ) : null}
+
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                      Linked object
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-content">
+                      <span>{getNudgeObjectLabel(selectedNudge)}</span>
+                      {getRoutingLabel(selectedNudge.linkedReportRoutingMode) ? (
+                        <span className="nb-chip text-[10px] uppercase tracking-[0.18em]">
+                          {getRoutingLabel(selectedNudge.linkedReportRoutingMode)}
                         </span>
                       ) : null}
                     </div>
-                    <p className="mt-2 text-sm leading-6 text-content-muted">{nudge.summary}</p>
                   </div>
-                  <div className={`nb-status-badge px-3 py-1 text-[11px] uppercase tracking-[0.18em] ${index === 0 ? "nb-status-badge-accent" : ""}`}>
-                    {String(nudge.type ?? "nudge").replaceAll("_", " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}
+
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                      Next step
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-content-muted">{getNudgeNextStep(selectedNudge)}</p>
                   </div>
                 </div>
 
-                <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
-                  <div className="text-sm leading-6 text-content-muted">
-                    {nudge.actionTargetSurface === "chat"
-                      ? "Best next move: reopen the live session and continue from the saved context."
-                      : "Best next move: reopen the saved report, then route the follow-up through Chat if needed."}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => navigate(getSurfacePath(nudge))}
-                      className="nb-primary-button rounded-full px-3 py-1.5 text-xs"
-                    >
-                      {nudge.actionLabel}
-                    </button>
-                    {hasLiveNudges ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!api?.domains.product.nudges.snoozeNudge) return;
-                            void convex.mutation(api.domains.product.nudges.snoozeNudge, {
-                              anonymousSessionId,
-                              nudgeId: nudge._id,
-                            });
-                          }}
-                          className="nb-secondary-button px-3 py-1.5 text-xs"
-                        >
-                          Snooze
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!api?.domains.product.nudges.completeNudge) return;
-                            void convex.mutation(api.domains.product.nudges.completeNudge, {
-                              anonymousSessionId,
-                              nudgeId: nudge._id,
-                            });
-                          }}
-                          className="nb-secondary-button px-3 py-1.5 text-xs"
-                        >
-                          Done
-                        </button>
-                      </>
-                    ) : null}
-                  </div>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate(getSurfacePath(selectedNudge))}
+                    className="nb-primary-button w-full px-4 py-3 text-sm sm:w-auto"
+                  >
+                    {getNudgeActionLabel(selectedNudge)}
+                    <ArrowUpRight className="h-4 w-4" />
+                  </button>
+                  {hasLiveNudges ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!api?.domains.product.nudges.snoozeNudge) return;
+                          void convex.mutation(api.domains.product.nudges.snoozeNudge, {
+                            anonymousSessionId,
+                            nudgeId: selectedNudge._id,
+                          });
+                        }}
+                        className="nb-secondary-button px-3 py-2 text-xs"
+                      >
+                        Snooze
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!api?.domains.product.nudges.completeNudge) return;
+                          void convex.mutation(api.domains.product.nudges.completeNudge, {
+                            anonymousSessionId,
+                            nudgeId: selectedNudge._id,
+                          });
+                        }}
+                        className="nb-secondary-button px-3 py-2 text-xs"
+                      >
+                        Done
+                      </button>
+                    </>
+                  ) : null}
                 </div>
-              </div>
-            ))}
-          </div>
-        </article>
-
-        <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
-          <article className="px-5 py-6">
-            <div className="nb-section-kicker">Next action</div>
-            {nextNudge ? (
-              <>
-                <h2 className="mt-3 text-lg font-semibold text-content">{nextNudge.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-content-muted">{nextNudge.summary}</p>
-                <button
-                  type="button"
-                  onClick={() => navigate(getSurfacePath(nextNudge))}
-                  className="nb-primary-button mt-4 w-full px-4 py-3 text-sm"
-                >
-                  {nextNudge.actionLabel}
-                  <ArrowUpRight className="h-4 w-4" />
-                </button>
               </>
-            ) : null}
+            ) : (
+              <p className="mt-3 text-sm leading-6 text-content-muted">
+                Pick a loop from the queue to see the exact next step.
+              </p>
+            )}
           </article>
 
-          <article className="px-5 py-6">
-            <h2 className="nb-section-kicker">Connected channels</h2>
-            <div className="mt-4 space-y-3">
+          <article className="px-4 py-5 sm:px-5 sm:py-6">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold text-content">Connected tools</h2>
+              <span className="text-xs text-content-muted">{connectedCount} connected</span>
+            </div>
+
+            <div className="mt-4 space-y-2">
               {channels.length > 0 ? channels.map((channel: any) => (
-                <div key={channel.label} className="nb-panel-inset flex items-center justify-between px-4 py-3">
-                  <span className="text-sm font-medium text-content">{channel.label}</span>
-                  <span className={`inline-flex items-center gap-2 text-xs ${channel.status === "Connected" ? "text-emerald-700 dark:text-emerald-300" : "text-content-muted"}`}>
-                    <span className={`nb-status-dot ${channel.status === "Connected" ? "bg-emerald-400" : "bg-white/25"}`} />
+                <div
+                  key={channel.label}
+                  className="flex items-center justify-between rounded-[18px] border border-black/6 px-4 py-3 dark:border-white/8"
+                >
+                  <div className="text-sm font-medium text-content">{channel.label}</div>
+                  <span
+                    className={`inline-flex items-center gap-2 text-xs ${
+                      channel.status === "Connected" ? "text-emerald-700 dark:text-emerald-300" : "text-content-muted"
+                    }`}
+                  >
+                    <span
+                      className={`nb-status-dot ${channel.status === "Connected" ? "bg-emerald-400" : "bg-white/25"}`}
+                    />
                     {channel.status}
                   </span>
                 </div>
               )) : (
-                <div className="nb-panel-inset px-4 py-3 text-sm leading-6 text-content-muted">
-                  No channels connected yet. Connect Gmail, Slack, or other tools from the Me tab.
+                <div className="rounded-[18px] border border-dashed border-black/10 px-4 py-4 text-sm leading-6 text-content-muted dark:border-white/12">
+                  No tools connected yet. Connect Gmail, Slack, or Notion from Me when you want nudges to return with real external context.
                 </div>
               )}
             </div>
-          </article>
 
-          <article className="px-5 py-6">
-            <h2 className="nb-section-kicker">Suggested actions</h2>
-            <div className="mt-4 space-y-2">
-              {suggestedActions.length === 0 && (
-                <div className="nb-panel-inset px-4 py-3 text-sm leading-6 text-content-muted">
-                  Suggested actions appear here when saved reports or nudges have a clear next step.
+            {selectedNudge ? (
+              <div className="mt-5 border-t border-black/5 pt-4 dark:border-white/8">
+                <div className="flex items-start gap-3 text-sm text-content-muted">
+                  <Clock3 className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p className="leading-6">
+                    Keep this surface calm. The queue should tell you what changed, the detail panel should explain why, and the action should move you back into the right report or chat thread.
+                  </p>
                 </div>
-              )}
-              {suggestedActions.map((label: string) => {
-                const Icon =
-                  label === "Reply draft ready"
-                    ? Mail
-                    : label === "Refresh report"
-                      ? RefreshCw
-                      : CheckCircle2;
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => navigate(label === "Refresh report" ? buildCockpitPath({ surfaceId: "packets" }) : buildCockpitPath({ surfaceId: "workspace" }))}
-                    className="nb-panel-inset nb-hover-lift flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium text-content"
-                  >
-                    <Icon className="h-3.5 w-3.5 shrink-0 text-content-muted" />
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
+              </div>
+            ) : null}
           </article>
-        </div>
+        </aside>
       </section>
     </div>
   );

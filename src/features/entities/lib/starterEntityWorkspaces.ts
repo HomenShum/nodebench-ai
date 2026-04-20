@@ -31,6 +31,7 @@ export type StarterEntityWorkspace = {
     name: string;
     summary: string;
     entityType: string;
+    savedBecause?: string;
     reportCount: number;
     latestRevision: number;
     createdAt: number;
@@ -63,6 +64,7 @@ export const STARTER_ENTITY_WORKSPACES: StarterEntityWorkspace[] = [
       name: "Axiarete",
       summary: "One entity page should accumulate every run, note, and source about the company instead of freezing knowledge into isolated chats.",
       entityType: "company",
+      savedBecause: "job target",
       reportCount: 2,
       latestRevision: 2,
       createdAt: now - 2 * 24 * 60 * 60 * 1000,
@@ -141,6 +143,8 @@ export const STARTER_ENTITY_WORKSPACES: StarterEntityWorkspace[] = [
       },
     ],
     evidence: [
+      { label: "Axiarete AI", type: "link", sourceUrl: "https://www.axiarete.ai/" },
+      { label: "Company page", type: "link", sourceUrl: "https://www.axiarete.com/company" },
       { label: "JD.pdf", type: "document" },
       { label: "Recruiter screenshot", type: "image" },
       { label: "Resume.pdf", type: "document" },
@@ -152,6 +156,7 @@ export const STARTER_ENTITY_WORKSPACES: StarterEntityWorkspace[] = [
       name: "SMR thesis",
       summary: "A market memory should keep the thesis, source map, and what changed over time without forcing you back to blank chat.",
       entityType: "market",
+      savedBecause: "market watch",
       reportCount: 2,
       latestRevision: 2,
       createdAt: now - 4 * 24 * 60 * 60 * 1000,
@@ -229,8 +234,9 @@ export const STARTER_ENTITY_WORKSPACES: StarterEntityWorkspace[] = [
       },
     ],
     evidence: [
+      { label: "IAEA SMR overview", type: "link", sourceUrl: "https://www.iaea.org/topics/small-modular-reactors" },
+      { label: "IAEA 2024 SMR report", type: "link", sourceUrl: "https://www.iaea.org/publications/15790/small-modular-reactors-advances-in-smr-developments-2024" },
       { label: "Thesis note", type: "text" },
-      { label: "Official source", type: "link" },
     ],
   },
 ];

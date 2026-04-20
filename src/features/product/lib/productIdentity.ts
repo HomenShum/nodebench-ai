@@ -1,7 +1,7 @@
 const PRODUCT_ANON_SESSION_KEY = "nodebench:product-anon-session";
 
 function canUseStorage() {
-  return typeof window !== "undefined" && !!window.sessionStorage;
+  return typeof window !== "undefined" && !!window.localStorage && !!window.sessionStorage;
 }
 
 function createAnonymousSessionId() {
@@ -11,14 +11,32 @@ function createAnonymousSessionId() {
   return `anon-${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`;
 }
 
+function readStoredAnonymousSessionId() {
+  if (!canUseStorage()) return null;
+  const persisted = window.localStorage.getItem(PRODUCT_ANON_SESSION_KEY);
+  if (persisted) return persisted;
+  const tabScoped = window.sessionStorage.getItem(PRODUCT_ANON_SESSION_KEY);
+  if (tabScoped) return tabScoped;
+  return null;
+}
+
+function persistAnonymousSessionId(sessionId: string) {
+  if (!canUseStorage()) return;
+  window.localStorage.setItem(PRODUCT_ANON_SESSION_KEY, sessionId);
+  window.sessionStorage.setItem(PRODUCT_ANON_SESSION_KEY, sessionId);
+}
+
 export function getAnonymousProductSessionId() {
   if (!canUseStorage()) return "anon-server";
 
   try {
-    const existing = window.sessionStorage.getItem(PRODUCT_ANON_SESSION_KEY);
-    if (existing) return existing;
+    const existing = readStoredAnonymousSessionId();
+    if (existing) {
+      persistAnonymousSessionId(existing);
+      return existing;
+    }
     const next = createAnonymousSessionId();
-    window.sessionStorage.setItem(PRODUCT_ANON_SESSION_KEY, next);
+    persistAnonymousSessionId(next);
     return next;
   } catch {
     return "anon-fallback";

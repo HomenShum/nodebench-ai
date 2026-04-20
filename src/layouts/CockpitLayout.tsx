@@ -183,10 +183,12 @@ export function CockpitLayout({
     [],
   );
   const isCompactLayout = typeof window !== "undefined" && window.innerWidth < 1280;
+  const isPublicEntityView = currentSurface === "packets" && currentView === "entity";
   const isDesktopPublicShell =
     !isCompactLayout &&
-    ["ask", "workspace", "packets", "history", "connect"].includes(currentSurface) &&
-    currentView === getDefaultViewForSurface(currentSurface);
+    (isPublicEntityView ||
+      (["ask", "workspace", "packets", "history", "connect"].includes(currentSurface) &&
+        currentView === getDefaultViewForSurface(currentSurface)));
   const isMobileAskRoot = isCompactLayout && currentSurface === "ask" && location.pathname === "/";
   const shouldHideStatusStrip = isMobileAskRoot;
   useSwipeNavigation({

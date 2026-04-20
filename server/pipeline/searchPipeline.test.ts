@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildSearchQueries, filterSearchSourcesForEntity } from "./searchPipeline.js";
+import { buildSearchQueries, classify, createInitialPipelineState, filterSearchSourcesForEntity } from "./searchPipeline.js";
 
 describe("filterSearchSourcesForEntity", () => {
   it("keeps only clearly grounded sources for multi-word company names", () => {
@@ -88,5 +88,47 @@ describe("filterSearchSourcesForEntity", () => {
       "tests assured",
       "\"Tests Assured\" company linkedin crunchbase glassdoor",
     ]);
+  });
+
+  it("fans out pasted recruiter packets into domain-aware search variants", () => {
+    expect(
+      buildSearchQueries(
+        [
+          "Cliffside Ventures hiring packet",
+          "https://cliffside.ventures/",
+          "https://www.linkedin.com/in/xudirk/",
+        ].join(" "),
+        "Dirk",
+        "company_search",
+      ),
+    ).toEqual([
+      "Cliffside Ventures hiring packet https://cliffside.ventures/ https://www.linkedin.com/in/xudirk/",
+      "Cliffside Ventures hiring packet",
+      "\"Dirk\" company linkedin crunchbase glassdoor",
+      "\"Dirk\" site:cliffside.ventures",
+      "\"Dirk\" site:linkedin.com",
+      "\"Dirk\" founder profile linkedin",
+      "\"Dirk\" hiring role expectations",
+    ]);
+  });
+
+  it("anchors classification to the primary entity from context hints", () => {
+    const state = classify(
+      createInitialPipelineState(
+        "What matters most about SoftBank right now?",
+        "investor",
+        "Primary entity for this run: SoftBank. Keep the brief anchored on this subject unless the user explicitly changes it.",
+      ),
+    );
+
+    expect(state.entity).toBe("SoftBank");
+  });
+
+  it("skips question openers when extracting a fallback entity from the query", () => {
+    const state = classify(
+      createInitialPipelineState("What matters most about SoftBank right now?", "investor"),
+    );
+
+    expect(state.entity).toBe("SoftBank");
   });
 });

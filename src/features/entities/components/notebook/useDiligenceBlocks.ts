@@ -186,9 +186,9 @@ export function useDiligenceBlocks(
   entitySlug: string,
   snapshot?: NotebookSnapshotLike | undefined,
 ): DiligenceBlocksSubscription {
-  // Slice C.3 — read Convex-side projections if the table has rows for this
-  // entity. Empty today (orchestrator hasn't written yet); merged with
-  // snapshot-derived projections once it does. See:
+  // Read Convex-side projections if the generic projection orchestrator has
+  // materialized rows for this entity. Snapshot-derived projections remain as
+  // a bridge for older entities until the notebook surface backfills them. See:
   //   convex/domains/product/diligenceProjections.ts
   //   docs/architecture/AGENT_PIPELINE.md
   //   .claude/rules/scratchpad_first.md
@@ -216,8 +216,7 @@ export function useDiligenceBlocks(
     | undefined;
 
   return useMemo(() => {
-    // Snapshot-derived projections — the Phase 1 bridge while the
-    // orchestrator write path is still being wired.
+    // Snapshot-derived projections — bridge for pre-materialized entities.
     const snapshotProjections =
       snapshot && snapshot.blocks && snapshot.blocks.length > 0
         ? deriveDiligenceProjectionsFromSnapshot(entitySlug, snapshot)
@@ -252,13 +251,41 @@ export function useDiligenceBlocks(
     const convexLoading = api != null && convexRows === undefined;
     if (snapshotLoading && convexLoading) return EMPTY_LOADING;
 
-    // Deterministic merge: Convex rows first (authoritative), then snapshot
-    // rows only if their (blockType, scratchpadRunId) isn't already present.
+    // Deterministic merge:
+    //   1. Scratchpad-backed rows progressively replace the old report-backed
+    //      bridge by matching sourceSectionId first, then blockType.
+    //   2. Remaining Convex rows stay authoritative over snapshot fallback.
+    //   3. Snapshot rows fill any gap that has not been checkpointed yet.
+    const scratchpadProjections = convexProjections.filter((projection) =>
+      projection.scratchpadRunId.startsWith(`scratchpad:${entitySlug}:`),
+    );
+    const reportBackedProjections = convexProjections.filter(
+      (projection) => !projection.scratchpadRunId.startsWith(`scratchpad:${entitySlug}:`),
+    );
+    const scratchpadSectionKeys = new Set(
+      scratchpadProjections
+        .map((projection) => projection.sourceSectionId?.trim())
+        .filter((value): value is string => Boolean(value)),
+    );
+    const scratchpadBlockTypes = new Set(scratchpadProjections.map((projection) => projection.blockType));
+    const authoritativeConvexProjections =
+      scratchpadProjections.length > 0
+        ? [
+            ...scratchpadProjections,
+            ...reportBackedProjections.filter((projection) => {
+              const sourceSectionId = projection.sourceSectionId?.trim();
+              if (sourceSectionId && scratchpadSectionKeys.has(sourceSectionId)) return false;
+              if (!sourceSectionId && scratchpadBlockTypes.has(projection.blockType)) return false;
+              return true;
+            }),
+          ]
+        : convexProjections;
+
     const mergedKey = (p: DiligenceBlockProjection) =>
       `${p.blockType}:${p.scratchpadRunId}`;
     const seen = new Set<string>();
     const merged: DiligenceBlockProjection[] = [];
-    for (const p of convexProjections) {
+    for (const p of authoritativeConvexProjections) {
       const key = mergedKey(p);
       if (seen.has(key)) continue;
       seen.add(key);

@@ -350,6 +350,11 @@ export const productWorkspaceInviteStatusValidator = v.union(
   v.literal("accepted"),
 );
 
+export const productWorkspaceInviteDeliveryStatusValidator = v.union(
+  v.literal("sent"),
+  v.literal("link_only"),
+);
+
 export const productWorkspaceShares = defineTable({
   ownerKey: v.string(),
   resourceType: productWorkspaceShareResourceValidator,
@@ -378,6 +383,10 @@ export const productEntityWorkspaceMembers = defineTable({
   token: v.string(),
   access: productWorkspaceShareAccessValidator,
   invitedByUserId: v.optional(v.id("users")),
+  notificationStatus: v.optional(productWorkspaceInviteDeliveryStatusValidator),
+  notificationUpdatedAt: v.optional(v.number()),
+  notificationMessageId: v.optional(v.string()),
+  notificationError: v.optional(v.string()),
   revokedAt: v.optional(v.number()),
   createdAt: v.number(),
   updatedAt: v.number(),
@@ -398,6 +407,10 @@ export const productEntityWorkspaceInvites = defineTable({
   status: productWorkspaceInviteStatusValidator,
   invitedByUserId: v.optional(v.id("users")),
   acceptedByUserId: v.optional(v.id("users")),
+  notificationStatus: v.optional(productWorkspaceInviteDeliveryStatusValidator),
+  notificationUpdatedAt: v.optional(v.number()),
+  notificationMessageId: v.optional(v.string()),
+  notificationError: v.optional(v.string()),
   revokedAt: v.optional(v.number()),
   expiresAt: v.optional(v.number()),
   createdAt: v.number(),
