@@ -334,15 +334,14 @@ export function HomeLanding() {
   return (
     <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[1120px] flex-col px-4 pb-24 pt-6 sm:px-6 sm:pb-12 sm:pt-10">
       <section className="mx-auto w-full max-w-[760px] text-center">
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-gray-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#d97757]" aria-hidden="true" />
-          New run
-        </div>
-        <h1 className="mt-4 text-[1.5rem] font-semibold leading-[1.15] tracking-tight text-gray-900 dark:text-gray-100 md:text-[1.75rem]">
+        {/* "NEW RUN" pill removed — the composer below IS the CTA.
+            Perplexity / Claude / ChatGPT all omit this label. If
+            removing an element loses no function, remove it. */}
+        <h1 className="text-[1.75rem] font-semibold leading-[1.1] tracking-[-0.01em] text-gray-900 dark:text-gray-100 md:text-[2rem]">
           What do you want to understand?
         </h1>
-        <p className="mx-auto mt-2 max-w-[560px] text-sm leading-6 text-gray-500 dark:text-gray-400">
-          A company, a market, a person, a decision. We answer with sources and save the result so you can reopen it.
+        <p className="mx-auto mt-2 max-w-[460px] text-[15px] leading-6 text-gray-500 dark:text-gray-400">
+          A company, a market, a person, a decision. Answered with sources.
         </p>
         {operatorContextLabel ? (
           <div className="mt-4 inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300">
@@ -363,8 +362,8 @@ export function HomeLanding() {
             operatorContextLabel={operatorContextLabel}
             operatorContextHint={operatorContextHint}
             uploadingFiles={uploadingFiles}
-            placeholder="Paste a LinkedIn profile, drop a pitch deck, or describe the company/role. I'll classify each source and run diligence."
-            helperText="Accepts: LinkedIn/GitHub/X URLs · press articles · pitch decks (.pdf/.pptx) · bios (.pdf/.docx/.md) · recruiter & founder notes."
+            placeholder="Paste a LinkedIn URL, drop a pitch deck, or describe the company."
+            helperText="Accepts URLs, PDFs, docs, and notes."
             submitLabel="Start run"
           />
           {/* Live classifier affordance — stays silent until the user types
