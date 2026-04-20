@@ -27,13 +27,42 @@ in production.
 2. Confirm the deploy platform registered the push:
      Vercel:   vercel ls                      → new deployment, age < 1min
      Convex:   npx convex deploy              → "Deployment updated" + URL
-3. Wait for Ready / Live status
-4. Run the mechanical verifier:
+3. Wait for Ready / Live status AND confirm a new bundle hash —
+   a successful `git push` is NOT a successful deploy. Verify by
+   comparing prod's /assets/index-<hash>.js fingerprint before vs
+   after. If the hash hasn't changed within 5 min, the deploy
+   webhook failed silently — check the deploy dashboard.
+4. Run BOTH verification tiers:
+     # Tier A — raw-HTML (proves server serves the right bundle)
      npx tsx scripts/verify-live.ts           → must print "LIVE OK"
-     Override URL for preview:
-     npx tsx scripts/verify-live.ts --url=<preview-url>
+     # Tier B — hydrated DOM (proves React renders after hydration)
+     npm run live-smoke                       → all tests pass
+     Override URL for preview deploys:
+     BASE_URL=https://preview-xyz.vercel.app npm run live-smoke
 5. ONLY THEN use the words "deployed", "live", or "ships X to users".
 ```
+
+## Two-tier verification — why both are required
+
+On a pure Vite SPA (no SSR) every route serves the same `<div id="root">`
+shell in raw HTML. Route-specific content appears only after React
+hydrates + Convex queries resolve. That means:
+
+- **Tier A (scripts/verify-live.ts)** — raw-HTML fetch + grep.
+  Proves: deploy webhook fired, CDN serves the right bundle, routes
+  return 200 not 404. Catches landmines (a) and (c).
+  Does NOT prove: routes actually render the right component.
+
+- **Tier B (tests/e2e/live-smoke.spec.ts via `npm run live-smoke`)** —
+  Playwright loads each URL in a real browser, waits for hydration,
+  asserts DOM nodes exist (e.g. "Link not found" on `/share/dummy`,
+  `<h1>` on landing, recovery CTAs visible).
+  Proves: users actually see the right page. Catches landmine (b)
+  (Suspense / client-only regressions).
+
+Running ONLY Tier A and saying "live" is a landmine-B blind spot.
+Running ONLY Tier B is acceptable but slower than Tier A for CI
+loops. Run both, in that order.
 
 If any step fails, report the EXACT failure — not a polished summary of what
 you hoped happened.
