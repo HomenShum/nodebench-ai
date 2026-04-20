@@ -43,11 +43,40 @@ function parseArgs(): { baseUrl: string } {
   return { baseUrl: baseUrl.replace(/\/$/, "") };
 }
 
+/**
+ * Architecture note (honest limitation):
+ *
+ * NodeBench is a Vite SPA — there is NO SSR. The raw HTML served by any
+ * route is the same Vite shell (`<div id="root"></div>` + bundle tags).
+ * Route-specific content only appears AFTER client-side hydration.
+ *
+ * That means raw-HTML greps for route-specific strings (e.g. "Link not
+ * found") will ALWAYS fail on prod, even when the route works perfectly.
+ * This is the "Suspense / client-only trap" the live_dom_verification rule
+ * warns about in its second landmine clause.
+ *
+ * Honest verification on an SPA therefore has two tiers:
+ *
+ *   Tier A — raw-HTML (this script): proves the server/CDN is serving the
+ *     right bundle. Catches:
+ *       (a) silently-disconnected deploy webhooks (no new bundle hash)
+ *       (b) stale CDN cache (old bundle hash)
+ *       (c) routes returning 404 / 500 at the edge
+ *     Does NOT catch: client-side render failures, missing Convex data,
+ *     hydration errors.
+ *
+ *   Tier B — Playwright smoke (separate, not wired yet): loads the URL in
+ *     a real browser, waits for hydration, asserts DOM nodes. Catches the
+ *     rest.
+ *
+ * This file is Tier A. When Tier B ships (playwright/tests/live-smoke.spec.ts),
+ * the rule's protocol becomes: run BOTH tiers before saying "live".
+ */
 const CHECKS: ReadonlyArray<Check> = [
   {
     name: "landing responds",
     path: "/",
-    contains: /<html/i, // baseline — anything HTML-ish at all
+    contains: /<html/i,
   },
   {
     name: "landing has <title>",
@@ -55,38 +84,50 @@ const CHECKS: ReadonlyArray<Check> = [
     contains: /<title[^>]*>[^<]+<\/title>/i,
   },
   {
-    name: "/share/ route renders (not 404)",
+    name: "landing serves Vite bundle (deploy fingerprint)",
+    path: "/",
+    // Vite emits /assets/index-<hash>.js in production HTML. This is the
+    // single strongest signal that a specific build hash is on prod.
+    contains: /assets\/(index|entry)[-.]/i,
+  },
+  {
+    name: "SPA root mount point",
+    path: "/",
+    contains: 'id="root"',
+  },
+  {
+    name: "/share/ route serves SPA shell (not 404)",
     path: "/share/nonexistent-token-verify-live",
-    contains: /(Link not found|share)/i,
+    contains: 'id="root"',
   },
   {
     name: "/developers page reachable",
     path: "/developers",
-    contains: /<html/i,
+    contains: 'id="root"',
     optional: true,
   },
   {
     name: "/pricing page reachable",
     path: "/pricing",
-    contains: /<html/i,
+    contains: 'id="root"',
     optional: true,
   },
   {
     name: "/changelog page reachable",
     path: "/changelog",
-    contains: /<html/i,
+    contains: 'id="root"',
     optional: true,
   },
   {
     name: "/api-docs reachable",
     path: "/api-docs",
-    contains: /<html/i,
+    contains: 'id="root"',
     optional: true,
   },
   {
     name: "/legal reachable",
     path: "/legal",
-    contains: /<html/i,
+    contains: 'id="root"',
     optional: true,
   },
 ];
