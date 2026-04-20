@@ -1,5 +1,14 @@
 import { memo, Suspense, lazy } from "react";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
+// LiveDiligenceSection collapses the five operator-facing diligence
+// panels behind a single quiet affordance. See its header for the
+// Ive/earned-complexity rationale. Lazy-loaded alongside the panels
+// it wraps so cold-start stays light.
+const LiveDiligenceSection = lazy(() =>
+  import("@/features/entities/components/LiveDiligenceSection").then((mod) => ({
+    default: mod.LiveDiligenceSection,
+  })),
+);
 
 const EntityNotebookView = lazy(() =>
   import("@/features/entities/components/EntityNotebookView").then((mod) => ({
@@ -229,63 +238,22 @@ function EntityNotebookSurfaceBase({
               </ErrorBoundary>
             ) : null}
             {/*
-              Drift banner — silent by default. Renders only when recent
-              verdict rate for THIS entity drops below the floor. Sitting
-              above the verdict panel means operators see the alert first
-              when drift is real, and see nothing when things are fine
-              (zero noise, design_reduction.md).
-            */}
-            <ErrorBoundary section="Drift banner">
-              <Suspense fallback={null}>
-                <DiligenceDriftBanner entitySlug={entitySlug} className="mt-4" />
-              </Suspense>
-            </ErrorBoundary>
-            {/*
-              Reliability chip — shows scheduled retries + DLQ state for
-              this entity. Silent when healthy; fires a compact amber row
-              when anything is pending. Part of the async_reliability.md
-              "partial success is first-class" contract.
-            */}
-            <ErrorBoundary section="Reliability chip">
-              <Suspense fallback={null}>
-                <PipelineReliabilityChip entitySlug={entitySlug} className="mt-3" />
-              </Suspense>
-            </ErrorBoundary>
-            {/*
-              Memory index — one-liner per topic across runs. Layered
-              memory L1. Silent on cold start (no topics yet); grows as
-              the entity accumulates structured runs.
-            */}
-            <ErrorBoundary section="Memory index">
-              <Suspense fallback={null}>
-                <EntityMemoryPanel entitySlug={entitySlug} className="mt-4" />
-              </Suspense>
-            </ErrorBoundary>
-            {/*
-              Live Diligence surface — multi-checkpoint autonomous Claude
-              run with streaming-ish UI (checkpoint-granular via Convex
-              reactivity). Launcher is owner-only; read-only visitors
-              see past run summaries.
+              All five diligence panels (drift banner, reliability chip,
+              memory index, extended run, verdict panel) are now wrapped
+              in a single collapsing section. On a quiet entity, this
+              renders a tiny "Run diligence · last run 9h ago" pill; on
+              any real activity (drift, retries, live run), it auto-
+              expands to the full panel set. Principle: the notebook is
+              the product. Ops tooling only shows up when it earns the
+              space. See `LiveDiligenceSection.tsx` for details.
             */}
             <ErrorBoundary section="Live diligence">
               <Suspense fallback={null}>
-                <ExtendedRunPanel
+                <LiveDiligenceSection
                   entitySlug={entitySlug}
                   canEdit={canEditNotebook}
                   className="mt-4"
                 />
-              </Suspense>
-            </ErrorBoundary>
-            {/*
-              Verdict panel ABOVE the notebook article so operators see
-              deterministic + LLM scoring before they dive into blocks
-              (agent_run_verdict_workflow.md §4). Fallback is bounded and
-              the panel itself renders a skeleton, so there is no blank
-              section under Suspense.
-            */}
-            <ErrorBoundary section="Pipeline verdicts">
-              <Suspense fallback={null}>
-                <DiligenceVerdictPanel entitySlug={entitySlug} limit={8} className="mt-4" />
               </Suspense>
             </ErrorBoundary>
             <article className="notebook-sheet mt-4">

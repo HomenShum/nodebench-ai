@@ -1211,6 +1211,28 @@ html[data-density='spacious'] {
 @media (prefers-reduced-motion: reduce) {
   .nb-composer-surface { transition: none; }
 }
+
+/*
+ * .nb-block-shell — per-block editor wrapper for NotebookBlockEditor.
+ *
+ * Goal: make the BlockChipRenderer → TipTap editor swap visually
+ * invisible. Two things matter:
+ *   1. `contain: content` isolates layout so when one block hydrates
+ *      and swaps in its live editor, it does NOT reflow neighboring
+ *      blocks — which was the "every block is loading" perception
+ *      (a cascade of reflows looked like a cascade of loads).
+ *   2. Shared `ProseMirror` class on both the fallback and the live
+ *      editor container ensures typography/spacing match pixel-wise.
+ *
+ * Perf: `content-visibility: auto` lets the browser skip layout/paint
+ * for blocks far off-screen until they approach the viewport. A
+ * `contain-intrinsic-size` hint keeps scrollbar behavior stable.
+ */
+.nb-block-shell {
+  contain: content;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1.75rem;
+}
 [data-nb-composer] textarea:focus,
 [data-nb-composer] textarea:focus-visible,
 [data-nb-composer] input:focus,
@@ -1339,38 +1361,27 @@ html[data-density='spacious'] {
 }
 
 /* ───────────────────────────────────────────────────────────────────────
-   Physical-notebook surface — §12 of docs/architecture/ENTITY_PAGE_REDESIGN.md
-   Use `.notebook-sheet` on the entity-page article; margin/rule helpers
-   attach to individual blocks. No nested cards inside the sheet.
+   Notebook surface — flat document (Notion/Linear/Obsidian convention).
+   Previous version was a cream "paper sheet" with binding line; dropped
+   in favor of a clean transparent surface that sits on the page bg and
+   lets typography do the work. Keep `--ink-user` / `--ink-agent` for
+   authorship distinction.
    ─────────────────────────────────────────────────────────────────────── */
 .notebook-sheet {
-  background: var(--paper-bg);
+  background: transparent;
   color: var(--ink-user);
-  border-radius: 18px;
-  box-shadow: var(--paper-shadow);
-  padding: 48px 56px 64px;
+  padding: 8px 0 64px;
   position: relative;
-  /* The left binding/margin — subtle terracotta guide a notebook would have. */
-}
-
-.notebook-sheet::before {
-  content: "";
-  position: absolute;
-  left: 48px;
-  top: 32px;
-  bottom: 32px;
-  width: 1px;
-  background: var(--paper-margin);
-  pointer-events: none;
+  /* Reading column cap — matches Notion default (~900px). Wider than
+     Linear (~720px) because NodeBench shows more metadata per line. */
+  max-width: 960px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 @media (max-width: 640px) {
   .notebook-sheet {
-    padding: 28px 20px 40px;
-    border-radius: 12px;
-  }
-  .notebook-sheet::before {
-    left: 20px;
+    padding: 4px 0 40px;
   }
 }
 
@@ -1407,22 +1418,103 @@ html[data-density='spacious'] {
   animation: notebook-wet-ink 800ms ease-out 1;
 }
 
-/* Placeholder ghost-text for the Tiptap block editor. Tiptap's Placeholder
-   extension tags empty paragraphs with .is-empty; we hang a ::before on
-   the first such paragraph so the hint reads like pencil text on the
-   same ruled line the user is about to write on. */
-.notebook-sheet .ProseMirror p.is-empty:first-child::before {
-  content: attr(data-placeholder);
+/* Placeholder ghost-text — shows ONLY on the currently-focused block's
+   empty paragraph, never on every empty block in the document. Matches
+   Ideaflow/Lexical pattern (Editor.module.css:69-89): hidden by default,
+   fades in on focus. A doc with 10 empty lines must not display 10
+   repeated "Type / for commands…" ghosts — that drowns real content. */
+.notebook-sheet [data-testid="notebook-block"][data-block-focused="true"] .ProseMirror p.is-empty::before {
+  content: "Type / for commands…";
   color: var(--text-placeholder, #9CA3AF);
-  opacity: 0.5;
-  font-style: italic;
+  opacity: 0.4;
+  font-style: normal;
   pointer-events: none;
   float: left;
   height: 0;
+  transition: opacity 150ms ease-in;
+}
+
+/* Ensure the Tiptap editor always has at least one line-height of space
+   so the cursor is visible in empty blocks without relying on block padding. */
+.notebook-sheet .ProseMirror {
+  min-height: 1.5em;
+}
+
+/* Notebook block: hover affordance + focus transition. Matches Notion's
+   "calm on read, surface on intent" rhythm. */
+.notebook-sheet [data-testid="notebook-block"] {
+  transition: background-color 120ms ease-out;
+}
+
+/* Lexical/Ideaflow rhythm: zero block margin + min-height per paragraph.
+   Tight spacing between content blocks; empty blocks collapse to a single
+   line instead of a full paragraph of whitespace. */
+.notebook-sheet .ProseMirror p {
+  margin: 0;
+  min-height: 1.5rem;
+}
+
+/* Stagger-reveal on initial mount. Each block fades in with a small
+   cascading delay (50ms per block, capped). Respects reduced-motion. */
+@keyframes notebook-block-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.notebook-sheet [data-testid="notebook-block"] {
+  animation: notebook-block-reveal 200ms ease-out backwards;
+}
+/* Cap the cascade at 10 blocks so a 100-block document doesn't take 5s
+   to finish revealing. Blocks beyond the cap fade in together. */
+.notebook-sheet [data-testid="notebook-block"]:nth-child(1)  { animation-delay: 0ms; }
+.notebook-sheet [data-testid="notebook-block"]:nth-child(2)  { animation-delay: 30ms; }
+.notebook-sheet [data-testid="notebook-block"]:nth-child(3)  { animation-delay: 60ms; }
+.notebook-sheet [data-testid="notebook-block"]:nth-child(4)  { animation-delay: 90ms; }
+.notebook-sheet [data-testid="notebook-block"]:nth-child(5)  { animation-delay: 120ms; }
+.notebook-sheet [data-testid="notebook-block"]:nth-child(6)  { animation-delay: 150ms; }
+.notebook-sheet [data-testid="notebook-block"]:nth-child(7)  { animation-delay: 180ms; }
+.notebook-sheet [data-testid="notebook-block"]:nth-child(8)  { animation-delay: 210ms; }
+.notebook-sheet [data-testid="notebook-block"]:nth-child(9)  { animation-delay: 240ms; }
+.notebook-sheet [data-testid="notebook-block"]:nth-child(n+10) { animation-delay: 270ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .notebook-sheet [data-testid="notebook-block"] {
+    animation: none;
+  }
+}
+
+/* Agent ink tweak — ensure agent-authored blocks have a subtle tone shift
+   without being distracting. Works on flat surface (no paper bg). */
+.notebook-sheet [data-author-kind="agent"] .ProseMirror,
+.notebook-sheet [data-author-kind="agent"] [role="textbox"] {
+  color: var(--ink-agent);
+}
+
+/* Outline jump pulse — brief left-accent flash when the user navigates to
+   a heading via the right-rail outline. Tells the user "you landed here"
+   without stealing the focus ring. */
+@keyframes notebook-outline-jump {
+  0% {
+    box-shadow: inset 2px 0 0 0 var(--accent-primary, #d97757);
+    background-color: color-mix(in oklab, var(--accent-primary, #d97757) 8%, transparent);
+  }
+  100% {
+    box-shadow: inset 2px 0 0 0 transparent;
+    background-color: transparent;
+  }
+}
+.notebook-sheet [data-testid="notebook-block"].notebook-outline-jump-pulse {
+  animation: notebook-outline-jump 900ms ease-out 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .notebook-block-wet-ink {
+  .notebook-block-wet-ink,
+  .notebook-sheet [data-testid="notebook-block"].notebook-outline-jump-pulse {
     animation: none;
   }
 }

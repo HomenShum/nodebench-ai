@@ -55,9 +55,11 @@ import {
   buildEntityShareUrl,
   buildOutreachDraft,
 } from "@/features/entities/lib/entityExport";
+import { useActiveEntity } from "@/features/agents/context/FastAgentContext";
 import { EntityMemoryGraph } from "@/features/entities/components/EntityMemoryGraph";
 import { EntityNotebookMeta } from "@/features/entities/components/EntityNotebookMeta";
 import { EntityNotebookSurface } from "@/features/entities/components/EntityNotebookSurface";
+import { EntityPropertiesStrip } from "@/features/entities/components/EntityPropertiesStrip";
 import { EntityShareSheet } from "@/features/entities/components/EntityShareSheet";
 import { DiligenceSection } from "@/features/entities/components/DiligenceSection";
 import { SignInForm } from "@/SignInForm";
@@ -854,6 +856,10 @@ function EntityWorkspaceView({
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
   const anonymousSessionId = getAnonymousProductSessionId();
+  // Register this entity slug with FastAgentContext so the "Ask NodeBench"
+  // side panel always knows which notebook to target — even when the panel
+  // is closed. Cleared on unmount.
+  useActiveEntity(slug);
   const toast = useToast();
   const generateUploadUrl = useMutation(api?.domains.product.me.generateUploadUrl ?? ("skip" as any));
   const saveFileMutation = useMutation(api?.domains.product.me.saveFile ?? ("skip" as any));
@@ -1867,19 +1873,53 @@ function EntityWorkspaceView({
 
   return (
     <div className="mx-auto w-full max-w-[min(1760px,95vw)] px-4 py-6 pb-16 sm:px-6 sm:py-8">
-      {/* ── Breadcrumb ── */}
-      <nav className="mb-4 flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400" aria-label="Breadcrumb">
-        <button
-          type="button"
-          onClick={() => navigate(buildCockpitPath({ surfaceId: "packets" }))}
-          className="flex items-center gap-1 transition-colors hover:text-gray-700 dark:hover:text-gray-200"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Reports
-        </button>
-        <ChevronRight className="h-3 w-3 text-gray-300 dark:text-gray-600" />
-        <span className="truncate text-gray-700 dark:text-gray-300">{entity.name}</span>
-      </nav>
+      {/* ── Sticky entity bar carrying IDENTITY + properties row.
+           Ship-gate rubric §5: "Users can recover context at any scroll
+           depth." Two rows: (1) back + entity name + kebab, (2) dense
+           properties (stage/industry/updated/sources/reports). */}
+      <div
+        className="sticky top-0 z-30 -mx-4 mb-5 border-b border-black/[0.04] bg-white/85 px-4 py-2 backdrop-blur-md sm:-mx-6 sm:px-6 dark:border-white/[0.06] dark:bg-[#151413]/85"
+      >
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(buildCockpitPath({ surfaceId: "packets" }))}
+            className="flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs text-gray-500 transition-colors hover:bg-black/[0.04] hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.04] dark:hover:text-gray-200"
+            aria-label="Back to reports"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Reports</span>
+          </button>
+          <div className="h-4 w-px shrink-0 bg-gray-200 dark:bg-white/[0.08]" aria-hidden="true" />
+          <h2 className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {entity.name}
+          </h2>
+          {/* Dense properties row — right-aligned so the title holds the
+              eye, and metadata stays secondary (Linear pattern). */}
+          <div className="hidden shrink-0 items-center gap-3 text-[11px] text-gray-500 dark:text-gray-400 md:flex">
+            {entity.entityType ? (
+              <span className="inline-flex items-center gap-1 capitalize">
+                {entityTypeIcon(entity.entityType)}
+                <span>{entity.entityType}</span>
+              </span>
+            ) : null}
+            {entity.reportCount > 0 ? (
+              <>
+                <span className="text-gray-300 dark:text-gray-600">·</span>
+                <span>{entity.reportCount} {entity.reportCount === 1 ? "run" : "runs"}</span>
+              </>
+            ) : null}
+            {entity.updatedAt ? (
+              <>
+                <span className="text-gray-300 dark:text-gray-600">·</span>
+                <span title={new Date(entity.updatedAt).toLocaleString()}>
+                  updated {formatRelative(entity.updatedAt)}
+                </span>
+              </>
+            ) : null}
+          </div>
+        </div>
+      </div>
 
       {/* ── Entity Header (Linear-style) ── */}
       <header className="mb-6 border-b border-gray-100 pb-5 dark:border-white/[0.06]">
@@ -1911,20 +1951,27 @@ function EntityWorkspaceView({
             <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
               {entity.name}
             </h1>
-            {/* Framework audit §3: last-changed chip so the "what-changed"
-                persona doesn't have to re-scan the whole page. One chip,
-                muted, above the summary so it reads like a date-stamp
-                on the top-right of a physical page. */}
-            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-content-muted">
-              <span>{entity.entityType ?? "entity"}</span>
-              {entity.updatedAt ? (
-                <>
-                  <span aria-hidden="true">·</span>
-                  <span title={new Date(entity.updatedAt).toLocaleString()}>
-                    updated {formatRelative(entity.updatedAt)}
-                  </span>
-                </>
-              ) : null}
+            {/* Compact Notion-style properties row. Replaces the older
+                two-chip "type · updated" row with a richer strip that
+                reads as page metadata: who/what the entity is and how
+                deep the notebook currently goes. Renders nothing if
+                no property resolves (keeps cold-start quiet). */}
+            <div className="mt-1.5">
+              <EntityPropertiesStrip
+                sector={entity.entityType ?? undefined}
+                sourceCount={
+                  Array.isArray(reports)
+                    ? reports.reduce(
+                        (sum, r) =>
+                          sum + (Array.isArray(r?.sources) ? r.sources.length : 0),
+                        0,
+                      )
+                    : undefined
+                }
+                noteCount={note ? 1 : 0}
+                runCount={Array.isArray(reports) ? reports.length : undefined}
+                updatedAt={entity.updatedAt ?? undefined}
+              />
             </div>
             <p className="mt-2 max-w-[720px] text-sm leading-relaxed text-gray-600 dark:text-gray-400">
               {entity.summary}
@@ -2191,20 +2238,29 @@ function EntityWorkspaceView({
         </div>
       ) : null}
 
-      {/* ── Inline context strip (replaces right sidebar, Linear-style) ── */}
+      {/* ── Inline context strip — earned-complexity: only the
+           "Since last visit" chip is ever rendered when there are
+           real updates to summarize. On a calm entity, this region
+           collapses to just the "Saved because" affordance (or
+           disappears entirely when shared). Keeps the first fold
+           quiet instead of padding it with ceremony. ── */}
+      {(visitBrief.title !== "No new changes since your last visit" ||
+        !isSharedWorkspace) ? (
       <div className="mb-4 flex flex-col gap-3 rounded-lg border border-gray-100 bg-gray-50/40 px-4 py-3 text-sm dark:border-white/[0.06] dark:bg-white/[0.015] sm:flex-row sm:items-center sm:justify-between">
-        {/* Since last visit — compact */}
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="flex-shrink-0 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            Since last visit
-          </span>
-          <span className="truncate text-gray-700 dark:text-gray-300">{visitBrief.title}</span>
-          {visitBrief.items.find((item) => item.icon === "time") ? (
-            <span className="flex-shrink-0 text-xs text-gray-400 dark:text-gray-500">
-              {visitBrief.items.find((item) => item.icon === "time")?.value}
+        {/* Since last visit — shown only when there are real changes. */}
+        {visitBrief.title !== "No new changes since your last visit" ? (
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex-shrink-0 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              Since last visit
             </span>
-          ) : null}
-        </div>
+            <span className="truncate text-gray-700 dark:text-gray-300">{visitBrief.title}</span>
+            {visitBrief.items.find((item) => item.icon === "time") ? (
+              <span className="flex-shrink-0 text-xs text-gray-400 dark:text-gray-500">
+                {visitBrief.items.find((item) => item.icon === "time")?.value}
+              </span>
+            ) : null}
+          </div>
+        ) : <div className="hidden sm:block" />}
 
         {/* Saved because — compact inline editor */}
         {isSharedWorkspace ? (
@@ -2240,6 +2296,7 @@ function EntityWorkspaceView({
           </div>
         )}
       </div>
+      ) : null}
 
       {/* ── Activity ribbon (Google Doc-style: who touched what) ── */}
       {(timeline.length > 0 || note) && (
