@@ -372,7 +372,12 @@ describe("EntityNotebookLive empty live notebook", () => {
     expect(screen.getByText("Reference overlay active")).toBeInTheDocument();
     const overlayHost = screen.getByTestId("notebook-diligence-overlay-host");
     expect(overlayHost).toBeInTheDocument();
-    expect(screen.getAllByText("AI generated")).toHaveLength(1);
+    // The old "AI generated" generic stamp was replaced by a per-agent
+    // AgentAuthorTag pill (nb-agent-tag class). One pill should appear
+    // on the frozen agent-authored block inserted by the reference
+    // overlay. Exact label derives from `block.authorId`; we just
+    // assert the class is present.
+    expect(document.querySelectorAll(".nb-agent-tag")).toHaveLength(1);
     expect(within(overlayHost).getByText("[s1]")).toBeInTheDocument();
     expect(screen.queryByText("[src_1]")).not.toBeInTheDocument();
   });

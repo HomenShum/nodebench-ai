@@ -30,13 +30,15 @@ import {
   type BlockChip,
 } from "./BlockChipRenderer";
 import { BlockProvenance } from "./BlockProvenance";
-import { NotebookBlockEditor, type NotebookBlockEditorHandle } from "./NotebookBlockEditor";
+import { NotebookBlockEditor, type NotebookBlockEditorHandle, type MarkdownBlockKind } from "./NotebookBlockEditor";
 import { SlashPalette, type SlashCommand } from "./SlashPalette";
 import { MentionPicker, type EntityMatch } from "./MentionPicker";
 import { BlockStatusBar } from "./BlockStatusBar";
 import { NotebookDiligenceOverlayHost } from "./NotebookDiligenceOverlayHost";
 import { NotebookRightRail } from "./NotebookRightRail";
 import { NotebookOutline } from "./NotebookOutline";
+import { NotebookDismissalsSync } from "./NotebookDismissalsSync";
+import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { NotebookScratchpadTracePanel } from "./NotebookScratchpadTracePanel";
 import {
   enqueue as enqueueOfflineEdit,
@@ -49,6 +51,7 @@ import { useDiligenceBlocks } from "./useDiligenceBlocks";
 import type { DiligenceDecorationData } from "./DiligenceDecorationPlugin";
 import { acceptDecorationIntoNotebook } from "./acceptDecorationIntoNotebook";
 import { useAgentActions, type DecorationContext } from "@/features/agents/hooks/useAgentActions";
+import { AgentAuthorTag } from "@/features/agents/primitives/AgentAuthorTag";
 
 type BlockKind =
   | "text"
@@ -1054,26 +1057,15 @@ export function EntityNotebookLive({
   }, [snapshot?.sources]);
 
   const diligenceBlocks = useDiligenceBlocks(entitySlug, snapshot);
-  // Subscribe to the user's persisted dismissals so a hide survives
-  // refresh (the fix for the "I dismissed this yesterday and it keeps
-  // coming back" trust bug). Returned as a flat array — we key into a
-  // Set below for O(1) lookup. See `decorationPreferences.ts`.
-  // Declared BEFORE visibleDiligenceDecorations so its memo's factory
-  // can reference `dismissedKeySet` without TDZ (React runs memo
-  // factories during the render pass — order matters).
-  const persistedDismissals = useQuery(
-    api?.domains?.agents?.decorationPreferences?.listDismissedForEntity ?? ("skip" as any),
-    api?.domains?.agents?.decorationPreferences?.listDismissedForEntity
-      ? { entitySlug, anonymousSessionId }
-      : "skip",
+  // Persisted dismissals live as lifted state. The actual Convex subscription
+  // runs inside <NotebookDismissalsSync /> which is wrapped in a local
+  // ErrorBoundary at the render site — so a server-side failure on the
+  // dismissals query (schema drift, deploy lag) degrades to "empty set"
+  // instead of crashing the whole notebook. See decorationPreferences.ts
+  // and NotebookDismissalsSync.tsx.
+  const [dismissedKeySet, setDismissedKeySet] = useState<Set<string>>(
+    () => new Set<string>(),
   );
-  const dismissedKeySet = useMemo(() => {
-    const keys = new Set<string>();
-    for (const row of persistedDismissals ?? []) {
-      keys.add(`${row.scratchpadRunId}::${row.blockType}`);
-    }
-    return keys;
-  }, [persistedDismissals]);
   const visibleDiligenceDecorations = useMemo(
     () =>
       diligenceBlocks.projections.filter((projection) => {
@@ -1522,6 +1514,16 @@ export function EntityNotebookLive({
 
   return (
     <div className="mt-6" data-testid="entity-live-notebook">
+      {/* Dismissals sync — isolated boundary so a backend error on this
+          specific query (e.g. schema drift, prod deploy lag) can't crash
+          the whole notebook. Degrades to "no persisted dismissals". */}
+      <ErrorBoundary section="Dismissals sync" fallback={null}>
+        <NotebookDismissalsSync
+          entitySlug={entitySlug}
+          anonymousSessionId={anonymousSessionId}
+          onKeysChange={setDismissedKeySet}
+        />
+      </ErrorBoundary>
       {showReferenceOverlayStrip ? (
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200/70 pb-3 text-sm text-gray-600 dark:border-white/10 dark:text-gray-400">
           <div className="min-w-0">
@@ -1874,7 +1876,7 @@ type BlockRowProps = {
   onOpenSlash: () => void;
   onCloseSlash: () => void;
   onSlashCommand: (cmd: SlashCommand) => void;
-  onMarkdownShortcut: (kind: "heading_2" | "heading_3" | "bullet" | "quote" | "todo") => void;
+  onMarkdownShortcut: (kind: MarkdownBlockKind) => void;
   onTabIndent: () => void;
   onShiftTabOutdent: () => void;
   /** Nesting depth — 0 for top-level, 1+ for indented children. Used to
@@ -2033,10 +2035,27 @@ const BlockRow = memo(function BlockRow({
     >
       <div className="relative min-w-0">
         {isAgentAuthored && startsAuthorRun ? (
-          <div className={`${opensSection ? "mb-3" : "mb-2"} flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400`}>
-            <span className="rounded-full border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/10 px-2 py-0.5 font-medium text-[var(--accent-primary)]">
-              AI generated
-            </span>
+          <div className={`${opensSection ? "mb-3" : "mb-2"} flex flex-wrap items-center gap-2`}>
+            {/* Per-agent author tag — colored pill carrying WHICH agent
+                wrote this block, not a generic "AI generated" stamp.
+                Pulled from the v3/v4 prototypes: attribution is what
+                makes the notebook feel co-authored rather than auto-
+                generated. `authorId` parsed into a display name:
+                  - "agent:<name>"  → <name>
+                  - "slash:<cmd>"   → "/<cmd>"
+                  - anything else   → "Agent" (fallback) */}
+            <AgentAuthorTag
+              agentId={block.authorId ?? "agent"}
+              agentName={
+                typeof block.authorId === "string"
+                  ? block.authorId.startsWith("agent:")
+                    ? block.authorId.slice(6) || "Agent"
+                    : block.authorId.startsWith("slash:")
+                      ? `/${block.authorId.slice(6)}`
+                      : "Agent"
+                  : "Agent"
+              }
+            />
           </div>
         ) : null}
         <div className="flex items-start justify-between gap-3">
