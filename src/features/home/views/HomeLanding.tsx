@@ -451,14 +451,17 @@ export function HomeLanding() {
                 }
                 startChat(r.prompt, r.lens, "report_card");
               }}
-              className="group flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 text-left transition hover:border-gray-300 hover:shadow-sm dark:border-white/[0.1] dark:bg-[#171b20] dark:hover:border-white/[0.16] dark:hover:bg-[#1b2026] dark:hover:shadow-[0_24px_80px_-56px_rgba(0,0,0,0.9)]"
+              className="group flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 text-left transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[var(--accent-primary)]/30 hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.15)] motion-reduce:transform-none motion-reduce:transition-none dark:border-white/[0.1] dark:bg-[#171b20] dark:hover:border-[var(--accent-primary)]/40 dark:hover:bg-[#1b2026] dark:hover:shadow-[0_24px_80px_-40px_rgba(0,0,0,0.9)]"
             >
+              {/* Polish pass: date moves from thumbnail corner to bottom
+                  metadata block below. Corner meta competed with the
+                  type badge for attention; bottom meta is the
+                  Notion / Linear pattern. */}
               <ProductThumbnail
                 className="mb-3 aspect-[16/9]"
                 title={r.title}
                 summary={r.summary}
                 type={r.type}
-                meta={r.updatedLabel}
                 imageUrl={r.thumbnailUrl}
                 imageUrls={r.thumbnailUrls}
                 sourceUrls={r.sourceUrls}

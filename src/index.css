@@ -227,10 +227,13 @@
   }
 
   .dark body {
+    /* Polish pass: tighten the gradient reach so the terracotta +
+       blue glows fade by the time cards render below the hero. Cards
+       compete less with the atmospheric wash; hero still feels warm. */
     background-image:
-      radial-gradient(circle at 18% 12%, rgba(27, 122, 224, 0.09), transparent 22%),
-      radial-gradient(circle at 78% 0%, rgba(217, 119, 87, 0.12), transparent 24%),
-      linear-gradient(180deg, #101317, #111419 32%, #111419);
+      radial-gradient(ellipse at 18% 10%, rgba(27, 122, 224, 0.08), transparent 18%),
+      radial-gradient(ellipse at 78% 0%, rgba(217, 119, 87, 0.09), transparent 20%),
+      linear-gradient(180deg, #101317, #111419 28%, #111419);
   }
 
   h1,
