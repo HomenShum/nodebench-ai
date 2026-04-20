@@ -1,8 +1,8 @@
 {
   "name": "nodebench-mcp",
-  "version": "3.1.5",
+  "version": "3.2.0",
   "mcpName": "io.github.homenshum/nodebench",
-  "description": "Turn messy input into a sourced report. 9 default tools in the core lane, with separate power and admin companion packages for deeper workflows.",
+  "description": "Turn messy input into a sourced report. 13 default tools: 7 workflow + 4 bidirectional sync + discover_tools + load_toolset. Push company context from Claude Code into NodeBench AI and pull it back.",
   "type": "module",
   "bin": {
     "nodebench-mcp": "dist/index.js"

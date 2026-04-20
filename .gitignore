@@ -146,3 +146,10 @@ CODEBASE_STRUCTURE.json
 *.log
 **/.tmp-*
 
+
+# --- auto-cleanup added 2026-04 ---
+# Generated esbuild bundle — produced by `npm run build:search-api-bundle`
+api/_searchApp.bundle.mjs
+# Python bytecode
+__pycache__/
+

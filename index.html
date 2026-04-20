@@ -10,12 +10,12 @@
          - style-src 'self' 'unsafe-inline' fonts.googleapis.com: inline styles for CSS-in-JS + Google Fonts
          - font-src 'self' data: fonts.gstatic.com: Google Fonts hosted font files + bundled data URL fonts
          - connect-src 'self' *.convex.cloud wss://*.convex.cloud api.elevenlabs.io localhost/127.0.0.1: API backends
-         - img-src 'self' data: blob:: inline images + generated content
+         - img-src 'self' data: blob: https: localhost/127.0.0.1: inline images, generated content, and persisted remote/source thumbnails
          - frame-src 'none': no iframes allowed
          - object-src 'none': no Flash/Java applets
          - base-uri 'self': prevent base tag hijacking
     -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.convex.cloud wss://*.convex.cloud https://api.elevenlabs.io ws://localhost:* http://localhost:* ws://127.0.0.1:* http://127.0.0.1:*; img-src 'self' data: blob:; frame-src 'none'; object-src 'none'; base-uri 'self';" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.convex.cloud wss://*.convex.cloud https://api.elevenlabs.io ws://localhost:* http://localhost:* ws://127.0.0.1:* http://127.0.0.1:*; img-src 'self' data: blob: https: http://localhost:* http://127.0.0.1:*; frame-src 'none'; object-src 'none'; base-uri 'self';" />
 
     <!-- Resource hints for better performance -->
     <link rel="dns-prefetch" href="https://fonts.googleapis.com" />

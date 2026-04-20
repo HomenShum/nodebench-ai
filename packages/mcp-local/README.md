@@ -95,6 +95,8 @@ Unified cross-surface spec: [`docs/architecture/UNIFIED_WORKFLOW_SPEC.md`](../..
 
 Production companion spec: [`docs/architecture/UNIFIED_WEB_MCP_PRODUCTION_SPEC.md`](../../docs/architecture/UNIFIED_WEB_MCP_PRODUCTION_SPEC.md)
 
+Founder MCP flow spec: [`docs/architecture/FOUNDER_MCP_FLOW_SPEC.md`](../../docs/architecture/FOUNDER_MCP_FLOW_SPEC.md)
+
 ---
 
 ## What You Get

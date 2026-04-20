@@ -306,6 +306,79 @@ tracked entities / watch conditions / nudges
 future runs with better operator context
 ```
 
+## Student Learning Lessons
+
+The notebook and diligence stack in this repo are a good example of a common
+product engineering tradeoff:
+
+- the best user experience is one notebook that feels continuous
+- the safest current runtime is still layered and block-addressable underneath
+
+For NodeBench, that means:
+
+- `founder` is a trait and diligence block, not a permanent sixth tab
+- diligence should use one generic pipeline, not many narrow `*Identify.ts`
+  features
+- the runtime should stay `scratchpad-first -> structuring pass ->
+  deterministic merge`
+- user-owned prose should feel local-first and calm while typing
+- live agent output should arrive as overlays or decorations first, not as
+  direct document mutations
+- accepted agent output should become frozen, user-owned notebook content
+- provenance should stay available, but secondary to the reading and writing
+  flow
+
+Why the notebook does **not** use one giant live editor model yet:
+
+- collaboration is more reliable when the system can address bounded sections
+- provenance, evidence, and contribution logs need stable attachment points
+- background agent updates should not compete with user keystrokes
+- deterministic section-level merge is easier to reason about than whole-page
+  mutation churn
+
+The practical rule in this repo is:
+
+```text
+UX should feel monolithic.
+Runtime should stay layered.
+Typing should be local-first.
+Agent output should be overlay-first.
+Accepted output should become owned prose.
+```
+
+Current notebook refactor lessons:
+
+- hide the block machinery from the reading path
+- keep chrome quiet and move metadata to hover or focus
+- isolate the notebook surface from page-level re-render churn
+- favor one memoized notebook boundary over many inline object props
+- treat live diligence as read-only reference overlay until the user accepts it
+- when accepted, materialize a frozen notebook snapshot with explicit provenance
+- anchor live overlays at the notebook surface, not inside the first editable row
+- let Convex projection rows carry real source metadata so the UI is not forced to reconstruct trust state from prose alone
+- use one generic projection producer for overlays: report save writes the same structured rows that page-load backfill and manual refresh re-run
+- when moving beyond report-backed overlays, stream raw scratchpad only in a secondary rail and emit structured projection rows on checkpoint rather than dumping scratchpad prose into the notebook body
+- if checkpoint structure comes from an LLM, keep it block-scoped and schema-bound: `scratchpad checkpoint -> JSON -> validation/repair -> deterministic fallback -> projection row`
+- let the model structure intermediate JSON, but keep merge, persistence, and notebook ownership deterministic
+- ship generic diligence primitives first, then block-specific renderers
+
+For students reading the code, the most relevant docs are:
+
+- [`AGENT_PIPELINE`](docs/architecture/AGENT_PIPELINE.md)
+- [`DILIGENCE_BLOCKS`](docs/architecture/DILIGENCE_BLOCKS.md)
+- [`SCRATCHPAD_PATTERN`](docs/architecture/SCRATCHPAD_PATTERN.md)
+- [`PROSEMIRROR_DECORATIONS`](docs/architecture/PROSEMIRROR_DECORATIONS.md)
+- [`SESSION_ARTIFACTS`](docs/architecture/SESSION_ARTIFACTS.md)
+
+The live notebook refactor is deliberately incremental:
+
+- current shipped slices make the notebook feel more continuous and reduce
+  per-keystroke render churn
+- current shipped slices also move live diligence into notebook-surface
+  overlays instead of seeded block-like records and freeze accepted snapshots
+- the end state is one notebook experience with layered internals, not a raw
+  block UI and not a brittle giant document runtime
+
 ### Key tech
 
 - Frontend: React, Vite, TypeScript, Tailwind CSS
