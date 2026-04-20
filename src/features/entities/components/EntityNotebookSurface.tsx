@@ -60,6 +60,16 @@ const EntityMemoryPanel = lazy(() =>
   })),
 );
 
+// ExtendedRunPanel — Live Diligence surface. Launcher + streaming
+// checkpoint feed for multi-checkpoint Claude extended-thinking runs.
+// The "90-minute autonomous build" pitch wired as Convex-reactive
+// chain-of-checkpoints (convex/domains/product/extendedThinking.ts).
+const ExtendedRunPanel = lazy(() =>
+  import("@/features/entities/components/notebook/ExtendedRunPanel").then((mod) => ({
+    default: mod.ExtendedRunPanel,
+  })),
+);
+
 type EntityNotebookSurfaceProps = {
   entitySlug: string;
   shareToken?: string;
@@ -249,6 +259,21 @@ function EntityNotebookSurfaceBase({
             <ErrorBoundary section="Memory index">
               <Suspense fallback={null}>
                 <EntityMemoryPanel entitySlug={entitySlug} className="mt-4" />
+              </Suspense>
+            </ErrorBoundary>
+            {/*
+              Live Diligence surface — multi-checkpoint autonomous Claude
+              run with streaming-ish UI (checkpoint-granular via Convex
+              reactivity). Launcher is owner-only; read-only visitors
+              see past run summaries.
+            */}
+            <ErrorBoundary section="Live diligence">
+              <Suspense fallback={null}>
+                <ExtendedRunPanel
+                  entitySlug={entitySlug}
+                  canEdit={canEditNotebook}
+                  className="mt-4"
+                />
               </Suspense>
             </ErrorBoundary>
             {/*
