@@ -440,6 +440,25 @@ export function HomeLanding() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Skeleton loaders during first fetch. Once savedReports
+              resolves (empty or populated), real cards render below.
+              Three placeholders matches the three-column layout so
+              the grid doesn't reflow on hydration. */}
+          {savedReports === undefined && visibleReports.length === 0
+            ? [0, 1, 2].map((i) => (
+                <div
+                  key={`skeleton-${i}`}
+                  className="starting-point-skeleton rounded-2xl border border-gray-200 bg-white p-4 dark:border-white/[0.1] dark:bg-[#171b20]"
+                  aria-hidden="true"
+                >
+                  <div className="mb-3 aspect-[16/9] rounded-xl bg-gray-100 dark:bg-white/[0.04]" />
+                  <div className="h-4 w-3/4 rounded bg-gray-100 dark:bg-white/[0.04]" />
+                  <div className="mt-2 h-3 w-full rounded bg-gray-100 dark:bg-white/[0.04]" />
+                  <div className="mt-1 h-3 w-5/6 rounded bg-gray-100 dark:bg-white/[0.04]" />
+                  <div className="mt-4 h-3 w-1/3 rounded bg-gray-100 dark:bg-white/[0.04]" />
+                </div>
+              ))
+            : null}
           {visibleReports.map((r, index) => (
             <button
               key={r.key}
@@ -451,7 +470,12 @@ export function HomeLanding() {
                 }
                 startChat(r.prompt, r.lens, "report_card");
               }}
-              className="group flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 text-left transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[var(--accent-primary)]/30 hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.15)] motion-reduce:transform-none motion-reduce:transition-none dark:border-white/[0.1] dark:bg-[#171b20] dark:hover:border-[var(--accent-primary)]/40 dark:hover:bg-[#1b2026] dark:hover:shadow-[0_24px_80px_-40px_rgba(0,0,0,0.9)]"
+              className="starting-point-card group flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 text-left transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[var(--accent-primary)]/30 hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.15)] active:translate-y-0 active:shadow-none active:border-[var(--accent-primary)]/50 active:duration-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white motion-reduce:transform-none motion-reduce:transition-none dark:border-white/[0.1] dark:bg-[#171b20] dark:hover:border-[var(--accent-primary)]/40 dark:hover:bg-[#1b2026] dark:hover:shadow-[0_24px_80px_-40px_rgba(0,0,0,0.9)] dark:focus-visible:ring-offset-[#0a0d10]"
+              style={{
+                // Staggered fade-in: first card 0ms, each subsequent +60ms.
+                // Capped at 240ms so the last card doesn't feel slow.
+                animationDelay: `${Math.min(index * 60, 240)}ms`,
+              }}
             >
               {/* Polish pass: date moves from thumbnail corner to bottom
                   metadata block below. Corner meta competed with the

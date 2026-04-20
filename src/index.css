@@ -1233,6 +1233,48 @@ html[data-density='spacious'] {
 }
 
 /* ───────────────────────────────────────────────────────────────────────
+   Home starting-point cards — staggered fade-in entry + skeleton loader.
+   Used on `/?surface=home` for the Recent Reports grid so cards don't
+   pop in all at once. animation-delay is set inline per-card.
+   ─────────────────────────────────────────────────────────────────────── */
+@keyframes starting-point-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.starting-point-card {
+  animation: starting-point-enter 320ms var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starting-point-card {
+    animation: none;
+  }
+}
+
+@keyframes starting-point-skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 0.7; }
+}
+
+.starting-point-skeleton {
+  animation: starting-point-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starting-point-skeleton {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────
    Physical-notebook surface — §12 of docs/architecture/ENTITY_PAGE_REDESIGN.md
    Use `.notebook-sheet` on the entity-page article; margin/rule helpers
    attach to individual blocks. No nested cards inside the sheet.
