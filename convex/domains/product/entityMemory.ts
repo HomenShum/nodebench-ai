@@ -16,11 +16,16 @@
 
 import { v } from "convex/values";
 import { internalMutation, query } from "../../_generated/server";
+import { internal } from "../../_generated/api";
 import {
   compactTopic,
   type CompactionFact,
   type TopicFileContent,
 } from "../../../server/pipeline/topicCompaction";
+import {
+  diffTopicFacts,
+  buildNudgeText,
+} from "../../../server/pipeline/changeDetector";
 
 const MAX_TOPICS_PER_ENTITY = 20;
 
@@ -139,6 +144,59 @@ export const compactBlockTopic = internalMutation({
         totalFactCount,
         lastRebuildAt: Date.now(),
       });
+    }
+
+    // Material-change detection: diff existing vs new, emit a nudge when
+    // significance = "material". changeDetector.ts is pure + tested; we
+    // call createNudge from nudges.ts so the existing nudge surface picks
+    // it up automatically. BOUND + ERROR_BOUNDARY: nudge creation is
+    // wrapped in try/catch so a notification failure never taints the
+    // compaction write. We also only fire when status !== "unchanged"
+    // (which we already returned above).
+    if (existing) {
+      try {
+        const diff = diffTopicFacts({
+          topicName: args.topicName,
+          previousFacts: existing.facts.map((f) => ({
+            text: f.text,
+            sourceRefId: f.sourceRefId,
+            observedAt: f.observedAt,
+          })),
+          nextFacts: verdict.newContent.facts.map((f) => ({
+            text: f.text,
+            sourceRefId: f.sourceRefId,
+            observedAt: f.observedAt,
+          })),
+        });
+        if (diff.significance === "material" && diff.addedFacts.length > 0) {
+          // Resolve ownerKey via productEntities.
+          const entity = await ctx.db
+            .query("productEntities")
+            .withIndex("by_slug", (q) => q.eq("slug", args.entitySlug))
+            .first();
+          if (entity && typeof entity.ownerKey === "string") {
+            const { title, summary } = buildNudgeText({
+              entityLabel: entity.title ?? args.entitySlug,
+              topicName: args.topicName,
+              diff,
+            });
+            await ctx.runMutation(
+              internal.domains.product.nudges.createNudge,
+              {
+                ownerKey: entity.ownerKey,
+                type: "report_changed",
+                title,
+                summary,
+                actionLabel: "Open entity",
+                actionTargetSurface: "entity",
+                actionTargetId: args.entitySlug,
+              },
+            );
+          }
+        }
+      } catch {
+        // ERROR_BOUNDARY — nudge creation failure never taints compaction.
+      }
     }
 
     return {
