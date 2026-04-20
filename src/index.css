@@ -1154,6 +1154,35 @@ html[data-density='spacious'] {
   box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--accent-primary), 0 0 12px var(--accent-primary-bg);
 }
 
+/* ------------------------------------------------------------------ */
+/* Composer surface — unified single-halo focus state.                */
+/* Before: container had `focus-within:ring-2` (terracotta) PLUS      */
+/* `focus-within:border-[accent]/50` PLUS the global :focus-visible   */
+/* outline on the inner textarea. 2-3 rings stacked in different      */
+/* colors. Fix: one box-shadow halo + one border color shift, and     */
+/* explicit `outline: none` on wrapped textareas/inputs so the global */
+/* :focus-visible rule (src/index.css L206) doesn't add a second     */
+/* halo. Applied via data-nb-composer attribute on the wrapper so    */
+/* the selector is scoped and doesn't leak to other inputs.          */
+/* ------------------------------------------------------------------ */
+.nb-composer-surface {
+  transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
+}
+.nb-composer-surface:focus-within {
+  border-color: color-mix(in oklab, var(--accent-primary) 65%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent-primary) 18%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-composer-surface { transition: none; }
+}
+[data-nb-composer] textarea:focus,
+[data-nb-composer] textarea:focus-visible,
+[data-nb-composer] input:focus,
+[data-nb-composer] input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* Inline code — monospace with accent-aware background */
 :not(pre) > code {
   background: var(--accent-primary-bg);

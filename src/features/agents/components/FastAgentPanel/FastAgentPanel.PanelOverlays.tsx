@@ -186,7 +186,10 @@ export const PanelOverlays = memo(function PanelOverlays(props: PanelOverlaysPro
         <>
           <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={() => props.setShowCommandPalette(false)} />
           <div className="absolute inset-x-4 top-16 z-50 bg-surface border border-edge rounded-lg shadow-2xl overflow-hidden max-h-[400px] flex flex-col">
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-edge focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/30 focus-within:border-[var(--accent-primary)]/50 transition-colors">
+            <div
+              data-nb-composer="agent-overlay-search"
+              className="nb-composer-surface flex items-center gap-2 px-4 py-3 border-b border-edge transition-colors"
+            >
               <Search className="w-4 h-4 text-content-muted" aria-hidden="true" />
               <input
                 ref={props.commandInputRef}

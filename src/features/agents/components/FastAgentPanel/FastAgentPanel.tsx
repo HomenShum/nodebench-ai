@@ -2416,7 +2416,11 @@ export const FastAgentPanel = memo(function FastAgentPanel({
 
         {/* Conversation Search Bar */}
         {showSearch && (
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-edge bg-surface-secondary focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/30 focus-within:border-[var(--accent-primary)]/50 transition-colors" role="search">
+          <div
+            data-nb-composer="agent-search"
+            className="nb-composer-surface flex items-center gap-2 px-3 py-2 border-b border-edge bg-surface-secondary transition-colors"
+            role="search"
+          >
             <Search className="w-3.5 h-3.5 text-content-muted flex-shrink-0" aria-hidden="true" />
             <input
               ref={searchInputRef}

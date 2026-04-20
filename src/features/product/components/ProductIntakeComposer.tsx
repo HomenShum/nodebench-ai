@@ -90,7 +90,8 @@ export function ProductIntakeComposer({
       onDrop={handleDrop}
     >
       <div
-        className={`rounded-[22px] border bg-white px-3 py-3 transition-all duration-200 sm:px-4 dark:bg-[#11161c] focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/25 focus-within:border-[var(--accent-primary)]/50 ${
+        data-nb-composer="intake"
+        className={`nb-composer-surface rounded-[22px] border bg-white px-3 py-3 transition-all duration-200 sm:px-4 dark:bg-[#11161c] ${
           dragActive
             ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]/5 dark:bg-[var(--accent-primary)]/10"
             : "border-gray-200 dark:border-white/[0.1]"
