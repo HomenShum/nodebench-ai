@@ -14,7 +14,7 @@
 
 import { v } from "convex/values";
 import { mutation, internalMutation } from "../../_generated/server";
-import { DAAS_VERDICTS } from "./schema";
+import { DAAS_VERDICTS, DAAS_AUDIT_STATUSES } from "./schema";
 
 const MAX_JSON_BYTES = 512 * 1024; // 512KB per JSON field (BOUND_READ equivalent)
 const MAX_ANSWER_CHARS = 50_000;
@@ -324,5 +324,56 @@ export const checkAndIncrementRateBucket = internalMutation({
       remaining: limit - newCount,
       resetAt: existing.resetAt,
     };
+  },
+});
+
+// ── Audit log ───────────────────────────────────────────────────────────────
+//
+// Internal-only. Called from mutations / actions / http handlers to record
+// what happened, by whom, with what result. Appends one row per operation.
+// metaJson is bounded at 8KB (stays small for index-friendly reads).
+
+const MAX_META_BYTES = 8 * 1024;
+
+export const logAuditEvent = internalMutation({
+  args: {
+    op: v.string(),
+    actorKind: v.string(),
+    actorId: v.optional(v.string()),
+    status: v.string(),
+    subjectId: v.optional(v.string()),
+    metaJson: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
+    durationMs: v.optional(v.number()),
+  },
+  returns: v.id("daasAuditLog"),
+  handler: async (ctx, args) => {
+    const allowed = new Set<string>(DAAS_AUDIT_STATUSES);
+    if (!allowed.has(args.status)) {
+      throw new Error(`audit status must be one of ${[...allowed].join(", ")}`);
+    }
+    if (args.metaJson && args.metaJson.length > MAX_META_BYTES) {
+      throw new Error(
+        `audit metaJson exceeds ${MAX_META_BYTES} bytes (${args.metaJson.length})`,
+      );
+    }
+    if (args.errorMessage && args.errorMessage.length > 1024) {
+      // Truncate rather than reject — we still want the audit row.
+      args = {
+        ...args,
+        errorMessage: args.errorMessage.slice(0, 1024) + "…[truncated]",
+      };
+    }
+    return await ctx.db.insert("daasAuditLog", {
+      op: args.op,
+      actorKind: args.actorKind,
+      actorId: args.actorId,
+      status: args.status,
+      subjectId: args.subjectId,
+      metaJson: args.metaJson,
+      errorMessage: args.errorMessage,
+      durationMs: args.durationMs,
+      createdAt: Date.now(),
+    });
   },
 });

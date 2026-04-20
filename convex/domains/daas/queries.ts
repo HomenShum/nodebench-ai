@@ -7,8 +7,10 @@
 
 import { v } from "convex/values";
 import { query } from "../../_generated/server";
+import { listRubrics as registryListRubrics } from "./rubrics";
 
 const MAX_ROWS = 200;
+const MAX_AUDIT_ROWS = 100;
 
 // ── List recent runs (joined view for the /daas page) ───────────────────────
 
@@ -250,6 +252,80 @@ export const getRun = query({
 });
 
 // ── Aggregate stats (for the hero strip on /daas) ───────────────────────────
+
+// ── Rubric registry listing (for UI rubric picker) ──────────────────────────
+
+export const listRubrics = query({
+  args: {},
+  returns: v.array(
+    v.object({
+      id: v.string(),
+      version: v.string(),
+      description: v.string(),
+      checkCount: v.number(),
+    }),
+  ),
+  handler: async () => registryListRubrics(),
+});
+
+// ── Audit log listing (for dashboards + debugging) ──────────────────────────
+
+export const listAuditLog = query({
+  args: {
+    op: v.optional(v.string()),
+    status: v.optional(v.string()),
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(
+    v.object({
+      _id: v.id("daasAuditLog"),
+      op: v.string(),
+      actorKind: v.string(),
+      actorId: v.optional(v.string()),
+      status: v.string(),
+      subjectId: v.optional(v.string()),
+      metaJson: v.optional(v.string()),
+      errorMessage: v.optional(v.string()),
+      durationMs: v.optional(v.number()),
+      createdAt: v.number(),
+    }),
+  ),
+  handler: async (ctx, { op, status, limit }) => {
+    const cap = Math.max(1, Math.min(MAX_AUDIT_ROWS, limit ?? 50));
+    let results: any[];
+    if (op) {
+      results = await ctx.db
+        .query("daasAuditLog")
+        .withIndex("by_op", (q) => q.eq("op", op))
+        .order("desc")
+        .take(cap);
+    } else if (status) {
+      results = await ctx.db
+        .query("daasAuditLog")
+        .withIndex("by_status_createdAt", (q) => q.eq("status", status))
+        .order("desc")
+        .take(cap);
+    } else {
+      results = await ctx.db
+        .query("daasAuditLog")
+        .withIndex("by_createdAt")
+        .order("desc")
+        .take(cap);
+    }
+    return results.map((r: any) => ({
+      _id: r._id,
+      op: r.op,
+      actorKind: r.actorKind,
+      actorId: r.actorId,
+      status: r.status,
+      subjectId: r.subjectId,
+      metaJson: r.metaJson,
+      errorMessage: r.errorMessage,
+      durationMs: r.durationMs,
+      createdAt: r.createdAt,
+    }));
+  },
+});
 
 export const getAggregateStats = query({
   args: {},

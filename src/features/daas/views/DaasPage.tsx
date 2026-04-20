@@ -110,16 +110,22 @@ function Bar({ value, max, color }: { value: number; max: number; color: string 
 // Detail subcomponent rendered below the run list when a run is selected.
 function RunDetail({ sessionId }: { sessionId: string }) {
   const run = useQuery(api.domains.daas.queries.getRun, { sessionId });
+  const rubrics = useQuery(api.domains.daas.queries.listRubrics, {});
   const judgeReplay = useAction(api.domains.daas.actions.judgeReplay);
   const [judging, setJudging] = useState(false);
   const [judgeError, setJudgeError] = useState<string | null>(null);
+  const [selectedRubric, setSelectedRubric] = useState<string>("daas.generic.v1");
 
   const handleRejudge = async () => {
     if (!run || !run.replays[0]) return;
     setJudging(true);
     setJudgeError(null);
     try {
-      await judgeReplay({ sessionId, replayId: run.replays[0]._id });
+      await judgeReplay({
+        sessionId,
+        replayId: run.replays[0]._id,
+        rubricId: selectedRubric,
+      });
     } catch (e) {
       setJudgeError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -272,6 +278,28 @@ function RunDetail({ sessionId }: { sessionId: string }) {
               <strong style={{ fontSize: 12 }}>Judgment</strong>
               <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                 <VerdictBadge verdict={latestReplay.judgment?.verdict} />
+                <select
+                  value={selectedRubric}
+                  onChange={(e) => setSelectedRubric(e.target.value)}
+                  aria-label="Rubric for judge run"
+                  disabled={judging}
+                  style={{
+                    fontSize: 10,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    padding: "3px 6px",
+                    borderRadius: 4,
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "rgba(255,255,255,0.03)",
+                    color: "#e8e6e3",
+                    cursor: judging ? "wait" : "pointer",
+                  }}
+                >
+                  {(rubrics ?? []).map((rb) => (
+                    <option key={rb.id} value={rb.id}>
+                      {rb.id} ({rb.checkCount})
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
                   onClick={handleRejudge}

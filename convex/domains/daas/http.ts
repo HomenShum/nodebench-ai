@@ -208,11 +208,34 @@ export const ingestHttp = httpAction(async (ctx, req) => {
     return jsonResponse(400, { error: "invalid_durationMs" });
   }
 
+  const ingestStart = Date.now();
   try {
     const traceId = await ctx.runMutation(
       api.domains.daas.mutations.ingestTrace,
       args as any,
     );
+    // Audit log: success. Fire-and-forget-ish — we still await so it
+    // completes before the client sees the response, but any failure
+    // is absorbed so audit outages never block the ingest path.
+    try {
+      await ctx.runMutation(internal.domains.daas.mutations.logAuditEvent, {
+        op: "http.ingest",
+        actorKind: "http",
+        actorId: client.key,
+        status: "ok",
+        subjectId: String(args.sessionId),
+        durationMs: Date.now() - ingestStart,
+        metaJson: JSON.stringify({
+          sourceModel: args.sourceModel,
+          sourceSystem: args.sourceSystem,
+          totalCostUsd: args.totalCostUsd,
+          totalTokens: args.totalTokens,
+          authed: client.authed,
+        }),
+      });
+    } catch {
+      /* audit failure must not affect the ingest outcome */
+    }
     return new Response(
       JSON.stringify({ ok: true, traceId, sessionId: args.sessionId }),
       {
@@ -225,6 +248,19 @@ export const ingestHttp = httpAction(async (ctx, req) => {
       },
     );
   } catch (err) {
+    try {
+      await ctx.runMutation(internal.domains.daas.mutations.logAuditEvent, {
+        op: "http.ingest",
+        actorKind: "http",
+        actorId: client.key,
+        status: "error",
+        subjectId: String(args.sessionId),
+        durationMs: Date.now() - ingestStart,
+        errorMessage: String(err).slice(0, 1024),
+      });
+    } catch {
+      /* audit failure absorbed */
+    }
     return jsonResponse(500, { error: "ingest_failed", detail: String(err) });
   }
 });

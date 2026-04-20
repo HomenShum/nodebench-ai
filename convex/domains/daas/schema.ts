@@ -153,6 +153,41 @@ export const daasJudgments = defineTable({
   .index("by_judgedAt", ["judgedAt"]);
 
 /**
+ * daasAuditLog — append-only audit trail for every DaaS operation that
+ * mutates or judges data. Every row has an actor (who), an operation
+ * (what), a bounded status (ok | error | denied), and structured
+ * metadata. Append-only per agent_run_verdict_workflow.md.
+ *
+ * Kept lean (< 2KB / row) so storage stays bounded; large payloads go
+ * elsewhere and are referenced by id.
+ */
+export const DAAS_AUDIT_STATUSES = ["ok", "error", "denied"] as const;
+
+export const daasAuditLog = defineTable({
+  /** "http.ingest" | "action.judgeReplay" | "admin.deleteTracesByPrefix" | ... */
+  op: v.string(),
+  /** "cli" | "http" | "frontend" | "action" */
+  actorKind: v.string(),
+  /** Client identifier — bucketKey for HTTP, userId for authed actions */
+  actorId: v.optional(v.string()),
+  /** One of DAAS_AUDIT_STATUSES */
+  status: v.string(),
+  /** Optional traceId / replayId / judgmentId this entry relates to */
+  subjectId: v.optional(v.string()),
+  /** Bounded JSON blob with op-specific fields (cost, tokens, model, etc.) */
+  metaJson: v.optional(v.string()),
+  /** Short error string when status != "ok" */
+  errorMessage: v.optional(v.string()),
+  /** Duration of the operation in ms */
+  durationMs: v.optional(v.number()),
+  createdAt: v.number(),
+})
+  .index("by_createdAt", ["createdAt"])
+  .index("by_op", ["op"])
+  .index("by_status_createdAt", ["status", "createdAt"])
+  .index("by_subjectId", ["subjectId"]);
+
+/**
  * daasRateBuckets — DB-backed rate limit buckets.
  *
  * In-memory rate limiting doesn't work in Convex's serverless environment

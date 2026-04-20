@@ -91,40 +91,71 @@ export const runAdminOp = action({
     deleted: v.number(),
   }),
   handler: async (ctx, args): Promise<{ op: string; deleted: number }> => {
-    // CLI calls (convex run) don't provide an adminKey — they come in
-    // via the deploy-key auth that Convex enforces on its edge. We
-    // still require adminKey when present to allow non-CLI callers.
-    // If DAAS_REQUIRE_ADMIN_KEY=true, adminKey becomes mandatory.
+    const startTime = Date.now();
+    const actorId = args.adminKey ? `key:${args.adminKey.slice(0, 8)}...` : "cli";
+
+    const audit = async (status: string, extra: Record<string, unknown>) => {
+      try {
+        await ctx.runMutation(internal.domains.daas.mutations.logAuditEvent, {
+          op: `admin.${args.op}`,
+          actorKind: args.adminKey ? "http" : "cli",
+          actorId,
+          status,
+          durationMs: Date.now() - startTime,
+          metaJson: JSON.stringify(extra),
+          ...(status === "error" && typeof extra.error === "string"
+            ? { errorMessage: String(extra.error).slice(0, 1024) }
+            : {}),
+        });
+      } catch { /* audit absorbed */ }
+    };
+
+    // Auth gate
     const requireKey = (process.env.DAAS_REQUIRE_ADMIN_KEY ?? "").toLowerCase();
     const keyRequired = requireKey === "true" || requireKey === "1";
 
     if (args.adminKey) {
       if (!isAllowedAdminKey(args.adminKey)) {
+        await audit("denied", { reason: "invalid_admin_key" });
         throw new Error("unauthorized: invalid adminKey");
       }
     } else if (keyRequired) {
+      await audit("denied", { reason: "admin_key_required" });
       throw new Error("unauthorized: adminKey required (DAAS_REQUIRE_ADMIN_KEY=true)");
     }
 
-    if (args.op === "deleteTracesByPrefix") {
-      const prefix = (args.sessionIdPrefix ?? "").trim();
-      if (prefix.length < 3) {
-        throw new Error("sessionIdPrefix must be at least 3 chars");
+    try {
+      if (args.op === "deleteTracesByPrefix") {
+        const prefix = (args.sessionIdPrefix ?? "").trim();
+        if (prefix.length < 3) {
+          await audit("error", { error: "prefix_too_short", prefix });
+          throw new Error("sessionIdPrefix must be at least 3 chars");
+        }
+        const deleted: number = await ctx.runMutation(
+          internal.domains.daas.admin._deleteTracesByPrefix,
+          { sessionIdPrefix: prefix },
+        );
+        await audit("ok", { op: args.op, prefix, deleted });
+        return { op: args.op, deleted };
       }
-      const deleted: number = await ctx.runMutation(
-        internal.domains.daas.admin._deleteTracesByPrefix,
-        { sessionIdPrefix: prefix },
-      );
-      return { op: args.op, deleted };
+      if (args.op === "deleteAllJudgments") {
+        const deleted: number = await ctx.runMutation(
+          internal.domains.daas.admin._deleteAllJudgments,
+          {},
+        );
+        await audit("ok", { op: args.op, deleted });
+        return { op: args.op, deleted };
+      }
+      await audit("error", { error: "unknown_op", op: args.op });
+      throw new Error(`unknown op: ${args.op}`);
+    } catch (err) {
+      if (err instanceof Error) {
+        await audit("error", { error: err.message });
+      } else {
+        await audit("error", { error: String(err) });
+      }
+      throw err;
     }
-    if (args.op === "deleteAllJudgments") {
-      const deleted: number = await ctx.runMutation(
-        internal.domains.daas.admin._deleteAllJudgments,
-        {},
-      );
-      return { op: args.op, deleted };
-    }
-    throw new Error(`unknown op: ${args.op}`);
   },
 });
 
