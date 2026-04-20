@@ -171,6 +171,11 @@ export default function PublicEntityShareView() {
     <main
       className="mx-auto min-h-screen max-w-3xl px-6 py-10 text-zinc-900 dark:text-zinc-100"
       aria-label="Public diligence brief"
+      /* Share-token visitors are always in read mode — the
+         data-view-mode attribute triggers the global CSS that
+         strips edit chrome (accept/dismiss buttons, composer,
+         slash hints, timeline, status chips). See src/index.css. */
+      data-view-mode="read"
     >
       <header className="mb-6 border-b border-zinc-200 pb-5 dark:border-white/[0.08]">
         <div className="text-[11px] uppercase tracking-[0.2em] text-zinc-500">

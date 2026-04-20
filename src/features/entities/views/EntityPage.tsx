@@ -60,6 +60,8 @@ import { EntityMemoryGraph } from "@/features/entities/components/EntityMemoryGr
 import { EntityNotebookMeta } from "@/features/entities/components/EntityNotebookMeta";
 import { EntityNotebookSurface } from "@/features/entities/components/EntityNotebookSurface";
 import { EntityPropertiesStrip } from "@/features/entities/components/EntityPropertiesStrip";
+import { ViewModeToggle } from "@/features/entities/components/ViewModeToggle";
+import { useViewMode } from "@/features/entities/lib/useViewMode";
 import { EntityShareSheet } from "@/features/entities/components/EntityShareSheet";
 import { DiligenceSection } from "@/features/entities/components/DiligenceSection";
 import { SignInForm } from "@/SignInForm";
@@ -811,6 +813,11 @@ export function EntityPage({ entitySlug }: { entitySlug?: string }) {
   const api = useConvexApi();
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  // Read mode flips a data attribute on the outer wrapper; CSS
+  // rules in src/index.css do all the chrome-stripping so the
+  // component tree stays unified between edit and read. Share-
+  // token routes force read mode via PublicEntityShareView.
+  const { isReadMode } = useViewMode();
 
   // Resolve slug from: prop > URL path /entity/:slug > query param ?entity=
   const slugFromPath = useMemo(() => {
@@ -1872,7 +1879,10 @@ function EntityWorkspaceView({
   const noteDocument = workspace.noteDocument ?? noteDocumentDraft;
 
   return (
-    <div className="mx-auto w-full max-w-[min(1760px,95vw)] px-4 py-6 pb-16 sm:px-6 sm:py-8">
+    <div
+      className="mx-auto w-full max-w-[min(1760px,95vw)] px-4 py-6 pb-16 sm:px-6 sm:py-8"
+      data-view-mode={isReadMode ? "read" : "edit"}
+    >
       {/* ── Sticky entity bar carrying IDENTITY + properties row.
            Ship-gate rubric §5: "Users can recover context at any scroll
            depth." Two rows: (1) back + entity name + kebab, (2) dense
@@ -1984,6 +1994,12 @@ function EntityWorkspaceView({
 
           {/* Action cluster */}
           <div className="flex flex-shrink-0 items-center gap-2">
+            {/* View mode toggle — flips the page between edit mode
+                (default) and read mode (?view=read). Read mode is
+                the "report" view: same notebook, chrome stripped,
+                editor immutable, reading-column width. Cmd/Ctrl+E
+                toggles from anywhere not already typing. */}
+            <ViewModeToggle />
             {!isSharedWorkspace ? (
               <>
                 <button

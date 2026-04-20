@@ -165,8 +165,10 @@ export function useAgentActions(): AgentActionsApi {
       const threadId = threadIdForDecoration(ctx);
       // 1) Open drawer with the decoration as context.
       openWithContext({
+        initialTab: "chat",
         initialMessage: buildAskMessage(ctx),
         contextTitle: `${ctx.blockType} · ${ctx.entitySlug}`,
+        contextEntitySlug: ctx.entitySlug,
         // Pass source IDs through contextDocumentIds so the drawer's
         // context-bundle path can pull their bodies into the agent.
         contextDocumentIds: ctx.sourceRefIds ?? [],

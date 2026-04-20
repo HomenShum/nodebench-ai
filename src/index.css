@@ -1235,6 +1235,87 @@ html[data-density='spacious'] {
 }
 
 /*
+ * [data-view-mode="read"] — strip edit chrome for the read/report
+ * view. Same page, same data, different presentation. Pattern is
+ * pulled from Notion's edit/published-webpage duality.
+ *
+ * Rule of thumb: if a UI element is about MUTATING the notebook
+ * (slash menu, accept/dismiss, edit toggles, composer), hide it
+ * in read mode. Elements that communicate content (overlays, author
+ * attribution on content, citations) stay visible, sometimes with
+ * chrome stripped so they read as footnotes rather than live
+ * affordances.
+ */
+
+/* Hide runtime ops chrome — operator affordances, not reading
+   material. */
+[data-view-mode="read"] .nb-top-status-row,
+[data-view-mode="read"] [data-testid="notebook-top-status-row"],
+[data-view-mode="read"] [data-testid="notebook-timeline"] {
+  display: none !important;
+}
+
+/* Hide mutation affordances on decorations — the content of the
+   decoration stays (IS the reading material); only the buttons go. */
+[data-view-mode="read"] [data-action="accept"],
+[data-view-mode="read"] [data-action="dismiss"],
+[data-view-mode="read"] [data-action="refresh"],
+[data-view-mode="read"] [data-action="ask"],
+[data-view-mode="read"] .decoration-action-bar {
+  display: none !important;
+}
+
+/* Make the notebook immutable for readers. Belt-and-suspenders:
+   we ALSO set contenteditable=false on the editor from JS; CSS
+   guards against stray clicks reaching ProseMirror's view. */
+[data-view-mode="read"] .ProseMirror,
+[data-view-mode="read"] [contenteditable="true"] {
+  pointer-events: none;
+  caret-color: transparent;
+  user-select: text;
+}
+[data-view-mode="read"] .ProseMirror a,
+[data-view-mode="read"] [contenteditable="true"] a {
+  pointer-events: auto;
+}
+
+/* Reading column — tighter than edit mode's notebook-sheet width
+   for classic document rhythm (Notion ~720px; Medium ~680px). */
+[data-view-mode="read"] .notebook-sheet {
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: 48px;
+}
+
+/* Hide composer surfaces in read mode (Ask panels, inline composers,
+   share-entity input fields). Structural content stays. */
+[data-view-mode="read"] [data-nb-composer],
+[data-view-mode="read"] .nb-composer-surface {
+  display: none !important;
+}
+
+/* Quiet inline agent attribution to an aside-style look — still
+   visible for provenance, but half-weight so the prose leads. */
+[data-view-mode="read"] .nb-agent-tag { opacity: 0.5; }
+
+/* Free print stylesheet for read mode. */
+@media print {
+  [data-view-mode="read"] .notebook-sheet {
+    max-width: none;
+    padding-top: 0;
+  }
+  [data-view-mode="read"] .nb-agent-tag {
+    opacity: 1;
+    filter: grayscale(1);
+  }
+  [data-view-mode="read"] * {
+    box-shadow: none !important;
+    animation: none !important;
+  }
+}
+
+/*
  * .nb-decoration-reveal — first-appearance animation for inline
  * diligence decorations. Applied once per (scratchpadRunId,
  * blockType) by DiligenceDecorationPlugin; subsequent renders skip
@@ -1398,6 +1479,10 @@ html[data-density='spacious'] {
   margin-right: auto;
 }
 
+.notebook-sheet.notebook-sheet-live {
+  max-width: 1680px;
+}
+
 @media (max-width: 640px) {
   .notebook-sheet {
     padding: 4px 0 40px;
@@ -1541,6 +1626,18 @@ html[data-density='spacious'] {
   animation: notebook-stream-fade 320ms ease-out backwards;
 }
 
+/* Char-by-char typewriter (v4 prototype, 12ms/char). Only used on the tail
+   of the last paragraph during active stream (see DiligenceDecorationPlugin).
+   Cap at 120 chars → ≤1.4s total animation. */
+@keyframes notebook-stream-char {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.notebook-stream-char {
+  display: inline;
+  animation: notebook-stream-char 180ms ease-out backwards;
+}
+
 /* Active-stream caret: blinking vertical bar at the end of the most recent
    paragraph when the decoration updated within the last 5s. Matches v4's
    "live writing" feel without per-char wrapping. */
@@ -1563,6 +1660,7 @@ html[data-density='spacious'] {
 @media (prefers-reduced-motion: reduce) {
   .notebook-block-wet-ink,
   .notebook-stream-ink,
+  .notebook-stream-char,
   .notebook-stream-active::after,
   .notebook-sheet [data-testid="notebook-block"].notebook-outline-jump-pulse {
     animation: none;
