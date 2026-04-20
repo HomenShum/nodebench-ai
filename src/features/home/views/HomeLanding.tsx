@@ -18,6 +18,7 @@ import {
 import { ProductThumbnail } from "@/features/product/components/ProductThumbnail";
 import { ProductSourceIdentity } from "@/features/product/components/ProductSourceIdentity";
 import { ProductIntakeComposer } from "@/features/product/components/ProductIntakeComposer";
+import { IntakeDetectedSources } from "@/features/product/components/IntakeDetectedSources";
 import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
 import { buildOperatorContextHint, buildOperatorContextLabel } from "@/features/product/lib/operatorContext";
 import { uploadProductDraftFiles } from "@/features/product/lib/uploadDraftFiles";
@@ -333,14 +334,15 @@ export function HomeLanding() {
   return (
     <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[1120px] flex-col px-4 pb-24 pt-6 sm:px-6 sm:pb-12 sm:pt-10">
       <section className="mx-auto w-full max-w-[760px] text-center">
-        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-          Ask or upload anything
-        </p>
-        <h1 className="mt-3 text-[2rem] font-semibold leading-[1.08] tracking-tight text-gray-900 dark:text-gray-100 md:text-[2.5rem] md:leading-[1.02]">
-          Turn messy input into a clear report.
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-gray-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#d97757]" aria-hidden="true" />
+          New run
+        </div>
+        <h1 className="mt-4 text-[1.5rem] font-semibold leading-[1.15] tracking-tight text-gray-900 dark:text-gray-100 md:text-[1.75rem]">
+          What do you want to understand?
         </h1>
-        <p className="mx-auto mt-3 max-w-[620px] text-sm leading-6 text-gray-500 dark:text-gray-400">
-          Start with a company, person, role, or market. NodeBench answers with sources, then gives you something you can save, reopen, and act on later.
+        <p className="mx-auto mt-2 max-w-[560px] text-sm leading-6 text-gray-500 dark:text-gray-400">
+          A company, a market, a person, a decision. We answer with sources and save the result so you can reopen it.
         </p>
         {operatorContextLabel ? (
           <div className="mt-4 inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300">
@@ -361,9 +363,18 @@ export function HomeLanding() {
             operatorContextLabel={operatorContextLabel}
             operatorContextHint={operatorContextHint}
             uploadingFiles={uploadingFiles}
-            placeholder="Paste recruiter notes, URLs, your resume context, and the actual ask in one box..."
-            helperText="Drop the hiring PDF, resume, screenshots, or notes here after you paste the full packet."
+            placeholder="Paste a LinkedIn profile, drop a pitch deck, or describe the company/role. I'll classify each source and run diligence."
+            helperText="Accepts: LinkedIn/GitHub/X URLs · press articles · pitch decks (.pdf/.pptx) · bios (.pdf/.docx/.md) · recruiter & founder notes."
             submitLabel="Start run"
+          />
+          {/* Live classifier affordance — stays silent until the user types
+              or drops files, then shows "Detected: N LinkedIn profiles ·
+              1 pitch deck · founder note" + per-source chips. Proves the
+              intake breadth claim in the elevator pitch. */}
+          <IntakeDetectedSources
+            text={query}
+            files={pendingFiles}
+            className="mt-3"
           />
         </div>
 
@@ -421,14 +432,11 @@ export function HomeLanding() {
         <div className="mb-4 flex items-end justify-between gap-4 sm:mb-5">
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
-              Starting points
+              Pick up where you left off
             </p>
             <h2 className="mt-2 text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-              Reopen a saved report or start from a clean template
+              Your recent reports
             </h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Keep this secondary to the composer. It is here to help you start faster, not compete with the main ask box.
-            </p>
           </div>
         </div>
 
