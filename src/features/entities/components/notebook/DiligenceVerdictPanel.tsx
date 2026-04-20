@@ -287,28 +287,11 @@ export function DiligenceVerdictPanel({
     );
   }
 
-  // Empty — agency-giving message.
+  // Empty — render nothing (ship-gate rubric §8: "Empty states are compact
+  // and contextual. The page is never dominated by emptiness."). A verdict
+  // panel with no verdicts is just chrome claiming prime real estate.
   if (!rows || rows.length === 0) {
-    return (
-      <section
-        className={
-          "rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 " + (className ?? "")
-        }
-        role="region"
-        aria-label="Pipeline verdict panel"
-      >
-        <header className="mb-3">
-          <h2 className="text-[11px] uppercase tracking-[0.2em] text-white/60">
-            Pipeline verdicts
-          </h2>
-        </header>
-        <p className="text-sm text-white/70">
-          No pipeline runs yet for this entity. Trigger a structuring pass via
-          chat or the Refresh action — verdicts will appear here as the
-          orchestrator emits.
-        </p>
-      </section>
-    );
+    return null;
   }
 
   const latest = rows[0];

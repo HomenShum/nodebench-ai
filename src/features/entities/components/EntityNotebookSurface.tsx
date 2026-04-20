@@ -1,19 +1,12 @@
 import { memo, Suspense, lazy } from "react";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
-// LiveDiligenceSection collapses the five operator-facing diligence
-// panels behind a single quiet affordance. See its header for the
-// Ive/earned-complexity rationale. Lazy-loaded alongside the panels
-// it wraps so cold-start stays light.
+
 const LiveDiligenceSection = lazy(() =>
   import("@/features/entities/components/LiveDiligenceSection").then((mod) => ({
     default: mod.LiveDiligenceSection,
   })),
 );
 
-// NotebookTimeline — bottom scrubber for replaying agent activity on
-// this entity. Writes a ?t=<ms> URL-hash cursor that EntityNotebookLive
-// reads via useScrubTime to filter decorations. Hides automatically
-// when there's zero agent activity to replay.
 const NotebookTimeline = lazy(() =>
   import("@/features/entities/components/notebook/NotebookTimeline").then((mod) => ({
     default: mod.NotebookTimeline,
@@ -32,60 +25,9 @@ const EntityNotebookLiveMount = lazy(() =>
   })),
 );
 
-// DiligenceVerdictPanel — surfaces deterministic + LLM verdicts above the
-// notebook trace. Lazy-loaded because it pulls Convex subscriptions + the
-// per-gate rendering we only need when the live notebook is visible.
-// (owner_mode_end_to_end.md: don't stop at backend work when UI can't see it.)
-const DiligenceVerdictPanel = lazy(() =>
-  import("@/features/entities/components/notebook/DiligenceVerdictPanel").then((mod) => ({
-    default: mod.DiligenceVerdictPanel,
-  })),
-);
-
-// DiligenceDriftBanner — silent by default; fires a warning when recent
-// verdict rate drops below floor. Mounted ABOVE the verdict panel so
-// the alert is the first thing operators see when drift is real.
-const DiligenceDriftBanner = lazy(() =>
-  import("@/features/entities/components/notebook/DiligenceDriftBanner").then((mod) => ({
-    default: mod.DiligenceDriftBanner,
-  })),
-);
-
-// ShareEntityButton — owner-facing "copy public share link". Anonymous
-// read-only URL so owners can send briefs to investors without asking
-// them to sign up (pitch-line commitment: "shareable public URLs").
 const ShareEntityButton = lazy(() =>
   import("@/features/share/components/ShareEntityButton").then((mod) => ({
     default: mod.ShareEntityButton,
-  })),
-);
-
-// PipelineReliabilityChip — surfaces scheduled retries + open DLQ entries
-// tied to THIS entity. Silent when the pipeline is healthy
-// (async_reliability.md invariant: "partial success is first-class").
-const PipelineReliabilityChip = lazy(() =>
-  import("@/features/entities/components/notebook/PipelineReliabilityChip").then((mod) => ({
-    default: mod.PipelineReliabilityChip,
-  })),
-);
-
-// EntityMemoryPanel — read-only view of the per-entity MEMORY.md index
-// (layered_memory.md L1). Silent when the entity has no compacted topics
-// yet; once runs accumulate, shows the one-liner summary per topic with
-// progressive-disclosure fact expansion.
-const EntityMemoryPanel = lazy(() =>
-  import("@/features/entities/components/notebook/EntityMemoryPanel").then((mod) => ({
-    default: mod.EntityMemoryPanel,
-  })),
-);
-
-// ExtendedRunPanel — Live Diligence surface. Launcher + streaming
-// checkpoint feed for multi-checkpoint Claude extended-thinking runs.
-// The "90-minute autonomous build" pitch wired as Convex-reactive
-// chain-of-checkpoints (convex/domains/product/extendedThinking.ts).
-const ExtendedRunPanel = lazy(() =>
-  import("@/features/entities/components/notebook/ExtendedRunPanel").then((mod) => ({
-    default: mod.ExtendedRunPanel,
   })),
 );
 
@@ -168,10 +110,10 @@ function EntityNotebookSurfaceBase({
         <div className="mt-6 flex items-center justify-between gap-3">
           <div className="text-xs text-gray-500 dark:text-gray-400">
             {entityViewMode === "live"
-              ? "Live notebook — blocks are persisted, inline-editable, slash commands active."
+              ? "Live notebook - blocks are persisted, inline-editable, slash commands active."
               : entityViewMode === "notebook"
-                ? "Notebook view — read-only derivation with full harness lineage."
-                : "Classic view — sections rendered as stacked panels."}
+                ? "Notebook view - read-only derivation with full harness lineage."
+                : "Classic view - sections rendered as stacked panels."}
           </div>
           <div className="flex gap-1 rounded-md border border-gray-200 bg-gray-50/60 p-0.5 dark:border-white/10 dark:bg-white/[0.02]">
             <button
@@ -208,7 +150,7 @@ function EntityNotebookSurfaceBase({
                     : "text-gray-500 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:text-gray-200"
                 }`}
               >
-                {materializingLiveWorkspace ? "Opening Live..." : "Live ✨"}
+                {materializingLiveWorkspace ? "Opening Live..." : "Live"}
               </button>
             ) : null}
           </div>
@@ -217,7 +159,7 @@ function EntityNotebookSurfaceBase({
 
       {entityViewMode === "notebook" ? (
         <ErrorBoundary section="Entity notebook">
-          <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading notebook…</div>}>
+          <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading notebook...</div>}>
             <article className="notebook-sheet mt-4">
               <EntityNotebookView
                 entitySlug={entitySlug}
@@ -233,52 +175,26 @@ function EntityNotebookSurfaceBase({
 
       {entityViewMode === "live" ? (
         <ErrorBoundary section="Live notebook">
-          <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading live notebook…</div>}>
-            {/*
-              Owner-only: mint a public share link for this entity's brief.
-              Gated on canEditNotebook so read-only viewers don't see the
-              button. The minted link works anonymously — no sign-in
-              required for the recipient (publicShares.ts bearer token).
-            */}
-            {canEditNotebook ? (
-              <ErrorBoundary section="Share link">
-                <Suspense fallback={null}>
-                  <ShareEntityButton entitySlug={entitySlug} className="mt-4" />
-                </Suspense>
-              </ErrorBoundary>
-            ) : null}
-            {/*
-              All five diligence panels (drift banner, reliability chip,
-              memory index, extended run, verdict panel) are now wrapped
-              in a single collapsing section. On a quiet entity, this
-              renders a tiny "Run diligence · last run 9h ago" pill; on
-              any real activity (drift, retries, live run), it auto-
-              expands to the full panel set. Principle: the notebook is
-              the product. Ops tooling only shows up when it earns the
-              space. See `LiveDiligenceSection.tsx` for details.
-            */}
-            <ErrorBoundary section="Live diligence">
-              <Suspense fallback={null}>
-                <LiveDiligenceSection
-                  entitySlug={entitySlug}
-                  canEdit={canEditNotebook}
-                  className="mt-4"
-                />
-              </Suspense>
-            </ErrorBoundary>
-            {/*
-              NotebookTimeline — bottom scrubber for replaying agent
-              activity. Placed above the notebook article so readers
-              see the cursor's relation to the content below. Hidden
-              automatically when there's nothing to replay, so the
-              cold-start entity page still feels clean.
-            */}
-            <ErrorBoundary section="Timeline">
-              <Suspense fallback={null}>
-                <NotebookTimeline entitySlug={entitySlug} className="mt-3" />
-              </Suspense>
-            </ErrorBoundary>
+          <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading live notebook...</div>}>
             <article className="notebook-sheet mt-4">
+              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gray-200/70 pb-4 dark:border-white/[0.08]">
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                    Live notebook
+                  </div>
+                  <p className="mt-1 max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-300">
+                    The notebook stays first. Runtime, replay, and operator detail now sit underneath it instead of competing with the page header.
+                  </p>
+                </div>
+                {canEditNotebook ? (
+                  <ErrorBoundary section="Share link">
+                    <Suspense fallback={null}>
+                      <ShareEntityButton entitySlug={entitySlug} />
+                    </Suspense>
+                  </ErrorBoundary>
+                ) : null}
+              </div>
+
               <EntityNotebookLiveMount
                 entitySlug={entitySlug}
                 shareToken={shareToken}
@@ -290,6 +206,25 @@ function EntityNotebookSurfaceBase({
                 latestHumanEditorOwnerKey={latestHumanEditorOwnerKey}
                 latestHumanEditorUpdatedAt={latestHumanEditorUpdatedAt}
               />
+
+              <ErrorBoundary section="Timeline">
+                <Suspense fallback={null}>
+                  <NotebookTimeline
+                    entitySlug={entitySlug}
+                    className="mt-6 border-t border-gray-200/70 pt-6 dark:border-white/[0.08]"
+                  />
+                </Suspense>
+              </ErrorBoundary>
+
+              <ErrorBoundary section="Live diligence">
+                <Suspense fallback={null}>
+                  <LiveDiligenceSection
+                    entitySlug={entitySlug}
+                    canEdit={canEditNotebook}
+                    className="mt-6"
+                  />
+                </Suspense>
+              </ErrorBoundary>
             </article>
           </Suspense>
         </ErrorBoundary>

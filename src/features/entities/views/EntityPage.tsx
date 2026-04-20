@@ -1960,16 +1960,20 @@ function EntityWorkspaceView({
               <EntityPropertiesStrip
                 sector={entity.entityType ?? undefined}
                 sourceCount={
-                  Array.isArray(reports)
-                    ? reports.reduce(
+                  Array.isArray(workspace.timeline)
+                    ? workspace.timeline.reduce(
                         (sum, r) =>
                           sum + (Array.isArray(r?.sources) ? r.sources.length : 0),
                         0,
                       )
                     : undefined
                 }
-                noteCount={note ? 1 : 0}
-                runCount={Array.isArray(reports) ? reports.length : undefined}
+                noteCount={workspace.note ? 1 : 0}
+                runCount={
+                  Array.isArray(workspace.timeline)
+                    ? workspace.timeline.length
+                    : undefined
+                }
                 updatedAt={entity.updatedAt ?? undefined}
               />
             </div>

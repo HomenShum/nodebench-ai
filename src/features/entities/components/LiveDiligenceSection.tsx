@@ -1,35 +1,3 @@
-/**
- * LiveDiligenceSection — collapses the five operator-facing diligence
- * panels behind a single quiet affordance when idle.
- *
- * Before this component:
- *   - DiligenceDriftBanner, PipelineReliabilityChip, EntityMemoryPanel,
- *     ExtendedRunPanel, DiligenceVerdictPanel were all rendered as
- *     prominent siblings above the notebook article.
- *   - On a fresh entity with no runs and no drift, the page still
- *     showed five "tooling" shells — the reader felt like they'd
- *     opened an ops dashboard, not a notebook.
- *
- * After:
- *   - When all five panels are idle (no drift, no pending retries, no
- *     in-progress extended runs, no verdicts), this component shows a
- *     single tiny row:   "Run diligence · last run 9h ago" (or
- *     "Run diligence" if never run).
- *   - When ANY panel has real content, the expanded view renders the
- *     five panels in a quiet container.
- *   - A user-controlled "Show diligence" toggle lets the operator
- *     open the full view even when idle (for debugging or review).
- *
- * Principle (Ive / Linear / Notion): earned complexity. If the system
- * has nothing urgent, it says nothing. The notebook becomes the
- * product, not the dashboard.
- *
- * We deliberately do NOT move the panels' data gating into this
- * wrapper — each panel still decides internally when to return null.
- * We only compute an aggregate "hasAnyLiveActivity" signal to decide
- * whether to auto-expand.
- */
-
 import { memo, Suspense, useState } from "react";
 import { Activity, ChevronDown } from "lucide-react";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
@@ -45,11 +13,6 @@ import { cn } from "@/lib/utils";
 export interface LiveDiligenceSectionProps {
   entitySlug: string;
   canEdit: boolean;
-  /**
-   * Optional signals the caller can pass if they've already read them.
-   * When any is truthy, the section auto-expands because there's
-   * something worth showing.
-   */
   hasDriftWarning?: boolean;
   hasPendingRetries?: boolean;
   hasActiveRun?: boolean;
@@ -74,12 +37,8 @@ export const LiveDiligenceSection = memo(function LiveDiligenceSection({
   lastRunAt,
   className,
 }: LiveDiligenceSectionProps) {
-  // Pull the real run graph — isActive + lastRunAt from the runtime are
-  // more authoritative than caller-provided props, so we prefer them
-  // when present. Callers can still pass explicit overrides for tests.
   const runGraph = useRunGraph(entitySlug);
 
-  // Auto-expand on any real activity; user can override via toggle.
   const effectiveActiveRun = hasActiveRun ?? runGraph.isActive;
   const effectiveLastRunAt = lastRunAt ?? runGraph.lastRunAt;
   const autoExpanded = Boolean(hasDriftWarning || hasPendingRetries || effectiveActiveRun);
@@ -131,7 +90,7 @@ export const LiveDiligenceSection = memo(function LiveDiligenceSection({
           <p className="mt-1 text-sm leading-6 text-gray-600 dark:text-gray-300">
             {effectiveActiveRun
               ? "A live diligence run is still shaping the notebook. Open the details below when you need the flow, checkpoints, verdicts, or memory state."
-              : `No active run. ${lastRunLabel} — reopen this section when you need trace, reliability, or verdict detail.`}
+              : `No active run. ${lastRunLabel} - reopen this section when you need trace, reliability, or verdict detail.`}
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -150,14 +109,7 @@ export const LiveDiligenceSection = memo(function LiveDiligenceSection({
           ) : null}
         </div>
       </div>
-      {/*
-        Flow graph — appears first when there IS a run to show.
-        Mirrors the v4 prototype's right-rail FlowPanel: a visual
-        answer to "what are the agents doing right now?" Draggable,
-        pulses the active checkpoint, dash-animates the live edge.
-        Hidden entirely when no run exists so the section stays calm
-        (silent-when-idle principle).
-      */}
+
       <div className="mt-4 space-y-3">
         {runGraph.hasRun ? (
           <div className="space-y-2 rounded-xl border border-gray-200 bg-white/80 p-3 dark:border-white/[0.08] dark:bg-white/[0.02]">
@@ -169,21 +121,22 @@ export const LiveDiligenceSection = memo(function LiveDiligenceSection({
                 {effectiveActiveRun ? "Live flow" : lastRunLabel}
               </div>
             </div>
-          {runGraph.runHeadline ? (
+            {runGraph.runHeadline ? (
               <div className="text-xs text-gray-500 dark:text-gray-400">
                 <span className="font-medium text-gray-900 dark:text-gray-100">
-                {runGraph.isActive ? "Running" : "Last run"}:
+                  {runGraph.isActive ? "Running" : "Last run"}:
                 </span>{" "}
-              {runGraph.runHeadline}
+                {runGraph.runHeadline}
               </div>
-          ) : null}
-          <AgentFlowRail
-            nodes={runGraph.nodes}
-            edges={runGraph.edges}
-            height={Math.max(200, Math.min(360, 36 + Math.ceil(runGraph.nodes.length / 2) * 88))}
-          />
+            ) : null}
+            <AgentFlowRail
+              nodes={runGraph.nodes}
+              edges={runGraph.edges}
+              height={Math.max(200, Math.min(360, 36 + Math.ceil(runGraph.nodes.length / 2) * 88))}
+            />
           </div>
         ) : null}
+
         <div className="grid gap-3 xl:grid-cols-2">
           <ErrorBoundary section="Drift banner">
             <Suspense fallback={null}>
@@ -206,6 +159,7 @@ export const LiveDiligenceSection = memo(function LiveDiligenceSection({
             </Suspense>
           </ErrorBoundary>
         </div>
+
         <ErrorBoundary section="Pipeline verdicts">
           <Suspense fallback={null}>
             <DiligenceVerdictPanel entitySlug={entitySlug} limit={8} />

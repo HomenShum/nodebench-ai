@@ -27,6 +27,21 @@ import {
 } from "./DiligenceDecorationPlugin";
 import { diligenceRenderers } from "./diligenceRenderers";
 
+/** Block kinds reachable via inline markdown shortcut (`## ` → H2, etc.). */
+export type MarkdownBlockKind = "heading_2" | "heading_3" | "bullet" | "quote" | "todo";
+
+/** Map of prefix → target block kind. Hoisted out of `handleKeyDown` so the
+ *  Record literal isn't re-allocated on every keystroke. */
+const MARKDOWN_SHORTCUTS: Readonly<Record<string, MarkdownBlockKind>> = Object.freeze({
+  "##": "heading_2",
+  "###": "heading_3",
+  "-": "bullet",
+  "*": "bullet",
+  ">": "quote",
+  "[]": "todo",
+  "[ ]": "todo",
+});
+
 type Props = {
   syncDocumentId: string;
   chips: BlockChip[];
@@ -44,7 +59,7 @@ type Props = {
   /** Markdown shortcut — called when the user types a recognized prefix
       followed by space at the start of an empty block. Parent transforms
       the block kind and clears the prefix. */
-  onMarkdownShortcut?: (kind: "heading_2" | "heading_3" | "bullet" | "quote" | "todo") => void;
+  onMarkdownShortcut?: (kind: MarkdownBlockKind) => void;
   /** Tab pressed — indent this block (make it a child of the previous block). */
   onTabIndent?: () => void;
   /** Shift+Tab pressed — outdent this block one level. */
@@ -384,17 +399,7 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
             // only text so far is the prefix itself (prevents mid-line
             // accidents).
             if (event.key === " " && onMarkdownShortcutRef.current) {
-              const trimmed = textContent;
-              const SHORTCUTS: Record<string, "heading_2" | "heading_3" | "bullet" | "quote" | "todo"> = {
-                "##": "heading_2",
-                "###": "heading_3",
-                "-": "bullet",
-                "*": "bullet",
-                ">": "quote",
-                "[]": "todo",
-                "[ ]": "todo",
-              };
-              const match = SHORTCUTS[trimmed];
+              const match = MARKDOWN_SHORTCUTS[textContent];
               if (match) {
                 event.preventDefault();
                 // Clear the prefix — the kind change visually carries the

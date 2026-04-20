@@ -44,6 +44,14 @@ export interface AgentOpenOptions {
   contextWebUrls?: string[];
   /** Title of the content being analyzed (for display) */
   contextTitle?: string;
+  /**
+   * Entity slug the user is currently viewing. When set, the panel agent
+   * knows which entity notebook is "active" and can offer a "Save to
+   * notebook" CTA on responses. Required for cross-surface unification:
+   * Chat / Panel / Inline all target the same productBlocks table when an
+   * entitySlug is present.
+   */
+  contextEntitySlug?: string;
   /** Dossier context for bidirectional sync */
   dossierContext?: DossierContext;
 }
@@ -53,6 +61,14 @@ interface FastAgentContextValue {
   isOpen: boolean;
   /** Current context options (if opened with context) */
   options: AgentOpenOptions | null;
+  /**
+   * Entity slug for the route the user is currently viewing. Tracked
+   * independently of whether the panel is open — so when the user opens
+   * the panel on an entity page, the panel already knows which entity's
+   * notebook to target. Set by the entity page on mount / cleared on
+   * unmount via `useActiveEntity`.
+   */
+  activeEntitySlug: string | null;
   /** Whether an external panel handler is registered (e.g., MainLayout) */
   hasExternalHandler: boolean;
   /** Open the Fast Agent panel (optionally with context) */
@@ -69,6 +85,12 @@ interface FastAgentContextValue {
   clearOptions: () => void;
   /** Register an external state setter (from MainLayout) */
   registerExternalState: (setter: (open: boolean) => void, getter: () => boolean) => void;
+  /**
+   * Set the active entity slug. Called by the entity page on mount;
+   * passed `null` on unmount. The panel subscribes to this so agent
+   * responses can offer "Save to notebook" CTAs against the right entity.
+   */
+  setActiveEntitySlug: (slug: string | null) => void;
 }
 
 const FastAgentContext = createContext<FastAgentContextValue | null>(null);
@@ -79,6 +101,11 @@ export function FastAgentProvider({ children }: { children: ReactNode }) {
 
   // Context options for the agent
   const [options, setOptions] = useState<AgentOpenOptions | null>(null);
+
+  // Active entity — tracked independently of open/close so the panel
+  // always knows which notebook to target when the user is on an entity
+  // page. Cleared when user leaves the entity page.
+  const [activeEntitySlug, setActiveEntitySlug] = useState<string | null>(null);
 
   // External state from MainLayout (when registered)
   const [externalSetter, setExternalSetter] = useState<((open: boolean) => void) | null>(null);
@@ -147,6 +174,7 @@ export function FastAgentProvider({ children }: { children: ReactNode }) {
   const value = useMemo<FastAgentContextValue>(() => ({
     isOpen,
     options,
+    activeEntitySlug,
     hasExternalHandler,
     open,
     openWithContext,
@@ -155,7 +183,8 @@ export function FastAgentProvider({ children }: { children: ReactNode }) {
     setIsOpen,
     clearOptions,
     registerExternalState,
-  }), [isOpen, options, hasExternalHandler, open, openWithContext, close, toggle, setIsOpen, clearOptions, registerExternalState]);
+    setActiveEntitySlug,
+  }), [isOpen, options, activeEntitySlug, hasExternalHandler, open, openWithContext, close, toggle, setIsOpen, clearOptions, registerExternalState]);
 
   return (
     <FastAgentContext.Provider value={value}>
@@ -171,6 +200,7 @@ export function useFastAgent() {
     return {
       isOpen: false,
       options: null,
+      activeEntitySlug: null,
       hasExternalHandler: false,
       open: () => console.warn('FastAgentProvider not found'),
       openWithContext: () => console.warn('FastAgentProvider not found'),
@@ -179,9 +209,24 @@ export function useFastAgent() {
       setIsOpen: () => {},
       clearOptions: () => {},
       registerExternalState: () => {},
+      setActiveEntitySlug: () => {},
     };
   }
   return context;
+}
+
+/**
+ * Hook used by the entity page to register the currently-viewed entity
+ * slug with the global FastAgentContext. Keeps the panel + agent aware
+ * of context even when the panel is closed. Clears on unmount so
+ * navigation away from the entity page resets the context.
+ */
+export function useActiveEntity(slug: string | null | undefined) {
+  const { setActiveEntitySlug } = useFastAgent();
+  useEffect(() => {
+    setActiveEntitySlug(slug ?? null);
+    return () => setActiveEntitySlug(null);
+  }, [slug, setActiveEntitySlug]);
 }
 
 /**

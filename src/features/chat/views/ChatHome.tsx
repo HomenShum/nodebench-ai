@@ -20,6 +20,7 @@ import { useStreamingSearch, type ToolStage } from "@/hooks/useStreamingSearch";
 import { useConvexApi } from "@/lib/convexApi";
 import { buildOperatorContextHint, buildOperatorContextLabel } from "@/features/product/lib/operatorContext";
 import { ProductIntakeComposer } from "@/features/product/components/ProductIntakeComposer";
+import { SaveToNotebookButton } from "@/features/agents/components/SaveToNotebookButton";
 import { SessionArtifactsPanel } from "@/features/chat/components/SessionArtifactsPanel";
 import { uploadProductDraftFiles } from "@/features/product/lib/uploadDraftFiles";
 import { deriveReportArtifactMode, getReportArtifactLabel, type ReportArtifactMode } from "../../../../shared/reportArtifacts";
@@ -698,6 +699,22 @@ export const ChatHome = memo(function ChatHome() {
                               href={source!.href}
                             />
                           ))}
+                      </div>
+                    )}
+                    {/* Save-to-notebook CTA — surfaces per-section only when
+                        the chat is scoped to an entity (via ?entity=slug).
+                        Writes the section body as an agent-authored pending
+                        suggestion into that entity's notebook. Unifies the
+                        cross-surface agent flow: Chat and Panel both route
+                        into the same productBlocks stream as inline /ai. */}
+                    {entityParam?.trim() && section.status !== "building" && typeof section.body === "string" && section.body.trim() && (
+                      <div className="mt-2">
+                        <SaveToNotebookButton
+                          entitySlug={entityParam.trim()}
+                          text={`## ${section.title}\n\n${section.body}`}
+                          surface="chat"
+                          compact
+                        />
                       </div>
                     )}
                     {streaming.isStreaming && section.status === "building" && streaming.sourcePreview.length > 0 && section.id === "what-it-is" && (

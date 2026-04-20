@@ -35,6 +35,18 @@ vi.mock("@/features/entities/components/notebook/EntityNotebookLiveMount", () =>
   ),
 }));
 
+vi.mock("@/features/entities/components/notebook/NotebookTimeline", () => ({
+  NotebookTimeline: ({ entitySlug }: { entitySlug: string }) => (
+    <div data-testid="mock-notebook-timeline">timeline:{entitySlug}</div>
+  ),
+}));
+
+vi.mock("@/features/entities/components/LiveDiligenceSection", () => ({
+  LiveDiligenceSection: ({ entitySlug }: { entitySlug: string }) => (
+    <div data-testid="mock-live-diligence">runtime:{entitySlug}</div>
+  ),
+}));
+
 describe("EntityNotebookSurface", () => {
   it("renders classic drift state and routes view toggle clicks through stable callbacks", () => {
     const onSelectClassic = vi.fn();

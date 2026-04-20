@@ -49,6 +49,8 @@ import { DocumentActionGrid, extractDocumentActions, type DocumentAction } from 
 import { extractMediaFromText, type ExtractedMedia } from './utils/mediaExtractor';
 import type { SpawnedAgent } from './types/agent';
 import type { AgentOpenOptions, DossierContext } from '@/features/agents/context/FastAgentContext';
+import { useFastAgent } from '@/features/agents/context/FastAgentContext';
+import { SaveToNotebookButton } from '@/features/agents/components/SaveToNotebookButton';
 import { trackEvent } from '@/lib/analytics';
 import { buildDossierContextPrefix } from '@/features/agents/context/FastAgentContext';
 import { findDemoConversation, GUEST_FALLBACK_RESPONSE, type DemoConversation } from './demoConversation';
@@ -85,6 +87,27 @@ interface FastAgentPanelProps {
   onOptionsConsumed?: () => void;
   /** Voice intent router — intercepts UI commands before agent send. Return true if handled. */
   onVoiceIntent?: (text: string, source?: 'voice' | 'text') => boolean;
+}
+
+/**
+ * Extract plain text from an agent message regardless of which shape the
+ * Convex agent SDK returned. Used by both the artifact aggregator and the
+ * per-message "Save to notebook" CTA — keeping the logic single-sourced.
+ */
+function extractAssistantMessageText(msg: any): string {
+  if (typeof msg?.text === "string" && msg.text.trim()) return msg.text;
+  if (typeof msg?.content === "string" && msg.content.trim()) return msg.content;
+  if (Array.isArray(msg?.content)) {
+    const parts = msg.content
+      .filter((c: any) => typeof c?.text === "string")
+      .map((c: any) => c.text)
+      .join("\n\n");
+    if (parts.trim()) return parts;
+  }
+  if (typeof msg?.message?.text === "string" && msg.message.text.trim()) {
+    return msg.message.text;
+  }
+  return "";
 }
 
 function DossierFocusSubscription({
@@ -1244,6 +1267,12 @@ export const FastAgentPanel = memo(function FastAgentPanel({
 
   const isBusy = isStreaming || isGenerating || isDemoThinking;
 
+  // Cross-surface agent unification: when the user is on an entity page,
+  // agent responses can be saved directly into that entity's notebook.
+  // activeEntitySlug is tracked by FastAgentContext independently of
+  // whether the panel is open.
+  const { activeEntitySlug } = useFastAgent();
+
   // Prepare messages for rendering - must be before any useMemo/useCallback/useEffect that references messagesToRender
   const messagesToRender = useMemo(() => {
     // In guest mode with demo messages, render those instead of (empty) backend messages
@@ -2199,17 +2228,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     return messagesToRender
       .filter((msg: any) => (msg.role ?? msg?.message?.role) === 'assistant')
       .map((msg: any) => {
-        if (typeof msg.text === 'string' && msg.text.trim()) return msg.text;
-        if (typeof msg.content === 'string' && msg.content.trim()) return msg.content;
-        if (Array.isArray(msg.content)) {
-          const parts = msg.content
-            .filter((c: any) => typeof c?.text === 'string')
-            .map((c: any) => c.text)
-            .join('\n\n');
-          if (parts.trim()) return parts;
-        }
-        if (typeof msg.message?.text === 'string' && msg.message.text.trim()) return msg.message.text;
-        return '';
+        return extractAssistantMessageText(msg) || '';
       })
       .filter(Boolean);
   }, [messagesToRender]);
@@ -2981,6 +3000,24 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                               return idx >= startIdx;
                             })()}
                           />
+                          {/* Save to notebook — appears under completed assistant
+                              responses when the user is on an entity page. Writes
+                              the text as an agent-authored read-only block; user
+                              reviews as a pending suggestion in the notebook. */}
+                          {activeEntitySlug && message.role === 'assistant' && message.status === 'complete' && (() => {
+                            const text = extractAssistantMessageText(message);
+                            if (!text.trim()) return null;
+                            return (
+                              <div className="ml-10 mt-1 mb-1.5">
+                                <SaveToNotebookButton
+                                  entitySlug={activeEntitySlug}
+                                  text={text}
+                                  surface="panel"
+                                  compact
+                                />
+                              </div>
+                            );
+                          })()}
                           {/* Demo source badges + key insight */}
                           {message._demoSources && message._demoSources.length > 0 && message.role === 'assistant' && message.status === 'complete' && (
                             <div className="ml-10 mt-1.5 mb-2 animate-in fade-in slide-in-from-bottom-1 duration-300">

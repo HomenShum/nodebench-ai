@@ -375,6 +375,7 @@ export function ExtendedRunPanel({
   canEdit,
   className,
 }: ExtendedRunPanelProps) {
+  const [launcherOpen, setLauncherOpen] = useState(false);
   const runs = useQuery(
     api.domains.product.extendedThinking.listRunsForEntity,
     { entitySlug, limit: 5 },
@@ -386,6 +387,33 @@ export function ExtendedRunPanel({
   const active = latest && (latest.status === "running" || latest.status === "waiting_checkpoint" || latest.status === "queued");
 
   if (!canEdit && !latest) return null;
+
+  // Ship-gate rubric §1 + §6: idle state should be a single compact
+  // affordance, not a full control panel. Full launcher only when user
+  // signals intent by clicking "Run diligence" or a past run is active.
+  const idle = !latest && !active;
+
+  if (idle && canEdit && !launcherOpen) {
+    return (
+      <div
+        className={"flex items-center gap-2 text-[12px] text-white/50 " + (className ?? "")}
+        role="region"
+        aria-label="Live diligence (idle)"
+      >
+        <span className="uppercase tracking-[0.18em] text-[10px] text-white/35">
+          Live diligence
+        </span>
+        <span className="text-white/20">·</span>
+        <button
+          type="button"
+          onClick={() => setLauncherOpen(true)}
+          className="rounded-md px-2 py-0.5 text-[11px] text-white/70 transition-colors hover:bg-white/[0.05] hover:text-white/95 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30"
+        >
+          Run diligence →
+        </button>
+      </div>
+    );
+  }
 
   return (
     <section
@@ -404,6 +432,15 @@ export function ExtendedRunPanel({
           <span className="font-mono text-[11px] text-white/40">
             {runs.length} run{runs.length === 1 ? "" : "s"}
           </span>
+        ) : idle && canEdit ? (
+          <button
+            type="button"
+            onClick={() => setLauncherOpen(false)}
+            className="text-[11px] text-white/40 transition-colors hover:text-white/70"
+            aria-label="Close launcher"
+          >
+            ✕
+          </button>
         ) : null}
       </header>
 
