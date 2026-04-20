@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npx convex deploy --cmd 'npm run build'",
   "functions": {
     "api/search.js": {
       "maxDuration": 60
