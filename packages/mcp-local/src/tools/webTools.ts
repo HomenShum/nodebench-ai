@@ -25,7 +25,16 @@ async function canImport(pkg: string): Promise<boolean> {
 
 async function getLinkedom(): Promise<any | null> {
   try {
-    return await import("linkedom");
+    // `linkedom` is declared only in packages/mcp-local/package.json (this
+    // sub-package) — root/Convex TypeScript projects don't resolve it at
+    // type-check time even though the runtime import is safe via
+    // try/catch. Dynamic-string import bypasses static resolution so
+    // Convex deploy's TypeScript gate passes while the optional runtime
+    // behavior is preserved.
+    const mod = "linkedom";
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore -- optional dep, declared in packages/mcp-local only
+    return await import(/* @vite-ignore */ mod);
   } catch {
     return null;
   }
