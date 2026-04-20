@@ -202,13 +202,22 @@
     @apply border-border;
   }
 
-  /* Subtle focus rings — Linear-style thin neutral outline */
-  :focus-visible {
+  /*
+   * Subtle focus rings — Linear-style thin neutral outline.
+   *
+   * SCOPED: applies only to elements that haven't declared their own
+   * focus-visible affordance. Otherwise this 1px outline stacks on
+   * top of Tailwind's `focus-visible:ring-*` producing double-halo
+   * artifacts. Buttons/links/tabs/menuitems and anything inside a
+   * nb-composer-surface get their own ring. A11y floor preserved —
+   * every interactive element keeps a keyboard-visible focus state.
+   */
+  :focus-visible:not(button):not(a):not(summary):not([role="button"]):not([role="tab"]):not([role="link"]):not([role="menuitem"]):not([role="option"]):not([role="switch"]):not([data-nb-composer] *) {
     outline: 1px solid rgba(15, 23, 42, 0.25);
     outline-offset: 2px;
   }
 
-  .dark :focus-visible {
+  .dark :focus-visible:not(button):not(a):not(summary):not([role="button"]):not([role="tab"]):not([role="link"]):not([role="menuitem"]):not([role="option"]):not([role="switch"]):not([data-nb-composer] *) {
     outline: 1px solid rgba(255, 255, 255, 0.2);
     outline-offset: 2px;
   }
