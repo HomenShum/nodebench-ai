@@ -322,6 +322,7 @@ import type * as domains_daas_admin from "../domains/daas/admin.js";
 import type * as domains_daas_http from "../domains/daas/http.js";
 import type * as domains_daas_mutations from "../domains/daas/mutations.js";
 import type * as domains_daas_queries from "../domains/daas/queries.js";
+import type * as domains_daas_rubrics from "../domains/daas/rubrics.js";
 import type * as domains_deepTrace_causalChainEngine from "../domains/deepTrace/causalChainEngine.js";
 import type * as domains_deepTrace_dimensionEngine from "../domains/deepTrace/dimensionEngine.js";
 import type * as domains_deepTrace_dimensionModel from "../domains/deepTrace/dimensionModel.js";
@@ -895,6 +896,8 @@ import type * as domains_product_notebookPresence from "../domains/product/noteb
 import type * as domains_product_notebookTracking from "../domains/product/notebookTracking.js";
 import type * as domains_product_nudgeHelpers from "../domains/product/nudgeHelpers.js";
 import type * as domains_product_nudges from "../domains/product/nudges.js";
+import type * as domains_product_pipelineReliability from "../domains/product/pipelineReliability.js";
+import type * as domains_product_pipelineRetryDispatcher from "../domains/product/pipelineRetryDispatcher.js";
 import type * as domains_product_publicShares from "../domains/product/publicShares.js";
 import type * as domains_product_reports from "../domains/product/reports.js";
 import type * as domains_product_sessionArtifacts from "../domains/product/sessionArtifacts.js";
@@ -1703,6 +1706,7 @@ declare const fullApi: ApiFromModules<{
   "domains/daas/http": typeof domains_daas_http;
   "domains/daas/mutations": typeof domains_daas_mutations;
   "domains/daas/queries": typeof domains_daas_queries;
+  "domains/daas/rubrics": typeof domains_daas_rubrics;
   "domains/deepTrace/causalChainEngine": typeof domains_deepTrace_causalChainEngine;
   "domains/deepTrace/dimensionEngine": typeof domains_deepTrace_dimensionEngine;
   "domains/deepTrace/dimensionModel": typeof domains_deepTrace_dimensionModel;
@@ -2276,6 +2280,8 @@ declare const fullApi: ApiFromModules<{
   "domains/product/notebookTracking": typeof domains_product_notebookTracking;
   "domains/product/nudgeHelpers": typeof domains_product_nudgeHelpers;
   "domains/product/nudges": typeof domains_product_nudges;
+  "domains/product/pipelineReliability": typeof domains_product_pipelineReliability;
+  "domains/product/pipelineRetryDispatcher": typeof domains_product_pipelineRetryDispatcher;
   "domains/product/publicShares": typeof domains_product_publicShares;
   "domains/product/reports": typeof domains_product_reports;
   "domains/product/sessionArtifacts": typeof domains_product_sessionArtifacts;

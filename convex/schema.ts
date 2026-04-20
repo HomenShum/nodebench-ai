@@ -157,6 +157,7 @@ import {
   daasReplays,
   daasJudgments,
   daasRateBuckets,
+  daasAuditLog,
 } from "./domains/daas/schema";
 
 // MCP Gateway API key & session schema
@@ -13588,6 +13589,50 @@ export default defineSchema({
     .index("by_owner", ["ownerKey"])
     .index("by_resource", ["resourceType", "resourceSlug"]),
 
+  /* ------------------------------------------------------------------ */
+  /* pipelineDeadLetters — terminal failures grouped by fingerprint.    */
+  /* Per .claude/rules/async_reliability.md §4.                          */
+  /* ------------------------------------------------------------------ */
+  pipelineDeadLetters: defineTable({
+    fingerprint: v.string(),
+    errorClass: v.string(),
+    source: v.string(),
+    messageStem: v.string(),
+    firstSeen: v.number(),
+    lastSeen: v.number(),
+    occurrenceCount: v.number(),
+    sampleEntitySlug: v.optional(v.string()),
+    sampleScratchpadRunId: v.optional(v.string()),
+    sampleErrorJson: v.optional(v.string()),
+    status: v.string(), // "open" | "acknowledged" | "resolved"
+    resolvedAt: v.optional(v.number()),
+    resolvedNote: v.optional(v.string()),
+  })
+    .index("by_fingerprint", ["fingerprint"])
+    .index("by_status", ["status"])
+    .index("by_last_seen", ["lastSeen"]),
+
+  /* ------------------------------------------------------------------ */
+  /* pipelineRetries — scheduled long-horizon retry queue.               */
+  /* Per .claude/rules/async_reliability.md §3 (+12h, +24h, +48h).       */
+  /* ------------------------------------------------------------------ */
+  pipelineRetries: defineTable({
+    entitySlug: v.string(),
+    blockType: v.string(),
+    reason: v.string(),
+    errorClass: v.string(),
+    attempt: v.number(),
+    firstAttemptAtMs: v.number(),
+    nextAttemptAtMs: v.number(),
+    status: v.string(), // "scheduled" | "in_flight" | "completed" | "canceled" | "dead_lettered"
+    createdAt: v.number(),
+    completedAt: v.optional(v.number()),
+    canceledAt: v.optional(v.number()),
+  })
+    .index("by_next_attempt", ["nextAttemptAtMs"])
+    .index("by_entity", ["entitySlug"])
+    .index("by_status_next", ["status", "nextAttemptAtMs"]),
+
   hyperloopVariants,
   hyperloopEvaluationRuns,
   hyperloopPromotions,
@@ -13598,4 +13643,5 @@ export default defineSchema({
   daasReplays,
   daasJudgments,
   daasRateBuckets,
+  daasAuditLog,
 });

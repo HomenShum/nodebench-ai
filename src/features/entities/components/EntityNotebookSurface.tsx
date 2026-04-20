@@ -41,6 +41,15 @@ const ShareEntityButton = lazy(() =>
   })),
 );
 
+// PipelineReliabilityChip — surfaces scheduled retries + open DLQ entries
+// tied to THIS entity. Silent when the pipeline is healthy
+// (async_reliability.md invariant: "partial success is first-class").
+const PipelineReliabilityChip = lazy(() =>
+  import("@/features/entities/components/notebook/PipelineReliabilityChip").then((mod) => ({
+    default: mod.PipelineReliabilityChip,
+  })),
+);
+
 type EntityNotebookSurfaceProps = {
   entitySlug: string;
   shareToken?: string;
@@ -209,6 +218,17 @@ function EntityNotebookSurfaceBase({
             <ErrorBoundary section="Drift banner">
               <Suspense fallback={null}>
                 <DiligenceDriftBanner entitySlug={entitySlug} className="mt-4" />
+              </Suspense>
+            </ErrorBoundary>
+            {/*
+              Reliability chip — shows scheduled retries + DLQ state for
+              this entity. Silent when healthy; fires a compact amber row
+              when anything is pending. Part of the async_reliability.md
+              "partial success is first-class" contract.
+            */}
+            <ErrorBoundary section="Reliability chip">
+              <Suspense fallback={null}>
+                <PipelineReliabilityChip entitySlug={entitySlug} className="mt-3" />
               </Suspense>
             </ErrorBoundary>
             {/*

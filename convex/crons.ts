@@ -942,4 +942,17 @@ crons.interval(
   { batchSize: 50 }
 );
 
+// Async reliability: sweep due rows in pipelineRetries every 5 minutes.
+// Per .claude/rules/async_reliability.md §3, long-horizon retries
+// (+12h / +24h / +48h for data_unavailable failures) live on the
+// pipelineRetries table; this cron promotes due rows into active runs.
+// BOUND — 50 rows per sweep, claims via markRetryInFlight to prevent
+// double-dispatch across overlapping ticks.
+crons.interval(
+  "dispatch due pipeline retries",
+  { minutes: 5 },
+  internal.domains.product.pipelineRetryDispatcher.dispatchDueRetries,
+  { limit: 50 }
+);
+
 export default crons;
