@@ -9,6 +9,7 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode, useEffect } from 'react';
+import { matchesAskShortcut } from "@/features/agents/lib/askShortcut";
 
 /** Dossier context for bidirectional sync */
 export interface DossierContext {
@@ -125,6 +126,21 @@ export function FastAgentProvider({ children }: { children: ReactNode }) {
   const close = useCallback(() => setIsOpen(false), [setIsOpen]);
   const toggle = useCallback(() => setIsOpen(!isOpen), [setIsOpen, isOpen]);
   const clearOptions = useCallback(() => setOptions(null), []);
+
+  // Global "Ask NodeBench" keyboard shortcut — Cmd+J (Mac) / Ctrl+J (Win/Linux).
+  // Pure matcher in lib/askShortcut.ts guards IME composition, key-repeat,
+  // text-editing targets (textarea/input/contenteditable) and modifier
+  // combos. We just wire it up here.
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (matchesAskShortcut(event)) {
+        event.preventDefault();
+        toggle();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [toggle]);
 
   const hasExternalHandler = !!externalSetter;
 

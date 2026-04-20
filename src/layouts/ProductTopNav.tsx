@@ -4,6 +4,7 @@ import { useConvexAuth } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { ArrowUpRight, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { AskNodeBenchPill } from "@/features/agents/components/AskNodeBenchPill";
 import { buildCockpitPath, type CockpitSurfaceId } from "@/lib/registry/viewRegistry";
 import { cn } from "@/lib/utils";
 import { BackgroundRunsChip } from "@/features/chat/components/BackgroundRunsChip";
@@ -87,6 +88,7 @@ export const ProductTopNav = memo(function ProductTopNav({
             attentionCount={0}
             onClick={() => navigate(buildCockpitPath({ surfaceId: "history" }))}
           />
+          <AskNodeBenchPill />
           <button
             type="button"
             onClick={() => setMode(resolvedMode === "dark" ? "light" : "dark")}

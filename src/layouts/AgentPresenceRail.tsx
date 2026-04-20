@@ -85,23 +85,16 @@ export const AgentPresenceRail = memo(function AgentPresenceRail({
           isCollapsed ? "pointer-events-none overflow-hidden opacity-0" : "overflow-y-auto opacity-100",
         )}
       >
-        {/* Prominent agent toggle — always visible at top */}
-        {onOpenAgent ? (
-          <button
-            type="button"
-            onClick={onOpenAgent}
-            className="flex w-full items-center gap-3 rounded-2xl border border-accent-primary/30 bg-accent-primary/10 px-4 py-3 text-left transition-colors hover:bg-accent-primary/20"
-            aria-label="Open Ask NodeBench agent panel"
-            data-agent-id="cockpit:open-agent"
-            data-agent-action="open-panel"
-          >
-            <Sparkles className="h-4 w-4 shrink-0 text-accent-primary" />
-            <div className="min-w-0">
-              <div className="text-sm font-semibold text-content">Ask NodeBench</div>
-              <div className="truncate text-xs text-content-muted">Docs, architecture, codebase</div>
-            </div>
-          </button>
-        ) : null}
+        {/*
+          Removed: the prominent "Ask NodeBench" card at the top of the
+          rail. Consolidated into a single app-level trigger in the top
+          nav (AskNodeBenchPill, see src/layouts/ProductTopNav.tsx) so
+          users see ONE canonical entry instead of 3+ scattered CTAs.
+          The rail keeps its per-row / per-selection contextual triggers
+          below — those carry specific context into the drawer.
+          Keyboard shortcut: Cmd+J (Mac) / Ctrl+J (Win/Linux) works
+          from anywhere in the app (see FastAgentContext.tsx).
+        */}
 
         <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5">
           <div className="flex items-center justify-between">
