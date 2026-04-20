@@ -20,6 +20,7 @@ import { buildCockpitPathForView } from "@/lib/registry/viewRegistry";
 import { initErrorReporting } from "@/lib/errorReporting";
 
 const ShareableMemoView = lazy(() => import("@/features/founder/views/ShareableMemoView"));
+const PublicEntityShareView = lazy(() => import("@/features/share/views/PublicEntityShareView"));
 const PublicCompanyProfileView = lazy(() => import("@/features/founder/views/PublicCompanyProfileView"));
 const EmbedView = lazy(() => import("@/features/founder/views/EmbedView"));
 const FounderRouteResolver = lazy(() => import("@/features/founder/views/FounderRouteResolver"));
@@ -124,6 +125,21 @@ function App() {
         <ErrorBoundary title="Something went wrong">
           <Suspense fallback={<ViewSkeleton />}>
             <ShareableMemoView />
+          </Suspense>
+        </ErrorBoundary>
+      </ThemeProvider>
+    );
+  }
+
+  // Standalone route: /share/{token} renders anonymous read-only diligence
+  // brief. Token IS the auth credential — no sign-in required.
+  const isShareRoute = location.pathname.startsWith("/share/");
+  if (isShareRoute) {
+    return (
+      <ThemeProvider>
+        <ErrorBoundary title="Something went wrong">
+          <Suspense fallback={<ViewSkeleton />}>
+            <PublicEntityShareView />
           </Suspense>
         </ErrorBoundary>
       </ThemeProvider>

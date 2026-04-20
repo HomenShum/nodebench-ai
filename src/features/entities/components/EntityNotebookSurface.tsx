@@ -32,6 +32,15 @@ const DiligenceDriftBanner = lazy(() =>
   })),
 );
 
+// ShareEntityButton — owner-facing "copy public share link". Anonymous
+// read-only URL so owners can send briefs to investors without asking
+// them to sign up (pitch-line commitment: "shareable public URLs").
+const ShareEntityButton = lazy(() =>
+  import("@/features/share/components/ShareEntityButton").then((mod) => ({
+    default: mod.ShareEntityButton,
+  })),
+);
+
 type EntityNotebookSurfaceProps = {
   entitySlug: string;
   shareToken?: string;
@@ -177,6 +186,19 @@ function EntityNotebookSurfaceBase({
       {entityViewMode === "live" ? (
         <ErrorBoundary section="Live notebook">
           <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading live notebook…</div>}>
+            {/*
+              Owner-only: mint a public share link for this entity's brief.
+              Gated on canEditNotebook so read-only viewers don't see the
+              button. The minted link works anonymously — no sign-in
+              required for the recipient (publicShares.ts bearer token).
+            */}
+            {canEditNotebook ? (
+              <ErrorBoundary section="Share link">
+                <Suspense fallback={null}>
+                  <ShareEntityButton entitySlug={entitySlug} className="mt-4" />
+                </Suspense>
+              </ErrorBoundary>
+            ) : null}
             {/*
               Drift banner — silent by default. Renders only when recent
               verdict rate for THIS entity drops below the floor. Sitting

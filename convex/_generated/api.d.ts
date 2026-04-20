@@ -895,6 +895,7 @@ import type * as domains_product_notebookPresence from "../domains/product/noteb
 import type * as domains_product_notebookTracking from "../domains/product/notebookTracking.js";
 import type * as domains_product_nudgeHelpers from "../domains/product/nudgeHelpers.js";
 import type * as domains_product_nudges from "../domains/product/nudges.js";
+import type * as domains_product_publicShares from "../domains/product/publicShares.js";
 import type * as domains_product_reports from "../domains/product/reports.js";
 import type * as domains_product_sessionArtifacts from "../domains/product/sessionArtifacts.js";
 import type * as domains_product_shares from "../domains/product/shares.js";
@@ -2275,6 +2276,7 @@ declare const fullApi: ApiFromModules<{
   "domains/product/notebookTracking": typeof domains_product_notebookTracking;
   "domains/product/nudgeHelpers": typeof domains_product_nudgeHelpers;
   "domains/product/nudges": typeof domains_product_nudges;
+  "domains/product/publicShares": typeof domains_product_publicShares;
   "domains/product/reports": typeof domains_product_reports;
   "domains/product/sessionArtifacts": typeof domains_product_sessionArtifacts;
   "domains/product/shares": typeof domains_product_shares;

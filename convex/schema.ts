@@ -13557,6 +13557,37 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_judged_at", ["judgedAt"]),
 
+  /* ------------------------------------------------------------------ */
+  /* publicShares — anonymous read-only shares of a diligence resource. */
+  /*                                                                     */
+  /* Unlike productEntityWorkspaceMembers (which requires auth + invite),*/
+  /* a publicShare is a bearer token: anyone with the URL can read the   */
+  /* resource. Used for sending an exec brief to an investor without     */
+  /* asking them to sign up. The owner mints explicit shares; we never   */
+  /* auto-publicize.                                                     */
+  /*                                                                     */
+  /* Invariants:                                                         */
+  /*   BOUND — listMine capped; token is random 32-byte base64url        */
+  /*   HONEST_STATUS — revoked tokens return { status: "revoked" }, not  */
+  /*                   a 404 that would look like "never existed"        */
+  /*   DETERMINISTIC — token is the dedupe key (primary lookup)          */
+  /* ------------------------------------------------------------------ */
+  publicShares: defineTable({
+    token: v.string(),
+    resourceType: v.string(), // "entity" (v1), future: "memo" | "founder_profile"
+    resourceSlug: v.string(),
+    ownerKey: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.optional(v.number()),
+    revokedAt: v.optional(v.number()),
+    lastViewedAt: v.optional(v.number()),
+    viewCount: v.number(),
+    label: v.optional(v.string()),
+  })
+    .index("by_token", ["token"])
+    .index("by_owner", ["ownerKey"])
+    .index("by_resource", ["resourceType", "resourceSlug"]),
+
   hyperloopVariants,
   hyperloopEvaluationRuns,
   hyperloopPromotions,
