@@ -201,11 +201,11 @@ export const getRun = query({
         judgment: j
           ? {
               _id: j._id,
-              passedCount: j.passedCount ?? 0,
-              totalCount: j.totalCount ?? 0,
+              passedCount: j.passedCount,
+              totalCount: j.totalCount,
               costDeltaPct: j.costDeltaPct,
               verdict: j.verdict,
-              checksJson: j.checksJson ?? "[]",
+              checksJson: j.checksJson,
               judgeModel: j.judgeModel,
               rubricId: j.rubricId,
               rubricVersion: j.rubricVersion,
@@ -278,8 +278,8 @@ export const getAggregateStats = query({
     let fail = 0;
     for (const j of judgments) {
       totalCostDelta += j.costDeltaPct;
-      totalChecksPassed += j.passedCount ?? 0;
-      totalChecksEvaluated += j.totalCount ?? 0;
+      totalChecksPassed += j.passedCount;
+      totalChecksEvaluated += j.totalCount;
       if (j.verdict === "pass") pass++;
       else if (j.verdict === "partial") partial++;
       else if (j.verdict === "fail") fail++;

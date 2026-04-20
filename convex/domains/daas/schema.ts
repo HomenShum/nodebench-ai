@@ -132,26 +132,44 @@ export const daasJudgments = defineTable({
 
   judgedAt: v.number(),
 
-  // ─── Boolean-rubric (new shape, required going forward) ──────────────
-  // checksJson is the source of truth: [{ name, passed, reason }, ...]
-  passedCount: v.optional(v.number()),
-  totalCount: v.optional(v.number()),
-  checksJson: v.optional(v.string()),
+  // Boolean-rubric shape — required. checksJson is source of truth:
+  // [{ name, passed, reason }, ...]. Other fields are denormalized
+  // aggregates stored for index + fast read.
+  passedCount: v.number(),
+  totalCount: v.number(),
+  checksJson: v.string(),
+
+  // Judge provenance (apples-to-apples rollouts across revisions)
   judgeModel: v.optional(v.string()),
   rubricId: v.optional(v.string()),
   rubricVersion: v.optional(v.string()),
 
   // Optional free-form rationale
   detailsJson: v.optional(v.string()),
-
-  // ─── Legacy arbitrary-score fields (DEPRECATED) ──────────────────────
-  // Kept as optional so existing rows validate until migration completes.
-  // Deleted in favor of checksJson going forward.
-  outputSimilarity: v.optional(v.number()),
-  toolParity: v.optional(v.number()),
-  qualityScore: v.optional(v.number()),
 })
   .index("by_traceId", ["traceId"])
   .index("by_replayId", ["replayId"])
   .index("by_verdict", ["verdict"])
   .index("by_judgedAt", ["judgedAt"]);
+
+/**
+ * daasRateBuckets — DB-backed rate limit buckets.
+ *
+ * In-memory rate limiting doesn't work in Convex's serverless environment
+ * (each HTTP action can land in a fresh container). This table persists
+ * buckets so the limit is enforced across containers.
+ *
+ * BOUND: old rows (resetAt < now - 1 day) should be cleaned by a cron.
+ * HONEST_SCORES: count is a real counter; resetAt is absolute epoch ms.
+ */
+export const daasRateBuckets = defineTable({
+  /** Key is either `ip:<addr>` or `key:<hashed-api-key-prefix>` */
+  bucketKey: v.string(),
+  count: v.number(),
+  /** Epoch ms when this bucket resets to 0 */
+  resetAt: v.number(),
+  /** Epoch ms when this row was last touched (for GC) */
+  updatedAt: v.number(),
+})
+  .index("by_bucketKey", ["bucketKey"])
+  .index("by_updatedAt", ["updatedAt"]);

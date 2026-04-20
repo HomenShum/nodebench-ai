@@ -13,7 +13,7 @@
 //                    inside comparisons).
 
 import { v } from "convex/values";
-import { mutation } from "../../_generated/server";
+import { mutation, internalMutation } from "../../_generated/server";
 import { DAAS_VERDICTS } from "./schema";
 
 const MAX_JSON_BYTES = 512 * 1024; // 512KB per JSON field (BOUND_READ equivalent)
@@ -250,5 +250,79 @@ export const storeJudgment = mutation({
       detailsJson: clampJson(args.detailsJson, "detailsJson"),
       judgedAt: Date.now(),
     });
+  },
+});
+
+// ── Rate limit bucket (DB-backed — works across serverless containers) ──────
+//
+// Internal mutation: called by the HTTP ingest action on every request.
+// Reads the current bucket for `bucketKey`, resets if expired, increments
+// atomically via Convex's serialized mutation runtime (no race window).
+// Returns {allowed, remaining, resetAt} so the caller can emit headers
+// and choose between 201 and 429.
+//
+// WHY internalMutation: this should not be callable from public clients —
+// only from our own httpAction wrapper.
+
+export const checkAndIncrementRateBucket = internalMutation({
+  args: {
+    bucketKey: v.string(),
+    limit: v.number(),
+    windowMs: v.number(),
+  },
+  returns: v.object({
+    allowed: v.boolean(),
+    remaining: v.number(),
+    resetAt: v.number(),
+  }),
+  handler: async (ctx, { bucketKey, limit, windowMs }) => {
+    if (!bucketKey || bucketKey.length === 0 || bucketKey.length > 256) {
+      throw new Error("bucketKey must be non-empty and <= 256 chars");
+    }
+    if (limit <= 0 || !Number.isFinite(limit)) {
+      throw new Error("limit must be positive finite number");
+    }
+    if (windowMs <= 0 || windowMs > 24 * 60 * 60 * 1000) {
+      throw new Error("windowMs must be positive and <= 24h");
+    }
+    const now = Date.now();
+    const existing = await ctx.db
+      .query("daasRateBuckets")
+      .withIndex("by_bucketKey", (q) => q.eq("bucketKey", bucketKey))
+      .first();
+
+    if (!existing || existing.resetAt <= now) {
+      // New window: create/reset the bucket with count=1.
+      if (existing) {
+        await ctx.db.patch(existing._id, {
+          count: 1,
+          resetAt: now + windowMs,
+          updatedAt: now,
+        });
+      } else {
+        await ctx.db.insert("daasRateBuckets", {
+          bucketKey,
+          count: 1,
+          resetAt: now + windowMs,
+          updatedAt: now,
+        });
+      }
+      return { allowed: true, remaining: limit - 1, resetAt: now + windowMs };
+    }
+
+    if (existing.count >= limit) {
+      return { allowed: false, remaining: 0, resetAt: existing.resetAt };
+    }
+
+    const newCount = existing.count + 1;
+    await ctx.db.patch(existing._id, {
+      count: newCount,
+      updatedAt: now,
+    });
+    return {
+      allowed: true,
+      remaining: limit - newCount,
+      resetAt: existing.resetAt,
+    };
   },
 });

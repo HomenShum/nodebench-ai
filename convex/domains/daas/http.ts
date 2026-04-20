@@ -18,9 +18,67 @@
 //   should be wired once the endpoint sees real external traffic.
 
 import { httpAction } from "../../_generated/server";
-import { api } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 
 const MAX_BODY_BYTES = 256 * 1024; // 256 KB
+
+// Rate limit config — DB-backed (daasRateBuckets table + mutation) so
+// limits persist across serverless containers.
+const RATE_WINDOW_MS = 60_000;
+const RATE_LIMIT_UNAUTHED = 10; // per minute per IP
+const RATE_LIMIT_AUTHED = 120; // per minute per API key
+
+function deriveClientKey(req: Request): { key: string; authed: boolean } {
+  // Prefer explicit API key header — authed callers get higher quota.
+  const apiKey = req.headers.get("x-daas-api-key");
+  if (apiKey && apiKey.length >= 16) {
+    return { key: `key:${apiKey.slice(0, 48)}`, authed: true };
+  }
+  // Fall back to forwarded-for IP, with explicit fallback marker so we
+  // never collapse every request into a single shared bucket.
+  const xff =
+    req.headers.get("x-forwarded-for") ||
+    req.headers.get("cf-connecting-ip") ||
+    req.headers.get("x-real-ip") ||
+    "";
+  const ip = xff.split(",")[0].trim();
+  return { key: ip ? `ip:${ip}` : "ip:unknown", authed: false };
+}
+
+function assertApiKeyIfRequired(req: Request): Response | null {
+  // REQUIRE_API_KEY env flag: when set to any non-empty value, the
+  // endpoint rejects unauthed calls entirely. Default: allow-unauthed
+  // but rate-limited hard (10/min/IP) so we can iterate without
+  // locking out the smoke tests.
+  const required = (process.env.DAAS_REQUIRE_API_KEY ?? "").toLowerCase();
+  if (required !== "true" && required !== "1") return null;
+  const allowedKeys = (process.env.DAAS_INGEST_API_KEYS ?? "")
+    .split(",")
+    .map((k) => k.trim())
+    .filter((k) => k.length >= 16);
+  const provided = (req.headers.get("x-daas-api-key") ?? "").trim();
+  if (!provided) {
+    return new Response(
+      JSON.stringify({ error: "unauthorized", hint: "provide x-daas-api-key" }),
+      { status: 401, headers: { "Content-Type": "application/json" } },
+    );
+  }
+  if (allowedKeys.length === 0) {
+    // Fail closed — if DAAS_REQUIRE_API_KEY=true but no keys configured,
+    // refuse to let anyone in. HONEST_STATUS: never silently accept.
+    return new Response(
+      JSON.stringify({ error: "server_misconfigured", detail: "no allowed keys configured" }),
+      { status: 503, headers: { "Content-Type": "application/json" } },
+    );
+  }
+  if (!allowedKeys.includes(provided)) {
+    return new Response(
+      JSON.stringify({ error: "unauthorized", hint: "api key not recognized" }),
+      { status: 401, headers: { "Content-Type": "application/json" } },
+    );
+  }
+  return null;
+}
 
 function jsonResponse(status: number, body: Record<string, unknown>): Response {
   return new Response(JSON.stringify(body), {
@@ -43,6 +101,44 @@ export const ingestHttp = httpAction(async (ctx, req) => {
 
   if (req.method !== "POST") {
     return jsonResponse(405, { error: "method_not_allowed", hint: "POST only" });
+  }
+
+  // Auth gate — only enforced when DAAS_REQUIRE_API_KEY=true in env.
+  // Rate limit is enforced unconditionally.
+  const authReject = assertApiKeyIfRequired(req);
+  if (authReject) return authReject;
+
+  // Rate limit — per-IP for unauthed, per-key for authed callers.
+  // DB-backed via checkAndIncrementRateBucket mutation so the limit
+  // holds across serverless containers (in-memory state doesn't).
+  const client = deriveClientKey(req);
+  const limit = client.authed ? RATE_LIMIT_AUTHED : RATE_LIMIT_UNAUTHED;
+  const rate = await ctx.runMutation(
+    internal.domains.daas.mutations.checkAndIncrementRateBucket,
+    { bucketKey: client.key, limit, windowMs: RATE_WINDOW_MS },
+  );
+  const rateHeaders = {
+    "X-RateLimit-Limit": String(limit),
+    "X-RateLimit-Remaining": String(rate.remaining),
+    "X-RateLimit-Reset": String(Math.floor(rate.resetAt / 1000)),
+  };
+  if (!rate.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: "rate_limited",
+        limit,
+        window_ms: RATE_WINDOW_MS,
+        retry_at: new Date(rate.resetAt).toISOString(),
+      }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          ...rateHeaders,
+        },
+      },
+    );
   }
 
   // BOUND_READ: reject payloads larger than MAX_BODY_BYTES by
@@ -117,11 +213,17 @@ export const ingestHttp = httpAction(async (ctx, req) => {
       api.domains.daas.mutations.ingestTrace,
       args as any,
     );
-    return jsonResponse(201, {
-      ok: true,
-      traceId,
-      sessionId: args.sessionId,
-    });
+    return new Response(
+      JSON.stringify({ ok: true, traceId, sessionId: args.sessionId }),
+      {
+        status: 201,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          ...rateHeaders,
+        },
+      },
+    );
   } catch (err) {
     return jsonResponse(500, { error: "ingest_failed", detail: String(err) });
   }

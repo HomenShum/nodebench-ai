@@ -156,6 +156,7 @@ import {
   daasWorkflowSpecs,
   daasReplays,
   daasJudgments,
+  daasRateBuckets,
 } from "./domains/daas/schema";
 
 // MCP Gateway API key & session schema
@@ -13565,4 +13566,5 @@ export default defineSchema({
   daasWorkflowSpecs,
   daasReplays,
   daasJudgments,
+  daasRateBuckets,
 });

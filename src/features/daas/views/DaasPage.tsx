@@ -23,7 +23,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useAction } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 
 type VerdictKind = "pass" | "partial" | "fail";
@@ -110,6 +110,22 @@ function Bar({ value, max, color }: { value: number; max: number; color: string 
 // Detail subcomponent rendered below the run list when a run is selected.
 function RunDetail({ sessionId }: { sessionId: string }) {
   const run = useQuery(api.domains.daas.queries.getRun, { sessionId });
+  const judgeReplay = useAction(api.domains.daas.actions.judgeReplay);
+  const [judging, setJudging] = useState(false);
+  const [judgeError, setJudgeError] = useState<string | null>(null);
+
+  const handleRejudge = async () => {
+    if (!run || !run.replays[0]) return;
+    setJudging(true);
+    setJudgeError(null);
+    try {
+      await judgeReplay({ sessionId, replayId: run.replays[0]._id });
+    } catch (e) {
+      setJudgeError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setJudging(false);
+    }
+  };
 
   if (run === undefined) {
     return <div style={{ padding: 16, color: "#9a9590" }}>Loading run…</div>;
@@ -252,10 +268,53 @@ function RunDetail({ sessionId }: { sessionId: string }) {
           </div>
 
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
               <strong style={{ fontSize: 12 }}>Judgment</strong>
-              <VerdictBadge verdict={latestReplay.judgment?.verdict} />
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <VerdictBadge verdict={latestReplay.judgment?.verdict} />
+                <button
+                  type="button"
+                  onClick={handleRejudge}
+                  disabled={judging}
+                  aria-label="Re-run LLM rubric judge on this replay"
+                  style={{
+                    fontSize: 10,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    padding: "3px 8px",
+                    borderRadius: 4,
+                    border: "1px solid rgba(96,165,250,0.4)",
+                    background: judging ? "rgba(96,165,250,0.08)" : "rgba(96,165,250,0.15)",
+                    color: "#60a5fa",
+                    cursor: judging ? "wait" : "pointer",
+                    fontWeight: 600,
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.outline = "2px solid #60a5fa";
+                    e.currentTarget.style.outlineOffset = "2px";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.outline = "";
+                  }}
+                >
+                  {judging ? "JUDGING…" : "RE-JUDGE"}
+                </button>
+              </div>
             </div>
+            {judgeError && (
+              <div
+                role="alert"
+                style={{
+                  fontSize: 10,
+                  color: "#ef4444",
+                  padding: 6,
+                  marginBottom: 6,
+                  background: "rgba(239,68,68,0.08)",
+                  borderRadius: 4,
+                }}
+              >
+                {judgeError.slice(0, 240)}
+              </div>
+            )}
             <div style={{ fontSize: 11, display: "grid", gap: 8 }}>
               <div>
                 <div style={{ color: "#9a9590", fontSize: 10, marginBottom: 2 }}>Checks passed</div>

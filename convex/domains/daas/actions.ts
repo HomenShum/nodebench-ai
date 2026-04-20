@@ -34,6 +34,40 @@ const JUDGE_TIMEOUT_MS = 45_000;
 const MAX_ANSWER_INPUT = 16_000; // cap prompt section size
 const MAX_CHECKS = 24;
 
+// Concurrency control — bounds simultaneous Gemini calls from the judge
+// to prevent rate-limit storms when many replays are triggered at once.
+// This is process-local (each Convex action container gets its own) but
+// is still useful because Convex fans action calls across containers.
+const MAX_CONCURRENT_JUDGES = 4;
+let inFlight = 0;
+const waitQueue: Array<() => void> = [];
+
+async function acquireJudgeSlot(): Promise<() => void> {
+  if (inFlight < MAX_CONCURRENT_JUDGES) {
+    inFlight += 1;
+    return () => {
+      inFlight -= 1;
+      const next = waitQueue.shift();
+      if (next) {
+        inFlight += 1;
+        next();
+      }
+    };
+  }
+  return new Promise((resolve) => {
+    waitQueue.push(() => {
+      resolve(() => {
+        inFlight -= 1;
+        const next = waitQueue.shift();
+        if (next) {
+          inFlight += 1;
+          next();
+        }
+      });
+    });
+  });
+}
+
 export const DEFAULT_RUBRIC_ID = "daas.generic.v1";
 export const DEFAULT_RUBRIC_VERSION = "2026-04-19";
 
@@ -230,24 +264,32 @@ export const judgeReplay = action({
 
     let used_model = JUDGE_MODEL_PRIMARY;
     let raw: { text: string; inputTokens: number; outputTokens: number };
+
+    // Acquire a concurrency slot so we never exceed MAX_CONCURRENT_JUDGES
+    // simultaneous Gemini calls per container.
+    const release = await acquireJudgeSlot();
     try {
-      raw = await callGemini({
-        model: JUDGE_MODEL_PRIMARY,
-        prompt,
-        apiKey,
-        maxTokens: 3500,
-        timeoutMs: JUDGE_TIMEOUT_MS,
-      });
-    } catch (err) {
-      // Fallback to Flash Lite on Pro failure
-      used_model = JUDGE_MODEL_FALLBACK;
-      raw = await callGemini({
-        model: JUDGE_MODEL_FALLBACK,
-        prompt,
-        apiKey,
-        maxTokens: 3500,
-        timeoutMs: JUDGE_TIMEOUT_MS,
-      });
+      try {
+        raw = await callGemini({
+          model: JUDGE_MODEL_PRIMARY,
+          prompt,
+          apiKey,
+          maxTokens: 3500,
+          timeoutMs: JUDGE_TIMEOUT_MS,
+        });
+      } catch (err) {
+        // Fallback to Flash Lite on Pro failure
+        used_model = JUDGE_MODEL_FALLBACK;
+        raw = await callGemini({
+          model: JUDGE_MODEL_FALLBACK,
+          prompt,
+          apiKey,
+          maxTokens: 3500,
+          timeoutMs: JUDGE_TIMEOUT_MS,
+        });
+      }
+    } finally {
+      release();
     }
 
     const checks = parseJudgeJson(raw.text);
