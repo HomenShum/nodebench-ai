@@ -82,7 +82,7 @@ export function ProductIntakeComposer({
       onDrop={handleDrop}
     >
       <div
-        className={`rounded-[22px] border bg-white px-3 py-3 transition sm:px-4 dark:bg-[#11161c] ${
+        className={`rounded-[22px] border bg-white px-3 py-3 transition-all duration-200 sm:px-4 dark:bg-[#11161c] focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/25 focus-within:border-[var(--accent-primary)]/50 ${
           dragActive
             ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]/5 dark:bg-[var(--accent-primary)]/10"
             : "border-gray-200 dark:border-white/[0.1]"
@@ -96,9 +96,9 @@ export function ProductIntakeComposer({
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          rows={6}
+          rows={4}
           disabled={disabled}
-          className="min-h-[148px] w-full resize-none bg-transparent text-[15px] leading-6 text-gray-900 outline-none placeholder:text-gray-400 disabled:cursor-not-allowed dark:text-gray-100 dark:placeholder:text-gray-500"
+          className="min-h-[96px] max-h-[320px] w-full resize-none bg-transparent text-[15px] leading-6 text-gray-900 outline-none placeholder:text-gray-400 disabled:cursor-not-allowed dark:text-gray-100 dark:placeholder:text-gray-500"
         />
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-gray-200/80 pt-3 dark:border-white/[0.08]">
@@ -112,24 +112,38 @@ export function ProductIntakeComposer({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Ghost "Attach files" — demoted so "Start run" is the single
+                primary action (Linear + Perplexity pattern). Icon-only on
+                mobile to preserve composer width. */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:border-gray-300 hover:text-gray-900 disabled:opacity-40 dark:border-white/[0.12] dark:bg-[#161b20] dark:text-gray-300 dark:hover:border-white/[0.2] dark:hover:bg-[#20262d] dark:hover:text-white"
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 disabled:opacity-40 dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100"
               disabled={disabled || uploadingFiles}
+              aria-label={uploadingFiles ? "Uploading files" : "Attach files"}
             >
               <Paperclip className="h-3.5 w-3.5" />
-              {uploadingFiles ? "Uploading..." : "Attach files"}
+              <span className="hidden sm:inline">
+                {uploadingFiles ? "Uploading..." : "Attach files"}
+              </span>
             </button>
             <button
               type="button"
               onClick={onSubmit}
               disabled={disabled || !value.trim()}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-primary)] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[var(--accent-primary-hover)] disabled:opacity-40"
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-primary)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--accent-primary-hover)] active:scale-[0.98] disabled:opacity-40"
               aria-label={submitLabel}
             >
-              {submitLabel}
-              <ArrowUp className="h-4 w-4" />
+              <span>{submitLabel}</span>
+              {/* Keyboard hint — only show when the composer has content
+                  so empty-state stays minimal. */}
+              {value.trim() ? (
+                <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-medium leading-none">
+                  ⌘↵
+                </kbd>
+              ) : (
+                <ArrowUp className="h-4 w-4" />
+              )}
             </button>
           </div>
         </div>
@@ -147,16 +161,24 @@ export function ProductIntakeComposer({
           </div>
         ) : null}
 
-        <div className="no-scrollbar -mx-1 mt-3 flex items-center justify-start gap-1.5 overflow-x-auto px-1 sm:flex-wrap sm:justify-center sm:overflow-visible">
+        {/* Lens segmented control — Linear-style wrapper so 6 pills read
+            as one toggle group rather than six separate buttons. */}
+        <div
+          role="tablist"
+          aria-label="Lens"
+          className="no-scrollbar -mx-1 mt-3 flex items-center justify-start gap-0.5 overflow-x-auto rounded-full border border-gray-200 bg-gray-50/60 p-1 px-1 sm:justify-center sm:overflow-visible dark:border-white/[0.08] dark:bg-white/[0.02]"
+        >
           {LENSES.map((option) => (
             <button
               key={option.id}
               type="button"
+              role="tab"
+              aria-selected={lens === option.id}
               onClick={() => onLensChange(option.id)}
               className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
                 lens === option.id
-                  ? "bg-[var(--accent-primary)] text-white"
-                  : "border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:border-white/[0.12] dark:bg-[#161b20] dark:text-gray-300 dark:hover:border-white/[0.2] dark:hover:bg-[#20262d] dark:hover:text-gray-100"
+                  ? "bg-[var(--accent-primary)] text-white shadow-sm"
+                  : "text-gray-500 hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100"
               }`}
             >
               {option.label}
