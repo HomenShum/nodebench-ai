@@ -603,6 +603,33 @@ html[data-density='spacious'] {
     box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
   }
 
+  .nb-hover-lift:active {
+    transform: translateY(0);
+    transition-duration: 75ms;
+  }
+
+  /* Accent variant — tints the border with accent-primary on hover.
+     Stacks with .nb-hover-lift. Used where a card must read as a
+     clickable primary surface (Recent Reports, dossier cards). */
+  .nb-hover-lift-accent:hover {
+    border-color: color-mix(in oklab, var(--accent-primary) 30%, transparent);
+  }
+  .dark .nb-hover-lift-accent:hover {
+    border-color: color-mix(in oklab, var(--accent-primary) 40%, transparent);
+  }
+  .nb-hover-lift-accent:active {
+    border-color: color-mix(in oklab, var(--accent-primary) 50%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nb-hover-lift,
+    .nb-hover-lift:hover,
+    .nb-hover-lift:active {
+      transform: none;
+      transition-duration: 0ms;
+    }
+  }
+
   .nb-enter {
     animation: nb-enter 200ms ease-out both;
   }

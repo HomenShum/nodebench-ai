@@ -91,7 +91,7 @@ export function ProductIntakeComposer({
     >
       <div
         data-nb-composer="intake"
-        className={`nb-composer-surface rounded-[22px] border bg-white px-3 py-3 transition-all duration-200 sm:px-4 dark:bg-[#11161c] ${
+        className={`nb-composer-surface rounded-[22px] border bg-white px-3 py-3 transition-all duration-normal sm:px-4 dark:bg-[#11161c] ${
           dragActive
             ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]/5 dark:bg-[var(--accent-primary)]/10"
             : "border-gray-200 dark:border-white/[0.1]"
@@ -107,7 +107,7 @@ export function ProductIntakeComposer({
           placeholder={placeholder}
           rows={4}
           disabled={disabled}
-          className="min-h-[96px] max-h-[320px] w-full resize-none bg-transparent text-[15px] leading-6 text-gray-900 outline-none transition-[height] duration-150 ease-out placeholder:text-gray-400 disabled:cursor-not-allowed motion-reduce:transition-none dark:text-gray-100 dark:placeholder:text-gray-500"
+          className="min-h-[96px] max-h-[320px] w-full resize-none bg-transparent text-[15px] leading-6 text-gray-900 outline-none transition-[height] duration-fast ease-out placeholder:text-gray-400 disabled:cursor-not-allowed motion-reduce:transition-none dark:text-gray-100 dark:placeholder:text-gray-500"
         />
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-gray-200/80 pt-3 dark:border-white/[0.08]">
@@ -127,7 +127,7 @@ export function ProductIntakeComposer({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-gray-500 transition-all duration-150 ease-out hover:bg-gray-100 hover:text-gray-900 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 disabled:opacity-40 motion-reduce:transform-none motion-reduce:transition-none dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100"
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-gray-500 transition-all duration-fast ease-out hover:bg-gray-100 hover:text-gray-900 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 disabled:opacity-40 motion-reduce:transform-none motion-reduce:transition-none dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100"
               disabled={disabled || uploadingFiles}
               aria-label={uploadingFiles ? "Uploading files" : "Attach files"}
             >
@@ -141,7 +141,7 @@ export function ProductIntakeComposer({
               onClick={onSubmit}
               disabled={disabled || submitPending || !value.trim()}
               aria-busy={submitPending}
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-primary)] px-4 py-2 text-sm font-medium text-white transition-all duration-150 ease-out hover:bg-[var(--accent-primary-hover)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-40 disabled:active:scale-100 motion-reduce:transform-none motion-reduce:transition-none dark:focus-visible:ring-offset-[#11161c]"
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-primary)] px-4 py-2 text-sm font-medium text-white transition-all duration-fast ease-out hover:bg-[var(--accent-primary-hover)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-40 disabled:active:scale-100 motion-reduce:transform-none motion-reduce:transition-none dark:focus-visible:ring-offset-[#11161c]"
               aria-label={submitPending ? `${submitLabel} (running)` : submitLabel}
             >
               <span>{submitPending ? "Running…" : submitLabel}</span>
@@ -185,7 +185,7 @@ export function ProductIntakeComposer({
               role="tab"
               aria-selected={lens === option.id}
               onClick={() => onLensChange(option.id)}
-              className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all duration-150 ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 motion-reduce:transform-none motion-reduce:transition-none ${
+              className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all duration-fast ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 motion-reduce:transform-none motion-reduce:transition-none ${
                 lens === option.id
                   ? "bg-[var(--accent-primary)] text-white shadow-sm"
                   : "text-gray-500 hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100"

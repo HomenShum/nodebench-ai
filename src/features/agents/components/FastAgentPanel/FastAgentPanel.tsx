@@ -150,7 +150,7 @@ function MobileCommandChips({ onSelect }: { onSelect: (message: string) => void 
           type="button"
           onClick={() => onSelect(c.message)}
           aria-label={`Send command: ${c.label}`}
-          className="rounded-full border border-white/[0.15] bg-white/[0.06] px-3 py-1.5 text-[11px] font-medium text-white/60 transition-all duration-150 ease-out hover:bg-white/[0.10] hover:text-white/80 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 motion-reduce:transform-none motion-reduce:transition-none"
+          className="rounded-full border border-white/[0.15] bg-white/[0.06] px-3 py-1.5 text-[11px] font-medium text-white/60 transition-all duration-fast ease-out hover:bg-white/[0.10] hover:text-white/80 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 motion-reduce:transform-none motion-reduce:transition-none"
         >
           {c.label}
         </button>
@@ -3030,7 +3030,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
 
                   {/* Demo thinking indicator (guest mode) */}
                   {isDemoThinking && (
-                    <div className="flex items-center gap-2 px-4 mb-4 animate-in fade-in duration-200">
+                    <div className="flex items-center gap-2 px-4 mb-4 animate-in fade-in duration-normal">
                       <div className="typing-dots">
                         <span className="dot" />
                         <span className="dot" />
@@ -3128,7 +3128,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                     onClick={() => {
                       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
                     }}
-                    className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 w-8 h-8 rounded-full bg-surface-secondary border border-edge shadow-lg flex items-center justify-center text-content-muted hover:text-content hover:bg-surface-secondary transition-all duration-200 animate-in fade-in slide-in-from-bottom-2"
+                    className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 w-8 h-8 rounded-full bg-surface-secondary border border-edge shadow-lg flex items-center justify-center text-content-muted hover:text-content hover:bg-surface-secondary transition-all duration-normal animate-in fade-in slide-in-from-bottom-2"
                     aria-label="Scroll to bottom"
                   >
                     <ArrowDown className="w-4 h-4" aria-hidden="true" />

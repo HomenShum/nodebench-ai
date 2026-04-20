@@ -583,7 +583,7 @@ export const ChatHome = memo(function ChatHome() {
                     setInput(prompt);
                     void beginRun(prompt, lens);
                   }}
-                  className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-[var(--accent-primary)]/30 hover:text-gray-900 active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 motion-reduce:transform-none motion-reduce:transition-none dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300 dark:hover:border-[var(--accent-primary)]/40 dark:hover:bg-[#20262d] dark:hover:text-white"
+                  className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 transition-all duration-fast ease-out hover:-translate-y-0.5 hover:border-[var(--accent-primary)]/30 hover:text-gray-900 active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 motion-reduce:transform-none motion-reduce:transition-none dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300 dark:hover:border-[var(--accent-primary)]/40 dark:hover:bg-[#20262d] dark:hover:text-white"
                 >
                   {prompt}
                 </button>

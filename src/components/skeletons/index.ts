@@ -19,6 +19,7 @@ export {
 
 // Feed skeletons
 export { FeedCardSkeleton, FeedGridSkeleton } from './FeedCardSkeleton';
+export { ReportCardSkeleton } from './ReportCardSkeleton';
 export { DigestSkeleton } from './DigestSkeleton';
 export { DealCardSkeleton, DealListSkeleton } from './DealCardSkeleton';
 export { BriefingSkeleton, ActSectionSkeleton, DashboardSkeleton } from './BriefingSkeleton';

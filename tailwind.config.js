@@ -11,6 +11,21 @@ module.exports = {
         display: ["var(--font-display)", ...fontFamily.sans],
         mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "monospace"],
       },
+      /* Transition durations backed by the CSS design tokens defined in
+         src/index.css (--duration-fast/normal/slow). Consuming these via
+         Tailwind (e.g. `duration-normal`) keeps timing consistent across
+         the codebase and allows one edit at the token level to propagate
+         everywhere. Preserves Tailwind defaults (duration-150, etc.)
+         for ad-hoc usage. */
+      transitionDuration: {
+        fast: "var(--duration-fast)",
+        normal: "var(--duration-normal)",
+        slow: "var(--duration-slow)",
+      },
+      transitionTimingFunction: {
+        "out-expo": "var(--ease-out-expo)",
+        spring: "var(--ease-spring)",
+      },
       borderRadius: {
         DEFAULT: "8px",
         sm: "6px",
