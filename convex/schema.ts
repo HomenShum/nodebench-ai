@@ -13666,6 +13666,56 @@ export default defineSchema({
     lastRebuildAt: v.number(),
   }).index("by_entity", ["entitySlug"]),
 
+  /* ------------------------------------------------------------------ */
+  /* extendedThinkingRuns — multi-checkpoint autonomous Claude runs.     */
+  /* Chain of internalActions via ctx.scheduler.runAfter; each checkpoint*/
+  /* survives the per-action wall-clock limit.                           */
+  /* ------------------------------------------------------------------ */
+  extendedThinkingRuns: defineTable({
+    entitySlug: v.string(),
+    ownerKey: v.string(),
+    goal: v.string(),
+    status: v.string(), // queued | running | waiting_checkpoint | completed | failed | canceled
+    currentCheckpoint: v.number(),
+    totalCheckpoints: v.number(),
+    thinkingBudgetTokens: v.number(),
+    thinkingTokensUsed: v.number(),
+    modelName: v.string(),
+    startedAt: v.number(),
+    lastActivityAt: v.number(),
+    completedAt: v.optional(v.number()),
+    canceledAt: v.optional(v.number()),
+    errorMessage: v.optional(v.string()),
+    researchComplete: v.optional(v.boolean()),
+  })
+    .index("by_entity", ["entitySlug"])
+    .index("by_owner", ["ownerKey"])
+    .index("by_status", ["status"])
+    .index("by_last_activity", ["lastActivityAt"]),
+
+  extendedThinkingCheckpoints: defineTable({
+    runId: v.id("extendedThinkingRuns"),
+    index: v.number(),
+    status: v.string(), // scored | parse_error | request_failed
+    promptHash: v.string(),
+    modelName: v.string(),
+    headline: v.optional(v.string()),
+    findingsJson: v.optional(v.string()),
+    nextFocus: v.optional(v.string()),
+    reasoning: v.optional(v.string()),
+    researchComplete: v.optional(v.boolean()),
+    focus: v.optional(v.string()),
+    latencyMs: v.number(),
+    thinkingTokens: v.optional(v.number()),
+    outputTokens: v.optional(v.number()),
+    errorMessage: v.optional(v.string()),
+    judgedAt: v.number(),
+  })
+    .index("by_run", ["runId"])
+    .index("by_run_index", ["runId", "index"])
+    .index("by_status", ["status"])
+    .index("by_judged_at", ["judgedAt"]),
+
   hyperloopVariants,
   hyperloopEvaluationRuns,
   hyperloopPromotions,

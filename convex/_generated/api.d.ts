@@ -884,6 +884,7 @@ import type * as domains_product_diligenceScratchpads from "../domains/product/d
 import type * as domains_product_documents from "../domains/product/documents.js";
 import type * as domains_product_entities from "../domains/product/entities.js";
 import type * as domains_product_entityMemory from "../domains/product/entityMemory.js";
+import type * as domains_product_extendedThinking from "../domains/product/extendedThinking.js";
 import type * as domains_product_helpers from "../domains/product/helpers.js";
 import type * as domains_product_home from "../domains/product/home.js";
 import type * as domains_product_me from "../domains/product/me.js";
@@ -2263,6 +2264,7 @@ declare const fullApi: ApiFromModules<{
   "domains/product/documents": typeof domains_product_documents;
   "domains/product/entities": typeof domains_product_entities;
   "domains/product/entityMemory": typeof domains_product_entityMemory;
+  "domains/product/extendedThinking": typeof domains_product_extendedThinking;
   "domains/product/helpers": typeof domains_product_helpers;
   "domains/product/home": typeof domains_product_home;
   "domains/product/me": typeof domains_product_me;
