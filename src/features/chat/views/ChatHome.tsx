@@ -566,7 +566,7 @@ export const ChatHome = memo(function ChatHome() {
                 operatorContextLabel={operatorContextLabel}
                 operatorContextHint={operatorContextHint}
                 uploadingFiles={uploadingFiles}
-                disabled={streaming.isStreaming}
+                submitPending={streaming.isStreaming}
                 placeholder="Ask anything. Paste notes, URLs, or files to ground the answer."
                 helperText="Your lens and saved context shape how NodeBench answers."
                 submitLabel="Run advisor"
@@ -582,7 +582,7 @@ export const ChatHome = memo(function ChatHome() {
                     setInput(prompt);
                     void beginRun(prompt, lens);
                   }}
-                  className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 transition hover:border-gray-300 hover:text-gray-900 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300 dark:hover:border-white/[0.2] dark:hover:bg-[#20262d] dark:hover:text-white"
+                  className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-[var(--accent-primary)]/30 hover:text-gray-900 active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 motion-reduce:transform-none motion-reduce:transition-none dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300 dark:hover:border-[var(--accent-primary)]/40 dark:hover:bg-[#20262d] dark:hover:text-white"
                 >
                   {prompt}
                 </button>
@@ -664,9 +664,18 @@ export const ChatHome = memo(function ChatHome() {
           {/* ---- Answer sections ---- */}
           {hasRun && (
             <div className="mt-6 space-y-8">
-              {reportSections.map((section) =>
+              {reportSections.map((section, sectionIndex) =>
                 section.skeleton ? null : (
-                  <div key={section.id} className={`${section.status === "building" ? "animate-pulse" : ""}`}>
+                  <div
+                    key={section.id}
+                    className={`starting-point-card ${section.status === "building" ? "animate-pulse motion-reduce:animate-none" : ""}`}
+                    style={{
+                      // Reuse the Home stagger keyframe — sections land
+                      // in sequence (60ms apart, max 240ms) instead of
+                      // flashing simultaneously once the stream resolves.
+                      animationDelay: `${Math.min(sectionIndex * 60, 240)}ms`,
+                    }}
+                  >
                     <h2 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
                       {section.title}
                     </h2>

@@ -15,6 +15,13 @@ type ProductIntakeComposerProps = {
   operatorContextLabel?: string | null;
   operatorContextHint?: string | null;
   uploadingFiles?: boolean;
+  /**
+   * When true, the Start-run button shows a spinner in place of the
+   * keyboard hint and is non-interactive. Distinct from `disabled`
+   * (which is used for "no content to submit"). Prevents double-submit
+   * while a mutation is in flight.
+   */
+  submitPending?: boolean;
   disabled?: boolean;
   placeholder?: string;
   helperText?: string;
@@ -33,6 +40,7 @@ export function ProductIntakeComposer({
   operatorContextLabel,
   operatorContextHint,
   uploadingFiles = false,
+  submitPending = false,
   disabled = false,
   placeholder = "Paste your notes, links, and ask here...",
   helperText = "Paste the full packet in one box, then drop PDFs, screenshots, or resumes below.",
@@ -130,14 +138,27 @@ export function ProductIntakeComposer({
             <button
               type="button"
               onClick={onSubmit}
-              disabled={disabled || !value.trim()}
+              disabled={disabled || submitPending || !value.trim()}
+              aria-busy={submitPending}
               className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-primary)] px-4 py-2 text-sm font-medium text-white transition-all duration-150 ease-out hover:bg-[var(--accent-primary-hover)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-40 disabled:active:scale-100 motion-reduce:transform-none motion-reduce:transition-none dark:focus-visible:ring-offset-[#11161c]"
-              aria-label={submitLabel}
+              aria-label={submitPending ? `${submitLabel} (running)` : submitLabel}
             >
-              <span>{submitLabel}</span>
-              {/* Keyboard hint — only show when the composer has content
-                  so empty-state stays minimal. */}
-              {value.trim() ? (
+              <span>{submitPending ? "Running…" : submitLabel}</span>
+              {/* Three-state trailing glyph:
+                    submitPending → inline spinner (mutation in flight)
+                    value present → ⌘↵ hint (keyboard shortcut available)
+                    else           → ArrowUp (neutral "submit" icon) */}
+              {submitPending ? (
+                <svg
+                  className="h-4 w-4 animate-spin motion-reduce:animate-none"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
+                  <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                </svg>
+              ) : value.trim() ? (
                 <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-medium leading-none">
                   ⌘↵
                 </kbd>
