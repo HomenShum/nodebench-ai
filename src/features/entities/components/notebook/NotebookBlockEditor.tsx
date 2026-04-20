@@ -45,6 +45,10 @@ type Props = {
       followed by space at the start of an empty block. Parent transforms
       the block kind and clears the prefix. */
   onMarkdownShortcut?: (kind: "heading_2" | "heading_3" | "bullet" | "quote" | "todo") => void;
+  /** Tab pressed — indent this block (make it a child of the previous block). */
+  onTabIndent?: () => void;
+  /** Shift+Tab pressed — outdent this block one level. */
+  onShiftTabOutdent?: () => void;
   diligenceDecorations?: readonly DiligenceDecorationData[];
   onAcceptDecoration?: (
     scratchpadRunId: string,
@@ -55,6 +59,11 @@ type Props = {
     blockType: DiligenceDecorationData["blockType"],
   ) => void;
   onRefreshDecoration?: (
+    scratchpadRunId: string,
+    blockType: DiligenceDecorationData["blockType"],
+  ) => void;
+  /** Seam between inline decoration → side-panel drawer. */
+  onAskAboutDecoration?: (
     scratchpadRunId: string,
     blockType: DiligenceDecorationData["blockType"],
   ) => void;
@@ -133,10 +142,13 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
       onOpenSlash,
       onCloseSlash,
       onMarkdownShortcut,
+      onTabIndent,
+      onShiftTabOutdent,
       diligenceDecorations = [],
       onAcceptDecoration,
       onDismissDecoration,
       onRefreshDecoration,
+      onAskAboutDecoration,
     },
     ref,
   ) {
@@ -152,10 +164,13 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
     const onOpenSlashRef = useRef(onOpenSlash);
     const onCloseSlashRef = useRef(onCloseSlash);
     const onMarkdownShortcutRef = useRef(onMarkdownShortcut);
+    const onTabIndentRef = useRef(onTabIndent);
+    const onShiftTabOutdentRef = useRef(onShiftTabOutdent);
     const diligenceDecorationsRef = useRef<readonly DiligenceDecorationData[]>(diligenceDecorations);
     const onAcceptDecorationRef = useRef(onAcceptDecoration);
     const onDismissDecorationRef = useRef(onDismissDecoration);
     const onRefreshDecorationRef = useRef(onRefreshDecoration);
+    const onAskAboutDecorationRef = useRef(onAskAboutDecoration);
 
     const diligenceExtension = useMemo(
       () =>
@@ -173,6 +188,8 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
                   onDismissDecorationRef.current?.(runId, blockType),
                 onRefreshDecoration: (runId, blockType) =>
                   onRefreshDecorationRef.current?.(runId, blockType),
+                onAskAboutDecoration: (runId, blockType) =>
+                  onAskAboutDecorationRef.current?.(runId, blockType),
               }),
             ];
           },
@@ -289,11 +306,15 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
       onOpenSlashRef.current = onOpenSlash;
       onCloseSlashRef.current = onCloseSlash;
       onMarkdownShortcutRef.current = onMarkdownShortcut;
+      onTabIndentRef.current = onTabIndent;
+      onShiftTabOutdentRef.current = onShiftTabOutdent;
       onAcceptDecorationRef.current = onAcceptDecoration;
       onDismissDecorationRef.current = onDismissDecoration;
       onRefreshDecorationRef.current = onRefreshDecoration;
+      onAskAboutDecorationRef.current = onAskAboutDecoration;
     }, [
       onAcceptDecoration,
+      onAskAboutDecoration,
       onBackspaceAtStart,
       onBlur,
       onCloseSlash,
@@ -384,6 +405,18 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
                 onMarkdownShortcutRef.current(match);
                 return true;
               }
+            }
+            // Tab / Shift-Tab — indent/outdent the block via moveBlock
+            // in the parent. Roam/Obsidian convention. PreventDefault on
+            // Tab is required to stop the browser from moving focus.
+            if (event.key === "Tab") {
+              event.preventDefault();
+              if (event.shiftKey) {
+                onShiftTabOutdentRef.current?.();
+              } else {
+                onTabIndentRef.current?.();
+              }
+              return true;
             }
             if (event.key === "Escape") {
               onCloseSlashRef.current();

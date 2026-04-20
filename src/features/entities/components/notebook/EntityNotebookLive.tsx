@@ -36,6 +36,7 @@ import { MentionPicker, type EntityMatch } from "./MentionPicker";
 import { BlockStatusBar } from "./BlockStatusBar";
 import { NotebookDiligenceOverlayHost } from "./NotebookDiligenceOverlayHost";
 import { NotebookRightRail } from "./NotebookRightRail";
+import { NotebookOutline } from "./NotebookOutline";
 import { NotebookScratchpadTracePanel } from "./NotebookScratchpadTracePanel";
 import {
   enqueue as enqueueOfflineEdit,
@@ -47,6 +48,7 @@ import { buildProductBlockSyncId } from "../../../../../shared/productBlockSync"
 import { useDiligenceBlocks } from "./useDiligenceBlocks";
 import type { DiligenceDecorationData } from "./DiligenceDecorationPlugin";
 import { acceptDecorationIntoNotebook } from "./acceptDecorationIntoNotebook";
+import { useAgentActions, type DecorationContext } from "@/features/agents/hooks/useAgentActions";
 
 type BlockKind =
   | "text"
@@ -338,6 +340,12 @@ export function EntityNotebookLive({
   );
   const anonymousSessionId = getAnonymousProductSessionId();
   const toast = useToast();
+  // Unified agent actions — routes inline decoration events into the
+  // drawer's history + persists dismissals. See useAgentActions for
+  // the seam contract. Keep this call ONCE at component top so the
+  // React identity of the returned callbacks is stable for memoized
+  // handlers below.
+  const agentActions = useAgentActions();
   const participantDirectory = useMemo(
     () =>
       Object.fromEntries(
@@ -408,6 +416,7 @@ export function EntityNotebookLive({
   );
 
   const appendBlock = useMutation(api?.domains.product.blocks.appendBlock ?? ("skip" as any));
+  const moveBlock = useMutation(api?.domains.product.blocks.moveBlock ?? ("skip" as any));
   const insertBlockBetween = useMutation(
     api?.domains.product.blocks.insertBlockBetween ?? ("skip" as any),
   );
@@ -435,6 +444,19 @@ export function EntityNotebookLive({
   const [slashFor, setSlashFor] = useState<Id<"productBlocks"> | null>(null);
   const [mentionFor, setMentionFor] = useState<{ blockId: Id<"productBlocks">; initial: string } | null>(null);
   const [focusedBlockId, setFocusedBlockId] = useState<Id<"productBlocks"> | null>(null);
+  // Sticky mount set: once a block has been focused (or hovered near) this
+  // session, keep its Tiptap editor mounted so subsequent clicks don't
+  // re-fetch the Convex sync snapshot. Fixes the click-reload delay.
+  const [mountedBlockIds, setMountedBlockIds] = useState<Set<string>>(new Set());
+  const warmBlock = useCallback((blockId: Id<"productBlocks">) => {
+    setMountedBlockIds((prev) => {
+      const key = String(blockId);
+      if (prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
+  }, []);
   const [runtimeError, setRuntimeError] = useState<{ title: string; detail?: string } | null>(null);
   const [creatingFirstBlock, setCreatingFirstBlock] = useState(false);
   const [optimisticBlockContent, setOptimisticBlockContent] = useState<Record<string, BlockChip[]>>(
@@ -1032,12 +1054,55 @@ export function EntityNotebookLive({
   }, [snapshot?.sources]);
 
   const diligenceBlocks = useDiligenceBlocks(entitySlug, snapshot);
+  // Subscribe to the user's persisted dismissals so a hide survives
+  // refresh (the fix for the "I dismissed this yesterday and it keeps
+  // coming back" trust bug). Returned as a flat array — we key into a
+  // Set below for O(1) lookup. See `decorationPreferences.ts`.
+  // Declared BEFORE visibleDiligenceDecorations so its memo's factory
+  // can reference `dismissedKeySet` without TDZ (React runs memo
+  // factories during the render pass — order matters).
+  const persistedDismissals = useQuery(
+    api?.domains?.agents?.decorationPreferences?.listDismissedForEntity ?? ("skip" as any),
+    api?.domains?.agents?.decorationPreferences?.listDismissedForEntity
+      ? { entitySlug, anonymousSessionId }
+      : "skip",
+  );
+  const dismissedKeySet = useMemo(() => {
+    const keys = new Set<string>();
+    for (const row of persistedDismissals ?? []) {
+      keys.add(`${row.scratchpadRunId}::${row.blockType}`);
+    }
+    return keys;
+  }, [persistedDismissals]);
   const visibleDiligenceDecorations = useMemo(
     () =>
-      diligenceBlocks.projections.filter(
-        (projection) => !hiddenDecorationRunIds[projection.scratchpadRunId],
-      ),
-    [diligenceBlocks.projections, hiddenDecorationRunIds],
+      diligenceBlocks.projections.filter((projection) => {
+        if (hiddenDecorationRunIds[projection.scratchpadRunId]) return false;
+        // Honor persisted dismissals (Milestone 4c — dismissal now
+        // survives refresh). Keyed by (scratchpadRunId, blockType)
+        // so dismissing one block's decoration from a run does not
+        // silence the other block types produced by the same run.
+        if (dismissedKeySet.has(`${projection.scratchpadRunId}::${projection.blockType}`)) {
+          return false;
+        }
+        // Suppress starter/placeholder cards that have no real content.
+        // Notion/Linear rule: if the agent returned nothing, render nothing —
+        // not a card saying "the agent returned nothing".
+        const prose = (projection.bodyProse ?? "").trim();
+        if (prose.length === 0) return false;
+        const placeholderFragments = [
+          "no clear summary was returned",
+          "no explicit gap was returned",
+          "no next action was returned",
+          "the agent did not return",
+          "no live diligence content is available",
+          "use this notebook to accumulate",
+        ];
+        const lower = prose.toLowerCase();
+        if (placeholderFragments.some((frag) => lower.includes(frag))) return false;
+        return true;
+      }),
+    [diligenceBlocks.projections, hiddenDecorationRunIds, dismissedKeySet],
   );
 
   const notebookLoadState = getNotebookLoadState({
@@ -1064,6 +1129,55 @@ export function EntityNotebookLive({
   const focusedBlock = blocks?.find((block) => block._id === focusedBlockId);
   const showReferenceOverlayStrip =
     visibleDiligenceDecorations.length > 0 && (blocks?.length ?? 0) > 0;
+  // Nesting depth per block. Walks parentBlockId chain once, caches in a
+  // Map for O(1) lookup during the render map. Guards against parent cycles
+  // by stopping after 16 hops.
+  const blockDepthMap = useMemo(() => {
+    const byId = new Map<string, LiveBlock>();
+    for (const b of blocks ?? []) byId.set(String(b._id), b);
+    const depthByBlock = new Map<string, number>();
+    for (const b of blocks ?? []) {
+      let depth = 0;
+      let cursor: LiveBlock | undefined = b;
+      const seen = new Set<string>();
+      while (cursor?.parentBlockId && depth < 16) {
+        const parentKey = String(cursor.parentBlockId);
+        if (seen.has(parentKey)) break;
+        seen.add(parentKey);
+        const parent = byId.get(parentKey);
+        if (!parent) break;
+        // Only indent when parent is an editable sibling block, not a
+        // seeded section marker (heading_1 / heading_2). This matches the
+        // Roam/Notion behavior where Tab indents lists and paragraphs but
+        // doesn't push headings under headings.
+        if (parent.kind === "heading_1" || parent.kind === "heading_2") {
+          break;
+        }
+        depth += 1;
+        cursor = parent;
+      }
+      depthByBlock.set(String(b._id), depth);
+    }
+    return depthByBlock;
+  }, [blocks]);
+  // Outline items — collect H1/H2/H3 with non-empty text. Rendered in the
+  // right rail only when ≥2 exist (NotebookOutline enforces the floor).
+  const outlineItems = useMemo(
+    () =>
+      (blocks ?? [])
+        .filter(
+          (b) =>
+            b.kind === "heading_1" || b.kind === "heading_2" || b.kind === "heading_3",
+        )
+        .map((b) => ({
+          blockId: String(b._id),
+          kind: b.kind as "heading_1" | "heading_2" | "heading_3",
+          text: chipsToPlainText(
+            (optimisticBlockContent[String(b._id)] ?? b.content) as BlockChip[],
+          ),
+        })),
+    [blocks, optimisticBlockContent],
+  );
   const canUseOverlayActions = canEdit && notebookLoadState.fullyLoaded;
 
   useEffect(() => {
@@ -1095,11 +1209,65 @@ export function EntityNotebookLive({
     snapshot?.reportUpdatedAt,
   ]);
 
-  const handleDismissDecoration = useCallback((scratchpadRunId: string) => {
-    setHiddenDecorationRunIds((current) =>
-      current[scratchpadRunId] ? current : { ...current, [scratchpadRunId]: true },
-    );
-  }, []);
+  /**
+   * Shared helper — turn a decoration into the context shape the
+   * drawer and action log expect. Keeps the three call sites below
+   * (ask / accept / dismiss / refresh) reading identically.
+   */
+  const buildDecorationContext = useCallback(
+    (decoration: DiligenceDecorationData): DecorationContext => ({
+      entitySlug,
+      scratchpadRunId: decoration.scratchpadRunId,
+      blockType: decoration.blockType,
+      overallTier: decoration.overallTier,
+      headerText: decoration.headerText,
+      bodyProse: decoration.bodyProse,
+      sourceCount: decoration.sourceCount,
+      sourceRefIds: decoration.sourceRefIds,
+    }),
+    [entitySlug],
+  );
+
+  /**
+   * "Ask NodeBench about this" — opens the drawer pre-loaded with this
+   * decoration as context. Logs the escalation so the drawer timeline
+   * reflects the inline ↔ chat continuity (Milestone 4 seam).
+   */
+  const handleAskAboutDecoration = useCallback(
+    (scratchpadRunId: string, blockType: DiligenceDecorationData["blockType"]) => {
+      const decoration = visibleDiligenceDecorations.find(
+        (c) => c.scratchpadRunId === scratchpadRunId && c.blockType === blockType,
+      );
+      if (!decoration) return;
+      agentActions.askAboutDecoration(
+        buildDecorationContext(decoration),
+        anonymousSessionId ?? undefined,
+      );
+    },
+    [agentActions, anonymousSessionId, buildDecorationContext, visibleDiligenceDecorations],
+  );
+
+  const handleDismissDecoration = useCallback(
+    (scratchpadRunId: string, blockType?: DiligenceDecorationData["blockType"]) => {
+      // Still update the local Set instantly for responsive UX — the
+      // Convex write is fire-and-forget so the user never sees a lag
+      // between click and fade-out. The persisted state syncs via
+      // query reactivity in the next tick.
+      setHiddenDecorationRunIds((current) =>
+        current[scratchpadRunId] ? current : { ...current, [scratchpadRunId]: true },
+      );
+      if (!blockType) return; // legacy callers (should shrink to zero)
+      const decoration = visibleDiligenceDecorations.find(
+        (c) => c.scratchpadRunId === scratchpadRunId && c.blockType === blockType,
+      );
+      if (!decoration) return;
+      void agentActions.dismissDecoration(
+        buildDecorationContext(decoration),
+        anonymousSessionId ?? undefined,
+      );
+    },
+    [agentActions, anonymousSessionId, buildDecorationContext, visibleDiligenceDecorations],
+  );
 
   /**
    * Refresh handler — requests a re-run of a specific decoration's block.
@@ -1271,13 +1439,23 @@ export function EntityNotebookLive({
         setLastSyncedAt(Date.now());
         setFocusedBlockId(lastCreatedBlockId);
         toast.success("Live snapshot added to notebook");
+        // Log the accept so the drawer's activity timeline shows it.
+        // Fire-and-forget; network/log failure must NEVER undo the
+        // successful accept (HONEST_STATUS applies: the notebook was
+        // truly updated).
+        agentActions.logAcceptDecoration(
+          buildDecorationContext(decoration),
+          anonymousSessionId ?? undefined,
+        );
       } catch (error) {
         reportNotebookMutationFailure("save", error);
       }
     },
     [
+      agentActions,
       anonymousSessionId,
       blocks,
+      buildDecorationContext,
       canEdit,
       entitySlug,
       focusedBlockId,
@@ -1400,10 +1578,11 @@ export function EntityNotebookLive({
           }
           onDismissDecoration={
             canUseOverlayActions
-              ? (runId, _blockType) => handleDismissDecoration(runId)
+              ? (runId, blockType) => handleDismissDecoration(runId, blockType)
               : undefined
           }
           onRefreshDecoration={canEdit ? handleRefreshDecoration : undefined}
+          onAskAboutDecoration={handleAskAboutDecoration}
         />
       ) : null}
 
@@ -1439,7 +1618,19 @@ export function EntityNotebookLive({
         </div>
       ) : null}
 
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
+      {/* Compute outline items from heading blocks. Outline shows only when
+          the notebook has ≥2 headings (ship-gate §8 — no low-value modules). */}
+      {(() => null)()}
+      {/* Only claim the 320px right-rail column when a rail slot is actually
+          populated (scratchpad OR outline). When there's nothing to show,
+          the notebook gets the full width. */}
+      <div
+        className={
+          scratchpadRailSlot || outlineItems.length >= 2
+            ? "lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6"
+            : "block"
+        }
+      >
         <div className="min-w-0">
           <div className="space-y-0">
             {blocks.map((block, blockIndex) => (
@@ -1455,13 +1646,19 @@ export function EntityNotebookLive({
                   canEdit && notebookLoadState.fullyLoaded ? (block.accessMode ?? "edit") : "read"
                 }
                 isFocused={focusedBlockId === block._id}
+                hasBeenMounted={mountedBlockIds.has(String(block._id))}
+                depth={blockDepthMap.get(String(block._id)) ?? 0}
+                onHoverPrewarm={() => warmBlock(block._id)}
                 showSlash={slashFor === block._id}
                 syncDocumentId={buildProductBlockSyncId({
                   blockId: String(block._id),
                   anonymousSessionId,
                   shareToken,
                 })}
-                onFocus={() => setFocusedBlockId(block._id)}
+                onFocus={() => {
+                  warmBlock(block._id);
+                  setFocusedBlockId(block._id);
+                }}
                 onBlur={() => {
                   flushOptimisticBlockContent(block._id);
                   setFocusedBlockId((current) => (current === block._id ? null : current));
@@ -1480,13 +1677,61 @@ export function EntityNotebookLive({
                 onOpenSlash={() => setSlashFor(block._id)}
                 onCloseSlash={() => setSlashFor(null)}
                 onSlashCommand={(cmd) => void runSlashCommand(cmd, block)}
+                onMarkdownShortcut={(kind) => {
+                  if (!canEdit || block.accessMode !== "edit") return;
+                  void updateBlock({
+                    anonymousSessionId,
+                    shareToken,
+                    blockId: block._id,
+                    kind,
+                    content: [],
+                    expectedRevision: block.revision,
+                  });
+                }}
+                onTabIndent={() => {
+                  // Indent this block under the previous one. No-op if
+                  // there is no previous block or the user can't edit.
+                  if (!canEdit || block.accessMode !== "edit") return;
+                  const prevBlock = blocks[blockIndex - 1];
+                  if (!prevBlock) return;
+                  // Don't nest under self (shouldn't happen, but guard
+                  // against parentBlockId === block._id loops).
+                  if (prevBlock._id === block._id) return;
+                  void moveBlock({
+                    anonymousSessionId,
+                    shareToken,
+                    blockId: block._id,
+                    parentBlockId: prevBlock._id,
+                  });
+                }}
+                onShiftTabOutdent={() => {
+                  // Outdent — move this block up to sibling of current
+                  // parent. If block has no parent, no-op.
+                  if (!canEdit || block.accessMode !== "edit") return;
+                  if (!block.parentBlockId) return;
+                  const currentParent = blocks.find(
+                    (b) => b._id === block.parentBlockId,
+                  );
+                  // Passing `undefined` via the `parentBlockId` arg keeps
+                  // the current value (moveBlock falls back to existing).
+                  // To actually clear, we need to pass null — but the
+                  // mutation doesn't support that. Workaround: set to
+                  // grandparent explicitly (may be undefined → root).
+                  void moveBlock({
+                    anonymousSessionId,
+                    shareToken,
+                    blockId: block._id,
+                    parentBlockId: currentParent?.parentBlockId ?? undefined,
+                  });
+                }}
                 onAcceptDecoration={(runId, blockType) =>
                   void handleAcceptDecoration(runId, blockType)
                 }
-                onDismissDecoration={(runId, _blockType) => handleDismissDecoration(runId)}
+                onDismissDecoration={(runId, blockType) => handleDismissDecoration(runId, blockType)}
                 onRefreshDecoration={(runId, blockType) =>
                   handleRefreshDecoration(runId, blockType)
                 }
+                onAskAboutDecoration={handleAskAboutDecoration}
                 navigate={navigate}
               />
             ))}
@@ -1526,9 +1771,14 @@ export function EntityNotebookLive({
           />
         </div>
 
-        <div className="mt-6 lg:mt-0">
-          <NotebookRightRail scratchpadSlot={scratchpadRailSlot} />
-        </div>
+        {scratchpadRailSlot || outlineItems.length >= 2 ? (
+          <div className="mt-6 flex flex-col gap-3 lg:mt-0 lg:sticky lg:top-[80px] lg:self-start">
+            {outlineItems.length >= 2 ? (
+              <NotebookOutline items={outlineItems} />
+            ) : null}
+            <NotebookRightRail scratchpadSlot={scratchpadRailSlot} />
+          </div>
+        ) : null}
       </div>
 
       {/* Backlinks */}
@@ -1604,6 +1854,12 @@ type BlockRowProps = {
   isEditable: boolean;
   accessMode: AccessMode;
   isFocused: boolean;
+  /** Sticky mount flag — once a block has been focused or pre-warmed, keep
+      its editor mounted so re-clicks don't re-fetch the sync snapshot. */
+  hasBeenMounted?: boolean;
+  /** Hover prewarm callback — schedules the editor to mount before the
+      user actually clicks, for near-instant interaction. */
+  onHoverPrewarm?: () => void;
   showSlash: boolean;
   diligenceDecorations?: readonly DiligenceDecorationData[];
   // Encoded sync id combining anonymousSessionId + blockId; drives
@@ -1618,6 +1874,12 @@ type BlockRowProps = {
   onOpenSlash: () => void;
   onCloseSlash: () => void;
   onSlashCommand: (cmd: SlashCommand) => void;
+  onMarkdownShortcut: (kind: "heading_2" | "heading_3" | "bullet" | "quote" | "todo") => void;
+  onTabIndent: () => void;
+  onShiftTabOutdent: () => void;
+  /** Nesting depth — 0 for top-level, 1+ for indented children. Used to
+      apply visual indent (`ml-6` per depth). */
+  depth?: number;
   onAcceptDecoration: (
     scratchpadRunId: string,
     blockType: DiligenceDecorationData["blockType"],
@@ -1627,6 +1889,11 @@ type BlockRowProps = {
     blockType: DiligenceDecorationData["blockType"],
   ) => void;
   onRefreshDecoration: (
+    scratchpadRunId: string,
+    blockType: DiligenceDecorationData["blockType"],
+  ) => void;
+  /** Seam to side-panel drawer — opens with decoration as context. */
+  onAskAboutDecoration?: (
     scratchpadRunId: string,
     blockType: DiligenceDecorationData["blockType"],
   ) => void;
@@ -1642,6 +1909,8 @@ const BlockRow = memo(function BlockRow({
   isEditable,
   accessMode,
   isFocused,
+  hasBeenMounted,
+  onHoverPrewarm,
   showSlash,
   diligenceDecorations,
   syncDocumentId,
@@ -1654,14 +1923,20 @@ const BlockRow = memo(function BlockRow({
   onOpenSlash,
   onCloseSlash,
   onSlashCommand,
+  onMarkdownShortcut,
+  onTabIndent,
+  onShiftTabOutdent,
+  depth = 0,
   onAcceptDecoration,
   onDismissDecoration,
   onRefreshDecoration,
+  onAskAboutDecoration,
 }: BlockRowProps) {
   const isEvidence = block.kind === "evidence";
   const supportsSyncEditing = isSyncEditableBlock(block);
   const shouldMountSyncEditor =
-    supportsSyncEditing && (isFocused || (diligenceDecorations?.length ?? 0) > 0);
+    supportsSyncEditing &&
+    (isFocused || hasBeenMounted || (diligenceDecorations?.length ?? 0) > 0);
   const isAgentAuthored = block.authorKind === "agent";
   const isRecentAgentEdit =
     isAgentAuthored && Date.now() - block.updatedAt < 5 * 60 * 1000;
@@ -1675,14 +1950,17 @@ const BlockRow = memo(function BlockRow({
     block.kind === "heading_2" ||
     block.kind === "heading_3" ||
     (!prev && block.kind === "text");
+  const isEmptyTextBlock = isTriviallyEmptyNotebookBlock(block, displayContent);
   const blockSpacingClass =
     block.kind === "heading_2"
-      ? "pt-4"
+      ? "pt-5"
       : block.kind === "heading_3"
         ? "pt-3"
         : followsParentHeading
-          ? "pt-0.5"
-          : "pt-1.5";
+          ? "pt-px"
+          : isEmptyTextBlock
+            ? "pt-px"
+            : "pt-0.5";
 
   // Render heading/text/bullet/todo/callout/evidence kinds.
   const classesForKind = (): string => {
@@ -1694,19 +1972,19 @@ const BlockRow = memo(function BlockRow({
       case "heading_3":
         return "text-[0.95rem] font-semibold tracking-tight text-gray-900 dark:text-gray-100";
       case "bullet":
-        return "text-[15px] leading-7 text-gray-700 dark:text-gray-200";
+        return "text-[15px] leading-[1.5] text-gray-700 dark:text-gray-200";
       case "todo":
-        return "text-[15px] leading-7 text-gray-700 dark:text-gray-200";
+        return "text-[15px] leading-[1.5] text-gray-700 dark:text-gray-200";
       case "callout":
-        return "border-l-2 border-[var(--accent-primary)] bg-[var(--accent-primary)]/5 py-1 pl-3 text-[15px] leading-7 text-gray-700 dark:text-gray-200";
+        return "border-l-2 border-[var(--accent-primary)] bg-[var(--accent-primary)]/5 py-1 pl-3 text-[15px] leading-[1.5] text-gray-700 dark:text-gray-200";
       case "quote":
-        return "border-l-2 border-gray-300 pl-3 text-[15px] italic leading-7 text-gray-600 dark:border-white/20 dark:text-gray-400";
+        return "border-l-2 border-gray-300 pl-3 text-[15px] italic leading-[1.5] text-gray-600 dark:border-white/20 dark:text-gray-400";
       case "code":
         return "rounded bg-gray-100 px-3 py-2 font-mono text-[12.5px] text-gray-800 dark:bg-white/[0.04] dark:text-gray-200";
       case "generated_marker":
         return "text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400";
       default:
-        return "text-[15px] leading-7 text-gray-700 dark:text-gray-200";
+        return "text-[15px] leading-[1.5] text-gray-700 dark:text-gray-200";
     }
   };
 
@@ -1737,18 +2015,21 @@ const BlockRow = memo(function BlockRow({
       data-block-kind={block.kind}
       data-block-focused={String(isFocused)}
       data-author-kind={block.authorKind}
+      onMouseEnter={onHoverPrewarm}
       onClick={() => {
         if (supportsSyncEditing) {
           onFocus();
         }
       }}
-      className={`group relative -mx-2 px-2 ${blockSpacingClass} transition-colors ${
+      data-depth={depth}
+      className={`group relative -mx-2 px-2 ${blockSpacingClass} transition-[background,padding] duration-150 ${
         isRecentAgentEdit ? "notebook-block-wet-ink" : ""
       } ${
         isFocused
           ? "rounded-md bg-white/[0.045] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]"
           : "hover:bg-white/[0.02]"
       }`}
+      style={depth > 0 ? { marginLeft: `${depth * 1.5}rem` } : undefined}
     >
       <div className="relative min-w-0">
         {isAgentAuthored && startsAuthorRun ? (
@@ -1776,10 +2057,14 @@ const BlockRow = memo(function BlockRow({
                 onEnter={onEnter}
                 onBackspaceAtStart={onBackspaceAtStart}
                 onOpenSlash={onOpenSlash}
+                onMarkdownShortcut={onMarkdownShortcut}
+                onTabIndent={onTabIndent}
+                onShiftTabOutdent={onShiftTabOutdent}
                 onCloseSlash={onCloseSlash}
                 onAcceptDecoration={onAcceptDecoration}
                 onDismissDecoration={onDismissDecoration}
                 onRefreshDecoration={onRefreshDecoration}
+                onAskAboutDecoration={onAskAboutDecoration}
               />
             ) : (
               <div

@@ -13720,4 +13720,70 @@ export default defineSchema({
   hyperloopEvaluationRuns,
   hyperloopPromotions,
 
+  /* ------------------------------------------------------------------ */
+  /* agentActions — unified audit log of every structured agent action. */
+  /*                                                                    */
+  /* One table for all three surfaces (inline notebook decorations,     */
+  /* side-panel drawer, chat page). Any action the user takes via the   */
+  /* agent — accepting a suggestion, dismissing a decoration, sending   */
+  /* a message — lands here as a single row with `surfaceOrigin` set.   */
+  /* This is the glue that lets the drawer show "earlier today I        */
+  /* accepted a founder tier on Acme" even though the accept happened   */
+  /* inline in the notebook.                                            */
+  /*                                                                    */
+  /* Pattern: Anthropic trace events + NodeBench surfaceOrigin tag.     */
+  /* See docs/architecture/AGENT_INFRA_COHESION.md (to be authored).    */
+  /* ------------------------------------------------------------------ */
+  agentActions: defineTable({
+    ownerKey: v.string(),
+    userId: v.optional(v.id("users")),
+    surfaceOrigin: v.union(
+      v.literal("inline"),
+      v.literal("drawer"),
+      v.literal("chat"),
+    ),
+    // Linking — nullable because not every action ties to every concept.
+    threadId: v.optional(v.string()),
+    entitySlug: v.optional(v.string()),
+    blockId: v.optional(v.string()),
+    scratchpadRunId: v.optional(v.string()),
+    // Action shape — bounded enum (HONEST_STATUS).
+    kind: v.union(
+      v.literal("decoration_accepted"),
+      v.literal("decoration_dismissed"),
+      v.literal("decoration_refreshed"),
+      v.literal("decoration_asked_about"),
+      v.literal("block_added"),
+      v.literal("block_edited"),
+      v.literal("message_sent"),
+    ),
+    summary: v.string(),
+    payload: v.optional(v.any()),
+    createdAt: v.number(),
+  })
+    .index("by_owner", ["ownerKey"])
+    .index("by_owner_time", ["ownerKey", "createdAt"])
+    .index("by_thread", ["threadId"])
+    .index("by_entity", ["entitySlug"])
+    .index("by_entity_time", ["entitySlug", "createdAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* dismissedDecorations — persistent per-user dismissal of inline     */
+  /* agent suggestions. Before this table, dismissals were client-only  */
+  /* React state, lost on refresh. That violated user trust: dismissing */
+  /* something should *stay* dismissed.                                 */
+  /* ------------------------------------------------------------------ */
+  dismissedDecorations: defineTable({
+    ownerKey: v.string(),
+    userId: v.optional(v.id("users")),
+    entitySlug: v.string(),
+    scratchpadRunId: v.string(),
+    blockType: v.string(),
+    dismissedAt: v.number(),
+    reason: v.optional(v.string()),
+  })
+    .index("by_owner", ["ownerKey"])
+    .index("by_owner_entity", ["ownerKey", "entitySlug"])
+    .index("by_owner_run", ["ownerKey", "scratchpadRunId"]),
+
 });

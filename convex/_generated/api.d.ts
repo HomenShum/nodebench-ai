@@ -40,6 +40,7 @@ import type * as domains_agents_adapters_registry from "../domains/agents/adapte
 import type * as domains_agents_adapters_routing_personaRouter from "../domains/agents/adapters/routing/personaRouter.js";
 import type * as domains_agents_adapters_types from "../domains/agents/adapters/types.js";
 import type * as domains_agents_adapters_vercel_vercelAiSdkAdapter from "../domains/agents/adapters/vercel/vercelAiSdkAdapter.js";
+import type * as domains_agents_agentActions from "../domains/agents/agentActions.js";
 import type * as domains_agents_agentChat from "../domains/agents/agentChat.js";
 import type * as domains_agents_agentChatActions from "../domains/agents/agentChatActions.js";
 import type * as domains_agents_agentDelegations from "../domains/agents/agentDelegations.js";
@@ -133,6 +134,7 @@ import type * as domains_agents_dataAccess_tools_index from "../domains/agents/d
 import type * as domains_agents_dataAccess_tools_taskTools from "../domains/agents/dataAccess/tools/taskTools.js";
 import type * as domains_agents_decisionMemory from "../domains/agents/decisionMemory.js";
 import type * as domains_agents_decisionMemoryQueries from "../domains/agents/decisionMemoryQueries.js";
+import type * as domains_agents_decorationPreferences from "../domains/agents/decorationPreferences.js";
 import type * as domains_agents_deliberationToEvolution from "../domains/agents/deliberationToEvolution.js";
 import type * as domains_agents_digestAgent from "../domains/agents/digestAgent.js";
 import type * as domains_agents_dueDiligence_branches_companyProfile from "../domains/agents/dueDiligence/branches/companyProfile.js";
@@ -1420,6 +1422,7 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/adapters/routing/personaRouter": typeof domains_agents_adapters_routing_personaRouter;
   "domains/agents/adapters/types": typeof domains_agents_adapters_types;
   "domains/agents/adapters/vercel/vercelAiSdkAdapter": typeof domains_agents_adapters_vercel_vercelAiSdkAdapter;
+  "domains/agents/agentActions": typeof domains_agents_agentActions;
   "domains/agents/agentChat": typeof domains_agents_agentChat;
   "domains/agents/agentChatActions": typeof domains_agents_agentChatActions;
   "domains/agents/agentDelegations": typeof domains_agents_agentDelegations;
@@ -1513,6 +1516,7 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/dataAccess/tools/taskTools": typeof domains_agents_dataAccess_tools_taskTools;
   "domains/agents/decisionMemory": typeof domains_agents_decisionMemory;
   "domains/agents/decisionMemoryQueries": typeof domains_agents_decisionMemoryQueries;
+  "domains/agents/decorationPreferences": typeof domains_agents_decorationPreferences;
   "domains/agents/deliberationToEvolution": typeof domains_agents_deliberationToEvolution;
   "domains/agents/digestAgent": typeof domains_agents_digestAgent;
   "domains/agents/dueDiligence/branches/companyProfile": typeof domains_agents_dueDiligence_branches_companyProfile;

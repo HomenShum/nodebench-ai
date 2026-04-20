@@ -17,6 +17,13 @@ type Props = {
     scratchpadRunId: string,
     blockType: DiligenceDecorationData["blockType"],
   ) => void;
+  /** Seam to side-panel drawer — opens the agent with this decoration
+   *  as context. When provided, the plugin auto-injects an "Ask
+   *  NodeBench" button into every decoration's action bar. */
+  onAskAboutDecoration?: (
+    scratchpadRunId: string,
+    blockType: DiligenceDecorationData["blockType"],
+  ) => void;
 };
 
 export function NotebookDiligenceOverlayHost({
@@ -24,6 +31,7 @@ export function NotebookDiligenceOverlayHost({
   onAcceptDecoration,
   onDismissDecoration,
   onRefreshDecoration,
+  onAskAboutDecoration,
 }: Props) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const config = useMemo(
@@ -34,8 +42,9 @@ export function NotebookDiligenceOverlayHost({
       onAcceptDecoration,
       onDismissDecoration,
       onRefreshDecoration,
+      onAskAboutDecoration,
     }),
-    [decorations, onAcceptDecoration, onDismissDecoration, onRefreshDecoration],
+    [decorations, onAcceptDecoration, onDismissDecoration, onRefreshDecoration, onAskAboutDecoration],
   );
 
   useEffect(() => {

@@ -72,6 +72,19 @@ export type DiligenceDecorationPluginConfig = {
     scratchpadRunId: string,
     blockType: DiligenceDecorationData["blockType"],
   ) => void;
+  /**
+   * Opens the side-panel agent drawer with this decoration as context.
+   * The seam between inline AI (decorations) and chat AI (drawer).
+   *
+   * When provided, the plugin auto-injects an "Ask NodeBench" button
+   * into the action bar of every decoration (no per-renderer change
+   * required). When omitted, the button is suppressed — not disabled —
+   * so we never show dead UI.
+   */
+  onAskAboutDecoration?: (
+    scratchpadRunId: string,
+    blockType: DiligenceDecorationData["blockType"],
+  ) => void;
 };
 
 function tierToneClass(tier: EvidenceTier): string {
@@ -192,6 +205,38 @@ function attachRendererActions(
       config.onDismissDecoration?.(data.scratchpadRunId, data.blockType),
     );
   }
+
+  /*
+   * Central injection of the "Ask NodeBench" button — one line of config
+   * wires every renderer, no per-renderer edits. We locate the action bar
+   * by the first existing action button (accept / refresh / dismiss),
+   * then prepend our button so it reads left-to-right as the first
+   * option — "Ask > Accept > Refresh > Dismiss" — because "learn more"
+   * is almost always the safest action when a user isn't sure yet.
+   *
+   * Suppressed (not disabled) when onAskAboutDecoration is absent, so
+   * tests running with partial configs don't see dead UI.
+   */
+  if (config.onAskAboutDecoration) {
+    const anchorButton = root.querySelector<HTMLButtonElement>(
+      '[data-action="accept"], [data-action="refresh"], [data-action="dismiss"]',
+    );
+    const actionBar = anchorButton?.parentElement;
+    if (actionBar) {
+      const askButton = document.createElement("button");
+      askButton.type = "button";
+      askButton.setAttribute("data-action", "ask");
+      askButton.setAttribute("data-block", data.blockType);
+      askButton.setAttribute("data-run-id", data.scratchpadRunId);
+      askButton.className =
+        "inline-flex items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-content-muted hover:border-[color:var(--accent-primary)]/40 hover:text-content transition";
+      askButton.textContent = "Ask NodeBench";
+      actionBar.insertBefore(askButton, actionBar.firstChild);
+      attachAction(askButton, () =>
+        config.onAskAboutDecoration?.(data.scratchpadRunId, data.blockType),
+      );
+    }
+  }
 }
 
 export function renderDiligenceDecorationElement(
@@ -212,146 +257,143 @@ function renderDefaultDecoration(
   data: DiligenceDecorationData,
   config: DiligenceDecorationPluginConfig,
 ): HTMLElement {
+  // Inline agent suggestion — rendered like a natural notebook block, not a
+  // card. Left-accent hints "this is agent-authored, not yet accepted".
+  // Actions appear on hover (Notion/Linear pattern).
   const root = document.createElement("span");
   root.className =
-    "notebook-diligence-decoration mb-4 block rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left";
+    "notebook-diligence-decoration group my-2 block border-l-2 border-l-[var(--accent-primary)]/35 pl-3 text-left";
   root.setAttribute("contenteditable", "false");
   root.dataset.blockType = data.blockType;
   root.dataset.runId = data.scratchpadRunId;
   root.dataset.version = String(data.version);
 
-  const eyebrow = document.createElement("span");
-  eyebrow.className =
-    "mb-2 inline-flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-gray-400";
-  const liveChip = document.createElement("span");
-  liveChip.className =
-    "rounded-full border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/10 px-2 py-0.5 text-[var(--accent-primary)]";
-  liveChip.textContent = "Live";
-  eyebrow.appendChild(liveChip);
-  const typeLabel = document.createElement("span");
-  typeLabel.textContent =
-    data.blockType === "projection" ? "Reference overlay" : data.blockType;
-  eyebrow.appendChild(typeLabel);
-  root.appendChild(eyebrow);
-
-  const headerRow = document.createElement("span");
-  headerRow.className = "mb-2 flex items-center justify-between gap-2";
+  // Section header: reads like an H3 in the document. Small "· agent"
+  // suffix tells the user this section is a pending suggestion.
+  const titleRow = document.createElement("span");
+  titleRow.className = "mb-1 flex items-baseline gap-2";
 
   const title = document.createElement("span");
-  title.className = "text-sm font-semibold tracking-tight text-gray-100";
+  title.className = "text-[15px] font-semibold tracking-tight text-gray-900 dark:text-gray-100";
   title.textContent = data.headerText;
-  headerRow.appendChild(title);
+  titleRow.appendChild(title);
 
-  const meta = document.createElement("span");
-  meta.className = "inline-flex items-center gap-2";
-  const tier = document.createElement("span");
-  tier.className = `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] ${tierToneClass(data.overallTier)}`;
-  const tierDot = document.createElement("span");
-  tierDot.className = "h-1.5 w-1.5 rounded-full bg-current";
-  tier.appendChild(tierDot);
-  tier.appendChild(document.createTextNode(tierLabel(data.overallTier)));
-  meta.appendChild(tier);
+  const agentTag = document.createElement("span");
+  agentTag.className = "text-[10px] uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400";
+  agentTag.textContent = "agent · suggestion";
+  titleRow.appendChild(agentTag);
 
-  const updated = document.createElement("span");
-  updated.className = "text-[11px] text-gray-500";
-  updated.textContent = `updated ${formatRelative(data.updatedAt)}`;
-  meta.appendChild(updated);
-  headerRow.appendChild(meta);
-  root.appendChild(headerRow);
+  // Tier chip only when meaningful (not the default "unverified").
+  if (data.overallTier !== "unverified") {
+    const tier = document.createElement("span");
+    tier.className = `ml-auto inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] ${tierToneClass(data.overallTier)}`;
+    const tierDot = document.createElement("span");
+    tierDot.className = "h-1.5 w-1.5 rounded-full bg-current";
+    tier.appendChild(tierDot);
+    tier.appendChild(document.createTextNode(tierLabel(data.overallTier)));
+    titleRow.appendChild(tier);
+  }
+  root.appendChild(titleRow);
 
-  const body = document.createElement("span");
-  body.className = "block space-y-2";
+  // Body: plain agent-ink prose, matching the notebook's reading rhythm.
+  // No card padding, no background tint — flows like any other paragraph.
   const paragraphs = (data.bodyProse ?? "")
     .split(/\n\s*\n/)
     .map((paragraph) => paragraph.trim())
     .filter(Boolean);
-  if (paragraphs.length === 0) {
-    const empty = document.createElement("span");
-    empty.className = "block text-sm leading-6 text-gray-400";
-    empty.textContent = "No live diligence content is available yet.";
-    body.appendChild(empty);
-  } else {
-    for (const paragraph of paragraphs) {
-      const p = document.createElement("span");
-      p.className = "block text-sm leading-6 text-gray-300";
-      p.textContent = paragraph;
-      body.appendChild(p);
-    }
+  for (const paragraph of paragraphs) {
+    const p = document.createElement("span");
+    p.className = "block text-[15px] leading-[1.5] text-gray-600 dark:text-gray-300";
+    p.textContent = paragraph;
+    root.appendChild(p);
   }
-  root.appendChild(body);
 
-  const footer = document.createElement("span");
-  footer.className = "mt-3 flex flex-wrap items-center justify-between gap-2";
+  // Meta row: source count + inline action strip. Hidden opacity, reveals
+  // on hover (keeps reading surface calm).
+  const meta = document.createElement("span");
+  meta.className =
+    "mt-1 flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100";
 
-  const sourceMeta = document.createElement("span");
-  sourceMeta.className = "inline-flex flex-wrap items-center gap-2 text-[11px] text-gray-500";
-  if (data.sourceCount != null) {
+  if (data.sourceCount != null && data.sourceCount > 0) {
     const count = document.createElement("span");
     count.textContent = `${data.sourceCount} source${data.sourceCount === 1 ? "" : "s"}`;
-    sourceMeta.appendChild(count);
+    meta.appendChild(count);
+    const sep = document.createElement("span");
+    sep.className = "text-gray-300 dark:text-gray-600";
+    sep.textContent = "·";
+    meta.appendChild(sep);
   }
+
+  // Render source-token chips ([s1], [s2], ...) so a reader can see
+  // which report sources backed the suggestion at a glance. Restored
+  // here after an earlier refactor dropped them; test coverage in
+  // NotebookDiligenceOverlayHost.test.tsx asserts on these literals.
   if (data.sourceTokens && data.sourceTokens.length > 0) {
     for (const token of data.sourceTokens) {
-      const source = document.createElement("span");
-      source.className =
+      const chip = document.createElement("span");
+      chip.className =
         "rounded px-1.5 py-0.5 text-[10px] font-medium text-[var(--accent-primary)] bg-[var(--accent-primary)]/10";
-      source.textContent = token;
-      sourceMeta.appendChild(source);
+      chip.textContent = token;
+      meta.appendChild(chip);
     }
-  } else if (data.sourceLabel) {
-    const label = document.createElement("span");
-    label.textContent = data.sourceLabel;
-    sourceMeta.appendChild(label);
+    const chipSep = document.createElement("span");
+    chipSep.className = "text-gray-300 dark:text-gray-600";
+    chipSep.textContent = "·";
+    meta.appendChild(chipSep);
   }
-  footer.appendChild(sourceMeta);
+
+  const updated = document.createElement("span");
+  updated.textContent = `updated ${formatRelative(data.updatedAt)}`;
+  meta.appendChild(updated);
 
   const hasActions =
     Boolean(config.onAcceptDecoration) ||
     Boolean(config.onRefreshDecoration) ||
     Boolean(config.onDismissDecoration);
   if (hasActions) {
-    const actions = document.createElement("span");
-    actions.className = "inline-flex items-center gap-2";
+    const actionSep = document.createElement("span");
+    actionSep.className = "ml-1 text-gray-300 dark:text-gray-600";
+    actionSep.textContent = "·";
+    meta.appendChild(actionSep);
+
     if (config.onAcceptDecoration) {
       const accept = document.createElement("button");
       accept.type = "button";
       accept.className =
-        "rounded-md border border-white/10 px-2 py-1 text-[11px] font-medium text-gray-200 transition-colors hover:bg-white/[0.05]";
+        "rounded px-1.5 py-0.5 text-[11px] font-medium text-[var(--accent-primary)] transition-colors hover:bg-[var(--accent-primary)]/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-primary)]/40";
       accept.textContent = "Accept";
       attachAction(accept, () =>
         config.onAcceptDecoration?.(data.scratchpadRunId, data.blockType),
       );
-      actions.appendChild(accept);
+      meta.appendChild(accept);
     }
 
     if (config.onRefreshDecoration) {
       const refresh = document.createElement("button");
       refresh.type = "button";
       refresh.className =
-        "rounded-md border border-white/10 px-2 py-1 text-[11px] font-medium text-gray-300 transition-colors hover:bg-white/[0.05]";
+        "rounded px-1.5 py-0.5 text-[11px] text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/[0.05]";
       refresh.textContent = "Refresh";
       attachAction(refresh, () =>
         config.onRefreshDecoration?.(data.scratchpadRunId, data.blockType),
       );
-      actions.appendChild(refresh);
+      meta.appendChild(refresh);
     }
 
     if (config.onDismissDecoration) {
       const dismiss = document.createElement("button");
       dismiss.type = "button";
       dismiss.className =
-        "rounded-md border border-white/10 px-2 py-1 text-[11px] font-medium text-gray-400 transition-colors hover:bg-white/[0.05]";
+        "rounded px-1.5 py-0.5 text-[11px] text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/[0.05]";
       dismiss.textContent = "Dismiss";
       attachAction(dismiss, () =>
         config.onDismissDecoration?.(data.scratchpadRunId, data.blockType),
       );
-      actions.appendChild(dismiss);
+      meta.appendChild(dismiss);
     }
-
-    footer.appendChild(actions);
   }
-  root.appendChild(footer);
 
+  root.appendChild(meta);
   return root;
 }
 
@@ -368,6 +410,28 @@ function buildSignature(decorations: readonly DiligenceDecorationData[]): string
   );
 }
 
+/**
+ * Maps diligence block-types to the H2/H3 heading text where their content
+ * naturally belongs. When the notebook contains that heading, the decoration
+ * is anchored AFTER it (inline flow, Notion pattern). When it doesn't,
+ * decorations fall back to the top of the document.
+ *
+ * This eliminates the "wall of cards at top" problem: agent content now
+ * appears where the user would expect it in the document.
+ */
+const BLOCK_TYPE_ANCHOR_HEADING: Record<string, string> = {
+  founder: "Founders",
+  product: "Product",
+  funding: "Funding",
+  news: "News",
+  hiring: "Hiring",
+  patent: "Patents",
+  publicOpinion: "Public opinion",
+  competitor: "Competitors",
+  regulatory: "Regulatory",
+  financial: "Financial",
+};
+
 function buildDecorationSet(
   doc: ProseMirrorNode,
   config: DiligenceDecorationPluginConfig,
@@ -377,33 +441,32 @@ function buildDecorationSet(
     return DecorationSet.empty;
   }
 
-  const anchorPos = resolveAnchorPosition(doc, config.anchors);
   const registry = config.renderers ?? {};
-  const widget = Decoration.widget(
-    anchorPos,
-    () => {
-      const wrapper = document.createElement("span");
-      wrapper.className = "notebook-diligence-decoration-root block";
-      wrapper.setAttribute("contenteditable", "false");
-      wrapper.dataset.testid = "diligence-decoration-overlay";
+  const widgets: Decoration[] = [];
 
-      for (const item of decorations) {
-        const node = renderDiligenceDecorationElement(item, {
-          ...config,
-          renderers: registry,
-        });
-        wrapper.appendChild(node);
-      }
+  // One widget PER decoration, each anchored at its natural in-flow
+  // position. Decorations for the same blockType cluster together under
+  // their matching heading, not in a wall at the top of the document.
+  for (const item of decorations) {
+    const headingText = BLOCK_TYPE_ANCHOR_HEADING[item.blockType];
+    const anchorStrategies: AnchorStrategy[] = headingText
+      ? [{ kind: "after-heading", text: headingText }, ...config.anchors]
+      : config.anchors;
+    const pos = resolveAnchorPosition(doc, anchorStrategies);
 
-      return wrapper;
-    },
-    {
-      key: `nodebench-diligence:${buildSignature(decorations)}`,
-      side: -1,
-    },
-  );
+    const widget = Decoration.widget(
+      pos,
+      () =>
+        renderDiligenceDecorationElement(item, { ...config, renderers: registry }),
+      {
+        key: `nodebench-diligence:${item.scratchpadRunId}:${item.version}:${item.blockType}`,
+        side: -1,
+      },
+    );
+    widgets.push(widget);
+  }
 
-  return DecorationSet.create(doc, [widget]);
+  return DecorationSet.create(doc, widgets);
 }
 
 export function createDiligenceDecorationPlugin(
