@@ -33,8 +33,7 @@ export type MainView =
   | "entity-compare"
   | "benchmark-comparison"
   | "role-lens-output"
-  | "homes-hub-session"
-  | "daas";
+  | "homes-hub-session";
 
 export type ResearchTab = "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
 
@@ -226,19 +225,6 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     commandPaletteVisible: false,
   },
 
-  // ── Distillation-as-a-Service ────────────────────────────────────────────
-  {
-    id: "daas",
-    title: "Distillation-as-a-Service",
-    subtitle: "Ingest expert traces, distill workflows, replay with cheap models, measure savings",
-    path: "/daas",
-    aliases: ["/distill"],
-    component: lazyNamed(() => import("@/features/daas/views/DaasPage"), "DaasPage"),
-    group: "nested",
-    navVisible: false,
-    surfaceId: "ask",
-    commandPaletteVisible: true,
-  },
 
 
 

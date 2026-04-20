@@ -150,17 +150,6 @@ import {
 } from "./domains/successLoops/schema";
 import { agentResponseReviews } from "./domains/agents/schema";
 
-// Distillation-as-a-Service (DaaS) schema — see daas/ Python pipeline.
-import {
-  daasTraces,
-  daasWorkflowSpecs,
-  daasReplays,
-  daasJudgments,
-  daasRateBuckets,
-  daasAuditLog,
-  daasApiKeys,
-} from "./domains/daas/schema";
-
 // MCP Gateway API key & session schema
 import { mcpApiKeys, mcpGatewaySessions } from "./domains/mcp/apiKeysSchema";
 
@@ -13681,12 +13670,4 @@ export default defineSchema({
   hyperloopEvaluationRuns,
   hyperloopPromotions,
 
-  // Distillation-as-a-Service tables
-  daasTraces,
-  daasWorkflowSpecs,
-  daasReplays,
-  daasJudgments,
-  daasRateBuckets,
-  daasAuditLog,
-  daasApiKeys,
 });

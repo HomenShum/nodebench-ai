@@ -16,7 +16,6 @@ import {
   callbackHandler as linkedinCallbackHandler,
 } from "./domains/social/linkedinOAuth";
 import { openclawInboundHandler } from "./domains/messaging/inboundPipeline";
-import { ingestHttp as daasIngestHttp } from "./domains/daas/http";
 
 const http = router;
 
@@ -38,20 +37,6 @@ http.route({
   handler: telegramWebhookHandler,
 });
 
-// Distillation-as-a-Service ingest endpoint — accepts CanonicalTrace
-// payloads from any source (Python pipeline, curl, external webhooks).
-// Returns 201 with {ok, traceId, sessionId} on success.
-// See convex/domains/daas/http.ts for validation + rate-limit plan.
-http.route({
-  path: "/api/daas/ingest",
-  method: "POST",
-  handler: daasIngestHttp,
-});
-http.route({
-  path: "/api/daas/ingest",
-  method: "OPTIONS",
-  handler: daasIngestHttp,
-});
 
 // Register Discord interactions webhook for slash commands (FREE)
 // Route: /discord/interactions

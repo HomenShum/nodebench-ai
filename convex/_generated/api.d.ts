@@ -317,12 +317,6 @@ import type * as domains_canonicalization_duplicateDetection from "../domains/ca
 import type * as domains_channels_channelIntelligence from "../domains/channels/channelIntelligence.js";
 import type * as domains_channels_engagementOptimizer from "../domains/channels/engagementOptimizer.js";
 import type * as domains_channels_index from "../domains/channels/index.js";
-import type * as domains_daas_actions from "../domains/daas/actions.js";
-import type * as domains_daas_admin from "../domains/daas/admin.js";
-import type * as domains_daas_http from "../domains/daas/http.js";
-import type * as domains_daas_mutations from "../domains/daas/mutations.js";
-import type * as domains_daas_queries from "../domains/daas/queries.js";
-import type * as domains_daas_rubrics from "../domains/daas/rubrics.js";
 import type * as domains_deepTrace_causalChainEngine from "../domains/deepTrace/causalChainEngine.js";
 import type * as domains_deepTrace_dimensionEngine from "../domains/deepTrace/dimensionEngine.js";
 import type * as domains_deepTrace_dimensionModel from "../domains/deepTrace/dimensionModel.js";
@@ -1702,12 +1696,6 @@ declare const fullApi: ApiFromModules<{
   "domains/channels/channelIntelligence": typeof domains_channels_channelIntelligence;
   "domains/channels/engagementOptimizer": typeof domains_channels_engagementOptimizer;
   "domains/channels/index": typeof domains_channels_index;
-  "domains/daas/actions": typeof domains_daas_actions;
-  "domains/daas/admin": typeof domains_daas_admin;
-  "domains/daas/http": typeof domains_daas_http;
-  "domains/daas/mutations": typeof domains_daas_mutations;
-  "domains/daas/queries": typeof domains_daas_queries;
-  "domains/daas/rubrics": typeof domains_daas_rubrics;
   "domains/deepTrace/causalChainEngine": typeof domains_deepTrace_causalChainEngine;
   "domains/deepTrace/dimensionEngine": typeof domains_deepTrace_dimensionEngine;
   "domains/deepTrace/dimensionModel": typeof domains_deepTrace_dimensionModel;

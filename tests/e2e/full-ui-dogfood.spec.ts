@@ -26,11 +26,6 @@ const ROUTES = [
     name: "me",
     readyText: "What improves the next run",
   },
-  {
-    path: "/daas",
-    name: "daas",
-    readyText: "Distillation-as-a-Service",
-  },
 ] as const;
 
 const VARIANTS = [
