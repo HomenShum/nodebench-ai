@@ -47,6 +47,24 @@ export type DiligenceBlockType =
   | "regulatory"
   | "financial";
 
+/** 4-state status chip (v2 prototype). `label` is the human-readable line. */
+export type StatusLineState = "done" | "progress" | "info" | "wait";
+export type StatusLine = {
+  state: StatusLineState;
+  label: string;
+  /** Optional code-chip for typed shared data (e.g. `raw_data`, `Cluster 1`). */
+  codeChip?: string;
+};
+
+/** Approval-gate states (v2 prototype human-in-the-loop pattern). */
+export type ApprovalStatus = "pending" | "granted" | "denied";
+
+/** Dependency wait: "Waiting for {dataKey} from {agentId}". */
+export type WaitingOn = {
+  agentId: string;
+  dataKey: string;
+};
+
 export type DiligenceDecorationData = {
   blockType: DiligenceBlockType;
   overallTier: EvidenceTier;
@@ -60,6 +78,12 @@ export type DiligenceDecorationData = {
   sourceCount?: number;
   sourceLabel?: string;
   sourceTokens?: string[];
+  /** v2 status lines — each renders as a colored chip with optional code chip. */
+  statusLines?: StatusLine[];
+  /** v2 dependency-wait state — renders a callout above the body. */
+  waitingOn?: WaitingOn;
+  /** v2 human approval gate — pending renders [Approve] [Deny]; granted/denied renders a quiet confirmation. */
+  approvalStatus?: ApprovalStatus;
   payload?: unknown;
 };
 
@@ -362,6 +386,41 @@ function renderDefaultDecoration(
   }
   root.appendChild(titleRow);
 
+  // Waiting-on dependency callout (v2 prototype pattern) — renders ABOVE
+  // the body so the user sees the block is blocked before the prose.
+  if (data.waitingOn) {
+    const waitCallout = document.createElement("span");
+    waitCallout.className =
+      "notebook-stream-ink mt-1 mb-2 flex items-center gap-2 rounded border-l-2 border-amber-400/50 bg-amber-500/[0.06] px-2 py-1 text-[12px] text-amber-700 dark:text-amber-300";
+    waitCallout.innerHTML =
+      `<span>⏳</span><span>Waiting for <code class="font-mono text-[11px] rounded bg-amber-500/15 px-1 py-0.5">${data.waitingOn.dataKey}</code> from ${data.waitingOn.agentId}…</span>`;
+    root.appendChild(waitCallout);
+  }
+
+  // Status lines (v2 prototype — 4 semantic states: done/progress/info/wait).
+  // Each renders as a single-line chip with icon + label + optional code chip.
+  if (data.statusLines && data.statusLines.length > 0) {
+    for (const line of data.statusLines) {
+      const row = document.createElement("span");
+      const toneClass =
+        line.state === "done"
+          ? "text-emerald-600 dark:text-emerald-400"
+          : line.state === "progress"
+            ? "text-amber-600 dark:text-amber-400"
+            : line.state === "info"
+              ? "text-sky-600 dark:text-sky-400"
+              : "text-gray-500 dark:text-gray-400";
+      const icon =
+        line.state === "done" ? "✓" : line.state === "progress" ? "⏳" : line.state === "info" ? "↳" : "◯";
+      row.className = `notebook-stream-ink flex items-center gap-1.5 text-[12px] py-0.5 ${toneClass}`;
+      const codeChipHtml = line.codeChip
+        ? `<code class="font-mono text-[11px] rounded bg-current/[0.1] px-1 py-0.5 opacity-80">${line.codeChip}</code>`
+        : "";
+      row.innerHTML = `<span>${icon}</span><span>${line.label}${codeChipHtml ? " " + codeChipHtml : ""}</span>`;
+      root.appendChild(row);
+    }
+  }
+
   // Body: plain agent-ink prose, matching the notebook's reading rhythm.
   // Each paragraph fades in with a staggered delay (v3 pattern). The last
   // paragraph additionally gets a blinking caret when the decoration is
@@ -380,9 +439,66 @@ function renderDefaultDecoration(
       (isLast && isStreamingRecent ? " notebook-stream-active" : "");
     // Staggered per-paragraph fade (v3 prototype: index * 50ms).
     p.style.animationDelay = `${idx * 40}ms`;
-    p.textContent = paragraph;
+    // Gap 2: Char-by-char typewriter for the LAST paragraph during active
+    // stream (v4 prototype's 20ms/char feel). Older paragraphs get the
+    // block fade only (cheap). Paragraph can be thousands of chars; cap
+    // the wrapped count at 120 so animation never runs longer than ~1.2s.
+    if (isLast && isStreamingRecent && paragraph.length <= 400) {
+      const head = paragraph.slice(0, Math.max(0, paragraph.length - 120));
+      const tail = paragraph.slice(head.length);
+      if (head) p.appendChild(document.createTextNode(head));
+      for (let i = 0; i < tail.length; i++) {
+        const ch = document.createElement("span");
+        ch.className = "notebook-stream-char";
+        ch.style.animationDelay = `${i * 12}ms`;
+        ch.textContent = tail[i];
+        p.appendChild(ch);
+      }
+    } else {
+      p.textContent = paragraph;
+    }
     root.appendChild(p);
   });
+
+  // Approval gate (v2 prototype) — renders between body and meta so the
+  // user sees it before the action bar. Pending shows buttons; others
+  // show a quiet confirmation row.
+  if (data.approvalStatus) {
+    const gate = document.createElement("span");
+    gate.className =
+      "notebook-stream-ink mt-2 flex items-center gap-2 rounded border-l-2 px-2 py-1.5 text-[12px] " +
+      (data.approvalStatus === "pending"
+        ? "border-[var(--accent-primary)]/50 bg-[var(--accent-primary)]/[0.06] text-gray-700 dark:text-gray-200"
+        : data.approvalStatus === "granted"
+          ? "border-emerald-500/40 bg-emerald-500/[0.05] text-emerald-700 dark:text-emerald-300"
+          : "border-rose-500/40 bg-rose-500/[0.05] text-rose-600 dark:text-rose-300");
+    if (data.approvalStatus === "pending") {
+      gate.innerHTML = `<span>🔒</span><span class="flex-1">Human approval required before proceeding.</span>`;
+      const approveBtn = document.createElement("button");
+      approveBtn.type = "button";
+      approveBtn.className =
+        "rounded-md bg-[var(--accent-primary)]/15 px-2 py-0.5 text-[11px] font-medium text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/25 transition-colors";
+      approveBtn.textContent = "Approve";
+      approveBtn.setAttribute("data-action", "approve");
+      approveBtn.setAttribute("data-run-id", data.scratchpadRunId);
+      approveBtn.setAttribute("data-block", data.blockType);
+      gate.appendChild(approveBtn);
+      const denyBtn = document.createElement("button");
+      denyBtn.type = "button";
+      denyBtn.className =
+        "rounded-md bg-white/[0.04] px-2 py-0.5 text-[11px] font-medium text-gray-500 hover:bg-white/[0.08] transition-colors";
+      denyBtn.textContent = "Deny";
+      denyBtn.setAttribute("data-action", "deny");
+      denyBtn.setAttribute("data-run-id", data.scratchpadRunId);
+      denyBtn.setAttribute("data-block", data.blockType);
+      gate.appendChild(denyBtn);
+    } else {
+      const icon = data.approvalStatus === "granted" ? "✓" : "✕";
+      const label = data.approvalStatus === "granted" ? "Approved" : "Denied";
+      gate.innerHTML = `<span>${icon}</span><span>${label}</span>`;
+    }
+    root.appendChild(gate);
+  }
 
   // Meta row: source count + inline action strip. Hidden opacity, reveals
   // on hover (keeps reading surface calm).
