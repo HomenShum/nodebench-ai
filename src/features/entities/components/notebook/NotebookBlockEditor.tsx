@@ -18,7 +18,7 @@ import { useTiptapSync } from "@convex-dev/prosemirror-sync/tiptap";
 
 import { useConvexApi } from "@/lib/convexApi";
 import type { EntityMatch } from "./MentionPicker";
-import type { BlockChip } from "./BlockChipRenderer";
+import { BlockChipRenderer, type BlockChip } from "./BlockChipRenderer";
 import { chipsToProsemirrorDoc, prosemirrorDocToChips } from "../../../../../shared/notebookBlockProsemirror";
 import {
   createDiligenceDecorationPlugin,
@@ -41,6 +41,10 @@ type Props = {
   onBackspaceAtStart: () => void;
   onOpenSlash: () => void;
   onCloseSlash: () => void;
+  /** Markdown shortcut — called when the user types a recognized prefix
+      followed by space at the start of an empty block. Parent transforms
+      the block kind and clears the prefix. */
+  onMarkdownShortcut?: (kind: "heading_2" | "heading_3" | "bullet" | "quote" | "todo") => void;
   diligenceDecorations?: readonly DiligenceDecorationData[];
   onAcceptDecoration?: (
     scratchpadRunId: string,
@@ -128,6 +132,7 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
       onBackspaceAtStart,
       onOpenSlash,
       onCloseSlash,
+      onMarkdownShortcut,
       diligenceDecorations = [],
       onAcceptDecoration,
       onDismissDecoration,
@@ -146,6 +151,7 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
     const onBackspaceAtStartRef = useRef(onBackspaceAtStart);
     const onOpenSlashRef = useRef(onOpenSlash);
     const onCloseSlashRef = useRef(onCloseSlash);
+    const onMarkdownShortcutRef = useRef(onMarkdownShortcut);
     const diligenceDecorationsRef = useRef<readonly DiligenceDecorationData[]>(diligenceDecorations);
     const onAcceptDecorationRef = useRef(onAcceptDecoration);
     const onDismissDecorationRef = useRef(onDismissDecoration);
@@ -194,7 +200,7 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
         // begins typing — Tiptap's Placeholder handles that natively.
         Placeholder.configure({
           placeholder: "Type / for commands…",
-          showOnlyCurrent: true,
+          showOnlyCurrent: false,
           includeChildren: false,
           emptyEditorClass: "is-empty",
           emptyNodeClass: "is-empty",
@@ -243,6 +249,25 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
       },
     );
 
+    // Latch `sync.extension` and `sync.initialContent` once populated so
+    // `useEditor`'s dep array doesn't churn on every parent re-render.
+    // Without this, any parent reactivity (pagination tick, another
+    // block's update) can rebuild every editor on the page — which is
+    // the "every block is loading" perception. These values are
+    // monotonically populated once (null/undefined → set); collab
+    // updates flow through the extension itself, not through reference
+    // identity changes.
+    const latchedExtensionRef = useRef<typeof sync.extension | null>(null);
+    const latchedInitialContentRef = useRef<typeof sync.initialContent | null>(null);
+    if (sync.extension && !latchedExtensionRef.current) {
+      latchedExtensionRef.current = sync.extension;
+    }
+    if (sync.initialContent !== null && latchedInitialContentRef.current === null) {
+      latchedInitialContentRef.current = sync.initialContent;
+    }
+    const stableExtension = latchedExtensionRef.current;
+    const stableInitialContent = latchedInitialContentRef.current;
+
     useEffect(() => {
       if (sync.isLoading || sync.initialContent !== null || createRequestedRef.current) {
         return;
@@ -263,6 +288,7 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
       onBackspaceAtStartRef.current = onBackspaceAtStart;
       onOpenSlashRef.current = onOpenSlash;
       onCloseSlashRef.current = onCloseSlash;
+      onMarkdownShortcutRef.current = onMarkdownShortcut;
       onAcceptDecorationRef.current = onAcceptDecoration;
       onDismissDecorationRef.current = onDismissDecoration;
       onRefreshDecorationRef.current = onRefreshDecoration;
@@ -284,15 +310,18 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
         immediatelyRender: false,
         editable: isEditableRef.current,
         content:
-          sync.initialContent ??
+          stableInitialContent ??
           ({
             type: "doc",
             content: [{ type: "paragraph" }],
           } as const),
-        extensions: sync.extension ? [...baseExtensions, sync.extension] : baseExtensions,
+        extensions: stableExtension ? [...baseExtensions, stableExtension] : baseExtensions,
         editorProps: {
           attributes: {
-            class: `outline-none focus-visible:outline-none ${className} ${
+            // `nb-block-shell` here mirrors what the fallback wrapper uses,
+            // so the fallback → live editor swap is pixel-identical: same
+            // containment, same layout isolation, no reflow flash.
+            class: `nb-block-shell outline-none focus-visible:outline-none ${className} ${
               !isEditableRef.current ? "cursor-default opacity-80" : ""
             }`,
             role: "textbox",
@@ -329,6 +358,33 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
               onOpenSlashRef.current();
               return true;
             }
+            // Block-level markdown shortcuts — trigger on Space after the
+            // prefix, mirroring Notion/Linear. Only fires when the block's
+            // only text so far is the prefix itself (prevents mid-line
+            // accidents).
+            if (event.key === " " && onMarkdownShortcutRef.current) {
+              const trimmed = textContent;
+              const SHORTCUTS: Record<string, "heading_2" | "heading_3" | "bullet" | "quote" | "todo"> = {
+                "##": "heading_2",
+                "###": "heading_3",
+                "-": "bullet",
+                "*": "bullet",
+                ">": "quote",
+                "[]": "todo",
+                "[ ]": "todo",
+              };
+              const match = SHORTCUTS[trimmed];
+              if (match) {
+                event.preventDefault();
+                // Clear the prefix — the kind change visually carries the
+                // semantic, no need to keep the "##" characters.
+                view.dispatch(
+                  view.state.tr.delete(0, view.state.doc.content.size),
+                );
+                onMarkdownShortcutRef.current(match);
+                return true;
+              }
+            }
             if (event.key === "Escape") {
               onCloseSlashRef.current();
             }
@@ -343,7 +399,7 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
         },
         onUpdate({ editor: activeEditor }: { editor: { getJSON: () => unknown } }) {
           const onLocalContentChange = onLocalContentChangeRef.current;
-          if (!onLocalContentChange || sync.initialContent === null || !sync.extension) return;
+          if (!onLocalContentChange || !stableInitialContent || !stableExtension) return;
           const nextContent = prosemirrorDocToChips(activeEditor.getJSON()) as BlockChip[];
           const signature = JSON.stringify(nextContent);
           if (signature === lastPublishedRef.current) return;
@@ -355,14 +411,14 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
         ariaLabel,
         baseExtensions,
         className,
-        sync.extension,
-        sync.initialContent,
+        stableExtension,
+        stableInitialContent,
       ],
     );
 
     const editor = useEditor(
       editorOptions,
-      [syncDocumentId, sync.extension, sync.initialContent],
+      [syncDocumentId, stableExtension, stableInitialContent],
     );
 
     useEffect(() => {
@@ -431,10 +487,29 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
       [editor, focusEditorSafely],
     );
 
-    if (!api || sync.isLoading || !sync.extension || sync.initialContent === null || !editor) {
+    // While the sync snapshot is loading, render the static chip content
+    // (not a "Loading…" placeholder) so block clicks feel instant — the
+    // editor swaps in live once Convex responds, without a visible flash.
+    // This is the Notion/Linear pattern: content is always visible; edit
+    // affordance upgrades in place.
+    //
+    // Key polish notes:
+    //   - No `aria-busy` here: the chips ARE real content, not a loading
+    //     state. Announcing "busy" would flood screen readers on every
+    //     notebook open/scroll.
+    //   - `ProseMirror` class on the wrapper matches what TipTap renders,
+    //     so typography, spacing, and chip alignment are pixel-identical
+    //     between fallback and live editor — the swap is invisible.
+    //   - `contain: content` (via `nb-block-shell`) isolates layout so
+    //     one block's hydration doesn't reflow its neighbors.
+    if (!api || !stableExtension || !stableInitialContent || !editor) {
       return (
-        <div className={`opacity-70 ${className}`} aria-label={ariaLabel}>
-          Loading…
+        <div
+          className={`ProseMirror nb-block-shell ${className} outline-none focus-visible:outline-none`}
+          role="textbox"
+          aria-label={ariaLabel}
+        >
+          <BlockChipRenderer chips={chips} />
         </div>
       );
     }
