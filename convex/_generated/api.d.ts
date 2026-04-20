@@ -254,6 +254,7 @@ import type * as domains_agents_traceAuditLog from "../domains/agents/traceAudit
 import type * as domains_agents_traceOrchestrator from "../domains/agents/traceOrchestrator.js";
 import type * as domains_agents_traceTypes from "../domains/agents/traceTypes.js";
 import type * as domains_agents_types from "../domains/agents/types.js";
+import type * as domains_agents_unified from "../domains/agents/unified.js";
 import type * as domains_ai_ai from "../domains/ai/ai.js";
 import type * as domains_ai_genai from "../domains/ai/genai.js";
 import type * as domains_ai_metadataAnalyzer from "../domains/ai/metadataAnalyzer.js";
@@ -1636,6 +1637,7 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/traceOrchestrator": typeof domains_agents_traceOrchestrator;
   "domains/agents/traceTypes": typeof domains_agents_traceTypes;
   "domains/agents/types": typeof domains_agents_types;
+  "domains/agents/unified": typeof domains_agents_unified;
   "domains/ai/ai": typeof domains_ai_ai;
   "domains/ai/genai": typeof domains_ai_genai;
   "domains/ai/metadataAnalyzer": typeof domains_ai_metadataAnalyzer;

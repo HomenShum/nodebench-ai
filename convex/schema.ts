@@ -13768,6 +13768,75 @@ export default defineSchema({
     .index("by_entity_time", ["entitySlug", "createdAt"]),
 
   /* ------------------------------------------------------------------ */
+  /* agentThreads — canonical thread metadata across all three         */
+  /* surfaces (inline | drawer | chat). Legacy tables                  */
+  /* (chatThreadsStream, productChatSessions) continue to exist and    */
+  /* receive dual-writes during migration; read path cuts over once    */
+  /* backfill completes.                                                */
+  /*                                                                    */
+  /* Pattern: Cockroach "shadow cluster" migration + canonical-keyed    */
+  /* threadId strings (UUID) so the same row can be referenced from    */
+  /* legacy tables via `legacyMessageId`.                              */
+  /* ------------------------------------------------------------------ */
+  agentThreads: defineTable({
+    ownerKey: v.string(),
+    userId: v.optional(v.id("users")),
+    threadId: v.string(), // app-generated UUID, stable across dual-write
+    title: v.string(),
+    surfaceOrigin: v.union(
+      v.literal("inline"),
+      v.literal("drawer"),
+      v.literal("chat"),
+    ),
+    entitySlug: v.optional(v.string()),
+    seedContext: v.optional(v.any()),
+    status: v.union(
+      v.literal("active"),
+      v.literal("archived"),
+      v.literal("deleted"),
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastMessageAt: v.number(),
+    messageCount: v.number(),
+  })
+    .index("by_owner_thread", ["ownerKey", "threadId"])
+    .index("by_owner_last_message", ["ownerKey", "lastMessageAt"])
+    .index("by_entity", ["entitySlug"]),
+
+  /* ------------------------------------------------------------------ */
+  /* agentMessages — canonical per-turn log across surfaces. One row   */
+  /* per turn regardless of origin. Legacy id back-pointer              */
+  /* (`legacyMessageId` + `legacyTableHint`) lets us reconcile during   */
+  /* migration.                                                         */
+  /* ------------------------------------------------------------------ */
+  agentMessages: defineTable({
+    ownerKey: v.string(),
+    userId: v.optional(v.id("users")),
+    threadId: v.string(),
+    role: v.union(
+      v.literal("user"),
+      v.literal("assistant"),
+      v.literal("system"),
+    ),
+    content: v.string(), // capped at ~64KB in appendMessage mutation
+    surfaceOrigin: v.union(
+      v.literal("inline"),
+      v.literal("drawer"),
+      v.literal("chat"),
+    ),
+    legacyMessageId: v.optional(v.string()),
+    legacyTableHint: v.optional(v.string()),
+    tokensUsed: v.optional(v.number()),
+    elapsedMs: v.optional(v.number()),
+    model: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_thread_time", ["threadId", "createdAt"])
+    .index("by_owner_time", ["ownerKey", "createdAt"])
+    .index("by_legacy", ["legacyMessageId"]),
+
+  /* ------------------------------------------------------------------ */
   /* dismissedDecorations — persistent per-user dismissal of inline     */
   /* agent suggestions. Before this table, dismissals were client-only  */
   /* React state, lost on refresh. That violated user trust: dismissing */

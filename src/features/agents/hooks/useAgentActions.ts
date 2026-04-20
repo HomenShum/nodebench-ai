@@ -110,6 +110,12 @@ export function useAgentActions(): AgentActionsApi {
   const undismissDecorationMutation = useMutation(
     api?.domains?.agents?.decorationPreferences?.undismiss ?? (("skip" as unknown) as never),
   );
+  // M1-thick canonical writers. These dual-write into the agent
+  // thread log so the drawer/chat page can read a unified history
+  // once they switch their reads over. See `unified.ts`.
+  const appendCanonicalMessage = useMutation(
+    api?.domains?.agents?.unified?.appendMessage ?? (("skip" as unknown) as never),
+  );
 
   const safeLogAction = useCallback(
     (args: {
@@ -141,8 +147,22 @@ export function useAgentActions(): AgentActionsApi {
     [api, logActionMutation],
   );
 
+  /**
+   * Build a deterministic canonical thread id from the decoration
+   * identity so repeated Asks on the same decoration land in the
+   * same thread — users continuing a conversation they started
+   * earlier see full history. Format: `dec::{entity}::{runId}`.
+   * Collision-safe because scratchpadRunId is globally unique per
+   * decoration.
+   */
+  const threadIdForDecoration = useCallback(
+    (ctx: DecorationContext) => `dec::${ctx.entitySlug}::${ctx.scratchpadRunId}`,
+    [],
+  );
+
   const askAboutDecoration = useCallback<AgentActionsApi["askAboutDecoration"]>(
     (ctx, anonymousSessionId) => {
+      const threadId = threadIdForDecoration(ctx);
       // 1) Open drawer with the decoration as context.
       openWithContext({
         initialMessage: buildAskMessage(ctx),
@@ -158,11 +178,30 @@ export function useAgentActions(): AgentActionsApi {
         summary: summarizeDecoration("Asked about", ctx),
         entitySlug: ctx.entitySlug,
         scratchpadRunId: ctx.scratchpadRunId,
+        threadId,
         anonymousSessionId,
         payload: { blockType: ctx.blockType, overallTier: ctx.overallTier },
       });
+      // 3) Shadow-write a canonical user-role turn so the unified
+      // thread view sees the inline escalation as the first message.
+      // Fire-and-forget; failure must not block the UX.
+      if (api) {
+        void Promise.resolve(
+          appendCanonicalMessage({
+            anonymousSessionId,
+            threadId,
+            role: "user",
+            content: buildAskMessage(ctx),
+            surfaceOrigin: "inline",
+          }),
+        ).catch((err) => {
+          if (typeof console !== "undefined") {
+            console.warn("[useAgentActions] canonical appendMessage failed:", err);
+          }
+        });
+      }
     },
-    [openWithContext, safeLogAction],
+    [api, appendCanonicalMessage, openWithContext, safeLogAction, threadIdForDecoration],
   );
 
   const logAcceptDecoration = useCallback<AgentActionsApi["logAcceptDecoration"]>(

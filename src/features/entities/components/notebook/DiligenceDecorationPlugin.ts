@@ -56,22 +56,24 @@ export type DecorationRendererRegistry = Partial<
   Record<DiligenceBlockType, DecorationRenderer>
 >;
 
+/**
+ * Canonical callback shape for every decoration action (accept,
+ * dismiss, refresh, ask). Centralized here so NotebookBlockEditor,
+ * NotebookDiligenceOverlayHost, and EntityNotebookLive's BlockRow
+ * type don't duplicate the signature six times.
+ */
+export type DecorationActionCallback = (
+  scratchpadRunId: string,
+  blockType: DiligenceDecorationData["blockType"],
+) => void;
+
 export type DiligenceDecorationPluginConfig = {
   getDecorations: () => readonly DiligenceDecorationData[];
   anchors: AnchorStrategy[];
   renderers?: DecorationRendererRegistry;
-  onAcceptDecoration?: (
-    scratchpadRunId: string,
-    blockType: DiligenceDecorationData["blockType"],
-  ) => void;
-  onDismissDecoration?: (
-    scratchpadRunId: string,
-    blockType: DiligenceDecorationData["blockType"],
-  ) => void;
-  onRefreshDecoration?: (
-    scratchpadRunId: string,
-    blockType: DiligenceDecorationData["blockType"],
-  ) => void;
+  onAcceptDecoration?: DecorationActionCallback;
+  onDismissDecoration?: DecorationActionCallback;
+  onRefreshDecoration?: DecorationActionCallback;
   /**
    * Opens the side-panel agent drawer with this decoration as context.
    * The seam between inline AI (decorations) and chat AI (drawer).
@@ -81,10 +83,7 @@ export type DiligenceDecorationPluginConfig = {
    * required). When omitted, the button is suppressed — not disabled —
    * so we never show dead UI.
    */
-  onAskAboutDecoration?: (
-    scratchpadRunId: string,
-    blockType: DiligenceDecorationData["blockType"],
-  ) => void;
+  onAskAboutDecoration?: DecorationActionCallback;
 };
 
 function tierToneClass(tier: EvidenceTier): string {
@@ -444,18 +443,24 @@ function buildDecorationSet(
   const registry = config.renderers ?? {};
   const widgets: Decoration[] = [];
 
-  // One widget PER decoration, each anchored at its natural in-flow
-  // position. Decorations for the same blockType cluster together under
-  // their matching heading, not in a wall at the top of the document.
-  for (const item of decorations) {
+  // Position cache per blockType — doc is walked once per unique block
+  // type instead of once per decoration (O(U) vs O(D)).
+  const positionCache = new Map<string, number>();
+  const resolveFor = (item: DiligenceDecorationData): number => {
+    const cached = positionCache.get(item.blockType);
+    if (cached !== undefined) return cached;
     const headingText = BLOCK_TYPE_ANCHOR_HEADING[item.blockType];
     const anchorStrategies: AnchorStrategy[] = headingText
       ? [{ kind: "after-heading", text: headingText }, ...config.anchors]
       : config.anchors;
     const pos = resolveAnchorPosition(doc, anchorStrategies);
+    positionCache.set(item.blockType, pos);
+    return pos;
+  };
 
+  for (const item of decorations) {
     const widget = Decoration.widget(
-      pos,
+      resolveFor(item),
       () =>
         renderDiligenceDecorationElement(item, { ...config, renderers: registry }),
       {
