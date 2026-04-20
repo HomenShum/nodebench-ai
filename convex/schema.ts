@@ -158,6 +158,7 @@ import {
   daasJudgments,
   daasRateBuckets,
   daasAuditLog,
+  daasApiKeys,
 } from "./domains/daas/schema";
 
 // MCP Gateway API key & session schema
@@ -13633,6 +13634,49 @@ export default defineSchema({
     .index("by_entity", ["entitySlug"])
     .index("by_status_next", ["status", "nextAttemptAtMs"]),
 
+  /* ------------------------------------------------------------------ */
+  /* entityTopicFiles — layered_memory.md L2: per-entity per-topic       */
+  /*                   accumulated facts.                                */
+  /*                                                                     */
+  /* One row per (entitySlug, topicName). Content is a JSON-serialized   */
+  /* TopicFileContent (server/pipeline/topicCompaction.ts) — small and  */
+  /* bounded so it fits cleanly in a Convex document. Write path is     */
+  /* EXCLUSIVELY the compaction step (compactBlockTopic) — sub-agents   */
+  /* never write here directly (layer-boundary invariant).              */
+  /* ------------------------------------------------------------------ */
+  entityTopicFiles: defineTable({
+    entitySlug: v.string(),
+    topicName: v.string(), // "founder" | "product" | "funding" | ...
+    /** JSON-serialized TopicFileContent — see server/pipeline/topicCompaction.ts. */
+    contentJson: v.string(),
+    /** One-liner cached from TopicFileContent.oneLineSummary for index reads. */
+    oneLineSummary: v.string(),
+    factCount: v.number(),
+    compactedAt: v.number(),
+    /** Schema bump — mirrors topicCompaction.TOPIC_SCHEMA_VERSION. */
+    schemaVersion: v.number(),
+  })
+    .index("by_entity_topic", ["entitySlug", "topicName"])
+    .index("by_entity", ["entitySlug"])
+    .index("by_compacted_at", ["compactedAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* entityMemoryIndex — layered_memory.md L1: per-entity aggregate      */
+  /*                    one-liner index (MEMORY.md analog).              */
+  /*                                                                     */
+  /* One row per entity. Regenerable from entityTopicFiles — this is a  */
+  /* CACHE, not a source of truth. Rebuilt by rebuildMemoryIndex after  */
+  /* every successful compaction pass.                                   */
+  /* ------------------------------------------------------------------ */
+  entityMemoryIndex: defineTable({
+    entitySlug: v.string(),
+    /** JSON-encoded Array<{ topicName, oneLineSummary, factCount, compactedAt }>. */
+    indexJson: v.string(),
+    topicCount: v.number(),
+    totalFactCount: v.number(),
+    lastRebuildAt: v.number(),
+  }).index("by_entity", ["entitySlug"]),
+
   hyperloopVariants,
   hyperloopEvaluationRuns,
   hyperloopPromotions,
@@ -13644,4 +13688,5 @@ export default defineSchema({
   daasJudgments,
   daasRateBuckets,
   daasAuditLog,
+  daasApiKeys,
 });

@@ -50,6 +50,16 @@ const PipelineReliabilityChip = lazy(() =>
   })),
 );
 
+// EntityMemoryPanel — read-only view of the per-entity MEMORY.md index
+// (layered_memory.md L1). Silent when the entity has no compacted topics
+// yet; once runs accumulate, shows the one-liner summary per topic with
+// progressive-disclosure fact expansion.
+const EntityMemoryPanel = lazy(() =>
+  import("@/features/entities/components/notebook/EntityMemoryPanel").then((mod) => ({
+    default: mod.EntityMemoryPanel,
+  })),
+);
+
 type EntityNotebookSurfaceProps = {
   entitySlug: string;
   shareToken?: string;
@@ -229,6 +239,16 @@ function EntityNotebookSurfaceBase({
             <ErrorBoundary section="Reliability chip">
               <Suspense fallback={null}>
                 <PipelineReliabilityChip entitySlug={entitySlug} className="mt-3" />
+              </Suspense>
+            </ErrorBoundary>
+            {/*
+              Memory index — one-liner per topic across runs. Layered
+              memory L1. Silent on cold start (no topics yet); grows as
+              the entity accumulates structured runs.
+            */}
+            <ErrorBoundary section="Memory index">
+              <Suspense fallback={null}>
+                <EntityMemoryPanel entitySlug={entitySlug} className="mt-4" />
               </Suspense>
             </ErrorBoundary>
             {/*

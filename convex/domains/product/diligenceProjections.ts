@@ -456,6 +456,40 @@ export const runScratchpadProjectionPass = internalAction({
           latencyBudgetMs: verdict.latencyBudgetMs,
           gatesJson: JSON.stringify(verdict.gates),
         });
+
+        // Layered memory (layered_memory.md L2): compact this block's
+        // facts into the per-entity topic file. Only on successful emits
+        // — we don't want to poison topic state with errored output.
+        // Fact extraction: one fact per non-empty sentence-ish line of
+        // bodyProse, capped at MAX_COMPACTION_FACTS to keep the compaction
+        // call bounded.
+        if (outcome.ok && draft.bodyProse) {
+          try {
+            const rawFacts = draft.bodyProse
+              .split(/\n+|\.(?=\s|$)/)
+              .map((s: string) => s.trim())
+              .filter((s: string) => s.length >= 20)
+              .slice(0, 12)
+              .map((text: string) => ({
+                text,
+                sourceRefId: undefined,
+                observedAt: Date.now(),
+              }));
+            if (rawFacts.length > 0) {
+              await ctx.runMutation(
+                internal.domains.product.entityMemory.compactBlockTopic,
+                {
+                  entitySlug: draft.entitySlug,
+                  topicName: draft.blockType,
+                  newFacts: rawFacts,
+                },
+              );
+            }
+          } catch {
+            // Swallow — compaction failure never kills the structuring pass.
+            // ERROR_BOUNDARY per agentic_reliability.md §7.
+          }
+        }
       }
 
       await saveScratchpad({
