@@ -13837,6 +13837,46 @@ export default defineSchema({
     .index("by_legacy", ["legacyMessageId"]),
 
   /* ------------------------------------------------------------------ */
+  /* pulseReports — daily-regenerated notebook pages per entity.        */
+  /*                                                                    */
+  /* The Pulse surface: "what changed since yesterday" on any entity    */
+  /* the user is tracking. Each row is a scheduled-or-manual regen of   */
+  /* a lightweight markdown payload that renders as a notebook page at  */
+  /* /entity/<slug>/pulse (today) or /entity/<slug>/pulse/<dateKey>.    */
+  /*                                                                    */
+  /* Pattern: Granola per-meeting notes + Arc Max daily digest + the    */
+  /* Superhuman morning digest — adapted to per-entity scope. No new    */
+  /* editor substrate; pulse is just a productBlocks namespace tag in   */
+  /* V2. For V1 we store the summary markdown inline so the page can    */
+  /* render even before full productBlocks writing lands.               */
+  /*                                                                    */
+  /* Invariants: one row per (ownerKey, entitySlug, dateKey). The       */
+  /* (entitySlug, dateKey) index supports daily-cron reads across all   */
+  /* owners. BOUND: summary capped at ~32KB in the mutation.            */
+  /* ------------------------------------------------------------------ */
+  pulseReports: defineTable({
+    ownerKey: v.string(),
+    userId: v.optional(v.id("users")),
+    entitySlug: v.string(),
+    dateKey: v.string(), // "YYYY-MM-DD" — the pulse's day of record
+    status: v.union(
+      v.literal("generating"),
+      v.literal("ready"),
+      v.literal("failed"),
+    ),
+    summaryMarkdown: v.optional(v.string()),
+    changeCount: v.number(),
+    materialChangeCount: v.number(),
+    generatedAt: v.number(),
+    readAt: v.optional(v.number()),
+    errorMessage: v.optional(v.string()),
+  })
+    .index("by_owner_date", ["ownerKey", "dateKey"])
+    .index("by_owner_entity_date", ["ownerKey", "entitySlug", "dateKey"])
+    .index("by_entity_date", ["entitySlug", "dateKey"])
+    .index("by_unread", ["ownerKey", "readAt"]),
+
+  /* ------------------------------------------------------------------ */
   /* dismissedDecorations — persistent per-user dismissal of inline     */
   /* agent suggestions. Before this table, dismissals were client-only  */
   /* React state, lost on refresh. That violated user trust: dismissing */

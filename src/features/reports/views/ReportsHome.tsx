@@ -10,6 +10,7 @@ import { buildEntityShareUrl } from "@/features/entities/lib/entityExport";
 import { STARTER_ENTITY_WORKSPACES } from "@/features/entities/lib/starterEntityWorkspaces";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
+import { RecentPulseStrip } from "@/features/reports/components/RecentPulseStrip";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -466,6 +467,10 @@ export function ReportsHome() {
 
   return (
     <div className="mx-auto max-w-[1120px] px-4 py-6 sm:px-6 sm:py-8">
+      {/* ── New updates strip (Phase 4 spec: "Updates section") ──
+           Silent-when-idle; surfaces unread pulses across all watched
+           entities. Click-through to /entity/<slug>/pulse. */}
+      <RecentPulseStrip className="mb-4" />
       {/* ── Header ── */}
       <div className="mb-6 flex items-baseline justify-between">
         <div>
