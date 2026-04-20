@@ -16,7 +16,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, ExternalLink, Link2, Lock } from "lucide-react";
+import { Activity, AlertTriangle, ExternalLink, Link2, Lock } from "lucide-react";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { useConvexApi } from "@/lib/convexApi";
 import { buildEntityPath } from "@/features/entities/lib/entityExport";
@@ -40,6 +40,7 @@ import { NotebookOutline } from "./NotebookOutline";
 import { NotebookDismissalsSync } from "./NotebookDismissalsSync";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { NotebookScratchpadTracePanel } from "./NotebookScratchpadTracePanel";
+import { NotebookRunMapPanel } from "./NotebookRunMapPanel";
 import {
   enqueue as enqueueOfflineEdit,
   makeEditId,
@@ -52,6 +53,7 @@ import type { DiligenceDecorationData } from "./DiligenceDecorationPlugin";
 import { acceptDecorationIntoNotebook } from "./acceptDecorationIntoNotebook";
 import { useAgentActions, type DecorationContext } from "@/features/agents/hooks/useAgentActions";
 import { AgentAuthorTag } from "@/features/agents/primitives/AgentAuthorTag";
+import { useScrubTime } from "./useScrubTime";
 
 type BlockKind =
   | "text"
@@ -144,6 +146,16 @@ function resolvePresenceSelfUserId(
   if (viewerOwnerKey?.trim()) return viewerOwnerKey.trim();
   const trimmed = anonymousSessionId?.trim();
   return trimmed ? `anon:${trimmed}` : null;
+}
+
+function formatNotebookRuntimeRelative(timestamp: number): string {
+  const ageMs = Math.max(0, Date.now() - timestamp);
+  if (ageMs < 60_000) return "just now";
+  const minutes = Math.round(ageMs / 60_000);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.round(hours / 24)}d ago`;
 }
 
 export function shouldRefreshAgentNotebookProjection(
@@ -1066,6 +1078,11 @@ export function EntityNotebookLive({
   const [dismissedKeySet, setDismissedKeySet] = useState<Set<string>>(
     () => new Set<string>(),
   );
+  // Timeline scrub cursor — when set, decorations filter to those
+  // authored at-or-before the cursor. Null == view "now". Subscribed
+  // via URL-hash hook so NotebookTimeline can set the cursor from a
+  // sibling component without prop-drilling through Suspense.
+  const scrubTime = useScrubTime();
   const visibleDiligenceDecorations = useMemo(
     () =>
       diligenceBlocks.projections.filter((projection) => {
@@ -1075,6 +1092,12 @@ export function EntityNotebookLive({
         // so dismissing one block's decoration from a run does not
         // silence the other block types produced by the same run.
         if (dismissedKeySet.has(`${projection.scratchpadRunId}::${projection.blockType}`)) {
+          return false;
+        }
+        // Timeline scrub filter — when the user has scrubbed back,
+        // hide decorations produced after the cursor (they didn't
+        // exist at that moment yet).
+        if (scrubTime != null && projection.updatedAt > scrubTime) {
           return false;
         }
         // Suppress starter/placeholder cards that have no real content.
@@ -1094,7 +1117,7 @@ export function EntityNotebookLive({
         if (placeholderFragments.some((frag) => lower.includes(frag))) return false;
         return true;
       }),
-    [diligenceBlocks.projections, hiddenDecorationRunIds, dismissedKeySet],
+    [diligenceBlocks.projections, hiddenDecorationRunIds, dismissedKeySet, scrubTime],
   );
 
   const notebookLoadState = getNotebookLoadState({
@@ -1102,8 +1125,32 @@ export function EntityNotebookLive({
     totalCount: blockSummary?.blockCount,
     paginationStatus: blocksPagination.status,
   });
+  const latestRunCheckpoint = latestScratchpadRun?.checkpoints?.at(-1);
+  const isNotebookRunActive =
+    latestScratchpadRun?.status === "streaming" ||
+    latestScratchpadRun?.status === "structuring";
+  const notebookRuntimeTone = latestScratchpadRun
+    ? latestScratchpadRun.status === "failed"
+      ? "border-rose-500/20 bg-rose-500/10 text-rose-200"
+      : isNotebookRunActive
+        ? "border-sky-500/20 bg-sky-500/10 text-sky-200"
+        : latestScratchpadRun.status === "merged"
+          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
+          : "border-amber-500/20 bg-amber-500/10 text-amber-200"
+    : "border-gray-200 bg-gray-50 text-gray-700 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200";
+  const notebookRuntimeLabel = latestScratchpadRun
+    ? latestScratchpadRun.status === "streaming"
+      ? "Running"
+      : latestScratchpadRun.status === "structuring"
+        ? "Structuring"
+        : latestScratchpadRun.status === "merged"
+          ? "Ready"
+          : latestScratchpadRun.status === "failed"
+            ? "Needs review"
+            : latestScratchpadRun.status
+    : "Ready";
   const scratchpadRailSlot = useMemo(() => {
-    if (!canEdit) return undefined;
+    if (!canEdit || !latestScratchpadRun) return undefined;
     return (
       <NotebookScratchpadTracePanel
         markdownSource={latestScratchpadRun?.markdownSource}
@@ -1118,9 +1165,26 @@ export function EntityNotebookLive({
       />
     );
   }, [canEdit, entitySlug, latestScratchpadRun, snapshot?.entityName]);
+  const runMapRailSlot = useMemo(() => {
+    if (!latestScratchpadRun) return undefined;
+    return (
+      <NotebookRunMapPanel
+        entitySlug={entitySlug}
+        runStatus={latestScratchpadRun.status}
+        checkpointCount={latestScratchpadRun.checkpointCount}
+        updatedAt={latestScratchpadRun.updatedAt}
+        latestBlockType={latestScratchpadRun.latestBlockType}
+      />
+    );
+  }, [entitySlug, latestScratchpadRun]);
   const focusedBlock = blocks?.find((block) => block._id === focusedBlockId);
   const showReferenceOverlayStrip =
     visibleDiligenceDecorations.length > 0 && (blocks?.length ?? 0) > 0;
+  const showNotebookRuntimeHeader =
+    canEdit ||
+    Boolean(latestScratchpadRun) ||
+    showReferenceOverlayStrip ||
+    visibleDiligenceDecorations.length > 0;
   // Nesting depth per block. Walks parentBlockId chain once, caches in a
   // Map for O(1) lookup during the render map. Guards against parent cycles
   // by stopping after 16 hops.
@@ -1524,29 +1588,106 @@ export function EntityNotebookLive({
           onKeysChange={setDismissedKeySet}
         />
       </ErrorBoundary>
-      {showReferenceOverlayStrip ? (
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200/70 pb-3 text-sm text-gray-600 dark:border-white/10 dark:text-gray-400">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--accent-primary)]">
-                Live
-              </span>
-              <span className="font-medium text-gray-900 dark:text-gray-100">
-                Reference overlay active
-              </span>
+      {showNotebookRuntimeHeader ? (
+        <div className="mb-5 rounded-2xl border border-gray-200/80 bg-gradient-to-b from-white/80 to-white/45 px-4 py-4 shadow-sm dark:border-white/10 dark:from-white/[0.04] dark:to-white/[0.02]">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--accent-primary)]">
+                  Live notebook
+                </span>
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] ${notebookRuntimeTone}`}
+                >
+                  {notebookRuntimeLabel}
+                </span>
+                {showReferenceOverlayStrip ? (
+                  <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-gray-600 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300">
+                    Reference overlay active
+                  </span>
+                ) : null}
+                {latestScratchpadRun?.checkpointCount ? (
+                  <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] text-gray-600 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300">
+                    {latestScratchpadRun.checkpointCount} checkpoint
+                    {latestScratchpadRun.checkpointCount === 1 ? "" : "s"}
+                  </span>
+                ) : null}
+                {visibleDiligenceDecorations.length > 0 ? (
+                  <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] text-gray-600 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300">
+                    {visibleDiligenceDecorations.length} live overlay
+                    {visibleDiligenceDecorations.length === 1 ? "" : "s"}
+                  </span>
+                ) : null}
+                {latestScratchpadRun?.updatedAt ? (
+                  <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] text-gray-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
+                    updated {formatNotebookRuntimeRelative(latestScratchpadRun.updatedAt)}
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-300">
+                {isNotebookRunActive
+                  ? "Keep writing in the notebook. The current diligence run is structuring sections in place while raw trace and scratchpad stay in the run inspector."
+                  : showReferenceOverlayStrip
+                    ? "Write in the notebook first. Structured intelligence stays read-only until you explicitly accept it into owned prose."
+                    : "The notebook is the primary surface. Runtime details stay compact here and open into the run inspector only when you need them."}
+              </p>
             </div>
-            <div className="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">
-              Latest intelligence stays read-only as a notebook overlay. Your notes remain editable and owned.
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {latestRunCheckpoint?.currentStep ? (
+                <div className="rounded-lg border border-gray-200 bg-white/80 px-3 py-2 text-[11px] text-gray-600 shadow-sm dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300">
+                  <div className="font-medium text-gray-900 dark:text-gray-100">
+                    {latestRunCheckpoint.currentStep}
+                  </div>
+                  <div className="mt-0.5 text-gray-500 dark:text-gray-400">
+                    {typeof latestRunCheckpoint.progress === "number"
+                      ? `${latestRunCheckpoint.progress}% complete`
+                      : "checkpoint active"}
+                  </div>
+                </div>
+              ) : null}
+              {onOpenReferenceNotebook ? (
+                <button
+                  type="button"
+                  onClick={onOpenReferenceNotebook}
+                  className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-gray-300 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300"
+                >
+                  Open reference view
+                </button>
+              ) : null}
             </div>
           </div>
-          {onOpenReferenceNotebook ? (
-            <button
-              type="button"
-              onClick={onOpenReferenceNotebook}
-              className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-gray-300 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300"
-            >
-              Open reference view
-            </button>
+
+          {isNotebookRunActive ? (
+            <div className="mt-4 rounded-xl border border-sky-200/70 bg-sky-50/70 px-3 py-3 dark:border-sky-500/20 dark:bg-sky-500/10">
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <div className="flex min-w-0 items-center gap-2">
+                  <Activity className="h-3.5 w-3.5 shrink-0 text-sky-600 dark:text-sky-300" />
+                  <span className="truncate font-medium text-sky-900 dark:text-sky-100">
+                    {latestRunCheckpoint
+                      ? `Checkpoint #${latestRunCheckpoint.checkpointNumber} · ${latestRunCheckpoint.currentStep}`
+                      : "Structuring live run"}
+                  </span>
+                </div>
+                <span className="shrink-0 text-sky-700 dark:text-sky-200">
+                  {latestRunCheckpoint?.progress ?? 0}%
+                </span>
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-sky-100 dark:bg-sky-500/20">
+                <div
+                  className="h-full rounded-full bg-sky-500 transition-[width] duration-300"
+                  style={{ width: `${Math.max(8, latestRunCheckpoint?.progress ?? 12)}%` }}
+                />
+              </div>
+              {latestScratchpadRun?.latestBlockType || latestScratchpadRun?.latestHeaderText ? (
+                <div className="mt-2 text-[11px] text-sky-800/80 dark:text-sky-100/80">
+                  {latestScratchpadRun.latestHeaderText
+                    ? `Latest section: ${latestScratchpadRun.latestHeaderText}`
+                    : latestScratchpadRun.latestBlockType
+                      ? `Latest block: ${latestScratchpadRun.latestBlockType}`
+                      : null}
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </div>
       ) : null}
@@ -1628,7 +1769,7 @@ export function EntityNotebookLive({
           the notebook gets the full width. */}
       <div
         className={
-          scratchpadRailSlot || outlineItems.length >= 2
+          scratchpadRailSlot || runMapRailSlot || outlineItems.length >= 2
             ? "lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6"
             : "block"
         }
@@ -1773,12 +1914,16 @@ export function EntityNotebookLive({
           />
         </div>
 
-        {scratchpadRailSlot || outlineItems.length >= 2 ? (
+        {scratchpadRailSlot || runMapRailSlot || outlineItems.length >= 2 ? (
           <div className="mt-6 flex flex-col gap-3 lg:mt-0 lg:sticky lg:top-[80px] lg:self-start">
             {outlineItems.length >= 2 ? (
               <NotebookOutline items={outlineItems} />
             ) : null}
-            <NotebookRightRail scratchpadSlot={scratchpadRailSlot} />
+            <NotebookRightRail
+              scratchpadSlot={scratchpadRailSlot}
+              sessionArtifactsSlot={runMapRailSlot}
+              defaultOpen={isNotebookRunActive}
+            />
           </div>
         ) : null}
       </div>

@@ -34,7 +34,7 @@ describe("NotebookRightRail", () => {
         sessionArtifactsSlot={<div>Artifacts content</div>}
       />,
     );
-    const toggle = screen.getByRole("button", { name: /companion/i });
+    const toggle = screen.getByRole("button", { name: /run inspector/i });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     // Neither slot is rendered while closed — lazy invariant
     expect(screen.queryByText("Scratch content")).not.toBeInTheDocument();
@@ -48,7 +48,7 @@ describe("NotebookRightRail", () => {
         sessionArtifactsSlot={<div>Artifacts content</div>}
       />,
     );
-    const toggle = screen.getByRole("button", { name: /companion/i });
+    const toggle = screen.getByRole("button", { name: /run inspector/i });
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     // Default tab = artifacts → that slot renders
@@ -68,7 +68,7 @@ describe("NotebookRightRail", () => {
     // Artifacts visible by default
     expect(screen.getByText("Artifacts content")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("tab", { name: /scratchpad/i }));
+    fireEvent.click(screen.getByRole("tab", { name: /trace/i }));
 
     expect(screen.getByText("Scratch content")).toBeInTheDocument();
     expect(screen.queryByText("Artifacts content")).not.toBeInTheDocument();
@@ -93,7 +93,7 @@ describe("NotebookRightRail", () => {
         defaultOpen
       />,
     );
-    const toggle = screen.getByRole("button", { name: /companion/i });
+    const toggle = screen.getByRole("button", { name: /run inspector/i });
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("Artifacts content")).toBeInTheDocument();
   });
@@ -105,7 +105,7 @@ describe("NotebookRightRail", () => {
         defaultOpen
       />,
     );
-    const toggle = screen.getByRole("button", { name: /companion/i });
+    const toggle = screen.getByRole("button", { name: /run inspector/i });
     const controls = toggle.getAttribute("aria-controls");
     expect(controls).toBe("notebook-right-rail-body");
     const body = document.getElementById(controls!);
@@ -121,7 +121,7 @@ describe("NotebookRightRail", () => {
       />,
     );
     const tabpanel = screen.getByRole("tabpanel");
-    expect(tabpanel).toHaveAttribute("aria-label", "Session artifacts");
+    expect(tabpanel).toHaveAttribute("aria-label", "Run map");
   });
 
   it("falls back to available tab when defaultOpen + scratchpad-only", () => {

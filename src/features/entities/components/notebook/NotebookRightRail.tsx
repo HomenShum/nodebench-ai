@@ -1,8 +1,8 @@
 /**
- * NotebookRightRail — optional companion rail for the entity notebook.
+ * NotebookRightRail — optional run inspector rail for the entity notebook.
  *
  * Pattern: optional rails (PR8 from the refactor checklist).
- *          Scratchpad and Session Artifacts panels exist as secondary
+ *          Scratchpad / trace and run-map panels exist as secondary
  *          surfaces — visible to power users, invisible to search-only users
  *          by default. Never the primary reading path.
  *
@@ -34,6 +34,8 @@ export type NotebookRightRailProps = {
   scratchpadSlot?: ReactNode;
   /** Content slot for the Session Artifacts panel. */
   sessionArtifactsSlot?: ReactNode;
+  /** Header title. Defaults to the runtime-oriented label. */
+  title?: string;
   /** Default open? For returning power users. Persist via caller if needed. */
   defaultOpen?: boolean;
   /** Additional classes for positioning. */
@@ -47,13 +49,14 @@ type RailTab = "scratchpad" | "artifacts";
  * live on the child panels themselves.
  */
 const TAB_LABEL: Record<RailTab, string> = {
-  scratchpad: "Scratchpad",
-  artifacts: "Session artifacts",
+  scratchpad: "Trace",
+  artifacts: "Run map",
 };
 
 function NotebookRightRailBase({
   scratchpadSlot,
   sessionArtifactsSlot,
+  title = "Run inspector",
   defaultOpen = false,
   className,
 }: NotebookRightRailProps) {
@@ -81,7 +84,7 @@ function NotebookRightRailBase({
         "flex flex-col rounded-lg border border-gray-200 bg-white/60 backdrop-blur-sm dark:border-white/[0.08] dark:bg-white/[0.02]",
         className,
       )}
-      aria-label="Notebook companion rail"
+      aria-label={title}
     >
       {/* Compact header — always visible, toggles the rail body */}
       <button
@@ -98,11 +101,11 @@ function NotebookRightRailBase({
             <PanelRight className="h-3.5 w-3.5 text-gray-500" aria-hidden="true" />
           )}
           <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-gray-600 dark:text-gray-300">
-            Companion
+            {title}
           </span>
         </span>
         <span className="text-[10px] text-gray-400 dark:text-gray-500">
-          {open ? "Hide" : "Show"}
+          {open ? "Hide" : "Open"}
         </span>
       </button>
 
@@ -110,7 +113,7 @@ function NotebookRightRailBase({
       {open && availableTabs.length > 1 ? (
         <div
           role="tablist"
-          aria-label="Companion rail sections"
+          aria-label={`${title} sections`}
           className="flex border-t border-gray-100 px-2 pt-2 dark:border-white/[0.06]"
         >
           {availableTabs.map((tab) => {

@@ -10,6 +10,16 @@ const LiveDiligenceSection = lazy(() =>
   })),
 );
 
+// NotebookTimeline — bottom scrubber for replaying agent activity on
+// this entity. Writes a ?t=<ms> URL-hash cursor that EntityNotebookLive
+// reads via useScrubTime to filter decorations. Hides automatically
+// when there's zero agent activity to replay.
+const NotebookTimeline = lazy(() =>
+  import("@/features/entities/components/notebook/NotebookTimeline").then((mod) => ({
+    default: mod.NotebookTimeline,
+  })),
+);
+
 const EntityNotebookView = lazy(() =>
   import("@/features/entities/components/EntityNotebookView").then((mod) => ({
     default: mod.EntityNotebookView,
@@ -254,6 +264,18 @@ function EntityNotebookSurfaceBase({
                   canEdit={canEditNotebook}
                   className="mt-4"
                 />
+              </Suspense>
+            </ErrorBoundary>
+            {/*
+              NotebookTimeline — bottom scrubber for replaying agent
+              activity. Placed above the notebook article so readers
+              see the cursor's relation to the content below. Hidden
+              automatically when there's nothing to replay, so the
+              cold-start entity page still feels clean.
+            */}
+            <ErrorBoundary section="Timeline">
+              <Suspense fallback={null}>
+                <NotebookTimeline entitySlug={entitySlug} className="mt-3" />
               </Suspense>
             </ErrorBoundary>
             <article className="notebook-sheet mt-4">

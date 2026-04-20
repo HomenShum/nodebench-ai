@@ -1233,6 +1233,25 @@ html[data-density='spacious'] {
   content-visibility: auto;
   contain-intrinsic-size: auto 1.75rem;
 }
+
+/*
+ * .nb-decoration-reveal — first-appearance animation for inline
+ * diligence decorations. Applied once per (scratchpadRunId,
+ * blockType) by DiligenceDecorationPlugin; subsequent renders skip
+ * the class. The motion mirrors the v3/v4 prototype feel: fade in
+ * + gentle rise so users SEE the agent place content. Respects
+ * prefers-reduced-motion (class becomes a no-op).
+ */
+@keyframes nb-decoration-reveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.nb-decoration-reveal {
+  animation: nb-decoration-reveal 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-decoration-reveal { animation: none; }
+}
 [data-nb-composer] textarea:focus,
 [data-nb-composer] textarea:focus-visible,
 [data-nb-composer] input:focus,
@@ -1512,8 +1531,39 @@ html[data-density='spacious'] {
   animation: notebook-outline-jump 900ms ease-out 1;
 }
 
+/* Stream-ink: per-paragraph fade-in inside a decoration body. Matches
+   v3 prototype's staggered arrival (animation-delay set inline per idx). */
+@keyframes notebook-stream-fade {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.notebook-stream-ink {
+  animation: notebook-stream-fade 320ms ease-out backwards;
+}
+
+/* Active-stream caret: blinking vertical bar at the end of the most recent
+   paragraph when the decoration updated within the last 5s. Matches v4's
+   "live writing" feel without per-char wrapping. */
+@keyframes notebook-caret-blink {
+  0%, 50%   { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+.notebook-stream-active::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: currentColor;
+  animation: notebook-caret-blink 1s steps(1, end) infinite;
+  opacity: 0.7;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .notebook-block-wet-ink,
+  .notebook-stream-ink,
+  .notebook-stream-active::after,
   .notebook-sheet [data-testid="notebook-block"].notebook-outline-jump-pulse {
     animation: none;
   }

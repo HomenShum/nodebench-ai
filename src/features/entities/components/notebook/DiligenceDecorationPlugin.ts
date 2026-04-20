@@ -3,6 +3,27 @@ import { Decoration, DecorationSet } from "prosemirror-view";
 import type { Node as ProseMirrorNode } from "prosemirror-model";
 import type { EvidenceTier } from "@/features/entities/components/EvidenceChip";
 
+/**
+ * Agent palette — persistent color + label per block-type. v3/v4 prototype
+ * pattern: users learn "purple is News, teal is Funding" over time. Keep
+ * the map here (not imported) so this module stays free of React / app
+ * imports and can be bundled into the editor chunk cleanly.
+ */
+type PaletteEntry = { label: string; color: string; glyph: string | null };
+const PALETTE_BY_BLOCK_TYPE: Record<string, PaletteEntry> = {
+  projection:    { label: "Reference",   color: "#94a3b8", glyph: "⌘" },
+  founder:       { label: "Founder",     color: "#d97757", glyph: "F" },
+  product:       { label: "Product",     color: "#529cca", glyph: "P" },
+  funding:       { label: "Funding",     color: "#4dab9a", glyph: "$" },
+  news:          { label: "News",        color: "#9065b0", glyph: "N" },
+  hiring:        { label: "Hiring",      color: "#e8a33d", glyph: "H" },
+  patent:        { label: "Patents",     color: "#6b7fd7", glyph: "⚙" },
+  publicOpinion: { label: "Sentiment",   color: "#d1568f", glyph: "◎" },
+  competitor:    { label: "Competitors", color: "#d9730d", glyph: "C" },
+  regulatory:    { label: "Regulatory",  color: "#9ca3af", glyph: "§" },
+  financial:     { label: "Financials",  color: "#10b981", glyph: "%" },
+};
+
 export const diligenceDecorationPluginKey = new PluginKey<DecorationSet>(
   "nodebench.diligenceDecorations",
 );
@@ -238,6 +259,22 @@ function attachRendererActions(
   }
 }
 
+/**
+ * First-appearance reveal tracking.
+ *
+ * When a decoration's `scratchpadRunId + blockType` has never been
+ * rendered in this session, we add a `nb-decoration-reveal` class
+ * to its root element. A CSS `@keyframes nb-decoration-reveal` rule
+ * (see src/index.css) animates the decoration in with a subtle fade
+ * + slight upward translate, and respects `prefers-reduced-motion`.
+ *
+ * Subsequent renders (user scrolls away and back) skip the class so
+ * the decoration just appears without drawing new attention. Module-
+ * level set is safe: bounded by distinct runs per session (tens to
+ * low hundreds). Never cleared; GC happens on page unload.
+ */
+const seenDecorationRunIds = new Set<string>();
+
 export function renderDiligenceDecorationElement(
   data: DiligenceDecorationData,
   config: DiligenceDecorationPluginConfig,
@@ -249,6 +286,15 @@ export function renderDiligenceDecorationElement(
   if (renderer) {
     attachRendererActions(node, data, config);
   }
+  // First-appearance reveal — stagger slightly so sibling arrivals
+  // don't animate in on the exact same frame.
+  const revealKey = `${data.scratchpadRunId}::${data.blockType}`;
+  if (!seenDecorationRunIds.has(revealKey)) {
+    seenDecorationRunIds.add(revealKey);
+    node.classList.add("nb-decoration-reveal");
+    const revealIndex = Math.min(seenDecorationRunIds.size - 1, 8);
+    (node as HTMLElement).style.animationDelay = `${revealIndex * 40}ms`;
+  }
   return node;
 }
 
@@ -256,19 +302,30 @@ function renderDefaultDecoration(
   data: DiligenceDecorationData,
   config: DiligenceDecorationPluginConfig,
 ): HTMLElement {
+  // Per-agent palette (v3/v4 pattern): the left accent adopts the block-type's
+  // role color so the user learns "purple is News, teal is Funding" over time.
+  const palette = PALETTE_BY_BLOCK_TYPE[data.blockType] ?? {
+    color: "var(--accent-primary)",
+    label: data.blockType,
+    glyph: null as string | null,
+  };
+
   // Inline agent suggestion — rendered like a natural notebook block, not a
   // card. Left-accent hints "this is agent-authored, not yet accepted".
   // Actions appear on hover (Notion/Linear pattern).
   const root = document.createElement("span");
   root.className =
-    "notebook-diligence-decoration group my-2 block border-l-2 border-l-[var(--accent-primary)]/35 pl-3 text-left";
+    "notebook-diligence-decoration group my-2 block border-l-2 pl-3 text-left";
+  // Inline style so the palette color wins over the default accent; can't
+  // parametrize a Tailwind class at runtime.
+  root.style.borderLeftColor = `${palette.color}80`; // 50% alpha
   root.setAttribute("contenteditable", "false");
   root.dataset.blockType = data.blockType;
   root.dataset.runId = data.scratchpadRunId;
   root.dataset.version = String(data.version);
 
-  // Section header: reads like an H3 in the document. Small "· agent"
-  // suffix tells the user this section is a pending suggestion.
+  // Section header: reads like an H3 in the document. Small colored agent
+  // chip tells the user which agent authored this section (v3/v4 pattern).
   const titleRow = document.createElement("span");
   titleRow.className = "mb-1 flex items-baseline gap-2";
 
@@ -278,8 +335,19 @@ function renderDefaultDecoration(
   titleRow.appendChild(title);
 
   const agentTag = document.createElement("span");
-  agentTag.className = "text-[10px] uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400";
-  agentTag.textContent = "agent · suggestion";
+  agentTag.className = "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium";
+  // Color-mix gives us a readable tinted background from any hex source.
+  agentTag.style.backgroundColor = `color-mix(in oklab, ${palette.color} 18%, transparent)`;
+  agentTag.style.color = palette.color;
+  if (palette.glyph) {
+    const glyph = document.createElement("span");
+    glyph.textContent = palette.glyph;
+    glyph.style.fontWeight = "700";
+    agentTag.appendChild(glyph);
+  }
+  const agentLabel = document.createElement("span");
+  agentLabel.textContent = palette.label;
+  agentTag.appendChild(agentLabel);
   titleRow.appendChild(agentTag);
 
   // Tier chip only when meaningful (not the default "unverified").
@@ -295,17 +363,26 @@ function renderDefaultDecoration(
   root.appendChild(titleRow);
 
   // Body: plain agent-ink prose, matching the notebook's reading rhythm.
-  // No card padding, no background tint — flows like any other paragraph.
+  // Each paragraph fades in with a staggered delay (v3 pattern). The last
+  // paragraph additionally gets a blinking caret when the decoration is
+  // recent (<5s) — the "live writing" feel from v4 without per-char
+  // wrapping. Caret is a pure CSS pseudo-element so no extra DOM.
   const paragraphs = (data.bodyProse ?? "")
     .split(/\n\s*\n/)
     .map((paragraph) => paragraph.trim())
     .filter(Boolean);
-  for (const paragraph of paragraphs) {
+  const isStreamingRecent = Date.now() - data.updatedAt < 5_000;
+  paragraphs.forEach((paragraph, idx) => {
     const p = document.createElement("span");
-    p.className = "block text-[15px] leading-[1.5] text-gray-600 dark:text-gray-300";
+    const isLast = idx === paragraphs.length - 1;
+    p.className =
+      "notebook-stream-ink block text-[15px] leading-[1.5] text-gray-600 dark:text-gray-300" +
+      (isLast && isStreamingRecent ? " notebook-stream-active" : "");
+    // Staggered per-paragraph fade (v3 prototype: index * 50ms).
+    p.style.animationDelay = `${idx * 40}ms`;
     p.textContent = paragraph;
     root.appendChild(p);
-  }
+  });
 
   // Meta row: source count + inline action strip. Hidden opacity, reveals
   // on hover (keeps reading surface calm).
