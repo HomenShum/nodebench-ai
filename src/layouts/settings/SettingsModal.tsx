@@ -412,7 +412,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
   const providerStatus = useMemo(() => {
     const map: Record<string, { hasKey: boolean; createdAt?: number }> = {};
-    (keyStatuses ?? []).forEach((k) => (map[k.provider] = { hasKey: k.hasKey, createdAt: k.createdAt }));
+    (keyStatuses ?? []).forEach((k: any) => (map[k.provider] = { hasKey: k.hasKey, createdAt: k.createdAt }));
     return map;
   }, [keyStatuses]);
 
@@ -1096,9 +1096,9 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   <div className="rounded-lg border border-edge bg-surface p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="text-sm font-semibold">Current Session</div>
-                      {sessions && sessions.find(s => s.isCurrent) && (
+                      {sessions && sessions.find((s: any) => s.isCurrent) && (
                         <div className="text-xs text-content-secondary">
-                          Active since {new Date(sessions.find(s => s.isCurrent)!._creationTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          Active since {new Date(sessions.find((s: any) => s.isCurrent)!._creationTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                       )}
                     </div>
@@ -1277,7 +1277,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             .catch((e: any) => toast.error(e?.message ?? "Failed"))
                             .finally(() => setSigningOutOthers(false));
                         }}
-                        disabled={user === null || signingOutOthers || !((sessions ?? []).some((s) => !s.isCurrent))}
+                        disabled={user === null || signingOutOthers || !((sessions ?? []).some((s: any) => !s.isCurrent))}
                       >
                         {signingOutOthers ? "Signing out…" : "Sign out other devices"}
                       </button>
@@ -1288,8 +1288,8 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       <div className="text-xs text-content-secondary">No sessions found.</div>
                     ) : (
                       <div className="space-y-2">
-                        {sessions.slice().sort((a, b) => b._creationTime - a._creationTime).map((s) => {
-                          const deviceLabel = s.isCurrent ? "This Device" : `Device ${sessions.filter(sess => !sess.isCurrent).indexOf(s) + 1}`;
+                        {sessions.slice().sort((a: any, b: any) => b._creationTime - a._creationTime).map((s: any) => {
+                          const deviceLabel = s.isCurrent ? "This Device" : `Device ${sessions.filter((sess: any) => !sess.isCurrent).indexOf(s) + 1}`;
                           return (
                             <div key={s._id} className={`flex items-center justify-between p-2 rounded border ${s.isCurrent
                                 ? "border-blue-200 dark:border-blue-800/30 bg-blue-50 dark:bg-blue-950/30"
@@ -1375,7 +1375,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       <div className="text-xs text-content-secondary">No linked accounts.</div>
                     ) : (
                       <div className="space-y-2">
-                        {linkedAccounts.map((a) => (
+                        {linkedAccounts.map((a: any) => (
                           <div key={a._id} className="flex items-center justify-between p-2 rounded border border-edge bg-surface-secondary">
                             <div className="text-xs">
                               <div className="font-medium">{a.provider}</div>

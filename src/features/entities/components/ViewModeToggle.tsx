@@ -1,15 +1,11 @@
 /**
- * ViewModeToggle — small segmented pill that flips the entity page
- * between edit and read mode.
+ * ViewModeToggle — one quiet mode switch for the entity artifact.
  *
- * Matches the Notion edit/publish duality: same page, same data,
- * stripped chrome. See `useViewMode` for URL-param semantics.
- *
- * Design rules:
- *   - Always-visible in the top action row (when editable)
- *   - Keyboard: `⌘E` / `Ctrl+E` toggles between edit ↔ read
- *   - Quiet visual weight — this is a mode switcher, not a CTA
- *   - Hidden entirely on public share routes (forced-read view)
+ * The earlier segmented toggle added too much top-row pressure for the
+ * notebook-first layout. We keep the same route-backed behavior, but the
+ * chrome collapses to a single secondary action:
+ *   - edit mode shows "Read mode"
+ *   - read mode shows "Edit notebook"
  */
 
 import { memo, useEffect } from "react";
@@ -56,46 +52,22 @@ export const ViewModeToggle = memo(function ViewModeToggle({
 
   if (hidden) return null;
 
+  const nextMode = viewMode === "read" ? "edit" : "read";
+  const isRead = viewMode === "read";
+
   return (
-    <div
+    <button
+      type="button"
+      onClick={() => setViewMode(nextMode)}
+      aria-label={isRead ? "Edit notebook" : "Read mode"}
       className={cn(
-        "inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.02] p-0.5 text-[11px]",
+        "inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-white/70 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:border-black/12 hover:bg-white hover:text-gray-900 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-gray-100",
         className,
       )}
-      role="group"
-      aria-label="View mode"
     >
-      <button
-        type="button"
-        onClick={() => setViewMode("edit")}
-        aria-pressed={viewMode === "edit"}
-        aria-label="Edit mode"
-        className={cn(
-          "inline-flex items-center gap-1 rounded-full px-2.5 py-1 transition",
-          viewMode === "edit"
-            ? "bg-white/[0.08] text-content"
-            : "text-content-muted hover:text-content",
-        )}
-      >
-        <Pencil className="h-3 w-3" />
-        <span>Edit</span>
-      </button>
-      <button
-        type="button"
-        onClick={() => setViewMode("read")}
-        aria-pressed={viewMode === "read"}
-        aria-label="Read mode"
-        className={cn(
-          "inline-flex items-center gap-1 rounded-full px-2.5 py-1 transition",
-          viewMode === "read"
-            ? "bg-white/[0.08] text-content"
-            : "text-content-muted hover:text-content",
-        )}
-      >
-        <Eye className="h-3 w-3" />
-        <span>Read</span>
-      </button>
-    </div>
+      {isRead ? <Pencil className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+      <span>{isRead ? "Edit notebook" : "Read mode"}</span>
+    </button>
   );
 });
 

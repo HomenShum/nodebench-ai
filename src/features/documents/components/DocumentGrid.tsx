@@ -1,4 +1,4 @@
-﻿import { useState, useCallback, useRef, useEffect, useMemo, useLayoutEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo, useLayoutEffect } from "react";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { DocumentView } from "@/features/documents/views/DocumentView";
 import { X, ZoomIn, ZoomOut, Maximize2, Calendar } from "lucide-react";
@@ -20,7 +20,7 @@ interface GridTabBase {
 
 export type GridTab =
   | (GridTabBase & { kind: "document"; id: Id<"documents"> })
-  | (GridTabBase & { kind: "task"; id: Id<"tasks"> });
+  | (GridTabBase & { kind: "task"; id: Id<"userEvents"> });
 
 interface DocumentGridProps {
   openTabs: GridTab[];

@@ -9,9 +9,9 @@ interface DocumentsSidebarProps {
   density: "comfortable" | "compact";
   loggedInUser: any;
   onAddTask: () => void;
-  onSelectTask: (id: Id<"tasks">) => void;
+  onSelectTask: (id: Id<"userEvents">) => void;
   onUpdateTaskStatus: (
-    taskId: Id<"tasks">,
+    taskId: Id<"userEvents">,
     status: "todo" | "in_progress" | "done" | "blocked",
   ) => Promise<void> | void;
   onSelectDocument: (id: Id<"documents">) => void;
@@ -82,10 +82,10 @@ export function DocumentsSidebar({
                   key={task._id}
                   t={task}
                   density={density}
-                  onSelect={(id) => onSelectTask(id as Id<"tasks">)}
+                  onSelect={(id) => onSelectTask(id as Id<"userEvents">)}
                   onChangeStatus={(id, status) =>
                     onUpdateTaskStatus(
-                      id as Id<"tasks">,
+                      id as Id<"userEvents">,
                       status as "todo" | "in_progress" | "done" | "blocked",
                     )
                   }

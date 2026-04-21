@@ -22,9 +22,9 @@ import {
 export interface DocumentsPlannerProviderProps {
   prefs: any;
   loggedInUser: unknown;
-  selectedTaskId?: Id<"tasks"> | null;
+  selectedTaskId?: Id<"userEvents"> | null;
   onSelectTask?: (
-    id: Id<"tasks">,
+    id: Id<"userEvents">,
     source: "today" | "upcoming" | "week" | "other",
   ) => void;
   onClearTaskSelection?: () => void;
@@ -61,7 +61,12 @@ export function DocumentsPlannerProvider({
     onClearTaskSelection,
   });
 
-  const { agendaState, editorState, viewState } = planner;
+  const { agendaState: agendaStateRaw, editorState, viewState: viewStateRaw } = planner;
+  // AgendaStateReturn / PlannerViewState are currently under-specified in the
+  // hook return types; treat as structural for slice projection until the
+  // hook signatures are aligned with the full slice schemas.
+  const agendaState = agendaStateRaw as any;
+  const viewState = viewStateRaw as any;
 
   // ── Slice projections ───────────────────────────────────────────────────────
 
@@ -137,8 +142,8 @@ export function DocumentsPlannerProvider({
 
   return (
     <PlannerDateNavCtx.Provider value={plannerDateNavSlice}>
-      <PlannerAgendaCtx.Provider value={plannerAgendaSlice}>
-        <PlannerViewCtx.Provider value={plannerViewSlice}>
+      <PlannerAgendaCtx.Provider value={plannerAgendaSlice as any}>
+        <PlannerViewCtx.Provider value={plannerViewSlice as any}>
           <PlannerEditorCtx.Provider value={plannerEditorSlice}>
             {children}
           </PlannerEditorCtx.Provider>

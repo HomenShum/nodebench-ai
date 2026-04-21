@@ -72,4 +72,33 @@ describe("resolvePathToView", () => {
     });
   });
 
+  it("preserves entity read mode in the canonical path", () => {
+    expect(resolvePathToCockpitState("/entity/ditto-ai", "?view=read")).toMatchObject({
+      canonicalPath: "/entity/ditto-ai?view=read",
+      isLegacyRedirect: false,
+    });
+  });
+
+  it("preserves research tab routes in the canonical path", () => {
+    expect(resolvePathToCockpitState("/research/signals")).toMatchObject({
+      canonicalPath: "/research/signals",
+      researchTab: "signals",
+      isLegacyRedirect: false,
+    });
+  });
+
+  it("keeps canonical entity pulse routes on direct slug paths", () => {
+    expect(buildCockpitPathForView({ view: "entity-pulse", entity: "ditto-ai" })).toBe(
+      "/entity/ditto-ai/pulse",
+    );
+    expect(resolvePathToView("/entity/ditto-ai/pulse")).toMatchObject({
+      view: "entity-pulse",
+      entityName: "ditto-ai",
+    });
+    expect(resolvePathToView("/entity/ditto-ai/pulse/2026-04-20")).toMatchObject({
+      view: "entity-pulse",
+      entityName: "ditto-ai",
+    });
+  });
+
 });

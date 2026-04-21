@@ -23,7 +23,7 @@ export const ActionReceiptFeed = memo(function ActionReceiptFeed() {
 
   const convexReceipts = useQuery(api.domains.agents.receipts.actionReceipts.list, { limit: 100 });
   const liveReceipts = useMemo(
-    () => (convexReceipts && convexReceipts.length > 0 ? convexReceipts.map((row) => toActionReceipt(row as Record<string, unknown>)) : null),
+    () => (convexReceipts && convexReceipts.length > 0 ? convexReceipts.map((row: any) => toActionReceipt(row as Record<string, unknown>)) : null),
     [convexReceipts],
   );
   const isDemo = !liveReceipts;
@@ -62,19 +62,19 @@ export const ActionReceiptFeed = memo(function ActionReceiptFeed() {
   const filteredReceipts = useMemo(() => {
     if (filter === "all") return receipts;
     if (filter === "reversible") {
-      return receipts.filter((receipt) => receipt.reversible.canUndo);
+      return receipts.filter((receipt: any) => receipt.reversible.canUndo);
     }
     if (filter === "needs-approval") {
-      return receipts.filter((receipt) => receipt.approval?.state === "pending");
+      return receipts.filter((receipt: any) => receipt.approval?.state === "pending");
     }
-    return receipts.filter((receipt) => receipt.policyRef.action === filter);
+    return receipts.filter((receipt: any) => receipt.policyRef.action === filter);
   }, [filter, receipts]);
 
   const stats = useMemo(() => {
-    const allowed = receipts.filter((receipt) => receipt.policyRef.action === "allowed").length;
-    const denied = receipts.filter((receipt) => receipt.policyRef.action === "denied").length;
-    const pending = receipts.filter((receipt) => receipt.approval?.state === "pending").length;
-    const reversible = receipts.filter((receipt) => receipt.reversible.canUndo).length;
+    const allowed = receipts.filter((receipt: any) => receipt.policyRef.action === "allowed").length;
+    const denied = receipts.filter((receipt: any) => receipt.policyRef.action === "denied").length;
+    const pending = receipts.filter((receipt: any) => receipt.approval?.state === "pending").length;
+    const reversible = receipts.filter((receipt: any) => receipt.reversible.canUndo).length;
     return { allowed, denied, pending, reversible, total: receipts.length };
   }, [receipts]);
 
@@ -180,7 +180,7 @@ export const ActionReceiptFeed = memo(function ActionReceiptFeed() {
       </section>
 
       <div className="space-y-2">
-        {filteredReceipts.map((receipt) => (
+        {filteredReceipts.map((receipt: any) => (
           <ReceiptCard
             key={receipt.receiptId}
             receipt={receipt}

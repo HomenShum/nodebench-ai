@@ -64,12 +64,12 @@ interface DocumentsHomeHubProps {
 
   // Lifted task selection state & handlers from MainLayout
 
-  selectedTaskId?: Id<"tasks"> | null;
+  selectedTaskId?: Id<"userEvents"> | null;
 
   selectedTaskSource?: "today" | "upcoming" | "week" | "other" | null;
 
   onSelectTask?: (
-    id: Id<"tasks">,
+    id: Id<"userEvents">,
 
     source: "today" | "upcoming" | "week" | "other",
   ) => void;
@@ -214,23 +214,31 @@ export function DocumentsHomeHub({
   const documentActionSlice = useMemo(() => ({
     selectedDocIds: docWs.selectedDocIds,
     selectAnchorByContext: docWs.selectAnchorByContext,
-    handleSelectDoc: docWs.handleSelectDoc,
+    handleSelectDoc: (docId: string, _shiftKey?: boolean) =>
+      docWs.handleSelectDocument(docId as Id<"documents">),
     clearSelection: docWs.clearSelection,
     handleBulkArchive: docWs.handleBulkArchive,
-    handleBulkFavorite: docWs.handleBulkFavorite,
-    handleBulkDelete: docWs.handleBulkDelete,
+    handleBulkFavorite: docWs.handleBulkToggleFavorite,
+    handleBulkDelete: () => {
+      // no-op: bulk delete not yet implemented in workspace state hook
+    },
     archiveDocument: docWs.archiveDocument,
     toggleFavorite: docWs.toggleFavorite,
-    duplicateDocument: docWs.duplicateDocument,
-    deleteDocument: docWs.deleteDocument,
+    duplicateDocument: async (args: { documentId: Id<"documents"> }) =>
+      docWs.handleDuplicateDocument(args.documentId),
+    deleteDocument: async (args: { documentId: Id<"documents"> }) =>
+      docWs.handleDeleteDocument(args.documentId),
     toggleSelected: docWs.toggleSelected,
-    handleSelectDocument: docWs.handleSelectDocument,
+    handleSelectDocument: (docId: string) =>
+      docWs.handleSelectDocument(docId as Id<"documents">),
     handleCardClickWithModifiers: docWs.handleCardClickWithModifiers,
-    handleDeleteDocument: docWs.handleDeleteDocument,
-    handleToggleFavorite: docWs.handleToggleFavorite,
+    handleDeleteDocument: (docId: string) =>
+      docWs.handleDeleteDocument(docId as Id<"documents">),
+    handleToggleFavorite: (docId: string) =>
+      docWs.handleToggleFavorite(docId as Id<"documents">),
     handleBulkToggleFavorite: docWs.handleBulkToggleFavorite,
     handleCleanupEmptyFiles: docWs.handleCleanupEmptyFiles,
-  }), [docWs.selectedDocIds, docWs.selectAnchorByContext, docWs.handleSelectDoc, docWs.clearSelection, docWs.handleBulkArchive, docWs.handleBulkFavorite, docWs.handleBulkDelete, docWs.archiveDocument, docWs.toggleFavorite, docWs.duplicateDocument, docWs.deleteDocument, docWs.toggleSelected, docWs.handleSelectDocument, docWs.handleCardClickWithModifiers, docWs.handleDeleteDocument, docWs.handleToggleFavorite, docWs.handleBulkToggleFavorite, docWs.handleCleanupEmptyFiles]);
+  }), [docWs]);
 
   const documentOrderSlice = useMemo(() => ({
     docOrderByFilter: docWs.docOrderByFilter,
@@ -251,8 +259,8 @@ export function DocumentsHomeHub({
     getRootProps: docWs.getRootProps,
     getInputProps: docWs.getInputProps,
     isDragActive: docWs.isDragActive,
-    openFilePicker: docWs.openFilePicker,
-  }), [docWs.isUploading, docWs.uploadProgress, docWs.isFileDragActive, docWs.getRootProps, docWs.getInputProps, docWs.isDragActive, docWs.openFilePicker]);
+    openFilePicker: docWs.open,
+  }), [docWs.isUploading, docWs.uploadProgress, docWs.isFileDragActive, docWs.getRootProps, docWs.getInputProps, docWs.isDragActive, docWs.open]);
 
   const documentOverlaySlice = useMemo(() => ({
     viewingMediaDoc: docWs.viewingMediaDoc,

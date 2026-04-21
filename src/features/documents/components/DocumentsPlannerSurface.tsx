@@ -27,9 +27,9 @@ const LazyDocumentsPlannerOverlays = lazy(
 export interface DocumentsPlannerSurfaceProps {
   prefs: any;
   loggedInUser: unknown;
-  selectedTaskId?: Id<"tasks"> | null;
+  selectedTaskId?: Id<"userEvents"> | null;
   onSelectTask?: (
-    id: Id<"tasks">,
+    id: Id<"userEvents">,
     source: "today" | "upcoming" | "week" | "other",
   ) => void;
   onClearTaskSelection?: () => void;

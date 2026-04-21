@@ -6,7 +6,7 @@ import { X, Trash2, Save, Tag as TagIcon, User as UserIcon, Link as LinkIcon } f
 import { toast } from "sonner";
 
 type Props = {
-  taskId: Id<"tasks">;
+  taskId: Id<"userEvents">;
   onClose: () => void;
   /**
    * When true, renders inline within the parent (no full-screen overlay/backdrop).

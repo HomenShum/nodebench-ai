@@ -22,9 +22,9 @@ import { RefsPills } from "../pills/RefsPills";
 export interface TaskRowProps {
   t: any;
   kind?: "task" | "event";
-  onSelect?: (id: Id<"tasks"> | Id<"events">) => void;
+  onSelect?: (id: Id<"userEvents"> | Id<"events">) => void;
   onChangeStatus?: (
-    id: Id<"tasks"> | Id<"events">,
+    id: Id<"userEvents"> | Id<"events">,
     status: TaskStatus | "confirmed" | "tentative" | "cancelled",
   ) => void;
   density?: "compact" | "comfortable";
@@ -214,7 +214,7 @@ export const TaskRowGlobal = memo(({
         status: "confirmed",
       });
 
-      await deleteTaskLocal({ taskId: task._id as Id<"tasks"> });
+      await deleteTaskLocal({ taskId: task._id as Id<"userEvents"> });
       toast.success("Converted task to event");
     } catch (err: any) {
       toast.error(err?.message ?? "Failed to convert task");

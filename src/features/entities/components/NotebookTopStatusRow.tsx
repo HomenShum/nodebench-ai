@@ -237,11 +237,12 @@ export const NotebookTopStatusRow = memo(function NotebookTopStatusRow({
   return (
     <div
       className={cn(
-        "flex items-center gap-2 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-xs",
+        "nb-top-status-row flex items-center gap-2 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-xs",
         className,
       )}
       role="group"
       aria-label="Notebook runtime status"
+      data-testid="notebook-top-status-row"
     >
       <Activity className="h-3.5 w-3.5 shrink-0 text-content-muted" aria-hidden="true" />
       <span className="shrink-0 text-[10px] font-medium uppercase tracking-[0.18em] text-content-muted">

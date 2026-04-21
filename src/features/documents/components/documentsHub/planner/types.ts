@@ -10,7 +10,7 @@ export type AgendaPopoverState =
   | {
       kind: "task";
       anchor: HTMLElement | null;
-      taskId: Id<"tasks">;
+      taskId: Id<"userEvents">;
     }
   | {
       kind: "create";

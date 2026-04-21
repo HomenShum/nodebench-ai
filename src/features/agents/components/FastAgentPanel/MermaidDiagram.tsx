@@ -284,7 +284,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
             e.stopPropagation();
             setIsZoomed(true);
           }}
-          className="p-1.5 bg-surface/90 backdrop-blur-sm rounded hover:bg-surface transition-colors shadow-sm"
+          className="rounded bg-surface p-1.5 shadow-sm transition-colors hover:bg-surface-secondary"
           title="Zoom"
         >
           <Maximize2 className="h-3.5 w-3.5 text-content-secondary" />
@@ -295,7 +295,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
             handleDownload('png');
           }}
           disabled={isDownloading}
-          className="p-1.5 bg-surface/90 backdrop-blur-sm rounded hover:bg-surface transition-colors shadow-sm disabled:opacity-50"
+          className="rounded bg-surface p-1.5 shadow-sm transition-colors hover:bg-surface-secondary disabled:opacity-50"
           title="Download PNG"
         >
           <Download className="h-3.5 w-3.5 text-content-secondary" />
@@ -305,7 +305,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
             e.stopPropagation();
             setShowCode(!showCode);
           }}
-          className="p-1.5 bg-surface/90 backdrop-blur-sm rounded hover:bg-surface transition-colors shadow-sm"
+          className="rounded bg-surface p-1.5 shadow-sm transition-colors hover:bg-surface-secondary"
           title="Code"
         >
           <Code2 className="h-3.5 w-3.5 text-content-secondary" />
@@ -315,7 +315,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
             e.stopPropagation();
             handleCopyCode();
           }}
-          className="p-1.5 bg-surface/90 backdrop-blur-sm rounded hover:bg-surface transition-colors shadow-sm"
+          className="rounded bg-surface p-1.5 shadow-sm transition-colors hover:bg-surface-secondary"
           title="Copy"
         >
           {copied ? (
@@ -356,7 +356,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
           <div className="relative w-full h-full max-w-6xl flex flex-col">
             {/* Compact control bar */}
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1 bg-surface/90 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-lg">
+              <div className="flex items-center gap-1 rounded-lg bg-surface px-2 py-1.5 shadow-lg">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -394,7 +394,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
                 </button>
               </div>
 
-              <div className="flex items-center gap-1 bg-surface/90 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-lg">
+              <div className="flex items-center gap-1 rounded-lg bg-surface px-2 py-1.5 shadow-lg">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

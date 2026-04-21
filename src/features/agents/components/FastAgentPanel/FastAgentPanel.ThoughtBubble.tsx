@@ -25,7 +25,7 @@ export function ThoughtBubble({
   return (
     <div className={cn(
       "mb-4 p-3 rounded-lg border-l-4 border-yellow-500",
-      "bg-yellow-50/50 backdrop-blur-sm",
+      "bg-yellow-50 dark:bg-yellow-900/10",
       "transition-all duration-300",
       isStreaming && "animate-in slide-in-from-top-2",
       className

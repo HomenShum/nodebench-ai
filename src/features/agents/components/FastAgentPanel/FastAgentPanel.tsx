@@ -7,14 +7,12 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvex, usePaginatedQuery, useQuery, useMutation, useAction, useConvexAuth } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
-import { X, Bot, Loader2, ChevronDown, ArrowDown, MessageSquare, Activity, LogIn, Search } from 'lucide-react';
+import { X, Loader2, ChevronDown, ArrowDown, MessageSquare, Activity, LogIn, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUIMessages } from '@convex-dev/agent/react';
 
 import './FastAgentPanel.animations.css';
 import { FastAgentThreadList } from './FastAgentPanel.ThreadList';
-import { MessageStream } from './FastAgentPanel.MessageStream';
-import { UIMessageStream } from './FastAgentPanel.UIMessageStream';
 import { FastAgentInputBar } from './FastAgentPanel.InputBar';
 import { FileUpload } from './FastAgentPanel.FileUpload';
 import { ExportMenu } from './FastAgentPanel.ExportMenu';
@@ -61,10 +59,16 @@ import { PanelDialogs } from './FastAgentPanel.PanelDialogs';
 import { DossierModeIndicator } from '@/features/agents/components/DossierModeIndicator';
 import { DEFAULT_MODEL, MODEL_UI_INFO, type ApprovedModel } from '@shared/llm/approvedModels';
 import { cn } from '@/lib/utils';
+import { buildCockpitPath } from '@/lib/registry/viewRegistry';
 import { useAnonymousSession } from '../../hooks/useAnonymousSession';
 import { useAgentNavigation } from '../../hooks/useAgentNavigation';
 import { useIntentTelemetry } from '@/lib/hooks/useIntentTelemetry';
 import { useOracleSessionContext } from '@/contexts/OracleSessionContext';
+import { EntityWorkspaceDrawerContent } from './EntityWorkspaceDrawerContent';
+import { useConversationEngine } from '@/features/chat/hooks/useConversationEngine';
+import type { LensId } from '@/features/controlPlane/components/searchTypes';
+import { ProductIntakeComposer } from '@/features/product/components/ProductIntakeComposer';
+import { uploadProductDraftFiles } from '@/features/product/lib/uploadDraftFiles';
 
 import type {
   Message,
@@ -88,6 +92,8 @@ interface FastAgentPanelProps {
   /** Voice intent router — intercepts UI commands before agent send. Return true if handled. */
   onVoiceIntent?: (text: string, source?: 'voice' | 'text') => boolean;
 }
+
+type PanelTab = 'chat' | 'scratchpad' | 'flow' | 'sources' | 'telemetry' | 'trace';
 
 /**
  * Extract plain text from an agent message regardless of which shape the
@@ -173,7 +179,7 @@ function MobileCommandChips({ onSelect }: { onSelect: (message: string) => void 
           type="button"
           onClick={() => onSelect(c.message)}
           aria-label={`Send command: ${c.label}`}
-          className="rounded-full border border-white/[0.15] bg-white/[0.06] px-3 py-1.5 text-[11px] font-medium text-white/60 transition-all duration-fast ease-out hover:bg-white/[0.10] hover:text-white/80 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 motion-reduce:transform-none motion-reduce:transition-none"
+          className="rounded-full border border-edge bg-surface px-3 py-1.5 text-[11px] font-medium text-content-secondary transition-all duration-fast ease-out hover:bg-surface-hover hover:text-content active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 motion-reduce:transform-none motion-reduce:transition-none"
         >
           {c.label}
         </button>
@@ -964,8 +970,9 @@ export const FastAgentPanel = memo(function FastAgentPanel({
   const [disclosureEvents, setDisclosureEvents] = useState<DisclosureEvent[]>([]);
   const [showDisclosureTrace, setShowDisclosureTrace] = useState(false);
 
-  // Tab state - Chat, Sources, and Activity (Task History)
-  const [activeTab, setActiveTab] = useState<'chat' | 'sources' | 'telemetry' | 'trace'>('chat');
+  // Tab state - default agent tabs plus entity-workspace tabs when the
+  // drawer is opened from the notebook surface.
+  const [activeTab, setActiveTab] = useState<PanelTab>('chat');
   const [isThreadDropdownOpen, setIsThreadDropdownOpen] = useState(false);
 
   // ========== AGENT-DRIVEN NAVIGATION ==========
@@ -1031,7 +1038,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
 
   // Ref-based callback pattern for stable handleSendMessage reference
   // This prevents re-renders when callback dependencies change
-  const handleSendMessageRef = useRef<(content?: string) => Promise<void>>();
+  const handleSendMessageRef = useRef<(content?: string) => Promise<void>>(undefined);
 
   // Track auto-created documents to avoid duplicates (by agentThreadId) and processed message IDs
   const autoDocCreatedThreadIdsRef = useRef<Set<string>>(new Set());
@@ -1103,6 +1110,47 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     return variant === "sidebar" ? isDesktop : !isDesktop;
   }, [variant]);
 
+  // Cross-surface agent unification: when the user is on an entity page,
+  // agent responses can be saved directly into that entity's notebook.
+  // activeEntitySlug is tracked by FastAgentContext independently of
+  // whether the panel is open. Hoisted above openOptions handler so it
+  // can gate the allowed-tab set without hitting a TDZ.
+  const { activeEntitySlug } = useFastAgent();
+  const productEntitySlug = activeEntitySlug ?? openOptions?.contextEntitySlug ?? null;
+  const showsNotebookWorkspaceTabs = Boolean(productEntitySlug);
+  const isProductConversationMode = chatMode === 'agent-streaming' && Boolean(productEntitySlug);
+  const productConversation = useConversationEngine({
+    anonymousSessionId: anonymousSession.sessionId ?? "anonymous",
+    entitySlugHint: productEntitySlug,
+    contextHint: productEntitySlug
+      ? `Primary entity for this run: ${productEntitySlug}. Keep the answer anchored on this entity unless the user explicitly changes subjects.`
+      : null,
+    contextLabel: productEntitySlug ? "Entity workspace" : null,
+    includeSessionList: isProductConversationMode,
+    activeSessionId: isProductConversationMode ? activeThreadId : undefined,
+    onActiveSessionChange: isProductConversationMode ? setActiveThreadId : undefined,
+  });
+  const productLens: LensId = 'founder';
+  const generateProductUploadUrl = useMutation(api.domains.product.me.generateUploadUrl);
+  const saveProductFile = useMutation(api.domains.product.me.saveFile);
+  const productAttachedFiles = useMemo(
+    () =>
+      attachedFiles.map((file) => ({
+        name: file.name,
+        type: file.type || "application/octet-stream",
+        size: file.size,
+      })),
+    [attachedFiles],
+  );
+  const productEntityLabel = useMemo(() => {
+    if (!productEntitySlug) return null;
+    return productEntitySlug
+      .replace(/[-_]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/\b\w/g, (match) => match.toUpperCase());
+  }, [productEntitySlug]);
+
   // Apply openOptions once per requestId, and optionally auto-send.
   useEffect(() => {
     if (!isViewportActiveVariant()) return;
@@ -1119,6 +1167,18 @@ export const FastAgentPanel = memo(function FastAgentPanel({
         for (const id of contextDocIds) next.add(id);
         return next;
       });
+    }
+
+    const requestedTab = openOptions?.initialTab;
+    if (requestedTab) {
+      const allowed = showsNotebookWorkspaceTabs
+        ? (["chat", "scratchpad", "flow"] as const)
+        : (["chat", "sources", "telemetry", "trace"] as const);
+      if (allowed.includes(requestedTab as any)) {
+        setActiveTab(requestedTab as PanelTab);
+      } else {
+        setActiveTab("chat");
+      }
     }
 
     const initial = typeof openOptions?.initialMessage === "string" ? openOptions.initialMessage.trim() : "";
@@ -1155,7 +1215,19 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     setInput(message);
     setChatMode("agent-streaming");
     setPendingAutoSend({ requestId, message });
-  }, [isOpen, openOptions, onOptionsConsumed, isViewportActiveVariant]);
+  }, [isOpen, onOptionsConsumed, openOptions, isViewportActiveVariant, showsNotebookWorkspaceTabs]);
+
+  useEffect(() => {
+    if (showsNotebookWorkspaceTabs) {
+      if (activeTab !== "chat" && activeTab !== "scratchpad" && activeTab !== "flow") {
+        setActiveTab("chat");
+      }
+      return;
+    }
+    if (activeTab === "scratchpad" || activeTab === "flow") {
+      setActiveTab("chat");
+    }
+  }, [activeTab, showsNotebookWorkspaceTabs]);
 
   // Persist dossier context so it remains available after openOptions is consumed/cleared.
   useEffect(() => {
@@ -1178,12 +1250,12 @@ export const FastAgentPanel = memo(function FastAgentPanel({
   // Agent mode: Using @convex-dev/agent component
   const agentThreadsPagination = usePaginatedQuery(
     api.domains.agents.agentChat.listUserThreads,
-    isAuthenticated && chatMode === "agent" ? {} : "skip",
+    isAuthenticated && chatMode === "agent" && !isProductConversationMode ? {} : "skip",
     { initialNumItems: 20 }
   );
   const agentMessagesResult = useQuery(
     api.domains.agents.agentChat.getThreadMessages,
-    activeThreadId && chatMode === 'agent' ? {
+    activeThreadId && chatMode === 'agent' && !isProductConversationMode ? {
       threadId: activeThreadId,
       paginationOpts: { numItems: 100, cursor: null }
     } : "skip"
@@ -1199,7 +1271,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
   // Note: Anonymous users can also use streaming mode with their sessionId
   const streamingThreadsPagination = usePaginatedQuery(
     api.domains.agents.fastAgentPanelStreaming.listThreads,
-    chatMode === "agent-streaming" ? {} : "skip",
+    chatMode === "agent-streaming" && !isProductConversationMode ? {} : "skip",
     { initialNumItems: 20 }
   );
   const requestStreamCancel = useMutation(api.domains.agents.fastAgentPanelStreaming.requestStreamCancel);
@@ -1208,7 +1280,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
   // Pass anonymousSessionId for anonymous users to validate ownership
   const streamingThread = useQuery(
     api.domains.agents.fastAgentPanelStreaming.getThreadByStreamId,
-    activeThreadId && chatMode === 'agent-streaming'
+    activeThreadId && chatMode === 'agent-streaming' && !isProductConversationMode
       ? {
         threadId: activeThreadId as Id<"chatThreadsStream">,
         anonymousSessionId: anonymousSession.sessionId ?? undefined,
@@ -1221,7 +1293,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
   // Pass anonymousSessionId for anonymous users to validate access
   const { results: streamingMessages, status: _streamingStatus, error: streamError } = useUIMessages(
     api.domains.agents.fastAgentPanelStreaming.getThreadMessagesWithStreaming,
-    streamingThread?.agentThreadId && chatMode === 'agent-streaming'
+    streamingThread?.agentThreadId && chatMode === 'agent-streaming' && !isProductConversationMode
       ? {
         threadId: streamingThread.agentThreadId,
         anonymousSessionId: anonymousSession.sessionId ?? undefined,
@@ -1231,7 +1303,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
       initialNumItems: 100,
       stream: true,  // CRITICAL: Enable streaming deltas.
     }
-  );
+  ) as { results: any; status: any; error?: unknown };
 
   // Handle stream errors
   useEffect(() => {
@@ -1246,6 +1318,9 @@ export const FastAgentPanel = memo(function FastAgentPanel({
   }, [streamError]);
 
   const isGenerating = useMemo(() => {
+    if (isProductConversationMode) {
+      return productConversation.streaming.isStreaming;
+    }
     if (chatMode !== "agent-streaming") return false;
     const runStatus = streamingThread?.runStatus;
     if (runStatus && runStatus !== "running" && runStatus !== "scheduled") {
@@ -1255,23 +1330,89 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     return streamingMessages.some(
       (m: any) => m?.role === "assistant" && (m?.status === "streaming" || m?.status === "pending")
     );
-  }, [chatMode, streamingMessages, streamingThread?.runStatus]);
+  }, [chatMode, isProductConversationMode, productConversation.streaming.isStreaming, streamingMessages, streamingThread?.runStatus]);
 
   useEffect(() => {
+    if (isProductConversationMode) {
+      if (!productConversation.streaming.isStreaming) {
+        setIsStreaming(false);
+      }
+      return;
+    }
     const runStatus = streamingThread?.runStatus;
     if (!runStatus) return;
     if (runStatus === "completed" || runStatus === "failed" || runStatus === "cancelled") {
       setIsStreaming(false);
     }
-  }, [streamingThread?.runStatus]);
+  }, [isProductConversationMode, productConversation.streaming.isStreaming, streamingThread?.runStatus]);
 
   const isBusy = isStreaming || isGenerating || isDemoThinking;
 
-  // Cross-surface agent unification: when the user is on an entity page,
-  // agent responses can be saved directly into that entity's notebook.
-  // activeEntitySlug is tracked by FastAgentContext independently of
-  // whether the panel is open.
-  const { activeEntitySlug } = useFastAgent();
+  const productMessagesToRender = useMemo(() => {
+    if (!isProductConversationMode) return [] as any[];
+    const baseMessages = (productConversation.sessionMessages ?? []).map((message) => ({
+      _id: message.id,
+      key: message.id,
+      id: message.id,
+      role: message.role,
+      text: message.content,
+      content: message.content,
+      status: message.status === 'error' ? 'error' : 'complete',
+      parts: [{ type: 'text' as const, text: message.content }],
+      _creationTime: message.createdAt,
+      label: message.label,
+      reportId: message.reportId,
+    }));
+    if (!productConversation.streaming.isStreaming) {
+      return baseMessages;
+    }
+    const liveText =
+      productConversation.streaming.liveAnswerPreview?.trim() ||
+      (productConversation.streaming.result && typeof productConversation.streaming.result.answer === 'string'
+        ? productConversation.streaming.result.answer.trim()
+        : '');
+    const userPrompt = input.trim() || productConversation.startedQuery?.trim() || '';
+    const pendingMessages = [...baseMessages];
+    const lastRole = pendingMessages[pendingMessages.length - 1]?.role;
+    if (userPrompt && lastRole !== 'user') {
+      pendingMessages.push({
+        _id: `pending-user:${productConversation.activeSessionId ?? 'draft'}`,
+        key: `pending-user:${productConversation.activeSessionId ?? 'draft'}`,
+        id: `pending-user:${productConversation.activeSessionId ?? 'draft'}`,
+        role: 'user',
+        text: userPrompt,
+        content: userPrompt,
+        status: 'complete',
+        parts: [{ type: 'text' as const, text: userPrompt }],
+        _creationTime: Date.now(),
+        label: '',
+        reportId: undefined,
+      });
+    }
+    pendingMessages.push({
+      _id: `streaming-assistant:${productConversation.activeSessionId ?? 'draft'}`,
+      key: `streaming-assistant:${productConversation.activeSessionId ?? 'draft'}`,
+      id: `streaming-assistant:${productConversation.activeSessionId ?? 'draft'}`,
+      role: 'assistant',
+      text: liveText,
+      content: liveText,
+      status: 'streaming',
+      parts: [{ type: 'text' as const, text: liveText }],
+      _creationTime: Date.now(),
+      label: '',
+      reportId: undefined,
+    });
+    return pendingMessages;
+  }, [
+    input,
+    isProductConversationMode,
+    productConversation.activeSessionId,
+    productConversation.sessionMessages,
+    productConversation.startedQuery,
+    productConversation.streaming.isStreaming,
+    productConversation.streaming.liveAnswerPreview,
+    productConversation.streaming.result,
+  ]);
 
   // Prepare messages for rendering - must be before any useMemo/useCallback/useEffect that references messagesToRender
   const messagesToRender = useMemo(() => {
@@ -1288,6 +1429,9 @@ export const FastAgentPanel = memo(function FastAgentPanel({
         _demoKeyInsight: m.keyInsight,
       }));
     }
+    if (isProductConversationMode) {
+      return productMessagesToRender;
+    }
     if (chatMode === 'agent-streaming') {
       return streamingMessages;
     }
@@ -1300,7 +1444,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
       _creationTime: msg._creationTime,
       model: msg.model,
     }));
-  }, [chatMode, streamingMessages, agentMessages, isAuthenticated, demoMessages]);
+  }, [chatMode, streamingMessages, agentMessages, isAuthenticated, demoMessages, isProductConversationMode, productMessagesToRender]);
 
   // Auto-title from first exchange (must be after messagesToRender)
   const autoTitle = useMemo(() => {
@@ -1409,6 +1553,11 @@ export const FastAgentPanel = memo(function FastAgentPanel({
   }, [isBusy]);
 
   const handleStopStreaming = useCallback(async () => {
+    if (isProductConversationMode) {
+      productConversation.streaming.stopStream();
+      setIsStreaming(false);
+      return;
+    }
     if (chatMode !== "agent-streaming") {
       setIsStreaming(false);
       return;
@@ -1430,10 +1579,22 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     } finally {
       setIsStreaming(false);
     }
-  }, [activeThreadId, chatMode, isAuthenticated, requestStreamCancel]);
+  }, [activeThreadId, chatMode, isAuthenticated, isProductConversationMode, productConversation.streaming, requestStreamCancel]);
 
   // Live Events - extracted from streaming messages (must be after streamingMessages definition)
   const liveEvents = useMemo<LiveEvent[]>(() => {
+    if (isProductConversationMode) {
+      return (productConversation.streaming.stages ?? []).map((stage, index) => ({
+        id: `${stage.tool}-${stage.step}-${index}`,
+        type: stage.status === 'done' ? 'tool_end' : stage.status === 'error' ? 'tool_error' : 'tool_start',
+        status: stage.status === 'done' ? 'success' : stage.status === 'error' ? 'error' : 'running',
+        title: stage.tool,
+        toolName: stage.tool,
+        details: stage.preview,
+        timestamp: stage.startedAt,
+        duration: stage.durationMs,
+      }));
+    }
     if (chatMode !== "agent-streaming") return [];
     if (!streamingMessages || streamingMessages.length === 0) return [];
 
@@ -1509,13 +1670,12 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     }
 
     return events;
-  }, [chatMode, streamingMessages]);
+  }, [chatMode, isProductConversationMode, productConversation.streaming.stages, streamingMessages]);
 
   const createStreamingThread = useAction(api.domains.agents.fastAgentPanelStreaming.createThread);
   const sendStreamingMessage = useMutation(api.domains.agents.fastAgentPanelStreaming.initiateAsyncStreaming);
   const deleteStreamingThread = useMutation(api.domains.agents.fastAgentPanelStreaming.deleteThread);
   const deleteMessage = useMutation(api.domains.agents.fastAgentPanelStreaming.deleteMessage);
-  const saveChatSessionToDossier = useMutation(api.domains.documents.documents.saveChatSessionToDossier);
   // Append to landing page signals log
   const appendToSignalsLog = useMutation((api as any).domains.landing.landingPageLog.appendFromUser);
   // NEW: Unified document generation and creation action
@@ -1525,11 +1685,39 @@ export const FastAgentPanel = memo(function FastAgentPanel({
   // Client does not trigger server workflows directly; coordinator handles routing via useCoordinator: true
 
   // Use the appropriate data based on mode
-  const threads = chatMode === 'agent' ? agentThreadsPagination.results : streamingThreadsPagination.results;
-  const threadsStatus = chatMode === 'agent' ? agentThreadsPagination.status : streamingThreadsPagination.status;
-  const loadMoreThreads = chatMode === 'agent' ? agentThreadsPagination.loadMore : streamingThreadsPagination.loadMore;
-  const hasMoreThreads = threadsStatus === "CanLoadMore";
-  const isLoadingMoreThreads = threadsStatus === "LoadingMore";
+  const productThreads = useMemo<Thread[]>(
+    () =>
+      (productConversation.sessions ?? []).map((session) => ({
+        _id: session._id,
+        userId: '' as any,
+        title: session.title,
+        pinned: session.pinned,
+        createdAt: session.createdAt,
+        updatedAt: session.updatedAt,
+        _creationTime: session._creationTime,
+        lastMessage: session.lastMessage,
+        lastMessageAt: session.lastMessageAt,
+      })),
+    [productConversation.sessions],
+  );
+
+  const threads = isProductConversationMode
+    ? productThreads
+    : chatMode === 'agent'
+      ? agentThreadsPagination.results
+      : streamingThreadsPagination.results;
+  const threadsStatus = isProductConversationMode
+    ? "Loaded"
+    : chatMode === 'agent'
+      ? agentThreadsPagination.status
+      : streamingThreadsPagination.status;
+  const loadMoreThreads = isProductConversationMode
+    ? (() => undefined)
+    : chatMode === 'agent'
+      ? agentThreadsPagination.loadMore
+      : streamingThreadsPagination.loadMore;
+  const hasMoreThreads = isProductConversationMode ? false : threadsStatus === "CanLoadMore";
+  const isLoadingMoreThreads = isProductConversationMode ? false : threadsStatus === "LoadingMore";
 
   useEffect(() => {
     const handleVoiceThreadSelect = (event: Event) => {
@@ -1609,6 +1797,11 @@ export const FastAgentPanel = memo(function FastAgentPanel({
   // ========== HANDLERS ==========
 
   const handleCreateThread = useCallback(async () => {
+    if (isProductConversationMode) {
+      productConversation.clearSession();
+      toast.success("Ready to start new product chat");
+      return;
+    }
     if (chatMode === 'agent') {
       // For Agent-based API, threads are created automatically when sending the first message
       setActiveThreadId(null);
@@ -1629,9 +1822,13 @@ export const FastAgentPanel = memo(function FastAgentPanel({
         toast.error('Failed to create new chat');
       }
     }
-  }, [chatMode, createStreamingThread, selectedModel, anonymousSession.sessionId]);
+  }, [anonymousSession.sessionId, chatMode, createStreamingThread, isProductConversationMode, productConversation, selectedModel]);
 
   const handleDeleteThread = useCallback(async (threadId: string) => {
+    if (isProductConversationMode) {
+      toast.info('Product chat sessions can be revisited from Reports. Delete is not enabled here yet.');
+      return;
+    }
     try {
       if (chatMode === 'agent') {
         await deleteAgentThread({ threadId });
@@ -1650,46 +1847,11 @@ export const FastAgentPanel = memo(function FastAgentPanel({
       console.error('Failed to delete thread:', error);
       toast.error('Failed to delete conversation');
     }
-  }, [activeThreadId, threads, chatMode, deleteAgentThread, deleteStreamingThread]);
+  }, [activeThreadId, threads, chatMode, deleteAgentThread, deleteStreamingThread, isProductConversationMode]);
 
   const handleExportThread = useCallback((threadId: string) => {
     setExportingThreadId(threadId);
   }, []);
-
-  const handleSaveSession = useCallback(async () => {
-    if (!activeThreadId) {
-      toast.error("No active chat session to save");
-      return;
-    }
-
-    try {
-      // Get the agent thread ID for streaming mode
-      const threadIdToSave = chatMode === 'agent-streaming' && streamingThread?.agentThreadId
-        ? streamingThread.agentThreadId
-        : activeThreadId;
-
-      // Get the thread title
-      const currentThread = threads?.find((t) => t._id === activeThreadId);
-      const threadTitle = currentThread?.title || "Chat Session";
-
-      const result = await saveChatSessionToDossier({
-        threadId: threadIdToSave,
-        title: threadTitle,
-      });
-
-      toast.success(
-        <div className="flex flex-col gap-1">
-          <div className="font-medium">Session saved!</div>
-          <div className="text-xs text-content-secondary">
-            {result.mediaCount ?? 0} media assets linked
-          </div>
-        </div>
-      );
-    } catch (error) {
-      console.error("Failed to save session:", error);
-      toast.error("Failed to save chat session");
-    }
-  }, [activeThreadId, chatMode, streamingThread, threads, saveChatSessionToDossier]);
 
   const handleSendMessage = useCallback(async (content?: string) => {
     const text = (content ?? input).trim();
@@ -1727,7 +1889,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     // Check if this is a document creation request
     const docCreationMatch = text.match(/^(?:make|create)\s+(?:new\s+)?document\s+(?:about|on|for)\s+(.+)$/i);
 
-    if (docCreationMatch && chatMode === 'agent-streaming') {
+    if (docCreationMatch && chatMode === 'agent-streaming' && !isProductConversationMode) {
       const topic = docCreationMatch[1];
 
       setInput('');
@@ -1833,7 +1995,24 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     setLiveSources([]);
 
     try {
-      if (chatMode === 'agent') {
+      if (isProductConversationMode) {
+        const uploadedFiles =
+          attachedFiles.length > 0
+            ? await uploadProductDraftFiles({
+                files: attachedFiles,
+                anonymousSessionId: anonymousSession.sessionId ?? "anonymous",
+                generateUploadUrl: generateProductUploadUrl,
+                saveFileMutation: saveProductFile,
+              })
+            : [];
+        await productConversation.beginRun({
+          query: messageContent,
+          lens: productLens,
+          files: uploadedFiles,
+        });
+        setAttachedFiles([]);
+        setIsStreaming(false);
+      } else if (chatMode === 'agent') {
         // Agent-based chat flow
         let result;
         if (!activeThreadId) {
@@ -1871,7 +2050,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
             oracleSession.startSession({
               title: messageContent.substring(0, 80),
               type: "agent",
-              goalId: threadId,
+              goalId: threadId ?? undefined,
               visionSnapshot: messageContent.substring(0, 200),
             }).catch(() => { /* Oracle session is best-effort */ });
           }
@@ -1903,6 +2082,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
           arbitrageEnabled,
           anonymousSessionId: anonymousSession.sessionId ?? undefined,
           clientContext,
+          entitySlug: productEntitySlug ?? undefined,
         });
 
         setIsStreaming(false);
@@ -1912,10 +2092,10 @@ export const FastAgentPanel = memo(function FastAgentPanel({
           autoNameThread({
             threadId: threadId as Id<"chatThreadsStream">,
             firstMessage: text,
-          }).then((result) => {
+          }).then((result: any) => {
             if (!result.skipped) {
             }
-          }).catch((err) => {
+          }).catch((_err: unknown) => {
           });
         }
       }
@@ -1931,7 +2111,11 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     fastMode,
     selectedModel,
     arbitrageEnabled,
+    attachedFiles,
     chatMode,
+    isProductConversationMode,
+    productConversation,
+    productLens,
     selectedDocumentIds,
     contextDocuments,
     createThreadWithMessage,
@@ -1939,6 +2123,8 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     createStreamingThread,
     sendStreamingMessage,
     generateAndCreateDocument,
+    generateProductUploadUrl,
+    saveProductFile,
     convex,
     streamingThread,
     autoNameThread,
@@ -1946,6 +2132,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
     playDemoConversation,
     anonymousSession,
     oracleSession,
+    productEntitySlug,
   ]);
 
   // Update ref for stable callback reference
@@ -2009,7 +2196,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
   // Handle message deletion
   const handleDeleteMessage = useCallback(async (messageId: string) => {
 
-    if (chatMode !== 'agent-streaming' || !activeThreadId) {
+    if (isProductConversationMode || chatMode !== 'agent-streaming' || !activeThreadId) {
       return;
     }
 
@@ -2023,10 +2210,34 @@ export const FastAgentPanel = memo(function FastAgentPanel({
       console.error('[FastAgentPanel] Failed to delete message:', err);
       toast.error('Failed to delete message');
     }
-  }, [chatMode, activeThreadId, deleteMessage]);
+  }, [activeThreadId, chatMode, deleteMessage, isProductConversationMode]);
 
   // Handle general message regeneration
   const handleRegenerateMessage = useCallback(async (messageKey: string) => {
+
+    if (isProductConversationMode) {
+      const productMessageIndex = messagesToRender.findIndex((message: any) => (message.key || message.id || message._id) === messageKey);
+      if (productMessageIndex === -1) {
+        return;
+      }
+      let userPrompt = '';
+      for (let i = productMessageIndex - 1; i >= 0; i--) {
+        if (messagesToRender[i]?.role === 'user') {
+          userPrompt = messagesToRender[i].text || messagesToRender[i].content || '';
+          break;
+        }
+      }
+      if (!userPrompt.trim()) {
+        toast.error('Could not find the original prompt to regenerate');
+        return;
+      }
+      await productConversation.beginRun({
+        query: userPrompt,
+        lens: productLens,
+      });
+      toast.success('Regenerating response...');
+      return;
+    }
 
     if (chatMode !== 'agent-streaming' || !activeThreadId || !streamingMessages) {
       return;
@@ -2075,13 +2286,14 @@ export const FastAgentPanel = memo(function FastAgentPanel({
         model: selectedModel,
         useCoordinator: true,
         clientContext,
+        entitySlug: productEntitySlug ?? undefined,
       });
       toast.success('Regenerating response...');
     } catch (err) {
       console.error('[FastAgentPanel] Failed to regenerate:', err);
       toast.error('Failed to regenerate response');
     }
-  }, [chatMode, activeThreadId, streamingMessages, sendStreamingMessage, selectedModel]);
+  }, [activeThreadId, chatMode, isProductConversationMode, messagesToRender, productConversation, productLens, selectedModel, sendStreamingMessage, streamingMessages, productEntitySlug]);
 
   // Handle manual Mermaid diagram retry
   const handleMermaidRetry = useCallback(async (error: string, code: string) => {
@@ -2246,7 +2458,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
       return Array.from(map.values());
     };
 
-    const collected = assistantTexts.reduce((acc, text) => {
+    const collected = assistantTexts.reduce((acc: typeof base, text: string) => {
       const media = extractMediaFromText(text);
       acc.youtubeVideos.push(...media.youtubeVideos);
       acc.secDocuments.push(...media.secDocuments);
@@ -2274,58 +2486,54 @@ export const FastAgentPanel = memo(function FastAgentPanel({
       return Array.from(map.values());
     };
 
-    const docs = assistantTexts.flatMap((text) => extractDocumentActions(text));
+    const docs = assistantTexts.flatMap((text: string) => extractDocumentActions(text));
     return dedupe(docs);
   }, [assistantTexts]);
 
   // Convert messages to Message type based on chat mode
   const uiMessages: Message[] = useMemo(() => {
-    return (chatMode === 'agent-streaming' ? streamingMessages : agentMessages || []).map((msg: any) => {
-      if (chatMode === 'agent-streaming') {
-        // Agent streaming mode messages - from agent component
-        const messageData = msg.message || msg;
-        const role = messageData.role || 'assistant';
-
-        // Extract content and ensure it's a string
-        let content = '';
-        if (typeof messageData.text === 'string') {
-          content = messageData.text;
-        } else if (typeof messageData.content === 'string') {
-          content = messageData.content;
-        } else if (typeof msg.text === 'string') {
-          content = msg.text;
-        } else if (typeof msg.content === 'string') {
-          content = msg.content;
-        } else {
-          const textParts = messageData.parts?.filter((p: any) => p.type === 'text')?.map((p: any) => p.text) || [];
-          content = textParts.join('');
-        }
-
-        return {
-          id: msg._id,
-          threadId: (activeThreadId || '') as any,
-          role: role as 'user' | 'assistant' | 'system',
-          content: String(content || ''),
-          status: (msg.status || 'complete') as 'sending' | 'streaming' | 'complete' | 'error',
-          timestamp: new Date(msg._creationTime || Date.now()),
-          isStreaming: msg.status === 'streaming',
-          model: selectedModel,
-        };
+    return (messagesToRender ?? []).map((msg: any) => {
+      const messageData = msg.message || msg;
+      let content = '';
+      if (typeof messageData.text === 'string') {
+        content = messageData.text;
+      } else if (typeof messageData.content === 'string') {
+        content = messageData.content;
+      } else if (typeof msg.text === 'string') {
+        content = msg.text;
+      } else if (typeof msg.content === 'string') {
+        content = msg.content;
+      } else {
+        const textParts = messageData.parts?.filter((p: any) => p.type === 'text')?.map((p: any) => p.text) || [];
+        content = textParts.join('');
       }
 
-      // Agent mode messages
       return {
-        id: msg._id,
-        threadId: msg.threadId,
-        role: (msg.role || 'assistant') as 'user' | 'assistant' | 'system',
-        content: msg.text || msg.content || '',
-        status: 'complete',
-        timestamp: new Date(msg._creationTime),
-        isStreaming: false,
-        model: msg.model,
+        id: msg._id || msg.id || msg.key,
+        threadId: msg.threadId || activeThreadId || '',
+        role: (messageData.role || msg.role || 'assistant') as 'user' | 'assistant' | 'system',
+        content: String(content || ''),
+        status: (msg.status || 'complete') as 'sending' | 'streaming' | 'complete' | 'error',
+        timestamp: new Date(msg._creationTime || msg.createdAt || Date.now()),
+        isStreaming: msg.status === 'streaming',
+        model: msg.model || selectedModel,
       };
     });
-  }, [chatMode, streamingMessages, agentMessages, activeThreadId, selectedModel]);
+  }, [messagesToRender, activeThreadId, selectedModel]);
+
+  const openCurrentConversationInChat = useCallback(() => {
+    if (!isProductConversationMode || !activeThreadId) {
+      toast.error('This conversation does not have a canonical product session yet.');
+      return;
+    }
+    navigate(
+      buildCockpitPath({
+        surfaceId: 'workspace',
+        entity: productEntitySlug,
+        extra: { session: activeThreadId },
+      }),
+    );
+  }, [activeThreadId, isProductConversationMode, navigate, productEntitySlug]);
 
   // ========== RENDER ==========
 
@@ -2363,19 +2571,21 @@ export const FastAgentPanel = memo(function FastAgentPanel({
       {/* Backdrop for tablet/intermediate — mobile uses bottom-sheet via CockpitLayout */}
       {isOpen && !isCompactSidebar && (
         <div
-          className="fixed inset-0 bg-surface-secondary dark:bg-black/50 backdrop-blur-sm z-[999] hidden sm:block lg:hidden"
+          className="fixed inset-0 bg-black/20 dark:bg-black/45 z-[999] hidden sm:block lg:hidden"
           onClick={onClose}
         />
       )}
 
       <div
         className={cn(
-          "fast-agent-panel noise-bg",
+          "fast-agent-panel",
           variant === 'sidebar' && 'sidebar-mode',
           isWideMode && 'wide-mode',
           isFocusMode && 'focus-mode',
           highContrast && 'high-contrast',
-          isCompactSidebar ? "bg-transparent border-0 shadow-none" : "bg-surface border-l border-edge",
+          isCompactSidebar
+            ? "border-0 bg-white shadow-none dark:bg-[#11161c]"
+            : "border-l border-gray-200 bg-white shadow-[0_20px_70px_-50px_rgba(15,23,42,0.34)] dark:border-white/[0.08] dark:bg-[#11161c] dark:shadow-[0_26px_90px_-58px_rgba(0,0,0,0.82)]",
         )}
         style={{ fontSize: `${fontSize}px` }}
         role="complementary"
@@ -2397,7 +2607,6 @@ export const FastAgentPanel = memo(function FastAgentPanel({
           isAuthenticated={isAuthenticated}
           activeThreadId={activeThreadId}
           messagesToRender={messagesToRender}
-          streamingMessages={streamingMessages}
           threads={threads}
           selectedModel={selectedModel}
           systemPrompt={systemPrompt}
@@ -2431,6 +2640,8 @@ export const FastAgentPanel = memo(function FastAgentPanel({
           handleCopyAsMarkdown={handleCopyAsMarkdown}
           handleDownloadMarkdown={handleDownloadMarkdown}
           appendToSignalsLog={appendToSignalsLog}
+          showOpenInChat={isProductConversationMode}
+          onOpenInChat={openCurrentConversationInChat}
         />
 
         {/* Conversation Search Bar */}
@@ -2488,13 +2699,22 @@ export const FastAgentPanel = memo(function FastAgentPanel({
         {/* Tab Bar - Primary tabs visible, power-user tabs behind overflow (hidden in focus mode) */}
         <div className={cn(
           "flex items-center border-b border-edge/50",
-          isCompactSidebar ? "mx-4 mt-3 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-2 py-1.5" : "px-3",
+          isCompactSidebar
+            ? "mx-4 mt-3 rounded-full border border-gray-200 bg-gray-50/90 p-1 dark:border-white/[0.08] dark:bg-white/[0.03]"
+            : "px-3",
           isFocusMode && "hidden"
         )}>
-          {([
-            { id: 'chat', label: 'Answer' },
-            { id: 'sources', label: 'Sources' },
-          ] as const).map((tab) => (
+          {(showsNotebookWorkspaceTabs
+            ? ([
+                { id: 'chat', label: 'Chat' },
+                { id: 'scratchpad', label: 'Scratchpad' },
+                { id: 'flow', label: 'Flow' },
+              ] as const)
+            : ([
+                { id: 'chat', label: 'Answer' },
+                { id: 'sources', label: 'Sources' },
+              ] as const)
+          ).map((tab) => (
             <button
               type="button"
               key={tab.id}
@@ -2504,10 +2724,10 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                 isCompactSidebar ? "flex-1 rounded-xl px-3.5 py-2" : "px-3 py-2 border-b-2 -mb-px",
                 activeTab === tab.id
                   ? isCompactSidebar
-                    ? "bg-surface text-content shadow-sm"
+                    ? "bg-white text-content shadow-sm dark:bg-[#171c22]"
                     : "border-indigo-500/30 text-indigo-600 dark:text-indigo-400"
                   : isCompactSidebar
-                    ? "text-content-secondary hover:bg-surface-hover hover:text-content"
+                    ? "text-content-secondary hover:bg-white hover:text-content dark:hover:bg-white/[0.05]"
                     : "border-transparent text-content-secondary hover:text-content"
               )}
             >
@@ -2515,7 +2735,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
             </button>
           ))}
           {/* Overflow menu for power-user tabs */}
-          {!isCompactSidebar && <div className="relative ml-auto group">
+          {!showsNotebookWorkspaceTabs && !isCompactSidebar && <div className="relative ml-auto group">
             <button
               type="button"
               className="px-2 py-2 text-xs text-content-secondary hover:text-content transition-colors"
@@ -2576,7 +2796,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                 threads={threads}
                 activeThreadId={activeThreadId}
                 onSelectThread={setActiveThreadId}
-                onDeleteThread={handleDeleteThread}
+                onDeleteThread={isProductConversationMode ? undefined : handleDeleteThread}
                 hasMore={hasMoreThreads}
                 onLoadMore={() => loadMoreThreads(10)}
                 isLoadingMore={isLoadingMoreThreads}
@@ -2587,7 +2807,11 @@ export const FastAgentPanel = memo(function FastAgentPanel({
 
           {/* Main Content Area */}
           <div className={cn("flex-1 flex flex-col min-w-0 relative", isCompactSidebar ? "bg-transparent" : "bg-surface")}>
-            {activeTab === 'telemetry' ? (
+            {activeTab === 'scratchpad' && productEntitySlug ? (
+              <EntityWorkspaceDrawerContent entitySlug={productEntitySlug} tab="scratchpad" />
+            ) : activeTab === 'flow' && productEntitySlug ? (
+              <EntityWorkspaceDrawerContent entitySlug={productEntitySlug} tab="flow" />
+            ) : activeTab === 'telemetry' ? (
               <TaskManagerView isPublic={false} className="h-full" />
             ) : activeTab === 'trace' ? (
               <div className="flex-1 overflow-y-auto p-3">
@@ -2695,11 +2919,16 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                 >
 
                   {/* Conversation Starters (empty thread) */}
-                  {(!messagesToRender || messagesToRender.length === 0) && !isBusy && !isCompactSidebar && (
-                    <div className="flex flex-col items-center justify-center h-full py-12 animate-in fade-in duration-500">
-                      <div className="text-3xl mb-3">👋</div>
-                      <h3 className="text-sm font-semibold text-content mb-1">How can I help you today?</h3>
-                      <p className="text-xs text-content-muted mb-6">Choose a starter or type your own message</p>
+                  {activeThreadId && (!messagesToRender || messagesToRender.length === 0) && !isBusy && !isCompactSidebar && (
+                    <div className="flex flex-col items-center justify-center h-full py-12 animate-in fade-in duration-300">
+                      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300">
+                        <MessageSquare className="h-3.5 w-3.5 text-[var(--accent-primary)]" />
+                        New thread
+                      </div>
+                      <h3 className="mb-2 text-base font-semibold text-content">Start with a direct question</h3>
+                      <p className="mb-6 max-w-[320px] text-center text-[13px] leading-6 text-content-muted">
+                        The sidecar now follows the same calmer chat surface as the main chat page.
+                      </p>
 
                       {/* Mobile: QuickCommandChips — surface-aware, one-tap dispatch */}
                       <div className="w-full max-w-[360px] lg:hidden">
@@ -2715,10 +2944,10 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                             key={i}
                             type="button"
                             onClick={() => setInput(starter.prompt)}
-                            className="flex items-center gap-2 p-3 rounded-lg border border-edge bg-surface-secondary hover:bg-surface-hover hover:border-indigo-500/30 transition-all text-left group"
+                            className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white p-3 text-left transition-all hover:border-[var(--accent-primary)]/20 hover:bg-gray-50 dark:border-white/[0.08] dark:bg-[#171c22] dark:hover:bg-white/[0.04]"
                           >
                             <span className="text-lg">{starter.icon}</span>
-                            <span className="text-xs font-medium text-content-secondary group-hover:text-content transition-colors">{starter.label}</span>
+                            <span className="text-xs font-medium text-content-secondary transition-colors">{starter.label}</span>
                           </button>
                         ))}
                       </div>
@@ -2772,26 +3001,19 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                   {/* Empty State - Branding + Quick Actions */}
                   {!activeThreadId && (!messagesToRender || messagesToRender.length === 0) && (
                     <div className="flex-1 flex flex-col overflow-y-auto">
-                      {/* Hero Section */}
-                      <div className="flex flex-col items-center justify-center pt-10 pb-8 px-4">
-                        {/* Hero Icon */}
-                        <div className="relative w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 border-2 border-green-200 dark:border-green-800/40 flex items-center justify-center mb-5">
-                          <Bot className="w-7 h-7 text-green-700 dark:text-green-400" />
-                          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-green-500 border-2 border-surface" />
+                      <div className="mx-auto flex w-full max-w-[440px] flex-col items-center justify-center px-4 pb-8 pt-10 text-center">
+                        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300">
+                          <MessageSquare className="h-3.5 w-3.5 text-[var(--accent-primary)]" />
+                          Workspace chat
                         </div>
-
-                        {/* Title */}
-                        <h2 className="text-base font-semibold text-content mb-2">
-                          Ask NodeBench
+                        <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-content">
+                          Ask directly or pick a starting point
                         </h2>
+                        <p className="mt-2 max-w-[360px] text-[13px] leading-6 text-content-muted">
+                          Same conversation feel as the chat page, with recent threads and workspace context close at hand.
+                        </p>
 
-                       {/* Marketing Tagline */}
-                       <p className="text-[13px] text-content-muted text-center max-w-[320px] leading-relaxed">
-                         Your startup intelligence assistant. Ask about competitors, gaps, readiness, and next moves.
-                       </p>
-
-                       {/* Suggestion Chips (ChatGPT pattern) */}
-                       <div className="flex flex-wrap justify-center gap-2 mt-5 max-w-[380px]">
+                       <div className="mt-6 grid w-full gap-2 sm:grid-cols-2">
                          {[
                            { label: 'What gaps do I have before pitching?', icon: '🎯' },
                            { label: 'Should I build or find a partner?', icon: '🏗️' },
@@ -2811,23 +3033,12 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                                }
                                setInput(chip.label);
                              }}
-                             className="chip-press inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-content-secondary bg-surface-secondary border border-edge hover:bg-surface-secondary hover:text-content hover:border-content-muted"
+                             className="chip-press flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3.5 py-3 text-left text-xs font-medium text-content-secondary transition-colors hover:border-[var(--accent-primary)]/20 hover:bg-gray-50 hover:text-content dark:border-white/[0.08] dark:bg-[#171c22] dark:hover:bg-white/[0.04]"
                            >
-                             <span>{chip.icon}</span>
-                             {chip.label}
+                             <span className="text-sm" aria-hidden="true">{chip.icon}</span>
+                             <span>{chip.label}</span>
                            </button>
                          ))}
-                       </div>
-
-                       {/* Learning badge */}
-                       <div
-                         className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1"
-                         data-agent-learning="badge"
-                       >
-                         <svg className="h-3 w-3 text-content-muted" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                           <path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L8 1z" fill="currentColor" opacity="0.7" />
-                         </svg>
-                         <span className="text-[11px] text-content-muted">Learns from every conversation</span>
                        </div>
                      </div>
 
@@ -2979,7 +3190,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                           <FastAgentUIMessageBubble
                             message={message}
                             onRegenerateMessage={() => handleRegenerateMessage(message.key)}
-                            onDeleteMessage={() => handleDeleteMessage(message._id)}
+                            onDeleteMessage={isProductConversationMode ? undefined : () => handleDeleteMessage(message._id)}
                             onEditMessage={(newText: string) => {
                               void stableSendMessage(newText);
                             }}
@@ -3004,13 +3215,13 @@ export const FastAgentPanel = memo(function FastAgentPanel({
                               responses when the user is on an entity page. Writes
                               the text as an agent-authored read-only block; user
                               reviews as a pending suggestion in the notebook. */}
-                          {activeEntitySlug && message.role === 'assistant' && message.status === 'complete' && (() => {
+                          {productEntitySlug && message.role === 'assistant' && message.status === 'complete' && (() => {
                             const text = extractAssistantMessageText(message);
                             if (!text.trim()) return null;
                             return (
                               <div className="ml-10 mt-1 mb-1.5">
                                 <SaveToNotebookButton
-                                  entitySlug={activeEntitySlug}
+                                  entitySlug={productEntitySlug}
                                   text={text}
                                   surface="panel"
                                   compact
@@ -3176,7 +3387,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
 
             {/* Anonymous User Banner — minimized for clean panel */}
             {false && anonymousSession.isAnonymous && !anonymousSession.isLoading && (
-              <div className={`mx-3 mt-2 px-3 py-2.5 rounded-lg border backdrop-blur-sm ${anonymousSession.canSendMessage
+              <div className={`mx-3 mt-2 px-3 py-2.5 rounded-lg border ${anonymousSession.canSendMessage
                 ? 'bg-gradient-to-r from-violet-50/80 to-indigo-50/80 border-violet-200/50'
                 : 'bg-gradient-to-r from-amber-50/80 to-orange-50/80 border-amber-200/50'
                 }`}>
@@ -3407,46 +3618,68 @@ export const FastAgentPanel = memo(function FastAgentPanel({
               <MobileCommandChips
                 onSelect={(msg) => { setInput(msg); void stableSendMessage(msg); }}
               />
-              <FastAgentInputBar
-                id="fa-chat-input"
-                input={input}
-                setInput={setInput}
-                onSend={() => stableSendMessage(input)}
-                isStreaming={isBusy}
-                onStop={handleStopStreaming}
-                selectedModel={selectedModel}
-                onSelectModel={setSelectedModel}
-                attachedFiles={attachedFiles}
-                onAttachFiles={handleAttachFiles}
-                onRemoveFile={handleRemoveFile}
-                selectedDocumentIds={selectedDocumentIds}
-                contextDocuments={contextDocuments}
-                onAddContextDocument={handleAddContextDocument}
-                onRemoveContextDocument={handleRemoveContextDocument}
-                contextCalendarEvents={contextCalendarEvents}
-                onAddCalendarEvent={handleAddCalendarEvent}
-                onRemoveCalendarEvent={handleRemoveCalendarEvent}
-                responseLength={responseLength}
-                onResponseLengthChange={setResponseLength}
-                onVoiceIntent={onVoiceIntent}
-                compact={isCompactSidebar}
-                onSpawn={async (query, agents) => {
-                  try {
-                    toast.info(`Starting team with ${agents.length} agents...`);
-                    const result = await spawnSwarm({
-                      query,
-                      agents,
-                      model: selectedModel,
-                    });
-                    // Switch to the new team thread
-                    setActiveThreadId(result.threadId);
-                    toast.success(`Team started with ${result.taskCount} agents`);
-                  } catch (error: any) {
-                    console.error('[FastAgentPanel] Swarm spawn failed:', error);
-                    toast.error(error.message || 'Failed to start team');
-                  }
-                }}
-              />
+              {isProductConversationMode ? (
+                <ProductIntakeComposer
+                  value={input}
+                  onChange={setInput}
+                  onSubmit={() => stableSendMessage(input)}
+                  onFilesSelected={async (files) => {
+                    handleAttachFiles(files);
+                  }}
+                  files={productAttachedFiles}
+                  lens={productLens}
+                  onLensChange={() => undefined}
+                  operatorContextLabel={productEntityLabel ? `Anchored on ${productEntityLabel}` : "Entity workspace"}
+                  operatorContextHint="Replies stay attached to this entity conversation. Add notes or files here to keep the notebook thread grounded."
+                  submitPending={isBusy}
+                  placeholder="Ask about this entity, continue the notebook thread, or add more evidence."
+                  helperText="Attach notes, screenshots, or files to ground the next run."
+                  submitLabel="Continue"
+                  variant="drawer"
+                  showLensSelector={false}
+                />
+              ) : (
+                <FastAgentInputBar
+                  id="fa-chat-input"
+                  input={input}
+                  setInput={setInput}
+                  onSend={() => stableSendMessage(input)}
+                  isStreaming={isBusy}
+                  onStop={handleStopStreaming}
+                  selectedModel={selectedModel}
+                  onSelectModel={setSelectedModel as (model: string) => void}
+                  attachedFiles={attachedFiles}
+                  onAttachFiles={handleAttachFiles}
+                  onRemoveFile={handleRemoveFile}
+                  selectedDocumentIds={selectedDocumentIds}
+                  contextDocuments={contextDocuments}
+                  onAddContextDocument={handleAddContextDocument}
+                  onRemoveContextDocument={handleRemoveContextDocument}
+                  contextCalendarEvents={contextCalendarEvents}
+                  onAddCalendarEvent={handleAddCalendarEvent}
+                  onRemoveCalendarEvent={handleRemoveCalendarEvent}
+                  responseLength={responseLength}
+                  onResponseLengthChange={setResponseLength}
+                  onVoiceIntent={onVoiceIntent}
+                  compact={isCompactSidebar}
+                  onSpawn={async (query, agents) => {
+                    try {
+                      toast.info(`Starting team with ${agents.length} agents...`);
+                      const result = await spawnSwarm({
+                        query,
+                        agents,
+                        model: selectedModel,
+                      });
+                      // Switch to the new team thread
+                      setActiveThreadId(result.threadId);
+                      toast.success(`Team started with ${result.taskCount} agents`);
+                    } catch (error: any) {
+                      console.error('[FastAgentPanel] Swarm spawn failed:', error);
+                      toast.error(error.message || 'Failed to start team');
+                    }
+                  }}
+                />
+              )}
             </div>
 
             {/* Simplified Status Bar */}
@@ -3598,7 +3831,7 @@ export const FastAgentPanel = memo(function FastAgentPanel({
             fastMode={fastMode}
             onFastModeChange={setFastMode}
             model={selectedModel}
-            onModelChange={setSelectedModel}
+            onModelChange={setSelectedModel as (model: string) => void}
             arbitrageMode={arbitrageEnabled}
             onArbitrageModeChange={setArbitrageEnabled}
             onClose={() => setShowSettings(false)}

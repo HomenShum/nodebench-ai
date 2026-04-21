@@ -63,7 +63,7 @@ export const PanelOverlays = memo(function PanelOverlays(props: PanelOverlaysPro
       {/* Keyboard Shortcuts Overlay */}
       {props.showShortcutsOverlay && (
         <>
-          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => props.setShowShortcutsOverlay(false)} />
+          <div className="fixed inset-0 z-50 bg-black/40" onClick={() => props.setShowShortcutsOverlay(false)} />
           <div className="absolute inset-0 z-50 flex items-center justify-center p-6 pointer-events-none">
             <div className="pointer-events-auto bg-surface border border-edge rounded-lg shadow-2xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between mb-4">
@@ -105,7 +105,7 @@ export const PanelOverlays = memo(function PanelOverlays(props: PanelOverlaysPro
       {/* System Prompt Editor Modal */}
       {props.showSystemPrompt && (
         <>
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm z-50" onClick={() => props.setShowSystemPrompt(false)} />
+          <div className="absolute inset-0 bg-black/30 z-50" onClick={() => props.setShowSystemPrompt(false)} />
           <div className="absolute inset-x-4 top-20 z-50 bg-surface border border-edge rounded-lg shadow-2xl p-4 max-h-[300px] flex flex-col">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-content">Custom System Prompt</h3>
@@ -184,7 +184,7 @@ export const PanelOverlays = memo(function PanelOverlays(props: PanelOverlaysPro
       {/* Command Palette (Ctrl+K) */}
       {props.showCommandPalette && (
         <>
-          <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={() => props.setShowCommandPalette(false)} />
+          <div className="fixed inset-0 z-50 bg-black/30" onClick={() => props.setShowCommandPalette(false)} />
           <div className="absolute inset-x-4 top-16 z-50 bg-surface border border-edge rounded-lg shadow-2xl overflow-hidden max-h-[400px] flex flex-col">
             <div
               data-nb-composer="agent-overlay-search"

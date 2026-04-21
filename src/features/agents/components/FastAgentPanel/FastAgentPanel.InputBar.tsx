@@ -781,7 +781,7 @@ export function FastAgentInputBar({
 
       {/* Recording Modal */}
       {isRecording && recordingMode && (
-        <div className="fixed inset-0 z-[1001] flex items-center justify-center bg-surface-secondary backdrop-blur-sm">
+        <div className="fixed inset-0 z-[1001] flex items-center justify-center bg-black/40">
           <MediaRecorderComponent
             mode={recordingMode}
             onRecordingComplete={handleRecordingComplete}
@@ -795,8 +795,8 @@ export function FastAgentInputBar({
 
       {/* Main Input Card */}
       <div className={cn(
-        "bg-surface rounded-lg border border-edge shadow-sm transition-all duration-200 glass-surface",
-        "focus-within:shadow-md focus-within:border-indigo-500/30 focus-within:ring-2 focus-within:ring-ring",
+        "overflow-hidden rounded-[24px] border border-gray-200 bg-white shadow-[0_18px_60px_-42px_rgba(15,23,42,0.28)] transition-all duration-200 dark:border-white/[0.1] dark:bg-[#171b20] dark:shadow-[0_24px_80px_-56px_rgba(0,0,0,0.78)]",
+        "focus-within:border-[var(--accent-primary)] focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/15",
         isDragOver && dragFeedback.border
       )}>
 
@@ -859,10 +859,10 @@ export function FastAgentInputBar({
 
           {/* Document Pills (legacy) */}
            {selectedDocumentIds && selectedDocumentIds.size > 0 && Array.from(selectedDocumentIds).map((docId) => (
-             <div key={docId} className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-full text-xs font-medium text-blue-700 dark:text-blue-300">
+             <div key={docId} className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300">
                <FileText className="w-3 h-3" />
                <span className="max-w-[100px] truncate">Document</span>
-              <span className="text-blue-400" aria-hidden="true">
+              <span className="text-gray-400 dark:text-gray-500" aria-hidden="true">
                 <X className="w-3 h-3" />
               </span>
              </div>
@@ -875,8 +875,8 @@ export function FastAgentInputBar({
               className={cn(
                 "flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition-all",
                 doc.analyzing
-                  ? "bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300"
-                  : "bg-indigo-50 dark:bg-gray-900/20 border border-indigo-200 dark:border-edge text-content-secondary dark:text-indigo-300"
+                  ? "border border-[var(--accent-primary)]/25 bg-[var(--accent-primary)]/8 text-[var(--accent-primary)] dark:border-[var(--accent-primary)]/25 dark:bg-[var(--accent-primary)]/12"
+                  : "border border-gray-200 bg-white text-gray-600 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300"
               )}
             >
               {doc.analyzing ? (
@@ -891,7 +891,7 @@ export function FastAgentInputBar({
                 <button
                   type="button"
                   onClick={() => onRemoveContextDocument(doc.id)}
-                  className="hover:text-content dark:hover:text-indigo-100"
+                  className="hover:text-content"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -901,7 +901,7 @@ export function FastAgentInputBar({
 
           {/* Selection Context Pill */}
           {selection && (
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-full text-xs font-medium text-indigo-700 dark:text-indigo-300">
+            <div className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300">
               <Table2 className="w-3 h-3" />
               <span className="max-w-[150px] truncate">
                 {selection.metadata.sourceType === 'spreadsheet'
@@ -912,7 +912,7 @@ export function FastAgentInputBar({
               <button
                 type="button"
                 onClick={clearSelection}
-                className="hover:text-indigo-900 dark:hover:text-indigo-100"
+                className="hover:text-content"
                 title="Remove selection context"
               >
                 <X className="w-3 h-3" />
@@ -928,20 +928,20 @@ export function FastAgentInputBar({
             return (
               <div
                 key={event.id}
-                className="flex items-center gap-1.5 px-2 py-1 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-full text-xs font-medium text-purple-700 dark:text-purple-300"
+                className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300"
               >
                 <Calendar className="w-3 h-3" />
                 <span className="max-w-[120px] truncate" title={`${event.title} - ${dateStr} ${timeStr}`}>
                   {event.title}
                 </span>
-                <span className="text-purple-500 dark:text-purple-400 text-xs">
+                <span className="text-gray-400 dark:text-gray-500 text-xs">
                   {dateStr}
                 </span>
                 {onRemoveCalendarEvent && (
                   <button
                     type="button"
                     onClick={() => onRemoveCalendarEvent(event.id)}
-                    className="hover:text-purple-900 dark:hover:text-purple-100"
+                    className="hover:text-content"
                     title="Remove event context"
                   >
                     <X className="w-3 h-3" />
@@ -1036,7 +1036,7 @@ export function FastAgentInputBar({
 
         {voiceConfirmation && (
           <div
-            className="mx-3 mb-1 rounded-md border border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-[11px] text-violet-200"
+            className="mx-3 mb-1 rounded-md border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/8 px-2.5 py-1 text-[11px] text-[var(--accent-primary)] dark:border-[var(--accent-primary)]/20 dark:bg-[var(--accent-primary)]/10"
             aria-live="polite"
             role="status"
           >
@@ -1250,7 +1250,7 @@ export function FastAgentInputBar({
               className={cn(
                 "press-scale p-2.5 rounded-lg",
                 canSend
-                  ? "bg-content text-surface hover:opacity-90 shadow-md transition-shadow"
+                  ? "bg-[var(--accent-primary)] text-white shadow-sm transition-all hover:bg-[var(--accent-primary-hover)]"
                   : "bg-surface-secondary text-content-muted cursor-not-allowed"
               )}
               title="Send message"

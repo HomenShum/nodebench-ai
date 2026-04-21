@@ -390,7 +390,7 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
                 </p>
               ) : (
                 <ul className="mt-2 space-y-1 text-sm text-content-secondary">
-                  {proofPack.nextActions.map((action) => (
+                  {proofPack.nextActions.map((action: string) => (
                     <li key={action} className="flex items-start gap-2">
                       <span className="mt-1 h-1.5 w-1.5 rounded-full bg-accent" />
                       <span>{action}</span>
@@ -410,7 +410,7 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
                 </p>
               ) : (
                 <ul className="mt-2 space-y-1 text-sm text-content-secondary">
-                  {proofPack.openIssues.map((issue) => (
+                  {proofPack.openIssues.map((issue: string) => (
                     <li key={issue} className="flex items-start gap-2">
                       <span className="mt-1 h-1.5 w-1.5 rounded-full bg-orange-500" />
                       <span>{issue}</span>
@@ -428,7 +428,7 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
                   Key Findings
                 </div>
                 <ul className="mt-2 space-y-1 text-sm text-content-secondary">
-                  {proofPack.keyFindings.slice(0, 4).map((finding) => (
+                  {proofPack.keyFindings.slice(0, 4).map((finding: string) => (
                     <li key={finding} className="flex items-start gap-2">
                       <span className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-500" />
                       <span>{finding}</span>
@@ -442,7 +442,7 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
                   Citation Pack
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {proofPack.topSourceRefs.map((ref, idx) => (
+                  {proofPack.topSourceRefs.map((ref: any, idx: number) => (
                     ref.href ? (
                       <a
                         key={`${ref.label}-${idx}`}
@@ -499,7 +499,7 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
                   Success Criteria
                 </div>
                 <ul className="mt-2 space-y-1 text-sm text-content-secondary">
-                  {session.successCriteria.map((criterion) => (
+                  {session.successCriteria.map((criterion: string) => (
                     <li key={criterion} className="flex items-start gap-2">
                       <span className="mt-1 h-1.5 w-1.5 rounded-full bg-accent" />
                       <span>{criterion}</span>
@@ -515,7 +515,7 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
                   Source References
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {session.sourceRefs.map((ref, idx) => (
+                  {session.sourceRefs.map((ref: any, idx: number) => (
                     ref.href ? (
                       <a
                         key={`${ref.label}-${idx}`}
@@ -560,7 +560,7 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
           </div>
         ) : (
           <div className="space-y-2">
-            {traces.map((trace) => (
+            {traces.map((trace: any) => (
               <TraceItem
                 key={trace._id}
                 trace={trace as TaskTrace}

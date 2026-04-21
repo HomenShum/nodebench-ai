@@ -93,7 +93,7 @@ export function useInlineFastAgent({ editor, userId, documentId }: InlineFastAge
     // Extract markdown images: ![alt](url)
     const imageMatches = fullText.match(/!\[.*?\]\(.*?\)/g) || [];
     const markdownImages = imageMatches
-      .map(match => {
+      .map((match: string) => {
         const urlMatch = match.match(/\((.*?)\)/);
         const altMatch = match.match(/!\[(.*?)\]/);
         return {
@@ -101,7 +101,7 @@ export function useInlineFastAgent({ editor, userId, documentId }: InlineFastAge
           alt: altMatch?.[1] || 'Image'
         };
       })
-      .filter(img => img.url && img.url.trim().length > 0);
+      .filter((img: { url: string; alt: string }) => img.url && img.url.trim().length > 0);
 
     images.push(...markdownImages);
 
@@ -195,7 +195,7 @@ export function useInlineFastAgent({ editor, userId, documentId }: InlineFastAge
             const nextBlock = blocks[lastBlockIndex + 1];
 
             // Only add media note if it doesn't already exist
-            if (!nextBlock || !nextBlock.content?.some((c: any) => c.text?.includes('📎 Media files found'))) {
+            if (!nextBlock || !(nextBlock.content as any[])?.some?.((c: any) => c.text?.includes('📎 Media files found'))) {
               const lastBlock = blocks[lastBlockIndex];
               editor.insertBlocks([{
                 type: 'paragraph',

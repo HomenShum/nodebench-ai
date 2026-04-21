@@ -14,7 +14,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 
 export interface KanbanSortableItemProps {
-  id: Id<"tasks"> | Id<"events"> | string; // supports both task and event ids
+  id: Id<"userEvents"> | Id<"events"> | string; // supports both task and event ids
   rowStyle: CSSProperties;
   children: (isDragging: boolean) => ReactNode;
 }

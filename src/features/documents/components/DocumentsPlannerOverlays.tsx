@@ -41,7 +41,7 @@ export interface DocumentsPlannerOverlaysProps {
   loggedInUser: unknown;
 
   // --- Shell-level task selection ---
-  selectedTaskId?: Id<"tasks"> | null;
+  selectedTaskId?: Id<"userEvents"> | null;
   onClearTaskSelection?: () => void;
 
   // --- Mini Editor Popover (local state in DocumentsHomeHub) ---

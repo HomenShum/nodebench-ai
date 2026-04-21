@@ -76,14 +76,14 @@ export interface DocumentsHomeHubProps {
     hideCalendarCard?: boolean;
 
     /** Currently selected task ID (lifted from MainLayout) */
-    selectedTaskId?: Id<"tasks"> | null;
+    selectedTaskId?: Id<"userEvents"> | null;
 
     /** Source section of the selected task */
     selectedTaskSource?: TaskSelectionSource | null;
 
     /** Callback when a task is selected */
     onSelectTask?: (
-        id: Id<"tasks">,
+        id: Id<"userEvents">,
         source: TaskSelectionSource
     ) => void;
 
@@ -94,21 +94,21 @@ export interface DocumentsHomeHubProps {
 /** Props for ListView component */
 export interface ListViewProps {
     /** Task selection callback */
-    onSelectTask?: (id: Id<"tasks">, source: TaskSelectionSource) => void;
+    onSelectTask?: (id: Id<"userEvents">, source: TaskSelectionSource) => void;
     /** Currently selected task */
-    selectedTaskId?: Id<"tasks"> | null;
+    selectedTaskId?: Id<"userEvents"> | null;
     /** Selected task source */
     selectedTaskSource?: TaskSelectionSource | null;
     /** Callback when a task is clicked */
-    onTaskClick?: (taskId: Id<"tasks">) => void;
+    onTaskClick?: (taskId: Id<"userEvents">) => void;
 }
 
 /** Props for KanbanView component */
 export interface KanbanViewProps {
     /** Task selection callback */
-    onSelectTask?: (id: Id<"tasks">, source: TaskSelectionSource) => void;
+    onSelectTask?: (id: Id<"userEvents">, source: TaskSelectionSource) => void;
     /** Currently selected task */
-    selectedTaskId?: Id<"tasks"> | null;
+    selectedTaskId?: Id<"userEvents"> | null;
 }
 
 /** Props for WeeklyView component */

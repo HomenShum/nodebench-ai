@@ -89,6 +89,7 @@ export function BlockStatusBar({
 
   return (
     <div
+      data-testid="notebook-block-status"
       className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-2 text-[11px] text-gray-500 dark:border-white/[0.06] dark:text-gray-400"
       role="status"
       aria-live="polite"

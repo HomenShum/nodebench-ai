@@ -17,7 +17,7 @@ export function useTaskActions() {
     const updateTaskMutation = useMutation(api.domains.tasks.userEvents.updateTask);
 
     // Create Task Handler
-    const handleCreateTask = useCallback(async (onSuccess?: (taskId: Id<"tasks">) => void) => {
+    const handleCreateTask = useCallback(async (onSuccess?: (taskId: Id<"userEvents">) => void) => {
         try {
             if (!user) {
                 toast.error("Please sign in to create tasks");
@@ -34,7 +34,7 @@ export function useTaskActions() {
     }, [createTaskMutation, user]);
 
     // Open Task Editor Handler
-    const handleOpenTask = useCallback((taskId: Id<"tasks">, setTaskPanelTaskId: (id: Id<"tasks"> | null) => void) => {
+    const handleOpenTask = useCallback((taskId: Id<"userEvents">, setTaskPanelTaskId: (id: Id<"userEvents"> | null) => void) => {
         setTaskPanelTaskId(taskId);
     }, []);
 

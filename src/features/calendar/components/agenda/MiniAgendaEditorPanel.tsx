@@ -3,7 +3,7 @@ import type { Id } from "../../../../../convex/_generated/dataModel";
 import PopoverMiniEditor from "@/features/documents/editors/PopoverMiniEditor";
 
 export type MiniAgendaEditorPanelProps =
-  | { kind: "task"; taskId: Id<"tasks">; onClose: () => void }
+  | { kind: "task"; taskId: Id<"userEvents">; onClose: () => void }
   | { kind: "event"; eventId: Id<"events">; onClose: () => void; documentIdForAssociation?: Id<"documents"> | null };
 
 export default function MiniAgendaEditorPanel(props: MiniAgendaEditorPanelProps) {

@@ -97,15 +97,7 @@ const useCalendarDocument = () => {
 };
 
 // Editor subcomponent that only mounts the sync hook when a valid documentId exists
-function CalendarEditor({
-  _documentId,
-  _isDarkMode,
-  _quickAddText,
-  _setQuickAddText,
-  _handleQuickAddCreate,
-  _anchorDate,
-  _loggedInUser,
-}: {
+function CalendarEditor(_props: {
   documentId: Id<"documents">;
   isDarkMode: boolean;
   quickAddText: string;
@@ -211,7 +203,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
     return `${h - 12} PM`;
   };
 
-  type WeekEvent = { _id: Id<"events">; title: string; startTime: number; endTime?: number; allDay?: boolean };
+  type WeekEvent = { _id: Id<"events">; title: string; startTime: number; endTime?: number; allDay?: boolean; description?: string; location?: string; status?: string; color?: string; documentId?: Id<"documents"> };
 
   // Inline CRUD helpers
   const onCreateInline = async (title: string, startMs: number, endMs: number) => {

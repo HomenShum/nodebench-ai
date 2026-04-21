@@ -227,7 +227,7 @@ export function PromptEnhancer({
 
       {/* Preview modal */}
       {showPreview && preview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-surface-secondary border border-edge rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-edge">

@@ -1770,7 +1770,7 @@ export function FastAgentUIMessageBubble({
   });
 
   // Extract reasoning text from parts
-  const reasoningParts = message.parts.filter((p) => p.type === 'reasoning');
+  const reasoningParts = message.parts.filter((p: any) => p.type === 'reasoning');
   const reasoningText = reasoningParts.map((p: any) => p.text).join('\n');
   const [visibleReasoning] = useSmoothText(reasoningText, {
     startStreaming: message.status === 'streaming',
@@ -1780,12 +1780,12 @@ export function FastAgentUIMessageBubble({
     : undefined;
 
   // Extract tool calls
-  const toolParts = message.parts.filter((p): p is ToolUIPart =>
+  const toolParts = message.parts.filter((p: any): p is ToolUIPart =>
     p.type.startsWith('tool-')
   );
 
   // Extract file parts (images, etc.)
-  const fileParts = message.parts.filter((p): p is FileUIPart =>
+  const fileParts = message.parts.filter((p: any): p is FileUIPart =>
     p.type === 'file'
   );
 
@@ -2083,12 +2083,12 @@ export function FastAgentUIMessageBubble({
     if (isUser) return { youtubeVideos: [], secDocuments: [], webSources: [], profiles: [], images: [] };
 
     // Extract all tool-result parts from message
-    const toolResultParts = message.parts.filter((p): p is any =>
+    const toolResultParts = message.parts.filter((p: any): p is any =>
       p.type === 'tool-result'
     );
 
     // Combine media from all tool results
-    const toolMedia = toolResultParts.reduce((acc, part) => {
+    const toolMedia = toolResultParts.reduce((acc: any, part: any) => {
       const resultText = String((part as any).output ?? (part as any).result ?? '');
       const media = extractMediaFromText(resultText);
 
@@ -2115,12 +2115,12 @@ export function FastAgentUIMessageBubble({
     if (isUser) return [];
 
     // Extract all tool-result parts from message
-    const toolResultParts = message.parts.filter((p): p is any =>
+    const toolResultParts = message.parts.filter((p: any): p is any =>
       p.type === 'tool-result'
     );
 
     // Combine documents from all tool results
-    const documents = toolResultParts.reduce((acc, part) => {
+    const documents = toolResultParts.reduce((acc: any[], part: any) => {
       const resultText = String((part as any).output ?? (part as any).result ?? '');
       const docs = extractDocumentActions(resultText);
       return [...acc, ...docs];
@@ -2136,7 +2136,7 @@ export function FastAgentUIMessageBubble({
   const arbitrageData = useMemo(() => {
     if (isUser) return null;
 
-    const toolResultParts = message.parts.filter((p): p is any => p.type === 'tool-result');
+    const toolResultParts = message.parts.filter((p: any): p is any => p.type === 'tool-result');
 
     for (const part of toolResultParts) {
       const resultText = String((part as any).output ?? (part as any).result ?? '');
@@ -2237,7 +2237,7 @@ export function FastAgentUIMessageBubble({
           if (delegationCalls.length === 0) return null;
 
           // Extract task status from delegation calls
-          const tasks: TaskStatusItem[] = delegationCalls.map((part: any, idx) => {
+          const tasks: TaskStatusItem[] = delegationCalls.map((part: any, idx: number) => {
             const toolName = part.toolName?.replace('delegateTo', '').replace('Agent', '') || 'Task';
 
             // Default status is queued, will be updated by child responses
@@ -2315,12 +2315,12 @@ export function FastAgentUIMessageBubble({
         */}
         {!isUser && toolParts.length > 0 && (
           <ToolStepsAccordion
-            toolCount={toolParts.filter(p => p.type === 'tool-call' || p.type === 'tool-result').length}
-            completedCount={toolParts.filter(p => p.type === 'tool-result').length}
+            toolCount={toolParts.filter((p: any) => p.type === 'tool-call' || p.type === 'tool-result').length}
+            completedCount={toolParts.filter((p: any) => p.type === 'tool-result').length}
             isStreaming={message.status === 'streaming'}
           >
             <div className="w-full">
-              {toolParts.map((part, idx) => {
+              {toolParts.map((part: any, idx: number) => {
                 // Only render tool calls, not results (results are nested in steps)
                 if (part.type !== 'tool-call' && part.type !== 'tool-result' && part.type !== 'tool-error') return null;
 
@@ -2472,7 +2472,7 @@ export function FastAgentUIMessageBubble({
         )}
 
         {/* Files (images, etc.) */}
-        {fileParts.map((part, idx) => {
+        {fileParts.map((part: any, idx: number) => {
           // FileUIPart has url and mimeType properties
           const fileUrl = (part as any).url || '';
           const mimeType = (part as any).mimeType || '';

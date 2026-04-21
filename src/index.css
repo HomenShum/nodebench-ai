@@ -1251,7 +1251,8 @@ html[data-density='spacious'] {
    material. */
 [data-view-mode="read"] .nb-top-status-row,
 [data-view-mode="read"] [data-testid="notebook-top-status-row"],
-[data-view-mode="read"] [data-testid="notebook-timeline"] {
+[data-view-mode="read"] [data-testid="notebook-timeline"],
+[data-view-mode="read"] [data-testid="notebook-block-status"] {
   display: none !important;
 }
 
@@ -1479,13 +1480,51 @@ html[data-density='spacious'] {
   margin-right: auto;
 }
 
+.entity-page-header-shell {
+  max-width: 1120px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.entity-page-header-shell--live {
+  max-width: 960px;
+}
+
+.entity-page-header-shell--read {
+  max-width: 720px;
+}
+
+.entity-page-summary {
+  max-width: 44rem;
+}
+
+.entity-page-header-shell--live .entity-page-summary {
+  max-width: 40rem;
+}
+
+.entity-page-header-shell--read .entity-page-summary {
+  max-width: 38rem;
+}
+
 .notebook-sheet.notebook-sheet-live {
-  max-width: 1680px;
+  max-width: 1160px;
 }
 
 @media (max-width: 640px) {
   .notebook-sheet {
     padding: 4px 0 40px;
+  }
+
+  .entity-page-header-shell,
+  .entity-page-header-shell--live,
+  .entity-page-header-shell--read {
+    max-width: none;
+  }
+
+  .entity-page-summary,
+  .entity-page-header-shell--live .entity-page-summary,
+  .entity-page-header-shell--read .entity-page-summary {
+    max-width: none;
   }
 }
 
@@ -3006,4 +3045,3 @@ select:focus-visible,
     transition: none !important;
   }
 }
-

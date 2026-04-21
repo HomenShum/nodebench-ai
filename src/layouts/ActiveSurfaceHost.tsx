@@ -39,6 +39,7 @@ const SURFACE_SKELETON_VARIANT: Record<CockpitSurfaceId, "default" | "ask"> = {
   packets: "default",
   history: "default",
   connect: "default",
+  trace: "default",
 };
 
 const MAX_CACHED_SURFACES = 4;
@@ -57,9 +58,9 @@ interface ActiveSurfaceHostProps {
   onDocumentSelect: (id: Id<"documents"> | null) => void;
   isGridMode: boolean;
   setIsGridMode: React.Dispatch<React.SetStateAction<boolean>>;
-  selectedTaskId: Id<"tasks"> | null;
+  selectedTaskId: Id<"userEvents"> | null;
   selectedTaskSource: "today" | "upcoming" | "week" | "other" | null;
-  onSelectTask: (id: Id<"tasks">, source: "today" | "upcoming" | "week" | "other") => void;
+  onSelectTask: (id: Id<"userEvents">, source: "today" | "upcoming" | "week" | "other") => void;
   onClearTaskSelection: () => void;
   researchHubInitialTab: ResearchTab;
   setResearchHubInitialTab: (tab: ResearchTab) => void;
@@ -123,14 +124,23 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
 
   const renderSurface = (surfaceId: CockpitSurfaceId) => {
     const directRouteComponent =
-      currentView !== getDefaultViewForSurface(surfaceId) &&
-      !DIRECT_ROUTE_COMPONENT_EXCLUSIONS.has(currentView)
+      surfaceId === currentSurface && !DIRECT_ROUTE_COMPONENT_EXCLUSIONS.has(currentView)
         ? VIEW_MAP[currentView]?.component
         : null;
 
     if (directRouteComponent) {
       const DirectRouteComponent = directRouteComponent;
       return <DirectRouteComponent />;
+    }
+
+    const defaultViewComponent =
+      !DIRECT_ROUTE_COMPONENT_EXCLUSIONS.has(getDefaultViewForSurface(surfaceId))
+        ? VIEW_MAP[getDefaultViewForSurface(surfaceId)]?.component
+        : null;
+
+    if (defaultViewComponent) {
+      const DefaultViewComponent = defaultViewComponent;
+      return <DefaultViewComponent />;
     }
 
     switch (surfaceId) {
@@ -147,6 +157,8 @@ export function ActiveSurfaceHost(props: ActiveSurfaceHostProps) {
         return <NudgesHome />;
       case "connect":
         return <MeHome />;
+      case "trace":
+        return <NotFoundPage />;
       default:
         return <HomeLanding />;
     }

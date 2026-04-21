@@ -24,7 +24,6 @@ export interface PanelHeaderProps {
   isAuthenticated: boolean;
   activeThreadId: string | null;
   messagesToRender: any[] | null;
-  streamingMessages: any[] | null;
   threads: any[];
   selectedModel: string;
   systemPrompt: string;
@@ -65,6 +64,8 @@ export interface PanelHeaderProps {
   handleCopyAsMarkdown: () => Promise<void>;
   handleDownloadMarkdown: () => void;
   appendToSignalsLog: (payload: any) => Promise<void>;
+  showOpenInChat?: boolean;
+  onOpenInChat?: () => void;
 }
 
 export const PanelHeader = memo(function PanelHeader({
@@ -75,7 +76,6 @@ export const PanelHeader = memo(function PanelHeader({
   isAuthenticated,
   activeThreadId,
   messagesToRender,
-  streamingMessages,
   threads,
   selectedModel,
   systemPrompt,
@@ -106,6 +106,8 @@ export const PanelHeader = memo(function PanelHeader({
   handleCopyAsMarkdown,
   handleDownloadMarkdown,
   appendToSignalsLog,
+  showOpenInChat = false,
+  onOpenInChat,
 }: PanelHeaderProps) {
   const navigate = useNavigate();
   const { signIn } = useAuthActions();
@@ -114,8 +116,8 @@ export const PanelHeader = memo(function PanelHeader({
 
   return (
     <div className={cn(
-      "glass-header flex items-center gap-2 px-3 py-2",
-      isCompactSidebar && "border-b border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015))] px-4 py-3.5"
+      "flex items-center gap-2 border-b border-edge bg-surface px-3 py-2.5",
+      isCompactSidebar && "px-4 py-3"
     )}>
       {/* Status dot + Title */}
       <div className={cn("min-w-0", isCompactSidebar ? "flex-1" : "flex items-center gap-2")}>
@@ -153,7 +155,7 @@ export const PanelHeader = memo(function PanelHeader({
               )}
             </div>
             <p className="mt-1 truncate text-[11px] leading-5 text-content-muted">
-              Docs, codebase answers, and live workspace context.
+              Same chat surface, with files, notebook context, and workspace tools.
             </p>
           </div>
         ) : (
@@ -295,7 +297,7 @@ export const PanelHeader = memo(function PanelHeader({
                       setShowOverflowMenu(false);
                       try {
                         const threadTitle = threads.find((t) => t._id === activeThreadId)?.title || 'Agent Thread Summary';
-                        const recentMsgs = (streamingMessages ?? [])
+                        const recentMsgs = (messagesToRender ?? [])
                           .filter((m) => m.role === 'assistant' && m.content)
                           .slice(-3)
                           .map((m) => typeof m.content === 'string' ? m.content : JSON.stringify(m.content))
@@ -320,6 +322,20 @@ export const PanelHeader = memo(function PanelHeader({
                   >
                     <Share2 className="w-3.5 h-3.5" />
                     <span>Share to Signals</span>
+                  </button>
+                )}
+
+                {showOpenInChat && onOpenInChat && activeThreadId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowOverflowMenu(false);
+                      onOpenInChat();
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-surface-secondary text-left"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Open in Chat</span>
                   </button>
                 )}
 

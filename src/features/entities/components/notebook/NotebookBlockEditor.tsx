@@ -541,6 +541,20 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
     //   - `contain: content` (via `nb-block-shell`) isolates layout so
     //     one block's hydration doesn't reflow its neighbors.
     if (!api || !stableExtension || !stableInitialContent || !editor) {
+      // When chips render no visible text, add a <br> so the line-box matches
+      // what TipTap will later render (`<p><br class="ProseMirror-trailingBreak"></p>`).
+      // Without it, `nb-block-shell`'s `content-visibility: auto` sizes the
+      // empty wrapper to `contain-intrinsic-size` (~24.5px) instead of the
+      // line-height-driven 28px, causing a 3.5px dip during the hover→mount
+      // transition — the "empty newline expands on hover" jitter.
+      // "Empty" here means no chip contributes a line-box: whitespace-only
+      // text/mention/link chips count as empty. Image and linebreak chips
+      // DO render visible content (an <img> or a <br>) so they are non-empty.
+      const chipsEmpty = chips.every((c) => {
+        if (c.type === "image") return false;
+        if (c.type === "linebreak") return false;
+        return !c.value || c.value.trim().length === 0;
+      });
       return (
         <div
           className={`ProseMirror nb-block-shell ${className} outline-none focus-visible:outline-none`}
@@ -548,6 +562,7 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
           aria-label={ariaLabel}
         >
           <BlockChipRenderer chips={chips} />
+          {chipsEmpty ? <br aria-hidden="true" /> : null}
         </div>
       );
     }

@@ -131,7 +131,7 @@ export function EntityNotebookView({ entitySlug, shareToken, canOpenLive = false
   const citationLabelByKey = useMemo(() => {
     if (!snapshot) return new Map<string, string>();
     const map = new Map<string, string>();
-    snapshot.sources.forEach((source, index) => {
+    snapshot.sources.forEach((source: any, index: number) => {
       const label = `s${index + 1}`;
       map.set(source.id, label);
       map.set(source.label.toLowerCase(), label);
@@ -286,7 +286,7 @@ export function EntityNotebookView({ entitySlug, shareToken, canOpenLive = false
           {planTrace.steps.length === 0 ? (
             <div className="text-gray-500">No tool events recorded for this run.</div>
           ) : (
-            planTrace.steps.map((step) => (
+            planTrace.steps.map((step: any) => (
               <div
                 key={`${step.step}-${step.tool}`}
                 className="grid grid-cols-[24px_170px_1fr_auto] gap-3 border-b border-dashed border-gray-200/40 py-1.5 last:border-0 dark:border-white/[0.06]"
@@ -350,7 +350,7 @@ export function EntityNotebookView({ entitySlug, shareToken, canOpenLive = false
           {sources.length === 0 ? (
             <div className="text-gray-500">No sources captured.</div>
           ) : (
-            sources.map((source, index) => (
+            sources.map((source: any, index: number) => (
               <div
                 key={source.id}
                 className="grid grid-cols-[120px_1fr_auto] gap-3 border-b border-dashed border-gray-200/40 py-1.5 last:border-0 dark:border-white/[0.06]"
@@ -401,7 +401,7 @@ export function EntityNotebookView({ entitySlug, shareToken, canOpenLive = false
         {blocks.length === 0 ? (
           <div className="py-8 text-center text-sm text-gray-500">No content yet. Start a chat to generate a brief.</div>
         ) : (
-          blocks.map((block) => (
+          blocks.map((block: any) => (
             <BlockRow
               key={block.id}
               block={block}
@@ -418,7 +418,7 @@ export function EntityNotebookView({ entitySlug, shareToken, canOpenLive = false
             Linked from · {backlinks.length} place{backlinks.length === 1 ? "" : "s"}
           </div>
           <div className="mt-3 space-y-2">
-            {backlinks.map((ref) =>
+            {backlinks.map((ref: any) =>
               canTraverseLinkedEntities ? (
                 <button
                   key={ref.relationId}
@@ -453,7 +453,7 @@ export function EntityNotebookView({ entitySlug, shareToken, canOpenLive = false
             Linked entities
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            {snapshot.linkedFrom.map((item) =>
+            {snapshot.linkedFrom.map((item: any) =>
               canTraverseLinkedEntities ? (
               <button
                 key={`linked-${item.slug}`}
@@ -486,7 +486,7 @@ export function EntityNotebookView({ entitySlug, shareToken, canOpenLive = false
             Related entities (harness-suggested)
           </div>
           <div className="mt-3 space-y-2">
-            {snapshot.relatedEntities.map((item) =>
+            {snapshot.relatedEntities.map((item: any) =>
               canTraverseLinkedEntities ? (
               <button
                 key={`related-${item.slug}`}

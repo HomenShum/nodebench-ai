@@ -435,7 +435,7 @@ function renderDefaultDecoration(
     const p = document.createElement("span");
     const isLast = idx === paragraphs.length - 1;
     p.className =
-      "notebook-stream-ink block text-[15px] leading-[1.5] text-gray-600 dark:text-gray-300" +
+      "notebook-stream-ink block text-[16px] leading-[1.75] text-gray-600 dark:text-gray-300" +
       (isLast && isStreamingRecent ? " notebook-stream-active" : "");
     // Staggered per-paragraph fade (v3 prototype: index * 50ms).
     p.style.animationDelay = `${idx * 40}ms`;

@@ -154,18 +154,19 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
   const { getCustomSlashMenuItems } = useSlashMenuItems({ askFastAgent });
 
   // Sanitize the loaded content to remove unsupported node types
+  const syncInitialContent = (sync as { initialContent?: unknown }).initialContent;
   useEffect(() => {
-    if (sync.initialContent) {
+    if (syncInitialContent) {
       try {
-        const sanitized = sanitizeProseMirrorContent(sync.initialContent);
-        if (sanitized !== sync.initialContent) {
+        const sanitized = sanitizeProseMirrorContent(syncInitialContent as any);
+        if (sanitized !== syncInitialContent) {
           // Content was sanitized to remove unsupported node types
         }
       } catch (err) {
         console.error("[UnifiedEditor] Error sanitizing content:", err);
       }
     }
-  }, [sync.initialContent]);
+  }, [syncInitialContent]);
 
   // --- AI proposal/apply wiring (parity with NB3, minimal overlay) ---
   type AIToolAction = {
@@ -884,13 +885,14 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
   }
 
   // Check if sync has an error (e.g., unsupported node types)
-  if (sync.error) {
-    console.error("[UnifiedEditor] Sync error:", sync.error);
+  const syncError = (sync as { error?: unknown }).error;
+  if (syncError) {
+    console.error("[UnifiedEditor] Sync error:", syncError);
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="text-center">
           <p className="text-content-secondary mb-4">Unable to load document</p>
-          <p className="text-xs text-[var(--text-tertiary)] mb-4">{String(sync.error)}</p>
+          <p className="text-xs text-[var(--text-tertiary)] mb-4">{String(syncError)}</p>
           <button
             className="px-3 py-1.5 text-sm rounded bg-indigo-600 text-white"
             onClick={() => window.location.reload()}
@@ -968,11 +970,11 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
         {editable && pendingProposal && (
           <ProposalInlineDecorations
             pendingProposal={pendingProposal}
-            setPendingProposal={setPendingProposal}
+            setPendingProposal={setPendingProposal as unknown as (p: any) => void}
             computeProposalTargets={computeProposalTargets}
             findBlockByNodeId={findBlockByNodeId}
             syncEditor={sync.editor}
-            editorContainerRef={editorContainerRef}
+            editorContainerRef={editorContainerRef as React.RefObject<HTMLDivElement>}
             getBlockEl={getBlockEl}
           />
         )}
@@ -1036,7 +1038,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
             editor={sync.editor}
             pendingEdits={pendingEdits}
             currentEdit={currentEdit}
-            containerRef={editorContainerRef}
+            containerRef={editorContainerRef as React.RefObject<HTMLDivElement>}
           />
 
           <BlockNoteView
@@ -1049,13 +1051,14 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
             {/* Custom slash menu with Fast Agent integration */}
             {!disableSlashMenu && (
               <SuggestionMenuController
-                triggerCharacter={"/"}
-                getItems={async (query) =>
-                  filterSuggestionItems(
-                    sync.editor ? getCustomSlashMenuItems(sync.editor) : [],
-                    query
-                  )
-                }
+                {...({
+                  triggerCharacter: "/",
+                  getItems: async (query: string) =>
+                    filterSuggestionItems(
+                      sync.editor ? getCustomSlashMenuItems(sync.editor) : [],
+                      query,
+                    ),
+                } as any)}
               />
             )}
 

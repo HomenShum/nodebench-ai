@@ -37,7 +37,7 @@ export const RefsPills = ({ refs, onOpenRef }: RefsPillsProps) => {
   );
 
   const docIdsTyped = docIds as unknown as Array<Id<"documents">>;
-  const taskIdsTyped = taskIds as unknown as Array<Id<"tasks">>;
+  const taskIdsTyped = taskIds as unknown as Array<Id<"userEvents">>;
   const eventIdsTyped = eventIds as unknown as Array<Id<"events">>;
 
   const docTitles = useQuery(
@@ -48,7 +48,7 @@ export const RefsPills = ({ refs, onOpenRef }: RefsPillsProps) => {
   const taskTitles = useQuery(
     api.domains.tasks.userEvents.getTitles,
     taskIdsTyped.length ? { ids: taskIdsTyped } : "skip",
-  ) as Array<{ _id: Id<"tasks">; title: string }> | undefined;
+  ) as Array<{ _id: Id<"userEvents">; title: string }> | undefined;
 
   const eventTitles = useQuery(
     api.domains.calendar.events.getTitles,

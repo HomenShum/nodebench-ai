@@ -20,6 +20,7 @@ import { useQuery } from "convex/react";
 import { ArrowUpRight, Sparkles } from "lucide-react";
 import { useConvexApi } from "@/lib/convexApi";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
+import { buildEntityPulsePath } from "@/features/entities/lib/entityExport";
 import { cn } from "@/lib/utils";
 
 interface PulseRow {
@@ -61,7 +62,7 @@ export const RecentPulseStrip = memo(function RecentPulseStrip({
 
   const handleOpen = useCallback(
     (slug: string) => {
-      navigate(`/entity/${encodeURIComponent(slug)}/pulse`);
+      navigate(buildEntityPulsePath(slug));
     },
     [navigate],
   );

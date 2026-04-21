@@ -19,7 +19,7 @@ export interface ToolStage {
   durationMs?: number;
   tokensIn?: number;
   tokensOut?: number;
-  preview?: string;
+  preview?: string | Record<string, any>;
   startedAt: number;
 }
 

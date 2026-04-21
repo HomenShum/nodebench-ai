@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMutation} from 'convex/react';
 import { useMotionConfig } from '@/lib/motion';
 import { useConvexApi } from "@/lib/convexApi";
+import { getAnonymousProductSessionId } from '@/features/product/lib/productIdentity';
 import { toast } from 'sonner';
 import {
   Plus,
@@ -24,6 +25,7 @@ interface QuickCaptureWidgetProps {
 
 export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) {
   const api = useConvexApi();
+  const anonymousSessionId = getAnonymousProductSessionId();
 
   const { instant, transition } = useMotionConfig();
   const [isOpen, setIsOpen] = useState(false);
@@ -31,55 +33,98 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  const saveCapture = useMutation(api?.domains.quickCapture.quickCapture.saveCapture);
-  const generateUploadUrl = useMutation(api?.domains.quickCapture.quickCapture.generateUploadUrl);
+  const saveContextCapture = useMutation(
+    api?.domains.product.me.saveContextCapture ?? ("skip" as any),
+  );
+  const generateUploadUrl = useMutation(
+    api?.domains.product.me.generateUploadUrl ?? ("skip" as any),
+  );
+  const saveFile = useMutation(api?.domains.product.me.saveFile ?? ("skip" as any));
 
   const { isRecording, audioBlob, duration, startRecording, stopRecording, clearRecording } =
     useVoiceRecording();
   const { screenshotData, captureScreen, clearScreenshot } = useScreenCapture();
 
+  const hasSaveableContent =
+    mode === 'voice'
+      ? Boolean(audioBlob)
+      : mode === 'screenshot'
+        ? Boolean(screenshotData)
+        : Boolean(content.trim());
+
+  const saveUploadedFile = useCallback(async (args: {
+    blob: Blob;
+    name: string;
+    mimeType: string;
+    category: 'voice' | 'image';
+  }) => {
+    const uploadUrl = await generateUploadUrl();
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': args.mimeType || 'application/octet-stream' },
+      body: args.blob,
+    });
+    const { storageId } = await response.json();
+    await saveFile({
+      anonymousSessionId,
+      storageId,
+      name: args.name,
+      mimeType: args.mimeType || 'application/octet-stream',
+      size: args.blob.size,
+      category: args.category,
+    });
+  }, [anonymousSessionId, generateUploadUrl, saveFile]);
+
+  const handleModeSelect = useCallback((nextMode: CaptureMode) => {
+    if (mode === 'voice' && nextMode !== 'voice' && isRecording) {
+      stopRecording();
+    }
+    setMode(nextMode);
+    if (nextMode !== 'voice') {
+      clearRecording();
+    }
+    if (nextMode !== 'screenshot') {
+      clearScreenshot();
+    }
+  }, [clearRecording, clearScreenshot, isRecording, mode, stopRecording]);
+
   const handleSave = useCallback(async () => {
-    if (!content.trim() && !audioBlob && !screenshotData) {
-      toast.error('Please add some content');
+    if (!hasSaveableContent) {
+      toast.error(
+        mode === 'voice'
+          ? 'Record a voice memo first'
+          : mode === 'screenshot'
+            ? 'Capture a screenshot first'
+            : 'Please add some content',
+      );
       return;
     }
 
     setIsSaving(true);
     try {
-      let audioStorageId;
-      let screenshotStorageId;
-
-      // Upload audio if present
-      if (audioBlob) {
-        const uploadUrl = await generateUploadUrl();
-        const response = await fetch(uploadUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': audioBlob.type },
-          body: audioBlob,
+      if (mode === 'note' || mode === 'task') {
+        await saveContextCapture({
+          anonymousSessionId,
+          type: mode,
+          content: content.trim(),
         });
-        const { storageId } = await response.json();
-        audioStorageId = storageId;
-      }
-
-      // Upload screenshot if present
-      if (screenshotData) {
-        const uploadUrl = await generateUploadUrl();
+      } else if (mode === 'voice' && audioBlob) {
+        const extension = audioBlob.type.includes('mp4') ? 'm4a' : 'webm';
+        await saveUploadedFile({
+          blob: audioBlob,
+          name: `voice-memo-${Date.now()}.${extension}`,
+          mimeType: audioBlob.type || 'audio/webm',
+          category: 'voice',
+        });
+      } else if (mode === 'screenshot' && screenshotData) {
         const blob = await fetch(screenshotData).then((r) => r.blob());
-        const response = await fetch(uploadUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'image/png' },
-          body: blob,
+        await saveUploadedFile({
+          blob,
+          name: `screenshot-${Date.now()}.png`,
+          mimeType: 'image/png',
+          category: 'image',
         });
-        const { storageId } = await response.json();
-        screenshotStorageId = storageId;
       }
-
-      await saveCapture({
-        type: mode,
-        content: content.trim() || (mode === 'voice' ? 'Voice memo' : 'Screenshot'),
-        audioStorageId,
-        screenshotStorageId,
-      });
 
       toast.success('Captured!');
       setContent('');
@@ -91,7 +136,7 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
     } finally {
       setIsSaving(false);
     }
-  }, [content, mode, audioBlob, screenshotData, saveCapture, generateUploadUrl, clearRecording, clearScreenshot]);
+  }, [anonymousSessionId, audioBlob, clearRecording, clearScreenshot, content, hasSaveableContent, mode, saveContextCapture, saveUploadedFile, screenshotData]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -130,7 +175,7 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
               {modeButtons.map(({ mode: m, icon, label }) => (
                 <button
                   key={m}
-                  onClick={() => setMode(m)}
+                  onClick={() => handleModeSelect(m)}
                   className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                     mode === m
                       ? 'bg-primary/10 text-primary'
@@ -215,7 +260,7 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
             <div className="flex justify-end px-3 pb-3 mt-2">
               <button
                 onClick={handleSave}
-                disabled={isSaving || (!content.trim() && !audioBlob && !screenshotData)}
+                disabled={isSaving || !hasSaveableContent}
                 className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 shadow-sm"
               >
                 <Send className="h-4 w-4" />

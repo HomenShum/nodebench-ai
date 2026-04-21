@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 type RefItem = { kind: "document" | "task" | "event"; id: string };
 
-export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"tasks">; onClose: () => void }) {
+export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"userEvents">; onClose: () => void }) {
   const task = useQuery(api.domains.tasks.userEvents.getTask, { taskId });
   const updateTask = useMutation(api.domains.tasks.userEvents.updateTask);
   const deleteTask = useMutation(api.domains.tasks.userEvents.deleteTask);
@@ -125,7 +125,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
         r.kind === "document"
           ? ({ kind: "document" as const, id: r.id as Id<"documents"> })
           : r.kind === "task"
-          ? ({ kind: "task" as const, id: r.id as Id<"tasks"> })
+          ? ({ kind: "task" as const, id: r.id as Id<"userEvents"> })
           : ({ kind: "event" as const, id: r.id as Id<"events"> })
       ));
 

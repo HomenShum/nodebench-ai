@@ -107,7 +107,7 @@ export const PanelDialogs = memo(function PanelDialogs(props: PanelDialogsProps)
       {/* Drag-and-Drop File Upload Overlay */}
       {props.isDragOver && (
         <div
-          className="absolute inset-0 z-[60] bg-violet-500/10 border-2 border-dashed border-violet-500 rounded-lg flex items-center justify-center backdrop-blur-sm"
+          className="absolute inset-0 z-[60] flex items-center justify-center rounded-lg border-2 border-dashed border-[var(--accent-primary)] bg-[var(--accent-primary)]/8"
           onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
           onDragLeave={() => props.setIsDragOver(false)}
           onDrop={(e) => {

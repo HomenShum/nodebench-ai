@@ -56,8 +56,8 @@ export interface UsePlannerControllerParams {
     thisWeek: any[];
   };
   notes?: any[];
-  selectedTaskId?: Id<"tasks"> | null;
-  onSelectTask?: (id: Id<"tasks">, source: "today" | "upcoming" | "week" | "other") => void;
+  selectedTaskId?: Id<"userEvents"> | null;
+  onSelectTask?: (id: Id<"userEvents">, source: "today" | "upcoming" | "week" | "other") => void;
   onClearTaskSelection?: () => void;
 }
 

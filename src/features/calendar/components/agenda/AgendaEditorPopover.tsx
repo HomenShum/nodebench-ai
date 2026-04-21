@@ -11,7 +11,7 @@ type Props = {
   onClose: () => void;
   kind: "event" | "task" | "create" | "createBoth";
   eventId?: Id<"events">;
-  taskId?: Id<"tasks">;
+  taskId?: Id<"userEvents">;
   dateMs?: number;
   defaultKind?: "task" | "event";
   defaultTitle?: string;

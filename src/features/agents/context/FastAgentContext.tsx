@@ -36,6 +36,8 @@ export interface DossierContext {
 export interface AgentOpenOptions {
   /** Unique identifier for this open request (used to prevent duplicate auto-sends) */
   requestId?: string;
+  /** Preferred tab when the drawer opens. */
+  initialTab?: "chat" | "scratchpad" | "flow" | "sources" | "telemetry" | "trace";
   /** Pre-filled initial message/prompt */
   initialMessage?: string;
   /** Document IDs to load as context */

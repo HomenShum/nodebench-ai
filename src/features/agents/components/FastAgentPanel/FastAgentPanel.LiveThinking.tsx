@@ -80,7 +80,7 @@ export function LiveThinking({
     <div className="mt-4 flex justify-center">
       <div className={cn(
         "inline-flex items-center gap-2.5 px-4 py-2 rounded-full",
-        "bg-surface-secondary/80 backdrop-blur-sm border border-edge shadow-sm",
+        "bg-surface-secondary border border-edge shadow-sm",
         "text-xs font-medium text-content-secondary",
         "animate-in fade-in slide-in-from-bottom-2 duration-300"
       )}>
@@ -97,4 +97,3 @@ export function LiveThinking({
     </div>
   );
 }
-

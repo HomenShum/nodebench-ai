@@ -66,15 +66,15 @@ export interface DocumentsHubContextValue {
     isDocsLoading: boolean;
 
     // Task Selection
-    selectedTaskId?: Id<"tasks"> | null;
+    selectedTaskId?: Id<"userEvents"> | null;
     selectedTaskSource?: "today" | "upcoming" | "week" | "other" | null;
-    onSelectTask?: (id: Id<"tasks">, source: "today" | "upcoming" | "week" | "other") => void;
+    onSelectTask?: (id: Id<"userEvents">, source: "today" | "upcoming" | "week" | "other") => void;
     onClearTaskSelection?: () => void;
 
     // Actions
     onDocumentSelect: (documentId: Id<"documents">) => void;
     createTask: (args: { title: string; status?: string; dueDate?: number }) => Promise<any>;
-    updateTask: (args: { id: Id<"tasks">; status?: string; order?: number }) => Promise<any>;
+    updateTask: (args: { id: Id<"userEvents">; status?: string; order?: number }) => Promise<any>;
     createEvent: (args: any) => Promise<any>;
     handleAddTaskForDate: (dateMs: number) => void;
     handleAddEventForDate: (dateMs: number) => void;

@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Activity, GitBranch, Radar } from "lucide-react";
 import { AgentFlowRail } from "@/features/agents/primitives/AgentFlowRail";
 import { useRunGraph } from "@/features/agents/hooks/useRunGraph";
+import { cn } from "@/lib/utils";
 
 type Props = {
   entitySlug: string;
@@ -9,6 +10,7 @@ type Props = {
   checkpointCount?: number;
   updatedAt?: number;
   latestBlockType?: string | null;
+  className?: string;
 };
 
 function formatRelative(timestamp: number): string {
@@ -42,10 +44,9 @@ function NotebookRunMapPanelBase({
   checkpointCount,
   updatedAt,
   latestBlockType,
+  className,
 }: Props) {
   const runGraph = useRunGraph(entitySlug);
-
-  if (!runGraph.hasRun) return null;
 
   const graphHeight = Math.max(
     220,
@@ -53,54 +54,86 @@ function NotebookRunMapPanelBase({
   );
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-white px-3 py-3 dark:border-white/[0.08] dark:bg-white/[0.02]">
+    <section
+      className={cn(
+        "rounded-[20px] border border-white/[0.08] bg-[#0f1217] px-4 py-4 text-white shadow-[0_16px_40px_rgba(0,0,0,0.2)]",
+        className,
+      )}
+    >
       <div className="flex items-center gap-2">
-        <Radar className="h-3.5 w-3.5 text-gray-400" />
-        <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+        <Radar className="h-3.5 w-3.5 text-white/42" />
+        <div className="text-sm font-semibold text-white/92">
           Run map
         </div>
       </div>
-      <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-        {runGraph.isActive
-          ? "The current diligence run is still shaping the notebook."
-          : "Last run topology for this entity."}
+      <p className="mt-1 text-[11px] text-white/46">
+        {runGraph.hasRun
+          ? runGraph.isActive
+            ? "The current diligence run is still shaping the notebook."
+            : "Last run topology for this entity."
+          : "Start live diligence to watch checkpoints, handoffs, and section updates land here."}
       </p>
 
       <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
-        <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-gray-700 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200">
+        <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-1 text-white/78">
           <Activity className="h-3 w-3" />
-          {runGraph.isActive ? "Live now" : statusLabel(runStatus)}
+          {runGraph.hasRun && runGraph.isActive ? "Live now" : statusLabel(runStatus)}
         </span>
         {typeof checkpointCount === "number" && checkpointCount > 0 ? (
-          <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-gray-600 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300">
+          <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-1 text-white/68">
             <GitBranch className="h-3 w-3" />
             {checkpointCount} checkpoint{checkpointCount === 1 ? "" : "s"}
           </span>
         ) : null}
         {latestBlockType ? (
-          <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-gray-600 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300">
+          <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-1 text-white/68">
             latest {latestBlockType}
           </span>
         ) : null}
         {updatedAt ? (
-          <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-gray-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
+          <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-1 text-white/52">
             updated {formatRelative(updatedAt)}
           </span>
         ) : null}
       </div>
 
       {runGraph.runHeadline ? (
-        <div className="mt-3 rounded-md border border-gray-100 bg-gray-50/80 px-3 py-2 text-[11px] text-gray-600 dark:border-white/[0.06] dark:bg-white/[0.02] dark:text-gray-300">
+        <div className="mt-3 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-[11px] text-white/62">
           {runGraph.runHeadline}
         </div>
       ) : null}
 
-      <AgentFlowRail
-        nodes={runGraph.nodes}
-        edges={runGraph.edges}
-        height={graphHeight}
-        className="mt-3"
-      />
+      {runGraph.hasRun ? (
+        <AgentFlowRail
+          nodes={runGraph.nodes}
+          edges={runGraph.edges}
+          height={graphHeight}
+          className="mt-4"
+        />
+      ) : (
+        <div className="mt-4 rounded-[18px] border border-dashed border-white/[0.08] bg-[#0c0f14] px-4 py-6">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg border border-white/[0.08] bg-[#171717] px-3 py-3 text-white/80">
+              <div className="text-[10px] uppercase tracking-[0.16em] text-white/40">
+                Run
+              </div>
+              <div className="mt-1 text-sm font-medium">Queued for launch</div>
+              <div className="mt-1 text-[11px] text-white/45">
+                Waiting for your first diligence run.
+              </div>
+            </div>
+            <div className="rounded-lg border border-white/[0.08] bg-[#171717] px-3 py-3 text-white/80">
+              <div className="text-[10px] uppercase tracking-[0.16em] text-white/40">
+                Output
+              </div>
+              <div className="mt-1 text-sm font-medium">No checkpoints yet</div>
+              <div className="mt-1 text-[11px] text-white/45">
+                The run graph will grow here as checkpoints land.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

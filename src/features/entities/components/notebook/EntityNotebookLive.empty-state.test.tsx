@@ -187,7 +187,7 @@ describe("EntityNotebookLive empty live notebook", () => {
     };
     queryState.backlinks = [];
     mockAppendBlock.mockResolvedValue("block_first");
-    mockBackfillEntityBlocks.mockResolvedValue(undefined);
+    mockBackfillEntityBlocks.mockResolvedValue({ inserted: 3, cleared: 0 });
     mockInsertBlockBetween.mockResolvedValue("block_inserted");
     mockUpdateBlock.mockResolvedValue("block_existing");
     mockMaterializeForEntity.mockResolvedValue({
@@ -229,7 +229,7 @@ describe("EntityNotebookLive empty live notebook", () => {
     );
   });
 
-  it("still opens a real editable block when a reference projection exists", async () => {
+  it("hydrates the notebook from the saved brief when a reference projection exists", async () => {
     queryState.snapshot = {
       blocks: [
         { id: "derived_1", kind: "heading-3", body: "Why it matters" },
@@ -247,13 +247,10 @@ describe("EntityNotebookLive empty live notebook", () => {
     renderWithRouter(<EntityNotebookLive entitySlug="smr-thesis" canEdit />);
 
     await waitFor(() =>
-      expect(mockAppendBlock).toHaveBeenCalledWith({
+      expect(mockBackfillEntityBlocks).toHaveBeenCalledWith({
         anonymousSessionId: expect.any(String),
         shareToken: undefined,
         entitySlug: "smr-thesis",
-        kind: "text",
-        content: [{ type: "text", value: "" }],
-        authorKind: "user",
       }),
     );
     await waitFor(() =>
@@ -263,10 +260,10 @@ describe("EntityNotebookLive empty live notebook", () => {
         entitySlug: "smr-thesis",
       }),
     );
-    expect(mockBackfillEntityBlocks).not.toHaveBeenCalled();
+    expect(mockAppendBlock).not.toHaveBeenCalled();
   });
 
-  it("explains that live intelligence will appear as a read-only overlay while the editor opens", async () => {
+  it("explains that the saved brief is being restored instead of opening a blank draft", async () => {
     queryState.snapshot = {
       blocks: [
         { id: "derived_1", kind: "heading-3", body: "Why it matters" },
@@ -283,12 +280,55 @@ describe("EntityNotebookLive empty live notebook", () => {
 
     renderWithRouter(<EntityNotebookLive entitySlug="smr-thesis" canEdit />);
 
-    await waitFor(() => expect(mockAppendBlock).toHaveBeenCalled());
+    await waitFor(() => expect(mockBackfillEntityBlocks).toHaveBeenCalled());
 
     expect(
       screen.getByText(
-        "Your notes stay editable. The latest intelligence will appear as a read-only reference overlay as soon as the editor opens.",
+        "NodeBench is turning the latest saved report into the notebook so you land on real content instead of an empty draft.",
       ),
+    ).toBeInTheDocument();
+  });
+
+  it("replaces placeholder-only user blocks with the saved brief", async () => {
+    paginatedState.results = [
+      {
+        _id: "placeholder_1",
+        entityId: "entity_1",
+        kind: "text",
+        authorKind: "user",
+        content: [{ type: "text", value: "" }],
+        positionInt: 1,
+        positionFrac: "a0",
+        revision: 1,
+        updatedAt: Date.now(),
+        accessMode: "edit",
+      },
+    ];
+    queryState.snapshot = {
+      blocks: [
+        { id: "derived_1", kind: "heading-3", body: "Why it matters" },
+        {
+          id: "derived_2",
+          kind: "text",
+          body: "This notebook was projected from archived intelligence.",
+          sourceRefIds: ["src_1"],
+        },
+      ],
+      reportCount: 1,
+      reportUpdatedAt: 100,
+    };
+
+    renderWithRouter(<EntityNotebookLive entitySlug="smr-thesis" canEdit />);
+
+    await waitFor(() =>
+      expect(mockBackfillEntityBlocks).toHaveBeenCalledWith({
+        anonymousSessionId: expect.any(String),
+        shareToken: undefined,
+        entitySlug: "smr-thesis",
+      }),
+    );
+    expect(
+      screen.getByText("This notebook can be restored from the saved brief."),
     ).toBeInTheDocument();
   });
 
@@ -369,9 +409,10 @@ describe("EntityNotebookLive empty live notebook", () => {
 
     renderWithRouter(<EntityNotebookLive entitySlug="smr-thesis" canEdit={false} />);
 
-    expect(screen.getByText("Reference overlay active")).toBeInTheDocument();
     const overlayHost = screen.getByTestId("notebook-diligence-overlay-host");
     expect(overlayHost).toBeInTheDocument();
+    expect(within(overlayHost).getByText("Reference")).toBeInTheDocument();
+    expect(within(overlayHost).getByText("Why it matters")).toBeInTheDocument();
     // The old "AI generated" generic stamp was replaced by a per-agent
     // AgentAuthorTag pill (nb-agent-tag class). One pill should appear
     // on the frozen agent-authored block inserted by the reference
@@ -389,7 +430,7 @@ describe("EntityNotebookLive empty live notebook", () => {
         entityId: "entity_1",
         kind: "text",
         authorKind: "user",
-        content: [{ type: "text", value: "" }],
+        content: [{ type: "text", value: "Working draft anchor" }],
         positionInt: 1,
         positionFrac: "a0",
         revision: 1,
@@ -428,6 +469,7 @@ describe("EntityNotebookLive empty live notebook", () => {
       userEditedCount: 1,
     };
     mockInsertBlockBetween
+      .mockResolvedValueOnce("block_marker")
       .mockResolvedValueOnce("block_heading")
       .mockResolvedValueOnce("block_body");
 
@@ -438,36 +480,31 @@ describe("EntityNotebookLive empty live notebook", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Accept" }));
 
-    await waitFor(() =>
-      expect(mockUpdateBlock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          blockId: "block_blank",
-          kind: "generated_marker",
-          attributes: expect.objectContaining({
-            acceptedFromLive: expect.objectContaining({
-              sourceScratchpadRunId: expect.stringContaining("projection:smr-thesis:100"),
-              blockType: "projection",
-            }),
-          }),
-        }),
-      ),
-    );
-
+    await waitFor(() => expect(mockInsertBlockBetween).toHaveBeenCalledTimes(3));
     expect(mockInsertBlockBetween).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
         beforeBlockId: "block_blank",
-        kind: "heading_3",
+        kind: "generated_marker",
+        content: [{ type: "text", value: expect.stringContaining("Accepted from live notebook intelligence") }],
       }),
     );
     expect(mockInsertBlockBetween).toHaveBeenNthCalledWith(
       2,
+      expect.objectContaining({
+        beforeBlockId: "block_marker",
+        kind: "heading_3",
+      }),
+    );
+    expect(mockInsertBlockBetween).toHaveBeenNthCalledWith(
+      3,
       expect.objectContaining({
         beforeBlockId: "block_heading",
         kind: "text",
         sourceRefIds: ["src_1"],
       }),
     );
+    expect(mockUpdateBlock).not.toHaveBeenCalled();
     expect(mockToastSuccess).toHaveBeenCalledWith("Live snapshot added to notebook");
     await waitFor(() =>
       expect(screen.queryByRole("button", { name: "Accept" })).not.toBeInTheDocument(),
@@ -481,7 +518,7 @@ describe("EntityNotebookLive empty live notebook", () => {
         entityId: "entity_1",
         kind: "text",
         authorKind: "user",
-        content: [{ type: "text", value: "" }],
+        content: [{ type: "text", value: "Working draft anchor" }],
         positionInt: 1,
         positionFrac: "a0",
         revision: 1,

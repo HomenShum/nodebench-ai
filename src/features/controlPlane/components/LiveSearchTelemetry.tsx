@@ -98,9 +98,9 @@ function ToolCard({ stage }: { stage: ToolStage }) {
           </div>
 
           {/* Preview data */}
-          {stage.preview && Object.keys(stage.preview).length > 0 && (
+          {stage.preview && typeof stage.preview === "object" && Object.keys(stage.preview).length > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
-              {Object.entries(stage.preview).map(([key, value]) => {
+              {Object.entries(stage.preview as Record<string, unknown>).map(([key, value]) => {
                 if (value === undefined || value === null || value === false) return null;
                 const display = Array.isArray(value)
                   ? value.length > 0
@@ -197,13 +197,16 @@ export const LiveSearchTelemetry = memo(function LiveSearchTelemetry({
           const classifyDone = stages.find((s) => s.tool === "classify" && s.status === "done");
           const searchDone = stages.find((s) => (s.tool === "web_search" || s.tool === "search") && s.status === "done");
           const analyzeDone = stages.find((s) => (s.tool === "entity_extract" || s.tool === "analyze") && s.status === "done");
-          const entity = classifyDone?.preview?.entity as string | undefined;
-          const classification = classifyDone?.preview?.classification as string | undefined;
-          const sourceCount = searchDone?.preview?.sourceCount as number | undefined;
-          const confidence = analyzeDone?.preview?.confidence as number | undefined;
-          const signalCount = analyzeDone?.preview?.signalCount as number | undefined;
-          const riskCount = analyzeDone?.preview?.riskCount as number | undefined;
-          const keyMetrics = analyzeDone?.preview?.keyMetrics as Array<{ label: string; value: string }> | undefined;
+          const classifyPreview = (typeof classifyDone?.preview === "object" ? classifyDone.preview : undefined) as Record<string, any> | undefined;
+          const searchPreview = (typeof searchDone?.preview === "object" ? searchDone.preview : undefined) as Record<string, any> | undefined;
+          const analyzePreview = (typeof analyzeDone?.preview === "object" ? analyzeDone.preview : undefined) as Record<string, any> | undefined;
+          const entity = classifyPreview?.entity as string | undefined;
+          const classification = classifyPreview?.classification as string | undefined;
+          const sourceCount = searchPreview?.sourceCount as number | undefined;
+          const confidence = analyzePreview?.confidence as number | undefined;
+          const signalCount = analyzePreview?.signalCount as number | undefined;
+          const riskCount = analyzePreview?.riskCount as number | undefined;
+          const keyMetrics = analyzePreview?.keyMetrics as Array<{ label: string; value: string }> | undefined;
 
           if (!entity) return null;
 

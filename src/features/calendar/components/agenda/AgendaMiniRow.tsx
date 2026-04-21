@@ -8,10 +8,10 @@ export type AgendaMiniKind = "task" | "event" | "holiday" | "note";
 export interface AgendaMiniRowProps {
   item: any;
   kind: AgendaMiniKind;
-  onSelect?: (id: Id<"tasks"> | Id<"events"> | string) => void;
+  onSelect?: (id: Id<"userEvents"> | Id<"events"> | string) => void;
   // When provided for kind === 'task', show a checkbox and call handler on toggle
   showCheckbox?: boolean;
-  onToggleComplete?: (id: Id<"tasks">, completed: boolean) => void;
+  onToggleComplete?: (id: Id<"userEvents">, completed: boolean) => void;
   onAcceptProposed?: (id: Id<"events">) => void | Promise<void>;
   onDeclineProposed?: (id: Id<"events">) => void | Promise<void>;
 }

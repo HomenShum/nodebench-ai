@@ -232,9 +232,9 @@ export function CockpitLayout({
 
   // Document / task state
   const [isGridMode, setIsGridMode] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState<Id<"tasks"> | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<Id<"userEvents"> | null>(null);
   const [selectedTaskSource, setSelectedTaskSource] = useState<"today" | "upcoming" | "week" | "other" | null>(null);
-  const handleSelectTask = useCallback((id: Id<"tasks">, source: "today" | "upcoming" | "week" | "other") => {
+  const handleSelectTask = useCallback((id: Id<"userEvents">, source: "today" | "upcoming" | "week" | "other") => {
     setSelectedTaskId(id);
     setSelectedTaskSource(source);
   }, []);
@@ -839,7 +839,7 @@ export function CockpitLayout({
           <>
             {/* Backdrop */}
             <div
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+              className="fixed inset-0 z-40 bg-black/40"
               onClick={() => setShowFastAgent(false)}
               aria-hidden="true"
             />
@@ -901,12 +901,15 @@ export function CockpitLayout({
           onClose={() => setHashtagPopover(null)}
         />
 
-        {/* Quick-capture FAB is suppressed on entity pages — the live notebook's
-            `/` slash palette already covers inline note/task capture, and the
-            WorkspaceDrawerPill owns the bottom-right corner there. Following the
-            Notion/Linear pattern: no global floating "+" when the page is itself
-            the capture surface. Precedent: FeedbackWidget removal (same reason). */}
-        {isAuthenticated && !location.pathname.startsWith("/entity/") && <QuickCaptureWidget />}
+        {/* Quick-capture FAB is suppressed anywhere the product already presents
+            a primary composer: entity notebooks, Home, and Chat. The goal is
+            one obvious input surface, not a second floating CTA competing with it. */}
+        {isAuthenticated &&
+        !location.pathname.startsWith("/entity/") &&
+        currentSurface !== "ask" &&
+        currentSurface !== "workspace" ? (
+          <QuickCaptureWidget />
+        ) : null}
 
         {showSettingsModal && (
           <ErrorBoundary title="Settings failed to load">

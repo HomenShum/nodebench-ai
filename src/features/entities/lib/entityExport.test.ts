@@ -6,6 +6,7 @@ import {
   buildEntityInviteUrl,
   buildEntityMarkdown,
   buildEntityPath,
+  buildEntityPulsePath,
   buildEntityShareUrl,
   buildOutreachDraft,
   type ExportEntityWorkspace,
@@ -34,6 +35,11 @@ describe("entityExport share helpers", () => {
     expect(buildEntityInvitePath("softbank")).toBe("/entity/softbank");
     expect(buildEntityInvitePath("softbank", "ewi_demo")).toBe("/entity/softbank?invite=ewi_demo");
     expect(buildEntityInviteUrl("softbank", "ewi_demo")).toContain("?invite=ewi_demo");
+  });
+
+  it("builds canonical entity pulse paths", () => {
+    expect(buildEntityPulsePath("softbank")).toBe("/entity/softbank/pulse");
+    expect(buildEntityPulsePath("softbank", "2026-04-20")).toBe("/entity/softbank/pulse/2026-04-20");
   });
 
   it("threads share tokens through exported copy payloads", () => {

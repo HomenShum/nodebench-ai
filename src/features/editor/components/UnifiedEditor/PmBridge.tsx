@@ -197,6 +197,7 @@ function applyPmOperations(
           continue;
         }
         const { from, to, newText } = result;
+        if (from === undefined || to === undefined || newText === undefined) continue;
         tr.replaceWith(from + offset, to + offset, editor.schema.text(newText));
         offset += newText.length - (to - from);
       } else if (op.type === 'insertAt') {

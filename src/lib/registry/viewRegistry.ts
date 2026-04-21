@@ -19,7 +19,16 @@ import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 export type MainView =
   | "control-plane"
   | "developers"
+  | "research"
+  | "product-direction"
+  | "execution-trace"
+  | "world-monitor"
+  | "watchlists"
+  | "receipts"
+  | "delegation"
+  | "mcp-ledger"
   | "entity"
+  | "entity-pulse"
   | "pricing"
   | "changelog"
   | "legal"
@@ -27,6 +36,7 @@ export type MainView =
   | "chat-home"
   | "reports-home"
   | "nudges-home"
+  | "pulse-home"
   | "me-home"
   | "dogfood"
   | "conference-capture"
@@ -56,7 +66,8 @@ export type CockpitSurfaceId =
   | "workspace"    // Chat
   | "packets"      // Reports
   | "history"      // Nudges
-  | "connect";     // Me
+  | "connect"      // Me
+  | "trace";       // Audit / trace / receipts
 
 export const CANONICAL_SURFACE_PARAM: Record<CockpitSurfaceId, string> = {
   ask: "home",
@@ -64,6 +75,7 @@ export const CANONICAL_SURFACE_PARAM: Record<CockpitSurfaceId, string> = {
   packets: "reports",
   history: "nudges",
   connect: "me",
+  trace: "trace",
 };
 
 const SURFACE_PARAM_ALIASES: Record<string, CockpitSurfaceId> = {
@@ -77,6 +89,9 @@ const SURFACE_PARAM_ALIASES: Record<string, CockpitSurfaceId> = {
   nudges: "history",
   connect: "connect",
   me: "connect",
+  trace: "trace",
+  activity: "trace",
+  audit: "trace",
 };
 
 // ─── Registry entry shape ────────────────────────────────────────────────────
@@ -197,6 +212,122 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
 
   // ── Entity Intelligence ──────────────────────────────────────────────────
   {
+    id: "research",
+    title: "Research Hub",
+    subtitle: "Overview, signals, briefing, deals, and change tracking",
+    path: "/research",
+    aliases: ["/hub", "/research/overview"],
+    component: lazyView(() => import("@/features/research/views/ResearchHub")),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "product-direction",
+    title: "Product Direction",
+    subtitle: "Evidence-bounded memo for what to build next",
+    path: "/product-direction",
+    aliases: ["/strategy", "/strategy/product-direction", "/research/product-direction"],
+    component: lazyNamed(
+      () => import("@/features/strategy/views/ProductDirectionMemoView"),
+      "ProductDirectionMemoView",
+    ),
+    group: "nested",
+    navVisible: false,
+    parentId: "research",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "world-monitor",
+    title: "World Monitor",
+    subtitle: "Open-source event map with company-impact routing",
+    path: "/research/world-monitor",
+    aliases: ["/world-monitor"],
+    component: lazyView(() => import("@/features/research/views/WorldMonitorView")),
+    group: "nested",
+    navVisible: false,
+    parentId: "research",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "watchlists",
+    title: "Watchlists",
+    subtitle: "Persistent monitoring queues with alert thresholds",
+    path: "/research/watchlists",
+    aliases: ["/watchlists"],
+    component: lazyView(() => import("@/features/research/views/WatchlistsView")),
+    group: "nested",
+    navVisible: false,
+    parentId: "research",
+    surfaceId: "ask",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "receipts",
+    title: "Agent Actions",
+    subtitle: "Receipt stream for approvals, denials, and reversible steps",
+    path: "/receipts",
+    aliases: ["/action-receipts", "/control-plane/receipts"],
+    component: lazyNamed(
+      () => import("@/features/controlPlane/views/ActionReceiptFeed"),
+      "ActionReceiptFeed",
+    ),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "trace",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "delegation",
+    title: "Passport",
+    subtitle: "Delegation scopes, approval gates, and denied tools",
+    path: "/delegation",
+    aliases: ["/delegate", "/passport", "/control-plane/delegation", "/control-plane/passport"],
+    component: lazyNamed(
+      () => import("@/features/controlPlane/views/DelegationShowcase"),
+      "DelegationShowcase",
+    ),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "trace",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "execution-trace",
+    title: "Execution Trace",
+    subtitle: "Workflow steps, decisions, verifications, and evidence",
+    path: "/execution-trace",
+    aliases: ["/workflow-trace", "/trace/execution"],
+    component: lazyNamed(
+      () => import("@/features/strategy/views/ExecutionTraceView"),
+      "ExecutionTraceView",
+    ),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "trace",
+    commandPaletteVisible: true,
+  },
+  {
+    id: "mcp-ledger",
+    title: "Tool Activity",
+    subtitle: "MCP tool ledger, sync bridge state, and shared-context traffic",
+    path: "/mcp/ledger",
+    aliases: ["/mcp-ledger", "/internal/mcp-ledger", "/activity-log"],
+    component: lazyNamed(() => import("@/features/mcp/views/McpLedgerPage"), "McpLedgerPage"),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+    surfaceId: "trace",
+    commandPaletteVisible: true,
+  },
+  {
     id: "entity",
     title: "Entity",
     subtitle: "Compound note page — all searches, notes, and sources for one entity",
@@ -207,6 +338,22 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     surfaceId: "packets",
     commandPaletteVisible: true,
+  },
+  {
+    // Per-entity daily pulse digest. URL shape: /entity-pulse/:slug
+    // Layered on the LinkedIn daily-brief worker substrate — same
+    // synthesis + fact-check pipeline, writes to pulseReports instead
+    // of an external LinkedIn post.
+    id: "entity-pulse",
+    title: "Entity Pulse",
+    subtitle: "Daily change digest for one entity",
+    path: "/entity-pulse",
+    component: lazyNamed(() => import("@/features/pulse/views/EntityPulsePage"), "EntityPulsePage"),
+    dynamic: true,
+    group: "nested",
+    navVisible: false,
+    surfaceId: "packets",
+    commandPaletteVisible: false,
   },
 
 
@@ -308,6 +455,21 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     surfaceId: "packets",
     commandPaletteVisible: false,
+  },
+  {
+    // Global pulse digest — cross-entity "what changed today" inbox.
+    // Pairs with per-entity /entity-pulse/:slug view. Data flows from
+    // pulseReports (populated by pulseWorker, which layers on the
+    // existing LinkedIn daily-brief synthesis pipeline).
+    id: "pulse-home",
+    title: "Pulse",
+    subtitle: "Daily change digest across your entities",
+    path: "/pulse",
+    component: lazyNamed(() => import("@/features/pulse/views/GlobalPulsePage"), "GlobalPulsePage"),
+    group: "core",
+    navVisible: false,
+    surfaceId: "packets",
+    commandPaletteVisible: true,
   },
   {
     id: "nudges-home",
@@ -432,6 +594,7 @@ export const SURFACE_DEFAULT_VIEW: Record<CockpitSurfaceId, MainView> = {
   packets: "reports-home",
   history: "nudges-home",
   connect: "me-home",
+  trace: "mcp-ledger",
 };
 
 export const SURFACE_TITLES: Record<CockpitSurfaceId, string> = {
@@ -440,6 +603,7 @@ export const SURFACE_TITLES: Record<CockpitSurfaceId, string> = {
   packets: "Reports",
   history: "Nudges",
   connect: "Me",
+  trace: "Trace",
 };
 
 export function getSurfaceForView(viewId: MainView): CockpitSurfaceId {
@@ -538,6 +702,63 @@ export function buildCockpitPathForView({
     return appendQuery(pathname, query);
   }
 
+  if (view === "entity-pulse") {
+    const dateKey = extra?.dateKey ?? null;
+    const pathname = entity
+      ? `/entity/${encodeURIComponent(entity)}/pulse${dateKey ? `/${encodeURIComponent(dateKey)}` : ""}`
+      : "/pulse";
+    const query = new URLSearchParams();
+    if (run) query.set("run", run);
+    if (doc) query.set("doc", doc);
+    if (workspace) query.set("workspace", workspace);
+    if (panel) query.set("panel", panel);
+    if (tab) query.set("tab", tab);
+    if (extra) {
+      for (const [key, value] of Object.entries(extra)) {
+        if (!value || key === "dateKey") continue;
+        query.set(key, value);
+      }
+    }
+    return appendQuery(pathname, query);
+  }
+
+  if (view === "research") {
+    const pathname = tab && tab !== "overview" ? `/research/${encodeURIComponent(tab)}` : "/research";
+    const query = new URLSearchParams();
+    if (run) query.set("run", run);
+    if (doc) query.set("doc", doc);
+    if (workspace) query.set("workspace", workspace);
+    if (panel) query.set("panel", panel);
+    if (extra) {
+      for (const [key, value] of Object.entries(extra)) {
+        if (value) query.set(key, value);
+      }
+    }
+    return appendQuery(pathname, query);
+  }
+
+  const directRouteView = VIEW_MAP[view];
+  const isSurfaceHome =
+    view === "control-plane" ||
+    view === "chat-home" ||
+    view === "reports-home" ||
+    view === "nudges-home" ||
+    view === "me-home";
+  if (directRouteView && !isSurfaceHome) {
+    const query = new URLSearchParams();
+    if (run) query.set("run", run);
+    if (doc) query.set("doc", doc);
+    if (workspace) query.set("workspace", workspace);
+    if (panel) query.set("panel", panel);
+    if (tab) query.set("tab", tab);
+    if (extra) {
+      for (const [key, value] of Object.entries(extra)) {
+        if (value) query.set(key, value);
+      }
+    }
+    return appendQuery(directRouteView.path, query);
+  }
+
   const surfaceId = getSurfaceForView(view);
   return buildCockpitPath({
     surfaceId,
@@ -552,12 +773,19 @@ export function buildCockpitPathForView({
   });
 }
 
-function buildPassthroughExtraParams(params: URLSearchParams) {
+function buildPassthroughExtraParams(
+  params: URLSearchParams,
+  options?: { includeEntityReadMode?: boolean },
+) {
   return {
     join: params.get("join"),
     room: params.get("room"),
     share: params.get("share"),
     invite: params.get("invite"),
+    view:
+      options?.includeEntityReadMode && params.get("view") === "read"
+        ? "read"
+        : null,
   };
 }
 
@@ -611,6 +839,10 @@ export function resolvePathToCockpitState(rawPathname: string, rawSearch = ""): 
   const resolved = resolvePathToView(rawPathname);
   const surfaceId = getSurfaceForView(resolved.view);
   const entityName = resolved.entityName;
+  const pulseDateKeyMatch =
+    resolved.view === "entity-pulse"
+      ? (rawPathname || "").match(/^\/entity[\\/].+?[\\/]pulse(?:[\\/](\d{4}-\d{2}-\d{2}))?$/i)
+      : null;
   const canonicalPath = buildCockpitPathForView({
     view: resolved.view,
     entity: entityName,
@@ -618,8 +850,16 @@ export function resolvePathToCockpitState(rawPathname: string, rawSearch = ""): 
     doc: params.get("doc"),
     workspace: params.get("workspace"),
     panel: null,
-    tab: params.get("tab"),
-    extra: buildPassthroughExtraParams(params),
+    tab:
+      resolved.view === "research"
+        ? resolved.researchTab
+        : params.get("tab"),
+    extra: {
+      ...buildPassthroughExtraParams(params, {
+        includeEntityReadMode: resolved.view === "entity",
+      }),
+      dateKey: pulseDateKeyMatch?.[1] ?? null,
+    },
   });
 
   return {
@@ -664,15 +904,42 @@ export function resolvePathToView(rawPathname: string): {
     return { view: "entity", entityName: null, spreadsheetId: null, researchTab: "overview", isUnknownRoute: false };
   }
 
+  if (pathname.match(/^\/entity\/[^/]+\/pulse(?:\/\d{4}-\d{2}-\d{2})?$/i)) {
+    const match = (rawPathname || "").match(/^\/entity[\\/](.+?)[\\/]pulse(?:[\\/](\d{4}-\d{2}-\d{2}))?$/i);
+    const name = match ? decodeURIComponent(match[1]) : null;
+    return { view: "entity-pulse", entityName: name, spreadsheetId: null, researchTab: "overview", isUnknownRoute: false };
+  }
+
   if (pathname.startsWith("/entity/") || pathname.startsWith("/entity%2f")) {
     const match = (rawPathname || "").match(/^\/entity[\\/](.+)$/i);
     const name = match ? decodeURIComponent(match[1]) : null;
     return { view: "entity", entityName: name, spreadsheetId: null, researchTab: "overview", isUnknownRoute: false };
   }
 
+  // /entity-pulse/:slug — per-entity daily digest. Extract the slug into
+  // entityName so the canonical redirect preserves it as ?entity=… (same
+  // pattern as /entity/:slug above). Without this, the slug is dropped
+  // during the legacy→cockpit redirect and the page renders empty.
+  if (pathname.startsWith("/entity-pulse/")) {
+    const match = (rawPathname || "").match(/^\/entity-pulse[\\/](.+)$/i);
+    const name = match ? decodeURIComponent(match[1]) : null;
+    return { view: "entity-pulse", entityName: name, spreadsheetId: null, researchTab: "overview", isUnknownRoute: false };
+  }
+
+  const researchTabMatch = pathname.match(/^\/research(?:\/(overview|signals|briefing|deals|changes|changelog))?$/);
+  if (researchTabMatch) {
+    return {
+      view: "research",
+      entityName: null,
+      spreadsheetId: null,
+      researchTab: (researchTabMatch[1] as ResearchTab | undefined) ?? "overview",
+      isUnknownRoute: false,
+    };
+  }
+
   // General matching: longest path wins. Never let "/" swallow all routes.
   const candidates = VIEW_REGISTRY
-    .filter((entry) => entry.id !== "entity")
+    .filter((entry) => entry.id !== "entity" && entry.id !== "entity-pulse" && entry.id !== "research")
     .flatMap((entry) => [entry.path, ...(entry.aliases ?? [])].map((path) => ({ view: entry.id, path })))
     .sort((a, b) => b.path.length - a.path.length);
 

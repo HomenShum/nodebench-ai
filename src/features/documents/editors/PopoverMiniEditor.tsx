@@ -8,7 +8,7 @@ import DocumentMiniEditor from "./DocumentMiniEditor";
 const SpreadsheetMiniEditor = React.lazy(() => import("./SpreadsheetMiniEditor"));
 
 export type PopoverMiniEditorProps =
-  | { kind: "task"; taskId: Id<"tasks">; onClose: () => void }
+  | { kind: "task"; taskId: Id<"userEvents">; onClose: () => void }
   | { kind: "event"; eventId: Id<"events">; onClose: () => void; documentIdForAssociation?: Id<"documents"> | null }
   | { kind: "document"; documentId: Id<"documents">; onClose: () => void }
   | { kind: "spreadsheet"; documentId: Id<"documents">; onClose: () => void };

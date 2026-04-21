@@ -195,7 +195,7 @@ interface CategoryBreakdownProps {
   avgReadTime?: number;
 }
 
-function formatCategoryLabel(category) {
+function formatCategoryLabel(category: string | undefined | null) {
   const raw = String(category ?? "").trim();
   if (!raw) return "";
 
@@ -276,18 +276,18 @@ export default function ComponentMetricsDashboard() {
   const aggregates = useMemo(() => {
     if (!todayMetrics) return null;
 
-    const totalItems = todayMetrics.reduce((sum, m) => sum + m.itemCount, 0);
-    const totalImpressions = todayMetrics.reduce((sum, m) => sum + (m.impressions || 0), 0);
-    const totalClicks = todayMetrics.reduce((sum, m) => sum + (m.clicks || 0), 0);
+    const totalItems = todayMetrics.reduce((sum: number, m: any) => sum + m.itemCount, 0);
+    const totalImpressions = todayMetrics.reduce((sum: number, m: any) => sum + (m.impressions || 0), 0);
+    const totalClicks = todayMetrics.reduce((sum: number, m: any) => sum + (m.clicks || 0), 0);
     const avgCTR = totalImpressions > 0 ? totalClicks / totalImpressions : 0;
 
-    const metricsWithReadTime = todayMetrics.filter(m => m.avgReadTimeSeconds && m.avgReadTimeSeconds > 0);
+    const metricsWithReadTime = todayMetrics.filter((m: any) => m.avgReadTimeSeconds && m.avgReadTimeSeconds > 0);
     const avgReadTime = metricsWithReadTime.length > 0
-      ? metricsWithReadTime.reduce((sum, m) => sum + (m.avgReadTimeSeconds || 0), 0) / metricsWithReadTime.length
+      ? metricsWithReadTime.reduce((sum: number, m: any) => sum + (m.avgReadTimeSeconds || 0), 0) / metricsWithReadTime.length
       : 0;
 
-    const uniqueSources = new Set(todayMetrics.map(m => m.sourceName)).size;
-    const uniqueReportTypes = new Set(todayMetrics.map(m => m.reportType)).size;
+    const uniqueSources = new Set(todayMetrics.map((m: any) => m.sourceName)).size;
+    const uniqueReportTypes = new Set(todayMetrics.map((m: any) => m.reportType)).size;
 
     return {
       totalItems,
@@ -573,7 +573,7 @@ export default function ComponentMetricsDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {topSources.map((source, index) => (
+                    {topSources.map((source: any, index: number) => (
                       <div
                         key={source.sourceName}
                         className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg"

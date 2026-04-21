@@ -38,15 +38,15 @@ export interface AgendaListSectionProps {
     /** Callback when order changes */
     onReorder?: (newKeys: string[]) => void;
     /** Currently selected task ID */
-    selectedTaskId?: Id<"tasks"> | null;
+    selectedTaskId?: Id<"userEvents"> | null;
     /** Currently selected event ID */
     selectedEventId?: Id<"events"> | null;
     /** Callback when a task is selected */
-    onSelectTask?: (id: Id<"tasks">, source: "today" | "week") => void;
+    onSelectTask?: (id: Id<"userEvents">, source: "today" | "week") => void;
     /** Callback when an event is selected */
     onSelectEvent?: (id: Id<"events">) => void;
     /** Callback when task status changes */
-    onChangeTaskStatus?: (id: Id<"tasks">, status: string) => void;
+    onChangeTaskStatus?: (id: Id<"userEvents">, status: string) => void;
     /** Callback to clear task selection */
     onClearTaskSelection?: () => void;
     /** Callback to clear event selection */
@@ -155,8 +155,8 @@ export function AgendaListSection({
                 <TaskRowGlobal
                     t={entry.item}
                     density={density}
-                    onSelect={(id) => onSelectTask?.(id as Id<"tasks">, selectionSource)}
-                    onChangeStatus={(id, status) => onChangeTaskStatus?.(id as Id<"tasks">, status)}
+                    onSelect={(id) => onSelectTask?.(id as Id<"userEvents">, selectionSource)}
+                    onChangeStatus={(id, status) => onChangeTaskStatus?.(id as Id<"userEvents">, status)}
                     onOpenRef={onOpenReference}
                 />
                 {showInlineEditors && selectedTaskId === entry.item._id && (

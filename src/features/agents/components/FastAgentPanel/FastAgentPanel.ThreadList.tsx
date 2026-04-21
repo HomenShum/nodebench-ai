@@ -27,7 +27,7 @@ function formatRelativeTime(timestamp: number): string {
 interface FastAgentThreadListProps {
   activeThreadId: string | null;
   onSelectThread: (threadId: string) => void;
-  onDeleteThread: (threadId: string) => void;
+  onDeleteThread?: (threadId: string) => void;
   onPinThread?: (threadId: string) => void;
   className?: string;
   /** Threads to display */
@@ -171,7 +171,7 @@ export function FastAgentThreadList({
   };
 
   const confirmDelete = () => {
-    if (deletingThreadId) {
+    if (deletingThreadId && onDeleteThread) {
       onDeleteThread(deletingThreadId);
       setDeletingThreadId(null);
     }
@@ -272,15 +272,17 @@ export function FastAgentThreadList({
                               <Pin className={cn("w-3 h-3", thread.pinned && "fill-current")} />
                             </button>
                           )}
-                          <button
-                            type="button"
-                            onClick={(e) => handleDelete(thread._id, e)}
-                            className="p-1 text-content-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                            title="Delete"
-                            aria-label="Delete conversation"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
+                          {onDeleteThread && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleDelete(thread._id, e)}
+                              className="p-1 text-content-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                              title="Delete"
+                              aria-label="Delete conversation"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -350,7 +352,7 @@ export function FastAgentThreadList({
 
       {/* Delete Modal */}
       {deletingThreadId && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" role="presentation">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="presentation">
           <div className="bg-surface border border-edge shadow-xl rounded-lg p-4 w-full max-w-[240px]" role="dialog" aria-label="Delete conversation">
             <h3 className="text-sm font-semibold text-content mb-1">Delete chat?</h3>
             <p className="text-xs text-content-secondary mb-3">This cannot be undone.</p>

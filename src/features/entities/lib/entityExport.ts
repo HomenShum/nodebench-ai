@@ -37,6 +37,11 @@ export function buildEntityPath(entitySlug: string, shareToken?: string) {
   return shareToken ? `${pathname}?share=${encodeURIComponent(shareToken)}` : pathname;
 }
 
+export function buildEntityPulsePath(entitySlug: string, dateKey?: string | null) {
+  const pathname = `/entity/${encodeURIComponent(entitySlug)}/pulse`;
+  return dateKey ? `${pathname}/${encodeURIComponent(dateKey)}` : pathname;
+}
+
 export function buildEntityInvitePath(entitySlug: string, inviteToken?: string) {
   const pathname = `/entity/${encodeURIComponent(entitySlug)}`;
   return inviteToken ? `${pathname}?invite=${encodeURIComponent(inviteToken)}` : pathname;

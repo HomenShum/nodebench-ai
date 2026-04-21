@@ -219,7 +219,7 @@ export function ExecutionTraceView() {
     });
   }, [primaryTraceSpans?.spans, sessionDetail]);
 
-  const trace = liveTrace ?? SPREADSHEET_EXECUTION_TRACE;
+  const trace: any = liveTrace ?? SPREADSHEET_EXECUTION_TRACE;
   const usingLiveRun = Boolean(liveTrace);
   const activeWorkflowName = useMemo(
     () =>
@@ -271,7 +271,7 @@ export function ExecutionTraceView() {
   const verificationCounts = useMemo(
     () =>
       trace.verification_checks.reduce(
-        (acc, check) => {
+        (acc: Record<"passed" | "warning" | "failed" | "fixed", number>, check: any) => {
           acc[check.status] += 1;
           return acc;
         },
@@ -507,7 +507,7 @@ export function ExecutionTraceView() {
             <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
               <SectionCard title="Why this outcome" icon={<BadgeCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}>
                 <div className="space-y-4">
-                  {trace.decisions.map((decision) => (
+                  {trace.decisions.map((decision: any) => (
                     <div key={decision.decision_id} className="rounded-xl border border-edge bg-surface/50 p-4">
                       <div className="text-sm font-medium text-content">{decision.statement}</div>
                       <div className="mt-2">
@@ -521,7 +521,7 @@ export function ExecutionTraceView() {
               <div className="space-y-6">
                 <SectionCard title="Evidence boundary" icon={<Files className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />}>
                   <div className="space-y-4">
-                    {trace.evidence_catalog.slice(0, 3).map((evidence) => (
+                    {trace.evidence_catalog.slice(0, 3).map((evidence: any) => (
                       <div key={evidence.evidence_id} className="rounded-xl border border-edge bg-surface/50 p-4">
                         <div className="text-sm font-medium text-content">{evidence.title}</div>
                         <p className="mt-2 text-sm leading-relaxed text-content-secondary">{evidence.summary}</p>
@@ -581,7 +581,7 @@ export function ExecutionTraceView() {
               <div className="space-y-6">
                 <SectionCard title="Structured Decisions" icon={<BadgeCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}>
                   <div className="space-y-4">
-                    {trace.decisions.map((decision) => (
+                    {trace.decisions.map((decision: any) => (
                       <div key={decision.decision_id} className="rounded-xl border border-edge bg-surface/50 p-4">
                         <div className="text-sm font-medium text-content">{decision.statement}</div>
                         <div className="mt-2">
@@ -594,7 +594,7 @@ export function ExecutionTraceView() {
 
                 <SectionCard title="Outputs" icon={<FileSpreadsheet className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />}>
                   <div className="space-y-3">
-                    {trace.outputs.map((output) => (
+                    {trace.outputs.map((output: any) => (
                       <div key={output.output_id} className="rounded-xl border border-edge bg-surface/50 p-4">
                         <div className="text-sm font-medium text-content">{output.label}</div>
                         <div className="mt-1 text-xs uppercase tracking-wide text-content-muted">{output.kind}</div>
@@ -614,7 +614,7 @@ export function ExecutionTraceView() {
         <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
           <SectionCard title="Step Timeline" icon={<Waypoints className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />}>
             <div className="space-y-4">
-              {trace.steps.map((step, index) => (
+              {trace.steps.map((step: any, index: number) => (
                 <div key={step.step_id} className="grid gap-3 rounded-2xl border border-edge bg-surface/50 p-4 lg:grid-cols-[120px_1fr]">
                   <div>
                     <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">{step.stage}</div>
@@ -662,7 +662,7 @@ export function ExecutionTraceView() {
         <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
           <SectionCard title="Evidence Catalog" icon={<Files className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />}>
             <div className="space-y-4">
-              {trace.evidence_catalog.map((evidence) => (
+              {trace.evidence_catalog.map((evidence: any) => (
                 <div key={evidence.evidence_id} className="rounded-xl border border-edge bg-surface/50 p-4">
                   <div className="text-sm font-medium text-content">{evidence.title}</div>
                   <p className="mt-2 text-sm leading-relaxed text-content-secondary">{evidence.summary}</p>
@@ -700,7 +700,7 @@ export function ExecutionTraceView() {
 
       {activeTab === "diffs" ? (
         <div className="space-y-6">
-          {trace.diffs.map((diff) => (
+          {trace.diffs.map((diff: any) => (
             <SectionCard key={diff.diff_id} title={diff.target} icon={<GitCompareArrows className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />}>
               <p className="text-sm leading-relaxed text-content-secondary">{diff.summary}</p>
               {diff.cell_changes.length ? (
@@ -714,7 +714,7 @@ export function ExecutionTraceView() {
                       </tr>
                     </thead>
                     <tbody>
-                      {diff.cell_changes.map((change) => (
+                      {diff.cell_changes.map((change: any) => (
                         <tr key={`${diff.diff_id}-${change.cell}`} className="border-t border-edge align-top">
                           <td className="px-3 py-2 font-mono text-xs text-content-muted">{change.cell}</td>
                           <td className="px-3 py-2 text-content-muted">{change.before ?? "blank"}</td>
@@ -743,7 +743,7 @@ export function ExecutionTraceView() {
       {activeTab === "verification" ? (
         <SectionCard title="Verification Loop" icon={<ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}>
           <div className="space-y-4">
-            {trace.verification_checks.map((check) => (
+            {trace.verification_checks.map((check: any) => (
               <div key={check.check_id} className="rounded-xl border border-edge bg-surface/50 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="text-sm font-medium text-content">{check.label}</div>
@@ -752,7 +752,7 @@ export function ExecutionTraceView() {
                 <p className="mt-2 text-sm leading-relaxed text-content-secondary">{check.details}</p>
                 {check.related_artifact_ids.length ? (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {check.related_artifact_ids.map((artifactId) => (
+                    {check.related_artifact_ids.map((artifactId: string) => (
                       <span
                         key={artifactId}
                         className="rounded-full border border-edge bg-surface-secondary/50 px-2 py-1 text-[11px] text-content-muted"

@@ -89,7 +89,7 @@ export function useSidebarState() {
     );
 
     // Task State
-    const [taskPanelTaskId, setTaskPanelTaskId] = useState<Id<"tasks"> | null>(null);
+    const [taskPanelTaskId, setTaskPanelTaskId] = useState<Id<"userEvents"> | null>(null);
     const [tasksSortBy, setTasksSortBy] = useState<"updated" | "due" | "priority" | "title">("updated");
     const [tasksSortOrder, setTasksSortOrder] = useState<"asc" | "desc">("desc");
     const [tasksFilter, setTasksFilter] = useState<"all" | "open" | "completed">("all");

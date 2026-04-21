@@ -27,13 +27,13 @@ export default function DualEditMiniPanel({
   const [allDay, setAllDay] = React.useState<boolean>(!!defaultAllDay);
   const [creating, setCreating] = React.useState<boolean>(false);
 
-  const [taskId, setTaskId] = React.useState<Id<"tasks"> | null>(null);
+  const [taskId, setTaskId] = React.useState<Id<"userEvents"> | null>(null);
   const [eventId, setEventId] = React.useState<Id<"events"> | null>(null);
 
   const createBoth = async () => {
     try {
       setCreating(true);
-      const p1 = createTask({ title: taskTitle.trim() || "New task", status: "todo", dueDate: dateMs }) as Promise<Id<"tasks">>;
+      const p1 = createTask({ title: taskTitle.trim() || "New task", status: "todo", dueDate: dateMs }) as Promise<Id<"userEvents">>;
       const start = allDay ? dateMs : dateMs + 9 * 60 * 60 * 1000;
       const end = allDay ? undefined : dateMs + 10 * 60 * 60 * 1000;
       const p2 = createEvent({ title: eventTitle.trim() || "New event", startTime: start, endTime: end, allDay, status: "confirmed" }) as Promise<Id<"events">>;
@@ -53,7 +53,7 @@ export default function DualEditMiniPanel({
   const createTaskOnly = async () => {
     try {
       setCreating(true);
-      const tid = (await createTask({ title: taskTitle.trim() || "New task", status: "todo", dueDate: dateMs })) as Id<"tasks">;
+      const tid = (await createTask({ title: taskTitle.trim() || "New task", status: "todo", dueDate: dateMs })) as Id<"userEvents">;
       setTaskId(tid);
       setMode("edit");
       toast.success("Task created");

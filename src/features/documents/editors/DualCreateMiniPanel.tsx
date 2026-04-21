@@ -25,7 +25,7 @@ export default function DualCreateMiniPanel({
   const [eventTitle, setEventTitle] = React.useState<string>(defaultTitle ?? "New event");
   const [allDay, setAllDay] = React.useState<boolean>(!!defaultAllDay);
 
-  const [createdTaskId, setCreatedTaskId] = React.useState<Id<"tasks"> | null>(null);
+  const [createdTaskId, setCreatedTaskId] = React.useState<Id<"userEvents"> | null>(null);
   const [createdEventId, setCreatedEventId] = React.useState<Id<"events"> | null>(null);
 
   if (createdTaskId) {
@@ -46,7 +46,7 @@ export default function DualCreateMiniPanel({
     try {
       const title = taskTitle.trim() || "New task";
       const id = await createTask({ title, status: "todo", dueDate: dateMs });
-      setCreatedTaskId(id as Id<"tasks">);
+      setCreatedTaskId(id as Id<"userEvents">);
       toast.success("Task created");
     } catch (e) {
       console.error(e);

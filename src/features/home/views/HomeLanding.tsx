@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "convex/react";
+import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import { useConvexApi } from "@/lib/convexApi";
 import { buildCockpitPath } from "@/lib/registry/viewRegistry";
@@ -19,7 +20,7 @@ import {
 import { ReportCardSkeleton } from "@/components/skeletons";
 import { ProductThumbnail } from "@/features/product/components/ProductThumbnail";
 import { ProductSourceIdentity } from "@/features/product/components/ProductSourceIdentity";
-import { ProductIntakeComposer } from "@/features/product/components/ProductIntakeComposer";
+import { ProductIntakeComposer, type ProductComposerMode } from "@/features/product/components/ProductIntakeComposer";
 import { IntakeDetectedSources } from "@/features/product/components/IntakeDetectedSources";
 import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap";
 import { buildOperatorContextHint, buildOperatorContextLabel } from "@/features/product/lib/operatorContext";
@@ -167,6 +168,8 @@ export function HomeLanding() {
   const [showAllPrompts, setShowAllPrompts] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<ProductDraftFile[]>(() => draft?.files ?? []);
   const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [composerMode, setComposerMode] = useState<ProductComposerMode>("ask");
+  const [savingCapture, setSavingCapture] = useState(false);
   const [recentSearches] = useState(() => getRecentSearches());
   const queryParam = searchParams.get("q");
 
@@ -175,6 +178,9 @@ export function HomeLanding() {
   );
   const saveFileMutation = useMutation(
     api?.domains.product.me.saveFile ?? ("skip" as any),
+  );
+  const saveContextCapture = useMutation(
+    api?.domains.product.me.saveContextCapture ?? ("skip" as any),
   );
   const meSnapshot = useQuery(
     api?.domains.product.me.getMeSnapshot ?? "skip",
@@ -333,6 +339,31 @@ export function HomeLanding() {
     }
   };
 
+  const handleSaveCapture = async (mode: Exclude<ProductComposerMode, "ask">, value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    setSavingCapture(true);
+    try {
+      await saveContextCapture({
+        anonymousSessionId: getAnonymousProductSessionId(),
+        type: mode,
+        content: trimmed,
+      });
+      setQuery("");
+      setComposerMode("ask");
+      saveProductDraft({
+        query: "",
+        lens,
+        files: pendingFiles,
+      });
+      toast.success(mode === "note" ? "Note saved to inbox" : "Task saved to inbox");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to save quick capture");
+    } finally {
+      setSavingCapture(false);
+    }
+  };
+
   return (
     <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[1120px] flex-col px-4 pb-24 pt-6 sm:px-6 sm:pb-12 sm:pt-10">
       <section className="mx-auto w-full max-w-[760px] text-center">
@@ -367,6 +398,14 @@ export function HomeLanding() {
             placeholder="Paste a LinkedIn URL, drop a pitch deck, or describe the company."
             helperText="Accepts URLs, PDFs, docs, and notes."
             submitLabel="Start run"
+            showOperatorContextChip={false}
+            showOperatorContextHint={false}
+            autoFocus
+            mode={composerMode}
+            onModeChange={setComposerMode}
+            showCaptureModes
+            onSaveCapture={handleSaveCapture}
+            captureSavePending={savingCapture}
           />
           {/* Live classifier affordance — stays silent until the user types
               or drops files, then shows "Detected: N LinkedIn profiles ·

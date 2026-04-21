@@ -64,6 +64,7 @@ export type ExtendedRunPanelProps = {
   entitySlug: string;
   canEdit: boolean;
   className?: string;
+  showLauncherWhenIdle?: boolean;
 };
 
 const STATUS_PILL: Record<string, { label: string; className: string }> = {
@@ -374,6 +375,7 @@ export function ExtendedRunPanel({
   entitySlug,
   canEdit,
   className,
+  showLauncherWhenIdle = false,
 }: ExtendedRunPanelProps) {
   const [launcherOpen, setLauncherOpen] = useState(false);
   const runs = useQuery(
@@ -393,7 +395,7 @@ export function ExtendedRunPanel({
   // signals intent by clicking "Run diligence" or a past run is active.
   const idle = !latest && !active;
 
-  if (idle && canEdit && !launcherOpen) {
+  if (idle && canEdit && !launcherOpen && !showLauncherWhenIdle) {
     return (
       <div
         className={"flex items-center gap-2 text-[12px] text-white/50 " + (className ?? "")}
@@ -432,7 +434,7 @@ export function ExtendedRunPanel({
           <span className="font-mono text-[11px] text-white/40">
             {runs.length} run{runs.length === 1 ? "" : "s"}
           </span>
-        ) : idle && canEdit ? (
+        ) : idle && canEdit && !showLauncherWhenIdle ? (
           <button
             type="button"
             onClick={() => setLauncherOpen(false)}
