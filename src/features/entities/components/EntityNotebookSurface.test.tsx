@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { EntityNotebookSurface } from "./EntityNotebookSurface";
@@ -35,109 +35,70 @@ vi.mock("@/features/entities/components/notebook/EntityNotebookLiveMount", () =>
   ),
 }));
 
-vi.mock("@/features/entities/components/notebook/NotebookTimeline", () => ({
-  NotebookTimeline: ({ entitySlug }: { entitySlug: string }) => (
-    <div data-testid="mock-notebook-timeline">timeline:{entitySlug}</div>
-  ),
-}));
-
-vi.mock("@/features/entities/components/LiveDiligenceSection", () => ({
-  LiveDiligenceSection: ({ entitySlug }: { entitySlug: string }) => (
-    <div data-testid="mock-live-diligence">runtime:{entitySlug}</div>
-  ),
-}));
-
 describe("EntityNotebookSurface", () => {
-  it("renders classic drift state and routes view toggle clicks through stable callbacks", () => {
-    const onSelectClassic = vi.fn();
-    const onSelectNotebook = vi.fn();
-    const onSelectLive = vi.fn();
+  const baseProps = {
+    entitySlug: "softbank",
+    shareToken: undefined,
+    showViewModeToggle: false,
+    isReadMode: false,
+    liveNotebookEnabled: true,
+    materializingLiveWorkspace: false,
+    hasWorkspaceSlug: true,
+    canEditNotebook: true,
+    notebookDriftMessage: null,
+    notebookDriftUpdatedLabel: null,
+    viewerOwnerKey: "user:owner",
+    collaborationParticipants: [],
+    latestHumanEditorOwnerKey: "user:owner",
+    latestHumanEditorUpdatedAt: Date.now(),
+    onSelectClassic: vi.fn(),
+    onSelectNotebook: vi.fn(),
+    onSelectLive: vi.fn(),
+    onOpenReferenceNotebook: vi.fn(),
+  } as const;
 
+  it("renders the fallback notebook view when no live notebook exists yet", async () => {
     render(
       <EntityNotebookSurface
-        entitySlug="softbank"
-        entityViewMode="classic"
-        showViewModeToggle
-        liveNotebookEnabled
-        materializingLiveWorkspace={false}
-        hasLiveEntity
-        hasWorkspaceSlug
-        canEditNotebook
-        notebookDriftMessage="2 live notebook edits are newer than the saved report."
-        notebookDriftUpdatedLabel="2m ago"
-        viewerOwnerKey="user:owner"
-        latestHumanEditorOwnerKey="user:owner"
-        latestHumanEditorUpdatedAt={Date.now()}
-        onSelectClassic={onSelectClassic}
-        onSelectNotebook={onSelectNotebook}
-        onSelectLive={onSelectLive}
-        onOpenReferenceNotebook={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText("Live notebook ahead")).toBeInTheDocument();
-    expect(
-      screen.getByText("2 live notebook edits are newer than the saved report."),
-    ).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Classic" }));
-    fireEvent.click(screen.getByRole("button", { name: "Notebook" }));
-    fireEvent.click(screen.getByRole("button", { name: /Live/i }));
-
-    expect(onSelectClassic).toHaveBeenCalledTimes(1);
-    expect(onSelectNotebook).toHaveBeenCalledTimes(1);
-    expect(onSelectLive).toHaveBeenCalledTimes(1);
-  });
-
-  it("renders the read-only notebook surface through the memoized boundary", async () => {
-    render(
-      <EntityNotebookSurface
-        entitySlug="softbank"
+        {...baseProps}
         entityViewMode="notebook"
-        showViewModeToggle
-        liveNotebookEnabled
-        materializingLiveWorkspace={false}
-        hasLiveEntity
-        hasWorkspaceSlug
-        canEditNotebook
-        viewerOwnerKey="user:owner"
-        latestHumanEditorOwnerKey="user:owner"
-        latestHumanEditorUpdatedAt={Date.now()}
-        onSelectClassic={vi.fn()}
-        onSelectNotebook={vi.fn()}
-        onSelectLive={vi.fn()}
-        onOpenReferenceNotebook={vi.fn()}
+        hasLiveEntity={false}
       />,
     );
 
     expect(await screen.findByTestId("mock-notebook-view")).toHaveTextContent(
       "notebook:softbank:true:false",
     );
+    expect(screen.queryByTestId("mock-live-notebook")).not.toBeInTheDocument();
   });
 
-  it("renders the live notebook surface through the memoized boundary", async () => {
+  it("renders the live notebook surface whenever live data exists", async () => {
     render(
       <EntityNotebookSurface
-        entitySlug="softbank"
-        entityViewMode="live"
-        showViewModeToggle
-        liveNotebookEnabled
-        materializingLiveWorkspace={false}
+        {...baseProps}
+        entityViewMode="notebook"
         hasLiveEntity
-        hasWorkspaceSlug
-        canEditNotebook={false}
-        viewerOwnerKey="user:owner"
-        latestHumanEditorOwnerKey="user:editor"
-        latestHumanEditorUpdatedAt={Date.now()}
-        onSelectClassic={vi.fn()}
-        onSelectNotebook={vi.fn()}
-        onSelectLive={vi.fn()}
-        onOpenReferenceNotebook={vi.fn()}
       />,
     );
 
     expect(await screen.findByTestId("mock-live-notebook")).toHaveTextContent(
-      "live:softbank:false:user:editor",
+      "live:softbank:true:user:owner",
+    );
+    expect(screen.queryByTestId("mock-notebook-view")).not.toBeInTheDocument();
+  });
+
+  it("turns the live notebook into a read-only report surface in read mode", async () => {
+    render(
+      <EntityNotebookSurface
+        {...baseProps}
+        entityViewMode="live"
+        isReadMode
+        hasLiveEntity
+      />,
+    );
+
+    expect(await screen.findByTestId("mock-live-notebook")).toHaveTextContent(
+      "live:softbank:false:user:owner",
     );
   });
 });

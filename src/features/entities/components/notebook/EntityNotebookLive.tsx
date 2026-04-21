@@ -16,10 +16,14 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import { useNavigate } from "react-router-dom";
-import { Activity, AlertTriangle, ExternalLink, Link2, Lock } from "lucide-react";
+import {
+  AlertTriangle,
+  ExternalLink,
+  Link2,
+  Lock,
+} from "lucide-react";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { useConvexApi } from "@/lib/convexApi";
-import { buildEntityPath } from "@/features/entities/lib/entityExport";
 import { getAnonymousProductSessionId } from "@/features/product/lib/productIdentity";
 import { useStreamingSearch } from "@/hooks/useStreamingSearch";
 import { publishNotebookAlert } from "@/lib/notebookAlerts";
@@ -35,12 +39,10 @@ import { SlashPalette, type SlashCommand } from "./SlashPalette";
 import { MentionPicker, type EntityMatch } from "./MentionPicker";
 import { BlockStatusBar } from "./BlockStatusBar";
 import { NotebookDiligenceOverlayHost } from "./NotebookDiligenceOverlayHost";
-import { NotebookRightRail } from "./NotebookRightRail";
-import { NotebookOutline } from "./NotebookOutline";
 import { NotebookDismissalsSync } from "./NotebookDismissalsSync";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
-import { NotebookScratchpadTracePanel } from "./NotebookScratchpadTracePanel";
-import { NotebookRunMapPanel } from "./NotebookRunMapPanel";
+import { NotebookTopStatusRow } from "@/features/entities/components/NotebookTopStatusRow";
+import { WorkspaceDrawerPill } from "./WorkspaceDrawerPill";
 import {
   enqueue as enqueueOfflineEdit,
   makeEditId,
@@ -52,8 +54,9 @@ import { useDiligenceBlocks } from "./useDiligenceBlocks";
 import type { DiligenceDecorationData } from "./DiligenceDecorationPlugin";
 import { acceptDecorationIntoNotebook } from "./acceptDecorationIntoNotebook";
 import { useAgentActions, type DecorationContext } from "@/features/agents/hooks/useAgentActions";
+import { useFastAgent } from "@/features/agents/context/FastAgentContext";
 import { AgentAuthorTag } from "@/features/agents/primitives/AgentAuthorTag";
-import { useScrubTime } from "./useScrubTime";
+import { useViewMode } from "@/features/entities/lib/useViewMode";
 
 type BlockKind =
   | "text"
@@ -146,16 +149,6 @@ function resolvePresenceSelfUserId(
   if (viewerOwnerKey?.trim()) return viewerOwnerKey.trim();
   const trimmed = anonymousSessionId?.trim();
   return trimmed ? `anon:${trimmed}` : null;
-}
-
-function formatNotebookRuntimeRelative(timestamp: number): string {
-  const ageMs = Math.max(0, Date.now() - timestamp);
-  if (ageMs < 60_000) return "just now";
-  const minutes = Math.round(ageMs / 60_000);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.round(hours / 24)}d ago`;
 }
 
 export function shouldRefreshAgentNotebookProjection(
@@ -341,7 +334,7 @@ export function describeNotebookMutationFailure(
 export function EntityNotebookLive({
   entitySlug,
   shareToken,
-  canEdit = true,
+  canEdit: canEditProp = true,
   onOpenReferenceNotebook,
   viewerOwnerKey,
   collaborationParticipants,
@@ -349,12 +342,16 @@ export function EntityNotebookLive({
 }: Props) {
   const api = useConvexApi();
   const navigate = useNavigate();
-  const buildEntityPathWithShare = useCallback(
-    (nextSlug: string) => buildEntityPath(nextSlug, shareToken),
-    [shareToken],
-  );
+  const { openWithContext } = useFastAgent();
   const anonymousSessionId = getAnonymousProductSessionId();
   const toast = useToast();
+  // Read-mode mask: when the page is in ?view=read, the notebook must
+  // behave as if the viewer has no edit rights. Empty-state CTAs,
+  // overlay accept affordances, and inline insert paths all branch on
+  // canEdit — masking it here keeps the change surgical instead of
+  // sprinkling `isReadMode &&` guards across 29 call sites.
+  const { isReadMode } = useViewMode();
+  const canEdit = canEditProp && !isReadMode;
   // Unified agent actions — routes inline decoration events into the
   // drawer's history + persists dismissals. See useAgentActions for
   // the seam contract. Keep this call ONCE at component top so the
@@ -423,14 +420,10 @@ export function EntityNotebookLive({
     | null
     | undefined;
 
-  const backlinks = useQuery(
-    api?.domains.product.blocks.listBacklinksForEntity ?? "skip",
-    api?.domains.product.blocks.listBacklinksForEntity
-      ? { anonymousSessionId, shareToken, entitySlug }
-      : "skip",
-  );
-
   const appendBlock = useMutation(api?.domains.product.blocks.appendBlock ?? ("skip" as any));
+  const backfillEntityBlocks = useMutation(
+    api?.domains.product.blocks.backfillEntityBlocks ?? ("skip" as any),
+  );
   const moveBlock = useMutation(api?.domains.product.blocks.moveBlock ?? ("skip" as any));
   const insertBlockBetween = useMutation(
     api?.domains.product.blocks.insertBlockBetween ?? ("skip" as any),
@@ -474,6 +467,7 @@ export function EntityNotebookLive({
   }, []);
   const [runtimeError, setRuntimeError] = useState<{ title: string; detail?: string } | null>(null);
   const [creatingFirstBlock, setCreatingFirstBlock] = useState(false);
+  const [preparingSeedContent, setPreparingSeedContent] = useState(false);
   const [optimisticBlockContent, setOptimisticBlockContent] = useState<Record<string, BlockChip[]>>(
     {},
   );
@@ -488,6 +482,7 @@ export function EntityNotebookLive({
   const [hiddenDecorationRunIds, setHiddenDecorationRunIds] = useState<Record<string, true>>({});
   const createFirstBlockInFlightRef = useRef<Promise<Id<"productBlocks"> | null> | null>(null);
   const autoCreateFirstBlockAttemptedRef = useRef(false);
+  const autoSeedNotebookAttemptedRef = useRef(false);
   const autoFocusInitialBlockAttemptedRef = useRef(false);
   const editorHandlesRef = useRef<Map<string, NotebookBlockEditorHandle>>(new Map());
   const pendingOptimisticBlockContentRef = useRef<Record<string, BlockChip[]>>({});
@@ -610,18 +605,71 @@ export function EntityNotebookLive({
 
   useEffect(() => {
     autoCreateFirstBlockAttemptedRef.current = false;
+    autoSeedNotebookAttemptedRef.current = false;
     autoFocusInitialBlockAttemptedRef.current = false;
     createFirstBlockInFlightRef.current = null;
     setCreatingFirstBlock(false);
+    setPreparingSeedContent(false);
   }, [entitySlug, shareToken]);
+
+  const hasDerivedNotebookSeed = Boolean(
+    (snapshot?.blocks?.length ?? 0) > 0 ||
+      (snapshot?.reportCount ?? 0) > 0 ||
+      snapshot?.reportUpdatedAt,
+  );
+
+  const hasOnlyEmptyPlaceholderBlocks = useMemo(() => {
+    if (!blocks || blocks.length === 0) return false;
+    return blocks.every((block) =>
+      isTriviallyEmptyNotebookBlock(
+        block,
+        optimisticBlockContent[String(block._id)] ?? block.content,
+      ),
+    );
+  }, [blocks, optimisticBlockContent]);
+
+  useEffect(() => {
+    if (!canEdit || !blocks || snapshot === undefined) return;
+    if (!hasDerivedNotebookSeed) return;
+    if (autoSeedNotebookAttemptedRef.current) return;
+
+    const needsSeed = blocks.length === 0 || hasOnlyEmptyPlaceholderBlocks;
+    if (!needsSeed) return;
+
+    autoSeedNotebookAttemptedRef.current = true;
+    setPreparingSeedContent(true);
+    void backfillEntityBlocks({ anonymousSessionId, shareToken, entitySlug })
+      .then(() => {
+        setRuntimeError(null);
+      })
+      .catch((error: unknown) => {
+        autoSeedNotebookAttemptedRef.current = false;
+        reportNotebookError("Failed to prepare the notebook from the saved brief", error);
+      })
+      .finally(() => {
+        setPreparingSeedContent(false);
+      });
+  }, [
+    anonymousSessionId,
+    backfillEntityBlocks,
+    blocks,
+    canEdit,
+    entitySlug,
+    hasDerivedNotebookSeed,
+    hasOnlyEmptyPlaceholderBlocks,
+    reportNotebookError,
+    shareToken,
+    snapshot,
+  ]);
 
   useEffect(() => {
     if (!canEdit || !blocks || snapshot === undefined) return;
     if (blocks.length > 0) return;
+    if (hasDerivedNotebookSeed) return;
     if (autoCreateFirstBlockAttemptedRef.current) return;
     autoCreateFirstBlockAttemptedRef.current = true;
     void openFirstBlock();
-  }, [blocks, canEdit, openFirstBlock, snapshot]);
+  }, [blocks, canEdit, hasDerivedNotebookSeed, openFirstBlock, snapshot]);
 
   useEffect(() => {
     if (!blocks || Object.keys(optimisticBlockContent).length === 0) return;
@@ -1078,11 +1126,6 @@ export function EntityNotebookLive({
   const [dismissedKeySet, setDismissedKeySet] = useState<Set<string>>(
     () => new Set<string>(),
   );
-  // Timeline scrub cursor — when set, decorations filter to those
-  // authored at-or-before the cursor. Null == view "now". Subscribed
-  // via URL-hash hook so NotebookTimeline can set the cursor from a
-  // sibling component without prop-drilling through Suspense.
-  const scrubTime = useScrubTime();
   const visibleDiligenceDecorations = useMemo(
     () =>
       diligenceBlocks.projections.filter((projection) => {
@@ -1092,12 +1135,6 @@ export function EntityNotebookLive({
         // so dismissing one block's decoration from a run does not
         // silence the other block types produced by the same run.
         if (dismissedKeySet.has(`${projection.scratchpadRunId}::${projection.blockType}`)) {
-          return false;
-        }
-        // Timeline scrub filter — when the user has scrubbed back,
-        // hide decorations produced after the cursor (they didn't
-        // exist at that moment yet).
-        if (scrubTime != null && projection.updatedAt > scrubTime) {
           return false;
         }
         // Suppress starter/placeholder cards that have no real content.
@@ -1117,7 +1154,7 @@ export function EntityNotebookLive({
         if (placeholderFragments.some((frag) => lower.includes(frag))) return false;
         return true;
       }),
-    [diligenceBlocks.projections, hiddenDecorationRunIds, dismissedKeySet, scrubTime],
+    [diligenceBlocks.projections, hiddenDecorationRunIds, dismissedKeySet],
   );
 
   const notebookLoadState = getNotebookLoadState({
@@ -1129,62 +1166,7 @@ export function EntityNotebookLive({
   const isNotebookRunActive =
     latestScratchpadRun?.status === "streaming" ||
     latestScratchpadRun?.status === "structuring";
-  const notebookRuntimeTone = latestScratchpadRun
-    ? latestScratchpadRun.status === "failed"
-      ? "border-rose-500/20 bg-rose-500/10 text-rose-200"
-      : isNotebookRunActive
-        ? "border-sky-500/20 bg-sky-500/10 text-sky-200"
-        : latestScratchpadRun.status === "merged"
-          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
-          : "border-amber-500/20 bg-amber-500/10 text-amber-200"
-    : "border-gray-200 bg-gray-50 text-gray-700 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200";
-  const notebookRuntimeLabel = latestScratchpadRun
-    ? latestScratchpadRun.status === "streaming"
-      ? "Running"
-      : latestScratchpadRun.status === "structuring"
-        ? "Structuring"
-        : latestScratchpadRun.status === "merged"
-          ? "Ready"
-          : latestScratchpadRun.status === "failed"
-            ? "Needs review"
-            : latestScratchpadRun.status
-    : "Ready";
-  const scratchpadRailSlot = useMemo(() => {
-    if (!canEdit || !latestScratchpadRun) return undefined;
-    return (
-      <NotebookScratchpadTracePanel
-        markdownSource={latestScratchpadRun?.markdownSource}
-        runLabel={
-          latestScratchpadRun
-            ? `${snapshot?.entityName ?? entitySlug} · ${latestScratchpadRun.status}`
-            : `${snapshot?.entityName ?? entitySlug} · no active run`
-        }
-        version={latestScratchpadRun?.version}
-        updatedAt={latestScratchpadRun?.updatedAt}
-        checkpoints={latestScratchpadRun?.checkpoints}
-      />
-    );
-  }, [canEdit, entitySlug, latestScratchpadRun, snapshot?.entityName]);
-  const runMapRailSlot = useMemo(() => {
-    if (!latestScratchpadRun) return undefined;
-    return (
-      <NotebookRunMapPanel
-        entitySlug={entitySlug}
-        runStatus={latestScratchpadRun.status}
-        checkpointCount={latestScratchpadRun.checkpointCount}
-        updatedAt={latestScratchpadRun.updatedAt}
-        latestBlockType={latestScratchpadRun.latestBlockType}
-      />
-    );
-  }, [entitySlug, latestScratchpadRun]);
   const focusedBlock = blocks?.find((block) => block._id === focusedBlockId);
-  const showReferenceOverlayStrip =
-    visibleDiligenceDecorations.length > 0 && (blocks?.length ?? 0) > 0;
-  const showNotebookRuntimeHeader =
-    canEdit ||
-    Boolean(latestScratchpadRun) ||
-    showReferenceOverlayStrip ||
-    visibleDiligenceDecorations.length > 0;
   // Nesting depth per block. Walks parentBlockId chain once, caches in a
   // Map for O(1) lookup during the render map. Guards against parent cycles
   // by stopping after 16 hops.
@@ -1216,23 +1198,15 @@ export function EntityNotebookLive({
     }
     return depthByBlock;
   }, [blocks]);
-  // Outline items — collect H1/H2/H3 with non-empty text. Rendered in the
-  // right rail only when ≥2 exist (NotebookOutline enforces the floor).
-  const outlineItems = useMemo(
-    () =>
-      (blocks ?? [])
-        .filter(
-          (b) =>
-            b.kind === "heading_1" || b.kind === "heading_2" || b.kind === "heading_3",
-        )
-        .map((b) => ({
-          blockId: String(b._id),
-          kind: b.kind as "heading_1" | "heading_2" | "heading_3",
-          text: chipsToPlainText(
-            (optimisticBlockContent[String(b._id)] ?? b.content) as BlockChip[],
-          ),
-        })),
-    [blocks, optimisticBlockContent],
+  const openWorkspaceDrawer = useCallback(
+    (initialTab: "chat" | "scratchpad" | "flow") => {
+      openWithContext({
+        initialTab,
+        contextEntitySlug: entitySlug,
+        contextTitle: snapshot?.entityName ?? entitySlug,
+      });
+    },
+    [entitySlug, openWithContext, snapshot?.entityName],
   );
   const canUseOverlayActions = canEdit && notebookLoadState.fullyLoaded;
 
@@ -1541,34 +1515,67 @@ export function EntityNotebookLive({
     return <div className="py-16 text-center text-sm text-gray-500">Loading notebookâ€¦</div>;
   }
 
-  if (!blocks || blocks.length === 0) {
+  if (!blocks || blocks.length === 0 || hasOnlyEmptyPlaceholderBlocks) {
     return (
       <div className="rounded-2xl border border-gray-200/80 bg-white/[0.02] px-6 py-16 text-center dark:border-white/10">
         <div className="mx-auto max-w-xl">
           <p className="text-base font-medium text-gray-900 dark:text-gray-100">
             {canEdit
-              ? creatingFirstBlock
-                ? "Opening the live notebook editor."
-                : "This live notebook is ready for the first block."
+              ? hasDerivedNotebookSeed
+                ? preparingSeedContent
+                  ? "Preparing the notebook from the saved brief."
+                  : "This notebook can be restored from the saved brief."
+                : creatingFirstBlock
+                  ? "Opening the live notebook editor."
+                  : "This live notebook is ready for the first block."
               : "No live notebook blocks yet."}
           </p>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
             {canEdit
-              ? visibleDiligenceDecorations.length > 0
-                ? "Your notes stay editable. The latest intelligence will appear as a read-only reference overlay as soon as the editor opens."
-                : "Start writing directly. The first editable block will open for you."
+              ? hasDerivedNotebookSeed
+                ? "NodeBench is turning the latest saved report into the notebook so you land on real content instead of an empty draft."
+                : visibleDiligenceDecorations.length > 0
+                  ? "Your notes stay editable. The latest intelligence will appear as a read-only reference overlay as soon as the editor opens."
+                  : "Start writing directly. The first editable block will open for you."
               : "This workspace has no persisted live blocks yet. Ask an editor to open the live notebook first."}
           </p>
           {canEdit ? (
             <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => void openFirstBlock()}
-                disabled={creatingFirstBlock}
-                className="rounded-md bg-[var(--accent-primary)] px-3 py-1.5 text-sm font-medium text-white transition hover:bg-[var(--accent-primary-hover)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {creatingFirstBlock ? "Opening editor..." : "Open live notebook"}
-              </button>
+              {hasDerivedNotebookSeed ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPreparingSeedContent(true);
+                    void backfillEntityBlocks({ anonymousSessionId, shareToken, entitySlug })
+                      .then(() => {
+                        setRuntimeError(null);
+                      })
+                      .catch((error: unknown) => {
+                        autoSeedNotebookAttemptedRef.current = false;
+                        reportNotebookError(
+                          "Failed to prepare the notebook from the saved brief",
+                          error,
+                        );
+                      })
+                      .finally(() => {
+                        setPreparingSeedContent(false);
+                      });
+                  }}
+                  disabled={preparingSeedContent}
+                  className="rounded-md bg-[var(--accent-primary)] px-3 py-1.5 text-sm font-medium text-white transition hover:bg-[var(--accent-primary-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {preparingSeedContent ? "Preparing notebook..." : "Load saved brief"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void openFirstBlock()}
+                  disabled={creatingFirstBlock}
+                  className="rounded-md bg-[var(--accent-primary)] px-3 py-1.5 text-sm font-medium text-white transition hover:bg-[var(--accent-primary-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {creatingFirstBlock ? "Opening editor..." : "Open live notebook"}
+                </button>
+              )}
             </div>
           ) : null}
         </div>
@@ -1588,110 +1595,12 @@ export function EntityNotebookLive({
           onKeysChange={setDismissedKeySet}
         />
       </ErrorBoundary>
-      {showNotebookRuntimeHeader ? (
-        <div className="mb-5 rounded-2xl border border-gray-200/80 bg-gradient-to-b from-white/80 to-white/45 px-4 py-4 shadow-sm dark:border-white/10 dark:from-white/[0.04] dark:to-white/[0.02]">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-[var(--accent-primary)]/20 bg-[var(--accent-primary)]/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--accent-primary)]">
-                  Live notebook
-                </span>
-                <span
-                  className={`rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] ${notebookRuntimeTone}`}
-                >
-                  {notebookRuntimeLabel}
-                </span>
-                {showReferenceOverlayStrip ? (
-                  <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-gray-600 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300">
-                    Reference overlay active
-                  </span>
-                ) : null}
-                {latestScratchpadRun?.checkpointCount ? (
-                  <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] text-gray-600 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300">
-                    {latestScratchpadRun.checkpointCount} checkpoint
-                    {latestScratchpadRun.checkpointCount === 1 ? "" : "s"}
-                  </span>
-                ) : null}
-                {visibleDiligenceDecorations.length > 0 ? (
-                  <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] text-gray-600 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300">
-                    {visibleDiligenceDecorations.length} live overlay
-                    {visibleDiligenceDecorations.length === 1 ? "" : "s"}
-                  </span>
-                ) : null}
-                {latestScratchpadRun?.updatedAt ? (
-                  <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] text-gray-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
-                    updated {formatNotebookRuntimeRelative(latestScratchpadRun.updatedAt)}
-                  </span>
-                ) : null}
-              </div>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-300">
-                {isNotebookRunActive
-                  ? "Keep writing in the notebook. The current diligence run is structuring sections in place while raw trace and scratchpad stay in the run inspector."
-                  : showReferenceOverlayStrip
-                    ? "Write in the notebook first. Structured intelligence stays read-only until you explicitly accept it into owned prose."
-                    : "The notebook is the primary surface. Runtime details stay compact here and open into the run inspector only when you need them."}
-              </p>
-            </div>
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
-              {latestRunCheckpoint?.currentStep ? (
-                <div className="rounded-lg border border-gray-200 bg-white/80 px-3 py-2 text-[11px] text-gray-600 shadow-sm dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300">
-                  <div className="font-medium text-gray-900 dark:text-gray-100">
-                    {latestRunCheckpoint.currentStep}
-                  </div>
-                  <div className="mt-0.5 text-gray-500 dark:text-gray-400">
-                    {typeof latestRunCheckpoint.progress === "number"
-                      ? `${latestRunCheckpoint.progress}% complete`
-                      : "checkpoint active"}
-                  </div>
-                </div>
-              ) : null}
-              {onOpenReferenceNotebook ? (
-                <button
-                  type="button"
-                  onClick={onOpenReferenceNotebook}
-                  className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-gray-300 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300"
-                >
-                  Open reference view
-                </button>
-              ) : null}
-            </div>
-          </div>
-
-          {isNotebookRunActive ? (
-            <div className="mt-4 rounded-xl border border-sky-200/70 bg-sky-50/70 px-3 py-3 dark:border-sky-500/20 dark:bg-sky-500/10">
-              <div className="flex items-center justify-between gap-3 text-xs">
-                <div className="flex min-w-0 items-center gap-2">
-                  <Activity className="h-3.5 w-3.5 shrink-0 text-sky-600 dark:text-sky-300" />
-                  <span className="truncate font-medium text-sky-900 dark:text-sky-100">
-                    {latestRunCheckpoint
-                      ? `Checkpoint #${latestRunCheckpoint.checkpointNumber} · ${latestRunCheckpoint.currentStep}`
-                      : "Structuring live run"}
-                  </span>
-                </div>
-                <span className="shrink-0 text-sky-700 dark:text-sky-200">
-                  {latestRunCheckpoint?.progress ?? 0}%
-                </span>
-              </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-sky-100 dark:bg-sky-500/20">
-                <div
-                  className="h-full rounded-full bg-sky-500 transition-[width] duration-300"
-                  style={{ width: `${Math.max(8, latestRunCheckpoint?.progress ?? 12)}%` }}
-                />
-              </div>
-              {latestScratchpadRun?.latestBlockType || latestScratchpadRun?.latestHeaderText ? (
-                <div className="mt-2 text-[11px] text-sky-800/80 dark:text-sky-100/80">
-                  {latestScratchpadRun.latestHeaderText
-                    ? `Latest section: ${latestScratchpadRun.latestHeaderText}`
-                    : latestScratchpadRun.latestBlockType
-                      ? `Latest block: ${latestScratchpadRun.latestBlockType}`
-                      : null}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
+      <NotebookTopStatusRow
+        entitySlug={entitySlug}
+        expanded={false}
+        onToggle={() => openWorkspaceDrawer("flow")}
+        className="mb-4"
+      />
       {runtimeError ? (
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
           <div className="flex items-start gap-3">
@@ -1761,174 +1670,159 @@ export function EntityNotebookLive({
         </div>
       ) : null}
 
-      {/* Compute outline items from heading blocks. Outline shows only when
-          the notebook has ≥2 headings (ship-gate §8 — no low-value modules). */}
-      {(() => null)()}
-      {/* Only claim the 320px right-rail column when a rail slot is actually
-          populated (scratchpad OR outline). When there's nothing to show,
-          the notebook gets the full width. */}
-      <div
-        className={
-          scratchpadRailSlot || runMapRailSlot || outlineItems.length >= 2
-            ? "lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6"
-            : "block"
-        }
-      >
-        <div className="min-w-0">
-          <div className="space-y-0">
-            {blocks.map((block, blockIndex) => (
-              <BlockRow
-                key={block._id}
-                block={block}
-                prev={blocks[blockIndex - 1]}
-                sourcesById={sourcesById}
-                citationLabelsById={citationLabelsById}
-                displayContent={optimisticBlockContent[String(block._id)] ?? block.content}
-                isEditable={canEdit && notebookLoadState.fullyLoaded && block.accessMode === "edit"}
-                accessMode={
-                  canEdit && notebookLoadState.fullyLoaded ? (block.accessMode ?? "edit") : "read"
-                }
-                isFocused={focusedBlockId === block._id}
-                hasBeenMounted={mountedBlockIds.has(String(block._id))}
-                depth={blockDepthMap.get(String(block._id)) ?? 0}
-                onHoverPrewarm={() => warmBlock(block._id)}
-                showSlash={slashFor === block._id}
-                syncDocumentId={buildProductBlockSyncId({
-                  blockId: String(block._id),
-                  anonymousSessionId,
-                  shareToken,
-                })}
-                onFocus={() => {
-                  warmBlock(block._id);
-                  setFocusedBlockId(block._id);
-                }}
-                onBlur={() => {
-                  flushOptimisticBlockContent(block._id);
-                  setFocusedBlockId((current) => (current === block._id ? null : current));
-                }}
-                onLocalContentChange={(content) => handleLocalContentChange(block._id, content)}
-                registerEditorHandle={(handle) => registerEditorHandle(block._id, handle)}
-                onEnter={() => void handleEnter(block, blockIndex)}
-                onBackspaceAtStart={async () => {
-                  if (blockIndex === 0) return;
-                  if (!canEdit || block.accessMode !== "edit") {
-                    notifyReadOnly("delete");
-                    return;
+      <div className="min-w-0">
+        <div className="mx-auto w-full max-w-[920px]">
+            <div className="space-y-0">
+              {blocks.map((block, blockIndex) => (
+                <BlockRow
+                  key={block._id}
+                  block={block}
+                  prev={blocks[blockIndex - 1]}
+                  sourcesById={sourcesById}
+                  citationLabelsById={citationLabelsById}
+                  displayContent={optimisticBlockContent[String(block._id)] ?? block.content}
+                  isEditable={canEdit && notebookLoadState.fullyLoaded && block.accessMode === "edit"}
+                  accessMode={
+                    canEdit && notebookLoadState.fullyLoaded ? (block.accessMode ?? "edit") : "read"
                   }
-                  await deleteBlock({ anonymousSessionId, shareToken, blockId: block._id });
-                }}
-                onOpenSlash={() => setSlashFor(block._id)}
-                onCloseSlash={() => setSlashFor(null)}
-                onSlashCommand={(cmd) => void runSlashCommand(cmd, block)}
-                onMarkdownShortcut={(kind) => {
-                  if (!canEdit || block.accessMode !== "edit") return;
-                  void updateBlock({
+                  isFocused={focusedBlockId === block._id}
+                  hasBeenMounted={mountedBlockIds.has(String(block._id))}
+                  depth={blockDepthMap.get(String(block._id)) ?? 0}
+                  onHoverPrewarm={() => warmBlock(block._id)}
+                  showSlash={slashFor === block._id}
+                  syncDocumentId={buildProductBlockSyncId({
+                    blockId: String(block._id),
                     anonymousSessionId,
                     shareToken,
-                    blockId: block._id,
-                    kind,
-                    content: [],
-                    expectedRevision: block.revision,
-                  });
-                }}
-                onTabIndent={() => {
-                  // Indent this block under the previous one. No-op if
-                  // there is no previous block or the user can't edit.
-                  if (!canEdit || block.accessMode !== "edit") return;
-                  const prevBlock = blocks[blockIndex - 1];
-                  if (!prevBlock) return;
-                  // Don't nest under self (shouldn't happen, but guard
-                  // against parentBlockId === block._id loops).
-                  if (prevBlock._id === block._id) return;
-                  void moveBlock({
-                    anonymousSessionId,
-                    shareToken,
-                    blockId: block._id,
-                    parentBlockId: prevBlock._id,
-                  });
-                }}
-                onShiftTabOutdent={() => {
-                  // Outdent — move this block up to sibling of current
-                  // parent. If block has no parent, no-op.
-                  if (!canEdit || block.accessMode !== "edit") return;
-                  if (!block.parentBlockId) return;
-                  const currentParent = blocks.find(
-                    (b) => b._id === block.parentBlockId,
-                  );
-                  // Passing `undefined` via the `parentBlockId` arg keeps
-                  // the current value (moveBlock falls back to existing).
-                  // To actually clear, we need to pass null — but the
-                  // mutation doesn't support that. Workaround: set to
-                  // grandparent explicitly (may be undefined → root).
-                  void moveBlock({
-                    anonymousSessionId,
-                    shareToken,
-                    blockId: block._id,
-                    parentBlockId: currentParent?.parentBlockId ?? undefined,
-                  });
-                }}
-                onAcceptDecoration={(runId, blockType) =>
-                  void handleAcceptDecoration(runId, blockType)
-                }
-                onDismissDecoration={(runId, blockType) => handleDismissDecoration(runId, blockType)}
-                onRefreshDecoration={(runId, blockType) =>
-                  handleRefreshDecoration(runId, blockType)
-                }
-                onAskAboutDecoration={handleAskAboutDecoration}
-                navigate={navigate}
-              />
-            ))}
-          </div>
-
-          {notebookLoadState.canLoadMore ? (
-            <div className="mt-4 flex justify-center">
-              <button
-                type="button"
-                onClick={() =>
-                  blocksPagination.loadMore(Math.min(Math.max(notebookLoadState.remainingCount, 1), 150))
-                }
-                disabled={notebookLoadState.isLoadingMore}
-                className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 transition-colors hover:border-gray-300 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300"
-              >
-                {notebookLoadState.isLoadingMore
-                  ? "Loading more blocks..."
-                  : `Load ${Math.min(notebookLoadState.remainingCount, 150)} more block${Math.min(notebookLoadState.remainingCount, 150) === 1 ? "" : "s"}`}
-              </button>
+                  })}
+                  onFocus={() => {
+                    warmBlock(block._id);
+                    setFocusedBlockId(block._id);
+                  }}
+                  onBlur={() => {
+                    flushOptimisticBlockContent(block._id);
+                    setFocusedBlockId((current) => (current === block._id ? null : current));
+                  }}
+                  onLocalContentChange={(content) => handleLocalContentChange(block._id, content)}
+                  registerEditorHandle={(handle) => registerEditorHandle(block._id, handle)}
+                  onEnter={() => void handleEnter(block, blockIndex)}
+                  onBackspaceAtStart={async () => {
+                    if (blockIndex === 0) return;
+                    if (!canEdit || block.accessMode !== "edit") {
+                      notifyReadOnly("delete");
+                      return;
+                    }
+                    const prevBlock = blocks[blockIndex - 1];
+                    if (prevBlock) {
+                      warmBlock(prevBlock._id);
+                      setFocusedBlockId(prevBlock._id);
+                    }
+                    await deleteBlock({ anonymousSessionId, shareToken, blockId: block._id });
+                  }}
+                  onOpenSlash={() => setSlashFor(block._id)}
+                  onCloseSlash={() => setSlashFor(null)}
+                  onSlashCommand={(cmd) => void runSlashCommand(cmd, block)}
+                  onMarkdownShortcut={(kind) => {
+                    if (!canEdit || block.accessMode !== "edit") return;
+                    void updateBlock({
+                      anonymousSessionId,
+                      shareToken,
+                      blockId: block._id,
+                      kind,
+                      content: [],
+                      expectedRevision: block.revision,
+                    });
+                  }}
+                  onTabIndent={() => {
+                    if (!canEdit || block.accessMode !== "edit") return;
+                    const prevBlock = blocks[blockIndex - 1];
+                    if (!prevBlock) return;
+                    if (prevBlock._id === block._id) return;
+                    const nextBlock = blocks[blockIndex + 1];
+                    void moveBlock({
+                      anonymousSessionId,
+                      shareToken,
+                      blockId: block._id,
+                      parentBlockId: prevBlock._id,
+                      beforeBlockId: prevBlock._id,
+                      afterBlockId: nextBlock?._id,
+                    });
+                  }}
+                  onShiftTabOutdent={() => {
+                    if (!canEdit || block.accessMode !== "edit") return;
+                    if (!block.parentBlockId) return;
+                    const currentParent = blocks.find(
+                      (b) => b._id === block.parentBlockId,
+                    );
+                    const grandparentId = currentParent?.parentBlockId;
+                    const prevBlock = blocks[blockIndex - 1];
+                    const nextBlock = blocks[blockIndex + 1];
+                    void moveBlock({
+                      anonymousSessionId,
+                      shareToken,
+                      blockId: block._id,
+                      beforeBlockId: prevBlock?._id,
+                      afterBlockId: nextBlock?._id,
+                      ...(grandparentId
+                        ? { parentBlockId: grandparentId }
+                        : { clearParent: true }),
+                    });
+                  }}
+                  onAcceptDecoration={(runId, blockType) =>
+                    void handleAcceptDecoration(runId, blockType)
+                  }
+                  onDismissDecoration={(runId, blockType) => handleDismissDecoration(runId, blockType)}
+                  onRefreshDecoration={(runId, blockType) =>
+                    handleRefreshDecoration(runId, blockType)
+                  }
+                  onAskAboutDecoration={handleAskAboutDecoration}
+                  navigate={navigate}
+                />
+              ))}
             </div>
-          ) : null}
 
-          <BlockStatusBar
-            presence={presence ?? []}
-            selfUserId={resolvePresenceSelfUserId(viewerOwnerKey, anonymousSessionId)}
-            participantDirectory={participantDirectory}
-            latestHumanEdit={latestHumanEdit}
-            lastSyncedAt={lastSyncedAt}
-            offlineQueueLength={offlineQueueLength}
-            isOffline={isOffline}
-            rateLimited={rateLimited}
-            readOnly={
-              !canEdit ||
-              !notebookLoadState.fullyLoaded ||
-              (!!focusedBlock && (focusedBlock.accessMode ?? "edit") !== "edit")
-            }
-          />
+            {notebookLoadState.canLoadMore ? (
+              <div className="mt-4 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() =>
+                    blocksPagination.loadMore(Math.min(Math.max(notebookLoadState.remainingCount, 1), 150))
+                  }
+                  disabled={notebookLoadState.isLoadingMore}
+                  className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 transition-colors hover:border-gray-300 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300"
+                >
+                  {notebookLoadState.isLoadingMore
+                    ? "Loading more blocks..."
+                    : `Load ${Math.min(notebookLoadState.remainingCount, 150)} more block${Math.min(notebookLoadState.remainingCount, 150) === 1 ? "" : "s"}`}
+                </button>
+              </div>
+            ) : null}
+
+            <BlockStatusBar
+              presence={presence ?? []}
+              selfUserId={resolvePresenceSelfUserId(viewerOwnerKey, anonymousSessionId)}
+              participantDirectory={participantDirectory}
+              latestHumanEdit={latestHumanEdit}
+              lastSyncedAt={lastSyncedAt}
+              offlineQueueLength={offlineQueueLength}
+              isOffline={isOffline}
+              rateLimited={rateLimited}
+              readOnly={
+                !canEdit ||
+                !notebookLoadState.fullyLoaded ||
+                (!!focusedBlock && (focusedBlock.accessMode ?? "edit") !== "edit")
+              }
+            />
+
+          </div>
         </div>
 
-        {scratchpadRailSlot || runMapRailSlot || outlineItems.length >= 2 ? (
-          <div className="mt-6 flex flex-col gap-3 lg:mt-0 lg:sticky lg:top-[80px] lg:self-start">
-            {outlineItems.length >= 2 ? (
-              <NotebookOutline items={outlineItems} />
-            ) : null}
-            <NotebookRightRail
-              scratchpadSlot={scratchpadRailSlot}
-              sessionArtifactsSlot={runMapRailSlot}
-              defaultOpen={isNotebookRunActive}
-            />
-          </div>
-        ) : null}
-      </div>
+      <WorkspaceDrawerPill
+        entitySlug={entitySlug}
+        runActive={isNotebookRunActive}
+        runLabel={latestRunCheckpoint?.currentStep}
+      />
 
-      {/* Backlinks */}
       {/* Mention picker â€” modal overlay when active */}
       {mentionFor ? (
         <div
@@ -1946,41 +1840,6 @@ export function EntityNotebookLive({
               onSelect={(match) => void handleMentionPick(match)}
               onClose={() => setMentionFor(null)}
             />
-          </div>
-        </div>
-      ) : null}
-
-      {backlinks && backlinks.length > 0 ? (
-        <div className="mt-10 border-t border-gray-100 pt-6 dark:border-white/[0.06]">
-          <h3 className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            Linked from - {backlinks.length} place{backlinks.length === 1 ? "" : "s"}
-          </h3>
-          <div className="mt-3 space-y-2">
-            {backlinks.map((ref) =>
-              shareToken ? (
-                <div
-                  key={ref.relationId}
-                  className="block w-full rounded-md border border-gray-100 px-3 py-2 text-left text-sm dark:border-white/[0.06]"
-                >
-                  <div className="font-medium text-gray-900 dark:text-gray-100">{ref.fromEntityName}</div>
-                  <div className="mt-0.5 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
-                    {ref.snippet || <em className="opacity-60">(empty block)</em>}
-                  </div>
-                </div>
-              ) : (
-                <button
-                  key={ref.relationId}
-                  type="button"
-                  onClick={() => navigate(buildEntityPathWithShare(ref.fromEntitySlug))}
-                  className="block w-full rounded-md border border-gray-100 px-3 py-2 text-left text-sm transition-colors hover:border-gray-200 hover:bg-gray-50 dark:border-white/[0.06] dark:hover:bg-white/[0.02]"
-                >
-                  <div className="font-medium text-gray-900 dark:text-gray-100">{ref.fromEntityName}</div>
-                  <div className="mt-0.5 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
-                    {ref.snippet || <em className="opacity-60">(empty block)</em>}
-                  </div>
-                </button>
-              ),
-            )}
           </div>
         </div>
       ) : null}
@@ -2047,6 +1906,50 @@ type BlockRowProps = {
   navigate: (path: string) => void;
 };
 
+// Custom memo comparator — data props only.
+// ---------------------------------------------------------------------------
+// `BlockRow` receives ~20 inline-closure props (`onFocus`, `onBlur`, `onEnter`,
+// the per-row indent/outdent/delete handlers, and the decoration callbacks).
+// Each of those is re-created on every `EntityNotebookLive` render, so React's
+// default shallow-equal comparator always saw "props changed" and re-rendered
+// every block in the list on every keystroke anywhere in the notebook — even
+// blocks the user wasn't typing into. Profiler traces showed ~40 blocks × 5ms
+// per keystroke on a warm cache.
+//
+// Why this is safe:
+// 1. Every inline closure closes over callbacks that are already `useCallback`-
+//    wrapped at the parent (`warmBlock`, `setFocusedBlockId`,
+//    `handleLocalContentChange`, mutations from `useMutation`, etc.), so their
+//    BEHAVIOUR is stable even when their identity changes.
+// 2. The closures reference `block._id` / `blockIndex` / `blocks[i±1]`. If any
+//    of those structurally change, at least one DATA prop listed below also
+//    changes (`block`, `prev`, `displayContent`, `depth`) — the comparator
+//    still forces a re-render in those cases.
+// 3. Focus, slash-menu, and decoration state are all captured via data props,
+//    so the row still updates when the user interacts.
+//
+// Prior art: Linear, Figma, Notion — all collaborative editors route per-row
+// actions through a custom-compared memo boundary or a dispatcher-style
+// single-callback API. We take the comparator path because the dispatcher
+// refactor would touch every handler in this 2.2k-line file.
+const blockRowPropsEqual = (prev: BlockRowProps, next: BlockRowProps): boolean => {
+  return (
+    prev.block === next.block &&
+    prev.prev === next.prev &&
+    prev.displayContent === next.displayContent &&
+    prev.sourcesById === next.sourcesById &&
+    prev.citationLabelsById === next.citationLabelsById &&
+    prev.isEditable === next.isEditable &&
+    prev.accessMode === next.accessMode &&
+    prev.isFocused === next.isFocused &&
+    prev.hasBeenMounted === next.hasBeenMounted &&
+    prev.showSlash === next.showSlash &&
+    prev.syncDocumentId === next.syncDocumentId &&
+    prev.depth === next.depth &&
+    prev.diligenceDecorations === next.diligenceDecorations
+  );
+};
+
 const BlockRow = memo(function BlockRow({
   block,
   prev,
@@ -2098,40 +2001,49 @@ const BlockRow = memo(function BlockRow({
     block.kind === "heading_3" ||
     (!prev && block.kind === "text");
   const isEmptyTextBlock = isTriviallyEmptyNotebookBlock(block, displayContent);
+  // Heading rhythm mirrors v4 prototype (.block-h1 / .block-h2 margins):
+  // H1 gets 24px top-gap, H2 gets 20px, H3 gets 16px. Regular blocks use
+  // 4px to match .block-text margin. Followers of a heading collapse to
+  // 1px so the body hugs its section title like the prototype.
   const blockSpacingClass =
-    block.kind === "heading_2"
-      ? "pt-5"
-      : block.kind === "heading_3"
-        ? "pt-3"
-        : followsParentHeading
-          ? "pt-px"
-          : isEmptyTextBlock
+    block.kind === "heading_1"
+      ? "pt-6"
+      : block.kind === "heading_2"
+        ? "pt-5"
+        : block.kind === "heading_3"
+          ? "pt-4"
+          : followsParentHeading
             ? "pt-px"
-            : "pt-0.5";
+            : isEmptyTextBlock
+              ? "pt-px"
+              : "pt-1";
 
-  // Render heading/text/bullet/todo/callout/evidence kinds.
+  // Typography locked to v4 prototype (docs/inspo_prototype_htmls/
+  // nodebench_v4_notionLike_reactFlow.html):
+  //   H1 30/1.3, H2 24/1.3, H3 18/1.3, body 16/1.75.
+  // The prototype uses weight 600 for headings and leaves body at 400.
   const classesForKind = (): string => {
     switch (block.kind) {
       case "heading_1":
-        return "text-2xl font-semibold leading-tight text-gray-900 dark:text-gray-100";
+        return "text-[30px] font-semibold leading-[1.3] tracking-tight text-gray-900 dark:text-gray-100";
       case "heading_2":
-        return "text-[1.38rem] font-semibold leading-tight text-gray-900 dark:text-gray-100";
+        return "text-[24px] font-semibold leading-[1.3] tracking-tight text-gray-900 dark:text-gray-100";
       case "heading_3":
-        return "text-[0.95rem] font-semibold tracking-tight text-gray-900 dark:text-gray-100";
+        return "text-[18px] font-semibold leading-[1.3] tracking-tight text-gray-900 dark:text-gray-100";
       case "bullet":
-        return "text-[15px] leading-[1.5] text-gray-700 dark:text-gray-200";
+        return "text-[16px] leading-[1.75] text-gray-700 dark:text-gray-200";
       case "todo":
-        return "text-[15px] leading-[1.5] text-gray-700 dark:text-gray-200";
+        return "text-[16px] leading-[1.75] text-gray-700 dark:text-gray-200";
       case "callout":
-        return "border-l-2 border-[var(--accent-primary)] bg-[var(--accent-primary)]/5 py-1 pl-3 text-[15px] leading-[1.5] text-gray-700 dark:text-gray-200";
+        return "border-l-2 border-[var(--accent-primary)] bg-[var(--accent-primary)]/5 py-1 pl-3 text-[16px] leading-[1.75] text-gray-700 dark:text-gray-200";
       case "quote":
-        return "border-l-2 border-gray-300 pl-3 text-[15px] italic leading-[1.5] text-gray-600 dark:border-white/20 dark:text-gray-400";
+        return "border-l-2 border-gray-300 pl-3 text-[16px] italic leading-[1.75] text-gray-600 dark:border-white/20 dark:text-gray-400";
       case "code":
-        return "rounded bg-gray-100 px-3 py-2 font-mono text-[12.5px] text-gray-800 dark:bg-white/[0.04] dark:text-gray-200";
+        return "rounded bg-gray-100 px-3 py-2 font-mono text-[13px] text-gray-800 dark:bg-white/[0.04] dark:text-gray-200";
       case "generated_marker":
         return "text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400";
       default:
-        return "text-[15px] leading-[1.5] text-gray-700 dark:text-gray-200";
+        return "text-[16px] leading-[1.75] text-gray-700 dark:text-gray-200";
     }
   };
 
@@ -2232,7 +2144,7 @@ const BlockRow = memo(function BlockRow({
               />
             ) : (
               <div
-                className={`outline-none focus-visible:outline-none ${classesForKind()} ${
+                className={`ProseMirror nb-block-shell outline-none focus-visible:outline-none min-h-[1.5em] ${classesForKind()} ${
                   !isEditable ? "cursor-default opacity-80" : supportsSyncEditing ? "cursor-text" : ""
                 }`}
                 onFocus={shouldMountSyncEditor ? undefined : onFocus}
@@ -2243,6 +2155,7 @@ const BlockRow = memo(function BlockRow({
                 tabIndex={supportsSyncEditing ? 0 : undefined}
               >
                 <BlockChipRenderer chips={displayContent} />
+                {isEmptyTextBlock ? <br aria-hidden="true" /> : null}
               </div>
             )}
             {/* Render inline citations (sourceRefIds) after the editable surface */}
@@ -2272,18 +2185,23 @@ const BlockRow = memo(function BlockRow({
               </span>
             ) : null}
           </div>
-          <div className="flex shrink-0 items-start gap-2 pt-1">
-            {accessMode !== "edit" ? (
-              <span
-                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] text-amber-600 bg-amber-500/10"
-                title={accessMode === "read" ? "Read-only block" : "Append-only block"}
-              >
-                <Lock className="h-2.5 w-2.5" />
-                {accessMode}
-              </span>
-            ) : null}
-            <BlockProvenance block={block} />
-          </div>
+          {(accessMode !== "edit" ||
+            (block.authorKind === "agent" &&
+              !block.kind.startsWith("heading_") &&
+              block.kind !== "evidence")) ? (
+            <div className="flex shrink-0 items-start gap-2">
+              {accessMode !== "edit" ? (
+                <span
+                  className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] text-amber-600 bg-amber-500/10"
+                  title={accessMode === "read" ? "Read-only block" : "Append-only block"}
+                >
+                  <Lock className="h-2.5 w-2.5" />
+                  {accessMode}
+                </span>
+              ) : null}
+              <BlockProvenance block={block} />
+            </div>
+          ) : null}
         </div>
 
         {showSlash ? (
@@ -2295,7 +2213,7 @@ const BlockRow = memo(function BlockRow({
       </div>
     </div>
   );
-});
+}, blockRowPropsEqual);
 
 BlockRow.displayName = "BlockRow";
 

@@ -55,11 +55,11 @@ import {
   buildEntityShareUrl,
   buildOutreachDraft,
 } from "@/features/entities/lib/entityExport";
-import { useActiveEntity } from "@/features/agents/context/FastAgentContext";
+import { useActiveEntity, useFastAgent } from "@/features/agents/context/FastAgentContext";
+import { PulseBadge } from "@/features/pulse/components/PulseBadge";
 import { EntityMemoryGraph } from "@/features/entities/components/EntityMemoryGraph";
 import { EntityNotebookMeta } from "@/features/entities/components/EntityNotebookMeta";
 import { EntityNotebookSurface } from "@/features/entities/components/EntityNotebookSurface";
-import { EntityPropertiesStrip } from "@/features/entities/components/EntityPropertiesStrip";
 import { ViewModeToggle } from "@/features/entities/components/ViewModeToggle";
 import { useViewMode } from "@/features/entities/lib/useViewMode";
 import { EntityShareSheet } from "@/features/entities/components/EntityShareSheet";
@@ -813,11 +813,6 @@ export function EntityPage({ entitySlug }: { entitySlug?: string }) {
   const api = useConvexApi();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  // Read mode flips a data attribute on the outer wrapper; CSS
-  // rules in src/index.css do all the chrome-stripping so the
-  // component tree stays unified between edit and read. Share-
-  // token routes force read mode via PublicEntityShareView.
-  const { isReadMode } = useViewMode();
 
   // Resolve slug from: prop > URL path /entity/:slug > query param ?entity=
   const slugFromPath = useMemo(() => {
@@ -863,10 +858,13 @@ function EntityWorkspaceView({
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
   const anonymousSessionId = getAnonymousProductSessionId();
+  const { openWithContext } = useFastAgent();
   // Register this entity slug with FastAgentContext so the "Ask NodeBench"
   // side panel always knows which notebook to target — even when the panel
   // is closed. Cleared on unmount.
   useActiveEntity(slug);
+  // Read-mode toggle — strips edit chrome via data-view-mode="read" CSS.
+  const { isReadMode } = useViewMode();
   const toast = useToast();
   const generateUploadUrl = useMutation(api?.domains.product.me.generateUploadUrl ?? ("skip" as any));
   const saveFileMutation = useMutation(api?.domains.product.me.saveFile ?? ("skip" as any));
@@ -1010,6 +1008,7 @@ function EntityWorkspaceView({
   const [savingSavedBecause, setSavingSavedBecause] = useState(false);
   const [materializingLiveWorkspace, setMaterializingLiveWorkspace] = useState(false);
   const [pendingLiveWorkspaceOpen, setPendingLiveWorkspaceOpen] = useState(false);
+  const [autoMaterializeAttempted, setAutoMaterializeAttempted] = useState(false);
   const [refreshingReport, setRefreshingReport] = useState(false);
   const [uploadingEvidence, setUploadingEvidence] = useState(false);
   const [attachingEvidenceId, setAttachingEvidenceId] = useState<string | null>(null);
@@ -1082,6 +1081,9 @@ function EntityWorkspaceView({
       : (liveWorkspace ?? systemWorkspace ?? starterWorkspace);
   const liveWorkspaceResolved = liveWorkspace !== undefined;
   const hasLiveEntity = Boolean(liveWorkspace?.entity?._id);
+  // Hoisted above the entity-view-mode effects so they can gate on the
+  // feature flag without hitting a TDZ reference error.
+  const liveNotebookEnabled = isLiveNotebookEnabled(workspace?.entity?.slug);
   const notebookDrift = useMemo(
     () => getNotebookDriftSummary(blockSummary, liveWorkspace?.latest ?? null),
     [blockSummary, liveWorkspace?.latest],
@@ -1131,6 +1133,16 @@ function EntityWorkspaceView({
   }, [invitePreview?.email]);
 
   useEffect(() => {
+    if (!isReadMode) return;
+    setShowActions(false);
+    setShowShareSheet(false);
+  }, [isReadMode]);
+
+  useEffect(() => {
+    setAutoMaterializeAttempted(false);
+  }, [slug]);
+
+  useEffect(() => {
     setEntityViewMode(readInitialEntityViewMode(slug));
   }, [slug]);
 
@@ -1142,7 +1154,7 @@ function EntityWorkspaceView({
   useEffect(() => {
     if (!liveWorkspaceResolved) return;
     if (!hasLiveEntity && entityViewMode === "live") {
-      setEntityViewMode("classic");
+      setEntityViewMode("notebook");
     }
   }, [entityViewMode, hasLiveEntity, liveWorkspaceResolved]);
 
@@ -1152,16 +1164,16 @@ function EntityWorkspaceView({
     setPendingLiveWorkspaceOpen(false);
   }, [hasLiveEntity, pendingLiveWorkspaceOpen]);
 
-  // Identity redesign: when ON and Live is available, promote Live as the
-  // only editable surface. The kill-switch branch above still downgrades
-  // to classic when Live is unavailable, so we don't fight it here.
   useEffect(() => {
     if (!liveWorkspaceResolved) return;
-    if (!isNotebookIdentityRedesignEnabled()) return;
-    if (!isLiveNotebookEnabled(workspace?.entity?.slug)) return;
-    if (!hasLiveEntity) return;
-    if (entityViewMode !== "live") setEntityViewMode("live");
-  }, [entityViewMode, hasLiveEntity, liveWorkspaceResolved, workspace?.entity?.slug]);
+    if (liveNotebookEnabled && hasLiveEntity) {
+      if (entityViewMode !== "live") setEntityViewMode("live");
+      return;
+    }
+    if (entityViewMode === "classic") {
+      setEntityViewMode("notebook");
+    }
+  }, [entityViewMode, hasLiveEntity, liveNotebookEnabled, liveWorkspaceResolved]);
 
   useEffect(() => {
     if (!workspace) return;
@@ -1200,43 +1212,88 @@ function EntityWorkspaceView({
     });
   }, [anonymousSessionId, ensureNoteDocumentBackfill, liveWorkspace, shareToken]);
 
+  const materializeLiveWorkspace = useCallback(
+    async ({
+      notifyOnError = true,
+      errorTitle = "Failed to open Live notebook",
+    }: {
+      notifyOnError?: boolean;
+      errorTitle?: string;
+    } = {}) => {
+      if (hasLiveEntity) {
+        setEntityViewMode("live");
+        return;
+      }
+      if (!workspace?.entity?.slug || shareToken || inviteToken || !ensureLiveEntityWorkspace) {
+        return;
+      }
+
+      setMaterializingLiveWorkspace(true);
+      setPendingLiveWorkspaceOpen(true);
+      try {
+        await ensureLiveEntityWorkspace({
+          anonymousSessionId,
+          slug: workspace.entity.slug,
+          name: workspace.entity.name,
+          entityType: workspace.entity.entityType,
+          summary: workspace.entity.summary,
+          savedBecause: workspace.entity.savedBecause,
+        });
+      } catch (error) {
+        setPendingLiveWorkspaceOpen(false);
+        if (notifyOnError) {
+          toast.error(
+            errorTitle,
+            error instanceof Error ? error.message : String(error ?? "Unknown error"),
+          );
+        }
+      } finally {
+        setMaterializingLiveWorkspace(false);
+      }
+    },
+    [
+      anonymousSessionId,
+      ensureLiveEntityWorkspace,
+      hasLiveEntity,
+      inviteToken,
+      shareToken,
+      toast,
+      workspace,
+    ],
+  );
+
   const handleSelectLiveView = useCallback(async () => {
     if (hasLiveEntity) {
       setEntityViewMode("live");
       return;
     }
-    if (!workspace?.entity?.slug || shareToken || !ensureLiveEntityWorkspace) {
-      return;
-    }
+    await materializeLiveWorkspace();
+  }, [hasLiveEntity, materializeLiveWorkspace]);
 
-    setMaterializingLiveWorkspace(true);
-    setPendingLiveWorkspaceOpen(true);
-    try {
-      await ensureLiveEntityWorkspace({
-        anonymousSessionId,
-        slug: workspace.entity.slug,
-        name: workspace.entity.name,
-        entityType: workspace.entity.entityType,
-        summary: workspace.entity.summary,
-        savedBecause: workspace.entity.savedBecause,
-      });
-    } catch (error) {
-      setPendingLiveWorkspaceOpen(false);
-      toast.error(
-        "Failed to open Live notebook",
-        error instanceof Error ? error.message : String(error ?? "Unknown error"),
-      );
-    } finally {
-      setMaterializingLiveWorkspace(false);
-    }
+  useEffect(() => {
+    if (autoMaterializeAttempted) return;
+    if (!liveWorkspaceResolved) return;
+    if (hasLiveEntity) return;
+    if (!liveNotebookEnabled) return;
+    if (shareToken || inviteToken) return;
+    if (!workspace?.entity?.slug || !ensureLiveEntityWorkspace) return;
+
+    setAutoMaterializeAttempted(true);
+    void materializeLiveWorkspace({
+      errorTitle: "Failed to prepare notebook",
+    });
   }, [
-    anonymousSessionId,
+    autoMaterializeAttempted,
     ensureLiveEntityWorkspace,
     hasLiveEntity,
+    inviteToken,
+    liveNotebookEnabled,
+    liveWorkspaceResolved,
+    materializeLiveWorkspace,
     shareToken,
-    toast,
     workspace,
   ]);
+
   const handleOpenReferenceNotebookToggle = useCallback(() => {
     setEntityViewMode("notebook");
   }, []);
@@ -1619,6 +1676,43 @@ function EntityWorkspaceView({
     }
   }, [evidenceSections, latestBriefSources, selectedEvidenceSectionId, selectedEvidenceSourceKey]);
 
+  // Hoisted above the loading/invite/share/not-found early returns so the
+  // hook count stays stable across render passes. Rules of Hooks: every
+  // hook that appears after a conditional `return` will crash the
+  // component the first time workspace resolves from undefined.
+  const openEntityWorkspaceDrawer = useCallback(
+    (initialTab: "chat" | "scratchpad" | "flow" = "chat") => {
+      openWithContext({
+        initialTab,
+        contextEntitySlug: workspace?.entity?.slug ?? slug,
+        contextTitle: workspace?.entity?.name ?? slug,
+      });
+    },
+    [openWithContext, slug, workspace?.entity?.name, workspace?.entity?.slug],
+  );
+
+  // Dedupe related entities by slug and drop any self-reference. The backend
+  // list occasionally includes the current entity or repeats a peer (multiple
+  // relation edges → same slug), producing duplicate React keys across three
+  // render sites below (console: "Encountered two children with the same key,
+  // `<slug>`"). Duplicate keys force React to bail out of keyed reconciliation
+  // for the whole list — expensive on every parent render. Kept above the
+  // loading-state early-return so hook order is stable across renders.
+  const uniqueRelatedEntities = useMemo(() => {
+    const list = workspace?.relatedEntities ?? [];
+    if (list.length === 0) return list;
+    const seen = new Set<string>();
+    const out: typeof list = [];
+    for (const r of list) {
+      if (!r?.slug) continue;
+      if (r.slug === slug) continue;
+      if (seen.has(r.slug)) continue;
+      seen.add(r.slug);
+      out.push(r);
+    }
+    return out;
+  }, [workspace?.relatedEntities, slug]);
+
   // Loading state
   if (liveWorkspace === undefined && systemWorkspace === undefined && !starterWorkspace) {
     return (
@@ -1824,6 +1918,7 @@ function EntityWorkspaceView({
   const canEditNotebook = hasLiveEntity && viewerAccess.canEditNotebook;
   const canManageShare = hasLiveEntity && viewerAccess.canManageShare;
   const canManageMembers = hasLiveEntity && viewerAccess.canManageMembers;
+  // openEntityWorkspaceDrawer hoisted above early returns — see earlier.
   const shareAccessLabel = isSharedWorkspace
     ? viewerAccess.access === "edit"
       ? viewerAccess.mode === "member"
@@ -1835,13 +1930,28 @@ function EntityWorkspaceView({
     : null;
   const buildEntityPathWithShare = (nextSlug: string) => buildEntityPath(nextSlug, shareToken);
   const canTraverseLinkedEntities = !shareToken;
-  const liveNotebookEnabled = isLiveNotebookEnabled(workspace.entity.slug);
-  const identityRedesignEnabled = isNotebookIdentityRedesignEnabled();
+  // liveNotebookEnabled hoisted above (see earlier in component)
+  const unifiedNotebookSurface = liveNotebookEnabled && hasLiveEntity;
+  const effectiveEntityViewMode: "classic" | "notebook" | "live" = unifiedNotebookSurface
+    ? "live"
+    : entityViewMode === "classic"
+      ? "notebook"
+      : entityViewMode;
+  const showPrimaryDrawerAction = unifiedNotebookSurface && !isSharedWorkspace && !isReadMode;
+  const showTrackHeaderButton = !unifiedNotebookSurface && !isSharedWorkspace && !isReadMode;
+  const showShareHeaderButton = canManageShare && !isReadMode && !unifiedNotebookSurface;
+  const showRefreshHeaderButton =
+    !unifiedNotebookSurface &&
+    !isSharedWorkspace &&
+    !isReadMode &&
+    hasLiveEntity &&
+    Boolean(latestBriefReport?._id);
+  const showHeaderActionsMenu = !isReadMode;
   // When the identity redesign is on AND Live is available, the three-way
   // Classic/Notebook/Live toggle is hidden — Live becomes the only user-
   // facing editable surface. The toggle re-appears automatically when
   // either flag is off (kill-switch / fallback path).
-  const showViewModeToggle = !(identityRedesignEnabled && liveNotebookEnabled && hasLiveEntity);
+  const showViewModeToggle = false;
 
   // PR1 refactor — stable callback identity for EntityNotebookLiveMount.
   // Without this, the inline arrow created a new closure every render,
@@ -1890,7 +2000,7 @@ function EntityWorkspaceView({
       <div
         className="sticky top-0 z-30 -mx-4 mb-5 border-b border-black/[0.04] bg-white/85 px-4 py-2 backdrop-blur-md sm:-mx-6 sm:px-6 dark:border-white/[0.06] dark:bg-[#151413]/85"
       >
-        <div className="flex items-center gap-3">
+        <div className="entity-page-header-shell flex items-center gap-3">
           <button
             type="button"
             onClick={() => navigate(buildCockpitPath({ surfaceId: "packets" }))}
@@ -1906,34 +2016,34 @@ function EntityWorkspaceView({
           </h2>
           {/* Dense properties row — right-aligned so the title holds the
               eye, and metadata stays secondary (Linear pattern). */}
-          <div className="hidden shrink-0 items-center gap-3 text-[11px] text-gray-500 dark:text-gray-400 md:flex">
-            {entity.entityType ? (
-              <span className="inline-flex items-center gap-1 capitalize">
-                {entityTypeIcon(entity.entityType)}
-                <span>{entity.entityType}</span>
+          <div className="hidden shrink-0 items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 md:flex">
+            {shareAccessLabel ? (
+              <span className="rounded-full border border-black/8 bg-black/[0.03] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-content-muted dark:border-white/10 dark:bg-white/[0.04]">
+                {shareAccessLabel}
               </span>
             ) : null}
-            {entity.reportCount > 0 ? (
-              <>
-                <span className="text-gray-300 dark:text-gray-600">·</span>
-                <span>{entity.reportCount} {entity.reportCount === 1 ? "run" : "runs"}</span>
-              </>
-            ) : null}
+            <PulseBadge entitySlug={entity.slug} variant="dot" />
             {entity.updatedAt ? (
-              <>
-                <span className="text-gray-300 dark:text-gray-600">·</span>
-                <span title={new Date(entity.updatedAt).toLocaleString()}>
-                  updated {formatRelative(entity.updatedAt)}
-                </span>
-              </>
+              <span title={new Date(entity.updatedAt).toLocaleString()}>
+                updated {formatRelative(entity.updatedAt)}
+              </span>
             ) : null}
           </div>
         </div>
       </div>
 
       {/* ── Entity Header (Linear-style) ── */}
-      <header className="mb-6 border-b border-gray-100 pb-5 dark:border-white/[0.06]">
-        {/* Type + badges row */}
+      <header className="mb-5 border-b border-gray-100 pb-4 dark:border-white/[0.06]">
+        <div
+          className={`entity-page-header-shell ${
+            isReadMode
+              ? "entity-page-header-shell--read"
+              : unifiedNotebookSurface
+                ? "entity-page-header-shell--live"
+                : ""
+          }`}
+        >
+        {/* Compact eyebrow — identity only, not a second dashboard row. */}
         <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
           <span className="flex items-center gap-1.5 capitalize">
             {entityTypeIcon(entity.entityType)}
@@ -1945,7 +2055,7 @@ function EntityWorkspaceView({
               <span className="truncate">Saved because: {entity.savedBecause}</span>
             </>
           ) : null}
-          {shareAccessLabel ? (
+          {!unifiedNotebookSurface && shareAccessLabel ? (
             <>
               <span className="text-gray-300 dark:text-gray-600">·</span>
               <span className="rounded-full border border-black/8 bg-black/[0.03] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-content-muted dark:border-white/10 dark:bg-white/[0.04]">
@@ -1961,46 +2071,25 @@ function EntityWorkspaceView({
             <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
               {entity.name}
             </h1>
-            {/* Compact Notion-style properties row. Replaces the older
-                two-chip "type · updated" row with a richer strip that
-                reads as page metadata: who/what the entity is and how
-                deep the notebook currently goes. Renders nothing if
-                no property resolves (keeps cold-start quiet). */}
-            <div className="mt-1.5">
-              <EntityPropertiesStrip
-                sector={entity.entityType ?? undefined}
-                sourceCount={
-                  Array.isArray(workspace.timeline)
-                    ? workspace.timeline.reduce(
-                        (sum, r) =>
-                          sum + (Array.isArray(r?.sources) ? r.sources.length : 0),
-                        0,
-                      )
-                    : undefined
-                }
-                noteCount={workspace.note ? 1 : 0}
-                runCount={
-                  Array.isArray(workspace.timeline)
-                    ? workspace.timeline.length
-                    : undefined
-                }
-                updatedAt={entity.updatedAt ?? undefined}
-              />
-            </div>
-            <p className="mt-2 max-w-[720px] text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+            <p className="entity-page-summary mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
               {entity.summary}
             </p>
           </div>
 
           {/* Action cluster */}
           <div className="flex flex-shrink-0 items-center gap-2">
-            {/* View mode toggle — flips the page between edit mode
-                (default) and read mode (?view=read). Read mode is
-                the "report" view: same notebook, chrome stripped,
-                editor immutable, reading-column width. Cmd/Ctrl+E
-                toggles from anywhere not already typing. */}
-            <ViewModeToggle />
-            {!isSharedWorkspace ? (
+            <ViewModeToggle hidden={Boolean(shareToken)} />
+            {showPrimaryDrawerAction ? (
+              <button
+                type="button"
+                onClick={() => openEntityWorkspaceDrawer("chat")}
+                className="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-primary)] px-3 py-1.5 text-sm font-medium text-white transition hover:bg-[var(--accent-primary-hover)]"
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                Open drawer
+              </button>
+            ) : null}
+            {!unifiedNotebookSurface && !isSharedWorkspace && !isReadMode ? (
               <>
                 <button
                   type="button"
@@ -2018,36 +2107,34 @@ function EntityWorkspaceView({
                   <Sparkles className="h-3.5 w-3.5" />
                   Prep brief
                 </button>
-                {/* Track this entity (framework audit #5).
-                    Visible only for non-shared workspace (your own page).
-                    Optimistic-but-safe: button disables during mutation,
-                    reactive query pulls the real state after ack. */}
-                <button
-                  type="button"
-                  onClick={handleToggleTrack}
-                  disabled={trackPending}
-                  aria-pressed={isTracked}
-                  title={
-                    isTracked
-                      ? "Stop notifying me when an agent updates this entity"
-                      : "Notify me when an agent updates this entity"
-                  }
-                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition disabled:opacity-60 ${
-                    isTracked
-                      ? "border border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/[0.08] text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/[0.12]"
-                      : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06]"
-                  }`}
-                >
-                  {isTracked ? (
-                    <BellRing className="h-3.5 w-3.5" />
-                  ) : (
-                    <Bell className="h-3.5 w-3.5" />
-                  )}
-                  {isTracked ? "Tracking" : "Track"}
-                </button>
               </>
             ) : null}
-            {canManageShare ? (
+            {showTrackHeaderButton ? (
+              <button
+                type="button"
+                onClick={handleToggleTrack}
+                disabled={trackPending}
+                aria-pressed={isTracked}
+                title={
+                  isTracked
+                    ? "Stop notifying me when an agent updates this entity"
+                    : "Notify me when an agent updates this entity"
+                }
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition disabled:opacity-60 ${
+                  isTracked
+                    ? "border border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/[0.08] text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/[0.12]"
+                    : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06]"
+                }`}
+              >
+                {isTracked ? (
+                  <BellRing className="h-3.5 w-3.5" />
+                ) : (
+                  <Bell className="h-3.5 w-3.5" />
+                )}
+                {isTracked ? "Tracking" : "Track"}
+              </button>
+            ) : null}
+            {showShareHeaderButton ? (
               <button
                 type="button"
                 onClick={() => setShowShareSheet((current) => !current)}
@@ -2057,7 +2144,7 @@ function EntityWorkspaceView({
                 Share
               </button>
             ) : null}
-            {!isSharedWorkspace && hasLiveEntity && latestReport?._id ? (
+            {showRefreshHeaderButton ? (
               <button
                 type="button"
                 onClick={() => void handleRefreshLatestReport()}
@@ -2069,46 +2156,55 @@ function EntityWorkspaceView({
                 {refreshingReport ? "Refreshing..." : "Refresh"}
               </button>
             ) : null}
-            <button
-              type="button"
-              aria-expanded={showActions}
-              aria-label={showActions ? "Close actions menu" : "Open actions menu"}
-              onClick={() => setShowActions((current) => !current)}
-              className="inline-flex items-center justify-center rounded-md border border-gray-200 bg-white p-1.5 text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06]"
-            >
-              <Ellipsis className="h-3.5 w-3.5" />
-            </button>
+            {showHeaderActionsMenu ? (
+              <button
+                type="button"
+                aria-expanded={showActions}
+                aria-label={showActions ? "Close actions menu" : "Open actions menu"}
+                onClick={() => setShowActions((current) => !current)}
+                className="inline-flex items-center justify-center rounded-md border border-gray-200 bg-white p-1.5 text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06]"
+              >
+                <Ellipsis className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
           </div>
         </div>
 
-        {/* Metadata row (Linear-style inline chips) */}
+        {/* Metadata row — this is the single notebook-facing status strip. */}
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-500 dark:text-gray-400">
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
             First seen {formatDate(entity.createdAt)}
           </span>
-          <span className="tabular-nums">
-            {entity.reportCount} {entity.reportCount === 1 ? "report" : "reports"}
-          </span>
-          <button
-            type="button"
-            onClick={() => sourceCount > 0 && setShowSources(true)}
-            disabled={sourceCount === 0}
-            className="tabular-nums underline-offset-2 transition-colors hover:text-gray-700 hover:underline disabled:cursor-default disabled:no-underline disabled:hover:text-inherit dark:hover:text-gray-200"
-            aria-label={`View all ${sourceCount} sources`}
-          >
-            {sourceCount} source{sourceCount === 1 ? "" : "s"}
-          </button>
+          {entity.reportCount > 0 ? (
+            <span className="tabular-nums">
+              {entity.reportCount} {entity.reportCount === 1 ? "report" : "reports"}
+            </span>
+          ) : null}
+          {sourceCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => setShowSources(true)}
+              className="tabular-nums underline-offset-2 transition-colors hover:text-gray-700 hover:underline dark:hover:text-gray-200"
+              aria-label={`View all ${sourceCount} sources`}
+            >
+              {sourceCount} source{sourceCount === 1 ? "" : "s"}
+            </button>
+          ) : null}
           {note ? <span>1 note</span> : null}
           {shareAccessLabel ? (
             <span className="tabular-nums">{shareAccessLabel.toLowerCase()}</span>
           ) : null}
+          <PulseBadge entitySlug={entity.slug} />
           {latestCollaborationStatus ? (
             <span data-testid="entity-collaboration-status">{latestCollaborationStatus}</span>
           ) : null}
-          <span className="ml-auto tabular-nums">
-            Updated {formatRelative(latestReport?.updatedAt ?? entity.updatedAt)}
-          </span>
+          {!unifiedNotebookSurface ? (
+            <span className="ml-auto tabular-nums">
+              Updated {formatRelative(latestReport?.updatedAt ?? entity.updatedAt)}
+            </span>
+          ) : null}
+        </div>
         </div>
       </header>
 
@@ -2264,7 +2360,8 @@ function EntityWorkspaceView({
            collapses to just the "Saved because" affordance (or
            disappears entirely when shared). Keeps the first fold
            quiet instead of padding it with ceremony. ── */}
-      {(visitBrief.title !== "No new changes since your last visit" ||
+      {!unifiedNotebookSurface &&
+      (visitBrief.title !== "No new changes since your last visit" ||
         !isSharedWorkspace) ? (
       <div className="mb-4 flex flex-col gap-3 rounded-lg border border-gray-100 bg-gray-50/40 px-4 py-3 text-sm dark:border-white/[0.06] dark:bg-white/[0.015] sm:flex-row sm:items-center sm:justify-between">
         {/* Since last visit — shown only when there are real changes. */}
@@ -2319,7 +2416,7 @@ function EntityWorkspaceView({
       ) : null}
 
       {/* ── Activity ribbon (Google Doc-style: who touched what) ── */}
-      {(timeline.length > 0 || note) && (
+      {!unifiedNotebookSurface && (timeline.length > 0 || note) && (
         <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
           <span className="font-medium text-gray-600 dark:text-gray-400">Recent edits:</span>
           {timeline.slice(0, 3).map((report) => (
@@ -2346,8 +2443,9 @@ function EntityWorkspaceView({
       <EntityNotebookSurface
         entitySlug={entity.slug}
         shareToken={shareToken}
-        entityViewMode={entityViewMode}
+        entityViewMode={effectiveEntityViewMode}
         showViewModeToggle={showViewModeToggle}
+        isReadMode={isReadMode}
         liveNotebookEnabled={liveNotebookEnabled}
         materializingLiveWorkspace={materializingLiveWorkspace}
         hasLiveEntity={hasLiveEntity}
@@ -2382,7 +2480,7 @@ function EntityWorkspaceView({
       */}
 
       {/* ── Notebook flow (Roam/Notion-style: one continuous page) ── */}
-      <section className={`mt-6 ${entityViewMode !== "classic" ? "hidden" : ""}`}>
+      <section className={`mt-6 ${effectiveEntityViewMode !== "classic" ? "hidden" : ""}`}>
         <article>
           <div className="flex flex-col gap-4 pb-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
@@ -2638,7 +2736,7 @@ function EntityWorkspaceView({
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {(workspace.relatedEntities ?? []).slice(0, 6).map((related) =>
+                  {uniqueRelatedEntities.slice(0, 6).map((related) =>
                     canTraverseLinkedEntities ? (
                       <button
                         key={related.slug}
@@ -2745,7 +2843,7 @@ function EntityWorkspaceView({
         output, sections render with empty state + actionable copy.
         See: docs/architecture/AGENT_PIPELINE.md
         ───────────────────────────────────────────────────────────── */}
-      {entityViewMode === "classic" ? (
+      {effectiveEntityViewMode === "classic" ? (
         <section className="mt-8 flex flex-col gap-3" data-testid="entity-diligence-blocks">
           <DiligenceSection<never>
             block="founder"
@@ -2780,14 +2878,58 @@ function EntityWorkspaceView({
         </section>
       ) : null}
 
-      {showActions ? (
+      {showActions && !isReadMode ? (
         <section className="mt-4 rounded-3xl border border-black/8 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-[#111214]/90">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
-            Export
+          {(unifiedNotebookSurface || canManageShare || hasLiveEntity) ? (
+            <>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                Workspace
+              </div>
+              <p className="mt-2 text-sm leading-6 text-content-muted">
+                Keep the notebook calm. Secondary controls live here instead of the page header.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {unifiedNotebookSurface && !isSharedWorkspace ? (
+                  <button
+                    type="button"
+                    onClick={handleToggleTrack}
+                    disabled={trackPending}
+                    className="nb-secondary-button rounded-full px-3 py-1.5 text-xs"
+                  >
+                    {trackPending ? "Updating..." : isTracked ? "Stop tracking" : "Track updates"}
+                  </button>
+                ) : null}
+                {canManageShare ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowShareSheet((current) => !current)}
+                    className="nb-secondary-button rounded-full px-3 py-1.5 text-xs"
+                  >
+                    {showShareSheet ? "Hide share options" : "Share workspace"}
+                  </button>
+                ) : null}
+                {!isSharedWorkspace && hasLiveEntity && latestReport?._id ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleRefreshLatestReport()}
+                    disabled={refreshingReport}
+                    className="nb-secondary-button rounded-full px-3 py-1.5 text-xs"
+                  >
+                    {refreshingReport ? "Refreshing..." : "Refresh report"}
+                  </button>
+                ) : null}
+              </div>
+            </>
+          ) : null}
+
+          <div className={`${unifiedNotebookSurface || canManageShare || hasLiveEntity ? "mt-5 border-t border-black/8 pt-4 dark:border-white/10" : ""}`}>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+              Export
+            </div>
+            <p className="mt-2 text-sm leading-6 text-content-muted">
+              Copy exactly what you need and leave the workspace alone.
+            </p>
           </div>
-          <p className="mt-2 text-sm leading-6 text-content-muted">
-            Copy exactly what you need and leave the workspace alone.
-          </p>
           <div className="mt-4 flex flex-wrap gap-2">
             {([
               ["brief", "Executive brief"],
@@ -2809,7 +2951,7 @@ function EntityWorkspaceView({
         </section>
       ) : null}
 
-      <section className={`mt-10 pt-8 ${entityViewMode !== "classic" ? "hidden" : ""}`}>
+      <section className={`mt-10 pt-8 ${effectiveEntityViewMode !== "classic" ? "hidden" : ""}`}>
         <div className="grid gap-8 2xl:grid-cols-[minmax(0,3fr)_minmax(280px,0.7fr)] 2xl:items-start">
         <section data-testid="entity-working-notes" className="min-w-0">
           <div className="flex items-center justify-between gap-3">
@@ -3095,9 +3237,9 @@ function EntityWorkspaceView({
                   <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
                     Linked reports
                   </div>
-                  {workspace.relatedEntities && workspace.relatedEntities.length > 0 ? (
+                  {uniqueRelatedEntities.length > 0 ? (
                     <div className="mt-3 space-y-3">
-                      {workspace.relatedEntities.map((related) =>
+                      {uniqueRelatedEntities.map((related) =>
                         canTraverseLinkedEntities ? (
                           <button
                             key={related.slug}
@@ -3155,7 +3297,7 @@ function EntityWorkspaceView({
       {/* ── User Notes (editable, Obsidian-like) ───────────────────────── */}
       {false ? (
       <>
-      <section className={`mt-10 pt-8 ${entityViewMode !== "classic" ? "hidden" : ""}`}>
+      <section className={`mt-10 pt-8 ${effectiveEntityViewMode !== "classic" ? "hidden" : ""}`}>
         <div className="mb-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Connected node</h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -3169,12 +3311,12 @@ function EntityWorkspaceView({
           onOpenEntity={(nextSlug) => navigate(buildEntityPathWithShare(nextSlug))}
         />
 
-        {workspace.relatedEntities && workspace.relatedEntities.length > 0 ? (
+        {uniqueRelatedEntities.length > 0 ? (
           <div className="mt-4 space-y-3">
             <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
               Linked reports
             </h2>
-            {workspace.relatedEntities.map((related) => (
+            {uniqueRelatedEntities.map((related) => (
               <button
                 key={related.slug}
                 type="button"
@@ -3208,7 +3350,7 @@ function EntityWorkspaceView({
       </>
       ) : null}
 
-      <section className={`mt-10 pt-8 ${entityViewMode !== "classic" ? "hidden" : ""}`}>
+      <section className={`mt-10 pt-8 ${effectiveEntityViewMode !== "classic" ? "hidden" : ""}`}>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">

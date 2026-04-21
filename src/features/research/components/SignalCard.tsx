@@ -156,7 +156,7 @@ export const SignalCard = memo(function SignalCard({
       )}
     </div>
   );
-}
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SIGNAL LIST (renders multiple signals)
@@ -199,7 +199,7 @@ export function SignalList({ signals, onSignalClick, className = "" }: SignalLis
       ))}
     </div>
   );
-});
+}
 
 export default SignalCard;
 

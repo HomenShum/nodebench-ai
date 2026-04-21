@@ -317,11 +317,22 @@ export function CockpitLayout({
   useEffect(() => {
     if (!canonicalPath || !isLegacyRedirect) return;
     const currentFullPath = `${location.pathname}${location.search}`;
-    if (currentFullPath === canonicalPath) return;
+    // `useCockpitRouting` rebuilds canonicalPath from surface/view/entity
+    // primitives; it does NOT know about cross-cutting params like `view`
+    // (edit/read mode). Preserve those here so the legacy redirect can't
+    // silently strip the user's mode choice.
+    const preserved = new URLSearchParams(location.search);
+    const viewParam = preserved.get("view");
+    const [pathOnly, canonicalQuery = ""] = canonicalPath.split("?");
+    const mergedParams = new URLSearchParams(canonicalQuery);
+    if (viewParam === "read") mergedParams.set("view", "read");
+    const mergedQuery = mergedParams.toString();
+    const targetPath = mergedQuery ? `${pathOnly}?${mergedQuery}` : pathOnly;
+    if (currentFullPath === targetPath) return;
     // Defer redirect to next frame — ensures useCockpitRouting state is fully settled
     // before we navigate, preventing stale surface/view in ActiveSurfaceHost
     const rafId = requestAnimationFrame(() => {
-      navigate(canonicalPath, { replace: true });
+      navigate(targetPath, { replace: true });
     });
     return () => cancelAnimationFrame(rafId);
   }, [canonicalPath, isLegacyRedirect, location.pathname, location.search, navigate]);
@@ -890,9 +901,12 @@ export function CockpitLayout({
           onClose={() => setHashtagPopover(null)}
         />
 
-        {isAuthenticated && <QuickCaptureWidget />}
-
-        {/* FeedbackWidget removed — overlapped FastAgent FAB, localStorage-only with no backend reader */}
+        {/* Quick-capture FAB is suppressed on entity pages — the live notebook's
+            `/` slash palette already covers inline note/task capture, and the
+            WorkspaceDrawerPill owns the bottom-right corner there. Following the
+            Notion/Linear pattern: no global floating "+" when the page is itself
+            the capture surface. Precedent: FeedbackWidget removal (same reason). */}
+        {isAuthenticated && !location.pathname.startsWith("/entity/") && <QuickCaptureWidget />}
 
         {showSettingsModal && (
           <ErrorBoundary title="Settings failed to load">
