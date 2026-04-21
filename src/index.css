@@ -1550,6 +1550,44 @@ html[data-density='spacious'] {
   transition: background-color 120ms ease-out;
 }
 
+/* ------------------------------------------------------------------ */
+/* Live notebook: industry-grade block interaction layer.
+   Scope: [data-testid="entity-live-notebook"] (not .notebook-sheet)
+   because EntityNotebookLive renders its own root, not the sheet.
+   - Hover: 2px neutral left-edge tint + faint background.
+   - Focus: 2px accent-primary left-edge bar + crisper background.
+   - Active (pointer-down): subtle GPU scale for tactile feedback.
+   All transitions use GPU-composited properties (background-color,
+   box-shadow, transform). No layout-affecting transitions. */
+[data-testid="entity-live-notebook"] [data-testid="notebook-block"] {
+  border-radius: 6px;
+  transition:
+    background-color 120ms ease-out,
+    box-shadow 140ms ease-out,
+    transform 80ms ease-out;
+}
+[data-testid="entity-live-notebook"] [data-testid="notebook-block"]:hover {
+  background-color: rgba(255, 255, 255, 0.022);
+  box-shadow: inset 2px 0 0 0 rgba(255, 255, 255, 0.08);
+}
+[data-testid="entity-live-notebook"] [data-testid="notebook-block"][data-block-focused="true"] {
+  background-color: rgba(255, 255, 255, 0.045);
+  box-shadow:
+    inset 2px 0 0 0 var(--accent-primary),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+[data-testid="entity-live-notebook"] [data-testid="notebook-block"]:active {
+  transform: scale(0.998);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-testid="entity-live-notebook"] [data-testid="notebook-block"] {
+    transition: background-color 120ms ease-out;
+  }
+  [data-testid="entity-live-notebook"] [data-testid="notebook-block"]:active {
+    transform: none;
+  }
+}
+
 /* Lexical/Ideaflow rhythm: zero block margin + min-height per paragraph.
    Tight spacing between content blocks; empty blocks collapse to a single
    line instead of a full paragraph of whitespace. */

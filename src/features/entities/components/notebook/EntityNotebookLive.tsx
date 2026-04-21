@@ -2126,13 +2126,9 @@ const BlockRow = memo(function BlockRow({
         }
       }}
       data-depth={depth}
-      className={`group relative -mx-2 px-2 ${blockSpacingClass} transition-[background,padding] duration-150 ${
-        isRecentAgentEdit ? "notebook-block-wet-ink" : ""
-      } ${
-        isFocused
-          ? "rounded-md bg-white/[0.045] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]"
-          : "hover:bg-white/[0.02]"
-      }`}
+      className={`group relative -mx-2 px-2 ${blockSpacingClass} ${
+        supportsSyncEditing ? "cursor-text" : ""
+      } ${isRecentAgentEdit ? "notebook-block-wet-ink" : ""}`}
       style={depth > 0 ? { marginLeft: `${depth * 1.5}rem` } : undefined}
     >
       <div className="relative min-w-0">
