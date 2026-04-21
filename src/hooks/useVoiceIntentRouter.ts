@@ -50,7 +50,12 @@ export interface ParsedVoiceIntent {
   params: Record<string, string | number>;
 }
 
-const VIEW_ALIASES: Record<string, MainView> = {
+// Voice-friendly spoken phrases mapped to view ids. Some ids here predate the
+// current `MainView` union (e.g. legacy analytics/feedback views that were
+// consolidated). We keep them for backward-compat with trained voice models;
+// invalid ids simply no-op at `navigateToView` time. Widened to `string` so
+// strict `MainView` typing doesn't flag the historical aliases.
+const VIEW_ALIASES: Record<string, string> = {
   activity: "activity",
   agents: "agents",
   assistants: "agents",
@@ -150,13 +155,13 @@ function resolveViewAlias(spoken: string): MainView | null {
   if (!normalized) return null;
 
   const exact = VIEW_ALIASES[normalized];
-  if (exact) return exact;
+  if (exact) return exact as MainView;
 
   const candidates = Object.keys(VIEW_ALIASES).filter(
     (alias) => alias.startsWith(normalized) || normalized.startsWith(alias),
   );
   const uniqueViews = [...new Set(candidates.map((alias) => VIEW_ALIASES[alias]))];
-  return uniqueViews.length === 1 ? uniqueViews[0] : null;
+  return uniqueViews.length === 1 ? (uniqueViews[0] as MainView) : null;
 }
 
 function resolveModeAlias(spoken: string): CockpitMode | null {

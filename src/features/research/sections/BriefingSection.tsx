@@ -445,7 +445,7 @@ function BriefingSectionInner({
             <div className="rounded-md border border-edge bg-background p-3">
               <div className="text-xs font-bold text-content-muted">Coverage</div>
               <div className="mt-1 text-sm text-content-secondary">
-                {formatBriefSectionTitle(actI?.headline || actI?.title, "Coverage & Freshness")}
+                {formatBriefSectionTitle((actI as { headline?: string } | undefined)?.headline || actI?.title, "Coverage & Freshness")}
               </div>
             </div>
             <div className="rounded-md border border-edge bg-background p-3">
@@ -726,7 +726,7 @@ function BriefingSectionInner({
             {coverageSourceSummaries.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-bold text-content-muted">By source</p>
-                {coverageSourceSummaries.slice(0, 6).map((entry, idx) => (
+                {coverageSourceSummaries.slice(0, 6).map((entry: { source: string; count: number | null; summary: string }, idx: number) => (
                   <div key={`${entry.source}-${idx}`} className="text-xs text-content-secondary">
                     <span className="font-semibold text-content-secondary">{entry.source}</span>
                     {entry.count !== null && <span className="text-content-muted"> ({entry.count})</span>}
@@ -875,7 +875,7 @@ function ActIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string) 
   const actTopSources = Array.isArray(data.topSources)
     ? data.topSources
       .map((source: any) => normalizeSourceEntry(source))
-      .filter((entry): entry is { name: string; count: string | number | null } => Boolean(entry))
+      .filter((entry: unknown): entry is { name: string; count: string | number | null } => Boolean(entry))
       .slice(0, 5)
     : [];
 
@@ -908,7 +908,7 @@ function ActIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string) 
             <p className="text-xs font-bold text-content-muted">Primary Signal Sources</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            {actTopSources.map((source, idx: number) => (
+            {actTopSources.map((source: { name: string; count: string | number | null }, idx: number) => (
               <span
                 key={`${source.name}-${idx}`}
                 className="px-0 py-1 text-[13px] font-medium text-content-secondary border-b border-edge hover:border-content hover:text-content transition-all cursor-default"

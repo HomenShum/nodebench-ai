@@ -196,6 +196,7 @@ const PROVIDERS: string[] = [
 ];
 
 export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
+  const api = useConvexApi();
   const [active, setActive] = useState<SettingsTab>(TAB_COMPAT[initialTab as string] ?? initialTab ?? "usage");
 
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});

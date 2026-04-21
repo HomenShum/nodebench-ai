@@ -43,6 +43,25 @@ interface DigestItem {
   linkedEntity?: string;
 }
 
+// Minimal shape shared by the live Convex query and the demo-mode fallback.
+// Useed to type-narrow `dataToUse` so the many mappers below compile cleanly
+// under `noImplicitAny` without sprinkling `any` casts everywhere.
+interface DigestFeedItem {
+  title: string;
+  source?: string;
+  summary?: string;
+  tags?: string[];
+  url?: string;
+}
+interface DigestDataShape {
+  marketMovers?: DigestFeedItem[];
+  watchlistRelevant?: DigestFeedItem[];
+  riskAlerts?: DigestFeedItem[];
+  trackedHashtags?: Array<string | { hashtag?: string; tag?: string }>;
+  lastUpdated?: number | string;
+  _demo?: boolean;
+}
+
 interface MorningDigestProps {
   userName?: string;
   onItemClick?: (item: DigestItem) => void;
@@ -143,7 +162,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
   // Fetch real digest data from Convex
   // Query is in separate file (morningDigestQueries) due to Convex Node.js restrictions
-  const digestData = useQuery(api.domains.ai.morningDigestQueries.getDigestData);
+  const digestData = useQuery(api.domains.ai.morningDigestQueries.getDigestData) as DigestDataShape | undefined;
 
   // Fetch live feed items for accurate source counts
   const liveFeed = useQuery(api.feed.get, { limit: 100 });
@@ -350,7 +369,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
       trackedHashtags,
       userName,
     })
-      .then(async (result) => {
+      .then(async (result: { summary: string }) => {
         const sanitizedSummary = sanitizeReadableText(result.summary);
         setGeneratedSummary(sanitizedSummary);
         // Cache the generated summary for future mounts
@@ -362,7 +381,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
         } catch (cacheErr) {
         }
       })
-      .catch(err => {
+      .catch((err: unknown) => {
         console.error('Failed to generate summary:', err);
         setGeneratedSummary('Check the feed for the latest updates on markets and your tracked topics.');
       })
@@ -514,7 +533,10 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     if (digestData?.lastUpdated) {
       // Clamp negative values to avoid showing "Updated -1 min ago" when clocks are slightly out of sync
       // (e.g., preview build timestamp jitter).
-      const mins = Math.max(0, Math.round((Date.now() - digestData.lastUpdated) / 60000));
+      const lastUpdatedMs = typeof digestData.lastUpdated === "number"
+        ? digestData.lastUpdated
+        : Date.parse(digestData.lastUpdated);
+      const mins = Math.max(0, Math.round((Date.now() - lastUpdatedMs) / 60000));
       return `Updated ${formatAge(mins)}`;
     }
     return 'Fetching latest...';
@@ -983,16 +1005,19 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                         </span>
                         <span className="text-sm text-content-secondary leading-snug line-clamp-2 group-hover:text-content transition-colors">{item.text || 'No description available'}</span>
                       </button>
-                      {item.linkedEntity && (
-                        <button
-                          type="button"
-                          onClick={() => onEntityClick?.(item.linkedEntity, "company")}
-                          className="shrink-0 px-2 py-1 text-xs font-mono font-medium text-content-secondary hover:text-content dark:hover:text-gray-200 bg-surface-secondary rounded-md border border-edge hover:border-edge dark:hover:border-edge transition-all"
-                          title={`Open entity: ${item.linkedEntity}`}
-                        >
-                          {item.linkedEntity}
-                        </button>
-                      )}
+                      {item.linkedEntity ? (() => {
+                        const entityName = item.linkedEntity;
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => onEntityClick?.(entityName, "company")}
+                            className="shrink-0 px-2 py-1 text-xs font-mono font-medium text-content-secondary hover:text-content dark:hover:text-gray-200 bg-surface-secondary rounded-md border border-edge hover:border-edge dark:hover:border-edge transition-all"
+                            title={`Open entity: ${entityName}`}
+                          >
+                            {entityName}
+                          </button>
+                        );
+                      })() : null}
                     </div>
                   ))}
                 </div>
@@ -1167,7 +1192,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       : section.sentiment === 'bearish' ? 'bg-rose-500/10 text-rose-600 border border-rose-500/20 shadow-sm'
                         : 'bg-surface-secondary text-content-secondary border border-edge shadow-sm'
                       }`}>
-                      {React.cloneElement(section.icon as React.ReactElement, { className: "w-5 h-5", strokeWidth: 2 })}
+                      {React.cloneElement(section.icon as React.ReactElement<Record<string, unknown>>, { className: "w-5 h-5", strokeWidth: 2 })}
                     </div>
                     <div className="text-left">
                       <p className="text-base font-bold text-content">{section.title}</p>
@@ -1220,16 +1245,19 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity duration-200">
-                          {item.linkedEntity && (
-                            <button
-                              type="button"
-                              onClick={() => onEntityClick?.(item.linkedEntity, "company")}
-                              className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold font-mono text-content-secondary bg-surface-secondary border border-edge tracking-tight hover:text-content hover:border-edge transition-all"
-                              title={`Open topic: ${item.linkedEntity}`}
-                            >
-                              {item.linkedEntity}
-                            </button>
-                          )}
+                          {item.linkedEntity ? (() => {
+                            const entityName = item.linkedEntity;
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => onEntityClick?.(entityName, "company")}
+                                className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold font-mono text-content-secondary bg-surface-secondary border border-edge tracking-tight hover:text-content hover:border-edge transition-all"
+                                title={`Open topic: ${entityName}`}
+                              >
+                                {entityName}
+                              </button>
+                            );
+                          })() : null}
                           <button
                             type="button"
                             onClick={() => onItemClick?.(item)}

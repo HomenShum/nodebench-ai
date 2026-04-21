@@ -14,6 +14,13 @@ interface ErrorBoundaryProps {
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
   section?: string;
+  /**
+   * Legacy alias for `section`. Many existing callers (App.tsx, CockpitLayout,
+   * ActiveSurfaceHost, etc.) pass `title` to label the failing region in the
+   * fallback. Accepting both keeps the ~15 existing call sites type-clean
+   * without requiring a rename sweep.
+   */
+  title?: string;
 }
 
 interface ErrorBoundaryState {
@@ -67,7 +74,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
       return (
         <ErrorFallback
-          section={this.props.section}
+          section={this.props.section ?? this.props.title}
           error={this.state.error}
           onRetry={this.handleRetry}
         />
