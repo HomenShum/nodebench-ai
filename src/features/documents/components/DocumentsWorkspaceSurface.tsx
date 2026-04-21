@@ -9,6 +9,7 @@
  * to any context slice remain as explicit props (shell-level concerns).
  */
 
+import type React from "react";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { FileText, FileSpreadsheet } from "lucide-react";
 import { TopDividerBar } from "@shared/ui/TopDividerBar";
@@ -157,51 +158,53 @@ export default function DocumentsWorkspaceSurface({
 
               {/* Documents grid */}
               <DocumentsTabContent
-                isDocsLoading={isDocsLoading}
-                showDocsLoadingFallback={overlay.showDocsLoadingFallback}
-                filter={data.filter}
-                setFilter={data.setFilter}
-                docViewMode={overlay.docViewMode}
-                setDocViewMode={overlay.setDocViewMode}
-                documentTypes={documentTypes}
-                countsByFilter={data.countsByFilter as Record<string, number>}
-                filterButtonRefs={filterButtonRefs}
-                onFilterKeyDown={onFilterKeyDown}
-                filteredDocuments={data.filteredDocuments}
-                orderedDocuments={data.orderedDocuments}
-                groupedDocuments={data.groupedDocuments}
-                docsById={data.docsById}
-                docOrderByFilter={order.docOrderByFilter}
-                setDocOrderByFilter={order.setDocOrderByFilter}
-                segmentedOrderByGroup={order.segmentedOrderByGroup}
-                setSegmentedOrderByGroup={order.setSegmentedOrderByGroup}
-                orderDocsBy={orderDocsBy}
-                loggedInUser={loggedInUser}
-                saveOrderForFilter={saveOrderForFilter}
-                saveOrderForSegmented={saveOrderForSegmented}
-                selectedDocIds={actions.selectedDocIds}
-                toggleSelected={toggleSelected}
-                clearSelection={actions.clearSelection}
-                handleSelectDocument={handleSelectDocument}
-                handleCardClickWithModifiers={handleCardClickWithModifiers}
-                handleDeleteDocument={handleDeleteDocument}
-                handleToggleFavorite={handleToggleFavorite}
-                openMiniEditor={openMiniEditor}
-                handleChatWithFile={handleChatWithFile}
-                handleAnalyzeWithAI={handleAnalyzeWithAI}
-                handleOpenMedia={handleOpenMedia}
-                handleCreateDocument={handleCreateDocument}
-                handleCreateTimelineDoc={handleCreateTimelineDoc}
-                getRootProps={upload.getRootProps}
-                getInputProps={upload.getInputProps}
-                isDragActive={upload.isDragActive}
-                open={upload.openFilePicker}
-                isUploading={upload.isUploading}
-                uploadProgress={upload.uploadProgress}
-                handleBulkToggleFavorite={handleBulkToggleFavorite}
-                handleBulkArchive={actions.handleBulkArchive}
-                emptyFileCount={data.emptyFileCount}
-                handleCleanupEmptyFiles={handleCleanupEmptyFiles}
+                {...({
+                  isDocsLoading,
+                  showDocsLoadingFallback: overlay.showDocsLoadingFallback,
+                  filter: data.filter,
+                  setFilter: data.setFilter,
+                  docViewMode: overlay.docViewMode,
+                  setDocViewMode: overlay.setDocViewMode,
+                  documentTypes,
+                  countsByFilter: data.countsByFilter as Record<string, number>,
+                  filterButtonRefs,
+                  onFilterKeyDown,
+                  filteredDocuments: data.filteredDocuments,
+                  orderedDocuments: data.orderedDocuments,
+                  groupedDocuments: data.groupedDocuments,
+                  docsById: data.docsById,
+                  docOrderByFilter: order.docOrderByFilter,
+                  setDocOrderByFilter: order.setDocOrderByFilter,
+                  segmentedOrderByGroup: order.segmentedOrderByGroup,
+                  setSegmentedOrderByGroup: order.setSegmentedOrderByGroup,
+                  orderDocsBy,
+                  loggedInUser,
+                  saveOrderForFilter,
+                  saveOrderForSegmented,
+                  selectedDocIds: actions.selectedDocIds,
+                  toggleSelected,
+                  clearSelection: actions.clearSelection,
+                  handleSelectDocument,
+                  handleCardClickWithModifiers,
+                  handleDeleteDocument,
+                  handleToggleFavorite,
+                  openMiniEditor,
+                  handleChatWithFile,
+                  handleAnalyzeWithAI,
+                  handleOpenMedia,
+                  handleCreateDocument,
+                  handleCreateTimelineDoc,
+                  getRootProps: upload.getRootProps,
+                  getInputProps: upload.getInputProps,
+                  isDragActive: upload.isDragActive,
+                  open: upload.openFilePicker,
+                  isUploading: upload.isUploading,
+                  uploadProgress: upload.uploadProgress,
+                  handleBulkToggleFavorite,
+                  handleBulkArchive: actions.handleBulkArchive,
+                  emptyFileCount: data.emptyFileCount,
+                  handleCleanupEmptyFiles,
+                } as unknown as React.ComponentProps<typeof DocumentsTabContent>)}
               />
             </div>
           </div>

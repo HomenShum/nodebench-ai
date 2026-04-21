@@ -7,8 +7,9 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useConvex, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { ArrowUp, ChevronDown, ChevronUp, Link2, Search } from "lucide-react";
+import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import { staggerDelay } from "@/lib/ui/stagger";
 import { buildCockpitPath } from "@/lib/registry/viewRegistry";
@@ -19,9 +20,10 @@ import { useProductBootstrap } from "@/features/product/lib/useProductBootstrap"
 import { useStreamingSearch, type ToolStage } from "@/hooks/useStreamingSearch";
 import { useConvexApi } from "@/lib/convexApi";
 import { buildOperatorContextHint, buildOperatorContextLabel } from "@/features/product/lib/operatorContext";
-import { ProductIntakeComposer } from "@/features/product/components/ProductIntakeComposer";
+import { ProductIntakeComposer, type ProductComposerMode } from "@/features/product/components/ProductIntakeComposer";
 import { SaveToNotebookButton } from "@/features/agents/components/SaveToNotebookButton";
 import { SessionArtifactsPanel } from "@/features/chat/components/SessionArtifactsPanel";
+import { useConversationEngine } from "@/features/chat/hooks/useConversationEngine";
 import { uploadProductDraftFiles } from "@/features/product/lib/uploadDraftFiles";
 import { deriveReportArtifactMode, getReportArtifactLabel, type ReportArtifactMode } from "../../../../shared/reportArtifacts";
 import { deriveCanonicalReportSections } from "../../../../shared/reportSections";
@@ -39,6 +41,12 @@ type ReportSection = {
 };
 
 type ReportSectionWithSkeleton = ReportSection & { skeleton?: boolean };
+
+type RoutingInfo = {
+  routingMode?: string;
+  routingReason?: string;
+  [key: string]: unknown;
+};
 
 const DEFAULT_LENS: LensId = "founder";
 const STARTER_PROMPTS = [
@@ -167,6 +175,45 @@ function deriveReportSections(
   });
 }
 
+function normalizeStoredSections(value: unknown): ReportSectionWithSkeleton[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((section): ReportSectionWithSkeleton | null => {
+      if (!section || typeof section !== "object") return null;
+      const record = section as Record<string, unknown>;
+      const id = typeof record.id === "string" ? record.id : null;
+      const title = typeof record.title === "string" ? record.title : null;
+      const body = typeof record.body === "string" ? record.body : "";
+      if (!id || !title) return null;
+      const status: ReportSectionWithSkeleton["status"] =
+        record.status === "pending" ||
+        record.status === "building" ||
+        record.status === "complete"
+          ? record.status
+          : "complete";
+      return {
+        id,
+        title,
+        body,
+        status,
+        sourceRefIds: Array.isArray(record.sourceRefIds)
+          ? record.sourceRefIds.filter((entry): entry is string => typeof entry === "string")
+          : undefined,
+      };
+    })
+    .filter((section): section is ReportSectionWithSkeleton => section !== null);
+}
+
+function normalizeStoredSources(
+  value: unknown,
+): NonNullable<ResultPacket["sourceRefs"]> {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (source): source is NonNullable<ResultPacket["sourceRefs"]>[number] =>
+      Boolean(source && typeof source === "object"),
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /*  Citation chip                                                      */
 /* ------------------------------------------------------------------ */
@@ -194,12 +241,12 @@ export const ChatHome = memo(function ChatHome() {
   useProductBootstrap();
 
   const navigate = useNavigate();
-  const convex = useConvex();
   const api = useConvexApi();
   const [searchParams] = useSearchParams();
   const queryParam = searchParams.get("q");
   const lensParam = searchParams.get("lens");
   const entityParam = searchParams.get("entity");
+  const sessionParam = searchParams.get("session");
   const anonymousSessionId = getAnonymousProductSessionId();
   const draft = useMemo(() => loadProductDraft(), []);
   const meSnapshot = useQuery(
@@ -213,6 +260,9 @@ export const ChatHome = memo(function ChatHome() {
   );
   const saveFileMutation = useMutation(
     api?.domains.product.me.saveFile ?? ("skip" as any),
+  );
+  const saveContextCapture = useMutation(
+    api?.domains.product.me.saveContextCapture ?? ("skip" as any),
   );
   const operatorProfile = meSnapshot?.profile ?? null;
   const operatorContextHint = useMemo(() => buildOperatorContextHint(operatorProfile), [operatorProfile]);
@@ -237,28 +287,46 @@ export const ChatHome = memo(function ChatHome() {
 
   const [input, setInput] = useState(initialQuery);
   const [lens, setLens] = useState<LensId>(initialLens);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [savedReportId, setSavedReportId] = useState<string | null>(null);
-  const [savedEntitySlug, setSavedEntitySlug] = useState<string | null>(null);
-  const [reportPinned, setReportPinned] = useState(false);
-  const [persistenceMessage, setPersistenceMessage] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [traceOpen, setTraceOpen] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [draftFiles, setDraftFiles] = useState(() => draft?.files ?? []);
-  const streaming = useStreamingSearch();
-  const startedQueryRef = useRef<string | null>(null);
-  const routingRef = useRef<typeof streaming.routing>(null);
+  const [composerMode, setComposerMode] = useState<ProductComposerMode>("ask");
+  const [savingCapture, setSavingCapture] = useState(false);
+  const handleConversationSessionChange = useCallback(
+    (sessionId: string | null) => {
+      const nextSearch = new URLSearchParams(window.location.search);
+      nextSearch.set("surface", "chat");
+      if (entityParam?.trim()) nextSearch.set("entity", entityParam.trim());
+      if (sessionId) {
+        nextSearch.set("session", sessionId);
+        nextSearch.delete("q");
+        nextSearch.delete("draft");
+      } else {
+        nextSearch.delete("session");
+      }
+      const nextUrl = `/?${nextSearch.toString()}`;
+      if (`/?${window.location.search.replace(/^\?/, "")}` !== nextUrl) {
+        navigate(nextUrl, { replace: true });
+      }
+    },
+    [entityParam, navigate],
+  );
+  const conversation = useConversationEngine({
+    anonymousSessionId,
+    entitySlugHint: entityParam?.trim() || null,
+    contextHint: runtimeContextHint ?? null,
+    contextLabel: operatorContextLabel ?? null,
+    activeSessionId: sessionParam?.trim() || null,
+    onActiveSessionChange: handleConversationSessionChange,
+  });
+  const streaming = conversation.streaming;
   const recordedMilestonesRef = useRef({
     firstSignal: false,
     firstSource: false,
     firstPartialAnswer: false,
     reportSaved: false,
   });
-
-  useEffect(() => {
-    routingRef.current = streaming.routing;
-  }, [streaming.routing]);
 
   /* ---- begin run ---- */
 
@@ -267,12 +335,7 @@ export const ChatHome = memo(function ChatHome() {
       const trimmed = nextQuery.trim();
       if (!trimmed) return;
 
-      startedQueryRef.current = trimmed;
       recordedMilestonesRef.current = { firstSignal: false, firstSource: false, firstPartialAnswer: false, reportSaved: false };
-      setSavedReportId(null);
-      setSavedEntitySlug(null);
-      setReportPinned(false);
-      setPersistenceMessage(null);
 
       saveProductDraft({ query: trimmed, lens: nextLens, files: draftFiles });
       const nextSearch = new URLSearchParams();
@@ -283,92 +346,19 @@ export const ChatHome = memo(function ChatHome() {
       } else {
         nextSearch.set("draft", "1");
       }
+      nextSearch.delete("session");
       if (entityParam?.trim()) nextSearch.set("entity", entityParam.trim());
       if (window.location.search !== `?${nextSearch.toString()}`) {
         navigate(`/?${nextSearch.toString()}`, { replace: true });
       }
       trackEvent("chat_run_started", { queryLength: trimmed.length, uploads: draft?.files?.length ?? 0, lens: nextLens });
-
-      let sessionId: string | null = null;
-      if (api?.domains.product.chat.startSession) {
-        try {
-          const result: any = await convex.mutation(api.domains.product.chat.startSession, {
-            anonymousSessionId,
-            query: trimmed,
-            lens: nextLens,
-            files: draftFiles,
-            contextHint: runtimeContextHint ?? undefined,
-            contextLabel: operatorContextLabel ?? undefined,
-          });
-          sessionId = result?.sessionId ?? null;
-          setActiveSessionId(sessionId);
-        } catch (error) {
-          setPersistenceMessage(error instanceof Error ? error.message : "Could not start canonical session.");
-        }
-      }
-
-      streaming.startStream(trimmed, nextLens, {
-        onToolStart: (payload) => {
-          if (!sessionId || !api?.domains.product.chat.recordToolStart) return;
-          void convex.mutation(api.domains.product.chat.recordToolStart, {
-            anonymousSessionId,
-            sessionId: sessionId as any,
-            tool: payload.tool,
-            provider: payload.provider,
-            model: payload.model,
-            step: payload.step,
-            totalPlanned: payload.totalPlanned,
-            reason: payload.reason,
-          });
-        },
-        onToolDone: (payload) => {
-          if (!sessionId || !api?.domains.product.chat.recordToolDone) return;
-          void convex.mutation(api.domains.product.chat.recordToolDone, {
-            anonymousSessionId,
-            sessionId: sessionId as any,
-            tool: payload.tool,
-            step: payload.step,
-            durationMs: payload.durationMs,
-            tokensIn: payload.tokensIn,
-            tokensOut: payload.tokensOut,
-            preview: payload.preview,
-          });
-        },
-        onComplete: (payload) => {
-          if (!sessionId || !api?.domains.product.chat.completeSession) return;
-          void convex
-            .mutation(api.domains.product.chat.completeSession, {
-              anonymousSessionId,
-              sessionId: sessionId as any,
-              packet: payload.packet ?? payload,
-              entitySlugHint: entityParam?.trim() || undefined,
-              routing: routingRef.current ?? undefined,
-              totalDurationMs: payload.totalDurationMs,
-            })
-            .then((result: any) => {
-              setSavedReportId(result?.reportId ?? null);
-              setSavedEntitySlug(result?.entitySlug ?? null);
-              setPersistenceMessage("Report saved automatically.");
-            })
-            .catch((error: unknown) => {
-              setPersistenceMessage(error instanceof Error ? error.message : "Could not save report.");
-            });
-        },
-        onError: (message) => {
-          setPersistenceMessage(message);
-          if (!sessionId || !api?.domains.product.chat.completeSession) return;
-          void convex.mutation(api.domains.product.chat.completeSession, {
-            anonymousSessionId,
-            sessionId: sessionId as any,
-            packet: { answer: "", sourceRefs: [] },
-            entitySlugHint: entityParam?.trim() || undefined,
-            routing: routingRef.current ?? undefined,
-            error: message,
-          });
-        },
-      }, { contextHint: runtimeContextHint ?? undefined });
+      await conversation.beginRun({
+        query: trimmed,
+        lens: nextLens,
+        files: draftFiles,
+      });
     },
-    [anonymousSessionId, api, convex, draftFiles, entityParam, navigate, operatorContextLabel, runtimeContextHint, streaming.startStream],
+    [conversation, draft?.files?.length, draftFiles, entityParam, navigate],
   );
 
   /* ---- search-param sync ---- */
@@ -376,9 +366,9 @@ export const ChatHome = memo(function ChatHome() {
   useEffect(() => {
     const nextQuery = queryParam;
     const nextLens = lensParam;
-    if (nextQuery) setInput(nextQuery);
+    if (!sessionParam && nextQuery) setInput(nextQuery);
     if (isLensId(nextLens)) setLens(nextLens);
-  }, [lensParam, queryParam]);
+  }, [lensParam, queryParam, sessionParam]);
 
   useEffect(() => {
     const nextLens = resolvePreferredLens({
@@ -393,6 +383,7 @@ export const ChatHome = memo(function ChatHome() {
   }, [draft?.lens, draft?.query, lens, lensParam, operatorProfile?.preferredLens]);
 
   useEffect(() => {
+    if (sessionParam?.trim()) return;
     const nextQuery = queryParam ?? draft?.query ?? "";
     const nextLens = resolvePreferredLens({
       lensParam,
@@ -401,11 +392,11 @@ export const ChatHome = memo(function ChatHome() {
       preferredLens: operatorProfile?.preferredLens,
     });
     if (!nextQuery.trim()) return;
-    if (startedQueryRef.current === nextQuery.trim()) return;
+    if (conversation.startedQuery === nextQuery.trim()) return;
     setInput(nextQuery);
     setLens(nextLens);
     void beginRun(nextQuery, nextLens);
-  }, [beginRun, draft?.lens, draft?.query, lensParam, operatorProfile?.preferredLens, queryParam]);
+  }, [beginRun, conversation.startedQuery, draft?.lens, draft?.query, lensParam, operatorProfile?.preferredLens, queryParam, sessionParam]);
 
   const handleSubmit = useCallback(() => { void beginRun(input, lens); }, [beginRun, input, lens]);
   const handleKeyDown = useCallback(
@@ -442,25 +433,91 @@ export const ChatHome = memo(function ChatHome() {
     [anonymousSessionId, api, generateUploadUrl, input, lens, pendingFiles, saveFileMutation],
   );
 
+  const handleSaveCapture = useCallback(
+    async (mode: Exclude<ProductComposerMode, "ask">, value: string) => {
+      const trimmed = value.trim();
+      if (!trimmed) return;
+      setSavingCapture(true);
+      try {
+        await saveContextCapture({
+          anonymousSessionId,
+          type: mode,
+          content: trimmed,
+          entitySlug: entityParam?.trim() || undefined,
+        });
+        setInput("");
+        setComposerMode("ask");
+        saveProductDraft({
+          query: "",
+          lens,
+          files: draftFiles,
+        });
+        toast.success(mode === "note" ? "Note saved to inbox" : "Task saved to inbox");
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Failed to save quick capture");
+      } finally {
+        setSavingCapture(false);
+      }
+    },
+    [anonymousSessionId, draftFiles, entityParam, lens, saveContextCapture],
+  );
+
   /* ---- derived state (must be before effects that reference them) ---- */
 
   const packet = normalizePacket(streaming.result);
-  const artifactMode = deriveReportArtifactMode(startedQueryRef.current ?? input);
-  const reportSections = deriveReportSections(
+  const persistedReport = (conversation.sessionResult?.report ?? null) as
+    | {
+        _id: string;
+        entitySlug?: string | null;
+        pinned?: boolean;
+        summary?: string | null;
+        sections?: unknown;
+        sources?: unknown;
+        routing?: RoutingInfo | null;
+      }
+    | null;
+  const persistedSections = useMemo(
+    () =>
+      normalizeStoredSections(
+        persistedReport?.sections ??
+          ((conversation.sessionResult?.draft as { sections?: unknown } | null | undefined)?.sections ?? null),
+      ),
+    [conversation.sessionResult?.draft, persistedReport?.sections],
+  );
+  const persistedSources = useMemo(
+    () => normalizeStoredSources(persistedReport?.sources ?? null),
+    [persistedReport?.sources],
+  );
+  const artifactMode = deriveReportArtifactMode(conversation.startedQuery ?? input);
+  const liveSections = deriveReportSections(
     packet,
     streaming.isStreaming,
     streaming.stages,
     streaming.liveAnswerPreview,
     artifactMode,
   );
-  const sources = packet?.sourceRefs?.length ? packet.sourceRefs : streaming.sourcePreview;
-  const routing = streaming.routing;
-  const hasRun = Boolean(startedQueryRef.current?.trim() || streaming.milestones.startedAt || packet);
+  const reportSections =
+    !packet && !streaming.isStreaming && persistedSections.length > 0 ? persistedSections : liveSections;
+  const sources: NonNullable<ResultPacket["sourceRefs"]> =
+    packet?.sourceRefs && packet.sourceRefs.length > 0
+      ? packet.sourceRefs
+      : streaming.sourcePreview.length > 0
+        ? (streaming.sourcePreview as NonNullable<ResultPacket["sourceRefs"]>)
+        : persistedSources;
+  const routing = (streaming.routing ?? persistedReport?.routing ?? conversation.session?.routing ?? null) as RoutingInfo | null;
+  const hasRun = Boolean(
+    conversation.startedQuery?.trim() ||
+      conversation.activeSessionId ||
+      streaming.milestones.startedAt ||
+      packet ||
+      persistedSections.length > 0 ||
+      persistedSources.length > 0,
+  );
   const followUps = ["Go deeper", "Show risks", "Draft reply", "What changed?"];
   const showLaunchState = !hasRun && !streaming.isStreaming;
 
   const buildFollowUpQuery = useCallback((label: string) => {
-    const baseQuery = startedQueryRef.current?.trim();
+    const baseQuery = conversation.startedQuery?.trim();
     if (!baseQuery) return label;
     switch (label) {
       case "Go deeper":
@@ -474,7 +531,7 @@ export const ChatHome = memo(function ChatHome() {
       default:
         return label;
     }
-  }, []);
+  }, [conversation.startedQuery]);
 
   /* ---- milestone tracking ---- */
 
@@ -495,40 +552,48 @@ export const ChatHome = memo(function ChatHome() {
   }, [streaming.milestones.firstPartialAnswerAt, streaming.milestones.firstSourceAt, streaming.milestones.firstStageAt, streaming.milestones.startedAt]);
 
   useEffect(() => {
-    if (!savedReportId || recordedMilestonesRef.current.reportSaved) return;
+    if (!conversation.savedReportId || recordedMilestonesRef.current.reportSaved) return;
     recordedMilestonesRef.current.reportSaved = true;
-    trackEvent("report_saved", { reportId: savedReportId, sources: sources.length, uploads: pendingFiles.length });
-  }, [pendingFiles.length, savedReportId, sources.length]);
+    trackEvent("report_saved", { reportId: conversation.savedReportId, sources: sources.length, uploads: pendingFiles.length });
+  }, [conversation.savedReportId, pendingFiles.length, sources.length]);
 
   /* ---- share link ---- */
 
   const copyShareLink = useCallback(() => {
-    const url = savedEntitySlug
-      ? new URL(`${window.location.origin}/entity/${encodeURIComponent(savedEntitySlug)}`)
-      : new URL(window.location.href);
-    if (!savedEntitySlug && startedQueryRef.current) url.searchParams.set("q", startedQueryRef.current);
-    if (!savedEntitySlug) url.searchParams.set("lens", lens);
+    const url = conversation.savedEntitySlug
+      ? new URL(`${window.location.origin}/entity/${encodeURIComponent(conversation.savedEntitySlug)}`)
+      : conversation.activeSessionId
+        ? new URL(
+            buildCockpitPath({
+              surfaceId: "workspace",
+              entity: entityParam?.trim() || null,
+              extra: { session: conversation.activeSessionId },
+            }),
+            window.location.origin,
+          )
+        : new URL(window.location.href);
+    if (!conversation.savedEntitySlug && !conversation.activeSessionId && conversation.startedQuery) {
+      url.searchParams.set("q", conversation.startedQuery);
+    }
+    if (!conversation.savedEntitySlug && !conversation.activeSessionId) url.searchParams.set("lens", lens);
     void navigator.clipboard.writeText(url.toString());
-    trackEvent("chat_share_link", { hasReport: savedReportId ? 1 : 0, hasSources: sources.length });
+    trackEvent("chat_share_link", { hasReport: conversation.savedReportId ? 1 : 0, hasSources: sources.length });
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
-  }, [lens, savedEntitySlug, savedReportId, sources.length]);
+  }, [conversation.activeSessionId, conversation.savedEntitySlug, conversation.savedReportId, conversation.startedQuery, entityParam, lens, sources.length]);
 
   /* ---- pin report ---- */
 
   const pinReport = useCallback(async () => {
-    if (!savedReportId || !api?.domains.product.chat.pinReport) {
+    if (!conversation.savedReportId) {
       navigate(buildCockpitPath({ surfaceId: "packets" }));
       return;
     }
-    try {
-      await convex.mutation(api.domains.product.chat.pinReport, { reportId: savedReportId as any });
-      setReportPinned(true);
-      setPersistenceMessage("Report pinned to your workspace.");
-    } catch {
+    const ok = await conversation.pinReport(true);
+    if (!ok) {
       navigate(buildCockpitPath({ surfaceId: "packets" }));
     }
-  }, [api, convex, navigate, savedReportId]);
+  }, [conversation, navigate]);
 
   /* ================================================================ */
   /*  Render                                                           */
@@ -539,15 +604,11 @@ export const ChatHome = memo(function ChatHome() {
       {showLaunchState ? (
         <section className="flex flex-1 flex-col items-center justify-start pb-10 pt-10 text-center sm:justify-center sm:pb-20 sm:pt-6">
           <div className="w-full max-w-[680px]">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-gray-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#d97757]" aria-hidden="true" />
-              New conversation
-            </div>
-            <h1 className="mt-4 text-[1.5rem] font-semibold leading-[1.15] tracking-tight text-gray-900 dark:text-gray-100 md:text-[1.75rem]">
-              Start a conversation.
+            <h1 className="text-[1.75rem] font-semibold leading-[1.1] tracking-[-0.01em] text-gray-900 dark:text-gray-100 md:text-[2rem]">
+              What do you want to understand?
             </h1>
-            <p className="mx-auto mt-2 max-w-[520px] text-sm leading-6 text-gray-500 dark:text-gray-400">
-              Ask anything. Follow up with more questions. Save the result as a report when it's useful.
+            <p className="mx-auto mt-2 max-w-[520px] text-[15px] leading-6 text-gray-500 dark:text-gray-400">
+              Ask anything, follow up, and keep the useful answer as a report.
             </p>
             {operatorContextLabel ? (
               <div className="mt-4 inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300">
@@ -572,6 +633,14 @@ export const ChatHome = memo(function ChatHome() {
                 placeholder="Ask anything. Paste notes, URLs, or files to ground the answer."
                 helperText="Your lens and saved context shape how NodeBench answers."
                 submitLabel="Run advisor"
+                showOperatorContextChip={false}
+                showOperatorContextHint={false}
+                autoFocus
+                mode={composerMode}
+                onModeChange={setComposerMode}
+                showCaptureModes
+                onSaveCapture={handleSaveCapture}
+                captureSavePending={savingCapture}
               />
             </div>
 
@@ -596,7 +665,7 @@ export const ChatHome = memo(function ChatHome() {
         <>
           {/* ---- Query heading ---- */}
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-            {startedQueryRef.current || input || "Ask anything"}
+            {conversation.startedQuery || input || "Ask anything"}
           </h1>
 
           {(routing || operatorContextLabel || artifactMode === "prep_brief") && (
@@ -657,9 +726,9 @@ export const ChatHome = memo(function ChatHome() {
           )}
 
           {/* ---- Persistence message ---- */}
-          {persistenceMessage && (
+          {conversation.persistenceMessage && (
             <p className="mt-4 rounded-lg border border-gray-200 bg-gray-100 px-4 py-2 text-sm text-gray-600 dark:border-white/[0.08] dark:bg-[#171c22] dark:text-gray-300">
-              {persistenceMessage}
+              {conversation.persistenceMessage}
             </p>
           )}
 
@@ -754,20 +823,20 @@ export const ChatHome = memo(function ChatHome() {
           )}
 
           {/* ---- Action bar (save / open / share) ---- */}
-          {hasRun && !streaming.isStreaming && packet && (
+          {hasRun && !streaming.isStreaming && (packet || persistedReport) && (
             <div className="mt-6 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={pinReport}
                 className="rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--accent-primary-hover)]"
               >
-                {reportPinned ? "Pinned" : "Save to workspace"}
+                {conversation.reportPinned ? "Pinned" : "Save to workspace"}
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  if (savedEntitySlug) { navigate(`/entity/${encodeURIComponent(savedEntitySlug)}`); return; }
-                  navigate(buildCockpitPath({ surfaceId: "packets", extra: savedReportId ? { report: savedReportId } : undefined }));
+                  if (conversation.savedEntitySlug) { navigate(`/entity/${encodeURIComponent(conversation.savedEntitySlug)}`); return; }
+                  navigate(buildCockpitPath({ surfaceId: "packets", extra: conversation.savedReportId ? { report: conversation.savedReportId } : undefined }));
                 }}
                 className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition hover:border-gray-400 dark:border-white/[0.12] dark:bg-[#171c22] dark:text-gray-300 dark:hover:border-white/[0.24] dark:hover:bg-[#1d232a]"
               >
@@ -805,7 +874,7 @@ export const ChatHome = memo(function ChatHome() {
                         }`}
                       />
                       <span className="text-gray-700 dark:text-gray-300">
-                        {stage.tool?.replaceAll("_", " ").replace(/\b\w/g, (m) => m.toUpperCase()) || "Working"}
+                        {stage.tool?.split("_").join(" ").replace(/\b\w/g, (m: string) => m.toUpperCase()) || "Working"}
                       </span>
                       <span className="ml-auto text-xs text-gray-400">
                         Step {stage.step}{stage.totalPlanned ? ` / ${stage.totalPlanned}` : ""}
@@ -825,9 +894,9 @@ export const ChatHome = memo(function ChatHome() {
                once the run has an active session id so the panel isn't
                orphaned. See docs/architecture/AGENT_PIPELINE.md + Session
                Artifacts section. Backend: convex/domains/product/sessionArtifacts.ts */}
-          {activeSessionId ? (
+          {conversation.activeSessionId ? (
             <div className="mt-6">
-              <SessionArtifactsPanel sessionId={activeSessionId} defaultCollapsed />
+              <SessionArtifactsPanel sessionId={conversation.activeSessionId} defaultCollapsed />
             </div>
           ) : null}
 

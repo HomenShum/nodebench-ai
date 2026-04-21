@@ -60,7 +60,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
       );
 
       // Input area should be present
-      const input = screen.getByPlaceholderText(/ask anything/i, { hidden: true });
+      const input = screen.getByPlaceholderText(/ask anything/i);
       expect(input).toBeInTheDocument();
     });
 
@@ -81,7 +81,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
         <FastAgentPanel isOpen={true} onClose={vi.fn()} />
       );
 
-      const input = screen.getByPlaceholderText(/ask anything/i, { hidden: true });
+      const input = screen.getByPlaceholderText(/ask anything/i);
       
       fireEvent.change(input, { target: { value: 'Search for Tesla news' } });
       expect(input).toHaveValue('Search for Tesla news');
@@ -92,7 +92,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
         <FastAgentPanel isOpen={true} onClose={vi.fn()} />
       );
 
-      const input = screen.getByPlaceholderText(/ask anything/i, { hidden: true });
+      const input = screen.getByPlaceholderText(/ask anything/i);
       
       fireEvent.change(input, { target: { value: 'Test query' } });
       fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
@@ -108,7 +108,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
         <FastAgentPanel isOpen={true} onClose={vi.fn()} />
       );
 
-      const input = screen.getByPlaceholderText(/ask anything/i, { hidden: true });
+      const input = screen.getByPlaceholderText(/ask anything/i);
       const sendButton = screen.getByRole('button', { name: /send|submit/i, hidden: true });
       
       fireEvent.change(input, { target: { value: 'Test query' } });
@@ -127,7 +127,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
         <FastAgentPanel isOpen={true} onClose={vi.fn()} />
       );
 
-      const input = screen.getByPlaceholderText(/ask anything/i, { hidden: true });
+      const input = screen.getByPlaceholderText(/ask anything/i);
       const sendButton = screen.getByRole('button', { name: /send|submit/i, hidden: true });
       
       fireEvent.change(input, { target: { value: 'Hello agent' } });
@@ -135,7 +135,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
       
       // User message should appear in chat
       await waitFor(() => {
-        expect(screen.getByText('Hello agent', { hidden: true })).toBeInTheDocument();
+        expect(screen.getByText('Hello agent')).toBeInTheDocument();
       }, { timeout: 3000 });
     });
 
@@ -144,7 +144,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
         <FastAgentPanel isOpen={true} onClose={vi.fn()} />
       );
 
-      const input = screen.getByPlaceholderText(/ask anything/i, { hidden: true });
+      const input = screen.getByPlaceholderText(/ask anything/i);
       const sendButton = screen.getByRole('button', { name: /send|submit/i, hidden: true });
       
       fireEvent.change(input, { target: { value: 'What is AI?' } });
@@ -162,7 +162,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
         <FastAgentPanel isOpen={true} onClose={vi.fn()} />
       );
 
-      const input = screen.getByPlaceholderText(/ask anything/i, { hidden: true });
+      const input = screen.getByPlaceholderText(/ask anything/i);
       const sendButton = screen.getByRole('button', { name: /send|submit/i, hidden: true });
       
       fireEvent.change(input, { target: { value: 'Search for information' } });
@@ -170,7 +170,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
       
       // Typing indicator should appear
       await waitFor(() => {
-        const typingIndicator = screen.queryByTestId('typing-indicator', { hidden: true });
+        const typingIndicator = screen.queryByTestId('typing-indicator');
         expect(typingIndicator).toBeInTheDocument();
       }, { timeout: 2000 });
     });
@@ -182,7 +182,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
         <FastAgentPanel isOpen={true} onClose={vi.fn()} />
       );
 
-      const input = screen.getByPlaceholderText(/ask anything/i, { hidden: true });
+      const input = screen.getByPlaceholderText(/ask anything/i);
       const sendButton = screen.getByRole('button', { name: /send|submit/i, hidden: true });
       
       fireEvent.change(input, { target: { value: 'Find videos about machine learning' } });
@@ -190,7 +190,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
       
       // Video carousel should appear
       await waitFor(() => {
-        const videoCarousel = screen.queryByText(/Related Videos|videos/i, { hidden: true });
+        const videoCarousel = screen.queryByText(/Related Videos|videos/i);
         expect(videoCarousel).toBeInTheDocument();
       }, { timeout: 5000 });
     });
@@ -200,7 +200,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
         <FastAgentPanel isOpen={true} onClose={vi.fn()} />
       );
 
-      const input = screen.getByPlaceholderText(/ask anything/i, { hidden: true });
+      const input = screen.getByPlaceholderText(/ask anything/i);
       const sendButton = screen.getByRole('button', { name: /send|submit/i, hidden: true });
       
       fireEvent.change(input, { target: { value: 'Search for news articles' } });
@@ -208,7 +208,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
       
       // Source grid should appear
       await waitFor(() => {
-        const sourceGrid = screen.queryByText(/Sources|Documents/i, { hidden: true });
+        const sourceGrid = screen.queryByText(/Sources|Documents/i);
         expect(sourceGrid).toBeInTheDocument();
       }, { timeout: 5000 });
     });
@@ -218,7 +218,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
         <FastAgentPanel isOpen={true} onClose={vi.fn()} />
       );
 
-      const input = screen.getByPlaceholderText(/ask anything/i, { hidden: true });
+      const input = screen.getByPlaceholderText(/ask anything/i);
       const sendButton = screen.getByRole('button', { name: /send|submit/i, hidden: true });
       
       fireEvent.change(input, { target: { value: 'Find information about tech leaders' } });
@@ -226,7 +226,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
       
       // Profile grid should appear
       await waitFor(() => {
-        const profileGrid = screen.queryByText(/People|Profiles/i, { hidden: true });
+        const profileGrid = screen.queryByText(/People|Profiles/i);
         expect(profileGrid).toBeInTheDocument();
       }, { timeout: 5000 });
     });
@@ -238,7 +238,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
         <FastAgentPanel isOpen={true} onClose={vi.fn()} />
       );
 
-      const input = screen.getByPlaceholderText(/ask anything/i, { hidden: true });
+      const input = screen.getByPlaceholderText(/ask anything/i);
       const sendButton = screen.getByRole('button', { name: /send|submit/i, hidden: true });
       
       fireEvent.change(input, { target: { value: 'Find many videos about Python' } });
@@ -258,7 +258,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
         <FastAgentPanel isOpen={true} onClose={vi.fn()} />
       );
 
-      const input = screen.getByPlaceholderText(/ask anything/i, { hidden: true });
+      const input = screen.getByPlaceholderText(/ask anything/i);
       const sendButton = screen.getByRole('button', { name: /send|submit/i, hidden: true });
       
       fireEvent.change(input, { target: { value: 'Find many sources' } });
@@ -283,7 +283,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
         <FastAgentPanel isOpen={true} onClose={vi.fn()} />
       );
 
-      const input = screen.getByPlaceholderText(/ask anything/i, { hidden: true });
+      const input = screen.getByPlaceholderText(/ask anything/i);
       const sendButton = screen.getByRole('button', { name: /send|submit/i, hidden: true });
       
       fireEvent.change(input, { target: { value: 'Search for information with citations' } });
@@ -291,7 +291,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
       
       // Citation numbers should appear
       await waitFor(() => {
-        const citations = screen.queryAllByText(/^[0-9]$/, { hidden: true });
+        const citations = screen.queryAllByText(/^[0-9]$/);
         expect(citations.length).toBeGreaterThan(0);
       }, { timeout: 5000 });
     });
@@ -301,7 +301,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
         <FastAgentPanel isOpen={true} onClose={vi.fn()} />
       );
 
-      const input = screen.getByPlaceholderText(/ask anything/i, { hidden: true });
+      const input = screen.getByPlaceholderText(/ask anything/i);
       const sendButton = screen.getByRole('button', { name: /send|submit/i, hidden: true });
       
       fireEvent.change(input, { target: { value: 'Search for sources' } });
@@ -309,7 +309,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
       
       // Wait for response and citations
       await waitFor(() => {
-        const citations = screen.queryAllByText(/^[0-9]$/, { hidden: true });
+        const citations = screen.queryAllByText(/^[0-9]$/);
         if (citations.length > 0) {
           fireEvent.click(citations[0]);
           // Should scroll to corresponding source
@@ -329,7 +329,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
       
       // New thread should be created
       await waitFor(() => {
-        const input = screen.getByPlaceholderText(/ask anything/i, { hidden: true });
+        const input = screen.getByPlaceholderText(/ask anything/i);
         expect(input).toHaveValue('');
       }, { timeout: 2000 });
     });
@@ -339,7 +339,7 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
         <FastAgentPanel isOpen={true} onClose={vi.fn()} />
       );
 
-      const input = screen.getByPlaceholderText(/ask anything/i, { hidden: true });
+      const input = screen.getByPlaceholderText(/ask anything/i);
       const sendButton = screen.getByRole('button', { name: /send|submit/i, hidden: true });
       
       // Send first message
@@ -356,8 +356,8 @@ describe.skipIf(!process.env.CONVEX_DEPLOYMENT_URL)('Agent Chat UI Integration E
       
       // Both messages should be visible
       await waitFor(() => {
-        expect(screen.getByText('First question', { hidden: true })).toBeInTheDocument();
-        expect(screen.getByText('Second question', { hidden: true })).toBeInTheDocument();
+        expect(screen.getByText('First question')).toBeInTheDocument();
+        expect(screen.getByText('Second question')).toBeInTheDocument();
       }, { timeout: 3000 });
     });
   });
