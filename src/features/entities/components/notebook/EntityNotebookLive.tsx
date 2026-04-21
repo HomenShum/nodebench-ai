@@ -465,6 +465,49 @@ export function EntityNotebookLive({
       return next;
     });
   }, []);
+  // Hover-intent debounce for rapid mouse traversal across rows.
+  // Flushes pending warms in a single setState call per animation-frame-ish
+  // window. Keeps `warmBlock` synchronous for focus / delete paths where
+  // we need the editor mounted on the next render.
+  const hoverWarmBufferRef = useRef<Set<string>>(new Set());
+  const hoverWarmTimerRef = useRef<number | null>(null);
+  const scheduleWarm = useCallback((blockId: Id<"productBlocks">) => {
+    const key = String(blockId);
+    hoverWarmBufferRef.current.add(key);
+    if (hoverWarmTimerRef.current !== null) return;
+    hoverWarmTimerRef.current = window.setTimeout(() => {
+      hoverWarmTimerRef.current = null;
+      const buffer = hoverWarmBufferRef.current;
+      if (buffer.size === 0) return;
+      setMountedBlockIds((prev) => {
+        let changed = false;
+        const next = new Set(prev);
+        for (const k of buffer) {
+          if (!next.has(k)) {
+            next.add(k);
+            changed = true;
+          }
+        }
+        buffer.clear();
+        return changed ? next : prev;
+      });
+    }, 80);
+  }, []);
+  useEffect(() => () => {
+    if (hoverWarmTimerRef.current !== null) {
+      window.clearTimeout(hoverWarmTimerRef.current);
+      hoverWarmTimerRef.current = null;
+    }
+  }, []);
+  // Defer the dismissals Convex subscription to post-first-paint so the
+  // WebSocket handshake doesn't compete with the notebook's initial render.
+  // The subscription returns null visually and feeds into `dismissedKeySet`;
+  // a one-frame delay before keys populate is imperceptible.
+  const [dismissalsReady, setDismissalsReady] = useState(false);
+  useEffect(() => {
+    const id = window.requestAnimationFrame(() => setDismissalsReady(true));
+    return () => window.cancelAnimationFrame(id);
+  }, []);
   const [runtimeError, setRuntimeError] = useState<{ title: string; detail?: string } | null>(null);
   const [creatingFirstBlock, setCreatingFirstBlock] = useState(false);
   const [preparingSeedContent, setPreparingSeedContent] = useState(false);
@@ -1588,13 +1631,15 @@ export function EntityNotebookLive({
       {/* Dismissals sync — isolated boundary so a backend error on this
           specific query (e.g. schema drift, prod deploy lag) can't crash
           the whole notebook. Degrades to "no persisted dismissals". */}
-      <ErrorBoundary section="Dismissals sync" fallback={null}>
-        <NotebookDismissalsSync
-          entitySlug={entitySlug}
-          anonymousSessionId={anonymousSessionId}
-          onKeysChange={setDismissedKeySet}
-        />
-      </ErrorBoundary>
+      {dismissalsReady ? (
+        <ErrorBoundary section="Dismissals sync" fallback={null}>
+          <NotebookDismissalsSync
+            entitySlug={entitySlug}
+            anonymousSessionId={anonymousSessionId}
+            onKeysChange={setDismissedKeySet}
+          />
+        </ErrorBoundary>
+      ) : null}
       <NotebookTopStatusRow
         entitySlug={entitySlug}
         expanded={false}
@@ -1688,7 +1733,7 @@ export function EntityNotebookLive({
                   isFocused={focusedBlockId === block._id}
                   hasBeenMounted={mountedBlockIds.has(String(block._id))}
                   depth={blockDepthMap.get(String(block._id)) ?? 0}
-                  onHoverPrewarm={() => warmBlock(block._id)}
+                  onHoverPrewarm={() => scheduleWarm(block._id)}
                   showSlash={slashFor === block._id}
                   syncDocumentId={buildProductBlockSyncId({
                     blockId: String(block._id),
