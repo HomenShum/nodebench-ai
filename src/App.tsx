@@ -25,6 +25,9 @@ const PublicCompanyProfileView = lazy(() => import("@/features/founder/views/Pub
 const PublicReportView = lazy(() => import("@/features/reports/views/PublicReportView"));
 const EmbedView = lazy(() => import("@/features/founder/views/EmbedView"));
 const FounderRouteResolver = lazy(() => import("@/features/founder/views/FounderRouteResolver"));
+// My Wiki — Phase 1 routes. See docs/architecture/ME_AGENT_DESIGN.md
+const WikiLandingRoute = lazy(() => import("@/features/me/components/wiki/WikiLandingRoute"));
+const WikiPageDetailRoute = lazy(() => import("@/features/me/components/wiki/WikiPageDetailRoute"));
 
 const FastAgentPanel = lazy(() =>
   import("@/features/agents/components/FastAgentPanel/FastAgentPanel").then((mod) => ({
@@ -198,6 +201,42 @@ function App() {
           <Suspense fallback={<ViewSkeleton />}>
             <div key="embed" className="route-fade-in">
               <EmbedView />
+            </div>
+          </Suspense>
+        </ErrorBoundary>
+      </ThemeProvider>
+    );
+  }
+
+  // My Wiki — personal synthesis layer under /me/wiki.
+  // Detail: /me/wiki/:pageType/:slug  (handled first, more specific)
+  // Landing: /me/wiki  (list view)
+  // See: docs/architecture/ME_PAGE_WIKI_SPEC.md + ME_AGENT_DESIGN.md
+  const wikiDetailMatch = location.pathname.match(
+    /^\/me\/wiki\/(topic|company|person|product|event|location|job|contradiction)\/([^/]+)\/?$/,
+  );
+  if (wikiDetailMatch) {
+    return (
+      <ThemeProvider>
+        <ErrorBoundary title="Something went wrong">
+          <Suspense fallback={<ViewSkeleton />}>
+            <div key="wiki-detail" className="route-fade-in">
+              <WikiPageDetailRoute />
+            </div>
+          </Suspense>
+        </ErrorBoundary>
+      </ThemeProvider>
+    );
+  }
+  const isWikiLandingRoute =
+    location.pathname === "/me/wiki" || location.pathname === "/me/wiki/";
+  if (isWikiLandingRoute) {
+    return (
+      <ThemeProvider>
+        <ErrorBoundary title="Something went wrong">
+          <Suspense fallback={<ViewSkeleton />}>
+            <div key="wiki-landing" className="route-fade-in">
+              <WikiLandingRoute />
             </div>
           </Suspense>
         </ErrorBoundary>
