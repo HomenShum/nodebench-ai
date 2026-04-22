@@ -42,7 +42,9 @@ export const productRoutingModeValidator = v.union(
 export const productRoutingDecisionValidator = v.object({
   routingMode: productRoutingModeValidator,
   routingReason: v.optional(v.string()),
-  routingSource: v.optional(v.union(v.literal("automatic"), v.literal("user_forced"))),
+  routingSource: v.optional(
+    v.union(v.literal("automatic"), v.literal("user_forced")),
+  ),
   plannerModel: v.optional(v.string()),
   executionModel: v.optional(v.string()),
   reasoningEffort: v.optional(v.union(v.literal("medium"), v.literal("high"))),
@@ -52,6 +54,71 @@ export const productOperatorContextSnapshotValidator = v.object({
   label: v.optional(v.string()),
   hint: v.optional(v.string()),
 });
+
+export const productResolutionStateValidator = v.union(
+  v.literal("exact"),
+  v.literal("probable"),
+  v.literal("ambiguous"),
+  v.literal("unresolved"),
+);
+
+export const productArtifactStateValidator = v.union(
+  v.literal("none"),
+  v.literal("draft"),
+  v.literal("saved"),
+  v.literal("published"),
+);
+
+export const productSaveEligibilityValidator = v.union(
+  v.literal("blocked"),
+  v.literal("draft_only"),
+  v.literal("save_ready"),
+  v.literal("publish_ready"),
+);
+
+export const productRequestKindValidator = v.union(
+  v.literal("conversational_follow_up"),
+  v.literal("entity_lookup"),
+  v.literal("compound_research"),
+  v.literal("artifact_resume"),
+);
+
+export const productClaimTypeValidator = v.union(
+  v.literal("entity_name"),
+  v.literal("headquarters"),
+  v.literal("funding_round"),
+  v.literal("funding_amount"),
+  v.literal("funding_date"),
+  v.literal("founder_identity"),
+  v.literal("founder_role"),
+  v.literal("product_capability"),
+  v.literal("pricing"),
+  v.literal("customer"),
+  v.literal("hiring_signal"),
+  v.literal("job_salary"),
+  v.literal("job_location"),
+  v.literal("timeline_event"),
+  v.literal("summary_other"),
+);
+
+export const productClaimSupportTypeValidator = v.union(
+  v.literal("direct"),
+  v.literal("inferred"),
+  v.literal("weak"),
+);
+
+export const productClaimSupportStrengthValidator = v.union(
+  v.literal("verified"),
+  v.literal("corroborated"),
+  v.literal("single_source"),
+  v.literal("weak"),
+);
+
+export const productFreshnessStatusValidator = v.union(
+  v.literal("fresh"),
+  v.literal("stale"),
+  v.literal("unknown"),
+);
 
 export const productNoteBlockKindValidator = v.union(
   v.literal("observation"),
@@ -111,6 +178,90 @@ export const productSourceValidator = v.object({
   confidence: v.optional(v.number()),
 });
 
+export const productRunEventKindValidator = v.union(
+  v.literal("run_started"),
+  v.literal("intent_classified"),
+  v.literal("entity_candidates_ranked"),
+  v.literal("entity_resolution_finalized"),
+  v.literal("evidence_collected"),
+  v.literal("tool_started"),
+  v.literal("tool_completed"),
+  v.literal("tool_recovered"),
+  v.literal("provider_budget"),
+  v.literal("interrupt_created"),
+  v.literal("interrupt_resolved"),
+  v.literal("claims_extracted"),
+  v.literal("claims_rejected"),
+  v.literal("claims_published"),
+  v.literal("truth_compiled"),
+  v.literal("actions_compiled"),
+  v.literal("artifact_state_changed"),
+  v.literal("milestone"),
+  v.literal("run_completed"),
+  v.literal("run_failed"),
+);
+
+export const productRunEventStatusValidator = v.union(
+  v.literal("info"),
+  v.literal("success"),
+  v.literal("warning"),
+  v.literal("error"),
+  v.literal("pending"),
+);
+
+export const productRunVerdictValidator = v.union(
+  v.literal("verified"),
+  v.literal("provisionally_verified"),
+  v.literal("needs_review"),
+  v.literal("failed"),
+);
+
+export const productRunGateResultValidator = v.object({
+  gateKey: v.string(),
+  passed: v.boolean(),
+  label: v.optional(v.string()),
+});
+
+export const productClaimSupportSnapshotValidator = v.object({
+  sourceRefId: v.string(),
+  spanText: v.string(),
+  spanHash: v.string(),
+  supportType: productClaimSupportTypeValidator,
+  freshnessStatus: productFreshnessStatusValidator,
+});
+
+export const productCompiledSentenceValidator = v.object({
+  sentenceId: v.string(),
+  text: v.string(),
+  claimIds: v.array(v.id("productClaims")),
+  evidenceIds: v.array(v.id("productEvidenceItems")),
+});
+
+export const productCompiledSectionValidator = v.object({
+  id: v.string(),
+  title: v.string(),
+  sentences: v.array(productCompiledSentenceValidator),
+});
+
+export const productActionItemValidator = v.object({
+  type: v.string(),
+  label: v.string(),
+  rationale: v.string(),
+  enabled: v.boolean(),
+  blockedReason: v.optional(v.string()),
+});
+
+export const productClaimLedgerSummaryValidator = v.object({
+  totalClaims: v.number(),
+  publishableClaims: v.number(),
+  rejectedClaims: v.number(),
+  contradictedClaims: v.number(),
+  corroboratedClaims: v.number(),
+  verifiedClaims: v.number(),
+  weakClaims: v.number(),
+  rejectionReasons: v.array(v.string()),
+});
+
 export const productPublicCards = defineTable({
   key: v.string(),
   title: v.string(),
@@ -136,8 +287,7 @@ export const productMigrationState = defineTable({
   migratedDocuments: v.number(),
   migratedReports: v.number(),
   updatedAt: v.number(),
-})
-  .index("by_owner", ["ownerKey"]);
+}).index("by_owner", ["ownerKey"]);
 
 export const productInputBundles = defineTable({
   ownerKey: v.string(),
@@ -171,8 +321,7 @@ export const productInputBundles = defineTable({
   ),
   createdAt: v.number(),
   updatedAt: v.number(),
-})
-  .index("by_owner_updated", ["ownerKey", "updatedAt"]);
+}).index("by_owner_updated", ["ownerKey", "updatedAt"]);
 
 export const productEvidenceItems = defineTable({
   ownerKey: v.string(),
@@ -189,8 +338,15 @@ export const productEvidenceItems = defineTable({
     v.literal("linked"),
   ),
   sourceUrl: v.optional(v.string()),
+  sourceDomain: v.optional(v.string()),
+  publishedAt: v.optional(v.string()),
+  snapshotHash: v.optional(v.string()),
   mimeType: v.optional(v.string()),
   textPreview: v.optional(v.string()),
+  matchedEntityId: v.optional(v.id("productEntities")),
+  matchedEntityConfidence: v.optional(v.number()),
+  freshnessStatus: v.optional(productFreshnessStatusValidator),
+  retrievalQuery: v.optional(v.string()),
   legacyFileId: v.optional(v.id("files")),
   legacyDocumentId: v.optional(v.id("documents")),
   metadata: v.optional(v.any()),
@@ -212,6 +368,15 @@ export const productChatSessions = defineTable({
   query: v.string(),
   lens: productLensValidator,
   title: v.string(),
+  intentKind: v.optional(productRequestKindValidator),
+  resolutionState: v.optional(productResolutionStateValidator),
+  resolvedEntityId: v.optional(v.id("productEntities")),
+  resolvedEntitySlug: v.optional(v.string()),
+  resolutionConfidence: v.optional(v.number()),
+  resolutionReason: v.optional(v.string()),
+  artifactState: v.optional(productArtifactStateValidator),
+  saveEligibility: v.optional(productSaveEligibilityValidator),
+  saveEligibilityReason: v.optional(v.string()),
   status: v.union(
     v.literal("queued"),
     v.literal("streaming"),
@@ -221,9 +386,14 @@ export const productChatSessions = defineTable({
   latestSummary: v.optional(v.string()),
   lastError: v.optional(v.string()),
   totalDurationMs: v.optional(v.number()),
+  verdict: v.optional(productRunVerdictValidator),
+  gateResults: v.optional(v.array(productRunGateResultValidator)),
+  costUsd: v.optional(v.number()),
+  needsAttention: v.optional(v.boolean()),
   routing: v.optional(productRoutingDecisionValidator),
   operatorContext: v.optional(productOperatorContextSnapshotValidator),
   autoSavedReportId: v.optional(v.id("productReports")),
+  deletedAt: v.optional(v.number()),
   createdAt: v.number(),
   updatedAt: v.number(),
 })
@@ -256,11 +426,7 @@ export const productToolEvents = defineTable({
   step: v.number(),
   totalPlanned: v.number(),
   reason: v.optional(v.string()),
-  status: v.union(
-    v.literal("running"),
-    v.literal("done"),
-    v.literal("error"),
-  ),
+  status: v.union(v.literal("running"), v.literal("done"), v.literal("error")),
   durationMs: v.optional(v.number()),
   tokensIn: v.optional(v.number()),
   tokensOut: v.optional(v.number()),
@@ -269,6 +435,39 @@ export const productToolEvents = defineTable({
   updatedAt: v.number(),
 })
   .index("by_session_step", ["sessionId", "step"])
+  .index("by_owner_updated", ["ownerKey", "updatedAt"]);
+
+export const productRunEvents = defineTable({
+  ownerKey: v.string(),
+  sessionId: v.id("productChatSessions"),
+  kind: productRunEventKindValidator,
+  status: productRunEventStatusValidator,
+  label: v.string(),
+  tool: v.optional(v.string()),
+  provider: v.optional(v.string()),
+  model: v.optional(v.string()),
+  step: v.optional(v.number()),
+  totalPlanned: v.optional(v.number()),
+  payload: v.optional(v.any()),
+  createdAt: v.number(),
+})
+  .index("by_session_created", ["sessionId", "createdAt"])
+  .index("by_owner_created", ["ownerKey", "createdAt"])
+  .index("by_session_kind_created", ["sessionId", "kind", "createdAt"]);
+
+export const productResolutionCandidates = defineTable({
+  ownerKey: v.string(),
+  sessionId: v.id("productChatSessions"),
+  entityId: v.optional(v.id("productEntities")),
+  candidateKey: v.string(),
+  label: v.string(),
+  slug: v.string(),
+  confidence: v.number(),
+  reason: v.string(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_session_confidence", ["sessionId", "confidence"])
   .index("by_owner_updated", ["ownerKey", "updatedAt"]);
 
 export const productSourceEvents = defineTable({
@@ -309,6 +508,74 @@ export const productReportDrafts = defineTable({
   .index("by_session", ["sessionId"])
   .index("by_owner_updated", ["ownerKey", "updatedAt"]);
 
+export const productClaims = defineTable({
+  ownerKey: v.string(),
+  sessionId: v.optional(v.id("productChatSessions")),
+  reportId: v.optional(v.id("productReports")),
+  entityId: v.optional(v.id("productEntities")),
+  claimKey: v.string(),
+  claimText: v.string(),
+  claimType: productClaimTypeValidator,
+  slotKey: v.string(),
+  sectionId: v.string(),
+  sourceRefIds: v.array(v.string()),
+  supportStrength: productClaimSupportStrengthValidator,
+  freshnessStatus: productFreshnessStatusValidator,
+  contradictionFlag: v.boolean(),
+  conflictClaimIds: v.optional(v.array(v.id("productClaims"))),
+  publishable: v.boolean(),
+  rejectionReasons: v.array(v.string()),
+  gateResults: v.optional(v.array(productRunGateResultValidator)),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_owner_session", ["ownerKey", "sessionId"])
+  .index("by_owner_report", ["ownerKey", "reportId"])
+  .index("by_owner_entity", ["ownerKey", "entityId"])
+  .index("by_owner_publishable", ["ownerKey", "publishable"])
+  .index("by_owner_claim_type", ["ownerKey", "claimType"])
+  .index("by_owner_slot_key", ["ownerKey", "slotKey"])
+  .index("by_owner_created", ["ownerKey", "createdAt"]);
+
+export const productClaimSupports = defineTable({
+  ownerKey: v.string(),
+  claimId: v.id("productClaims"),
+  evidenceId: v.id("productEvidenceItems"),
+  sessionId: v.optional(v.id("productChatSessions")),
+  reportId: v.optional(v.id("productReports")),
+  sourceRefId: v.string(),
+  spanText: v.string(),
+  spanHash: v.string(),
+  supportType: productClaimSupportTypeValidator,
+  entityId: v.optional(v.id("productEntities")),
+  freshnessStatus: productFreshnessStatusValidator,
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_claim", ["claimId"])
+  .index("by_evidence", ["evidenceId"])
+  .index("by_owner_created", ["ownerKey", "createdAt"]);
+
+export const productClaimReviews = defineTable({
+  ownerKey: v.string(),
+  claimId: v.id("productClaims"),
+  sessionId: v.optional(v.id("productChatSessions")),
+  reportId: v.optional(v.id("productReports")),
+  reviewer: v.union(v.literal("deterministic"), v.literal("llm")),
+  status: v.union(
+    v.literal("approved"),
+    v.literal("rejected"),
+    v.literal("needs_review"),
+  ),
+  reasoning: v.optional(v.string()),
+  gateResults: v.optional(v.array(productRunGateResultValidator)),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_claim", ["claimId"])
+  .index("by_owner_created", ["ownerKey", "createdAt"])
+  .index("by_owner_session", ["ownerKey", "sessionId"]);
+
 export const productEntities = defineTable({
   ownerKey: v.string(),
   slug: v.string(),
@@ -343,7 +610,8 @@ export const productWorkspaceShareAccessValidator = v.union(
   v.literal("edit"),
 );
 
-export const productWorkspaceShareResourceValidator = v.literal("entity_workspace");
+export const productWorkspaceShareResourceValidator =
+  v.literal("entity_workspace");
 
 export const productWorkspaceInviteStatusValidator = v.union(
   v.literal("pending"),
@@ -369,7 +637,12 @@ export const productWorkspaceShares = defineTable({
 })
   .index("by_token", ["token"])
   .index("by_owner_entity", ["ownerKey", "entityId", "updatedAt"])
-  .index("by_owner_entity_access", ["ownerKey", "entityId", "access", "updatedAt"])
+  .index("by_owner_entity_access", [
+    "ownerKey",
+    "entityId",
+    "access",
+    "updatedAt",
+  ])
   .index("by_owner_updated", ["ownerKey", "updatedAt"]);
 
 export const productEntityWorkspaceMembers = defineTable({
@@ -418,7 +691,12 @@ export const productEntityWorkspaceInvites = defineTable({
   acceptedAt: v.optional(v.number()),
 })
   .index("by_token", ["token"])
-  .index("by_owner_entity_email", ["ownerKey", "entityId", "normalizedEmail", "updatedAt"])
+  .index("by_owner_entity_email", [
+    "ownerKey",
+    "entityId",
+    "normalizedEmail",
+    "updatedAt",
+  ])
   .index("by_owner_entity_updated", ["ownerKey", "entityId", "updatedAt"]);
 
 export const productEntityRelations = defineTable({
@@ -538,8 +816,12 @@ export const productReports = defineTable({
   status: v.union(
     v.literal("draft"),
     v.literal("saved"),
+    v.literal("published"),
     v.literal("archived"),
   ),
+  resolutionState: v.optional(productResolutionStateValidator),
+  artifactState: v.optional(productArtifactStateValidator),
+  saveEligibility: v.optional(productSaveEligibilityValidator),
   primaryEntity: v.optional(v.string()),
   lens: productLensValidator,
   query: v.string(),
@@ -548,6 +830,17 @@ export const productReports = defineTable({
   sections: v.array(productReportSectionValidator),
   sources: v.array(productSourceValidator),
   evidenceItemIds: v.array(v.id("productEvidenceItems")),
+  claimIds: v.optional(v.array(v.id("productClaims"))),
+  compiledAnswerV2: v.optional(
+    v.object({
+      resolutionState: productResolutionStateValidator,
+      artifactState: productArtifactStateValidator,
+      saveEligibility: productSaveEligibilityValidator,
+      truthSections: v.array(productCompiledSectionValidator),
+      actions: v.array(productActionItemValidator),
+    }),
+  ),
+  qualityGateSummary: v.optional(productClaimLedgerSummaryValidator),
   revision: v.optional(v.number()),
   previousReportId: v.optional(v.id("productReports")),
   pinned: v.boolean(),
@@ -606,16 +899,8 @@ export const productNudges = defineTable({
   linkedReportId: v.optional(v.id("productReports")),
   linkedChatSessionId: v.optional(v.id("productChatSessions")),
   linkedChannel: v.optional(v.string()),
-  status: v.union(
-    v.literal("open"),
-    v.literal("snoozed"),
-    v.literal("done"),
-  ),
-  priority: v.union(
-    v.literal("low"),
-    v.literal("medium"),
-    v.literal("high"),
-  ),
+  status: v.union(v.literal("open"), v.literal("snoozed"), v.literal("done")),
+  priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
   dueAt: v.optional(v.number()),
   actionLabel: v.string(),
   actionTargetSurface: v.optional(v.string()),
@@ -636,8 +921,7 @@ export const productProfileSummaries = defineTable({
   preferences: v.optional(v.any()),
   createdAt: v.number(),
   updatedAt: v.number(),
-})
-  .index("by_owner", ["ownerKey"]);
+}).index("by_owner", ["ownerKey"]);
 
 export const productContextItems = defineTable({
   ownerKey: v.string(),
@@ -751,10 +1035,26 @@ export const productBlocks = defineTable({
   createdAt: v.number(),
   updatedAt: v.number(),
 })
-  .index("by_entity_position", ["entityId", "parentBlockId", "positionInt", "positionFrac"])
+  .index("by_entity_position", [
+    "entityId",
+    "parentBlockId",
+    "positionInt",
+    "positionFrac",
+  ])
   .index("by_owner_entity", ["ownerKey", "entityId"])
-  .index("by_owner_entity_position", ["ownerKey", "entityId", "positionInt", "positionFrac"])
-  .index("by_owner_entity_parent_position", ["ownerKey", "entityId", "parentBlockId", "positionInt", "positionFrac"])
+  .index("by_owner_entity_position", [
+    "ownerKey",
+    "entityId",
+    "positionInt",
+    "positionFrac",
+  ])
+  .index("by_owner_entity_parent_position", [
+    "ownerKey",
+    "entityId",
+    "parentBlockId",
+    "positionInt",
+    "positionFrac",
+  ])
   .index("by_entity_author_updated", ["entityId", "authorKind", "updatedAt"])
   .index("by_session_step", ["sourceSessionId", "sourceToolStep"])
   .index("by_previous", ["previousBlockId"]);
@@ -796,7 +1096,12 @@ export const productBlockWriteWindows = defineTable({
   updatedAt: v.number(),
 })
   .index("by_owner_session_bucket", ["ownerKey", "sessionKey", "bucketStartMs"])
-  .index("by_owner_session_actor_bucket", ["ownerKey", "sessionKey", "actorKey", "bucketStartMs"]);
+  .index("by_owner_session_actor_bucket", [
+    "ownerKey",
+    "sessionKey",
+    "actorKey",
+    "bucketStartMs",
+  ]);
 
 /**
  * productNudgeSubscriptions — "track this entity" subscriptions.
@@ -838,3 +1143,26 @@ export const productNudgeSubscriptions = defineTable({
   .index("by_owner_updated", ["ownerKey", "updatedAt"])
   // Dispatcher lookup: "which subscriptions haven't been checked recently?"
   .index("by_last_notified", ["lastNotifiedAt"]);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CANONICAL V2 SCHEMA — Notebook-centric runtime substrate
+// NOTE: agentThreads, agentMessages, extendedThinkingRuns, agentScratchpads,
+// extendedThinkingCheckpoints, diligenceProjections, agentActions, pulseReports,
+// publicShares, deadLetters, entityMemoryIndex, entityMemoryTopics are all
+// defined inline in convex/schema.ts. Only productNotebookPages is added here
+// because it did not exist in the main schema prior to this change.
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const productNotebookPages = defineTable({
+  ownerKey: v.string(),
+  entitySlug: v.string(),
+  pageType: v.union(v.literal("entity"), v.literal("pulse")),
+  title: v.string(),
+  dateKey: v.optional(v.string()), // required for pulse pages, e.g. "2026-04-20"
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_entity_type", ["entitySlug", "pageType"])
+  .index("by_entity_date", ["entitySlug", "dateKey"])
+  .index("by_owner_updated", ["ownerKey", "updatedAt"]);
+

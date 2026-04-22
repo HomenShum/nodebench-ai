@@ -208,8 +208,13 @@ import {
   productChatSessions,
   productChatEvents,
   productToolEvents,
+  productRunEvents,
+  productResolutionCandidates,
   productSourceEvents,
   productReportDrafts,
+  productClaims,
+  productClaimSupports,
+  productClaimReviews,
   productEntities,
   productEntityNotes,
   productWorkspaceShares,
@@ -231,6 +236,7 @@ import {
   productBlockRelations,
   productBlockWriteWindows,
   productNudgeSubscriptions,
+  productNotebookPages,
 } from "./domains/product/schema";
 
 /* ------------------------------------------------------------------ */
@@ -238,12 +244,12 @@ import {
 /* ------------------------------------------------------------------ */
 const documents = defineTable({
   title: v.string(),
-  parentId: v.optional(v.id("documents")),  // hierarchy
+  parentId: v.optional(v.id("documents")), // hierarchy
   isPublic: v.boolean(),
   // When true, public viewers may also edit (used by ProseMirror + UI to toggle read-only)
   allowPublicEdit: v.optional(v.boolean()),
   createdBy: v.id("users"),
-  lastEditedBy: v.optional(v.id("users")),    // who last edited this document
+  lastEditedBy: v.optional(v.id("users")), // who last edited this document
   coverImage: v.optional(v.id("_storage")),
   // LEGACY: holds ProseMirror JSON blob; retained temporarily for migration
   content: v.optional(v.string()),
@@ -252,10 +258,10 @@ const documents = defineTable({
   icon: v.optional(v.string()),
   isArchived: v.optional(v.boolean()),
   isFavorite: v.optional(v.boolean()),
-  publishedAt: v.optional(v.number()),        // ms since epoch
+  publishedAt: v.optional(v.number()), // ms since epoch
   /** points at the top GraphNode that owns the editor view */
   rootNodeId: v.optional(v.id("nodes")),
-  lastModified: v.optional(v.number()),       // ms since epoch - when document was last updated
+  lastModified: v.optional(v.number()), // ms since epoch - when document was last updated
   // Optional: associate a document with a calendar day (local midnight ms)
   agendaDate: v.optional(v.number()),
   // Rolling count of snapshots for this document (maintained on insert/delete)
@@ -273,85 +279,96 @@ const documents = defineTable({
       v.literal("file"),
       v.literal("timeline"),
       v.literal("dossier"),
-      v.literal("operator_profile")
-    )
+      v.literal("operator_profile"),
+    ),
   ), // "text" (default) | "file" | "timeline" | "dossier" | "operator_profile"
-  fileId: v.optional(v.id("files")),     // reference to files table for file documents
-  fileType: v.optional(v.string()),        // "csv", "pdf", "image", etc. for file documents
-  mimeType: v.optional(v.string()),        // MIME type for file documents
+  fileId: v.optional(v.id("files")), // reference to files table for file documents
+  fileType: v.optional(v.string()), // "csv", "pdf", "image", etc. for file documents
+  mimeType: v.optional(v.string()), // MIME type for file documents
 
   // RESEARCH DOSSIER SUPPORT
   dossierType: v.optional(
     v.union(
-      v.literal("primary"),      // The main chat transcript/dossier
-      v.literal("media-asset"),  // Linked media (video/image/document)
-      v.literal("quick-notes")   // Quick notes linked to a dossier
-    )
-  ),
-  parentDossierId: v.optional(v.id("documents")),  // Links media assets to primary dossier
-  chatThreadId: v.optional(v.string()),         // Source chat thread (Agent component uses string IDs)
-  assetMetadata: v.optional(v.object({
-    assetType: v.union(
-      v.literal("image"),
-      v.literal("video"),
-      v.literal("youtube"),
-      v.literal("sec-document"),
-      v.literal("pdf"),
-      v.literal("news"),
-      v.literal("file")
+      v.literal("primary"), // The main chat transcript/dossier
+      v.literal("media-asset"), // Linked media (video/image/document)
+      v.literal("quick-notes"), // Quick notes linked to a dossier
     ),
-    sourceUrl: v.string(),                     // Original URL of the asset
-    thumbnailUrl: v.optional(v.string()),         // Thumbnail/preview URL
-    extractedAt: v.number(),                     // Timestamp when found in chat
-    toolName: v.optional(v.string()),         // Which tool found this asset
-    metadata: v.optional(v.any()),            // Additional metadata (title, description, etc.)
-  })),
+  ),
+  parentDossierId: v.optional(v.id("documents")), // Links media assets to primary dossier
+  chatThreadId: v.optional(v.string()), // Source chat thread (Agent component uses string IDs)
+  assetMetadata: v.optional(
+    v.object({
+      assetType: v.union(
+        v.literal("image"),
+        v.literal("video"),
+        v.literal("youtube"),
+        v.literal("sec-document"),
+        v.literal("pdf"),
+        v.literal("news"),
+        v.literal("file"),
+      ),
+      sourceUrl: v.string(), // Original URL of the asset
+      thumbnailUrl: v.optional(v.string()), // Thumbnail/preview URL
+      extractedAt: v.number(), // Timestamp when found in chat
+      toolName: v.optional(v.string()), // Which tool found this asset
+      metadata: v.optional(v.any()), // Additional metadata (title, description, etc.)
+    }),
+  ),
   // Idempotency key for creation (threadId + title + content hash)
   creationKey: v.optional(v.string()),
 
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // GAM: THEME MEMORY (for hashtag dossiers)
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-  themeMemory: v.optional(v.object({
-    topicId: v.string(),               // e.g., "theme:agent-memory"
-    summary: v.string(),
-    keyFacts: v.array(v.object({
-      id: v.string(),
-      text: v.string(),
-      isHighConfidence: v.boolean(),   // Boolean: passes threshold or not
-      sourceDocIds: v.array(v.string()),
-    })),
-    narratives: v.array(v.object({
-      label: v.string(),
-      description: v.string(),
-      supportingDocIds: v.array(v.string()),
-    })),
-    heuristics: v.array(v.string()),
-    lastRefreshed: v.number(),
-    // Boolean quality flags (not arbitrary scores)
-    quality: v.object({
-      hasSufficientFacts: v.boolean(),
-      hasRecentResearch: v.boolean(),
-      hasVerifiedSources: v.boolean(),
+  themeMemory: v.optional(
+    v.object({
+      topicId: v.string(), // e.g., "theme:agent-memory"
+      summary: v.string(),
+      keyFacts: v.array(
+        v.object({
+          id: v.string(),
+          text: v.string(),
+          isHighConfidence: v.boolean(), // Boolean: passes threshold or not
+          sourceDocIds: v.array(v.string()),
+        }),
+      ),
+      narratives: v.array(
+        v.object({
+          label: v.string(),
+          description: v.string(),
+          supportingDocIds: v.array(v.string()),
+        }),
+      ),
+      heuristics: v.array(v.string()),
+      lastRefreshed: v.number(),
+      // Boolean quality flags (not arbitrary scores)
+      quality: v.object({
+        hasSufficientFacts: v.boolean(),
+        hasRecentResearch: v.boolean(),
+        hasVerifiedSources: v.boolean(),
+      }),
+      staleDays: v.number(), // Default: 30 days
+      researchDepth: v.union(
+        v.literal("shallow"),
+        v.literal("standard"),
+        v.literal("deep"),
+      ),
     }),
-    staleDays: v.number(),             // Default: 30 days
-    researchDepth: v.union(
-      v.literal("shallow"),
-      v.literal("standard"),
-      v.literal("deep")
-    ),
-  })),
+  ),
 
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // LINKED ARTIFACTS (for citation tracking)
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-  linkedArtifacts: v.optional(v.array(v.object({
-    artifactId: v.id("sourceArtifacts"),
-    citationKey: v.string(),      // e.g., "[1]"
-    addedAt: v.number(),
-    addedBy: v.id("users"),
-  }))),
-
+  linkedArtifacts: v.optional(
+    v.array(
+      v.object({
+        artifactId: v.id("sourceArtifacts"),
+        citationKey: v.string(), // e.g., "[1]"
+        addedAt: v.number(),
+        addedBy: v.id("users"),
+      }),
+    ),
+  ),
 })
   .index("by_user", ["createdBy"])
   .index("by_user_archived", ["createdBy", "isArchived"])
@@ -379,17 +396,17 @@ const documents = defineTable({
 /* 2.  NODES  â€“  one row per ProseMirror block (GraphNode)             */
 /* ------------------------------------------------------------------ */
 const nodes = defineTable({
-  documentId: v.id("documents"),           // which doc/board it belongs to
-  parentId: v.optional(v.id("nodes")),   // null â‡’ root
-  order: v.number(),                  // sibling ordering
-  type: v.string(),                  // "paragraph" | "heading" | â€¦
-  text: v.optional(v.string()),      // plain text (for search)
-  json: v.optional(v.any()),         // full PM node as JSON
-  authorId: v.id("users"),               // who created this node
-  lastEditedBy: v.optional(v.id("users")),   // who last edited this node
+  documentId: v.id("documents"), // which doc/board it belongs to
+  parentId: v.optional(v.id("nodes")), // null â‡’ root
+  order: v.number(), // sibling ordering
+  type: v.string(), // "paragraph" | "heading" | â€¦
+  text: v.optional(v.string()), // plain text (for search)
+  json: v.optional(v.any()), // full PM node as JSON
+  authorId: v.id("users"), // who created this node
+  lastEditedBy: v.optional(v.id("users")), // who last edited this node
   createdAt: v.number(),
   updatedAt: v.number(),
-  isUserNode: v.optional(v.boolean()),     // flags for mention logic
+  isUserNode: v.optional(v.boolean()), // flags for mention logic
 })
   .index("by_document", ["documentId", "order"])
   .index("by_parent", ["parentId", "order"])
@@ -405,8 +422,8 @@ const nodes = defineTable({
 const relations = defineTable({
   from: v.id("nodes"),
   to: v.id("nodes"),
-  relationTypeId: v.string(),                 // store the string id, faster than join
-  order: v.optional(v.number()),     // for ordered children
+  relationTypeId: v.string(), // store the string id, faster than join
+  order: v.optional(v.number()), // for ordered children
   createdBy: v.id("users"),
   createdAt: v.number(),
 })
@@ -418,7 +435,7 @@ const relations = defineTable({
 /* 4.  RELATION TYPES  â€“  mostly static, but editable in UI            */
 /* ------------------------------------------------------------------ */
 const relationTypes = defineTable({
-  id: v.string(),                           // "child", "relatedTo", "hashtag"â€¦
+  id: v.string(), // "child", "relatedTo", "hashtag"â€¦
   name: v.string(),
   icon: v.optional(v.string()),
 })
@@ -429,9 +446,9 @@ const relationTypes = defineTable({
 /* 5.  TAGS  â€“  domain/entity/topic keywords                           */
 /* ------------------------------------------------------------------ */
 export const tags = defineTable({
-  name: v.string(),                 // canonical tag text (lower-cased)
-  kind: v.optional(v.string()),     // "domain" | "entity" | "topic" etc
-  importance: v.optional(v.float64()),    // 0â€“1 weighting when ranking context
+  name: v.string(), // canonical tag text (lower-cased)
+  kind: v.optional(v.string()), // "domain" | "entity" | "topic" etc
+  importance: v.optional(v.float64()), // 0â€“1 weighting when ranking context
   createdBy: v.id("users"),
   createdAt: v.number(),
 })
@@ -447,8 +464,8 @@ export const tags = defineTable({
 /* ------------------------------------------------------------------ */
 export const tagRefs = defineTable({
   tagId: v.id("tags"),
-  targetId: v.string(),                 // generic Id in string form
-  targetType: v.string(),                 // "documents" | "nodes"
+  targetId: v.string(), // generic Id in string form
+  targetType: v.string(), // "documents" | "nodes"
   createdBy: v.id("users"),
   createdAt: v.number(),
 })
@@ -461,14 +478,14 @@ export const tagRefs = defineTable({
 export const smsLogs = defineTable({
   to: v.string(),
   body: v.string(),
-  status: v.string(),       // "sent" | "failed" | "delivered" | "undelivered"
+  status: v.string(), // "sent" | "failed" | "delivered" | "undelivered"
   createdAt: v.number(),
   // Enhanced tracking for cost analytics
   userId: v.optional(v.id("users")),
-  messageSid: v.optional(v.string()),  // Twilio message SID
-  eventType: v.optional(v.string()),   // "meeting_created" | "meeting_reminder" | "morning_digest"
+  messageSid: v.optional(v.string()), // Twilio message SID
+  eventType: v.optional(v.string()), // "meeting_created" | "meeting_reminder" | "morning_digest"
   eventId: v.optional(v.id("events")),
-  segments: v.optional(v.number()),    // Number of SMS segments (160 chars = 1 segment)
+  segments: v.optional(v.number()), // Number of SMS segments (160 chars = 1 segment)
   estimatedCostCents: v.optional(v.number()), // Estimated cost in cents
 })
   .index("by_to", ["to"])
@@ -481,12 +498,12 @@ export const smsLogs = defineTable({
 /* ------------------------------------------------------------------ */
 export const smsUsageDaily = defineTable({
   userId: v.id("users"),
-  date: v.string(),                    // YYYY-MM-DD
+  date: v.string(), // YYYY-MM-DD
   totalMessages: v.number(),
   successfulMessages: v.number(),
   failedMessages: v.number(),
   totalSegments: v.number(),
-  estimatedCostCents: v.number(),      // Total estimated cost in cents
+  estimatedCostCents: v.number(), // Total estimated cost in cents
   // Breakdown by event type
   meetingCreatedCount: v.optional(v.number()),
   meetingReminderCount: v.optional(v.number()),
@@ -500,7 +517,7 @@ export const smsUsageDaily = defineTable({
 /* 7b. TELEGRAM USERS - Telegram bot user preferences                 */
 /* ------------------------------------------------------------------ */
 export const telegramUsers = defineTable({
-  telegramChatId: v.string(),           // Telegram chat ID (unique per user)
+  telegramChatId: v.string(), // Telegram chat ID (unique per user)
   telegramUsername: v.optional(v.string()),
   firstName: v.optional(v.string()),
   notificationsEnabled: v.boolean(),
@@ -516,8 +533,8 @@ export const telegramUsers = defineTable({
 export const telegramMessages = defineTable({
   telegramChatId: v.string(),
   messageText: v.string(),
-  messageType: v.string(),              // "incoming" | "outgoing"
-  messageId: v.optional(v.number()),    // Telegram message ID
+  messageType: v.string(), // "incoming" | "outgoing"
+  messageId: v.optional(v.number()), // Telegram message ID
   agentResponse: v.optional(v.string()),
   timestamp: v.number(),
 })
@@ -531,8 +548,8 @@ export const telegramMessages = defineTable({
 // If you want to persist your `SimpleVectorStore` so the index survives reloads
 // keep a compact cache here; leave it out if youâ€™re only embedding client-side.
 const embeddings = defineTable({
-  chunkHash: v.string(),               // sha256(text)
-  vector: v.array(v.float64()),     // normalised
+  chunkHash: v.string(), // sha256(text)
+  vector: v.array(v.float64()), // normalised
 });
 
 /* ------------------------------------------------------------------ */
@@ -542,19 +559,20 @@ const embeddings = defineTable({
 /* 9.  GRID PROJECTS  â€“  saved multi-document grid configurations     */
 /* ------------------------------------------------------------------ */
 const gridProjects = defineTable({
-  name: v.string(),                    // user-defined name for the grid project
-  description: v.optional(v.string()),       // optional description
-  createdBy: v.id("users"),               // owner of the grid project
-  documentIds: v.array(v.id("documents")),   // array of document IDs in the grid
-  layout: v.object({                    // grid layout configuration
+  name: v.string(), // user-defined name for the grid project
+  description: v.optional(v.string()), // optional description
+  createdBy: v.id("users"), // owner of the grid project
+  documentIds: v.array(v.id("documents")), // array of document IDs in the grid
+  layout: v.object({
+    // grid layout configuration
     cols: v.number(),
     rows: v.number(),
     gridClass: v.string(),
     name: v.string(),
   }),
-  createdAt: v.number(),                   // ms since epoch
-  updatedAt: v.number(),                   // ms since epoch
-  isArchived: v.optional(v.boolean()),      // soft delete
+  createdAt: v.number(), // ms since epoch
+  updatedAt: v.number(), // ms since epoch
+  isArchived: v.optional(v.boolean()), // soft delete
 })
   .index("by_user", ["createdBy"])
   .index("by_user_archived", ["createdBy", "isArchived"]);
@@ -563,28 +581,28 @@ const gridProjects = defineTable({
 /* 7.  FILES  â€“  uploaded files for analysis                           */
 /* ------------------------------------------------------------------ */
 const files = defineTable({
-  userId: v.string(),                     // user ID from auth
-  storageId: v.string(),                     // Convex storage ID
-  fileName: v.string(),                     // original filename
-  fileType: v.string(),                     // "video", "image", "audio", "document"
-  mimeType: v.string(),                     // MIME type
-  fileSize: v.number(),                     // file size in bytes
+  userId: v.string(), // user ID from auth
+  storageId: v.string(), // Convex storage ID
+  fileName: v.string(), // original filename
+  fileType: v.string(), // "video", "image", "audio", "document"
+  mimeType: v.string(), // MIME type
+  fileSize: v.number(), // file size in bytes
 
   // Analysis results
-  analysis: v.optional(v.string()),      // analysis text result
-  structuredData: v.optional(v.any()),         // structured analysis data
-  analysisType: v.optional(v.string()),      // type of analysis performed
-  processingTime: v.optional(v.number()),      // time taken for analysis in ms
-  analyzedAt: v.optional(v.number()),      // ms since epoch when analyzed
+  analysis: v.optional(v.string()), // analysis text result
+  structuredData: v.optional(v.any()), // structured analysis data
+  analysisType: v.optional(v.string()), // type of analysis performed
+  processingTime: v.optional(v.number()), // time taken for analysis in ms
+  analyzedAt: v.optional(v.number()), // ms since epoch when analyzed
 
   // Metadata
-  isPublic: v.optional(v.boolean()),       // whether file is publicly accessible
+  isPublic: v.optional(v.boolean()), // whether file is publicly accessible
   tags: v.optional(v.array(v.string())), // user-defined tags
-  description: v.optional(v.string()),        // user description
+  description: v.optional(v.string()), // user description
 
   // Modification tracking for CSV editing
-  lastModified: v.optional(v.number()),    // ms since epoch when last modified
-  modificationCount: v.optional(v.number()),   // number of times file has been modified
+  lastModified: v.optional(v.number()), // ms since epoch when last modified
+  modificationCount: v.optional(v.number()), // number of times file has been modified
   parentFileId: v.optional(v.id("files")), // reference to original file if this is a copy/export
 
   // GenAI cache & extracted metadata (optional)
@@ -607,12 +625,12 @@ const files = defineTable({
 /* 8.  URL ANALYSES  â€“  URL content analysis results                   */
 /* ------------------------------------------------------------------ */
 const urlAnalyses = defineTable({
-  userId: v.string(),                     // user ID from auth
-  url: v.string(),                     // analyzed URL
-  analysis: v.optional(v.string()),        // analysis text result
-  structuredData: v.optional(v.any()),         // structured analysis data
-  analyzedAt: v.number(),                     // ms since epoch when analyzed
-  contentType: v.optional(v.string()),        // detected content type
+  userId: v.string(), // user ID from auth
+  url: v.string(), // analyzed URL
+  analysis: v.optional(v.string()), // analysis text result
+  structuredData: v.optional(v.any()), // structured analysis data
+  analyzedAt: v.number(), // ms since epoch when analyzed
+  contentType: v.optional(v.string()), // detected content type
 })
   .index("by_user", ["userId"])
   .index("by_url", ["url"]);
@@ -625,17 +643,16 @@ const chunks = defineTable({
   text: v.string(),
   meta: v.optional(v.any()), // { page?, startTimeSec?, endTimeSec? }
   embedding: v.array(v.number()),
-})
-  .index("by_file", ["fileId"]);
+}).index("by_file", ["fileId"]);
 
 /* ------------------------------------------------------------------ */
 /* FOLDERS - Document organization system                              */
 /* ------------------------------------------------------------------ */
 const folders = defineTable({
   name: v.string(),
-  color: v.string(),                    // CSS color class for folder display
-  userId: v.id("users"),               // folder owner
-  isExpanded: v.optional(v.boolean()),  // UI state for expand/collapse
+  color: v.string(), // CSS color class for folder display
+  userId: v.id("users"), // folder owner
+  isExpanded: v.optional(v.boolean()), // UI state for expand/collapse
   createdAt: v.number(),
   updatedAt: v.number(),
 })
@@ -646,8 +663,8 @@ const folders = defineTable({
 const documentFolders = defineTable({
   documentId: v.id("documents"),
   folderId: v.id("folders"),
-  userId: v.id("users"),               // for access control
-  addedAt: v.number(),                  // when document was added to folder
+  userId: v.id("users"), // for access control
+  addedAt: v.number(), // when document was added to folder
 })
   .index("by_document", ["documentId"])
   .index("by_folder", ["folderId"])
@@ -659,28 +676,27 @@ const documentFolders = defineTable({
 /* ------------------------------------------------------------------ */
 const fileSearchStores = defineTable({
   userId: v.id("users"),
-  storeName: v.string(),                   // full resource name from Gemini
+  storeName: v.string(), // full resource name from Gemini
   createdAt: v.number(),
   updatedAt: v.number(),
-})
-  .index("by_user", ["userId"]);
+}).index("by_user", ["userId"]);
 
 /* ------------------------------------------------------------------ */
 /* MCP SERVERS - Model Context Protocol server configurations         */
 /* ------------------------------------------------------------------ */
 const mcpServers = defineTable({
-  name: v.string(),                        // user-friendly name
-  url: v.optional(v.string()),            // URL for HTTP tool calls
-  apiKey: v.optional(v.string()),         // encrypted API key if needed
-  userId: v.id("users"),                 // server owner
+  name: v.string(), // user-friendly name
+  url: v.optional(v.string()), // URL for HTTP tool calls
+  apiKey: v.optional(v.string()), // encrypted API key if needed
+  userId: v.id("users"), // server owner
   createdAt: v.number(),
   updatedAt: v.number(),
   // Additional fields found in existing data
   connectionStatus: v.optional(v.string()), // "connected", "error", "disconnected"
-  description: v.optional(v.string()),      // server description
-  isEnabled: v.optional(v.boolean()),       // whether server is enabled
-  lastConnected: v.optional(v.number()),    // timestamp of last connection
-  transport: v.optional(v.string()),        // transport type ("sse", "http", etc.)
+  description: v.optional(v.string()), // server description
+  isEnabled: v.optional(v.boolean()), // whether server is enabled
+  lastConnected: v.optional(v.number()), // timestamp of last connection
+  transport: v.optional(v.string()), // transport type ("sse", "http", etc.)
 })
   .index("by_user", ["userId"])
   .index("by_name", ["name"])
@@ -795,14 +811,16 @@ const actionReceipts = defineTable({
   approvalReviewedBy: v.optional(v.string()),
   approvalReviewNotes: v.optional(v.string()),
   /** Policy violations */
-  violations: v.array(v.object({
-    ruleId: v.string(),
-    ruleName: v.string(),
-    /** "warning" | "block" | "audit_only" */
-    severity: v.string(),
-    description: v.string(),
-    resolution: v.optional(v.string()),
-  })),
+  violations: v.array(
+    v.object({
+      ruleId: v.string(),
+      ruleName: v.string(),
+      /** "warning" | "block" | "audit_only" */
+      severity: v.string(),
+      description: v.string(),
+      resolution: v.optional(v.string()),
+    }),
+  ),
   createdAt: v.number(),
 })
   .index("by_receiptId", ["receiptId"])
@@ -865,7 +883,11 @@ const artifactChunks = defineTable({
   chunkHash: v.string(),
   createdAt: v.number(),
 })
-  .index("by_artifact_version_offset", ["artifactId", "chunkVersion", "startOffset"])
+  .index("by_artifact_version_offset", [
+    "artifactId",
+    "chunkVersion",
+    "startOffset",
+  ])
   .index("by_chunkKey", ["chunkKey"])
   .index("by_run_fetchedAt", ["runId", "fetchedAt"])
   .searchIndex("search_text", {
@@ -895,26 +917,30 @@ const artifactIndexJobs = defineTable({
   updatedAt: v.number(),
 })
   .index("by_status_updatedAt", ["status", "updatedAt"])
-  .index("by_artifact_hash_version", ["artifactId", "contentHash", "chunkVersion"]);
+  .index("by_artifact_hash_version", [
+    "artifactId",
+    "contentHash",
+    "chunkVersion",
+  ]);
 
 /* ------------------------------------------------------------------ */
 /* RESOURCE LINKS - MCP-style pointers to artifacts for large outputs  */
 /* ------------------------------------------------------------------ */
 const resourceLinks = defineTable({
   runId: v.optional(v.id("agentRuns")),
-  toolName: v.string(),                   // Which tool produced this output
-  toolCallId: v.string(),                 // Unique ID for the tool call
-  artifactId: v.id("sourceArtifacts"),    // Link to stored artifact
+  toolName: v.string(), // Which tool produced this output
+  toolCallId: v.string(), // Unique ID for the tool call
+  artifactId: v.id("sourceArtifacts"), // Link to stored artifact
   chunkIds: v.optional(v.array(v.id("artifactChunks"))), // Specific chunks if distilled
-  mimeType: v.string(),                   // e.g., "text/html", "application/json"
-  sizeBytes: v.number(),                  // Original output size
-  preview: v.string(),                    // First ~500 chars for context
-  title: v.optional(v.string()),          // Optional title for the resource
-  originalTokenEstimate: v.number(),      // Estimated tokens if inlined
-  actualTokens: v.number(),               // Tokens used (preview only)
-  tokenSavings: v.number(),               // Calculated savings
+  mimeType: v.string(), // e.g., "text/html", "application/json"
+  sizeBytes: v.number(), // Original output size
+  preview: v.string(), // First ~500 chars for context
+  title: v.optional(v.string()), // Optional title for the resource
+  originalTokenEstimate: v.number(), // Estimated tokens if inlined
+  actualTokens: v.number(), // Tokens used (preview only)
+  tokenSavings: v.number(), // Calculated savings
   createdAt: v.number(),
-  accessedAt: v.optional(v.number()),     // Last time resource was retrieved
+  accessedAt: v.optional(v.number()), // Last time resource was retrieved
 })
   .index("by_run", ["runId", "createdAt"])
   .index("by_artifact", ["artifactId"])
@@ -929,8 +955,7 @@ const evidencePacks = defineTable({
   scope: v.optional(v.any()),
   chunkIds: v.array(v.id("artifactChunks")),
   createdAt: v.number(),
-})
-  .index("by_run_createdAt", ["runId", "createdAt"]);
+}).index("by_run_createdAt", ["runId", "createdAt"]);
 
 /* ------------------------------------------------------------------ */
 /* TOOL HEALTH - adaptive routing telemetry + circuit breaker          */
@@ -980,34 +1005,44 @@ const projectContext = defineTable({
   // Codebase structure
   name: v.string(),
   techStack: v.array(v.string()), // ["React", "TypeScript", "Convex"]
-  fileStructure: v.optional(v.object({
-    rootPath: v.string(),
-    keyDirectories: v.array(v.string()),
-    totalFiles: v.number(),
-  })),
+  fileStructure: v.optional(
+    v.object({
+      rootPath: v.string(),
+      keyDirectories: v.array(v.string()),
+      totalFiles: v.number(),
+    }),
+  ),
 
   // Recent changes
-  recentCommits: v.array(v.object({
-    sha: v.string(),
-    message: v.string(),
-    author: v.string(),
-    timestamp: v.number(),
-    filesChanged: v.array(v.string()),
-  })),
+  recentCommits: v.array(
+    v.object({
+      sha: v.string(),
+      message: v.string(),
+      author: v.string(),
+      timestamp: v.number(),
+      filesChanged: v.array(v.string()),
+    }),
+  ),
 
   // Patterns and conventions
   commonPatterns: v.array(v.string()), // ["Use Convex mutations for DB writes", "camelCase for variables"]
-  styleGuide: v.optional(v.object({
-    summary: v.string(),
-    rules: v.array(v.string()),
-  })),
+  styleGuide: v.optional(
+    v.object({
+      summary: v.string(),
+      rules: v.array(v.string()),
+    }),
+  ),
 
   // Dependency context
-  dependencies: v.optional(v.array(v.object({
-    name: v.string(),
-    version: v.string(),
-    isDevDependency: v.boolean(),
-  }))),
+  dependencies: v.optional(
+    v.array(
+      v.object({
+        name: v.string(),
+        version: v.string(),
+        isDevDependency: v.boolean(),
+      }),
+    ),
+  ),
 
   // Session state
   currentBranch: v.optional(v.string()),
@@ -1028,8 +1063,7 @@ const agentRunEvents = defineTable({
   message: v.optional(v.string()),
   data: v.optional(v.any()),
   createdAt: v.number(),
-})
-  .index("by_run", ["runId", "seq"]);
+}).index("by_run", ["runId", "seq"]);
 
 /* ------------------------------------------------------------------ */
 /* INSTAGRAM POSTS - Social media content ingestion                    */
@@ -1037,49 +1071,59 @@ const agentRunEvents = defineTable({
 const instagramPosts = defineTable({
   userId: v.id("users"),
   postUrl: v.string(),
-  shortcode: v.optional(v.string()),              // Instagram post ID
+  shortcode: v.optional(v.string()), // Instagram post ID
   mediaType: v.union(
     v.literal("image"),
     v.literal("video"),
-    v.literal("carousel")
+    v.literal("carousel"),
   ),
   caption: v.optional(v.string()),
-  transcript: v.optional(v.string()),              // Gemini video transcription
-  extractedClaims: v.optional(v.array(v.object({
-    claim: v.string(),
-    confidence: v.number(),                        // 0-1
-    sourceTimestamp: v.optional(v.number()),       // seconds into video
-    category: v.optional(v.string()),              // "financial", "product", "opinion"
-  }))),
-  mediaStorageId: v.optional(v.id("_storage")),    // Downloaded media
+  transcript: v.optional(v.string()), // Gemini video transcription
+  extractedClaims: v.optional(
+    v.array(
+      v.object({
+        claim: v.string(),
+        confidence: v.number(), // 0-1
+        sourceTimestamp: v.optional(v.number()), // seconds into video
+        category: v.optional(v.string()), // "financial", "product", "opinion"
+      }),
+    ),
+  ),
+  mediaStorageId: v.optional(v.id("_storage")), // Downloaded media
   thumbnailUrl: v.optional(v.string()),
   authorUsername: v.optional(v.string()),
   authorFullName: v.optional(v.string()),
   likeCount: v.optional(v.number()),
   commentCount: v.optional(v.number()),
-  postedAt: v.optional(v.number()),                // Original post timestamp
+  postedAt: v.optional(v.number()), // Original post timestamp
   fetchedAt: v.number(),
   status: v.union(
     v.literal("pending"),
     v.literal("transcribing"),
     v.literal("analyzing"),
     v.literal("completed"),
-    v.literal("error")
+    v.literal("error"),
   ),
   errorMessage: v.optional(v.string()),
   // Fact-check verification results
-  verificationResults: v.optional(v.array(v.object({
-    claim: v.string(),
-    status: v.string(),                             // "verified", "partially_verified", "unverified", "false"
-    explanation: v.string(),
-    sources: v.array(v.object({
-      name: v.string(),
-      url: v.optional(v.string()),
-      credibility: v.string(),                      // "high", "medium", "low"
-    })),
-    confidence: v.number(),                         // 0-1
-  }))),
-  verifiedAt: v.optional(v.number()),               // When verification completed
+  verificationResults: v.optional(
+    v.array(
+      v.object({
+        claim: v.string(),
+        status: v.string(), // "verified", "partially_verified", "unverified", "false"
+        explanation: v.string(),
+        sources: v.array(
+          v.object({
+            name: v.string(),
+            url: v.optional(v.string()),
+            credibility: v.string(), // "high", "medium", "low"
+          }),
+        ),
+        confidence: v.number(), // 0-1
+      }),
+    ),
+  ),
+  verifiedAt: v.optional(v.number()), // When verification completed
 })
   .index("by_user", ["userId"])
   .index("by_url", ["postUrl"])
@@ -1087,15 +1131,14 @@ const instagramPosts = defineTable({
   .index("by_status", ["status"])
   .index("by_verified", ["verifiedAt"]);
 
-
 /* ------------------------------------------------------------------ */
 /* AGENT DELEGATIONS - Tracking parallel subagent execution           */
 /* ------------------------------------------------------------------ */
 const agentDelegations = defineTable({
   // Identity & isolation
-  runId: v.string(),                      // coordinatorThreadId (for UI scoping)
-  delegationId: v.string(),               // UUID, stable ID for this delegation
-  userId: v.id("users"),                  // Multi-user isolation
+  runId: v.string(), // coordinatorThreadId (for UI scoping)
+  delegationId: v.string(), // UUID, stable ID for this delegation
+  userId: v.id("users"), // Multi-user isolation
 
   // Agent info
   agentName: v.union(
@@ -1105,15 +1148,15 @@ const agentDelegations = defineTable({
     v.literal("OpenBBAgent"),
     v.literal("EntityResearchAgent"),
   ),
-  query: v.string(),                      // Original task description
+  query: v.string(), // Original task description
 
   // Lifecycle
   status: v.union(
-    v.literal("scheduled"),               // Scheduler accepted
-    v.literal("running"),                 // generateText started
-    v.literal("completed"),               // Finished successfully
-    v.literal("failed"),                  // Error
-    v.literal("cancelled"),               // User cancelled
+    v.literal("scheduled"), // Scheduler accepted
+    v.literal("running"), // generateText started
+    v.literal("completed"), // Finished successfully
+    v.literal("failed"), // Error
+    v.literal("cancelled"), // User cancelled
   ),
 
   // Timing
@@ -1123,15 +1166,13 @@ const agentDelegations = defineTable({
 
   // Results (refs, not inline - avoids OCC on streaming)
   subagentThreadId: v.optional(v.string()),
-  finalPatchRef: v.optional(v.string()),  // Pointer to patch document
+  finalPatchRef: v.optional(v.string()), // Pointer to patch document
   errorMessage: v.optional(v.string()),
 
   // Merge tracking
-  mergeStatus: v.optional(v.union(
-    v.literal("pending"),
-    v.literal("merged"),
-    v.literal("rejected"),
-  )),
+  mergeStatus: v.optional(
+    v.union(v.literal("pending"), v.literal("merged"), v.literal("rejected")),
+  ),
 })
   .index("by_run", ["runId"])
   .index("by_run_status", ["runId", "status"])
@@ -1143,21 +1184,20 @@ const agentDelegations = defineTable({
 /* Mirrors agentRunEvents pattern: seq owned by action, not mutated   */
 /* ------------------------------------------------------------------ */
 const agentWriteEvents = defineTable({
-  delegationId: v.string(),               // FK to agentDelegations
-  seq: v.number(),                        // Monotonic per delegation (action-owned)
+  delegationId: v.string(), // FK to agentDelegations
+  seq: v.number(), // Monotonic per delegation (action-owned)
   kind: v.union(
-    v.literal("delta"),                   // Streaming text chunk
-    v.literal("tool_start"),              // Tool invocation started
-    v.literal("tool_end"),                // Tool completed
-    v.literal("note"),                    // Status update
-    v.literal("final"),                   // Final output chunk
+    v.literal("delta"), // Streaming text chunk
+    v.literal("tool_start"), // Tool invocation started
+    v.literal("tool_end"), // Tool completed
+    v.literal("note"), // Status update
+    v.literal("final"), // Final output chunk
   ),
-  textChunk: v.optional(v.string()),      // For delta/final
-  toolName: v.optional(v.string()),       // For tool_start/tool_end
-  metadata: v.optional(v.any()),          // Extra data (citations, artifactIds)
+  textChunk: v.optional(v.string()), // For delta/final
+  toolName: v.optional(v.string()), // For tool_start/tool_end
+  metadata: v.optional(v.any()), // Extra data (citations, artifactIds)
   createdAt: v.number(),
-})
-  .index("by_delegation", ["delegationId", "seq"]);  // Compound for range queries
+}).index("by_delegation", ["delegationId", "seq"]); // Compound for range queries
 
 /* ------------------------------------------------------------------ */
 /* CHAT - Now using @convex-dev/agent component                       */
@@ -1168,7 +1208,7 @@ const agentWriteEvents = defineTable({
 /* STREAMING CHAT - Persistent Text Streaming for FastAgentPanel     */
 /* ------------------------------------------------------------------ */
 const chatThreadsStream = defineTable({
-  userId: v.optional(v.id("users")),    // Optional for anonymous users
+  userId: v.optional(v.id("users")), // Optional for anonymous users
   anonymousSessionId: v.optional(v.string()), // Session ID for anonymous users
   title: v.string(),
   model: v.optional(v.string()),
@@ -1178,7 +1218,7 @@ const chatThreadsStream = defineTable({
   cancelRequestedAt: v.optional(v.number()),
   workflowProgress: v.optional(v.any()), // Stores Deep Agent steps: { steps: [...], status: "running"|"completed" }
   // Swarm support - links thread to parallel agent swarm
-  swarmId: v.optional(v.string()),       // Links to agentSwarms table
+  swarmId: v.optional(v.string()), // Links to agentSwarms table
   createdAt: v.number(),
   updatedAt: v.number(),
 })
@@ -1192,7 +1232,7 @@ const chatThreadsStream = defineTable({
 
 const chatMessagesStream = defineTable({
   threadId: v.id("chatThreadsStream"),
-  userId: v.optional(v.id("users")),    // Optional for anonymous users
+  userId: v.optional(v.id("users")), // Optional for anonymous users
   role: v.union(v.literal("user"), v.literal("assistant"), v.literal("system")),
   content: v.string(),
   streamId: v.optional(v.string()), // For persistent-text-streaming (legacy)
@@ -1201,13 +1241,15 @@ const chatMessagesStream = defineTable({
     v.literal("pending"),
     v.literal("streaming"),
     v.literal("complete"),
-    v.literal("error")
+    v.literal("error"),
   ),
   model: v.optional(v.string()),
-  tokensUsed: v.optional(v.object({
-    input: v.number(),
-    output: v.number(),
-  })),
+  tokensUsed: v.optional(
+    v.object({
+      input: v.number(),
+      output: v.number(),
+    }),
+  ),
   elapsedMs: v.optional(v.number()),
   createdAt: v.number(),
   updatedAt: v.number(),
@@ -1218,51 +1260,148 @@ const chatMessagesStream = defineTable({
   .index("by_user", ["userId"]);
 
 /* ------------------------------------------------------------------ */
+/* SHARED PUBLIC CACHE — Canonical Source Layer (CSL)                  */
+/* Cross-user public-origin content only.                              */
+/* Privacy invariant: user queries, scratchpad, or auth-gated content  */
+/* MUST NEVER be written here. Enforced by validators in               */
+/* convex/domains/search/sharedCache.ts                                */
+/* See: docs/architecture/FAST_SLOW_RUNTIME_SPEC.md §3                 */
+/* ------------------------------------------------------------------ */
+const canonicalSources = defineTable({
+  // sha256(stableStringify({url, day}))
+  key: v.string(),
+  url: v.string(),
+  fetchedAt: v.number(),
+  ttlMs: v.number(),
+  contentType: v.union(
+    v.literal("html"),
+    v.literal("json"),
+    v.literal("pdf"),
+    v.literal("markdown"),
+    v.literal("text"),
+  ),
+  // sha256 of body — detect content drift, dedupe across same-URL re-fetches
+  bodyHash: v.string(),
+  // Bounded body (MAX_CSL_BODY_BYTES enforced at insert)
+  body: v.string(),
+  bodyBytes: v.number(),
+  sourceClass: v.union(
+    v.literal("news"),
+    v.literal("regulatory"),
+    v.literal("careers"),
+    v.literal("profile"),
+    v.literal("other"),
+  ),
+  // Hard privacy flag — validator rejects inserts with false
+  isPublicOrigin: v.boolean(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_key", ["key"])
+  .index("by_url", ["url"])
+  .index("by_sourceClass_fetchedAt", ["sourceClass", "fetchedAt"]);
+
+/* ------------------------------------------------------------------ */
+/* SHARED PUBLIC CACHE — Extracted Signal Layer (ESL)                  */
+/* Deduplicated public facts keyed by (entitySlug, signalType, day).   */
+/* Privacy invariant: only derived from canonicalSources entries.      */
+/* ------------------------------------------------------------------ */
+const extractedSignals = defineTable({
+  // sha256(stableStringify({entitySlug, signalType, dayBucket}))
+  key: v.string(),
+  entitySlug: v.string(),
+  signalType: v.string(),
+  // YYYY-MM-DD
+  dayBucket: v.string(),
+  // Value bounded to MAX_ESL_VALUE_BYTES at insert
+  value: v.string(),
+  // Citation chain back to CSL entries
+  sourceCanonicalKeys: v.array(v.string()),
+  // 0..1, computed from #sources + agreement; validator clamps
+  confidence: v.number(),
+  extractedAt: v.number(),
+  extractorModel: v.string(),
+  isPublicOrigin: v.boolean(),
+})
+  .index("by_key", ["key"])
+  .index("by_entity_signal_day", ["entitySlug", "signalType", "dayBucket"])
+  .index("by_entity", ["entitySlug"]);
+
+/* ------------------------------------------------------------------ */
+/* CROSS-SCOPE VIOLATION AUDIT LOG                                      */
+/* Every suspected privacy boundary breach is recorded here for triage. */
+/* ------------------------------------------------------------------ */
+const crossScopeViolations = defineTable({
+  detectedAt: v.number(),
+  violationType: v.union(
+    v.literal("user_content_in_csl"),
+    v.literal("user_content_in_esl"),
+    v.literal("unknown_origin"),
+    v.literal("auth_url_attempted"),
+    v.literal("usl_read_from_shared"),
+    v.literal("oversize_body"),
+  ),
+  offendingKey: v.string(),
+  severity: v.union(v.literal("warn"), v.literal("p0")),
+  // Bounded to 1KB at insert
+  details: v.string(),
+  resolved: v.boolean(),
+  resolvedAt: v.optional(v.number()),
+})
+  .index("by_detectedAt", ["detectedAt"])
+  .index("by_severity_resolved", ["severity", "resolved"]);
+
+/* ------------------------------------------------------------------ */
 /* SEARCH CACHE - Global search result caching with versioning       */
 /* ------------------------------------------------------------------ */
 const searchCache = defineTable({
-  prompt: v.string(),                      // Normalized search query (lowercase, trimmed)
-  threadId: v.string(),                    // Current/latest thread ID with full content
-  lastUpdated: v.number(),                 // Timestamp of last update
-  searchCount: v.number(),                 // Popularity metric (how many times searched)
-  versions: v.array(v.object({             // History of updates
-    date: v.string(),                      // YYYY-MM-DD when this version was created
-    threadId: v.string(),                  // Thread ID for this version
-    summary: v.string(),                   // What changed in this update
-    timestamp: v.number()                  // When this version was created
-  })),
-  isPublic: v.boolean(),                   // Whether this cache entry is publicly visible
-  createdAt: v.number(),                   // Initial creation timestamp
+  prompt: v.string(), // Normalized search query (lowercase, trimmed)
+  threadId: v.string(), // Current/latest thread ID with full content
+  lastUpdated: v.number(), // Timestamp of last update
+  searchCount: v.number(), // Popularity metric (how many times searched)
+  versions: v.array(
+    v.object({
+      // History of updates
+      date: v.string(), // YYYY-MM-DD when this version was created
+      threadId: v.string(), // Thread ID for this version
+      summary: v.string(), // What changed in this update
+      timestamp: v.number(), // When this version was created
+    }),
+  ),
+  isPublic: v.boolean(), // Whether this cache entry is publicly visible
+  createdAt: v.number(), // Initial creation timestamp
 })
-  .index("by_prompt", ["prompt"])          // Fast lookup by query
+  .index("by_prompt", ["prompt"]) // Fast lookup by query
   .index("by_popularity", ["searchCount"]) // For trending queries
-  .index("by_updated", ["lastUpdated"])    // Recent updates
+  .index("by_updated", ["lastUpdated"]) // Recent updates
   .index("by_public", ["isPublic", "searchCount"]); // Public trending queries
 
 /* ------------------------------------------------------------------ */
 /* MCP TOOLS - Available tools from connected MCP servers             */
 /* ------------------------------------------------------------------ */
 const mcpTools = defineTable({
-  serverId: v.id("mcpServers"),           // which server provides this tool
-  name: v.string(),                       // tool name
-  description: v.optional(v.string()),    // tool description (full)
-  schema: v.optional(v.any()),            // tool parameter schema (DEPRECATED - use mcpToolSchemas)
-  isAvailable: v.boolean(),               // whether tool is currently available
-  isEnabled: v.optional(v.boolean()),     // whether tool is enabled for use (user-controlled)
-  lastUsed: v.optional(v.number()),       // last time tool was used
-  usageCount: v.optional(v.number()),     // how many times tool has been used
+  serverId: v.id("mcpServers"), // which server provides this tool
+  name: v.string(), // tool name
+  description: v.optional(v.string()), // tool description (full)
+  schema: v.optional(v.any()), // tool parameter schema (DEPRECATED - use mcpToolSchemas)
+  isAvailable: v.boolean(), // whether tool is currently available
+  isEnabled: v.optional(v.boolean()), // whether tool is enabled for use (user-controlled)
+  lastUsed: v.optional(v.number()), // last time tool was used
+  usageCount: v.optional(v.number()), // how many times tool has been used
   createdAt: v.number(),
   updatedAt: v.number(),
   // Progressive disclosure fields (thin descriptor for search)
   shortDescription: v.optional(v.string()), // One-line description (â‰¤100 chars) for search
-  category: v.optional(v.string()),         // e.g., "filesystem", "database", "api", "web"
+  category: v.optional(v.string()), // e.g., "filesystem", "database", "api", "web"
   keywords: v.optional(v.array(v.string())), // Search keywords for tool discovery
-  schemaHash: v.optional(v.string()),       // FK to mcpToolSchemas.schemaHash for on-demand hydration
-  accessTier: v.optional(v.union(
-    v.literal("public"),                    // Anyone can see/use
-    v.literal("user"),                      // User-owned tools only
-    v.literal("restricted")                 // Requires explicit grant
-  )),
+  schemaHash: v.optional(v.string()), // FK to mcpToolSchemas.schemaHash for on-demand hydration
+  accessTier: v.optional(
+    v.union(
+      v.literal("public"), // Anyone can see/use
+      v.literal("user"), // User-owned tools only
+      v.literal("restricted"), // Requires explicit grant
+    ),
+  ),
 })
   .index("by_server", ["serverId"])
   .index("by_server_available", ["serverId", "isAvailable"])
@@ -1275,15 +1414,15 @@ const mcpTools = defineTable({
 /* MCP TOOL SCHEMAS - Cached full schemas for on-demand hydration     */
 /* ------------------------------------------------------------------ */
 const mcpToolSchemas = defineTable({
-  toolId: v.id("mcpTools"),               // FK to mcpTools
-  serverId: v.id("mcpServers"),           // Server for quick lookups
-  toolName: v.string(),                   // Tool name for reference
-  schemaHash: v.string(),                 // SHA-256 of JSON.stringify(schema) for dedup/versioning
-  fullSchema: v.any(),                    // The complete JSON Schema
-  parametersCount: v.number(),            // Quick complexity metric
-  requiredParams: v.array(v.string()),    // List of required param names
-  cachedAt: v.number(),                   // When schema was cached
-  expiresAt: v.optional(v.number()),      // Optional TTL for cache invalidation
+  toolId: v.id("mcpTools"), // FK to mcpTools
+  serverId: v.id("mcpServers"), // Server for quick lookups
+  toolName: v.string(), // Tool name for reference
+  schemaHash: v.string(), // SHA-256 of JSON.stringify(schema) for dedup/versioning
+  fullSchema: v.any(), // The complete JSON Schema
+  parametersCount: v.number(), // Quick complexity metric
+  requiredParams: v.array(v.string()), // List of required param names
+  cachedAt: v.number(), // When schema was cached
+  expiresAt: v.optional(v.number()), // Optional TTL for cache invalidation
 })
   .index("by_tool", ["toolId"])
   .index("by_server_name", ["serverId", "toolName"])
@@ -1293,13 +1432,18 @@ const mcpToolSchemas = defineTable({
 /* MCP SESSIONS - Active MCP client sessions                          */
 /* ------------------------------------------------------------------ */
 const mcpSessions = defineTable({
-  serverId: v.id("mcpServers"),           // which server this session connects to
-  userId: v.id("users"),                 // session owner
-  sessionId: v.string(),                  // unique session identifier
-  status: v.union(v.literal("connecting"), v.literal("connected"), v.literal("disconnected"), v.literal("error")),
-  connectedAt: v.optional(v.number()),    // when session was established
+  serverId: v.id("mcpServers"), // which server this session connects to
+  userId: v.id("users"), // session owner
+  sessionId: v.string(), // unique session identifier
+  status: v.union(
+    v.literal("connecting"),
+    v.literal("connected"),
+    v.literal("disconnected"),
+    v.literal("error"),
+  ),
+  connectedAt: v.optional(v.number()), // when session was established
   disconnectedAt: v.optional(v.number()), // when session ended
-  errorMessage: v.optional(v.string()),   // error details if status is error
+  errorMessage: v.optional(v.string()), // error details if status is error
   toolsAvailable: v.optional(v.array(v.string())), // available tool names
   createdAt: v.number(),
   updatedAt: v.number(),
@@ -1315,24 +1459,22 @@ const mcpSessions = defineTable({
 const userPreferences = defineTable({
   userId: v.id("users"),
   // Sidebar preferences
-  ungroupedSectionName: v.optional(v.string()),     // custom name for ungrouped documents section
-  isUngroupedExpanded: v.optional(v.boolean()),     // expand/collapse state for ungrouped section
-  organizationMode: v.optional(v.string()),         // 'flat' | 'folders' | 'smart' | 'filetype'
-  iconOrder: v.optional(v.array(v.string())),       // persisted order of Integrate section icons
-  docOrderByGroup: v.optional(
-    v.record(v.string(), v.array(v.id("documents")))
-  ), // persisted per-group document order for Sidebar
+  ungroupedSectionName: v.optional(v.string()), // custom name for ungrouped documents section
+  isUngroupedExpanded: v.optional(v.boolean()), // expand/collapse state for ungrouped section
+  organizationMode: v.optional(v.string()), // 'flat' | 'folders' | 'smart' | 'filetype'
+  iconOrder: v.optional(v.array(v.string())), // persisted order of Integrate section icons
+  docOrderByGroup: v.optional(v.record(v.string(), v.array(v.id("documents")))), // persisted per-group document order for Sidebar
   // Documents grid ordering (server-side persistence)
   docOrderByFilter: v.optional(
-    v.record(v.string(), v.array(v.id("documents")))
+    v.record(v.string(), v.array(v.id("documents"))),
   ), // persisted per-filter document order for Documents grid (list/cards)
   docOrderBySegmented: v.optional(
-    v.record(v.string(), v.array(v.id("documents")))
+    v.record(v.string(), v.array(v.id("documents"))),
   ), // persisted per-group document order for Documents grid segmented view
   // Account reminders/preferences
-  linkReminderOptOut: v.optional(v.boolean()),      // true => do not show anonymous link reminders
+  linkReminderOptOut: v.optional(v.boolean()), // true => do not show anonymous link reminders
   // Calendar & planner UI preferences
-  calendarHubSizePct: v.optional(v.number()),       // preferred % height for Calendar panel (20-80)
+  calendarHubSizePct: v.optional(v.number()), // preferred % height for Calendar panel (20-80)
   plannerMode: v.optional(
     v.union(
       v.literal("list"),
@@ -1345,10 +1487,7 @@ const userPreferences = defineTable({
   timeZone: v.optional(v.string()),
   // Planner view preferences
   plannerDensity: v.optional(
-    v.union(
-      v.literal("comfortable"),
-      v.literal("compact"),
-    ),
+    v.union(v.literal("comfortable"), v.literal("compact")),
   ),
   showWeekInAgenda: v.optional(v.boolean()),
   agendaMode: v.optional(
@@ -1362,12 +1501,7 @@ const userPreferences = defineTable({
   // Persisted selected day for Agenda (UTC ms of local day start)
   agendaSelectedDateMs: v.optional(v.number()),
   // Upcoming list-specific view preference
-  upcomingMode: v.optional(
-    v.union(
-      v.literal("list"),
-      v.literal("mini"),
-    ),
-  ),
+  upcomingMode: v.optional(v.union(v.literal("list"), v.literal("mini"))),
   // Per-user Kanban lane titles (display labels for status lanes)
   kanbanLaneTitles: v.optional(
     v.object({
@@ -1389,28 +1523,37 @@ const userPreferences = defineTable({
   // Calendar ingestion preferences
   gmailIngestEnabled: v.optional(v.boolean()),
   gcalSyncEnabled: v.optional(v.boolean()),
-  calendarAutoAddMode: v.optional(v.union(v.literal("auto"), v.literal("propose"))),
+  calendarAutoAddMode: v.optional(
+    v.union(v.literal("auto"), v.literal("propose")),
+  ),
   // Onboarding status
   onboardingSeededAt: v.optional(v.number()),
   // SMS notification preferences
-  phoneNumber: v.optional(v.string()),           // E.164 format (e.g., "+14083335386")
+  phoneNumber: v.optional(v.string()), // E.164 format (e.g., "+14083335386")
   smsNotificationsEnabled: v.optional(v.boolean()), // Master toggle for SMS notifications
-  smsMeetingCreated: v.optional(v.boolean()),    // Notify when meeting is created
-  smsMeetingReminder: v.optional(v.boolean()),   // Notify before meeting starts
-  smsMorningDigest: v.optional(v.boolean()),     // Include in morning digest SMS
-  smsReminderMinutes: v.optional(v.number()),    // Minutes before meeting to send reminder (default: 15)
+  smsMeetingCreated: v.optional(v.boolean()), // Notify when meeting is created
+  smsMeetingReminder: v.optional(v.boolean()), // Notify before meeting starts
+  smsMorningDigest: v.optional(v.boolean()), // Include in morning digest SMS
+  smsReminderMinutes: v.optional(v.number()), // Minutes before meeting to send reminder (default: 15)
   // Theme customization preferences
-  themeMode: v.optional(v.union(v.literal("light"), v.literal("dark"), v.literal("system"))),
-  themeAccentColor: v.optional(v.string()),      // Hex color or preset name (e.g., "blue", "#3B82F6")
-  themeDensity: v.optional(v.union(v.literal("comfortable"), v.literal("compact"), v.literal("spacious"))),
-  themeFontFamily: v.optional(v.string()),       // Font family name (e.g., "Inter", "System")
+  themeMode: v.optional(
+    v.union(v.literal("light"), v.literal("dark"), v.literal("system")),
+  ),
+  themeAccentColor: v.optional(v.string()), // Hex color or preset name (e.g., "blue", "#3B82F6")
+  themeDensity: v.optional(
+    v.union(
+      v.literal("comfortable"),
+      v.literal("compact"),
+      v.literal("spacious"),
+    ),
+  ),
+  themeFontFamily: v.optional(v.string()), // Font family name (e.g., "Inter", "System")
   themeBackgroundPattern: v.optional(v.string()), // Background pattern name (e.g., "none", "dots", "grid")
-  themeReducedMotion: v.optional(v.boolean()),   // Reduce animations for accessibility
+  themeReducedMotion: v.optional(v.boolean()), // Reduce animations for accessibility
   // Future: more UI preferences can be added here
   createdAt: v.number(),
   updatedAt: v.number(),
-})
-  .index("by_user", ["userId"]);
+}).index("by_user", ["userId"]);
 
 /* ------------------------------------------------------------------ */
 /* QUICK CAPTURES - Instant capture of thoughts, voice memos, screenshots */
@@ -1421,17 +1564,17 @@ const quickCaptures = defineTable({
     v.literal("note"),
     v.literal("task"),
     v.literal("voice"),
-    v.literal("screenshot")
+    v.literal("screenshot"),
   ),
   content: v.string(),
   title: v.optional(v.string()),
-  audioUrl: v.optional(v.string()),      // For voice memos (storage URL)
+  audioUrl: v.optional(v.string()), // For voice memos (storage URL)
   audioStorageId: v.optional(v.id("_storage")), // For voice memos (storage ID)
   screenshotUrl: v.optional(v.string()), // For screenshots (storage URL)
   screenshotStorageId: v.optional(v.id("_storage")), // For screenshots (storage ID)
-  annotations: v.optional(v.any()),      // Screenshot annotations
+  annotations: v.optional(v.any()), // Screenshot annotations
   transcription: v.optional(v.string()), // Voice memo transcription
-  processed: v.boolean(),                // Has AI processed it?
+  processed: v.boolean(), // Has AI processed it?
   linkedDocumentId: v.optional(v.id("documents")),
   tags: v.optional(v.array(v.string())),
   metadata: v.optional(v.any()),
@@ -1457,13 +1600,13 @@ const userBehaviorEvents = defineTable({
     v.literal("agent_interaction"),
     v.literal("search_performed"),
     v.literal("calendar_event_ended"),
-    v.literal("quick_capture")
+    v.literal("quick_capture"),
   ),
   entityId: v.optional(v.string()),
   metadata: v.optional(v.any()),
   timestamp: v.number(),
-  timeOfDay: v.string(),         // "morning" | "afternoon" | "evening" | "night"
-  dayOfWeek: v.string(),         // "monday" | "tuesday" | etc.
+  timeOfDay: v.string(), // "morning" | "afternoon" | "evening" | "night"
+  dayOfWeek: v.string(), // "monday" | "tuesday" | etc.
 })
   .index("by_user_time", ["userId", "timestamp"])
   .index("by_user_type", ["userId", "eventType"])
@@ -1475,20 +1618,16 @@ const userBehaviorEvents = defineTable({
 const recommendations = defineTable({
   userId: v.id("users"),
   type: v.union(
-    v.literal("pattern"),          // "You usually create notes after meetings"
-    v.literal("idle_content"),     // "Document X hasn't been updated"
-    v.literal("collaboration"),    // "3 people viewed this doc"
+    v.literal("pattern"), // "You usually create notes after meetings"
+    v.literal("idle_content"), // "Document X hasn't been updated"
+    v.literal("collaboration"), // "3 people viewed this doc"
     v.literal("external_trigger"), // "New article about [topic]"
-    v.literal("smart_suggestion")  // AI-generated recommendation
+    v.literal("smart_suggestion"), // AI-generated recommendation
   ),
-  priority: v.union(
-    v.literal("high"),
-    v.literal("medium"),
-    v.literal("low")
-  ),
+  priority: v.union(v.literal("high"), v.literal("medium"), v.literal("low")),
   message: v.string(),
   actionLabel: v.string(),
-  actionType: v.optional(v.string()),  // "open_document" | "create_note" | etc.
+  actionType: v.optional(v.string()), // "open_document" | "create_note" | etc.
   actionData: v.optional(v.any()),
   icon: v.optional(v.string()),
   dismissed: v.boolean(),
@@ -1504,25 +1643,21 @@ const recommendations = defineTable({
 /* ------------------------------------------------------------------ */
 const userTeachings = defineTable({
   userId: v.id("users"),
-  type: v.union(
-    v.literal("fact"),
-    v.literal("preference"),
-    v.literal("skill"),
-  ),
-  category: v.optional(v.string()),           // Stable bucket for conflict resolution
-  key: v.optional(v.string()),                // Short label for the teaching
-  content: v.string(),                        // Normalized teaching text
-  embedding: v.optional(v.array(v.float64())),// Vector embedding for semantic retrieval
+  type: v.union(v.literal("fact"), v.literal("preference"), v.literal("skill")),
+  category: v.optional(v.string()), // Stable bucket for conflict resolution
+  key: v.optional(v.string()), // Short label for the teaching
+  content: v.string(), // Normalized teaching text
+  embedding: v.optional(v.array(v.float64())), // Vector embedding for semantic retrieval
   status: v.union(v.literal("active"), v.literal("archived")),
   source: v.optional(v.union(v.literal("explicit"), v.literal("inferred"))),
-  steps: v.optional(v.array(v.string())),     // For skills: ordered steps
+  steps: v.optional(v.array(v.string())), // For skills: ordered steps
   triggerPhrases: v.optional(v.array(v.string())), // For skills: trigger phrases
-  confidence: v.optional(v.float64()),        // Analyzer confidence (0-1)
+  confidence: v.optional(v.float64()), // Analyzer confidence (0-1)
   usageCount: v.optional(v.number()),
   lastUsedAt: v.optional(v.number()),
   createdAt: v.number(),
   archivedAt: v.optional(v.number()),
-  threadId: v.optional(v.string()),           // Source thread for provenance
+  threadId: v.optional(v.string()), // Source thread for provenance
 })
   .index("by_user", ["userId"])
   .index("by_user_type", ["userId", "type"])
@@ -1542,8 +1677,8 @@ const googleAccounts = defineTable({
   scope: v.optional(v.string()),
   expiryDate: v.optional(v.number()), // ms since epoch
   tokenType: v.optional(v.string()),
-  historyId: v.optional(v.string()),      // Gmail history cursor for watch
-  gcalSyncToken: v.optional(v.string()),   // Google Calendar sync token
+  historyId: v.optional(v.string()), // Gmail history cursor for watch
+  gcalSyncToken: v.optional(v.string()), // Google Calendar sync token
   createdAt: v.number(),
   updatedAt: v.number(),
 })
@@ -1560,7 +1695,7 @@ const slackAccounts = defineTable({
   teamName: v.optional(v.string()),
   botUserId: v.optional(v.string()),
   authedUserId: v.optional(v.string()),
-  accessToken: v.string(),             // bot token
+  accessToken: v.string(), // bot token
   userAccessToken: v.optional(v.string()), // authed_user.access_token if granted
   scope: v.optional(v.string()),
   tokenType: v.optional(v.string()),
@@ -1606,14 +1741,14 @@ const notionAccounts = defineTable({
 const linkedinAccounts = defineTable({
   userId: v.id("users"),
   provider: v.literal("linkedin"),
-  personUrn: v.optional(v.string()),         // urn:li:person:{id}
+  personUrn: v.optional(v.string()), // urn:li:person:{id}
   displayName: v.optional(v.string()),
   email: v.optional(v.string()),
   profilePictureUrl: v.optional(v.string()),
   accessToken: v.string(),
   refreshToken: v.optional(v.string()),
-  scope: v.optional(v.string()),             // e.g., "w_member_social openid email"
-  expiresAt: v.optional(v.number()),         // ms since epoch
+  scope: v.optional(v.string()), // e.g., "w_member_social openid email"
+  expiresAt: v.optional(v.number()), // ms since epoch
   createdAt: v.number(),
   updatedAt: v.number(),
 })
@@ -1630,31 +1765,33 @@ const linkedinAccounts = defineTable({
  */
 const linkedinFundingPosts = defineTable({
   // Company identification (normalized to lowercase for dedup)
-  companyNameNormalized: v.string(),         // Lowercase, trimmed company name
-  companyName: v.string(),                   // Original display name
+  companyNameNormalized: v.string(), // Lowercase, trimmed company name
+  companyName: v.string(), // Original display name
 
   // Funding round info (at time of posting)
-  roundType: v.string(),                     // "seed", "series-a", etc.
-  amountRaw: v.string(),                     // "$50M"
-  amountUsd: v.optional(v.number()),         // Normalized USD
+  roundType: v.string(), // "seed", "series-a", etc.
+  amountRaw: v.string(), // "$50M"
+  amountUsd: v.optional(v.number()), // Normalized USD
 
   // Sector categorization for filtering
-  sector: v.optional(v.string()),            // "HealthTech", "AI/ML", etc.
-  sectorCategory: v.optional(v.string()),    // "healthcare", "technology", etc.
+  sector: v.optional(v.string()), // "HealthTech", "AI/ML", etc.
+  sectorCategory: v.optional(v.string()), // "healthcare", "technology", etc.
 
   // Post details
-  postUrn: v.string(),                       // LinkedIn post URN
-  postUrl: v.string(),                       // Full URL to post
-  postPart: v.optional(v.number()),          // Which part of multi-part post (1, 2, 3)
-  totalParts: v.optional(v.number()),        // Total parts in series
+  postUrn: v.string(), // LinkedIn post URN
+  postUrl: v.string(), // Full URL to post
+  postPart: v.optional(v.number()), // Which part of multi-part post (1, 2, 3)
+  totalParts: v.optional(v.number()), // Total parts in series
 
   // Reference to previous posts for same company (progression tracking)
   previousPostId: v.optional(v.id("linkedinFundingPosts")),
-  progressionType: v.optional(v.union(
-    v.literal("new"),                        // First mention
-    v.literal("update"),                     // Same round, updated info
-    v.literal("next-round")                  // Company raised new round
-  )),
+  progressionType: v.optional(
+    v.union(
+      v.literal("new"), // First mention
+      v.literal("update"), // Same round, updated info
+      v.literal("next-round"), // Company raised new round
+    ),
+  ),
 
   // Timestamps
   postedAt: v.number(),
@@ -1665,41 +1802,47 @@ const linkedinFundingPosts = defineTable({
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   // Canonical identifiers for hard-match dedup (Stage 1a)
-  entityId: v.optional(v.string()),          // Canonical entity ID (e.g., company URN)
-  eventKey: v.optional(v.string()),          // Normalized event key: "{entityId}:{roundType}:{date}"
+  entityId: v.optional(v.string()), // Canonical entity ID (e.g., company URN)
+  eventKey: v.optional(v.string()), // Normalized event key: "{entityId}:{roundType}:{date}"
 
   // Structured claims for semantic comparison (Stage 1b + Stage 2)
-  claims: v.optional(v.array(v.object({
-    claimType: v.string(),                   // "funding_amount", "investor", "valuation", etc.
-    subject: v.string(),                     // Entity the claim is about
-    predicate: v.string(),                   // The relationship/property
-    object: v.string(),                      // The value/target
-    confidence: v.optional(v.number()),      // Extraction confidence 0-1
-  }))),
+  claims: v.optional(
+    v.array(
+      v.object({
+        claimType: v.string(), // "funding_amount", "investor", "valuation", etc.
+        subject: v.string(), // Entity the claim is about
+        predicate: v.string(), // The relationship/property
+        object: v.string(), // The value/target
+        confidence: v.optional(v.number()), // Extraction confidence 0-1
+      }),
+    ),
+  ),
 
   // Canonical summary for embedding (Stage 1b)
-  contentSummary: v.optional(v.string()),    // Canonical "card summary" text
+  contentSummary: v.optional(v.string()), // Canonical "card summary" text
   embedding: v.optional(v.array(v.float64())), // 1536-dim text-embedding-3-small
 
   // Supersession tracking (Stage 2 output)
   supersedesPostId: v.optional(v.id("linkedinFundingPosts")), // Post this replaces
   relatedPostIds: v.optional(v.array(v.id("linkedinFundingPosts"))), // Related posts
-  diffSummary: v.optional(v.string()),       // What changed from prior post
+  diffSummary: v.optional(v.string()), // What changed from prior post
 
   // LLM-as-judge dedup verdict (Stage 2)
-  dedupJudgment: v.optional(v.object({
-    verdict: v.union(
-      v.literal("NEW"),                      // First-ever post for this event
-      v.literal("UPDATE"),                   // Same event, new material info
-      v.literal("DUPLICATE"),                // Semantically identical, skip
-      v.literal("CONTRADICTS_PRIOR"),        // Contradicts previous post
-      v.literal("INCONCLUSIVE")              // Judge couldn't decide
-    ),
-    comparedToPostId: v.optional(v.id("linkedinFundingPosts")),
-    reasoning: v.optional(v.string()),       // Brief reasoning
-    confidence: v.optional(v.number()),      // Judge confidence 0-1
-    judgedAt: v.number(),                    // When judgment was made
-  })),
+  dedupJudgment: v.optional(
+    v.object({
+      verdict: v.union(
+        v.literal("NEW"), // First-ever post for this event
+        v.literal("UPDATE"), // Same event, new material info
+        v.literal("DUPLICATE"), // Semantically identical, skip
+        v.literal("CONTRADICTS_PRIOR"), // Contradicts previous post
+        v.literal("INCONCLUSIVE"), // Judge couldn't decide
+      ),
+      comparedToPostId: v.optional(v.id("linkedinFundingPosts")),
+      reasoning: v.optional(v.string()), // Brief reasoning
+      confidence: v.optional(v.number()), // Judge confidence 0-1
+      judgedAt: v.number(), // When judgment was made
+    }),
+  ),
 })
   .index("by_company", ["companyNameNormalized"])
   .index("by_company_round", ["companyNameNormalized", "roundType"])
@@ -1738,10 +1881,10 @@ const linkedinFdaPosts = defineTable({
     v.literal("bla"),
     v.literal("nda"),
     v.literal("recall"),
-    v.literal("adverse_event")
+    v.literal("adverse_event"),
   ),
   productName: v.string(),
-  referenceNumber: v.optional(v.string()),    // K-number, PMA number, etc.
+  referenceNumber: v.optional(v.string()), // K-number, PMA number, etc.
   decisionDate: v.string(),
   description: v.optional(v.string()),
   sourceUrl: v.optional(v.string()),
@@ -1758,16 +1901,18 @@ const linkedinFdaPosts = defineTable({
 
   // Timeline progression
   previousPostId: v.optional(v.id("linkedinFdaPosts")),
-  progressionType: v.optional(v.union(
-    v.literal("new"),
-    v.literal("additional-clearance"),     // Another 510(k) for same company
-    v.literal("major-upgrade"),             // 510(k) â†’ PMA progression
-    v.literal("recall-follow-up")           // Post about a recalled product
-  )),
+  progressionType: v.optional(
+    v.union(
+      v.literal("new"),
+      v.literal("additional-clearance"), // Another 510(k) for same company
+      v.literal("major-upgrade"), // 510(k) â†’ PMA progression
+      v.literal("recall-follow-up"), // Post about a recalled product
+    ),
+  ),
 
   // Timestamps
   postedAt: v.number(),
-  fdaCacheId: v.optional(v.string()),        // Link to investorPlaybookFdaCache
+  fdaCacheId: v.optional(v.string()), // Link to investorPlaybookFdaCache
 })
   .index("by_company", ["companyNameNormalized"])
   .index("by_company_type", ["companyNameNormalized", "eventType"])
@@ -1794,11 +1939,11 @@ const linkedinClinicalPosts = defineTable({
     v.literal("phase-2-3"),
     v.literal("phase-3"),
     v.literal("nda-submitted"),
-    v.literal("approved")
+    v.literal("approved"),
   ),
-  nctId: v.optional(v.string()),              // ClinicalTrials.gov NCT ID
+  nctId: v.optional(v.string()), // ClinicalTrials.gov NCT ID
   indication: v.optional(v.string()),
-  milestone: v.string(),                       // "Phase 2 results announced", "FDA Fast Track", etc.
+  milestone: v.string(), // "Phase 2 results announced", "FDA Fast Track", etc.
   milestoneDate: v.string(),
   sourceUrl: v.optional(v.string()),
 
@@ -1814,14 +1959,16 @@ const linkedinClinicalPosts = defineTable({
 
   // Timeline progression
   previousPostId: v.optional(v.id("linkedinClinicalPosts")),
-  previousPhase: v.optional(v.string()),       // For phase progression tracking
-  progressionType: v.optional(v.union(
-    v.literal("new"),
-    v.literal("phase-advance"),               // Phase 1 â†’ Phase 2
-    v.literal("results-announced"),           // Trial results
-    v.literal("regulatory-milestone"),        // Fast Track, Breakthrough, etc.
-    v.literal("approval")                     // FDA/EMA approval
-  )),
+  previousPhase: v.optional(v.string()), // For phase progression tracking
+  progressionType: v.optional(
+    v.union(
+      v.literal("new"),
+      v.literal("phase-advance"), // Phase 1 â†’ Phase 2
+      v.literal("results-announced"), // Trial results
+      v.literal("regulatory-milestone"), // Fast Track, Breakthrough, etc.
+      v.literal("approval"), // FDA/EMA approval
+    ),
+  ),
 
   // Timestamps
   postedAt: v.number(),
@@ -1840,7 +1987,11 @@ const linkedinResearchPosts = defineTable({
   // Entity identification (company or researcher)
   entityNameNormalized: v.string(),
   entityName: v.string(),
-  entityType: v.union(v.literal("company"), v.literal("researcher"), v.literal("institution")),
+  entityType: v.union(
+    v.literal("company"),
+    v.literal("researcher"),
+    v.literal("institution"),
+  ),
 
   // Paper details
   paperTitle: v.string(),
@@ -1854,12 +2005,12 @@ const linkedinResearchPosts = defineTable({
 
   // Impact metrics
   citationCount: v.optional(v.number()),
-  impactScore: v.optional(v.number()),         // h-index, impact factor, etc.
+  impactScore: v.optional(v.number()), // h-index, impact factor, etc.
 
   // Sector categorization
   sector: v.optional(v.string()),
   sectorCategory: v.optional(v.string()),
-  researchArea: v.optional(v.string()),        // "AI/ML", "Biotech", "Quantum", etc.
+  researchArea: v.optional(v.string()), // "AI/ML", "Biotech", "Quantum", etc.
 
   // Post details
   postUrn: v.string(),
@@ -1869,12 +2020,14 @@ const linkedinResearchPosts = defineTable({
 
   // Timeline progression
   previousPostId: v.optional(v.id("linkedinResearchPosts")),
-  progressionType: v.optional(v.union(
-    v.literal("new"),
-    v.literal("follow-up-study"),             // Same authors, related topic
-    v.literal("breakthrough"),                // High-impact publication
-    v.literal("citation-milestone")           // Paper reached citation milestone
-  )),
+  progressionType: v.optional(
+    v.union(
+      v.literal("new"),
+      v.literal("follow-up-study"), // Same authors, related topic
+      v.literal("breakthrough"), // High-impact publication
+      v.literal("citation-milestone"), // Paper reached citation milestone
+    ),
+  ),
 
   // Timestamps
   postedAt: v.number(),
@@ -1904,9 +2057,9 @@ const linkedinMaPosts = defineTable({
     v.literal("merger"),
     v.literal("strategic-investment"),
     v.literal("spin-off"),
-    v.literal("divestiture")
+    v.literal("divestiture"),
   ),
-  dealValue: v.optional(v.string()),           // "$500M", "Undisclosed"
+  dealValue: v.optional(v.string()), // "$500M", "Undisclosed"
   dealValueUsd: v.optional(v.number()),
   announcedDate: v.string(),
   closedDate: v.optional(v.string()),
@@ -1914,7 +2067,7 @@ const linkedinMaPosts = defineTable({
     v.literal("announced"),
     v.literal("pending"),
     v.literal("closed"),
-    v.literal("terminated")
+    v.literal("terminated"),
   ),
   sourceUrl: v.optional(v.string()),
 
@@ -1930,13 +2083,15 @@ const linkedinMaPosts = defineTable({
 
   // Timeline progression (for serial acquirers)
   previousPostId: v.optional(v.id("linkedinMaPosts")),
-  acquirerDealCount: v.optional(v.number()),   // How many deals this acquirer has done
-  progressionType: v.optional(v.union(
-    v.literal("new"),
-    v.literal("serial-acquirer"),             // Same acquirer, another deal
-    v.literal("deal-update"),                 // Status change (announced â†’ closed)
-    v.literal("target-history")               // Target's journey to acquisition
-  )),
+  acquirerDealCount: v.optional(v.number()), // How many deals this acquirer has done
+  progressionType: v.optional(
+    v.union(
+      v.literal("new"),
+      v.literal("serial-acquirer"), // Same acquirer, another deal
+      v.literal("deal-update"), // Status change (announced â†’ closed)
+      v.literal("target-history"), // Target's journey to acquisition
+    ),
+  ),
 
   // Timestamps
   postedAt: v.number(),
@@ -1980,7 +2135,12 @@ const linkedinHeldPosts = defineTable({
   failures: v.array(v.string()),
   softWarnings: v.array(v.string()),
   heldAt: v.number(),
-  status: v.union(v.literal("held"), v.literal("rewritten"), v.literal("force_posted"), v.literal("discarded")),
+  status: v.union(
+    v.literal("held"),
+    v.literal("rewritten"),
+    v.literal("force_posted"),
+    v.literal("discarded"),
+  ),
   resolvedAt: v.optional(v.number()),
   rewrittenContent: v.optional(v.string()),
   metadata: v.optional(v.any()),
@@ -2011,21 +2171,33 @@ const linkedinContentQueue = defineTable({
     v.literal("posted"),
     v.literal("failed"),
   ),
-  engagementGateResult: v.optional(v.object({
-    passed: v.boolean(),
-    failures: v.array(v.string()),
-    softWarnings: v.array(v.string()),
-  })),
-  llmJudgeResult: v.optional(v.object({
-    model: v.string(),
-    verdict: v.union(v.literal("approve"), v.literal("needs_rewrite"), v.literal("reject")),
-    hookQuality: v.boolean(),
-    opinionDepth: v.boolean(),
-    questionAuthenticity: v.boolean(),
-    reasoning: v.string(),
-    judgedAt: v.number(),
-  })),
-  source: v.union(v.literal("backfill"), v.literal("fresh"), v.literal("manual")),
+  engagementGateResult: v.optional(
+    v.object({
+      passed: v.boolean(),
+      failures: v.array(v.string()),
+      softWarnings: v.array(v.string()),
+    }),
+  ),
+  llmJudgeResult: v.optional(
+    v.object({
+      model: v.string(),
+      verdict: v.union(
+        v.literal("approve"),
+        v.literal("needs_rewrite"),
+        v.literal("reject"),
+      ),
+      hookQuality: v.boolean(),
+      opinionDepth: v.boolean(),
+      questionAuthenticity: v.boolean(),
+      reasoning: v.string(),
+      judgedAt: v.number(),
+    }),
+  ),
+  source: v.union(
+    v.literal("backfill"),
+    v.literal("fresh"),
+    v.literal("manual"),
+  ),
   sourcePostId: v.optional(v.string()),
   metadata: v.optional(v.any()),
   createdAt: v.number(),
@@ -2050,8 +2222,7 @@ const userApiKeys = defineTable({
   encryptedApiKey: v.optional(v.string()),
   createdAt: v.number(),
   updatedAt: v.number(),
-})
-  .index("by_user_provider", ["userId", "provider"]);
+}).index("by_user_provider", ["userId", "provider"]);
 
 /* ------------------------------------------------------------------ */
 /* DAILY USAGE - Per-user, per-provider daily counts                  */
@@ -2086,20 +2257,20 @@ const subscriptions = defineTable({
 /* MCP TOOL LEARNING - AI learning data for adaptive guidance          */
 /* ------------------------------------------------------------------ */
 const mcpToolLearning = defineTable({
-  toolId: v.id("mcpTools"),              // which tool this learning data is for
-  serverId: v.id("mcpServers"),          // which server provides the tool
-  naturalLanguageQuery: v.string(),      // the natural language input
-  convertedParameters: v.any(),           // the AI-converted parameters
-  executionSuccess: v.boolean(),          // whether the execution succeeded
-  executionResult: v.optional(v.any()),   // the execution result (if successful)
-  errorMessage: v.optional(v.string()),   // error details (if failed)
+  toolId: v.id("mcpTools"), // which tool this learning data is for
+  serverId: v.id("mcpServers"), // which server provides the tool
+  naturalLanguageQuery: v.string(), // the natural language input
+  convertedParameters: v.any(), // the AI-converted parameters
+  executionSuccess: v.boolean(), // whether the execution succeeded
+  executionResult: v.optional(v.any()), // the execution result (if successful)
+  errorMessage: v.optional(v.string()), // error details (if failed)
   learningType: v.union(
-    v.literal("auto_discovery"),         // automatic learning during tool discovery
-    v.literal("user_interaction"),       // learning from real user interactions
-    v.literal("manual_training")          // manually triggered learning
+    v.literal("auto_discovery"), // automatic learning during tool discovery
+    v.literal("user_interaction"), // learning from real user interactions
+    v.literal("manual_training"), // manually triggered learning
   ),
-  qualityScore: v.optional(v.number()),   // 0-1 score of how good this example is
-  timingMs: v.optional(v.number()),       // execution time in milliseconds
+  qualityScore: v.optional(v.number()), // 0-1 score of how good this example is
+  timingMs: v.optional(v.number()), // execution time in milliseconds
   createdAt: v.number(),
   updatedAt: v.number(),
 })
@@ -2113,18 +2284,20 @@ const mcpToolLearning = defineTable({
 /* MCP GUIDANCE EXAMPLES - Curated examples for user guidance          */
 /* ------------------------------------------------------------------ */
 const mcpGuidanceExamples = defineTable({
-  toolId: v.id("mcpTools"),              // which tool these examples are for
-  serverId: v.id("mcpServers"),          // which server provides the tool
-  examples: v.array(v.object({
-    query: v.string(),                   // example natural language query
-    parameters: v.any(),                 // the converted parameters
-    description: v.string(),             // human-readable description
-    successRate: v.optional(v.number()), // success rate for this type of query
-  })),
-  generatedAt: v.number(),               // when these examples were generated
-  lastUpdated: v.number(),               // when examples were last refreshed
-  version: v.number(),                   // version number for cache invalidation
-  isActive: v.boolean(),                 // whether these examples are currently active
+  toolId: v.id("mcpTools"), // which tool these examples are for
+  serverId: v.id("mcpServers"), // which server provides the tool
+  examples: v.array(
+    v.object({
+      query: v.string(), // example natural language query
+      parameters: v.any(), // the converted parameters
+      description: v.string(), // human-readable description
+      successRate: v.optional(v.number()), // success rate for this type of query
+    }),
+  ),
+  generatedAt: v.number(), // when these examples were generated
+  lastUpdated: v.number(), // when examples were last refreshed
+  version: v.number(), // version number for cache invalidation
+  isActive: v.boolean(), // whether these examples are currently active
 })
   .index("by_tool", ["toolId"])
   .index("by_server", ["serverId"])
@@ -2172,8 +2345,7 @@ const mcpPolicyConfigs = defineTable({
 
   createdAt: v.number(),
   updatedAt: v.number(),
-})
-  .index("by_name", ["name"]);
+}).index("by_name", ["name"]);
 
 const mcpToolUsageDaily = defineTable({
   dateKey: v.string(), // YYYY-MM-DD (UTC)
@@ -2227,17 +2399,17 @@ const documentSnapshots = defineTable({
   stepCount: v.number(),
 
   // NEW FIELDS for enhanced management
-  contentSize: v.optional(v.number()),        // Track content size in bytes
-  isEmergency: v.optional(v.boolean()),       // Flag emergency snapshots
-  isManual: v.optional(v.boolean()),          // Flag manually triggered snapshots
-  compressionRatio: v.optional(v.number()),   // Track compression effectiveness
-  triggerReason: v.optional(v.string()),      // Why this snapshot was created
+  contentSize: v.optional(v.number()), // Track content size in bytes
+  isEmergency: v.optional(v.boolean()), // Flag emergency snapshots
+  isManual: v.optional(v.boolean()), // Flag manually triggered snapshots
+  compressionRatio: v.optional(v.number()), // Track compression effectiveness
+  triggerReason: v.optional(v.string()), // Why this snapshot was created
 })
   .index("by_document", ["documentId"])
   .index("by_document_version", ["documentId", "version"])
   .index("by_created_at", ["createdAt"])
-  .index("by_size", ["contentSize"])           // NEW: Index by content size
-  .index("by_emergency", ["isEmergency"])      // NEW: Quick access to emergency snapshots
+  .index("by_size", ["contentSize"]) // NEW: Index by content size
+  .index("by_emergency", ["isEmergency"]); // NEW: Quick access to emergency snapshots
 
 /* ------------------------------------------------------------------ */
 /* SPREADSHEETS â€“ sheet metadata and individual cells                  */
@@ -2258,7 +2430,7 @@ const sheetCells = defineTable({
   row: v.number(),
   col: v.number(),
   value: v.optional(v.string()),
-  type: v.optional(v.string()),      // e.g. "text", "number", "formula"
+  type: v.optional(v.string()), // e.g. "text", "number", "formula"
   comment: v.optional(v.string()),
   updatedAt: v.number(),
   updatedBy: v.optional(v.id("users")),
@@ -2275,8 +2447,8 @@ const events = defineTable({
   description: v.optional(v.string()),
   // Canonical Editor.js JSON (stringified) for event description
   descriptionJson: v.optional(v.string()),
-  startTime: v.number(),                 // ms since epoch
-  endTime: v.optional(v.number()),       // ms since epoch
+  startTime: v.number(), // ms since epoch
+  endTime: v.optional(v.number()), // ms since epoch
   allDay: v.optional(v.boolean()),
   location: v.optional(v.string()),
   status: v.optional(
@@ -2289,21 +2461,17 @@ const events = defineTable({
   color: v.optional(v.string()),
   documentId: v.optional(v.id("documents")),
   tags: v.optional(v.array(v.string())),
-  recurrence: v.optional(v.string()),    // simple RRULE or custom text for now
-  sourceType: v.optional(v.union(
-    v.literal("gmail"),
-    v.literal("gcal"),
-    v.literal("doc"),
-  )),
-  sourceId: v.optional(v.string()),       // external id (messageId/eventId/etc.)
-  ingestionConfidence: v.optional(v.union(
-    v.literal("low"),
-    v.literal("med"),
-    v.literal("high"),
-  )),
-  proposed: v.optional(v.boolean()),      // requires user accept before "confirmed"
-  rawSummary: v.optional(v.string()),     // short extracted summary from source
-  meta: v.optional(v.any()),              // misc ingestion metadata (e.g., hash, origin headers)
+  recurrence: v.optional(v.string()), // simple RRULE or custom text for now
+  sourceType: v.optional(
+    v.union(v.literal("gmail"), v.literal("gcal"), v.literal("doc")),
+  ),
+  sourceId: v.optional(v.string()), // external id (messageId/eventId/etc.)
+  ingestionConfidence: v.optional(
+    v.union(v.literal("low"), v.literal("med"), v.literal("high")),
+  ),
+  proposed: v.optional(v.boolean()), // requires user accept before "confirmed"
+  rawSummary: v.optional(v.string()), // short extracted summary from source
+  meta: v.optional(v.any()), // misc ingestion metadata (e.g., hash, origin headers)
   createdAt: v.number(),
   updatedAt: v.number(),
 })
@@ -2313,18 +2481,17 @@ const events = defineTable({
   .index("by_document", ["documentId"])
   .index("by_user_source", ["userId", "sourceType", "sourceId"]); // for gmail/gcal dedup
 
-
 /* ------------------------------------------------------------------ */
 /* HOLIDAYS â€“ cached public holidays by country                        */
 /* ------------------------------------------------------------------ */
 const holidays = defineTable({
-  country: v.string(),                 // e.g. "US"
-  name: v.string(),                    // Holiday display name
-  dateMs: v.number(),                  // UTC ms for the holiday date (00:00Z of that date)
-  dateKey: v.string(),                 // "YYYY-MM-DD" (as provided by API)
+  country: v.string(), // e.g. "US"
+  name: v.string(), // Holiday display name
+  dateMs: v.number(), // UTC ms for the holiday date (00:00Z of that date)
+  dateKey: v.string(), // "YYYY-MM-DD" (as provided by API)
   types: v.optional(v.array(v.string())),
   year: v.number(),
-  raw: v.optional(v.any()),            // Raw provider payload
+  raw: v.optional(v.any()), // Raw provider payload
   updatedAt: v.number(),
 })
   .index("by_country_date", ["country", "dateMs"])
@@ -2335,14 +2502,14 @@ const holidays = defineTable({
 /* FINANCIAL EVENTS â€“ macro releases and earnings (cached)             */
 /* ------------------------------------------------------------------ */
 const financialEvents = defineTable({
-  market: v.string(),                  // e.g. "US"
-  category: v.string(),                // e.g. "CPI" | "FOMC" | "NFP" | "GDP" | "PCE" | "EARNINGS"
-  title: v.string(),                   // Display title
-  dateMs: v.number(),                  // UTC ms of the calendar day (00:00Z)
-  dateKey: v.string(),                 // "YYYY-MM-DD"
-  time: v.optional(v.string()),        // e.g. "08:30 ET"
-  symbol: v.optional(v.string()),      // For earnings: ticker
-  raw: v.optional(v.any()),            // Raw provider payload
+  market: v.string(), // e.g. "US"
+  category: v.string(), // e.g. "CPI" | "FOMC" | "NFP" | "GDP" | "PCE" | "EARNINGS"
+  title: v.string(), // Display title
+  dateMs: v.number(), // UTC ms of the calendar day (00:00Z)
+  dateKey: v.string(), // "YYYY-MM-DD"
+  time: v.optional(v.string()), // e.g. "08:30 ET"
+  symbol: v.optional(v.string()), // For earnings: ticker
+  raw: v.optional(v.any()), // Raw provider payload
   updatedAt: v.number(),
 })
   .index("by_market_date", ["market", "dateMs"])
@@ -2371,10 +2538,10 @@ const userEvents = defineTable({
       v.literal("urgent"),
     ),
   ),
-  dueDate: v.optional(v.number()),       // ms since epoch
-  startDate: v.optional(v.number()),     // ms since epoch
+  dueDate: v.optional(v.number()), // ms since epoch
+  startDate: v.optional(v.number()), // ms since epoch
   documentId: v.optional(v.id("documents")),
-  eventId: v.optional(v.id("events")),  // optional link to a scheduled event
+  eventId: v.optional(v.id("events")), // optional link to a scheduled event
   assigneeId: v.optional(v.id("users")), // optional assignee separate from owner
   refs: v.optional(
     v.array(
@@ -2388,42 +2555,52 @@ const userEvents = defineTable({
   tags: v.optional(v.array(v.string())),
   color: v.optional(v.string()),
   isFavorite: v.optional(v.boolean()),
-  order: v.optional(v.number()),         // for Kanban ordering
+  order: v.optional(v.number()), // for Kanban ordering
   createdAt: v.number(),
   updatedAt: v.number(),
 
   // â”€â”€â”€ Encounter Capture (Slack/Email Distribution) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  sourceType: v.optional(v.union(
-    v.literal("manual"),         // User created in UI
-    v.literal("slack"),          // Captured from Slack
-    v.literal("email_forward"),  // Forwarded email ingest
-  )),
-  sourceId: v.optional(v.string()),           // Slack message ts, email ID
-  sourceChannelId: v.optional(v.string()),    // Slack channel ID
+  sourceType: v.optional(
+    v.union(
+      v.literal("manual"), // User created in UI
+      v.literal("slack"), // Captured from Slack
+      v.literal("email_forward"), // Forwarded email ingest
+    ),
+  ),
+  sourceId: v.optional(v.string()), // Slack message ts, email ID
+  sourceChannelId: v.optional(v.string()), // Slack channel ID
 
   // Encounter-specific nested object for professional networking capture
-  encounter: v.optional(v.object({
-    participants: v.array(v.object({
-      name: v.string(),
-      role: v.optional(v.string()),
-      company: v.optional(v.string()),
-      email: v.optional(v.string()),
-      linkedEntityId: v.optional(v.id("entityContexts")),
-    })),
-    companies: v.array(v.object({
-      name: v.string(),
-      linkedEntityId: v.optional(v.id("entityContexts")),
-    })),
-    context: v.optional(v.string()),          // Meeting context/topic
-    followUpRequested: v.optional(v.boolean()),
-    rawText: v.optional(v.string()),          // Original message/email content
-    researchStatus: v.optional(v.union(
-      v.literal("none"),
-      v.literal("fast_pass"),
-      v.literal("deep_dive"),
-      v.literal("complete"),
-    )),
-  })),
+  encounter: v.optional(
+    v.object({
+      participants: v.array(
+        v.object({
+          name: v.string(),
+          role: v.optional(v.string()),
+          company: v.optional(v.string()),
+          email: v.optional(v.string()),
+          linkedEntityId: v.optional(v.id("entityContexts")),
+        }),
+      ),
+      companies: v.array(
+        v.object({
+          name: v.string(),
+          linkedEntityId: v.optional(v.id("entityContexts")),
+        }),
+      ),
+      context: v.optional(v.string()), // Meeting context/topic
+      followUpRequested: v.optional(v.boolean()),
+      rawText: v.optional(v.string()), // Original message/email content
+      researchStatus: v.optional(
+        v.union(
+          v.literal("none"),
+          v.literal("fast_pass"),
+          v.literal("deep_dive"),
+          v.literal("complete"),
+        ),
+      ),
+    }),
+  ),
 })
   .index("by_user", ["userId"])
   .index("by_user_status", ["userId", "status"]) // Kanban, filters
@@ -2433,8 +2610,6 @@ const userEvents = defineTable({
   .index("by_user_assignee", ["userId", "assigneeId"]) // filtering by assignee
   .index("by_document", ["documentId"])
   .index("by_user_sourceType", ["userId", "sourceType"]); // Encounter queries
-
-
 
 /* ------------------------------------------------------------------ */
 /* AGENT TIMELINES â€“ timeline docs + tasks + links                     */
@@ -2453,7 +2628,8 @@ const agentTimelines = defineTable({
   latestRunInput: v.optional(v.string()),
   latestRunOutput: v.optional(v.string()),
   latestRunAt: v.optional(v.number()),
-}).index("by_document", ["documentId"])
+})
+  .index("by_document", ["documentId"])
   .index("by_user", ["createdBy"])
   .index("by_agent_thread", ["agentThreadId"]);
 
@@ -2467,18 +2643,18 @@ const agentTasks = defineTable({
   startMs: v.optional(v.number()),
   durationMs: v.number(),
   progress: v.optional(v.number()), // 0..1
-  status: v.optional(v.union(
-    v.literal("pending"),
-    v.literal("running"),
-    v.literal("complete"),
-    v.literal("paused"),
-    v.literal("error"),
-  )),
-  agentType: v.optional(v.union(
-    v.literal("orchestrator"),
-    v.literal("main"),
-    v.literal("leaf")
-  )),
+  status: v.optional(
+    v.union(
+      v.literal("pending"),
+      v.literal("running"),
+      v.literal("complete"),
+      v.literal("paused"),
+      v.literal("error"),
+    ),
+  ),
+  agentType: v.optional(
+    v.union(v.literal("orchestrator"), v.literal("main"), v.literal("leaf")),
+  ),
   assigneeId: v.optional(v.id("users")),
   // Visual metadata and runtime stats for richer timeline rendering
   icon: v.optional(v.string()),
@@ -2498,7 +2674,8 @@ const agentTasks = defineTable({
   order: v.optional(v.number()),
   createdAt: v.number(),
   updatedAt: v.number(),
-}).index("by_timeline", ["timelineId"])
+})
+  .index("by_timeline", ["timelineId"])
   .index("by_agent_thread", ["agentThreadId"])
   .index("by_parent", ["parentId"]);
 
@@ -2506,15 +2683,16 @@ const agentLinks = defineTable({
   timelineId: v.id("agentTimelines"),
   sourceTaskId: v.id("agentTasks"),
   targetTaskId: v.id("agentTasks"),
-  type: v.optional(v.union(
-    v.literal("e2e"),
-    v.literal("s2s"),
-    v.literal("s2e"),
-    v.literal("e2s")
-  )),
+  type: v.optional(
+    v.union(
+      v.literal("e2e"),
+      v.literal("s2s"),
+      v.literal("s2e"),
+      v.literal("e2s"),
+    ),
+  ),
   createdAt: v.number(),
 }).index("by_timeline", ["timelineId"]);
-
 
 /* ------------------------------------------------------------------ */
 /* AGENT TIMELINE RUNS â€“ per-run history                               */
@@ -2538,16 +2716,16 @@ const agentImageResults = defineTable({
   timelineId: v.id("agentTimelines"),
   taskId: v.optional(v.id("agentTasks")),
   imageUrl: v.string(),
-  sourceUrl: v.optional(v.string()),        // Source page URL
-  title: v.optional(v.string()),            // Image title/description
-  thumbnailUrl: v.optional(v.string()),     // Thumbnail URL
-  width: v.optional(v.number()),            // Image width
-  height: v.optional(v.number()),           // Image height
-  format: v.optional(v.string()),           // Image format (jpg, png, etc.)
-  classification: v.optional(v.string()),   // Classification result
+  sourceUrl: v.optional(v.string()), // Source page URL
+  title: v.optional(v.string()), // Image title/description
+  thumbnailUrl: v.optional(v.string()), // Thumbnail URL
+  width: v.optional(v.number()), // Image width
+  height: v.optional(v.number()), // Image height
+  format: v.optional(v.string()), // Image format (jpg, png, etc.)
+  classification: v.optional(v.string()), // Classification result
   classificationConfidence: v.optional(v.number()), // Confidence score
   classificationDetails: v.optional(v.any()), // Detailed classification data
-  metadata: v.optional(v.any()),            // Additional metadata
+  metadata: v.optional(v.any()), // Additional metadata
   createdAt: v.number(),
 })
   .index("by_timeline", ["timelineId"])
@@ -2558,16 +2736,19 @@ const agentImageResults = defineTable({
 /* VOICE SESSIONS - Real-time voice agent sessions (RTVI/Daily Bots) */
 /* ------------------------------------------------------------------ */
 const voiceSessions = defineTable({
-  sessionId: v.string(),           // Unique session identifier
-  userId: v.id("users"),           // User who owns this session
-  threadId: v.string(),            // Agent thread ID for conversation continuity
-  createdAt: v.number(),           // Session creation timestamp
-  lastActivityAt: v.number(),      // Last interaction timestamp
-  metadata: v.optional(v.object({  // Optional session metadata
-    clientType: v.optional(v.string()),    // "daily-bots", "rtvi", etc.
-    deviceInfo: v.optional(v.string()),    // Device/browser info
-    model: v.optional(v.string()),         // AI model used
-  })),
+  sessionId: v.string(), // Unique session identifier
+  userId: v.id("users"), // User who owns this session
+  threadId: v.string(), // Agent thread ID for conversation continuity
+  createdAt: v.number(), // Session creation timestamp
+  lastActivityAt: v.number(), // Last interaction timestamp
+  metadata: v.optional(
+    v.object({
+      // Optional session metadata
+      clientType: v.optional(v.string()), // "daily-bots", "rtvi", etc.
+      deviceInfo: v.optional(v.string()), // Device/browser info
+      model: v.optional(v.string()), // AI model used
+    }),
+  ),
 })
   .index("by_user", ["userId"])
   .index("by_session_id", ["sessionId"])
@@ -2580,43 +2761,50 @@ const voiceSessions = defineTable({
 /* "Write Once, Read Many" - one hourly ingest, all users read free   */
 /* ------------------------------------------------------------------ */
 const feedItems = defineTable({
-  sourceId: v.string(),                    // e.g., "hn-12345" (deduplication key) 
+  sourceId: v.string(), // e.g., "hn-12345" (deduplication key)
   type: v.union(
     v.literal("news"),
     v.literal("signal"),
     v.literal("dossier"),
-    v.literal("repo"),                     // GitHub repos
-    v.literal("product")                   // Product launches
+    v.literal("repo"), // GitHub repos
+    v.literal("product"), // Product launches
   ),
-  category: v.optional(v.union(            // For segmented views
-    v.literal("tech"),                     // General tech news
-    v.literal("ai_ml"),                    // AI/ML research & news
-    v.literal("startups"),                 // Startup/funding news
-    v.literal("products"),                 // Product launches (Product Hunt, etc.)
-    v.literal("opensource"),               // Open source / GitHub
-    v.literal("finance"),                  // Finance/markets
-    v.literal("research")                  // Academic research (ArXiv, etc.)
-  )),
+  category: v.optional(
+    v.union(
+      // For segmented views
+      v.literal("tech"), // General tech news
+      v.literal("ai_ml"), // AI/ML research & news
+      v.literal("startups"), // Startup/funding news
+      v.literal("products"), // Product launches (Product Hunt, etc.)
+      v.literal("opensource"), // Open source / GitHub
+      v.literal("finance"), // Finance/markets
+      v.literal("research"), // Academic research (ArXiv, etc.)
+    ),
+  ),
   title: v.string(),
-  summary: v.string(),                     // The "Newsletter" style blurb
-  url: v.string(),                         // Link to original content
-  source: v.string(),                      // "YCombinator", "ArXiv", "GitHub", "ProductHunt"
-  tags: v.array(v.string()),               // ["Trending", "AI", "Funding"]
-  metrics: v.optional(v.array(v.object({
-    label: v.string(),
-    value: v.string(),
-    trend: v.optional(v.union(v.literal("up"), v.literal("down")))
-  }))),
-  publishedAt: v.string(),                 // ISO date string
-  score: v.number(),                       // For sorting by "Heat"
-  createdAt: v.optional(v.number()),       // When we ingested this
+  summary: v.string(), // The "Newsletter" style blurb
+  url: v.string(), // Link to original content
+  source: v.string(), // "YCombinator", "ArXiv", "GitHub", "ProductHunt"
+  tags: v.array(v.string()), // ["Trending", "AI", "Funding"]
+  metrics: v.optional(
+    v.array(
+      v.object({
+        label: v.string(),
+        value: v.string(),
+        trend: v.optional(v.union(v.literal("up"), v.literal("down"))),
+      }),
+    ),
+  ),
+  publishedAt: v.string(), // ISO date string
+  score: v.number(), // For sorting by "Heat"
+  createdAt: v.optional(v.number()), // When we ingested this
 })
   .index("by_published", ["publishedAt"])
   .index("by_score", ["score"])
   .index("by_source", ["source"])
   .index("by_type", ["type"])
-  .index("by_category", ["category"])      // Segmented view filtering 
-  .index("by_source_id", ["sourceId"]);    // Fast deduplication lookup
+  .index("by_category", ["category"]) // Segmented view filtering
+  .index("by_source_id", ["sourceId"]); // Fast deduplication lookup
 
 /* ------------------------------------------------------------------ */
 /* LANDING PAGE LOG - Public, append-only "signals" style feed         */
@@ -2651,7 +2839,7 @@ const landingPageLog = defineTable({
 /* REPO STATS CACHE - GitHub repo stats + velocity snapshots           */
 /* ------------------------------------------------------------------ */
 const repoStatsCache = defineTable({
-  repoFullName: v.string(),               // owner/name
+  repoFullName: v.string(), // owner/name
   repoUrl: v.string(),
   description: v.optional(v.string()),
   stars: v.number(),
@@ -2660,19 +2848,27 @@ const repoStatsCache = defineTable({
   openIssues: v.optional(v.number()),
   createdAt: v.string(),
   pushedAt: v.string(),
-  starHistory: v.array(v.object({
-    date: v.string(),                     // YYYY-MM-DD
-    stars: v.number(),                    // total or daily count
-    delta: v.optional(v.number()),        // optional daily delta
-  })),
-  commitHistory: v.array(v.object({
-    weekStart: v.string(),                // YYYY-MM-DD
-    commits: v.number(),
-  })),
-  languages: v.optional(v.array(v.object({
-    name: v.string(),
-    pct: v.number(),
-  }))),
+  starHistory: v.array(
+    v.object({
+      date: v.string(), // YYYY-MM-DD
+      stars: v.number(), // total or daily count
+      delta: v.optional(v.number()), // optional daily delta
+    }),
+  ),
+  commitHistory: v.array(
+    v.object({
+      weekStart: v.string(), // YYYY-MM-DD
+      commits: v.number(),
+    }),
+  ),
+  languages: v.optional(
+    v.array(
+      v.object({
+        name: v.string(),
+        pct: v.number(),
+      }),
+    ),
+  ),
   fetchedAt: v.number(),
 })
   .index("by_repo", ["repoFullName"])
@@ -2682,7 +2878,7 @@ const repoStatsCache = defineTable({
 /* PAPER DETAILS CACHE - ArXiv metadata + methodology extraction       */
 /* ------------------------------------------------------------------ */
 const paperDetailsCache = defineTable({
-  paperId: v.string(),                    // arXiv ID
+  paperId: v.string(), // arXiv ID
   url: v.string(),
   title: v.optional(v.string()),
   abstract: v.optional(v.string()),
@@ -2703,7 +2899,7 @@ const paperDetailsCache = defineTable({
 /* STACK IMPACT CACHE - CVE impact mapping vs user tech stack          */
 /* ------------------------------------------------------------------ */
 const stackImpactCache = defineTable({
-  signalKey: v.string(),                  // hash of signal + stack
+  signalKey: v.string(), // hash of signal + stack
   signalTitle: v.optional(v.string()),
   signalUrl: v.optional(v.string()),
   techStack: v.array(v.string()),
@@ -2714,21 +2910,27 @@ const stackImpactCache = defineTable({
   sourceUrls: v.optional(v.array(v.string())),
   graph: v.object({
     focusNodeId: v.optional(v.string()),
-    nodes: v.array(v.object({
-      id: v.string(),
-      label: v.string(),
-      type: v.optional(v.string()),
-      importance: v.optional(v.number()),
-      tier: v.optional(v.number()),       // 1 = direct, 2 = second-order
-    })),
-    edges: v.array(v.object({
-      source: v.string(),
-      target: v.string(),
-      relationship: v.optional(v.string()),
-      context: v.optional(v.string()),
-      impact: v.optional(v.string()),
-      order: v.optional(v.union(v.literal("primary"), v.literal("secondary"))),
-    })),
+    nodes: v.array(
+      v.object({
+        id: v.string(),
+        label: v.string(),
+        type: v.optional(v.string()),
+        importance: v.optional(v.number()),
+        tier: v.optional(v.number()), // 1 = direct, 2 = second-order
+      }),
+    ),
+    edges: v.array(
+      v.object({
+        source: v.string(),
+        target: v.string(),
+        relationship: v.optional(v.string()),
+        context: v.optional(v.string()),
+        impact: v.optional(v.string()),
+        order: v.optional(
+          v.union(v.literal("primary"), v.literal("secondary")),
+        ),
+      }),
+    ),
   }),
   fetchedAt: v.number(),
 })
@@ -2743,19 +2945,20 @@ const modelComparisonCache = defineTable({
   context: v.optional(v.string()),
   summary: v.optional(v.string()),
   recommendation: v.optional(v.string()),
-  rows: v.array(v.object({
-    model: v.string(),
-    inputCostPer1M: v.number(),
-    outputCostPer1M: v.number(),
-    contextWindow: v.number(),
-    reliabilityScore: v.optional(v.number()),
-    performance: v.optional(v.string()),
-    notes: v.optional(v.string()),
-  })),
+  rows: v.array(
+    v.object({
+      model: v.string(),
+      inputCostPer1M: v.number(),
+      outputCostPer1M: v.number(),
+      contextWindow: v.number(),
+      reliabilityScore: v.optional(v.number()),
+      performance: v.optional(v.string()),
+      notes: v.optional(v.string()),
+    }),
+  ),
   sourceUrls: v.optional(v.array(v.string())),
   fetchedAt: v.number(),
-})
-  .index("by_model_key", ["modelKey"]);
+}).index("by_model_key", ["modelKey"]);
 
 /* ------------------------------------------------------------------ */
 /* DEAL FLOW CACHE - AI-curated startup deal flow snapshots           */
@@ -2763,41 +2966,53 @@ const modelComparisonCache = defineTable({
 const dealFlowCache = defineTable({
   dateString: v.string(),
   focusSectors: v.optional(v.array(v.string())),
-  deals: v.array(v.object({
-    id: v.string(),
-    company: v.string(),
-    sector: v.string(),
-    stage: v.string(),
-    amount: v.string(),
-    date: v.string(),
-    location: v.string(),
-    foundingYear: v.optional(v.string()),
-    foundersBackground: v.optional(v.string()),
-    leads: v.array(v.string()),
-    coInvestors: v.optional(v.array(v.string())),
-    summary: v.string(),
-    traction: v.optional(v.string()),
-    sentiment: v.optional(v.union(v.literal("hot"), v.literal("watch"))),
-    spark: v.optional(v.array(v.number())),
-    people: v.array(v.object({
-      name: v.string(),
-      role: v.string(),
-      past: v.string(),
-    })),
-    timeline: v.array(v.object({
-      label: v.string(),
-      detail: v.string(),
-    })),
-    regulatory: v.optional(v.object({
-      fdaStatus: v.optional(v.string()),
-      patents: v.optional(v.array(v.string())),
-      papers: v.optional(v.array(v.string())),
-    })),
-    sources: v.optional(v.array(v.object({
-      name: v.string(),
-      url: v.string(),
-    }))),
-  })),
+  deals: v.array(
+    v.object({
+      id: v.string(),
+      company: v.string(),
+      sector: v.string(),
+      stage: v.string(),
+      amount: v.string(),
+      date: v.string(),
+      location: v.string(),
+      foundingYear: v.optional(v.string()),
+      foundersBackground: v.optional(v.string()),
+      leads: v.array(v.string()),
+      coInvestors: v.optional(v.array(v.string())),
+      summary: v.string(),
+      traction: v.optional(v.string()),
+      sentiment: v.optional(v.union(v.literal("hot"), v.literal("watch"))),
+      spark: v.optional(v.array(v.number())),
+      people: v.array(
+        v.object({
+          name: v.string(),
+          role: v.string(),
+          past: v.string(),
+        }),
+      ),
+      timeline: v.array(
+        v.object({
+          label: v.string(),
+          detail: v.string(),
+        }),
+      ),
+      regulatory: v.optional(
+        v.object({
+          fdaStatus: v.optional(v.string()),
+          patents: v.optional(v.array(v.string())),
+          papers: v.optional(v.array(v.string())),
+        }),
+      ),
+      sources: v.optional(
+        v.array(
+          v.object({
+            name: v.string(),
+            url: v.string(),
+          }),
+        ),
+      ),
+    }),
+  ),
   fetchedAt: v.number(),
 })
   .index("by_date", ["dateString"])
@@ -2810,24 +3025,29 @@ const repoScoutCache = defineTable({
   signalKey: v.string(),
   signalTitle: v.string(),
   signalSummary: v.optional(v.string()),
-  repos: v.array(v.object({
-    name: v.string(),
-    url: v.string(),
-    description: v.optional(v.string()),
-    stars: v.number(),
-    starVelocity: v.number(),
-    commitsPerWeek: v.number(),
-    lastPush: v.optional(v.string()),
-    languages: v.optional(v.array(v.object({
+  repos: v.array(
+    v.object({
       name: v.string(),
-      pct: v.number(),
-    }))),
-  })),
+      url: v.string(),
+      description: v.optional(v.string()),
+      stars: v.number(),
+      starVelocity: v.number(),
+      commitsPerWeek: v.number(),
+      lastPush: v.optional(v.string()),
+      languages: v.optional(
+        v.array(
+          v.object({
+            name: v.string(),
+            pct: v.number(),
+          }),
+        ),
+      ),
+    }),
+  ),
   moatSummary: v.optional(v.string()),
   moatRisks: v.optional(v.array(v.string())),
   fetchedAt: v.number(),
-})
-  .index("by_signal_key", ["signalKey"]);
+}).index("by_signal_key", ["signalKey"]);
 
 /* ------------------------------------------------------------------ */
 /* STRATEGY METRICS CACHE - pivot KPI extractions                     */
@@ -2836,22 +3056,27 @@ const strategyMetricsCache = defineTable({
   signalKey: v.string(),
   signalTitle: v.string(),
   signalSummary: v.optional(v.string()),
-  metrics: v.array(v.object({
-    label: v.string(),
-    value: v.string(),
-    unit: v.optional(v.string()),
-    context: v.optional(v.string()),
-    source: v.optional(v.string()),
-  })),
+  metrics: v.array(
+    v.object({
+      label: v.string(),
+      value: v.string(),
+      unit: v.optional(v.string()),
+      context: v.optional(v.string()),
+      source: v.optional(v.string()),
+    }),
+  ),
   narrative: v.optional(v.string()),
   risks: v.optional(v.array(v.string())),
-  sources: v.optional(v.array(v.object({
-    title: v.string(),
-    url: v.string(),
-  }))),
+  sources: v.optional(
+    v.array(
+      v.object({
+        title: v.string(),
+        url: v.string(),
+      }),
+    ),
+  ),
   fetchedAt: v.number(),
-})
-  .index("by_signal_key", ["signalKey"]);
+}).index("by_signal_key", ["signalKey"]);
 
 /* ------------------------------------------------------------------ */
 /* SEARCH EVALUATIONS - LLM-as-judge benchmark results                 */
@@ -2872,17 +3097,17 @@ const strategyMetricsCache = defineTable({
  * - by_judge_model: Analyze performance by model
  */
 const searchEvaluations = defineTable({
-  evaluationId: v.string(),                 // Unique evaluation ID
-  query: v.string(),                        // Search query evaluated
-  mode: v.string(),                         // Search mode (fast/balanced/comprehensive)
-  judgeModel: v.optional(v.string()),       // Approved model alias used for evaluation
+  evaluationId: v.string(), // Unique evaluation ID
+  query: v.string(), // Search query evaluated
+  mode: v.string(), // Search mode (fast/balanced/comprehensive)
+  judgeModel: v.optional(v.string()), // Approved model alias used for evaluation
   judgePromptVersion: v.optional(v.string()), // Version of judge prompt for reproducibility
-  rawResponse: v.optional(v.string()),      // Raw LLM response for replay/debugging
-  judgeInput: v.string(),                   // JSON-serialized JudgeInput
-  judgeResult: v.string(),                  // JSON-serialized JudgeResult
-  pass: v.boolean(),                        // Overall pass/fail
-  overallScore: v.number(),                 // Weighted score (0-1)
-  createdAt: v.number(),                    // Timestamp
+  rawResponse: v.optional(v.string()), // Raw LLM response for replay/debugging
+  judgeInput: v.string(), // JSON-serialized JudgeInput
+  judgeResult: v.string(), // JSON-serialized JudgeResult
+  pass: v.boolean(), // Overall pass/fail
+  overallScore: v.number(), // Weighted score (0-1)
+  createdAt: v.number(), // Timestamp
 })
   .index("by_evaluation_id", ["evaluationId"])
   .index("by_pass", ["pass"])
@@ -2897,13 +3122,13 @@ const searchEvaluations = defineTable({
  * Measures consistency, overlap, and score normalization.
  */
 const searchCrossProviderEvals = defineTable({
-  evalId: v.string(),                       // Unique evaluation ID
-  evalVersion: v.string(),                  // Evaluation harness version
-  query: v.string(),                        // Search query
-  category: v.string(),                     // Category (funding, tech_news, company, etc.)
-  timestamp: v.number(),                    // When evaluated
-  providerResults: v.string(),              // JSON: per-provider results
-  metrics: v.string(),                      // JSON: cross-provider metrics
+  evalId: v.string(), // Unique evaluation ID
+  evalVersion: v.string(), // Evaluation harness version
+  query: v.string(), // Search query
+  category: v.string(), // Category (funding, tech_news, company, etc.)
+  timestamp: v.number(), // When evaluated
+  providerResults: v.string(), // JSON: per-provider results
+  metrics: v.string(), // JSON: cross-provider metrics
 })
   .index("by_eval_id", ["evalId"])
   .index("by_category", ["category"])
@@ -2914,12 +3139,12 @@ const searchCrossProviderEvals = defineTable({
  * Aggregates metrics across multiple query evaluations.
  */
 const searchBaselineSnapshots = defineTable({
-  snapshotId: v.string(),                   // Unique snapshot ID
-  snapshotVersion: v.string(),              // Evaluation harness version
-  createdAt: v.number(),                    // When created
-  queryCount: v.number(),                   // Number of queries evaluated
-  aggregateMetrics: v.string(),             // JSON: aggregate metrics
-  evaluationIds: v.array(v.string()),       // Individual evaluation IDs
+  snapshotId: v.string(), // Unique snapshot ID
+  snapshotVersion: v.string(), // Evaluation harness version
+  createdAt: v.number(), // When created
+  queryCount: v.number(), // Number of queries evaluated
+  aggregateMetrics: v.string(), // JSON: aggregate metrics
+  evaluationIds: v.array(v.string()), // Individual evaluation IDs
 })
   .index("by_snapshot_id", ["snapshotId"])
   .index("by_created", ["createdAt"]);
@@ -2934,8 +3159,8 @@ const searchBaselineSnapshots = defineTable({
  * Used for continuous testing of agent response quality.
  */
 const evaluationRuns = defineTable({
-  sessionId: v.string(),                    // Session ID (for anonymous) or derived from userId
-  userId: v.optional(v.id("users")),        // Optional user ID (for authenticated)
+  sessionId: v.string(), // Session ID (for anonymous) or derived from userId
+  userId: v.optional(v.id("users")), // Optional user ID (for authenticated)
   mode: v.union(
     v.literal("anonymous"),
     v.literal("authenticated"),
@@ -2947,42 +3172,45 @@ const evaluationRuns = defineTable({
     v.literal("failed"),
   ),
   // Query tracking
-  queryIds: v.array(v.string()),            // List of test query IDs to run
+  queryIds: v.array(v.string()), // List of test query IDs to run
   completedQueries: v.number(),
   passedQueries: v.number(),
   failedQueries: v.number(),
   // Individual results
-  results: v.array(v.object({
-    queryId: v.string(),
-    query: v.string(),
-    persona: v.string(),
-    expectedOutcome: v.string(),
-    actualOutcome: v.string(),
-    passed: v.boolean(),
-    containsRequired: v.boolean(),
-    noForbidden: v.boolean(),
-    failureReasons: v.array(v.string()),
-    responseLength: v.number(),
-    responseSnippet: v.optional(v.string()),
-    executedAt: v.number(),
-  })),
+  results: v.array(
+    v.object({
+      queryId: v.string(),
+      query: v.string(),
+      persona: v.string(),
+      expectedOutcome: v.string(),
+      actualOutcome: v.string(),
+      passed: v.boolean(),
+      containsRequired: v.boolean(),
+      noForbidden: v.boolean(),
+      failureReasons: v.array(v.string()),
+      responseLength: v.number(),
+      responseSnippet: v.optional(v.string()),
+      executedAt: v.number(),
+    }),
+  ),
   // Summary
-  summary: v.optional(v.object({
-    total: v.number(),
-    passed: v.number(),
-    failed: v.number(),
-    passRate: v.number(),
-    isPassing: v.boolean(),
-    threshold: v.number(),
-  })),
+  summary: v.optional(
+    v.object({
+      total: v.number(),
+      passed: v.number(),
+      failed: v.number(),
+      passRate: v.number(),
+      isPassing: v.boolean(),
+      threshold: v.number(),
+    }),
+  ),
   // Timestamps
   startedAt: v.number(),
   updatedAt: v.optional(v.number()),
   completedAt: v.optional(v.number()),
   // Error tracking
   error: v.optional(v.string()),
-})
-  .index("by_session", ["sessionId"])
+}).index("by_session", ["sessionId"]);
 
 /**
  * Persona Episode Evaluation Scenarios
@@ -2991,26 +3219,28 @@ const evaluationRuns = defineTable({
  * Loaded from persona-episode-eval-pack-v2.json during migration.
  */
 const evaluation_scenarios = defineTable({
-  scenarioId: v.string(),                   // Unique scenario ID (e.g., "banker_vague_disco")
-  name: v.string(),                         // Human-readable name
-  query: v.string(),                        // The test query/prompt
-  expectedPersona: v.string(),              // Expected persona (e.g., "JPM_STARTUP_BANKER")
-  expectedEntityId: v.string(),             // Expected entity ground truth ID
-  allowedPersonas: v.optional(v.array(v.string())),  // Optional: multiple allowed personas
-  domain: v.optional(v.string()),           // Domain category (e.g., "finance", "tech", "medical")
+  scenarioId: v.string(), // Unique scenario ID (e.g., "banker_vague_disco")
+  name: v.string(), // Human-readable name
+  query: v.string(), // The test query/prompt
+  expectedPersona: v.string(), // Expected persona (e.g., "JPM_STARTUP_BANKER")
+  expectedEntityId: v.string(), // Expected entity ground truth ID
+  allowedPersonas: v.optional(v.array(v.string())), // Optional: multiple allowed personas
+  domain: v.optional(v.string()), // Domain category (e.g., "finance", "tech", "medical")
   // Behavioral requirements
-  requirements: v.optional(v.object({
-    minToolCalls: v.optional(v.number()),
-    maxToolCalls: v.optional(v.number()),
-    maxCostUsd: v.optional(v.number()),
-    maxClarifyingQuestions: v.optional(v.number()),
-    requireVerificationStep: v.optional(v.boolean()),
-    requireProviderUsage: v.optional(v.boolean()),
-    requireTools: v.optional(v.array(v.string())),
-  })),
+  requirements: v.optional(
+    v.object({
+      minToolCalls: v.optional(v.number()),
+      maxToolCalls: v.optional(v.number()),
+      maxCostUsd: v.optional(v.number()),
+      maxClarifyingQuestions: v.optional(v.number()),
+      requireVerificationStep: v.optional(v.boolean()),
+      requireProviderUsage: v.optional(v.boolean()),
+      requireTools: v.optional(v.array(v.string())),
+    }),
+  ),
   // Metadata
   createdAt: v.number(),
-  version: v.optional(v.string()),          // Pack version (e.g., "v2")
+  version: v.optional(v.string()), // Pack version (e.g., "v2")
 })
   .index("by_scenario_id", ["scenarioId"])
   .index("by_domain", ["domain"]);
@@ -3019,79 +3249,103 @@ const evaluation_scenarios = defineTable({
 /* DIGEST CACHE - Agent-generated digest storage                       */
 /* ------------------------------------------------------------------ */
 const digestCache = defineTable({
-  dateString: v.string(),                    // YYYY-MM-DD
-  persona: v.string(),                       // GENERAL, JPM_STARTUP_BANKER, etc.
-  model: v.string(),                         // claude-haiku-4.5, etc.
+  dateString: v.string(), // YYYY-MM-DD
+  persona: v.string(), // GENERAL, JPM_STARTUP_BANKER, etc.
+  model: v.string(), // claude-haiku-3.5, etc.
   // Raw agent output
-  rawText: v.string(),                       // Full LLM response
+  rawText: v.string(), // Full LLM response
   // Parsed digest
   digest: v.object({
     dateString: v.string(),
     narrativeThesis: v.string(),
-    leadStory: v.optional(v.object({
-      title: v.string(),
-      url: v.optional(v.string()),
-      whyItMatters: v.string(),
-      reflection: v.optional(v.object({
-        what: v.string(),
-        soWhat: v.string(),
-        nowWhat: v.string(),
-      })),
-    })),
-    signals: v.array(v.object({
-      title: v.string(),
-      url: v.optional(v.string()),
-      summary: v.string(),
-      hardNumbers: v.optional(v.string()),
-      directQuote: v.optional(v.string()),
-      reflection: v.optional(v.object({
-        what: v.string(),
-        soWhat: v.string(),
-        nowWhat: v.string(),
-      })),
-    })),
-    actionItems: v.array(v.object({
-      persona: v.string(),
-      action: v.string(),
-    })),
-    entitySpotlight: v.optional(v.array(v.object({
-      name: v.string(),
-      type: v.string(),
-      keyInsight: v.string(),
-      fundingStage: v.optional(v.string()),
-    }))),
-    factCheckFindings: v.optional(v.array(v.object({
-      claim: v.string(),
-      status: v.string(),
-      explanation: v.string(),
-      source: v.optional(v.string()),
-      sourceUrl: v.optional(v.string()),
-      confidence: v.number(),
-    }))),
-    fundingRounds: v.optional(v.array(v.object({
-      rank: v.number(),
-      companyName: v.string(),
-      roundType: v.string(),
-      amountRaw: v.string(),
-      amountUsd: v.optional(v.number()),
-      leadInvestors: v.array(v.string()),
-      sector: v.optional(v.string()),
-      productDescription: v.optional(v.string()),
-      founderBackground: v.optional(v.string()),
-      sourceUrl: v.optional(v.string()),
-      announcedAt: v.number(),
-      confidence: v.number(),
-    }))),
+    leadStory: v.optional(
+      v.object({
+        title: v.string(),
+        url: v.optional(v.string()),
+        whyItMatters: v.string(),
+        reflection: v.optional(
+          v.object({
+            what: v.string(),
+            soWhat: v.string(),
+            nowWhat: v.string(),
+          }),
+        ),
+      }),
+    ),
+    signals: v.array(
+      v.object({
+        title: v.string(),
+        url: v.optional(v.string()),
+        summary: v.string(),
+        hardNumbers: v.optional(v.string()),
+        directQuote: v.optional(v.string()),
+        reflection: v.optional(
+          v.object({
+            what: v.string(),
+            soWhat: v.string(),
+            nowWhat: v.string(),
+          }),
+        ),
+      }),
+    ),
+    actionItems: v.array(
+      v.object({
+        persona: v.string(),
+        action: v.string(),
+      }),
+    ),
+    entitySpotlight: v.optional(
+      v.array(
+        v.object({
+          name: v.string(),
+          type: v.string(),
+          keyInsight: v.string(),
+          fundingStage: v.optional(v.string()),
+        }),
+      ),
+    ),
+    factCheckFindings: v.optional(
+      v.array(
+        v.object({
+          claim: v.string(),
+          status: v.string(),
+          explanation: v.string(),
+          source: v.optional(v.string()),
+          sourceUrl: v.optional(v.string()),
+          confidence: v.number(),
+        }),
+      ),
+    ),
+    fundingRounds: v.optional(
+      v.array(
+        v.object({
+          rank: v.number(),
+          companyName: v.string(),
+          roundType: v.string(),
+          amountRaw: v.string(),
+          amountUsd: v.optional(v.number()),
+          leadInvestors: v.array(v.string()),
+          sector: v.optional(v.string()),
+          productDescription: v.optional(v.string()),
+          founderBackground: v.optional(v.string()),
+          sourceUrl: v.optional(v.string()),
+          announcedAt: v.number(),
+          confidence: v.number(),
+        }),
+      ),
+    ),
     storyCount: v.number(),
     topSources: v.array(v.string()),
     topCategories: v.array(v.string()),
     processingTimeMs: v.number(),
   }),
   // Formatted outputs (for different channels)
-  ntfyPayload: v.optional(v.object({
-    title: v.string(),
-    body: v.string(),
-  })),
+  ntfyPayload: v.optional(
+    v.object({
+      title: v.string(),
+      body: v.string(),
+    }),
+  ),
   slackPayload: v.optional(v.string()),
   emailPayload: v.optional(v.string()),
   // Usage tracking
@@ -3103,7 +3357,7 @@ const digestCache = defineTable({
   feedItemCount: v.number(),
   // Metadata
   createdAt: v.number(),
-  expiresAt: v.number(),                     // TTL for cache invalidation
+  expiresAt: v.number(), // TTL for cache invalidation
   sentToNtfy: v.optional(v.boolean()),
   sentToSlack: v.optional(v.boolean()),
   sentToEmail: v.optional(v.boolean()),
@@ -3118,14 +3372,14 @@ const digestCache = defineTable({
 /* ------------------------------------------------------------------ */
 const entityMonitorProfiles = defineTable({
   // Entity identification
-  entityType: v.string(),                    // "company", "person", "domain"
-  entityName: v.string(),                    // Company name, person name, etc.
-  entityId: v.optional(v.string()),          // External ID if known (CrunchBase, SEC, etc.)
+  entityType: v.string(), // "company", "person", "domain"
+  entityName: v.string(), // Company name, person name, etc.
+  entityId: v.optional(v.string()), // External ID if known (CrunchBase, SEC, etc.)
 
   // Monitoring configuration
-  monitorFrequency: v.string(),              // "daily", "weekly", "monthly"
-  riskTier: v.string(),                      // "low", "medium", "high", "critical"
-  triggerReason: v.string(),                 // Why monitoring was triggered
+  monitorFrequency: v.string(), // "daily", "weekly", "monthly"
+  riskTier: v.string(), // "low", "medium", "high", "critical"
+  triggerReason: v.string(), // Why monitoring was triggered
 
   // Entity snapshot at creation
   initialSnapshot: v.object({
@@ -3138,20 +3392,22 @@ const entityMonitorProfiles = defineTable({
 
   // Latest check results
   lastCheckAt: v.optional(v.number()),
-  lastCheckResult: v.optional(v.object({
-    websiteLive: v.optional(v.union(v.boolean(), v.null())),
-    riskScore: v.optional(v.number()),
-    verificationStatus: v.optional(v.string()),
-    changesDetected: v.array(v.string()),    // List of detected changes
-  })),
-  nextCheckAt: v.number(),                   // Scheduled next check time
+  lastCheckResult: v.optional(
+    v.object({
+      websiteLive: v.optional(v.union(v.boolean(), v.null())),
+      riskScore: v.optional(v.number()),
+      verificationStatus: v.optional(v.string()),
+      changesDetected: v.array(v.string()), // List of detected changes
+    }),
+  ),
+  nextCheckAt: v.number(), // Scheduled next check time
 
   // Change history
-  changeCount: v.number(),                   // Number of changes detected
-  alertsSent: v.number(),                    // Number of alerts triggered
+  changeCount: v.number(), // Number of changes detected
+  alertsSent: v.number(), // Number of alerts triggered
 
   // Status
-  status: v.string(),                        // "active", "paused", "archived"
+  status: v.string(), // "active", "paused", "archived"
   createdAt: v.number(),
   updatedAt: v.number(),
   createdBy: v.optional(v.id("users")),
@@ -3167,81 +3423,87 @@ const entityMonitorProfiles = defineTable({
 /* ------------------------------------------------------------------ */
 const verificationAuditLog = defineTable({
   // Entity identification
-  entityType: v.string(),                    // "company", "funding_claim", "person"
+  entityType: v.string(), // "company", "funding_claim", "person"
   entityName: v.string(),
-  entityId: v.optional(v.string()),          // External ID if known
+  entityId: v.optional(v.string()), // External ID if known
 
   // Verification request context
-  requestId: v.string(),                     // Unique request ID for correlation
-  requestSource: v.string(),                 // "linkedin_post", "dd_pipeline", "manual"
+  requestId: v.string(), // Unique request ID for correlation
+  requestSource: v.string(), // "linkedin_post", "dd_pipeline", "manual"
   triggeredBy: v.optional(v.id("users")),
 
   // Input claim (for methodology transparency)
-  claimText: v.optional(v.string()),         // Original claim being verified
-  sourceUrl: v.optional(v.string()),         // Source of the claim
-  websiteUrl: v.optional(v.string()),        // Company website checked
+  claimText: v.optional(v.string()), // Original claim being verified
+  sourceUrl: v.optional(v.string()), // Source of the claim
+  websiteUrl: v.optional(v.string()), // Company website checked
 
   // Verification results (tri-state)
   entityFound: v.union(v.boolean(), v.null()),
   websiteLive: v.union(v.boolean(), v.null()),
-  sourceCredibility: v.string(),             // "high", "medium", "low", "unknown"
-  overallStatus: v.string(),                 // "verified", "partial", "unverified", "suspicious"
-  confidenceScore: v.number(),               // 0-1
+  sourceCredibility: v.string(), // "high", "medium", "low", "unknown"
+  overallStatus: v.string(), // "verified", "partial", "unverified", "suspicious"
+  confidenceScore: v.number(), // 0-1
 
   // Probe-level details (for observability)
   probeResults: v.object({
     entity: v.object({
       result: v.union(v.boolean(), v.null()),
       latencyMs: v.number(),
-      source: v.optional(v.string()),        // "fusion_search", "registry", etc.
+      source: v.optional(v.string()), // "fusion_search", "registry", etc.
       summary: v.optional(v.string()),
     }),
     website: v.object({
       result: v.union(v.boolean(), v.null()),
       latencyMs: v.number(),
-      errorClass: v.optional(v.string()),    // Error taxonomy class
+      errorClass: v.optional(v.string()), // Error taxonomy class
       httpStatus: v.optional(v.number()),
       attemptCount: v.number(),
     }),
     credibility: v.object({
       tier: v.string(),
       domain: v.string(),
-      matchType: v.optional(v.string()),     // "exact", "subdomain", "pattern"
+      matchType: v.optional(v.string()), // "exact", "subdomain", "pattern"
     }),
   }),
 
   // External fact-check results (if queried)
-  factCheckResults: v.optional(v.object({
-    provider: v.string(),                    // "google", "claimbuster", "none"
-    hasResults: v.boolean(),                 // Did we find any fact-checks?
-    factCheckCount: v.number(),
-    consensus: v.optional(v.string()),       // "true", "false", "mixed", "unproven", "insufficient"
-    agreementLevel: v.optional(v.number()),
-  })),
+  factCheckResults: v.optional(
+    v.object({
+      provider: v.string(), // "google", "claimbuster", "none"
+      hasResults: v.boolean(), // Did we find any fact-checks?
+      factCheckCount: v.number(),
+      consensus: v.optional(v.string()), // "true", "false", "mixed", "unproven", "insufficient"
+      agreementLevel: v.optional(v.number()),
+    }),
+  ),
 
   // Labeled outcome (for calibration - set later by human review)
-  labeledOutcome: v.optional(v.object({
-    verdict: v.string(),                     // "legit", "scam", "unclear", "insufficient_info"
-    labeledBy: v.optional(v.id("users")),
-    labeledAt: v.number(),
-    notes: v.optional(v.string()),
-    evidenceUrls: v.optional(v.array(v.string())),
-  })),
+  labeledOutcome: v.optional(
+    v.object({
+      verdict: v.string(), // "legit", "scam", "unclear", "insufficient_info"
+      labeledBy: v.optional(v.id("users")),
+      labeledAt: v.number(),
+      notes: v.optional(v.string()),
+      evidenceUrls: v.optional(v.array(v.string())),
+    }),
+  ),
 
   // Calibration metrics (computed when labeled)
-  calibration: v.optional(v.object({
-    wasCorrect: v.boolean(),                 // Did verification match labeled outcome?
-    errorType: v.optional(v.string()),       // "false_positive", "false_negative", "correct"
-    confidenceDelta: v.optional(v.number()), // How far off was confidence?
-  })),
+  calibration: v.optional(
+    v.object({
+      wasCorrect: v.boolean(), // Did verification match labeled outcome?
+      errorType: v.optional(v.string()), // "false_positive", "false_negative", "correct"
+      confidenceDelta: v.optional(v.number()), // How far off was confidence?
+    }),
+  ),
 
   // SLO tracking fields
   sloMetrics: v.object({
-    totalLatencyMs: v.number(),              // End-to-end verification time
-    hadPrimarySource: v.boolean(),           // Did we find SEC/registry/official source?
-    hadTimeout: v.boolean(),                 // Any probe timed out?
-    circuitBreakerTripped: v.boolean(),      // Was any circuit breaker open?
-    inconclusiveCount: v.number(),           // How many probes were inconclusive?
+    totalLatencyMs: v.number(), // End-to-end verification time
+    hadPrimarySource: v.boolean(), // Did we find SEC/registry/official source?
+    hadTimeout: v.boolean(), // Any probe timed out?
+    circuitBreakerTripped: v.boolean(), // Was any circuit breaker open?
+    inconclusiveCount: v.number(), // How many probes were inconclusive?
   }),
 
   // Timestamps
@@ -3262,8 +3524,8 @@ const verificationAuditLog = defineTable({
 /* ------------------------------------------------------------------ */
 const verificationActions = defineTable({
   auditId: v.string(),
-  action: v.string(),                        // "claim_verified", "claim_rejected", "source_checked", etc.
-  targetType: v.string(),                    // "claim", "post", "fact", "source"
+  action: v.string(), // "claim_verified", "claim_rejected", "source_checked", etc.
+  targetType: v.string(), // "claim", "post", "fact", "source"
   targetId: v.string(),
   claim: v.optional(v.string()),
   sourceUrls: v.array(v.string()),
@@ -3284,19 +3546,19 @@ const verificationActions = defineTable({
 /* SCHEDULED REPORTS - Automated PDF report generation                 */
 /* ------------------------------------------------------------------ */
 const scheduledReports = defineTable({
-  storageId: v.string(),                     // Convex storage ID for the PDF file
-  fileName: v.string(),                      // Human-readable filename
-  fileSize: v.number(),                      // File size in bytes
-  reportType: v.string(),                    // "weekly-digest", "monthly-summary", "quarterly-funding-summary"
-  title: v.string(),                         // Report title
-  description: v.string(),                   // Report description
-  quarterLabel: v.string(),                  // Period label (e.g., "Q4 2025", "Week of Jan 14")
-  totalDeals: v.number(),                    // Number of deals in report
-  totalAmountUsd: v.number(),                // Total funding amount
-  generatedAt: v.number(),                   // Timestamp when generated
-  status: v.string(),                        // "pending", "generating", "completed", "failed"
+  storageId: v.string(), // Convex storage ID for the PDF file
+  fileName: v.string(), // Human-readable filename
+  fileSize: v.number(), // File size in bytes
+  reportType: v.string(), // "weekly-digest", "monthly-summary", "quarterly-funding-summary"
+  title: v.string(), // Report title
+  description: v.string(), // Report description
+  quarterLabel: v.string(), // Period label (e.g., "Q4 2025", "Week of Jan 14")
+  totalDeals: v.number(), // Number of deals in report
+  totalAmountUsd: v.number(), // Total funding amount
+  generatedAt: v.number(), // Timestamp when generated
+  status: v.string(), // "pending", "generating", "completed", "failed"
   distributedTo: v.optional(v.array(v.string())), // Channels distributed to
-  error: v.optional(v.string()),             // Error message if failed
+  error: v.optional(v.string()), // Error message if failed
 })
   .index("by_report_type", ["reportType"])
   .index("by_generated_at", ["generatedAt"])
@@ -3308,11 +3570,9 @@ const scheduledReports = defineTable({
 const chatMemories = defineTable({
   userId: v.id("users"),
   text: v.string(),
-  source: v.optional(v.union(
-    v.literal("user"),
-    v.literal("context_menu"),
-    v.literal("auto"),
-  )),
+  source: v.optional(
+    v.union(v.literal("user"), v.literal("context_menu"), v.literal("auto")),
+  ),
   threadId: v.optional(v.string()),
   createdAt: v.number(),
 })
@@ -3327,10 +3587,12 @@ const chatSnapshots = defineTable({
   threadId: v.optional(v.string()),
   name: v.string(),
   messageCount: v.number(),
-  messages: v.array(v.object({
-    role: v.string(),
-    text: v.string(),
-  })),
+  messages: v.array(
+    v.object({
+      role: v.string(),
+      text: v.string(),
+    }),
+  ),
   createdAt: v.number(),
 })
   .index("by_user", ["userId"])
@@ -3383,11 +3645,7 @@ const toolApprovals = defineTable({
     v.literal("approved"),
     v.literal("rejected"),
   ),
-  riskLevel: v.union(
-    v.literal("low"),
-    v.literal("medium"),
-    v.literal("high"),
-  ),
+  riskLevel: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
   reason: v.optional(v.string()),
   decidedAt: v.optional(v.number()),
   createdAt: v.number(),
@@ -3405,14 +3663,23 @@ const dogfoodQaRuns = defineTable({
   createdAt: v.number(),
   provider: v.literal("gemini"),
   model: v.string(),
-  source: v.union(v.literal("video"), v.literal("frames"), v.literal("screenshots")),
+  source: v.union(
+    v.literal("video"),
+    v.literal("frames"),
+    v.literal("screenshots"),
+  ),
   videoUrl: v.optional(v.string()),
   inputSha256: v.optional(v.string()),
   prompt: v.string(),
   summary: v.string(),
   issues: v.array(
     v.object({
-      severity: v.union(v.literal("p0"), v.literal("p1"), v.literal("p2"), v.literal("p3")),
+      severity: v.union(
+        v.literal("p0"),
+        v.literal("p1"),
+        v.literal("p2"),
+        v.literal("p3"),
+      ),
       title: v.string(),
       details: v.string(),
       suggestedFix: v.optional(v.string()),
@@ -3429,7 +3696,7 @@ const dogfoodQaRuns = defineTable({
   .index("by_user_inputSha256", ["userId", "inputSha256"]);
 
 export default defineSchema({
-  ...authTables,       // `users`, `sessions`
+  ...authTables, // `users`, `sessions`
   documents,
   nodes,
   relations,
@@ -3479,6 +3746,9 @@ export default defineSchema({
   chatThreadsStream,
   chatMessagesStream,
   searchCache,
+  canonicalSources,
+  extractedSignals,
+  crossScopeViolations,
   mcpToolLearning,
   mcpGuidanceExamples,
   mcpToolHistory,
@@ -3563,8 +3833,13 @@ export default defineSchema({
   productChatSessions,
   productChatEvents,
   productToolEvents,
+  productRunEvents,
+  productResolutionCandidates,
   productSourceEvents,
   productReportDrafts,
+  productClaims,
+  productClaimSupports,
+  productClaimReviews,
   productEntities,
   productEntityNotes,
   productWorkspaceShares,
@@ -3588,6 +3863,11 @@ export default defineSchema({
   productNudgeSubscriptions,
 
   /* ------------------------------------------------------------------ */
+  /* CANONICAL V2 NOTEBOOK RUNTIME — agent scratchpad + projection layer */
+  /* ------------------------------------------------------------------ */
+  productNotebookPages,
+
+  /* ------------------------------------------------------------------ */
   /* ENTITY PROFILES - Cached Wikidata entity resolutions               */
   /* Canonical entity identification for deduplication and linking      */
   /* ------------------------------------------------------------------ */
@@ -3598,48 +3878,52 @@ export default defineSchema({
    */
   entityProfiles: defineTable({
     // Wikidata identification
-    wikidataId: v.string(),                    // Q-format ID (e.g., "Q312" for Apple)
+    wikidataId: v.string(), // Q-format ID (e.g., "Q312" for Apple)
     entityType: v.union(
       v.literal("person"),
       v.literal("company"),
       v.literal("organization"),
       v.literal("location"),
-      v.literal("other")
+      v.literal("other"),
     ),
 
     // Canonical names
-    canonicalName: v.string(),                 // Official name from Wikidata
-    description: v.optional(v.string()),       // Wikidata description
-    aliases: v.optional(v.array(v.string())),  // Alternative names
+    canonicalName: v.string(), // Official name from Wikidata
+    description: v.optional(v.string()), // Wikidata description
+    aliases: v.optional(v.array(v.string())), // Alternative names
 
     // Additional metadata for people
-    personInfo: v.optional(v.object({
-      linkedInUrl: v.optional(v.string()),
-      twitterHandle: v.optional(v.string()),
-      crunchbaseUrl: v.optional(v.string()),
-      currentCompany: v.optional(v.string()),
-      currentRole: v.optional(v.string()),
-    })),
+    personInfo: v.optional(
+      v.object({
+        linkedInUrl: v.optional(v.string()),
+        twitterHandle: v.optional(v.string()),
+        crunchbaseUrl: v.optional(v.string()),
+        currentCompany: v.optional(v.string()),
+        currentRole: v.optional(v.string()),
+      }),
+    ),
 
     // Additional metadata for companies
-    companyInfo: v.optional(v.object({
-      sector: v.optional(v.string()),
-      industry: v.optional(v.string()),
-      foundedYear: v.optional(v.number()),
-      headquarters: v.optional(v.string()),
-      stockTicker: v.optional(v.string()),
-      linkedInUrl: v.optional(v.string()),
-      crunchbaseUrl: v.optional(v.string()),
-    })),
+    companyInfo: v.optional(
+      v.object({
+        sector: v.optional(v.string()),
+        industry: v.optional(v.string()),
+        foundedYear: v.optional(v.number()),
+        headquarters: v.optional(v.string()),
+        stockTicker: v.optional(v.string()),
+        linkedInUrl: v.optional(v.string()),
+        crunchbaseUrl: v.optional(v.string()),
+      }),
+    ),
 
     // Timestamps
     createdAt: v.number(),
     updatedAt: v.number(),
-    lastVerifiedAt: v.optional(v.number()),    // When Wikidata was last checked
+    lastVerifiedAt: v.optional(v.number()), // When Wikidata was last checked
 
     // Linking stats
-    mentionCount: v.optional(v.number()),      // How many times this entity was linked
-    lastMentionedAt: v.optional(v.number()),   // When last linked
+    mentionCount: v.optional(v.number()), // How many times this entity was linked
+    lastMentionedAt: v.optional(v.number()), // When last linked
   })
     .index("by_wikidataId", ["wikidataId"])
     .index("by_type", ["entityType", "canonicalName"])
@@ -3654,8 +3938,8 @@ export default defineSchema({
    * Links entities to posts, feed items, and other content
    */
   entityMentions: defineTable({
-    entityId: v.id("entityProfiles"),          // Reference to cached entity
-    wikidataId: v.string(),                    // Denormalized for quick queries
+    entityId: v.id("entityProfiles"), // Reference to cached entity
+    wikidataId: v.string(), // Denormalized for quick queries
 
     // Source reference
     sourceType: v.union(
@@ -3663,21 +3947,21 @@ export default defineSchema({
       v.literal("feedItem"),
       v.literal("narrativeEvent"),
       v.literal("narrativePost"),
-      v.literal("document")
+      v.literal("document"),
     ),
-    sourceId: v.string(),                      // ID of the source document
+    sourceId: v.string(), // ID of the source document
 
     // Mention details
     mentionType: v.union(
-      v.literal("primary"),                    // Main subject
-      v.literal("secondary"),                  // Supporting mention
-      v.literal("investor"),                   // Investor in funding context
-      v.literal("partner"),                    // Partnership mention
-      v.literal("competitor")                  // Competitive mention
+      v.literal("primary"), // Main subject
+      v.literal("secondary"), // Supporting mention
+      v.literal("investor"), // Investor in funding context
+      v.literal("partner"), // Partnership mention
+      v.literal("competitor"), // Competitive mention
     ),
-    extractedName: v.string(),                 // Original name as extracted
-    context: v.optional(v.string()),           // Surrounding text context
-    confidence: v.number(),                    // Linking confidence 0-1
+    extractedName: v.string(), // Original name as extracted
+    context: v.optional(v.string()), // Surrounding text context
+    confidence: v.number(), // Linking confidence 0-1
 
     // Timestamps
     createdAt: v.number(),
@@ -3697,17 +3981,17 @@ export default defineSchema({
    * Each swarm is linked to a thread for UI display.
    */
   agentSwarms: defineTable({
-    swarmId: v.string(),                   // UUID for this swarm
-    userId: v.id("users"),                 // Owner
-    threadId: v.string(),                  // Associated chatThreadsStream._id
+    swarmId: v.string(), // UUID for this swarm
+    userId: v.id("users"), // Owner
+    threadId: v.string(), // Associated chatThreadsStream._id
 
     // Swarm definition
-    name: v.optional(v.string()),          // User-defined name (e.g., "Research Team")
-    query: v.string(),                     // Original user query
+    name: v.optional(v.string()), // User-defined name (e.g., "Research Team")
+    query: v.string(), // Original user query
     pattern: v.union(
-      v.literal("fan_out_gather"),         // Parallel then merge (default)
-      v.literal("pipeline"),               // Sequential handoff
-      v.literal("swarm"),                  // Autonomous collaboration
+      v.literal("fan_out_gather"), // Parallel then merge (default)
+      v.literal("pipeline"), // Sequential handoff
+      v.literal("swarm"), // Autonomous collaboration
     ),
 
     // Status
@@ -3723,16 +4007,18 @@ export default defineSchema({
     ),
 
     // Agent configurations
-    agentConfigs: v.array(v.object({
-      agentName: v.string(),               // DocumentAgent, MediaAgent, etc.
-      role: v.string(),                    // Role description
-      query: v.string(),                   // Task for this agent
-      stateKeyPrefix: v.string(),          // Unique namespace: "agent_name:key"
-    })),
+    agentConfigs: v.array(
+      v.object({
+        agentName: v.string(), // DocumentAgent, MediaAgent, etc.
+        role: v.string(), // Role description
+        query: v.string(), // Task for this agent
+        stateKeyPrefix: v.string(), // Unique namespace: "agent_name:key"
+      }),
+    ),
 
     // Results
     mergedResult: v.optional(v.string()),
-    confidence: v.optional(v.number()),    // 0-1 confidence score
+    confidence: v.optional(v.number()), // 0-1 confidence score
 
     // Timing
     createdAt: v.number(),
@@ -3751,8 +4037,8 @@ export default defineSchema({
    */
   swarmAgentTasks: defineTable({
     swarmId: v.string(),
-    taskId: v.string(),                    // UUID
-    delegationId: v.optional(v.string()),  // Links to agentDelegations
+    taskId: v.string(), // UUID
+    delegationId: v.optional(v.string()), // Links to agentDelegations
 
     // Agent assignment
     agentName: v.string(),
@@ -3760,7 +4046,7 @@ export default defineSchema({
     role: v.string(),
 
     // State isolation
-    stateKeyPrefix: v.string(),            // e.g., "DocumentAgent:research"
+    stateKeyPrefix: v.string(), // e.g., "DocumentAgent:research"
 
     // Status
     status: v.union(
@@ -3799,10 +4085,10 @@ export default defineSchema({
     // Context data
     value: v.any(),
     valueType: v.union(
-      v.literal("discovery"),              // New fact discovered
-      v.literal("artifact"),               // File/URL reference
-      v.literal("question"),               // Follow-up question
-      v.literal("synthesis"),              // Partial synthesis
+      v.literal("discovery"), // New fact discovered
+      v.literal("artifact"), // File/URL reference
+      v.literal("question"), // Follow-up question
+      v.literal("synthesis"), // Partial synthesis
     ),
 
     // Provenance
@@ -3826,19 +4112,19 @@ export default defineSchema({
    */
   parallelTaskTrees: defineTable({
     userId: v.id("users"),
-    agentThreadId: v.string(),           // Links to agent conversation
-    rootTaskId: v.optional(v.string()),  // ID of root task node
-    query: v.string(),                   // Original user query
+    agentThreadId: v.string(), // Links to agent conversation
+    rootTaskId: v.optional(v.string()), // ID of root task node
+    query: v.string(), // Original user query
     status: v.union(
-      v.literal("decomposing"),          // Breaking into subtasks
-      v.literal("executing"),            // Running parallel branches
-      v.literal("verifying"),            // Verification phase
-      v.literal("cross_checking"),       // Cross-checking results
-      v.literal("merging"),              // Merging surviving paths
-      v.literal("completed"),            // Done
-      v.literal("failed"),               // Terminal failure
+      v.literal("decomposing"), // Breaking into subtasks
+      v.literal("executing"), // Running parallel branches
+      v.literal("verifying"), // Verification phase
+      v.literal("cross_checking"), // Cross-checking results
+      v.literal("merging"), // Merging surviving paths
+      v.literal("completed"), // Done
+      v.literal("failed"), // Terminal failure
     ),
-    phase: v.optional(v.string()),       // Current phase description
+    phase: v.optional(v.string()), // Current phase description
     phaseProgress: v.optional(v.number()), // 0-100 progress within phase
 
     // Execution stats
@@ -3849,7 +4135,7 @@ export default defineSchema({
 
     // Final result
     mergedResult: v.optional(v.string()),
-    confidence: v.optional(v.number()),   // 0-1 final confidence
+    confidence: v.optional(v.number()), // 0-1 final confidence
 
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -3857,10 +4143,12 @@ export default defineSchema({
 
     // Performance metrics
     elapsedMs: v.optional(v.number()),
-    tokenUsage: v.optional(v.object({
-      input: v.number(),
-      output: v.number(),
-    })),
+    tokenUsage: v.optional(
+      v.object({
+        input: v.number(),
+        output: v.number(),
+      }),
+    ),
   })
     .index("by_user", ["userId"])
     .index("by_agent_thread", ["agentThreadId"])
@@ -3873,55 +4161,63 @@ export default defineSchema({
    */
   parallelTaskNodes: defineTable({
     treeId: v.id("parallelTaskTrees"),
-    taskId: v.string(),                  // Stable unique ID (uuid)
+    taskId: v.string(), // Stable unique ID (uuid)
     parentTaskId: v.optional(v.string()), // Null for root
 
     // Task info
     title: v.string(),
     description: v.optional(v.string()),
     taskType: v.union(
-      v.literal("root"),                 // Root decomposition task
-      v.literal("branch"),               // Parallel exploration branch
-      v.literal("verification"),         // Verifier task
-      v.literal("critique"),             // Critique/cross-check task
-      v.literal("merge"),                // Merge surviving paths
-      v.literal("refinement"),           // Post-merge refinement
+      v.literal("root"), // Root decomposition task
+      v.literal("branch"), // Parallel exploration branch
+      v.literal("verification"), // Verifier task
+      v.literal("critique"), // Critique/cross-check task
+      v.literal("merge"), // Merge surviving paths
+      v.literal("refinement"), // Post-merge refinement
     ),
 
     // Execution state
     status: v.union(
-      v.literal("pending"),              // Waiting to execute
-      v.literal("running"),              // Currently executing
-      v.literal("awaiting_children"),    // Waiting for child tasks
-      v.literal("verifying"),            // In verification
-      v.literal("completed"),            // Done successfully
-      v.literal("pruned"),               // Pruned (didn't survive verification)
-      v.literal("failed"),               // Execution error
-      v.literal("backtracked"),          // Rolled back due to downstream failure
+      v.literal("pending"), // Waiting to execute
+      v.literal("running"), // Currently executing
+      v.literal("awaiting_children"), // Waiting for child tasks
+      v.literal("verifying"), // In verification
+      v.literal("completed"), // Done successfully
+      v.literal("pruned"), // Pruned (didn't survive verification)
+      v.literal("failed"), // Execution error
+      v.literal("backtracked"), // Rolled back due to downstream failure
     ),
 
     // Parallel execution metadata
     branchIndex: v.optional(v.number()), // Position in parallel set (0, 1, 2...)
     siblingCount: v.optional(v.number()), // Total siblings in parallel set
-    depth: v.number(),                   // Tree depth (0 = root)
+    depth: v.number(), // Tree depth (0 = root)
 
     // Agent assignment
-    agentName: v.optional(v.string()),   // Which agent handles this
+    agentName: v.optional(v.string()), // Which agent handles this
     subagentThreadId: v.optional(v.string()), // Thread for subagent
 
     // Result
-    result: v.optional(v.string()),      // Task output
+    result: v.optional(v.string()), // Task output
     resultSummary: v.optional(v.string()), // Brief summary for UI
-    confidence: v.optional(v.number()),  // 0-1 confidence
+    confidence: v.optional(v.number()), // 0-1 confidence
 
     // Verification
     verificationScore: v.optional(v.number()), // 0-1 from verifier
     verificationNotes: v.optional(v.string()), // Verifier feedback
-    critiques: v.optional(v.array(v.object({
-      source: v.string(),                // Which sibling critiqued
-      verdict: v.union(v.literal("agree"), v.literal("disagree"), v.literal("partial")),
-      reason: v.string(),
-    }))),
+    critiques: v.optional(
+      v.array(
+        v.object({
+          source: v.string(), // Which sibling critiqued
+          verdict: v.union(
+            v.literal("agree"),
+            v.literal("disagree"),
+            v.literal("partial"),
+          ),
+          reason: v.string(),
+        }),
+      ),
+    ),
     survivedVerification: v.optional(v.boolean()), // Did it pass?
 
     // Timing
@@ -3954,26 +4250,26 @@ export default defineSchema({
   parallelTaskEvents: defineTable({
     treeId: v.id("parallelTaskTrees"),
     taskId: v.string(),
-    seq: v.number(),                     // Monotonic within task
+    seq: v.number(), // Monotonic within task
 
     eventType: v.union(
-      v.literal("started"),              // Task began
-      v.literal("progress"),             // Progress update
-      v.literal("thinking"),             // Reasoning step
-      v.literal("tool_call"),            // Tool invocation
-      v.literal("result_partial"),       // Partial result
-      v.literal("result_final"),         // Final result
+      v.literal("started"), // Task began
+      v.literal("progress"), // Progress update
+      v.literal("thinking"), // Reasoning step
+      v.literal("tool_call"), // Tool invocation
+      v.literal("result_partial"), // Partial result
+      v.literal("result_final"), // Final result
       v.literal("verification_started"), // Verification began
-      v.literal("verification_result"),  // Verification outcome
-      v.literal("critique_received"),    // Critique from sibling
-      v.literal("pruned"),               // Task was pruned
-      v.literal("completed"),            // Task completed
-      v.literal("failed"),               // Task failed
-      v.literal("backtracked"),          // Task rolled back
+      v.literal("verification_result"), // Verification outcome
+      v.literal("critique_received"), // Critique from sibling
+      v.literal("pruned"), // Task was pruned
+      v.literal("completed"), // Task completed
+      v.literal("failed"), // Task failed
+      v.literal("backtracked"), // Task rolled back
     ),
 
     message: v.optional(v.string()),
-    data: v.optional(v.any()),           // Event-specific payload
+    data: v.optional(v.any()), // Event-specific payload
 
     createdAt: v.number(),
   })
@@ -3987,19 +4283,19 @@ export default defineSchema({
    */
   parallelTaskCrossChecks: defineTable({
     treeId: v.id("parallelTaskTrees"),
-    sourceTaskId: v.string(),            // Task doing the critique
-    targetTaskId: v.string(),            // Task being critiqued
+    sourceTaskId: v.string(), // Task doing the critique
+    targetTaskId: v.string(), // Task being critiqued
 
     verdict: v.union(
-      v.literal("agree"),                // Full agreement
-      v.literal("disagree"),             // Contradiction found
-      v.literal("partial"),              // Partial agreement
-      v.literal("abstain"),              // Cannot evaluate
+      v.literal("agree"), // Full agreement
+      v.literal("disagree"), // Contradiction found
+      v.literal("partial"), // Partial agreement
+      v.literal("abstain"), // Cannot evaluate
     ),
 
     agreementPoints: v.optional(v.array(v.string())),
     disagreementPoints: v.optional(v.array(v.string())),
-    confidence: v.number(),              // 0-1 confidence in verdict
+    confidence: v.number(), // 0-1 confidence in verdict
     reasoning: v.optional(v.string()),
 
     createdAt: v.number(),
@@ -4080,14 +4376,14 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   emailEvents: defineTable({
     userId: v.id("users"),
-    threadId: v.optional(v.string()),           // Agent thread that triggered send
-    runId: v.optional(v.string()),              // Agent run ID for provenance
-    messageId: v.optional(v.string()),          // Resend message ID (on success)
-    to: v.string(),                             // Recipient email
-    cc: v.optional(v.array(v.string())),        // CC recipients
-    bcc: v.optional(v.array(v.string())),       // BCC recipients
+    threadId: v.optional(v.string()), // Agent thread that triggered send
+    runId: v.optional(v.string()), // Agent run ID for provenance
+    messageId: v.optional(v.string()), // Resend message ID (on success)
+    to: v.string(), // Recipient email
+    cc: v.optional(v.array(v.string())), // CC recipients
+    bcc: v.optional(v.array(v.string())), // BCC recipients
     subject: v.string(),
-    bodyPreview: v.optional(v.string()),        // First 200 chars of body
+    bodyPreview: v.optional(v.string()), // First 200 chars of body
     status: v.union(
       v.literal("queued"),
       v.literal("sent"),
@@ -4095,7 +4391,7 @@ export default defineSchema({
       v.literal("failed"),
       v.literal("bounced"),
     ),
-    providerResponse: v.optional(v.any()),      // Raw response from Resend
+    providerResponse: v.optional(v.any()), // Raw response from Resend
     errorMessage: v.optional(v.string()),
     createdAt: v.number(),
     sentAt: v.optional(v.number()),
@@ -4111,8 +4407,8 @@ export default defineSchema({
   spreadsheetEvents: defineTable({
     userId: v.id("users"),
     spreadsheetId: v.id("spreadsheets"),
-    threadId: v.optional(v.string()),           // Agent thread that triggered edit
-    runId: v.optional(v.string()),              // Agent run ID for provenance
+    threadId: v.optional(v.string()), // Agent thread that triggered edit
+    runId: v.optional(v.string()), // Agent run ID for provenance
     operation: v.union(
       v.literal("set_cell"),
       v.literal("insert_row"),
@@ -4123,10 +4419,10 @@ export default defineSchema({
       v.literal("add_sheet"),
       v.literal("rename_sheet"),
     ),
-    targetRange: v.optional(v.string()),        // A1 notation (e.g., "A1:B5")
-    payload: v.any(),                           // Operation-specific data (before/after)
+    targetRange: v.optional(v.string()), // A1 notation (e.g., "A1:B5")
+    payload: v.any(), // Operation-specific data (before/after)
     previousArtifactId: v.optional(v.string()), // Link to previous versioned artifact
-    newArtifactId: v.optional(v.string()),      // Link to new versioned artifact
+    newArtifactId: v.optional(v.string()), // Link to new versioned artifact
     validationErrors: v.optional(v.array(v.string())), // Formula/type validation errors
     status: v.union(
       v.literal("applied"),
@@ -4145,24 +4441,24 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   calendarArtifacts: defineTable({
     userId: v.id("users"),
-    threadId: v.optional(v.string()),           // Agent thread that created artifact
+    threadId: v.optional(v.string()), // Agent thread that created artifact
     runId: v.optional(v.string()),
-    eventUid: v.string(),                       // VEVENT UID (stable across updates)
+    eventUid: v.string(), // VEVENT UID (stable across updates)
     operation: v.union(
       v.literal("create"),
       v.literal("update"),
       v.literal("cancel"),
     ),
-    icsContent: v.string(),                     // Full ICS VEVENT string
-    summary: v.string(),                        // Event title
-    dtStart: v.number(),                        // Start timestamp (ms)
-    dtEnd: v.optional(v.number()),              // End timestamp (ms)
+    icsContent: v.string(), // Full ICS VEVENT string
+    summary: v.string(), // Event title
+    dtStart: v.number(), // Start timestamp (ms)
+    dtEnd: v.optional(v.number()), // End timestamp (ms)
     location: v.optional(v.string()),
     description: v.optional(v.string()),
     attendees: v.optional(v.array(v.string())), // Attendee emails
-    sequence: v.number(),                       // SEQUENCE number for updates
-    version: v.number(),                        // Internal version counter
-    linkedEventId: v.optional(v.id("events")),  // Link to actual calendar event if synced
+    sequence: v.number(), // SEQUENCE number for updates
+    version: v.number(), // Internal version counter
+    linkedEventId: v.optional(v.id("events")), // Link to actual calendar event if synced
     createdAt: v.number(),
   })
     .index("by_user", ["userId"])
@@ -4175,7 +4471,7 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   documentPatches: defineTable({
     documentId: v.string(),
-    operations: v.any(),                        // Array of patch operations
+    operations: v.any(), // Array of patch operations
     description: v.optional(v.string()),
     originalContentPreview: v.optional(v.string()),
     newContentPreview: v.optional(v.string()),
@@ -4196,17 +4492,21 @@ export default defineSchema({
   contextPacks: defineTable({
     packId: v.string(),
     threadId: v.string(),
-    docSetHash: v.string(),                     // Hash of sorted docIds for cache key
-    documents: v.array(v.object({
-      docId: v.string(),
-      title: v.string(),
-      excerpts: v.array(v.object({
-        text: v.string(),
-        section: v.optional(v.string()),
-        relevanceScore: v.optional(v.number()),
-      })),
-      totalTokensEstimate: v.number(),
-    })),
+    docSetHash: v.string(), // Hash of sorted docIds for cache key
+    documents: v.array(
+      v.object({
+        docId: v.string(),
+        title: v.string(),
+        excerpts: v.array(
+          v.object({
+            text: v.string(),
+            section: v.optional(v.string()),
+            relevanceScore: v.optional(v.number()),
+          }),
+        ),
+        totalTokensEstimate: v.number(),
+      }),
+    ),
     totalTokens: v.number(),
     createdAt: v.number(),
     expiresAt: v.number(),
@@ -4224,8 +4524,8 @@ export default defineSchema({
   /* EVAL RUNS - Benchmark evaluation runs for agent testing            */
   /* ------------------------------------------------------------------ */
   evalRuns: defineTable({
-    suiteId: v.string(),                        // Test suite identifier
-    model: v.string(),                          // Model used for evaluation
+    suiteId: v.string(), // Test suite identifier
+    model: v.string(), // Model used for evaluation
     status: v.union(
       v.literal("pending"),
       v.literal("running"),
@@ -4235,12 +4535,12 @@ export default defineSchema({
     totalCases: v.number(),
     passedCases: v.number(),
     failedCases: v.number(),
-    passRate: v.number(),                       // 0-1
+    passRate: v.number(), // 0-1
     avgLatencyMs: v.number(),
     startedAt: v.number(),
     completedAt: v.optional(v.number()),
     errorMessage: v.optional(v.string()),
-    metadata: v.optional(v.any()),              // Extra run configuration
+    metadata: v.optional(v.any()), // Extra run configuration
   })
     .index("by_suite", ["suiteId"])
     .index("by_status", ["status"])
@@ -4251,14 +4551,14 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   evalResults: defineTable({
     runId: v.id("evalRuns"),
-    testId: v.string(),                         // Test case ID
+    testId: v.string(), // Test case ID
     passed: v.boolean(),
     latencyMs: v.number(),
     toolsCalled: v.array(v.string()),
     response: v.string(),
-    reasoning: v.string(),                      // Judge's reasoning
-    failureCategory: v.optional(v.string()),    // For failure analysis
-    suggestedFix: v.optional(v.string()),       // Judge's suggestion
+    reasoning: v.string(), // Judge's reasoning
+    failureCategory: v.optional(v.string()), // For failure analysis
+    suggestedFix: v.optional(v.string()), // Judge's suggestion
     artifacts: v.optional(v.array(v.string())), // Artifact IDs produced
     createdAt: v.number(),
   })
@@ -4272,19 +4572,21 @@ export default defineSchema({
   rubricEvolutions: defineTable({
     cycleId: v.string(),
     version: v.number(),
-    changes: v.array(v.object({
-      type: v.union(
-        v.literal("add_gate"),
-        v.literal("remove_gate"),
-        v.literal("adjust_threshold"),
-        v.literal("add_disqualifier"),
-      ),
-      gateName: v.string(),
-      reasoning: v.string(),
-      confidence: v.number(),
-      before: v.string(),
-      after: v.string(),
-    })),
+    changes: v.array(
+      v.object({
+        type: v.union(
+          v.literal("add_gate"),
+          v.literal("remove_gate"),
+          v.literal("adjust_threshold"),
+          v.literal("add_disqualifier"),
+        ),
+        gateName: v.string(),
+        reasoning: v.string(),
+        confidence: v.number(),
+        before: v.string(),
+        after: v.string(),
+      }),
+    ),
     overallReasoning: v.string(),
     expectedImpact: v.string(),
     analysisSnapshot: v.object({
@@ -4309,14 +4611,18 @@ export default defineSchema({
     description: v.string(),
     allowedDecisions: v.array(v.string()), // ["approve", "edit", "reject"]
     status: v.string(), // "pending" | "approve" | "edit" | "reject" | "cancelled"
-    decision: v.optional(v.object({
-      type: v.string(),
-      editedAction: v.optional(v.object({
-        name: v.string(),
-        args: v.any(),
-      })),
-      message: v.optional(v.string()),
-    })),
+    decision: v.optional(
+      v.object({
+        type: v.string(),
+        editedAction: v.optional(
+          v.object({
+            name: v.string(),
+            args: v.any(),
+          }),
+        ),
+        message: v.optional(v.string()),
+      }),
+    ),
     createdAt: v.number(),
     resolvedAt: v.optional(v.number()),
   })
@@ -4358,12 +4664,12 @@ export default defineSchema({
   /* CONFIRMED COMPANIES - User-confirmed company selections for SEC    */
   /* ------------------------------------------------------------------ */
   confirmedCompanies: defineTable({
-    threadId: v.string(),                    // Links to conversation thread
-    companyName: v.string(),                 // User's original query term (e.g., "Dasher")
-    confirmedCik: v.string(),                // The CIK of the confirmed company
-    confirmedName: v.string(),               // Full legal name of the confirmed company
+    threadId: v.string(), // Links to conversation thread
+    companyName: v.string(), // User's original query term (e.g., "Dasher")
+    confirmedCik: v.string(), // The CIK of the confirmed company
+    confirmedName: v.string(), // Full legal name of the confirmed company
     confirmedTicker: v.optional(v.string()), // Ticker symbol if available
-    createdAt: v.number(),                   // Timestamp of confirmation
+    createdAt: v.number(), // Timestamp of confirmation
   })
     .index("by_thread_and_name", ["threadId", "companyName"])
     .index("by_thread", ["threadId"]),
@@ -4372,28 +4678,28 @@ export default defineSchema({
   /* PENDING DOCUMENT EDITS - Deep Agent edit instructions for client   */
   /* ------------------------------------------------------------------ */
   pendingDocumentEdits: defineTable({
-    documentId: v.id("documents"),              // Target document
-    userId: v.id("users"),                      // User who initiated the edit
-    agentThreadId: v.string(),                  // Agent thread for correlation
-    documentVersion: v.number(),                // Document version at time of read (OCC)
+    documentId: v.id("documents"), // Target document
+    userId: v.id("users"), // User who initiated the edit
+    agentThreadId: v.string(), // Agent thread for correlation
+    documentVersion: v.number(), // Document version at time of read (OCC)
     operation: v.object({
-      type: v.literal("anchoredReplace"),       // Edit operation type
-      anchor: v.string(),                       // Text anchor to find position
-      search: v.string(),                       // Text to search for and replace
-      replace: v.string(),                      // Replacement text
-      sectionHint: v.optional(v.string()),      // Human-readable section name
+      type: v.literal("anchoredReplace"), // Edit operation type
+      anchor: v.string(), // Text anchor to find position
+      search: v.string(), // Text to search for and replace
+      replace: v.string(), // Replacement text
+      sectionHint: v.optional(v.string()), // Human-readable section name
     }),
     status: v.union(
-      v.literal("pending"),                     // Awaiting client application
-      v.literal("applied"),                     // Successfully applied
-      v.literal("failed"),                      // Client failed to apply
-      v.literal("cancelled"),                   // User cancelled
-      v.literal("stale"),                       // Document changed since planning
+      v.literal("pending"), // Awaiting client application
+      v.literal("applied"), // Successfully applied
+      v.literal("failed"), // Client failed to apply
+      v.literal("cancelled"), // User cancelled
+      v.literal("stale"), // Document changed since planning
     ),
-    errorMessage: v.optional(v.string()),       // Error details if failed
-    retryCount: v.number(),                     // Number of retry attempts
-    createdAt: v.number(),                      // When edit was created
-    appliedAt: v.optional(v.number()),          // When edit was applied
+    errorMessage: v.optional(v.string()), // Error details if failed
+    retryCount: v.number(), // Number of retry attempts
+    createdAt: v.number(), // When edit was created
+    appliedAt: v.optional(v.number()), // When edit was applied
   })
     .index("by_document", ["documentId"])
     .index("by_document_status", ["documentId", "status"])
@@ -4405,14 +4711,14 @@ export default defineSchema({
   /* CALENDAR DATE MARKERS - Auto-detected dates from files            */
   /* ------------------------------------------------------------------ */
   calendarDateMarkers: defineTable({
-    userId: v.id("users"),                        // User who owns this marker
-    documentId: v.id("documents"),                // Document that triggered the marker
-    fileName: v.string(),                         // Original filename
-    detectedDate: v.number(),                     // Detected date timestamp
-    confidence: v.string(),                       // 'high', 'medium', 'low'
-    pattern: v.string(),                          // Pattern used to detect (ISO, US, MonthDay, etc.)
-    createdAt: v.number(),                        // When marker was created
-    updatedAt: v.number(),                        // When marker was last updated
+    userId: v.id("users"), // User who owns this marker
+    documentId: v.id("documents"), // Document that triggered the marker
+    fileName: v.string(), // Original filename
+    detectedDate: v.number(), // Detected date timestamp
+    confidence: v.string(), // 'high', 'medium', 'low'
+    pattern: v.string(), // Pattern used to detect (ISO, US, MonthDay, etc.)
+    createdAt: v.number(), // When marker was created
+    updatedAt: v.number(), // When marker was last updated
   })
     .index("by_user", ["userId"])
     .index("by_document", ["documentId"])
@@ -4422,20 +4728,20 @@ export default defineSchema({
   /* HUMAN-IN-THE-LOOP - Agent requests for human input                */
   /* ------------------------------------------------------------------ */
   humanRequests: defineTable({
-    userId: v.id("users"),                       // User who owns this request (for security)
-    threadId: v.string(),                        // Agent thread ID
-    messageId: v.string(),                       // Message ID where request was made
-    toolCallId: v.string(),                      // Tool call ID for askHuman
-    question: v.string(),                        // Question to ask human
-    context: v.optional(v.string()),             // Context about why asking
-    options: v.optional(v.array(v.string())),    // Suggested options
+    userId: v.id("users"), // User who owns this request (for security)
+    threadId: v.string(), // Agent thread ID
+    messageId: v.string(), // Message ID where request was made
+    toolCallId: v.string(), // Tool call ID for askHuman
+    question: v.string(), // Question to ask human
+    context: v.optional(v.string()), // Context about why asking
+    options: v.optional(v.array(v.string())), // Suggested options
     status: v.union(
       v.literal("pending"),
       v.literal("answered"),
-      v.literal("cancelled")
+      v.literal("cancelled"),
     ),
-    response: v.optional(v.string()),            // Human's response
-    respondedAt: v.optional(v.number()),         // When human responded
+    response: v.optional(v.string()), // Human's response
+    respondedAt: v.optional(v.number()), // When human responded
   })
     .index("by_user", ["userId"])
     .index("by_thread", ["threadId"])
@@ -4446,14 +4752,14 @@ export default defineSchema({
   /* CONFIRMED PEOPLE - User-confirmed person selections                */
   /* ------------------------------------------------------------------ */
   confirmedPeople: defineTable({
-    threadId: v.string(),                    // Links to conversation thread
-    personName: v.string(),                  // User's original query term (e.g., "Michael Jordan")
-    confirmedId: v.string(),                 // Unique identifier for the person
-    confirmedName: v.string(),               // Full name of the confirmed person
+    threadId: v.string(), // Links to conversation thread
+    personName: v.string(), // User's original query term (e.g., "Michael Jordan")
+    confirmedId: v.string(), // Unique identifier for the person
+    confirmedName: v.string(), // Full name of the confirmed person
     confirmedProfession: v.optional(v.string()), // Profession/occupation
     confirmedOrganization: v.optional(v.string()), // Organization/company
     confirmedLocation: v.optional(v.string()), // Location
-    createdAt: v.number(),                   // Timestamp of confirmation
+    createdAt: v.number(), // Timestamp of confirmation
   })
     .index("by_thread_and_name", ["threadId", "personName"])
     .index("by_thread", ["threadId"]),
@@ -4462,14 +4768,14 @@ export default defineSchema({
   /* CONFIRMED EVENTS - User-confirmed event selections                 */
   /* ------------------------------------------------------------------ */
   confirmedEvents: defineTable({
-    threadId: v.string(),                    // Links to conversation thread
-    eventQuery: v.string(),                  // User's original query term (e.g., "Apple Event")
-    confirmedId: v.string(),                 // Unique identifier for the event
-    confirmedName: v.string(),               // Full name of the confirmed event
-    confirmedDate: v.optional(v.string()),   // Event date
+    threadId: v.string(), // Links to conversation thread
+    eventQuery: v.string(), // User's original query term (e.g., "Apple Event")
+    confirmedId: v.string(), // Unique identifier for the event
+    confirmedName: v.string(), // Full name of the confirmed event
+    confirmedDate: v.optional(v.string()), // Event date
     confirmedLocation: v.optional(v.string()), // Event location
     confirmedDescription: v.optional(v.string()), // Event description
-    createdAt: v.number(),                   // Timestamp of confirmation
+    createdAt: v.number(), // Timestamp of confirmation
   })
     .index("by_thread_and_query", ["threadId", "eventQuery"])
     .index("by_thread", ["threadId"]),
@@ -4478,14 +4784,14 @@ export default defineSchema({
   /* CONFIRMED NEWS TOPICS - User-confirmed news article selections     */
   /* ------------------------------------------------------------------ */
   confirmedNewsTopics: defineTable({
-    threadId: v.string(),                    // Links to conversation thread
-    newsQuery: v.string(),                   // User's original query term (e.g., "Tesla news")
-    confirmedId: v.string(),                 // Unique identifier for the article
-    confirmedHeadline: v.string(),           // Article headline
+    threadId: v.string(), // Links to conversation thread
+    newsQuery: v.string(), // User's original query term (e.g., "Tesla news")
+    confirmedId: v.string(), // Unique identifier for the article
+    confirmedHeadline: v.string(), // Article headline
     confirmedSource: v.optional(v.string()), // News source
-    confirmedDate: v.optional(v.string()),   // Publication date
-    confirmedUrl: v.optional(v.string()),    // Article URL
-    createdAt: v.number(),                   // Timestamp of confirmation
+    confirmedDate: v.optional(v.string()), // Publication date
+    confirmedUrl: v.optional(v.string()), // Article URL
+    createdAt: v.number(), // Timestamp of confirmation
   })
     .index("by_thread_and_query", ["threadId", "newsQuery"])
     .index("by_thread", ["threadId"]),
@@ -4494,71 +4800,76 @@ export default defineSchema({
   /* ENTITY CONTEXTS - Cached entity research data (companies, people)  */
   /* ------------------------------------------------------------------ */
   entityContexts: defineTable({
-    entityName: v.string(),                  // Name of the entity (company/person)
-    entityType: v.union(
-      v.literal("company"),
-      v.literal("person")
-    ),
-    linkupData: v.optional(v.any()),         // Raw LinkUp API response
-    summary: v.string(),                     // Brief summary of the entity
-    keyFacts: v.array(v.string()),           // Array of key facts/highlights
-    sources: v.array(v.object({
-      name: v.string(),
-      url: v.string(),
-      snippet: v.optional(v.string()),
-    })),
-    // CRM Fields (NEW)
-    crmFields: v.optional(v.object({
-      companyName: v.string(),
-      description: v.string(),
-      headline: v.string(),
-      hqLocation: v.string(),
-      city: v.string(),
-      state: v.string(),
-      country: v.string(),
-      website: v.string(),
-      email: v.string(),
-      phone: v.string(),
-      founders: v.array(v.string()),
-      foundersBackground: v.string(),
-      keyPeople: v.array(v.object({
+    entityName: v.string(), // Name of the entity (company/person)
+    entityType: v.union(v.literal("company"), v.literal("person")),
+    linkupData: v.optional(v.any()), // Raw LinkUp API response
+    summary: v.string(), // Brief summary of the entity
+    keyFacts: v.array(v.string()), // Array of key facts/highlights
+    sources: v.array(
+      v.object({
         name: v.string(),
-        title: v.string(),
-      })),
-      industry: v.string(),
-      companyType: v.string(),
-      foundingYear: v.optional(v.number()),
-      product: v.string(),
-      targetMarket: v.string(),
-      businessModel: v.string(),
-      fundingStage: v.string(),
-      totalFunding: v.string(),
-      lastFundingDate: v.string(),
-      investors: v.array(v.string()),
-      investorBackground: v.string(),
-      competitors: v.array(v.string()),
-      competitorAnalysis: v.string(),
-      fdaApprovalStatus: v.string(),
-      fdaTimeline: v.string(),
-      newsTimeline: v.array(v.object({
-        date: v.string(),
+        url: v.string(),
+        snippet: v.optional(v.string()),
+      }),
+    ),
+    // CRM Fields (NEW)
+    crmFields: v.optional(
+      v.object({
+        companyName: v.string(),
+        description: v.string(),
         headline: v.string(),
-        source: v.string(),
-      })),
-      recentNews: v.string(),
-      keyEntities: v.array(v.string()),
-      researchPapers: v.array(v.string()),
-      partnerships: v.array(v.string()),
-      completenessScore: v.number(),
-      dataQuality: v.union(
-        v.literal("verified"),
-        v.literal("partial"),
-        v.literal("incomplete")
-      ),
-    })),
-    // 
+        hqLocation: v.string(),
+        city: v.string(),
+        state: v.string(),
+        country: v.string(),
+        website: v.string(),
+        email: v.string(),
+        phone: v.string(),
+        founders: v.array(v.string()),
+        foundersBackground: v.string(),
+        keyPeople: v.array(
+          v.object({
+            name: v.string(),
+            title: v.string(),
+          }),
+        ),
+        industry: v.string(),
+        companyType: v.string(),
+        foundingYear: v.optional(v.number()),
+        product: v.string(),
+        targetMarket: v.string(),
+        businessModel: v.string(),
+        fundingStage: v.string(),
+        totalFunding: v.string(),
+        lastFundingDate: v.string(),
+        investors: v.array(v.string()),
+        investorBackground: v.string(),
+        competitors: v.array(v.string()),
+        competitorAnalysis: v.string(),
+        fdaApprovalStatus: v.string(),
+        fdaTimeline: v.string(),
+        newsTimeline: v.array(
+          v.object({
+            date: v.string(),
+            headline: v.string(),
+            source: v.string(),
+          }),
+        ),
+        recentNews: v.string(),
+        keyEntities: v.array(v.string()),
+        researchPapers: v.array(v.string()),
+        partnerships: v.array(v.string()),
+        completenessScore: v.number(),
+        dataQuality: v.union(
+          v.literal("verified"),
+          v.literal("partial"),
+          v.literal("incomplete"),
+        ),
+      }),
+    ),
+    //
     // BANKER-GRADE ENRICHMENT FIELDS (AUDIT_MOCKS aligned)
-    // 
+    //
 
     /** Structured funding data */
     funding: v.optional(v.any()),
@@ -4582,13 +4893,13 @@ export default defineSchema({
     personaHooks: v.optional(v.any()),
 
     spreadsheetId: v.optional(v.id("documents")), // Optional link to source spreadsheet
-    rowIndex: v.optional(v.number()),        // Optional row index in spreadsheet
-    researchedAt: v.number(),                // Timestamp when researched
+    rowIndex: v.optional(v.number()), // Optional row index in spreadsheet
+    researchedAt: v.number(), // Timestamp when researched
     researchedBy: v.optional(v.id("users")), // User who triggered the research (optional for anonymous)
-    lastAccessedAt: v.number(),              // Last time this context was accessed
-    accessCount: v.number(),                 // Number of times accessed (cache hits)
-    version: v.number(),                     // Version number for cache invalidation
-    isStale: v.optional(v.boolean()),        // Flag for stale data (> 7 days)
+    lastAccessedAt: v.number(), // Last time this context was accessed
+    accessCount: v.number(), // Number of times accessed (cache hits)
+    version: v.number(), // Version number for cache invalidation
+    isStale: v.optional(v.boolean()), // Flag for stale data (> 7 days)
 
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // GAM: STRUCTURED MEMORY FIELDS
@@ -4598,57 +4909,73 @@ export default defineSchema({
     canonicalKey: v.optional(v.string()),
 
     /** Structured facts with boolean confidence flags */
-    structuredFacts: v.optional(v.array(v.object({
-      id: v.string(),
-      subject: v.string(),
-      predicate: v.string(),
-      object: v.string(),
-      /** Boolean: does this fact meet confidence threshold? */
-      isHighConfidence: v.boolean(),
-      sourceIds: v.array(v.string()),
-      timestamp: v.string(),
-      isOutdated: v.optional(v.boolean()),
-    }))),
+    structuredFacts: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          subject: v.string(),
+          predicate: v.string(),
+          object: v.string(),
+          /** Boolean: does this fact meet confidence threshold? */
+          isHighConfidence: v.boolean(),
+          sourceIds: v.array(v.string()),
+          timestamp: v.string(),
+          isOutdated: v.optional(v.boolean()),
+        }),
+      ),
+    ),
 
     /** Narrative interpretations (growth story, bear case, etc.) */
-    narratives: v.optional(v.array(v.object({
-      label: v.string(),
-      description: v.string(),
-      supportingFactIds: v.array(v.string()),
-      /** Boolean: is this narrative well-supported? */
-      isWellSupported: v.boolean(),
-      lastUpdated: v.string(),
-    }))),
+    narratives: v.optional(
+      v.array(
+        v.object({
+          label: v.string(),
+          description: v.string(),
+          supportingFactIds: v.array(v.string()),
+          /** Boolean: is this narrative well-supported? */
+          isWellSupported: v.boolean(),
+          lastUpdated: v.string(),
+        }),
+      ),
+    ),
 
     /** Actionable heuristics for agents */
     heuristics: v.optional(v.array(v.string())),
 
     /** Conflict tracking */
-    conflicts: v.optional(v.array(v.object({
-      factIds: v.array(v.string()),
-      description: v.string(),
-      status: v.union(v.literal("unresolved"), v.literal("resolved")),
-      detectedAt: v.string(),
-    }))),
+    conflicts: v.optional(
+      v.array(
+        v.object({
+          factIds: v.array(v.string()),
+          description: v.string(),
+          status: v.union(v.literal("unresolved"), v.literal("resolved")),
+          detectedAt: v.string(),
+        }),
+      ),
+    ),
 
     /** Boolean quality flags (not arbitrary scores) */
-    quality: v.optional(v.object({
-      hasSufficientFacts: v.boolean(),
-      hasRecentResearch: v.boolean(),
-      hasNoConflicts: v.boolean(),
-      hasVerifiedSources: v.boolean(),
-      hasHighConfidenceFacts: v.boolean(),
-      hasNarratives: v.boolean(),
-      hasHeuristics: v.boolean(),
-    })),
+    quality: v.optional(
+      v.object({
+        hasSufficientFacts: v.boolean(),
+        hasRecentResearch: v.boolean(),
+        hasNoConflicts: v.boolean(),
+        hasVerifiedSources: v.boolean(),
+        hasHighConfidenceFacts: v.boolean(),
+        hasNarratives: v.boolean(),
+        hasHeuristics: v.boolean(),
+      }),
+    ),
 
     /** Quality tier derived from flags */
-    qualityTier: v.optional(v.union(
-      v.literal("excellent"),
-      v.literal("good"),
-      v.literal("fair"),
-      v.literal("poor")
-    )),
+    qualityTier: v.optional(
+      v.union(
+        v.literal("excellent"),
+        v.literal("good"),
+        v.literal("fair"),
+        v.literal("poor"),
+      ),
+    ),
 
     /** Fact count for quick checks */
     factCount: v.optional(v.number()),
@@ -4659,11 +4986,9 @@ export default defineSchema({
 
     /** Research job tracking */
     lastResearchJobId: v.optional(v.string()),
-    researchDepth: v.optional(v.union(
-      v.literal("shallow"),
-      v.literal("standard"),
-      v.literal("deep")
-    )),
+    researchDepth: v.optional(
+      v.union(v.literal("shallow"), v.literal("standard"), v.literal("deep")),
+    ),
 
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // KNOWLEDGE GRAPH INTEGRATION
@@ -4686,56 +5011,66 @@ export default defineSchema({
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /** Arbitrage-specific metrics */
-    arbitrageMetadata: v.optional(v.object({
-      lastArbitrageCheckAt: v.number(),
-      contradictionCount: v.number(),
-      sourceQualityScore: v.number(), // 0-100 composite score
-      verificationStatus: v.union(
-        v.literal("verified"),
-        v.literal("partial"),
-        v.literal("unverified")
-      ),
-      deltasSinceLastCheck: v.number(),
-      hiddenSourcesCount: v.number(),
-    })),
+    arbitrageMetadata: v.optional(
+      v.object({
+        lastArbitrageCheckAt: v.number(),
+        contradictionCount: v.number(),
+        sourceQualityScore: v.number(), // 0-100 composite score
+        verificationStatus: v.union(
+          v.literal("verified"),
+          v.literal("partial"),
+          v.literal("unverified"),
+        ),
+        deltasSinceLastCheck: v.number(),
+        hiddenSourcesCount: v.number(),
+      }),
+    ),
 
     /** Source health tracking (URL availability + content changes) */
-    sourceHealth: v.optional(v.array(v.object({
-      url: v.string(),
-      lastChecked: v.number(),
-      status: v.union(
-        v.literal("ok"),
-        v.literal("404"),
-        v.literal("content_changed")
+    sourceHealth: v.optional(
+      v.array(
+        v.object({
+          url: v.string(),
+          lastChecked: v.number(),
+          status: v.union(
+            v.literal("ok"),
+            v.literal("404"),
+            v.literal("content_changed"),
+          ),
+          contentHash: v.string(),
+          firstSeenHash: v.string(),
+        }),
       ),
-      contentHash: v.string(),
-      firstSeenHash: v.string(),
-    }))),
+    ),
 
     /** Delta changelog (what changed since last arbitrage check) */
-    deltas: v.optional(v.array(v.object({
-      type: v.union(
-        v.literal("fact_added"),
-        v.literal("fact_removed"),
-        v.literal("fact_modified"),
-        v.literal("conflict_detected"),
-        v.literal("conflict_resolved"),
-        v.literal("source_404"),
-        v.literal("source_changed")
+    deltas: v.optional(
+      v.array(
+        v.object({
+          type: v.union(
+            v.literal("fact_added"),
+            v.literal("fact_removed"),
+            v.literal("fact_modified"),
+            v.literal("conflict_detected"),
+            v.literal("conflict_resolved"),
+            v.literal("source_404"),
+            v.literal("source_changed"),
+          ),
+          factId: v.optional(v.string()),
+          timestamp: v.number(),
+          description: v.string(),
+          severity: v.union(
+            v.literal("high"),
+            v.literal("medium"),
+            v.literal("low"),
+          ),
+        }),
       ),
-      factId: v.optional(v.string()),
-      timestamp: v.number(),
-      description: v.string(),
-      severity: v.union(
-        v.literal("high"),
-        v.literal("medium"),
-        v.literal("low")
-      ),
-    }))),
+    ),
 
     // Deep Agent enrichment tracking (fixes publishedAt hack)
-    ingestedAt: v.optional(v.number()),          // When entity was first discovered
-    lastEnrichedAt: v.optional(v.number()),      // Last enrichment job completion
+    ingestedAt: v.optional(v.number()), // When entity was first discovered
+    lastEnrichedAt: v.optional(v.number()), // Last enrichment job completion
     enrichmentJobId: v.optional(v.id("enrichmentJobs")), // Current/last enrichment job
   })
     .index("by_entity", ["entityName", "entityType"])
@@ -4756,28 +5091,26 @@ export default defineSchema({
   /* Dynamic timeline, relationships, and sections (not hardcoded)       */
   /* ------------------------------------------------------------------ */
   adaptiveEntityProfiles: defineTable({
-    entityName: v.string(),                  // Name of the entity
-    entityType: v.string(),                  // LLM-inferred type (founder, investor, company, etc.)
+    entityName: v.string(), // Name of the entity
+    entityType: v.string(), // LLM-inferred type (founder, investor, company, etc.)
 
     // The full adaptive profile (stored as flexible JSON)
-    profile: v.any(),                        // AdaptiveEntityProfile object
+    profile: v.any(), // AdaptiveEntityProfile object
 
     // Metadata
     createdAt: v.number(),
     updatedAt: v.number(),
-    version: v.number(),                     // Version for cache invalidation
+    version: v.number(), // Version for cache invalidation
 
     // Quality tracking
-    completeness: v.optional(v.number()),    // 0-100 score
-    confidence: v.optional(v.number()),      // 0-100 score
+    completeness: v.optional(v.number()), // 0-100 score
+    confidence: v.optional(v.number()), // 0-100 score
 
     // Research state
     lastResearchedAt: v.optional(v.number()),
-    researchDepth: v.optional(v.union(
-      v.literal("quick"),
-      v.literal("standard"),
-      v.literal("deep")
-    )),
+    researchDepth: v.optional(
+      v.union(v.literal("quick"), v.literal("standard"), v.literal("deep")),
+    ),
 
     // Link to base entity context
     entityContextId: v.optional(v.id("entityContexts")),
@@ -4819,37 +5152,47 @@ export default defineSchema({
     userId: v.id("users"),
     agentThreadId: v.optional(v.string()),
     goal: v.string(),
-    steps: v.array(v.object({
-      description: v.string(),
-      status: v.union(
-        v.literal("pending"),
-        v.literal("in_progress"),
-        v.literal("completed")
+    steps: v.array(
+      v.object({
+        description: v.string(),
+        status: v.union(
+          v.literal("pending"),
+          v.literal("in_progress"),
+          v.literal("completed"),
+        ),
+      }),
+    ),
+    features: v.optional(
+      v.array(
+        v.object({
+          name: v.string(),
+          status: v.union(
+            v.literal("pending"),
+            v.literal("failing"),
+            v.literal("passing"),
+          ),
+          testCriteria: v.string(),
+          notes: v.optional(v.string()),
+        }),
       ),
-    })),
-    features: v.optional(v.array(v.object({
-      name: v.string(),
-      status: v.union(
-        v.literal("pending"),
-        v.literal("failing"),
-        v.literal("passing")
+    ),
+    progressLog: v.optional(
+      v.array(
+        v.object({
+          ts: v.number(),
+          status: v.union(
+            v.literal("info"),
+            v.literal("pending"),
+            v.literal("working"),
+            v.literal("passing"),
+            v.literal("failing"),
+            v.literal("error"),
+          ),
+          message: v.string(),
+          meta: v.optional(v.any()),
+        }),
       ),
-      testCriteria: v.string(),
-      notes: v.optional(v.string()),
-    }))),
-    progressLog: v.optional(v.array(v.object({
-      ts: v.number(),
-      status: v.union(
-        v.literal("info"),
-        v.literal("pending"),
-        v.literal("working"),
-        v.literal("passing"),
-        v.literal("failing"),
-        v.literal("error")
-      ),
-      message: v.string(),
-      meta: v.optional(v.any()),
-    }))),
+    ),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -5011,10 +5354,10 @@ export default defineSchema({
 
     /** Review state. */
     status: v.union(
-      v.literal("pending"),   // awaiting user review (wrap-up)
-      v.literal("kept"),      // promoted to a standalone entity Report
+      v.literal("pending"), // awaiting user review (wrap-up)
+      v.literal("kept"), // promoted to a standalone entity Report
       v.literal("dismissed"), // explicitly rejected by user
-      v.literal("auto"),      // auto-kept (verified tier, user didn't intervene)
+      v.literal("auto"), // auto-kept (verified tier, user didn't intervene)
     ),
 
     /** Slug of the entity Report this artifact promoted to, after `status = kept`. */
@@ -5065,18 +5408,16 @@ export default defineSchema({
       v.literal("initial"),
       v.literal("refresh"),
       v.literal("merge_review"),
-      v.literal("deep_upgrade")
+      v.literal("deep_upgrade"),
     ),
-    researchDepth: v.optional(v.union(
-      v.literal("shallow"),
-      v.literal("standard"),
-      v.literal("deep")
-    )),
+    researchDepth: v.optional(
+      v.union(v.literal("shallow"), v.literal("standard"), v.literal("deep")),
+    ),
     status: v.union(
       v.literal("pending"),
       v.literal("running"),
       v.literal("completed"),
-      v.literal("failed")
+      v.literal("failed"),
     ),
     priority: v.number(),
     triggerSource: v.optional(v.string()),
@@ -5095,14 +5436,14 @@ export default defineSchema({
   /* GAM: MEMORY METRICS - Usage and quality tracking                   */
   /* ------------------------------------------------------------------ */
   memoryMetrics: defineTable({
-    date: v.string(),                       // YYYY-MM-DD
-    userId: v.optional(v.id("users")),      // null for global metrics
+    date: v.string(), // YYYY-MM-DD
+    userId: v.optional(v.id("users")), // null for global metrics
 
     // Query metrics (boolean outcomes)
     queryMemoryCalls: v.number(),
-    queryMemoryHits: v.number(),            // found=true
-    queryMemoryMisses: v.number(),          // found=false
-    queryMemoryStaleHits: v.number(),       // found but stale
+    queryMemoryHits: v.number(), // found=true
+    queryMemoryMisses: v.number(), // found=false
+    queryMemoryStaleHits: v.number(), // found but stale
 
     // Job metrics
     researchJobsCreated: v.number(),
@@ -5128,21 +5469,21 @@ export default defineSchema({
     // Identity
     name: v.string(),
     sourceType: v.union(
-      v.literal("entity"),      // from entityContexts
-      v.literal("theme"),       // from themeMemory
-      v.literal("artifact"),    // from document/file
-      v.literal("session")      // from chat session research
+      v.literal("entity"), // from entityContexts
+      v.literal("theme"), // from themeMemory
+      v.literal("artifact"), // from document/file
+      v.literal("session"), // from chat session research
     ),
-    sourceId: v.string(),       // canonicalKey or documentId
+    sourceId: v.string(), // canonicalKey or documentId
     userId: v.id("users"),
 
     // Graph-level embeddings (fingerprints)
     semanticFingerprint: v.optional(v.array(v.float64())),
-    wlSignature: v.optional(v.string()),        // Weisfeiler-Lehman hash
+    wlSignature: v.optional(v.string()), // Weisfeiler-Lehman hash
 
     // Clustering results (boolean outputs)
-    clusterId: v.optional(v.string()),          // null = noise/odd-one-out
-    isOddOneOut: v.boolean(),                   // HDBSCAN noise label
+    clusterId: v.optional(v.string()), // null = noise/odd-one-out
+    isOddOneOut: v.boolean(), // HDBSCAN noise label
     isInClusterSupport: v.optional(v.boolean()), // One-Class SVM inlier
 
     // Provenance
@@ -5171,7 +5512,7 @@ export default defineSchema({
     subject: v.string(),
     predicate: v.string(),
     object: v.string(),
-    claimText: v.string(),                      // Full sentence form
+    claimText: v.string(), // Full sentence form
 
     // Provenance
     sourceDocIds: v.array(v.string()),
@@ -5213,7 +5554,7 @@ export default defineSchema({
       v.literal("causes"),
       v.literal("relatedTo"),
       v.literal("partOf"),
-      v.literal("precedes")
+      v.literal("precedes"),
     ),
 
     // Strength (boolean, not score)
@@ -5233,9 +5574,9 @@ export default defineSchema({
   /* GRAPH CLUSTERS - HDBSCAN clustering results                         */
   /* ------------------------------------------------------------------ */
   graphClusters: defineTable({
-    clusterId: v.string(),                      // UUID
+    clusterId: v.string(), // UUID
     userId: v.id("users"),
-    name: v.optional(v.string()),               // Auto-generated or user label
+    name: v.optional(v.string()), // Auto-generated or user label
     description: v.optional(v.string()),
 
     // Members
@@ -5254,7 +5595,7 @@ export default defineSchema({
     dominantSourceType: v.optional(v.string()),
 
     // Metadata
-    algorithmUsed: v.optional(v.string()),      // "hdbscan", "kmeans", etc.
+    algorithmUsed: v.optional(v.string()), // "hdbscan", "kmeans", etc.
     minClusterSize: v.optional(v.number()),
 
     createdAt: v.number(),
@@ -5271,8 +5612,8 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   artifactRunMeta: defineTable({
     runId: v.string(),
-    shardId: v.optional(v.number()),  // 0..K-1, where K=8 shards (optional for migration)
-    bump: v.number(),                  // Incremented on every artifact write
+    shardId: v.optional(v.number()), // 0..K-1, where K=8 shards (optional for migration)
+    bump: v.number(), // Incremented on every artifact write
     updatedAt: v.number(),
   })
     .index("by_run_shard", ["runId", "shardId"])
@@ -5290,11 +5631,11 @@ export default defineSchema({
       v.literal("VALIDATION"),
       v.literal("EXTRACTOR"),
       v.literal("SCHEDULER"),
-      v.literal("UNKNOWN")
+      v.literal("UNKNOWN"),
     ),
-    errorMessage: v.string(),         // Truncated to ~2KB
+    errorMessage: v.string(), // Truncated to ~2KB
     artifactCount: v.number(),
-    sampleUrls: v.array(v.string()),  // Cap 3-5 URLs for debugging
+    sampleUrls: v.array(v.string()), // Cap 3-5 URLs for debugging
     createdAt: v.number(),
   })
     .index("by_run", ["runId"])
@@ -5309,7 +5650,7 @@ export default defineSchema({
     status: v.union(
       v.literal("started"),
       v.literal("done"),
-      v.literal("failed")
+      v.literal("failed"),
     ),
     attempts: v.number(),
     createdAt: v.number(),
@@ -5324,7 +5665,7 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   artifactRunStatsShards: defineTable({
     runId: v.string(),
-    shardId: v.number(),             // 0..K-1, matches mutex shards
+    shardId: v.number(), // 0..K-1, matches mutex shards
     jobsScheduled: v.number(),
     jobsDeduped: v.number(),
     deadLetters: v.number(),
@@ -5342,8 +5683,8 @@ export default defineSchema({
   /* ARTIFACTS - First-class streaming artifacts for dossiers            */
   /* ------------------------------------------------------------------ */
   artifacts: defineTable({
-    runId: v.string(),              // agentThreadId - stable for whole dossier
-    artifactId: v.string(),         // Stable hash: art_<sha256_prefix>
+    runId: v.string(), // agentThreadId - stable for whole dossier
+    artifactId: v.string(), // Stable hash: art_<sha256_prefix>
     userId: v.id("users"),
 
     // Core (immutable after creation)
@@ -5352,16 +5693,18 @@ export default defineSchema({
       v.literal("file"),
       v.literal("video"),
       v.literal("image"),
-      v.literal("document")
+      v.literal("document"),
     ),
-    provider: v.optional(v.union(
-      v.literal("youtube"),
-      v.literal("sec"),
-      v.literal("arxiv"),
-      v.literal("news"),
-      v.literal("web"),
-      v.literal("local")
-    )),
+    provider: v.optional(
+      v.union(
+        v.literal("youtube"),
+        v.literal("sec"),
+        v.literal("arxiv"),
+        v.literal("news"),
+        v.literal("web"),
+        v.literal("local"),
+      ),
+    ),
     canonicalUrl: v.string(),
 
     // Display (mutable via enrich)
@@ -5377,7 +5720,7 @@ export default defineSchema({
     // Metadata
     discoveredAt: v.number(),
     toolName: v.optional(v.string()),
-    rev: v.number(),                // Monotonic version for safe merges
+    rev: v.number(), // Monotonic version for safe merges
 
     // Boolean flags (GAM philosophy)
     flags: v.object({
@@ -5390,12 +5733,14 @@ export default defineSchema({
     }),
 
     // Verification health (light indicator, claim-specific verdicts in claimVerifications)
-    verificationHealth: v.optional(v.union(
-      v.literal("unknown"),
-      v.literal("has_supported"),   // At least one claim was supported
-      v.literal("has_not_found"),   // No claims found in source
-      v.literal("has_contradicted") // At least one claim was contradicted
-    )),
+    verificationHealth: v.optional(
+      v.union(
+        v.literal("unknown"),
+        v.literal("has_supported"), // At least one claim was supported
+        v.literal("has_not_found"), // No claims found in source
+        v.literal("has_contradicted"), // At least one claim was contradicted
+      ),
+    ),
     lastVerificationAt: v.optional(v.number()),
 
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -5415,11 +5760,13 @@ export default defineSchema({
     sectionId: v.optional(v.string()),
 
     /** Provenance: only "tool" sources are eligible for global store */
-    sourceType: v.optional(v.union(
-      v.literal("tool"),   // From GLOBAL_ARTIFACT_PRODUCERS (Linkup, SEC, etc.)
-      v.literal("agent"),  // Agent-generated (may be hallucinated)
-      v.literal("user")    // User-provided
-    )),
+    sourceType: v.optional(
+      v.union(
+        v.literal("tool"), // From GLOBAL_ARTIFACT_PRODUCERS (Linkup, SEC, etc.)
+        v.literal("agent"), // Agent-generated (may be hallucinated)
+        v.literal("user"), // User-provided
+      ),
+    ),
 
     /** Reference to global artifact (set after write-through) */
     globalArtifactKey: v.optional(v.string()),
@@ -5428,8 +5775,8 @@ export default defineSchema({
     .index("by_run_artifact", ["runId", "artifactId"])
     .index("by_user_run", ["userId", "runId"])
     .index("by_user", ["userId"])
-    .index("by_runId_seq", ["runId", "seq"])        // For write-through sync
-    .index("by_createdAt", ["discoveredAt"]),       // For diagnostics
+    .index("by_runId_seq", ["runId", "seq"]) // For write-through sync
+    .index("by_createdAt", ["discoveredAt"]), // For diagnostics
 
   /* ------------------------------------------------------------------ */
   /* ARTIFACT LINKS - Artifact-to-section assignments                    */
@@ -5462,21 +5809,24 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   facts: defineTable({
     runId: v.string(),
-    factId: v.string(),           // e.g., "funding_signals:etched_series_c"
-    sectionKey: v.string(),       // e.g., "funding_signals"
-    claimText: v.string(),        // The exact claim text to verify
+    factId: v.string(), // e.g., "funding_signals:etched_series_c"
+    sectionKey: v.string(), // e.g., "funding_signals"
+    claimText: v.string(), // The exact claim text to verify
     artifactIds: v.array(v.string()), // Linked evidence (from evidenceLinks)
     createdAt: v.number(),
 
     // Enhanced fields for Deep Agent intelligence layer
-    confidence: v.optional(v.number()),        // 0-1 scale based on source quality
-    ttlDays: v.optional(v.number()),           // Cache expiry in days
-    snippetSpan: v.optional(v.object({         // Where in source this was extracted
-      startChar: v.number(),
-      endChar: v.number(),
-    })),
-    sourceUrl: v.optional(v.string()),         // Primary source URL
-    retrievedAt: v.optional(v.number()),       // When source was fetched
+    confidence: v.optional(v.number()), // 0-1 scale based on source quality
+    ttlDays: v.optional(v.number()), // Cache expiry in days
+    snippetSpan: v.optional(
+      v.object({
+        // Where in source this was extracted
+        startChar: v.number(),
+        endChar: v.number(),
+      }),
+    ),
+    sourceUrl: v.optional(v.string()), // Primary source URL
+    retrievedAt: v.optional(v.number()), // When source was fetched
     contradictionFlag: v.optional(v.boolean()), // True if conflicts with other facts
     contradictingFactIds: v.optional(v.array(v.string())), // IDs of conflicting facts
   })
@@ -5492,19 +5842,19 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   claimVerifications: defineTable({
     runId: v.string(),
-    factId: v.string(),           // Links to facts table
-    artifactId: v.string(),       // Which artifact was checked
+    factId: v.string(), // Links to facts table
+    artifactId: v.string(), // Which artifact was checked
 
     // Verdict from LLM-as-a-judge
     verdict: v.union(
-      v.literal("supported"),     // Source explicitly states the claim
-      v.literal("not_found"),     // Source doesn't mention the claim
-      v.literal("contradicted"),  // Source contradicts the claim
-      v.literal("inaccessible")   // Source is error page, paywall, blocked
+      v.literal("supported"), // Source explicitly states the claim
+      v.literal("not_found"), // Source doesn't mention the claim
+      v.literal("contradicted"), // Source contradicts the claim
+      v.literal("inaccessible"), // Source is error page, paywall, blocked
     ),
-    confidence: v.number(),       // 0-1 confidence score
+    confidence: v.number(), // 0-1 confidence score
     explanation: v.optional(v.string()), // Short explanation (max 60 words)
-    snippet: v.optional(v.string()),     // Cached source excerpt for display
+    snippet: v.optional(v.string()), // Cached source excerpt for display
 
     createdAt: v.number(),
   })
@@ -5527,7 +5877,7 @@ export default defineSchema({
     /** Deterministic key: "ga_" + sha256(canonicalUrl) */
     artifactKey: v.string(),
     canonicalUrl: v.string(),
-    domain: v.string(),                // Extracted host
+    domain: v.string(), // Extracted host
     title: v.optional(v.string()),
     snippet: v.optional(v.string()),
     thumbnail: v.optional(v.string()),
@@ -5635,12 +5985,12 @@ export default defineSchema({
     firstSeenAt: v.number(),
     lastSeenAt: v.number(),
   })
-    .index("by_aggKey", ["aggKey"])           // Upsert lookup
+    .index("by_aggKey", ["aggKey"]) // Upsert lookup
     .index("by_queryKey_day", ["queryKey", "dayBucket"])
     // WARNING: Only use when entityKey !== ""
     .index("by_entityKey_day", ["entityKey", "dayBucket"])
     .index("by_artifactKey_day", ["artifactKey", "dayBucket"])
-    .index("by_dayBucket", ["dayBucket"]),    // "Top today" queries
+    .index("by_dayBucket", ["dayBucket"]), // "Top today" queries
 
   /* ------------------------------------------------------------------ */
   /* GLOBAL RESEARCH RUNS - Research job snapshots                       */
@@ -5659,7 +6009,7 @@ export default defineSchema({
       v.literal("scheduled"),
       v.literal("running"),
       v.literal("completed"),
-      v.literal("failed")
+      v.literal("failed"),
     ),
     /** Monotonic version per queryKey */
     version: v.number(),
@@ -5702,7 +6052,7 @@ export default defineSchema({
       v.literal("fact_extracted"),
       v.literal("run_started"),
       v.literal("run_completed"),
-      v.literal("run_failed")
+      v.literal("run_failed"),
     ),
     payload: v.any(),
     createdAt: v.number(),
@@ -5719,7 +6069,7 @@ export default defineSchema({
     status: v.union(
       v.literal("running"),
       v.literal("completed"),
-      v.literal("failed")
+      v.literal("failed"),
     ),
     runId: v.string(),
     /** Random UUID for ownership verification */
@@ -5730,8 +6080,7 @@ export default defineSchema({
     error: v.optional(v.string()),
     /** Default 10 minutes */
     staleAfterMs: v.number(),
-  })
-    .index("by_queryKey", ["queryKey"]),
+  }).index("by_queryKey", ["queryKey"]),
 
   /* ------------------------------------------------------------------ */
   /* RESEARCH SUBSCRIPTIONS - User subscriptions for email digests       */
@@ -5741,7 +6090,7 @@ export default defineSchema({
     subscriptionType: v.union(
       v.literal("entity"),
       v.literal("query"),
-      v.literal("hashtag")
+      v.literal("hashtag"),
     ),
     /** entityKey, queryKey, or hashtag */
     targetKey: v.string(),
@@ -5749,7 +6098,7 @@ export default defineSchema({
     frequency: v.union(
       v.literal("daily"),
       v.literal("weekly"),
-      v.literal("monthly")
+      v.literal("monthly"),
     ),
     deliveryMethod: v.union(v.literal("email"), v.literal("in_app")),
     /** Timezone for delivery (default "UTC") */
@@ -5782,8 +6131,7 @@ export default defineSchema({
     mentionsCompacted: v.optional(v.number()),
     mentionsPurged: v.optional(v.number()),
     duplicatesMerged: v.optional(v.number()),
-  })
-    .index("by_type", ["compactionType"]),
+  }).index("by_type", ["compactionType"]),
 
   /* ------------------------------------------------------------------ */
   /* GLOBAL BACKFILL STATE - Resumable migration state                   */
@@ -5793,7 +6141,7 @@ export default defineSchema({
     status: v.union(
       v.literal("running"),
       v.literal("paused"),
-      v.literal("completed")
+      v.literal("completed"),
     ),
     /** Last processed run ID */
     lastRunId: v.optional(v.string()),
@@ -5829,47 +6177,55 @@ export default defineSchema({
    */
   skills: defineTable({
     // Identity (Anthropic spec)
-    name: v.string(),              // Unique identifier (hyphen-case, e.g., "company-research")
-    description: v.string(),       // Brief description (shown in search results)
+    name: v.string(), // Unique identifier (hyphen-case, e.g., "company-research")
+    description: v.string(), // Brief description (shown in search results)
 
     // Content (loaded on-demand)
-    fullInstructions: v.string(),  // Full markdown body with workflow steps
+    fullInstructions: v.string(), // Full markdown body with workflow steps
 
     // Classification
-    category: v.string(),          // "research", "document", "media", "financial", "workflow"
-    categoryName: v.string(),      // Human-readable category name
+    category: v.string(), // "research", "document", "media", "financial", "workflow"
+    categoryName: v.string(), // Human-readable category name
 
     // Search support
     keywords: v.array(v.string()), // Keywords for keyword matching
-    keywordsText: v.string(),      // Joined keywords for BM25 search index
+    keywordsText: v.string(), // Joined keywords for BM25 search index
 
     // Vector embedding for semantic search (1536-dim OpenAI text-embedding-3-small)
     embedding: v.optional(v.array(v.float64())),
 
     // Anthropic spec optional fields
-    license: v.optional(v.string()),           // e.g., "Apache-2.0"
+    license: v.optional(v.string()), // e.g., "Apache-2.0"
     allowedTools: v.optional(v.array(v.string())), // Pre-approved tools this skill uses
-    metadata: v.optional(v.any()),             // Custom metadata
+    metadata: v.optional(v.any()), // Custom metadata
 
     // L3 Nested Resources (Progressive Disclosure Level 3)
     // Resources are loaded on-demand when referenced in fullInstructions
-    nestedResources: v.optional(v.array(v.object({
-      name: v.string(),                        // Resource identifier (e.g., "examples", "keyword-table")
-      type: v.union(v.literal("markdown"), v.literal("json"), v.literal("template")),
-      uri: v.string(),                         // Resource URI (e.g., "./persona-inference-examples.md")
-      tokensEstimate: v.optional(v.number()),  // Estimated tokens when loaded
-    }))),
+    nestedResources: v.optional(
+      v.array(
+        v.object({
+          name: v.string(), // Resource identifier (e.g., "examples", "keyword-table")
+          type: v.union(
+            v.literal("markdown"),
+            v.literal("json"),
+            v.literal("template"),
+          ),
+          uri: v.string(), // Resource URI (e.g., "./persona-inference-examples.md")
+          tokensEstimate: v.optional(v.number()), // Estimated tokens when loaded
+        }),
+      ),
+    ),
 
     // Skill Caching (avoid re-expanding unchanged skills)
-    contentHash: v.optional(v.string()),       // SHA-256 hash of fullInstructions
-    version: v.optional(v.number()),           // Monotonic version number
+    contentHash: v.optional(v.string()), // SHA-256 hash of fullInstructions
+    version: v.optional(v.number()), // Monotonic version number
 
     // Usage tracking
-    usageCount: v.number(),        // Times this skill was used
+    usageCount: v.number(), // Times this skill was used
     lastUsedAt: v.optional(v.number()), // Last usage timestamp
 
     // Status
-    isEnabled: v.boolean(),        // Whether skill is available
+    isEnabled: v.boolean(), // Whether skill is available
 
     // Timestamps
     createdAt: v.number(),
@@ -5880,8 +6236,8 @@ export default defineSchema({
     .index("by_usage", ["usageCount"])
     .index("by_enabled", ["isEnabled"])
     .index("by_enabled_category", ["isEnabled", "category"])
-    .index("by_content_hash", ["contentHash"])  // For skill caching
-    .index("by_version", ["version"])           // For version tracking
+    .index("by_content_hash", ["contentHash"]) // For skill caching
+    .index("by_version", ["version"]) // For version tracking
     .searchIndex("search_description", {
       searchField: "description",
       filterFields: ["category", "isEnabled"],
@@ -5900,9 +6256,9 @@ export default defineSchema({
    * Tracks individual skill usages for analytics
    */
   skillUsage: defineTable({
-    skillName: v.string(),         // Skill that was used
-    queryText: v.string(),         // Original search query
-    wasSuccessful: v.boolean(),    // Whether execution succeeded
+    skillName: v.string(), // Skill that was used
+    queryText: v.string(), // Original search query
+    wasSuccessful: v.boolean(), // Whether execution succeeded
     executionTimeMs: v.optional(v.number()),
     toolsInvoked: v.optional(v.array(v.string())), // Tools used during skill execution
     userId: v.optional(v.id("users")),
@@ -5914,15 +6270,17 @@ export default defineSchema({
    * Caches skill search results to reduce latency
    */
   skillSearchCache: defineTable({
-    queryHash: v.string(),         // Hash of normalized query
-    queryText: v.string(),         // Original query text
+    queryHash: v.string(), // Hash of normalized query
+    queryText: v.string(), // Original query text
     category: v.optional(v.string()),
-    results: v.array(v.object({
-      skillName: v.string(),
-      score: v.number(),
-      matchType: v.string(),
-    })),
-    expiresAt: v.number(),         // Unix timestamp for expiration
+    results: v.array(
+      v.object({
+        skillName: v.string(),
+        score: v.number(),
+        matchType: v.string(),
+      }),
+    ),
+    expiresAt: v.number(), // Unix timestamp for expiration
   })
     .index("by_hash", ["queryHash"])
     .index("by_expiry", ["expiresAt"]),
@@ -5936,33 +6294,33 @@ export default defineSchema({
    */
   toolRegistry: defineTable({
     // Core identity
-    toolName: v.string(),           // Unique tool identifier (e.g., "createDocument")
+    toolName: v.string(), // Unique tool identifier (e.g., "createDocument")
 
     // Searchable content
-    description: v.string(),        // Full description for BM25 search
-    keywords: v.array(v.string()),  // Keywords for keyword matching
-    keywordsText: v.string(),       // Joined keywords for searchIndex
+    description: v.string(), // Full description for BM25 search
+    keywords: v.array(v.string()), // Keywords for keyword matching
+    keywordsText: v.string(), // Joined keywords for searchIndex
 
     // Classification
-    category: v.string(),           // Category key (e.g., "document", "media")
-    categoryName: v.string(),       // Human-readable category name
+    category: v.string(), // Category key (e.g., "document", "media")
+    categoryName: v.string(), // Human-readable category name
 
     // Module location
-    module: v.string(),             // Import path (e.g., "document/documentTools")
+    module: v.string(), // Import path (e.g., "document/documentTools")
 
     // Optional enhancements
-    examples: v.optional(v.array(v.string())),  // Usage examples
+    examples: v.optional(v.array(v.string())), // Usage examples
 
     // Vector embedding for semantic search (1536-dim OpenAI text-embedding-3-small)
     embedding: v.optional(v.array(v.float64())),
 
     // Usage & ranking
-    usageCount: v.number(),         // Times this tool was invoked
+    usageCount: v.number(), // Times this tool was invoked
     successRate: v.optional(v.number()), // Success rate 0-1
     avgExecutionMs: v.optional(v.number()), // Average execution time
 
     // Status
-    isEnabled: v.boolean(),         // Whether tool is available
+    isEnabled: v.boolean(), // Whether tool is available
 
     // Metadata
     metadata: v.optional(v.any()),
@@ -5990,9 +6348,9 @@ export default defineSchema({
    * Tracks individual tool invocations for analytics and popularity ranking
    */
   toolUsage: defineTable({
-    toolName: v.string(),           // Tool that was invoked
-    queryText: v.string(),          // Original search query
-    wasSuccessful: v.boolean(),     // Whether execution succeeded
+    toolName: v.string(), // Tool that was invoked
+    queryText: v.string(), // Original search query
+    wasSuccessful: v.boolean(), // Whether execution succeeded
     executionTimeMs: v.optional(v.number()),
     errorMessage: v.optional(v.string()),
     userId: v.optional(v.id("users")),
@@ -6004,15 +6362,17 @@ export default defineSchema({
    * Caches hybrid search results to reduce latency
    */
   toolSearchCache: defineTable({
-    queryHash: v.string(),          // SHA-256 hash of normalized query
-    queryText: v.string(),          // Original query text
+    queryHash: v.string(), // SHA-256 hash of normalized query
+    queryText: v.string(), // Original query text
     category: v.optional(v.string()),
-    results: v.array(v.object({
-      toolName: v.string(),
-      score: v.number(),
-      matchType: v.string(),
-    })),
-    expiresAt: v.number(),          // Unix timestamp for expiration
+    results: v.array(
+      v.object({
+        toolName: v.string(),
+        score: v.number(),
+        matchType: v.string(),
+      }),
+    ),
+    expiresAt: v.number(), // Unix timestamp for expiration
   })
     .index("by_hash", ["queryHash"])
     .index("by_expiry", ["expiresAt"]),
@@ -6022,11 +6382,11 @@ export default defineSchema({
   /* No auth required - free for all users                              */
   /* ------------------------------------------------------------------ */
   publicDossiers: defineTable({
-    sections: v.array(v.any()),     // ScrollySection[] - JSON structure for scrollytelling
-    topic: v.string(),              // Topic/focus of the dossier (e.g., "AI Infrastructure")
-    generatedAt: v.number(),        // Unix timestamp when generated
-    dateString: v.string(),         // YYYY-MM-DD for easy querying
-    version: v.number(),            // Version number for same-day updates
+    sections: v.array(v.any()), // ScrollySection[] - JSON structure for scrollytelling
+    topic: v.string(), // Topic/focus of the dossier (e.g., "AI Infrastructure")
+    generatedAt: v.number(), // Unix timestamp when generated
+    dateString: v.string(), // YYYY-MM-DD for easy querying
+    version: v.number(), // Version number for same-day updates
   })
     .index("by_date", ["generatedAt"])
     .index("by_date_string", ["dateString"]),
@@ -6036,8 +6396,8 @@ export default defineSchema({
   /* Generated daily at 6:00 AM UTC from aggregated feed data           */
   /* ------------------------------------------------------------------ */
   dailyBriefSnapshots: defineTable({
-    dateString: v.string(),         // YYYY-MM-DD for easy querying
-    generatedAt: v.number(),        // Unix timestamp when generated
+    dateString: v.string(), // YYYY-MM-DD for easy querying
+    generatedAt: v.number(), // Unix timestamp when generated
 
     // Dashboard metrics for StickyDashboard component
     dashboardMetrics: v.object({
@@ -6046,7 +6406,7 @@ export default defineSchema({
         timelineProgress: v.number(),
       }),
       charts: v.object({
-        trendLine: v.any(),         // TrendLineConfig
+        trendLine: v.any(), // TrendLineConfig
         marketShare: v.array(v.any()), // MarketShareSegment[]
       }),
       techReadiness: v.object({
@@ -6054,44 +6414,54 @@ export default defineSchema({
         emerging: v.number(),
         sciFi: v.number(),
       }),
-      keyStats: v.array(v.any()),   // KeyStat[]
+      keyStats: v.array(v.any()), // KeyStat[]
       capabilities: v.array(v.any()), // CapabilityEntry[]
       annotations: v.optional(v.array(v.any())),
-      agentCount: v.optional(v.object({
-        count: v.number(),
-        label: v.string(),
-        speed: v.number(),
-      })),
-      entityGraph: v.optional(v.object({
-        focusNodeId: v.optional(v.string()),
-        nodes: v.array(v.object({
-          id: v.string(),
+      agentCount: v.optional(
+        v.object({
+          count: v.number(),
           label: v.string(),
-          type: v.optional(v.string()),
-          importance: v.optional(v.number()),
-          tier: v.optional(v.number()),
-        })),
-        edges: v.array(v.object({
-          source: v.string(),
-          target: v.string(),
-          relationship: v.optional(v.string()),
-          context: v.optional(v.string()),
-          impact: v.optional(v.string()),
-          order: v.optional(v.union(v.literal("primary"), v.literal("secondary"))),
-        })),
-      })),
+          speed: v.number(),
+        }),
+      ),
+      entityGraph: v.optional(
+        v.object({
+          focusNodeId: v.optional(v.string()),
+          nodes: v.array(
+            v.object({
+              id: v.string(),
+              label: v.string(),
+              type: v.optional(v.string()),
+              importance: v.optional(v.number()),
+              tier: v.optional(v.number()),
+            }),
+          ),
+          edges: v.array(
+            v.object({
+              source: v.string(),
+              target: v.string(),
+              relationship: v.optional(v.string()),
+              context: v.optional(v.string()),
+              impact: v.optional(v.string()),
+              order: v.optional(
+                v.union(v.literal("primary"), v.literal("secondary")),
+              ),
+            }),
+          ),
+        }),
+      ),
     }),
 
     // Source data summary
     sourceSummary: v.object({
       totalItems: v.number(),
-      bySource: v.any(),            // { "HackerNews": 15, "GitHub": 20, ... }
-      byCategory: v.any(),          // { "ai_ml": 25, "tech": 10, ... }
+      bySource: v.any(), // { "HackerNews": 15, "GitHub": 20, ... }
+      byCategory: v.any(), // { "ai_ml": 25, "tech": 10, ... }
       topTrending: v.array(v.string()), // Top 5 trending topics
     }),
 
     // Generation metadata
-    version: v.number(),            // Version number for same-day updates
+    version: v.number(), // Version number for same-day updates
     processingTimeMs: v.optional(v.number()),
     errors: v.optional(v.array(v.string())),
   })
@@ -6104,44 +6474,48 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   dailyBriefMemories: defineTable({
     snapshotId: v.id("dailyBriefSnapshots"),
-    dateString: v.string(),         // YYYY-MM-DD
-    generatedAt: v.number(),        // Mirrors snapshot.generatedAt
-    version: v.number(),            // Mirrors snapshot.version
+    dateString: v.string(), // YYYY-MM-DD
+    generatedAt: v.number(), // Mirrors snapshot.generatedAt
+    version: v.number(), // Mirrors snapshot.version
 
-    goal: v.string(),               // High-level daily objective
+    goal: v.string(), // High-level daily objective
 
-    features: v.array(v.object({
-      id: v.string(),
-      type: v.string(),             // e.g. "repo_analysis", "paper_summary"
-      name: v.string(),
-      status: v.union(
-        v.literal("pending"),
-        v.literal("failing"),
-        v.literal("passing"),
-      ),
-      priority: v.optional(v.number()),
-      testCriteria: v.string(),
-      sourceRefs: v.optional(v.any()), // Links to feed items/repos/papers/docs/charts
-      notes: v.optional(v.string()),
-      resultId: v.optional(v.id("dailyBriefTaskResults")),
-      updatedAt: v.number(),
-    })),
+    features: v.array(
+      v.object({
+        id: v.string(),
+        type: v.string(), // e.g. "repo_analysis", "paper_summary"
+        name: v.string(),
+        status: v.union(
+          v.literal("pending"),
+          v.literal("failing"),
+          v.literal("passing"),
+        ),
+        priority: v.optional(v.number()),
+        testCriteria: v.string(),
+        sourceRefs: v.optional(v.any()), // Links to feed items/repos/papers/docs/charts
+        notes: v.optional(v.string()),
+        resultId: v.optional(v.id("dailyBriefTaskResults")),
+        updatedAt: v.number(),
+      }),
+    ),
 
-    progressLog: v.array(v.object({
-      ts: v.number(),
-      status: v.union(
-        v.literal("info"),
-        v.literal("pending"),
-        v.literal("working"),
-        v.literal("passing"),
-        v.literal("failing"),
-        v.literal("error"),
-      ),
-      message: v.string(),
-      meta: v.optional(v.any()),
-    })),
+    progressLog: v.array(
+      v.object({
+        ts: v.number(),
+        status: v.union(
+          v.literal("info"),
+          v.literal("pending"),
+          v.literal("working"),
+          v.literal("passing"),
+          v.literal("failing"),
+          v.literal("error"),
+        ),
+        message: v.string(),
+        meta: v.optional(v.any()),
+      }),
+    ),
 
-    context: v.any(),               // Compacted machine-readable context bundle
+    context: v.any(), // Compacted machine-readable context bundle
 
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -6173,36 +6547,40 @@ export default defineSchema({
     memoryId: v.id("dailyBriefMemories"),
     dateString: v.string(),
 
-    features: v.array(v.object({
-      id: v.string(),
-      type: v.string(),
-      name: v.string(),
-      status: v.union(
-        v.literal("pending"),
-        v.literal("failing"),
-        v.literal("passing"),
-      ),
-      priority: v.optional(v.number()),
-      testCriteria: v.string(),
-      sourceRefs: v.optional(v.any()),
-      notes: v.optional(v.string()),
-      resultMarkdown: v.optional(v.string()),
-      updatedAt: v.number(),
-    })),
+    features: v.array(
+      v.object({
+        id: v.string(),
+        type: v.string(),
+        name: v.string(),
+        status: v.union(
+          v.literal("pending"),
+          v.literal("failing"),
+          v.literal("passing"),
+        ),
+        priority: v.optional(v.number()),
+        testCriteria: v.string(),
+        sourceRefs: v.optional(v.any()),
+        notes: v.optional(v.string()),
+        resultMarkdown: v.optional(v.string()),
+        updatedAt: v.number(),
+      }),
+    ),
 
-    progressLog: v.array(v.object({
-      ts: v.number(),
-      status: v.union(
-        v.literal("info"),
-        v.literal("pending"),
-        v.literal("working"),
-        v.literal("passing"),
-        v.literal("failing"),
-        v.literal("error"),
-      ),
-      message: v.string(),
-      meta: v.optional(v.any()),
-    })),
+    progressLog: v.array(
+      v.object({
+        ts: v.number(),
+        status: v.union(
+          v.literal("info"),
+          v.literal("pending"),
+          v.literal("working"),
+          v.literal("passing"),
+          v.literal("failing"),
+          v.literal("error"),
+        ),
+        message: v.string(),
+        meta: v.optional(v.any()),
+      }),
+    ),
 
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -6215,17 +6593,17 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   llmUsageDaily: defineTable({
     userId: v.id("users"),
-    date: v.string(),               // YYYY-MM-DD
-    requests: v.number(),           // Total requests today
-    totalTokens: v.number(),        // Total tokens (input + output)
-    inputTokens: v.number(),        // Total input tokens
-    outputTokens: v.number(),       // Total output tokens
-    cachedTokens: v.number(),       // Cached input tokens (discounted)
-    totalCost: v.number(),          // Total cost in USD
-    successCount: v.number(),       // Successful requests
-    errorCount: v.number(),         // Failed requests
+    date: v.string(), // YYYY-MM-DD
+    requests: v.number(), // Total requests today
+    totalTokens: v.number(), // Total tokens (input + output)
+    inputTokens: v.number(), // Total input tokens
+    outputTokens: v.number(), // Total output tokens
+    cachedTokens: v.number(), // Cached input tokens (discounted)
+    totalCost: v.number(), // Total cost in USD
+    successCount: v.number(), // Successful requests
+    errorCount: v.number(), // Failed requests
     providers: v.optional(v.any()), // { openai: 5, anthropic: 3 }
-    models: v.optional(v.any()),    // { "gpt-5.2": 3, "claude-sonnet-4.5": 2 }
+    models: v.optional(v.any()), // { "gpt-5.4": 3, "claude-sonnet-4": 2 }
     updatedAt: v.number(),
   })
     .index("by_user", ["userId"])
@@ -6236,12 +6614,12 @@ export default defineSchema({
   /* ANONYMOUS USAGE - Daily limits for unauthenticated users (5/day)   */
   /* ------------------------------------------------------------------ */
   anonymousUsageDaily: defineTable({
-    sessionId: v.string(),            // Browser fingerprint/session ID
-    ipHash: v.optional(v.string()),   // Hashed IP for additional tracking
-    date: v.string(),                 // YYYY-MM-DD
-    requests: v.number(),             // Requests made today (max 5)
-    totalTokens: v.number(),          // Tokens used
-    totalCost: v.number(),            // Cost incurred
+    sessionId: v.string(), // Browser fingerprint/session ID
+    ipHash: v.optional(v.string()), // Hashed IP for additional tracking
+    date: v.string(), // YYYY-MM-DD
+    requests: v.number(), // Requests made today (max 5)
+    totalTokens: v.number(), // Tokens used
+    totalCost: v.number(), // Cost incurred
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -6255,12 +6633,12 @@ export default defineSchema({
   llmUsageLog: defineTable({
     userId: v.id("users"),
     timestamp: v.number(),
-    model: v.string(),              // e.g., "gpt-5.2", "claude-sonnet-4.5"
-    provider: v.string(),           // "openai", "anthropic", "gemini"
+    model: v.string(), // e.g., "gpt-5.4", "claude-sonnet-4"
+    provider: v.string(), // "openai", "anthropic", "gemini"
     inputTokens: v.number(),
     outputTokens: v.number(),
     cachedTokens: v.number(),
-    cost: v.number(),               // Cost in USD
+    cost: v.number(), // Cost in USD
     latencyMs: v.optional(v.number()),
     success: v.boolean(),
     errorMessage: v.optional(v.string()),
@@ -6275,17 +6653,17 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   searchRuns: defineTable({
     userId: v.optional(v.id("users")),
-    threadId: v.optional(v.string()),      // Agent thread ID if from agent
-    query: v.string(),                      // The search query
-    mode: v.string(),                       // "fast" | "balanced" | "comprehensive"
-    sourcesRequested: v.array(v.string()),  // Sources requested
-    sourcesQueried: v.array(v.string()),    // Sources actually queried
-    totalResults: v.number(),               // Total results after fusion
-    totalBeforeFusion: v.number(),          // Total results before fusion
-    reranked: v.boolean(),                  // Whether LLM reranking was applied
-    totalTimeMs: v.number(),                // Total execution time
-    cacheHit: v.optional(v.boolean()),      // Whether cache was hit
-    timestamp: v.number(),                  // When search was executed
+    threadId: v.optional(v.string()), // Agent thread ID if from agent
+    query: v.string(), // The search query
+    mode: v.string(), // "fast" | "balanced" | "comprehensive"
+    sourcesRequested: v.array(v.string()), // Sources requested
+    sourcesQueried: v.array(v.string()), // Sources actually queried
+    totalResults: v.number(), // Total results after fusion
+    totalBeforeFusion: v.number(), // Total results before fusion
+    reranked: v.boolean(), // Whether LLM reranking was applied
+    totalTimeMs: v.number(), // Total execution time
+    cacheHit: v.optional(v.boolean()), // Whether cache was hit
+    timestamp: v.number(), // When search was executed
     fusedResultIds: v.optional(v.array(v.string())), // IDs of fused results
   })
     .index("by_user", ["userId"])
@@ -6298,12 +6676,12 @@ export default defineSchema({
   /* SEARCH RUN RESULTS - Per-source results for each search run         */
   /* ------------------------------------------------------------------ */
   searchRunResults: defineTable({
-    searchRunId: v.id("searchRuns"),        // Reference to parent search run
-    source: v.string(),                      // "linkup" | "youtube" | "arxiv" etc.
-    latencyMs: v.number(),                   // Time taken for this source
-    resultCount: v.number(),                 // Number of results from this source
-    success: v.boolean(),                    // Whether source search succeeded
-    errorMessage: v.optional(v.string()),    // Error message if failed
+    searchRunId: v.id("searchRuns"), // Reference to parent search run
+    source: v.string(), // "linkup" | "youtube" | "arxiv" etc.
+    latencyMs: v.number(), // Time taken for this source
+    resultCount: v.number(), // Number of results from this source
+    success: v.boolean(), // Whether source search succeeded
+    errorMessage: v.optional(v.string()), // Error message if failed
     resultIds: v.optional(v.array(v.string())), // IDs of results from this source
   })
     .index("by_search_run", ["searchRunId"])
@@ -6314,9 +6692,9 @@ export default defineSchema({
   /* SEARCH QUOTA USAGE - FREE-FIRST tracking per provider               */
   /* ------------------------------------------------------------------ */
   searchQuotaUsage: defineTable({
-    provider: v.string(),           // "brave" | "serper" | "tavily" | "exa" | "linkup"
-    monthKey: v.string(),           // "2026-01" format for monthly reset
-    usedQueries: v.number(),        // Count of queries used this month
+    provider: v.string(), // "brave" | "serper" | "tavily" | "exa" | "linkup"
+    monthKey: v.string(), // "2026-01" format for monthly reset
+    usedQueries: v.number(), // Count of queries used this month
     successfulQueries: v.optional(v.number()),
     failedQueries: v.optional(v.number()),
     lastUsedAt: v.optional(v.number()),
@@ -6330,15 +6708,15 @@ export default defineSchema({
   /* SEARCH FUSION CACHE - TTL-based cache for fusion search results     */
   /* ------------------------------------------------------------------ */
   searchFusionCache: defineTable({
-    cacheKey: v.string(),                   // hash(query + sources + mode + userId)
-    query: v.string(),                      // Original query
-    mode: v.string(),                       // Search mode
-    sources: v.array(v.string()),           // Sources queried
-    results: v.string(),                    // JSON-stringified results
-    resultCount: v.number(),                // Number of results
-    createdAt: v.number(),                  // When cache entry was created
-    expiresAt: v.number(),                  // When cache expires
-    hitCount: v.optional(v.number()),       // Number of times cache was hit
+    cacheKey: v.string(), // hash(query + sources + mode + userId)
+    query: v.string(), // Original query
+    mode: v.string(), // Search mode
+    sources: v.array(v.string()), // Sources queried
+    results: v.string(), // JSON-stringified results
+    resultCount: v.number(), // Number of results
+    createdAt: v.number(), // When cache entry was created
+    expiresAt: v.number(), // When cache expires
+    hitCount: v.optional(v.number()), // Number of times cache was hit
   })
     .index("by_cache_key", ["cacheKey"])
     .index("by_expires_at", ["expiresAt"])
@@ -6349,13 +6727,13 @@ export default defineSchema({
   /* Avoids regenerating LLM summary on every component mount           */
   /* ------------------------------------------------------------------ */
   digestSummaryCache: defineTable({
-    dateString: v.string(),                 // YYYY-MM-DD
-    userId: v.optional(v.id("users")),      // Optional: per-user personalization
-    summary: v.string(),                    // AI-generated summary text
-    dataHash: v.string(),                   // Hash of input data (for invalidation)
-    generatedAt: v.number(),                // When summary was generated
-    expiresAt: v.number(),                  // TTL expiration (4 hours from generation)
-    hitCount: v.optional(v.number()),       // Cache hit counter
+    dateString: v.string(), // YYYY-MM-DD
+    userId: v.optional(v.id("users")), // Optional: per-user personalization
+    summary: v.string(), // AI-generated summary text
+    dataHash: v.string(), // Hash of input data (for invalidation)
+    generatedAt: v.number(), // When summary was generated
+    expiresAt: v.number(), // TTL expiration (4 hours from generation)
+    hitCount: v.optional(v.number()), // Cache hit counter
   })
     .index("by_date", ["dateString"])
     .index("by_date_user", ["dateString", "userId"])
@@ -6385,11 +6763,11 @@ export default defineSchema({
       v.literal("series-d-plus"),
       v.literal("growth"),
       v.literal("debt"),
-      v.literal("unknown")
+      v.literal("unknown"),
     ),
-    amountUsd: v.optional(v.number()),        // Normalized to USD cents
-    amountRaw: v.string(),                     // Original "$50M" string
-    announcedAt: v.number(),                   // Unix timestamp of announcement
+    amountUsd: v.optional(v.number()), // Normalized to USD cents
+    amountRaw: v.string(), // Original "$50M" string
+    announcedAt: v.number(), // Unix timestamp of announcement
 
     // Investors
     leadInvestors: v.array(v.string()),
@@ -6398,12 +6776,12 @@ export default defineSchema({
     // Sources & confidence (evidence-backed)
     sourceUrls: v.array(v.string()),
     sourceNames: v.array(v.string()),
-    confidence: v.number(),                    // 0-1 scale
+    confidence: v.number(), // 0-1 scale
     verificationStatus: v.union(
       v.literal("unverified"),
       v.literal("single-source"),
       v.literal("multi-source"),
-      v.literal("verified")
+      v.literal("verified"),
     ),
 
     // Additional context
@@ -6415,23 +6793,29 @@ export default defineSchema({
     // Use of Proceeds - Enhanced structured format (2026-01-21)
     useOfProceeds: v.optional(
       v.union(
-        v.string(),  // Legacy: simple string format
+        v.string(), // Legacy: simple string format
         v.object({
           // Allocation breakdown
-          categories: v.array(v.object({
-            category: v.string(),              // "R&D", "Sales & Marketing", "Hiring", etc.
-            percentage: v.optional(v.number()), // 0-100
-            amount: v.optional(v.number()),    // USD cents
-            description: v.optional(v.string()),
-          })),
+          categories: v.array(
+            v.object({
+              category: v.string(), // "R&D", "Sales & Marketing", "Hiring", etc.
+              percentage: v.optional(v.number()), // 0-100
+              amount: v.optional(v.number()), // USD cents
+              description: v.optional(v.string()),
+            }),
+          ),
 
           // Milestone-based tranches
-          milestones: v.optional(v.array(v.object({
-            milestone: v.string(),             // "Launch enterprise tier", "FDA approval"
-            fundingTranche: v.optional(v.number()), // USD cents to be released
-            targetDate: v.optional(v.string()), // ISO date or "Q2 2026"
-            description: v.optional(v.string()),
-          }))),
+          milestones: v.optional(
+            v.array(
+              v.object({
+                milestone: v.string(), // "Launch enterprise tier", "FDA approval"
+                fundingTranche: v.optional(v.number()), // USD cents to be released
+                targetDate: v.optional(v.string()), // ISO date or "Q2 2026"
+                description: v.optional(v.string()),
+              }),
+            ),
+          ),
 
           // Source & confidence
           source: v.union(
@@ -6439,24 +6823,24 @@ export default defineSchema({
             v.literal("press release"),
             v.literal("company statement"),
             v.literal("inferred"),
-            v.literal("unknown")
+            v.literal("unknown"),
           ),
-          confidence: v.number(),              // 0-1
+          confidence: v.number(), // 0-1
 
           // Summary for display
-          summary: v.optional(v.string()),     // Human-readable summary
-        })
-      )
+          summary: v.optional(v.string()), // Human-readable summary
+        }),
+      ),
     ),
 
     // Lifecycle
-    ttlDays: v.number(),                       // Cache expiry in days
+    ttlDays: v.number(), // Cache expiry in days
     createdAt: v.number(),
     updatedAt: v.number(),
 
     // Linking to other tables
     feedItemIds: v.optional(v.array(v.id("feedItems"))),
-    factIds: v.optional(v.array(v.string())),  // Links to facts table
+    factIds: v.optional(v.array(v.string())), // Links to facts table
   })
     .index("by_company", ["companyName", "roundType"])
     .index("by_companyId", ["companyId"])
@@ -6476,14 +6860,14 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   enrichmentJobs: defineTable({
     // Job identification
-    jobId: v.string(),                         // UUID for deduplication
+    jobId: v.string(), // UUID for deduplication
     jobType: v.union(
       v.literal("funding_detection"),
       v.literal("entity_promotion"),
       v.literal("full_article_fetch"),
       v.literal("structured_search"),
       v.literal("verification"),
-      v.literal("persona_evaluation")
+      v.literal("persona_evaluation"),
     ),
 
     // Status tracking
@@ -6493,7 +6877,7 @@ export default defineSchema({
       v.literal("in_progress"),
       v.literal("completed"),
       v.literal("failed"),
-      v.literal("retrying")
+      v.literal("retrying"),
     ),
 
     // Priority (higher = more urgent, 100 = digest-critical, 50 = backfill)
@@ -6506,8 +6890,8 @@ export default defineSchema({
     nextRetryAt: v.optional(v.number()),
 
     // Payload
-    inputPayload: v.any(),                     // Job-specific input
-    outputPayload: v.optional(v.any()),        // Job-specific output
+    inputPayload: v.any(), // Job-specific input
+    outputPayload: v.optional(v.any()), // Job-specific output
 
     // Relationships
     targetEntityId: v.optional(v.id("entityContexts")),
@@ -6520,7 +6904,7 @@ export default defineSchema({
     completedAt: v.optional(v.number()),
 
     // Workpool tracking
-    poolName: v.optional(v.string()),          // "highPriority" | "backfill"
+    poolName: v.optional(v.string()), // "highPriority" | "backfill"
     workpoolJobId: v.optional(v.string()),
   })
     .index("by_status", ["status", "priority"])
@@ -6539,37 +6923,37 @@ export default defineSchema({
    * Each task represents a deterministic, reproducible test scenario.
    */
   benchmarkTasks: defineTable({
-    taskId: v.string(),                          // Unique task identifier (e.g., "sec_10k_retrieval_01")
-    suite: v.string(),                           // Suite name: "banking_memo", "social_factcheck", "mcp_smoke"
-    name: v.string(),                            // Human-readable name
+    taskId: v.string(), // Unique task identifier (e.g., "sec_10k_retrieval_01")
+    suite: v.string(), // Suite name: "banking_memo", "social_factcheck", "mcp_smoke"
+    name: v.string(), // Human-readable name
     description: v.optional(v.string()),
 
     // Task configuration
     taskType: v.union(
-      v.literal("sec_retrieval"),                // SEC filing retrieval
-      v.literal("memo_generation"),              // Banking memo workflow
-      v.literal("instagram_ingestion"),          // Instagram post ingestion
-      v.literal("claim_extraction"),             // Claim extraction from content
-      v.literal("citation_validation"),          // Citation integrity check
-      v.literal("tool_health"),                  // Tool availability check
-      v.literal("artifact_replay"),              // Artifact idempotency check
+      v.literal("sec_retrieval"), // SEC filing retrieval
+      v.literal("memo_generation"), // Banking memo workflow
+      v.literal("instagram_ingestion"), // Instagram post ingestion
+      v.literal("claim_extraction"), // Claim extraction from content
+      v.literal("citation_validation"), // Citation integrity check
+      v.literal("tool_health"), // Tool availability check
+      v.literal("artifact_replay"), // Artifact idempotency check
     ),
-    inputPayload: v.any(),                       // Task-specific input parameters
+    inputPayload: v.any(), // Task-specific input parameters
 
     // Expected outcomes (for validation)
     expectations: v.object({
-      minArtifacts: v.optional(v.number()),      // Minimum artifact count
+      minArtifacts: v.optional(v.number()), // Minimum artifact count
       requiredFields: v.optional(v.array(v.string())),
-      maxLatencyMs: v.optional(v.number()),      // Performance threshold
-      successRequired: v.boolean(),              // Must succeed to pass
-      idempotent: v.optional(v.boolean()),       // Should produce same result on re-run
+      maxLatencyMs: v.optional(v.number()), // Performance threshold
+      successRequired: v.boolean(), // Must succeed to pass
+      idempotent: v.optional(v.boolean()), // Should produce same result on re-run
     }),
 
     // Metadata
     createdAt: v.number(),
     updatedAt: v.optional(v.number()),
     isActive: v.boolean(),
-    priority: v.optional(v.number()),            // Execution order priority
+    priority: v.optional(v.number()), // Execution order priority
   })
     .index("by_taskId", ["taskId"])
     .index("by_suite", ["suite"])
@@ -6580,10 +6964,10 @@ export default defineSchema({
    * Benchmark runs - execution of a suite of tasks.
    */
   benchmarkRuns: defineTable({
-    runId: v.string(),                           // Unique run identifier
-    suite: v.string(),                           // Suite being run
-    triggeredBy: v.optional(v.string()),         // "manual" | "ci" | "scheduled"
-    gitCommit: v.optional(v.string()),           // Git commit hash for traceability
+    runId: v.string(), // Unique run identifier
+    suite: v.string(), // Suite being run
+    triggeredBy: v.optional(v.string()), // "manual" | "ci" | "scheduled"
+    gitCommit: v.optional(v.string()), // Git commit hash for traceability
 
     // Status tracking
     status: v.union(
@@ -6608,10 +6992,14 @@ export default defineSchema({
     completedAt: v.optional(v.number()),
 
     // Error summary
-    errors: v.optional(v.array(v.object({
-      taskId: v.string(),
-      error: v.string(),
-    }))),
+    errors: v.optional(
+      v.array(
+        v.object({
+          taskId: v.string(),
+          error: v.string(),
+        }),
+      ),
+    ),
   })
     .index("by_runId", ["runId"])
     .index("by_suite", ["suite"])
@@ -6622,9 +7010,9 @@ export default defineSchema({
    * Benchmark scores - individual task results within a run.
    */
   benchmarkScores: defineTable({
-    runId: v.string(),                           // Parent benchmark run
-    taskId: v.string(),                          // Task that was executed
-    suite: v.string(),                           // Suite for filtering
+    runId: v.string(), // Parent benchmark run
+    taskId: v.string(), // Task that was executed
+    suite: v.string(), // Suite for filtering
 
     // Execution result
     passed: v.boolean(),
@@ -6636,18 +7024,22 @@ export default defineSchema({
       requiredFieldsPresent: v.optional(v.boolean()),
       latencyWithinThreshold: v.optional(v.boolean()),
       idempotencyVerified: v.optional(v.boolean()),
-      customChecks: v.optional(v.array(v.object({
-        name: v.string(),
-        passed: v.boolean(),
-        message: v.optional(v.string()),
-      }))),
+      customChecks: v.optional(
+        v.array(
+          v.object({
+            name: v.string(),
+            passed: v.boolean(),
+            message: v.optional(v.string()),
+          }),
+        ),
+      ),
     }),
 
     // Artifacts produced (for traceability)
     artifactIds: v.optional(v.array(v.id("sourceArtifacts"))),
 
     // Raw output (for debugging)
-    outputPreview: v.optional(v.string()),       // First 500 chars of output
+    outputPreview: v.optional(v.string()), // First 500 chars of output
     error: v.optional(v.string()),
 
     // Timestamps
@@ -6666,10 +7058,10 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   workbenchRuns: defineTable({
     // Identity
-    model: v.string(),              // "claude-sonnet-4-6", "gpt-4o", "gemini-3.1-flash-lite-preview"
-    provider: v.string(),           // "anthropic" | "openai" | "google" | "open-source"
-    scenarioId: v.string(),         // "ui-transform" | "agent-integration" | "long-run-reliability" | "architect-mode"
-    appSubstrate: v.string(),       // Frozen repo slug, e.g. "chef-todo-v1"
+    model: v.string(), // "claude-sonnet-4-6", "gpt-4o", "gemini-3.1-flash-lite-preview"
+    provider: v.string(), // "anthropic" | "openai" | "google" | "open-source"
+    scenarioId: v.string(), // "ui-transform" | "agent-integration" | "long-run-reliability" | "architect-mode"
+    appSubstrate: v.string(), // Frozen repo slug, e.g. "chef-todo-v1"
 
     // Execution state
     status: v.union(
@@ -6679,17 +7071,17 @@ export default defineSchema({
     ),
 
     // Scoring (multi-layer rubric, matches QA pipeline layers)
-    compositeScore: v.optional(v.number()),   // 0-100 weighted composite
-    layer0Score: v.optional(v.number()),       // Design compliance (static analysis)
-    layer1Score: v.optional(v.number()),       // Deterministic (build, tests, runtime)
-    layer2Score: v.optional(v.number()),       // Severity rubric (LLM judge)
-    layer3Score: v.optional(v.number()),       // Taste (visual quality)
-    grade: v.optional(v.string()),             // "A" | "B" | "C" | "D" | "F"
+    compositeScore: v.optional(v.number()), // 0-100 weighted composite
+    layer0Score: v.optional(v.number()), // Design compliance (static analysis)
+    layer1Score: v.optional(v.number()), // Deterministic (build, tests, runtime)
+    layer2Score: v.optional(v.number()), // Severity rubric (LLM judge)
+    layer3Score: v.optional(v.number()), // Taste (visual quality)
+    grade: v.optional(v.string()), // "A" | "B" | "C" | "D" | "F"
 
     // Operational metrics
-    runDurationMs: v.optional(v.number()),     // Wall-clock ms for the full run
-    toolCallCount: v.optional(v.number()),     // Total MCP tool calls made
-    costUsd: v.optional(v.number()),           // Estimated API cost for the run
+    runDurationMs: v.optional(v.number()), // Wall-clock ms for the full run
+    toolCallCount: v.optional(v.number()), // Total MCP tool calls made
+    costUsd: v.optional(v.number()), // Estimated API cost for the run
 
     // Artifacts produced (for traceability, Phase 2+)
     artifactIds: v.optional(v.array(v.string())),
@@ -6708,29 +7100,26 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   actionDrafts: defineTable({
     // Identity
-    sessionId: v.string(),           // Conversation/batch session
+    sessionId: v.string(), // Conversation/batch session
     userId: v.optional(v.id("users")),
 
     // Action details
-    toolName: v.string(),            // Tool that would be invoked
-    args: v.string(),                // JSON-stringified arguments
-    riskTier: v.union(
-      v.literal("write"),
-      v.literal("destructive")
-    ),
-    actionSummary: v.string(),       // Human-readable summary
+    toolName: v.string(), // Tool that would be invoked
+    args: v.string(), // JSON-stringified arguments
+    riskTier: v.union(v.literal("write"), v.literal("destructive")),
+    actionSummary: v.string(), // Human-readable summary
 
     // Status
     status: v.union(
       v.literal("pending"),
       v.literal("confirmed"),
       v.literal("denied"),
-      v.literal("expired")
+      v.literal("expired"),
     ),
 
     // Timestamps
     createdAt: v.number(),
-    expiresAt: v.number(),           // 5 minute default
+    expiresAt: v.number(), // 5 minute default
     confirmedAt: v.optional(v.number()),
     deniedAt: v.optional(v.number()),
     expiredAt: v.optional(v.number()),
@@ -6740,7 +7129,7 @@ export default defineSchema({
 
     // Execution result (after confirmation)
     executedAt: v.optional(v.number()),
-    result: v.optional(v.string()),  // JSON-stringified result
+    result: v.optional(v.string()), // JSON-stringified result
     error: v.optional(v.string()),
   })
     .index("by_session", ["sessionId", "createdAt"])
@@ -6758,23 +7147,23 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   signals: defineTable({
     // Signal source metadata
-    source: v.string(),                          // "cron" | "rss" | "webhook" | "event" | "mention"
-    sourceType: v.string(),                      // Specific source identifier (e.g., "hackernews", "arxiv")
-    sourceUrl: v.optional(v.string()),           // URL if applicable (RSS feed, webhook endpoint)
+    source: v.string(), // "cron" | "rss" | "webhook" | "event" | "mention"
+    sourceType: v.string(), // Specific source identifier (e.g., "hackernews", "arxiv")
+    sourceUrl: v.optional(v.string()), // URL if applicable (RSS feed, webhook endpoint)
 
     // Content
-    rawContent: v.string(),                      // Raw signal content
-    title: v.optional(v.string()),               // Signal title if available
-    contentHash: v.string(),                     // SHA-256 hash for deduplication
+    rawContent: v.string(), // Raw signal content
+    title: v.optional(v.string()), // Signal title if available
+    contentHash: v.string(), // SHA-256 hash for deduplication
 
     // Processing status
-    processedAt: v.optional(v.number()),         // When signal was processed
+    processedAt: v.optional(v.number()), // When signal was processed
     processingStatus: v.union(
       v.literal("pending"),
       v.literal("processing"),
       v.literal("processed"),
       v.literal("failed"),
-      v.literal("skipped"),                      // Skipped due to deduplication
+      v.literal("skipped"), // Skipped due to deduplication
     ),
 
     // Extracted information
@@ -6782,19 +7171,23 @@ export default defineSchema({
     suggestedPersonas: v.optional(v.array(v.string())), // Persona IDs relevant to this signal
 
     // Urgency classification
-    urgency: v.optional(v.union(
-      v.literal("critical"),                     // Immediate action required
-      v.literal("high"),                         // Same-day attention
-      v.literal("medium"),                       // This week
-      v.literal("low"),                          // When convenient
-    )),
+    urgency: v.optional(
+      v.union(
+        v.literal("critical"), // Immediate action required
+        v.literal("high"), // Same-day attention
+        v.literal("medium"), // This week
+        v.literal("low"), // When convenient
+      ),
+    ),
 
     // Research depth estimation
-    estimatedResearchDepth: v.optional(v.union(
-      v.literal("shallow"),                      // Quick lookup
-      v.literal("standard"),                     // Normal research
-      v.literal("deep"),                         // Comprehensive analysis
-    )),
+    estimatedResearchDepth: v.optional(
+      v.union(
+        v.literal("shallow"), // Quick lookup
+        v.literal("standard"), // Normal research
+        v.literal("deep"), // Comprehensive analysis
+      ),
+    ),
 
     // Error tracking
     errorMessage: v.optional(v.string()),
@@ -6802,7 +7195,7 @@ export default defineSchema({
 
     // Timestamps
     createdAt: v.number(),
-    expiresAt: v.optional(v.number()),           // TTL for cleanup
+    expiresAt: v.optional(v.number()), // TTL for cleanup
   })
     .index("by_processed", ["processedAt"])
     .index("by_status", ["processingStatus"])
@@ -6816,57 +7209,65 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   researchTasks: defineTable({
     // Entity identification
-    entityId: v.string(),                        // Entity to research
-    entityType: v.optional(v.string()),          // "company" | "person" | "topic" | "product" | "event"
-    entityName: v.optional(v.string()),          // Human-readable name
+    entityId: v.string(), // Entity to research
+    entityType: v.optional(v.string()), // "company" | "person" | "topic" | "product" | "event"
+    entityName: v.optional(v.string()), // Human-readable name
 
     // Persona configuration
-    personas: v.array(v.string()),               // Persona IDs to apply
-    primaryPersona: v.optional(v.string()),      // Lead persona for this research
+    personas: v.array(v.string()), // Persona IDs to apply
+    primaryPersona: v.optional(v.string()), // Lead persona for this research
 
     // Priority calculation
-    priority: v.number(),                        // 0-100, higher = more urgent
-    priorityFactors: v.optional(v.object({
-      urgencyBoost: v.optional(v.number()),      // From signal urgency
-      stalenessBoost: v.optional(v.number()),    // From entity decay
-      watchlistBoost: v.optional(v.number()),    // From user watchlists
-      trendingBoost: v.optional(v.number()),     // From engagement spike
-    })),
+    priority: v.number(), // 0-100, higher = more urgent
+    priorityFactors: v.optional(
+      v.object({
+        urgencyBoost: v.optional(v.number()), // From signal urgency
+        stalenessBoost: v.optional(v.number()), // From entity decay
+        watchlistBoost: v.optional(v.number()), // From user watchlists
+        trendingBoost: v.optional(v.number()), // From engagement spike
+      }),
+    ),
 
     // Status tracking
     status: v.union(
-      v.literal("queued"),                       // Waiting for execution
-      v.literal("researching"),                  // Active research underway
-      v.literal("validating"),                   // Self-question validation
-      v.literal("publishing"),                   // Queued for delivery
-      v.literal("completed"),                    // Successfully finished
-      v.literal("failed"),                       // Terminal failure
-      v.literal("cancelled"),                    // User/system cancelled
+      v.literal("queued"), // Waiting for execution
+      v.literal("researching"), // Active research underway
+      v.literal("validating"), // Self-question validation
+      v.literal("publishing"), // Queued for delivery
+      v.literal("completed"), // Successfully finished
+      v.literal("failed"), // Terminal failure
+      v.literal("cancelled"), // User/system cancelled
     ),
 
     // Execution tracking
-    swarmId: v.optional(v.string()),             // Associated swarm if running
-    qualityScore: v.optional(v.number()),        // 0-100 from validation
-    validationPassed: v.optional(v.boolean()),   // Did it pass self-question?
-    validationIssues: v.optional(v.array(v.object({
-      type: v.string(),                          // "factual" | "freshness" | "completeness" | "grounding" | "contradiction"
-      severity: v.string(),                      // "blocker" | "warning" | "info"
-      description: v.string(),
-    }))),
+    swarmId: v.optional(v.string()), // Associated swarm if running
+    qualityScore: v.optional(v.number()), // 0-100 from validation
+    validationPassed: v.optional(v.boolean()), // Did it pass self-question?
+    validationIssues: v.optional(
+      v.array(
+        v.object({
+          type: v.string(), // "factual" | "freshness" | "completeness" | "grounding" | "contradiction"
+          severity: v.string(), // "blocker" | "warning" | "info"
+          description: v.string(),
+        }),
+      ),
+    ),
 
     // Source tracking
-    signalId: v.optional(v.id("signals")),       // Signal that triggered this task
-    triggeredBy: v.optional(v.union(
-      v.literal("signal"),                       // From signal ingestion
-      v.literal("decay"),                        // From staleness detection
-      v.literal("watchlist"),                    // From user watchlist
-      v.literal("enrichment"),                   // From enrichment prioritizer
-      v.literal("manual"),                       // Manual trigger
-    )),
+    signalId: v.optional(v.id("signals")), // Signal that triggered this task
+    triggeredBy: v.optional(
+      v.union(
+        v.literal("signal"), // From signal ingestion
+        v.literal("decay"), // From staleness detection
+        v.literal("watchlist"), // From user watchlist
+        v.literal("enrichment"), // From enrichment prioritizer
+        v.literal("manual"), // Manual trigger
+      ),
+    ),
 
     // Retry handling
     retryCount: v.number(),
-    maxRetries: v.optional(v.number()),          // Default: 3
+    maxRetries: v.optional(v.number()), // Default: 3
     lastError: v.optional(v.string()),
 
     // Cost tracking
@@ -6897,47 +7298,55 @@ export default defineSchema({
 
     // Content
     content: v.object({
-      raw: v.string(),                           // Full research output
-      summary: v.string(),                       // Executive summary
-      keyFacts: v.array(v.object({
-        label: v.string(),
-        value: v.string(),
-        category: v.optional(v.string()),        // "funding" | "contact" | "news" | "metric"
-        confidence: v.optional(v.number()),
-      })),
-      nextActions: v.array(v.string()),          // Recommended actions
-      persona: v.string(),                       // Persona that generated this
+      raw: v.string(), // Full research output
+      summary: v.string(), // Executive summary
+      keyFacts: v.array(
+        v.object({
+          label: v.string(),
+          value: v.string(),
+          category: v.optional(v.string()), // "funding" | "contact" | "news" | "metric"
+          confidence: v.optional(v.number()),
+        }),
+      ),
+      nextActions: v.array(v.string()), // Recommended actions
+      persona: v.string(), // Persona that generated this
     }),
 
     // Channel configuration
-    channels: v.array(v.object({
-      channel: v.string(),                       // "ui" | "ntfy" | "email" | "sms" | "slack" | "rss"
-      enabled: v.boolean(),
-      format: v.string(),                        // "full" | "summary" | "alert" | "digest"
-      urgency: v.optional(v.string()),
-      recipients: v.optional(v.array(v.string())), // For targeted channels
-      scheduledFor: v.optional(v.number()),      // Scheduled delivery time
-    })),
+    channels: v.array(
+      v.object({
+        channel: v.string(), // "ui" | "ntfy" | "email" | "sms" | "slack" | "rss"
+        enabled: v.boolean(),
+        format: v.string(), // "full" | "summary" | "alert" | "digest"
+        urgency: v.optional(v.string()),
+        recipients: v.optional(v.array(v.string())), // For targeted channels
+        scheduledFor: v.optional(v.number()), // Scheduled delivery time
+      }),
+    ),
 
     // Status
     status: v.union(
-      v.literal("pending"),                      // Awaiting formatting
-      v.literal("formatting"),                   // Generating channel-specific formats
-      v.literal("delivering"),                   // Sending to channels
-      v.literal("completed"),                    // All deliveries done
-      v.literal("partial"),                      // Some channels failed
-      v.literal("failed"),                       // All channels failed
+      v.literal("pending"), // Awaiting formatting
+      v.literal("formatting"), // Generating channel-specific formats
+      v.literal("delivering"), // Sending to channels
+      v.literal("completed"), // All deliveries done
+      v.literal("partial"), // Some channels failed
+      v.literal("failed"), // All channels failed
     ),
 
     // Delivery results
-    deliveryResults: v.optional(v.array(v.object({
-      channel: v.string(),
-      success: v.boolean(),
-      deliveredAt: v.optional(v.number()),
-      messageId: v.optional(v.string()),         // External message ID
-      error: v.optional(v.string()),
-      retryCount: v.optional(v.number()),
-    }))),
+    deliveryResults: v.optional(
+      v.array(
+        v.object({
+          channel: v.string(),
+          success: v.boolean(),
+          deliveredAt: v.optional(v.number()),
+          messageId: v.optional(v.string()), // External message ID
+          error: v.optional(v.string()),
+          retryCount: v.optional(v.number()),
+        }),
+      ),
+    ),
 
     // Timestamps
     createdAt: v.number(),
@@ -6954,34 +7363,34 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   entityStates: defineTable({
     // Identity
-    entityId: v.string(),                        // Canonical entity identifier
-    canonicalName: v.string(),                   // Primary display name
-    aliases: v.optional(v.array(v.string())),    // Alternative names
-    entityType: v.string(),                      // "company" | "person" | "topic" | "product" | "event"
+    entityId: v.string(), // Canonical entity identifier
+    canonicalName: v.string(), // Primary display name
+    aliases: v.optional(v.array(v.string())), // Alternative names
+    entityType: v.string(), // "company" | "person" | "topic" | "product" | "event"
 
     // Freshness tracking
     freshness: v.object({
-      lastUpdated: v.number(),                   // Last successful research
-      lastChecked: v.optional(v.number()),       // Last staleness check
-      staleDays: v.number(),                     // Days since last update
-      decayScore: v.number(),                    // 0-1, lower = more stale
+      lastUpdated: v.number(), // Last successful research
+      lastChecked: v.optional(v.number()), // Last staleness check
+      staleDays: v.number(), // Days since last update
+      decayScore: v.number(), // 0-1, lower = more stale
       decayHalfLifeDays: v.optional(v.number()), // Entity-specific half-life
     }),
 
     // Completeness tracking
     completeness: v.object({
-      score: v.number(),                         // 0-100
-      missingFields: v.array(v.string()),        // Fields still needed
+      score: v.number(), // 0-100
+      missingFields: v.array(v.string()), // Fields still needed
       enrichmentOpportunities: v.array(v.string()), // Suggested enrichments
       lastAssessed: v.number(),
     }),
 
     // Quality tracking
     quality: v.object({
-      overallScore: v.number(),                  // 0-100
-      personaScores: v.optional(v.any()),        // Record<PersonaId, number>
-      sourceCount: v.number(),                   // Number of unique sources
-      contradictionCount: v.number(),            // Unresolved contradictions
+      overallScore: v.number(), // 0-100
+      personaScores: v.optional(v.any()), // Record<PersonaId, number>
+      sourceCount: v.number(), // Number of unique sources
+      contradictionCount: v.number(), // Unresolved contradictions
       lastValidated: v.number(),
     }),
 
@@ -6990,16 +7399,20 @@ export default defineSchema({
       viewCount: v.number(),
       watchlistCount: v.number(),
       lastViewed: v.optional(v.number()),
-      trendingScore: v.optional(v.number()),     // Engagement velocity
+      trendingScore: v.optional(v.number()), // Engagement velocity
     }),
 
     // Research history
-    researchHistory: v.optional(v.array(v.object({
-      taskId: v.id("researchTasks"),
-      completedAt: v.number(),
-      qualityScore: v.number(),
-      personas: v.array(v.string()),
-    }))),
+    researchHistory: v.optional(
+      v.array(
+        v.object({
+          taskId: v.id("researchTasks"),
+          completedAt: v.number(),
+          qualityScore: v.number(),
+          personas: v.array(v.string()),
+        }),
+      ),
+    ),
 
     // Timestamps
     createdAt: v.number(),
@@ -7020,21 +7433,23 @@ export default defineSchema({
     userId: v.id("users"),
 
     // Event context
-    channel: v.string(),                         // "ui" | "ntfy" | "email" | "sms" | "slack"
-    eventType: v.string(),                       // "delivered" | "opened" | "clicked" | "dismissed" | "shared"
+    channel: v.string(), // "ui" | "ntfy" | "email" | "sms" | "slack"
+    eventType: v.string(), // "delivered" | "opened" | "clicked" | "dismissed" | "shared"
 
     // Content reference
     entityId: v.optional(v.string()),
     publishingTaskId: v.optional(v.id("publishingTasks")),
-    contentType: v.optional(v.string()),         // "research" | "digest" | "alert"
+    contentType: v.optional(v.string()), // "research" | "digest" | "alert"
 
     // Event metadata
-    metadata: v.optional(v.object({
-      clickTarget: v.optional(v.string()),       // What was clicked
-      timeToOpen: v.optional(v.number()),        // Ms from delivery to open
-      deviceType: v.optional(v.string()),        // "mobile" | "desktop"
-      source: v.optional(v.string()),            // Tracking source
-    })),
+    metadata: v.optional(
+      v.object({
+        clickTarget: v.optional(v.string()), // What was clicked
+        timeToOpen: v.optional(v.number()), // Ms from delivery to open
+        deviceType: v.optional(v.string()), // "mobile" | "desktop"
+        source: v.optional(v.string()), // Tracking source
+      }),
+    ),
 
     // Timestamps
     timestamp: v.number(),
@@ -7056,8 +7471,8 @@ export default defineSchema({
       claim: v.string(),
       source: v.string(),
       sourceUrl: v.optional(v.string()),
-      confidence: v.number(),                    // 0-1
-      timestamp: v.optional(v.number()),         // When fact was discovered
+      confidence: v.number(), // 0-1
+      timestamp: v.optional(v.number()), // When fact was discovered
     }),
     factB: v.object({
       claim: v.string(),
@@ -7069,30 +7484,32 @@ export default defineSchema({
 
     // Classification
     nature: v.union(
-      v.literal("direct"),                       // Direct logical contradiction
-      v.literal("temporal"),                     // Time-based conflict (old vs new)
-      v.literal("numerical"),                    // Conflicting numbers
-      v.literal("semantic"),                     // Meaning-based conflict
+      v.literal("direct"), // Direct logical contradiction
+      v.literal("temporal"), // Time-based conflict (old vs new)
+      v.literal("numerical"), // Conflicting numbers
+      v.literal("semantic"), // Meaning-based conflict
     ),
     severity: v.union(
-      v.literal("critical"),                     // Major data integrity issue
-      v.literal("high"),                         // Important to resolve
-      v.literal("medium"),                       // Should be resolved
-      v.literal("low"),                          // Minor discrepancy
+      v.literal("critical"), // Major data integrity issue
+      v.literal("high"), // Important to resolve
+      v.literal("medium"), // Should be resolved
+      v.literal("low"), // Minor discrepancy
     ),
 
     // Resolution
-    resolution: v.optional(v.object({
-      winner: v.string(),                        // "A" | "B" | "neither" | "merged"
-      reason: v.string(),
-      resolvedBy: v.optional(v.string()),        // "auto" | "human" | persona ID
-      resolvedAt: v.number(),
-      mergedClaim: v.optional(v.string()),       // If merged into new claim
-    })),
+    resolution: v.optional(
+      v.object({
+        winner: v.string(), // "A" | "B" | "neither" | "merged"
+        reason: v.string(),
+        resolvedBy: v.optional(v.string()), // "auto" | "human" | persona ID
+        resolvedAt: v.number(),
+        mergedClaim: v.optional(v.string()), // If merged into new claim
+      }),
+    ),
 
     // Tracking
     detectedAt: v.number(),
-    detectedBy: v.optional(v.string()),          // Which agent/process detected
+    detectedBy: v.optional(v.string()), // Which agent/process detected
   })
     .index("by_entity", ["entityId"])
     .index("by_unresolved", ["entityId", "resolution"])
@@ -7104,7 +7521,7 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   healthChecks: defineTable({
     // Component identification
-    component: v.string(),                       // "signalIngester" | "researchQueue" | etc.
+    component: v.string(), // "signalIngester" | "researchQueue" | etc.
 
     // Health status
     status: v.union(
@@ -7114,29 +7531,33 @@ export default defineSchema({
     ),
 
     // Metrics
-    latencyP50: v.number(),                      // 50th percentile latency (ms)
-    latencyP99: v.number(),                      // 99th percentile latency (ms)
-    errorRate: v.number(),                       // 0-1
-    throughput: v.optional(v.number()),          // Operations per minute
+    latencyP50: v.number(), // 50th percentile latency (ms)
+    latencyP99: v.number(), // 99th percentile latency (ms)
+    errorRate: v.number(), // 0-1
+    throughput: v.optional(v.number()), // Operations per minute
 
     // Queue metrics (if applicable)
     queueDepth: v.optional(v.number()),
-    oldestItemAge: v.optional(v.number()),       // Age in ms of oldest queued item
+    oldestItemAge: v.optional(v.number()), // Age in ms of oldest queued item
 
     // Resource metrics
-    memoryUsage: v.optional(v.number()),         // MB
-    cpuUsage: v.optional(v.number()),            // 0-1
+    memoryUsage: v.optional(v.number()), // MB
+    cpuUsage: v.optional(v.number()), // 0-1
 
     // Error details
-    recentErrors: v.optional(v.array(v.object({
-      timestamp: v.number(),
-      message: v.string(),
-      count: v.number(),
-    }))),
+    recentErrors: v.optional(
+      v.array(
+        v.object({
+          timestamp: v.number(),
+          message: v.string(),
+          count: v.number(),
+        }),
+      ),
+    ),
 
     // Check metadata
     checkedAt: v.number(),
-    windowMinutes: v.number(),                   // Time window for metrics
+    windowMinutes: v.number(), // Time window for metrics
   })
     .index("by_component", ["component", "checkedAt"])
     .index("by_status", ["status", "checkedAt"])
@@ -7148,12 +7569,12 @@ export default defineSchema({
   healingActions: defineTable({
     // Target component
     component: v.string(),
-    issue: v.string(),                           // Issue identifier
+    issue: v.string(), // Issue identifier
 
     // Action taken
-    action: v.string(),                          // "restart" | "scale" | "fallback" | "isolate" | "alert"
+    action: v.string(), // "restart" | "scale" | "fallback" | "isolate" | "alert"
     reason: v.string(),
-    automated: v.boolean(),                      // Was this automatic or manual?
+    automated: v.boolean(), // Was this automatic or manual?
 
     // Execution
     status: v.union(
@@ -7167,11 +7588,13 @@ export default defineSchema({
     errorMessage: v.optional(v.string()),
 
     // Impact tracking
-    impactMetrics: v.optional(v.object({
-      preActionHealth: v.string(),
-      postActionHealth: v.optional(v.string()),
-      recoveryTimeMs: v.optional(v.number()),
-    })),
+    impactMetrics: v.optional(
+      v.object({
+        preActionHealth: v.string(),
+        postActionHealth: v.optional(v.string()),
+        recoveryTimeMs: v.optional(v.number()),
+      }),
+    ),
 
     // Timestamps
     createdAt: v.number(),
@@ -7188,23 +7611,23 @@ export default defineSchema({
     personaId: v.string(),
 
     // Time period
-    period: v.string(),                          // "daily" | "weekly" | "monthly"
-    periodStart: v.number(),                     // Start of period
-    periodEnd: v.number(),                       // End of period
+    period: v.string(), // "daily" | "weekly" | "monthly"
+    periodStart: v.number(), // Start of period
+    periodEnd: v.number(), // End of period
 
     // Usage tracking
     tokensUsed: v.number(),
     costUsd: v.number(),
-    researchCount: v.number(),                   // Number of research tasks
-    publishCount: v.number(),                    // Number of publications
+    researchCount: v.number(), // Number of research tasks
+    publishCount: v.number(), // Number of publications
 
     // Budget limits
     tokenLimit: v.number(),
     costLimit: v.number(),
 
     // Status
-    exhausted: v.boolean(),                      // Has budget been exhausted?
-    exhaustedAt: v.optional(v.number()),         // When budget was exhausted
+    exhausted: v.boolean(), // Has budget been exhausted?
+    exhaustedAt: v.optional(v.number()), // When budget was exhausted
 
     // Timestamps
     updatedAt: v.number(),
@@ -7217,11 +7640,11 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   deliveryJobs: defineTable({
     // Channel targeting
-    channel: v.string(),                         // "ntfy" | "email" | "sms" | "slack" | "rss"
-    recipient: v.optional(v.string()),           // Target recipient
+    channel: v.string(), // "ntfy" | "email" | "sms" | "slack" | "rss"
+    recipient: v.optional(v.string()), // Target recipient
 
     // Payload
-    payload: v.any(),                            // Channel-specific payload
+    payload: v.any(), // Channel-specific payload
 
     // Status
     status: v.union(
@@ -7234,13 +7657,13 @@ export default defineSchema({
 
     // Retry handling
     attempts: v.number(),
-    maxAttempts: v.number(),                     // Default: 5
+    maxAttempts: v.number(), // Default: 5
     lastError: v.optional(v.string()),
     nextRetryAt: v.optional(v.number()),
 
     // External references
     publishingTaskId: v.optional(v.id("publishingTasks")),
-    externalMessageId: v.optional(v.string()),   // ID from delivery provider
+    externalMessageId: v.optional(v.string()), // ID from delivery provider
 
     // Timestamps
     createdAt: v.number(),
@@ -7261,9 +7684,9 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   freeModels: defineTable({
     // Identity
-    openRouterId: v.string(),                    // e.g., "qwen/qwen3-coder:free"
-    name: v.string(),                            // Human-readable name
-    contextLength: v.number(),                   // Max context window
+    openRouterId: v.string(), // e.g., "qwen/qwen3-coder:free"
+    name: v.string(), // Human-readable name
+    contextLength: v.number(), // Max context window
 
     // Capabilities (refined by evaluation)
     capabilities: v.object({
@@ -7274,19 +7697,19 @@ export default defineSchema({
     }),
 
     // Performance metrics (rolling averages)
-    performanceScore: v.number(),                // 0-100 composite score
-    reliabilityScore: v.number(),                // 0-100 based on success rate
-    latencyAvgMs: v.number(),                    // Average response time
+    performanceScore: v.number(), // 0-100 composite score
+    reliabilityScore: v.number(), // 0-100 based on success rate
+    latencyAvgMs: v.number(), // Average response time
 
     // Evaluation tracking
-    lastEvaluated: v.number(),                   // Last evaluation timestamp
-    evaluationCount: v.number(),                 // Total evaluations run
-    successCount: v.number(),                    // Successful evaluations
-    failureCount: v.number(),                    // Failed evaluations
+    lastEvaluated: v.number(), // Last evaluation timestamp
+    evaluationCount: v.number(), // Total evaluations run
+    successCount: v.number(), // Successful evaluations
+    failureCount: v.number(), // Failed evaluations
 
     // Status
-    isActive: v.boolean(),                       // Meets reliability threshold
-    rank: v.number(),                            // 1 = best, higher = worse
+    isActive: v.boolean(), // Meets reliability threshold
+    rank: v.number(), // 1 = best, higher = worse
   })
     .index("by_openRouterId", ["openRouterId"])
     .index("by_rank", ["rank"])
@@ -7300,7 +7723,7 @@ export default defineSchema({
     modelId: v.id("freeModels"),
     success: v.boolean(),
     latencyMs: v.number(),
-    responseQuality: v.optional(v.number()),     // 0-100
+    responseQuality: v.optional(v.number()), // 0-100
     toolCallSuccess: v.optional(v.boolean()),
     error: v.optional(v.string()),
     timestamp: v.number(),
@@ -7312,21 +7735,21 @@ export default defineSchema({
   /* FREE MODEL METADATA - System-level discovery tracking              */
   /* ------------------------------------------------------------------ */
   freeModelMeta: defineTable({
-    key: v.string(),                             // "lastDiscovery" | "lastRankingUpdate"
-    value: v.number(),                           // Timestamp value
+    key: v.string(), // "lastDiscovery" | "lastRankingUpdate"
+    value: v.number(), // Timestamp value
   }),
 
   /* ------------------------------------------------------------------ */
   /* AUTONOMOUS MODEL USAGE - Usage tracking for autonomous operations  */
   /* ------------------------------------------------------------------ */
   autonomousModelUsage: defineTable({
-    modelId: v.string(),                         // Model identifier used
-    taskType: v.string(),                        // "research" | "synthesis" | "publishing" etc.
+    modelId: v.string(), // Model identifier used
+    taskType: v.string(), // "research" | "synthesis" | "publishing" etc.
     success: v.boolean(),
     latencyMs: v.number(),
     inputTokens: v.optional(v.number()),
     outputTokens: v.optional(v.number()),
-    cost: v.number(),                            // Cost in USD (0 for free models)
+    cost: v.number(), // Cost in USD (0 for free models)
     error: v.optional(v.string()),
     timestamp: v.number(),
   })
@@ -7344,7 +7767,7 @@ export default defineSchema({
   /* DISCORD USERS - Registered Discord users for notifications         */
   /* ------------------------------------------------------------------ */
   discordUsers: defineTable({
-    discordUserId: v.string(),              // Discord user ID (snowflake)
+    discordUserId: v.string(), // Discord user ID (snowflake)
     discordUsername: v.string(),
     discordGuildId: v.optional(v.string()), // Server/guild ID
     discordChannelId: v.optional(v.string()), // Preferred channel
@@ -7364,7 +7787,7 @@ export default defineSchema({
     discordUsername: v.string(),
     guildId: v.optional(v.string()),
     channelId: v.optional(v.string()),
-    interactionType: v.string(),            // "slash_command" | "button_click" | "modal_submit"
+    interactionType: v.string(), // "slash_command" | "button_click" | "modal_submit"
     commandName: v.optional(v.string()),
     commandOptions: v.optional(v.any()),
     agentResponse: v.optional(v.string()),
@@ -7383,7 +7806,7 @@ export default defineSchema({
     slackTeamId: v.string(),
     channelId: v.optional(v.string()),
     channelName: v.optional(v.string()),
-    interactionType: v.string(),            // "slash_command" | "message" | "button_click" | "modal_submit"
+    interactionType: v.string(), // "slash_command" | "message" | "button_click" | "modal_submit"
     commandName: v.optional(v.string()),
     commandOptions: v.optional(v.any()),
     messageText: v.optional(v.string()),
@@ -7411,78 +7834,84 @@ export default defineSchema({
   /* DUE DILIGENCE JOBS - Orchestration layer for DD research            */
   /* ------------------------------------------------------------------ */
   dueDiligenceJobs: defineTable({
-    jobId: v.string(),                        // UUID for deduplication
+    jobId: v.string(), // UUID for deduplication
     userId: v.id("users"),
     entityId: v.optional(v.id("entityContexts")),
     entityName: v.string(),
     entityType: v.union(
       v.literal("company"),
       v.literal("fund"),
-      v.literal("person")
+      v.literal("person"),
     ),
 
     // Trigger source
     triggerSource: v.union(
-      v.literal("funding_detection"),         // Auto-triggered from funding events
-      v.literal("deals_feed"),                // From deals/opportunities feed
-      v.literal("manual"),                    // User-initiated
-      v.literal("scheduled_refresh"),         // Periodic refresh of stale DD
-      v.literal("encounter")                  // Triggered from encounter capture
+      v.literal("funding_detection"), // Auto-triggered from funding events
+      v.literal("deals_feed"), // From deals/opportunities feed
+      v.literal("manual"), // User-initiated
+      v.literal("scheduled_refresh"), // Periodic refresh of stale DD
+      v.literal("encounter"), // Triggered from encounter capture
     ),
-    triggerEventId: v.optional(v.string()),   // Link to fundingEvent or feedItem
+    triggerEventId: v.optional(v.string()), // Link to fundingEvent or feedItem
     triggerEncounterId: v.optional(v.id("encounterEvents")), // Link to encounter if triggered from one
 
     // Status workflow
     status: v.union(
-      v.literal("pending"),                   // Queued
-      v.literal("analyzing"),                 // Complexity signal analysis
-      v.literal("executing"),                 // Parallel branch execution
-      v.literal("cross_checking"),            // Cross-check phase
-      v.literal("synthesizing"),              // Memo generation
+      v.literal("pending"), // Queued
+      v.literal("analyzing"), // Complexity signal analysis
+      v.literal("executing"), // Parallel branch execution
+      v.literal("cross_checking"), // Cross-check phase
+      v.literal("synthesizing"), // Memo generation
       v.literal("completed"),
-      v.literal("failed")
+      v.literal("failed"),
     ),
 
     // Branch tracking
-    activeBranches: v.array(v.string()),      // Currently executing branch types
+    activeBranches: v.array(v.string()), // Currently executing branch types
     conditionalBranchesSpawned: v.optional(v.array(v.string())), // Dynamically added
 
     // Complexity signals (determines conditional branches)
-    complexitySignals: v.optional(v.object({
-      fundingSize: v.optional(v.number()),    // USD amount
-      teamSize: v.optional(v.number()),       // Key people count
-      hasPatentMentions: v.optional(v.boolean()),
-      hasRegulatoryMentions: v.optional(v.boolean()),
-      hasPublicSecurities: v.optional(v.boolean()),
-      hasSerialFounders: v.optional(v.boolean()),
-      hasVCBackedFounders: v.optional(v.boolean()),
-      industryRisk: v.optional(v.union(
-        v.literal("low"),
-        v.literal("medium"),
-        v.literal("high")
-      )),
-      sectors: v.optional(v.array(v.string())),
-    })),
+    complexitySignals: v.optional(
+      v.object({
+        fundingSize: v.optional(v.number()), // USD amount
+        teamSize: v.optional(v.number()), // Key people count
+        hasPatentMentions: v.optional(v.boolean()),
+        hasRegulatoryMentions: v.optional(v.boolean()),
+        hasPublicSecurities: v.optional(v.boolean()),
+        hasSerialFounders: v.optional(v.boolean()),
+        hasVCBackedFounders: v.optional(v.boolean()),
+        industryRisk: v.optional(
+          v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+        ),
+        sectors: v.optional(v.array(v.string())),
+      }),
+    ),
 
     // Results
     ddMemoId: v.optional(v.id("dueDiligenceMemos")),
-    overallConfidence: v.optional(v.number()),  // 0-1 final confidence
+    overallConfidence: v.optional(v.number()), // 0-1 final confidence
 
     // Contradiction tracking
-    contradictions: v.optional(v.array(v.object({
-      field: v.string(),                      // Which field has conflict
-      sourceA: v.string(),                    // Branch or source A
-      valueA: v.string(),
-      sourceB: v.string(),                    // Branch or source B
-      valueB: v.string(),
-      resolution: v.optional(v.union(
-        v.literal("resolved_to_a"),
-        v.literal("resolved_to_b"),
-        v.literal("unresolved"),
-        v.literal("both_valid")
-      )),
-      resolutionReason: v.optional(v.string()),
-    }))),
+    contradictions: v.optional(
+      v.array(
+        v.object({
+          field: v.string(), // Which field has conflict
+          sourceA: v.string(), // Branch or source A
+          valueA: v.string(),
+          sourceB: v.string(), // Branch or source B
+          valueB: v.string(),
+          resolution: v.optional(
+            v.union(
+              v.literal("resolved_to_a"),
+              v.literal("resolved_to_b"),
+              v.literal("unresolved"),
+              v.literal("both_valid"),
+            ),
+          ),
+          resolutionReason: v.optional(v.string()),
+        }),
+      ),
+    ),
 
     // Task tree integration
     parallelTreeId: v.optional(v.id("parallelTaskTrees")),
@@ -7514,19 +7943,19 @@ export default defineSchema({
   /* DD RESEARCH BRANCHES - Individual research angles                   */
   /* ------------------------------------------------------------------ */
   ddResearchBranches: defineTable({
-    jobId: v.string(),                        // Links to dueDiligenceJobs
-    branchId: v.string(),                     // UUID
+    jobId: v.string(), // Links to dueDiligenceJobs
+    branchId: v.string(), // UUID
     branchType: v.union(
       // Core branches (always run)
-      v.literal("company_profile"),           // Basic company data
-      v.literal("team_founders"),             // Deep team/founder research
-      v.literal("market_competitive"),        // Market size, competitors
+      v.literal("company_profile"), // Basic company data
+      v.literal("team_founders"), // Deep team/founder research
+      v.literal("market_competitive"), // Market size, competitors
       // Conditional branches (spawned based on complexity)
-      v.literal("technical_dd"),              // Tech stack, architecture
-      v.literal("ip_patents"),                // Patent portfolio, IP
-      v.literal("regulatory"),                // SEC, FDA, compliance
-      v.literal("financial_deep"),            // Deep financial analysis
-      v.literal("network_mapping")            // Network graph, relationships
+      v.literal("technical_dd"), // Tech stack, architecture
+      v.literal("ip_patents"), // Patent portfolio, IP
+      v.literal("regulatory"), // SEC, FDA, compliance
+      v.literal("financial_deep"), // Deep financial analysis
+      v.literal("network_mapping"), // Network graph, relationships
     ),
 
     // Status
@@ -7536,46 +7965,50 @@ export default defineSchema({
       v.literal("awaiting_verification"),
       v.literal("completed"),
       v.literal("failed"),
-      v.literal("skipped")                    // Conditional branch not needed
+      v.literal("skipped"), // Conditional branch not needed
     ),
 
     // Integration with parallel task tree
     taskTreeId: v.optional(v.id("parallelTaskTrees")),
-    taskNodeId: v.optional(v.string()),       // parallelTaskNodes.taskId
+    taskNodeId: v.optional(v.string()), // parallelTaskNodes.taskId
 
     // Findings (branch-specific structured data)
-    findings: v.optional(v.any()),            // Varies by branchType
-    findingsSummary: v.optional(v.string()),  // Human-readable summary
+    findings: v.optional(v.any()), // Varies by branchType
+    findingsSummary: v.optional(v.string()), // Human-readable summary
 
     // Confidence & verification
-    confidence: v.optional(v.number()),       // 0-1 confidence in findings
+    confidence: v.optional(v.number()), // 0-1 confidence in findings
     verificationScore: v.optional(v.number()), // From verifier agent
 
     // Sources used
-    sourcesUsed: v.optional(v.array(v.object({
-      sourceType: v.union(
-        v.literal("sec_filing"),
-        v.literal("news_article"),
-        v.literal("company_website"),
-        v.literal("linkedin"),
-        v.literal("patent_db"),
-        v.literal("crunchbase"),
-        v.literal("pitchbook"),
-        v.literal("llm_inference")
+    sourcesUsed: v.optional(
+      v.array(
+        v.object({
+          sourceType: v.union(
+            v.literal("sec_filing"),
+            v.literal("news_article"),
+            v.literal("company_website"),
+            v.literal("linkedin"),
+            v.literal("patent_db"),
+            v.literal("crunchbase"),
+            v.literal("pitchbook"),
+            v.literal("llm_inference"),
+          ),
+          url: v.optional(v.string()),
+          title: v.optional(v.string()),
+          accessedAt: v.number(),
+          reliability: v.union(
+            v.literal("authoritative"), // SEC, USPTO, official
+            v.literal("reliable"), // Major news, LinkedIn
+            v.literal("secondary"), // Blog, press release
+            v.literal("inferred"), // LLM synthesis
+          ),
+          // Optional section tracking
+          section: v.optional(v.string()), // Which memo section this supports
+          branchType: v.optional(v.string()), // Which branch produced this source
+        }),
       ),
-      url: v.optional(v.string()),
-      title: v.optional(v.string()),
-      accessedAt: v.number(),
-      reliability: v.union(
-        v.literal("authoritative"),           // SEC, USPTO, official
-        v.literal("reliable"),                // Major news, LinkedIn
-        v.literal("secondary"),               // Blog, press release
-        v.literal("inferred")                 // LLM synthesis
-      ),
-      // Optional section tracking
-      section: v.optional(v.string()),        // Which memo section this supports
-      branchType: v.optional(v.string()),     // Which branch produced this source
-    }))),
+    ),
 
     // Timing
     createdAt: v.number(),
@@ -7596,12 +8029,12 @@ export default defineSchema({
   /* DUE DILIGENCE MEMOS - Traditional IC/VC memo structure              */
   /* ------------------------------------------------------------------ */
   dueDiligenceMemos: defineTable({
-    jobId: v.string(),                        // Links to dueDiligenceJobs
+    jobId: v.string(), // Links to dueDiligenceJobs
     entityName: v.string(),
     entityType: v.union(
       v.literal("company"),
       v.literal("fund"),
-      v.literal("person")
+      v.literal("person"),
     ),
 
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -7613,7 +8046,7 @@ export default defineSchema({
       v.literal("BUY"),
       v.literal("HOLD"),
       v.literal("PASS"),
-      v.literal("INSUFFICIENT_DATA")
+      v.literal("INSUFFICIENT_DATA"),
     ),
     verdictRationale: v.optional(v.string()),
 
@@ -7627,7 +8060,7 @@ export default defineSchema({
       employeeCount: v.optional(v.number()),
       employeeGrowth: v.optional(v.string()), // e.g., "+50% YoY"
       sectors: v.array(v.string()),
-      stage: v.optional(v.string()),          // Seed, Series A, etc.
+      stage: v.optional(v.string()), // Seed, Series A, etc.
       businessModel: v.optional(v.string()),
       keyProducts: v.optional(v.array(v.string())),
     }),
@@ -7636,21 +8069,21 @@ export default defineSchema({
     // III. MARKET ANALYSIS
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     marketAnalysis: v.object({
-      marketSize: v.optional(v.string()),     // TAM/SAM/SOM
-      marketGrowth: v.optional(v.string()),   // CAGR
-      competitors: v.array(v.object({
-        name: v.string(),
-        description: v.optional(v.string()),
-        fundingStage: v.optional(v.string()),
-        differentiator: v.optional(v.string()),
-        threat: v.optional(v.union(
-          v.literal("low"),
-          v.literal("medium"),
-          v.literal("high")
-        )),                                    // Competitive threat level
-      })),
-      differentiators: v.array(v.string()),   // Company's competitive advantages
-      whyNow: v.optional(v.string()),         // Market timing thesis
+      marketSize: v.optional(v.string()), // TAM/SAM/SOM
+      marketGrowth: v.optional(v.string()), // CAGR
+      competitors: v.array(
+        v.object({
+          name: v.string(),
+          description: v.optional(v.string()),
+          fundingStage: v.optional(v.string()),
+          differentiator: v.optional(v.string()),
+          threat: v.optional(
+            v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+          ), // Competitive threat level
+        }),
+      ),
+      differentiators: v.array(v.string()), // Company's competitive advantages
+      whyNow: v.optional(v.string()), // Market timing thesis
       tailwinds: v.optional(v.array(v.string())),
       headwinds: v.optional(v.array(v.string())),
     }),
@@ -7659,11 +8092,11 @@ export default defineSchema({
     // IV. TEAM ASSESSMENT
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     teamAnalysis: v.object({
-      founders: v.array(v.any()),             // TeamMemberProfile[]
-      executives: v.array(v.any()),           // TeamMemberProfile[]
-      boardMembers: v.array(v.any()),         // TeamMemberProfile[]
+      founders: v.array(v.any()), // TeamMemberProfile[]
+      executives: v.array(v.any()), // TeamMemberProfile[]
+      boardMembers: v.array(v.any()), // TeamMemberProfile[]
       advisors: v.optional(v.array(v.any())),
-      networkGraph: v.optional(v.any()),      // Network visualization data
+      networkGraph: v.optional(v.any()), // Network visualization data
       trackRecordSummary: v.optional(v.string()),
       teamStrengths: v.optional(v.array(v.string())),
       teamGaps: v.optional(v.array(v.string())),
@@ -7674,29 +8107,39 @@ export default defineSchema({
     // V. FINANCIALS / FUNDING HISTORY
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     fundingHistory: v.object({
-      totalRaised: v.optional(v.object({
-        amount: v.number(),
-        currency: v.string(),
-        unit: v.string(),                     // M, B, K
-      })),
-      rounds: v.array(v.object({
-        roundType: v.string(),
-        date: v.optional(v.string()),
-        amount: v.optional(v.string()),
-        leadInvestors: v.optional(v.array(v.string())),
-        valuation: v.optional(v.string()),
-        verified: v.optional(v.boolean()),
-        source: v.optional(v.string()),
-      })),
-      valuationComps: v.optional(v.object({
-        currentValuation: v.optional(v.string()),
-        revenueMultiple: v.optional(v.number()),
-        comparables: v.optional(v.array(v.object({
-          company: v.string(),
-          valuation: v.string(),
-          multiple: v.optional(v.number()),
-        }))),
-      })),
+      totalRaised: v.optional(
+        v.object({
+          amount: v.number(),
+          currency: v.string(),
+          unit: v.string(), // M, B, K
+        }),
+      ),
+      rounds: v.array(
+        v.object({
+          roundType: v.string(),
+          date: v.optional(v.string()),
+          amount: v.optional(v.string()),
+          leadInvestors: v.optional(v.array(v.string())),
+          valuation: v.optional(v.string()),
+          verified: v.optional(v.boolean()),
+          source: v.optional(v.string()),
+        }),
+      ),
+      valuationComps: v.optional(
+        v.object({
+          currentValuation: v.optional(v.string()),
+          revenueMultiple: v.optional(v.number()),
+          comparables: v.optional(
+            v.array(
+              v.object({
+                company: v.string(),
+                valuation: v.string(),
+                multiple: v.optional(v.number()),
+              }),
+            ),
+          ),
+        }),
+      ),
       burnRate: v.optional(v.string()),
       runway: v.optional(v.string()),
     }),
@@ -7704,56 +8147,68 @@ export default defineSchema({
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // VI. RISKS
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    risks: v.array(v.object({
-      category: v.union(
-        v.literal("Market"),
-        v.literal("Execution"),
-        v.literal("Regulatory"),
-        v.literal("Team"),
-        v.literal("Technical"),
-        v.literal("Financial"),
-        v.literal("Competitive"),
-        v.literal("Legal")
-      ),
-      description: v.string(),
-      severity: v.union(
-        v.literal("low"),
-        v.literal("medium"),
-        v.literal("high"),
-        v.literal("critical")
-      ),
-      likelihood: v.optional(v.union(
-        v.literal("low"),
-        v.literal("medium"),
-        v.literal("high")
-      )),
-      mitigation: v.optional(v.string()),
-      timeframe: v.optional(v.string()),      // Near-term, medium-term, long-term
-    })),
+    risks: v.array(
+      v.object({
+        category: v.union(
+          v.literal("Market"),
+          v.literal("Execution"),
+          v.literal("Regulatory"),
+          v.literal("Team"),
+          v.literal("Technical"),
+          v.literal("Financial"),
+          v.literal("Competitive"),
+          v.literal("Legal"),
+        ),
+        description: v.string(),
+        severity: v.union(
+          v.literal("low"),
+          v.literal("medium"),
+          v.literal("high"),
+          v.literal("critical"),
+        ),
+        likelihood: v.optional(
+          v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+        ),
+        mitigation: v.optional(v.string()),
+        timeframe: v.optional(v.string()), // Near-term, medium-term, long-term
+      }),
+    ),
 
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // VII. INVESTMENT THESIS
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     investmentThesis: v.object({
       thesisSummary: v.string(),
-      keyDrivers: v.array(v.string()),        // Why this will work
-      keyMilestones: v.optional(v.array(v.object({
-        milestone: v.string(),
-        timeframe: v.optional(v.string()),
-        importance: v.optional(v.string()),
-      }))),
-      exitScenarios: v.optional(v.array(v.object({
-        scenario: v.string(),
-        probability: v.optional(v.string()),  // Low/Medium/High
-        potentialReturn: v.optional(v.string()),
-        acquirers: v.optional(v.array(v.string())),
-      }))),
-      comparableExits: v.optional(v.array(v.object({
-        company: v.string(),
-        exitType: v.string(),
-        exitValue: v.string(),
-        year: v.optional(v.number()),
-      }))),
+      keyDrivers: v.array(v.string()), // Why this will work
+      keyMilestones: v.optional(
+        v.array(
+          v.object({
+            milestone: v.string(),
+            timeframe: v.optional(v.string()),
+            importance: v.optional(v.string()),
+          }),
+        ),
+      ),
+      exitScenarios: v.optional(
+        v.array(
+          v.object({
+            scenario: v.string(),
+            probability: v.optional(v.string()), // Low/Medium/High
+            potentialReturn: v.optional(v.string()),
+            acquirers: v.optional(v.array(v.string())),
+          }),
+        ),
+      ),
+      comparableExits: v.optional(
+        v.array(
+          v.object({
+            company: v.string(),
+            exitType: v.string(),
+            exitValue: v.string(),
+            year: v.optional(v.number()),
+          }),
+        ),
+      ),
     }),
 
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -7762,32 +8217,39 @@ export default defineSchema({
     verificationSummary: v.object({
       contradictionsFound: v.number(),
       contradictionsResolved: v.number(),
-      overallConfidence: v.number(),          // 0-1
-      dataCompleteness: v.number(),           // 0-1 how complete is the data
+      overallConfidence: v.number(), // 0-1
+      dataCompleteness: v.number(), // 0-1 how complete is the data
       sourceQuality: v.union(
-        v.literal("high"),                    // Multiple authoritative sources
-        v.literal("medium"),                  // Mix of sources
-        v.literal("low")                      // Mostly inferred
+        v.literal("high"), // Multiple authoritative sources
+        v.literal("medium"), // Mix of sources
+        v.literal("low"), // Mostly inferred
       ),
     }),
 
     // All sources used across all branches
-    sources: v.array(v.object({
-      sourceType: v.string(),
-      url: v.optional(v.string()),
-      title: v.optional(v.string()),
-      reliability: v.string(),
-      section: v.optional(v.string()),        // Which memo section uses this
-    })),
+    sources: v.array(
+      v.object({
+        sourceType: v.string(),
+        url: v.optional(v.string()),
+        title: v.optional(v.string()),
+        reliability: v.string(),
+        section: v.optional(v.string()), // Which memo section uses this
+      }),
+    ),
 
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // PERSONA READINESS
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    personaReadiness: v.optional(v.record(v.string(), v.object({
-      ready: v.boolean(),
-      missingFields: v.optional(v.array(v.string())),
-      relevanceScore: v.optional(v.number()), // 0-1 how relevant for this persona
-    }))),
+    personaReadiness: v.optional(
+      v.record(
+        v.string(),
+        v.object({
+          ready: v.boolean(),
+          missingFields: v.optional(v.array(v.string())),
+          relevanceScore: v.optional(v.number()), // 0-1 how relevant for this persona
+        }),
+      ),
+    ),
 
     // Timing
     createdAt: v.number(),
@@ -7812,7 +8274,7 @@ export default defineSchema({
 
   // Investor protection verification jobs
   investorPlaybookJobs: defineTable({
-    jobId: v.string(),                        // UUID for deduplication
+    jobId: v.string(), // UUID for deduplication
     userId: v.id("users"),
 
     // Input - the offering being verified
@@ -7823,38 +8285,48 @@ export default defineSchema({
     pitchText: v.optional(v.string()),
 
     // Extracted claims from pitch
-    extractedClaims: v.optional(v.object({
-      companyName: v.string(),
-      companyNameVariants: v.optional(v.array(v.string())),
-      incorporationState: v.optional(v.string()),
-      incorporationDate: v.optional(v.string()),
-      secFilingType: v.optional(v.string()),
-      fundingPortal: v.optional(v.string()),
-      fdaClaims: v.array(v.object({
-        description: v.string(),
-        claimedType: v.string(),
-        clearanceNumber: v.optional(v.string()),
-        productName: v.optional(v.string()),
-      })),
-      patentClaims: v.array(v.object({
-        description: v.string(),
-        patentNumber: v.optional(v.string()),
-        status: v.string(),
-        inventorNames: v.optional(v.array(v.string())),
-      })),
-      fundingClaims: v.optional(v.object({
-        targetRaise: v.optional(v.string()),
-        previousRaises: v.optional(v.array(v.string())),
-        valuation: v.optional(v.string()),
-      })),
-      otherClaims: v.array(v.object({
-        category: v.string(),
-        claim: v.string(),
-        evidence: v.optional(v.string()),
-      })),
-      extractedAt: v.number(),
-      confidence: v.number(),
-    })),
+    extractedClaims: v.optional(
+      v.object({
+        companyName: v.string(),
+        companyNameVariants: v.optional(v.array(v.string())),
+        incorporationState: v.optional(v.string()),
+        incorporationDate: v.optional(v.string()),
+        secFilingType: v.optional(v.string()),
+        fundingPortal: v.optional(v.string()),
+        fdaClaims: v.array(
+          v.object({
+            description: v.string(),
+            claimedType: v.string(),
+            clearanceNumber: v.optional(v.string()),
+            productName: v.optional(v.string()),
+          }),
+        ),
+        patentClaims: v.array(
+          v.object({
+            description: v.string(),
+            patentNumber: v.optional(v.string()),
+            status: v.string(),
+            inventorNames: v.optional(v.array(v.string())),
+          }),
+        ),
+        fundingClaims: v.optional(
+          v.object({
+            targetRaise: v.optional(v.string()),
+            previousRaises: v.optional(v.array(v.string())),
+            valuation: v.optional(v.string()),
+          }),
+        ),
+        otherClaims: v.array(
+          v.object({
+            category: v.string(),
+            claim: v.string(),
+            evidence: v.optional(v.string()),
+          }),
+        ),
+        extractedAt: v.number(),
+        confidence: v.number(),
+      }),
+    ),
 
     // Status
     status: v.union(
@@ -7866,85 +8338,103 @@ export default defineSchema({
       v.literal("checking_money_flow"),
       v.literal("synthesizing"),
       v.literal("completed"),
-      v.literal("failed")
+      v.literal("failed"),
     ),
 
     // Phase results
-    entityVerification: v.optional(v.object({
-      verified: v.boolean(),
-      stateRegistry: v.optional(v.string()),
-      record: v.optional(v.object({
-        state: v.string(),
-        entityName: v.string(),
-        fileNumber: v.string(),
-        formationDate: v.optional(v.string()),
-        registeredAgent: v.optional(v.string()),
-        registeredAgentAddress: v.optional(v.string()),
-        status: v.string(),
-        entityType: v.optional(v.string()),
-      })),
-      discrepancies: v.array(v.string()),
-      redFlags: v.array(v.string()),
-      verifiedAt: v.number(),
-    })),
-
-    securitiesVerification: v.optional(v.object({
-      verified: v.boolean(),
-      filingType: v.optional(v.string()),
-      filing: v.optional(v.object({
-        formType: v.string(),
-        filingDate: v.string(),
-        cik: v.string(),
-        accessionNumber: v.string(),
-        issuerName: v.string(),
-        offeringAmount: v.optional(v.string()),
-        url: v.string(),
-      })),
-      filingFound: v.boolean(),
-      fundingPortal: v.optional(v.object({
-        portalName: v.string(),
-        finraId: v.optional(v.string()),
-        registrationDate: v.optional(v.string()),
-        isRegistered: v.boolean(),
-      })),
-      portalVerified: v.boolean(),
-      discrepancies: v.array(v.string()),
-      redFlags: v.array(v.string()),
-      verifiedAt: v.number(),
-    })),
-
-    claimsValidation: v.optional(v.object({
-      fdaVerifications: v.array(v.object({
-        claimDescription: v.string(),
+    entityVerification: v.optional(
+      v.object({
         verified: v.boolean(),
-        kNumber: v.optional(v.string()),
-        deviceName: v.optional(v.string()),
-        applicant: v.optional(v.string()),
-        discrepancy: v.optional(v.string()),
-      })),
-      patentVerifications: v.array(v.object({
-        claimDescription: v.string(),
-        verified: v.boolean(),
-        patentNumber: v.optional(v.string()),
-        assignee: v.optional(v.string()),
-        assigneeMatches: v.boolean(),
-        discrepancy: v.optional(v.string()),
-      })),
-      allFDAClaimed: v.number(),
-      allFDAVerified: v.number(),
-      allPatentsClaimed: v.number(),
-      allPatentsVerified: v.number(),
-      verifiedAt: v.number(),
-    })),
+        stateRegistry: v.optional(v.string()),
+        record: v.optional(
+          v.object({
+            state: v.string(),
+            entityName: v.string(),
+            fileNumber: v.string(),
+            formationDate: v.optional(v.string()),
+            registeredAgent: v.optional(v.string()),
+            registeredAgentAddress: v.optional(v.string()),
+            status: v.string(),
+            entityType: v.optional(v.string()),
+          }),
+        ),
+        discrepancies: v.array(v.string()),
+        redFlags: v.array(v.string()),
+        verifiedAt: v.number(),
+      }),
+    ),
 
-    moneyFlowVerification: v.optional(v.object({
-      verified: v.boolean(),
-      expectedFlow: v.string(),
-      escrowAgent: v.optional(v.string()),
-      escrowVerified: v.boolean(),
-      redFlags: v.array(v.string()),
-      verifiedAt: v.number(),
-    })),
+    securitiesVerification: v.optional(
+      v.object({
+        verified: v.boolean(),
+        filingType: v.optional(v.string()),
+        filing: v.optional(
+          v.object({
+            formType: v.string(),
+            filingDate: v.string(),
+            cik: v.string(),
+            accessionNumber: v.string(),
+            issuerName: v.string(),
+            offeringAmount: v.optional(v.string()),
+            url: v.string(),
+          }),
+        ),
+        filingFound: v.boolean(),
+        fundingPortal: v.optional(
+          v.object({
+            portalName: v.string(),
+            finraId: v.optional(v.string()),
+            registrationDate: v.optional(v.string()),
+            isRegistered: v.boolean(),
+          }),
+        ),
+        portalVerified: v.boolean(),
+        discrepancies: v.array(v.string()),
+        redFlags: v.array(v.string()),
+        verifiedAt: v.number(),
+      }),
+    ),
+
+    claimsValidation: v.optional(
+      v.object({
+        fdaVerifications: v.array(
+          v.object({
+            claimDescription: v.string(),
+            verified: v.boolean(),
+            kNumber: v.optional(v.string()),
+            deviceName: v.optional(v.string()),
+            applicant: v.optional(v.string()),
+            discrepancy: v.optional(v.string()),
+          }),
+        ),
+        patentVerifications: v.array(
+          v.object({
+            claimDescription: v.string(),
+            verified: v.boolean(),
+            patentNumber: v.optional(v.string()),
+            assignee: v.optional(v.string()),
+            assigneeMatches: v.boolean(),
+            discrepancy: v.optional(v.string()),
+          }),
+        ),
+        allFDAClaimed: v.number(),
+        allFDAVerified: v.number(),
+        allPatentsClaimed: v.number(),
+        allPatentsVerified: v.number(),
+        verifiedAt: v.number(),
+      }),
+    ),
+
+    moneyFlowVerification: v.optional(
+      v.object({
+        verified: v.boolean(),
+        expectedFlow: v.string(),
+        escrowAgent: v.optional(v.string()),
+        escrowVerified: v.boolean(),
+        redFlags: v.array(v.string()),
+        verifiedAt: v.number(),
+      }),
+    ),
 
     // Final result link
     resultId: v.optional(v.id("investorPlaybookResults")),
@@ -7981,12 +8471,14 @@ export default defineSchema({
       v.literal("Dissolved"),
       v.literal("Merged"),
       v.literal("Suspended"),
-      v.literal("Unknown")
+      v.literal("Unknown"),
     ),
-    registeredAgent: v.optional(v.object({
-      name: v.string(),
-      address: v.string(),
-    })),
+    registeredAgent: v.optional(
+      v.object({
+        name: v.string(),
+        address: v.string(),
+      }),
+    ),
     goodStanding: v.optional(v.boolean()),
     verifiedAt: v.number(),
     sourceUrl: v.optional(v.string()),
@@ -7998,7 +8490,7 @@ export default defineSchema({
   investorPlaybookSecCache: defineTable({
     entityName: v.string(),
     cik: v.optional(v.string()),
-    formType: v.string(),                    // "C", "D", "10-K", etc.
+    formType: v.string(), // "C", "D", "10-K", etc.
     accessionNumber: v.string(),
     filingDate: v.string(),
     filingUrl: v.string(),
@@ -8022,9 +8514,9 @@ export default defineSchema({
       v.literal("registration"),
       v.literal("listing"),
       v.literal("recall"),
-      v.literal("adverse_event")
+      v.literal("adverse_event"),
     ),
-    referenceNumber: v.string(),             // K-number, PMA number, etc.
+    referenceNumber: v.string(), // K-number, PMA number, etc.
     status: v.string(),
     decisionDate: v.optional(v.string()),
     productCode: v.optional(v.string()),
@@ -8051,7 +8543,7 @@ export default defineSchema({
     status: v.union(
       v.literal("Active"),
       v.literal("Expired"),
-      v.literal("Lapsed")
+      v.literal("Lapsed"),
     ),
     usptoUrl: v.string(),
     cachedAt: v.number(),
@@ -8070,7 +8562,7 @@ export default defineSchema({
       v.literal("Active"),
       v.literal("Inactive"),
       v.literal("Suspended"),
-      v.literal("Withdrawn")
+      v.literal("Withdrawn"),
     ),
     registrationDate: v.optional(v.string()),
     website: v.optional(v.string()),
@@ -8083,12 +8575,12 @@ export default defineSchema({
 
   // Investor playbook synthesis results
   investorPlaybookResults: defineTable({
-    jobId: v.optional(v.string()),           // Links to DD job if part of full DD
+    jobId: v.optional(v.string()), // Links to DD job if part of full DD
     entityName: v.string(),
     entityType: v.union(
       v.literal("company"),
       v.literal("fund"),
-      v.literal("person")
+      v.literal("person"),
     ),
 
     // Overall assessment
@@ -8097,13 +8589,13 @@ export default defineSchema({
       v.literal("moderate"),
       v.literal("elevated"),
       v.literal("high"),
-      v.literal("critical")
+      v.literal("critical"),
     ),
     recommendation: v.union(
       v.literal("proceed"),
       v.literal("proceed_with_conditions"),
       v.literal("require_resolution"),
-      v.literal("pass")
+      v.literal("pass"),
     ),
     shouldDisengage: v.boolean(),
 
@@ -8159,7 +8651,7 @@ export default defineSchema({
       v.literal("quick"),
       v.literal("standard"),
       v.literal("comprehensive"),
-      v.literal("exhaustive")
+      v.literal("exhaustive"),
     ),
     status: v.union(
       v.literal("pending"),
@@ -8170,21 +8662,25 @@ export default defineSchema({
       v.literal("evaluating_hypotheses"),
       v.literal("synthesizing"),
       v.literal("completed"),
-      v.literal("failed")
+      v.literal("failed"),
     ),
 
     // Query decomposition
     decomposedQuery: v.optional(v.any()), // DecomposedQuery
 
     // Sub-agent tracking
-    subAgentTasks: v.optional(v.array(v.object({
-      taskId: v.string(),
-      type: v.string(),
-      target: v.string(),
-      status: v.string(),
-      startedAt: v.optional(v.number()),
-      completedAt: v.optional(v.number()),
-    }))),
+    subAgentTasks: v.optional(
+      v.array(
+        v.object({
+          taskId: v.string(),
+          type: v.string(),
+          target: v.string(),
+          status: v.string(),
+          startedAt: v.optional(v.number()),
+          completedAt: v.optional(v.number()),
+        }),
+      ),
+    ),
 
     // Results
     reportId: v.optional(v.id("deepResearchReports")),
@@ -8217,7 +8713,7 @@ export default defineSchema({
       v.literal("PARTIALLY_SUPPORTED"),
       v.literal("UNVERIFIED"),
       v.literal("CONTRADICTED"),
-      v.literal("FALSIFIED")
+      v.literal("FALSIFIED"),
     ),
     verdictReasoning: v.string(),
 
@@ -8256,70 +8752,92 @@ export default defineSchema({
     entityType: v.union(
       v.literal("company"),
       v.literal("fund"),
-      v.literal("person")
+      v.literal("person"),
     ),
 
     // Verified facts with sources
     verifiedFacts: v.object({
       // Company facts
-      foundedYear: v.optional(v.object({
-        value: v.number(),
-        source: v.string(),
-        verifiedAt: v.number(),
-      })),
-      hqLocation: v.optional(v.object({
-        value: v.string(),
-        source: v.string(),
-        verifiedAt: v.number(),
-      })),
-      employeeCount: v.optional(v.object({
-        value: v.number(),
-        asOf: v.string(),
-        source: v.string(),
-        verifiedAt: v.number(),
-      })),
+      foundedYear: v.optional(
+        v.object({
+          value: v.number(),
+          source: v.string(),
+          verifiedAt: v.number(),
+        }),
+      ),
+      hqLocation: v.optional(
+        v.object({
+          value: v.string(),
+          source: v.string(),
+          verifiedAt: v.number(),
+        }),
+      ),
+      employeeCount: v.optional(
+        v.object({
+          value: v.number(),
+          asOf: v.string(),
+          source: v.string(),
+          verifiedAt: v.number(),
+        }),
+      ),
 
       // Funding facts (SEC Form D verified)
-      fundingRounds: v.optional(v.array(v.object({
-        roundType: v.string(),
-        amount: v.number(),
-        date: v.string(),
-        secFormDUrl: v.optional(v.string()),
-        verified: v.boolean(),
-      }))),
+      fundingRounds: v.optional(
+        v.array(
+          v.object({
+            roundType: v.string(),
+            amount: v.number(),
+            date: v.string(),
+            secFormDUrl: v.optional(v.string()),
+            verified: v.boolean(),
+          }),
+        ),
+      ),
 
       // Team facts (LinkedIn verified)
-      keyPeople: v.optional(v.array(v.object({
-        name: v.string(),
-        role: v.string(),
-        linkedinUrl: v.optional(v.string()),
-        verified: v.boolean(),
-      }))),
+      keyPeople: v.optional(
+        v.array(
+          v.object({
+            name: v.string(),
+            role: v.string(),
+            linkedinUrl: v.optional(v.string()),
+            verified: v.boolean(),
+          }),
+        ),
+      ),
 
       // Patent facts (USPTO verified)
-      patents: v.optional(v.array(v.object({
-        patentId: v.string(),
-        title: v.string(),
-        inventors: v.array(v.string()),
-        usptoUrl: v.optional(v.string()),
-        verified: v.boolean(),
-      }))),
+      patents: v.optional(
+        v.array(
+          v.object({
+            patentId: v.string(),
+            title: v.string(),
+            inventors: v.array(v.string()),
+            usptoUrl: v.optional(v.string()),
+            verified: v.boolean(),
+          }),
+        ),
+      ),
 
       // Regulatory facts
-      regulatoryStatus: v.optional(v.object({
-        type: v.string(),                     // FDA, SEC, etc.
-        status: v.string(),
-        source: v.string(),
-        verifiedAt: v.number(),
-      })),
+      regulatoryStatus: v.optional(
+        v.object({
+          type: v.string(), // FDA, SEC, etc.
+          status: v.string(),
+          source: v.string(),
+          verifiedAt: v.number(),
+        }),
+      ),
     }),
 
     // Expected memo content for evaluation
-    expectedMemo: v.optional(v.object({
-      expectedVerdict: v.optional(v.string()),
-      expectedRiskCategories: v.optional(v.array(v.string())),
-      expectedCompetitors: v.optional(v.array(v.string())),
-    })),
+    expectedMemo: v.optional(
+      v.object({
+        expectedVerdict: v.optional(v.string()),
+        expectedRiskCategories: v.optional(v.array(v.string())),
+        expectedCompetitors: v.optional(v.array(v.string())),
+      }),
+    ),
 
     // Curation status
     curatorId: v.optional(v.id("users")),
@@ -8327,7 +8845,7 @@ export default defineSchema({
       v.literal("pending"),
       v.literal("in_progress"),
       v.literal("verified"),
-      v.literal("contested")
+      v.literal("contested"),
     ),
     curatorNotes: v.optional(v.string()),
 
@@ -8348,7 +8866,7 @@ export default defineSchema({
       v.literal("slack"),
       v.literal("web_ui"),
       v.literal("email_forward"),
-      v.literal("calendar_sync")
+      v.literal("calendar_sync"),
     ),
     sourceId: v.optional(v.string()),
     sourceChannelId: v.optional(v.string()),
@@ -8359,19 +8877,23 @@ export default defineSchema({
     context: v.optional(v.string()),
 
     // Extracted entities (from NER pass)
-    participants: v.array(v.object({
-      name: v.string(),
-      role: v.optional(v.string()),
-      company: v.optional(v.string()),
-      email: v.optional(v.string()),
-      linkedEntityId: v.optional(v.id("entityContexts")),
-      confidence: v.number(),
-    })),
-    companies: v.array(v.object({
-      name: v.string(),
-      linkedEntityId: v.optional(v.id("entityContexts")),
-      confidence: v.number(),
-    })),
+    participants: v.array(
+      v.object({
+        name: v.string(),
+        role: v.optional(v.string()),
+        company: v.optional(v.string()),
+        email: v.optional(v.string()),
+        linkedEntityId: v.optional(v.id("entityContexts")),
+        confidence: v.number(),
+      }),
+    ),
+    companies: v.array(
+      v.object({
+        name: v.string(),
+        linkedEntityId: v.optional(v.id("entityContexts")),
+        confidence: v.number(),
+      }),
+    ),
 
     // Research status
     researchStatus: v.union(
@@ -8380,22 +8902,26 @@ export default defineSchema({
       v.literal("fast_pass_complete"),
       v.literal("deep_dive_queued"),
       v.literal("deep_dive_running"),
-      v.literal("complete")
+      v.literal("complete"),
     ),
 
     // Fast-pass results (inline for <10s display)
-    fastPassResults: v.optional(v.object({
-      entitySummaries: v.array(v.object({
-        entityName: v.string(),
-        summary: v.string(),
-        keyFacts: v.array(v.string()),
-        fundingStage: v.optional(v.string()),
-        lastFundingAmount: v.optional(v.string()),
-        sector: v.optional(v.string()),
-      })),
-      generatedAt: v.number(),
-      elapsedMs: v.number(),
-    })),
+    fastPassResults: v.optional(
+      v.object({
+        entitySummaries: v.array(
+          v.object({
+            entityName: v.string(),
+            summary: v.string(),
+            keyFacts: v.array(v.string()),
+            fundingStage: v.optional(v.string()),
+            lastFundingAmount: v.optional(v.string()),
+            sector: v.optional(v.string()),
+          }),
+        ),
+        generatedAt: v.number(),
+        elapsedMs: v.number(),
+      }),
+    ),
 
     // Deep dive reference
     ddJobId: v.optional(v.string()),
@@ -8441,7 +8967,7 @@ export default defineSchema({
       v.literal("product_hunt"),
       v.literal("dev_to"),
       v.literal("twitter"),
-      v.literal("manual")
+      v.literal("manual"),
     ),
     sourceUrl: v.string(),
 
@@ -8461,18 +8987,20 @@ export default defineSchema({
       v.literal("product"),
       v.literal("regulatory"),
       v.literal("markets"),
-      v.literal("general")
+      v.literal("general"),
     ),
     tags: v.array(v.string()),
 
     // Engagement metrics (for ranking)
     engagementScore: v.number(),
-    rawMetrics: v.optional(v.object({
-      upvotes: v.optional(v.number()),
-      comments: v.optional(v.number()),
-      shares: v.optional(v.number()),
-      stars: v.optional(v.number()),
-    })),
+    rawMetrics: v.optional(
+      v.object({
+        upvotes: v.optional(v.number()),
+        comments: v.optional(v.number()),
+        shares: v.optional(v.number()),
+        stars: v.optional(v.number()),
+      }),
+    ),
 
     // Processing status
     processingStatus: v.union(
@@ -8480,7 +9008,7 @@ export default defineSchema({
       v.literal("claim_extraction"),
       v.literal("blips_generated"),
       v.literal("verification_queued"),
-      v.literal("complete")
+      v.literal("complete"),
     ),
 
     // Timestamps
@@ -8517,22 +9045,24 @@ export default defineSchema({
       v.literal("causal"),
       v.literal("comparative"),
       v.literal("predictive"),
-      v.literal("opinion")
+      v.literal("opinion"),
     ),
 
     // Entities mentioned
-    entities: v.array(v.object({
-      name: v.string(),
-      type: v.union(
-        v.literal("company"),
-        v.literal("person"),
-        v.literal("product"),
-        v.literal("technology"),
-        v.literal("organization"),
-        v.literal("location")
-      ),
-      linkedEntityId: v.optional(v.id("entityContexts")),
-    })),
+    entities: v.array(
+      v.object({
+        name: v.string(),
+        type: v.union(
+          v.literal("company"),
+          v.literal("person"),
+          v.literal("product"),
+          v.literal("technology"),
+          v.literal("organization"),
+          v.literal("location"),
+        ),
+        linkedEntityId: v.optional(v.id("entityContexts")),
+      }),
+    ),
 
     // Verification status
     verificationStatus: v.union(
@@ -8541,7 +9071,7 @@ export default defineSchema({
       v.literal("verified"),
       v.literal("partially_verified"),
       v.literal("contradicted"),
-      v.literal("unverifiable")
+      v.literal("unverifiable"),
     ),
     verificationId: v.optional(v.id("blipClaimVerifications")),
 
@@ -8563,24 +9093,28 @@ export default defineSchema({
     claimSpanId: v.optional(v.id("claimSpans")),
 
     // Core blip content (UNIVERSAL - no persona baked in)
-    headline: v.string(),     // 5-word version
-    summary: v.string(),      // 10-word version
-    context: v.string(),      // 20-word version
+    headline: v.string(), // 5-word version
+    summary: v.string(), // 10-word version
+    context: v.string(), // 20-word version
 
     // Key facts for hover popover
-    keyFacts: v.array(v.object({
-      fact: v.string(),
-      source: v.optional(v.string()),
-      date: v.optional(v.string()),
-      confidence: v.number(),
-    })),
+    keyFacts: v.array(
+      v.object({
+        fact: v.string(),
+        source: v.optional(v.string()),
+        date: v.optional(v.string()),
+        confidence: v.number(),
+      }),
+    ),
 
     // Entity spotlight
-    primaryEntity: v.optional(v.object({
-      name: v.string(),
-      type: v.string(),
-      linkedEntityId: v.optional(v.id("entityContexts")),
-    })),
+    primaryEntity: v.optional(
+      v.object({
+        name: v.string(),
+        type: v.string(),
+        linkedEntityId: v.optional(v.id("entityContexts")),
+      }),
+    ),
 
     // Verification summary
     verificationSummary: v.object({
@@ -8591,17 +9125,19 @@ export default defineSchema({
     }),
 
     // Source attribution
-    sources: v.array(v.object({
-      name: v.string(),
-      url: v.optional(v.string()),
-      publishedAt: v.optional(v.number()),
-      reliability: v.union(
-        v.literal("authoritative"),
-        v.literal("reliable"),
-        v.literal("secondary"),
-        v.literal("inferred")
-      ),
-    })),
+    sources: v.array(
+      v.object({
+        name: v.string(),
+        url: v.optional(v.string()),
+        publishedAt: v.optional(v.number()),
+        reliability: v.union(
+          v.literal("authoritative"),
+          v.literal("reliable"),
+          v.literal("secondary"),
+          v.literal("inferred"),
+        ),
+      }),
+    ),
 
     // Ranking signals
     relevanceScore: v.number(),
@@ -8627,7 +9163,7 @@ export default defineSchema({
   /* ================================================================== */
   personaLenses: defineTable({
     blipId: v.id("meaningBlips"),
-    personaId: v.string(),   // "JPM_STARTUP_BANKER", "EARLY_STAGE_VC", etc.
+    personaId: v.string(), // "JPM_STARTUP_BANKER", "EARLY_STAGE_VC", etc.
 
     // Persona-specific framing
     framingHook: v.string(),
@@ -8655,29 +9191,35 @@ export default defineSchema({
       v.literal("partially_verified"),
       v.literal("contradicted"),
       v.literal("unverifiable"),
-      v.literal("insufficient_evidence")
+      v.literal("insufficient_evidence"),
     ),
     confidence: v.number(),
 
     // Evidence
-    supportingEvidence: v.array(v.object({
-      sourceUrl: v.optional(v.string()),
-      sourceName: v.string(),
-      snippet: v.string(),
-      publishedAt: v.optional(v.number()),
-      alignment: v.union(
-        v.literal("supports"),
-        v.literal("contradicts"),
-        v.literal("neutral")
-      ),
-    })),
+    supportingEvidence: v.array(
+      v.object({
+        sourceUrl: v.optional(v.string()),
+        sourceName: v.string(),
+        snippet: v.string(),
+        publishedAt: v.optional(v.number()),
+        alignment: v.union(
+          v.literal("supports"),
+          v.literal("contradicts"),
+          v.literal("neutral"),
+        ),
+      }),
+    ),
 
     // Contradictions found
-    contradictions: v.optional(v.array(v.object({
-      contradictingClaim: v.string(),
-      sourceUrl: v.optional(v.string()),
-      sourceName: v.string(),
-    }))),
+    contradictions: v.optional(
+      v.array(
+        v.object({
+          contradictingClaim: v.string(),
+          sourceUrl: v.optional(v.string()),
+          sourceName: v.string(),
+        }),
+      ),
+    ),
 
     // LLM judge metadata
     judgeModel: v.string(),
@@ -8702,12 +9244,12 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   sourceRegistry: defineTable({
     // Identity
-    registryId: v.string(),           // sr_<domain>_<slug>
-    domain: v.string(),               // "anthropic", "openai", "gemini", etc.
+    registryId: v.string(), // sr_<domain>_<slug>
+    domain: v.string(), // "anthropic", "openai", "gemini", etc.
 
     // Source metadata
     canonicalUrl: v.string(),
-    name: v.string(),                 // "Claude Prompt Library"
+    name: v.string(), // "Claude Prompt Library"
     category: v.union(
       v.literal("official_docs"),
       v.literal("prompt_library"),
@@ -8717,15 +9259,15 @@ export default defineSchema({
       v.literal("api_reference"),
       v.literal("newsletter"),
       v.literal("observability"),
-      v.literal("framework_docs")
+      v.literal("framework_docs"),
     ),
 
     // Trust metadata
-    trustRationale: v.string(),       // "Official Anthropic documentation"
+    trustRationale: v.string(), // "Official Anthropic documentation"
     reliabilityTier: v.union(
-      v.literal("authoritative"),     // Primary source (official docs, SEC filings)
-      v.literal("reliable"),          // Vetted secondary source
-      v.literal("secondary")          // Community/third-party
+      v.literal("authoritative"), // Primary source (official docs, SEC filings)
+      v.literal("reliable"), // Vetted secondary source
+      v.literal("secondary"), // Community/third-party
     ),
 
     // Freshness
@@ -8733,7 +9275,7 @@ export default defineSchema({
       v.literal("hourly"),
       v.literal("daily"),
       v.literal("weekly"),
-      v.literal("manual")
+      v.literal("manual"),
     ),
     lastFetchedAt: v.optional(v.number()),
     lastChangedAt: v.optional(v.number()),
@@ -8743,12 +9285,12 @@ export default defineSchema({
     usageConstraints: v.union(
       v.literal("internal_only"),
       v.literal("shareable_with_attribution"),
-      v.literal("public_domain")
+      v.literal("public_domain"),
     ),
 
     // Status
     isActive: v.boolean(),
-    isPinned: v.boolean(),            // Always include in dossiers
+    isPinned: v.boolean(), // Always include in dossiers
 
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -8766,13 +9308,17 @@ export default defineSchema({
     registryId: v.string(),
     snapshotAt: v.number(),
     contentHash: v.string(),
-    rawContent: v.optional(v.string()),   // Full content for diff (if small)
+    rawContent: v.optional(v.string()), // Full content for diff (if small)
     contentStorageId: v.optional(v.id("_storage")), // For large content
-    extractedSections: v.optional(v.array(v.object({
-      sectionId: v.string(),
-      title: v.string(),
-      contentHash: v.string(),
-    }))),
+    extractedSections: v.optional(
+      v.array(
+        v.object({
+          sectionId: v.string(),
+          title: v.string(),
+          contentHash: v.string(),
+        }),
+      ),
+    ),
 
     // Metadata
     httpStatus: v.optional(v.number()),
@@ -8802,34 +9348,38 @@ export default defineSchema({
       v.literal("pricing_change"),
       v.literal("api_change"),
       v.literal("model_update"),
-      v.literal("minor_update")
+      v.literal("minor_update"),
     ),
     severity: v.union(
-      v.literal("critical"),       // Breaking changes, major deprecations
-      v.literal("high"),           // Significant new features, important updates
-      v.literal("medium"),         // Notable changes worth tracking
-      v.literal("low")             // Minor updates, typo fixes
+      v.literal("critical"), // Breaking changes, major deprecations
+      v.literal("high"), // Significant new features, important updates
+      v.literal("medium"), // Notable changes worth tracking
+      v.literal("low"), // Minor updates, typo fixes
     ),
 
     // Human-readable
-    changeTitle: v.string(),          // "New tool_use parameter added"
-    changeSummary: v.string(),        // 2-3 sentence explanation
+    changeTitle: v.string(), // "New tool_use parameter added"
+    changeSummary: v.string(), // 2-3 sentence explanation
     affectedSections: v.array(v.string()),
 
     // Raw diff
-    diffHunks: v.optional(v.array(v.object({
-      type: v.union(
-        v.literal("add"),
-        v.literal("remove"),
-        v.literal("modify")
+    diffHunks: v.optional(
+      v.array(
+        v.object({
+          type: v.union(
+            v.literal("add"),
+            v.literal("remove"),
+            v.literal("modify"),
+          ),
+          oldText: v.optional(v.string()),
+          newText: v.optional(v.string()),
+          context: v.optional(v.string()),
+        }),
       ),
-      oldText: v.optional(v.string()),
-      newText: v.optional(v.string()),
-      context: v.optional(v.string()),
-    }))),
+    ),
 
     // Classification metadata
-    classifiedBy: v.optional(v.string()),  // "llm" | "rules" | "human"
+    classifiedBy: v.optional(v.string()), // "llm" | "rules" | "human"
     classificationConfidence: v.optional(v.number()),
 
     detectedAt: v.number(),
@@ -8844,34 +9394,36 @@ export default defineSchema({
   /* SKILL NODES - Hierarchical knowledge curriculum                     */
   /* ------------------------------------------------------------------ */
   skillNodes: defineTable({
-    skillId: v.string(),              // "llm_basics", "tool_use", "agent_orchestration"
+    skillId: v.string(), // "llm_basics", "tool_use", "agent_orchestration"
 
     // Hierarchy
     parentSkillId: v.optional(v.string()),
-    depth: v.number(),                // 0 = foundation, 1 = intermediate, 2 = advanced, 3 = expert
+    depth: v.number(), // 0 = foundation, 1 = intermediate, 2 = advanced, 3 = expert
 
     // Metadata
     title: v.string(),
     description: v.string(),
-    domain: v.string(),               // "foundations", "agent_systems", "production", "evaluation"
+    domain: v.string(), // "foundations", "agent_systems", "production", "evaluation"
 
     // Prerequisites
     prerequisiteSkillIds: v.array(v.string()),
 
     // Linked content
-    artifactIds: v.array(v.string()),         // Linked reading materials (globalArtifact keys)
-    registrySourceIds: v.array(v.string()),   // Linked authoritative sources
+    artifactIds: v.array(v.string()), // Linked reading materials (globalArtifact keys)
+    registrySourceIds: v.array(v.string()), // Linked authoritative sources
 
     // Progression
     estimatedHours: v.optional(v.number()),
-    milestones: v.array(v.object({
-      milestoneId: v.string(),
-      title: v.string(),
-      criteria: v.string(),
-    })),
+    milestones: v.array(
+      v.object({
+        milestoneId: v.string(),
+        title: v.string(),
+        criteria: v.string(),
+      }),
+    ),
 
     // Curation
-    isAdminCurated: v.boolean(),      // Admin-curated vs user-created
+    isAdminCurated: v.boolean(), // Admin-curated vs user-created
     createdBy: v.optional(v.id("users")),
 
     createdAt: v.number(),
@@ -8892,7 +9444,7 @@ export default defineSchema({
     status: v.union(
       v.literal("not_started"),
       v.literal("in_progress"),
-      v.literal("completed")
+      v.literal("completed"),
     ),
     completedMilestones: v.array(v.string()),
 
@@ -8917,21 +9469,21 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   groundTruthVersions: defineTable({
     // Identity
-    entityKey: v.string(),           // "NVDA" or "openai-series-e"
-    version: v.number(),             // Monotonic version number
+    entityKey: v.string(), // "NVDA" or "openai-series-e"
+    version: v.number(), // Monotonic version number
 
     // Lifecycle status
     status: v.union(
-      v.literal("draft"),            // Author editing
-      v.literal("pending_review"),   // Awaiting second reviewer
-      v.literal("approved"),         // Two-person sign-off
-      v.literal("superseded"),       // Replaced by newer version
-      v.literal("rejected"),         // Review rejected
+      v.literal("draft"), // Author editing
+      v.literal("pending_review"), // Awaiting second reviewer
+      v.literal("approved"), // Two-person sign-off
+      v.literal("superseded"), // Replaced by newer version
+      v.literal("rejected"), // Review rejected
     ),
 
     // Frozen snapshot (immutable once approved)
-    snapshotArtifactId: v.id("sourceArtifacts"),  // Links to frozen JSON
-    snapshotHash: v.string(),        // SHA-256 of snapshot content
+    snapshotArtifactId: v.id("sourceArtifacts"), // Links to frozen JSON
+    snapshotHash: v.string(), // SHA-256 of snapshot content
 
     // Authorship
     authorId: v.id("users"),
@@ -8939,7 +9491,7 @@ export default defineSchema({
     approvedAt: v.optional(v.number()),
 
     // Change tracking
-    changeNote: v.string(),          // What changed from previous version
+    changeNote: v.string(), // What changed from previous version
     previousVersionId: v.optional(v.id("groundTruthVersions")),
 
     createdAt: v.number(),
@@ -8967,7 +9519,7 @@ export default defineSchema({
 
     actorId: v.id("users"),
     reason: v.optional(v.string()),
-    metadata: v.optional(v.any()),    // Action-specific data
+    metadata: v.optional(v.any()), // Action-specific data
 
     createdAt: v.number(),
   })
@@ -8980,9 +9532,9 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   groundTruthFinancials: defineTable({
     ticker: v.string(),
-    cik: v.string(),                        // SEC CIK number
+    cik: v.string(), // SEC CIK number
     fiscalYear: v.number(),
-    fiscalQuarter: v.optional(v.number()),  // null for annual
+    fiscalQuarter: v.optional(v.number()), // null for annual
 
     // Income Statement
     revenue: v.optional(v.number()),
@@ -9006,8 +9558,8 @@ export default defineSchema({
     netMargin: v.optional(v.number()),
 
     // Source metadata
-    sourceUrl: v.string(),                  // SEC EDGAR URL
-    filingDate: v.string(),                 // ISO date
+    sourceUrl: v.string(), // SEC EDGAR URL
+    filingDate: v.string(), // ISO date
     fetchedAt: v.number(),
   })
     .index("by_ticker_year", ["ticker", "fiscalYear", "fiscalQuarter"])
@@ -9111,11 +9663,13 @@ export default defineSchema({
     // Calculated results
     results: v.object({
       wacc: v.number(),
-      fcfProjections: v.array(v.object({
-        year: v.number(),
-        fcf: v.number(),
-        growthRate: v.number(),
-      })),
+      fcfProjections: v.array(
+        v.object({
+          year: v.number(),
+          fcf: v.number(),
+          growthRate: v.number(),
+        }),
+      ),
       terminalValue: v.number(),
       enterpriseValue: v.number(),
       equityValue: v.number(),
@@ -9124,13 +9678,15 @@ export default defineSchema({
     }),
 
     // Edit history
-    history: v.array(v.object({
-      timestamp: v.number(),
-      field: v.string(),
-      oldValue: v.any(),
-      newValue: v.any(),
-      triggeredBy: v.union(v.literal("user"), v.literal("agent")),
-    })),
+    history: v.array(
+      v.object({
+        timestamp: v.number(),
+        field: v.string(),
+        oldValue: v.any(),
+        newValue: v.any(),
+        triggeredBy: v.union(v.literal("user"), v.literal("agent")),
+      }),
+    ),
   })
     .index("by_session_id", ["sessionId"])
     .index("by_user", ["userId"])
@@ -9160,21 +9716,20 @@ export default defineSchema({
     .index("by_ticker_year", ["ticker", "fiscalYear"])
     .index("by_ticker", ["ticker", "fetchedAt"]),
 
-
   /* ------------------------------------------------------------------ */
   /* FINANCIAL FUNDAMENTALS - Normalized SEC XBRL data                   */
   /* ------------------------------------------------------------------ */
   financialFundamentals: defineTable({
     // Identity
-    ticker: v.string(),              // "NVDA"
-    cik: v.string(),                 // SEC CIK number
+    ticker: v.string(), // "NVDA"
+    cik: v.string(), // SEC CIK number
     fiscalYear: v.number(),
-    fiscalQuarter: v.optional(v.number()),  // null = annual
+    fiscalQuarter: v.optional(v.number()), // null = annual
 
     // Source provenance
-    sourceArtifactId: v.id("sourceArtifacts"),  // Original 10-K/10-Q
-    xbrlUrl: v.string(),             // SEC EDGAR URL
-    filingDate: v.string(),          // ISO date
+    sourceArtifactId: v.id("sourceArtifacts"), // Original 10-K/10-Q
+    xbrlUrl: v.string(), // SEC EDGAR URL
+    filingDate: v.string(), // ISO date
 
     // Income Statement (in thousands)
     incomeStatement: v.object({
@@ -9209,88 +9764,107 @@ export default defineSchema({
     }),
 
     // Computed metrics
-    metrics: v.optional(v.object({
-      grossMargin: v.optional(v.number()),
-      operatingMargin: v.optional(v.number()),
-      netMargin: v.optional(v.number()),
-      roic: v.optional(v.number()),
-      roe: v.optional(v.number()),
-      debtToEquity: v.optional(v.number()),
-    })),
+    metrics: v.optional(
+      v.object({
+        grossMargin: v.optional(v.number()),
+        operatingMargin: v.optional(v.number()),
+        netMargin: v.optional(v.number()),
+        roic: v.optional(v.number()),
+        roe: v.optional(v.number()),
+        debtToEquity: v.optional(v.number()),
+      }),
+    ),
 
     // Data quality
-    extractionConfidence: v.number(),  // 0-1
-    manualOverrides: v.optional(v.array(v.string())),  // Fields manually corrected
+    extractionConfidence: v.number(), // 0-1
+    manualOverrides: v.optional(v.array(v.string())), // Fields manually corrected
 
     // Full provenance tracking for each normalized field
     // Maps field path (e.g., "incomeStatement.revenue") to provenance metadata
-    fieldProvenance: v.optional(v.array(v.object({
-      fieldPath: v.string(),           // e.g., "incomeStatement.revenue"
-      tag: v.string(),                 // Original XBRL concept name
-      namespace: v.string(),           // "us-gaap", "dei", "ifrs-full", or custom namespace
-      units: v.string(),               // "USD", "shares", "pure"
-      periodStart: v.optional(v.string()),  // ISO date for duration facts
-      periodEnd: v.string(),           // ISO date (end or instant)
-      fiscalPeriod: v.string(),        // "FY", "Q1", "Q2", "Q3", "Q4"
-      formType: v.string(),            // "10-K", "10-Q", etc.
-      accessionNumber: v.string(),     // SEC accession number
-      filedDate: v.string(),           // When filing was submitted
-      dimensions: v.optional(v.array(v.object({  // Dimensional qualifiers
-        axis: v.string(),
-        member: v.string(),
-      }))),
-      selectionRationale: v.string(),  // Why this tag was selected
-      isCustomTag: v.boolean(),        // Custom extension vs standard taxonomy
-      alternativeTags: v.optional(v.array(v.string())),  // Other tags considered
-      isComputed: v.optional(v.boolean()),  // True if derived/calculated
-      computedFrom: v.optional(v.array(v.string())),  // Source fields if computed
-    }))),
+    fieldProvenance: v.optional(
+      v.array(
+        v.object({
+          fieldPath: v.string(), // e.g., "incomeStatement.revenue"
+          tag: v.string(), // Original XBRL concept name
+          namespace: v.string(), // "us-gaap", "dei", "ifrs-full", or custom namespace
+          units: v.string(), // "USD", "shares", "pure"
+          periodStart: v.optional(v.string()), // ISO date for duration facts
+          periodEnd: v.string(), // ISO date (end or instant)
+          fiscalPeriod: v.string(), // "FY", "Q1", "Q2", "Q3", "Q4"
+          formType: v.string(), // "10-K", "10-Q", etc.
+          accessionNumber: v.string(), // SEC accession number
+          filedDate: v.string(), // When filing was submitted
+          dimensions: v.optional(
+            v.array(
+              v.object({
+                // Dimensional qualifiers
+                axis: v.string(),
+                member: v.string(),
+              }),
+            ),
+          ),
+          selectionRationale: v.string(), // Why this tag was selected
+          isCustomTag: v.boolean(), // Custom extension vs standard taxonomy
+          alternativeTags: v.optional(v.array(v.string())), // Other tags considered
+          isComputed: v.optional(v.boolean()), // True if derived/calculated
+          computedFrom: v.optional(v.array(v.string())), // Source fields if computed
+        }),
+      ),
+    ),
 
     // Quality flags
-    hasCustomTags: v.optional(v.boolean()),  // True if any field uses custom tags
-    customTagCount: v.optional(v.number()),  // Number of fields with custom tags
-    needsReview: v.optional(v.boolean()),    // Flag for manual review
+    hasCustomTags: v.optional(v.boolean()), // True if any field uses custom tags
+    customTagCount: v.optional(v.number()), // Number of fields with custom tags
+    needsReview: v.optional(v.boolean()), // Flag for manual review
 
     // Dimensional data strategy tracking
     // See xbrlParser.ts for full documentation of the CONSOLIDATED_ONLY approach
-    dimensionalStrategy: v.optional(v.union(
-      v.literal("CONSOLIDATED_ONLY"),   // Extract only total/consolidated figures (current)
-      v.literal("SEGMENT_AWARE"),       // Extract segment-level data with reconciliation (future)
-      v.literal("FULL_DIMENSIONAL"),    // Extract all dimensional combinations (future)
-    )),
-    dimensionalFactsEncountered: v.optional(v.number()),  // Total dimensional facts seen
-    dimensionalFactsSkipped: v.optional(v.number()),      // Dimensional facts not extracted
-    hasSegmentData: v.optional(v.boolean()),              // True if company reports segment data
+    dimensionalStrategy: v.optional(
+      v.union(
+        v.literal("CONSOLIDATED_ONLY"), // Extract only total/consolidated figures (current)
+        v.literal("SEGMENT_AWARE"), // Extract segment-level data with reconciliation (future)
+        v.literal("FULL_DIMENSIONAL"), // Extract all dimensional combinations (future)
+      ),
+    ),
+    dimensionalFactsEncountered: v.optional(v.number()), // Total dimensional facts seen
+    dimensionalFactsSkipped: v.optional(v.number()), // Dimensional facts not extracted
+    hasSegmentData: v.optional(v.boolean()), // True if company reports segment data
 
     // Taxonomy version provenance (critical for reproducibility)
     // See taxonomyManagement.ts for full documentation
-    taxonomyProvenance: v.optional(v.object({
-      primaryTaxonomy: v.object({
-        family: v.string(),
-        releaseYear: v.number(),
-        versionId: v.string(),
-        effectiveDate: v.string(),
-        taxonomyUrl: v.optional(v.string()),
-        changeNotes: v.optional(v.array(v.string())),
+    taxonomyProvenance: v.optional(
+      v.object({
+        primaryTaxonomy: v.object({
+          family: v.string(),
+          releaseYear: v.number(),
+          versionId: v.string(),
+          effectiveDate: v.string(),
+          taxonomyUrl: v.optional(v.string()),
+          changeNotes: v.optional(v.array(v.string())),
+        }),
+        detectedNamespaces: v.array(v.string()),
+        resolvedVersions: v.array(
+          v.object({
+            family: v.string(),
+            releaseYear: v.number(),
+            versionId: v.string(),
+            effectiveDate: v.string(),
+            taxonomyUrl: v.optional(v.string()),
+            changeNotes: v.optional(v.array(v.string())),
+          }),
+        ),
+        tagNormalizations: v.array(
+          v.object({
+            originalTag: v.string(),
+            normalizedTag: v.string(),
+            reason: v.string(),
+          }),
+        ),
+        extractionEngineVersion: v.string(),
+        tagMappingRevision: v.string(),
+        extractedAt: v.number(),
       }),
-      detectedNamespaces: v.array(v.string()),
-      resolvedVersions: v.array(v.object({
-        family: v.string(),
-        releaseYear: v.number(),
-        versionId: v.string(),
-        effectiveDate: v.string(),
-        taxonomyUrl: v.optional(v.string()),
-        changeNotes: v.optional(v.array(v.string())),
-      })),
-      tagNormalizations: v.array(v.object({
-        originalTag: v.string(),
-        normalizedTag: v.string(),
-        reason: v.string(),
-      })),
-      extractionEngineVersion: v.string(),
-      tagMappingRevision: v.string(),
-      extractedAt: v.number(),
-    })),
+    ),
 
     createdAt: v.number(),
   })
@@ -9310,11 +9884,11 @@ export default defineSchema({
     fiscalQuarter: v.optional(v.number()),
 
     // Pinned filing
-    pinnedAccession: v.string(),   // SEC accession number to use
-    reason: v.string(),            // Why override was created
+    pinnedAccession: v.string(), // SEC accession number to use
+    reason: v.string(), // Why override was created
 
     // Authorship
-    createdBy: v.string(),         // User ID or "system"
+    createdBy: v.string(), // User ID or "system"
     createdAt: v.number(),
     updatedAt: v.number(),
 
@@ -9336,7 +9910,7 @@ export default defineSchema({
 
     // Decision
     selectedAccession: v.string(),
-    selectionMethod: v.string(),   // "latest_wins", "manual_override", "pinned"
+    selectionMethod: v.string(), // "latest_wins", "manual_override", "pinned"
     reason: v.string(),
 
     // Available options
@@ -9360,8 +9934,8 @@ export default defineSchema({
   // Critical for monitoring, debugging, and SLO tracking.
   inconclusiveEventLog: defineTable({
     // Failure details
-    dependency: v.string(),        // "sec_edgar", "financial_api", etc.
-    category: v.string(),          // "api_error", "timeout", "rate_limited", etc.
+    dependency: v.string(), // "sec_edgar", "financial_api", etc.
+    category: v.string(), // "api_error", "timeout", "rate_limited", etc.
     message: v.string(),
     retriable: v.boolean(),
     httpStatus: v.optional(v.number()),
@@ -9373,7 +9947,7 @@ export default defineSchema({
     // Entity context (optional)
     ticker: v.optional(v.string()),
     fiscalYear: v.optional(v.number()),
-    operation: v.optional(v.string()),  // What operation was attempted
+    operation: v.optional(v.string()), // What operation was attempted
     runId: v.optional(v.string()),
 
     occurredAt: v.number(),
@@ -9388,18 +9962,18 @@ export default defineSchema({
   // Model Risk Management documentation for enterprise compliance.
   // Aligned with SR 11-7, OCC 2011-12 regulatory frameworks.
   modelCards: defineTable({
-    modelId: v.string(),           // Unique model identifier
-    name: v.string(),              // Human-readable name
-    version: v.string(),           // Version string
-    description: v.string(),       // Brief description
+    modelId: v.string(), // Unique model identifier
+    name: v.string(), // Human-readable name
+    version: v.string(), // Version string
+    description: v.string(), // Brief description
 
     // Classification
-    riskTier: v.string(),          // tier1_critical, tier2_significant, etc.
-    status: v.string(),            // development, validation, approved, etc.
-    useCase: v.string(),           // valuation, risk_assessment, etc.
+    riskTier: v.string(), // tier1_critical, tier2_significant, etc.
+    status: v.string(), // development, validation, approved, etc.
+    useCase: v.string(), // valuation, risk_assessment, etc.
 
     // Ownership
-    owner: v.string(),             // Model owner (individual or team)
+    owner: v.string(), // Model owner (individual or team)
 
     // Validation tracking
     lastValidationDate: v.optional(v.string()),
@@ -9453,8 +10027,8 @@ export default defineSchema({
     metadata: v.optional(v.any()),
 
     // Classification result
-    tier: v.string(),              // tier1_authoritative, etc.
-    score: v.number(),             // 0-100
+    tier: v.string(), // tier1_authoritative, etc.
+    score: v.number(), // 0-100
     matchedRules: v.array(v.string()),
     confidence: v.number(),
     scoreBreakdown: v.object({
@@ -9469,12 +10043,14 @@ export default defineSchema({
     evaluationId: v.optional(v.string()),
 
     // Calibration labels (filled by human reviewers)
-    humanLabel: v.optional(v.union(
-      v.literal("appropriate"),
-      v.literal("over_scored"),
-      v.literal("under_scored"),
-      v.literal("wrong_tier")
-    )),
+    humanLabel: v.optional(
+      v.union(
+        v.literal("appropriate"),
+        v.literal("over_scored"),
+        v.literal("under_scored"),
+        v.literal("wrong_tier"),
+      ),
+    ),
     suggestedTier: v.optional(v.string()),
     suggestedScore: v.optional(v.number()),
     labelNotes: v.optional(v.string()),
@@ -9493,33 +10069,39 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   dcfModels: defineTable({
     // Identity
-    modelId: v.string(),             // UUID
-    entityKey: v.string(),           // "NVDA"
+    modelId: v.string(), // UUID
+    entityKey: v.string(), // "NVDA"
     version: v.number(),
 
     // Source (AI-generated or analyst)
-    origin: v.union(v.literal("ai_generated"), v.literal("analyst"), v.literal("hybrid")),
+    origin: v.union(
+      v.literal("ai_generated"),
+      v.literal("analyst"),
+      v.literal("hybrid"),
+    ),
     authorId: v.optional(v.id("users")),
     runId: v.optional(v.id("agentRuns")),
 
     // Model inputs - stored as artifact for immutability
-    inputsArtifactId: v.id("sourceArtifacts"),  // JSON of all inputs
+    inputsArtifactId: v.id("sourceArtifacts"), // JSON of all inputs
 
     // Core assumptions (denormalized for queries)
     assumptions: v.object({
       // Forecast horizon
-      forecastYears: v.number(),     // Typically 5-10
-      baseYear: v.number(),          // FY from which projections start
+      forecastYears: v.number(), // Typically 5-10
+      baseYear: v.number(), // FY from which projections start
 
       // Revenue assumptions
       revenue: v.object({
         baseRevenue: v.number(),
-        growthRates: v.array(v.object({
-          year: v.number(),
-          rate: v.number(),
-          rationale: v.string(),
-          sourceChunkId: v.optional(v.string()),  // Citation
-        })),
+        growthRates: v.array(
+          v.object({
+            year: v.number(),
+            rate: v.number(),
+            rationale: v.string(),
+            sourceChunkId: v.optional(v.string()), // Citation
+          }),
+        ),
         terminalGrowthRate: v.number(),
       }),
 
@@ -9527,9 +10109,13 @@ export default defineSchema({
       operating: v.object({
         grossMargin: v.array(v.object({ year: v.number(), value: v.number() })),
         sgaPercent: v.array(v.object({ year: v.number(), value: v.number() })),
-        rdPercent: v.optional(v.array(v.object({ year: v.number(), value: v.number() }))),
+        rdPercent: v.optional(
+          v.array(v.object({ year: v.number(), value: v.number() })),
+        ),
         daPercent: v.array(v.object({ year: v.number(), value: v.number() })),
-        capexPercent: v.array(v.object({ year: v.number(), value: v.number() })),
+        capexPercent: v.array(
+          v.object({ year: v.number(), value: v.number() }),
+        ),
         nwcPercent: v.array(v.object({ year: v.number(), value: v.number() })),
       }),
 
@@ -9552,19 +10138,21 @@ export default defineSchema({
         method: v.union(v.literal("perpetuity"), v.literal("exit_multiple")),
         perpetuityGrowth: v.optional(v.number()),
         exitMultiple: v.optional(v.number()),
-        exitMultipleType: v.optional(v.string()),  // "EV/EBITDA", "EV/Revenue"
+        exitMultipleType: v.optional(v.string()), // "EV/EBITDA", "EV/Revenue"
       }),
 
       // Capital structure / dilution
-      capitalStructure: v.optional(v.object({
-        currentShares: v.number(),
-        expectedDilution: v.optional(v.number()),  // Annual dilution rate
-        netDebt: v.optional(v.number()),
-      })),
+      capitalStructure: v.optional(
+        v.object({
+          currentShares: v.number(),
+          expectedDilution: v.optional(v.number()), // Annual dilution rate
+          netDebt: v.optional(v.number()),
+        }),
+      ),
     }),
 
     // Computed outputs (also stored as artifact for reproducibility)
-    outputsArtifactId: v.id("sourceArtifacts"),  // JSON of all outputs
+    outputsArtifactId: v.id("sourceArtifacts"), // JSON of all outputs
 
     // Summary outputs (denormalized)
     outputs: v.object({
@@ -9573,15 +10161,17 @@ export default defineSchema({
       impliedSharePrice: v.optional(v.number()),
       presentValueFcf: v.number(),
       terminalValue: v.number(),
-      terminalValuePercent: v.number(),  // % of total EV
+      terminalValuePercent: v.number(), // % of total EV
     }),
 
     // Sensitivity analysis
-    sensitivity: v.optional(v.object({
-      waccRange: v.array(v.number()),       // e.g., [8%, 9%, 10%, 11%, 12%]
-      terminalGrowthRange: v.array(v.number()),
-      matrix: v.array(v.array(v.number())), // EV at each combo
-    })),
+    sensitivity: v.optional(
+      v.object({
+        waccRange: v.array(v.number()), // e.g., [8%, 9%, 10%, 11%, 12%]
+        terminalGrowthRange: v.array(v.number()),
+        matrix: v.array(v.array(v.number())), // EV at each combo
+      }),
+    ),
 
     // Source citations
     citationArtifactIds: v.array(v.id("sourceArtifacts")),
@@ -9602,22 +10192,22 @@ export default defineSchema({
 
     // Classification
     tier: v.union(
-      v.literal("tier1_authoritative"),  // SEC, USPTO, official gov
-      v.literal("tier2_reliable"),       // Earnings calls, IR decks
-      v.literal("tier3_secondary"),      // Sell-side, industry reports
-      v.literal("tier4_news"),           // News, press releases
-      v.literal("tier5_unverified"),     // LLM inference, social media
+      v.literal("tier1_authoritative"), // SEC, USPTO, official gov
+      v.literal("tier2_reliable"), // Earnings calls, IR decks
+      v.literal("tier3_secondary"), // Sell-side, industry reports
+      v.literal("tier4_news"), // News, press releases
+      v.literal("tier5_unverified"), // LLM inference, social media
     ),
 
     // Detection rules (machine-checkable)
-    urlPatterns: v.array(v.string()),    // Regex patterns for URLs
+    urlPatterns: v.array(v.string()), // Regex patterns for URLs
     domainAllowlist: v.optional(v.array(v.string())),
-    requiredMetadata: v.optional(v.array(v.string())),  // e.g., ["filingDate", "cik"]
-    maxAgeDays: v.optional(v.number()),  // Freshness requirement
+    requiredMetadata: v.optional(v.array(v.string())), // e.g., ["filingDate", "cik"]
+    maxAgeDays: v.optional(v.number()), // Freshness requirement
 
     // Scoring
-    reliabilityScore: v.number(),        // 0-100
-    citationWeight: v.number(),          // Weight in quality score
+    reliabilityScore: v.number(), // 0-100
+    citationWeight: v.number(), // Weight in quality score
 
     // Examples for training
     examples: v.optional(v.array(v.string())),
@@ -9634,8 +10224,12 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   financialModelEvaluations: defineTable({
     evaluationId: v.string(),
-    entityName: v.string(),          // Ticker or entity identifier
-    evaluationType: v.union(v.literal("dcf"), v.literal("comparables"), v.literal("lbo")),
+    entityName: v.string(), // Ticker or entity identifier
+    evaluationType: v.union(
+      v.literal("dcf"),
+      v.literal("comparables"),
+      v.literal("lbo"),
+    ),
 
     // Model references
     aiModelId: v.optional(v.id("dcfModels")),
@@ -9649,12 +10243,14 @@ export default defineSchema({
 
     // Reproducibility gates
     gatesPassed: v.optional(v.boolean()),
-    gateResults: v.optional(v.object({
-      inputCompleteness: v.any(),
-      determinismCheck: v.any(),
-      provenanceCompleteness: v.any(),
-      auditTrail: v.any(),
-    })),
+    gateResults: v.optional(
+      v.object({
+        inputCompleteness: v.any(),
+        determinismCheck: v.any(),
+        provenanceCompleteness: v.any(),
+        auditTrail: v.any(),
+      }),
+    ),
 
     // Detailed score breakdown
     scoreBreakdown: v.optional(v.any()),
@@ -9669,7 +10265,7 @@ export default defineSchema({
       v.literal("ALIGNED"),
       v.literal("MINOR_DRIFT"),
       v.literal("SIGNIFICANT_DRIFT"),
-      v.literal("METHODOLOGY_MISMATCH")
+      v.literal("METHODOLOGY_MISMATCH"),
     ),
 
     // Pass/fail flags (legacy)
@@ -9697,31 +10293,31 @@ export default defineSchema({
     entityKey: v.string(),
 
     // Correction details
-    fieldPath: v.string(),           // e.g., "assumptions.revenue.growthRates[0].rate"
-    aiValue: v.any(),                // Original AI value
-    correctedValue: v.any(),         // Human-corrected value
+    fieldPath: v.string(), // e.g., "assumptions.revenue.growthRates[0].rate"
+    aiValue: v.any(), // Original AI value
+    correctedValue: v.any(), // Human-corrected value
     correctionType: v.union(
-      v.literal("value_override"),   // Simple value change
-      v.literal("formula_fix"),      // Methodology correction
+      v.literal("value_override"), // Simple value change
+      v.literal("formula_fix"), // Methodology correction
       v.literal("source_replacement"), // Better source provided
-      v.literal("assumption_reject"),  // AI assumption rejected entirely
+      v.literal("assumption_reject"), // AI assumption rejected entirely
     ),
 
     // Justification
-    reason: v.string(),              // Why the correction was made
-    betterSourceArtifactId: v.optional(v.id("sourceArtifacts")),  // If source replacement
+    reason: v.string(), // Why the correction was made
+    betterSourceArtifactId: v.optional(v.id("sourceArtifacts")), // If source replacement
 
     // Magnitude tracking
-    impactOnEv: v.optional(v.number()),  // % change to enterprise value
+    impactOnEv: v.optional(v.number()), // % change to enterprise value
     severityLevel: v.union(
-      v.literal("minor"),            // <5% EV impact
-      v.literal("moderate"),         // 5-15% EV impact
-      v.literal("significant"),      // >15% EV impact
+      v.literal("minor"), // <5% EV impact
+      v.literal("moderate"), // 5-15% EV impact
+      v.literal("significant"), // >15% EV impact
     ),
 
     // Learning signal
-    shouldUpdateGroundTruth: v.boolean(),  // Flag for ground truth update
-    learningCategory: v.optional(v.string()),  // For categorizing patterns
+    shouldUpdateGroundTruth: v.boolean(), // Flag for ground truth update
+    learningCategory: v.optional(v.string()), // For categorizing patterns
 
     // Authorship
     correctedBy: v.id("users"),
@@ -9793,40 +10389,46 @@ export default defineSchema({
   /* MCP API TOKENS - Scoped tokens with rate limits                     */
   /* ------------------------------------------------------------------ */
   mcpApiTokens: defineTable({
-    tokenHash: v.string(),           // SHA-256 of token (never store plaintext)
-    name: v.string(),                // Human-readable name
+    tokenHash: v.string(), // SHA-256 of token (never store plaintext)
+    name: v.string(), // Human-readable name
 
     userId: v.string(),
 
     // Scopes (OWASP API5: BFLA Prevention)
-    scopes: v.array(v.union(
-      v.literal("read:artifacts"),
-      v.literal("read:evaluations"),
-      v.literal("read:groundtruth"),
-      v.literal("read:models"),
-      v.literal("write:evaluations"),
-      v.literal("write:corrections"),
-      v.literal("write:labels"),
-      v.literal("admin:all"),
-    )),
+    scopes: v.array(
+      v.union(
+        v.literal("read:artifacts"),
+        v.literal("read:evaluations"),
+        v.literal("read:groundtruth"),
+        v.literal("read:models"),
+        v.literal("write:evaluations"),
+        v.literal("write:corrections"),
+        v.literal("write:labels"),
+        v.literal("admin:all"),
+      ),
+    ),
 
     // Tool allowlists (OWASP API5: Function-level authz)
-    allowedTools: v.array(v.string()),  // Specific tools or "*" for all
+    allowedTools: v.array(v.string()), // Specific tools or "*" for all
 
     // Environment restrictions
-    allowedEnvironments: v.array(v.union(
-      v.literal("development"),
-      v.literal("staging"),
-      v.literal("production")
-    )),
+    allowedEnvironments: v.array(
+      v.union(
+        v.literal("development"),
+        v.literal("staging"),
+        v.literal("production"),
+      ),
+    ),
 
     // Rate limits (OWASP API4: Resource consumption)
-    rateLimit: v.optional(v.object({
-      requestsPerMinute: v.number(),
-      requestsPerHour: v.number(),
-      requestsPerDay: v.number(),
-      burstAllowance: v.optional(v.number()),
-    })),
+    rateLimit: v.optional(
+      v.object({
+        requestsPerMinute: v.number(),
+        requestsPerHour: v.number(),
+        requestsPerDay: v.number(),
+        burstAllowance: v.optional(v.number()),
+      }),
+    ),
 
     // Lifecycle
     expiresAt: v.optional(v.number()),
@@ -9846,9 +10448,9 @@ export default defineSchema({
     tokenId: v.id("mcpApiTokens"),
     userId: v.string(),
 
-    tool: v.string(),                // Tool name
-    operation: v.string(),           // Operation performed
-    argsHash: v.string(),            // SHA-256 of arguments (not full args for privacy)
+    tool: v.string(), // Tool name
+    operation: v.string(), // Operation performed
+    argsHash: v.string(), // SHA-256 of arguments (not full args for privacy)
 
     statusCode: v.number(),
     latencyMs: v.number(),
@@ -9860,11 +10462,13 @@ export default defineSchema({
 
     // Rate limit tracking
     rateLimitHit: v.optional(v.boolean()),
-    quotaRemaining: v.optional(v.object({
-      minute: v.number(),
-      hour: v.number(),
-      day: v.number(),
-    })),
+    quotaRemaining: v.optional(
+      v.object({
+        minute: v.number(),
+        hour: v.number(),
+        day: v.number(),
+      }),
+    ),
 
     createdAt: v.number(),
   })
@@ -9902,8 +10506,7 @@ export default defineSchema({
 
     createdAt: v.number(),
     updatedAt: v.number(),
-  })
-    .index("by_token", ["tokenId"]),
+  }).index("by_token", ["tokenId"]),
 
   /* ------------------------------------------------------------------ */
   /* MCP SERVER PACKAGES - Supply chain security (OWASP API8)           */
@@ -9913,7 +10516,7 @@ export default defineSchema({
     version: v.string(),
 
     // Supply chain security
-    checksum: v.string(),            // SHA-256 of package
+    checksum: v.string(), // SHA-256 of package
     signature: v.optional(v.string()), // Digital signature
     signedBy: v.optional(v.string()), // Signer identity
 
@@ -9924,18 +10527,22 @@ export default defineSchema({
       v.literal("pending_review"),
       v.literal("approved"),
       v.literal("rejected"),
-      v.literal("deprecated")
+      v.literal("deprecated"),
     ),
 
     // Security metadata
-    knownVulnerabilities: v.optional(v.array(v.object({
-      cveId: v.string(),
-      severity: v.string(),
-      patchedInVersion: v.optional(v.string()),
-    }))),
+    knownVulnerabilities: v.optional(
+      v.array(
+        v.object({
+          cveId: v.string(),
+          severity: v.string(),
+          patchedInVersion: v.optional(v.string()),
+        }),
+      ),
+    ),
 
     // Usage tracking
-    isPinned: v.boolean(),           // If true, enforce this exact version
+    isPinned: v.boolean(), // If true, enforce this exact version
     lastUsedAt: v.optional(v.number()),
 
     createdAt: v.number(),
@@ -9953,7 +10560,7 @@ export default defineSchema({
     status: v.union(
       v.literal("approved"),
       v.literal("pending"),
-      v.literal("revoked")
+      v.literal("revoked"),
     ),
     approvedBy: v.optional(v.string()),
     approvedAt: v.optional(v.number()),
@@ -10001,12 +10608,12 @@ export default defineSchema({
       v.literal("verification_audit"),
       v.literal("inconclusive_event"),
       v.literal("multi_vantage_disagreement"),
-      v.literal("fact_check_coverage")
+      v.literal("fact_check_coverage"),
     ),
-    sourceRecordId: v.string(),    // ID of source record
+    sourceRecordId: v.string(), // ID of source record
 
     // Stratification (for sampling)
-    stratum: v.string(),           // "high_confidence", "suspicious", "timeout", etc.
+    stratum: v.string(), // "high_confidence", "suspicious", "timeout", etc.
     persona: v.optional(v.string()), // Persona that made the call
     dependency: v.optional(v.string()), // External dependency involved
     confidenceBucket: v.optional(v.string()), // "high", "medium", "low"
@@ -10015,14 +10622,14 @@ export default defineSchema({
     costWeight: v.optional(v.number()), // FN risk weight
 
     // Context for labeler
-    contextData: v.any(),          // Claim, post, evidence, etc.
+    contextData: v.any(), // Claim, post, evidence, etc.
 
     // Assignment
     assignedTo: v.optional(v.string()),
     assignedAt: v.optional(v.number()),
 
     // SLA tracking
-    slaDeadline: v.number(),       // When this must be labeled by
+    slaDeadline: v.number(), // When this must be labeled by
     agingWarningThreshold: v.number(), // When to warn (e.g., 48h)
 
     // Status
@@ -10031,7 +10638,7 @@ export default defineSchema({
       v.literal("assigned"),
       v.literal("in_progress"),
       v.literal("completed"),
-      v.literal("escalated")
+      v.literal("escalated"),
     ),
 
     // Priority (high-cost FN risk = higher priority)
@@ -10039,7 +10646,7 @@ export default defineSchema({
       v.literal("critical"),
       v.literal("high"),
       v.literal("medium"),
-      v.literal("low")
+      v.literal("low"),
     ),
 
     createdAt: v.number(),
@@ -10085,7 +10692,7 @@ export default defineSchema({
     ),
 
     // Confidence in label
-    confidence: v.number(),        // 0-100
+    confidence: v.number(), // 0-100
 
     // Link to rationale
     rationaleId: v.id("labelRationales"),
@@ -10114,7 +10721,7 @@ export default defineSchema({
     evidenceUrls: v.optional(v.array(v.string())),
 
     // Reasoning
-    shortRationale: v.string(),    // 1-2 sentences
+    shortRationale: v.string(), // 1-2 sentences
     detailedRationale: v.optional(v.string()),
 
     // Policy tags (for pattern analysis)
@@ -10124,12 +10731,16 @@ export default defineSchema({
     pivotEvidence: v.optional(v.string()),
 
     // Suggested rule changes (feeds calibration)
-    suggestedRuleChanges: v.optional(v.array(v.object({
-      ruleId: v.string(),
-      currentValue: v.any(),
-      suggestedValue: v.any(),
-      reasoning: v.string(),
-    }))),
+    suggestedRuleChanges: v.optional(
+      v.array(
+        v.object({
+          ruleId: v.string(),
+          currentValue: v.any(),
+          suggestedValue: v.any(),
+          reasoning: v.string(),
+        }),
+      ),
+    ),
 
     createdAt: v.number(),
   })
@@ -10149,11 +10760,11 @@ export default defineSchema({
       v.literal("screenshot"),
       v.literal("pdf_excerpt"),
       v.literal("json_snippet"),
-      v.literal("url_snapshot")
+      v.literal("url_snapshot"),
     ),
 
     // Hash pointer (NOT the raw content)
-    contentHash: v.string(),       // SHA-256 of content
+    contentHash: v.string(), // SHA-256 of content
     storageId: v.optional(v.id("_storage")), // Reference to stored blob
     artifactId: v.optional(v.id("sourceArtifacts")), // Or link to existing artifact
 
@@ -10180,10 +10791,10 @@ export default defineSchema({
 
     // Reason for adjudication
     reason: v.union(
-      v.literal("disagreement"),   // Multiple labelers disagree
-      v.literal("low_confidence"),  // Labeler requested escalation
-      v.literal("high_cost_fn"),    // High FN risk
-      v.literal("rule_ambiguity")   // Policy unclear
+      v.literal("disagreement"), // Multiple labelers disagree
+      v.literal("low_confidence"), // Labeler requested escalation
+      v.literal("high_cost_fn"), // High FN risk
+      v.literal("rule_ambiguity"), // Policy unclear
     ),
 
     // Disagreeing labels
@@ -10198,7 +10809,7 @@ export default defineSchema({
       v.literal("critical"),
       v.literal("high"),
       v.literal("medium"),
-      v.literal("low")
+      v.literal("low"),
     ),
 
     // Assignment
@@ -10213,7 +10824,7 @@ export default defineSchema({
       v.literal("pending"),
       v.literal("in_progress"),
       v.literal("resolved"),
-      v.literal("deferred")
+      v.literal("deferred"),
     ),
 
     createdAt: v.number(),
@@ -10238,23 +10849,27 @@ export default defineSchema({
     // Reasoning (structured)
     decision: v.object({
       agreedWithLabelId: v.optional(v.id("labels")), // If agreed with one labeler
-      synthesizedNewLabel: v.optional(v.boolean()),  // If created new interpretation
+      synthesizedNewLabel: v.optional(v.boolean()), // If created new interpretation
       reasoning: v.string(),
       evidenceReferences: v.array(v.id("sourceArtifacts")),
       policyInterpretation: v.optional(v.string()),
     }),
 
     // Rule change suggestion (feeds calibration)
-    suggestedRuleChanges: v.optional(v.array(v.object({
-      ruleId: v.string(),
-      changeType: v.union(
-        v.literal("threshold_adjustment"),
-        v.literal("new_pattern"),
-        v.literal("policy_clarification")
+    suggestedRuleChanges: v.optional(
+      v.array(
+        v.object({
+          ruleId: v.string(),
+          changeType: v.union(
+            v.literal("threshold_adjustment"),
+            v.literal("new_pattern"),
+            v.literal("policy_clarification"),
+          ),
+          proposal: v.string(),
+          expectedImpact: v.string(),
+        }),
       ),
-      proposal: v.string(),
-      expectedImpact: v.string(),
-    }))),
+    ),
 
     // Adjudicator
     adjudicatorId: v.string(),
@@ -10285,21 +10900,23 @@ export default defineSchema({
     stratum: v.string(),
 
     // Agreement metrics
-    cohensKappa: v.number(),       // -1 to 1
-    percentAgreement: v.number(),  // 0-100
+    cohensKappa: v.number(), // -1 to 1
+    percentAgreement: v.number(), // 0-100
     sampleSize: v.number(),
 
     // Breakdown by label pair
-    confusionMatrix: v.any(),      // Label1 Ã— Label2 confusion matrix
+    confusionMatrix: v.any(), // Label1 Ã— Label2 confusion matrix
 
     // Annotator pairs analyzed
-    annotatorPairs: v.array(v.object({
-      annotator1: v.string(),
-      annotator2: v.string(),
-      kappa: v.number(),
-      agreements: v.number(),
-      disagreements: v.number(),
-    })),
+    annotatorPairs: v.array(
+      v.object({
+        annotator1: v.string(),
+        annotator2: v.string(),
+        kappa: v.number(),
+        agreements: v.number(),
+        disagreements: v.number(),
+      }),
+    ),
 
     // Quality gates
     passesKappaThreshold: v.boolean(), // >= 0.6 for "substantial"
@@ -10355,45 +10972,55 @@ export default defineSchema({
     actualEndTime: v.optional(v.number()),
 
     // Participants
-    participants: v.array(v.object({
-      userId: v.string(),
-      role: v.string(),        // "incident_commander", "on_call", "observer"
-    })),
+    participants: v.array(
+      v.object({
+        userId: v.string(),
+        role: v.string(), // "incident_commander", "on_call", "observer"
+      }),
+    ),
 
     // Timeline of events
-    timeline: v.array(v.object({
-      time: v.number(),
-      event: v.string(),
-      actionTaken: v.string(),
-      correct: v.boolean(),
-      evidence: v.optional(v.string()),
-    })),
+    timeline: v.array(
+      v.object({
+        time: v.number(),
+        event: v.string(),
+        actionTaken: v.string(),
+        correct: v.boolean(),
+        evidence: v.optional(v.string()),
+      }),
+    ),
 
     // Exit criteria checklist
-    exitCriteria: v.array(v.object({
-      criterion: v.string(),   // "Burn rate under threshold for 15min"
-      met: v.boolean(),
-      metAt: v.optional(v.number()),
-      evidence: v.optional(v.string()),
-    })),
+    exitCriteria: v.array(
+      v.object({
+        criterion: v.string(), // "Burn rate under threshold for 15min"
+        met: v.boolean(),
+        metAt: v.optional(v.number()),
+        evidence: v.optional(v.string()),
+      }),
+    ),
 
     // Outcomes
     status: v.union(
       v.literal("scheduled"),
       v.literal("in_progress"),
       v.literal("completed"),
-      v.literal("cancelled")
+      v.literal("cancelled"),
     ),
     allCriteriaMet: v.optional(v.boolean()),
 
     // Follow-ups
-    actionItems: v.optional(v.array(v.object({
-      item: v.string(),
-      owner: v.string(),
-      dueDate: v.number(),
-      status: v.union(v.literal("open"), v.literal("closed")),
-      closedAt: v.optional(v.number()),
-    }))),
+    actionItems: v.optional(
+      v.array(
+        v.object({
+          item: v.string(),
+          owner: v.string(),
+          dueDate: v.number(),
+          status: v.union(v.literal("open"), v.literal("closed")),
+          closedAt: v.optional(v.number()),
+        }),
+      ),
+    ),
 
     // Postmortem link
     postmortemDocumentId: v.optional(v.id("documents")),
@@ -10419,13 +11046,13 @@ export default defineSchema({
     // Results
     correctLabels: v.number(),
     incorrectLabels: v.number(),
-    accuracy: v.number(),          // 0-100
+    accuracy: v.number(), // 0-100
 
     // Breakdown by stratum
-    byStratum: v.any(),            // stratum â†’ {correct, incorrect, accuracy}
+    byStratum: v.any(), // stratum â†’ {correct, incorrect, accuracy}
 
     // Pass/fail
-    passThreshold: v.number(),     // e.g., 80%
+    passThreshold: v.number(), // e.g., 80%
     passed: v.boolean(),
 
     // Certification
@@ -10447,7 +11074,7 @@ export default defineSchema({
 
     // Stratification
     stratum: v.string(),
-    sourceType: v.string(),       // "source_quality", "verification", etc.
+    sourceType: v.string(), // "source_quality", "verification", etc.
 
     // Test data
     contextData: v.any(),
@@ -10498,13 +11125,17 @@ export default defineSchema({
     significantDrift: v.optional(v.boolean()),
 
     // Breakdown
-    driftDetails: v.optional(v.array(v.object({
-      dimension: v.string(),     // "stratum", "topic", "domain"
-      category: v.string(),
-      baselinePercent: v.number(),
-      currentPercent: v.number(),
-      delta: v.number(),
-    }))),
+    driftDetails: v.optional(
+      v.array(
+        v.object({
+          dimension: v.string(), // "stratum", "topic", "domain"
+          category: v.string(),
+          baselinePercent: v.number(),
+          currentPercent: v.number(),
+          delta: v.number(),
+        }),
+      ),
+    ),
 
     // Gate requirement
     requiresRevalidation: v.boolean(),
@@ -10521,17 +11152,17 @@ export default defineSchema({
     canonicalId: v.string(),
 
     // Entity identification
-    entityKey: v.string(),        // "NVDA", "openai-series-e"
+    entityKey: v.string(), // "NVDA", "openai-series-e"
     recordType: v.union(
       v.literal("company_fact"),
       v.literal("funding_event"),
       v.literal("product_launch"),
-      v.literal("verification_claim")
+      v.literal("verification_claim"),
     ),
 
     // Canonical content
-    canonicalContent: v.any(),    // Structured canonical representation
-    contentHash: v.string(),      // Hash of canonical content
+    canonicalContent: v.any(), // Structured canonical representation
+    contentHash: v.string(), // Hash of canonical content
 
     // Source consolidation
     sourceArtifactIds: v.array(v.id("sourceArtifacts")),
@@ -10543,13 +11174,15 @@ export default defineSchema({
     previousCanonicalId: v.optional(v.string()),
 
     // Change tracking
-    changeType: v.optional(v.union(
-      v.literal("new"),
-      v.literal("update"),
-      v.literal("correction"),
-      v.literal("consolidation")
-    )),
-    changeSummary: v.optional(v.string()),  // LLM-generated summary
+    changeType: v.optional(
+      v.union(
+        v.literal("new"),
+        v.literal("update"),
+        v.literal("correction"),
+        v.literal("consolidation"),
+      ),
+    ),
+    changeSummary: v.optional(v.string()), // LLM-generated summary
     changedFields: v.optional(v.array(v.string())),
 
     // Duplicate links
@@ -10580,7 +11213,7 @@ export default defineSchema({
     method: v.union(
       v.literal("embedding_similarity"),
       v.literal("llm_judge"),
-      v.literal("hybrid")
+      v.literal("hybrid"),
     ),
 
     // Results
@@ -10588,16 +11221,20 @@ export default defineSchema({
       v.literal("pending"),
       v.literal("processing"),
       v.literal("completed"),
-      v.literal("failed")
+      v.literal("failed"),
     ),
 
-    duplicatePairs: v.optional(v.array(v.object({
-      artifactId1: v.id("sourceArtifacts"),
-      artifactId2: v.id("sourceArtifacts"),
-      similarityScore: v.number(),  // 0-100
-      isDuplicate: v.boolean(),
-      reasoning: v.optional(v.string()),
-    }))),
+    duplicatePairs: v.optional(
+      v.array(
+        v.object({
+          artifactId1: v.id("sourceArtifacts"),
+          artifactId2: v.id("sourceArtifacts"),
+          similarityScore: v.number(), // 0-100
+          isDuplicate: v.boolean(),
+          reasoning: v.optional(v.string()),
+        }),
+      ),
+    ),
 
     // Stats
     artifactsProcessed: v.optional(v.number()),
@@ -10624,7 +11261,7 @@ export default defineSchema({
 
     // Entity extraction settings
     entityExtraction: v.object({
-      enabledTypes: v.array(v.string()),  // ["company", "person", "ticker"]
+      enabledTypes: v.array(v.string()), // ["company", "person", "ticker"]
       confidenceThreshold: v.number(),
     }),
 
@@ -10632,7 +11269,7 @@ export default defineSchema({
     temporalInference: v.object({
       enabled: v.boolean(),
       defaultLookbackDays: v.number(),
-      recencyBias: v.number(),  // 0-1
+      recencyBias: v.number(), // 0-1
     }),
 
     // Retrieval intent generation
@@ -10640,7 +11277,7 @@ export default defineSchema({
       enabled: v.boolean(),
       maxQueries: v.number(),
       tokenBudget: v.number(),
-      evidencePriorities: v.array(v.string()),  // ["sec_filings", "earnings_calls"]
+      evidencePriorities: v.array(v.string()), // ["sec_filings", "earnings_calls"]
     }),
 
     // Persona inference
@@ -10664,9 +11301,9 @@ export default defineSchema({
 
     // Model selection
     modelStrategy: v.union(
-      v.literal("free_first"),       // devstral â†’ gemini-flash â†’ haiku
-      v.literal("quality_first"),    // haiku â†’ sonnet
-      v.literal("specific"),         // Use specified model
+      v.literal("free_first"), // devstral â†’ gemini-flash â†’ haiku
+      v.literal("quality_first"), // haiku â†’ sonnet
+      v.literal("specific"), // Use specified model
     ),
     preferredModel: v.optional(v.string()),
 
@@ -10675,7 +11312,7 @@ export default defineSchema({
       maxFacts: v.number(),
       minConfidence: v.number(),
       requireCitations: v.boolean(),
-      citationFormat: v.string(),    // "{{cite:artifactId:chunkId}}"
+      citationFormat: v.string(), // "{{cite:artifactId:chunkId}}"
     }),
 
     // Token budget
@@ -10685,7 +11322,7 @@ export default defineSchema({
     }),
 
     // Categories of facts to extract
-    factCategories: v.array(v.string()),  // ["financial", "team", "product", "market"]
+    factCategories: v.array(v.string()), // ["financial", "team", "product", "market"]
 
     isDefault: v.boolean(),
     createdAt: v.number(),
@@ -10697,13 +11334,13 @@ export default defineSchema({
   /* SEC API RATE LIMITS - Track SEC EDGAR API request rate              */
   /* ------------------------------------------------------------------ */
   secApiRateLimits: defineTable({
-    endpoint: v.string(),              // e.g., "companyfacts/CIK0001234567"
-    timestamp: v.number(),             // When the request was made
-    statusCode: v.number(),            // HTTP status code
-    latencyMs: v.number(),             // Response latency
-    retryAfterSec: v.optional(v.number()),  // Retry-After header value (seconds)
+    endpoint: v.string(), // e.g., "companyfacts/CIK0001234567"
+    timestamp: v.number(), // When the request was made
+    statusCode: v.number(), // HTTP status code
+    latencyMs: v.number(), // Response latency
+    retryAfterSec: v.optional(v.number()), // Retry-After header value (seconds)
     isRateLimited: v.optional(v.boolean()), // True if this was a 429 response
-    errorMessage: v.optional(v.string()),   // Error details for failed requests
+    errorMessage: v.optional(v.string()), // Error details for failed requests
   })
     .index("by_timestamp", ["timestamp"])
     .index("by_endpoint", ["endpoint", "timestamp"])
@@ -10715,19 +11352,19 @@ export default defineSchema({
   secApiCircuitBreaker: defineTable({
     // Circuit breaker state
     state: v.union(
-      v.literal("closed"),     // Normal operation
-      v.literal("open"),       // Blocking all requests
-      v.literal("half_open"),  // Testing if service recovered
+      v.literal("closed"), // Normal operation
+      v.literal("open"), // Blocking all requests
+      v.literal("half_open"), // Testing if service recovered
     ),
 
     // Failure tracking
     consecutiveFailures: v.number(),
-    totalFailuresInWindow: v.number(),  // Failures in rolling window
+    totalFailuresInWindow: v.number(), // Failures in rolling window
     windowStartTimestamp: v.number(),
 
     // Rate limit tracking
     lastRateLimitTimestamp: v.optional(v.number()),
-    retryAfterUntil: v.optional(v.number()),  // Don't retry before this timestamp
+    retryAfterUntil: v.optional(v.number()), // Don't retry before this timestamp
 
     // Backoff state
     currentBackoffMs: v.number(),
@@ -10739,10 +11376,10 @@ export default defineSchema({
     halfOpenAt: v.optional(v.number()),
 
     // Configuration
-    failureThreshold: v.number(),       // Failures to open circuit
-    successThreshold: v.number(),       // Successes in half-open to close
-    windowDurationMs: v.number(),       // Rolling window for failure counting
-    openDurationMs: v.number(),         // How long to stay open before half-open
+    failureThreshold: v.number(), // Failures to open circuit
+    successThreshold: v.number(), // Successes in half-open to close
+    windowDurationMs: v.number(), // Rolling window for failure counting
+    openDurationMs: v.number(), // How long to stay open before half-open
 
     updatedAt: v.number(),
   }),
@@ -10752,20 +11389,20 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   secApiResponseCache: defineTable({
     // Cache key
-    endpoint: v.string(),              // Full endpoint path
-    cacheKey: v.string(),              // Hash of endpoint + params
+    endpoint: v.string(), // Full endpoint path
+    cacheKey: v.string(), // Hash of endpoint + params
 
     // Response data
-    responseHash: v.string(),          // SHA-256 of response for dedup
+    responseHash: v.string(), // SHA-256 of response for dedup
     artifactId: v.id("sourceArtifacts"), // Link to full response
 
     // Cache metadata
     fetchedAt: v.number(),
-    expiresAt: v.number(),             // When to consider stale
-    hitCount: v.number(),              // Number of cache hits
+    expiresAt: v.number(), // When to consider stale
+    hitCount: v.number(), // Number of cache hits
 
     // Validation
-    etag: v.optional(v.string()),      // For conditional requests
+    etag: v.optional(v.string()), // For conditional requests
     lastModified: v.optional(v.string()),
   })
     .index("by_cache_key", ["cacheKey"])
@@ -10859,12 +11496,14 @@ export default defineSchema({
     executedBy: v.string(),
     startedAt: v.number(),
     completedAt: v.optional(v.number()),
-    outcome: v.optional(v.union(
-      v.literal("resolved"),
-      v.literal("escalated"),
-      v.literal("partial"),
-      v.literal("ineffective")
-    )),
+    outcome: v.optional(
+      v.union(
+        v.literal("resolved"),
+        v.literal("escalated"),
+        v.literal("partial"),
+        v.literal("ineffective"),
+      ),
+    ),
     stepsCompleted: v.optional(v.array(v.number())),
     stepsSkipped: v.optional(v.array(v.number())),
     feedback: v.optional(v.string()),
@@ -10890,12 +11529,14 @@ export default defineSchema({
     }),
     currentValue: v.any(),
     proposedValue: v.any(),
-    evidence: v.optional(v.object({
-      supportingLabels: v.number(),
-      totalLabels: v.number(),
-      currentAccuracy: v.number(),
-      projectedAccuracy: v.number(),
-    })),
+    evidence: v.optional(
+      v.object({
+        supportingLabels: v.number(),
+        totalLabels: v.number(),
+        currentAccuracy: v.number(),
+        projectedAccuracy: v.number(),
+      }),
+    ),
     rationale: v.string(),
     generatedBy: v.union(v.literal("system"), v.literal("human")),
     generatedAt: v.number(),
@@ -10904,7 +11545,7 @@ export default defineSchema({
       v.literal("approved"),
       v.literal("rejected"),
       v.literal("deployed"),
-      v.literal("rolled_back")
+      v.literal("rolled_back"),
     ),
     reviewSubmittedAt: v.optional(v.number()),
     assignedReviewer: v.optional(v.string()),
@@ -10972,23 +11613,27 @@ export default defineSchema({
   calibrationDeployments: defineTable({
     deploymentId: v.string(),
     proposalId: v.id("calibrationProposals"),
-    changes: v.array(v.object({
-      target: v.string(),
-      field: v.string(),
-      oldValue: v.any(),
-      newValue: v.any(),
-    })),
+    changes: v.array(
+      v.object({
+        target: v.string(),
+        field: v.string(),
+        oldValue: v.any(),
+        newValue: v.any(),
+      }),
+    ),
     deployedBy: v.string(),
     deployedAt: v.number(),
     rollbackEnabled: v.boolean(),
     rollbackBy: v.optional(v.string()),
     rolledBackAt: v.optional(v.number()),
     rollbackReason: v.optional(v.string()),
-    monitoring: v.optional(v.object({
-      unexpectedErrors: v.number(),
-      alertVolumeChange: v.number(),
-      observedAccuracy: v.optional(v.number()),
-    })),
+    monitoring: v.optional(
+      v.object({
+        unexpectedErrors: v.number(),
+        alertVolumeChange: v.number(),
+        observedAccuracy: v.optional(v.number()),
+      }),
+    ),
   })
     .index("by_deployment_id", ["deploymentId"])
     .index("by_proposal", ["proposalId"])
@@ -11009,7 +11654,7 @@ export default defineSchema({
       v.literal("scheduled_revalidation"),
       v.literal("model_change"),
       v.literal("performance_degradation"),
-      v.literal("manual")
+      v.literal("manual"),
     ),
     requestedBy: v.string(),
     requestedAt: v.number(),
@@ -11021,7 +11666,7 @@ export default defineSchema({
       v.literal("in_progress"),
       v.literal("findings_review"),
       v.literal("completed"),
-      v.literal("rejected")
+      v.literal("rejected"),
     ),
     notes: v.optional(v.string()),
     completedAt: v.optional(v.number()),
@@ -11042,7 +11687,7 @@ export default defineSchema({
       v.literal("high"),
       v.literal("medium"),
       v.literal("low"),
-      v.literal("informational")
+      v.literal("informational"),
     ),
     category: v.union(
       v.literal("data_quality"),
@@ -11050,7 +11695,7 @@ export default defineSchema({
       v.literal("documentation"),
       v.literal("performance"),
       v.literal("governance"),
-      v.literal("other")
+      v.literal("other"),
     ),
     title: v.string(),
     description: v.string(),
@@ -11060,7 +11705,7 @@ export default defineSchema({
       v.literal("open"),
       v.literal("remediated"),
       v.literal("accepted_risk"),
-      v.literal("not_applicable")
+      v.literal("not_applicable"),
     ),
     createdBy: v.string(),
     createdAt: v.number(),
@@ -11108,7 +11753,7 @@ export default defineSchema({
     recommendation: v.union(
       v.literal("approve"),
       v.literal("conditional_approval"),
-      v.literal("reject")
+      v.literal("reject"),
     ),
     recommendationRationale: v.string(),
     approvedBy: v.optional(v.string()),
@@ -11133,9 +11778,9 @@ export default defineSchema({
     scope: v.union(
       v.literal("user_data"),
       v.literal("entity_data"),
-      v.literal("specific_records")
+      v.literal("specific_records"),
     ),
-    subject: v.string(),  // User ID or entity key
+    subject: v.string(), // User ID or entity key
     recordIds: v.optional(v.array(v.string())),
     requestedBy: v.string(),
     requestedAt: v.number(),
@@ -11143,18 +11788,22 @@ export default defineSchema({
       v.literal("pending"),
       v.literal("in_progress"),
       v.literal("completed"),
-      v.literal("failed")
+      v.literal("failed"),
     ),
-    deletionSummary: v.optional(v.object({
-      tablesAffected: v.array(v.string()),
-      recordsDeleted: v.number(),
-      tombstonesCreated: v.number(),
-      failedDeletions: v.array(v.object({
-        table: v.string(),
-        recordId: v.string(),
-        error: v.string(),
-      })),
-    })),
+    deletionSummary: v.optional(
+      v.object({
+        tablesAffected: v.array(v.string()),
+        recordsDeleted: v.number(),
+        tombstonesCreated: v.number(),
+        failedDeletions: v.array(
+          v.object({
+            table: v.string(),
+            recordId: v.string(),
+            error: v.string(),
+          }),
+        ),
+      }),
+    ),
     completedAt: v.optional(v.number()),
     completedBy: v.optional(v.string()),
   })
@@ -11240,17 +11889,23 @@ export default defineSchema({
     goalId: v.optional(v.string()),
     visionSnapshot: v.optional(v.string()),
     successCriteria: v.optional(v.array(v.string())),
-    sourceRefs: v.optional(v.array(v.object({
-      label: v.string(),
-      href: v.optional(v.string()),
-      note: v.optional(v.string()),
-      kind: v.optional(v.string()),
-    }))),
-    crossCheckStatus: v.optional(v.union(
-      v.literal("aligned"),
-      v.literal("drifting"),
-      v.literal("violated"),
-    )),
+    sourceRefs: v.optional(
+      v.array(
+        v.object({
+          label: v.string(),
+          href: v.optional(v.string()),
+          note: v.optional(v.string()),
+          kind: v.optional(v.string()),
+        }),
+      ),
+    ),
+    crossCheckStatus: v.optional(
+      v.union(
+        v.literal("aligned"),
+        v.literal("drifting"),
+        v.literal("violated"),
+      ),
+    ),
     deltaFromVision: v.optional(v.string()),
     dogfoodRunId: v.optional(v.id("dogfoodQaRuns")),
     estimatedCostUsd: v.optional(v.number()),
@@ -11273,17 +11928,23 @@ export default defineSchema({
     goalId: v.optional(v.string()),
     visionSnapshot: v.optional(v.string()),
     successCriteria: v.optional(v.array(v.string())),
-    sourceRefs: v.optional(v.array(v.object({
-      label: v.string(),
-      href: v.optional(v.string()),
-      note: v.optional(v.string()),
-      kind: v.optional(v.string()),
-    }))),
-    crossCheckStatus: v.optional(v.union(
-      v.literal("aligned"),
-      v.literal("drifting"),
-      v.literal("violated"),
-    )),
+    sourceRefs: v.optional(
+      v.array(
+        v.object({
+          label: v.string(),
+          href: v.optional(v.string()),
+          note: v.optional(v.string()),
+          kind: v.optional(v.string()),
+        }),
+      ),
+    ),
+    crossCheckStatus: v.optional(
+      v.union(
+        v.literal("aligned"),
+        v.literal("drifting"),
+        v.literal("violated"),
+      ),
+    ),
     deltaFromVision: v.optional(v.string()),
     dogfoodRunId: v.optional(v.id("dogfoodQaRuns")),
     status: v.union(
@@ -11294,11 +11955,13 @@ export default defineSchema({
     startedAt: v.number(),
     endedAt: v.optional(v.number()),
     totalDurationMs: v.optional(v.number()),
-    tokenUsage: v.optional(v.object({
-      input: v.number(),
-      output: v.number(),
-      total: v.number(),
-    })),
+    tokenUsage: v.optional(
+      v.object({
+        input: v.number(),
+        output: v.number(),
+        total: v.number(),
+      }),
+    ),
     estimatedCostUsd: v.optional(v.number()),
     model: v.optional(v.string()),
     metadata: v.optional(v.any()),
@@ -11332,11 +11995,13 @@ export default defineSchema({
     durationMs: v.optional(v.number()),
     data: v.optional(v.any()),
     metadata: v.optional(v.any()),
-    error: v.optional(v.object({
-      message: v.string(),
-      code: v.optional(v.string()),
-      stack: v.optional(v.string()),
-    })),
+    error: v.optional(
+      v.object({
+        message: v.string(),
+        code: v.optional(v.string()),
+        stack: v.optional(v.string()),
+      }),
+    ),
   })
     .index("by_trace", ["traceId", "seq"])
     .index("by_parent", ["parentSpanId", "seq"]),
@@ -11352,30 +12017,30 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   dailyReportComponentMetrics: defineTable({
     // Report identification
-    date: v.string(),                          // YYYY-MM-DD
+    date: v.string(), // YYYY-MM-DD
     reportType: v.union(
       v.literal("daily_brief"),
       v.literal("weekly_digest"),
       v.literal("funding_report"),
-      v.literal("research_highlights")
+      v.literal("research_highlights"),
     ),
 
     // Component details
-    componentType: v.string(),                 // "funding_events", "research_highlights", "market_signals"
-    sourceName: v.string(),                    // "SiliconAngle", "TechCrunch", etc.
-    category: v.optional(v.string()),          // "AI/ML", "FinTech", etc.
+    componentType: v.string(), // "funding_events", "research_highlights", "market_signals"
+    sourceName: v.string(), // "SiliconAngle", "TechCrunch", etc.
+    category: v.optional(v.string()), // "AI/ML", "FinTech", etc.
 
     // Metrics
-    itemCount: v.number(),                     // Number of items in this component
-    engagementScore: v.optional(v.number()),   // 0-1 engagement score
+    itemCount: v.number(), // Number of items in this component
+    engagementScore: v.optional(v.number()), // 0-1 engagement score
     avgReadTimeSeconds: v.optional(v.number()),
-    clickThroughRate: v.optional(v.number()),  // 0-1 CTR
+    clickThroughRate: v.optional(v.number()), // 0-1 CTR
     impressions: v.optional(v.number()),
     clicks: v.optional(v.number()),
 
     // Quality metrics
-    relevanceScore: v.optional(v.number()),    // 0-1 relevance score
-    freshnessHours: v.optional(v.number()),    // How recent was the content
+    relevanceScore: v.optional(v.number()), // 0-1 relevance score
+    freshnessHours: v.optional(v.number()), // How recent was the content
 
     // Metadata
     createdAt: v.number(),
@@ -11437,18 +12102,18 @@ export default defineSchema({
       v.literal("rejected"),
       v.literal("ignored"),
       v.literal("dismissed"),
-      v.literal("snoozed")
+      v.literal("snoozed"),
     ),
     actionTimestamp: v.number(),
 
     // Feedback
-    reason: v.optional(v.string()),            // User-provided reason for rejection
-    actualValue: v.optional(v.number()),       // 0-1 user rating of value
-    timeTakenMs: v.optional(v.number()),       // How long before user acted
+    reason: v.optional(v.string()), // User-provided reason for rejection
+    actualValue: v.optional(v.number()), // 0-1 user rating of value
+    timeTakenMs: v.optional(v.number()), // How long before user acted
 
     // Context
-    displayContext: v.optional(v.string()),    // Where was recommendation shown
-    metadata: v.optional(v.any()),             // Additional context
+    displayContext: v.optional(v.string()), // Where was recommendation shown
+    metadata: v.optional(v.any()), // Additional context
 
     // Timestamps
     createdAt: v.number(),
@@ -11465,7 +12130,7 @@ export default defineSchema({
   humanDecisions: defineTable({
     // Request reference
     requestId: v.id("humanRequests"),
-    requestType: v.string(),                   // Type of request from humanRequests
+    requestType: v.string(), // Type of request from humanRequests
 
     // Decision
     decision: v.union(
@@ -11473,26 +12138,26 @@ export default defineSchema({
       v.literal("rejected"),
       v.literal("modified"),
       v.literal("escalated"),
-      v.literal("deferred")
+      v.literal("deferred"),
     ),
 
     // Review details
-    reviewTimeMs: v.number(),                  // Time taken to make decision
+    reviewTimeMs: v.number(), // Time taken to make decision
     reviewedBy: v.id("users"),
     reviewedAt: v.number(),
 
     // Feedback & modifications
-    feedback: v.optional(v.string()),          // Human feedback on the request
+    feedback: v.optional(v.string()), // Human feedback on the request
     modifiedFields: v.optional(v.array(v.string())),
-    modifiedValues: v.optional(v.any()),       // { field: newValue }
+    modifiedValues: v.optional(v.any()), // { field: newValue }
 
     // Confidence & reasoning
-    confidence: v.optional(v.number()),        // 0-1 confidence in decision
-    reasoning: v.optional(v.string()),         // Why this decision was made
+    confidence: v.optional(v.number()), // 0-1 confidence in decision
+    reasoning: v.optional(v.string()), // Why this decision was made
 
     // Workflow
-    escalatedTo: v.optional(v.id("users")),    // If escalated, to whom
-    deferredUntil: v.optional(v.number()),     // If deferred, when to revisit
+    escalatedTo: v.optional(v.id("users")), // If escalated, to whom
+    deferredUntil: v.optional(v.number()), // If deferred, when to revisit
 
     // Metadata
     metadata: v.optional(v.any()),
@@ -11509,7 +12174,7 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   adminAuditLog: defineTable({
     // Action details
-    action: v.string(),                        // "user_created", "config_changed", "data_corrected"
+    action: v.string(), // "user_created", "config_changed", "data_corrected"
     actionCategory: v.union(
       v.literal("user_management"),
       v.literal("config_change"),
@@ -11517,24 +12182,24 @@ export default defineSchema({
       v.literal("permission_change"),
       v.literal("deletion"),
       v.literal("access_grant"),
-      v.literal("security_event")
+      v.literal("security_event"),
     ),
 
     // Resource details
-    resourceType: v.string(),                  // "user", "config", "fundingEvent"
-    resourceId: v.optional(v.string()),        // ID of affected resource
+    resourceType: v.string(), // "user", "config", "fundingEvent"
+    resourceId: v.optional(v.string()), // ID of affected resource
 
     // State changes
-    before: v.optional(v.any()),               // State before action
-    after: v.any(),                            // State after action
+    before: v.optional(v.any()), // State before action
+    after: v.any(), // State after action
 
     // Justification
-    reason: v.optional(v.string()),            // Why was this action taken
-    ticket: v.optional(v.string()),            // Related ticket/issue number
+    reason: v.optional(v.string()), // Why was this action taken
+    ticket: v.optional(v.string()), // Related ticket/issue number
 
     // Actor
     actor: v.id("users"),
-    actorRole: v.optional(v.string()),         // Role at time of action
+    actorRole: v.optional(v.string()), // Role at time of action
 
     // Security
     ipAddress: v.optional(v.string()),
@@ -11556,43 +12221,43 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   personaChangeLog: defineTable({
     // Persona identification
-    personaId: v.string(),                     // Persona identifier
+    personaId: v.string(), // Persona identifier
     personaType: v.union(
       v.literal("budget"),
       v.literal("lens"),
       v.literal("hook"),
       v.literal("preference"),
-      v.literal("setting")
+      v.literal("setting"),
     ),
 
     // Change details
-    fieldChanged: v.string(),                  // Which field was changed
-    previousValue: v.any(),                    // Previous value
-    newValue: v.any(),                         // New value
+    fieldChanged: v.string(), // Which field was changed
+    previousValue: v.any(), // Previous value
+    newValue: v.any(), // New value
 
     // Change metadata
     changeType: v.union(
       v.literal("create"),
       v.literal("update"),
       v.literal("delete"),
-      v.literal("reset")
+      v.literal("reset"),
     ),
 
     // Actor
-    actor: v.optional(v.id("users")),          // Who made the change (null = system)
+    actor: v.optional(v.id("users")), // Who made the change (null = system)
     actorType: v.union(
       v.literal("user"),
       v.literal("system"),
       v.literal("admin"),
-      v.literal("automation")
+      v.literal("automation"),
     ),
 
     // Justification
-    reason: v.optional(v.string()),            // Why was this changed
+    reason: v.optional(v.string()), // Why was this changed
 
     // Impact tracking
     impactedRecommendations: v.optional(v.number()), // How many recs affected
-    impactedJobs: v.optional(v.number()),      // How many jobs affected
+    impactedJobs: v.optional(v.number()), // How many jobs affected
 
     // Metadata
     metadata: v.optional(v.any()),
@@ -11609,8 +12274,8 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   verificationSloMetrics: defineTable({
     // Time window
-    date: v.string(),                          // YYYY-MM-DD
-    verificationType: v.string(),              // "funding_amount", "company_name", "investor"
+    date: v.string(), // YYYY-MM-DD
+    verificationType: v.string(), // "funding_amount", "company_name", "investor"
 
     // Confusion matrix
     truePositives: v.number(),
@@ -11619,10 +12284,10 @@ export default defineSchema({
     falseNegatives: v.number(),
 
     // Derived metrics
-    precision: v.number(),                     // TP/(TP+FP)
-    recall: v.number(),                        // TP/(TP+FN)
-    f1Score: v.number(),                       // Harmonic mean of precision/recall
-    accuracy: v.number(),                      // (TP+TN)/(TP+TN+FP+FN)
+    precision: v.number(), // TP/(TP+FP)
+    recall: v.number(), // TP/(TP+FN)
+    f1Score: v.number(), // Harmonic mean of precision/recall
+    accuracy: v.number(), // (TP+TN)/(TP+TN+FP+FN)
 
     // Volume metrics
     totalVerifications: v.number(),
@@ -11630,9 +12295,9 @@ export default defineSchema({
     avgSourcesPerVerification: v.number(),
 
     // SLO tracking
-    sloTarget: v.number(),                     // Target precision (e.g., 0.95)
-    sloMet: v.boolean(),                       // Did we meet SLO?
-    sloMissMargin: v.optional(v.number()),     // How far from target if missed
+    sloTarget: v.number(), // Target precision (e.g., 0.95)
+    sloMet: v.boolean(), // Did we meet SLO?
+    sloMissMargin: v.optional(v.number()), // How far from target if missed
 
     // Metadata
     metadata: v.optional(v.any()),
@@ -11689,15 +12354,15 @@ export default defineSchema({
    * Compatible with Langfuse, Datadog, LangSmith, etc.
    */
   traces: defineTable({
-    traceId: v.string(),                       // UUID for entire execution
-    name: v.string(),                          // "swarm_execution", "workflow_daily_brief"
-    startTime: v.number(),                     // Unix timestamp ms
+    traceId: v.string(), // UUID for entire execution
+    name: v.string(), // "swarm_execution", "workflow_daily_brief"
+    startTime: v.number(), // Unix timestamp ms
     endTime: v.optional(v.number()),
     level: v.union(
       v.literal("DEBUG"),
       v.literal("INFO"),
       v.literal("WARNING"),
-      v.literal("ERROR")
+      v.literal("ERROR"),
     ),
 
     // Metadata
@@ -11709,17 +12374,17 @@ export default defineSchema({
     }),
 
     // Spans (individual operations within trace)
-    spans: v.array(v.any()),                   // Array of span objects with attributes
+    spans: v.array(v.any()), // Array of span objects with attributes
 
     // Aggregated metrics
-    totalCost: v.optional(v.number()),         // Total USD cost across all LLM calls
-    totalTokens: v.optional(v.number()),       // Total tokens used
+    totalCost: v.optional(v.number()), // Total USD cost across all LLM calls
+    totalTokens: v.optional(v.number()), // Total tokens used
 
     // Status
     status: v.union(
       v.literal("running"),
       v.literal("completed"),
-      v.literal("error")
+      v.literal("error"),
     ),
     error: v.optional(v.string()),
 
@@ -11742,30 +12407,30 @@ export default defineSchema({
    */
   checkpoints: defineTable({
     // Identity
-    workflowId: v.string(),                    // UUID for entire workflow (e.g., swarmId)
-    checkpointId: v.string(),                  // UUID for this checkpoint
-    checkpointNumber: v.number(),              // Sequential: 1, 2, 3...
+    workflowId: v.string(), // UUID for entire workflow (e.g., swarmId)
+    checkpointId: v.string(), // UUID for this checkpoint
+    checkpointNumber: v.number(), // Sequential: 1, 2, 3...
     parentCheckpointId: v.optional(v.string()), // For branching (rare)
 
     // Workflow metadata
-    workflowType: v.string(),                  // "swarm", "dcf_analysis", "research"
-    workflowName: v.string(),                  // Human-readable name
+    workflowType: v.string(), // "swarm", "dcf_analysis", "research"
+    workflowName: v.string(), // Human-readable name
     userId: v.optional(v.string()),
     sessionId: v.optional(v.string()),
 
     // Current state
-    currentStep: v.string(),                   // "gathering", "synthesis", "approval_pending"
+    currentStep: v.string(), // "gathering", "synthesis", "approval_pending"
     status: v.union(
       v.literal("active"),
       v.literal("paused"),
       v.literal("completed"),
       v.literal("error"),
-      v.literal("waiting_approval")
+      v.literal("waiting_approval"),
     ),
-    progress: v.number(),                      // 0-100%
+    progress: v.number(), // 0-100%
 
     // Workflow state (varies by type)
-    state: v.any(),                            // Flexible state object
+    state: v.any(), // Flexible state object
 
     // Timing
     createdAt: v.number(),
@@ -11788,9 +12453,9 @@ export default defineSchema({
    * Use cases: Daily briefs, scheduled content, background reports.
    */
   batchJobs: defineTable({
-    batchId: v.string(),                       // Our internal ID
+    batchId: v.string(), // Our internal ID
     provider: v.union(v.literal("anthropic"), v.literal("openai")),
-    providerBatchId: v.string(),               // Provider's batch ID
+    providerBatchId: v.string(), // Provider's batch ID
 
     // Status
     status: v.union(
@@ -11798,22 +12463,22 @@ export default defineSchema({
       v.literal("processing"),
       v.literal("completed"),
       v.literal("failed"),
-      v.literal("cancelled")
+      v.literal("cancelled"),
     ),
 
     // Progress
-    requestCount: v.number(),                  // Total requests in batch
-    completedCount: v.number(),                // Completed so far
-    failedCount: v.number(),                   // Failed so far
+    requestCount: v.number(), // Total requests in batch
+    completedCount: v.number(), // Completed so far
+    failedCount: v.number(), // Failed so far
 
     // Timing
     createdAt: v.number(),
     startedAt: v.optional(v.number()),
     completedAt: v.optional(v.number()),
-    expiresAt: v.optional(v.number()),         // 24hrs from creation
+    expiresAt: v.optional(v.number()), // 24hrs from creation
 
     // Results
-    results: v.optional(v.array(v.any())),     // Completed results
+    results: v.optional(v.array(v.any())), // Completed results
     error: v.optional(v.string()),
   })
     .index("by_batch_id", ["batchId"])
@@ -11830,28 +12495,28 @@ export default defineSchema({
    */
   industryUpdates: defineTable({
     // Source
-    provider: v.string(),                          // "anthropic", "openai", "google", "langchain", "vercel", "xai"
-    providerName: v.string(),                      // "Anthropic", "OpenAI", "xAI", etc.
-    url: v.string(),                               // Source URL
+    provider: v.string(), // "anthropic", "openai", "google", "langchain", "vercel", "xai"
+    providerName: v.string(), // "Anthropic", "OpenAI", "xAI", etc.
+    url: v.string(), // Source URL
 
     // Content
-    title: v.string(),                             // Update title/headline
-    summary: v.string(),                           // 2-3 sentence summary
-    relevance: v.number(),                         // Relevance score (0-100)
-    actionableInsights: v.array(v.string()),       // Key takeaways
+    title: v.string(), // Update title/headline
+    summary: v.string(), // 2-3 sentence summary
+    relevance: v.number(), // Relevance score (0-100)
+    actionableInsights: v.array(v.string()), // Key takeaways
     implementationSuggestions: v.array(v.string()), // How to integrate
 
     // Status tracking
     status: v.union(
       v.literal("new"),
       v.literal("reviewed"),
-      v.literal("implemented")
+      v.literal("implemented"),
     ),
 
     // Timestamps
-    scannedAt: v.number(),                         // When discovered
-    reviewedAt: v.optional(v.number()),           // When reviewed by team
-    implementedAt: v.optional(v.number()),        // When integrated
+    scannedAt: v.number(), // When discovered
+    reviewedAt: v.optional(v.number()), // When reviewed by team
+    implementedAt: v.optional(v.number()), // When integrated
   })
     .index("by_status", ["status"])
     .index("by_scanned_at", ["scannedAt"])
@@ -11868,21 +12533,25 @@ export default defineSchema({
    */
   forYouFeedSnapshots: defineTable({
     userId: v.id("users"),
-    items: v.array(v.any()),                       // Ranked feed items
-    dateGroups: v.optional(v.array(v.object({     // Items grouped by date for UI
-      dateString: v.string(),                      // YYYY-MM-DD
-      displayLabel: v.string(),                    // "Today", "Yesterday", "Jan 20"
-      items: v.array(v.any()),                     // Items for this date
-    }))),
+    items: v.array(v.any()), // Ranked feed items
+    dateGroups: v.optional(
+      v.array(
+        v.object({
+          // Items grouped by date for UI
+          dateString: v.string(), // YYYY-MM-DD
+          displayLabel: v.string(), // "Today", "Yesterday", "Jan 20"
+          items: v.array(v.any()), // Items for this date
+        }),
+      ),
+    ),
     mixRatio: v.object({
-      inNetwork: v.number(),                       // 50% from people you follow
-      outOfNetwork: v.number(),                    // 40% discovery
-      trending: v.number(),                        // 10% trending
+      inNetwork: v.number(), // 50% from people you follow
+      outOfNetwork: v.number(), // 40% discovery
+      trending: v.number(), // 10% trending
     }),
-    totalCandidates: v.number(),                   // Total candidates evaluated
-    generatedAt: v.number(),                       // When generated
-  })
-    .index("by_user", ["userId", "generatedAt"]),
+    totalCandidates: v.number(), // Total candidates evaluated
+    generatedAt: v.number(), // When generated
+  }).index("by_user", ["userId", "generatedAt"]),
 
   /**
    * Feed Engagement Events - Multi-action tracking for ranking improvement
@@ -11890,12 +12559,12 @@ export default defineSchema({
    */
   feedEngagements: defineTable({
     userId: v.id("users"),
-    itemId: v.string(),                            // Item that was engaged with
+    itemId: v.string(), // Item that was engaged with
     action: v.union(
       v.literal("view"),
       v.literal("click"),
       v.literal("save"),
-      v.literal("share")
+      v.literal("share"),
     ),
     timestamp: v.number(),
   })
@@ -11909,10 +12578,10 @@ export default defineSchema({
   documentRecommendations: defineTable({
     userId: v.id("users"),
     documentId: v.id("documents"),
-    phoenixScore: v.number(),                      // 0-100 relevance score
-    relevanceReason: v.string(),                   // Why recommended
+    phoenixScore: v.number(), // 0-100 relevance score
+    relevanceReason: v.string(), // Why recommended
     engagementPrediction: v.object({
-      view: v.number(),                            // 0-1 probability
+      view: v.number(), // 0-1 probability
       click: v.number(),
       save: v.number(),
       share: v.number(),
@@ -11920,7 +12589,7 @@ export default defineSchema({
     source: v.union(
       v.literal("in_network"),
       v.literal("out_of_network"),
-      v.literal("trending")
+      v.literal("trending"),
     ),
     generatedAt: v.number(),
   })
@@ -11931,14 +12600,14 @@ export default defineSchema({
    * Agent Marketplace Rankings - Ranked agent discovery
    */
   agentRankings: defineTable({
-    agentType: v.string(),                         // Agent type/category
-    agentId: v.string(),                           // Agent identifier
-    phoenixScore: v.number(),                      // 0-100 ranking score
-    usageCount: v.number(),                        // Total uses
-    successRate: v.number(),                       // 0-1 success rate
-    avgLatencyMs: v.number(),                      // Performance metric
+    agentType: v.string(), // Agent type/category
+    agentId: v.string(), // Agent identifier
+    phoenixScore: v.number(), // 0-100 ranking score
+    usageCount: v.number(), // Total uses
+    successRate: v.number(), // 0-1 success rate
+    avgLatencyMs: v.number(), // Performance metric
     multiActionPrediction: v.object({
-      run: v.number(),                             // 0-1 probability
+      run: v.number(), // 0-1 probability
       fork: v.number(),
       like: v.number(),
       share: v.number(),
@@ -11952,13 +12621,13 @@ export default defineSchema({
    * GitHub Repository Discovery - Trending repo analysis
    */
   githubRepositories: defineTable({
-    fullName: v.string(),                          // owner/repo
+    fullName: v.string(), // owner/repo
     name: v.string(),
     description: v.string(),
     language: v.string(),
     stars: v.number(),
-    starGrowth7d: v.number(),                      // Stars gained in 7 days
-    phoenixScore: v.number(),                      // 0-100 relevance
+    starGrowth7d: v.number(), // Stars gained in 7 days
+    phoenixScore: v.number(), // 0-100 relevance
     relevanceReason: v.string(),
     topics: v.array(v.string()),
     url: v.string(),
@@ -11982,7 +12651,7 @@ export default defineSchema({
       v.literal("pending"),
       v.literal("approved"),
       v.literal("implemented"),
-      v.literal("rejected")
+      v.literal("rejected"),
     ),
     createdAt: v.number(),
     approvedAt: v.optional(v.number()),
@@ -12011,7 +12680,7 @@ export default defineSchema({
       v.literal("escalating"),
       v.literal("climax"),
       v.literal("resolution"),
-      v.literal("dormant")
+      v.literal("dormant"),
     ),
     firstEventAt: v.number(),
     latestEventAt: v.number(),
@@ -12047,19 +12716,21 @@ export default defineSchema({
       v.literal("evidence_addition"),
       v.literal("counterpoint"),
       v.literal("question"),
-      v.literal("correction")
+      v.literal("correction"),
     ),
     title: v.optional(v.string()),
     content: v.string(),
     changeSummary: v.optional(v.array(v.string())),
-    citations: v.array(v.object({
-      citationKey: v.string(),
-      artifactId: v.id("sourceArtifacts"),
-      chunkId: v.optional(v.id("artifactChunks")),
-      quote: v.optional(v.string()),
-      pageIndex: v.optional(v.number()),
-      publishedAt: v.optional(v.number()),
-    })),
+    citations: v.array(
+      v.object({
+        citationKey: v.string(),
+        artifactId: v.id("sourceArtifacts"),
+        chunkId: v.optional(v.id("artifactChunks")),
+        quote: v.optional(v.string()),
+        pageIndex: v.optional(v.number()),
+        publishedAt: v.optional(v.number()),
+      }),
+    ),
     supersedes: v.optional(v.id("narrativePosts")),
     supersededBy: v.optional(v.id("narrativePosts")),
     authorType: v.union(v.literal("agent"), v.literal("human")),
@@ -12088,37 +12759,45 @@ export default defineSchema({
     postId: v.id("narrativePosts"),
     parentReplyId: v.optional(v.id("narrativeReplies")),
     replyType: v.union(
-      v.literal("evidence"),        // New source or counterpoint
-      v.literal("question"),        // Clarifying question
-      v.literal("correction"),      // Error fix
-      v.literal("support"),         // Endorsement
-      v.literal("challenge")        // Dispute
+      v.literal("evidence"), // New source or counterpoint
+      v.literal("question"), // Clarifying question
+      v.literal("correction"), // Error fix
+      v.literal("support"), // Endorsement
+      v.literal("challenge"), // Dispute
     ),
     content: v.string(),
     // Evidence linking
     evidenceArtifactIds: v.optional(v.array(v.id("sourceArtifacts"))),
     citationIds: v.optional(v.array(v.string())),
     // Source tracking (for harvested comments)
-    sourceType: v.optional(v.union(
-      v.literal("internal"),        // Created in app
-      v.literal("hackernews"),      // Harvested from HN
-      v.literal("reddit"),          // Harvested from Reddit
-      v.literal("twitter"),         // Harvested from X/Twitter
-      v.literal("other")            // Other external source
-    )),
+    sourceType: v.optional(
+      v.union(
+        v.literal("internal"), // Created in app
+        v.literal("hackernews"), // Harvested from HN
+        v.literal("reddit"), // Harvested from Reddit
+        v.literal("twitter"), // Harvested from X/Twitter
+        v.literal("other"), // Other external source
+      ),
+    ),
     sourceUrl: v.optional(v.string()),
     sourceAuthor: v.optional(v.string()),
     sourceTimestamp: v.optional(v.number()),
     // Author info
-    authorType: v.union(v.literal("agent"), v.literal("human"), v.literal("harvested")),
+    authorType: v.union(
+      v.literal("agent"),
+      v.literal("human"),
+      v.literal("harvested"),
+    ),
     authorId: v.string(),
     // Quality signals
-    sentiment: v.optional(v.union(
-      v.literal("positive"),
-      v.literal("negative"),
-      v.literal("neutral"),
-      v.literal("mixed")
-    )),
+    sentiment: v.optional(
+      v.union(
+        v.literal("positive"),
+        v.literal("negative"),
+        v.literal("neutral"),
+        v.literal("mixed"),
+      ),
+    ),
     relevanceScore: v.optional(v.number()),
     isHighSignal: v.boolean(),
     // Moderation
@@ -12148,7 +12827,7 @@ export default defineSchema({
       v.literal("minor"),
       v.literal("moderate"),
       v.literal("major"),
-      v.literal("plot_twist")
+      v.literal("plot_twist"),
     ),
     occurredAt: v.number(),
     discoveredAt: v.number(),
@@ -12166,31 +12845,41 @@ export default defineSchema({
     supersedesEventId: v.optional(v.id("narrativeEvents")),
     changeSummary: v.optional(v.string()),
     // Claim structure (Phase 6, extended Phase 7)
-    claimSet: v.optional(v.array(v.object({
-      claim: v.string(),
-      kind: v.optional(v.union(
-        v.literal("verifiable"),
-        v.literal("interpretation"),
-        v.literal("prediction")
-      )),
-      confidence: v.number(),
-      uncertainty: v.optional(v.number()),
-      evidenceArtifactIds: v.array(v.string()),
-      // Phase 7: Narrative manipulation risk label
-      speculativeRisk: v.optional(v.union(
-        v.literal("grounded"),      // tier1/2 sources directly support
-        v.literal("mixed"),         // partly supported, partly interpretive
-        v.literal("speculative")    // mostly interpretive, missing direct evidence
-      )),
-      // Phase 7: Entailment verdict â€” does evidence support the claim?
-      entailmentVerdict: v.optional(v.union(
-        v.literal("entailed"),      // evidence directly supports
-        v.literal("neutral"),       // evidence neither supports nor contradicts
-        v.literal("contradicted")   // evidence contradicts
-      )),
-      // Phase 7: Link claim to a structured hypothesis
-      hypothesisId: v.optional(v.string()),
-    }))),
+    claimSet: v.optional(
+      v.array(
+        v.object({
+          claim: v.string(),
+          kind: v.optional(
+            v.union(
+              v.literal("verifiable"),
+              v.literal("interpretation"),
+              v.literal("prediction"),
+            ),
+          ),
+          confidence: v.number(),
+          uncertainty: v.optional(v.number()),
+          evidenceArtifactIds: v.array(v.string()),
+          // Phase 7: Narrative manipulation risk label
+          speculativeRisk: v.optional(
+            v.union(
+              v.literal("grounded"), // tier1/2 sources directly support
+              v.literal("mixed"), // partly supported, partly interpretive
+              v.literal("speculative"), // mostly interpretive, missing direct evidence
+            ),
+          ),
+          // Phase 7: Entailment verdict â€” does evidence support the claim?
+          entailmentVerdict: v.optional(
+            v.union(
+              v.literal("entailed"), // evidence directly supports
+              v.literal("neutral"), // evidence neither supports nor contradicts
+              v.literal("contradicted"), // evidence contradicts
+            ),
+          ),
+          // Phase 7: Link claim to a structured hypothesis
+          hypothesisId: v.optional(v.string()),
+        }),
+      ),
+    ),
     // Agent metadata
     discoveredByAgent: v.string(),
     agentConfidence: v.number(),
@@ -12225,10 +12914,12 @@ export default defineSchema({
     publishedAt: v.optional(v.number()),
     fetchedAt: v.number(),
     contentHash: v.string(),
-    extractedQuotes: v.array(v.object({
-      text: v.string(),
-      context: v.optional(v.string()),
-    })),
+    extractedQuotes: v.array(
+      v.object({
+        text: v.string(),
+        context: v.optional(v.string()),
+      }),
+    ),
     entities: v.array(v.string()),
     topics: v.array(v.string()),
     credibilityTier: v.string(),
@@ -12255,7 +12946,7 @@ export default defineSchema({
       v.literal("web_news"),
       v.literal("historical"),
       v.literal("entity_context"),
-      v.literal("verification")
+      v.literal("verification"),
     ),
     resultCount: v.number(),
     resultUrls: v.array(v.string()),
@@ -12290,8 +12981,8 @@ export default defineSchema({
     validFrom: v.number(),
     validTo: v.optional(v.number()),
     // Transaction time: when we learned/stored it (bi-temporal)
-    observedAt: v.optional(v.number()),   // When agent retrieved evidence
-    recordedAt: v.optional(v.number()),   // When DB committed
+    observedAt: v.optional(v.number()), // When agent retrieved evidence
+    recordedAt: v.optional(v.number()), // When DB committed
     confidence: v.number(),
     supersedes: v.optional(v.string()),
     supersededBy: v.optional(v.string()),
@@ -12312,14 +13003,14 @@ export default defineSchema({
       v.literal("post"),
       v.literal("event"),
       v.literal("fact"),
-      v.literal("claim")
+      v.literal("claim"),
     ),
     targetId: v.string(),
     disputeType: v.union(
       v.literal("factual_error"),
       v.literal("outdated"),
       v.literal("missing_context"),
-      v.literal("alternative_interpretation")
+      v.literal("alternative_interpretation"),
     ),
     originalClaim: v.string(),
     challengeClaim: v.string(),
@@ -12329,7 +13020,7 @@ export default defineSchema({
       v.literal("under_review"),
       v.literal("resolved_original"),
       v.literal("resolved_challenge"),
-      v.literal("merged")
+      v.literal("merged"),
     ),
     resolution: v.optional(v.string()),
     resolvedBy: v.optional(v.string()),
@@ -12354,7 +13045,7 @@ export default defineSchema({
       v.literal("causal"),
       v.literal("temporal"),
       v.literal("entity_overlap"),
-      v.literal("topic_similarity")
+      v.literal("topic_similarity"),
     ),
     strength: v.number(),
     description: v.string(),
@@ -12366,7 +13057,7 @@ export default defineSchema({
       v.literal("explicit_reference"),
       v.literal("time_proximity"),
       v.literal("topic_similarity"),
-      v.literal("llm_inference")
+      v.literal("llm_inference"),
     ),
     // Evidence binding (Phase 6)
     evidenceEventIds: v.array(v.id("narrativeEvents")),
@@ -12376,7 +13067,7 @@ export default defineSchema({
       v.literal("auto_approved"),
       v.literal("needs_review"),
       v.literal("human_verified"),
-      v.literal("human_rejected")
+      v.literal("human_rejected"),
     ),
     reviewedBy: v.optional(v.string()),
     reviewedAt: v.optional(v.number()),
@@ -12402,13 +13093,13 @@ export default defineSchema({
     policyType: v.union(
       v.literal("platform_default"),
       v.literal("source_specific"),
-      v.literal("manual_override")
+      v.literal("manual_override"),
     ),
     storageMode: v.union(
       v.literal("full_text"),
       v.literal("excerpt_only"),
       v.literal("hash_metadata"),
-      v.literal("link_only")
+      v.literal("link_only"),
     ),
     maxExcerptChars: v.optional(v.number()),
     storageTTLDays: v.optional(v.number()),
@@ -12416,13 +13107,13 @@ export default defineSchema({
       v.literal("direct_quote"),
       v.literal("paraphrase"),
       v.literal("summary_only"),
-      v.literal("link_only")
+      v.literal("link_only"),
     ),
     aiUsageMode: v.union(
       v.literal("full"),
       v.literal("inference_only"),
       v.literal("citation_only"),
-      v.literal("prohibited")
+      v.literal("prohibited"),
     ),
     attributionRequired: v.boolean(),
     attributionTemplate: v.optional(v.string()),
@@ -12443,7 +13134,7 @@ export default defineSchema({
       v.literal("fact_claim"),
       v.literal("inference"),
       v.literal("sentiment"),
-      v.literal("meta")
+      v.literal("meta"),
     ),
     confidence: v.number(),
     isVerified: v.boolean(),
@@ -12451,16 +13142,20 @@ export default defineSchema({
     linkedArtifactIds: v.optional(v.array(v.id("sourceArtifacts"))),
     verificationNote: v.optional(v.string()),
     // Phase 7: Narrative manipulation risk + entailment
-    speculativeRisk: v.optional(v.union(
-      v.literal("grounded"),
-      v.literal("mixed"),
-      v.literal("speculative")
-    )),
-    entailmentVerdict: v.optional(v.union(
-      v.literal("entailed"),
-      v.literal("neutral"),
-      v.literal("contradicted")
-    )),
+    speculativeRisk: v.optional(
+      v.union(
+        v.literal("grounded"),
+        v.literal("mixed"),
+        v.literal("speculative"),
+      ),
+    ),
+    entailmentVerdict: v.optional(
+      v.union(
+        v.literal("entailed"),
+        v.literal("neutral"),
+        v.literal("contradicted"),
+      ),
+    ),
     hypothesisId: v.optional(v.string()),
     classifiedAt: v.number(),
     classifiedBy: v.string(),
@@ -12480,7 +13175,7 @@ export default defineSchema({
       v.literal("canonical"),
       v.literal("contested"),
       v.literal("superseded"),
-      v.literal("retracted")
+      v.literal("retracted"),
     ),
     showInDefault: v.boolean(),
     requiresContext: v.boolean(),
@@ -12505,7 +13200,7 @@ export default defineSchema({
       v.literal("established"),
       v.literal("new"),
       v.literal("quarantined"),
-      v.literal("banned")
+      v.literal("banned"),
     ),
     trustScore: v.number(),
     totalContributions: v.number(),
@@ -12527,7 +13222,7 @@ export default defineSchema({
       v.literal("post"),
       v.literal("event"),
       v.literal("fact"),
-      v.literal("comment")
+      v.literal("comment"),
     ),
     contentId: v.string(),
     authorId: v.string(),
@@ -12537,7 +13232,7 @@ export default defineSchema({
       v.literal("pending"),
       v.literal("approved"),
       v.literal("rejected"),
-      v.literal("expired")
+      v.literal("expired"),
     ),
     reviewedBy: v.optional(v.string()),
     reviewedAt: v.optional(v.number()),
@@ -12562,28 +13257,28 @@ export default defineSchema({
   narrativeHypotheses: defineTable({
     hypothesisId: v.string(),
     threadId: v.id("narrativeThreads"),
-    label: v.string(),                    // e.g. "H1", "H2"
-    title: v.string(),                    // e.g. "Attention displacement"
-    claimForm: v.string(),                // Testable claim statement
-    measurementApproach: v.string(),      // How to evaluate this hypothesis
+    label: v.string(), // e.g. "H1", "H2"
+    title: v.string(), // e.g. "Attention displacement"
+    claimForm: v.string(), // Testable claim statement
+    measurementApproach: v.string(), // How to evaluate this hypothesis
     // Evidence summary
     supportingEvidenceCount: v.number(),
     contradictingEvidenceCount: v.number(),
     evidenceArtifactIds: v.array(v.string()),
     // Status
     status: v.union(
-      v.literal("active"),               // Still being evaluated
-      v.literal("supported"),            // Preponderance of evidence supports
-      v.literal("weakened"),             // Evidence mostly contradicts
-      v.literal("inconclusive"),         // Not enough evidence either way
-      v.literal("retired")              // Superseded or no longer relevant
+      v.literal("active"), // Still being evaluated
+      v.literal("supported"), // Preponderance of evidence supports
+      v.literal("weakened"), // Evidence mostly contradicts
+      v.literal("inconclusive"), // Not enough evidence either way
+      v.literal("retired"), // Superseded or no longer relevant
     ),
     // Confidence and risk
-    confidence: v.number(),              // 0-1 confidence in this hypothesis
+    confidence: v.number(), // 0-1 confidence in this hypothesis
     speculativeRisk: v.union(
       v.literal("grounded"),
       v.literal("mixed"),
-      v.literal("speculative")
+      v.literal("speculative"),
     ),
     // Falsification criteria -- what would change our mind
     falsificationCriteria: v.optional(v.string()),
@@ -12611,30 +13306,30 @@ export default defineSchema({
     hypothesisId: v.optional(v.string()),
     // Signal domain
     domain: v.union(
-      v.literal("attention"),            // News/social/search volume
-      v.literal("policy"),               // EO/memo/procurement activity
-      v.literal("labor"),                // Job postings, layoffs
-      v.literal("market"),               // Insider selling, sector rotation
-      v.literal("sentiment")             // Public opinion / social mood
+      v.literal("attention"), // News/social/search volume
+      v.literal("policy"), // EO/memo/procurement activity
+      v.literal("labor"), // Job postings, layoffs
+      v.literal("market"), // Insider selling, sector rotation
+      v.literal("sentiment"), // Public opinion / social mood
     ),
     // Metric identity
-    metricName: v.string(),              // e.g. "attentionShiftDelta", "policyVelocityScore"
-    topic: v.string(),                   // What this measures, e.g. "AI layoffs", "Epstein coverage"
+    metricName: v.string(), // e.g. "attentionShiftDelta", "policyVelocityScore"
+    topic: v.string(), // What this measures, e.g. "AI layoffs", "Epstein coverage"
     // Value
     value: v.number(),
-    unit: v.optional(v.string()),        // e.g. "articles/week", "percent", "score"
+    unit: v.optional(v.string()), // e.g. "articles/week", "percent", "score"
     // Time window
     measuredAt: v.number(),
     windowStartAt: v.number(),
     windowEndAt: v.number(),
     // Source and confidence
-    sourceDescription: v.string(),       // e.g. "GDELT news volume", "Indeed Hiring Lab"
+    sourceDescription: v.string(), // e.g. "GDELT news volume", "Indeed Hiring Lab"
     sourceUrls: v.array(v.string()),
     sourceTier: v.union(
-      v.literal("tier1"),                // Primary source (SEC, Federal Register, NEJM)
-      v.literal("tier2"),                // Reputable secondary (Reuters, Bloomberg)
-      v.literal("tier3"),                // Social/aggregated (Reddit, HN mention counts)
-      v.literal("tier4")                 // Unverified / model-derived
+      v.literal("tier1"), // Primary source (SEC, Federal Register, NEJM)
+      v.literal("tier2"), // Reputable secondary (Reuters, Bloomberg)
+      v.literal("tier3"), // Social/aggregated (Reddit, HN mention counts)
+      v.literal("tier4"), // Unverified / model-derived
     ),
     confidence: v.number(),
     // Comparison baseline
@@ -12707,17 +13402,19 @@ export default defineSchema({
     budgetDailyCostUsd: v.optional(v.number()),
     maxConcurrentRuns: v.optional(v.number()),
     // Trust integration â€” links to authorTrust for reputation tracking
-    authorTrustTier: v.optional(v.union(
-      v.literal("verified"),
-      v.literal("established"),
-      v.literal("new"),
-      v.literal("quarantined"),
-      v.literal("banned")
-    )),
+    authorTrustTier: v.optional(
+      v.union(
+        v.literal("verified"),
+        v.literal("established"),
+        v.literal("new"),
+        v.literal("quarantined"),
+        v.literal("banned"),
+      ),
+    ),
     status: v.union(
       v.literal("active"),
       v.literal("paused"),
-      v.literal("retired")
+      v.literal("retired"),
     ),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -12740,15 +13437,17 @@ export default defineSchema({
     channelType: v.union(
       v.literal("team"),
       v.literal("broadcast"),
-      v.literal("alert")
+      v.literal("alert"),
     ),
     // Feed/ranking config for this channel
-    rankingWeights: v.optional(v.object({
-      recency: v.optional(v.number()),
-      evidenceCoverage: v.optional(v.number()),
-      novelty: v.optional(v.number()),
-      authorTrust: v.optional(v.number()),
-    })),
+    rankingWeights: v.optional(
+      v.object({
+        recency: v.optional(v.number()),
+        evidenceCoverage: v.optional(v.number()),
+        novelty: v.optional(v.number()),
+        authorTrust: v.optional(v.number()),
+      }),
+    ),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -12766,7 +13465,7 @@ export default defineSchema({
       v.literal("schedule"),
       v.literal("event"),
       v.literal("manual"),
-      v.literal("sweep")
+      v.literal("sweep"),
     ),
     triggerEventId: v.optional(v.string()),
     triggerOpportunityId: v.optional(v.string()),
@@ -12774,7 +13473,7 @@ export default defineSchema({
       v.literal("started"),
       v.literal("completed"),
       v.literal("failed"),
-      v.literal("skipped")
+      v.literal("skipped"),
     ),
     // Work summary
     workQueueItemsProcessed: v.optional(v.number()),
@@ -12926,30 +13625,35 @@ export default defineSchema({
     /** Ordered fallback chain: ["whatsapp", "slack", "email"] */
     preferredChannels: v.array(v.string()),
     /** Per-channel configuration */
-    channelConfigs: v.array(v.object({
-      channelId: v.string(),
-      enabled: v.boolean(),
-      /** Recipient identifier (phone, email, chat ID, session key) */
-      identifier: v.string(),
-      /** GDPR/TCPA explicit opt-in */
-      optedIn: v.boolean(),
-      /** Quiet hours start (e.g., "22:00") */
-      quietHoursStart: v.optional(v.string()),
-      /** Quiet hours end (e.g., "08:00") */
-      quietHoursEnd: v.optional(v.string()),
-      /** Max messages per day per channel */
-      maxPerDay: v.optional(v.number()),
-      /** Content types this channel receives: ["alert", "digest", "report"] */
-      contentTypes: v.optional(v.array(v.string())),
-    })),
+    channelConfigs: v.array(
+      v.object({
+        channelId: v.string(),
+        enabled: v.boolean(),
+        /** Recipient identifier (phone, email, chat ID, session key) */
+        identifier: v.string(),
+        /** GDPR/TCPA explicit opt-in */
+        optedIn: v.boolean(),
+        /** Quiet hours start (e.g., "22:00") */
+        quietHoursStart: v.optional(v.string()),
+        /** Quiet hours end (e.g., "08:00") */
+        quietHoursEnd: v.optional(v.string()),
+        /** Max messages per day per channel */
+        maxPerDay: v.optional(v.number()),
+        /** Content types this channel receives: ["alert", "digest", "report"] */
+        contentTypes: v.optional(v.array(v.string())),
+      }),
+    ),
     /** OpenClaw session keys for Gateway channels */
-    openclawSessionKeys: v.optional(v.array(v.object({
-      channelId: v.string(),
-      sessionKey: v.string(),
-    }))),
+    openclawSessionKeys: v.optional(
+      v.array(
+        v.object({
+          channelId: v.string(),
+          sessionKey: v.string(),
+        }),
+      ),
+    ),
     updatedAt: v.number(),
-  })
-    .index("by_user", ["userId"]),
+  }).index("by_user", ["userId"]),
 
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // OPERATOR PROFILES â€” User-authored agent policy (USER.md equivalent)
@@ -12970,10 +13674,12 @@ export default defineSchema({
       writingStyle: v.optional(v.string()),
     }),
 
-    goals: v.array(v.object({
-      rank: v.number(),
-      description: v.string(),
-    })),
+    goals: v.array(
+      v.object({
+        rank: v.number(),
+        description: v.string(),
+      }),
+    ),
 
     /** "assist" | "batch_autopilot" | "full_autopilot" */
     autonomyMode: v.string(),
@@ -13016,8 +13722,7 @@ export default defineSchema({
     lastSyncedToFilesystem: v.optional(v.number()),
     updatedAt: v.number(),
     createdAt: v.number(),
-  })
-    .index("by_user", ["userId"]),
+  }).index("by_user", ["userId"]),
 
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // BATCH AUTOPILOT â€” Per-user scheduled autonomy
@@ -13063,15 +13768,19 @@ export default defineSchema({
     /** Brief content for delivery */
     briefMarkdown: v.optional(v.string()),
     /** Actions planned during the run (digest-first: usually empty) */
-    plannedActions: v.optional(v.array(v.object({
-      description: v.string(),
-      /** "low" | "medium" | "high" */
-      riskTier: v.string(),
-      requiredPermission: v.string(),
-      /** "planned" | "approved" | "executed" | "skipped" */
-      status: v.string(),
-      result: v.optional(v.string()),
-    }))),
+    plannedActions: v.optional(
+      v.array(
+        v.object({
+          description: v.string(),
+          /** "low" | "medium" | "high" */
+          riskTier: v.string(),
+          requiredPermission: v.string(),
+          /** "planned" | "approved" | "executed" | "skipped" */
+          status: v.string(),
+          result: v.optional(v.string()),
+        }),
+      ),
+    ),
     /** Cost tracking */
     tokensUsed: v.number(),
     modelCallsCount: v.number(),
@@ -13239,8 +13948,7 @@ export default defineSchema({
     classification: v.optional(v.string()),
     query: v.optional(v.string()),
     timestamp: v.number(),
-  })
-    .index("by_timestamp", ["timestamp"]),
+  }).index("by_timestamp", ["timestamp"]),
 
   // ── Search Sessions (Convex-native search pipeline) ──────────────────
   searchSessions: defineTable({
@@ -13256,20 +13964,24 @@ export default defineSchema({
       v.literal("complete"),
       v.literal("error"),
     ),
-    classification: v.optional(v.object({
-      type: v.string(),
-      entity: v.optional(v.string()),
-      entities: v.optional(v.array(v.string())),
-      lens: v.string(),
-    })),
-    trace: v.array(v.object({
-      step: v.string(),
-      tool: v.optional(v.string()),
-      status: v.string(),
-      detail: v.optional(v.string()),
-      durationMs: v.optional(v.number()),
-      startedAt: v.number(),
-    })),
+    classification: v.optional(
+      v.object({
+        type: v.string(),
+        entity: v.optional(v.string()),
+        entities: v.optional(v.array(v.string())),
+        lens: v.string(),
+      }),
+    ),
+    trace: v.array(
+      v.object({
+        step: v.string(),
+        tool: v.optional(v.string()),
+        status: v.string(),
+        detail: v.optional(v.string()),
+        durationMs: v.optional(v.number()),
+        startedAt: v.number(),
+      }),
+    ),
     result: v.optional(v.any()),
     error: v.optional(v.string()),
     startedAt: v.number(),
@@ -13296,15 +14008,25 @@ export default defineSchema({
     packetType: v.optional(v.string()),
     summary: v.optional(v.string()),
     searchSessionId: v.optional(v.id("searchSessions")),
-    spans: v.array(v.object({
-      stage: v.union(v.literal("before"), v.literal("during"), v.literal("after")),
-      type: v.string(),
-      status: v.union(v.literal("ok"), v.literal("running"), v.literal("error")),
-      label: v.string(),
-      detail: v.optional(v.string()),
-      timestamp: v.string(),
-      metrics: v.optional(v.any()),
-    })),
+    spans: v.array(
+      v.object({
+        stage: v.union(
+          v.literal("before"),
+          v.literal("during"),
+          v.literal("after"),
+        ),
+        type: v.string(),
+        status: v.union(
+          v.literal("ok"),
+          v.literal("running"),
+          v.literal("error"),
+        ),
+        label: v.string(),
+        detail: v.optional(v.string()),
+        timestamp: v.string(),
+        metrics: v.optional(v.any()),
+      }),
+    ),
     toolsInvoked: v.array(v.string()),
     artifactsProduced: v.array(v.string()),
     traceStepCount: v.optional(v.number()),
@@ -13394,7 +14116,11 @@ export default defineSchema({
     .index("by_entity", ["entitySlug"])
     .index("by_entity_block", ["entitySlug", "blockType"])
     .index("by_scratchpad", ["scratchpadRunId"])
-    .index("by_entity_block_run", ["entitySlug", "blockType", "scratchpadRunId"])
+    .index("by_entity_block_run", [
+      "entitySlug",
+      "blockType",
+      "scratchpadRunId",
+    ])
     .index("by_refresh_requested", ["refreshRequestedAt"]),
 
   /* ------------------------------------------------------------------ */
@@ -13894,5 +14620,4 @@ export default defineSchema({
     .index("by_owner", ["ownerKey"])
     .index("by_owner_entity", ["ownerKey", "entitySlug"])
     .index("by_owner_run", ["ownerKey", "scratchpadRunId"]),
-
 });
