@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Star, Pencil, Folder, Info, Trash2, X } from "lucide-react";
+import { Star, Pencil, Folder, Info, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMotionConfig } from "@/lib/motion";
 
@@ -44,6 +44,7 @@ export const ThreadActionsSheet = memo(function ThreadActionsSheet({
   hasActiveSession = true,
 }: ThreadActionsSheetProps) {
   const firstItemRef = useRef<HTMLButtonElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
   const { transition } = useMotionConfig();
   const portalRoot = typeof document !== "undefined" ? document.body : null;
 
@@ -56,22 +57,22 @@ export const ThreadActionsSheet = memo(function ThreadActionsSheet({
         onClose();
       }
     };
+    const handlePointer = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (target && popoverRef.current?.contains(target)) return;
+      onClose();
+    };
     window.addEventListener("keydown", handleKey);
-    const t = window.setTimeout(() => firstItemRef.current?.focus(), 120);
+    window.addEventListener("mousedown", handlePointer);
+    window.addEventListener("touchstart", handlePointer);
+    const t = window.setTimeout(() => firstItemRef.current?.focus(), 90);
     return () => {
       window.removeEventListener("keydown", handleKey);
+      window.removeEventListener("mousedown", handlePointer);
+      window.removeEventListener("touchstart", handlePointer);
       window.clearTimeout(t);
     };
   }, [open, onClose]);
-
-  useEffect(() => {
-    if (!open || typeof document === "undefined") return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [open]);
 
   const disabledReason = hasActiveSession
     ? undefined
@@ -143,56 +144,25 @@ export const ThreadActionsSheet = memo(function ThreadActionsSheet({
     <AnimatePresence>
       {open ? (
         <motion.div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Thread actions"
-          className="fixed inset-0 z-[100] isolate flex items-end justify-center p-0 sm:p-4"
+          role="presentation"
+          className="fixed inset-0 z-[100] isolate"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={transition({ duration: 0.28, ease: [0.16, 1, 0.3, 1] })}
+          transition={transition({ duration: 0.18 })}
         >
-          <motion.button
-            type="button"
-            aria-label="Close thread actions"
-            onClick={() => {
-              haptic(6);
-              onClose();
-            }}
-            className="absolute inset-0 bg-black/44 backdrop-blur-[10px]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={transition({ duration: 0.22 })}
-          />
+          <div className="absolute inset-0" aria-hidden="true" />
           <motion.div
+            ref={popoverRef}
             role="menu"
-            className="pointer-events-auto relative isolate w-full max-w-[520px] overflow-hidden rounded-t-[30px] border border-white/[0.1] bg-[#171c23] px-3 pb-[calc(env(safe-area-inset-bottom)+108px)] pt-3 shadow-[0_-26px_72px_-26px_rgba(0,0,0,0.88)] [backface-visibility:hidden] sm:mb-0 sm:max-w-[380px] sm:rounded-[28px] sm:pb-[max(14px,env(safe-area-inset-bottom))]"
-            initial={{ y: 52, opacity: 0, scale: 0.992 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 28, opacity: 0, scale: 0.992 }}
-            transition={transition({ type: "spring", stiffness: 340, damping: 30, mass: 0.78 })}
+            aria-label="Thread actions"
+            className="pointer-events-auto absolute right-3 top-[calc(env(safe-area-inset-top)+58px)] w-[min(296px,calc(100vw-24px))] overflow-hidden rounded-[24px] border border-white/[0.12] bg-[#171c23]/[0.98] p-2 shadow-[0_28px_70px_-30px_rgba(0,0,0,0.92)] backdrop-blur-2xl"
+            initial={{ opacity: 0, y: -10, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+            transition={transition({ type: "spring", stiffness: 420, damping: 30, mass: 0.72 })}
           >
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0))]"
-            />
-            <div className="mx-auto mt-1 mb-3 h-[5px] w-[42px] rounded-full bg-white/[0.18]" aria-hidden="true" />
-            <div className="relative mb-2 flex items-center justify-between px-2">
-              <h2 className="nb-text-title text-[15px] font-semibold tracking-[-0.01em] text-gray-50">Thread actions</h2>
-              <button
-                type="button"
-                onClick={() => {
-                  haptic(6);
-                  onClose();
-                }}
-                aria-label="Close"
-                className="nb-pressable inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 hover:bg-white/[0.08] hover:text-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
-              >
-                <X className="h-4.5 w-4.5" />
-              </button>
-            </div>
-            <ul className="relative flex flex-col gap-1">
+            <ul className="flex flex-col gap-1">
               {actions.map((action, index) => {
                 const Icon = action.icon;
                 const disabled = action.disabled ?? false;
@@ -205,14 +175,14 @@ export const ThreadActionsSheet = memo(function ThreadActionsSheet({
                       onClick={action.onSelect}
                       disabled={disabled}
                       title={disabled ? action.disabledReason : undefined}
-                      className={`nb-pressable flex min-h-[56px] w-full items-center gap-3.5 rounded-[18px] px-4 py-4 text-[16px] font-semibold tracking-[-0.01em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 ${
+                      className={`nb-pressable flex min-h-[48px] w-full items-center gap-3 rounded-[16px] px-3.5 py-3 text-[15px] font-medium tracking-[-0.01em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 ${
                         action.destructive
                           ? "text-[#ff453a] hover:bg-[#ff453a]/[0.09]"
                           : "text-gray-100 hover:bg-white/[0.06]"
                       } ${disabled ? "cursor-not-allowed opacity-40 hover:bg-transparent" : ""}`}
                     >
                       <Icon
-                        className={`h-5.5 w-5.5 shrink-0 ${
+                        className={`h-4.5 w-4.5 shrink-0 ${
                           action.destructive ? "text-[#ff453a]" : "text-gray-300"
                         }`}
                       />
@@ -225,8 +195,7 @@ export const ThreadActionsSheet = memo(function ThreadActionsSheet({
           </motion.div>
         </motion.div>
       ) : null}
-    </AnimatePresence>
-    ,
+    </AnimatePresence>,
     portalRoot,
   );
 });

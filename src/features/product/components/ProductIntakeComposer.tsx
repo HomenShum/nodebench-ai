@@ -109,6 +109,9 @@ export function ProductIntakeComposer({
     if (operatorContextLabel?.trim()) return "Context";
     return lensLabel === "Founder" ? "Auto" : lensLabel;
   }, [files.length, lensLabel, operatorContextLabel]);
+  const showAccessoryPill = Boolean(
+    files.length > 0 || operatorContextLabel?.trim() || lensLabel !== "Founder",
+  );
 
   const attachmentLabel = useMemo(() => {
     if (isCaptureMode) {
@@ -459,7 +462,7 @@ export function ProductIntakeComposer({
                     {uploadingFiles ? "Uploading..." : "Attach files"}
                   </span>
                 </button>
-                {isChatVariant ? (
+                {isChatVariant && showAccessoryPill ? (
                   <div
                     aria-hidden="true"
                     className={`inline-flex items-center gap-1.5 rounded-full border px-3 text-[12px] font-medium ${

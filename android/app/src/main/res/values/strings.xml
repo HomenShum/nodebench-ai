@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NodeBench</string>
+    <string name="title_activity_main">NodeBench</string>
+    <string name="package_name">com.nodebench.app</string>
+    <string name="custom_url_scheme">com.nodebench.app</string>
+</resources>

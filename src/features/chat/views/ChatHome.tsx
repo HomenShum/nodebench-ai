@@ -1828,6 +1828,12 @@ export const ChatHome = memo(function ChatHome() {
       !showMinimalIntro &&
       !showThreadUnavailableCard,
   );
+  const hideMobileChromeForThread = Boolean(
+    conversation.activeSessionId ||
+      streaming.isStreaming ||
+      showThreadUnavailableCard ||
+      showRecoveryCard,
+  );
   const showConversationArtifactCard = Boolean(
     useMobileTranscriptShell &&
       hasRenderableThread &&
@@ -2043,6 +2049,22 @@ export const ChatHome = memo(function ChatHome() {
     () => progressItems.filter((item) => item.state === "complete").length,
     [progressItems],
   );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(
+      new CustomEvent("nodebench:chat-detail-state", {
+        detail: { hideMobileChrome: hideMobileChromeForThread },
+      }),
+    );
+    return () => {
+      window.dispatchEvent(
+        new CustomEvent("nodebench:chat-detail-state", {
+          detail: { hideMobileChrome: false },
+        }),
+      );
+    };
+  }, [hideMobileChromeForThread]);
 
   useEffect(() => {
     setDetailTab("conversation");
@@ -3527,13 +3549,13 @@ export const ChatHome = memo(function ChatHome() {
       </div>
 
         <div
-          className={`fixed inset-x-0 ${
+          className={`fixed inset-x-0 z-20 sm:sticky sm:bottom-[max(10px,env(safe-area-inset-bottom))] sm:mx-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-0 sm:backdrop-blur-none ${
             conversation.activeSessionId
-              ? "bottom-0"
-              : "bottom-[calc(44px+env(safe-area-inset-bottom))]"
-          } z-20 bg-[linear-gradient(180deg,rgba(12,15,20,0),rgba(12,15,20,0.86)_18%,rgba(12,15,20,0.96))] px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+6px)] backdrop-blur-xl sm:sticky sm:bg-transparent sm:backdrop-blur-none sm:bottom-[max(10px,env(safe-area-inset-bottom))] sm:mx-0 sm:px-0 sm:pb-0 sm:pt-0`}
+              ? "bottom-0 border-t border-white/[0.06] bg-[#0d1117]/96 px-2.5 pt-2 pb-[calc(env(safe-area-inset-bottom)+4px)] shadow-[0_-22px_52px_-32px_rgba(0,0,0,0.9)] backdrop-blur-2xl"
+              : "bottom-[calc(44px+env(safe-area-inset-bottom))] bg-[linear-gradient(180deg,rgba(12,15,20,0),rgba(12,15,20,0.86)_18%,rgba(12,15,20,0.96))] px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+6px)] backdrop-blur-xl"
+          }`}
         >
-          <div className="relative flex flex-col gap-1">
+          <div className={`relative flex flex-col ${conversation.activeSessionId ? "gap-0.5" : "gap-1"}`}>
             {(lockedClassification || inferredClassification) ? (
               <div className="hidden justify-center sm:flex">
                 <ClassificationChip

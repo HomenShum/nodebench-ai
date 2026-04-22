@@ -751,7 +751,8 @@ export function CockpitLayout({
   void refreshNonce;
 
   const chatHasSession =
-    currentView === "chat-home" && new URLSearchParams(location.search).has("session");
+    currentView === "chat-home" &&
+    (new URLSearchParams(location.search).has("session") || chatDetailChromeHidden);
 
   return (
     <div

@@ -108,12 +108,12 @@ export const StatusStrip = memo(function StatusStrip({
 
         <div className="flex min-w-0 flex-1 justify-center px-2.5">
           <div
-            className="inline-flex min-w-0 max-w-[208px] items-center gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.035] px-5 py-2.5 text-[16px] font-semibold tracking-[-0.02em] text-gray-50 shadow-[0_16px_32px_-20px_rgba(0,0,0,0.94)]"
-            aria-label={`${entityName ? entityName : "NodeBench 1.0"} · ${connectionLabel}`}
+            className="inline-flex min-w-0 max-w-[208px] items-center gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.035] px-4.5 py-2.5 text-[15px] font-semibold tracking-[-0.02em] text-gray-50 shadow-[0_16px_32px_-20px_rgba(0,0,0,0.94)]"
+            aria-label={`${headerTitle} · ${connectionLabel}`}
             title={statusLabel}
           >
-            <span className="truncate">{entityName ? entityName : "NodeBench 1.0"}</span>
-            <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+            <span className="truncate">{headerTitle}</span>
+            {showDropdownCue ? <ChevronDown className="h-3.5 w-3.5 text-gray-400" /> : null}
           </div>
         </div>
 
@@ -145,22 +145,6 @@ export const StatusStrip = memo(function StatusStrip({
               <Search className="h-4 w-4" />
             </button>
           ) : null}
-          <button
-            type="button"
-            onClick={() => {
-              if (typeof window !== "undefined") {
-                window.dispatchEvent(
-                  new CustomEvent("nodebench:chat-header-action", {
-                    detail: { action: "new-thread" },
-                  }),
-                );
-              }
-            }}
-            className="nb-pressable inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-100 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
-            aria-label="Start a new thread"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
           {chatHasSession ? (
             <button
               type="button"
