@@ -35,6 +35,7 @@ export type MainView =
   | "about"
   | "chat-home"
   | "reports-home"
+  | "report-detail"
   | "nudges-home"
   | "pulse-home"
   | "me-home"
@@ -73,7 +74,7 @@ export const CANONICAL_SURFACE_PARAM: Record<CockpitSurfaceId, string> = {
   ask: "home",
   workspace: "chat",
   packets: "reports",
-  history: "nudges",
+  history: "inbox",
   connect: "me",
   trace: "trace",
 };
@@ -86,6 +87,7 @@ const SURFACE_PARAM_ALIASES: Record<string, CockpitSurfaceId> = {
   packets: "packets",
   reports: "packets",
   history: "history",
+  inbox: "history",
   nudges: "history",
   connect: "connect",
   me: "connect",
@@ -458,6 +460,21 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
   },
   {
     // Global pulse digest — cross-entity "what changed today" inbox.
+    // Used by public report links and signed-in report focusing redirects.
+    id: "report-detail",
+    title: "Report",
+    subtitle: "Read-only report view for shared and direct links",
+    path: "/report",
+    component: lazyView(() => import("@/features/reports/views/PublicReportView")),
+    dynamic: true,
+    group: "nested",
+    navVisible: false,
+    parentId: "reports-home",
+    surfaceId: "packets",
+    commandPaletteVisible: false,
+  },
+  {
+    // Standalone report route for shared and direct-link access.
     // Pairs with per-entity /entity-pulse/:slug view. Data flows from
     // pulseReports (populated by pulseWorker, which layers on the
     // existing LinkedIn daily-brief synthesis pipeline).
@@ -473,9 +490,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
   },
   {
     id: "nudges-home",
-    title: "Nudges",
-    subtitle: "Reminders, follow-ups, and connector actions",
-    path: "/nudges",
+    title: "Inbox",
+    subtitle: "Approvals, updates, and action-required items",
+    path: "/inbox",
+    aliases: ["/nudges"],
     component: null, // Custom rendering in ActiveSurfaceHost
     group: "core",
     navVisible: false,
@@ -492,6 +510,33 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     navVisible: false,
     surfaceId: "connect",
     commandPaletteVisible: false,
+  },
+  {
+    // My Wiki landing — list view grouped by page type.
+    // See: docs/architecture/ME_PAGE_WIKI_SPEC.md §3
+    id: "me-wiki-landing",
+    title: "My Wiki",
+    subtitle: "Personal synthesis layer — regenerated from your saved reports",
+    path: "/me/wiki",
+    component: lazyView(() => import("@/features/me/components/wiki/WikiLandingRoute")),
+    group: "core",
+    navVisible: false,
+    surfaceId: "connect",
+    commandPaletteVisible: false,
+  },
+  {
+    // My Wiki page detail — three-zone layout (AI / evidence / notes).
+    // Dynamic route; matches /me/wiki/:pageType/:slug.
+    id: "me-wiki-page-detail",
+    title: "Wiki Page",
+    subtitle: "AI-maintained page derived from your source reports",
+    path: "/me/wiki/:pageType/:slug",
+    component: lazyView(() => import("@/features/me/components/wiki/WikiPageDetailRoute")),
+    group: "core",
+    navVisible: false,
+    surfaceId: "connect",
+    commandPaletteVisible: false,
+    dynamic: true,
   },
 
   // ── Conference Capture ──────────────────────────────────────────────────
@@ -601,7 +646,7 @@ export const SURFACE_TITLES: Record<CockpitSurfaceId, string> = {
   ask: "Home",
   workspace: "Chat",
   packets: "Reports",
-  history: "Nudges",
+  history: "Inbox",
   connect: "Me",
   trace: "Trace",
 };
@@ -685,6 +730,22 @@ export function buildCockpitPathForView({
     const search = query.toString();
     return search ? `${pathname}?${search}` : pathname;
   };
+
+  if (view === "report-detail") {
+    const query = new URLSearchParams();
+    if (run) query.set("run", run);
+    if (doc) query.set("doc", doc);
+    if (workspace) query.set("workspace", workspace);
+    if (panel) query.set("panel", panel);
+    if (tab) query.set("tab", tab);
+    if (extra) {
+      for (const [key, value] of Object.entries(extra)) {
+        if (value) query.set(key, value);
+      }
+    }
+    const pathname = entity ? `/report/${encodeURIComponent(entity)}` : "/report";
+    return appendQuery(pathname, query);
+  }
 
   if (view === "entity") {
     const query = new URLSearchParams();
@@ -794,8 +855,32 @@ export function resolvePathToCockpitState(rawPathname: string, rawSearch = ""): 
   const requestedSurface = parseCockpitSurfaceParam(params.get("surface"));
   const currentPath = `${rawPathname || "/"}${rawSearch || ""}`;
   const activeSurface = requestedSurface ?? null;
+  const rootPath = (rawPathname || "/") === "/";
+  const compactRootDefault =
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(max-width: 1279px)")?.matches
+      ? "workspace"
+      : "ask";
 
-  if ((rawPathname || "/") === "/" && activeSurface && activeSurface in SURFACE_DEFAULT_VIEW) {
+  if (rootPath && !activeSurface) {
+    const canonicalPath = buildCockpitPath({ surfaceId: compactRootDefault });
+    return {
+      surfaceId: compactRootDefault,
+      view: getDefaultViewForSurface(compactRootDefault),
+      entityName: null,
+      spreadsheetId: null,
+      researchTab: "overview",
+      panel: null,
+      runId: params.get("run"),
+      docId: params.get("doc"),
+      workspace: params.get("workspace"),
+      canonicalPath,
+      isLegacyRedirect: currentPath !== canonicalPath,
+      isUnknownRoute: false,
+    };
+  }
+
+  if (rootPath && activeSurface && activeSurface in SURFACE_DEFAULT_VIEW) {
     const tabParam = params.get("tab");
     const researchTab = (tabParam as ResearchTab | null) ?? "overview";
     const requestedViewParam = params.get("view");
@@ -935,6 +1020,12 @@ export function resolvePathToView(rawPathname: string): {
       researchTab: (researchTabMatch[1] as ResearchTab | undefined) ?? "overview",
       isUnknownRoute: false,
     };
+  }
+
+  if (pathname.startsWith("/report/")) {
+    const match = (rawPathname || "").match(/^\/report[\\/](.+)$/i);
+    const reportId = match ? decodeURIComponent(match[1]) : null;
+    return { view: "report-detail", entityName: reportId, spreadsheetId: null, researchTab: "overview", isUnknownRoute: false };
   }
 
   // General matching: longest path wins. Never let "/" swallow all routes.
