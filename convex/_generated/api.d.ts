@@ -913,6 +913,8 @@ import type * as domains_product_sessionArtifacts from "../domains/product/sessi
 import type * as domains_product_shares from "../domains/product/shares.js";
 import type * as domains_product_shell from "../domains/product/shell.js";
 import type * as domains_product_systemIntelligence from "../domains/product/systemIntelligence.js";
+import type * as domains_product_userWikiMaintainer from "../domains/product/userWikiMaintainer.js";
+import type * as domains_product_userWikiSchema from "../domains/product/userWikiSchema.js";
 import type * as domains_profiler_mutations from "../domains/profiler/mutations.js";
 import type * as domains_profiler_queries from "../domains/profiler/queries.js";
 import type * as domains_publishing_deliveryQueue from "../domains/publishing/deliveryQueue.js";
@@ -2307,6 +2309,8 @@ declare const fullApi: ApiFromModules<{
   "domains/product/shares": typeof domains_product_shares;
   "domains/product/shell": typeof domains_product_shell;
   "domains/product/systemIntelligence": typeof domains_product_systemIntelligence;
+  "domains/product/userWikiMaintainer": typeof domains_product_userWikiMaintainer;
+  "domains/product/userWikiSchema": typeof domains_product_userWikiSchema;
   "domains/profiler/mutations": typeof domains_profiler_mutations;
   "domains/profiler/queries": typeof domains_profiler_queries;
   "domains/publishing/deliveryQueue": typeof domains_publishing_deliveryQueue;

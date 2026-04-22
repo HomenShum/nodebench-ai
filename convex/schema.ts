@@ -239,6 +239,14 @@ import {
   productNotebookPages,
 } from "./domains/product/schema";
 
+// My Wiki — Phase 1 (personal synthesis layer). Derivative of productReports,
+// productClaims, canonicalSources. See: docs/architecture/ME_AGENT_DESIGN.md
+import {
+  userWikiPages,
+  userWikiRevisions,
+  userWikiMaintainerJobs,
+} from "./domains/product/userWikiSchema";
+
 /* ------------------------------------------------------------------ */
 /* 1.  DOCUMENTS  â€“  page/board/post level metadata                    */
 /* ------------------------------------------------------------------ */
@@ -3749,6 +3757,9 @@ export default defineSchema({
   canonicalSources,
   extractedSignals,
   crossScopeViolations,
+  userWikiPages,
+  userWikiRevisions,
+  userWikiMaintainerJobs,
   mcpToolLearning,
   mcpGuidanceExamples,
   mcpToolHistory,
