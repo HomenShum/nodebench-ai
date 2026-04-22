@@ -140,6 +140,33 @@ export function isUIFlagEnabled(flag: UIFlagKey): boolean {
   return UI_FLAGS[flag];
 }
 
+export const PRODUCT_RUNTIME_FLAGS = {
+  strict_resolution_gate_v1: true,
+  claim_ledger_v1: true,
+  truth_compiler_v1: true,
+  action_compiler_v1: true,
+  artifact_save_gate_v1: true,
+  model_route_strict_v1: true,
+} as const;
+
+export type ProductRuntimeFlagKey = keyof typeof PRODUCT_RUNTIME_FLAGS;
+
+function readBooleanEnv(name: string): boolean | undefined {
+  if (typeof process === "undefined" || !process.env) return undefined;
+  const value = process.env[name];
+  if (value === undefined) return undefined;
+  return value === "true" || value === "1";
+}
+
+export function isProductRuntimeFlagEnabled(
+  flag: ProductRuntimeFlagKey,
+): boolean {
+  const envName = `NODEBENCH_${flag.toUpperCase()}`;
+  const override = readBooleanEnv(envName);
+  if (typeof override === "boolean") return override;
+  return PRODUCT_RUNTIME_FLAGS[flag];
+}
+
 /**
  * Check if fusion search is enabled.
  * Reads from environment variable ENABLE_FUSION_SEARCH if available.
