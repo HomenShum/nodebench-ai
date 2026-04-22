@@ -18,8 +18,8 @@ export interface WorkbenchRunRow {
 function formatModel(slug: string): string {
   const modelMap: Record<string, string> = {
     "claude-sonnet-4-6": "Claude 4.6 Sonnet",
-    "claude-opus-4-6": "Claude 4.6 Opus",
-    "claude-haiku-3.5": "Haiku 3.5",
+    "claude-opus-4-7": "Claude 4.7 Opus",
+    "claude-haiku-4.5": "Haiku 4.5",
     "gemini-3-flash-preview": "Gemini 3 Flash",
     "gemini-3.1-pro-preview": "Gemini 3.1 Pro",
     "gpt-4o": "GPT-4o",

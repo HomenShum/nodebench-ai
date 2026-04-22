@@ -83,7 +83,7 @@ export class NotebookMentionNode extends TextNode {
   }
 
   updateDOM(prevNode: NotebookMentionNode, dom: HTMLElement, config: EditorConfig): boolean {
-    const updated = super.updateDOM(prevNode, dom, config);
+    const updated = super.updateDOM(prevNode as any, dom, config);
     if (
       prevNode.__mentionTarget !== this.__mentionTarget ||
       prevNode.__mentionTrigger !== this.__mentionTrigger

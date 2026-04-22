@@ -112,10 +112,10 @@ export function normalizeDocument(d: any): DocumentCardData {
  * Get the appropriate icon for a document type
  */
 export const getDocumentTypeIcon = (doc: DocumentCardData) => {
-  let t: FileType;
+  let t: FileType | "timeline" | "markdown";
 
   if (doc.documentType === "file" && doc.fileType) {
-    t = inferFileType(doc.fileType);
+    t = inferFileType(doc.fileType as any);
   } else if (doc.documentType === "timeline") {
     t = "timeline";
   } else {

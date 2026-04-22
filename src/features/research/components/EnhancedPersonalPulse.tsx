@@ -39,7 +39,7 @@ export function EnhancedPersonalPulse({
   const documents = useQuery(api.domains.documents.documents.listDocuments, { limit: 10 });
   const recommendations = useQuery(api.domains.recommendations.recommendationEngine.getActiveRecommendations, { limit: 3 });
 
-  const pendingTasks = tasks?.filter((t) => t.status === 'pending').slice(0, 5) ?? [];
+  const pendingTasks = (tasks as any[] | undefined)?.filter((t: any) => t.status === 'pending').slice(0, 5) ?? [];
   const recentDocs = documents?.slice(0, 5) ?? [];
 
   const toggleSection = (section: string) => {
@@ -76,7 +76,7 @@ export function EnhancedPersonalPulse({
         >
           {pendingTasks.length > 0 ? (
             <div className="space-y-2">
-              {pendingTasks.map((task) => (
+              {pendingTasks.map((task: any) => (
                 <button
                   key={task._id}
                   onClick={() => onTaskSelect?.(task._id)}
@@ -105,7 +105,7 @@ export function EnhancedPersonalPulse({
         >
           {recentDocs.length > 0 ? (
             <div className="space-y-2">
-              {recentDocs.map((doc) => (
+              {recentDocs.map((doc: any) => (
                 <button
                   key={doc._id}
                   onClick={() => onDocumentSelect?.(doc._id)}
@@ -134,7 +134,7 @@ export function EnhancedPersonalPulse({
         >
           {recommendations && recommendations.length > 0 ? (
             <div className="space-y-2">
-              {recommendations.map((rec) => (
+              {recommendations.map((rec: any) => (
                 <div key={rec._id} className="p-3 bg-purple-50 rounded-lg border border-purple-100">
                   <p className="text-sm text-content-secondary">{rec.message}</p>
                   <button type="button" className="mt-2 text-xs text-purple-600 font-medium hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-1 rounded">

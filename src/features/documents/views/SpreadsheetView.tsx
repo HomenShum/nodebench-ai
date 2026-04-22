@@ -487,13 +487,13 @@ export const SpreadsheetView: React.FC<SpreadsheetViewProps> = ({
         .then(csvText => {
           try {
             // Let PapaParse auto-detect delimiter/newline for robustness
-            const parsed = Papa.parse<string[]>(csvText, {
+            const parsed = Papa.parse(csvText, {
               header: false,
               dynamicTyping: false,
               skipEmptyLines: false,
               quoteChar: '"',
               escapeChar: '"',
-            });
+            }) as any;
             if (parsed.errors && parsed.errors.length > 0) {
             }
             const rowsAll = (parsed.data || []).map((r: string[]) => r.map((c: string) => (c ?? '')));

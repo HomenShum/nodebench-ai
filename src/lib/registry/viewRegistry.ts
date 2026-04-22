@@ -334,7 +334,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     title: "Entity",
     subtitle: "Compound note page — all searches, notes, and sources for one entity",
     path: "/entity",
-    component: lazyNamed(() => import("@/features/entities/views/EntityPage"), "EntityPage"),
+    component: lazyNamed(() => import("@/features/entities/views/EntityPage") as any, "EntityPage"),
     dynamic: true,
     group: "nested",
     navVisible: false,
@@ -514,7 +514,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
   {
     // My Wiki landing — list view grouped by page type.
     // See: docs/architecture/ME_PAGE_WIKI_SPEC.md §3
-    id: "me-wiki-landing",
+    id: "me-wiki-landing" as any,
     title: "My Wiki",
     subtitle: "Personal synthesis layer — regenerated from your saved reports",
     path: "/me/wiki",
@@ -527,7 +527,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
   {
     // My Wiki page detail — three-zone layout (AI / evidence / notes).
     // Dynamic route; matches /me/wiki/:pageType/:slug.
-    id: "me-wiki-page-detail",
+    id: "me-wiki-page-detail" as any,
     title: "Wiki Page",
     subtitle: "AI-maintained page derived from your source reports",
     path: "/me/wiki/:pageType/:slug",
@@ -1032,7 +1032,7 @@ export function resolvePathToView(rawPathname: string): {
   const candidates = VIEW_REGISTRY
     .filter((entry) => entry.id !== "entity" && entry.id !== "entity-pulse" && entry.id !== "research")
     .flatMap((entry) => [entry.path, ...(entry.aliases ?? [])].map((path) => ({ view: entry.id, path })))
-    .sort((a, b) => b.path.length - a.path.length);
+    .sort((a: { path: string }, b: { path: string }) => b.path.length - a.path.length);
 
   for (const candidate of candidates) {
     if (candidate.path === "/") {

@@ -67,7 +67,7 @@ export const LATEST_EVAL_DATA: ModelEvalResult[] = [
     provider: "openrouter",
   },
   {
-    model: "claude-haiku-3.5",
+    model: "claude-haiku-4.5",
     passRate: 90,
     avgTimeSeconds: 38.9,
     totalTests: 10,

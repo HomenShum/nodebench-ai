@@ -310,7 +310,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
 
     fetchInsightsRef
       .current({ entityName, entityType })
-      .then((result) => {
+      .then((result: any) => {
         const hasLiveData =
           !!result &&
           (typeof result.summary === "string" ||
@@ -326,7 +326,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
         }
         setError("No entity data available.");
       })
-      .catch((err) => {
+      .catch((err: any) => {
         if (fallbackMock) {
           setInsight(fallbackMock);
           return;
@@ -398,7 +398,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                 setIsLoading(true);
                 fetchInsightsRef
                   .current({ entityName, entityType, forceRefresh: true })
-                  .then((result) => {
+                  .then((result: any) => {
                     const hasLiveData =
                       !!result &&
                       (typeof result.summary === "string" ||
@@ -416,7 +416,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                     }
                     setError("No entity data available.");
                   })
-                  .catch((err) => {
+                  .catch((err: any) => {
                     if (fallbackMock) {
                       setInsight(fallbackMock);
                       setError(null);
@@ -890,7 +890,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
               openWithContext({
                 contextTitle: `Entity brief: ${entityName}`,
                 initialMessage: `Provide a decision brief on ${entityName}. Include catalysts, risks, and next actions.`,
-                contextWebUrls: (sources || []).map((s) => s.url).filter(Boolean),
+                contextWebUrls: (sources || []).map((s) => s.url).filter((u): u is string => Boolean(u)),
               });
             }}
             className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-white bg-content hover:bg-black transition-colors"

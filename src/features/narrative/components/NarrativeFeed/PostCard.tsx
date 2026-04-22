@@ -78,6 +78,7 @@ export interface PostData {
   requiresAdjudication: boolean;
   replyCount: number;
   createdAt: number;
+  status?: string;
 }
 
 interface PostCardProps {

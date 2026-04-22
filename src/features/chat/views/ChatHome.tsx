@@ -8,7 +8,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "convex/react";
-import { Check, ChevronDown, ChevronRight, ChevronUp, Circle, Clock3, FileText, Link2, MessageSquareText, Plus, Search, Sparkles } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, ChevronUp, Circle, Clock3, FileText, Link2, Loader2, MessageSquareText, Plus, Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import { staggerDelay } from "@/lib/ui/stagger";
@@ -442,7 +442,7 @@ function progressStateClasses(state: "complete" | "active" | "pending") {
   if (state === "active") {
     return "text-gray-100";
   }
-  return "text-gray-400";
+  return "text-gray-300";
 }
 
 export type ConversationProgressItem = {
@@ -464,7 +464,7 @@ function progressChildToneClasses(tone: "complete" | "active" | "pending" = "pen
   if (tone === "active") {
     return "bg-[#171d25] text-gray-100";
   }
-  return "bg-white/[0.03] text-gray-400";
+  return "bg-white/[0.04] text-gray-300";
 }
 
 function shouldShowProgressChildren(item: ConversationProgressItem, expandedItemId: string | null) {
@@ -499,6 +499,12 @@ export function ConversationProgressCard({
       null,
     [progressItems],
   );
+  const progressHeadline = useMemo(() => {
+    if (collapsedSummaryItem?.label) return collapsedSummaryItem.label;
+    if (completedProgressCount === progressItems.length && !isStreaming) return "Report ready";
+    return "Working through the brief";
+  }, [collapsedSummaryItem?.label, completedProgressCount, isStreaming, progressItems.length]);
+  const progressEyebrow = completedProgressCount === progressItems.length && !isStreaming ? "Ready" : "Task progress";
 
   useEffect(() => {
     if (!expandedItemId) return;
@@ -539,20 +545,21 @@ export function ConversationProgressCard({
           {completedProgressCount === progressItems.length && !isStreaming ? (
             <Check className="h-3.5 w-3.5" />
           ) : isStreaming ? (
-            <Circle className="h-2.5 w-2.5 fill-current" />
+            <Loader2 className="h-3.5 w-3.5 motion-safe:animate-spin" />
           ) : (
             <Clock3 className="h-3.5 w-3.5" />
           )}
         </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[14px] font-semibold tracking-[0.01em] text-white">Task Progress</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-300">{progressEyebrow}</div>
+            <div className="pt-0.5 text-[13px] font-medium tracking-[0.01em] text-white">{progressHeadline}</div>
             {collapsed && collapsedSummaryItem ? (
               <div className="truncate pt-0.5 text-[11px] leading-4 text-gray-300">
-                {collapsedSummaryItem.label}
+                {collapsedSummaryItem.detail}
               </div>
             ) : null}
           </div>
-          <div className="ml-auto rounded-full border border-white/[0.06] bg-white/[0.03] px-2 py-0.5 text-[10px] font-medium tracking-[0.08em] text-gray-300">
+          <div className="ml-auto rounded-full border border-white/[0.06] bg-white/[0.03] px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.12em] text-gray-300">
             {completedProgressCount}/{progressItems.length}
           </div>
         <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.02] text-gray-400">
@@ -597,7 +604,7 @@ export function ConversationProgressCard({
                   {item.state === "complete" ? (
                     <Check className="h-3.5 w-3.5" />
                   ) : item.state === "active" ? (
-                    <Circle className="h-2.5 w-2.5 fill-current" />
+                    <Loader2 className="h-3.5 w-3.5 motion-safe:animate-spin" />
                   ) : (
                     <Clock3 className="h-3.5 w-3.5" />
                   )}
@@ -605,7 +612,7 @@ export function ConversationProgressCard({
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium leading-[1.1rem] text-white">{item.label}</p>
                   {item.detail ? (
-                    <p className="mt-0.5 text-[11px] leading-[1.02rem] text-gray-300">{item.detail}</p>
+                    <p className="mt-0.5 text-[11px] leading-[1.02rem] text-gray-200">{item.detail}</p>
                   ) : null}
                 </div>
                 {item.children?.length ? (
@@ -620,7 +627,7 @@ export function ConversationProgressCard({
               </button>
               {shouldShowProgressChildren(item, expandedItemId) ? (
                 <div className="space-y-1 pl-6 pr-0.5 pb-0.25 pt-1.25">
-                  {item.children.map((child) => (
+                  {(item.children ?? []).map((child) => (
                     <div
                       key={child.id}
                       className={`flex items-center gap-1.5 rounded-[12px] px-2 py-1 text-[10px] leading-[0.92rem] ${progressChildToneClasses(child.tone)}`}
@@ -638,7 +645,7 @@ export function ConversationProgressCard({
                         {child.tone === "complete" ? (
                           <Check className="h-3 w-3" />
                         ) : child.tone === "active" ? (
-                          <Circle className="h-2 w-2 fill-current" />
+                          <Loader2 className="h-3 w-3 motion-safe:animate-spin" />
                         ) : (
                           <Clock3 className="h-3 w-3" />
                         )}
@@ -836,6 +843,7 @@ export const ChatHome = memo(function ChatHome() {
   const [detailTab, setDetailTab] = useState<"conversation" | "steps" | "artifacts" | "files">("conversation");
   const detailContentRef = useRef<HTMLDivElement | null>(null);
   const threadSurfaceRef = useRef<HTMLDivElement | null>(null);
+  const desktopShelfPrimedRef = useRef(false);
   const [showFilePicker, setShowFilePicker] = useState(false);
   const [showThreadShelf, setShowThreadShelf] = useState(false);
   const [inferredClassification, setInferredClassification] = useState<PromptClassification | null>(null);
@@ -874,13 +882,13 @@ export const ChatHome = memo(function ChatHome() {
       setDraft({
         query: next.query,
         lens: next.lens,
-        files: normalizedFiles,
+        files: normalizedFiles as any,
         updatedAt,
       });
       saveProductDraft({
         query: next.query,
         lens: next.lens,
-        files: normalizedFiles,
+        files: normalizedFiles as any,
       });
     },
     [],
@@ -1314,14 +1322,14 @@ export const ChatHome = memo(function ChatHome() {
   const compiledTruthSections = useMemo(
     () =>
       normalizeCompiledTruthSections(
-        persistedReport?.compiledAnswerV2?.truthSections ?? null,
+        (persistedReport as any)?.compiledAnswerV2?.truthSections ?? null,
       ),
-    [persistedReport?.compiledAnswerV2?.truthSections],
+    [(persistedReport as any)?.compiledAnswerV2?.truthSections],
   );
   const compiledActionItems = useMemo(
     () => {
       const persisted = normalizeCompilerActions(
-        persistedReport?.compiledAnswerV2?.actions ?? null,
+        (persistedReport as any)?.compiledAnswerV2?.actions ?? null,
       );
       if (persisted.length > 0) return persisted;
       return extractCompilerActionsFromRunEvents(
@@ -1329,7 +1337,7 @@ export const ChatHome = memo(function ChatHome() {
           null,
       );
     },
-    [conversation.sessionResult?.runEvents, persistedReport?.compiledAnswerV2?.actions],
+    [conversation.sessionResult?.runEvents, (persistedReport as any)?.compiledAnswerV2?.actions],
   );
   const reportSections =
     packet
@@ -1481,7 +1489,7 @@ export const ChatHome = memo(function ChatHome() {
     [conversation.sessionMessages],
   );
   const threadTitle =
-    selectedSessionSummary?.title?.trim() ||
+    (selectedSessionSummary as any)?.title?.trim() ||
     conversation.startedQuery?.trim() ||
     input.trim() ||
     "New thread";
@@ -1572,16 +1580,16 @@ export const ChatHome = memo(function ChatHome() {
     fullReportPath &&
       (sessionArtifactState === "saved" ||
         sessionArtifactState === "published" ||
-        persistedReport?.status === "saved" ||
-        persistedReport?.status === "published"),
+        (persistedReport as any)?.status === "saved" ||
+        (persistedReport as any)?.status === "published"),
   );
   const canPinReport = Boolean(
     (conversation.savedReportId || persistedReport) &&
       !streaming.isStreaming &&
       (sessionArtifactState === "saved" ||
         sessionArtifactState === "published" ||
-        persistedReport?.status === "saved" ||
-        persistedReport?.status === "published"),
+        (persistedReport as any)?.status === "saved" ||
+        (persistedReport as any)?.status === "published"),
   );
   const statusMessage =
     streaming.error && hasArtifactFallback
@@ -1677,7 +1685,7 @@ export const ChatHome = memo(function ChatHome() {
           content: syntheticAssistantContent,
           createdAt: Date.now() + 1,
           status: streaming.isStreaming ? ("streaming" as const) : ("complete" as const),
-        });
+        } as any);
       }
       return messages;
     }
@@ -1846,7 +1854,8 @@ export const ChatHome = memo(function ChatHome() {
   );
   const collapseConversationProgress = Boolean(
     useMobileTranscriptShell &&
-      !streaming.isStreaming,
+      !streaming.isStreaming &&
+      hasSettledAnswerContent,
   );
   const progressItems = useMemo(() => {
     const routeComplete = hasRun || Boolean(routing?.routingMode) || Boolean(sessionStatus);
@@ -1882,8 +1891,8 @@ export const ChatHome = memo(function ChatHome() {
               : artifactActive
                 ? "Saving the draft artifact for reuse."
                 : canOpenFullReport
-                ? "Canonical report is ready to open."
-                  : "No saved report yet.";
+                  ? "Canonical report is ready to open."
+                  : "Draft report will land here once the first answer is ready.";
     const routeChildren = [
       routing?.routingMode
         ? {
@@ -2054,17 +2063,20 @@ export const ChatHome = memo(function ChatHome() {
     if (typeof window === "undefined") return;
     window.dispatchEvent(
       new CustomEvent("nodebench:chat-detail-state", {
-        detail: { hideMobileChrome: hideMobileChromeForThread },
+        detail: {
+          hideMobileChrome: hideMobileChromeForThread,
+          pinned: Boolean(activeSessionId && isCurrentFavorite),
+        },
       }),
     );
     return () => {
       window.dispatchEvent(
         new CustomEvent("nodebench:chat-detail-state", {
-          detail: { hideMobileChrome: false },
+          detail: { hideMobileChrome: false, pinned: false },
         }),
       );
     };
-  }, [hideMobileChromeForThread]);
+  }, [activeSessionId, hideMobileChromeForThread, isCurrentFavorite]);
 
   useEffect(() => {
     setDetailTab("conversation");
@@ -2154,6 +2166,16 @@ export const ChatHome = memo(function ChatHome() {
       setShowThreadShelf(false);
     }
   }, [sessionList.length]);
+
+  useEffect(() => {
+    if (desktopShelfPrimedRef.current) return;
+    if (typeof window === "undefined") return;
+    if (window.innerWidth < 1280) return;
+    if (conversation.activeSessionId) return;
+    if (sessionList.length === 0) return;
+    setShowThreadShelf(true);
+    desktopShelfPrimedRef.current = true;
+  }, [conversation.activeSessionId, sessionList.length]);
 
   const handleInterruptDecision = useCallback(
     async (interruptId: string, decisionType: "approve" | "reject") => {
@@ -2258,6 +2280,10 @@ export const ChatHome = memo(function ChatHome() {
         setThreadActionsOpen(true);
         return;
       }
+      if (action === "toggle-pin-thread") {
+        handleFavoriteThread();
+        return;
+      }
       if (action === "new-thread") {
         handleNewThread();
       }
@@ -2269,7 +2295,7 @@ export const ChatHome = memo(function ChatHome() {
         "nodebench:chat-header-action",
         handleHeaderAction as EventListener,
       );
-  }, [handleNewThread]);
+  }, [handleFavoriteThread, handleNewThread]);
 
   /* ---- milestone tracking ---- */
 
@@ -2413,9 +2439,9 @@ export const ChatHome = memo(function ChatHome() {
 
   return (
     <div
-      className={`mx-auto flex min-h-screen w-full max-w-[940px] flex-col gap-2 px-2.5 py-2 ${
+      className={`mx-auto flex min-h-screen w-full max-w-[1040px] flex-col gap-2 px-2.5 py-2 ${
         conversation.activeSessionId ? "pb-[8.75rem] sm:pb-32" : "pb-[10.25rem] sm:pb-40"
-      } sm:gap-3 sm:px-5 sm:py-5`}
+      } sm:gap-3 sm:px-5 sm:py-5 xl:max-w-[1120px]`}
     >
       <ProductFileAssetPicker
         open={showFilePicker}
@@ -2635,10 +2661,10 @@ export const ChatHome = memo(function ChatHome() {
                         {displayNeedsAttention ? "Needs attention" : verdictLabel(selectedSessionSummary?.verdict)}
                       </span>
                     ) : null}
-                    {!showMinimalIntro && selectedSessionSummary?.updatedAt ? (
+                    {!showMinimalIntro && (selectedSessionSummary as any)?.updatedAt ? (
                       <span className="hidden items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] text-gray-500 dark:border-white/[0.06] dark:bg-white/[0.02] dark:text-gray-500 sm:inline-flex">
                         <Clock3 className="h-3 w-3" />
-                        {formatRelativeTime(selectedSessionSummary.updatedAt)}
+                        {formatRelativeTime((selectedSessionSummary as any).updatedAt)}
                       </span>
                     ) : null}
                   </div>
@@ -2894,7 +2920,7 @@ export const ChatHome = memo(function ChatHome() {
 
             {showConversationProgress ? (
               <ConversationProgressCard
-                progressItems={progressItems}
+                progressItems={progressItems as any}
                 completedProgressCount={completedProgressCount}
                 isStreaming={streaming.isStreaming}
                 defaultCollapsed={collapseConversationProgress}
@@ -3162,7 +3188,7 @@ export const ChatHome = memo(function ChatHome() {
               className="mt-8 space-y-4 border-t border-gray-200 pt-4 dark:border-white/[0.1]"
             >
               <ConversationProgressCard
-                progressItems={progressItems}
+                progressItems={progressItems as any}
                 completedProgressCount={completedProgressCount}
                 isStreaming={streaming.isStreaming}
                 defaultCollapsed={false}
@@ -3516,12 +3542,12 @@ export const ChatHome = memo(function ChatHome() {
                               <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-500 dark:text-gray-400">
                                 {file.type ? <span className="capitalize">{file.type}</span> : null}
                                 {file.mimeType ? <span>{file.mimeType}</span> : null}
-                                {typeof file.size === "number" ? <span>{file.size} bytes</span> : null}
+                                {typeof (file as any).size === "number" ? <span>{(file as any).size} bytes</span> : null}
                               </div>
                             </div>
-                            {file.storageUrl ? (
+                            {(file as any).storageUrl ? (
                               <a
-                                href={file.storageUrl}
+                                href={(file as any).storageUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex shrink-0 items-center justify-center rounded-full border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:border-gray-400 dark:border-white/[0.12] dark:text-gray-200 dark:hover:border-white/[0.24]"
@@ -3590,7 +3616,10 @@ export const ChatHome = memo(function ChatHome() {
               captureSavePending={savingCapture}
               variant="chat"
               compact={compactComposer}
-              className="w-full max-w-none sm:mx-auto sm:max-w-[960px]"
+              onSecondaryAction={() => setShowFilePicker(true)}
+              secondaryActionLabel="Attach from Files"
+              secondaryActionAriaLabel="Reuse a file that already lives in your vault."
+              className="w-full max-w-none sm:mx-auto sm:max-w-[1040px] xl:max-w-[1120px]"
             />
           </div>
         </div>

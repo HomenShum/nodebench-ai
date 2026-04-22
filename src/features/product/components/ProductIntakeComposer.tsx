@@ -14,6 +14,9 @@ type ProductIntakeComposerProps = {
   onChange: (value: string) => void;
   onSubmit: () => void;
   onFilesSelected: (files: File[]) => Promise<void> | void;
+  onSecondaryAction?: (() => void) | null;
+  secondaryActionLabel?: string | null;
+  secondaryActionAriaLabel?: string | null;
   files: ProductDraftFile[];
   lens: LensId;
   onLensChange: (lens: LensId) => void;
@@ -44,6 +47,9 @@ export function ProductIntakeComposer({
   onChange,
   onSubmit,
   onFilesSelected,
+  onSecondaryAction = null,
+  secondaryActionLabel = null,
+  secondaryActionAriaLabel = null,
   files,
   lens,
   onLensChange,
@@ -70,7 +76,10 @@ export function ProductIntakeComposer({
 }: ProductIntakeComposerProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const attachmentMenuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const attachmentMenuRef = useRef<HTMLDivElement | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const [captureAttachmentPending, setCaptureAttachmentPending] = useState(false);
   const [voicePending, setVoicePending] = useState(false);
   const isChatVariant = variant === "chat";
@@ -98,6 +107,7 @@ export function ProductIntakeComposer({
   const voiceActive = voicePending || isRecording;
   const showChatHelperText =
     !isChatVariant || isCaptureMode || dragActive || files.length > 0 || voiceActive || captureAttachmentPending;
+  const showChatTextareaShell = isChatVariant;
   const lensLabel = useMemo(
     () => LENSES.find((option) => option.id === lens)?.label ?? "Founder",
     [lens],
@@ -112,6 +122,11 @@ export function ProductIntakeComposer({
   const showAccessoryPill = Boolean(
     files.length > 0 || operatorContextLabel?.trim() || lensLabel !== "Founder",
   );
+  const secondaryChatActionLabel = useMemo(() => {
+    const normalized = secondaryActionLabel?.trim();
+    if (normalized) return normalized;
+    return accessoryPillLabel;
+  }, [accessoryPillLabel, secondaryActionLabel]);
 
   const attachmentLabel = useMemo(() => {
     if (isCaptureMode) {
@@ -178,6 +193,20 @@ export function ProductIntakeComposer({
     }
   };
 
+  const openNativeFilePicker = () => {
+    setAttachmentMenuOpen(false);
+    fileInputRef.current?.click();
+  };
+
+  const handleAttachmentTrigger = () => {
+    if (disabled || isCaptureMode || uploadingFiles || captureAttachmentPending) return;
+    if (isChatVariant) {
+      setAttachmentMenuOpen((current) => !current);
+      return;
+    }
+    openNativeFilePicker();
+  };
+
   const handleVoiceCapture = async () => {
     if (disabled || isCaptureMode || captureAttachmentPending) return;
     if (isRecording) {
@@ -228,17 +257,6 @@ export function ProductIntakeComposer({
   };
 
   useEffect(() => {
-    if (!audioBlob) return;
-    const extension = audioBlob.type.includes("mp4") ? "m4a" : "webm";
-    const file = new File([audioBlob], `nodebench-voice-${Date.now()}.${extension}`, {
-      type: audioBlob.type || "audio/webm",
-    });
-    void attachGeneratedFile(file, "Voice memo attached").finally(() => {
-      clearRecording();
-    });
-  }, [audioBlob, clearRecording]);
-
-  useEffect(() => {
     if (!voiceError) return;
     toast.error(voiceError);
   }, [voiceError]);
@@ -273,6 +291,35 @@ export function ProductIntakeComposer({
         clearRecording();
       });
   }, [audioBlob, clearRecording, duration, onFilesSelected]);
+
+  useEffect(() => {
+    if (!attachmentMenuOpen) return;
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (attachmentMenuRef.current?.contains(target)) return;
+      if (attachmentMenuButtonRef.current?.contains(target)) return;
+      setAttachmentMenuOpen(false);
+    };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setAttachmentMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handlePointerDown, true);
+    document.addEventListener("touchstart", handlePointerDown, true);
+    window.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown, true);
+      document.removeEventListener("touchstart", handlePointerDown, true);
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [attachmentMenuOpen]);
+
+  useEffect(() => {
+    if (!isCaptureMode) return;
+    setAttachmentMenuOpen(false);
+  }, [isCaptureMode]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -378,23 +425,50 @@ export function ProductIntakeComposer({
               : "border-[var(--accent-primary)] bg-[var(--accent-primary)]/5 dark:bg-[var(--accent-primary)]/10"
               : isChatVariant
                 ? isCompactChatVariant
-                  ? "border-white/[0.08] bg-[#171c23]/98 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.9)] dark:border-white/[0.08] dark:bg-[#171c23]/98"
+                  ? "border-white/[0.12] bg-[#1a212b]/98 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.82),inset_0_1px_0_rgba(255,255,255,0.05)] dark:border-white/[0.12] dark:bg-[#1a212b]/98"
                   : "border-gray-200 bg-white dark:border-white/[0.06] dark:bg-[#11161d]"
                 : "border-gray-200 bg-white dark:border-white/[0.1] dark:bg-[#11161c]"
         }`}
       >
-        <textarea
-          ref={textareaRef}
-          id="product-intake-query"
-          name="productIntakeQuery"
-          aria-label={mode === "ask" ? "Paste notes, links, or your ask" : `Write your ${mode}`}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={effectivePlaceholder}
-          rows={isDrawerVariant ? 3 : isChatVariant ? 1 : 4}
-          disabled={disabled}
-          className={`${
+        {showChatTextareaShell ? (
+          <div
+            className={`rounded-[22px] border border-white/[0.06] bg-white/[0.05] px-1.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${
+              isCompactChatVariant ? "mb-0.5" : "mb-1"
+            }`}
+          >
+            <textarea
+              ref={textareaRef}
+              id="product-intake-query"
+              name="productIntakeQuery"
+              aria-label={mode === "ask" ? "Paste notes, links, or your ask" : `Write your ${mode}`}
+              value={value}
+              onChange={(event) => onChange(event.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={effectivePlaceholder}
+              rows={isDrawerVariant ? 3 : isChatVariant ? 1 : 4}
+              disabled={disabled}
+              className={`${
+                isCompactChatVariant ? "min-h-[24px]" : "min-h-[28px]"
+              } max-h-[320px] w-full resize-none bg-transparent text-[15px] leading-6 outline-none transition-[height] duration-fast ease-out disabled:cursor-not-allowed motion-reduce:transition-none ${
+                isCompactChatVariant
+                  ? "text-[14.5px] font-medium leading-[1.34rem]"
+                  : "text-[15px] leading-[1.45rem]"
+              } text-gray-100 placeholder:text-gray-300`}
+            />
+          </div>
+        ) : (
+          <textarea
+            ref={textareaRef}
+            id="product-intake-query"
+            name="productIntakeQuery"
+            aria-label={mode === "ask" ? "Paste notes, links, or your ask" : `Write your ${mode}`}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={effectivePlaceholder}
+            rows={isDrawerVariant ? 3 : isChatVariant ? 1 : 4}
+            disabled={disabled}
+            className={`${
               isDrawerVariant
                 ? "min-h-[72px]"
                 : isChatVariant
@@ -402,12 +476,13 @@ export function ProductIntakeComposer({
                     ? "min-h-[24px]"
                     : "min-h-[28px]"
                   : "min-h-[96px]"
-          } max-h-[320px] w-full resize-none bg-transparent text-[15px] leading-6 outline-none transition-[height] duration-fast ease-out disabled:cursor-not-allowed motion-reduce:transition-none ${
+            } max-h-[320px] w-full resize-none bg-transparent text-[15px] leading-6 outline-none transition-[height] duration-fast ease-out disabled:cursor-not-allowed motion-reduce:transition-none ${
               isChatVariant
-              ? `${isCompactChatVariant ? "text-[14.5px] leading-[1.34rem] font-medium" : "text-[15px] leading-[1.45rem]"} text-gray-900 placeholder:text-gray-500 dark:text-gray-100 dark:placeholder:text-gray-500`
-              : "text-gray-900 placeholder:text-gray-400 dark:text-gray-100 dark:placeholder:text-gray-500"
-          }`}
-        />
+                ? `${isCompactChatVariant ? "text-[14.5px] leading-[1.34rem] font-medium" : "text-[15px] leading-[1.45rem]"} text-gray-900 placeholder:text-gray-400 dark:text-gray-100 dark:placeholder:text-gray-400`
+                : "text-gray-900 placeholder:text-gray-400 dark:text-gray-100 dark:placeholder:text-gray-400"
+            }`}
+          />
+        )}
 
         <div className={`mt-0.5 flex flex-wrap items-center gap-1.5 ${
           isChatVariant
@@ -417,9 +492,9 @@ export function ProductIntakeComposer({
           <div className={`min-w-0 items-start gap-2 text-left text-xs ${
             isChatVariant
               ? showChatHelperText
-                ? "flex text-gray-500 dark:text-gray-400"
+                ? "flex text-gray-400 dark:text-gray-300"
                 : "hidden"
-              : "flex text-gray-500 dark:text-gray-400"
+              : "flex text-gray-500 dark:text-gray-300"
           }`}>
             <Sparkles className={`mt-0.5 shrink-0 text-[var(--accent-primary)] ${isChatVariant ? "h-3.5 w-3.5" : "h-4 w-4"}`} />
             <div className="min-w-0">
@@ -443,31 +518,91 @@ export function ProductIntakeComposer({
               ) : null}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center ${isChatVariant ? "gap-1.5" : "gap-2"}`}>
             {!isCaptureMode ? (
               <>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`inline-flex items-center justify-center gap-1.5 rounded-full text-xs font-medium transition-all duration-fast ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 disabled:opacity-40 motion-reduce:transform-none motion-reduce:transition-none ${
+                <div className="relative">
+                  <button
+                    ref={attachmentMenuButtonRef}
+                    type="button"
+                    onClick={handleAttachmentTrigger}
+                    className={`inline-flex items-center justify-center gap-1.5 rounded-full text-xs font-medium transition-all duration-fast ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 disabled:opacity-40 motion-reduce:transform-none motion-reduce:transition-none ${
                       isChatVariant
-                        ? `${isCompactChatVariant ? "order-1 h-10 w-10 border-0 bg-transparent" : "order-1 h-9 w-9"} text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-transparent dark:hover:text-white`
+                        ? `${isCompactChatVariant ? "order-1 h-10 w-10 border-0 bg-transparent" : "order-1 h-9 w-9 border-0 bg-transparent"} text-gray-400 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-100 dark:hover:bg-transparent dark:hover:text-white`
                         : "text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100"
                     }`}
                     disabled={disabled || uploadingFiles || captureAttachmentPending}
-                    aria-label={uploadingFiles ? "Uploading files" : "Attach files"}
+                    aria-label={uploadingFiles ? "Uploading files" : isChatVariant ? "Open attachments" : "Attach files"}
+                    aria-haspopup={isChatVariant ? "menu" : undefined}
+                    aria-expanded={isChatVariant ? attachmentMenuOpen : undefined}
                   >
                     {isChatVariant ? <Plus className="h-4.5 w-4.5" /> : <Paperclip className="h-3.5 w-3.5" />}
-                  <span className="hidden sm:inline">
-                    {uploadingFiles ? "Uploading..." : "Attach files"}
-                  </span>
-                </button>
+                    <span className={isChatVariant ? "sr-only" : "hidden whitespace-nowrap sm:inline"}>
+                      {uploadingFiles ? "Uploading..." : "Attach files"}
+                    </span>
+                  </button>
+                  {isChatVariant && attachmentMenuOpen ? (
+                    <div
+                      ref={attachmentMenuRef}
+                      role="menu"
+                      aria-label="Attachment options"
+                      className="absolute bottom-[calc(100%+10px)] left-0 z-20 min-w-[214px] overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#12171f]/96 p-2 text-left shadow-[0_24px_64px_-28px_rgba(0,0,0,0.9)] backdrop-blur-2xl"
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={openNativeFilePicker}
+                        className="flex w-full items-center gap-3 rounded-[18px] px-3.5 py-3 text-sm text-gray-100 transition hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+                      >
+                        <Paperclip className="h-4 w-4 text-gray-300" />
+                        <div className="min-w-0">
+                          <div className="font-medium">Upload files</div>
+                          <div className="text-xs text-gray-400">Add local files to this thread.</div>
+                        </div>
+                      </button>
+                      {onSecondaryAction ? (
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setAttachmentMenuOpen(false);
+                            onSecondaryAction();
+                          }}
+                          className="mt-1 flex w-full items-center gap-3 rounded-[18px] px-3.5 py-3 text-sm text-gray-100 transition hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+                        >
+                          <FileText className="h-4 w-4 text-[var(--accent-primary)]" />
+                          <div className="min-w-0">
+                            <div className="font-medium">{secondaryChatActionLabel}</div>
+                            <div className="text-xs text-gray-400">
+                              {secondaryActionAriaLabel?.trim() || "Reuse a file from your vault."}
+                            </div>
+                          </div>
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setAttachmentMenuOpen(false);
+                          void handleScreenshotCapture();
+                        }}
+                        className="mt-1 flex w-full items-center gap-3 rounded-[18px] px-3.5 py-3 text-sm text-gray-100 transition hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+                      >
+                        <Camera className="h-4 w-4 text-gray-300" />
+                        <div className="min-w-0">
+                          <div className="font-medium">Capture screenshot</div>
+                          <div className="text-xs text-gray-400">Drop a fresh screenshot straight into chat.</div>
+                        </div>
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
                 {isChatVariant && showAccessoryPill ? (
                   <div
                     aria-hidden="true"
                     className={`inline-flex items-center gap-1.5 rounded-full border px-3 text-[12px] font-medium ${
                       isCompactChatVariant
-                        ? "order-2 h-10 border-white/[0.08] bg-white/[0.04] text-gray-200 shadow-[0_10px_22px_-18px_rgba(0,0,0,0.9)]"
+                        ? "order-2 h-10 border-white/[0.1] bg-white/[0.06] text-gray-100 shadow-[0_10px_22px_-18px_rgba(0,0,0,0.9)]"
                         : "border-gray-200 bg-white text-gray-700 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-gray-200"
                     }`}
                   >
@@ -475,22 +610,18 @@ export function ProductIntakeComposer({
                     <span>{accessoryPillLabel}</span>
                   </div>
                 ) : null}
-                <button
-                  type="button"
-                  onClick={() => void handleScreenshotCapture()}
-                  className={`${
-                    isChatVariant ? "hidden sm:inline-flex order-2" : "inline-flex"
-                  } items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium transition-all duration-fast ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 disabled:opacity-40 motion-reduce:transform-none motion-reduce:transition-none ${
-                    isChatVariant
-                      ? "text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-white"
-                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100"
-                  }`}
-                  disabled={disabled || isCapturing || captureAttachmentPending}
-                  aria-label={isCapturing ? "Capturing screenshot" : "Attach screenshot"}
-                >
-                  <Camera className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{isCapturing ? "Capturing..." : "Screenshot"}</span>
-                </button>
+                {!isChatVariant ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleScreenshotCapture()}
+                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-gray-500 transition-all duration-fast ease-out hover:bg-gray-100 hover:text-gray-900 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 disabled:opacity-40 motion-reduce:transform-none motion-reduce:transition-none dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100"
+                    disabled={disabled || isCapturing || captureAttachmentPending}
+                    aria-label={isCapturing ? "Capturing screenshot" : "Attach screenshot"}
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                    <span className="hidden whitespace-nowrap sm:inline">{isCapturing ? "Capturing..." : "Screenshot"}</span>
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => void handleVoiceCapture()}
@@ -499,7 +630,7 @@ export function ProductIntakeComposer({
                     voiceActive
                       ? "bg-[var(--accent-primary)] text-white shadow-sm hover:bg-[var(--accent-primary-hover)]"
                         : isChatVariant
-                          ? `${isCompactChatVariant ? "order-3 h-10 w-10 border-0 bg-transparent" : "order-3 h-9 w-9"} text-gray-400 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-200 dark:hover:bg-transparent dark:hover:text-white`
+                          ? `${isCompactChatVariant ? "order-3 h-10 w-10 border-0 bg-transparent" : "order-3 h-9 w-9"} text-gray-300 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-100 dark:hover:bg-transparent dark:hover:text-white`
                           : "text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100"
                     }`}
                   disabled={disabled || captureAttachmentPending}
@@ -507,7 +638,7 @@ export function ProductIntakeComposer({
                   aria-pressed={voiceActive}
                 >
                   <Mic className="h-4.5 w-4.5" />
-                  <span className={`hidden ${isChatVariant ? "" : "sm:inline"}`}>
+                  <span className={isChatVariant ? "sr-only" : "hidden whitespace-nowrap sm:inline"}>
                     {isRecording ? "Stop" : voicePending ? "Starting..." : "Voice"}
                   </span>
                 </button>
@@ -536,7 +667,7 @@ export function ProductIntakeComposer({
               }`}
               aria-label={primaryLabel}
             >
-              <span className={isChatVariant ? "hidden sm:inline" : ""}>{primaryLabel}</span>
+              <span className={isChatVariant ? "hidden whitespace-nowrap sm:inline" : "whitespace-nowrap"}>{primaryLabel}</span>
               {mode === "ask" && submitPending ? (
                 <span aria-hidden="true" className="h-3.5 w-3.5 rounded-[3px] bg-current" />
               ) : mode !== "ask" && captureSavePending ? (

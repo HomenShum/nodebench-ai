@@ -81,7 +81,7 @@ export const ChartAnnotationLayer: React.FC<ChartAnnotationLayerProps> = ({
   // Filter annotations visible in current act
   const visibleAnnotations = useMemo(() => {
     if (!annotations) return [];
-    return annotations.filter((a) => a.visibleInActs.includes(currentAct));
+    return annotations.filter((a: any) => a.visibleInActs.includes(currentAct));
   }, [annotations, currentAct]);
 
   if (!visibleAnnotations.length) return null;
@@ -89,10 +89,10 @@ export const ChartAnnotationLayer: React.FC<ChartAnnotationLayerProps> = ({
   return (
     <g className="annotation-layer" aria-label="Chart annotations">
       <AnimatePresence mode="popLayout">
-        {visibleAnnotations.map((annotation) => {
+        {visibleAnnotations.map((annotation: any) => {
           const coord = getCoord(annotation.dataIndex);
-          const offset = ANNOTATION_OFFSET[annotation.position];
-          const textAnchor = TEXT_ANCHOR[annotation.position];
+          const offset = ANNOTATION_OFFSET[annotation.position as keyof typeof ANNOTATION_OFFSET];
+          const textAnchor = TEXT_ANCHOR[annotation.position as keyof typeof TEXT_ANCHOR];
 
           // Clamp position to stay within chart bounds
           const x = Math.max(20, Math.min(chartWidth - 20, coord.x + offset.dx));

@@ -18,9 +18,10 @@ describe('FastAgentPanel Message Rendering', () => {
     };
 
     // Simulate the extraction logic from fastAgentPanel.ts
+    const r1 = agentResponse as any;
     const responseText = String(
-      agentResponse.finalResponse ?? 
-      agentResponse.response ?? 
+      r1.finalResponse ??
+      r1.response ??
       ""
     );
 
@@ -64,10 +65,11 @@ describe('FastAgentPanel Message Rendering', () => {
       toolCalls: []
     };
 
+    const r2 = agentResponse as any;
     const responseText = String(
-      agentResponse.finalResponse ?? 
-      agentResponse.response ?? 
-      agentResponse.message ?? 
+      r2.finalResponse ??
+      r2.response ??
+      r2.message ??
       "No response generated"
     );
 
@@ -80,10 +82,11 @@ describe('FastAgentPanel Message Rendering', () => {
       toolCalls: []
     };
 
+    const r3 = agentResponse as any;
     const responseText = String(
-      agentResponse.finalResponse ?? 
-      agentResponse.response ?? 
-      agentResponse.message ?? 
+      r3.finalResponse ??
+      r3.response ??
+      r3.message ??
       "No response generated"
     );
 

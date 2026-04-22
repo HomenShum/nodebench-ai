@@ -96,7 +96,7 @@ function formatModelName(slug: string): string {
     "gemini-3-flash-preview": "Gemini 3 Flash",
     "gpt-5.4-mini": "GPT-5.4 Mini",
     "deepseek-v3.2": "DeepSeek V3.2",
-    "claude-haiku-3.5": "Claude Haiku 3.5",
+    "claude-haiku-4.5": "Claude Haiku 4.5",
     "minimax-m2.1": "MiniMax M2.1",
     "deepseek-r1": "DeepSeek R1",
     "qwen3-235b": "Qwen 3 235B",
@@ -340,7 +340,7 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
                 <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
                 <YAxis type="category" dataKey="model" width={100} tick={{ fontSize: 11 }} />
                 <Tooltip
-                  formatter={(value: number) => [`${value}%`, "Pass Rate"]}
+                  formatter={((value: number) => [`${value}%`, "Pass Rate"]) as any}
                   contentStyle={{ fontSize: 12 }}
                 />
                 <Bar dataKey="passRate" radius={[0, 4, 4, 0]}>
@@ -376,7 +376,7 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="model" tick={{ fontSize: 10 }} />
                 <YAxis tickFormatter={(v) => `${v}s`} tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(value: number) => [`${value.toFixed(1)}s`, "Avg Time"]} />
+                <Tooltip formatter={((value: number) => [`${value.toFixed(1)}s`, "Avg Time"]) as any} />
                 <Bar dataKey="avgTimeSeconds" fill="#6366f1" radius={[4, 4, 0, 0]}>
                   {sortedModels.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={getProviderColor(entry.provider)} />
@@ -398,7 +398,7 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
                 <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
                 <YAxis type="category" dataKey="scenario" width={200} tick={{ fontSize: 10 }} />
                 <Tooltip
-                  formatter={(value: number) => [`${value.toFixed(1)}%`, "Pass Rate"]}
+                  formatter={((value: number) => [`${value.toFixed(1)}%`, "Pass Rate"]) as any}
                   contentStyle={{ fontSize: 12 }}
                 />
                 <Bar dataKey="passRate" radius={[0, 4, 4, 0]}>
@@ -421,7 +421,7 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="model" tick={{ fontSize: 10 }} />
                 <YAxis tickFormatter={(v) => `$${v}`} tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(value: number) => [`$${value.toFixed(2)}`, ""]} />
+                <Tooltip formatter={((value: number) => [`$${value.toFixed(2)}`, ""]) as any} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="costPerMillion.input" name="Input $/1M" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="costPerMillion.output" name="Output $/1M" fill="#10b981" radius={[4, 4, 0, 0]} />

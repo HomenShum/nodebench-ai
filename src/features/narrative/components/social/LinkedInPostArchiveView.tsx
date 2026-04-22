@@ -53,7 +53,7 @@ export const LinkedInPostArchiveView: React.FC = () => {
     }
 
     return Array.from(groups.entries())
-      .sort(([a], [b]) => b.localeCompare(a))
+      .sort(([a]: [string, unknown], [b]: [string, unknown]) => b.localeCompare(a))
       .map(([date, posts]) => ({ date, posts }));
   }, [archiveData?.posts]);
 
@@ -144,7 +144,7 @@ export const LinkedInPostArchiveView: React.FC = () => {
               const count = stats
                 ? filter.key === "all"
                   ? stats.totalPosts
-                  : stats.byType.find((t) => t.postType === filter.key)?.count || 0
+                  : stats.byType.find((t: any) => t.postType === filter.key)?.count || 0
                 : 0;
 
               return (
@@ -226,7 +226,7 @@ export const LinkedInPostArchiveView: React.FC = () => {
                   {/* Posts */}
                   {!isCollapsed && (
                     <div className="space-y-3 ml-6">
-                      {posts.map((post) => (
+                      {posts.map((post: any) => (
                         <LinkedInPostCard
                           key={post._id}
                           content={post.content}

@@ -90,10 +90,10 @@ function DealListSectionInner({ className = "", deals }: DealListSectionProps) {
     let mounted = true;
     setIsRefreshing(true);
     refresh({ focusSectors: ["healthcare", "life sciences", "commerce", "biotech"] })
-      .then((result) => {
+      .then((result: any) => {
         if (mounted) setLiveDeals(result.deals ?? []);
       })
-      .catch((err) => {
+      .catch((err: any) => {
         if (mounted) setError(err?.message ?? "Failed to refresh deal flow.");
       })
       .finally(() => {
@@ -132,8 +132,8 @@ function DealListSectionInner({ className = "", deals }: DealListSectionProps) {
           onClick={() => {
             setIsRefreshing(true);
             refresh({ forceRefresh: true, focusSectors: ["healthcare", "life sciences", "commerce", "biotech"] })
-              .then((result) => setLiveDeals(result.deals ?? []))
-              .catch((err) => setError(err?.message ?? "Failed to refresh deal flow."))
+              .then((result: any) => setLiveDeals(result.deals ?? []))
+              .catch((err: any) => setError(err?.message ?? "Failed to refresh deal flow."))
               .finally(() => setIsRefreshing(false));
           }}
           className="flex items-center gap-1 text-content-secondary hover:text-content"

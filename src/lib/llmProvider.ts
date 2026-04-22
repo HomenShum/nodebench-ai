@@ -4,8 +4,8 @@
  * Three providers: Gemini (default), Claude (fallback), OpenAI (fallback).
  * Selection strategy:
  *   - Classification: Gemini 3.1 Flash Lite Preview
- *   - Analysis: Gemini 3 Flash Preview -> Claude Haiku 3.5 -> OpenAI GPT-5.4 Mini
- *   - Deep diligence: Claude Sonnet 4 -> Gemini 3.1 Pro Preview (if keys available)
+ *   - Analysis: Gemini 3 Flash Preview -> Claude Haiku 4.5 -> OpenAI GPT-5.4 Mini
+ *   - Deep diligence: Claude Sonnet 4.6 -> Gemini 3.1 Pro Preview (if keys available)
  *
  * Configuration via env vars:
  *   - GEMINI_API_KEY (required for primary)
@@ -127,7 +127,7 @@ class ClaudeProvider implements LLMProvider {
         "anthropic-dangerous-direct-browser-access": "true",
       },
       body: JSON.stringify({
-        model: "claude-3-5-haiku-20241022",
+        model: "claude-haiku-4-5",
         max_tokens: 200,
         messages: [{ role: "user", content: `Classify this search query. Return JSON only: {"type":"company_search"|"competitor"|"multi_entity"|"weekly_reset"|"pre_delegation"|"important_change"|"plan_proposal"|"general","entity":"primary entity or null","entities":["e1"],"lens":"${lens}"}
 
@@ -154,7 +154,7 @@ Query: "${query}"` }],
         "anthropic-dangerous-direct-browser-access": "true",
       },
       body: JSON.stringify({
-        model: "claude-3-5-haiku-20241022",
+        model: "claude-sonnet-4-6",
         max_tokens: 1200,
         messages: [{ role: "user", content: `Analyze this query and context. User is a ${lens}. Query: "${query}"
 

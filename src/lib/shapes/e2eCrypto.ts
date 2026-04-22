@@ -30,13 +30,13 @@ function base64ToBytes(b64: string): Uint8Array {
 async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
   const baseKey = await crypto.subtle.importKey(
     "raw",
-    toBytes(password),
+    toBytes(password) as unknown as BufferSource,
     { name: "PBKDF2" },
     false,
     ["deriveKey"]
   );
   return crypto.subtle.deriveKey(
-    { name: "PBKDF2", salt, iterations: 250000, hash: "SHA-256" },
+    { name: "PBKDF2", salt: salt as unknown as BufferSource, iterations: 250000, hash: "SHA-256" },
     baseKey,
     { name: "AES-GCM", length: 256 },
     false,
@@ -50,7 +50,7 @@ export async function encryptToString(plaintext: string, passphrase: string): Pr
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const key = await deriveKey(passphrase, salt);
   const data = toBytes(plaintext);
-  const cipherBuf = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data);
+  const cipherBuf = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv as unknown as BufferSource }, key, data as unknown as BufferSource);
   const cipher = new Uint8Array(cipherBuf);
   return [VERSION, bytesToBase64(salt), bytesToBase64(iv), bytesToBase64(cipher)].join(":");
 }
@@ -63,6 +63,6 @@ export async function decryptFromString(token: string, passphrase: string): Prom
   const iv = base64ToBytes(ivB64);
   const cipher = base64ToBytes(cipherB64);
   const key = await deriveKey(passphrase, salt);
-  const plainBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, cipher);
+  const plainBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv as unknown as BufferSource }, key, cipher as unknown as BufferSource);
   return fromBytes(new Uint8Array(plainBuf));
 }

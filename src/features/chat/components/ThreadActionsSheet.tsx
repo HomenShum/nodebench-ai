@@ -149,7 +149,7 @@ export const ThreadActionsSheet = memo(function ThreadActionsSheet({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={transition({ duration: 0.18 })}
+          transition={transition({ duration: 0.24 })}
         >
           <div className="absolute inset-0" aria-hidden="true" />
           <motion.div
@@ -157,10 +157,10 @@ export const ThreadActionsSheet = memo(function ThreadActionsSheet({
             role="menu"
             aria-label="Thread actions"
             className="pointer-events-auto absolute right-3 top-[calc(env(safe-area-inset-top)+58px)] w-[min(296px,calc(100vw-24px))] overflow-hidden rounded-[24px] border border-white/[0.12] bg-[#171c23]/[0.98] p-2 shadow-[0_28px_70px_-30px_rgba(0,0,0,0.92)] backdrop-blur-2xl"
-            initial={{ opacity: 0, y: -10, scale: 0.96 }}
+            initial={{ opacity: 0, y: -14, scale: 0.92 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.98 }}
-            transition={transition({ type: "spring", stiffness: 420, damping: 30, mass: 0.72 })}
+            exit={{ opacity: 0, y: -10, scale: 0.96 }}
+            transition={transition({ type: "spring", stiffness: 300, damping: 26, mass: 0.84 })}
           >
             <ul className="flex flex-col gap-1">
               {actions.map((action, index) => {

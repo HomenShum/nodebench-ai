@@ -136,16 +136,16 @@ describe("buildExecutionTraceFromLiveRun", () => {
 
     expect(trace.run.run_id).toBe("session_live_1");
     expect(trace.inputs.uploaded_files).toContain("/mnt/data/ideas.xlsx");
-    expect(trace.outputs.some((output) => output.path === "/mnt/data/ideas_filled.xlsx")).toBe(true);
-    expect(trace.evidence_catalog.some((item) => item.title === "Tests Assured site")).toBe(true);
-    expect(trace.evidence_catalog.some((item) => item.title === "Public positioning evidence")).toBe(true);
-    expect(trace.steps.some((step) => step.title === "Search public reputation")).toBe(true);
+    expect(trace.outputs.some((output: any) => output.path === "/mnt/data/ideas_filled.xlsx")).toBe(true);
+    expect(trace.evidence_catalog.some((item: any) => item.title === "Tests Assured site")).toBe(true);
+    expect(trace.evidence_catalog.some((item: any) => item.title === "Public positioning evidence")).toBe(true);
+    expect(trace.steps.some((step: any) => step.title === "Search public reputation")).toBe(true);
     expect(
       trace.decisions.some(
-        (decision) =>
+        (decision: any) =>
           decision.statement === "Agentic QA Control Plane was ranked as the primary recommendation.",
       ),
     ).toBe(true);
-    expect(trace.verification_checks.some((check) => check.label === "Workbook render check")).toBe(true);
+    expect(trace.verification_checks.some((check: any) => check.label === "Workbook render check")).toBe(true);
   });
 });

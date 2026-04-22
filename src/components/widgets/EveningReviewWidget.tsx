@@ -15,10 +15,10 @@ export function EveningReviewWidget({ onNavigate }: EveningReviewWidgetProps) {
 
   // Get completed tasks
   const allTasks = useQuery(api.domains.tasks.tasks.listTasks, { limit: 50 });
-  const completedTasks = allTasks?.filter((t) => t.status === 'completed').slice(0, 5) ?? [];
+  const completedTasks = (allTasks as any[] | undefined)?.filter((t: any) => t.status === 'completed').slice(0, 5) ?? [];
 
   // Get tomorrow's tasks (pending)
-  const pendingTasks = allTasks?.filter((t) => t.status === 'pending').slice(0, 3) ?? [];
+  const pendingTasks = (allTasks as any[] | undefined)?.filter((t: any) => t.status === 'pending').slice(0, 3) ?? [];
 
   const handleSaveReflection = () => {
     // TODO: Save reflection to quick capture or journal
@@ -51,7 +51,7 @@ export function EveningReviewWidget({ onNavigate }: EveningReviewWidgetProps) {
         </h3>
         {completedTasks.length > 0 ? (
           <ul className="space-y-2">
-            {completedTasks.map((task) => (
+            {completedTasks.map((task: any) => (
               <li key={task._id} className="flex items-center gap-2 text-sm text-content-secondary">
                 <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                 <span className="line-through text-content-secondary">{task.title}</span>
@@ -79,7 +79,7 @@ export function EveningReviewWidget({ onNavigate }: EveningReviewWidgetProps) {
         </div>
         {pendingTasks.length > 0 ? (
           <ul className="space-y-2">
-            {pendingTasks.map((task) => (
+            {pendingTasks.map((task: any) => (
               <li
                 key={task._id}
                 className="text-sm border-l-2 border-purple-500 pl-3 py-1 text-content-secondary"

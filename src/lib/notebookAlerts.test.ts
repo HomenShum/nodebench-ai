@@ -146,13 +146,14 @@ describe("notebookAlerts fail-open", () => {
       "https://ntfy.sh/test-topic",
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0];
+    const firstCall = fetchMock.mock.calls[0] as unknown as [unknown, RequestInit | undefined];
+    const [url, init] = firstCall;
     expect(String(url)).toBe("https://ntfy.sh/test-topic");
-    expect((init as RequestInit).method).toBe("POST");
-    const headers = (init as RequestInit).headers as Record<string, string>;
+    expect((init as unknown as RequestInit).method).toBe("POST");
+    const headers = (init as unknown as RequestInit).headers as Record<string, string>;
     expect(headers.Priority).toBe("4"); // P1
     expect(headers.Tags).toBe("warning");
     expect(headers.Title).toContain("TEST_POST");
-    expect((init as RequestInit).keepalive).toBe(true);
+    expect((init as unknown as RequestInit).keepalive).toBe(true);
   });
 });

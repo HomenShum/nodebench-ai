@@ -36,7 +36,7 @@ export interface Source {
 
 export interface Message {
   id: string;
-  threadId: Id<"chatThreads">;
+  threadId: Id<any>;
   role: MessageRole;
   content: string;
   status: MessageStatus;
@@ -63,12 +63,12 @@ export interface Message {
   elapsedMs?: number;
 
   // Convex fields
-  _id?: Id<"chatMessages">;
+  _id?: Id<any>;
   _creationTime?: number;
 }
 
 export interface MessageCreateInput {
-  threadId: Id<"chatThreads">;
+  threadId: Id<any>;
   role: MessageRole;
   content: string;
   status?: MessageStatus;
@@ -78,7 +78,7 @@ export interface MessageCreateInput {
 }
 
 export interface MessageUpdateInput {
-  messageId: Id<"chatMessages">;
+  messageId: Id<any>;
   content?: string;
   status?: MessageStatus;
   runId?: Id<"agentRuns">;

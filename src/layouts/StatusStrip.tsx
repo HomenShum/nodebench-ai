@@ -1,6 +1,14 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { useConvexAuth } from "convex/react";
-import { ChevronDown, ChevronLeft, MoreHorizontal, Search, Share2 } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  MoreHorizontal,
+  Pin,
+  Search,
+  Share2,
+} from "lucide-react";
 import { VIEW_TITLES } from "./cockpitModes";
 import type { MainView } from "@/lib/registry/viewRegistry";
 
@@ -55,10 +63,29 @@ const STATUS_CONFIG: Record<SystemStatus, { dotClass: string; label: string }> =
   offline: { dotClass: "bg-red-500", label: "You are offline" },
 };
 
+const CHAT_MODEL_OPTIONS = [
+  {
+    id: "max",
+    label: "NodeBench Max",
+    detail: "High-performance agent for deeper, multi-step threads.",
+  },
+  {
+    id: "core",
+    label: "NodeBench",
+    detail: "Versatile agent for most research, diligence, and report work.",
+  },
+  {
+    id: "fast",
+    label: "NodeBench Fast",
+    detail: "Lighter pass for quick lookups and iteration.",
+  },
+] as const;
+
 interface StatusStripProps {
   currentView: MainView;
   entityName?: string | null;
   chatHasSession?: boolean;
+  chatPinned?: boolean;
   onOpenPalette?: () => void;
 }
 
@@ -66,8 +93,13 @@ export const StatusStrip = memo(function StatusStrip({
   currentView,
   entityName,
   chatHasSession = false,
+  chatPinned = false,
   onOpenPalette,
 }: StatusStripProps) {
+  const modelButtonRef = useRef<HTMLButtonElement | null>(null);
+  const modelMenuRef = useRef<HTMLDivElement | null>(null);
+  const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [chatModelLabel, setChatModelLabel] = useState("NodeBench Max");
   const viewTitle = VIEW_TITLES[currentView] ?? currentView;
   const isChatView = viewTitle === "Chat";
   const { isAuthenticated, isLoading } = useConvexAuth();
@@ -79,13 +111,36 @@ export const StatusStrip = memo(function StatusStrip({
       ? "Connected"
       : "Guest";
   const { dotClass: statusDotClass, label: statusLabel } = STATUS_CONFIG[systemStatus];
-  const headerTitle = entityName?.trim() || "NodeBench";
-  const showDropdownCue = !chatHasSession;
+  const headerTitle = entityName?.trim() || chatModelLabel;
+
+  useEffect(() => {
+    if (!isChatView || !modelMenuOpen) return;
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (modelButtonRef.current?.contains(target)) return;
+      if (modelMenuRef.current?.contains(target)) return;
+      setModelMenuOpen(false);
+    };
+    const handleEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setModelMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handlePointerDown, true);
+    document.addEventListener("touchstart", handlePointerDown, true);
+    window.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown, true);
+      document.removeEventListener("touchstart", handlePointerDown, true);
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isChatView, modelMenuOpen]);
 
   if (isChatView) {
     return (
       <header
-        className="flex shrink-0 items-end justify-between border-b border-white/[0.08] bg-[rgba(15,18,23,0.98)] px-3.5 pb-2 pt-[max(8px,env(safe-area-inset-top))] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset,0_14px_30px_-20px_rgba(0,0,0,0.78)] backdrop-blur-2xl"
+        className="relative flex shrink-0 items-end justify-between border-b border-white/[0.08] bg-[rgba(15,18,23,0.98)] px-3.5 pb-2 pt-[max(8px,env(safe-area-inset-top))] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset,0_14px_30px_-20px_rgba(0,0,0,0.78)] backdrop-blur-2xl"
         role="banner"
         data-agent-id="cockpit:status-strip"
       >
@@ -106,18 +161,69 @@ export const StatusStrip = memo(function StatusStrip({
           <ChevronLeft className="h-5.5 w-5.5" />
         </button>
 
-        <div className="flex min-w-0 flex-1 justify-center px-2.5">
-          <div
-            className="inline-flex min-w-0 max-w-[208px] items-center gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.035] px-4.5 py-2.5 text-[15px] font-semibold tracking-[-0.02em] text-gray-50 shadow-[0_16px_32px_-20px_rgba(0,0,0,0.94)]"
-            aria-label={`${headerTitle} · ${connectionLabel}`}
+        <div className="relative flex min-w-0 flex-1 justify-center px-2.5">
+          <button
+            ref={modelButtonRef}
+            type="button"
+            onClick={() => setModelMenuOpen((current) => !current)}
+            className="inline-flex min-w-0 max-w-[228px] items-center gap-1.5 rounded-full border border-white/[0.16] bg-white/[0.08] px-4.5 py-2.5 text-[15px] font-semibold tracking-[-0.02em] text-gray-50 shadow-[0_16px_32px_-20px_rgba(0,0,0,0.94)] transition hover:bg-white/[0.11] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+            aria-label={`${headerTitle} - ${connectionLabel}`}
+            aria-haspopup="menu"
+            aria-expanded={modelMenuOpen}
             title={statusLabel}
           >
             <span className="truncate">{headerTitle}</span>
-            {showDropdownCue ? <ChevronDown className="h-3.5 w-3.5 text-gray-400" /> : null}
-          </div>
+            <ChevronDown
+              className={`h-4.5 w-4.5 text-white/85 transition ${modelMenuOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {modelMenuOpen ? (
+            <div
+              ref={modelMenuRef}
+              role="menu"
+              aria-label="Model selector"
+              className="absolute top-[calc(100%+10px)] z-20 w-[252px] overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#12171f]/96 p-2 shadow-[0_28px_68px_-32px_rgba(0,0,0,0.92)] backdrop-blur-2xl"
+            >
+              {CHAT_MODEL_OPTIONS.map((option) => {
+                const selected = option.label === chatModelLabel;
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={selected}
+                    onClick={() => {
+                      setChatModelLabel(option.label);
+                      setModelMenuOpen(false);
+                    }}
+                    className="flex w-full items-center gap-3 rounded-[20px] px-3.5 py-3 text-left transition hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/35"
+                  >
+                    <span
+                      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${
+                        selected
+                          ? "border-white/[0.18] bg-white/[0.08] text-white"
+                          : "border-white/[0.08] bg-white/[0.03] text-transparent"
+                      }`}
+                    >
+                      <Check className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[15px] font-semibold text-gray-50">
+                        {option.label}
+                      </span>
+                      <span className="mt-0.5 block text-[12px] leading-5 text-gray-400">
+                        {option.detail}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
         </div>
 
-        <div className="inline-flex items-center rounded-full border border-white/[0.1] bg-white/[0.035] p-1 shadow-[0_12px_28px_-18px_rgba(0,0,0,0.92)]">
+        <div className="inline-flex items-center rounded-full border border-white/[0.14] bg-white/[0.065] p-1 shadow-[0_12px_28px_-18px_rgba(0,0,0,0.92)]">
           {chatHasSession ? (
             <button
               type="button"
@@ -133,7 +239,7 @@ export const StatusStrip = memo(function StatusStrip({
               className="nb-pressable inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-100 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
               aria-label="Share thread"
             >
-              <Share2 className="h-4 w-4" />
+              <Share2 className="h-4.5 w-4.5" />
             </button>
           ) : onOpenPalette ? (
             <button
@@ -142,9 +248,33 @@ export const StatusStrip = memo(function StatusStrip({
               className="nb-pressable inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-100 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
               aria-label="Open search"
             >
-              <Search className="h-4 w-4" />
+              <Search className="h-4.5 w-4.5" />
             </button>
           ) : null}
+
+          {chatHasSession ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(
+                    new CustomEvent("nodebench:chat-header-action", {
+                      detail: { action: "toggle-pin-thread" },
+                    }),
+                  );
+                }
+              }}
+              className={`nb-pressable inline-flex h-10 w-10 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 ${
+                chatPinned
+                  ? "bg-white/[0.16] text-white"
+                  : "bg-white/[0.06] text-white hover:bg-white/[0.1] hover:text-white"
+              }`}
+              aria-label={chatPinned ? "Unpin thread" : "Pin thread"}
+            >
+              <Pin className="h-4.5 w-4.5" />
+            </button>
+          ) : null}
+
           {chatHasSession ? (
             <button
               type="button"
@@ -160,7 +290,7 @@ export const StatusStrip = memo(function StatusStrip({
               className="nb-pressable inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-100 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
               aria-label="Thread actions"
             >
-              <MoreHorizontal className="h-4 w-4" />
+              <MoreHorizontal className="h-4.5 w-4.5" />
             </button>
           ) : (
             <button
@@ -177,7 +307,7 @@ export const StatusStrip = memo(function StatusStrip({
               className="nb-pressable inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-100 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
               aria-label="Show recent threads"
             >
-              <MoreHorizontal className="h-4 w-4" />
+              <MoreHorizontal className="h-4.5 w-4.5" />
             </button>
           )}
         </div>
@@ -191,7 +321,10 @@ export const StatusStrip = memo(function StatusStrip({
       role="banner"
       data-agent-id="cockpit:status-strip"
     >
-      <nav className="flex min-w-0 items-center gap-1.5 text-[12px] tracking-wide" aria-label="Breadcrumb">
+      <nav
+        className="flex min-w-0 items-center gap-1.5 text-[12px] tracking-wide"
+        aria-label="Breadcrumb"
+      >
         <span className="font-semibold uppercase text-content-muted">NODEBENCH</span>
         <span className="text-content-muted/60" aria-hidden="true">
           /

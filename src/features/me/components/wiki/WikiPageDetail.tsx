@@ -3,14 +3,21 @@
  *
  * Zone 1 (generated overview): AI-maintained, regenerates only; marked with AI chip.
  * Zone 2 (evidence + sources): strictly derived; read-only.
- * Zone 3 (your notes): Phase-1 placeholder (notes table lands in Phase 2 of spec).
+ * Zone 3 (your notes): Human-owned, editable; AI reads but never writes.
+ *
+ * Dreaming Pipeline Integration:
+ * - Themes panel from REFLECT phase
+ * - Notes editor with 64KB bound
+ * - Source provenance from OBSERVE/CONSOLIDATE phases
  *
  * Contract: inputs are already-fetched Convex docs from getPageBySlug. The
  * component does not fetch; it only presents.
  */
-import { Sparkles, Link2, AlertTriangle } from "lucide-react";
+import { Sparkles, Link2, AlertTriangle, Brain, Clock } from "lucide-react";
 import { WikiFreshnessBadge, type FreshnessState } from "./WikiFreshnessBadge";
 import { WikiRegenerateButton } from "./WikiRegenerateButton";
+import { WikiThemesPanel } from "./WikiThemesPanel";
+import { WikiNotesEditor } from "./WikiNotesEditor";
 
 export type WikiRevisionDoc = {
   revision: number;
@@ -204,21 +211,11 @@ export function WikiPageDetail({
         </div>
       </section>
 
-      {/* Zone 3: Your notes (Phase-1 placeholder) */}
-      <section
-        data-testid="wiki-zone-user-notes"
-        role="region"
-        aria-label="Your notes"
-        className="rounded-lg border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-500 dark:border-white/[0.1] dark:bg-white/[0.01] dark:text-gray-400"
-      >
-        <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
-          Your notes
-        </h2>
-        <p>
-          Your private notes land here in a later phase. The AI can read them as
-          context but will never rewrite them.
-        </p>
-      </section>
+      {/* Themes Panel from REFLECT phase */}
+      <WikiThemesPanel ownerKey={ownerKey} />
+
+      {/* Zone 3: Your notes (human-owned, editable) */}
+      <WikiNotesEditor ownerKey={ownerKey} pageId={page._id as any} />
     </article>
   );
 }

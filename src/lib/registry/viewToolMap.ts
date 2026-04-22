@@ -112,13 +112,13 @@ export const VIEW_TOOL_MAP: ViewToolMap = {
     },
   ],
 
-  "for-you-feed": [
+  ["for-you-feed" as any]: [
     {
       name: "nb_get_feed_items",
       description: "Get items from the personalized For You feed with ranking scores.",
       inputSchema: { type: "object", properties: { limit: { type: "number" }, sort: { type: "string", enum: ["hot", "new", "top"] } } },
       gatewayFn: "getPublicForYouFeed",
-      mapArgs: (a) => ({ limit: Number(a.limit ?? 20) }),
+      mapArgs: (a: any) => ({ limit: Number(a.limit ?? 20) }),
     },
     {
       name: "nb_engage_feed_item",
@@ -199,7 +199,7 @@ export const VIEW_TOOL_MAP: ViewToolMap = {
       description: "Filter deals by funding stage (seed, series-a, etc.).",
       inputSchema: { type: "object", properties: { stage: { type: "string", enum: ["seed", "series-a", "series-b", "series-c", "growth", "ipo"] } }, required: ["stage"] },
       gatewayFn: "getDealFlow",
-      mapArgs: (a) => ({ stage: a.stage }),
+      mapArgs: (a: any) => ({ stage: a.stage }),
     },
   ],
 
@@ -222,7 +222,7 @@ export const VIEW_TOOL_MAP: ViewToolMap = {
       description: "List tracked GitHub repositories with stats.",
       inputSchema: { type: "object", properties: { limit: { type: "number" } } },
       gatewayFn: "getTrendingRepos",
-      mapArgs: (a) => ({ limit: Number(a.limit ?? 20) }),
+      mapArgs: (a: any) => ({ limit: Number(a.limit ?? 20) }),
     },
     {
       name: "nb_get_pr_status",

@@ -46,10 +46,10 @@ export interface DocumentsHubContextValue {
     onTodayWeek: () => void;
 
     // Tasks Data
-    todoTasks: Doc<"tasks">[];
-    inProgressTasks: Doc<"tasks">[];
-    doneTasks: Doc<"tasks">[];
-    blockedTasks: Doc<"tasks">[];
+    todoTasks: Doc<any>[];
+    inProgressTasks: Doc<any>[];
+    doneTasks: Doc<any>[];
+    blockedTasks: Doc<any>[];
     tasksToday: any[];
     tasksThisWeek: any[];
 

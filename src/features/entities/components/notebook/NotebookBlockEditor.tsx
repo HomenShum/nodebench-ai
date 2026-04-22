@@ -364,7 +364,7 @@ export const NotebookBlockEditor = forwardRef<NotebookBlockEditorHandle, Props>(
             "aria-label": ariaLabel,
             "aria-readonly": String(!isEditableRef.current),
           },
-          handleKeyDown(view, event) {
+          handleKeyDown(view: any, event: KeyboardEvent) {
             const textContent = view.state.doc.textContent;
             if (!isEditableRef.current) {
               if (event.key === "Escape") onCloseSlashRef.current();

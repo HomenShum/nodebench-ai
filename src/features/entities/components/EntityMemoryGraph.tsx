@@ -112,11 +112,12 @@ export function EntityMemoryGraph({
             </div>
           );
 
-          return node.slug && onOpenEntity ? (
+          const nodeSlug = (node as GraphNode).slug;
+          return nodeSlug && onOpenEntity ? (
             <button
               key={node.id}
               type="button"
-              onClick={() => onOpenEntity(node.slug!)}
+              onClick={() => onOpenEntity(nodeSlug)}
               className="absolute -translate-x-1/2 -translate-y-1/2 transition hover:scale-[1.02]"
               style={positionStyle}
             >

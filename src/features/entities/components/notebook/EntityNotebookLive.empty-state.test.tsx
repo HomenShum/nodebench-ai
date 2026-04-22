@@ -47,7 +47,7 @@ const {
       snapshot: {
         blocks: [] as unknown[],
         reportCount: 0,
-      },
+      } as Record<string, unknown>,
       blockSummary: {
         blockCount: 0,
         userEditedCount: 0,

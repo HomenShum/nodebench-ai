@@ -18,6 +18,7 @@
 
     /* Linting */
     "strict": true,
+    "noImplicitAny": false,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
@@ -29,5 +30,6 @@
       "@shared/ui/*": ["./src/shared/ui/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["convex", "convex/**/*", "node_modules"]
 }

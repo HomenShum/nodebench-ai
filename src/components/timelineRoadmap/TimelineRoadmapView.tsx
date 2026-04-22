@@ -958,7 +958,7 @@ const agentCoverageMap: AgentCoverage[] = Array.from(
       count: personas.length,
     };
   })
-  .sort((a, b) => b.count - a.count);
+  .sort((a: any, b: any) => b.count - a.count);
 
 const roadmapNav = [
   { label: "Overview", target: "roadmap-overview" },
@@ -1233,7 +1233,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                 <section className="nb-surface-card p-4">
                   <h3 className="type-section-title text-content mb-3">Activity Heatmap (Last 90 Days)</h3>
                   <div className="flex flex-wrap gap-1">
-                    {analytics.heatmap.map((day) => {
+                    {analytics.heatmap.map((day: any) => {
                       const intensity = Math.min(day.totalActivity / 10, 1); // normalize to 0-1
                       const bgOpacity = Math.max(0.1, intensity);
                       return (
@@ -1301,7 +1301,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                   <section className="rounded-lg border border-edge bg-surface-secondary p-4">
                     <h3 className="text-sm font-semibold text-content mb-3">Top Tags</h3>
                     <div className="flex flex-wrap gap-2">
-                      {analytics.topTags.map((tag) => (
+                      {analytics.topTags.map((tag: any) => (
                         <span
                           key={tag.name}
                           className="px-2 py-1 text-xs rounded-md border bg-surface text-content-secondary border-edge"

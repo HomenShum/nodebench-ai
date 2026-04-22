@@ -11,7 +11,7 @@ export const BENCHMARK_MODELS: Array<{
   evalSlug?: string;
 }> = [
   { id: "claude-sonnet-4-6", displayName: "Claude 4.6", provider: "anthropic", providerLabel: "Anthropic", evalSlug: undefined },
-  { id: "claude-haiku-3.5", displayName: "Haiku 3.5", provider: "anthropic", providerLabel: "Anthropic", evalSlug: "claude-haiku-3.5" },
+  { id: "claude-haiku-4.5", displayName: "Haiku 4.5", provider: "anthropic", providerLabel: "Anthropic", evalSlug: "claude-haiku-4.5" },
   { id: "gemini-3-flash-preview", displayName: "Gemini 3 Flash", provider: "google", providerLabel: "Google", evalSlug: "gemini-3-flash-preview" },
   { id: "gpt-5.4-mini", displayName: "GPT-5.4 Mini", provider: "openai", providerLabel: "OpenAI", evalSlug: "gpt-5.4-mini" },
   { id: "deepseek-v3.2", displayName: "DeepSeek V3", provider: "open-source", providerLabel: "DeepSeek", evalSlug: "deepseek-v3.2" },

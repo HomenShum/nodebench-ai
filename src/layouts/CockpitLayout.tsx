@@ -141,6 +141,7 @@ export function CockpitLayout({
   const [lastVoiceInstruction, setLastVoiceInstruction] = useState<string | null>(null);
   const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [chatDetailChromeHidden, setChatDetailChromeHidden] = useState(false);
+  const [chatDetailPinned, setChatDetailPinned] = useState(false);
 
   // Listen for voice state broadcasts from the home intake surface
   useEffect(() => {
@@ -154,8 +155,9 @@ export function CockpitLayout({
 
   useEffect(() => {
     const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ hideMobileChrome?: boolean }>).detail;
+      const detail = (event as CustomEvent<{ hideMobileChrome?: boolean; pinned?: boolean }>).detail;
       setChatDetailChromeHidden(Boolean(detail?.hideMobileChrome));
+      setChatDetailPinned(Boolean(detail?.pinned));
     };
     window.addEventListener("nodebench:chat-detail-state", handler as EventListener);
     return () =>
@@ -793,6 +795,7 @@ export function CockpitLayout({
             currentView={currentView}
             entityName={entityName}
             chatHasSession={chatHasSession}
+            chatPinned={chatDetailPinned}
             onOpenPalette={commandPalette.toggle}
           />
         </div>

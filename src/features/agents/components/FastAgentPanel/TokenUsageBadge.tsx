@@ -8,6 +8,9 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   "gpt-5.4": { input: 2.5, output: 15.0 },
   "gpt-5.4-mini": { input: 0.375, output: 2.25 },
   "gpt-5.4-nano": { input: 0.1, output: 0.625 },
+  "claude-opus-4.7": { input: 5.0, output: 25.0 },
+  "claude-sonnet-4.6": { input: 3.0, output: 15.0 },
+  "claude-haiku-4.5": { input: 1.0, output: 5.0 },
   "claude-sonnet-4": { input: 3.0, output: 15.0 },
   "claude-opus-4.1": { input: 15.0, output: 75.0 },
   "claude-haiku-3.5": { input: 0.8, output: 4.0 },
@@ -16,6 +19,7 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   "gemini-2.5-pro": { input: 1.25, output: 10.0 },
   "gemini-2.5-flash": { input: 0.3, output: 2.5 },
   "gemini-2.5-flash-lite": { input: 0.1, output: 0.4 },
+  "kimi-k2.6": { input: 0.75, output: 3.5 },
   default: { input: 3.0, output: 15.0 },
 };
 
